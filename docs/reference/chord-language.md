@@ -6,9 +6,10 @@ compile-checked example. Companion to the formal grammar
 (`chord-grammar.md`, `chord.ebnf`); where they disagree, the grammar and the
 parser win. Chord v1 (locked 2026-07-14) ships with Sharpee 3.0.
 
-> **Status: SKELETON** — sections are being filled in by the
-> `docs/work/chord-language-reference/` plan; every example is backed by a
-> fixture verified with `verify-examples.mjs` against `@sharpee/chord`.
+> **Status: DRAFT** — §1–§6 are written; every example is backed by a
+> fixture verified with `verify-examples.mjs` against `@sharpee/chord`. A
+> full verification sweep and site render remain (`docs/work/chord-language-reference/`
+> plan, Phases 6–7).
 
 ## 1. Reading a .story file
 
@@ -695,69 +696,887 @@ confuse it with the `when <value>` arm header inside `select on`
 
 ## 4. Branching, iteration, and progression
 
+The statements in §3 each do one thing. This chapter is about shaping
+what happens over time: choosing between several bodies, doing something
+once per matching entity, keeping score, ending the story, and running a
+scripted timeline. All of it is still made of the statements you already
+have; these are the blocks that route between them.
+
 ### 4.1 select on a value
-*[Placeholder: arm-per-state dispatch.]*
+
+`select on <value>` dispatches to the arm whose `when` matches the
+value, and runs nothing if none do. The classic use is a state machine:
+one arm per declared state, each speaking for that state.
+
+<!-- fixture: flow/select-on.story -->
+```story
+  on examining it
+    select on its state
+      when dormant
+        phrase bulb-dormant
+      when sprouting
+        phrase bulb-sprouting
+      when blooming
+        phrase bulb-blooming
+    end select
+  end on
+```
+
+The value after `on` is any value expression (§3.4): here `its state`,
+the amaryllis bulb's current state out of `dormant, sprouting,
+blooming`. Each `when <word>` heads an arm whose body is ordinary
+statements. The block closes with `end select`, and each `or`-free arm
+simply dedents. Coverage is not enforced — an unmatched value falls
+through silently, which is what you want for "react only to these
+states."
+
+Do not confuse this arm-header `when <word>` with the statement-final
+`when <condition>` suffix (§3.8). Same word, different job: the suffix
+gates one statement on a condition, while the arm header names a value
+to match. `select on` compares values; it does not evaluate conditions.
 
 ### 4.2 select with a strategy
-*[Placeholder: randomly / cycling / stopping / sticky / first-time with
-`or`-separated bodies.]*
+
+`select <strategy>` ignores the world and picks an arm by a rule about
+*how often the block has fired*. The arms are separated by `or`, exactly
+like the variants of a `define phrase` (§5.2), because it is the same
+machinery: the five strategies are the phrase-algebra Choice selectors
+under author-facing names.
+
+<!-- fixture: flow/select-strategy.story -->
+```story
+  on ringing it
+    select cycling
+      phrase chime-bright
+        The chime rings a bright, clean note.
+    or
+      phrase chime-lower
+        It answers itself a third lower.
+    or
+      phrase chime-clatter
+        The tubes clatter together, all music gone.
+    end select
+  end on
+```
+
+The five strategies:
+
+| Strategy | Behavior |
+|---|---|
+| `cycling` | arms in order, wrapping back to the first forever |
+| `stopping` | arms in order, then stays on the last |
+| `randomly` | a fresh seeded random arm every firing |
+| `sticky` | one seeded random arm, then that same arm forever |
+| `first-time` | the first arm once, the second arm ever after |
+
+`randomly` and `sticky` draw from the same seeded, save-persistent
+stream as every other random effect in Chord, so a replay or a restored
+save reproduces the same choices (never `Math.random`). `first-time` is
+the "novelty then routine" shape — a drawer that is a discovery the
+first time and a shrug thereafter:
+
+<!-- fixture: flow/select-strategy.story -->
+```story
+  on opening it
+    select first-time
+      phrase drawer-discovery
+        The drawer shrieks open on a jumble of twine, labels, and one
+        surprised spider.
+    or
+      phrase drawer-routine
+        The drawer shrieks open. The spider has moved out.
+    end select
+  end on
+```
+
+The retired adverbs `ordered` and `once` are gone (§6.3): `ordered` is
+now `stopping`, and there is no phrase-strategy `once` — its old job is
+covered by `first-time` and `stopping`. The clause modifier `, once`
+(§3.3) is a different construct at a different position and is
+untouched.
 
 ### 4.3 Ordinal blocks
-*[Placeholder: `first time` … `tenth time` in statement position.]*
+
+An ordinal block runs its body only on the Nth time the enclosing clause
+fires. The ordinals `first time` through `tenth time` appear in
+statement position, interleaved with ordinary statements:
+
+<!-- fixture: flow/ordinals.story -->
+```story
+  on knocking it
+    phrase knock-echo
+    first time
+      phrase knock-first
+    second time
+      change it to smudged
+      phrase knock-second
+    fifth time
+      phrase knock-fifth
+  end on
+```
+
+Every knock speaks `knock-echo`; the ordinal blocks add to it on the
+first, second, and fifth knock only. The ordinals need not be
+contiguous — jumping `first`, `second`, `fifth` is fine, and the gaps
+simply do nothing. Each block dedents to close; there is no `end`
+keyword.
+
+This is the same keyword pair as the create-block `first time`
+description (§2.9), and the collision is worth naming. Inside a `create`
+block, at the top level of the block, `first time` opens the room's
+first-visit description and only `first time` is legal there. Inside a
+behavior body, `first time` opens an ordinal block and the whole family
+through `tenth time` is available. Position decides which one you get:
+a `first time` directly under `create` is a description, a `first time`
+inside `on`/`after` is an ordinal.
 
 ### 4.4 each blocks
-*[Placeholder: iterating an open condition; `the match`; nesting.]*
+
+`each <condition>` runs its body once for every entity that satisfies a
+named *open* condition (§3.4) — a condition whose `it` is left free, so
+it describes a set rather than testing one thing. Inside the body, `the
+match` is the current entity; `it` keeps meaning the clause's owner.
+
+<!-- fixture: flow/each.story -->
+```story
+define condition frame-seedling: it is a seedling and it is in the cold frame
+define condition labeled-pot: it is a pot and it is in the potting shed
+```
+
+<!-- fixture: flow/each.story -->
+```story
+  on planting it
+    each frame-seedling
+      move the match to the Nursery Bed
+      phrase planted-out with plant = the match
+    end each
+    phrase planting-done
+  end on
+```
+
+Each matching seedling is moved and announced; then, after the loop,
+`planting-done` speaks once. The body is ordinary statements, so `move`,
+`change`, `phrase`, and the rest all work, and `the match` is a value
+you can pass as a parameter (`with plant = the match`) or use as a
+`move`/`change` target. The iteration order is the order entities were
+created, and an empty match set simply runs the body zero times.
+
+`each` blocks nest. The binder `the match` always refers to the
+*innermost* loop:
+
+<!-- fixture: flow/each.story -->
+```story
+  on auditing it
+    each frame-seedling
+      each labeled-pot
+        phrase audit-pair with pot = the match
+      end each
+    end each
+  end on
+```
+
+`each` is legal wherever statements are — `on` bodies, action bodies,
+trait clauses, sequence steps — and never at the top level
+(`parse.each-top-level`). Its condition must be a declared open
+condition; a closed condition or a story state is
+`analysis.closed-condition-selection`, and `the match` outside any
+`each` body is `analysis.match-outside-each`. `match` is a reserved
+name: you cannot call an entity, alias, trait field, or grammar slot
+`match`.
 
 ### 4.5 Scoring
-*[Placeholder: owner-scoped identities across story/entity/trait/action;
-award dedupe.]*
+
+A `score <name> worth N` line declares a scoring identity, and `award
+<name>` grants it (first seen in §2.8). The line is legal under four
+owners — the story header, a `create` block, a `define trait`, and a
+`define action` — and this section shows all four in one story, because
+where a score lives is a real design choice.
+
+The story header owns scores that belong to the whole game:
+
+<!-- fixture: flow/scoring.story -->
+```story
+story "Scoring" by "Sharpee Docs"
+  id: chord-ref-scoring
+  version: 0.0.1
+  score green-thumb worth 5
+```
+
+A trait owns a score every entity composed with it can grant, without
+the trait knowing which entities those are:
+
+<!-- fixture: flow/scoring.story -->
+```story
+define trait prunable
+  score tidy-secateurs worth 5
+
+  phrases en-US
+    pruned:
+      You snip away the dead wood.
+
+  on pruning it
+    award tidy-secateurs
+    phrase pruned
+  end on
+end trait
+```
+
+A `create` block owns a score specific to that one entity — and here is
+the payoff of owner-scoping. The damask rose and the moss rose both
+declare `score deadheaded worth 5`, and those are *two different
+scores*, one per rose, because each is owned by its own entity:
+
+<!-- fixture: flow/scoring.story -->
+```story
+create the damask rose
+  aka damask
+  prunable
+  in the Rose Border
+  score deadheaded worth 5
+
+  A crimson damask, badly overgrown.
+
+  after pruning it
+    award deadheaded
+    award green-thumb
+  end after
+```
+
+The damask's `after` clause awards its own `deadheaded`, and also the
+story-wide `green-thumb`. `award <name>` resolves owner-first: it looks
+for a score of that name on the enclosing owner, then falls back to the
+story header. So the same word `deadheaded` under the damask means the
+damask's score, and under the moss rose means the moss rose's — no
+collision, no prefixing.
+
+An action owns a score granted whenever the action succeeds:
+
+<!-- fixture: flow/scoring.story -->
+```story
+define action composting
+  grammar
+    compost :stuff
+  score turned-the-heap worth 10
+  award turned-the-heap
+  phrase composted
+  phrases en-US
+    composted:
+      Straight onto the heap with it.
+```
+
+Two properties fall out of this model. First, the maximum score is the
+sum of every declared `worth`, computed at load time. Second, awards
+dedupe by identity (ADR-129): awarding the same score twice grants it
+once, so `award` is idempotent and the explicit `, once` modifier
+(§3.7) is never *needed* for correctness — it only documents intent.
+This is why the pattern is "declare the score on the owner, award it in
+an `after` clause" rather than guarding awards behind first-time checks.
 
 ### 4.6 Endings: win and lose
-*[Placeholder: ending statements and variants.]*
+
+`win` and `lose` end the story. Each optionally names a phrase to speak
+on the way out, and each takes the statement-final `when` suffix (§3.8),
+so an ending can be conditional without a wrapping block.
+
+<!-- fixture: flow/endings.story -->
+```story
+  on pulling it
+    remove it
+    win garden-perfect
+  end on
+```
+
+<!-- fixture: flow/endings.story -->
+```story
+  on poking it
+    lose stung when one chance in 2
+    phrase near-miss
+  end on
+```
+
+The first ends in victory, speaking `garden-perfect`. The second loses
+only on a coin-flip (`when one chance in 2`); when the flip spares you,
+the `lose` is skipped and `near-miss` speaks instead. The phrase name is
+optional — bare `win` and bare `lose` end the story with only the
+platform's default ending text.
 
 ### 4.7 Sequences
-*[Placeholder: `define sequence` and the three step anchors.]*
+
+A `define sequence` is a scripted timeline: a named list of steps, each
+anchored to *when* it fires and carrying a body of ordinary statements.
+It replaces the hand-rolled turn-counting daemons of the old platform
+with one declarative block. There are three anchor forms, and this
+story uses all three across three sequences.
+
+The first two anchors are clock-based. `at turn N` fires at an absolute
+turn counted from the story's start; `N turns later` fires relative to
+the previous step, so you can chain a timeline without arithmetic:
+
+<!-- fixture: flow/sequence.story -->
+```story
+define sequence gathering storm
+  at turn 2
+    phrase storm-distant
+      Thunder mutters somewhere beyond the wall.
+  3 turns later
+    phrase storm-near
+      The light goes pewter, and the first fat drops crater the dust.
+  2 turns later
+    phrase storm-breaks
+      The storm breaks all at once, rain hammering the gravel.
+    change the story to raining
+end sequence
+```
+
+The steps here land on turns 2, 5, and 7. A step body is ordinary
+statements: the last step both speaks and moves the story into its
+`raining` state.
+
+The third anchor is state-based. `when <name> becomes <state>` fires the
+step when that owner transitions into the named state — the story
+itself, or any entity. This lets one sequence react to another's effect.
+The storm above moved the story to `raining`; a second sequence waits on
+exactly that:
+
+<!-- fixture: flow/sequence.story -->
+```story
+define sequence take shelter
+  when the story becomes raining
+    phrase shelter-note
+      Anywhere with a roof suddenly seems like a very good idea.
+end sequence
+```
+
+The same anchor works on an entity's own states. When the bonfire is lit
+and changes to `burning`, a third sequence notices:
+
+<!-- fixture: flow/sequence.story -->
+```story
+define sequence smoke drifts
+  when the bonfire becomes burning
+    phrase smoke-note
+      A ribbon of blue smoke begins to drift across the garden.
+end sequence
+```
+
+A sequence name may be several words (`gathering storm`, `take
+shelter`), and the block always closes with an explicit `end sequence`.
+Within a step, prose indented under a `phrase` line is declare-and-emit
+text (§3.7), which is why these steps need no separate `define phrases`
+block.
 
 ## 5. Defining vocabulary and text
 
+Everything so far attaches behavior to things that already exist. The
+`define` family is how you add to the language itself: name a condition,
+name a bundle of text, teach the parser a verb, mint a trait or an
+action other entities can be composed with. These are the only other
+top-level declarations besides `create`, and unlike `create` they
+declare *kinds and vocabulary*, not instances in the world.
+
 ### 5.1 define condition
-*[Placeholder: naming a condition; open vs closed.]*
+
+`define condition <name>: <condition>` names a condition so you can
+reuse it by name. The name is a single hyphenated token (not a
+multi-word prose name), and the body is the ordinary condition grammar
+(§3.4).
+
+<!-- fixture: define/condition.story -->
+```story
+define condition trug-in-hand: the player holds the trug
+define condition ripe-tomato: it is a tomato and it is not in the trug
+```
+
+The distinction that matters is *open* versus *closed*, and it is
+decided entirely by whether the body mentions `it`:
+
+- A **closed** condition never mentions `it`. It is a plain truth test
+  about the world — `trug-in-hand` asks whether the player holds the
+  trug, yes or no. Closed conditions go in truth positions: `while`,
+  `when`, `refuse when`, `must be` comparisons.
+- An **open** condition mentions `it`, leaving the subject free. It
+  describes a *set*: `ripe-tomato` is the criterion "any tomato not yet
+  in the trug." Open conditions go where a set is expected —
+  `any`/`no`/`each` (§3.4, §4.4) and `must be any` (§3.5).
+
+<!-- fixture: define/condition.story -->
+```story
+  on examining it
+    phrase go-ahead when trug-in-hand
+    phrase still-out when any ripe-tomato
+  end on
+```
+
+Using one where the other belongs is a load error, never a silent
+guess: `any` over a closed condition is
+`analysis.closed-condition-selection`, and a bare open condition in a
+truth position is `analysis.open-condition-truth`. The rule of thumb is
+"mention `it` when you mean a set, leave it out when you mean a fact."
 
 ### 5.2 define phrase
-*[Placeholder: strategies, `or` variants, the `while` gate, `verbatim`.]*
+
+`define phrase` gives a phrase key one or more `or`-separated variants
+and a strategy for choosing between them, closing with `end phrase`. The
+strategy is the same five-name set as `select <strategy>` (§4.2),
+because it is the same machinery: `select` chooses between statement
+bodies, `define phrase` chooses between texts.
+
+<!-- fixture: define/phrase.story -->
+```story
+define phrase parrot-chatter, randomly
+  Polly wants a cracker!
+or
+  SQUAWK! Pretty bird! Pretty bird!
+or
+  Pieces of eight! Pieces of eight!
+end phrase
+```
+
+Each variant is a prose block (§2.6) — the *only* form phrase text
+takes; the old same-line quoted and bare forms were removed (§6.3).
+Blank lines inside a variant are paragraph breaks, and `{br}` still
+forces a hard line break.
+
+A phrase header may carry a trailing `while <condition>` gate. This is
+mainly for description-marker phrases (§2.6): the gate decides whether
+the fragment appears at all, live at render time. Here a keeper line
+only splices into the aviary description while the zookeeper is actually
+present:
+
+<!-- fixture: define/phrase.story -->
+```story
+define phrase keeper-note, cycling while the zookeeper is here
+  where a keeper is refilling the feeders
+or
+  where a keeper is chalking today's talks on a board
+end phrase
+```
+
+Fragments spliced into prose are written *bare* — no leading separator
+and no trailing full stop. The platform owns the join: a marker mid-
+sentence joins with a comma, a marker after a sentence joins with a
+space. Writing the separator yourself earns a diagnostic.
+
+The `verbatim` modifier (mutually exclusive with the strategies) exempts
+a phrase's text from whitespace collapse, preserving its exact line
+structure and relative indentation — for signs, verse, and ASCII where
+the layout is the point:
+
+<!-- fixture: define/phrase.story -->
+```story
+define phrase plaque-text, verbatim
+  MACAWS OF THE AMERICAS
+    donated by the Willowbrook Trust
+  Please do not tap the glass
+end phrase
+```
+
+A `verbatim` phrase can be spoken by a `phrase` statement but cannot
+splice at a description marker (`analysis.verbatim-marker`): its
+whole point is preserved line structure, which a mid-sentence splice
+would break.
 
 ### 5.3 define phrases (locale blocks)
-*[Placeholder: `define phrases en-US` and `key:` entries.]*
+
+Where `define phrase` declares one key with variants, `define phrases
+<locale>` declares many plain keys at once, under a named locale. This
+is the localizable form — the same block stdlib uses — and the one to
+reach for when your text is a flat catalog of keyed strings rather than
+a single choice:
+
+<!-- fixture: define/phrases.story -->
+```story
+define phrases en-US
+  rack-front:
+    The front of every card is the same beaming flamingo.
+  rack-back:
+    Each back is pre-stamped, as if the zoo expects you to write home
+    before you have even seen it.
+```
+
+Each entry is `key:` on its own line followed by an indented prose
+block. The block is dedent-terminated — there is no `end phrases`. A key
+here is a plain phrase with no strategy; for variants or a strategy, use
+`define phrase` (§5.2) instead. Throughout this reference the small
+supporting texts live in exactly this kind of block at the foot of each
+fixture.
 
 ### 5.4 define verb
-*[Placeholder: verb aliases and `means` patterns with `(something)` slots.]*
+
+`define verb <word> {or <word>} means <pattern>` teaches the parser a
+new surface verb by mapping it onto an existing action's pattern. A
+`(something)` in the pattern is a slot the parser fills from the
+player's input:
+
+<!-- fixture: define/verb.story -->
+```story
+define verb hang or hook means put (something) on (something)
+define verb sniff means smell (something)
+```
+
+`hang the jacket on the hook` and `hook the jacket on the hook` now both
+route through the standard `put … on …` action; `sniff the jacket`
+routes through `smell`. This is verb *vocabulary* only — aliases onto
+patterns the platform already understands. To define a genuinely new
+action with its own grammar and behavior, use `define action` (§5.8).
 
 ### 5.5 define text (text hatches)
-*[Placeholder: `define text <name> from "./extras.ts"`.]*
+
+Some text cannot be authored as static variants — it depends on
+computation the language deliberately does not do (§2.5's "no
+counting"). A **text hatch** bridges to a small piece of TypeScript that
+produces the text. `define text <name> from "<module>"` binds a marker
+name to a named export of an author-supplied module:
+
+<!-- fixture: define/hatches.story -->
+```story
+define text weather from "./extras.ts"
+```
+
+`{weather}` in prose now renders whatever the module's `weather` export
+produces. The TypeScript side implements the platform's `PhraseProducer`
+contract and touches the world only through the narrow, typed context
+the loader hands it:
+
+```typescript
+import type { PhraseProducer } from '@sharpee/if-domain';
+
+export const weather: PhraseProducer = () => ({
+  kind: 'literal',
+  text: 'something ominous with the clouds',
+});
+```
+
+The name `br` is reserved and cannot be a hatch name. One limitation to
+state plainly: this reference's compile-check harness runs the Chord
+compiler, which validates the `define text` line and the marker binding
+but does *not* load the TypeScript module — hatch *binding* happens at
+story-load time, under the author's own build. So the `.story` side of
+every hatch example here is verified; the TypeScript stub is
+illustrative, checked by the author's toolchain, not by this document's
+harness.
 
 ### 5.6 define action/behavior hatches
-*[Placeholder: the other hatch kinds; what the TS side looks like.]*
+
+Text is one hatch kind; the other two bridge to whole actions and
+capability behaviors, for logic genuinely outside the language. The
+syntax mirrors the text hatch exactly:
+
+<!-- fixture: define/hatches.story -->
+```story
+define action dowsing from "./extras.ts"
+define behavior tide-clock from "./extras.ts"
+```
+
+`define action … from` binds an action implementing the platform's
+`Action` interface; `define behavior … from` binds a `CapabilityBehavior`
+(ADR-090). Both are governed by the hatch legitimacy rule (design.md
+§5.6): a hatch is legitimate only when it implements a public platform
+interface, or does pure non-IF computation, with data crossing the
+boundary through that interface. If the language can already express what
+the hatch does, the hatch is misuse and the fix is the Chord form; if it
+can't, that is a language gap worth filing. In particular, the `chord.*`
+state namespace is off-limits — those keys are the loader's private
+encoding and change without warning. As with text hatches, the binding
+is out of this harness's scope; the `.story` lines above compile, and the
+TypeScript is the author's to build and verify.
 
 ### 5.7 define trait
-*[Placeholder: data fields, states, score, phrases, on-clauses.]*
+
+A trait is a reusable bundle of data, states, scores, phrases, and
+behavior that entities compose with (§2.3). `define trait <name> …
+end trait` declares one. The block below carries one of everything:
+
+<!-- fixture: define/trait.story -->
+```story
+define trait feedable
+  data
+    food: entity
+    ration: optional number
+    diet: one of hay, seed, fish
+  states, reversible: hungry, content
+  score fed worth 10
+
+  phrases en-US
+    no-food:
+      You have nothing {the item} would want.
+    already-fed:
+      {capitalize the item} has had quite enough already.
+    fed:
+      The feed vanishes in seconds.
+
+  on feeding it
+    the player must have its food: no-food
+    it must be hungry: already-fed
+    change it to content
+    award fed
+    phrase fed
+  end on
+end trait
+```
+
+The parts, top to bottom:
+
+- **`data`** declares fields. Each is `<name>: <type>`, where the type
+  is `entity`, `number`, `name`, or `one of <word>, <word>, …` for a
+  fixed set. `optional` before the type makes the field omittable; `,
+  starts <value>` (not shown here) gives a default. Fields are read and
+  written with `its <field>` / `set its <field> to …`.
+- **`states`** and **`score`** are the same owner lines as everywhere
+  else (§2.7, §2.8), here owned by the trait: every entity composed with
+  `feedable` gets the `hungry`/`content` states and can award `fed`.
+- **`phrases`** is a locale block (§5.3) scoped to the trait.
+- **`on`/`after` clauses** are the trait's behavior (§3), with `it`
+  meaning the composed entity.
+
+An entity picks the trait up on a composition line, passing its data
+with `with`:
+
+<!-- fixture: define/trait.story -->
+```story
+create the pygmy goats
+  aka goats
+  feedable with food the handful of feed and diet hay
+  in the Petting Zoo
+```
+
+A state name declared by two different composed traits on one entity is
+a collision (`analysis.state-collision`), caught at load time.
 
 ### 5.8 define action
-*[Placeholder: grammar patterns, scope constraints, requirements, refusals,
-body.]*
+
+`define action <name> … end` (dedent-terminated) declares a brand-new
+action: its grammar, its requirements, its refusals, and its body. This
+one action shows the whole surface:
+
+<!-- fixture: define/action.story -->
+```story
+define action petting
+  grammar
+    pet :animal
+    pat :animal
+    stroke :animal → each nearby creature
+  the animal must be reachable
+  score gentle-hands worth 5
+  refuse without animal: pet-what
+  refuse when the animal is a snake: glass-way
+  otherwise refuse cant-pet
+  award gentle-hands
+  phrase petted
+
+  phrases en-US
+    pet-what:
+      Pet what?
+    glass-way:
+      You settle for pressing a hand to the cool glass.
+    cant-pet:
+      {capitalize the animal} really is not the sort of thing you can pet.
+    petted:
+      You give a good long scritch.
+```
+
+Reading it line by line:
+
+- **`grammar`** lists the surface patterns. A `:word` is a slot, and the
+  slot name *is* the value name used everywhere else in the action —
+  because the pattern says `:animal`, the requirements and phrases all
+  refer to `the animal`. The `→` gives a pattern's cardinality: `stroke
+  :animal → each nearby creature` marks that form as applying to each
+  match rather than a single object.
+- **`the animal must be reachable`** is a scope constraint (no colon):
+  a precondition on a slot the parser enforces during resolution.
+- **`score`** attaches an action-owned score (§4.5).
+- **`refuse without <slot>: <key>`** refuses when the slot was not
+  filled at all (nothing to pet); **`refuse when <condition>: <key>`**
+  refuses on a condition (§3.6); **`otherwise refuse <key>`** is the
+  last-resort refusal when no trait claimed the action on this target.
+- The remaining lines are the ordinary body: statements (`award`,
+  `phrase`, §3.7) that run when the action proceeds.
+- **`phrases`** is the action's locale block.
+
+The relationship to traits: `define action` declares the verb, its
+grammar, and its default outcomes; a `define trait` with an `on <verb>`
+clause is how a *particular kind of thing* responds to that verb.
+Together they are the story-author's version of stdlib's action-plus-
+behavior pattern — the goats above are pettable because `petting` exists
+as an action and something makes the goats respond to it.
 
 ## 6. Tooling
 
 ### 6.1 sharpee compose
-*[Placeholder: compile, check, emit IR; exit codes.]*
+
+`sharpee compose` is the command that turns a `.story` file into Story
+IR and, in the process, runs every load-time gate. It is the author's
+version of the compile check this whole reference is built on.
+
+```
+sharpee compose <file.story> [--check] [-o <ir.json>]
+```
+
+There are two modes. Plain `sharpee compose file.story` runs the gates
+and then goes further: it binds any hatches, builds the world, and
+creates the player, so that "it composed" means "it actually loads."
+On success it writes the IR as JSON to standard output (or to a file
+with `-o`). `sharpee compose --check file.story` stops after the gates —
+no IR is emitted and no load is attempted. `--check` is the CI form: the
+fast yes/no you run to know a story is well-formed.
+
+The output streams are split on purpose. Standard output carries *only*
+the IR JSON, so `-o` and a shell redirect produce clean machine-readable
+output; every human-facing line — diagnostics, the pass/fail summary,
+the load report — goes to standard error. That split is what lets
+`sharpee compose file.story > story.ir.json` do the right thing.
+
+The exit code is the contract for scripts:
+
+| Code | Meaning |
+|---|---|
+| `0` | gate-clean (and, in full mode, the IR loaded) |
+| `1` | the story failed the load-time gates, or a hatch source broke a rule |
+| `2` | a usage error — no file, missing argument, unknown flag |
 
 ### 6.2 Reading diagnostics
-*[Placeholder: diagnostic anatomy; the load-time gates; common analyzer
-gates.]*
+
+Every gate speaks the same line format:
+
+```
+<file>:<line>:<column> <severity> [<code>] <message>
+```
+
+For example:
+
+```
+zoo.story:42:3 error [analysis.irreversible-state] `intact` is
+declared before `trampled`; a `change` back is a load error unless the
+set is `states, reversible: …`.
+```
+
+The `<code>` is the stable identifier — the same code this reference
+cites throughout (`analysis.irreversible-state`, `parse.react-refusal`,
+and so on) — and the `<message>` usually carries the fix. `error`
+severity means the story will not load; `warning` means it loads but
+something reads oddly (the fragment-terminator warnings on description
+markers are the common one).
+
+The governing idea is that loading is **atomic**: a story either passes
+every gate and produces usable IR, or it fails and produces none. There
+is no partial load. This is why the reference can promise that a
+compiling example really works — "compiles" is not a syntax check, it is
+the full parse-and-analyze pass that the runtime itself depends on.
+
+The parser is built to give you one diagnostic per mistake rather than a
+cascade. After it reports a parse error, it resynchronizes at the next
+`end` line or top-level keyword and carries on, so a single missing
+`end on` produces a single message pointing at the clause, not a wall of
+confused errors from everything after it. When you do see several
+diagnostics at once, they are genuinely several problems — fix the first
+and recompile.
+
+The gates come in two families, distinguished by their code prefix.
+`parse.*` gates are structural: a tab in the indentation, a missing
+`end`, a removed construct (§6.3). `analysis.*` gates are semantic —
+they fire after a clean parse, when the shapes are right but the meaning
+is not. The analyzer gates you are most likely to meet, each named where
+it is first explained:
+
+- `analysis.irreversible-state` — a `change` backward through a
+  non-`reversible` state set (§2.7).
+- `analysis.state-collision` — two composed traits declaring the same
+  state name (§5.7).
+- `analysis.closed-condition-selection` — `any`/`no`/`each` over a
+  closed condition (§3.4, §5.1).
+- `analysis.open-condition-truth` — a bare open condition used as a
+  truth test (§5.1).
+- `analysis.negated-requirement` — `refuse when not …`, which is a
+  requirement in disguise; use `must` (§3.6).
+- `analysis.unbound-marker` — a `{marker}` naming no declared phrase or
+  hatch (§2.6).
+- `analysis.remove-player` — `remove the player`, which has no defined
+  meaning (§3.7).
+- `analysis.match-outside-each` — `the match` used outside an `each`
+  body (§4.4).
+
+The three-ring boolean-state gate deserves its own mention, because it
+catches the single most common instinct carried over from other
+systems: reaching for a boolean. If you declare a state set that looks
+like a flag — `true`/`false`, a platform pair like `open`/`closed`, or a
+negation pair like `fed`/`unfed` — the analyzer refuses it
+(`analysis.boolean-state`, `analysis.shadow-state`,
+`analysis.negated-state`) and tells you to name what the thing *is* in
+each state, or to compose the trait that already owns that state. A
+state names a condition of the thing, never the absence of another
+state.
 
 ### 6.3 Migrating from removed constructs
-*[Placeholder: before/after for every removed form and its fix-it.]*
+
+Chord's grammar is a one-way ratchet: constructs that were removed on
+the way to v1 are not merely undocumented, they are *actively refused*.
+Each removed form produces a specific `parse.*` error whose message
+names its replacement, so a story written against an older sketch fails
+loudly and points the way, rather than misbehaving quietly. Every row
+below is backed by an expected-to-fail fixture in this reference's
+harness, which asserts the exact code still fires.
+
+| Removed form | Diagnostic code | Replacement |
+|---|---|---|
+| top-level `when <actor> <verb>s …` rule | `parse.removed-when` | an `on`/`after` clause on the owner (§3.1) |
+| top-level `once <condition>` rule | `parse.removed-once` | the `, once` clause modifier (§3.3) |
+| top-level `every N turns` rule | `parse.removed-every` | a `define sequence` (§4.7) or `every turn` clause (§3.2) |
+| `define flag <name>` | `parse.removed-flag` | owner `states:` (§2.7) or a derived condition (§5.1) |
+| `flag` trait-field type | `parse.removed-flag-field` | trait `states` (§5.7) |
+| `if` / `else` / `end if` | `parse.removed-if` | `must` (§3.5), the `when` suffix (§3.8), or `select` (§4.1) |
+| top-level `define score … worth N` | `parse.removed-score` | an owner-attached `score` line (§4.5) |
+| `ordered` / `once` phrase strategy | `parse.phrase-strategy-retired` | `stopping` / `first-time` (§4.2) |
+
+The through-line is *stickiness* (design.md, given 9): every one of these
+removals took a floating, top-level behavior and re-homed it on the thing
+it is actually about. A `when` rule floated beside the world; an `on`
+clause lives on the room it reacts in. A global `flag` floated in no
+one's namespace; a `states:` line lives on its owner. The migration is
+almost always "find the thing this was really about, and move it there."
+
+The richest case is `if`, because a single removed construct fans out to
+three replacements. This no longer parses:
+
+<!-- fixture: migration/removed-if.story -->
+```story
+  on opening it
+    if it is locked-fast
+      phrase clunk
+    end if
+  end on
+```
+
+It reports `parse.removed-if`, and which replacement you want depends on
+what the `if` was doing. If it was *guarding* the whole action — this may
+not proceed unless a condition holds — it becomes a `must` requirement
+(§3.5). If it was making *one statement* conditional, it becomes that
+statement plus a `when` suffix (`phrase clunk when it is locked-fast`,
+§3.8). If it was choosing between *several bodies* by a value, it becomes
+a `select` (§4.1). The removed `if` had all three jobs; Chord gives each
+its own, clearer form.
 
 ## Appendix: the formal grammar
 
-*[Placeholder: pointer to `chord-grammar.md` / `chord.ebnf` and the layout
-table.]*
+This reference is the narrative companion to Chord's formal grammar, not
+a second source of truth. Where this document and the grammar disagree,
+the grammar and the parser win.
+
+- **`docs/reference/chord-grammar.md`** — the implementation notation:
+  an EBNF-style description of the grammar exactly as the parser accepts
+  it, tracked against the code phase by phase, including the layout rules
+  EBNF cannot express and the analyzer's gate policy.
+- **`docs/reference/chord.ebnf`** — a pure-EBNF extraction of the
+  productions, with no ratchet history or analyzer notes.
+- **`docs/architecture/chord-grammar-changes.md`** — the owner-approved
+  governance log: every construct added, renamed, or removed, with its
+  rationale and date. The migration table in §6.3 is drawn from it.
+
+The one structural fact worth restating here is the block-closing table
+from §1.2: some blocks close on dedent (`create`, `define action`,
+`define phrases`, story header), and some close with an explicit `end`
+line that must match its opener (`define trait` … `end trait`, `define
+sequence` … `end sequence`, `define phrase` … `end phrase`, `on` …
+`end on`, `after` … `end after`, `select` … `end select`, `each` …
+`end each`). When in doubt about whether a block needs an `end`, that
+table in §1.2 is the authority.

@@ -3,8 +3,36 @@
     "expect": "fail",
     "codes": ["analysis.closed-condition-selection"]
   },
+  "migration/removed-when.story": {
+    "expect": "fail",
+    "codes": ["parse.removed-when"]
+  },
+  "migration/removed-once.story": {
+    "expect": "fail",
+    "codes": ["parse.removed-once"]
+  },
+  "migration/removed-every.story": {
+    "expect": "fail",
+    "codes": ["parse.removed-every"]
+  },
   "migration/removed-flag.story": {
     "expect": "fail",
     "codes": ["parse.removed-flag"]
+  },
+  "migration/removed-flag-field.story": {
+    "expect": "fail",
+    "codes": ["parse.removed-flag-field"]
+  },
+  "migration/removed-if.story": {
+    "expect": "fail",
+    "codes": ["parse.removed-if"]
+  },
+  "migration/removed-score.story": {
+    "expect": "fail",
+    "codes": ["parse.removed-score"]
+  },
+  "migration/retired-ordered.story": {
+    "expect": "fail",
+    "codes": ["parse.phrase-strategy-retired"]
   }
 }

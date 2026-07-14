@@ -13,7 +13,7 @@ Section numbers refer to `docs/reference/chord-language.md`.
 
 - [x] WORD / NUMBER / STRING (no escapes) / MARKER tokens — §1.2 (smoke.story)
 - [x] Line orientation, spaces-only indentation (`lex.tab-indent`), block open/close table — §1.2 (smoke.story)
-- [ ] Error recovery (one mistake, one diagnostic; resync at `end`/top-level keyword) — §6.2
+- [x] Error recovery (one mistake, one diagnostic; resync at `end`/top-level keyword) — §6.2
 - [x] `story-file` = optional header + declarations — §1.1 (smoke.story)
 - [x] Story header (`story STRING [by STRING]`, `id:`/`version:`/`blurb:` free fields) — §2.1 (world/story-header.story)
 - [x] Story-scope `states-line` (D2) — §2.1 (world/story-header.story)
@@ -100,58 +100,58 @@ Section numbers refer to `docs/reference/chord-language.md`.
 
 ## Branching, iteration, progression (§4)
 
-- [ ] `select on <value-expr>` + `when <word>` arms — §4.1
-- [ ] `select <STRATEGY>` + `or`-separated bodies — §4.2
-- [ ] STRATEGY set: randomly / cycling / stopping / sticky / first-time (Z5, mirrors Choice selectors) — §4.2
-- [ ] Ordinal blocks `first`…`tenth time` (statement position; distinguish from §2.9 create-block form) — §4.3
-- [ ] `each <condition-name> … end each` (E3; statement-position legality follows host; never top-level; `parse.each-*` errors) — §4.4
-- [ ] `the match` binder (innermost; `it` stays the clause owner; `analysis.match-outside-each`; `match` reserved, `analysis.reserved-name`; enumeration in declaration order) — §4.4
-- [ ] Nested `each` — §4.4
-- [ ] Score identities owner-scoped at all four owners (story/create/trait/action) + award dedupe (ADR-129) — §4.5
-- [ ] `win [word]` / `lose [word]` — §4.6
-- [ ] `define sequence <name…>` + steps — §4.7
-- [ ] Step anchor `at turn N` — §4.7
-- [ ] Step anchor `N turns later` — §4.7
-- [ ] Step anchor `when <name> becomes <state>` (D10) — §4.7
+- [x] `select on <value-expr>` + `when <word>` arms — §4.1 (flow/select-on.story)
+- [x] `select <STRATEGY>` + `or`-separated bodies — §4.2 (flow/select-strategy.story)
+- [x] STRATEGY set: randomly / cycling / stopping / sticky / first-time (Z5, mirrors Choice selectors) — §4.2 (flow/select-strategy.story)
+- [x] Ordinal blocks `first`…`tenth time` (statement position; distinguish from §2.9 create-block form) — §4.3 (flow/ordinals.story)
+- [x] `each <condition-name> … end each` (E3; statement-position legality follows host; never top-level; `parse.each-*` errors) — §4.4 (flow/each.story)
+- [x] `the match` binder (innermost; `it` stays the clause owner; `analysis.match-outside-each`; `match` reserved, `analysis.reserved-name`; enumeration in declaration order) — §4.4 (flow/each.story)
+- [x] Nested `each` — §4.4 (flow/each.story)
+- [x] Score identities owner-scoped at all four owners (story/create/trait/action) + award dedupe (ADR-129) — §4.5 (flow/scoring.story)
+- [x] `win [word]` / `lose [word]` — §4.6 (flow/endings.story)
+- [x] `define sequence <name…>` + steps — §4.7 (flow/sequence.story)
+- [x] Step anchor `at turn N` — §4.7 (flow/sequence.story)
+- [x] Step anchor `N turns later` — §4.7 (flow/sequence.story)
+- [x] Step anchor `when <name> becomes <state>` (D10) — §4.7 (flow/sequence.story)
 
 ## define family (§5)
 
-- [ ] `define condition <name>: <condition>` (open vs closed conditions) — §5.1
-- [ ] `define phrase <name>[, STRATEGY|verbatim] [while <cond>]` + `or` variants + `end phrase` (CP1') — §5.2
-- [ ] `verbatim` mode (line structure preserved; no strategies/variants) — §5.2
-- [ ] `define phrases <locale>` + `key:` prose entries (dedent-terminated, no `end phrases`; same-line forms removed) — §5.3
-- [ ] `define verb <w> {or <w>} means <pattern>` + `(something)` slots — §5.4
-- [ ] `define text <name> from "<module>"` (text hatch; `br` reserved) — §5.5
-- [ ] `define action|behavior <name> from "<module>"` (hatch kinds; TS stub shown, binding out of harness scope — documented limitation) — §5.6
-- [ ] `define trait` block + `end trait` — §5.7
-- [ ] Trait `data` fields (`entity`/`number`/`name`/`one of`, `optional`, `, starts`) — §5.7
-- [ ] Trait-scope `states-line` (D8) + cross-trait `analysis.state-collision` — §5.7
-- [ ] Trait-scope `score-line` (D12) — §5.7
-- [ ] Trait `phrases <locale>` block — §5.7
-- [ ] Trait `on`-clauses — §5.7
-- [ ] `define action` block (dedent-terminated) — §5.8
-- [ ] Action `grammar` patterns + `:word` slots + `→` cardinality — §5.8
-- [ ] Scope constraint line `the <slot> must be <word>` (no colon) — §5.8
-- [ ] Action `must`-line / `score`-line / body statements — §5.8
-- [ ] `refuse without <word>: <key>` — §5.8
-- [ ] `refuse when <condition>: <key>` (action line) — §5.8
-- [ ] `otherwise refuse <key>` (dispatch miss) — §5.8
-- [ ] Action `phrases <locale>` block — §5.8
+- [x] `define condition <name>: <condition>` (open vs closed conditions) — §5.1 (define/condition.story)
+- [x] `define phrase <name>[, STRATEGY|verbatim] [while <cond>]` + `or` variants + `end phrase` (CP1') — §5.2 (define/phrase.story)
+- [x] `verbatim` mode (line structure preserved; no strategies/variants) — §5.2 (define/phrase.story)
+- [x] `define phrases <locale>` + `key:` prose entries (dedent-terminated, no `end phrases`; same-line forms removed) — §5.3 (define/phrases.story)
+- [x] `define verb <w> {or <w>} means <pattern>` + `(something)` slots — §5.4 (define/verb.story)
+- [x] `define text <name> from "<module>"` (text hatch; `br` reserved) — §5.5 (define/hatches.story)
+- [x] `define action|behavior <name> from "<module>"` (hatch kinds; TS stub shown, binding out of harness scope — documented limitation) — §5.6 (define/hatches.story)
+- [x] `define trait` block + `end trait` — §5.7 (define/trait.story)
+- [x] Trait `data` fields (`entity`/`number`/`name`/`one of`, `optional`, `, starts`) — §5.7 (define/trait.story)
+- [x] Trait-scope `states-line` (D8) + cross-trait `analysis.state-collision` — §5.7 (define/trait.story)
+- [x] Trait-scope `score-line` (D12) — §5.7 (define/trait.story)
+- [x] Trait `phrases <locale>` block — §5.7 (define/trait.story)
+- [x] Trait `on`-clauses — §5.7 (define/trait.story)
+- [x] `define action` block (dedent-terminated) — §5.8 (define/action.story)
+- [x] Action `grammar` patterns + `:word` slots + `→` cardinality — §5.8 (define/action.story)
+- [x] Scope constraint line `the <slot> must be <word>` (no colon) — §5.8 (define/action.story `the animal must be reachable`)
+- [x] Action `must`-line / `score`-line / body statements — §5.8 (define/action.story)
+- [x] `refuse without <word>: <key>` — §5.8 (define/action.story)
+- [x] `refuse when <condition>: <key>` (action line) — §5.8 (define/action.story)
+- [x] `otherwise refuse <key>` (dispatch miss) — §5.8 (define/action.story)
+- [x] Action `phrases <locale>` block — §5.8 (define/action.story)
 
 ## Tooling, diagnostics, migration (§6)
 
-- [ ] `sharpee compose <file> [--check] [-o <ir.json>]` — exit codes 0/1/2, stdout carries IR only — §6.1
-- [ ] Diagnostic anatomy: `<file>:<line>:<col> <severity> [<code>] <message>` — §6.2
-- [ ] Load-time-gate philosophy (atomic load; `ok` gates IR) — §6.2
-- [ ] Analyzer gates tour: boolean/shadow/negated-state (D9), state-collision (D8), irreversible-state (D4), negated-requirement (D6), open-condition-truth, here-subject, remove-player, override-gate, reserved-marker/name — §6.2
-- [ ] Removed: top-level `when` rules → owner-attached `on`/`after` (`parse.removed-when`) — §6.3
-- [ ] Removed: top-level `once <condition>` → `, once` modifier (`parse.removed-once`) — §6.3
-- [ ] Removed: `every N turns` → `define sequence` / every-turn clauses (`parse.removed-every`) — §6.3
-- [ ] Removed: `define flag` → owner states / derived conditions (`parse.removed-flag`) — §6.3
-- [ ] Removed: `flag` trait-field type → trait `states` (`parse.removed-flag-field`) — §6.3
-- [ ] Removed: `if`/`else`/`end if` → `must` guards, `when` suffix, `select` (`parse.removed-if`) — §6.3
-- [ ] Removed: top-level `define score` → owner-attached `score … worth N` (`parse.removed-score`) — §6.3
-- [ ] Retired: `ordered`/`once` strategy adverbs → `stopping`/`first-time` (load errors with fix-its) — §6.3
+- [x] `sharpee compose <file> [--check] [-o <ir.json>]` — exit codes 0/1/2, stdout carries IR only — §6.1
+- [x] Diagnostic anatomy: `<file>:<line>:<col> <severity> [<code>] <message>` — §6.2
+- [x] Load-time-gate philosophy (atomic load; `ok` gates IR) — §6.2
+- [x] Analyzer gates tour: boolean/shadow/negated-state (D9), state-collision (D8), irreversible-state (D4), negated-requirement (D6), open-condition-truth, here-subject, remove-player, override-gate, reserved-marker/name — §6.2
+- [x] Removed: top-level `when` rules → owner-attached `on`/`after` (`parse.removed-when`) — §6.3 (migration/removed-when.story)
+- [x] Removed: top-level `once <condition>` → `, once` modifier (`parse.removed-once`) — §6.3 (migration/removed-once.story)
+- [x] Removed: `every N turns` → `define sequence` / every-turn clauses (`parse.removed-every`) — §6.3 (migration/removed-every.story)
+- [x] Removed: `define flag` → owner states / derived conditions (`parse.removed-flag`) — §6.3 (migration/removed-flag.story)
+- [x] Removed: `flag` trait-field type → trait `states` (`parse.removed-flag-field`) — §6.3 (migration/removed-flag-field.story)
+- [x] Removed: `if`/`else`/`end if` → `must` guards, `when` suffix, `select` (`parse.removed-if`) — §6.3 (migration/removed-if.story)
+- [x] Removed: top-level `define score` → owner-attached `score … worth N` (`parse.removed-score`) — §6.3 (migration/removed-score.story)
+- [x] Retired: `ordered`/`once` strategy adverbs → `stopping`/`first-time` (load errors with fix-its) — §6.3 (migration/retired-ordered.story)
 - [x] Lexing note: lone `"` is prose punctuation (multi-line dialogue) — §2.6 (world/prose-markers.story)
 
 ## Fixture ↔ doc traceability (Phase 6 gate)
