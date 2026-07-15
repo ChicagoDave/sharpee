@@ -106,6 +106,13 @@ Inherits ADR-214 AC-1..AC-4. Concretely:
   entities; there is deliberately no new directionless exit channel.
 - The interim note in ADR-218 §2 ("`between` not frozen; ADR-220 may revise") is
   settled: `between` is **retained**; ADR-220 only adds optional logic-gating.
+- **Single exit-condition model — ADR-220 is authoritative.** ADR-220's `when` +
+  computed-`destination` is the platform's one conditional-exit model. ADR-115
+  (Map Export CLI) previously sketched a parallel `ConnectionMetadata` schema for
+  the same space; **ADR-115 is now CLOSED (2026-07-14)** — its map tooling moves
+  into SharpeeIDE (ADR-154) and its exit-condition metadata is subsumed here. Any
+  future mapping/visualization (in SharpeeIDE) reads exit conditions from this
+  `when` model; there is no competing `ConnectionMetadata` schema to build.
 
 ## Session
 
