@@ -19,10 +19,20 @@
 - `docs/architecture/adrs/adr-222-elegance-parity-seam-catalog.md`. **Chord is an elegance oracle for the Sharpee API**: because Chord compiles down to the platform, a Chord form cleaner than hand-written TS proves the platform can be elegant → the crude TS is a *seam*. Elegance parity, both directions. Seam taxonomy + friendly-zoo seam catalog (FZ-D1/D2/G1/G2/G3/S1/S2/X1/P1). Interview resolved all open questions.
 - `docs/work/chord-parity/friendly-zoo-canon-divergence.md` — the canon-vs-Chord divergence audit that seeded the catalog.
 
-### Person / automation four-layer separation — **ADR-223 DRAFT**
-- `docs/architecture/adrs/adr-223-npc-four-layer-separation.md`. `NpcTrait`/`person` fuses four orthogonal concepts: **AGENT / AUTOMATION / CREATURE-STATE / PERSONHOOD**. Umbrella model + approach (platform-primary, **explicit Chord validation** gate, **Dungeo regression secondary**) + child roadmap A/B/C/D + AC-1..AC-6 + 6 open questions.
-- **Five-slice read-only audit** → `docs/work/chord-parity/person-automation-blast-radius.md`: ~13 modules, 85+ files. Key findings: it's four layers (CREATURE-STATE forced out); a **live bug** (basic-combat kill leaves `NpcTrait.isAlive=true` → dead NPC still takes turns); combat is safe (anchored to `CombatantTrait`, never reads `NpcTrait`); the personhood stack (`@sharpee/character`) is **The Alderman's in-progress work**, not dead cruft; knowledge/goals duplicated 2–3×; a graveyard of orphaned plumbing (witness system, `observeEvent`, reactive hooks, behavior save-state, ADR-102 DialogueExtension).
-- `animaltrait-design-notes.md` (FZ-X1 — `AnimalTrait` + carry/weight/before-take; portability resolved in `taking`) and `person-npc-character-notes.md` (the model + approach).
+### Person/daemon separation — **ADR-223 DRAFT** (model LOCKED)
+- `docs/architecture/adrs/adr-223-npc-four-layer-separation.md`. `NpcTrait`/`person` fuses four orthogonal concepts. **Locked names (2026-07-15): AGENT / DAEMON / HEALTH / PERSONHOOD.** Umbrella model + approach (platform-primary, **explicit Chord validation** gate, **Dungeo regression secondary**) + child roadmap A/B/C/D + AC-1..AC-7.
+  - **DAEMON** = system-driven behavior over time, subject-agnostic (person/animal/machine/**environment**); **merge decision** — `NpcService`/`NpcBehavior` + `SchedulerPlugin` become one daemon model.
+  - **HEALTH** = one `HealthTrait` (alive/dead derive); **opt-in, required by combat/damage** (alive is the actor default); combat + destruction bend to it → three health models collapse and the **live sync bug vanishes by construction**. Hostility → disposition (personhood).
+  - **AC-7 — the thief is pure Chord**: the daemon layer's elegance-oracle test.
+- **Five-slice audit** → `person-automation-blast-radius.md`: ~13 modules/85+ files; the live sync bug; combat safe (keyed to `CombatantTrait`); the `@sharpee/character` personhood stack is **The Alderman's in-progress work**.
+
+### Thief decomposition (the daemon layer's concrete spec) — `docs/work/schism/`
+- Validated the Chord thief against the **canonical 1981 MDL** (`docs/internal/dungeon-81/`): `thief-mdl-validation.md`. Combat = the **existing melee plugin** (access); the daemon needs a bounded capability set.
+- **`thief-primitive-decomposition.md`** — the thief broken into **22 generic Sharpee+TS primitives (P1–P22)**, none thief-specific; the whole robber is a valid Chord composition of them (states + `each` + conditions + phrases + daemon movement + concealment). Gap list is fully generic.
+- **`ratchet-candidates.md`** — grammar candidates **RC-1–RC-8** (bare owner-state `while prowling`; `chance <p>`; movement verbs; bulk `drop everything`; `on giving`/`on throwing`/`on dying`; `sacred`/`valuable` markers; `conceal`/`reveal`). NOT approved — separate from the ratchet log.
+- **`code-examples.md`** — four entities (zookeeper/parrot/thief/Ross) in TS + Chord across the layers; alive-is-default, opt-in health, pure-Chord thief.
+- ADR-223 children **B** (platform primitives P1–P22) and **D** (Chord surface RC-1–RC-8) now cite these as their concrete deliverable spec.
+- Earlier notes: `animaltrait-design-notes.md`, `person-npc-character-notes.md`.
 
 ## Key Decisions
 1. **Canon = the original TS Sharpee stories** (not the crude code); Chord + transcripts reproduce it; where Chord can't, that's a platform gap. TS stories are canon; long-term goal a Chord Mainframe Zork. (Memory: `sharpee-chord-parity-goal`.)
