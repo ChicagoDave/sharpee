@@ -1,10 +1,25 @@
 # ADR-119: State Machines for Puzzles and Narratives
 
-## Status: PROPOSED
+## Status: IMPLEMENTED (core) — 2026-07-14 (corrected from stale `PROPOSED`)
+
+> **Status corrected 2026-07-14 (David).** The header read `PROPOSED` long after
+> the design shipped — the core state-machine runtime is **live** as
+> `@sharpee/plugin-state-machine` (`StateMachineRegistry`, `StateMachineDefinition`
+> with `onEnter`/`onExit`/`terminal`, action/event/condition triggers, the guard
+> and effect families, `$role` bindings, and per-instance save/restore). Of the
+> original Open Questions, **#1–#3 are resolved by what shipped** and **#4–#6 are
+> future enhancements**, not blockers (details in that section below). This ADR is
+> not a clean `ACCEPTED` only because those enhancement questions remain genuinely
+> open (rule 11a); the *implemented core* is done and in use. The Chord authoring
+> surface for this runtime is designed in **ADR-215** (`use state-machines`).
+>
+> **Dependency note:** `Depends On: ADR-120` (Engine Plugin Architecture) — the
+> `TurnPlugin` contract ADR-120 defines is likewise live in `packages/plugins`
+> (ADR-120's own header is similarly stale but out of scope for this edit).
 
 ## Depends On: ADR-120 (Engine Plugin Architecture)
 
-## Date: 2026-01-27
+## Date: 2026-01-27 (implemented; status corrected 2026-07-14)
 
 ## Context
 
@@ -453,41 +468,52 @@ The `history` array enables "undo" or narrative callbacks ("remember when you...
 
 ## Open Questions
 
+> **Resolution status (2026-07-14).** The core runtime shipped, resolving #1–#3.
+> #4–#6 remain genuine **future enhancements** — the implemented core does not
+> depend on them, and they are not blockers to this ADR's realized state.
+
 ### 1. Package Location — RESOLVED
 
 **Decision**: `@sharpee/plugin-state-machine`, implementing the `TurnPlugin` interface from ADR-120.
 
 The state machine runtime lives in its own plugin package. Engine calls it via the plugin contract after each successful player action. See ADR-120 for the plugin architecture and `docs/work/platform/state-machine.md` for the full location assessment.
 
-### 2. Declarative vs Programmatic
+### 2. Declarative vs Programmatic — RESOLVED
 
-The examples above are fully declarative (data structures). Should we also support:
+**Decision (shipped): both, declarative preferred.** The runtime is declarative
+(data-structure guards/effects) with a `custom` escape hatch in both the guard
+and effect families (`CustomGuard` / `CustomEffect`) for logic that doesn't fit
+the declarative forms. Declarative stays the default (serializable, inspectable,
+toolable); `custom` covers the rest.
 
-- **Programmatic guards**: `guard: (world, actor) => world.getEntity(doorId).isLocked`
-- **Programmatic effects**: `effect: (world, actor) => { /* complex logic */ }`
+### 3. Action Ownership — RESOLVED
 
-Declarative is safer (serializable, inspectable, toolable). Programmatic is more flexible. Could offer both with declarative preferred.
+**Decision (shipped): runtime executes (Option B).** The `StateMachinePlugin`
+(`TurnPlugin`, priority 75) evaluates matching transitions in `onAfterAction`
+after a successful player action and applies their effects — one transition per
+machine per turn, highest matching priority whose guard passes, emitting an
+`sm.transition` event. Actions don't need to know about state machines.
 
-### 3. Action Ownership
+### 4. Parallel State Machines — FUTURE (partially supported)
 
-Who executes the transition effects — the action or the state machine runtime?
+Multiple machines register and run independently (distinct ids, each evaluated
+per turn; intra-machine competition resolved by transition `priority`). What
+remains a **future enhancement** is *cross-machine* coordination when an entity
+participates in several machines with competing transitions — today authors
+coordinate this via guards/priority, there is no built-in cross-machine
+arbitration.
 
-- **Action executes**: Action calls `sm.transition()` in its execute phase. Action owns the mutation. State machine is advisory.
-- **Runtime executes**: Engine detects matching transition and applies effects automatically. Actions don't need to know about state machines.
+### 5. Hierarchical States — FUTURE
 
-Option B is more declarative but means mutations happen outside actions, which conflicts with ADR-051 (actions own mutations).
+Not in the shipped model (states are flat). Sub-states (e.g. "hostile" →
+"stalking"/"fighting") remain a future enhancement — added if NPC behavior needs
+them, without disturbing the flat-state core.
 
-### 4. Parallel State Machines
+### 6. Visual Tooling — FUTURE
 
-Can an entity participate in multiple state machines simultaneously? Example: the thief is in both the "thief combat" machine and the "thief treasure" machine. If yes, need conflict resolution for competing transitions.
-
-### 5. Hierarchical States
-
-Should states support sub-states? Example: "hostile" could have sub-states "stalking" and "fighting". This adds complexity but maps well to NPC behavior.
-
-### 6. Visual Tooling
-
-Declarative state machines enable visual editing. A future Sharpee Forge tool could render puzzle graphs, let authors drag states and draw transitions. This is a strong argument for keeping definitions declarative.
+Declarative definitions enable visual editing; a future SharpeeIDE (ADR-154) /
+Forge surface could render and edit puzzle graphs. A motivation for keeping
+definitions declarative, not a gap in the runtime.
 
 ## Consequences
 

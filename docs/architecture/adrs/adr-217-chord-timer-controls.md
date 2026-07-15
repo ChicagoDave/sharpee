@@ -103,6 +103,15 @@ uniformly as `, once`, and it removes a drift-prone parallel type (one Daemon
 shape, per the boundary discipline). The loader's `SchedulerContext` mirror is
 likewise reconciled with the real context where the widened fields need it.
 
+**`, once` → `runOnce` scope (pinned 2026-07-14):** the **new** constructs
+(`on every N turns`, and daemon-shaped clauses going forward) compile `, once` to
+the real `Daemon.runOnce` field — this is what the widening unlocks. The
+**pre-existing** `define sequence` / `on every turn` implementations, which
+already realize `, once` via a working world-state counter, are **left unchanged**
+(additive, AC-4 — migrating them would be a behavior change for no benefit). So
+`, once` is uniform in *spelling* across constructs, while existing timelines keep
+their proven implementation and new ones use `runOnce`.
+
 ## Consequences
 
 - Chord reaches the **entire** scheduler imperative API — fuses (one-shot + named

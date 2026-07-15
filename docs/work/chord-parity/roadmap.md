@@ -74,8 +74,13 @@ Serial critical path, with parallelizable tracks called out:
    `CapabilityBehavior` from `on <verb> it` (reusing the clause interpreter).
    Establishes the on-clause-verb pattern W3 reuses.
 
-   *After W1+W2, three tracks are independent and may proceed in any order / in
-   parallel (subject to one implementer + per-workstream go-ahead):*
+   *The numbering below is a recommended sequence, NOT a strict dependency chain —
+   the hard edges are only those in the Dependency graph above. Concretely: **W4
+   (doors) and W5 (timers) need only W1**, not W2; **W6 (extensions) needs only
+   W1**; only **W3 (liquids) additionally needs W2** (for the on-clause-verb
+   pattern its `on mixing` reuses); **W7 needs W6**. So after W1, W4/W5/W6 can each
+   start immediately and proceed in parallel, subject to one implementer +
+   per-workstream go-ahead:*
 
 3. **W3 — Liquids & pouring (ADR-219).** The largest of the mid-tier. New
    `pour`/`fill`/`empty`/`mix` stdlib actions + parser grammar; `LiquidTrait`

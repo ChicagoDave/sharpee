@@ -106,10 +106,16 @@ non-boolean trait state in Chord.
   vocabulary, since the NPC plugin auto-wires); custom per-turn logic still uses
   `on every turn` (compiles to a daemon). NPC numeric/data fields (hostile,
   canMove, allowedRooms) follow the same `with`-data pattern.
-- **State machines** are reachable under **`use state-machines`**, extending
-  Chord's existing `states:` + `select on` + `change` surface to the full ADR-119
-  model — `onEnter`/`onExit` effects, `terminal` states, named machines, and
-  `$role` bindings. Exact spellings land as ratchet entries under this ADR.
+- **State machines**: the full ADR-119 depth — `onEnter`/`onExit` effects,
+  `terminal` states, named machines, and `$role` bindings — is reachable under
+  **`use state-machines`**. **Gating scope (pinned 2026-07-14):** `use
+  state-machines` gates **only the new ADR-119 depth**; Chord's **existing core
+  `states:` + `select on` + `change` surface stays unconditional** (no `use`
+  required) exactly as it works in shipped stories. This is deliberate — gating
+  the existing surface would be a **breaking change** to stories already using
+  `states:`. So a story writes `states:`/`select`/`change` with no `use`; adding
+  `use state-machines` only *admits the additional depth* on top. Exact spellings
+  for the depth land as ratchet entries under this ADR.
 
 ### Trusted registry — runtime-bundled (resolved 2026-07-14)
 
