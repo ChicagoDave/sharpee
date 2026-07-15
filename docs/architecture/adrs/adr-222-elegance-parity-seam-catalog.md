@@ -153,6 +153,34 @@ before calling it work; **decide** = needs David's behavioral/direction call;
 Scoring reconciles once FZ-S1 + FZ-G2 land: canon `MAX_SCORE = 100` = Chord's
 current 85 + pet 5 + pressed-penny 10.
 
+## The seam catalog — Dungeo primitive backlog (P23–P33)
+
+Full audit + matrix: `docs/work/schism/dungeo-completeness-matrix.md`. The canonical Dungeo (path to a
+Chord Mainframe Zork) needs a **closed, bounded** set of generic IF primitives beyond
+the thief's P1–P22. **~6 are already roadmapped** (extend existing ADRs); **~5 are
+new-but-generic** (need their own ADR/child); **the 2 non-IF puzzles are HATCH by
+design** (the IF/non-IF line = the primitive/hatch line — §3 diagnostic, David
+2026-07-15). "Named-primitive" ids continue the decomposition's P-numbering.
+
+| ID | Primitive (generic) | Home | Status |
+|----|---------------------|------|--------|
+| DZ-1 (P23) | **entity transform / spawn** — consume input → materialize distinct output (coal→diamond, dig→statue, canary→bauble) | extends **FZ-G2** (container-insertion + off-stage swap) → likely one ADR | NEW → own ADR |
+| DZ-2 (P24) | **teleport actor on trigger** — move player/NPC to a non-adjacent room (pray, bank, mirrors, bat-random, lair-summon); ±computed ±random | new; touches **ADR-220** (computed destination) but trigger is a verb/event, not an exit | NEW → own ADR |
+| DZ-3 (P25) | **runtime exit mutation** — add/delete/rewrite a room's edges at play time (rug→trapdoor, mung, mirror/dam rewrite) | **extends ADR-220** (beyond *conditional* to *editing the graph*) | ROADMAP-extend |
+| DZ-4 (P26) | **light fuel / burn-down** — a source burns fuel while lit (pausable, warned, terminal) → darkens room | new light-source-fuel primitive | NEW → own ADR |
+| DZ-5 (P27) | **darkness + grue-death** — computed darkness + probabilistic move-death in the dark | new; depends on DZ-4 + DZ-6 | NEW (with DZ-4/DZ-6) |
+| DZ-6 (P28) | **conditional death** — kill on a condition: location+verb-allowlist ("all but LOOK fatal"), timed/escalating, probabilistic, item×state×room | new death/kill primitive | NEW → own ADR |
+| DZ-7 (P29) | **commandable NPC** — parse orders → NPC actions (follow/stay/"set dial to 4"/remote actuator) | **extends ADR-223** (daemon/NPC) | ROADMAP-extend (ADR-223) |
+| DZ-8 (P30) | **actor/entity-conditioned verb** — verb success depends on *who* acts or another entity's state (egg opens only by NPC; unarmed-attack veto; white-hot axe) | **extends ADR-090/118** (capability dispatch / interceptors) | ROADMAP-extend |
+| DZ-9 (P32) | **scoring variants** — deposit-award, first-visit milestone, negative/death-penalty, hidden max-change, game-over-after-N | **extends FZ-G3** (dual-mode scoring) | ROADMAP-extend (FZ-G3) |
+| DZ-10 (P33) | **vehicle (ride + state-gated egress)** — player occupies a vehicle whose real exits depend on its internal state (basket/boat/balloon/mirror-box) | `VehicleTrait` exists → **new Chord surface** | ROADMAP-extend + Chord surface |
+| DZ-11 (P31) | **Royal-Puzzle grid + INCANT cipher** — *non-IF* puzzles (spatial algorithm / cryptography) | **HATCH** (`define … from`) — not a Chord primitive, not a gap | HATCH (by design) |
+
+Combat is the **melee plugin** (access), not a catalog entry. Liquids (dam/well/boat)
+= **ADR-219**; capability-dispatch verbs (wave/turn/rub/lower/tie) = **ADR-090/221** —
+both already roadmapped, exercised harder by Dungeo. Fidelity backlog (the TS port ↔
+MDL divergences) is tracked in the matrix, separate from these primitives.
+
 ## Consequences
 
 - **ADR-214's roadmap is re-anchored.** Parity work is driven by *reproducing the
