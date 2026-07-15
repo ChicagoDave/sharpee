@@ -124,9 +124,19 @@ extensions; one-off non-IF puzzles are impure `define … from`.)
 
 ## Fidelity findings (the TS port itself diverges from the MDL canon)
 
-Canon-first means the **MDL** is the target, and the audit found the *Sharpee TS port* is
-not 100% faithful either — worth recording so the Chord version reproduces canon, not the
-port's shortcuts:
+**Canon = the MDL in `docs/internal/dungeon-81/` (a single finite corpus), MINUS the gnome
+logic** — the gnome is David's one *intentional* drop (out of scope, do not reproduce).
+**Every other divergence below is a real gap to account for** — a canon feature the port
+hasn't finished, not a design change.
+
+> **Consequence for this matrix (why it under-counts):** because these gaps are *not
+> implemented in the port*, the port-derived audit never saw their primitives — the
+> feed→thirst→sleep path (a ritual/state machine), auto-drift (a timed daemon that carries
+> the player), the basket weight-gate (an over-encumbrance passage veto) are all primitives
+> **missing from P23–P33**. The trustworthy set requires a **direct MDL audit** of
+> dungeon-81 (minus gnome), with the port as secondary reference.
+
+Real gaps to account for (reproduce the MDL canon):
 - **Cyclops lunch/water (feed→thirst→sleep) alternate solution is unimplemented** — only the
   "Ulysses/Odysseus" flee word works (items exist, unwired). MDL `act1.mud:927-1008`.
 - **Coal-mine basket has no weight/narrow-passage gate** — the canonical "can't carry the
