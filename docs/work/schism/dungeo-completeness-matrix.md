@@ -1,5 +1,15 @@
 # Dungeo → Chord completeness matrix
 
+> **SUPERSEDED (2026-07-15) as a primitive backlog.** The P23–P33 / DZ-1…11
+> "new primitive" enumeration here was port-derived and over-counted. It is
+> superseded by the grounded **capability matrix**
+> (`sharpee-chord-capability-matrix.md`), which verified each need against real
+> platform *and* Chord code and reclassified them as CAN / CHORD-GAP /
+> SHARPEE-GAP / HATCH — most are already owned by ACCEPTED ADRs (215/217/219/
+> 220/221) or possible today. Plan from the capability matrix, not this table.
+> Retained for provenance and for its **fidelity findings** section (the MDL↔port
+> divergences), which fed the gap analysis.
+
 Can Chord (as a composition of generic Sharpee+TS primitives) implement **every** Dungeo
 puzzle? Audited across all 15 regions, 5 NPCs, ~90 actions, 28 handlers
 (`stories/dungeo/src/`), cross-checked against the 1981 MDL (`docs/internal/dungeon-81/`).

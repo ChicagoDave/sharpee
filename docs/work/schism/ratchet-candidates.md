@@ -1,5 +1,13 @@
 # Chord grammar — ratchet candidates (from the person/daemon schism work)
 
+> **RE-HOMED (2026-07-15).** RC-1…8 are not superseded — they are valid
+> Chord-surface candidates — but they are now tracked as **CHORD-GAP** entries
+> under the capability matrix (`sharpee-chord-capability-matrix.md`) and graduate
+> through the ADR-210 one-way ratchet (`docs/architecture/chord-grammar-changes.md`),
+> most under existing owner ADRs (RC-3/RC-4 ↔ ADR-217 timers/daemons; RC-6 verb
+> interceptors ↔ ADR-221; RC-8 conceal/reveal is ergonomic sugar over `move`).
+> Still owner-approved individually before landing.
+
 Proposed Chord grammar refinements surfaced while decomposing the canonical thief into
 generic primitives (ADR-223 / `thief-primitive-decomposition.md`). **Candidates only —
 NOT approved and NOT in the ratchet log** (`docs/architecture/chord-grammar-changes.md`,

@@ -1,6 +1,6 @@
 # ADR-214: Chord Authoring Parity with the Sharpee Platform (100% Sharpee == 100% Chord)
 
-## Status: ACCEPTED (2026-07-14 — all six open questions resolved via interview; accepted by David)
+## Status: ACCEPTED (2026-07-14 — all six open questions resolved via interview; accepted by David) · AMENDED 2026-07-15 (§1a: bidirectional two-Ways parity + CAN/CHORD-GAP/SHARPEE-GAP/HATCH taxonomy; capability matrix supersedes ADR-222's DZ backlog)
 
 > Drafted 2026-07-14 from the standard-library reference work (session
 > 95d692). Starting an author-facing stdlib reference surfaced that Chord
@@ -83,6 +83,38 @@ exposed surface** — i.e. reachable only via a one-off story hatch
 capability's *implementation* is authored in Chord. This is why the extension
 surface (OQ2) and the trusted pure-IR extension registry (OQ6) are load-
 bearing: they are how complex TS capability reaches 100% Chord access.
+
+### 1a. Parity is bidirectional, between two first-class Ways (amended 2026-07-15)
+
+The invariant above is one-directional as originally written — it obliges the
+*Chord* surface to reach what a *TypeScript* story can do. The 2026-07-15 Dungeo
+capability audit (`docs/work/schism/sharpee-chord-capability-matrix.md`)
+sharpened it into the framing David states directly: there is a **Sharpee Way**
+(authoring in TypeScript against the platform) and a **Chord Way** (authoring in
+`.story`). Both are **first-class authoring surfaces**, and the invariant runs in
+**both directions** — neither Way is ever made crude to achieve parity. When a
+capability is awkward in one Way, the fix is the *platform* (which serves both),
+not crippling the other Way to match. (This folds in the elegance-parity
+obligation ADR-222 added; ADR-222 §Decision 1–4 remain the governing detail.)
+
+**The four-class taxonomy (the parity instrument).** Every capability is
+classified against the capability matrix:
+
+- **CAN** — both Ways express it idiomatically. Parity holds; nothing to do.
+- **CHORD-GAP** — the Sharpee Way can; the Chord Way can't. Build the Chord
+  surface; the §2 (a)/(b)/(c)/(d) kinds describe *how*, under the ADR-210 ratchet.
+- **SHARPEE-GAP** — the platform itself lacks it (both Ways crude or blocked).
+  Fix the platform, then expose to both Ways. Graduates to its own ADR (ADR-213
+  precedent).
+- **HATCH** — the capability is non-IF (a bespoke algorithm/cipher/simulation)
+  and legitimately lives behind `define … from`. This is **not** a parity gap; it
+  is the parity *boundary* (ADR-222 §3: the IF/non-IF line = the primitive/hatch
+  line). 214 as first written had no by-design-unreachable bucket; HATCH is it.
+
+The §2 taxonomy (a/b/c/d) is retained as the refinement of **how a CHORD-GAP is
+closed**; the four classes above sit above it. The capability matrix supersedes
+the Dungeo primitive-backlog table in ADR-222 (the DZ-1…11 enumeration) as the
+forward instrument.
 
 ### 2. The gap taxonomy (how gaps are closed)
 

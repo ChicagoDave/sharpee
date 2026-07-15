@@ -1,6 +1,6 @@
-# ADR-223: The Four-Layer NPC Separation — Agent / Automation / Creature-State / Personhood
+# ADR-223: The Four-Layer NPC Separation — Agent / Daemon / Health / Personhood
 
-## Status: DRAFT (2026-07-15 — umbrella model + approach + child roadmap; open questions unresolved, must not be marked ACCEPTED per rule 11a)
+## Status: ACCEPTED (2026-07-15 — umbrella model + approach + child roadmap; all five open questions resolved via interview, accepted by David; adr-review clean). Each child (A–D) graduates to its own ADR + plan under the platform-change gate.
 
 > Child of ADR-214 (Chord ⇄ Sharpee parity) and graduation of ADR-222 seam
 > **FZ-P1**. Surfaced 2026-07-15 while auditing the friendly-zoo story for
@@ -18,8 +18,8 @@
 - **AGENT** — an actor: takes turns, has inventory/pronouns, `isPlayer`
   (`ActorTrait`). The substrate the other layers attach to; the **player is an
   agent**. Physical sight/scope is an AGENT capability (already observer-agnostic).
-- **DAEMON** — system-driven behavior over time (Q-1 resolved 2026-07-15: the
-  layer is named for the *mechanism*, not the thing's nature). **Subject-agnostic**:
+- **DAEMON** — system-driven behavior over time (named for the *mechanism*, not
+  the thing's nature — resolved 2026-07-15). **Subject-agnostic**:
   a **person, animal, machine, or the environment** can each have a daemon — which
   is why no creature/agent word (automaton, autonomous, animate) fit. IF-native and
   already in Sharpee's scheduler (`daemon` runs each turn; `fuse` fires once after N;
@@ -27,12 +27,14 @@
   system (`NpcService`/`NpcBehavior`) and the world `SchedulerPlugin` are the *same
   concept on different subjects* and **merge into one daemon model** — an entity
   "has a daemon"; the world has story daemons/fuses/sequences.
-- **HEALTH** — the single mortality/health model (`HealthTrait`, Q-2 resolved
-  2026-07-15). alive/dead **derive from health** (health > 0 = alive, 0 = dead);
-  **combat and destruction bend to operate on it** (`CombatantTrait` keeps only
-  combat *stats* and *requires* `HealthTrait`; `DestructibleTrait.hitPoints` collapses
-  in too). Replaces the "creature-state" grab-bag: this layer is *just health* —
-  **hostility decomposes out to disposition** (personhood's `CharacterModel`). Because
+- **HEALTH** — the single mortality/health model (`HealthTrait`, resolved
+  2026-07-15). alive/dead/conscious **derive from health** (health > 0 = alive;
+  unconscious at ≤20%); **combat and destruction bend to operate on it**
+  (`CombatantTrait` keeps only combat *stats* and *requires* `HealthTrait`;
+  `DestructibleTrait.hitPoints` collapses in too). Replaces the "creature-state"
+  grab-bag: this layer is the **life-state** model (health + derived consciousness
+  + `asleep` + a terminal dead-by-cause state, ADR-224) — **hostility decomposes
+  out to disposition** (personhood's `CharacterModel`). Because
   there is now one health source, the live combat/turn **sync bug vanishes by
   construction** (nothing to sync).
 - **PERSONHOOD** — character depth: personality, mood, **disposition (incl.
@@ -90,7 +92,7 @@ personhood (`world-model/.../character-model`, `packages/character`), Chord pers
 |---|---|---|
 | **AGENT** | `ActorTrait` (existing) | turn-participation substrate, inventory, pronouns, `isPlayer`; sight/scope is an AGENT capability |
 | **DAEMON** | one merged daemon model (`NpcService`/`NpcBehavior` **+** `SchedulerPlugin`) + a per-subject daemon binding | `behaviorId`/routine, `canMove`, movement policy, typed per-entity daemon state; attaches to a **person, animal, machine, or the world** (subject-agnostic) |
-| **HEALTH** | a new `HealthTrait` (combat + destruction bend to it) | `health`; **alive/dead derive** from it (>0 alive, 0 dead); combat *stats* stay on `CombatantTrait` (which now *requires* `HealthTrait`); `DestructibleTrait.hitPoints` collapses in |
+| **HEALTH** | a new `HealthTrait` (combat + destruction bend to it) | `health` + a terminal **dead-state carrying a `cause`** (ADR-224); **alive/dead/conscious derive** from it (alive >0; unconscious at ≤20%); **`asleep`** (full health, not acting) a separate small flag; combat *stats* stay on `CombatantTrait` (which now *requires* `HealthTrait`); `DestructibleTrait.hitPoints` collapses in |
 | **PERSONHOOD** | `CharacterModelTrait` re-homed under **AGENT** (not NPC) | personality, mood, **disposition (incl. hostility)**, knowledge, beliefs, goals-state, conversation, memory, relationships; `'player'`-hardcoded predicates become observer-relative |
 
 The duplicated `NpcTrait` copies of knowledge/goals are deleted (their single home
@@ -128,14 +130,27 @@ personhood reference (finishing it validates the personhood layer);
   alive/dead derive from it; combat and destruction bend to operate on it
   (`CombatantTrait` keeps stats, requires `HealthTrait`). **Fixes the live sync bug
   by construction** (one source). Hostility is *not* here — it moves to disposition
-  (child C). Good first cut.
+  (child C). Good first cut. **Shape (resolved 2026-07-15 — life-state trait):**
+  `HealthTrait` carries `health` **plus a terminal dead-state with a `cause`** —
+  death is not only `health`=0; `killPlayer` (ADR-224) sets a first-class terminal
+  cause, so non-damage deaths (falls, grue) have a home on the same trait.
+  **Consciousness derives** from a health threshold (unconscious at ≤20%); **`asleep`**
+  (full health, not acting) is a separate small flag. One trait is the single source
+  of mortality + consciousness state (the "no second `isAlive`" invariant).
 - **B — Agent / Daemon split + scheduler merge.** Extract the daemon binding
   (`behaviorId`/routine + movement policy) off `NpcTrait`; **merge `NpcService`/
   `NpcBehavior` with the `SchedulerPlugin` into one daemon model** (subject-agnostic:
   entity daemons + world daemons/fuses/sequences); re-point turn eligibility (gated
-  by `HealthTrait`); give the daemon a real serializable, **typed** per-entity state
-  slot; resolve the stale plumbing (reactive hooks, behavior save-state); migrate the
-  thief off `customProperties`. **Ships the reusable platform primitives** — movement
+  by `HealthTrait`); give the daemon a real serializable per-entity state slot —
+  **generic-parameterized, typed at use** (the daemon binding is generic over its
+  state type; the thief declares a typed `ThiefState`, serialized generically by the
+  platform; resolved 2026-07-15), replacing the untyped `customProperties` bag;
+  **remove** the stale plumbing — the dead reactive hooks (`onSpokenTo`/
+  `onAttacked`), non-surviving `getState/setState`, and the dead witness system
+  (resolved 2026-07-15) — rebuilding cleanly instead: `on giving`/`on throwing`/`on dying`
+  lifecycle hooks on the daemon surface, the typed daemon state slot (Q-3) for
+  save-state, and the observation pipeline (Q-2) for witnessing; migrate the thief
+  off `customProperties`. **Ships the reusable platform primitives** — movement
   behaviors (wander [room-filter] / patrol / pursue / flee / path-to / cadence), the
   bulk "all it carries" statement, `conceal`/`reveal` (via the scope layer), the
   melee-plugin Chord surface, `on giving`/`on throwing`/`on dying` hooks, and the
@@ -144,8 +159,11 @@ personhood reference (finishing it validates the personhood layer);
   `thief-mdl-validation.md`).
 - **C — Personhood re-homing + realization.** `CharacterModel` under AGENT,
   `'player'` de-hardcoded, duplicated knowledge/goals deleted, **hostility folded into
-  disposition**; wire the ADR-102 DialogueExtension + the observation pipeline;
-  **validated by finishing The Alderman.**
+  disposition**; wire the ADR-102 DialogueExtension + the observation pipeline
+  (resolved 2026-07-15 — **distinct tiers over shared AGENT sight**: AGENT sight →
+  DAEMON accumulation [layer B, automaton reaction] → PERSONHOOD interpretation
+  [this layer, belief/mood]; composable, so an automaton uses AGENT+DAEMON without
+  personhood cognition); **validated by finishing The Alderman.**
 - **D — Chord authoring surface** for all four layers (the FZ-P1 → `.story` side):
   compose agent / daemon / health / personhood from Chord, each with a validation
   fixture. Its concrete Chord verbs/conditions are the **ratchet candidates RC-1–RC-8**
@@ -155,6 +173,12 @@ personhood reference (finishing it validates the personhood layer);
   authored purely in Chord from these (AC-7)** — no bespoke TS.
 
 Each child's acceptance = *authors cleanly from Chord* **and** *Dungeo still green*.
+
+**Sequencing (resolved 2026-07-15):** **A first** — `HealthTrait` is the critical path
+for both this ADR and the now-ACCEPTED **ADR-224** (death implementation waits on
+it). Then **B and C run in parallel** (largely independent — gives The Alderman
+priority), with the one coupling that C's observation-*interpretation* tier follows
+B's accumulation tier (Q-2). **D last** (the Chord surface for all four).
 
 ### 4. Governance
 
@@ -169,7 +193,10 @@ ADR-070 (NPC), ADR-072 (combat, currently stale/Proposed), and ADRs
 - **AC-1 — clean homes.** No entity trait spans more than one of {agent, daemon,
   health, personhood}; `NpcTrait`'s cross-layer fields are relocated or deleted.
   `HealthTrait` is opt-in (combat/damage), not carried by every creature — a plain
-  actor is alive by default.
+  actor is alive by default. **But any game with a death capability (ADR-224)
+  provisions the player a `HealthTrait`** (or `killPlayer` lazily attaches one), so
+  `killPlayer`'s lethal transition always has a target; the opt-in holds only for
+  death-free games.
 - **AC-2 — bug fixed.** A `basic-combat` kill takes the entity out of the turn loop
   (the sync bug cannot recur — one `HealthTrait` source).
 - **AC-3 — Chord-validated.** Each layer is authorable from a `.story` and has a
@@ -197,32 +224,9 @@ ADR-070 (NPC), ADR-072 (combat, currently stale/Proposed), and ADRs
 - **Large migration** — ~13 modules, 85+ files (dungeo 40 heaviest); the thief's
   `customProperties` state machine is the hardest single migration.
 - **Names the mechanism.** "NPC" retires as the automation concept name in favor of
-  a mechanism-honest term (open question below).
+  **DAEMON** (named for the mechanism, resolved 2026-07-15).
 - **Gives Chord its first NPC-authoring surface** — today `person` can do nothing
   autonomous.
-
-## Open Questions
-
-### Q-1: Fate of the orphaned daemon plumbing (reactive hooks `onSpokenTo`/`onAttacked`, behavior `getState/setState`, the witness system) — finish, fold, or remove?
-- **Why it matters**: authors write hooks believing they fire (a correctness trap);
-  patrol state is silently lost on save/restore.
-- **Blocks**: layer B (daemon save-state) and the observation-pipeline decision.
-
-### Q-2: The observation pipeline — unify the witness system (DAEMON accumulation) with `observeEvent` (PERSONHOOD interpretation), or keep them as distinct tiers over the AGENT sight capability?
-- **Why it matters**: both are currently dead; the split should formalize one design.
-- **Blocks**: layers B/C observation work.
-
-### Q-3: Per-entity daemon state — the thief's state machine gets a **typed** slot on the daemon binding (the working assumption in the code examples), replacing the untyped `customProperties` bag. Confirm the shape (per-daemon typed state vs a generic serializable slot).
-- **Why it matters**: the thief's whole 7-state machine lives in `customProperties` today.
-- **Blocks**: layer B and the thief migration.
-
-### Q-4: Child sequencing — A (`HealthTrait`) → B (agent/daemon split + scheduler merge) → C (personhood) → D (Chord surface) as written, or interleave (C in parallel, since it's independent of health/daemon)?
-- **Why it matters**: The Alderman (C) is in-flight and may want priority.
-- **Blocks**: which child ADR to draft first.
-
-### Q-5: Consciousness — does conscious/unconscious derive from a `HealthTrait` threshold (combat knocks out at ≤20% health), and is **asleep** (full health, not acting) a separate small flag, or is consciousness its own field?
-- **Why it matters**: decides whether `HealthTrait` is *just* health or health+consciousness.
-- **Blocks**: layer A's `HealthTrait` shape.
 
 ## Session
 

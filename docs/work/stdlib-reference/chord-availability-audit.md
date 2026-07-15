@@ -5,6 +5,17 @@ standard action, daemon, plugin, and platform-browser emit must be expressible
 from a `.story` file — not just reachable in TypeScript. Chord is meant to be a
 complete authoring surface for the platform, not a subset.
 
+**Taxonomy (adopted 2026-07-15, ADR-214 §1a).** Parity is bidirectional between
+two first-class Ways — the **Sharpee Way** (TS) and the **Chord Way** (`.story`),
+neither made crude to match the other. Every capability is classified: **CAN**
+(both Ways idiomatic), **CHORD-GAP** (Sharpee Way can, Chord Way can't → build
+the Chord surface), **SHARPEE-GAP** (platform hole → fix the platform, then both
+Ways), **HATCH** (non-IF, `define … from` by design — the parity boundary, not a
+gap). This audit (Parts 1–4, friendly-zoo scope) and the Dungeo-scope **capability
+matrix** (`docs/work/schism/sharpee-chord-capability-matrix.md`) are the two feeds
+of one parity instrument; both use these four classes. The Dungeo primitive
+backlog (ADR-222 DZ-1…11) is superseded by the capability matrix.
+
 **This document, Part 1 — Actions**: maps, for each of the 49 standard actions,
 the trait an entity needs to be *eligible* for it, whether that trait is
 composable in Chord v1 today, and — where it isn't — exactly what's missing. It

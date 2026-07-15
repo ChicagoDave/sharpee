@@ -1,6 +1,6 @@
 # ADR-222: Elegance Parity — Chord as the Elegance Oracle for the Sharpee API
 
-## Status: ACCEPTED (2026-07-15 — principle + seam taxonomy + friendly-zoo catalog; all open questions resolved via interview, accepted by David)
+## Status: ACCEPTED (2026-07-15 — principle + seam taxonomy + friendly-zoo catalog; all open questions resolved via interview, accepted by David) · AMENDED 2026-07-15 (DZ-1…11 Dungeo backlog table superseded by the capability matrix; §Decision 1–4 unchanged and authoritative)
 
 > Child/companion of ADR-214 (Chord ⇄ Sharpee parity). ADR-214 set the north
 > star **100% Sharpee == 100% Chord** as *capability* parity — every platform
@@ -154,6 +154,17 @@ Scoring reconciles once FZ-S1 + FZ-G2 land: canon `MAX_SCORE = 100` = Chord's
 current 85 + pet 5 + pressed-penny 10.
 
 ## The seam catalog — Dungeo primitive backlog (P23–P33)
+
+> **SUPERSEDED (2026-07-15) — the DZ-1…11 table below is superseded by the
+> grounded capability matrix, `docs/work/schism/sharpee-chord-capability-matrix.md`.**
+> This table was port-derived and over-counted "NEW primitives": the 2026-07-15
+> capability audit verified each need against real platform *and* Chord code and
+> reclassified them as CAN / CHORD-GAP / SHARPEE-GAP / HATCH — most are already
+> owned by ACCEPTED ADRs (215/217/219/220/221) or already possible today. The
+> table is retained below for provenance only; do not plan from it. **This ADR's
+> §Decision 1–4 (the elegance principle, the real-seam diagnostic, and the
+> graduation rule) are NOT superseded and remain authoritative** — they are the
+> source of the two-Ways framing now folded into ADR-214 §1a.
 
 Full audit + matrix: `docs/work/schism/dungeo-completeness-matrix.md`. The canonical Dungeo (path to a
 Chord Mainframe Zork) needs a **closed, bounded** set of generic IF primitives beyond
