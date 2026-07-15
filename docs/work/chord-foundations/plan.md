@@ -37,7 +37,11 @@ Standing constraints across every phase (CLAUDE.md):
   - `packages/story-loader/src/loader.ts` trait switch (~line 638): two new `case` arms composing `EnterableTrait`/`ClimbableTrait` with default config, following the existing arm shape (e.g. the `openable`/`switchable` arms).
   - Two fixture `.story` files (new, under `docs/work/chord-foundations/fixtures/`): an enterable thing the player can `enter`; a climbable object the player can `climb`.
 - **Exit state**: Both fixtures compile and run via `node dist/cli/sharpee.js --test <fixture>.story` after `./repokit build`. The `entering` and object-`climbing` rows in `chord-availability-audit.md` flip from ❌/⚠️ to ✅ reachable, with a note pointing at the fixture. `cloak.story` and `zoo.story` still compile unchanged (AC-4 spot check — this phase is purely additive).
-- **Status**: CURRENT
+- **Status**: COMPLETE (2026-07-14)
+- **As-built notes (two platform gaps surfaced beyond the plan's catalog+loader scope, each approved by David before implementing):**
+  1. **world-model root-barrel gap.** `EnterableTrait` (and 8 other trait subdirs: combatant, weapon, breakable, destructible, equipped, open-inventory, region, scene) shipped with leaf + mid-level barrels but were never enumerated in `packages/world-model/src/index.ts`, so they were unreachable via `@sharpee/world-model`. `entering.ts` masked it by using `EnterableTrait` only as a type cast. Fixed all nine root-barrel exports (the four combat-family subdirs export their `*Trait` via the trait file directly to avoid double-star-ing behaviors already re-exported by `./behaviors`). Not a Chord grammar change — no ratchet entry.
+  2. **parser-en-us object-climbing grammar gap.** The stdlib `climbing` action and `ClimbableTrait` existed but **no** `climb <object>` grammar routed to `if.action.climbing` (only `climb in/into :portal` → entering, `climb out` → exiting). Composing `climbable` was insufficient; added a `climb/scale/ascend/descend/climb up/climb down :target` grammar family (trait-gated on `CLIMBABLE`, mirroring `enter :portal`). Player-command grammar (ADR-087), not a Chord ratchet entry.
+  - **Test results:** enterable fixture 2/2, climbable fixture 2/2. AC-4: cloak 81/81; zoo 70/71 (the 1 failure — "Entrance Initial Description" — is pre-existing and unrelated: current `zoo.story` has no `first time` block on the entrance yet its transcript expects one; `git status` on zoo is clean).
 
 ### Phase 2: The liquid model — `drinkable`, `liquid`, container liquid contents (§1b)
 - **Tier**: Medium

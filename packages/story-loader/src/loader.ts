@@ -40,10 +40,12 @@ import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import {
   ActorTrait,
   CapabilityBehavior,
+  ClimbableTrait,
   ContainerTrait,
   Direction,
   DirectionType,
   EdibleTrait,
+  EnterableTrait,
   IFEntity,
   IdentityTrait,
   ITrait,
@@ -656,6 +658,12 @@ export class ChordStory implements Story {
           break;
         case 'edible':
           entity.add(new EdibleTrait());
+          break;
+        case 'enterable': // ADR-218 §1a (ratchet F1) — default config, preposition `in`
+          if (!entity.has(TraitType.ENTERABLE)) entity.add(new EnterableTrait());
+          break;
+        case 'climbable': // ADR-218 §1a (ratchet F2) — default config
+          if (!entity.has(TraitType.CLIMBABLE)) entity.add(new ClimbableTrait());
           break;
         case 'light-source':
           entity.add(new LightSourceTrait());

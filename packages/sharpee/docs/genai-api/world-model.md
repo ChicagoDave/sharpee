@@ -5462,6 +5462,496 @@ export interface IObstructorTraitMatch<T extends ITrait> {
 export declare function findTraitsOnObstructors<T extends ITrait>(wall: WallEntity, traitType: string, world: IObstructorQueryWorld): IObstructorTraitMatch<T>[];
 ```
 
+### traits/enterable/enterableTrait
+
+```typescript
+/**
+ * Trait for objects that can be entered by actors (baskets, vehicles, chairs, etc.)
+ *
+ * Separates the "can be entered" concern from ContainerTrait's "can hold items" concern.
+ * Entities with EnterableTrait can have players/actors enter them.
+ */
+import { ITrait } from '../trait';
+/**
+ * Configuration options for EnterableTrait
+ */
+export interface EnterableTraitConfig {
+    /** Preposition for entering: 'in' for containers, 'on' for supporters */
+    preposition?: 'in' | 'on';
+}
+/**
+ * Trait for enterable objects
+ */
+export declare class EnterableTrait implements ITrait {
+    static readonly type: "enterable";
+    readonly type: "enterable";
+    /** Preposition for entering (default: 'in') */
+    preposition: 'in' | 'on';
+    constructor(config?: EnterableTraitConfig);
+}
+/**
+ * Type guard for EnterableTrait
+ */
+export declare function isEnterableTrait(trait: ITrait): trait is EnterableTrait;
+/**
+ * Factory function for creating EnterableTrait
+ */
+export declare function createEnterableTrait(config?: EnterableTraitConfig): EnterableTrait;
+```
+
+### traits/equipped/equippedTrait
+
+```typescript
+/**
+ * Equipped trait for items that are currently equipped by an actor
+ */
+import { ITrait } from '../trait';
+export interface IEquippedData {
+    /** Which slot this item is equipped in */
+    slot?: 'weapon' | 'armor' | 'shield' | 'helmet' | 'boots' | 'gloves' | 'ring' | 'amulet' | 'accessory';
+    /** Whether this item is currently equipped */
+    isEquipped?: boolean;
+    /** Custom message when equipping */
+    equipMessage?: string;
+    /** Custom message when unequipping */
+    unequipMessage?: string;
+    /** Whether this item can be equipped in combat */
+    quickEquip?: boolean;
+    /** Stat modifiers when equipped */
+    modifiers?: {
+        attack?: number;
+        defense?: number;
+        health?: number;
+        speed?: number;
+    };
+}
+/**
+ * Equipped trait indicates an item is currently equipped by an actor.
+ *
+ * This trait contains only data - all equipment logic
+ * is in EquipmentBehavior.
+ */
+export declare class EquippedTrait implements ITrait, IEquippedData {
+    static readonly type: "equipped";
+    readonly type: "equipped";
+    slot: 'weapon' | 'armor' | 'shield' | 'helmet' | 'boots' | 'gloves' | 'ring' | 'amulet' | 'accessory';
+    isEquipped: boolean;
+    equipMessage?: string;
+    unequipMessage?: string;
+    quickEquip: boolean;
+    modifiers?: {
+        attack?: number;
+        defense?: number;
+        health?: number;
+        speed?: number;
+    };
+    constructor(data?: IEquippedData);
+}
+```
+
+### traits/open-inventory/openInventoryTrait
+
+```typescript
+/**
+ * @file Open Inventory Trait
+ * @description Marks an NPC's inventory as reachable by other actors.
+ *
+ * By default, items held by an NPC (actor) are visible but not reachable
+ * by the player — like a closed transparent container. Adding this trait
+ * to an actor makes their inventory reachable, allowing the player to
+ * take items directly from them.
+ *
+ * @public OpenInventoryTrait
+ * @owner world-model / scope
+ */
+import { ITrait } from '../trait';
+/**
+ * When applied to an actor, makes their carried items reachable by others.
+ *
+ * Without this trait, NPC inventory items are VISIBLE but not REACHABLE.
+ * With this trait, NPC inventory items follow normal reachability rules.
+ *
+ * Use cases:
+ * - A horse carrying saddlebags the player can reach into
+ * - A friendly NPC holding out an item for the player to take
+ * - A dead NPC whose belongings are accessible
+ */
+export declare class OpenInventoryTrait implements ITrait {
+    static readonly type: "openInventory";
+    readonly type: "openInventory";
+    constructor(data?: Partial<OpenInventoryTrait>);
+}
+```
+
+### traits/region/regionTrait
+
+```typescript
+/**
+ * Region trait for geographic groupings of rooms (ADR-149).
+ *
+ * Entities with this trait represent named spatial regions. Rooms declare
+ * membership via RoomTrait.regionId. Regions can be nested via parentRegionId.
+ *
+ * Public interface: RegionTrait, IRegionData.
+ * Owner context: @sharpee/world-model — traits / spatial
+ */
+import { ITrait } from '../trait';
+/**
+ * Data interface for RegionTrait construction.
+ *
+ * @param name - Human-readable region name (required).
+ * @param parentRegionId - Optional parent region entity ID for nesting.
+ * @param ambientSound - Region-wide ambient sound propagated to rooms.
+ * @param ambientSmell - Region-wide ambient smell propagated to rooms.
+ * @param defaultDark - Whether rooms in this region default to dark.
+ */
+export interface IRegionData {
+    name: string;
+    parentRegionId?: string;
+    ambientSound?: string;
+    ambientSmell?: string;
+    defaultDark?: boolean;
+}
+/**
+ * Marks an entity as a spatial region that groups rooms.
+ *
+ * Rooms reference their region via `RoomTrait.regionId`. Regions can form
+ * a hierarchy through `parentRegionId` — a room in a child region is
+ * implicitly in all ancestor regions.
+ */
+export declare class RegionTrait implements ITrait, IRegionData {
+    static readonly type: "region";
+    readonly type: "region";
+    /** Human-readable region name. */
+    name: string;
+    /** Parent region entity ID for nesting (optional). */
+    parentRegionId?: string;
+    /** Region-wide ambient sound propagated to contained rooms. */
+    ambientSound?: string;
+    /** Region-wide ambient smell propagated to contained rooms. */
+    ambientSmell?: string;
+    /** Whether rooms in this region default to dark. */
+    defaultDark: boolean;
+    constructor(data: IRegionData);
+}
+```
+
+### traits/scene/sceneTrait
+
+```typescript
+/**
+ * Scene trait for temporal story phases (ADR-149).
+ *
+ * Entities with this trait represent named dramatic episodes with
+ * begin/end conditions evaluated each turn by the engine. Multiple
+ * scenes can be active simultaneously. Scenes can be recurring.
+ *
+ * Condition closures are NOT serializable. On save/restore, trait
+ * data (state, activeTurns, etc.) persists, but stories must
+ * re-register conditions after restore.
+ *
+ * Public interface: SceneTrait, ISceneData, SceneState.
+ * Owner context: @sharpee/world-model — traits / temporal
+ */
+import { ITrait } from '../trait';
+/** Possible states for a scene lifecycle. */
+export type SceneState = 'waiting' | 'active' | 'ended';
+/**
+ * Data interface for SceneTrait construction.
+ *
+ * @param name - Human-readable scene name (required).
+ * @param state - Initial state. Defaults to 'waiting'.
+ * @param recurring - Whether the scene can re-activate after ending.
+ * @param activeTurns - Turns the scene has been active. Defaults to 0.
+ * @param beganAtTurn - Turn number when the scene last began.
+ * @param endedAtTurn - Turn number when the scene last ended.
+ */
+export interface ISceneData {
+    name: string;
+    state?: SceneState;
+    recurring?: boolean;
+    activeTurns?: number;
+    beganAtTurn?: number;
+    endedAtTurn?: number;
+}
+/**
+ * Marks an entity as a temporal scene — a dramatic episode with
+ * begin/end conditions polled each turn by the engine.
+ */
+export declare class SceneTrait implements ITrait, ISceneData {
+    static readonly type: "scene";
+    readonly type: "scene";
+    /** Human-readable scene name. */
+    name: string;
+    /** Current lifecycle state. */
+    state: SceneState;
+    /** Whether the scene can activate more than once. */
+    recurring: boolean;
+    /** Number of turns the scene has been active (0 if not active). */
+    activeTurns: number;
+    /** Turn number when the scene last began. */
+    beganAtTurn?: number;
+    /** Turn number when the scene last ended. */
+    endedAtTurn?: number;
+    constructor(data: ISceneData);
+}
+```
+
+### traits/weapon/weaponTrait
+
+```typescript
+/**
+ * Weapon trait for entities that can be used to attack
+ */
+import { ITrait } from '../trait';
+export interface IWeaponData {
+    /** Damage bonus added to attacks - ADR-072 */
+    damage?: number;
+    /** Skill bonus when wielding this weapon - ADR-072 */
+    skillBonus?: number;
+    /** Extra damage to undead/spirits - ADR-072 */
+    isBlessed?: boolean;
+    /** Whether this weapon glows near danger (e.g., elvish sword) - ADR-072 */
+    glowsNearDanger?: boolean;
+    /** Whether this weapon is currently glowing - ADR-072 */
+    isGlowing?: boolean;
+    /** Required trait to wield effectively - ADR-072 */
+    requiredTrait?: string;
+    /** Minimum damage this weapon can inflict (legacy, use damage) */
+    minDamage?: number;
+    /** Maximum damage this weapon can inflict (legacy, use damage) */
+    maxDamage?: number;
+    /** Type of weapon (blade, blunt, piercing, magic, etc.) */
+    weaponType?: string;
+    /** Whether this weapon requires two hands */
+    twoHanded?: boolean;
+    /** Custom attack message when using this weapon */
+    attackMessage?: string;
+    /** Custom sound when weapon hits */
+    hitSound?: string;
+    /** Whether this weapon can break */
+    breakable?: boolean;
+    /** Durability remaining (if breakable) */
+    durability?: number;
+    /** Maximum durability (if breakable) */
+    maxDurability?: number;
+}
+/**
+ * Weapon trait indicates an entity can be used to attack.
+ *
+ * This trait contains only data - all combat logic
+ * is in WeaponBehavior and AttackBehavior.
+ */
+export declare class WeaponTrait implements ITrait, IWeaponData {
+    static readonly type: "weapon";
+    readonly type: "weapon";
+    damage: number;
+    skillBonus: number;
+    isBlessed: boolean;
+    glowsNearDanger: boolean;
+    isGlowing: boolean;
+    requiredTrait?: string;
+    minDamage: number;
+    maxDamage: number;
+    weaponType: string;
+    twoHanded: boolean;
+    attackMessage?: string;
+    hitSound?: string;
+    breakable: boolean;
+    durability?: number;
+    maxDurability?: number;
+    constructor(data?: IWeaponData);
+    /**
+     * Set the glow state (for elvish sword behavior)
+     */
+    setGlowing(glowing: boolean): void;
+}
+```
+
+### traits/breakable/breakableTrait
+
+```typescript
+/**
+ * Breakable trait for entities that can be broken with a single hit
+ */
+import { ITrait } from '../trait';
+export interface IBreakableData {
+    /** Whether this object is already broken */
+    broken?: boolean;
+}
+/**
+ * Breakable trait indicates an entity can be broken with a single hit.
+ *
+ * This trait contains only data - all breaking logic
+ * is in BreakableBehavior. Story-specific properties (messages,
+ * sounds, debris, etc.) should be handled through event handlers.
+ */
+export declare class BreakableTrait implements ITrait, IBreakableData {
+    static readonly type: "breakable";
+    readonly type: "breakable";
+    broken: boolean;
+    constructor(data?: IBreakableData);
+}
+```
+
+### traits/destructible/destructibleTrait
+
+```typescript
+/**
+ * Destructible trait for entities that require multiple hits or specific tools to destroy
+ */
+import { ITrait } from '../trait';
+export interface IDestructibleData {
+    /** Current hit points */
+    hitPoints?: number;
+    /** Maximum hit points */
+    maxHitPoints?: number;
+    /** Whether this requires a weapon to damage */
+    requiresWeapon?: boolean;
+    /** Specific weapon type required (e.g., 'blade', 'magic') */
+    requiresType?: string;
+    /** Entity type to transform into when destroyed */
+    transformTo?: string;
+    /** Exit direction to reveal when destroyed (for barriers) */
+    revealExit?: string;
+    /** Custom message when damaged but not destroyed - injected into events */
+    damageMessage?: string;
+    /** Custom message when destroyed - injected into events */
+    destroyMessage?: string;
+    /** Whether this is invulnerable to normal attacks */
+    invulnerable?: boolean;
+    /** Armor value that reduces damage */
+    armor?: number;
+}
+/**
+ * Destructible trait indicates an entity can be destroyed with multiple hits.
+ *
+ * This trait contains only data - all destruction logic
+ * is in DestructibleBehavior. Messages are stored here to be
+ * injected into events during the report phase.
+ */
+export declare class DestructibleTrait implements ITrait, IDestructibleData {
+    static readonly type: "destructible";
+    readonly type: "destructible";
+    hitPoints: number;
+    maxHitPoints: number;
+    requiresWeapon: boolean;
+    requiresType?: string;
+    transformTo?: string;
+    revealExit?: string;
+    damageMessage?: string;
+    destroyMessage?: string;
+    invulnerable: boolean;
+    armor: number;
+    constructor(data?: IDestructibleData);
+}
+```
+
+### traits/combatant/combatantTrait
+
+```typescript
+/**
+ * Combatant trait for entities that can engage in combat
+ */
+import { ITrait } from '../trait';
+export interface ICombatantData {
+    /** Current health points */
+    health?: number;
+    /** Maximum health points */
+    maxHealth?: number;
+    /** Combat skill (0-100, affects hit/dodge chance) - ADR-072 */
+    skill?: number;
+    /** Natural damage (if no weapon) - ADR-072 */
+    baseDamage?: number;
+    /** Whether this combatant is conscious (false = knocked out) - ADR-072 */
+    isConscious?: boolean;
+    /** Turns until consciousness recovery - ADR-072 */
+    recoveryTurns?: number;
+    /** Armor value that reduces damage */
+    armor?: number;
+    /** Attack power modifier (legacy, use baseDamage) */
+    attackPower?: number;
+    /** Defense modifier */
+    defense?: number;
+    /** Whether this combatant is alive */
+    isAlive?: boolean;
+    /** Custom message when hit */
+    hitMessage?: string;
+    /** Custom message when killed */
+    deathMessage?: string;
+    /** Custom message when attacking */
+    attackMessage?: string;
+    /** Whether this combatant is hostile by default */
+    hostile?: boolean;
+    /** Whether this combatant can retaliate */
+    canRetaliate?: boolean;
+    /** Whether inventory drops when killed */
+    dropsInventory?: boolean;
+    /** Experience points awarded when defeated */
+    experienceValue?: number;
+    /** Whether this combatant is undead/spirit (affects blessed weapon bonus) */
+    isUndead?: boolean;
+}
+/**
+ * Combatant trait indicates an entity can engage in combat.
+ *
+ * This trait contains only data - all combat logic
+ * is in CombatBehavior.
+ */
+export declare class CombatantTrait implements ITrait, ICombatantData {
+    static readonly type: "combatant";
+    readonly type: "combatant";
+    health: number;
+    maxHealth: number;
+    skill: number;
+    baseDamage: number;
+    isConscious: boolean;
+    recoveryTurns?: number;
+    armor: number;
+    attackPower: number;
+    defense: number;
+    isAlive: boolean;
+    hitMessage?: string;
+    deathMessage?: string;
+    attackMessage?: string;
+    hostile: boolean;
+    canRetaliate: boolean;
+    dropsInventory: boolean;
+    experienceValue: number;
+    isUndead: boolean;
+    constructor(data?: ICombatantData);
+    /**
+     * Computed property to check if combatant is alive based on health
+     */
+    get alive(): boolean;
+    /**
+     * Check if combatant can act (alive and conscious)
+     */
+    get canAct(): boolean;
+    /**
+     * Knock out this combatant (unconscious but alive)
+     */
+    knockOut(recoveryTurns?: number): void;
+    /**
+     * Wake up this combatant
+     */
+    wakeUp(): void;
+    /**
+     * Kill this combatant
+     */
+    kill(): void;
+    /**
+     * Take damage
+     * @returns true if combatant was killed
+     */
+    takeDamage(amount: number): boolean;
+    /**
+     * Heal this combatant
+     */
+    heal(amount: number): void;
+}
+```
+
 ### extensions/types
 
 ```typescript

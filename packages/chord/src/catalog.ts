@@ -37,6 +37,8 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'light-source',
   'plural',
   'dark',
+  'enterable', // ADR-218 §1a (ratchet F1) — composes EnterableTrait; always explicit
+  'climbable', // ADR-218 §1a (ratchet F2) — composes ClimbableTrait
 ]);
 
 /**

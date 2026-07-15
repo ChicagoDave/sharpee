@@ -1,0 +1,15 @@
+title: F1 Climbable — player can climb a climbable object
+story: chord-f1-climbable
+description: ADR-218 §1a (ratchet F2) — the `climbable` trait adjective composes
+  ClimbableTrait, closing the object-`climbing` action gap. The ladder carries
+  only the `climbable` adjective, so a successful `climb` proves the adjective
+  alone made the object climbable.
+---
+
+# The climbable ladder is present and describable.
+> examine ladder
+[OK: contains "wooden ladder"]
+
+# `climb` succeeds because `climbable` composed ClimbableTrait.
+> climb ladder
+[OK: contains "onto the ladder"]

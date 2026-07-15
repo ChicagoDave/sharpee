@@ -64,6 +64,24 @@ export * from './traits/acoustic';
 export * from './traits/listener';
 export * from './traits/obstructor-protocol';
 
+// Root-barrel hygiene fix (2026-07-14): these trait subdirs shipped with leaf
+// barrels and a mid-level traits/index.ts export but were never enumerated in
+// this root barrel, so their traits were unreachable via `@sharpee/world-model`
+// (consumers reached them only through deep subpath imports). Enumerated here to
+// close the gap. The four combat-family subdirs export their *Trait via the trait
+// file directly — NOT the leaf barrel — because their behaviors are already
+// re-exported by `./behaviors` above; a leaf-barrel `export *` would double-star
+// those behavior symbols and silently drop them.
+export * from './traits/enterable';
+export * from './traits/equipped';
+export * from './traits/open-inventory';
+export * from './traits/region';
+export * from './traits/scene';
+export * from './traits/weapon/weaponTrait';
+export * from './traits/breakable/breakableTrait';
+export * from './traits/destructible/destructibleTrait';
+export * from './traits/combatant/combatantTrait';
+
 // Extension system
 export * from './extensions';
 

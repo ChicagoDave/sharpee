@@ -691,6 +691,53 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Semantic: climb a climbable object (priority 100) — ADR-218 §1a (ratchet F2).
+  // Routes `climb <thing>` and its synonyms to the climbing action's object-climb
+  // path, gated on CLIMBABLE exactly as `enter :portal` is gated on ENTERABLE.
+  // The prepositional `climb in/into :portal` (entering) and `climb out` (exiting)
+  // forms are unaffected — they carry a preposition token these bare forms do not.
+  grammar
+    .define('climb :target')
+    .hasTrait('target', TraitType.CLIMBABLE)
+    .mapsTo('if.action.climbing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('climb up :target')
+    .hasTrait('target', TraitType.CLIMBABLE)
+    .mapsTo('if.action.climbing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('climb down :target')
+    .hasTrait('target', TraitType.CLIMBABLE)
+    .mapsTo('if.action.climbing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('scale :target')
+    .hasTrait('target', TraitType.CLIMBABLE)
+    .mapsTo('if.action.climbing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('ascend :target')
+    .hasTrait('target', TraitType.CLIMBABLE)
+    .mapsTo('if.action.climbing')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('descend :target')
+    .hasTrait('target', TraitType.CLIMBABLE)
+    .mapsTo('if.action.climbing')
+    .withPriority(100)
+    .build();
+
   grammar
     .define('go in :portal')
     .hasTrait('portal', TraitType.ENTERABLE)

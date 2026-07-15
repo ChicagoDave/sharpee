@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.
 
-Generated: 2026-07-14 08:47:59 UTC
+Generated: 2026-07-15 03:48:16 UTC
 
 ## Quick Start
 
@@ -28,7 +28,7 @@ Generated: 2026-07-14 08:47:59 UTC
 |------|-----------|-------------|
 | [core.md](core.md) | @sharpee/core | Base types, query system, platform events, entity interfaces, debug utilities. (25 files, ~2412 lines) |
 | [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (23 files, ~3421 lines) |
-| [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (100 files, ~8119 lines) |
+| [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (109 files, ~8609 lines) |
 | [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (16 files, ~2093 lines) |
 | [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (39 files, ~3754 lines) |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~407 lines) |

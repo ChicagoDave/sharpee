@@ -53,8 +53,10 @@ What each maps to in the world model (from the story-loader):
 | `pullable` | PullableTrait | data-only trait |
 | `plural` | IdentityTrait.grammaticalNumber | |
 | `dark` | RoomTrait property | rooms only |
+| `enterable` | EnterableTrait | ADR-218 §1a (ratchet F1); always explicit |
+| `climbable` | ClimbableTrait | ADR-218 §1a (ratchet F2) |
 
-Notably **absent** from the composable set: `enterable`, `climbable`, `vehicle`,
+Notably **absent** from the composable set: `vehicle`,
 `exit` (as a trait), `npc`, `character-model`, `combatant`, `weapon`, `acoustic`,
 `listener`, `button`, `breakable`, `destructible`, `concealment`,
 `moveable-scenery`, `attached`, `equipped`, `open-inventory`, `clothing`,
@@ -89,8 +91,8 @@ Notably **absent** from the composable set: `enterable`, `climbable`, `vehicle`,
 |---|---|---|---|---|
 | going | source `ROOM` + exit data (door via `openable`/`lockable`) | `a room` / exits | ✅ reachable | — |
 | exiting | none (containment state; not a room) | — | ✅ reachable | — |
-| entering | target `ENTERABLE` | **not composable** | ❌ gap | add `enterable` trait adjective (and/or make `container`/`supporter` enterable via config) to catalog + loader |
-| climbing | directional (up/down): `ROOM` exit ✅; object: `CLIMBABLE` (or enterable `SUPPORTER`) | object path not composable | ⚠️ partial | directional works; object-climbing needs `climbable` added to catalog + loader |
+| entering | target `ENTERABLE` | `enterable` adjective | ✅ reachable | closed by ADR-218 §1a (ratchet F1); fixture `docs/work/chord-foundations/fixtures/enterable.{story,transcript}` |
+| climbing | directional (up/down): `ROOM` exit ✅; object: `CLIMBABLE` | `climbable` adjective + parser grammar | ✅ reachable | object path closed by ADR-218 §1a (ratchet F2): `climbable` added to catalog + loader, **plus** a new `climb :target` grammar family in parser-en-us (object-climbing had no grammar at all — the stdlib climbing action was unreachable). Fixture `docs/work/chord-foundations/fixtures/climbable.{story,transcript}` |
 
 ## Senses & examination (§6)
 
@@ -149,17 +151,21 @@ the story, always reachable in Chord:
 
 ## Part 1 result: action reachability
 
-**42 of 49 actions are fully reachable** from Chord's composable vocabulary
-today; **1 is partial** (climbing); **6 are gaps**; and one core *construct*
+**44 of 49 actions are fully reachable** from Chord's composable vocabulary
+today; **0 are partial**; **5 are gaps**; and one core *construct*
 (`a door`) doesn't load. Every meta action and every manipulation/senses/
 container/wearing/device action works. The gaps cluster into five kinds:
 
 1. **Missing composable trait — add adjective + loader support.**
-   - `entering` needs `ENTERABLE` (❌) — not a Chord adjective.
-   - object-`climbing` needs `CLIMBABLE` (⚠️ directional up/down works).
+   - ~~`entering` needs `ENTERABLE`~~ — **closed** by ADR-218 §1a (ratchet F1):
+     `enterable` adjective added to catalog + loader. ✅
+   - ~~object-`climbing` needs `CLIMBABLE`~~ — **closed** by ADR-218 §1a
+     (ratchet F2): `climbable` adjective added to catalog + loader, plus a new
+     `climb :target` grammar family in parser-en-us (object-climbing had no
+     player grammar at all). ✅
    - `hiding` needs `ConcealmentTrait` + a grammar `position` (❌).
-   *Fix*: add `enterable` / `climbable` / a concealment adjective to
-   `catalog.ts` + `story-loader`; wire the position for hiding.
+   *Fix*: a concealment adjective in `catalog.ts` + `story-loader`; wire the
+   position for hiding.
 
 2. **Property, not adjective.** `drinking` needs `EDIBLE.liquid` (or
    `CONTAINER.containsLiquid`) — a trait *property* Chord's bare `edible`
