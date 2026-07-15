@@ -1,6 +1,6 @@
 # ADR-214: Chord Authoring Parity with the Sharpee Platform (100% Sharpee == 100% Chord)
 
-## Status: DRAFT (2026-07-14 — all six open questions resolved via interview and folded in; pending acceptance)
+## Status: ACCEPTED (2026-07-14 — all six open questions resolved via interview; accepted by David)
 
 > Drafted 2026-07-14 from the standard-library reference work (session
 > 95d692). Starting an author-facing stdlib reference surfaced that Chord
