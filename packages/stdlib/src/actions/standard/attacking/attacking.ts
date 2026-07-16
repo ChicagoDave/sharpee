@@ -27,6 +27,7 @@ import {
   applyInterceptorReportResult
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
+import { killPlayer } from '../../../death';
 import { AttackedEventData } from './attacking-events';
 import { AttackingSharedData, AttackResult } from './attacking-types';
 import { ActionMetadata } from '../../../validation';
@@ -491,13 +492,27 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       applyInterceptorReportResult(events, 'if.event.attacked', result, context);
     }
 
-    // For killed targets, emit a death event
+    // For killed targets, emit a death event.
     if (result.targetKilled) {
-      events.push(context.event('if.event.death', {
-        target: target.id,
-        targetName: target.name,
-        killedBy: context.player.id
-      }));
+      if (target.id === context.player.id) {
+        // ADR-224: player death routes through the canonical primitive, not the
+        // generic if.event.death — combat becomes one `cause` among many. (Forward-
+        // looking: the attack grammar blocks self-attack, so this branch is not a
+        // live path today; Dungeo's real combat-death path is its own melee engine,
+        // migrated in Phase 4.)
+        const deathEvent = killPlayer(context.world, context.player, {
+          cause: 'combat',
+          messageId: 'combat.player_died',
+          terminal: true,
+        });
+        if (deathEvent) events.push(deathEvent);
+      } else {
+        events.push(context.event('if.event.death', {
+          target: target.id,
+          targetName: target.name,
+          killedBy: context.player.id
+        }));
+      }
     }
 
     // For knocked out targets, emit a knockout event

@@ -43,6 +43,7 @@ export * from './equipped';
 
 // Health / life-state (ADR-226, ADR-223 child A)
 export * from './health';
+export * from './deadly-room';
 
 // Transport traits
 export * from './vehicle';

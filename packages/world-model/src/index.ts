@@ -83,6 +83,8 @@ export * from './traits/destructible/destructibleTrait';
 export * from './traits/combatant/combatantTrait';
 // Health trait (ADR-226) — trait file direct; HealthBehavior comes via `./behaviors`
 export * from './traits/health/healthTrait';
+// Deadly-room trigger shape (ADR-224) — leaf barrel (trait + behavior + verdict type)
+export * from './traits/deadly-room';
 
 // Extension system
 export * from './extensions';

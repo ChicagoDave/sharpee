@@ -51,6 +51,7 @@ import { EquippedTrait } from './equipped/equippedTrait';
 
 // Health / life-state (ADR-226, ADR-223 child A)
 import { HealthTrait } from './health/healthTrait';
+import { DeadlyRoomTrait } from './deadly-room/deadlyRoomTrait';
 
 // NPC traits (ADR-070)
 import { NpcTrait } from './npc/npcTrait';
@@ -124,6 +125,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
 
   // Health / life-state (ADR-226, ADR-223 child A)
   [TraitType.HEALTH]: HealthTrait,
+  [TraitType.DEADLY_ROOM]: DeadlyRoomTrait,
 
   // NPC traits (ADR-070)
   [TraitType.NPC]: NpcTrait,
@@ -221,6 +223,9 @@ export {
 
   // Health / life-state (ADR-226, ADR-223 child A)
   HealthTrait,
+
+  // Deadly-room trigger shape (ADR-224)
+  DeadlyRoomTrait,
 
   // NPC traits (ADR-070)
   NpcTrait,

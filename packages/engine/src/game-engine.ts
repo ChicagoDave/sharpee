@@ -16,6 +16,8 @@ import {
   TraitType,
   EntityType,
   StoryInfoTrait,
+  HealthTrait,
+  HealthBehavior,
   registerConcealedVisibilityBehavior
 } from '@sharpee/world-model';
 import { EventProcessor, Effect } from '@sharpee/event-processor';
@@ -35,6 +37,8 @@ import {
   registerStandardChains,
   createScopeResolver,
   channelRegistry,
+  PLAYER_DIED_EVENT,
+  createDeadlyRoomTransformer,
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
@@ -324,7 +328,15 @@ export class GameEngine {
       this.parser,
       this.systemEventSource
     );
-    
+
+    // ADR-224: auto-register the deadly-room death transformer so every story
+    // (TS or Chord) gets the deadly-room verb-allowlist / probabilistic hazard for
+    // free — no story wiring needed. It early-returns when the player's room has no
+    // DeadlyRoomTrait, and uses the engine's seeded RNG for the `chance` variant.
+    this.commandExecutor.registerParsedCommandTransformer(
+      createDeadlyRoomTransformer(this.random),
+    );
+
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries
 
@@ -1199,6 +1211,14 @@ export class GameEngine {
         this.emitChannelPacket(turnEvents, blocks, turn);
       }
 
+      // Detect a canonical player-death event (ADR-224) *before* the turn's
+      // events are cleared below. The death may have been emitted this turn by
+      // the action, an interceptor, or a scheduler daemon — all have landed in
+      // this turn's event stream by now, and story policy (event handlers in the
+      // executor + state-machine plugins in the tick loop above) has already had
+      // its "first crack" to veto by resetting the player's HealthTrait.
+      const deathCause = this.playerDeathCauseThisTurn(turn);
+
       // Clear turn events after processing to prevent accumulation on same turn (meta commands)
       this.turnEvents.set(turn, []);
 
@@ -1208,6 +1228,15 @@ export class GameEngine {
       // Check for victory from events
       if (victoryDetected) {
         this.stop('victory', victoryDetails);
+        return result;
+      }
+
+      // Route a still-dead player to game.lost. Only if the player's *derived*
+      // life-state is still dead do we end the game — the re-check of live state,
+      // not the event's `terminal` flag, is the engine's final word (ADR-224
+      // Q-2, AC-3). A story reincarnation policy that cleared `dead` above wins.
+      if (deathCause !== undefined && this.isPlayerDead()) {
+        this.stop('defeat', { reason: 'You have died.', cause: deathCause });
         return result;
       }
 
@@ -2487,9 +2516,41 @@ export class GameEngine {
     if (this.story && this.story.isComplete) {
       return this.story.isComplete();
     }
-    
+
     // Default: game never ends
     return false;
+  }
+
+  /**
+   * The `cause` of a canonical player-death event (ADR-224) emitted during the
+   * given turn, or `undefined` if the player did not die this turn. Scans the
+   * turn's accumulated events, so it sees deaths from the action, interceptors,
+   * and scheduler daemons alike. When several fire in one turn (rare), the first
+   * is authoritative — `killPlayer` is idempotent, so later calls emit nothing.
+   * @param turn the turn number whose events to scan
+   */
+  private playerDeathCauseThisTurn(turn: number): string | undefined {
+    const events = this.turnEvents.get(turn) || [];
+    for (const event of events) {
+      if (event.type === PLAYER_DIED_EVENT) {
+        const cause = (event.data as { cause?: unknown } | undefined)?.cause;
+        return typeof cause === 'string' ? cause : 'unknown';
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Whether the player is currently dead by their derived `HealthTrait` state
+   * (ADR-226/ADR-224). A player with no `HealthTrait` is alive by default (the
+   * opt-in rule) — `killPlayer` lazily attaches one, so a real death always has a
+   * trait to read. This is the engine's "final word" after story policy has run.
+   */
+  private isPlayerDead(): boolean {
+    const player = this.context.player;
+    if (!player) return false;
+    const health = player.get(TraitType.HEALTH) as HealthTrait | undefined;
+    return health ? !HealthBehavior.isAlive(health) : false;
   }
 
   /**

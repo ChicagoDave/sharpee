@@ -22,6 +22,7 @@ import type { IOChannel, MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ScoringData } from '../capabilities/scoring';
+import { PLAYER_DIED_EVENT } from '../death';
 import { MAIN_KEYS } from './keys';
 import { playerLocationName, readCapability } from './world-helpers';
 
@@ -51,10 +52,13 @@ function flattenContent(content: ReadonlyArray<TextContent>): string {
  *
  * - `game.won` / `game.lost` — engine emits these from `engine.stop()`
  *   via `createGameWonEvent` / `createGameLostEvent` (core/events).
- * - `combat.player_died` — emitted by the `@sharpee/ext-basic-combat`
- *   extension. Stories not using basic-combat that want a death
- *   channel emission must either fire `combat.player_died` themselves
- *   or override `deathChannel` with their own closure.
+ * - `if.event.player.died` — the canonical player-death event (ADR-224),
+ *   emitted by `killPlayer` from any death mechanism (combat, hazard,
+ *   grue, gas). Re-pointed here from the pre-ADR-224 `combat.player_died`
+ *   (a hard cutover — no alias; that name and its `@sharpee/ext-basic-combat`
+ *   producer are retired). The `PLAYER_DIED` constant is the canonical
+ *   `PLAYER_DIED_EVENT` imported from the `death` module so emitter and
+ *   channel never drift (one wire shape).
  * - `game.score_changed` — no production emitter today. The channel
  *   listens for it, but it stays silent until a story or extension
  *   adopts the convention. Listed for forward-compatibility.
@@ -62,7 +66,7 @@ function flattenContent(content: ReadonlyArray<TextContent>): string {
  * Each event carries its message in `event.data.message` (string).
  */
 export const STANDARD_CHANNEL_EVENTS = {
-  PLAYER_DIED: 'combat.player_died',
+  PLAYER_DIED: PLAYER_DIED_EVENT,
   GAME_WON: 'game.won',
   GAME_LOST: 'game.lost',
   SCORE_CHANGED: 'game.score_changed',
@@ -291,11 +295,11 @@ export const ifidChannel: IOChannel<string> = {
 };
 
 /**
- * `death` — event-mode death notification. Closure looks for an
- * `if.event.player_died` event in this turn's events and projects its
- * `data.message` field. Stories that want different death handling
- * register a replacement `IOChannel` with id `'death'` (last-write-wins
- * per ADR-163 §6).
+ * `death` — event-mode death notification. Closure looks for the
+ * canonical `if.event.player.died` event (ADR-224) in this turn's events
+ * and projects its `data.message` field. Stories that want different death
+ * handling register a replacement `IOChannel` with id `'death'`
+ * (last-write-wins per ADR-163 §6).
  */
 export const deathChannel: IOChannel<string> = {
   id: 'death',

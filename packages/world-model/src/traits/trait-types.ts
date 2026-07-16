@@ -56,6 +56,9 @@ export const TraitType = {
   // Health / life-state (ADR-226, ADR-223 child A)
   HEALTH: 'health',
 
+  // Deadly-room trigger shape (ADR-224)
+  DEADLY_ROOM: 'deadlyRoom',
+
   // NPC traits (ADR-070)
   NPC: 'npc',
   OPEN_INVENTORY: 'openInventory',
@@ -148,6 +151,9 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
 
   // Health / life-state (ADR-226)
   [TraitType.HEALTH]: TraitCategory.STANDARD,
+
+  // Deadly-room trigger shape (ADR-224)
+  [TraitType.DEADLY_ROOM]: TraitCategory.STANDARD,
 
   // NPC traits
   [TraitType.NPC]: TraitCategory.STANDARD,

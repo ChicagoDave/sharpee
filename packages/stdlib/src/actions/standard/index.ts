@@ -137,6 +137,9 @@ import { restartingAction } from './restarting'; // Now from folder
 import { undoingAction } from './undoing'; // Now from folder
 import { againAction } from './again'; // Now from folder
 
+// Player-death (ADR-224): generic redirect target for the deadly-room transformer
+import { deadlyRoomDeathAction } from './deadly-room-death';
+
 // Concealment actions (ADR-148)
 import { hidingAction } from './hiding';
 import { revealingAction } from './hiding';
@@ -194,6 +197,7 @@ export const standardActions = [
   // tellingAction, // Moved to conversation extension
   // answeringAction, // Moved to conversation extension
   attackingAction,
+  deadlyRoomDeathAction,
   savingAction,
   restoringAction,
   quittingAction,
