@@ -1551,6 +1551,47 @@ export declare function runMultiObjectExecute(context: ActionContext, itemStates
 export declare function runMultiObjectReport(context: ActionContext, itemStates: MultiObjectItemState[], events: ISemanticEvent[], primaryEventType: string, blockedEventType: string, reportSuccess: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>, events: ISemanticEvent[]) => void, reportBlocked: (context: ActionContext, item: IFEntity, error: string, errorParams: Record<string, unknown> | undefined, events: ISemanticEvent[]) => void): void;
 ```
 
+### actions/lifecycle/registry
+
+```typescript
+/**
+ * Wired-action registry (ADR-228 D5).
+ *
+ * The descriptor table: every standard action's `ActionLifecycleDescriptor`,
+ * collected in one place, plus the set of interceptor-consulting action ids
+ * derived mechanically from it. The table IS the source of truth — an action
+ * is "wired" iff its descriptor appears here, and the id set is never
+ * hand-maintained. Consumers (the Chord story-loader's load-time fail-fast,
+ * tooling, tests) read the derived set to decide whether an interceptor
+ * registered under a given action id will ever be consulted.
+ *
+ * Public interface: `actionLifecycleDescriptors`,
+ * `interceptorConsultingActionIds`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ *
+ * NOTE: this module is deliberately NOT exported from `./index.ts` (the
+ * lifecycle barrel) — actions import that barrel, and this module imports
+ * the actions, so routing it through the barrel would create an import
+ * cycle. It is exported from the actions barrel (`../index.ts`) instead.
+ */
+import { ActionLifecycleDescriptor } from './descriptor';
+/**
+ * The descriptor table: all 33 entity-keyed standard actions (ADR-228
+ * Consequences). Structural exemptions (no entity to key on: about, waiting,
+ * looking, … and the full-delegation capability actions lowering/raising)
+ * are absent by design — see ADR-228 Context.
+ */
+export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[];
+/**
+ * Every action id under which some wired action consults interceptors —
+ * the union of all descriptors' slot actionIds (mechanically derived; the
+ * both-ids delegation seams of ADR-228 D6 and implicit-entity ids like
+ * `if.action.entering_room` fall out of the slots, not a hand-kept list).
+ * An interceptor registered under an id NOT in this set will never fire.
+ */
+export declare const interceptorConsultingActionIds: ReadonlySet<string>;
+```
+
 ### actions/standard
 
 ```typescript
