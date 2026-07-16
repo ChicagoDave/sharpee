@@ -1,0 +1,48 @@
+title: Falls Deadly Exit
+story: dungeo
+description: ADR-227 Phase 1 - only going SOUTH at Aragain Falls is fatal; other verbs and the north retreat are safe (MDL FALLS-ROOM, act2.mud:203)
+
+---
+
+# Teleport to Aragain Falls via GDT
+> gdt
+[OK: contains "GDT"]
+
+> ah Aragain Falls
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> look
+[OK: contains "Aragain Falls"]
+
+# Previously-lethal verbs are safe (old inverted allowlist killed on these)
+> wait
+[OK: contains "Time passes"]
+[EVENT: false, type="if.event.player.died"]
+
+> inventory
+[EVENT: false, type="if.event.player.died"]
+
+> take rainbow
+[EVENT: false, type="if.event.player.died"]
+
+# The north retreat is safe (player leaves and returns)
+> north
+[OK: contains "Shore"]
+[EVENT: false, type="if.event.player.died"]
+
+> south
+[OK: contains "Aragain Falls"]
+[EVENT: false, type="if.event.player.died"]
+
+# Going south -- over the falls -- is terminal death.
+# The death-penalty state machine still gets first crack on the canonical
+# event (ADR-224 AC-3 veto ordering, verified across the ADR-227 re-home).
+> south
+[OK: contains "tumble over Aragain Falls"]
+[EVENT: true, type="if.event.player.died" cause="aragain_falls"]
+[EVENT: true, type="dungeo.death.penalty"]
+[EVENT: true, type="sm.transition" machineId="dungeo.death_penalty"]
+[EVENT: true, type="game.lost"]

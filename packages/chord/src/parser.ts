@@ -22,6 +22,8 @@ import {
   ActionRefusal,
   AwardStmt,
   BlockedExitDecl,
+  DeadlyExitDecl,
+  KillStmt,
   ChangeStmt,
   CompositionItem,
   ConditionNode,
@@ -151,7 +153,7 @@ function isEndLine(line: Line): boolean {
 
 /** Words that open a statement or block boundary inside behavior bodies. */
 const STATEMENT_OPENERS = new Set([
-  'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose',
+  'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose', 'kill',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
 ]);
 
@@ -413,6 +415,8 @@ class Parser {
       wears: [],
       exits: [],
       blockedExits: [],
+      deadlyExits: [],
+      deadly: null,
       states: [],
       statesReversible: false,
       scores: [],
@@ -519,6 +523,24 @@ class Parser {
         this.pos++;
         const blocked = this.parseBlockedExit(word, line);
         if (blocked) decl.blockedExits.push(blocked);
+      } else if (word && DIRECTIONS.has(word) && cur.isWord('is', 1) && cur.isWord('deadly', 2)) {
+        this.pos++;
+        const deadly = this.parseDeadlyExit(word, line);
+        if (deadly) decl.deadlyExits.push(deadly);
+      } else if (word === 'deadly' && line.tokens[1]?.kind === 'colon') {
+        // `deadly: <phrase>` — the no-escape room marker (ADR-227).
+        this.pos++;
+        const dc = new Cursor(line.tokens, line);
+        dc.next(); // deadly
+        dc.next(); // colon
+        const key = dc.next();
+        if (!key || key.kind !== 'word') {
+          this.diagnostics.error('parse.deadly-room', 'Expected a phrase key after `deadly:`.', lineSpan(line));
+        } else if (decl.deadly) {
+          this.diagnostics.error('parse.deadly-room', 'Duplicate `deadly:` marker in this `create` block.', lineSpan(line));
+        } else {
+          decl.deadly = { kind: 'deadly-room', phraseKey: key.text, span: lineSpan(line) };
+        }
       } else if (!sawBlank || !line.afterBlank) {
         if (sawBlank) {
           this.diagnostics.error('parse.create-property', `Unrecognized line in \`create\` block: \`${line.raw.trim()}\`.`, lineSpan(line));
@@ -579,6 +601,32 @@ class Parser {
       return null;
     }
     return { kind: 'blocked-exit', direction, phraseKey: key.text, condition, span: lineSpan(line) };
+  }
+
+  private parseDeadlyExit(direction: string, line: Line): DeadlyExitDecl | null {
+    // <direction> is deadly [while <condition>]: <phrase-key> (ADR-227) —
+    // mirrors the blocked-exit grammar exactly.
+    const c = new Cursor(line.tokens, line);
+    c.next(); // direction
+    c.next(); // is
+    c.next(); // deadly
+    let condition: ConditionNode | null = null;
+    if (c.matchWord('while')) {
+      const condTokens: Token[] = [];
+      while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
+      condition = this.parseCondition(new Cursor(condTokens, line), line);
+    }
+    const colon = c.next();
+    if (!colon || colon.kind !== 'colon') {
+      this.diagnostics.error('parse.deadly-exit', 'Expected `: <phrase-key>` after `is deadly`.', lineSpan(line));
+      return null;
+    }
+    const key = c.next();
+    if (!key || key.kind !== 'word') {
+      this.diagnostics.error('parse.deadly-exit', 'Expected a phrase key after `is deadly:`.', lineSpan(line));
+      return null;
+    }
+    return { kind: 'deadly-exit', direction, phraseKey: key.text, condition, span: lineSpan(line) };
   }
 
   private parseCompositionLine(c: Cursor, line: Line): CompositionItem[] {
@@ -1909,6 +1957,28 @@ class Parser {
         }
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: word, phraseKey, stmtWhen, span: lineSpan(line) } as Statement;
+      }
+      case 'kill': {
+        // `kill the player [<phrase-key>] [when <cond>]` (ADR-227) — peer to
+        // win/lose; terminal death via the platform killPlayer sink.
+        this.pos++;
+        c.next();
+        if (!c.matchWord('the') || !c.matchWord('player')) {
+          this.diagnostics.error(
+            'parse.kill-statement',
+            'Expected `kill the player [<phrase-key>] [when <condition>]`.',
+            lineSpan(line),
+          );
+          return null;
+        }
+        const key = c.peek();
+        let phraseKey: string | null = null;
+        if (key && key.kind === 'word' && key.text !== 'when') {
+          phraseKey = key.text;
+          c.next();
+        }
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'kill', phraseKey, stmtWhen, span: lineSpan(line) } as KillStmt;
       }
       case 'if':
         // Removed — given 4 amended (ratchet 2026-07-11).

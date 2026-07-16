@@ -75,14 +75,14 @@ describe('derived darkness (dark while the player has the velvet cloak)', () => 
     const bar = cw.world.getEntity(cw.story.entityId('foyer-bar')!)!;
     const room = bar.get(TraitType.ROOM) as RoomTrait;
 
-    expect(room.isDark).toBe(true); // initial evaluation: player wears the cloak
+    expect(room.requiresLight).toBe(true); // initial evaluation: player wears the cloak
 
     hangCloak(cw);
-    expect(room.isDark).toBe(false);
+    expect(room.requiresLight).toBe(false);
 
     cw.world.moveEntity(cw.story.entityId('velvet-cloak')!, cw.playerId);
     cw.story.runtime.recomputeDerived(cw.world);
-    expect(room.isDark).toBe(true);
+    expect(room.requiresLight).toBe(true);
   });
 });
 

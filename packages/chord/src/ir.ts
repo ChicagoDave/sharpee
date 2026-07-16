@@ -69,6 +69,10 @@ export interface IREntity {
   wears: string[];
   exits: IRExit[];
   blockedExits: IRBlockedExit[];
+  /** `<direction> is deadly: <phrase>` lines (ADR-227). */
+  deadlyExits: IRDeadlyExit[];
+  /** `deadly: <phrase>` no-escape room marker (ADR-227); null = not deadly. */
+  deadly: IRDeadlyRoom | null;
   /**
    * Ordered state names — the entity's own `states:` line first, then every
    * composed trait's declared set in composition order (D8 merge; one
@@ -127,6 +131,23 @@ export interface IRBlockedExit {
   phraseKey: string;
   /** `is blocked while <cond>` — null = always blocked (grammar log 2026-07-10). */
   condition: IRCondition | null;
+  span: Span;
+}
+
+/** `<direction> is deadly: <phrase>` (ADR-227) — a lethal exit. */
+export interface IRDeadlyExit {
+  direction: string;
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
+  /** `is deadly while <cond>` — parsed but not yet wired (post-scope). */
+  condition: IRCondition | null;
+  span: Span;
+}
+
+/** `deadly: <phrase>` (ADR-227) — the no-escape room marker. */
+export interface IRDeadlyRoom {
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
   span: Span;
 }
 
@@ -347,6 +368,7 @@ export type IRStatement =
   | { kind: 'award'; expression: string[]; once: boolean; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
+  | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   /** `must` requirement as a body statement (ratchet D6). */
   | { kind: 'must'; condition: IRCondition; phraseKey: string; span: Span }
   /** `refuse when <cond>: <key>` as a body statement (prohibition, D6). */

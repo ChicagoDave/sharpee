@@ -233,7 +233,7 @@ describe('Sensory Extensions', () => {
     test('should not see in dark rooms without light', () => {
       // Make room dark via RoomTrait (the canonical mechanism)
       const roomTrait = room.getTrait(RoomTrait)!;
-      roomTrait.isDark = true;
+      roomTrait.requiresLight = true;
 
       const ball = author.createEntity('ball', EntityType.OBJECT);
       ball.add({ type: TraitType.IDENTITY, name: 'ball' });
@@ -247,7 +247,7 @@ describe('Sensory Extensions', () => {
     test('should see in dark rooms with carried light source', () => {
       // Make room dark via RoomTrait
       const roomTrait = room.getTrait(RoomTrait)!;
-      roomTrait.isDark = true;
+      roomTrait.requiresLight = true;
 
       // Give player a lit torch (proper LightSourceTrait)
       const torch = author.createEntity('torch', EntityType.OBJECT);
@@ -266,7 +266,7 @@ describe('Sensory Extensions', () => {
     test('should see if actor itself provides light', () => {
       // Make room dark via RoomTrait
       const roomTrait = room.getTrait(RoomTrait)!;
-      roomTrait.isDark = true;
+      roomTrait.requiresLight = true;
 
       // Give the player a lit light source (acts as "player glows")
       player.add({ type: TraitType.LIGHT_SOURCE, isLit: true });

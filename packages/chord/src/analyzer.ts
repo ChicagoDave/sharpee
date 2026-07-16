@@ -1020,6 +1020,19 @@ class Analyzer {
           span: b.span,
         };
       }),
+      deadlyExits: decl.deadlyExits.map((d) => {
+        this.requirePhrase(d.phraseKey, d.span);
+        return {
+          direction: d.direction,
+          phraseKey: d.phraseKey,
+          condition: d.condition ? this.resolveCondition(d.condition, entityScope(sym ?? null)) : null,
+          span: d.span,
+        };
+      }),
+      deadly: decl.deadly
+        ? (this.requirePhrase(decl.deadly.phraseKey, decl.deadly.span),
+          { phraseKey: decl.deadly.phraseKey, span: decl.deadly.span })
+        : null,
       // Merged set: own `states:` plus every composed trait's declared
       // states (ratchet D8) — the loader initializes from states[0].
       states: sym ? sym.states : decl.states.map((s) => s.name),
@@ -1257,6 +1270,7 @@ class Analyzer {
       }
       case 'win':
       case 'lose':
+      case 'kill':
         if (stmt.phraseKey) this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
         return { kind: stmt.kind, phraseKey: stmt.phraseKey, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       case 'must': {

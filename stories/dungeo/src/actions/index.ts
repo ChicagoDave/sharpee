@@ -127,8 +127,8 @@ export * from './river-blocked';
 // Launch (launch boat into river)
 export * from './launch';
 
-// Falls Death (any action except LOOK at Aragain Falls)
-export * from './falls-death';
+// Falls death: retired (ADR-227 Phase 1) — the falls deadly exit now redirects
+// to stdlib's generic DEADLY_ROOM_DEATH_ACTION_ID (see handlers/falls-death-handler.ts)
 
 // Gas Explosion Death (open flame in Gas Room)
 export * from './gas-explosion';
@@ -201,7 +201,6 @@ import { pullMatAction, PULL_MAT_ACTION_ID, PullMatMessages } from './pull-mat';
 import { inflateAction, INFLATE_ACTION_ID, InflateMessages } from './inflate';
 import { deflateAction, DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 import { riverBlockedAction, RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
-import { fallsDeathAction, FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 import { gasExplosionAction, GAS_EXPLOSION_ACTION_ID, GasExplosionMessages } from './gas-explosion';
 import { grueDeathAction, GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
 import { chimneyBlockedAction, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './chimney-blocked';
@@ -240,7 +239,6 @@ export { DEFLATE_ACTION_ID, DeflateMessages } from './deflate';
 
 // Re-export river navigation actions for use in index.ts
 export { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './river-blocked';
-export { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './falls-death';
 export { GAS_EXPLOSION_ACTION_ID, GasExplosionMessages } from './gas-explosion';
 export { GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue-death';
 export { CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './chimney-blocked';
@@ -303,7 +301,6 @@ export const customActions = [
   inflateAction,
   deflateAction,
   riverBlockedAction,
-  fallsDeathAction,
   gasExplosionAction,
   grueDeathAction,
   chimneyBlockedAction,

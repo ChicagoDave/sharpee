@@ -41,6 +41,7 @@ import {
   TraitType,
   WorldModel,
 } from '@sharpee/world-model';
+import { killPlayer } from '@sharpee/stdlib';
 import { Evaluator, EvalContext } from './evaluator';
 import { LoadError } from './errors';
 import {
@@ -923,6 +924,24 @@ export class ChordRuntime {
             events.push(
               this.host.triggerEnding(ctx.world, stmt.kind === 'win' ? 'victory' : 'defeat', stmt.phraseKey ?? undefined),
             );
+          }
+          break;
+        case 'kill':
+          // `kill the player` (ADR-227 Decision 4): terminal death via the
+          // platform's killPlayer sink — the engine routes game-over off the
+          // canonical if.event.player.died it returns; triggerEnding is NOT
+          // called (a distinct lowering target from win/lose). The phrase
+          // carries the death text; the cause derives from the phrase key.
+          if (phase !== 'mutations' && whenHolds(stmt)) {
+            if (stmt.phraseKey) events.push(this.phraseEvent(stmt.phraseKey, ctx));
+            const player = ctx.world.getPlayer();
+            if (player) {
+              const died = killPlayer(ctx.world, player, {
+                cause: stmt.phraseKey ?? 'killed',
+                terminal: true,
+              });
+              if (died) events.push(died);
+            }
           }
           break;
         case 'change': {

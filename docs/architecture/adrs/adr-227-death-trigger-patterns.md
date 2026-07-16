@@ -57,13 +57,31 @@ Decision 4; Dungeo's `death-penalty-machine` already does this).
 
    | Death | Correct surface | Rationale |
    |---|---|---|
-   | Falls (verb-allowlist room) | **Trait+Behavior** (`DeadlyRoomTrait`) via the ParsedCommandTransformer (built, ADR-224 Phase 2) | location + verb-allowlist |
-   | Cake eat/throw | **Capability Dispatch** (cake owns the verb's lethal meaning) | eating *this* entity means something entity-specific — not an additive reaction (re-home from today's `chainEvent` event handler) |
+   | Falls (deadly exit: south) | **ParsedCommandTransformer** → generic deadly-death action | movement-*attempt* hazard: the deadly exit is not in the room graph (Aragain Falls has `exits: {}`), so no destination-resolved interceptor can ever fire *(amended 2026-07-16)* |
+   | Grue-on-move | **ParsedCommandTransformer** (seeded RNG injected) | attempt-based: must see the parsed command pre-validate (invalid-exit vs blocked-exit vs lit-destination outcomes) and *replace* the move — a post-turn daemon has no command context *(amended 2026-07-16)* |
+   | Cake eat/throw | **Action Interceptor** on the cake entity (`if.action.eating`/`if.action.throwing`) | eating/throwing *this* entity means something entity-specific — not an additive reaction (re-home from today's `chainEvent` event handler). *Amended 2026-07-16: originally "Capability Dispatch", but the live Chord loader routes entity `on <action> it` clauses on **standard** verbs to Action Interceptors (`story-loader/runtime.ts:148-154`); capability dispatch is Chord's lowering only for story dispatch verbs (`chord.action.*`, §5.4). Parity therefore requires the interceptor surface. Enabling stdlib seam-fixes (approved by David 2026-07-16): `eating.ts` gains the ADR-118 hooks it was never wired for, and `throwing.ts` additionally resolves interceptors on the thrown **item** (target-keyed wins) — both close silently-dead Chord seams (`on eating it` / `on throwing it` registered but never fired).* |
    | Melt-glacier, say-echo, pray-basin | **Story Action** | the verb itself is story-owned |
-   | Gas-room entry (+flame), sphere/cage, grue-on-move | **Action Interceptor** | must block/redirect a standard action (`going`/`taking`), not merely react |
+   | Gas-room entry (+flame), sphere/cage | **Action Interceptor** | must block/redirect a standard action (`going`/`taking`) resolving on a *real entity* (destination room / object) |
    | Cage-poison, balloon, flooding, explosion | **Scheduler plugin** (daemon/fuse) | timed / per-turn |
    | Troll/cyclops melee | **NPC plugin** combat-resolver seam | NPC→PC lethal blow |
    | Reincarnation, −10, die-twice | **State Machine plugin** | policy, keyed off `if.event.player.died` |
+
+   **Amendment (2026-07-16, Phase-1 grounding): movement-context hazards use the
+   ParsedCommandTransformer** — not an Action Interceptor and not a scheduler
+   daemon. Three grounded facts force this: (a) interceptors are
+   one-per-(entity,action) and, for `going`, resolve on the *destination room
+   entity* (ADR-126) — unfireable when the deadly exit is absent from the room
+   graph; (b) scheduler daemons receive no command context (`SchedulerContext` is
+   `{world, turn, random, playerLocation, playerId}`), so an attempt-based death
+   (grue's invalid-exit/blocked-exit/lit-destination distinctions; WAIT-in-darkness
+   stays safe) cannot be expressed post-turn, and a daemon would print the turn's
+   normal output *before* the death instead of replacing the move; (c) the platform
+   already prescribes exactly this surface — stdlib's `deadly-room-transformer`
+   (ADR-224 Decision 3), which redirects to the generic extras-driven
+   `DEADLY_ROOM_DEATH_ACTION_ID` and takes an injected `SeededRandom` for
+   probabilistic variants. Story transformers obtain seeded randomness from the
+   scheduler's persisted RNG (`SchedulerService.getRandom()`) — no raw
+   `Math.random()`, no new platform API.
 
 3. **No new primitive.** The earlier draft's "death-rule registry" and
    "`createHazardFuse` factory" are **rejected**: the first duplicates the surfaces
@@ -89,7 +107,11 @@ Decision 4; Dungeo's `death-penalty-machine` already does this).
      player to their death. Mirrors cloak's `<direction> is blocked: <phrase>`
      exactly. This is the **common** case and it reads self-evidently *why* (Aragain
      Falls: `south is deadly: falls-death` — over the falls); the player retreats
-     another way. Lowers to a `going`-interceptor calling `killPlayer`.
+     another way. Lowers to a story-loader-registered **ParsedCommandTransformer**
+     redirecting to the generic deadly-death action (`DEADLY_ROOM_DEATH_ACTION_ID`),
+     threading phrase-derived cause/messageId through `extras` *(amended 2026-07-16
+     — see the Decision 2 amendment: a deadly exit need not exist in the room graph,
+     so a destination-resolved `going`-interceptor can never fire)*.
    - **`deadly: <phrase>`** — a room marker for the *rare no-escape position* where
      any action but `looking`/`examining` is fatal (the MDL `OVER-FALLS` shape) →
      `DeadlyRoomTrait` (`safeVerbs` default to look/examine; a `TRAIT_ADJECTIVES`
@@ -109,16 +131,20 @@ Decision 4; Dungeo's `death-penalty-machine` already does this).
 - **The 15 bespoke Dungeo sites re-home onto their correct prescribed surface** (per
   the Decision 2 table), each calling `killPlayer`. The Phase-4 migration's raw
   re-points are the interim; this is the architecturally-correct end state.
-- **Transform-on-use deaths: mechanism follows the ADR-090 tree** (resolved). When
-  using a verb on an entity *is* the death, the entity owns the verb's lethal meaning
-  and its handler's `execute` does the full outcome (consume/transform + `killPlayer`),
-  never an event-handler reaction layered on standard use. Which surface depends on
-  the verb: a **standard verb overridden per-entity → Capability Dispatch** (eat the
-  orange cake — `eat` is a stdlib verb the cake overrides; Chord's `on <action> it`
-  lowers here; cake moves off today's `chainEvent`); a **story-specific verb → its
-  Story Action** (melt the glacier — `melt` is a glacier-only story verb, so its
-  lethal branch already lives in `melt-action`, calling `killPlayer`). This is the
-  precedent for every verb-on-entity that transforms or kills.
+- **Transform-on-use deaths: mechanism follows the ADR-090 tree** (resolved; surface
+  corrected 2026-07-16). When using a verb on an entity *is* the death, the entity
+  owns the verb's lethal meaning — never an event-handler reaction layered on
+  standard use. Which surface depends on the verb: a **standard verb with
+  entity-specific consequences → Action Interceptor on that entity** (eat the orange
+  cake — `eat` is a stdlib verb; the standard action still runs (implicit take,
+  consume, taste line) and the cake's interceptor `postExecute` applies the
+  transform/`killPlayer` with `postReport` carrying the narration; Chord's
+  `on <action> it` lowers exactly here; cake moves off today's `chainEvent`); a
+  **story-specific verb → its Story Action** (melt the glacier — `melt` is a
+  glacier-only story verb, so its lethal branch already lives in `melt-action`,
+  calling `killPlayer`); **Capability Dispatch remains the surface for dispatch
+  verbs with no standard semantics** (LOWER/RAISE/WAVE — Chord's `chord.action.*`
+  routing). This is the precedent for every verb-on-entity that transforms or kills.
 - **Standard darkness only blinds — grue is story-specific** (resolved): the
   platform's darkness model makes the player unable to *see*, never dead. Zork's grue
   (act in the dark → ~75% death) is Dungeo-authored — a story daemon/interceptor doing

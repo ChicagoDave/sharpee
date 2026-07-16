@@ -114,6 +114,10 @@ export interface CreateDecl {
   wears: NameRef[];
   exits: ExitDecl[];
   blockedExits: BlockedExitDecl[];
+  /** `<direction> is deadly: <phrase>` lines (ADR-227). */
+  deadlyExits: DeadlyExitDecl[];
+  /** `deadly: <phrase>` no-escape room marker (ADR-227); null = not deadly. */
+  deadly: DeadlyRoomDecl | null;
   /** `states: a, b, c` — ordered. */
   states: StateName[];
   /** `states, reversible:` — declared back-transitions allowed (D4). */
@@ -183,6 +187,34 @@ export interface BlockedExitDecl {
    * condition holds (grammar log 2026-07-10, Phase B). Null = always.
    */
   condition: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `<direction> is deadly: <phrase>` (ADR-227 Decision 4) — a deadly *exit*:
+ * going that way takes the player to their death. Mirrors the blocked-exit
+ * shape; lowers to a pre-validate command redirect (the deadly exit need
+ * not exist in the room graph), never a destination-resolved interceptor.
+ */
+export interface DeadlyExitDecl {
+  kind: 'deadly-exit';
+  direction: string;
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
+  /** `is deadly while <cond>: <key>` — parsed but not yet wired (post-scope). */
+  condition: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `deadly: <phrase>` (ADR-227 Decision 4) — the rare no-escape room marker:
+ * any verb but the DeadlyRoomTrait safe allowlist (look/examine default)
+ * is fatal. Lowers to `DeadlyRoomTrait`.
+ */
+export interface DeadlyRoomDecl {
+  kind: 'deadly-room';
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
   span: Span;
 }
 
@@ -464,6 +496,7 @@ export type Statement =
   | AwardStmt
   | WinStmt
   | LoseStmt
+  | KillStmt
   | MustRequirement
   | SelectOnStmt
   | SelectStrategyStmt
@@ -597,6 +630,18 @@ export interface WinStmt {
 /** `lose [<phrase-key>] [when <cond>]` */
 export interface LoseStmt {
   kind: 'lose';
+  phraseKey: string | null;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `kill the player [<phrase-key>] [when <cond>]` (ADR-227 Decision 4) —
+ * terminal death via the platform's killPlayer sink; peer to win/lose.
+ * The phrase carries the death text; the cause is derived, never authored.
+ */
+export interface KillStmt {
+  kind: 'kill';
   phraseKey: string | null;
   stmtWhen: ConditionNode | null;
   span: Span;

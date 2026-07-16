@@ -99,7 +99,7 @@ describe('cloak.story loads into a playable world', () => {
 
   it('darkens the bar at load (dark-while initial evaluation: the player wears the cloak)', () => {
     const barRoom = entity('foyer-bar').get(TraitType.ROOM) as RoomTrait;
-    expect(barRoom.isDark).toBe(true);
+    expect(barRoom.requiresLight).toBe(true);
   });
 
   it('creates the default player with the story description, placed in the foyer', () => {
@@ -174,7 +174,7 @@ describe('engine lifecycle order: createPlayer BEFORE initializeWorld (GameEngin
     expect(wearable.worn).toBe(true);
     expect(wearable.wornBy).toBe(player.id);
     const barRoom = world.getEntity(story.entityId('foyer-bar')!)!.get(TraitType.ROOM) as RoomTrait;
-    expect(barRoom.isDark).toBe(true);
+    expect(barRoom.requiresLight).toBe(true);
   });
 });
 

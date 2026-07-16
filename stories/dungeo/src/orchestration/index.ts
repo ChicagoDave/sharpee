@@ -109,17 +109,20 @@ export function initializeOrchestration(
   world: WorldModel,
   config: OrchestrationConfig,
 ): void {
-  // 1. Command Transformers
+  // 1. Scheduler Plugin (ADR-120)
+  // Created first: its persisted seeded RNG feeds probabilistic transformers (ADR-227)
+  const schedulerPlugin = new SchedulerPlugin();
+  engine.getPluginRegistry().register(schedulerPlugin);
+
+  // 2. Command Transformers
   // Intercept and modify parsed commands before execution
   const transformerConfig: TransformerConfig = {
-    aragainFallsId: config.frigidRiverIds.aragainFalls
+    aragainFallsId: config.frigidRiverIds.aragainFalls,
+    rng: schedulerPlugin.getScheduler().getRandom()
   };
   registerCommandTransformers(engine, world, transformerConfig);
 
-  // 2. Scheduler Plugin (ADR-120)
-  // Register scheduler plugin and set up daemons and fuses
-  const schedulerPlugin = new SchedulerPlugin();
-  engine.getPluginRegistry().register(schedulerPlugin);
+  // Scheduler daemons and fuses
   const schedulerConfig: SchedulerConfig = {
     forestIds: config.forestIds,
     damIds: config.damIds,

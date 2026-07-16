@@ -11,7 +11,7 @@ import {
   WorldModel,
   TraitType,
 } from '@sharpee/world-model';
-import { findWieldedWeapon, nounPhraseFor } from '@sharpee/stdlib';
+import { findWieldedWeapon, nounPhraseFor, killPlayer } from '@sharpee/stdlib';
 import type { NpcCombatResolver } from '@sharpee/stdlib';
 import { CombatService, applyCombatResult } from './combat-service.js';
 import { CombatMessages } from './combat-messages.js';
@@ -84,6 +84,22 @@ export const basicNpcResolver: NpcCombatResolver = (
     random,
   });
 
+  // ADR-227 Decision 5 / AC-5: a player killed by an NPC routes through the
+  // canonical sink (killPlayer → if.event.player.died → engine game-over), not
+  // the legacy unrouted if.event.death. killPlayer must run BEFORE
+  // applyCombatResult: that call also flips HealthTrait.dead for a killed
+  // target, which would trip killPlayer's already-dead idempotence guard and
+  // swallow the canonical event.
+  const isPlayerKill = combatResult.targetKilled && target.id === world.getPlayer()?.id;
+  let playerDeathEvent: ISemanticEvent | null = null;
+  if (isPlayerKill) {
+    playerDeathEvent = killPlayer(world, target, {
+      cause: 'combat',
+      messageId: CombatMessages.PLAYER_DIED,
+      terminal: true,
+    });
+  }
+
   // Apply combat result to target
   applyCombatResult(target, combatResult, world);
 
@@ -107,15 +123,20 @@ export const basicNpcResolver: NpcCombatResolver = (
 
   // If target was killed, emit death event
   if (combatResult.targetKilled) {
-    events.push(createEvent(
-      'if.event.death',
-      {
-        target: target.id,
-        targetName: target.name,
-        killedBy: npc.id,
-      },
-      npc.id
-    ));
+    if (isPlayerKill) {
+      if (playerDeathEvent) events.push(playerDeathEvent);
+    } else {
+      // NPC-target kills keep the generic death event (unchanged).
+      events.push(createEvent(
+        'if.event.death',
+        {
+          target: target.id,
+          targetName: target.name,
+          killedBy: npc.id,
+        },
+        npc.id
+      ));
+    }
   }
 
   return events;

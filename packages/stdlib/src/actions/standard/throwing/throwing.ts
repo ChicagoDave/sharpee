@@ -27,6 +27,7 @@ import {
   DirectionType,
   ActionInterceptor,
   InterceptorSharedData,
+  IFEntity,
   findTraitWithCapability,
   CapabilityBehavior,
   CapabilityEffect,
@@ -101,6 +102,8 @@ interface ThrowingSharedData {
   interceptor?: ActionInterceptor;
   /** Shared data for interceptor phases */
   interceptorData?: InterceptorSharedData;
+  /** Entity the interceptor is keyed on: the target (priority) or the thrown item */
+  interceptorEntity?: IFEntity;
   /** ADR-090: capability behavior that handled this throw (if any) */
   capabilityBehavior?: CapabilityBehavior;
   capabilityTrait?: ITrait;
@@ -168,10 +171,15 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_item' };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    // Interceptors are on the thing being thrown AT, not the item being thrown
-    const interceptorResult = target ? context.world.getInterceptorForAction(target, IFActions.THROWING) : undefined;
+    // Check for interceptor (ADR-118): target-keyed wins — the receiving entity
+    // owns the interaction (glacier, troll). Otherwise resolve on the thrown
+    // ITEM — the item owns what throwing *it* means (e.g. an explosive). The
+    // item-side resolution is what makes Chord's `on throwing it` clause fire.
+    const targetResult = target ? context.world.getInterceptorForAction(target, IFActions.THROWING) : undefined;
+    const itemResult = !targetResult ? context.world.getInterceptorForAction(item, IFActions.THROWING) : undefined;
+    const interceptorResult = targetResult ?? itemResult;
     const interceptor = interceptorResult?.interceptor;
+    const interceptorEntity = targetResult ? target : (itemResult ? item : undefined);
     const interceptorData: InterceptorSharedData = {
       // Pass item info to interceptor so it knows what's being thrown
       itemId: item.id,
@@ -181,11 +189,12 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Store for later phases
     sharedData.interceptor = interceptor;
     sharedData.interceptorData = interceptorData;
+    sharedData.interceptorEntity = interceptorEntity;
 
     // === PRE-VALIDATE HOOK ===
     // Called before standard validation - can block early
-    if (interceptor?.preValidate && target) {
-      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
+    if (interceptor?.preValidate && interceptorEntity) {
+      const result = interceptor.preValidate(interceptorEntity, context.world, actor.id, interceptorData);
       if (result !== null) {
         return {
           valid: result.valid,
@@ -252,8 +261,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
 
     // === POST-VALIDATE HOOK ===
     // Called after standard validation passes - can add entity-specific conditions
-    if (interceptor?.postValidate && target) {
-      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
+    if (interceptor?.postValidate && interceptorEntity) {
+      const result = interceptor.postValidate(interceptorEntity, context.world, actor.id, interceptorData);
       if (result !== null) {
         return {
           valid: result.valid,
@@ -432,8 +441,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Called after standard execution - can perform additional mutations
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute && target) {
-      interceptor.postExecute(target, context.world, actor.id, interceptorData);
+    const interceptorEntity = sharedData.interceptorEntity;
+    if (interceptor?.postExecute && interceptorEntity) {
+      interceptor.postExecute(interceptorEntity, context.world, actor.id, interceptorData);
     }
   },
 
@@ -446,8 +456,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Called when action is blocked - can provide custom blocked handling
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && target && result.error) {
-      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
+    const interceptorEntity = sharedData.interceptorEntity;
+    if (interceptor?.onBlocked && interceptorEntity && result.error) {
+      const customEffects = interceptor.onBlocked(interceptorEntity, context.world, context.player.id, result.error, interceptorData);
       if (customEffects !== null) {
         // Interceptor provided custom blocked effects
         return customEffects.map(effect => context.event(effect.type, effect.payload));
@@ -545,12 +556,10 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // and/or emit (additional events). See ISSUE-074.
     const interceptor = sharedData.interceptor;
     const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const target = context.command.indirectObject?.entity;
-      if (target) {
-        const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-        applyInterceptorReportResult(events, 'if.event.thrown', result, context);
-      }
+    const interceptorEntity = sharedData.interceptorEntity;
+    if (interceptor?.postReport && interceptorEntity) {
+      const result = interceptor.postReport(interceptorEntity, context.world, context.player.id, interceptorData);
+      applyInterceptorReportResult(events, 'if.event.thrown', result, context);
     }
 
     return events;

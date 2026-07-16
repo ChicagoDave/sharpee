@@ -11,6 +11,7 @@
 
 import type { GameEngine } from '@sharpee/engine';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
+import type { SeededRandom } from '@sharpee/core';
 
 // GDT transformers
 import { isGDTActive, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID } from '../actions/gdt';
@@ -36,6 +37,11 @@ import { createGrueDeathTransformer } from '../handlers/grue-handler';
 export interface TransformerConfig {
   /** Aragain Falls room ID for falls death transformer */
   aragainFallsId: string;
+  /**
+   * Seeded RNG for probabilistic transformers (grue). Scheduler-owned so its
+   * seed is persisted across save/restore (ADR-227 AC-2: no Math.random()).
+   */
+  rng: SeededRandom;
 }
 
 /**
@@ -129,8 +135,8 @@ export function registerCommandTransformers(
   // Death Transformers
   // ==========================================================================
 
-  // Falls death transformer
-  // Any action except LOOK at Aragain Falls = death
+  // Falls deadly-exit transformer (ADR-227)
+  // Only going SOUTH (over the falls) at Aragain Falls = death
   registerFallsRoom(config.aragainFallsId);
   engine.registerParsedCommandTransformer(createFallsDeathTransformer());
 
@@ -139,5 +145,6 @@ export function registerCommandTransformers(
 
   // Grue death transformer
   // Moving in dark room has 75% death chance per FORTRAN verbs.f
-  engine.registerParsedCommandTransformer(createGrueDeathTransformer());
+  // Seeded roll (ADR-227): draws from the scheduler's persisted RNG
+  engine.registerParsedCommandTransformer(createGrueDeathTransformer(config.rng));
 }

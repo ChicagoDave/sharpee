@@ -30,7 +30,12 @@ import {
   StoryIR,
 } from '@sharpee/chord';
 import type { Choice, Literal, Phrase, SnippetEntry } from '@sharpee/if-domain';
-import { registerSnippetGate } from '@sharpee/stdlib';
+import {
+  registerSnippetGate,
+  DEADLY_ROOM_DEATH_ACTION_ID,
+  DEADLY_ROOM_CAUSE_KEY,
+  DEADLY_ROOM_MESSAGE_KEY,
+} from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
@@ -42,12 +47,14 @@ import {
   CapabilityBehavior,
   ClimbableTrait,
   ContainerTrait,
+  DeadlyRoomTrait,
   Direction,
   DirectionType,
   EdibleTrait,
   EnterableTrait,
   IFEntity,
   IdentityTrait,
+  IParsedCommand,
   ITrait,
   LightSourceTrait,
   LockableTrait,
@@ -144,6 +151,15 @@ export class ChordStory implements Story {
   private readonly evaluator: Evaluator;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
   private readonly worldIds = new Map<string, string>();
+
+  /**
+   * Deadly exits (ADR-227): world room id → DIRECTION → derived
+   * cause/messageId (both the phrase key). Lowered in `onEngineReady` to ONE
+   * pre-validate command transformer redirecting to the platform's generic
+   * deadly-death action — a deadly exit need not exist in the room graph, so
+   * no destination-resolved interceptor could ever fire.
+   */
+  private readonly deadlyExits = new Map<string, Map<string, { cause: string; messageId: string }>>();
   /** World entity ID → IR entity ID (state lookups in the evaluator). */
   private readonly irIds = new Map<string, string>();
   private world: WorldModel | null = null;
@@ -282,6 +298,30 @@ export class ChordStory implements Story {
         if (blocked.condition === null) {
           RoomBehavior.blockExit(entity, toDirection(blocked.direction, irEntity), this.phraseText(blocked.phraseKey));
         }
+      }
+      // ADR-227: `deadly: <phrase>` — the no-escape room marker lowers to
+      // DeadlyRoomTrait (safeVerbs default look/examine); the ENGINE
+      // auto-registers the deadly-room transformer, so no runtime code here.
+      // Cause and messageId both derive from the phrase key.
+      if (irEntity.deadly) {
+        entity.add(new DeadlyRoomTrait({
+          cause: irEntity.deadly.phraseKey,
+          messageId: irEntity.deadly.phraseKey,
+        }));
+      }
+      // ADR-227: `<direction> is deadly: <phrase>` — collected here, lowered
+      // to one command transformer in onEngineReady.
+      for (const deadly of irEntity.deadlyExits) {
+        if (deadly.condition !== null) {
+          throw new LoadError(
+            '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
+            deadly.span,
+          );
+        }
+        const direction = toDirection(deadly.direction, irEntity);
+        const byRoom = this.deadlyExits.get(entity.id) ?? new Map<string, { cause: string; messageId: string }>();
+        byRoom.set(String(direction).toUpperCase(), { cause: deadly.phraseKey, messageId: deadly.phraseKey });
+        this.deadlyExits.set(entity.id, byRoom);
       }
       if (irEntity.states.length > 0) {
         world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
@@ -427,6 +467,7 @@ export class ChordStory implements Story {
   onEngineReady(engine: {
     getPluginRegistry(): { register(plugin: unknown): void };
     registerSlotEntry?(entry: ChordSlotEntry): void;
+    registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
   }): void {
     const daemons = this.runtime.buildSchedulerDaemons();
     if (daemons.length > 0) {
@@ -436,10 +477,61 @@ export class ChordStory implements Story {
       for (const daemon of daemons) scheduler.registerDaemon(daemon);
     }
 
+    // ADR-227: `<direction> is deadly:` — one pre-validate transformer over
+    // the collected deadly-exit map, redirecting a matching going command to
+    // the platform's generic extras-driven deadly-death action (the same
+    // seam stdlib's own deadly-room transformer uses).
+    if (this.deadlyExits.size > 0 && engine.registerParsedCommandTransformer) {
+      engine.registerParsedCommandTransformer(this.buildDeadlyExitTransformer());
+    }
+
     // Z3 (ADR-212 §5): every `phrase present:` block compiles to ONE
     // declarative slot entry — no synthesized closures; the platform's
     // built-in contributor evaluates them.
     this.registerPresentEntries(engine);
+  }
+
+  /**
+   * The deadly-exit command transformer (ADR-227). Redirects `going
+   * <deadly-direction>` from a room with declared deadly exits to
+   * `DEADLY_ROOM_DEATH_ACTION_ID`, threading the phrase-derived
+   * cause/messageId through extras. Pass-through otherwise.
+   */
+  private buildDeadlyExitTransformer(): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
+    const deadlyExits = this.deadlyExits;
+    // Single-letter direction abbreviations some parsers surface in extras.
+    const ABBREV: Record<string, string> = {
+      N: 'NORTH', S: 'SOUTH', E: 'EAST', W: 'WEST',
+      NE: 'NORTHEAST', NW: 'NORTHWEST', SE: 'SOUTHEAST', SW: 'SOUTHWEST',
+      U: 'UP', D: 'DOWN',
+    };
+    return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
+      const actionId = parsed.action?.toLowerCase() ?? '';
+      if (actionId !== 'if.action.going' && actionId !== 'going') return parsed;
+
+      const player = world.getPlayer();
+      if (!player) return parsed;
+      const roomId = world.getLocation(player.id);
+      if (!roomId) return parsed;
+      const byRoom = deadlyExits.get(roomId);
+      if (!byRoom) return parsed;
+
+      const raw = String(parsed.extras?.direction ?? '').toUpperCase();
+      const direction = ABBREV[raw] ?? raw;
+      const hit = byRoom.get(direction);
+      if (!hit) return parsed;
+
+      return {
+        ...parsed,
+        action: DEADLY_ROOM_DEATH_ACTION_ID,
+        extras: {
+          ...parsed.extras,
+          [DEADLY_ROOM_CAUSE_KEY]: hit.cause,
+          [DEADLY_ROOM_MESSAGE_KEY]: hit.messageId,
+          originalAction: parsed.action,
+        },
+      };
+    };
   }
 
   /**

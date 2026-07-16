@@ -16,7 +16,13 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, EdibleBehavior } from '@sharpee/world-model';
+import {
+  TraitType,
+  EdibleBehavior,
+  ActionInterceptor,
+  InterceptorSharedData,
+  applyInterceptorReportResult
+} from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EatenEventData } from './eating-events';
 import { ActionMetadata } from '../../../validation';
@@ -31,6 +37,10 @@ interface EatingSharedData {
   itemName: string;
   messageId: string;
   eventData: EatenEventData;
+  /** Interceptor on the eaten entity (ADR-118), resolved in validate */
+  _interceptor?: ActionInterceptor;
+  /** Shared data threaded through the interceptor's phases */
+  _interceptorData?: InterceptorSharedData;
 }
 
 function getEatingSharedData(context: ActionContext): EatingSharedData {
@@ -89,6 +99,31 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // Check for interceptor on the eaten entity (ADR-118)
+    // Runs first so entity-specific blocks take priority (taking.ts pattern)
+    const interceptorResult = context.world.getInterceptorForAction(item, IFActions.EATING);
+    if (interceptorResult) {
+      const { interceptor } = interceptorResult;
+      const interceptorData: InterceptorSharedData = {};
+
+      // Store interceptor in sharedData for later phases
+      const sharedData = getEatingSharedData(context);
+      sharedData._interceptor = interceptor;
+      sharedData._interceptorData = interceptorData;
+
+      // === PRE-VALIDATE HOOK ===
+      if (interceptor.preValidate) {
+        const result = interceptor.preValidate(item, context.world, context.player.id, interceptorData);
+        if (result !== null && !result.valid) {
+          return {
+            valid: false,
+            error: result.error,
+            params: result.params
+          };
+        }
+      }
+    }
+
     // Check scope - must be able to reach the item
     const scopeCheck = context.requireScope(item, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -126,6 +161,23 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     const carryCheck = context.requireCarriedOrImplicitTake(item);
     if (!carryCheck.ok) {
       return carryCheck.error!;
+    }
+
+    // === POST-VALIDATE HOOK (ADR-118) ===
+    if (interceptorResult) {
+      const sharedData = getEatingSharedData(context);
+      const interceptor = sharedData._interceptor;
+      const interceptorData = sharedData._interceptorData ?? {};
+      if (interceptor?.postValidate) {
+        const result = interceptor.postValidate(item, context.world, context.player.id, interceptorData);
+        if (result !== null && !result.valid) {
+          return {
+            valid: false,
+            error: result.error,
+            params: result.params
+          };
+        }
+      }
     }
 
     return { valid: true };
@@ -223,6 +275,12 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     sharedData.itemName = item.name;
     sharedData.messageId = messageId;
     sharedData.eventData = eventData;
+
+    // === POST-EXECUTE HOOK (ADR-118) ===
+    // Entity-specific consequences after the standard consumption
+    if (sharedData._interceptor?.postExecute) {
+      sharedData._interceptor.postExecute(item, context.world, actor.id, sharedData._interceptorData ?? {});
+    }
   },
 
   /**
@@ -230,6 +288,18 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
+
+    // === ON-BLOCKED HOOK (ADR-118) ===
+    const sharedData = getEatingSharedData(context);
+    if (sharedData._interceptor?.onBlocked && item && result.error) {
+      const customEffects = sharedData._interceptor.onBlocked(
+        item, context.world, context.player.id, result.error, sharedData._interceptorData ?? {}
+      );
+      if (customEffects !== null) {
+        return customEffects.map(effect => context.event(effect.type, effect.payload));
+      }
+    }
+
     return [context.event('if.event.eaten', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
@@ -261,6 +331,17 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       params: { item: item ? nounPhraseFor(item) : { name: sharedData.eventData?.itemName ?? '' } },
       ...sharedData.eventData
     }));
+
+    // === POST-REPORT HOOK (ADR-118, ISSUE-074 semantics) ===
+    // `override` replaces the if.event.eaten messageId; `emit` appends events.
+    if (sharedData._interceptor?.postReport && item) {
+      const reportResult = sharedData._interceptor.postReport(
+        item, context.world, context.player.id, sharedData._interceptorData ?? {}
+      );
+      if (reportResult) {
+        applyInterceptorReportResult(events, 'if.event.eaten', reportResult, context);
+      }
+    }
 
     return events;
   },

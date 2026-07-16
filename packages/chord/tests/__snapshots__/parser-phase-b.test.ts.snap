@@ -966,6 +966,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1015,6 +1017,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       ],
       "blockedExits": [],
       "compositions": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1186,6 +1190,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1233,6 +1239,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "aka": [],
       "blockedExits": [],
       "compositions": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -2437,6 +2445,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": null,
       "exits": [],
       "initialDescription": null,
@@ -2570,6 +2580,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       ],
       "blockedExits": [],
       "compositions": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -2673,6 +2685,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -2792,6 +2806,8 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -2838,6 +2854,8 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "aka": [],
       "blockedExits": [],
       "compositions": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -3654,6 +3672,8 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -3720,6 +3740,8 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -4018,6 +4040,8 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",

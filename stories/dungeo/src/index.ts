@@ -79,8 +79,6 @@ import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandT
 import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
 import { createBalloonExitTransformer } from './handlers/balloon-handler';
 import { createRiverEntryTransformer, RiverMessages } from './handlers/river-handler';
-import { createFallsDeathTransformer, registerFallsRoom, FallsDeathMessages } from './handlers/falls-death-handler';
-import { createGrueDeathTransformer } from './handlers/grue-handler';
 import { createChimneyCommandTransformer } from './handlers/chimney-handler';
 import { createTinyRoomDoorTransformer, createTinyRoomMatTransformer, TinyRoomMessages } from './handlers/tiny-room-handler';
 

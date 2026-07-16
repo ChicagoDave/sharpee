@@ -23,6 +23,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -143,6 +145,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -287,6 +291,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "aka": [],
       "blockedExits": [],
       "compositions": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -591,6 +597,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -707,6 +715,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -839,6 +849,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1001,6 +1013,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "aka": [],
       "blockedExits": [],
       "compositions": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1106,6 +1120,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1201,6 +1217,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1291,6 +1309,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "deadly": null,
+      "deadlyExits": [],
       "description": null,
       "exits": [],
       "initialDescription": null,

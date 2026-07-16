@@ -24,7 +24,7 @@ import { registerExorcismHandler } from '../handlers/exorcism-handler';
 import { registerRoundRoomHandler } from '../handlers/round-room-handler';
 
 import { registerRoyalPuzzleHandler } from '../handlers/royal-puzzle';
-import { registerCakeEatingHandler, registerCakeThrowingHandler } from '../handlers/cake-handler';
+import { registerCakeInterceptors } from '../handlers/cake-handler';
 import { registerCarouselHandler } from '../handlers/carousel-handler';
 
 
@@ -156,9 +156,9 @@ export function registerSchedulerEvents(
   // Royal Puzzle handler (sliding block puzzle)
   registerRoyalPuzzleHandler(scheduler, config.royalPuzzleIds);
 
-  // Cake handlers (Tea Room / Well Area puzzle)
-  registerCakeEatingHandler(world);
-  registerCakeThrowingHandler(world);
+  // Cake interceptors (Tea Room / Well Area puzzle) — ADR-227 Phase 2:
+  // entity-keyed ADR-118 interceptors replace the old chainEvent handlers
+  registerCakeInterceptors(world);
 
   // Cage poison daemon (sphere puzzle in Dingy Closet)
   registerCagePoisonDaemon(scheduler, world, config.wellRoomIds.dingyCloset);
