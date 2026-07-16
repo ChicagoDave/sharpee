@@ -7,8 +7,11 @@
  * Uses four-phase pattern:
  * 1. validate: Always succeeds (no preconditions for listening)
  * 2. execute: Analyze sounds (no world mutations)
- * 3. blocked: Handle validation failures (n/a - always succeeds)
+ * 3. blocked: Handle validation failures (only interceptor vetoes)
  * 4. report: Emit listened event and success message
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `listeningLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,6 +22,33 @@ import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
 import { ListenedEventData } from './listening-events';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the listened-to target is the only
+ * consultable entity of a LISTEN command. Listening to the environment
+ * ("listen") has no direct object, so the slot resolves to undefined —
+ * zero consultations.
+ */
+export const listeningLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.LISTENING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.LISTENING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -154,7 +184,15 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
   },
   
   validate(context: ActionContext): ValidationResult {
-    // Listening always succeeds - no preconditions
+    const state = resolveLifecycle(context, listeningLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
+    // Listening always succeeds - no standard preconditions.
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
 
@@ -167,12 +205,16 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = analysis.messageId;
     sharedData.params = analysis.params;
     sharedData.eventData = analysis.eventData;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Listening always succeeds, but include blocked for consistency
+    // (interceptor preValidate/postValidate vetoes land here)
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.listen_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.listen_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -184,6 +226,13 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.listen_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -196,6 +245,9 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params,
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.listened');
 
     return events;
   }

@@ -33,6 +33,7 @@ import {
   Direction,
   createEffect,
   CapabilityEffect,
+  InterceptorBlockedResult,
 } from '@sharpee/world-model';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
 
@@ -531,6 +532,8 @@ export const MeleeInterceptor: ActionInterceptor = {
 
   /**
    * ON-BLOCKED: Custom message when hero is staggered.
+   * ADR-228 D2: override swaps the blocked event's message; the blocked
+   * record event itself survives for handlers/tests.
    */
   onBlocked(
     _entity: IFEntity,
@@ -538,22 +541,22 @@ export const MeleeInterceptor: ActionInterceptor = {
     _actorId: string,
     error: string,
     _sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null {
+  ): InterceptorBlockedResult | null {
     if (error === MeleeMessages.STILL_RECOVERING) {
-      return [
-        createEffect('game.message', {
+      return {
+        override: {
           messageId: MeleeMessages.STILL_RECOVERING,
           text: 'You are still recovering from a staggering blow.',
-        }),
-      ];
+        },
+      };
     }
     if (error === MeleeMessages.UNARMED_ATTACK) {
-      return [
-        createEffect('game.message', {
+      return {
+        override: {
           messageId: MeleeMessages.UNARMED_ATTACK,
           text: 'Fighting unarmed is suicide.',
-        }),
-      ];
+        },
+      };
     }
     return null; // Use standard blocked handling
   },

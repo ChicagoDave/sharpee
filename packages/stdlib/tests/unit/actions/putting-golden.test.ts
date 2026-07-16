@@ -932,3 +932,49 @@ describe('Putting Action Edge Cases', () => {
     });
   });
 });
+
+describe('Multi-object putting drives per-item container hooks (ADR-228 D4 — trophy-case shape)', () => {
+  test('put all in box: the container postExecute fires once per deposited item with that item\'s id', async () => {
+    const { setupBasicWorld, createRealTestContext, createCommand } = await import('../../test-utils');
+    const { world, player, room } = setupBasicWorld();
+    const box = world.createEntity('wooden box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    world.moveEntity(box.id, room.id);
+    const coin = world.createEntity('copper coin', 'object');
+    const gem = world.createEntity('green gem', 'object');
+    world.moveEntity(coin.id, player.id);
+    world.moveEntity(gem.id, player.id);
+
+    // The trophy-case shape: a container-keyed interceptor that reads the
+    // per-item seeded itemId in postExecute (this exact path was the live
+    // "put all in case awards no score" bug).
+    const deposited: string[] = [];
+    world.registerActionInterceptor(TraitType.CONTAINER, IFActions.PUTTING, {
+      postExecute(_entity, w, _actor, data) {
+        deposited.push(String(data.itemId));
+        w.setStateValue('test.deposits', ((w.getStateValue('test.deposits') as number) ?? 0) + 1);
+      },
+    });
+
+    const command = createCommand(IFActions.PUTTING, {
+      entity: coin,
+      secondEntity: box,
+      preposition: 'in',
+      text: 'all'
+    });
+    (command.parsed.structure.directObject as any).isAll = true;
+    const context = createRealTestContext(puttingAction, world, command);
+
+    const validation = puttingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    puttingAction.execute(context);
+    puttingAction.report(context);
+
+    // THE state assertions: both items moved AND the hook ran per item.
+    expect(world.getLocation(coin.id)).toBe(box.id);
+    expect(world.getLocation(gem.id)).toBe(box.id);
+    expect(world.getStateValue('test.deposits')).toBe(2);
+    expect(deposited.sort()).toEqual([coin.id, gem.id].sort());
+  });
+});

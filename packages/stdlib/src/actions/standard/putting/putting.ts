@@ -27,21 +27,73 @@ import {
   OpenableBehavior,
   IAddItemResult,
   IAddItemToSupporterResult,
-  IFEntity,
-  ActionInterceptor,
-  InterceptorSharedData,
-  applyInterceptorReportResult
+  IFEntity
 } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils';
 import { IFActions } from '../../constants';
 import { PuttingMessages } from './putting-messages';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  runMultiObjectValidate,
+  getMultiObjectLifecycle,
+  runMultiObjectExecute,
+  runMultiObjectReport
+} from '../../lifecycle';
 
 // Import types
-import { getPuttingSharedData, PuttingSharedData, PuttingItemResult } from './putting-types';
+import { getPuttingSharedData, PuttingItemScratch } from './putting-types';
 
 // Import multi-object helpers
 import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
 import { nounPhraseFor } from '../../../utils';
+
+/**
+ * Interceptor surface (ADR-228): BOTH the item and the container/supporter
+ * are consulted (D3-B order: direct object first). Each side's sharedData
+ * is seeded with the other's identity (D3 sub-ruling — symmetric context);
+ * in a multi-object command the container's seed carries the item
+ * currently being processed, which is what makes the trophy-case
+ * postExecute award score once per deposited treasure (D4).
+ */
+export const puttingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.PUTTING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.PUTTING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: entity.id,
+        itemName: entity.name,
+        targetId: ctx.command.indirectObject?.entity?.id,
+        targetName: ctx.command.indirectObject?.entity?.name,
+        preposition: ctx.command.parsed.structure.preposition?.text
+      })
+    },
+    {
+      id: 'container',
+      actionIds: [IFActions.PUTTING],
+      resolve: (ctx) => ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity, multiObjectItem) => {
+        const item = multiObjectItem ?? ctx.command.directObject?.entity;
+        return {
+          itemId: item?.id,
+          itemName: item?.name,
+          targetId: entity.id,
+          targetName: entity.name,
+          preposition: ctx.command.parsed.structure.preposition?.text
+        };
+      }
+    }
+  ]
+};
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
@@ -170,69 +222,26 @@ function validateSingleEntity(
 }
 
 /**
- * Validate a multi-object command (put all in box, put X and Y on table)
- */
-function validateMultiObject(context: ActionContext): ValidationResult {
-  const target = context.command.indirectObject?.entity;
-  const preposition = context.command.parsed.structure.preposition?.text;
-
-  // Must have a destination
-  if (!target) {
-    return { valid: false, error: PuttingMessages.NO_DESTINATION };
-  }
-
-  // For putting, scope is 'carried' - only put things we're holding
-  const items = expandMultiObject(context, { scope: 'carried' });
-
-  if (items.length === 0) {
-    return { valid: false, error: PuttingMessages.NOTHING_TO_PUT };
-  }
-
-  // Validate each entity, store results
-  const results: PuttingItemResult[] = items.map(item => {
-    const validation = validateSingleEntity(context, item.entity, target, preposition);
-    return {
-      entity: item.entity,
-      success: validation.valid,
-      error: validation.valid ? undefined : validation.error,
-      errorParams: validation.valid ? undefined : validation.params,
-      targetPreposition: validation.targetPreposition
-    };
-  });
-
-  // Store results for execute/report phases
-  const sharedData = getPuttingSharedData(context);
-  sharedData.multiObjectResults = results;
-
-  // Valid if at least one can be put
-  const anySuccess = results.some(r => r.success);
-  if (!anySuccess) {
-    // All failed - return the first error
-    return { valid: false, error: results[0].error, params: results[0].errorParams };
-  }
-
-  return { valid: true };
-}
-
-/**
- * Execute putting a single entity
+ * Execute putting a single entity. Mutation results are written into
+ * `scratch` — the single-object sharedData or the item's multi-object
+ * itemData (ADR-228 D4).
  */
 function executeSingleEntity(
   context: ActionContext,
   item: IFEntity,
   target: IFEntity,
-  result: PuttingItemResult,
+  scratch: PuttingItemScratch,
   targetPreposition: 'in' | 'on'
 ): void {
-  result.targetPreposition = targetPreposition;
+  scratch.targetPreposition = targetPreposition;
 
   // Delegate to appropriate behavior
   if (targetPreposition === 'in') {
     const putResult: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
-    result.putResult = putResult;
+    scratch.putResult = putResult;
   } else {
     const putResult: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
-    result.putResult = putResult;
+    scratch.putResult = putResult;
   }
 
   // Actually move the item to the target
@@ -248,10 +257,10 @@ function reportSingleSuccess(
   context: ActionContext,
   item: IFEntity,
   target: IFEntity,
-  result: PuttingItemResult,
+  scratch: PuttingItemScratch,
   events: ISemanticEvent[]
 ): void {
-  const targetPreposition = result.targetPreposition as 'in' | 'on';
+  const targetPreposition = scratch.targetPreposition as 'in' | 'on';
 
   if (targetPreposition === 'in') {
     const params = { item: nounPhraseFor(item), container: nounPhraseFor(target) };
@@ -353,17 +362,43 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    // Check for multi-object command
+    const target = context.command.indirectObject?.entity;
+    const preposition = context.command.parsed.structure.preposition?.text;
+
+    // Check for multi-object command — full per-item lifecycle (ADR-228 D4).
+    // This is what fixes the live trophy-case bug: every deposited item
+    // now runs the container's hooks.
     if (isMultiObjectCommand(context)) {
-      return validateMultiObject(context);
+      // Must have a destination
+      if (!target) {
+        return { valid: false, error: PuttingMessages.NO_DESTINATION };
+      }
+
+      // For putting, scope is 'carried' - only put things we're holding
+      const items = expandMultiObject(context, { scope: 'carried' }).map(i => i.entity);
+
+      if (items.length === 0) {
+        return { valid: false, error: PuttingMessages.NOTHING_TO_PUT };
+      }
+
+      const results = runMultiObjectValidate(
+        context, puttingLifecycle, 'item', items,
+        (ctx, item, itemData) => {
+          const validation = validateSingleEntity(ctx, item, target, preposition);
+          (itemData as PuttingItemScratch).targetPreposition = validation.targetPreposition;
+          return validation;
+        }
+      );
+
+      // Valid if at least one can be put; all-fail returns the first error
+      if (!results.some(r => r.success)) {
+        return { valid: false, error: results[0].error, params: results[0].errorParams };
+      }
+      return { valid: true };
     }
 
     // Single object validation
-    const actor = context.player;
     const item = context.command.directObject?.entity;
-    const target = context.command.indirectObject?.entity;
-    const preposition = context.command.parsed.structure.preposition?.text;
-    const sharedData = getPuttingSharedData(context);
 
     // Validate we have an item
     if (!item) {
@@ -379,35 +414,9 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    // Interceptors are on the container/supporter receiving the item
-    const interceptorResult = context.world.getInterceptorForAction(target, IFActions.PUTTING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {
-      // Pass item info to interceptor so it knows what's being put
-      itemId: item.id,
-      itemName: item.name,
-      targetId: target.id,
-      targetName: target.name,
-      preposition: preposition
-    };
-
-    // Store for later phases
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    // Called before standard validation - can block early
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, puttingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Item must be carried (or implicitly takeable)
     // This enables "put apple in box" when apple is on the ground
@@ -422,40 +431,28 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       return standardResult;
     }
 
-    // === POST-VALIDATE HOOK ===
-    // Called after standard validation passes - can add entity-specific conditions
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return standardResult;
   },
 
   execute(context: ActionContext): void {
-    const actor = context.player;
     const sharedData = getPuttingSharedData(context);
     const target = context.command.indirectObject!.entity!;
     const preposition = context.command.parsed.structure.preposition?.text;
 
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
+    // Multi-object command: per-item execute + hooks (D4 — the container's
+    // postExecute fires once per deposited item)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
       // Determine target preposition once for the batch
       const { targetPreposition } = determineTargetPreposition(preposition, target);
 
-      // Execute for each successful validation
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          executeSingleEntity(context, result.entity, target, result, targetPreposition);
-        }
-      }
-      // Note: Multi-object commands don't support interceptors currently
+      runMultiObjectExecute(context, multi, (ctx, item, itemData) => {
+        executeSingleEntity(ctx, item, target, itemData as PuttingItemScratch, targetPreposition);
+      });
       return;
     }
 
@@ -466,27 +463,10 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     const { targetPreposition } = determineTargetPreposition(preposition, target);
 
     // Store data for report phase
-    sharedData.targetPreposition = targetPreposition;
+    executeSingleEntity(context, item, target, sharedData, targetPreposition);
 
-    // Delegate to appropriate behavior
-    if (targetPreposition === 'in') {
-      const result: IAddItemResult = ContainerBehavior.addItem(target, item, context.world);
-      sharedData.putResult = result;
-    } else {
-      const result: IAddItemToSupporterResult = SupporterBehavior.addItem(target, item, context.world);
-      sharedData.putResult = result;
-    }
-
-    // Actually move the item to the target
-    context.world.moveEntity(item.id, target.id);
-
-    // === POST-EXECUTE HOOK ===
-    // Called after standard execution - can perform additional mutations
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute) {
-      interceptor.postExecute(target, context.world, actor.id, interceptorData);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -499,16 +479,21 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
-      // Generate events for each item (success and failure)
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          reportSingleSuccess(context, result.entity, target, result, events);
-        } else {
-          reportSingleBlocked(context, result.entity, target, result.error!, result.errorParams, events);
+    // Multi-object command: per-item success/blocked events + hooks (D4)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
+      const preposition = context.command.parsed.structure.preposition?.text;
+      const { targetPreposition } = determineTargetPreposition(preposition, target);
+      const primaryEventType = targetPreposition === 'in' ? 'if.event.put_in' : 'if.event.put_on';
+      runMultiObjectReport(
+        context, multi, events, primaryEventType, 'if.event.put_blocked',
+        (ctx, item, itemData, evts) => {
+          reportSingleSuccess(ctx, item, target, itemData as PuttingItemScratch, evts);
+        },
+        (ctx, item, error, errorParams, evts) => {
+          reportSingleBlocked(ctx, item, target, error, errorParams, evts);
         }
-      }
+      );
       return events;
     }
 
@@ -551,15 +536,10 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    // === POST-REPORT HOOK ===
-    // Apply interceptor's override (replaces if.event.put_in/put_on messageId)
-    // and/or emit (additional events). See ISSUE-074.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
+    const state = getLifecycleState(context);
+    if (state) {
       const primaryEventType = targetPreposition === 'in' ? 'if.event.put_in' : 'if.event.put_on';
-      applyInterceptorReportResult(events, primaryEventType, result, context);
+      runPostReport(context, state, events, primaryEventType);
     }
 
     return events;
@@ -573,22 +553,9 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
-    const sharedData = getPuttingSharedData(context);
-
-    // === ON-BLOCKED HOOK ===
-    // Called when action is blocked - can provide custom blocked handling
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && target && result.error) {
-      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        // Interceptor provided custom blocked effects
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
 
     // Standard blocked handling — EntityInfo for formatter chain (ADR-158)
-    return [context.event('if.event.put_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.put_blocked', {
       messageId: `${context.action.id}.${result.error}`,
       params: {
         ...result.params,
@@ -601,5 +568,25 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) {
+        // Single-object path: notify all consultations (ADR-228 D2/D3)
+        runOnBlocked(context, state, events, 'if.event.put_blocked', result.error);
+      } else {
+        // Multi-object all-fail path: the blocked event carries the FIRST
+        // failed item's error, so only that item's consultations are
+        // notified here — the other items produced no events for hooks to
+        // decorate. (Partial failures are handled per item in report().)
+        const multi = getMultiObjectLifecycle(context);
+        const first = multi?.[0];
+        if (first && !first.success) {
+          runOnBlocked(context, first.state, events, 'if.event.put_blocked', first.error ?? result.error);
+        }
+      }
+    }
+
+    return events;
   }
 };

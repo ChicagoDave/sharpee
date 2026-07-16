@@ -5,26 +5,27 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { IFEntity, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 
 /**
- * Result of validating/executing a single entity in multi-object command
+ * Per-item mutation scratch for dropping one entity. For a single-object
+ * command this lives on the action's sharedData; for a multi-object
+ * command each item gets its own copy via the lifecycle engine's per-item
+ * `itemData` (ADR-228 D4).
  */
-export interface DroppingItemResult {
-  entity: IFEntity;
-  success: boolean;
-  error?: string;  // messageId if validation failed
-  errorParams?: Record<string, unknown>;  // params for error message
-  dropLocation?: EntityId;  // where the item was dropped to
+export interface DroppingItemScratch {
+  /** Where the item was dropped to */
+  dropLocation?: EntityId;
 }
 
 /**
  * Typed shared data for dropping action
  *
  * This interface defines all data that the dropping action
- * stores in context.sharedData for communication between phases
+ * stores in context.sharedData for communication between phases.
+ * Interceptor and multi-object state live in the lifecycle engine's
+ * reserved sharedData slots (ADR-228), not here.
  */
-export interface DroppingSharedData {
+export interface DroppingSharedData extends DroppingItemScratch {
   /**
    * Result from ActorBehavior.dropItem for single-object drops
    */
@@ -32,17 +33,6 @@ export interface DroppingSharedData {
     success: boolean;
     droppedLocation?: EntityId;
   };
-
-  /**
-   * Multi-object support: results for each entity
-   * When set, indicates this is a multi-object command
-   */
-  multiObjectResults?: DroppingItemResult[];
-
-  /** Interceptor found during validate, if any (ADR-118) */
-  interceptor?: ActionInterceptor;
-  /** Shared data for interceptor phases */
-  interceptorData?: InterceptorSharedData;
 }
 
 /**

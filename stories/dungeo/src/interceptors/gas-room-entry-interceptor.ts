@@ -14,7 +14,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
-  CapabilityEffect,
+  InterceptorBlockedResult,
   createEffect,
   IFEntity,
   WorldModel,
@@ -68,6 +68,9 @@ export const GasRoomEntryInterceptor: ActionInterceptor = {
 
   /**
    * onBlocked: Kill the player and emit explosion death event.
+   * ADR-228 D2: the standard blocked event survives and carries the death
+   * narration via `override`; the canonical death event rides `emit` with
+   * no messageId (avoids a duplicate render — sphere-cage pattern).
    */
   onBlocked(
     entity: IFEntity,
@@ -75,7 +78,7 @@ export const GasRoomEntryInterceptor: ActionInterceptor = {
     actorId: string,
     error: string,
     _sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null {
+  ): InterceptorBlockedResult | null {
     if (error !== 'dungeo.gas_room.explosion') return null;
 
     // Canonical terminal death (ADR-224): apply the lethal transition via the
@@ -90,12 +93,14 @@ export const GasRoomEntryInterceptor: ActionInterceptor = {
       });
     }
 
-    return [
-      createEffect(PLAYER_DIED_EVENT, {
-        messageId: GasRoomEntryMessages.EXPLOSION_DEATH,
-        cause: 'gas_explosion',
-        terminal: true
-      })
-    ];
+    return {
+      override: { messageId: GasRoomEntryMessages.EXPLOSION_DEATH },
+      emit: [
+        createEffect(PLAYER_DIED_EVENT, {
+          cause: 'gas_explosion',
+          terminal: true
+        })
+      ]
+    };
   }
 };

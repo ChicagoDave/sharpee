@@ -25,10 +25,7 @@ import {
   Direction,
   DirectionType,
   canActorWalkInVehicle,
-  ActionInterceptor,
-  InterceptorSharedData,
   RegionCrossings,
-  applyInterceptorReportResult,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -37,6 +34,16 @@ import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } fr
 import { buildEventData } from '../../data-builder-types';
 import { GoingMessages } from './going-messages';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
 
 // Import our data builders
 import {
@@ -49,7 +56,6 @@ import {
 
 /**
  * Shared data passed between execute and report phases.
- * Now includes interceptor data for ADR-118 support.
  */
 export interface GoingSharedData {
   isFirstVisit?: boolean;
@@ -57,20 +63,6 @@ export interface GoingSharedData {
   currentLocation?: string;   // Room we're now in
   direction?: DirectionType;
   vehicleId?: string;         // If player is in a walkable vehicle, the vehicle ID
-  /** Source room interceptor found during validate (ADR-118) */
-  interceptor?: ActionInterceptor;
-  /** Shared data for source interceptor phases */
-  interceptorData?: InterceptorSharedData;
-  /** Source room entity for interceptor lookups */
-  sourceRoom?: IFEntity;
-  /** Destination room interceptor found during validate (ADR-126) */
-  destinationInterceptor?: ActionInterceptor;
-  /** Shared data for destination interceptor phases */
-  destinationInterceptorData?: InterceptorSharedData;
-  /** Destination room entity for interceptor lookups */
-  destinationRoom?: IFEntity;
-  /** Which interceptor blocked the action, if any */
-  blockedBy?: 'source' | 'destination';
   /** Region boundary crossings computed during execute (ADR-149) */
   regionCrossings?: RegionCrossings;
 }
@@ -78,6 +70,92 @@ export interface GoingSharedData {
 export function getGoingSharedData(context: ActionContext): GoingSharedData {
   return context.sharedData as GoingSharedData;
 }
+
+// ============================================================================
+// Implicit-entity resolvers (ADR-228 D3) — going has no parsed object
+// slots; its consultable entities are derived from the command + world.
+// Resolution is read-only and returns undefined when the entity does not
+// apply (no exit, blocked-only direction, not in a room).
+// ============================================================================
+
+/** The direction of travel, from extras or a direction-named direct object. */
+function resolveDirection(context: ActionContext): DirectionType | undefined {
+  let direction = context.command.parsed.extras?.direction as DirectionType;
+  if (!direction && context.command.directObject?.entity) {
+    const entityName = context.command.directObject.entity.name ||
+      context.command.directObject.entity.attributes?.name;
+    if (entityName) {
+      direction = entityName as DirectionType;
+    }
+  }
+  return direction || undefined;
+}
+
+/** The room movement starts from (the containing room when in a walkable vehicle). */
+function resolveSourceRoom(context: ActionContext): IFEntity | undefined {
+  const walkCheck = canActorWalkInVehicle(context.world, context.player.id);
+  let currentRoom = context.currentLocation;
+  if (walkCheck.vehicle && walkCheck.canWalk) {
+    const containingRoom = context.world.getContainingRoom(context.player.id);
+    if (containingRoom) {
+      currentRoom = containingRoom;
+    }
+  }
+  return currentRoom?.has(TraitType.ROOM) ? currentRoom : undefined;
+}
+
+/** The exit's door (via) and destination room, when the exit exists. */
+function resolveExitEntities(context: ActionContext): { door?: IFEntity; destination?: IFEntity } {
+  const sourceRoom = resolveSourceRoom(context);
+  const direction = resolveDirection(context);
+  if (!sourceRoom || !direction) return {};
+  // A blocked-only direction has no traversable exit (Chord `north is blocked:`)
+  if (RoomBehavior.isExitBlocked(sourceRoom, direction)) return {};
+  const exitConfig = RoomBehavior.getExit(sourceRoom, direction);
+  if (!exitConfig) return {};
+  const door = exitConfig.via ? (context.world.getEntity(exitConfig.via) ?? undefined) : undefined;
+  const destination = context.world.getEntity(exitConfig.destination) ?? undefined;
+  return { door, destination };
+}
+
+/**
+ * Interceptor surface (ADR-228): all three implicit entities of a GO
+ * command are consulted, in this published order — source room
+ * (if.action.going), destination room (if.action.entering_room, ADR-126),
+ * door (if.action.going; the previously-dead surface the audit found).
+ * First veto wins across the chain.
+ */
+export const goingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.GOING,
+  slots: [
+    {
+      id: 'source',
+      actionIds: [IFActions.GOING],
+      resolve: resolveSourceRoom,
+      seedData: (ctx) => ({ direction: resolveDirection(ctx) })
+    },
+    {
+      id: 'destination',
+      actionIds: [IFActions.ENTERING_ROOM],
+      resolve: (ctx) => resolveExitEntities(ctx).destination,
+      seedData: (ctx, entity) => ({
+        direction: resolveDirection(ctx),
+        sourceRoomId: resolveSourceRoom(ctx)?.id,
+        destinationRoomId: entity.id
+      })
+    },
+    {
+      id: 'door',
+      actionIds: [IFActions.GOING],
+      resolve: (ctx) => resolveExitEntities(ctx).door,
+      seedData: (ctx) => ({
+        direction: resolveDirection(ctx),
+        sourceRoomId: resolveSourceRoom(ctx)?.id,
+        destinationRoomId: resolveExitEntities(ctx).destination?.id
+      })
+    }
+  ]
+};
 
 export const goingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.GOING,
@@ -152,33 +230,11 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check for interceptor on the source room (ADR-118)
-    // Interceptors on rooms can block or modify movement attempts
-    const interceptorResult = context.world.getInterceptorForAction(currentRoom, IFActions.GOING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {
-      // Pass direction info to interceptor
-      direction: direction
-    };
-
-    // Store for later phases
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-    sharedData.sourceRoom = currentRoom;
-
-    // === SOURCE PRE-VALIDATE HOOK ===
-    // Called before standard validation - can block early
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(currentRoom, context.world, actor.id, interceptorData);
-      if (result !== null && !result.valid) {
-        sharedData.blockedBy = 'source';
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Resolve the interceptor surface (ADR-228): source room, destination
+    // room, and door — the engine owns hook order and veto semantics.
+    const state = resolveLifecycle(context, goingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check if the direction is blocked BEFORE requiring an exit config:
     // a blockedExits entry means "this direction is deliberately refused
@@ -260,61 +316,11 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Darkness affects visibility (looking), not movement.
     // This matches traditional IF behavior (e.g., Cloak of Darkness).
 
-    // === DESTINATION INTERCEPTOR LOOKUP (ADR-126) ===
-    // Check if the destination room has an entry condition interceptor
-    const destInterceptorResult = context.world.getInterceptorForAction(destination, IFActions.ENTERING_ROOM);
-    const destInterceptor = destInterceptorResult?.interceptor;
-    const destInterceptorData: InterceptorSharedData = {
-      direction: direction,
-      sourceRoomId: currentRoom.id,
-      destinationRoomId: destination.id
-    };
-
-    // Store for later phases
-    sharedData.destinationInterceptor = destInterceptor;
-    sharedData.destinationInterceptorData = destInterceptorData;
-    sharedData.destinationRoom = destination;
-
-    // === DESTINATION PRE-VALIDATE HOOK (ADR-126) ===
-    // Called after destination is resolved but before player moves - can block entry
-    if (destInterceptor?.preValidate) {
-      const result = destInterceptor.preValidate(destination, context.world, actor.id, destInterceptorData);
-      if (result !== null && !result.valid) {
-        sharedData.blockedBy = 'destination';
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
-
-    // === SOURCE POST-VALIDATE HOOK ===
-    // Called after standard validation passes - can add entity-specific conditions
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(currentRoom, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        sharedData.blockedBy = 'source';
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
-
-    // === DESTINATION POST-VALIDATE HOOK (ADR-126) ===
-    if (destInterceptor?.postValidate) {
-      const result = destInterceptor.postValidate(destination, context.world, actor.id, destInterceptorData);
-      if (result !== null) {
-        sharedData.blockedBy = 'destination';
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard
+    // validation, for every consultation (source → destination → door),
+    // first veto wins.
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -374,20 +380,8 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Compute region boundary crossings (ADR-149)
     sharedData.regionCrossings = context.world.getRegionCrossings(sourceRoom.id, destination.id);
 
-    // === SOURCE POST-EXECUTE HOOK ===
-    // Called after standard execution - can perform additional mutations
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute && sharedData.sourceRoom) {
-      interceptor.postExecute(sharedData.sourceRoom, context.world, actor.id, interceptorData);
-    }
-
-    // === DESTINATION POST-EXECUTE HOOK (ADR-126) ===
-    const destInterceptor = sharedData.destinationInterceptor;
-    const destInterceptorData = sharedData.destinationInterceptorData || {};
-    if (destInterceptor?.postExecute && sharedData.destinationRoom) {
-      destInterceptor.postExecute(sharedData.destinationRoom, context.world, actor.id, destInterceptorData);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -437,7 +431,10 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const isDark = VisibilityBehavior.isDark(destinationRoom, context.world);
 
     if (isDark) {
-      // Dark room with no light - emit went event with darkness messageId
+      // Dark room with no light - emit went event with darkness messageId.
+      // No early return: postReport hooks still run below (ADR-228 D7.1 —
+      // the old early return skipped hooks on exactly the path that emits
+      // if.event.went).
       events.push(context.event('if.event.went', {
         messageId: `${context.action.id}.too_dark`,
         params: {},
@@ -445,6 +442,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         destinationId: destinationRoom.id,
         isDark: true
       }));
+
+      const state = getLifecycleState(context);
+      if (state) runPostReport(context, state, events, 'if.event.went');
       return events;
     }
 
@@ -511,25 +511,10 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    // === SOURCE POST-REPORT HOOK ===
-    // Apply interceptor's override (replaces if.event.went.messageId, when emitted)
-    // and/or emit (additional events). See ISSUE-074.
     // Note: if.event.went is only emitted on dark/blocked; override is a no-op
     // on success non-dark transitions. Use emit for narration after success.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport && sharedData.sourceRoom) {
-      const result = interceptor.postReport(sharedData.sourceRoom, context.world, context.player.id, interceptorData);
-      applyInterceptorReportResult(events, 'if.event.went', result, context);
-    }
-
-    // === DESTINATION POST-REPORT HOOK (ADR-126) ===
-    const destInterceptor = sharedData.destinationInterceptor;
-    const destInterceptorData = sharedData.destinationInterceptorData || {};
-    if (destInterceptor?.postReport && sharedData.destinationRoom) {
-      const result = destInterceptor.postReport(sharedData.destinationRoom, context.world, context.player.id, destInterceptorData);
-      applyInterceptorReportResult(events, 'if.event.went', result, context);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.went');
 
     return events;
   },
@@ -539,40 +524,24 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
    * Called instead of execute/report when validate returns invalid
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    const sharedData = getGoingSharedData(context);
-
-    // === DESTINATION ON-BLOCKED HOOK (ADR-126) ===
-    // If the destination interceptor blocked entry, let it handle the blocked phase first
-    if (sharedData.blockedBy === 'destination') {
-      const destInterceptor = sharedData.destinationInterceptor;
-      const destInterceptorData = sharedData.destinationInterceptorData || {};
-      if (destInterceptor?.onBlocked && sharedData.destinationRoom && result.error) {
-        const customEffects = destInterceptor.onBlocked(sharedData.destinationRoom, context.world, context.player.id, result.error, destInterceptorData);
-        if (customEffects !== null) {
-          return customEffects.map(effect => context.event(effect.type, effect.payload));
-        }
-      }
-    }
-
-    // === SOURCE ON-BLOCKED HOOK ===
-    // Called when action is blocked by source room or standard checks
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && sharedData.sourceRoom && result.error) {
-      const customEffects = interceptor.onBlocked(sharedData.sourceRoom, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
-
-    // Standard blocked handling
-    return [context.event('if.event.went', {
+    // Standard blocked event — always emitted (ADR-228 D2)
+    const events: ISemanticEvent[] = [context.event('if.event.went', {
       blocked: true,
       reason: result.error,
       messageId: `${context.action.id}.${result.error}`,
       params: result.params || {},
       actorId: context.player.id
     })];
+
+    // All resolved consultations (source, destination, door) are notified;
+    // single-override arbitration replaces the old blockedBy precedence
+    // split (ADR-228 D2/D3).
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.went', result.error);
+    }
+
+    return events;
   },
   
   group: "movement",

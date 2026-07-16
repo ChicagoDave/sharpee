@@ -9,6 +9,9 @@
  * 2. execute: Analyze contents, reveal concealed items (mutation)
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `searchingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -28,6 +31,32 @@ import {
   determineSearchMessage,
   buildSearchEventData
 } from '../searching-helpers';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the searched target is the only
+ * consultable entity of a SEARCH command (a bare SEARCH of the current
+ * location has no consultable slot).
+ */
+export const searchingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.SEARCHING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.SEARCHING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -71,14 +100,14 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
   
   validate(context: ActionContext): ValidationResult {
     const target = context.command.directObject?.entity;
-    
-    // If no target, we'll search the current location (always valid)
-    if (!target) {
-      return { valid: true };
-    }
-    
-    // Check if it's a container that needs to be open
-    if (target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
+
+    const state = resolveLifecycle(context, searchingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
+    // If no target, we'll search the current location (always valid).
+    // The container-open check only applies to a targeted search.
+    if (target && target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
       if (!OpenableBehavior.isOpen(target)) {
         return {
           valid: false,
@@ -87,7 +116,11 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
         };
       }
     }
-    
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
   
@@ -111,11 +144,14 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = eventData;
     sharedData.messageId = messageId;
     sharedData.params = params;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.searched', {
+    const events: ISemanticEvent[] = [context.event('if.event.searched', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -124,6 +160,13 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.searched', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -136,6 +179,9 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params || {},
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.searched');
 
     return events;
   },

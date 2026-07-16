@@ -4,11 +4,14 @@
  * This action handles entering objects that have the ENTRY trait or
  * are containers/supporters marked as enterable.
  *
- * Uses four-phase pattern with interceptor support (ADR-118):
- * 1. validate: preValidate hook → standard checks → postValidate hook
- * 2. execute: standard mutation → postExecute hook
- * 3. blocked: onBlocked hook (if validation failed)
- * 4. report: standard events → postReport hook (additional effects)
+ * Uses four-phase pattern:
+ * 1. validate: Check target exists and can be entered
+ * 2. execute: Move the actor into the target
+ * 3. blocked: Generate error events when validation fails
+ * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `enteringLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -16,16 +19,37 @@ import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   OpenableBehavior,
-  EnterableTrait,
-  ActionInterceptor,
-  InterceptorSharedData,
-  createEffect,
-  applyInterceptorReportResult
+  EnterableTrait
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { EnteredEventData } from './entering-events';
 import { EnteringMessages } from './entering-messages';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the entered target is the only
+ * consultable entity of an ENTER command.
+ */
+export const enteringLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.ENTERING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.ENTERING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 interface EnteringExecutionState {
   targetId: string;
@@ -35,15 +59,10 @@ interface EnteringExecutionState {
 }
 
 /**
- * Shared data passed between execute and report phases.
- * Now includes interceptor data for ADR-118 support.
+ * Shared data passed between execute and report phases
  */
 interface EnteringSharedData {
   enteringState?: EnteringExecutionState;
-  /** Interceptor found during validate, if any */
-  interceptor?: ActionInterceptor;
-  /** Shared data for interceptor phases */
-  interceptorData?: InterceptorSharedData;
 }
 
 function getEnteringSharedData(context: ActionContext): EnteringSharedData {
@@ -76,7 +95,6 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
-    const sharedData = getEnteringSharedData(context);
 
     // Validate target
     if (!target) {
@@ -86,27 +104,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(target, IFActions.ENTERING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-
-    // Store for later phases
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    // Called before standard validation - can block early
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, enteringLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
@@ -142,18 +142,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // === POST-VALIDATE HOOK ===
-    // Called after standard validation passes - can add entity-specific conditions
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -184,13 +175,8 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     };
     sharedData.enteringState = state;
 
-    // === POST-EXECUTE HOOK ===
-    // Called after standard execution - can perform additional mutations
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute) {
-      interceptor.postExecute(target, context.world, actor.id, interceptorData);
-    }
+    const lifecycleState = getLifecycleState(context);
+    if (lifecycleState) runPostExecute(context, lifecycleState);
   },
 
   /**
@@ -226,15 +212,8 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       preposition: state.preposition
     } as EnteredEventData & { messageId: string; params: Record<string, any>; targetName: string })];
 
-    // === POST-REPORT HOOK ===
-    // Apply interceptor's override (replaces if.event.entered.messageId)
-    // and/or emit (additional events). See ISSUE-074.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport && target) {
-      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      applyInterceptorReportResult(events, 'if.event.entered', result, context);
-    }
+    const lifecycleState = getLifecycleState(context);
+    if (lifecycleState) runPostReport(context, lifecycleState, events, 'if.event.entered');
 
     return events;
   },
@@ -245,22 +224,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    const sharedData = getEnteringSharedData(context);
-
-    // === ON-BLOCKED HOOK ===
-    // Called when action is blocked - can provide custom blocked handling
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && target && result.error) {
-      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        // Interceptor provided custom blocked effects
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
 
     // Standard blocked handling — params carry EntityInfo (ADR-158)
-    return [context.event('if.event.entered', {
+    const events: ISemanticEvent[] = [context.event('if.event.entered', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       params: { place: target ? nounPhraseFor(target) : undefined, ...result.params },
@@ -268,6 +234,13 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const lifecycleState = getLifecycleState(context);
+      if (lifecycleState) runOnBlocked(context, lifecycleState, events, 'if.event.entered', result.error);
+    }
+
+    return events;
   },
 
   metadata: {

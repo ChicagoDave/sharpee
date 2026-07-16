@@ -304,7 +304,7 @@ describe('Trait Combinations Integration Tests', () => {
       darkBasement = createTestRoom(world, 'Dark Basement');
       
       // Make basement dark
-      darkBasement.getTrait(RoomTrait)!.isDark = true;
+      darkBasement.getTrait(RoomTrait)!.requiresLight = true;
 
       player = createTestActor(world, 'Player');
       torch = world.createEntity('Torch', 'item');
@@ -514,7 +514,7 @@ describe('Trait Combinations Integration Tests', () => {
       world.moveEntity(book.id, table.id);
 
       // Make room dark
-      room.getTrait(RoomTrait)!.isDark = true;
+      room.getTrait(RoomTrait)!.requiresLight = true;
 
       // Can't see in dark room
       expect(world.canSee(player.id, book.id)).toBe(false);

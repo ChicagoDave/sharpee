@@ -8,12 +8,52 @@ import { Action, ActionContext, ValidationResult, EnhancedActionContext } from '
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  OpenableBehavior
+  OpenableBehavior,
+  IFEntity
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ExitedEventData } from './exiting-events';
 import { ExitingMessages } from './exiting-messages';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * The enterable the actor is currently inside/on — exiting's affected
+ * entity is never a parsed object (EXIT takes no noun), so it resolves
+ * implicitly from the actor's location (ADR-228 D3 implicit-entity slot).
+ * Resolves undefined when the actor is directly in a room.
+ */
+function resolveCurrentContainer(context: ActionContext): IFEntity | undefined {
+  const currentLocation = context.world.getLocation(context.player.id);
+  if (!currentLocation) return undefined;
+  const container = context.world.getEntity(currentLocation);
+  if (!container || container.has(TraitType.ROOM)) return undefined;
+  return container;
+}
+
+/**
+ * Interceptor surface (ADR-228): the container/supporter being exited —
+ * `on exiting it` on a boat, cage, or bed fires here.
+ */
+export const exitingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.EXITING,
+  slots: [
+    {
+      id: 'container',
+      actionIds: [IFActions.EXITING],
+      resolve: resolveCurrentContainer
+    }
+  ]
+};
 
 interface ExitingExecutionState {
   fromLocation: string;
@@ -51,6 +91,10 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const currentLocation = context.world.getLocation(actor.id);
+
+    const state = resolveLifecycle(context, exitingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     if (!currentLocation) {
       return {
@@ -98,6 +142,10 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
   
@@ -131,6 +179,9 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     };
     const sharedData = getExitingSharedData(context);
     sharedData.exitingState = state;
+
+    const lifecycleState = getLifecycleState(context);
+    if (lifecycleState) runPostExecute(context, lifecycleState);
   },
   
   /**
@@ -155,7 +206,7 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     // params carry EntityInfo for the formatter chain (ADR-158);
     // re-derive from the entity since it's available via context.world.
     const fromEntity = context.world.getEntity(state.fromLocation);
-    return [context.event('if.event.exited', {
+    const events: ISemanticEvent[] = [context.event('if.event.exited', {
       messageId: `${context.action.id}.exited`,
       params: { place: fromEntity ? nounPhraseFor(fromEntity) : { name: state.fromLocationName } },
       fromLocation: state.fromLocation,
@@ -163,6 +214,11 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       toLocation: state.toLocation,
       preposition: state.preposition
     } as ExitedEventData & { messageId: string; params: Record<string, any>; fromLocationName: string })];
+
+    const lifecycleState = getLifecycleState(context);
+    if (lifecycleState) runPostReport(context, lifecycleState, events, 'if.event.exited');
+
+    return events;
   },
 
   /**
@@ -170,12 +226,19 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
    * Called instead of execute/report when validate returns invalid
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('if.event.exited', {
+    const events: ISemanticEvent[] = [context.event('if.event.exited', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       params: result.params || {},
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.exited', result.error);
+    }
+
+    return events;
   },
   
   metadata: {

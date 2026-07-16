@@ -9,6 +9,9 @@
  * 2. execute: Compute tactile properties (no world mutations)
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `touchingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,6 +22,31 @@ import { TouchedEventData } from './touching-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the touched target is the only consultable
+ * entity of a TOUCH command.
+ */
+export const touchingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.TOUCHING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.TOUCHING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -83,11 +111,19 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    const state = resolveLifecycle(context, touchingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
       return scopeCheck.error!;
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     // Tactile property computation happens in execute phase
     return { valid: true };
@@ -218,6 +254,9 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     sharedData.targetName = target.name;
     sharedData.messageId = messageId;
     sharedData.eventData = eventData;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -225,7 +264,7 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.touch_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.touch_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -237,6 +276,13 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.touch_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -251,6 +297,9 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.touched');
 
     return events;
   },

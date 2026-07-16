@@ -26,6 +26,54 @@ import { puttingAction } from '../putting';
 import { createActionContext } from '../../enhanced-context';
 import { InsertingMessages } from './inserting-messages';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228). D6-B delegation-seam ruling: inserting
+ * consults `if.action.inserting` on its own entities FIRST, then
+ * delegates into putting — whose engine wiring runs the
+ * `if.action.putting` hooks inside the delegated context. So `on
+ * inserting it` (previously dead) AND `on putting it` both fire for an
+ * INSERT command. Authors: one physical operation fires hooks under two
+ * ids — register a trait's interceptor under exactly ONE of them to
+ * avoid double-mutation.
+ */
+export const insertingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.INSERTING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.INSERTING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: entity.id,
+        itemName: entity.name,
+        targetId: ctx.command.indirectObject?.entity?.id,
+        targetName: ctx.command.indirectObject?.entity?.name
+      })
+    },
+    {
+      id: 'container',
+      actionIds: [IFActions.INSERTING],
+      resolve: (ctx) => ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: ctx.command.directObject?.entity?.id,
+        itemName: ctx.command.directObject?.entity?.name,
+        targetId: entity.id,
+        targetName: entity.name
+      })
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -113,6 +161,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // D6-B: consult the INSERTING-id hooks first (on the outer context) —
+    // the delegated putting phases run the PUTTING-id hooks themselves.
+    const state = resolveLifecycle(context, insertingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Create modified command with 'in' preposition for delegation to putting
     const modifiedCommand = createModifiedCommand(context);
 
@@ -136,6 +190,11 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       return puttingValidation as ValidationResult;
     }
 
+    // Canonical placement (ADR-228): postValidate after ALL standard
+    // validation, including the delegated putting validation.
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
 
@@ -155,8 +214,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       );
     }
 
-    // Execute putting action
+    // Execute putting action (runs the PUTTING-id hooks internally)
     puttingAction.execute(sharedData.modifiedContext!);
+
+    // Then the INSERTING-id hooks on the outer context (D6-B order)
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -187,9 +250,16 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
 
-    // Delegate to putting action's report (already using new pattern)
+    // Delegate to putting action's report (runs the PUTTING-id hooks)
     if ('report' in puttingAction && typeof puttingAction.report === 'function') {
-      return puttingAction.report(modifiedContext);
+      const events = puttingAction.report(modifiedContext);
+
+      // Then the INSERTING-id hooks on the outer context (D6-B order).
+      // Inserting is always 'in', so putting's primary event is put_in.
+      const state = getLifecycleState(context);
+      if (state) runPostReport(context, state, events, 'if.event.put_in');
+
+      return events;
     }
 
     // Shouldn't happen since putting is migrated
@@ -205,7 +275,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity;
     const container = context.command.indirectObject?.entity;
 
-    return [context.event('if.event.insert_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.insert_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId: `${context.action.id}.${result.error}`,
       params: {
@@ -220,5 +290,12 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       containerName: container?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.insert_blocked', result.error);
+    }
+
+    return events;
   }
 };

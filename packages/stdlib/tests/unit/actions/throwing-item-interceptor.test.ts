@@ -64,7 +64,7 @@ describe('Thrown-item interceptor resolution (ADR-118 extension)', () => {
     expect(events.some(e => e.type === 'bomb.boom')).toBe(true);
   });
 
-  test('target-keyed interceptor keeps priority over the thrown item', () => {
+  test('item AND target interceptors both fire, item (direct object) first (ADR-228 D3)', () => {
     const { world, room, bomb } = setup();
     const statue = world.createEntity('stone statue', 'object');
     statue.add({ type: TraitType.SCENERY } as any);
@@ -85,8 +85,9 @@ describe('Thrown-item interceptor resolution (ADR-118 extension)', () => {
 
     drive(world, bomb, statue);
 
-    // Target wins; the item-keyed interceptor is NOT consulted.
-    expect(fired).toEqual(['target']);
+    // ADR-228 D3-B retired the single-winner rule: every entity involved
+    // in the command fires, in the published order (direct object first).
+    expect(fired).toEqual(['item', 'target']);
   });
 
   test('no interceptor anywhere: general throw unchanged', () => {
@@ -98,5 +99,54 @@ describe('Thrown-item interceptor resolution (ADR-118 extension)', () => {
     expect(thrown).toBeDefined();
     // A target-less throw is a "throw down" in standard throwing semantics.
     expect((thrown!.data as any).messageId).toBe('if.action.throwing.thrown_down');
+  });
+});
+
+describe('Capability path runs interceptor hooks after the behavior (ADR-228 D7.2)', () => {
+  /** Minimal trait class declaring an ADR-090 capability for THROWING. */
+  class ThrowCapableTrait {
+    static readonly type = 'test.trait.throw_capable';
+    static readonly capabilities = [IFActions.THROWING];
+    readonly type = 'test.trait.throw_capable';
+  }
+
+  test('target capability behavior executes first, then the item interceptor postExecute/postReport', () => {
+    const { world, room, bomb } = setup();
+    const glacier = world.createEntity('wall of ice', 'object');
+    glacier.add(new ThrowCapableTrait() as any);
+    world.moveEntity(glacier.id, room.id);
+
+    const order: string[] = [];
+    world.registerCapabilityBehavior(ThrowCapableTrait.type, IFActions.THROWING, {
+      validate() { return { valid: true }; },
+      execute(_entity, w) {
+        order.push('capability.execute');
+        w.setStateValue('glacier.hit', true);
+      },
+      report() {
+        order.push('capability.report');
+        return [{ type: 'glacier.cracks', payload: { messageId: 'glacier.crack' } }];
+      },
+      blocked() { return []; },
+    } as any);
+    world.registerActionInterceptor(TraitType.READABLE, IFActions.THROWING, {
+      postExecute() { order.push('item.postExecute'); },
+      postReport() {
+        order.push('item.postReport');
+        return {};
+      },
+    });
+
+    const { events } = drive(world, bomb, glacier);
+
+    // THE D7.2 pin: the capability behavior handled the throw AND the
+    // item's hooks still ran, in behavior-then-hooks order per phase (the
+    // old code returned before the hooks on this path).
+    expect(world.getStateValue('glacier.hit')).toBe(true);
+    expect(events.some(e => e.type === 'glacier.cracks')).toBe(true);
+    expect(order).toEqual([
+      'capability.execute', 'item.postExecute',
+      'capability.report', 'item.postReport'
+    ]);
   });
 });

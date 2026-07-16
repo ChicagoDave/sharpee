@@ -9,6 +9,9 @@
  * 2. execute: Analyze scents (no world mutations)
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `smellingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,6 +22,32 @@ import { SmelledEventData } from './smelling-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the smelled target is the only consultable
+ * entity of a SMELL command. Smelling the environment ("smell") has no direct
+ * object, so the slot resolves to undefined — zero consultations.
+ */
+export const smellingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.SMELLING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.SMELLING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -163,6 +192,10 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.player;
     const target = context.command.directObject?.entity;
 
+    const state = resolveLifecycle(context, smellingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // If target specified, check distance
     if (target) {
       // Check if in different rooms first (too far to smell)
@@ -178,6 +211,10 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     // Scent analysis happens in execute phase
     return { valid: true };
   },
@@ -191,11 +228,14 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = analysis.messageId;
     sharedData.eventData = analysis.eventData;
     sharedData.params = analysis.params;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.smell_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.smell_blocked', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -207,6 +247,13 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.smell_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -219,6 +266,9 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params,
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.smelled');
 
     return events;
   },

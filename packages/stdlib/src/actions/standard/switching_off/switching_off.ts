@@ -4,10 +4,14 @@
  * This action validates conditions for switching something off and returns
  * appropriate events. It delegates state changes to SwitchableBehavior.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if target is switchable and can be turned off
  * 2. execute: Call SwitchableBehavior.switchOff(), store result in sharedData
  * 3. report: Generate events from sharedData
+ * 4. blocked: Generate error events when validation fails
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `switchingOffLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -20,6 +24,31 @@ import { SwitchedOffEventData } from './switching_off-events';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
 import { MESSAGES } from './switching_off-messages';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the switched-off target is the only
+ * consultable entity of a SWITCH OFF command.
+ */
+export const switchingOffLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.SWITCHING_OFF,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.SWITCHING_OFF],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -82,6 +111,10 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: MESSAGES.NO_TARGET };
     }
 
+    const state = resolveLifecycle(context, switchingOffLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -95,6 +128,10 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     if (!SwitchableBehavior.canSwitchOff(noun)) {
       return { valid: false, error: MESSAGES.ALREADY_OFF, params: { target: nounPhraseFor(noun) } };
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -188,6 +225,9 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
       hadRunningSound,
       willClose
     );
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -212,7 +252,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Emit domain event with messageId (simplified pattern - ADR-097)
-    return [
+    const events: ISemanticEvent[] = [
       context.event('if.event.switched_off', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${sharedData.messageId}`,
@@ -231,6 +271,11 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
         willClose: sharedData.willClose
       })
     ];
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.switched_off');
+
+    return events;
   },
 
   /**
@@ -241,7 +286,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
 
-    return [context.event('if.event.switch_off_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.switch_off_blocked', {
       // Rendering data
       messageId: `${context.action.id}.${result.error}`,
       params: result.params || {},
@@ -250,6 +295,13 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.switch_off_blocked', result.error);
+    }
+
+    return events;
   },
 
   group: "device_manipulation",

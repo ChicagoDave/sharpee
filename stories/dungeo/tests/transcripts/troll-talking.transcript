@@ -1,0 +1,38 @@
+title: Troll Talking Interceptor (ADR-228 Phase 5)
+story: dungeo
+description: Regression test for the live bug where TrollTalkingInterceptor (MDL "Unfortunately, the troll can't hear you.") was registered on if.action.talking but never fired because talking was unwired. The conscious-troll passthrough is unit-covered (talking-interceptor.test.ts); this transcript minimizes live-troll exposure to dodge combat RNG.
+
+---
+
+# Setup — lantern, teleport, and KO the troll all in one GDT session
+# (the troll attacks every turn we spend in his room while conscious)
+> GDT
+[OK: contains "GDT"]
+
+> TK brass lantern
+[OK: contains "Taken"]
+
+> AH Troll Room
+[OK: contains "Teleported"]
+
+> KO troll
+[OK: contains "Knocked out"]
+
+> EX
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# ============================================================
+# The dead-registration fix: "speak to troll" routes through
+# stdlib if.action.talking, where the newly-wired
+# TrollTalkingInterceptor vetoes with the MDL canon line
+# ============================================================
+
+> speak to troll
+[OK: contains "can't hear you"]
+
+# The story action's literal phrasing still works too
+> talk to troll
+[OK: contains "can't hear you"]

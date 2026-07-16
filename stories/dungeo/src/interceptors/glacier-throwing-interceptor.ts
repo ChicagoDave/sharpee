@@ -17,6 +17,7 @@ import {
   InterceptorSharedData,
   InterceptorResult,
   InterceptorReportResult,
+  InterceptorBlockedResult,
   CapabilityEffect,
   createEffect,
   IFEntity,
@@ -100,6 +101,8 @@ export const GlacierThrowingInterceptor: ActionInterceptor = {
 
   /**
    * On-blocked: Custom messages for glacier-specific blocks.
+   * ADR-228 D2: override swaps the blocked event's message; the blocked
+   * record event itself survives for handlers/tests.
    */
   onBlocked(
     entity: IFEntity,
@@ -107,18 +110,12 @@ export const GlacierThrowingInterceptor: ActionInterceptor = {
     actorId: string,
     error: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null {
+  ): InterceptorBlockedResult | null {
     if (error === 'glacier_wrong_item') {
-      return [createEffect('game.message', {
-        messageId: GlacierMessages.THROW_WRONG_ITEM,
-        params: {}
-      })];
+      return { override: { messageId: GlacierMessages.THROW_WRONG_ITEM } };
     }
     if (error === 'glacier_cold_torch') {
-      return [createEffect('game.message', {
-        messageId: GlacierMessages.THROW_COLD,
-        params: {}
-      })];
+      return { override: { messageId: GlacierMessages.THROW_COLD } };
     }
     return null;
   },

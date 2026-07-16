@@ -150,7 +150,7 @@ describe('VisibilityBehavior', () => {
 
     beforeEach(() => {
       darkRoom = world.createEntity('Dark Room', 'room');
-      darkRoom.add(new RoomTrait({ isDark: true })); // Explicitly dark
+      darkRoom.add(new RoomTrait({ requiresLight: true })); // Explicitly dark
       darkRoom.add(new ContainerTrait());
       
       lamp = world.createEntity('Lamp', 'item');
@@ -238,7 +238,7 @@ describe('VisibilityBehavior', () => {
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(false);
       
       // Turn on room lights (e.g., found light switch)
-      darkRoom.getTrait(RoomTrait)!.isDark = false;
+      darkRoom.getTrait(RoomTrait)!.requiresLight = false;
       
       // Now can see
       expect(VisibilityBehavior.canSee(observer, target, world)).toBe(true);
@@ -510,11 +510,11 @@ describe('VisibilityBehavior', () => {
     beforeEach(() => {
       // Create a dark room (rooms use spatial index, not ContainerTrait)
       darkRoom = world.createEntity('Dark Cave', 'room');
-      darkRoom.add(new RoomTrait({ isDark: true }));
+      darkRoom.add(new RoomTrait({ requiresLight: true }));
 
       // Create a lit room (for comparison)
       litRoom = world.createEntity('Lit Room', 'room');
-      litRoom.add(new RoomTrait({ isDark: false }));
+      litRoom.add(new RoomTrait({ requiresLight: false }));
 
       // Create player
       player = world.createEntity('Player', 'actor');
@@ -645,7 +645,7 @@ describe('VisibilityBehavior', () => {
     // Scenario 10: Light in ADJACENT room (shouldn't help)
     it('should return true when light only in adjacent room', () => {
       const adjacentRoom = world.createEntity('Lit Cave', 'room');
-      adjacentRoom.add(new RoomTrait({ isDark: false }));
+      adjacentRoom.add(new RoomTrait({ requiresLight: false }));
       adjacentRoom.add(new ContainerTrait());
 
       const lamp = world.createEntity('lamp', 'item');

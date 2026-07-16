@@ -66,8 +66,10 @@ export {
   InterceptorSharedData,
   InterceptorResult,
   InterceptorReportResult,
+  InterceptorBlockedResult,
   InterceptorEventContext,
-  applyInterceptorReportResult
+  applyInterceptorReportResult,
+  applyInterceptorBlockedResult
 } from './action-interceptor';
 
 // Binding types (ADR-118, ADR-208). The binding map itself is per-world —

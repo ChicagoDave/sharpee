@@ -4,10 +4,14 @@
  * This action handles wearing items that have the WEARABLE trait.
  * It validates that the item can be worn and isn't already worn.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if item is wearable and can be worn
  * 2. execute: Call WearableBehavior.wear(), store result in sharedData
  * 3. report: Generate events from sharedData
+ * 4. blocked: Generate error events when validation fails
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `wearingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -24,6 +28,31 @@ import {
   buildWearableEventParams
 } from '../wearable-shared';
 import { MESSAGES } from './wearing-messages';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the worn item is the only consultable
+ * entity of a WEAR command.
+ */
+export const wearingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.WEARING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.WEARING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -73,6 +102,10 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
+    const state = resolveLifecycle(context, wearingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     if (!item.has(TraitType.WEARABLE)) {
       return { valid: false, error: 'not_wearable' };
     }
@@ -91,6 +124,10 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       }
       return { valid: false, error: 'cant_wear_that' };
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -149,6 +186,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     sharedData.failed = false;
     sharedData.params = buildWearableEventParams(item, wearableTrait);
     sharedData.messageId = 'worn';
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -189,6 +229,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       layer: sharedData.layer
     }));
 
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.worn');
+
     return events;
   },
 
@@ -200,7 +243,7 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
 
-    return [context.event('if.event.wear_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.wear_blocked', {
       // Rendering data
       messageId: `${context.action.id}.${result.error}`,
       params: result.params || {},
@@ -209,6 +252,13 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       itemName: item?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.wear_blocked', result.error);
+    }
+
+    return events;
   },
 
   metadata: {

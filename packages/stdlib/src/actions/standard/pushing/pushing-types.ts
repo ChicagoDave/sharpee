@@ -1,10 +1,10 @@
 /**
  * Type definitions for the pushing action
  *
- * Provides type-safe access to shared data and interceptor integration (ADR-118)
+ * Provides type-safe access to shared data. Interceptor consultation
+ * (ADR-118) runs through the shared lifecycle engine (ADR-228) — no
+ * interceptor fields live here.
  */
-
-import { ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
 
 /**
  * Typed shared data for pushing action
@@ -29,11 +29,6 @@ export interface PushingSharedData {
   // Message data
   messageId?: string;
   messageParams?: Record<string, any>;
-
-  /** Interceptor found during validate, if any (ADR-118) */
-  interceptor?: ActionInterceptor;
-  /** Shared data for interceptor phases (ADR-118) */
-  interceptorData?: InterceptorSharedData;
 }
 
 /**

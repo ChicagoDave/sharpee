@@ -22,9 +22,7 @@ import {
   WearableBehavior,
   ActorBehavior,
   IDropItemResult,
-  IFEntity,
-  InterceptorSharedData,
-  applyInterceptorReportResult
+  IFEntity
 } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types';
 import { IFActions } from '../../constants';
@@ -32,15 +30,44 @@ import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { nounPhraseFor } from '../../../utils';
 import { DroppingMessages } from './dropping-messages';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  runMultiObjectValidate,
+  getMultiObjectLifecycle,
+  runMultiObjectExecute,
+  runMultiObjectReport
+} from '../../lifecycle';
 
 // Import our data builder
 import { droppedDataConfig, determineDroppingMessage } from './dropping-data';
 
 // Import types
-import { getDroppingSharedData, DroppingSharedData, DroppingItemResult } from './dropping-types';
+import { getDroppingSharedData, DroppingItemScratch } from './dropping-types';
 
 // Import multi-object helpers
 import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
+
+/**
+ * Interceptor surface (ADR-228): the dropped item is the only consultable
+ * entity of a DROP command.
+ */
+export const droppingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.DROPPING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.DROPPING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
@@ -108,54 +135,20 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 }
 
 /**
- * Validate a multi-object command (drop all, drop X and Y)
- */
-function validateMultiObject(context: ActionContext): ValidationResult {
-  // For dropping, scope is 'carried' - only drop things we're holding
-  const items = expandMultiObject(context, { scope: 'carried' });
-
-  if (items.length === 0) {
-    return { valid: false, error: DroppingMessages.NOTHING_TO_DROP };
-  }
-
-  // Validate each entity, store results
-  const results: DroppingItemResult[] = items.map(item => {
-    const validation = validateSingleEntity(context, item.entity);
-    return {
-      entity: item.entity,
-      success: validation.valid,
-      error: validation.valid ? undefined : validation.error,
-      errorParams: validation.valid ? undefined : validation.params
-    };
-  });
-
-  // Store results for execute/report phases
-  const sharedData = getDroppingSharedData(context);
-  sharedData.multiObjectResults = results;
-
-  // Valid if at least one can be dropped
-  const anySuccess = results.some(r => r.success);
-  if (!anySuccess) {
-    // All failed - return the first error
-    return { valid: false, error: results[0].error, params: results[0].errorParams };
-  }
-
-  return { valid: true };
-}
-
-/**
- * Execute dropping a single entity
+ * Execute dropping a single entity. Mutation results are written into
+ * `scratch` — the single-object sharedData or the item's multi-object
+ * itemData (ADR-228 D4).
  */
 function executeSingleEntity(
   context: ActionContext,
   noun: IFEntity,
-  result: DroppingItemResult
+  scratch: DroppingItemScratch
 ): void {
   const actor = context.player;
 
   // Store the drop location before the move (player's current location)
   const dropLocation = context.world.getLocation(actor.id);
-  result.dropLocation = dropLocation;
+  scratch.dropLocation = dropLocation;
 
   // Delegate to ActorBehavior for dropping validation
   ActorBehavior.dropItem(actor, noun, context.world);
@@ -175,13 +168,13 @@ function executeSingleEntity(
 function reportSingleSuccess(
   context: ActionContext,
   noun: IFEntity,
-  result: DroppingItemResult,
+  scratch: DroppingItemScratch,
   events: ISemanticEvent[],
   isMultiObject: boolean = false
 ): void {
   const actor = context.player;
-  const dropLocation = result.dropLocation
-    ? context.world.getEntity(result.dropLocation)
+  const dropLocation = scratch.dropLocation
+    ? context.world.getEntity(scratch.dropLocation)
     : getDropLocation(context);
 
   // Determine message key based on context.
@@ -295,9 +288,25 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    // Check for multi-object command
+    // Check for multi-object command — full per-item lifecycle (ADR-228 D4)
     if (isMultiObjectCommand(context)) {
-      return validateMultiObject(context);
+      // For dropping, scope is 'carried' - only drop things we're holding
+      const items = expandMultiObject(context, { scope: 'carried' }).map(i => i.entity);
+
+      if (items.length === 0) {
+        return { valid: false, error: DroppingMessages.NOTHING_TO_DROP };
+      }
+
+      const results = runMultiObjectValidate(
+        context, droppingLifecycle, 'item', items,
+        (ctx, item) => validateSingleEntity(ctx, item)
+      );
+
+      // Valid if at least one can be dropped; all-fail returns the first error
+      if (!results.some(r => r.success)) {
+        return { valid: false, error: results[0].error, params: results[0].errorParams };
+      }
+      return { valid: true };
     }
 
     // Single object validation
@@ -306,53 +315,32 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: DroppingMessages.NO_TARGET };
     }
 
-    const sharedData = getDroppingSharedData(context);
-
-    // Check for interceptor on the item being dropped (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.DROPPING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null) {
-        return { valid: result.valid, error: result.error, params: result.params };
-      }
-    }
+    const state = resolveLifecycle(context, droppingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     const validation = validateSingleEntity(context, noun);
     if (!validation.valid) return validation;
 
-    // === POST-VALIDATE HOOK ===
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null) {
-        return { valid: result.valid, error: result.error, params: result.params };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
-    const sharedData = getDroppingSharedData(context);
-
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
-      // Execute for each successful validation
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          executeSingleEntity(context, result.entity, result);
-        }
-      }
+    // Multi-object command: per-item execute + postExecute hooks (D4)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
+      runMultiObjectExecute(context, multi, (ctx, item, itemData) => {
+        executeSingleEntity(ctx, item, itemData as DroppingItemScratch);
+      });
       return;
     }
 
     // Single object execution
+    const sharedData = getDroppingSharedData(context);
     const actor = context.player;
     const noun = context.command.directObject!.entity!;
 
@@ -368,30 +356,26 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     // Store result for report phase using sharedData
     sharedData.dropResult = result;
 
-    // === POST-EXECUTE HOOK ===
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute) {
-      interceptor.postExecute(noun, context.world, actor.id, interceptorData);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const sharedData = getDroppingSharedData(context);
-
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
+    // Multi-object command: per-item success/blocked events + hooks (D4)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
       const events: ISemanticEvent[] = [];
-      // Generate events for each item (success and failure)
       // Use compact format when multiple items
-      const isMultiObject = sharedData.multiObjectResults.length > 1;
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          reportSingleSuccess(context, result.entity, result, events, isMultiObject);
-        } else {
-          reportSingleBlocked(context, result.entity, result.error!, result.errorParams, events);
+      const isMultiObject = multi.length > 1;
+      runMultiObjectReport(
+        context, multi, events, 'if.event.dropped', 'if.event.drop_blocked',
+        (ctx, item, itemData, evts) => {
+          reportSingleSuccess(ctx, item, itemData as DroppingItemScratch, evts, isMultiObject);
+        },
+        (ctx, item, error, errorParams, evts) => {
+          reportSingleBlocked(ctx, item, error, errorParams, evts);
         }
-      }
+      );
       return events;
     }
 
@@ -417,34 +401,16 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       })
     ];
 
-    // === POST-REPORT HOOK ===
-    // Apply interceptor's override (replaces if.event.dropped.messageId)
-    // and/or emit (additional events). See ISSUE-074.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const result = interceptor.postReport(noun, context.world, actor.id, interceptorData);
-      applyInterceptorReportResult(events, 'if.event.dropped', result, context);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.dropped');
 
     return events;
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
-    const sharedData = getDroppingSharedData(context);
 
-    // === ON-BLOCKED HOOK ===
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && noun && result.error) {
-      const customEffects = interceptor.onBlocked(noun, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
-
-    return [context.event('if.event.drop_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.drop_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId: `${context.action.id}.${result.error}`,
       params: { ...result.params, item: noun ? nounPhraseFor(noun) : undefined },
@@ -453,6 +419,26 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       itemId: noun?.id,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) {
+        // Single-object path: notify all consultations (ADR-228 D2/D3)
+        runOnBlocked(context, state, events, 'if.event.drop_blocked', result.error);
+      } else {
+        // Multi-object all-fail path: the blocked event carries the FIRST
+        // failed item's error, so only that item's consultations are
+        // notified here — the other items produced no events for hooks to
+        // decorate. (Partial failures are handled per item in report().)
+        const multi = getMultiObjectLifecycle(context);
+        const first = multi?.[0];
+        if (first && !first.success) {
+          runOnBlocked(context, first.state, events, 'if.event.drop_blocked', first.error ?? result.error);
+        }
+      }
+    }
+
+    return events;
   },
 
   group: "object_manipulation"

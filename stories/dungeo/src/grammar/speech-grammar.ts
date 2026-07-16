@@ -104,6 +104,23 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
     .withPriority(200)
     .build();
 
+  // Generic TALK TO — routes through stdlib if.action.talking so
+  // entity-keyed talking interceptors fire (ADR-228 Phase 5: the
+  // TrollTalkingInterceptor was registered but unreachable because core
+  // grammar has no talk pattern). The troll literals above (priority 200)
+  // still win their exact phrasings.
+  grammar
+    .define('talk to :target')
+    .mapsTo('if.action.talking')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('speak to :target')
+    .mapsTo('if.action.talking')
+    .withPriority(95)
+    .build();
+
   // KNOCK action (Dungeon Master trivia trigger)
   grammar
     .define('knock')

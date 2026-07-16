@@ -37,11 +37,67 @@ import { RemovingEventMap } from './removing-events';
 import { RemovingMessages } from './removing-messages';
 
 // Import types
-import { getRemovingSharedData, RemovingSharedData, RemovingItemResult } from './removing-types';
+import { getRemovingSharedData, RemovingItemScratch } from './removing-types';
 
 // Import multi-object helpers
 import { isMultiObjectCommand, getExcludedNames } from '../../../helpers/multi-object-handler';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  runMultiObjectValidate,
+  getMultiObjectLifecycle,
+  runMultiObjectExecute,
+  runMultiObjectReport
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228). D6-B delegation-seam ruling: removing IS
+ * a take (it re-implements taking's mutation and emits `if.event.taken`),
+ * so the item is consulted under BOTH ids — `if.action.removing` first
+ * (the specific phrasing), then `if.action.taking`. A taking-guard (the
+ * TrollAxe class) can therefore never be bypassed by REMOVE FROM
+ * phrasing. Authors: one physical operation fires hooks under two ids —
+ * register a trait's interceptor under exactly ONE of them to avoid
+ * double-mutation. The source container/supporter is consulted under
+ * `if.action.removing` per D3-B (all command entities fire).
+ */
+export const removingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.REMOVING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.REMOVING, IFActions.TAKING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: entity.id,
+        itemName: entity.name,
+        sourceId: ctx.command.indirectObject?.entity?.id,
+        sourceName: ctx.command.indirectObject?.entity?.name
+      })
+    },
+    {
+      id: 'source',
+      actionIds: [IFActions.REMOVING],
+      resolve: (ctx) => ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity, multiObjectItem) => {
+        const item = multiObjectItem ?? ctx.command.directObject?.entity;
+        return {
+          itemId: item?.id,
+          itemName: item?.name,
+          sourceId: entity.id,
+          sourceName: entity.name
+        };
+      }
+    }
+  ]
+};
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
@@ -142,26 +198,10 @@ function validateSingleEntity(
 }
 
 /**
- * Validate a multi-object command (remove all from box, remove X and Y from box)
+ * Expand the multi-object item list for "remove all/X and Y from Z" —
+ * removing resolves its items from the SOURCE's contents, not from scope.
  */
-function validateMultiObject(context: ActionContext): ValidationResult {
-  const source = context.command.indirectObject?.entity;
-
-  // Must have a source
-  if (!source) {
-    return { valid: false, error: RemovingMessages.NO_SOURCE };
-  }
-
-  // Container must be open if it's openable
-  if (source.has(TraitType.CONTAINER) && source.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(source)) {
-    return {
-      valid: false,
-      error: RemovingMessages.CONTAINER_CLOSED,
-      params: { container: nounPhraseFor(source) }
-    };
-  }
-
-  // Get items from source - for "remove all from X" we need contents of X
+function expandRemovableItems(context: ActionContext, source: IFEntity): IFEntity[] {
   const directObject = context.command.parsed.structure.directObject;
   let items: IFEntity[];
 
@@ -192,43 +232,19 @@ function validateMultiObject(context: ActionContext): ValidationResult {
     items = [];
   }
 
-  if (items.length === 0) {
-    return { valid: false, error: RemovingMessages.NOTHING_TO_REMOVE };
-  }
-
-  // Validate each entity, store results
-  const results: RemovingItemResult[] = items.map(item => {
-    const validation = validateSingleEntity(context, item, source);
-    return {
-      entity: item,
-      success: validation.valid,
-      error: validation.valid ? undefined : validation.error,
-      errorParams: validation.valid ? undefined : validation.params
-    };
-  });
-
-  // Store results for execute/report phases
-  const sharedData = getRemovingSharedData(context);
-  sharedData.multiObjectResults = results;
-
-  // Valid if at least one can be removed
-  const anySuccess = results.some(r => r.success);
-  if (!anySuccess) {
-    // All failed - return the first error
-    return { valid: false, error: results[0].error, params: results[0].errorParams };
-  }
-
-  return { valid: true };
+  return items;
 }
 
 /**
- * Execute removing a single entity from source
+ * Execute removing a single entity from source. Mutation results are
+ * written into `scratch` — the single-object sharedData or the item's
+ * multi-object itemData (ADR-228 D4).
  */
 function executeSingleEntity(
   context: ActionContext,
   item: IFEntity,
   source: IFEntity,
-  result: RemovingItemResult
+  scratch: RemovingItemScratch
 ): void {
   const actor = context.player;
 
@@ -241,11 +257,11 @@ function executeSingleEntity(
     removeResult = SupporterBehavior.removeItem(source, item, context.world);
   }
 
-  result.removeResult = removeResult;
+  scratch.removeResult = removeResult;
 
   // Validate taking using ActorBehavior
   const takeResult: ITakeItemResult = ActorBehavior.takeItem(actor, item, context.world);
-  result.takeResult = takeResult;
+  scratch.takeResult = takeResult;
 
   // Perform the actual move - this is the critical mutation!
   context.world.moveEntity(item.id, actor.id);
@@ -260,7 +276,7 @@ function reportSingleSuccess(
   context: ActionContext,
   item: IFEntity,
   source: IFEntity,
-  result: RemovingItemResult,
+  _scratch: RemovingItemScratch,
   events: ISemanticEvent[]
 ): void {
   const actor = context.player;
@@ -359,14 +375,43 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    // Check for multi-object command
+    const source = context.command.indirectObject?.entity;
+
+    // Check for multi-object command — full per-item lifecycle (ADR-228 D4)
     if (isMultiObjectCommand(context)) {
-      return validateMultiObject(context);
+      // Must have a source
+      if (!source) {
+        return { valid: false, error: RemovingMessages.NO_SOURCE };
+      }
+
+      // Container must be open if it's openable
+      if (source.has(TraitType.CONTAINER) && source.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(source)) {
+        return {
+          valid: false,
+          error: RemovingMessages.CONTAINER_CLOSED,
+          params: { container: nounPhraseFor(source) }
+        };
+      }
+
+      const items = expandRemovableItems(context, source);
+      if (items.length === 0) {
+        return { valid: false, error: RemovingMessages.NOTHING_TO_REMOVE };
+      }
+
+      const results = runMultiObjectValidate(
+        context, removingLifecycle, 'item', items,
+        (ctx, item) => validateSingleEntity(ctx, item, source)
+      );
+
+      // Valid if at least one can be removed; all-fail returns the first error
+      if (!results.some(r => r.success)) {
+        return { valid: false, error: results[0].error, params: results[0].errorParams };
+      }
+      return { valid: true };
     }
 
     // Single object validation
     const item = context.command.directObject?.entity;
-    const source = context.command.indirectObject?.entity;
 
     // Validate we have an item
     if (!item) {
@@ -386,46 +431,40 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    return validateSingleEntity(context, item, source);
+    const state = resolveLifecycle(context, removingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
+    const standard = validateSingleEntity(context, item, source);
+    if (!standard.valid) return standard;
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
+    return { valid: true };
   },
 
   execute(context: ActionContext): void {
-    const sharedData = getRemovingSharedData(context);
     const source = context.command.indirectObject!.entity!;
 
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
-      // Execute for each successful validation
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          executeSingleEntity(context, result.entity, source, result);
-        }
-      }
+    // Multi-object command: per-item execute + hooks (D4)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
+      runMultiObjectExecute(context, multi, (ctx, item, itemData) => {
+        executeSingleEntity(ctx, item, source, itemData as RemovingItemScratch);
+      });
       return;
     }
 
     // Single object execution
-    const actor = context.player;
+    const sharedData = getRemovingSharedData(context);
     const item = context.command.directObject!.entity!;
 
-    // First validate removal from source using appropriate behavior
-    let removeResult: IRemoveItemResult | IRemoveItemFromSupporterResult | null = null;
+    executeSingleEntity(context, item, source, sharedData);
 
-    if (source.has(TraitType.CONTAINER)) {
-      removeResult = ContainerBehavior.removeItem(source, item, context.world);
-    } else if (source.has(TraitType.SUPPORTER)) {
-      removeResult = SupporterBehavior.removeItem(source, item, context.world);
-    }
-
-    // Store results for report phase using sharedData
-    sharedData.removeResult = removeResult;
-
-    // Validate taking using ActorBehavior
-    const takeResult: ITakeItemResult = ActorBehavior.takeItem(actor, item, context.world);
-    sharedData.takeResult = takeResult;
-
-    // Perform the actual move - this is the critical mutation!
-    context.world.moveEntity(item.id, actor.id);
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -433,20 +472,21 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
    * Only called on success path - validation passed
    */
   report(context: ActionContext): ISemanticEvent[] {
-    const sharedData = getRemovingSharedData(context);
     const source = context.command.indirectObject!.entity!;
 
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
+    // Multi-object command: per-item success/blocked events + hooks (D4)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
       const events: ISemanticEvent[] = [];
-      // Generate events for each item (success and failure)
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          reportSingleSuccess(context, result.entity, source, result, events);
-        } else {
-          reportSingleBlocked(context, result.entity, source, result.error!, result.errorParams, events);
+      runMultiObjectReport(
+        context, multi, events, 'if.event.taken', 'if.event.remove_blocked',
+        (ctx, item, itemData, evts) => {
+          reportSingleSuccess(ctx, item, source, itemData as RemovingItemScratch, evts);
+        },
+        (ctx, item, error, errorParams, evts) => {
+          reportSingleBlocked(ctx, item, source, error, errorParams, evts);
         }
-      }
+      );
       return events;
     }
 
@@ -469,7 +509,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Emit domain event with messageId (simplified pattern - ADR-097)
-    return [
+    const events: ISemanticEvent[] = [
       context.event('if.event.taken', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${messageKey}`,
@@ -487,6 +527,11 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
         sourceSnapshot: captureEntitySnapshot(source, context.world, source.has(TraitType.ROOM))
       })
     ];
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.taken');
+
+    return events;
   },
 
   /**
@@ -498,7 +543,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity;
     const source = context.command.indirectObject?.entity;
 
-    return [context.event('if.event.remove_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.remove_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId: `${context.action.id}.${result.error}`,
       params: {
@@ -513,5 +558,23 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       sourceName: source?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) {
+        // Single-object path: notify all consultations (ADR-228 D2/D3)
+        runOnBlocked(context, state, events, 'if.event.remove_blocked', result.error);
+      } else {
+        // Multi-object all-fail path: first failed item's consultations only
+        // (taking's pattern — the blocked event carries that item's error).
+        const multi = getMultiObjectLifecycle(context);
+        const first = multi?.[0];
+        if (first && !first.success) {
+          runOnBlocked(context, first.state, events, 'if.event.remove_blocked', first.error ?? result.error);
+        }
+      }
+    }
+
+    return events;
   }
 };

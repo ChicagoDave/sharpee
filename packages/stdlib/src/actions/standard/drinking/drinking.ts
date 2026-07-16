@@ -9,6 +9,9 @@
  * 2. execute: Perform implicit take if needed, store data in sharedData
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `drinkingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,6 +22,31 @@ import { DrunkEventData, ImplicitTakenEventData } from './drinking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the drunk item is the only consultable
+ * entity of a DRINK command.
+ */
+export const drinkingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.DRINKING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.DRINKING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -189,6 +217,10 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_item' };
     }
 
+    const state = resolveLifecycle(context, drinkingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Check scope - must be able to reach the item
     const scopeCheck = context.requireScope(item, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -225,6 +257,10 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     if (containerTrait && item.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(item)) {
       return { valid: false, error: 'container_closed', params: { item: nounPhraseFor(item) } };
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -306,6 +342,9 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = messageId;
     sharedData.params = params;
     sharedData.eventData = eventData;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -313,7 +352,7 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
-    return [context.event('if.event.drunk', {
+    const events: ISemanticEvent[] = [context.event('if.event.drunk', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -322,6 +361,13 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       itemId: item?.id,
       itemName: item?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.drunk', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -347,6 +393,9 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params || {},
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.drunk');
 
     return events;
   }

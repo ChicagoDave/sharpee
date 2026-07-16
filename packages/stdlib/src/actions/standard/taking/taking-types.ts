@@ -5,7 +5,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { IWearableData, IFEntity, ActionInterceptor, InterceptorSharedData } from '@sharpee/world-model';
+import { IWearableData } from '@sharpee/world-model';
 
 /**
  * Type guard for wearable trait data
@@ -58,46 +58,30 @@ export function hasCapacityLimit(trait: unknown): trait is ContainerTraitData & 
 }
 
 /**
- * Result of validating/executing a single entity in multi-object command
+ * Per-item mutation scratch for taking one entity: the fields
+ * executeSingleEntity writes and reportSingleSuccess reads. For a
+ * single-object command this lives on the action's sharedData; for a
+ * multi-object command each item gets its own copy via the lifecycle
+ * engine's per-item `itemData` (ADR-228 D4).
  */
-export interface TakingItemResult {
-  entity: IFEntity;
-  success: boolean;
-  error?: string;  // messageId if validation failed
+export interface TakingItemScratch {
+  /** The location the item was in before being taken */
   previousLocation?: EntityId;
+  /** True if a worn item was implicitly removed before taking */
   implicitlyRemoved?: boolean;
+  /** True if the item was being worn (used with implicitlyRemoved) */
   wasWorn?: boolean;
-  /** Interceptor bound to THIS item (ADR-118) — captured at validate so each item's hooks fire in execute/report */
-  interceptor?: ActionInterceptor;
-  /** Per-item interceptor phase data (decision snapshots, occurrence counters) */
-  interceptorData?: InterceptorSharedData;
 }
 
 /**
  * Typed shared data for taking action
  *
  * This interface defines all data that the taking action
- * stores in context.sharedData for communication between phases
+ * stores in context.sharedData for communication between phases.
+ * Interceptor and multi-object state live in the lifecycle engine's
+ * reserved sharedData slots (ADR-228), not here.
  */
-export interface TakingSharedData {
-  /**
-   * The location the item was in before being taken
-   * Used to determine if it was in a container/supporter
-   */
-  previousLocation?: EntityId;
-
-  /**
-   * True if a worn item was implicitly removed before taking
-   * Triggers an additional 'removed' event
-   */
-  implicitlyRemoved?: boolean;
-
-  /**
-   * True if the item was being worn (used with implicitlyRemoved)
-   * Helps generate appropriate messages
-   */
-  wasWorn?: boolean;
-
+export interface TakingSharedData extends TakingItemScratch {
   /**
    * For future use: track if item was locked in container
    */
@@ -107,18 +91,6 @@ export interface TakingSharedData {
    * For future use: track if container was opened implicitly
    */
   containerOpened?: boolean;
-
-  /**
-   * Multi-object support: results for each entity
-   * When set, indicates this is a multi-object command
-   */
-  multiObjectResults?: TakingItemResult[];
-
-  /** Interceptor that claimed this taking action (ADR-118) */
-  _interceptor?: ActionInterceptor;
-
-  /** Shared data passed between interceptor phases */
-  _interceptorData?: InterceptorSharedData;
 }
 
 /**

@@ -9,6 +9,9 @@
  * 2. execute: Perform world mutation (move player to destination/onto object)
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `climbingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,6 +22,32 @@ import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ClimbedEventData } from './climbing-events';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the climbed object is the only consultable
+ * entity of a CLIMB command. Directional climbing ("climb up") has no direct
+ * object, so the slot resolves to undefined — zero consultations.
+ */
+export const climbingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.CLIMBING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.CLIMBING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -61,18 +90,26 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
 
-    // Handle directional climbing (climb up, climb down)
-    if (direction && !target) {
-      return validateDirectionalClimbing(direction, context);
+    // No target or direction specified — defensive early return, no hooks
+    if (!direction && !target) {
+      return { valid: false, error: 'no_target' };
     }
 
-    // Handle object climbing
-    if (target) {
-      return validateObjectClimbing(target, context);
-    }
+    const state = resolveLifecycle(context, climbingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
-    // No target or direction specified
-    return { valid: false, error: 'no_target' };
+    // Handle directional climbing (climb up, climb down) or object climbing
+    const result = (direction && !target)
+      ? validateDirectionalClimbing(direction, context)
+      : validateObjectClimbing(target, context);
+    if (!result.valid) return result;
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
+    return result;
   },
 
   /**
@@ -117,6 +154,9 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       // Move player onto the target
       context.world.moveEntity(context.player.id, target.id);
     }
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -125,7 +165,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
-    return [context.event('if.event.climbed', {
+    const events: ISemanticEvent[] = [context.event('if.event.climbed', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       // params carry EntityInfo for the formatter chain (ADR-158)
@@ -135,6 +175,13 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name,
       direction
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.climbed', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -185,6 +232,9 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
         preposition: 'onto'
       }));
     }
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.climbed');
 
     return events;
   }

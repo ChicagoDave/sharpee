@@ -894,3 +894,40 @@ describe('World State Mutations', () => {
     expect(room2TraitAfter.visited).toBe(true);
   });
 });
+
+describe('Going interceptor hooks on the dark path (ADR-228 D7.1)', () => {
+  test('destination postReport runs even when the destination is dark (old early return skipped it)', () => {
+    const { world, player, room } = setupBasicWorld();
+    const cave = world.createEntity('Dark Cave', 'object');
+    cave.add({ type: TraitType.ROOM, requiresLight: true });
+    // Benign trait used purely as the interceptor registration key.
+    cave.add({ type: TraitType.READABLE, text: '' });
+    const roomTrait = room.getTrait(RoomTrait)!;
+    roomTrait.exits = { [Direction.NORTH]: { destination: cave.id } };
+
+    world.registerActionInterceptor(TraitType.READABLE, 'if.action.entering_room', {
+      postReport(_entity, w) {
+        w.setStateValue('cave.post_report_ran', true);
+        return { emit: [{ type: 'cave.whisper', payload: { messageId: 'cave.voice' } }] };
+      },
+    });
+
+    const command = createCommand(IFActions.GOING);
+    command.parsed.extras = { direction: Direction.NORTH };
+    const context = createRealTestContext(goingAction, world, command);
+
+    const validation = goingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    goingAction.execute(context);
+    const events = goingAction.report(context);
+
+    // Player really moved into the dark room.
+    expect(world.getLocation(player.id)).toBe(cave.id);
+    // The dark path emitted the went/too_dark event...
+    const went = events.find(e => e.type === 'if.event.went')!;
+    expect((went.data as any).messageId).toContain('too_dark');
+    // ...AND the destination postReport hook still ran (the D7.1 fix).
+    expect(world.getStateValue('cave.post_report_ran')).toBe(true);
+    expect(events.some(e => e.type === 'cave.whisper')).toBe(true);
+  });
+});

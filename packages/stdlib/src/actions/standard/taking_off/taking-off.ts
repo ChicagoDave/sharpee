@@ -25,6 +25,31 @@ import {
   buildWearableEventParams,
   hasRemovalRestrictions
 } from '../wearable-shared';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the worn item is the only consultable
+ * entity of a TAKE OFF command.
+ */
+export const takingOffLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.TAKING_OFF,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.TAKING_OFF],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -72,6 +97,10 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
+    const state = resolveLifecycle(context, takingOffLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     if (!item.has(TraitType.WEARABLE)) {
       return { valid: false, error: 'not_wearing', params: { item: nounPhraseFor(item) } };
     }
@@ -86,6 +115,10 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       }
       return { valid: false, error: 'cant_remove', params: { item: nounPhraseFor(item) } };
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -153,6 +186,13 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     sharedData.failed = false;
     sharedData.params = buildWearableEventParams(item, wearableTrait);
     sharedData.messageId = 'removed';
+
+    // Interceptor lifecycle (ADR-228): postExecute runs after the successful
+    // mutation only — the ad-hoc refusal paths above (layering blockers,
+    // removal restrictions) early-return with sharedData.failed and skip it,
+    // matching the switching_on precedent.
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -163,7 +203,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
 
-    return [context.event('if.event.take_off_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.take_off_blocked', {
       // Rendering data
       messageId: `${context.action.id}.${result.error}`,
       params: result.params || {},
@@ -172,6 +212,13 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       itemName: item?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.take_off_blocked', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -194,7 +241,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Emit domain event with messageId (simplified pattern - ADR-097)
-    return [
+    const events: ISemanticEvent[] = [
       context.event('if.event.removed', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${sharedData.messageId}`,
@@ -207,6 +254,11 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
         layer: sharedData.layer
       })
     ];
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.removed');
+
+    return events;
   },
 
   metadata: {

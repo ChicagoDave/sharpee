@@ -17,6 +17,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
+  InterceptorBlockedResult,
   CapabilityEffect,
   createEffect,
   IFEntity,
@@ -148,13 +149,16 @@ export const SphereTakingInterceptor: ActionInterceptor = {
     }
   },
 
+  // ADR-228 D2: effects ride the `emit` channel — appended after the standard
+  // take_blocked event, which survives as the machine-readable refusal record
+  // (identical rendered output to the old append semantics of taking).
   onBlocked(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
     _error: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null {
+  ): InterceptorBlockedResult | null {
     const effects: CapabilityEffect[] = [];
 
     if (sharedData.cageTrapped) {
@@ -190,6 +194,6 @@ export const SphereTakingInterceptor: ActionInterceptor = {
       );
     }
 
-    return effects.length > 0 ? effects : null;
+    return effects.length > 0 ? { emit: effects } : null;
   }
 };

@@ -4,11 +4,14 @@
  * This action validates conditions for switching something on and returns
  * appropriate events. It delegates state changes to SwitchableBehavior.
  *
- * Uses four-phase pattern with interceptor support (ADR-118):
- * 1. validate: preValidate hook → standard checks → postValidate hook
- * 2. execute: standard mutation → postExecute hook
- * 3. report: standard events → postReport hook
- * 4. blocked: onBlocked hook (if validation failed)
+ * Uses four-phase pattern:
+ * 1. validate: Check target exists and can be switched on
+ * 2. execute: Delegate state change to SwitchableBehavior
+ * 3. report: Generate success events (plus auto-LOOK when illuminating)
+ * 4. blocked: Generate error events when validation fails
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `switchingOnLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -21,10 +24,7 @@ import {
   OpenableTrait,
   SwitchableBehavior,
   LightSourceBehavior,
-  VisibilityBehavior,
-  ActionInterceptor,
-  InterceptorSharedData,
-  applyInterceptorReportResult
+  VisibilityBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope';
@@ -33,6 +33,31 @@ import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching
 import { MESSAGES } from './switching_on-messages';
 import { nounPhraseFor } from '../../../utils';
 import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the switched-on target is the only
+ * consultable entity of a SWITCH ON command.
+ */
+export const switchingOnLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.SWITCHING_ON,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.SWITCHING_ON],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -64,9 +89,6 @@ interface SwitchingOnSharedData {
   // In case of behavior failure
   failed?: boolean;
   errorMessageId?: string;
-  // Interceptor support (ADR-118)
-  interceptor?: ActionInterceptor;
-  interceptorData?: InterceptorSharedData;
 }
 
 function getSwitchingOnSharedData(context: ActionContext): SwitchingOnSharedData {
@@ -99,28 +121,14 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
   validate(context: ActionContext): ValidationResult {
     const noun = context.command.directObject?.entity;
-    const sharedData = getSwitchingOnSharedData(context);
 
     if (!noun) {
       return { valid: false, error: MESSAGES.NO_TARGET };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.SWITCHING_ON);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-
-    // Store for later phases
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null) {
-        return { valid: result.valid, error: result.error, params: result.params };
-      }
-    }
+    const state = resolveLifecycle(context, switchingOnLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
@@ -142,13 +150,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // === POST-VALIDATE HOOK ===
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null) {
-        return { valid: result.valid, error: result.error, params: result.params };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -260,12 +264,8 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       willOpen
     );
 
-    // === POST-EXECUTE HOOK ===
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute) {
-      interceptor.postExecute(noun, context.world, context.player.id, interceptorData);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -367,18 +367,8 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // === POST-REPORT HOOK ===
-    // Apply interceptor's override (replaces if.event.switched_on.messageId)
-    // and/or emit (additional events). See ISSUE-074.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const noun = context.command.directObject?.entity;
-      if (noun) {
-        const result = interceptor.postReport(noun, context.world, context.player.id, interceptorData);
-        applyInterceptorReportResult(events, 'if.event.switched_on', result, context);
-      }
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.switched_on');
 
     return events;
   },
@@ -390,19 +380,8 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
-    const sharedData = getSwitchingOnSharedData(context);
 
-    // === ON-BLOCKED HOOK ===
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && noun && result.error) {
-      const customEffects = interceptor.onBlocked(noun, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
-
-    return [context.event('if.event.switch_on_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.switch_on_blocked', {
       // Rendering data
       messageId: `${context.action.id}.${result.error}`,
       params: result.params || {},
@@ -411,6 +390,13 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.switch_on_blocked', result.error);
+    }
+
+    return events;
   },
 
   group: "device_manipulation",

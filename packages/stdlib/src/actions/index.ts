@@ -14,6 +14,9 @@ export { MetaCommandRegistry } from './meta-registry';
 export * from './registry';
 export * from './constants';
 
+// Interceptor lifecycle engine (ADR-228) — descriptors + shared hook runner
+export * from './lifecycle';
+
 // Standard actions
 export * from './standard';
 

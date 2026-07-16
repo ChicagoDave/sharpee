@@ -1,0 +1,37 @@
+title: Trophy Case Multi-Put Scoring (ADR-228 D4)
+story: dungeo
+description: Regression test for the live bug where "put all in case" deposited treasures without awarding trophy score (putting's multi-object path bypassed all interceptor hooks)
+
+---
+
+# Setup — grab two treasures via GDT and teleport to the trophy case
+> gdt
+[OK: contains "GDT ready"]
+
+> tk jeweled egg
+[OK: contains "Taken"]
+
+> tk canary
+[OK: contains "Taken"]
+
+> ah Living Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+> open case
+[OK: contains "open"]
+
+# ============================================================
+# Test: put all in case — EVERY deposited treasure must award
+# its trophy value (egg 5 + canary 2 = 7)
+# ============================================================
+
+> put all in case
+[OK: contains "egg"]
+[OK: contains "canary"]
+[EVENT: true, type="if.event.put_in"]
+
+> score
+[OK: contains "7"]

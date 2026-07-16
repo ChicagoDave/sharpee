@@ -9,6 +9,9 @@
  * 2. execute: Analyze conversation state (no world mutations)
  * 3. blocked: Handle validation failures
  * 4. report: Emit talked event and success message
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `talkingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -19,6 +22,37 @@ import { TalkedEventData } from './talking-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the person talked to is the only
+ * consultable entity of a TALK command.
+ *
+ * Wiring this closed a live Dungeo dead-registration bug (ADR-118 hook
+ * audit): `TrollTalkingInterceptor` — a preValidate veto implementing the
+ * MDL-canon "Unfortunately, the troll can't hear you" when the troll is
+ * incapacitated — was registered under `if.action.talking` but never
+ * consulted, because talking was unwired.
+ */
+export const talkingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.TALKING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.TALKING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -62,12 +96,16 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     
     // Must have someone to talk to
     if (!target) {
-      return { 
-        valid: false, 
+      return {
+        valid: false,
         error: 'no_target'
       };
     }
-    
+
+    const state = resolveLifecycle(context, talkingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Check if target is visible
     if (!context.canSee(target)) {
       return { 
@@ -115,7 +153,11 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
         params: { target: nounPhraseFor(target) }
       };
     }
-    
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
   
@@ -188,13 +230,23 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
     sharedData.targetName = target.name;
     sharedData.messageId = messageId;
     sharedData.eventData = eventData;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.talk_blocked', {
+
+    // Fully-qualified message IDs (containing dots) are used as-is —
+    // e.g. an interceptor veto like 'dungeo.troll.cant_hear_you';
+    // short keys (e.g. 'not_visible') get the action ID prefix
+    const error = result.error || '';
+    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
+
+    const events: ISemanticEvent[] = [context.event('if.event.talk_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId,
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
@@ -204,6 +256,13 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.talk_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -218,6 +277,9 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.talked');
 
     return events;
   },

@@ -7,11 +7,14 @@
  * - Revealing hidden passages
  * - General pushing feedback
  *
- * Uses four-phase pattern with interceptor support (ADR-118):
- * 1. validate: preValidate hook → standard checks → postValidate hook
- * 2. execute: standard mutation → postExecute hook
- * 3. blocked: onBlocked hook (if validation failed)
- * 4. report: standard events → postReport hook (additional effects)
+ * Uses four-phase pattern:
+ * 1. validate: Check target exists and is pushable
+ * 2. execute: Perform push-type-specific mutations
+ * 3. blocked: Generate error events when validation fails
+ * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `pushingLifecycle` — no hand-rolled hook plumbing.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
@@ -21,15 +24,44 @@ import {
   TraitType,
   PushableTrait,
   SwitchableTrait,
-  SwitchableBehavior,
-  InterceptorSharedData,
-  applyInterceptorReportResult
+  SwitchableBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
 import { ScopeLevel } from '../../../scope/types';
 import { PushedEventData } from './pushing-events';
 import { getPushingSharedData, PushingSharedData } from './pushing-types';
 import { nounPhraseFor } from '../../../utils';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked
+} from '../../lifecycle';
+
+/**
+ * Interceptor surface (ADR-228): the pushed target is the only
+ * consultable entity of a PUSH command.
+ */
+export const pushingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.PUSHING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.PUSHING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      // Context the old hand-rolled wiring seeded — kept for story
+      // interceptors outside this repo (ADR-228 D3 symmetric-context).
+      seedData: (_ctx, entity) => ({
+        targetId: entity.id,
+        targetName: entity.name
+      })
+    }
+  ]
+};
 
 export const pushingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.PUSHING,
@@ -66,7 +98,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.player;
     const target = context.command.directObject?.entity;
-    const sharedData = getPushingSharedData(context);
 
     // Must have something to push
     if (!target) {
@@ -76,30 +107,9 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(target, IFActions.PUSHING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {
-      targetId: target.id,
-      targetName: target.name
-    };
-
-    // Store for later phases
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    // Called before standard validation - can block early
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, pushingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
@@ -134,18 +144,9 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // === POST-VALIDATE HOOK ===
-    // Called after standard validation passes - can add entity-specific conditions
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -260,13 +261,8 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         break;
     }
 
-    // === POST-EXECUTE HOOK ===
-    // Called after standard execution - can perform additional mutations
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute) {
-      interceptor.postExecute(target, context.world, context.player.id, interceptorData);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -274,23 +270,10 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    const sharedData = getPushingSharedData(context);
-
-    // === ON-BLOCKED HOOK ===
-    // Called when action is blocked - can provide custom blocked handling
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && target && result.error) {
-      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        // Interceptor provided custom blocked effects
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
 
     // Standard blocked handling — params carry EntityInfo for the
     // formatter chain (ADR-158); top-level fields stay strings for handlers.
-    return [context.event('if.event.pushed', {
+    const events: ISemanticEvent[] = [context.event('if.event.pushed', {
       blocked: true,
       messageId: `${context.action.id}.${result.error}`,
       params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
@@ -298,6 +281,13 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.pushed', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -306,7 +296,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
   report(context: ActionContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const sharedData = getPushingSharedData(context);
-    const target = context.command.directObject!.entity!;
 
     // Emit pushed event with messageId for text rendering
     events.push(context.event('if.event.pushed', {
@@ -328,15 +317,8 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       requiresStrength: sharedData.requiresStrength
     }));
 
-    // === POST-REPORT HOOK ===
-    // Apply interceptor's override (replaces if.event.pushed.messageId)
-    // and/or emit (additional events). See ISSUE-074.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      applyInterceptorReportResult(events, 'if.event.pushed', result, context);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.pushed');
 
     return events;
   },

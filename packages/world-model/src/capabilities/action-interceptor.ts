@@ -88,6 +88,46 @@ export interface InterceptorReportResult {
 }
 
 /**
+ * Result returned by `ActionInterceptor.onBlocked` (ADR-228, D2).
+ *
+ * Structurally symmetric with `InterceptorReportResult` so the whole
+ * interceptor API is teachable as one pattern:
+ *
+ * 1. `override` — swap the standard blocked event's `messageId` (and
+ *    optional params/text). The blocked event's **type survives intact**
+ *    (`if.event.take_blocked` etc.), so tests and state machines keyed on
+ *    blocked events keep working while the interceptor controls the
+ *    refusal's presentation.
+ *
+ * 2. `emit` — additional effects appended after the standard blocked
+ *    event (side-channel narration, death events, etc.).
+ *
+ * Returning `null` or `{}` means standard blocked handling.
+ *
+ * The bare `CapabilityEffect[]` form (replace-the-event, with `[]`
+ * silently suppressing it) is retired: the standard blocked event is the
+ * machine-readable record of the refusal and can no longer be eaten.
+ * Note the primary custom-refusal path is unchanged and does not go
+ * through onBlocked at all: a pre/postValidate hook returning
+ * `{valid: false, error: customMessageId}` renders that message on the
+ * blocked event (the white-hot-axe pattern).
+ *
+ * @see applyInterceptorBlockedResult
+ */
+export interface InterceptorBlockedResult {
+  /** Override the standard blocked event's messageId (and optional params/text).
+   *  The event type is preserved. */
+  override?: {
+    messageId: string;
+    params?: Record<string, unknown>;
+    text?: string;
+  };
+
+  /** Emit additional effects after the standard blocked event. */
+  emit?: CapabilityEffect[];
+}
+
+/**
  * Minimal context shape required by `applyInterceptorReportResult`.
  *
  * Real action contexts (both the engine's closure-based factory and the
@@ -122,6 +162,11 @@ export interface InterceptorEventContext {
  * @param result - The value returned from `interceptor.postReport`.
  * @param context - The action context (any object exposing
  *                  `event(type, data)`).
+ * @param options - `searchFrom`: index in `events` from which override
+ *                  targeting searches (default 0). Per-item applications
+ *                  in multi-object commands (ADR-228 D4) pass the index
+ *                  where the item's report began so the override lands on
+ *                  that item's event, not an earlier item's.
  *
  * @example
  * ```typescript
@@ -137,10 +182,13 @@ export function applyInterceptorReportResult(
   events: ISemanticEvent[],
   primaryEventType: string,
   result: InterceptorReportResult,
-  context: InterceptorEventContext
+  context: InterceptorEventContext,
+  options?: { searchFrom?: number }
 ): void {
   if (result.override) {
-    const primary = events.find((e) => e.type === primaryEventType);
+    const primary = events.find(
+      (e, i) => i >= (options?.searchFrom ?? 0) && e.type === primaryEventType
+    );
     if (primary) {
       const data = primary.data as Record<string, unknown>;
       data.messageId = result.override.messageId;
@@ -157,6 +205,68 @@ export function applyInterceptorReportResult(
       console.warn(
         `applyInterceptorReportResult: override requested for primary event type ` +
         `"${primaryEventType}" but no event of that type was found in the events array.`
+      );
+    }
+  }
+
+  if (result.emit) {
+    for (const effect of result.emit) {
+      events.push(context.event(effect.type, effect.payload));
+    }
+  }
+}
+
+/**
+ * Apply an interceptor's `onBlocked` result to an action's blocked events.
+ *
+ * - If `result.override` is set, copies `messageId` (and optional `params`/`text`)
+ *   onto the data of the event whose type matches `blockedEventType`. The
+ *   event itself — the machine-readable record of the refusal — survives.
+ * - If `result.emit` is set, converts each effect to an `ISemanticEvent`
+ *   via `context.event(...)` and appends to `events`.
+ *
+ * The action's `blocked()` phase calls this helper with the events array
+ * it has built (containing the standard blocked event), the blocked event
+ * type (e.g. `'if.event.take_blocked'`), and the action context.
+ *
+ * @param events - The action's blocked events array; mutated in place.
+ * @param blockedEventType - The event type whose `messageId` an `override`
+ *                           should replace (e.g. `'if.event.take_blocked'`).
+ * @param result - The value returned from `interceptor.onBlocked`.
+ * @param context - The action context (any object exposing
+ *                  `event(type, data)`).
+ * @param options - `searchFrom`: index in `events` from which override
+ *                  targeting searches (default 0). See
+ *                  `applyInterceptorReportResult` for the ADR-228 D4
+ *                  per-item rationale.
+ */
+export function applyInterceptorBlockedResult(
+  events: ISemanticEvent[],
+  blockedEventType: string,
+  result: InterceptorBlockedResult,
+  context: InterceptorEventContext,
+  options?: { searchFrom?: number }
+): void {
+  if (result.override) {
+    const blocked = events.find(
+      (e, i) => i >= (options?.searchFrom ?? 0) && e.type === blockedEventType
+    );
+    if (blocked) {
+      const data = blocked.data as Record<string, unknown>;
+      data.messageId = result.override.messageId;
+      if (result.override.params) {
+        data.params = result.override.params;
+      }
+      if (result.override.text) {
+        data.text = result.override.text;
+      }
+    } else {
+      // Defensive: an interceptor asked for an override but the action
+      // didn't emit a blocked event of that type. Either the action's
+      // contract changed or the interceptor is misconfigured.
+      console.warn(
+        `applyInterceptorBlockedResult: override requested for blocked event type ` +
+        `"${blockedEventType}" but no event of that type was found in the events array.`
       );
     }
   }
@@ -333,16 +443,31 @@ export interface ActionInterceptor {
   /**
    * Called when action is blocked (validation failed).
    *
-   * Use this to provide custom blocked handling for this entity.
-   * Return effects to emit, or null to use standard blocked handling.
+   * Return an `InterceptorBlockedResult` (ADR-228, D2) that declares either:
+   * - `override`: swap the standard blocked event's `messageId` — the event
+   *   type survives as the machine-readable record of the refusal, or
+   * - `emit`: additional effects appended after the standard blocked event
+   *   (side-channel narration, death events), or
+   * - both, or `null`/`{}` for standard blocked handling.
+   *
+   * The action's `blocked()` phase applies the result via
+   * `applyInterceptorBlockedResult`.
    *
    * @example
-   * // Custom message when troll blocks entry
+   * // Override: richer refusal presentation, record event intact
    * onBlocked(entity, world, actorId, error, sharedData) {
    *   if (error === 'dungeo.troll.blocks_path') {
-   *     return [createEffect('game.message', { messageId: 'dungeo.troll.snarls' })];
+   *     return { override: { messageId: 'dungeo.troll.snarls' } };
    *   }
    *   return null; // Use standard blocked handling
+   * }
+   *
+   * @example
+   * // Emit: refusal has side effects (poison death on blocked take)
+   * onBlocked(entity, world, actorId, error, sharedData) {
+   *   if (!sharedData.poisonDeath) return null;
+   *   killPlayer(world, world.getPlayer()!, { cause: 'poison', terminal: true });
+   *   return { emit: [createEffect(PLAYER_DIED_EVENT, { cause: 'poison', terminal: true })] };
    * }
    */
   onBlocked?(
@@ -351,5 +476,5 @@ export interface ActionInterceptor {
     actorId: string,
     error: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null;
+  ): InterceptorBlockedResult | null;
 }

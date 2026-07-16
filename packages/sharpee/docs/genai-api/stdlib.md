@@ -1150,6 +1150,407 @@ export declare const IFActions: {
 export type IFActionType = typeof IFActions[keyof typeof IFActions];
 ```
 
+### actions/lifecycle/descriptor
+
+```typescript
+/**
+ * Interceptor lifecycle descriptors (ADR-228).
+ *
+ * A descriptor is an action's declarative statement of its interceptor
+ * surface: which command entities carry interceptors under which action
+ * ids, in what order they are consulted, and which rare special contracts
+ * apply. The shared lifecycle engine (`lifecycle-engine.ts`) executes the
+ * ADR-228 rulings (D1 veto-only, D2 structured onBlocked, D3 all-entities
+ * fixed order, D4 per-item multi-object) against this declaration — the
+ * action never hand-rolls hook plumbing.
+ *
+ * An action is "wired" for interceptors iff it has a descriptor; the
+ * stdlib wired-action registry (ADR-228 D5) is derived mechanically from
+ * the descriptor table, never hand-maintained.
+ *
+ * Public interface: `ActionLifecycleDescriptor`, `EntitySlotSpec`,
+ * `LifecycleContracts`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ */
+import { IFEntity } from '@sharpee/world-model';
+import { ActionContext } from '../enhanced-types';
+/**
+ * One consultable entity slot of a command.
+ *
+ * Slots are declared in the published consultation order (ADR-228 D3-B):
+ * direct object → indirect object / instrument → action-specific implicit
+ * entities (e.g. going's door, source room, destination room; exiting's
+ * current container). Validate-phase vetoes stop the chain at the first
+ * vetoing slot; postExecute/postReport run for every slot that survived.
+ *
+ * Both-ids rule (ADR-228 D6): a slot may consult more than one action id
+ * (specific id first — e.g. removing consults `if.action.removing` then
+ * `if.action.taking` on the item). One physical operation can therefore
+ * fire hooks under two ids; a trait should register its interceptor under
+ * exactly one of them to avoid double-mutation.
+ */
+export interface EntitySlotSpec {
+    /**
+     * Slot identity — stable, human-readable, unique within the descriptor
+     * (e.g. 'directObject', 'container', 'item', 'weapon', 'door', 'source',
+     * 'destination'). Used in docs, diagnostics, and tests.
+     */
+    id: string;
+    /**
+     * Action ids to consult on this slot's entity, in consultation order
+     * (specific id before delegated id per D6).
+     */
+    actionIds: string[];
+    /**
+     * Resolve this slot's entity from the command. Return `undefined` when
+     * the slot is not present in this particular command (e.g. no indirect
+     * object) — the slot is then skipped, never an error.
+     *
+     * Implicit-entity slots resolve here too (going's source/destination
+     * rooms, exiting's current container) — resolution is not limited to
+     * parsed command objects.
+     */
+    resolve(context: ActionContext): IFEntity | undefined;
+    /**
+     * Optional seed for the slot's per-consultation sharedData, applied at
+     * resolve time. Used for symmetric cross-entity context (ADR-228 D3
+     * sub-ruling: the item-side hook in putting/inserting receives the
+     * container id, mirroring how the container's hook receives the item id).
+     *
+     * @param context - The action context.
+     * @param entity - This slot's resolved entity.
+     * @param multiObjectItem - In a multi-object per-item resolution (D4),
+     *   the item currently being processed — so a shared slot (e.g. the
+     *   container in "put all in case") can seed per-item context like the
+     *   item id. Undefined for single-object commands and for the item slot
+     *   itself (where `entity` IS the item).
+     */
+    seedData?(context: ActionContext, entity: IFEntity, multiObjectItem?: IFEntity): Record<string, unknown>;
+}
+/**
+ * Rare, explicit special contracts (ADR-228 D7.3). A contract changes the
+ * engine's standard hook semantics for the action and MUST be declared
+ * here — never encoded as a comment or an ad-hoc branch in the action.
+ */
+export interface LifecycleContracts {
+    /**
+     * attacking only: when a combatant target's interceptor implements
+     * postExecute, that hook REPLACES the action's standard combat
+     * resolution instead of running after it. The action reads this flag to
+     * decide whether to run its core execute logic; the engine still runs
+     * the hook itself normally.
+     */
+    postExecuteReplacesCore?: boolean;
+}
+/**
+ * An action's declarative interceptor surface (ADR-228 D0-B).
+ *
+ * Supplied by the action to the lifecycle engine at each phase boundary.
+ * Descriptors are static per action (module-level constants) — anything
+ * command-dependent lives in slot `resolve`/`seedData` functions.
+ */
+export interface ActionLifecycleDescriptor {
+    /**
+     * The action's primary id (e.g. `IFActions.TAKING`). Used for
+     * diagnostics and the D5 registry derivation.
+     */
+    actionId: string;
+    /**
+     * Entity slots in the published consultation order (D3-B): direct
+     * object → indirect/instrument → implicit entities.
+     */
+    slots: EntitySlotSpec[];
+    /** Rare special contracts (D7.3). Omit unless the ADR names one. */
+    contracts?: LifecycleContracts;
+}
+```
+
+### actions/lifecycle/lifecycle-engine
+
+```typescript
+/**
+ * Interceptor lifecycle engine (ADR-228).
+ *
+ * The single implementation of the ADR-118 interceptor lifecycle. Actions
+ * declare their interceptor surface as an `ActionLifecycleDescriptor` and
+ * call the engine at their four phase boundaries; the engine owns the
+ * rulings exactly once:
+ *
+ * - D1 — veto-only guards: a validate hook acts only when it returns
+ *   `{valid: false}`; any other result (including `{valid: true}`) falls
+ *   through. No hook can skip standard validation or later consultations.
+ *   (The explicit force-allow marker is a reserved, unimplemented
+ *   extension — see ADR-228 D1.)
+ * - D2 — structured onBlocked: `{ override?, emit? }` applied against the
+ *   standard blocked event, which always survives.
+ * - D3 — all command entities consulted in the descriptor's published
+ *   slot order, each consultation with its own sharedData; first veto
+ *   stops the validate chain; postExecute/postReport run for every
+ *   consultation once the action proceeds.
+ * - Override arbitration: at most one consultation may return an
+ *   `override` per report/blocked application — a second is a hard error,
+ *   mirroring ADR-106's "multiple game.message reactions" rule.
+ *
+ * Multi-object commands (D4) run one lifecycle per item via
+ * `multi-object-lifecycle.ts`, built on the same primitives.
+ *
+ * Public interface: `resolveLifecycle`, `getLifecycleState`,
+ * `runPreValidate`, `runPostValidate`, `runPostExecute`, `runPostReport`,
+ * `runOnBlocked`, `LifecycleState`, `ResolvedConsultation`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ */
+import { ISemanticEvent } from '@sharpee/core';
+import { IFEntity, InterceptorSharedData } from '@sharpee/world-model';
+import type { ActionInterceptor } from '@sharpee/world-model';
+import { ActionContext, ValidationResult } from '../enhanced-types';
+import { ActionLifecycleDescriptor } from './descriptor';
+/**
+ * One resolved (entity, actionId) interceptor consultation.
+ *
+ * A slot that consults two action ids (D6 both-ids) yields up to two
+ * consultations; each has its own `data` (D3 sharedData isolation).
+ */
+export interface ResolvedConsultation {
+    /** The descriptor slot this consultation came from. */
+    slotId: string;
+    /** The action id the interceptor was resolved under. */
+    actionId: string;
+    /** The entity whose trait declared the interceptor. */
+    entity: IFEntity;
+    /** The resolved interceptor. */
+    interceptor: ActionInterceptor;
+    /** Per-consultation shared data, isolated from other consultations. */
+    data: InterceptorSharedData;
+}
+/**
+ * The command's resolved lifecycle: the descriptor plus every
+ * consultation found for the command's entities, in consultation order.
+ */
+export interface LifecycleState {
+    descriptor: ActionLifecycleDescriptor;
+    consultations: ResolvedConsultation[];
+}
+/**
+ * Options for `resolveLifecycle`.
+ */
+export interface ResolveLifecycleOptions {
+    /**
+     * Substitute a specific entity for one slot instead of calling its
+     * `resolve` — used by the multi-object helper (D4) to bind each
+     * expanded item to the item slot. The resulting state is NOT stored in
+     * sharedData (per-item states live in the multi-object results).
+     */
+    slotOverride?: {
+        slotId: string;
+        entity: IFEntity;
+    };
+}
+/**
+ * Resolve an action's interceptor consultations for the current command.
+ *
+ * Iterates the descriptor's slots in published order (D3-B); for each
+ * slot that resolves to an entity, consults the world's interceptor
+ * registry under each of the slot's action ids (D6 order). Every match
+ * becomes a `ResolvedConsultation` with fresh sharedData (seeded via the
+ * slot's `seedData`, if any).
+ *
+ * Stores the state in `context.sharedData` (unless `slotOverride` is
+ * used) so later phases can fetch it with `getLifecycleState`.
+ *
+ * @param context - The action context.
+ * @param descriptor - The action's declared interceptor surface.
+ * @param options - See `ResolveLifecycleOptions`.
+ * @returns The resolved lifecycle state (possibly with zero consultations).
+ */
+export declare function resolveLifecycle(context: ActionContext, descriptor: ActionLifecycleDescriptor, options?: ResolveLifecycleOptions): LifecycleState;
+/**
+ * Fetch the lifecycle state stored by `resolveLifecycle` for this command.
+ *
+ * @param context - The action context.
+ * @returns The state, or `undefined` if `resolveLifecycle` has not run.
+ */
+export declare function getLifecycleState(context: ActionContext): LifecycleState | undefined;
+/**
+ * Run every consultation's `preValidate` hook in order (D3-B).
+ *
+ * First veto wins: returns that veto as a `ValidationResult` and stops
+ * consulting. Returns `null` when no hook vetoes (the action continues
+ * with standard validation — D1: hooks cannot approve, only object).
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ */
+export declare function runPreValidate(context: ActionContext, state: LifecycleState): ValidationResult | null;
+/**
+ * Run every consultation's `postValidate` hook in order (D3-B).
+ *
+ * Canonical placement (ADR-228): after ALL standard validation has
+ * passed. First veto wins; returns `null` when no hook vetoes.
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ */
+export declare function runPostValidate(context: ActionContext, state: LifecycleState): ValidationResult | null;
+/**
+ * Run every consultation's `postExecute` hook in order (D3-B: all
+ * consultations survived validation once the action executed).
+ *
+ * Note the `postExecuteReplacesCore` contract (D7.3) governs whether the
+ * ACTION runs its own core logic — the engine always runs the hooks
+ * themselves normally.
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ */
+export declare function runPostExecute(context: ActionContext, state: LifecycleState): void;
+/**
+ * Run every consultation's `postReport` hook and apply the results to the
+ * action's events.
+ *
+ * At most ONE consultation may return an `override` — a second is a hard
+ * error (throws), mirroring the `InterceptorReportResult` contract's
+ * ADR-106 rule. `emit` effects append in consultation order.
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ * @param events - The action's events array; mutated in place.
+ * @param primaryEventType - The event type an `override` targets.
+ * @param searchFrom - Index in `events` where this report began — override
+ *   targeting searches from here so per-item applications (D4) land on
+ *   the item's own event, not an earlier item's.
+ */
+export declare function runPostReport(context: ActionContext, state: LifecycleState, events: ISemanticEvent[], primaryEventType: string, searchFrom?: number): void;
+/**
+ * Run every consultation's `onBlocked` hook and apply the results to the
+ * action's blocked events (D2: the standard blocked event always
+ * survives; `override` swaps its message, `emit` appends).
+ *
+ * All resolved consultations are notified — including ones the validate
+ * chain never reached — matching the D3 author model ("a clause on any
+ * entity involved in the command fires"). At most one `override` (hard
+ * error otherwise).
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ * @param events - The blocked events array (standard blocked event
+ *   already pushed); mutated in place.
+ * @param blockedEventType - The standard blocked event's type.
+ * @param error - The validation error code the action was blocked with.
+ * @param searchFrom - Index in `events` where this item's blocked report
+ *   began (D4 per-item targeting).
+ */
+export declare function runOnBlocked(context: ActionContext, state: LifecycleState, events: ISemanticEvent[], blockedEventType: string, error: string, searchFrom?: number): void;
+```
+
+### actions/lifecycle/multi-object-lifecycle
+
+```typescript
+/**
+ * Multi-object interceptor lifecycle (ADR-228 D4).
+ *
+ * Runs the FULL interceptor lifecycle per expanded item of a multi-object
+ * command ("take all", "put all in case"): resolve → preValidate →
+ * standard per-item validation → postValidate per item; postExecute /
+ * postReport per successful item; onBlocked per failed item. Actions
+ * supply only their standard per-item logic as callbacks — the hook
+ * plumbing lives here exactly once, so the bypass class the ADR-118 audit
+ * found (putting/dropping multi paths skipping all five hooks; taking
+ * skipping onBlocked) cannot silently recur.
+ *
+ * Aggregated output is preserved: the action's report callbacks push
+ * their own events; the engine applies each item's hook results against
+ * that item's own events via `searchFrom` targeting.
+ *
+ * Public interface: `runMultiObjectValidate`, `runMultiObjectExecute`,
+ * `runMultiObjectReport`, `getMultiObjectLifecycle`,
+ * `MultiObjectItemState`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ */
+import { ISemanticEvent } from '@sharpee/core';
+import { IFEntity } from '@sharpee/world-model';
+import { ActionContext, ValidationResult } from '../enhanced-types';
+import { ActionLifecycleDescriptor } from './descriptor';
+import { LifecycleState } from './lifecycle-engine';
+/**
+ * One item's lifecycle through a multi-object command.
+ *
+ * `itemData` is the action's per-item scratch space (previous location,
+ * implicit-removal flags, ...) — the analogue of single-object
+ * sharedData, isolated per item.
+ */
+export interface MultiObjectItemState {
+    entity: IFEntity;
+    /** True when the item passed hooks + standard validation. */
+    success: boolean;
+    /** Validation error code when `success` is false. */
+    error?: string;
+    /** Error params when `success` is false. */
+    errorParams?: Record<string, unknown>;
+    /** The item's resolved interceptor consultations (own sharedData each). */
+    state: LifecycleState;
+    /** Action-owned per-item scratch data. */
+    itemData: Record<string, unknown>;
+}
+/**
+ * Validate every expanded item through its full lifecycle (D4).
+ *
+ * Per item, in order: resolve consultations (the descriptor's
+ * `multiObjectSlotId`-designated slot binds to the item) → preValidate
+ * hooks (veto fails the item) → `validateItem` (standard validation) →
+ * postValidate hooks (veto fails the item). A failed item never blocks
+ * the others — per-item success/failure is recorded for the execute and
+ * report phases.
+ *
+ * Stores the resulting array in `context.sharedData` and returns it.
+ *
+ * @param context - The action context.
+ * @param descriptor - The action's declared interceptor surface. Its slot
+ *   with id `multiObjectSlotId` is bound to each item in turn.
+ * @param multiObjectSlotId - Id of the slot that carries each expanded
+ *   item (usually the direct-object slot).
+ * @param items - The expanded entities of the multi-object command.
+ * @param validateItem - The action's standard single-item validation.
+ * @returns Per-item lifecycle states, in `items` order.
+ */
+export declare function runMultiObjectValidate(context: ActionContext, descriptor: ActionLifecycleDescriptor, multiObjectSlotId: string, items: IFEntity[], validateItem: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>) => ValidationResult): MultiObjectItemState[];
+/**
+ * Fetch the per-item states stored by `runMultiObjectValidate`.
+ *
+ * @param context - The action context.
+ * @returns The item states, or `undefined` if the command was not
+ *   validated as a multi-object command.
+ */
+export declare function getMultiObjectLifecycle(context: ActionContext): MultiObjectItemState[] | undefined;
+/**
+ * Execute every successful item: the action's `executeItem`, then that
+ * item's postExecute hooks (D4 — hooks fire per item, so e.g. a trophy
+ * case's postExecute awards score for EVERY deposited treasure).
+ *
+ * @param context - The action context.
+ * @param itemStates - The states from `runMultiObjectValidate`.
+ * @param executeItem - The action's standard single-item mutation.
+ */
+export declare function runMultiObjectExecute(context: ActionContext, itemStates: MultiObjectItemState[], executeItem: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>) => void): void;
+/**
+ * Report every item: successes via `reportSuccess` + postReport hooks,
+ * failures via `reportBlocked` + onBlocked hooks (D4 closes the audit's
+ * take-all-loses-onBlocked gap).
+ *
+ * Each item's hook results are applied with `searchFrom` set to the index
+ * where that item's events began, so overrides land on the item's own
+ * event even though all items share one events array (aggregated output).
+ *
+ * @param context - The action context.
+ * @param itemStates - The states from `runMultiObjectValidate`.
+ * @param events - The action's events array; mutated in place.
+ * @param primaryEventType - Event type a success `override` targets.
+ * @param blockedEventType - Event type a blocked `override` targets.
+ * @param reportSuccess - Pushes the item's standard success event(s).
+ * @param reportBlocked - Pushes the item's standard blocked event.
+ */
+export declare function runMultiObjectReport(context: ActionContext, itemStates: MultiObjectItemState[], events: ISemanticEvent[], primaryEventType: string, blockedEventType: string, reportSuccess: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>, events: ISemanticEvent[]) => void, reportBlocked: (context: ActionContext, item: IFEntity, error: string, errorParams: Record<string, unknown> | undefined, events: ISemanticEvent[]) => void): void;
+```
+
 ### actions/standard
 
 ```typescript
