@@ -41,7 +41,7 @@ import {
   TraitType,
   WorldModel,
 } from '@sharpee/world-model';
-import { killPlayer } from '@sharpee/stdlib';
+import { interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
 import { Evaluator, EvalContext } from './evaluator';
 import { LoadError } from './errors';
 import {
@@ -140,6 +140,21 @@ export class ChordRuntime {
           this.bindEventClause(world, entity, clause, clauseIndex);
           return;
         }
+        // D5 fail-fast (ADR-228): only bind clauses something will consult.
+        if (!this.isConsultedGerund(clause.action)) {
+          if (this.isDispatchAction(clause.action)) {
+            // Dispatch reactions fire via fireAfterClauses (the runtime owns
+            // those actions — interceptors never fire on the dispatch path),
+            // so `after` is live without any registration here…
+            if (clause.clauseKind === 'after') return;
+            // …but an entity `on` clause has no dispatch surface at all.
+            throw new LoadError(
+              `\`on ${clause.action} it\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on ${clause.action} it\`) and compose the trait, or react with \`after ${clause.action} it\`.`,
+              clause.span,
+            );
+          }
+          throw this.deadGerundError(clause);
+        }
         this.prepareOnClauseTarget(world, entity, clause);
         const list = byAction.get(clause.action) ?? [];
         list.push({ entity, clause });
@@ -174,6 +189,9 @@ export class ChordRuntime {
             this.buildCapabilityBehavior(trait.name, clause),
           );
         } else {
+          // D5 fail-fast (ADR-228): the analyzer routed this clause to the
+          // interceptor path, so its gerund must name a consulted action.
+          if (!this.isConsultedGerund(clause.action)) throw this.deadGerundError(clause);
           world.registerActionInterceptor(
             traitType,
             `if.action.${clause.action}`,
@@ -209,6 +227,47 @@ export class ChordRuntime {
         );
       }
     }
+  }
+
+  // ------------------------------------------------------- D5 fail-fast
+
+  /**
+   * True when an interceptor registered under `if.action.<gerund>` can ever
+   * fire: a wired stdlib action consults the id (the ADR-228 D5 registry,
+   * derived from the descriptor table), or the gerund names a `define
+   * action X from` hatch — an author-owned TS Action the loader can't see
+   * inside, which may consult its own id.
+   * @param gerund the clause's action word (e.g. `taking`)
+   */
+  private isConsultedGerund(gerund: string): boolean {
+    if (interceptorConsultingActionIds.has(`if.action.${gerund}`)) return true;
+    return this.ir.hatches.some((h) => h.hatchKind === 'action' && h.name === gerund);
+  }
+
+  /** True when the gerund names a `define action` dispatch action. */
+  private isDispatchAction(gerund: string): boolean {
+    return this.ir.actions.some((a) => a.name === gerund);
+  }
+
+  /**
+   * Load-time diagnostic for a clause whose gerund nothing will ever
+   * consult (ADR-228 D5): a typo or an unimplemented action word would
+   * otherwise register and silently die. lowering/raising get the pointed
+   * capability-dispatch message (they are full-delegation by design).
+   * @param clause the dead clause (its span anchors the diagnostic)
+   */
+  private deadGerundError(clause: IROnClause): LoadError {
+    const phrase = `${clause.clauseKind} ${clause.action} it`;
+    if (clause.action === 'lowering' || clause.action === 'raising') {
+      return new LoadError(
+        `\`${phrase}\` — \`${clause.action}\` is a full-delegation capability action by design (ADR-118): the standard action never consults interceptors. Use a capability behavior or a Chord dispatch action (\`define action ${clause.action}\`) instead.`,
+        clause.span,
+      );
+    }
+    return new LoadError(
+      `\`${phrase}\` — no standard action consults \`if.action.${clause.action}\`, so this clause would never fire. Check the action word's spelling, or create the verb with \`define action ${clause.action}\`.`,
+      clause.span,
+    );
   }
 
   // ---------------------------------------------------------- event clauses
@@ -327,11 +386,27 @@ export class ChordRuntime {
     const runtime = this;
     const ownWorldId = () => runtime.host.entityId(entity.id);
     const skipped = (data: InterceptorSharedData) => data.chordSkip === true;
+    const occurrenceKey = CHORD_OCCURRENCE_PREFIX + `on.${entity.id}.${clause.action}`;
 
     return {
-      preValidate(target: IFEntity, world: WorldModel): InterceptorResult | null {
+      preValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         if (target.id !== ownWorldId() || clause.clauseKind === 'after') return null;
         const ctx: ExecContext = { world, it: entity.id };
+        // D8 (ADR-228): the `while` gate is evaluated once per firing, at
+        // validate time, BEFORE findRefusal — a gated-out clause sits out
+        // entirely, refusals included. preValidate and postValidate may both
+        // evaluate the gate: no mutation occurs between them within one
+        // action, so the answers cannot differ. Do not move this evaluation.
+        if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
+          data.chordSkip = true;
+          return null;
+        }
+        // `, once`: a clause that has already fired keeps its refusal out
+        // too (peek only — the occurrence bump stays in postValidate).
+        if (clause.once && ((world.getStateValue(occurrenceKey) as number | undefined) ?? 0) >= 1) {
+          data.chordSkip = true;
+          return null;
+        }
         const refusal = runtime.findRefusal(clause.body, ctx);
         return refusal ? { valid: false, error: refusal } : null;
       },
@@ -339,11 +414,12 @@ export class ChordRuntime {
       postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         if (target.id !== ownWorldId()) return null;
         const ctx: ExecContext = { world, it: entity.id };
+        // D8: same gate, same evaluation point (see preValidate).
         if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
           data.chordSkip = true; // `while <cond>` gate — clause sits out this firing
           return null;
         }
-        const key = CHORD_OCCURRENCE_PREFIX + `on.${entity.id}.${clause.action}`;
+        const key = occurrenceKey;
         const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
         if (clause.once && occurrence > 1) {
           data.chordSkip = true; // `, once` — one lifetime firing (D5)
@@ -430,10 +506,23 @@ export class ChordRuntime {
     return {
       validate(entity, world, actorId, data): CapabilityValidationResult {
         const ctx = ctxOf(entity, world, actorId, data);
-        const refusal = runtime.findRefusal(clause.body, ctx);
-        if (refusal) return { valid: false, error: refusal };
+        // D8 (ADR-228): the `while` gate is evaluated once per firing, at
+        // validate time, BEFORE findRefusal — a gated-out clause sits out
+        // entirely, refusals included (the dispatch action itself still
+        // proceeds; execute/report honor chordSkip). Do not move this
+        // evaluation.
+        if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
+          data.chordSkip = true;
+          return { valid: true };
+        }
         const key = `${CHORD_OCCURRENCE_PREFIX}trait.${traitName}.${clause.action}.${runtime.host.irIdOf(entity.id)}`;
         const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+        if (clause.once && occurrence > 1) {
+          data.chordSkip = true; // `, once` — one lifetime firing (D5)
+          return { valid: true };
+        }
+        const refusal = runtime.findRefusal(clause.body, ctx);
+        if (refusal) return { valid: false, error: refusal };
         world.setStateValue(key, occurrence);
         ctx.occurrence = occurrence;
         data.chordOccurrence = occurrence;
@@ -441,9 +530,11 @@ export class ChordRuntime {
         return { valid: true };
       },
       execute(entity, world, actorId, data): void {
+        if (data.chordSkip === true) return;
         runtime.execStatements(clause.body, ctxOf(entity, world, actorId, data), 'mutations');
       },
       report(entity, world, actorId, data): CapabilityEffect[] {
+        if (data.chordSkip === true) return [];
         const events = runtime.execStatements(clause.body, ctxOf(entity, world, actorId, data), 'reports');
         return events.map((e) => ({ type: e.type, payload: (e.data ?? {}) as Record<string, unknown> }));
       },
@@ -462,25 +553,56 @@ export class ChordRuntime {
   private buildTraitInterceptor(clause: IROnClause): ActionInterceptor {
     const runtime = this;
     const itOf = (target: IFEntity) => runtime.host.irIdOf(target.id) ?? target.id;
+    const skipped = (data: InterceptorSharedData) => data.chordSkip === true;
+    const occurrenceKeyOf = (target: IFEntity) => `${CHORD_OCCURRENCE_PREFIX}trait.${clause.action}.${itOf(target)}`;
 
     return {
-      preValidate(target: IFEntity, world: WorldModel): InterceptorResult | null {
-        const refusal = runtime.findRefusal(clause.body, { world, it: itOf(target) });
+      preValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        if (clause.clauseKind === 'after') return null;
+        const ctx: ExecContext = { world, it: itOf(target) };
+        // D8 (ADR-228): the `while` gate is evaluated once per firing, at
+        // validate time, BEFORE findRefusal — a gated-out clause sits out
+        // entirely, refusals included. preValidate and postValidate may both
+        // evaluate the gate: no mutation occurs between them within one
+        // action, so the answers cannot differ. Do not move this evaluation.
+        if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
+          data.chordSkip = true;
+          return null;
+        }
+        // `, once`: a clause that has already fired keeps its refusal out
+        // too (peek only — the occurrence bump stays in postValidate).
+        if (clause.once && ((world.getStateValue(occurrenceKeyOf(target)) as number | undefined) ?? 0) >= 1) {
+          data.chordSkip = true;
+          return null;
+        }
+        const refusal = runtime.findRefusal(clause.body, ctx);
         return refusal ? { valid: false, error: refusal } : null;
       },
       postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        const key = `${CHORD_OCCURRENCE_PREFIX}trait.${clause.action}.${itOf(target)}`;
+        const ctx: ExecContext = { world, it: itOf(target) };
+        // D8: same gate, same evaluation point (see preValidate).
+        if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
+          data.chordSkip = true; // `while <cond>` gate — clause sits out this firing
+          return null;
+        }
+        const key = occurrenceKeyOf(target);
         const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+        if (clause.once && occurrence > 1) {
+          data.chordSkip = true; // `, once` — one lifetime firing (D5)
+          return null;
+        }
         world.setStateValue(key, occurrence);
-        const ctx: ExecContext = { world, it: itOf(target), occurrence };
+        ctx.occurrence = occurrence;
         data.chordOccurrence = occurrence;
         data.chordDecisions = runtime.snapshotDecisions(clause.body, ctx);
         return null;
       },
       postExecute(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): void {
+        if (skipped(data)) return;
         runtime.execStatements(clause.body, runtime.restoreCtx(world, itOf(target), data), 'mutations');
       },
       postReport(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorReportResult {
+        if (skipped(data)) return {};
         const reports = runtime.execStatements(clause.body, runtime.restoreCtx(world, itOf(target), data), 'reports');
         const result: InterceptorReportResult = {};
         const emit: CapabilityEffect[] = [];

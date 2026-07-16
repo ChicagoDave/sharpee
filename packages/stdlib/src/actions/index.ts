@@ -17,6 +17,11 @@ export * from './constants';
 // Interceptor lifecycle engine (ADR-228) — descriptors + shared hook runner
 export * from './lifecycle';
 
+// Wired-action registry (ADR-228 D5) — the descriptor table + derived id set.
+// Exported here, NOT from the lifecycle barrel: actions import that barrel,
+// and this module imports the actions (cycle otherwise).
+export * from './lifecycle/registry';
+
 // Standard actions
 export * from './standard';
 

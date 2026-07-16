@@ -117,6 +117,13 @@ wins), veto-only guard semantics, structured onBlocked, and per-item multi-objec
 lifecycles. New actions get interceptor correctness by writing a descriptor —
 hand-rolled lifecycle code is a review-rejectable smell.
 
+**Wired-action registry (ADR-228 D5)**: `src/actions/lifecycle/registry.ts` lists
+every descriptor and derives `interceptorConsultingActionIds` (the union of all slot
+actionIds) — the authoritative "will an interceptor under this id ever fire" set,
+consumed by the Chord story-loader's load-time fail-fast. A new action's descriptor
+MUST be added to the table; the registry test's source-scan completeness gate fails
+the suite if it isn't.
+
 **Both-ids-fire rule (ADR-228 D6)**: one physical operation can consult hooks under
 two action ids — `remove X from Y` fires `if.action.removing` AND `if.action.taking`
 on the item (a taking-guard can't be bypassed by phrasing); `insert X in Y` fires
