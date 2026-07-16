@@ -20,6 +20,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IWorldModel, IdentityBehavior, IdentityTrait, TraitType } from '@sharpee/world-model';
+import { killPlayer } from '@sharpee/stdlib';
 
 // Message IDs for lang layer
 export const CakeMessages = {
@@ -116,35 +117,33 @@ export function registerCakeEatingHandler(world: WorldModel): void {
             cakeType: 'blue-icing'
           });
         } else if (playerLocation === teaRoomId) {
-          // In Tea Room → crush death (already full size, enlarging crushes you)
-          w.setStateValue('dungeo.player.dead', true);
-          w.setStateValue('dungeo.player.death_cause', 'cake_crush');
-          return [
+          // In Tea Room → crush death (already full size, enlarging crushes you).
+          // Canonical terminal death (ADR-224); cake_effect carries the narration.
+          const deathEvent = killPlayer(w as WorldModel, player, { cause: 'cake_crush', terminal: true });
+          const result: ISemanticEvent[] = [
             makeEvent('dungeo.event.cake_effect', CakeMessages.BLUE_CRUSH, {
               cakeType: 'blue-icing',
               cause: 'cake_crush'
-            }),
-            makeEvent('if.event.player.died', CakeMessages.BLUE_CRUSH, {
-              cause: 'cake_crush'
             })
           ];
+          if (deathEvent) result.push(deathEvent);
+          return result;
         }
         return null;
       }
 
       case 'orange-icing': {
-        // Explosion → death anywhere
-        w.setStateValue('dungeo.player.dead', true);
-        w.setStateValue('dungeo.player.death_cause', 'cake_explosion');
-        return [
+        // Explosion → death anywhere. Canonical terminal death (ADR-224);
+        // cake_effect carries the narration.
+        const deathEvent = killPlayer(w as WorldModel, player, { cause: 'cake_explosion', terminal: true });
+        const result: ISemanticEvent[] = [
           makeEvent('dungeo.event.cake_effect', CakeMessages.ORANGE_EXPLODE, {
             cakeType: 'orange-icing',
             cause: 'cake_explosion'
-          }),
-          makeEvent('if.event.player.died', CakeMessages.ORANGE_EXPLODE, {
-            cause: 'cake_explosion'
           })
         ];
+        if (deathEvent) result.push(deathEvent);
+        return result;
       }
 
       case 'red-icing': {
@@ -222,19 +221,18 @@ export function registerCakeThrowingHandler(world: WorldModel): void {
       }
     }
 
-    // Orange cake thrown anywhere → explosion death
+    // Orange cake thrown anywhere → explosion death. Canonical terminal death
+    // (ADR-224); cake_effect carries the narration.
     if (cakeType === 'orange-icing') {
-      w.setStateValue('dungeo.player.dead', true);
-      w.setStateValue('dungeo.player.death_cause', 'cake_explosion');
-      return [
+      const deathEvent = killPlayer(w as WorldModel, player, { cause: 'cake_explosion', terminal: true });
+      const result: ISemanticEvent[] = [
         makeEvent('dungeo.event.cake_effect', CakeMessages.ORANGE_EXPLODE, {
           cakeType: 'orange-icing',
           cause: 'cake_explosion'
-        }),
-        makeEvent('if.event.player.died', CakeMessages.ORANGE_EXPLODE, {
-          cause: 'cake_explosion'
         })
       ];
+      if (deathEvent) result.push(deathEvent);
+      return result;
     }
 
     return null;

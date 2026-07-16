@@ -168,7 +168,7 @@ export class CloakOfDarknessStory implements Story {
         const results: string[] = [];
         const location = context.world.getEntity(context.currentLocation);
         const roomTrait = location?.get('room') as RoomTrait | undefined;
-        const isDark = roomTrait?.isDark === true;
+        const isDark = roomTrait?.requiresLight === true;
         
         // Always include current location
         results.push(context.currentLocation);
@@ -207,7 +207,7 @@ export class CloakOfDarknessStory implements Story {
       includeEntities: (context: any) => {
         const location = context.world.getEntity(context.currentLocation);
         const roomTrait = location?.get('room') as RoomTrait | undefined;
-        const isDark = roomTrait?.isDark === true;
+        const isDark = roomTrait?.requiresLight === true;
         
         // Check if player is carrying the cloak
         const carried = context.world.getContents(context.actorId);
@@ -343,7 +343,7 @@ export class CloakOfDarknessStory implements Story {
     
     foyer.add(new RoomTrait({
       exits: {}, // Will be added later
-      isDark: false // Well lit
+      requiresLight: false // Well lit
     }));
     
     foyer.add(new IdentityTrait({
@@ -365,7 +365,7 @@ export class CloakOfDarknessStory implements Story {
     
     cloakroom.add(new RoomTrait({
       exits: {}, // Will be added later
-      isDark: false // Well lit
+      requiresLight: false // Well lit
     }));
     
     cloakroom.add(new IdentityTrait({
@@ -388,7 +388,7 @@ export class CloakOfDarknessStory implements Story {
 
     bar.add(new RoomTrait({
       exits: {}, // Will be added later
-      isDark: true // Dark until cloak is hung on hook
+      requiresLight: true // Dark until cloak is hung on hook
     }));
     
     bar.add(new IdentityTrait({
@@ -410,7 +410,7 @@ export class CloakOfDarknessStory implements Story {
     
     outside.add(new RoomTrait({
       exits: {}, // Will be added later
-      isDark: false, // Well lit
+      requiresLight: false, // Well lit
       isOutdoors: true
     }));
     
@@ -513,7 +513,7 @@ export class CloakOfDarknessStory implements Story {
     if (!bar) return true;
     
     const roomTrait = bar.get(RoomTrait);
-    return roomTrait?.isDark === true;
+    return roomTrait?.requiresLight === true;
   }
   
   /**
@@ -725,7 +725,7 @@ export class CloakOfDarknessStory implements Story {
           if (bar) {
             const roomTrait = bar.get(RoomTrait);
             if (roomTrait) {
-              roomTrait.isDark = false;
+              roomTrait.requiresLight = false;
             }
           }
           this.updateMessage();

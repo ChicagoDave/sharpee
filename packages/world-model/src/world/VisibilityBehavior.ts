@@ -28,7 +28,7 @@ export class VisibilityBehavior extends Behavior {
    * This is the single source of truth for darkness checking.
    *
    * A room is dark if:
-   * 1. It has RoomTrait with isDark = true
+   * 1. It has RoomTrait with requiresLight = true
    * 2. There are no accessible, active light sources
    *
    * @param room - The room entity to check
@@ -37,7 +37,7 @@ export class VisibilityBehavior extends Behavior {
    */
   static isDark(room: IFEntity, world: WorldModel): boolean {
     const roomTrait = room.getTrait(RoomTrait);
-    if (!roomTrait || !roomTrait.isDark) {
+    if (!roomTrait || !roomTrait.requiresLight) {
       return false; // Room isn't marked as dark
     }
     return !this.hasLightSource(room, world);
@@ -114,7 +114,7 @@ export class VisibilityBehavior extends Behavior {
 
     // Check if room is dark
     const roomTrait = observerRoom.getTrait(RoomTrait);
-    if (roomTrait && roomTrait.isDark) {
+    if (roomTrait && roomTrait.requiresLight) {
       // In a dark room, need light to see
       if (!this.hasLightSource(observerRoom, world)) {
         // Special cases in darkness:
@@ -156,7 +156,7 @@ export class VisibilityBehavior extends Behavior {
 
     // Check if room is dark
     const roomTrait = observerRoom.getTrait(RoomTrait);
-    const isDark = roomTrait && roomTrait.isDark;
+    const isDark = roomTrait && roomTrait.requiresLight;
     const hasLight = this.hasLightSource(observerRoom, world);
     
     // If it's dark and no light, only see specific things

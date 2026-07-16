@@ -108,8 +108,8 @@ export const pressButtonAction: Action = {
           if (room) {
             const roomTrait = room.get(RoomTrait);
             if (roomTrait) {
-              const wasLight = !roomTrait.isDark;
-              roomTrait.isDark = wasLight; // Toggle
+              const wasLight = !roomTrait.requiresLight;
+              roomTrait.requiresLight = wasLight; // Toggle
               sharedData.resultMessage = wasLight
                 ? PressButtonMessages.LIGHTS_OFF
                 : PressButtonMessages.LIGHTS_ON;

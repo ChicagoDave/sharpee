@@ -55,7 +55,7 @@ function isRoomDark(world: WorldModel, roomId: EntityId): boolean {
   if (!room) return true;
 
   const roomTrait = room.get(RoomTrait);
-  if (!roomTrait?.isDark) return false; // Room has ambient light
+  if (!roomTrait?.requiresLight) return false; // Room has ambient light
 
   // Check if player has any lit light source
   const playerContents = world.getContents(player.id);

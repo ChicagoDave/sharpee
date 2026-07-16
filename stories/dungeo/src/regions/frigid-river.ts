@@ -46,7 +46,7 @@ export interface FrigidRiverRoomIds {
 
 function createRoom(world: WorldModel, name: string, description: string, isDark = false, isOutdoors = true): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: isDark, isOutdoors }));
   room.add(new IdentityTrait({ name, description, properName: true, article: 'the' }));
   return room;
 }
@@ -65,7 +65,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
 
   // FR1: Near dam, no shore landings
   const frigidRiver1 = world.createEntity('Frigid River-1', EntityType.ROOM);
-  frigidRiver1.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  frigidRiver1.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   frigidRiver1.add(new IdentityTrait({
     name: 'Frigid River',
     aliases: ['frigid river', 'river'],
@@ -80,7 +80,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
 
   // FR2: No landings - rocks and cliffs
   const frigidRiver2 = world.createEntity('Frigid River-2', EntityType.ROOM);
-  frigidRiver2.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  frigidRiver2.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   frigidRiver2.add(new IdentityTrait({
     name: 'Frigid River',
     aliases: ['frigid river', 'river'],
@@ -95,7 +95,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
 
   // FR3: Landings E (White Cliffs Beach 1) and W (Rocky Shore)
   const frigidRiver3 = world.createEntity('Frigid River-3', EntityType.ROOM);
-  frigidRiver3.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  frigidRiver3.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   frigidRiver3.add(new IdentityTrait({
     name: 'Frigid River',
     aliases: ['frigid river', 'river'],
@@ -110,7 +110,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
 
   // FR4: Landings E (White Cliffs Beach 2) and W (Sandy Beach) - buoy here
   const frigidRiver4 = world.createEntity('Frigid River-4', EntityType.ROOM);
-  frigidRiver4.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  frigidRiver4.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   frigidRiver4.add(new IdentityTrait({
     name: 'Frigid River',
     aliases: ['frigid river', 'river'],
@@ -125,7 +125,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
 
   // FR5: Landing W only (Shore) - death if continue downstream
   const frigidRiver5 = world.createEntity('Frigid River-5', EntityType.ROOM);
-  frigidRiver5.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  frigidRiver5.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   frigidRiver5.add(new IdentityTrait({
     name: 'Frigid River',
     aliases: ['frigid river', 'river'],
@@ -158,7 +158,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
 
   // White Cliffs Beach 2 - east of FR4, north of WCB1
   const whiteCliffsBeach2 = world.createEntity('White Cliffs Beach-2', EntityType.ROOM);
-  whiteCliffsBeach2.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  whiteCliffsBeach2.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   whiteCliffsBeach2.add(new IdentityTrait({
     name: 'White Cliffs Beach',
     aliases: ['white cliffs beach', 'beach', 'cliffs beach'],
@@ -182,7 +182,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
   const aragainFalls = world.createEntity('Aragain Falls', EntityType.ROOM);
   aragainFalls.add(new RoomTrait({
     exits: {},
-    isDark: false,
+    requiresLight: false,
     isOutdoors: true,
     blockedExits: {
       [Direction.EAST]: 'The rainbow is beautiful, but it looks far too insubstantial to walk on.'
@@ -203,7 +203,7 @@ export function createFrigidRiverRegion(world: WorldModel): FrigidRiverRoomIds {
 
   // Rainbow rooms
   const onTheRainbow = world.createEntity('On the Rainbow', EntityType.ROOM);
-  onTheRainbow.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  onTheRainbow.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   onTheRainbow.add(new IdentityTrait({
     name: 'On the Rainbow',
     aliases: ['on the rainbow', 'rainbow'],

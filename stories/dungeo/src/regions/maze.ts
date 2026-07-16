@@ -56,7 +56,7 @@ export interface MazeRoomIds {
 
 function createRoom(world: WorldModel, name: string, description: string, aliases: string[] = []): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   room.add(new IdentityTrait({
     name,
     aliases,
@@ -69,7 +69,7 @@ function createRoom(world: WorldModel, name: string, description: string, aliase
 
 function createMazeRoom(world: WorldModel, num: number): IFEntity {
   const room = world.createEntity('Maze', EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   room.add(new IdentityTrait({
     name: 'Maze',
     aliases: ['maze', `maze ${num}`, `maze${num}`],
@@ -82,7 +82,7 @@ function createMazeRoom(world: WorldModel, num: number): IFEntity {
 
 function createDeadEndRoom(world: WorldModel, num: number): IFEntity {
   const room = world.createEntity(`Dead End ${num}`, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   room.add(new IdentityTrait({
     name: 'Dead End',
     aliases: ['dead end', `dead end ${num}`, `deadend${num}`],

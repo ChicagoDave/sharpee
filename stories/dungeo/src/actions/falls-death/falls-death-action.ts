@@ -5,15 +5,9 @@
  * Per Mainframe Zork Fortran source - immediate death.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { FALLS_DEATH_ACTION_ID, FallsDeathMessages } from './types';
-
-// Event ID counter
-let eventCounter = 0;
-function generateEventId(): string {
-  return `falls-death-${Date.now()}-${++eventCounter}`;
-}
 
 export const fallsDeathAction: Action = {
   id: FALLS_DEATH_ACTION_ID,
@@ -25,9 +19,14 @@ export const fallsDeathAction: Action = {
   },
 
   execute(context: ActionContext): void {
-    // Mark player as dead
-    context.world.setStateValue('dungeo.player.dead', true);
-    context.world.setStateValue('dungeo.player.death_cause', 'falls');
+    // Canonical terminal death (ADR-224): kill via the platform primitive,
+    // stash the event for report(). No hand-rolled dead flag.
+    (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent =
+      killPlayer(context.world, context.player, {
+        cause: 'aragain_falls',
+        messageId: FallsDeathMessages.DEATH,
+        terminal: true,
+      });
   },
 
   blocked(_context: ActionContext, _result: ValidationResult): ISemanticEvent[] {
@@ -35,12 +34,7 @@ export const fallsDeathAction: Action = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Domain event with messageId - no action.success needed
-    return [
-      context.event('if.event.player.died', {
-        messageId: FallsDeathMessages.DEATH,
-        cause: 'aragain_falls'
-      })
-    ];
+    const event = (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent;
+    return event ? [event] : [];
   }
 };

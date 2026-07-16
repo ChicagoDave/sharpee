@@ -41,8 +41,13 @@ export interface IRoomData {
   /** Whether this is an outdoor location */
   outdoor?: boolean;
   
-  /** Whether this room is dark (requires light source to see) */
-  isDark?: boolean;
+  /**
+   * Whether this room is *intrinsically* dark — it needs an active light source
+   * to be seen. This is the raw input, not the answer: the effective "is it dark
+   * right now?" question (which also accounts for a carried lit lamp) is owned by
+   * `VisibilityBehavior.isDark(room, world)` — never read this field directly for that.
+   */
+  requiresLight?: boolean;
   
   /** Whether this room is affected by time of day (for outdoor locations) */
   isOutdoors?: boolean;
@@ -124,7 +129,7 @@ export class RoomTrait implements ITrait, IRoomData {
   exits: Partial<Record<DirectionType, IExitInfo>>;
   blockedExits?: Partial<Record<DirectionType, string>>;
   outdoor: boolean;
-  isDark: boolean;
+  requiresLight: boolean;
   isOutdoors: boolean;
   isUnderground: boolean;
   initialDescription?: string;
@@ -155,7 +160,7 @@ export class RoomTrait implements ITrait, IRoomData {
     this.exits = data.exits ?? {} as Partial<Record<DirectionType, IExitInfo>>;
     this.blockedExits = data.blockedExits;
     this.outdoor = data.outdoor ?? false;
-    this.isDark = data.isDark ?? false;  // Default to lit
+    this.requiresLight = data.requiresLight ?? false;  // Default to lit
     this.isOutdoors = data.isOutdoors ?? false;
     this.isUnderground = data.isUnderground ?? false;
     this.initialDescription = data.initialDescription;

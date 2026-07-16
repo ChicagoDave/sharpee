@@ -11,7 +11,7 @@
  * Unknown commands: "I am only a stupid robot and cannot perform that command."
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, NpcTrait, RoomTrait, RoomBehavior, Direction, TraitType } from '@sharpee/world-model';
 import { CommandingMessages, COMMANDING_ACTION_ID } from './commanding-messages';
@@ -333,20 +333,20 @@ function handleRobotTakeSphere(
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
 
-  // Robot crush message
+  // Robot crush message (narration)
   events.push(context.event('game.message', {
     messageId: CageMessages.ROBOT_CRUSH
   }));
 
-  // Set player death state
-  context.world.setStateValue('dungeo.player.dead', true);
-  context.world.setStateValue('dungeo.player.death_cause', 'robot_crush');
-
-  // Emit death event
-  events.push(context.event('game.player_death', {
+  // MDL act3.mud:251 `<JIGS-UP ,ROBOT-CRUSH>` kills the player (WINNER); the cage
+  // falls on the player when the robot reaches for the sphere. Canonical terminal
+  // death (ADR-224). The crush narration is carried by the game.message above, so
+  // the death event needs no messageId (avoids a duplicate render).
+  const deathEvent = killPlayer(context.world, context.player, {
     cause: 'robot_crush',
-    messageId: CageMessages.ROBOT_CRUSH
-  }));
+    terminal: true,
+  });
+  if (deathEvent) events.push(deathEvent);
 
   return events;
 }

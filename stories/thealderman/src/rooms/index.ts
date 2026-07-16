@@ -161,7 +161,7 @@ export function createRooms(world: WorldModel): void {
 
 function createRoom(world: WorldModel, name: string, description: string): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: false }));
   room.add(new IdentityTrait({
     name,
     description,

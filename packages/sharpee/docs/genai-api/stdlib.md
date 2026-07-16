@@ -3034,6 +3034,171 @@ import { IFEntity, WorldModel } from '@sharpee/world-model';
 export declare function findWieldedWeapon(entity: IFEntity, world: WorldModel): IFEntity | undefined;
 ```
 
+### death/kill-player
+
+```typescript
+/**
+ * `killPlayer` — the single Sharpee-Way player-death primitive (ADR-224 Decision 2).
+ *
+ * Every death mechanism (combat, a deadly-room verb-allowlist, a probabilistic
+ * grue, a gas interceptor, a scheduler daemon) calls this instead of hand-mutating
+ * a dead flag or hand-emitting an ad-hoc event. It applies the lethal transition to
+ * the player's `HealthTrait` (the single mortality substrate, ADR-226) and returns
+ * the canonical {@link PLAYER_DIED_EVENT}; the caller routes that event into its
+ * event stream (an action's report list, an interceptor's effects, a daemon's
+ * returned events). The engine observes the event and owns game-over routing.
+ *
+ * Public interface: `killPlayer`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+import type { IFEntity, WorldModel } from '@sharpee/world-model';
+/**
+ * Options for {@link killPlayer}.
+ */
+export interface IKillPlayerOptions {
+    /** Cause of death, recorded on the event and on `HealthTrait.causeOfDeath`. */
+    cause: string;
+    /** Optional death-text message id (language layer renders it — never English here). */
+    messageId?: string;
+    /**
+     * Terminal-death intent (ADR-224 Q-2). Defaults to `true`. A story reincarnation
+     * policy reads this off the event but the engine's decision is the player's derived
+     * life-state after dispatch, so `terminal:false` alone does not keep the game running.
+     */
+    terminal?: boolean;
+}
+/**
+ * Kill the player: apply a terminal lethal transition to the player's `HealthTrait`
+ * and produce the canonical death event.
+ *
+ * Lazily attaches a `HealthTrait` if the player has none — a death-capable game must
+ * always give `killPlayer`'s lethal transition a target (ADR-223 AC-1 caveat), so the
+ * `HealthTrait` opt-in rule does not apply to the player in such a game.
+ *
+ * Idempotent: if the player is already `dead`, this is a no-op that returns `null`, so
+ * a second call in the same turn does not re-emit the event or double-route game-over.
+ *
+ * @param world the world model (unused today; kept for signature stability and future scope resolution)
+ * @param player the player entity to kill
+ * @param opts cause, optional message id, terminal intent (default `true`)
+ * @returns the canonical `if.event.player.died` event, or `null` if the player was already dead
+ */
+export declare function killPlayer(world: WorldModel, player: IFEntity, opts: IKillPlayerOptions): ISemanticEvent | null;
+```
+
+### death/player-death-events
+
+```typescript
+/**
+ * Canonical player-death event — the single wire shape for ADR-224.
+ *
+ * One typed event, `if.event.player.died`, that both the emitter (`killPlayer`,
+ * this module) and the consumers (the stdlib `death` channel and the engine's
+ * game-over routing) import from here. Defining the type string and payload once,
+ * imported by both sides, is the co-located wire-type discipline (DEVARCH rule 8b):
+ * a change to the payload compiles — or fails to compile — every side in the same
+ * commit, so the four-way event-name drift ADR-224 catalogued cannot recur.
+ *
+ * The engine (`@sharpee/engine`) depends on stdlib, not the reverse, so this is the
+ * correct home: the lower layer owns the vocabulary, the runtime consumes it.
+ *
+ * Public interface: `PLAYER_DIED_EVENT`, `IPlayerDiedPayload`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+/**
+ * The canonical death event type (ADR-224 Q-3). Lives in the platform
+ * `if.event.*` namespace because death is not combat-specific — combat is one
+ * `cause` among falls, grue, and gas. Retires the pre-ADR-224 split across
+ * `combat.player_died`, `if.event.death` (player case), and the bare `player.died`.
+ */
+export declare const PLAYER_DIED_EVENT: "if.event.player.died";
+/**
+ * Payload of a {@link PLAYER_DIED_EVENT}. Carried on the event's `data` field.
+ */
+export interface IPlayerDiedPayload {
+    /** What killed the player: `'combat'`, `'gas'`, `'grue'`, `'fall'`, etc. Also recorded on the player's `HealthTrait.causeOfDeath`. */
+    cause: string;
+    /**
+     * Terminal-death intent (ADR-224 Q-2). `true` means the engine routes to
+     * `game.lost` unless a story policy vetoes first. The engine's final word is
+     * the player's derived life-state after dispatch, not this flag (see the
+     * routing contract); the flag is the story policy's signal.
+     */
+    terminal: boolean;
+    /** Optional message id for the death text (rendered by the language layer, never an English string here — ADR-158). */
+    messageId?: string;
+}
+```
+
+### death/probabilistic-death
+
+```typescript
+/**
+ * Seeded probabilistic-death helper (ADR-224 Decision 3).
+ *
+ * A thin, intention-revealing wrapper over the scheduler's seeded RNG so a
+ * probabilistic hazard (the grue: a move in the dark is lethal only some of the
+ * time) is replay-deterministic under a fixed seed. Centralising the roll here is
+ * also the enforcement point for the project RNG policy: probabilistic death uses
+ * the seeded RNG exclusively — `Math.random()` is never acceptable (a seeded roll
+ * is what makes AC-4 reproducible and what save/restore relies on).
+ *
+ * Public interface: `rollLethal`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+import type { SeededRandom } from '@sharpee/core';
+/**
+ * Whether a probabilistic hazard is lethal this time.
+ *
+ * @param probability chance of death in `[0, 1]` (e.g. `0.75` = the grue's 75% kill)
+ * @param rng the engine's seeded RNG — the sole randomness source (never `Math.random()`)
+ * @returns `true` with probability `probability`, deterministically for a given seed/sequence
+ */
+export declare function rollLethal(probability: number, rng: SeededRandom): boolean;
+```
+
+### death/deadly-room-transformer
+
+```typescript
+/**
+ * Deadly-room command transformer (ADR-224 Decision 3).
+ *
+ * Runs after parse / before validate: while the player stands in a room carrying
+ * `DeadlyRoomTrait`, a verb outside the room's safe allowlist is redirected to the
+ * generic {@link DEADLY_ROOM_DEATH_ACTION_ID} action (whose `report()` calls
+ * `killPlayer`). This is the seam MDL's Aragain Falls needs — "every verb but LOOK
+ * is fatal here" catches objectless verbs (WAIT, INVENTORY) an ADR-208 action
+ * interceptor could never see, because interceptors resolve on a direct object.
+ *
+ * The engine auto-registers this transformer (like a standard plugin), injecting
+ * its seeded RNG for the probabilistic (`chance`) variant. The transformer is a
+ * plain `(parsed, world) => parsed` function so stdlib need not import the engine's
+ * `ParsedCommandTransformer` type — that would invert the dependency direction.
+ *
+ * Public interface: `createDeadlyRoomTransformer`, `DEADLY_ROOM_DEATH_ACTION_ID`,
+ * `DEADLY_ROOM_CAUSE_KEY`, `DEADLY_ROOM_MESSAGE_KEY`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+import type { SeededRandom } from '@sharpee/core';
+import type { IParsedCommand, WorldModel } from '@sharpee/world-model';
+/** The generic platform action a lethal deadly-room verb is redirected to. */
+export declare const DEADLY_ROOM_DEATH_ACTION_ID = "if.action.deadly_room_death";
+/** `extras` key carrying the death cause from the transformer to the death action. */
+export declare const DEADLY_ROOM_CAUSE_KEY = "deadlyRoomCause";
+/** `extras` key carrying the optional death message id. */
+export declare const DEADLY_ROOM_MESSAGE_KEY = "deadlyRoomMessageId";
+/**
+ * Build the deadly-room transformer. Returns the parsed command unchanged unless
+ * the player's room has a `DeadlyRoomTrait` and the command's verb is lethal there,
+ * in which case it redirects to the generic death action, threading the cause and
+ * message id through `extras`.
+ *
+ * @param rng the engine's seeded RNG, used only for the probabilistic (`chance`) variant
+ */
+export declare function createDeadlyRoomTransformer(rng?: SeededRandom): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand;
+```
+
 ### chains
 
 ```typescript
@@ -3305,10 +3470,13 @@ import type { IOChannel, MainEntry } from '@sharpee/if-domain';
  *
  * - `game.won` / `game.lost` — engine emits these from `engine.stop()`
  *   via `createGameWonEvent` / `createGameLostEvent` (core/events).
- * - `combat.player_died` — emitted by the `@sharpee/ext-basic-combat`
- *   extension. Stories not using basic-combat that want a death
- *   channel emission must either fire `combat.player_died` themselves
- *   or override `deathChannel` with their own closure.
+ * - `if.event.player.died` — the canonical player-death event (ADR-224),
+ *   emitted by `killPlayer` from any death mechanism (combat, hazard,
+ *   grue, gas). Re-pointed here from the pre-ADR-224 `combat.player_died`
+ *   (a hard cutover — no alias; that name and its `@sharpee/ext-basic-combat`
+ *   producer are retired). The `PLAYER_DIED` constant is the canonical
+ *   `PLAYER_DIED_EVENT` imported from the `death` module so emitter and
+ *   channel never drift (one wire shape).
  * - `game.score_changed` — no production emitter today. The channel
  *   listens for it, but it stays silent until a story or extension
  *   adopts the convention. Listed for forward-compatibility.
@@ -3316,7 +3484,7 @@ import type { IOChannel, MainEntry } from '@sharpee/if-domain';
  * Each event carries its message in `event.data.message` (string).
  */
 export declare const STANDARD_CHANNEL_EVENTS: {
-    readonly PLAYER_DIED: "combat.player_died";
+    readonly PLAYER_DIED: "if.event.player.died";
     readonly GAME_WON: "game.won";
     readonly GAME_LOST: "game.lost";
     readonly SCORE_CHANGED: "game.score_changed";
@@ -3402,11 +3570,11 @@ export declare const infoChannel: IOChannel<StoryInfoPayload>;
  */
 export declare const ifidChannel: IOChannel<string>;
 /**
- * `death` — event-mode death notification. Closure looks for an
- * `if.event.player_died` event in this turn's events and projects its
- * `data.message` field. Stories that want different death handling
- * register a replacement `IOChannel` with id `'death'` (last-write-wins
- * per ADR-163 §6).
+ * `death` — event-mode death notification. Closure looks for the
+ * canonical `if.event.player.died` event (ADR-224) in this turn's events
+ * and projects its `data.message` field. Stories that want different death
+ * handling register a replacement `IOChannel` with id `'death'`
+ * (last-write-wins per ADR-163 §6).
  */
 export declare const deathChannel: IOChannel<string>;
 /**
@@ -3754,6 +3922,7 @@ export * from './scope';
 export * from './services';
 export * from './npc';
 export * from './combat';
+export * from './death';
 export * from './chains';
 export * from './inference';
 export * from './utils';

@@ -22,7 +22,7 @@ import {
   TraitType,
   IdentityTrait,
 } from '@sharpee/world-model';
-import { findWieldedWeapon } from '@sharpee/stdlib';
+import { findWieldedWeapon, killPlayer } from '@sharpee/stdlib';
 
 import {
   fightStrength,
@@ -173,7 +173,7 @@ export function meleeNpcResolver(
       target.attributes[MELEE_STATE.WOUND_ADJUST] = newWound;
       // Check for death from wounds
       if (isHeroDeadFromWounds(score, newWound)) {
-        emitHeroDeath(events, npc, target);
+        emitHeroDeath(events, world, npc, target);
       }
       break;
     }
@@ -183,7 +183,7 @@ export function meleeNpcResolver(
       const newWound = applyVillainBlowToHero(woundAdjust, blowResult, baseFight);
       target.attributes[MELEE_STATE.WOUND_ADJUST] = newWound;
       if (isHeroDeadFromWounds(score, newWound)) {
-        emitHeroDeath(events, npc, target);
+        emitHeroDeath(events, world, npc, target);
       }
       break;
     }
@@ -208,7 +208,7 @@ export function meleeNpcResolver(
     case MeleeOutcome.KILLED:
     case MeleeOutcome.SITTING_DUCK:
       // Hero is killed
-      emitHeroDeath(events, npc, target);
+      emitHeroDeath(events, world, npc, target);
       break;
   }
 
@@ -241,12 +241,13 @@ export function meleeNpcResolver(
  */
 function emitHeroDeath(
   events: ISemanticEvent[],
+  world: WorldModel,
   npc: IFEntity,
   target: IFEntity
 ): void {
-  events.push(createEvent('if.event.death', {
-    target: target.id,
-    targetName: target.name,
-    killedBy: npc.id,
-  }, npc.id));
+  // The hero (player) is slain in melee — MDL's "provoked" death (troll/cyclops).
+  // Canonical terminal death (ADR-224), cause 'combat'. The melee blow message
+  // already carried the death narration, so no messageId here (behavior-preserving).
+  const deathEvent = killPlayer(world, target, { cause: 'combat', terminal: true });
+  if (deathEvent) events.push(deathEvent);
 }

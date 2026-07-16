@@ -195,8 +195,8 @@ export function captureRoomSnapshot(
   };
 
   // Add darkness state from room trait
-  if (roomTrait?.isDark !== undefined) {
-    snapshot.isDark = roomTrait.isDark === true;
+  if (roomTrait?.requiresLight !== undefined) {
+    snapshot.isDark = roomTrait.requiresLight === true;
   }
 
   // Add visited state

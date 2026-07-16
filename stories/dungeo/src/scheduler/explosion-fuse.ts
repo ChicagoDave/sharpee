@@ -20,6 +20,7 @@
 
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait, RoomTrait, DirectionType, OpenableTrait, SceneryTrait, TraitType, Direction } from '@sharpee/world-model';
+import { killPlayer } from '@sharpee/stdlib';
 import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import { BurnableTrait } from '../traits';
@@ -88,6 +89,18 @@ function makeEvent(id: string, type: string, turn: number, messageId: string, en
     entities: entityId ? { target: entityId } : {},
     data: { messageId }
   };
+}
+
+/**
+ * Push a canonical terminal player-death (ADR-224) carrying the death narration.
+ * Replaces the hand-rolled `if.event.player.died` + `dungeo.player.death_cause`
+ * pattern the explosion fuses used before the killPlayer migration.
+ */
+function pushPlayerDeath(events: ISemanticEvent[], world: WorldModel, cause: string, messageId: string): void {
+  const player = world.getPlayer();
+  if (!player) return;
+  const deathEvent = killPlayer(world, player, { cause, messageId, terminal: true });
+  if (deathEvent) events.push(deathEvent);
 }
 
 // ============================================================================
@@ -211,8 +224,8 @@ function createExplosionFuse(config: ExplosionConfig, scheduler: ISchedulerServi
           mungRoom(world, ctx.playerLocation);
         }
 
-        events.push(makeEvent('brick-death', 'if.event.player.died', ctx.turn,
-          DungeoSchedulerMessages.BRICK_KILLS_PLAYER, config.brickId));
+        pushPlayerDeath(events, world, 'brick_explosion',
+          DungeoSchedulerMessages.BRICK_KILLS_PLAYER);
 
       } else if (brickInDustyRoom) {
         // Brick is on the floor of dusty room (not in slot) — still explodes in room
@@ -232,9 +245,8 @@ function createExplosionFuse(config: ExplosionConfig, scheduler: ISchedulerServi
 
         if (ctx.playerLocation === config.dustyRoomId) {
           // Player is in blast zone
-          world.setStateValue('dungeo.player.death_cause', 'brick_explosion');
-          events.push(makeEvent('brick-death', 'if.event.player.died', ctx.turn,
-            DungeoSchedulerMessages.BRICK_KILLS_PLAYER, config.brickId));
+          pushPlayerDeath(events, world, 'brick_explosion',
+            DungeoSchedulerMessages.BRICK_KILLS_PLAYER);
         } else {
           events.push(makeEvent('distant-explosion', 'scheduler.fuse.triggered', ctx.turn,
             DungeoSchedulerMessages.DISTANT_EXPLOSION));
@@ -295,9 +307,8 @@ function createSafeCollapseFuse(config: ExplosionConfig): Fuse {
 
       if (ctx.playerLocation === config.dustyRoomId) {
         // Player in Dusty Room: dies
-        world.setStateValue('dungeo.player.death_cause', 'safe_collapse');
-        events.push(makeEvent('safe-collapse-death', 'if.event.player.died', ctx.turn,
-          DungeoSchedulerMessages.SAFE_COLLAPSE_DEATH));
+        pushPlayerDeath(events, world, 'safe_collapse',
+          DungeoSchedulerMessages.SAFE_COLLAPSE_DEATH);
       } else {
         // Player elsewhere: ominous rumbling
         events.push(makeEvent('safe-collapse-rumble', 'scheduler.fuse.triggered', ctx.turn,
@@ -335,9 +346,8 @@ function createLedgeCollapseFuse(config: ExplosionConfig): Fuse {
 
       if (ctx.playerLocation === config.wideLedgeId) {
         // Player on Wide Ledge: dies
-        world.setStateValue('dungeo.player.death_cause', 'ledge_collapse');
-        events.push(makeEvent('ledge-collapse-death', 'if.event.player.died', ctx.turn,
-          DungeoSchedulerMessages.LEDGE_COLLAPSE_DEATH));
+        pushPlayerDeath(events, world, 'ledge_collapse',
+          DungeoSchedulerMessages.LEDGE_COLLAPSE_DEATH);
       } else {
         // Player elsewhere: narrow escape
         events.push(makeEvent('ledge-collapse-escape', 'scheduler.fuse.triggered', ctx.turn,

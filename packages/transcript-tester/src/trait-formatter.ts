@@ -117,7 +117,7 @@ function formatRoom(p: Record<string, any>): string {
 
   // Flags
   const flags: string[] = [];
-  if (p.isDark) flags.push('dark');
+  if (p.requiresLight) flags.push('dark');
   if (p.isOutdoors) flags.push('outdoors');
   if (p.isUnderground) flags.push('underground');
   if (p.visited === false) flags.push('unvisited');

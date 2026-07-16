@@ -54,7 +54,7 @@ export class ChannelServiceTestStory implements Story {
     lab.add(
       new RoomTrait({
         exits: {},
-        isDark: false,
+        requiresLight: false,
       }),
     );
     lab.add(

@@ -23,9 +23,9 @@ import {
   LightSourceTrait,
   LockableTrait,
   OpenableTrait,
-  RoomTrait,
   SwitchableTrait,
   TraitType,
+  VisibilityBehavior,
   WearableTrait,
   WorldModel,
 } from '@sharpee/world-model';
@@ -220,8 +220,9 @@ export class Evaluator {
       const entity = ctx.world.getEntity(subject);
       if (entity) {
         if (symbol === 'dark') {
-          const room = entity.get(TraitType.ROOM) as RoomTrait | undefined;
-          return room?.isDark === true;
+          // Effective darkness is owned by VisibilityBehavior — it also accounts
+          // for a carried lit light source — never the raw `requiresLight` field.
+          return VisibilityBehavior.isDark(entity, ctx.world);
         }
         const irId = this.ids.irIdOf(subject);
         if (irId !== undefined) {

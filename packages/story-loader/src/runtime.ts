@@ -848,7 +848,7 @@ export class ChordRuntime {
   }
 
   /**
-   * Re-evaluate derived properties: `dark while` into `RoomTrait.isDark`,
+   * Re-evaluate derived properties: `dark while` into `RoomTrait.requiresLight`,
    * and `is blocked while <cond>` into blockedExits (block/unblock per the
    * condition's current truth — grammar log 2026-07-10).
    */
@@ -857,7 +857,7 @@ export class ChordRuntime {
       const worldId = this.host.entityId(entity.id);
       const room = worldId ? (world.getEntity(worldId)?.get(TraitType.ROOM) as RoomTrait | undefined) : undefined;
       if (!room) continue;
-      room.isDark = this.evaluator.evalCondition(condition, { world });
+      room.requiresLight = this.evaluator.evalCondition(condition, { world });
     }
 
     for (const irEntity of this.ir.entities) {

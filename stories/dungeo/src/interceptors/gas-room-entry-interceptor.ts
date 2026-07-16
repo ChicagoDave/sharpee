@@ -21,6 +21,7 @@ import {
   TraitType,
   LightSourceBehavior
 } from '@sharpee/world-model';
+import { killPlayer, PLAYER_DIED_EVENT } from '@sharpee/stdlib';
 
 export const GasRoomEntryMessages = {
   EXPLOSION_DEATH: 'dungeo.gas.explosion_death'
@@ -77,14 +78,23 @@ export const GasRoomEntryInterceptor: ActionInterceptor = {
   ): CapabilityEffect[] | null {
     if (error !== 'dungeo.gas_room.explosion') return null;
 
-    // Kill the player
-    world.setStateValue('dungeo.player.dead', true);
-    world.setStateValue('dungeo.player.death_cause', 'gas_explosion');
+    // Canonical terminal death (ADR-224): apply the lethal transition via the
+    // platform primitive, then emit the canonical event through the interceptor's
+    // effect channel so the engine routes game-over.
+    const player = world.getPlayer();
+    if (player) {
+      killPlayer(world, player, {
+        cause: 'gas_explosion',
+        messageId: GasRoomEntryMessages.EXPLOSION_DEATH,
+        terminal: true,
+      });
+    }
 
     return [
-      createEffect('if.event.player.died', {
+      createEffect(PLAYER_DIED_EVENT, {
         messageId: GasRoomEntryMessages.EXPLOSION_DEATH,
-        cause: 'gas_explosion'
+        cause: 'gas_explosion',
+        terminal: true
       })
     ];
   }

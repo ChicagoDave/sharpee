@@ -52,7 +52,7 @@ export const SPIRITS_BLOCK_MESSAGE = 'dungeo.exorcism.spirits_block';
 
 function createRoom(world: WorldModel, name: string, description: string, isDark = false): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: isDark, isOutdoors: false }));
   room.add(new IdentityTrait({ name, description, properName: false, article: 'the' }));
   return room;
 }
@@ -111,7 +111,7 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
   world.setStateValue('prisonCell.bronzeDoorVisible', false);
 
   const treasury = world.createEntity('Treasury of Zork', EntityType.ROOM);
-  treasury.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: false }));
+  treasury.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: false }));
   treasury.add(new IdentityTrait({
     name: 'Treasury of Zork',
     aliases: ['treasury', 'treasury of zork'],
@@ -125,7 +125,7 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
   const entryToHades = world.createEntity('Entrance to Hades', EntityType.ROOM);
   entryToHades.add(new RoomTrait({
     exits: {},
-    isDark: true,
+    requiresLight: true,
     isOutdoors: false,
     blockedExits: { [Direction.EAST]: SPIRITS_BLOCK_MESSAGE }
   }));
@@ -139,7 +139,7 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
   entryToHades.add(new HadesEntryTrait({ spiritsBlocking: true }));
 
   const landOfDead = world.createEntity('Land of the Dead', EntityType.ROOM);
-  landOfDead.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  landOfDead.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   landOfDead.add(new IdentityTrait({
     name: 'Land of the Dead',
     aliases: ['land of dead', 'land of the dead', 'hades'],
@@ -149,7 +149,7 @@ export function createEndgameRegion(world: WorldModel): EndgameRoomIds {
   }));
 
   const tomb = world.createEntity('Tomb of the Unknown Implementer', EntityType.ROOM);
-  tomb.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  tomb.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   tomb.add(new IdentityTrait({
     name: 'Tomb of the Unknown Implementer',
     aliases: ['tomb', 'tomb of unknown implementer', 'tomb of the unknown implementer'],

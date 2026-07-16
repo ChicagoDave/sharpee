@@ -33,7 +33,7 @@ export interface WhiteHouseRoomIds {
 
 function createRoom(world: WorldModel, name: string, description: string, aliases: string[] = []): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   room.add(new IdentityTrait({
     name,
     aliases,

@@ -1571,6 +1571,22 @@ export declare class GameEngine {
      */
     private isGameOver;
     /**
+     * The `cause` of a canonical player-death event (ADR-224) emitted during the
+     * given turn, or `undefined` if the player did not die this turn. Scans the
+     * turn's accumulated events, so it sees deaths from the action, interceptors,
+     * and scheduler daemons alike. When several fire in one turn (rare), the first
+     * is authoritative — `killPlayer` is idempotent, so later calls emit nothing.
+     * @param turn the turn number whose events to scan
+     */
+    private playerDeathCauseThisTurn;
+    /**
+     * Whether the player is currently dead by their derived `HealthTrait` state
+     * (ADR-226/ADR-224). A player with no `HealthTrait` is alive by default (the
+     * opt-in rule) — `killPlayer` lazily attaches one, so a real death always has a
+     * trait to read. This is the engine's "final word" after story policy has run.
+     */
+    private isPlayerDead;
+    /**
      * Add event listener
      */
     on<K extends GameEngineEventName>(event: K, listener: GameEngineEventListener<K>): this;

@@ -19,6 +19,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, moveVehicle } from '@sharpee/world-model';
+import { killPlayer } from '@sharpee/stdlib';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import {
@@ -133,10 +134,12 @@ function handleCrash(world: WorldModel, ctx: SchedulerContext): ISemanticEvent[]
 
   const playerInBalloon = isPlayerInBalloon(world);
 
-  // Emit crash message
+  // Crash narration — shown whether or not the player is aboard (the balloon is
+  // always destroyed). Only a death when the player is inside, so this is a plain
+  // message, not a death event.
   events.push({
     id: `balloon-crash-${ctx.turn}`,
-    type: 'if.event.player.died',
+    type: 'game.message',
     timestamp: Date.now(),
     entities: { target: balloonEntityId || '' },
     data: {
@@ -147,10 +150,17 @@ function handleCrash(world: WorldModel, ctx: SchedulerContext): ISemanticEvent[]
     }
   });
 
-  // Kill player if inside balloon
+  // Player dies only if aboard — canonical terminal death (ADR-224). The crash
+  // narration above already carries the message.
   if (playerInBalloon) {
-    world.setStateValue('dungeo.player.dead', true);
-    world.setStateValue('dungeo.player.death_cause', 'balloon_crash');
+    const player = world.getPlayer();
+    if (player) {
+      const deathEvent = killPlayer(world, player, {
+        cause: 'balloon_crash',
+        terminal: true,
+      });
+      if (deathEvent) events.push(deathEvent);
+    }
   }
 
   // Disable the balloon daemon — balloon is destroyed

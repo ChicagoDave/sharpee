@@ -148,7 +148,7 @@ function getTraitProperties(traitName: string, trait: any): string | null {
     case 'scenery':
       return 'fixed';
     case 'room':
-      return `visited=${trait.visited}, dark=${trait.isDark}`;
+      return `visited=${trait.visited}, dark=${trait.requiresLight}`;
     default:
       return null;
   }

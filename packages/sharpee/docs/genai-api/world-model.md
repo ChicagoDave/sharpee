@@ -2117,6 +2117,7 @@ export declare const TraitType: {
     readonly COMBATANT: "combatant";
     readonly EQUIPPED: "equipped";
     readonly HEALTH: "health";
+    readonly DEADLY_ROOM: "deadlyRoom";
     readonly NPC: "npc";
     readonly OPEN_INVENTORY: "openInventory";
     readonly CHARACTER_MODEL: "characterModel";
@@ -2211,6 +2212,7 @@ import { DestructibleTrait } from './destructible/destructibleTrait';
 import { CombatantTrait } from './combatant/combatantTrait';
 import { EquippedTrait } from './equipped/equippedTrait';
 import { HealthTrait } from './health/healthTrait';
+import { DeadlyRoomTrait } from './deadly-room/deadlyRoomTrait';
 import { NpcTrait } from './npc/npcTrait';
 import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
 import { CharacterModelTrait } from './character-model/characterModelTrait';
@@ -2229,7 +2231,7 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -2604,8 +2606,13 @@ export interface IRoomData {
     blockedExits?: Partial<Record<DirectionType, string>>;
     /** Whether this is an outdoor location */
     outdoor?: boolean;
-    /** Whether this room is dark (requires light source to see) */
-    isDark?: boolean;
+    /**
+     * Whether this room is *intrinsically* dark — it needs an active light source
+     * to be seen. This is the raw input, not the answer: the effective "is it dark
+     * right now?" question (which also accounts for a carried lit lamp) is owned by
+     * `VisibilityBehavior.isDark(room, world)` — never read this field directly for that.
+     */
+    requiresLight?: boolean;
     /** Whether this room is affected by time of day (for outdoor locations) */
     isOutdoors?: boolean;
     /** Whether this room is underground (never has natural light) */
@@ -2668,7 +2675,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     exits: Partial<Record<DirectionType, IExitInfo>>;
     blockedExits?: Partial<Record<DirectionType, string>>;
     outdoor: boolean;
-    isDark: boolean;
+    requiresLight: boolean;
     isOutdoors: boolean;
     isUnderground: boolean;
     initialDescription?: string;
@@ -6037,6 +6044,113 @@ export declare class HealthTrait implements ITrait, IHealthData {
 }
 ```
 
+### traits/deadly-room/deadlyRoomTrait
+
+```typescript
+/**
+ * Deadly Room Trait (ADR-224 — the reusable deadly-room trigger shape).
+ *
+ * Marks a room where verbs outside a safe allowlist kill the player: MDL's
+ * Aragain Falls ("every verb but LOOK is fatal here"). An optional `chance` turns
+ * the same shape into a probabilistic hazard (the grue: a non-safe verb dies only
+ * `chance` of the time), rolled against the engine's seeded RNG.
+ *
+ * Data only — no methods. The lethal/safe verdict lives in {@link DeadlyRoomBehavior}
+ * (a getter would not survive `loadJSON()`). The trait carries no logic and no RNG;
+ * the deadly-room command transformer supplies the seeded RNG at check time.
+ *
+ * Public interface: read the verdict via `DeadlyRoomBehavior.checkVerb`.
+ * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
+ */
+import { ITrait } from '../trait';
+/**
+ * Constructor/serialization data for {@link DeadlyRoomTrait}.
+ */
+export interface IDeadlyRoomData {
+    /** Cause recorded on the death (e.g. 'fall', 'grue'). Defaults to `'hazard'`. */
+    cause?: string;
+    /** Optional death-text message id (rendered by the language layer). */
+    messageId?: string;
+    /**
+     * Verbs that are safe in this room — matched against a command's resolved
+     * action id, tolerant of the bare participle (`'looking'` matches
+     * `'if.action.looking'`). Defaults to `['looking', 'examining']` (LOOK/EXAMINE),
+     * the MDL falls allowlist.
+     */
+    safeVerbs?: string[];
+    /**
+     * Probability (0–1) that a non-safe verb is lethal. When omitted, every non-safe
+     * verb is lethal (the falls). When set, the hazard is probabilistic (the grue)
+     * and rolled against the engine's seeded RNG — never `Math.random()`.
+     */
+    chance?: number;
+}
+/**
+ * The deadly-room trigger trait. Data-only; see file header.
+ */
+export declare class DeadlyRoomTrait implements ITrait, IDeadlyRoomData {
+    static readonly type: "deadlyRoom";
+    readonly type: "deadlyRoom";
+    cause: string;
+    messageId?: string;
+    safeVerbs: string[];
+    chance?: number;
+    constructor(data?: IDeadlyRoomData);
+}
+```
+
+### traits/deadly-room/deadlyRoomBehavior
+
+```typescript
+/**
+ * Behavior for the deadly-room trigger shape (ADR-224).
+ *
+ * Computes the lethal/safe verdict for a parsed verb against a {@link DeadlyRoomTrait}.
+ * Consumers (the deadly-room command transformer) call `checkVerb` rather than
+ * reading the trait directly, so the model survives `loadJSON()`.
+ *
+ * Public interface: `checkVerb`, `isSafeVerb`.
+ * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
+ */
+import { SeededRandom } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior';
+import { DeadlyRoomTrait } from './deadlyRoomTrait';
+/** Verdict returned by {@link DeadlyRoomBehavior.checkVerb}. */
+export interface DeadlyRoomVerdict {
+    /** Whether this verb kills the player in this room. */
+    lethal: boolean;
+    /** Cause to record on the death (from the trait). */
+    cause: string;
+    /** Optional death-text message id (from the trait). */
+    messageId?: string;
+}
+export declare class DeadlyRoomBehavior extends Behavior {
+    static requiredTraits: "deadlyRoom"[];
+    /**
+     * Whether `verb` is in the room's safe allowlist. Matches the resolved action id
+     * exactly (case-insensitive) or by its final dotted segment, so both an action id
+     * (`'if.action.looking'`) and the bare participle (`'looking'`) count as safe.
+     * @param t the deadly-room trait
+     * @param verb the command's resolved action id
+     */
+    static isSafeVerb(t: DeadlyRoomTrait, verb: string): boolean;
+    /**
+     * The lethal/safe verdict for a verb in this room.
+     *
+     * A safe verb is never lethal. Otherwise the verb is lethal outright when the
+     * trait has no `chance`, or lethal with probability `chance` (rolled against the
+     * seeded `rng`) when it does. If `chance` is set but no `rng` is supplied, the
+     * verb is treated as lethal (fail-deadly) — production always supplies the
+     * engine's seeded RNG; a missing RNG is a wiring error, not a survival chance.
+     *
+     * @param t the deadly-room trait
+     * @param verb the command's resolved action id
+     * @param rng the engine's seeded RNG (required only for the `chance` variant)
+     */
+    static checkVerb(t: DeadlyRoomTrait, verb: string, rng?: SeededRandom): DeadlyRoomVerdict;
+}
+```
+
 ### extensions/types
 
 ```typescript
@@ -7099,7 +7213,7 @@ export declare class VisibilityBehavior extends Behavior {
      * This is the single source of truth for darkness checking.
      *
      * A room is dark if:
-     * 1. It has RoomTrait with isDark = true
+     * 1. It has RoomTrait with requiresLight = true
      * 2. There are no accessible, active light sources
      *
      * @param room - The room entity to check

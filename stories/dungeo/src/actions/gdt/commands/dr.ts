@@ -52,7 +52,7 @@ export const drHandler: GDTCommandHandler = {
       output.push('');
       output.push('Properties:');
       output.push(`  Visited: ${roomTrait.visited ? 'yes' : 'no'}`);
-      output.push(`  Dark: ${roomTrait.isDark ? 'YES' : 'no'}`);
+      output.push(`  Dark: ${roomTrait.requiresLight ? 'YES' : 'no'}`);
       output.push(`  Outdoors: ${roomTrait.isOutdoors ? 'yes' : 'no'}`);
       output.push(`  Underground: ${roomTrait.isUnderground ? 'yes' : 'no'}`);
       if (roomTrait.regionId) {
