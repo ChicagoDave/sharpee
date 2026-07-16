@@ -2784,6 +2784,14 @@ export declare class NpcService implements INpcService {
      * Handle player attacking an NPC
      */
     onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    /**
+     * Whether an NPC can take a turn: it is an NPC and — if it carries life-state —
+     * is alive and conscious. An NPC with no `HealthTrait` is active by default
+     * (opt-in life-state, ADR-226 §3). Reads health data via `HealthBehavior`, never a
+     * trait getter, so it survives `loadJSON()`. This is the single turn-eligibility
+     * source that makes the combat-kill sync bug (ADR-226 AC-2) impossible.
+     */
+    private canNpcAct;
     private getActiveNpcs;
     private getBehaviorForNpc;
     private createNpcContext;

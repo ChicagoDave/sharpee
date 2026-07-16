@@ -12,7 +12,7 @@
  */
 
 import { NpcBehavior, NpcContext, NpcAction, guardBehavior } from '@sharpee/stdlib';
-import { CombatantTrait, IdentityTrait, TraitType } from '@sharpee/world-model';
+import { HealthTrait, HealthBehavior, IdentityTrait, TraitType } from '@sharpee/world-model';
 import { TrollMessages } from './troll-messages';
 
 /**
@@ -59,9 +59,9 @@ export const trollBehavior: NpcBehavior = {
   name: 'Troll Behavior',
 
   onTurn(context: NpcContext): NpcAction[] {
-    // Check if NPC is alive and conscious (same as guard)
-    const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-    if (combatant && (!combatant.isAlive || !combatant.isConscious)) {
+    // Check if NPC is alive and conscious (life-state on HealthTrait — ADR-226)
+    const health = context.npc.get(TraitType.HEALTH) as HealthTrait | undefined;
+    if (health && !HealthBehavior.canAct(health)) {
       return [];
     }
 

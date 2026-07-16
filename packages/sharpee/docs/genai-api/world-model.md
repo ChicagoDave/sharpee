@@ -1349,7 +1349,17 @@ export declare class DestructibleBehavior extends Behavior {
 
 ```typescript
 /**
- * Behavior for combatant entities
+ * Behavior for combatant entities.
+ *
+ * Combat orchestration — armor reduction, inventory-drop on death, combat messages —
+ * over the entity's combat *stats* (`CombatantTrait`). Health itself lives on the
+ * required {@link HealthTrait}; all health reads/writes route through
+ * {@link HealthBehavior} (ADR-226 / ADR-223 child A). A combatant is guaranteed a
+ * `HealthTrait` by the load-time AC-7 check.
+ *
+ * Public interface: `canAttack` / `attack` / `heal` / `resurrect` / `isAlive` /
+ * `getHealth` / `getHealthPercentage` / `isHostile` / `setHostile`.
+ * Owner context: `@sharpee/world-model` — combat (requires the HEALTH layer).
  */
 import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
@@ -1368,52 +1378,47 @@ export interface ICombatResult {
     message?: string;
     deathMessage?: string;
 }
-/**
- * Behavior for combatant entities.
- *
- * Handles combat with health, armor, and death.
- * This is a world-aware behavior because it handles inventory dropping on death.
- */
 export declare class CombatBehavior extends Behavior {
-    static requiredTraits: "combatant"[];
+    static requiredTraits: ("combatant" | "health")[];
     /**
-     * Check if a combatant can be attacked
+     * Check if a combatant can be attacked (present, and alive per its health).
      */
     static canAttack(entity: IFEntity): boolean;
     /**
-     * Attack a combatant
+     * Attack a combatant.
      * @param entity The combatant to attack
-     * @param damage Base damage amount
+     * @param damage Base damage amount (pre-armor)
      * @param world The world model (needed for dropping inventory)
      * @returns Result describing what happened
      */
     static attack(entity: IFEntity, damage: number, world: WorldModel): ICombatResult;
     /**
-     * Heal a combatant
+     * Heal a combatant. Returns the amount actually healed.
      */
     static heal(entity: IFEntity, amount: number): number;
     /**
-     * Resurrect a dead combatant
+     * Resurrect a dead combatant — clears the terminal state and restores full health.
+     * @returns true if a dead combatant was resurrected, false if it was already alive
      */
     static resurrect(entity: IFEntity): boolean;
     /**
-     * Check if combatant is alive
+     * Check if combatant is alive (via its health). Non-combatants are alive by default.
      */
     static isAlive(entity: IFEntity): boolean;
     /**
-     * Get current health
+     * Get current health.
      */
     static getHealth(entity: IFEntity): number;
     /**
-     * Get health percentage
+     * Get health percentage.
      */
     static getHealthPercentage(entity: IFEntity): number;
     /**
-     * Check if combatant is hostile
+     * Check if combatant is hostile.
      */
     static isHostile(entity: IFEntity): boolean;
     /**
-     * Set hostility
+     * Set hostility.
      */
     static setHostile(entity: IFEntity, hostile: boolean): void;
 }
@@ -1472,6 +1477,76 @@ export declare class AttackBehavior {
      * @returns The best weapon found, or undefined
      */
     static inferWeapon(inventory: IFEntity[]): IFEntity | undefined;
+}
+```
+
+### traits/health/healthBehavior
+
+```typescript
+/**
+ * Behavior for the HEALTH layer (ADR-226).
+ *
+ * All derivation and mutation over {@link HealthTrait} data. Consumers call these
+ * static methods rather than reading the trait's fields through getters, so the
+ * model survives `loadJSON()` (the `npc-service` `canAct`-getter footgun this layer
+ * removes). Consciousness is purely derived from `health` — there is no stored
+ * knocked-out flag, no `knockOut`/`wakeUp`, and no recovery timer (ADR-226 §1 F1).
+ *
+ * Public interface: `isAlive` / `isConscious` / `canAct` (pure derivation) and
+ * `takeDamage` / `heal` / `kill` (mutation). All operate on a `HealthTrait` directly;
+ * callers first confirm the entity has one (an entity with no `HealthTrait` is alive
+ * and conscious by default — ADR-226 §3 opt-in rule — a check owned by the caller).
+ * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
+ */
+import { Behavior } from '../../behaviors/behavior';
+import { HealthTrait } from './healthTrait';
+export declare class HealthBehavior extends Behavior {
+    static requiredTraits: "health"[];
+    /**
+     * Whether the entity is alive: not terminally dead and above zero health.
+     * @param t the entity's health trait
+     */
+    static isAlive(t: HealthTrait): boolean;
+    /**
+     * Whether the entity is conscious: alive, not asleep, and above the
+     * unconsciousness threshold. Consciousness is derived from `health` alone.
+     * @param t the entity's health trait
+     */
+    static isConscious(t: HealthTrait): boolean;
+    /**
+     * Whether the entity can take a turn / act. Alias of {@link isConscious} — the
+     * turn loop's eligibility predicate (replaces `NpcTrait.canAct`).
+     * @param t the entity's health trait
+     */
+    static canAct(t: HealthTrait): boolean;
+    /**
+     * Apply damage to health. Armor is the caller's concern (a `CombatantTrait` stat),
+     * so `amount` is already post-armor. On reaching zero health the entity dies with
+     * the given `cause`.
+     * @param t the entity's health trait
+     * @param amount post-armor damage; negatives are treated as zero
+     * @param cause cause recorded if this blow is lethal (default 'damage')
+     * @returns `true` iff the entity is now dead
+     */
+    static takeDamage(t: HealthTrait, amount: number, cause?: string): boolean;
+    /**
+     * Restore health, clamped to `maxHealth`. Healing back above the unconsciousness
+     * threshold *is* regaining consciousness (no separate wake step). The dead do not
+     * heal — resurrection is a deliberate separate act, not `heal`.
+     * @param t the entity's health trait
+     * @param amount healing; negatives are treated as zero
+     * @returns the actual amount healed
+     */
+    static heal(t: HealthTrait, amount: number): number;
+    /**
+     * Kill the entity: set the terminal `dead` flag and its `cause`, leaving `health`
+     * untouched. This is death's single writer — non-damage deaths (grue/fall/drown,
+     * ADR-224 `killPlayer`) call it directly; `takeDamage` calls it on a lethal blow.
+     * Death is distinct from `health === 0` (an entity can be dead at full health).
+     * @param t the entity's health trait
+     * @param cause the cause of death (e.g. 'grue', 'fall', 'combat')
+     */
+    static kill(t: HealthTrait, cause: string): void;
 }
 ```
 
@@ -2041,6 +2116,7 @@ export declare const TraitType: {
     readonly DESTRUCTIBLE: "destructible";
     readonly COMBATANT: "combatant";
     readonly EQUIPPED: "equipped";
+    readonly HEALTH: "health";
     readonly NPC: "npc";
     readonly OPEN_INVENTORY: "openInventory";
     readonly CHARACTER_MODEL: "characterModel";
@@ -2134,6 +2210,7 @@ import { BreakableTrait } from './breakable/breakableTrait';
 import { DestructibleTrait } from './destructible/destructibleTrait';
 import { CombatantTrait } from './combatant/combatantTrait';
 import { EquippedTrait } from './equipped/equippedTrait';
+import { HealthTrait } from './health/healthTrait';
 import { NpcTrait } from './npc/npcTrait';
 import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
 import { CharacterModelTrait } from './character-model/characterModelTrait';
@@ -2152,7 +2229,7 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -4275,11 +4352,11 @@ import { EntityId } from '@sharpee/core';
  * Interface for NPC trait data
  */
 export interface INpcData {
-    /** Whether this NPC is currently alive */
-    isAlive?: boolean;
-    /** Whether this NPC is conscious (can act) */
-    isConscious?: boolean;
-    /** Whether this NPC is hostile to the player */
+    /**
+     * Whether this NPC is hostile to the player.
+     * (Life-state — alive/conscious — lives on HealthTrait, ADR-226; hostility moves
+     * to disposition in ADR-223 child C.)
+     */
     isHostile?: boolean;
     /** Whether this NPC can move between rooms */
     canMove?: boolean;
@@ -4326,8 +4403,6 @@ export interface INpcData {
 export declare class NpcTrait implements ITrait, INpcData {
     static readonly type: "npc";
     readonly type: "npc";
-    isAlive: boolean;
-    isConscious: boolean;
     isHostile: boolean;
     canMove: boolean;
     allowedRooms?: EntityId[];
@@ -4346,10 +4421,6 @@ export declare class NpcTrait implements ITrait, INpcData {
     customProperties?: Record<string, unknown>;
     constructor(data?: INpcData);
     /**
-     * Check if NPC can act (alive and conscious)
-     */
-    get canAct(): boolean;
-    /**
      * Check if NPC can enter a specific room
      */
     canEnterRoom(roomId: EntityId): boolean;
@@ -4361,22 +4432,6 @@ export declare class NpcTrait implements ITrait, INpcData {
      * Make this NPC non-hostile
      */
     makePassive(): void;
-    /**
-     * Knock out this NPC (unconscious but alive)
-     */
-    knockOut(): void;
-    /**
-     * Wake up this NPC
-     */
-    wakeUp(): void;
-    /**
-     * Kill this NPC
-     */
-    kill(): void;
-    /**
-     * Revive this NPC
-     */
-    revive(): void;
     /**
      * Set a knowledge item
      */
@@ -5851,37 +5906,37 @@ export declare class DestructibleTrait implements ITrait, IDestructibleData {
 
 ```typescript
 /**
- * Combatant trait for entities that can engage in combat
+ * Combatant trait for entities that can engage in combat.
+ *
+ * Combat STATS only (ADR-226 / ADR-223 child A): a combatant's health, alive/
+ * conscious state, and recovery live on the entity's {@link HealthTrait} — the single
+ * life-state source — not here. `CombatantTrait` *requires* a `HealthTrait`
+ * (enforced at load; ADR-226 §2 / AC-7). Hostility stays here for now (moves to
+ * disposition in ADR-223 child C).
+ *
+ * Data only — all combat logic is in `CombatBehavior`, which reads/writes health
+ * through `HealthBehavior`.
+ * Owner context: `@sharpee/world-model` — combat stats (requires the HEALTH layer).
  */
 import { ITrait } from '../trait';
 export interface ICombatantData {
-    /** Current health points */
-    health?: number;
-    /** Maximum health points */
-    maxHealth?: number;
     /** Combat skill (0-100, affects hit/dodge chance) - ADR-072 */
     skill?: number;
     /** Natural damage (if no weapon) - ADR-072 */
     baseDamage?: number;
-    /** Whether this combatant is conscious (false = knocked out) - ADR-072 */
-    isConscious?: boolean;
-    /** Turns until consciousness recovery - ADR-072 */
-    recoveryTurns?: number;
     /** Armor value that reduces damage */
     armor?: number;
     /** Attack power modifier (legacy, use baseDamage) */
     attackPower?: number;
     /** Defense modifier */
     defense?: number;
-    /** Whether this combatant is alive */
-    isAlive?: boolean;
     /** Custom message when hit */
     hitMessage?: string;
     /** Custom message when killed */
     deathMessage?: string;
     /** Custom message when attacking */
     attackMessage?: string;
-    /** Whether this combatant is hostile by default */
+    /** Whether this combatant is hostile by default (moves to disposition, ADR-223 child C) */
     hostile?: boolean;
     /** Whether this combatant can retaliate */
     canRetaliate?: boolean;
@@ -5895,22 +5950,17 @@ export interface ICombatantData {
 /**
  * Combatant trait indicates an entity can engage in combat.
  *
- * This trait contains only data - all combat logic
- * is in CombatBehavior.
+ * This trait contains only combat *stats* — health and life-state are on the
+ * required {@link HealthTrait}. All combat logic is in `CombatBehavior`.
  */
 export declare class CombatantTrait implements ITrait, ICombatantData {
     static readonly type: "combatant";
     readonly type: "combatant";
-    health: number;
-    maxHealth: number;
     skill: number;
     baseDamage: number;
-    isConscious: boolean;
-    recoveryTurns?: number;
     armor: number;
     attackPower: number;
     defense: number;
-    isAlive: boolean;
     hitMessage?: string;
     deathMessage?: string;
     attackMessage?: string;
@@ -5920,35 +5970,70 @@ export declare class CombatantTrait implements ITrait, ICombatantData {
     experienceValue: number;
     isUndead: boolean;
     constructor(data?: ICombatantData);
+}
+```
+
+### traits/health/healthTrait
+
+```typescript
+/**
+ * Health Trait (ADR-226 — the HEALTH layer of ADR-223's four-layer NPC model).
+ *
+ * The single creature life-state model: current/max health, a derived
+ * consciousness threshold, an `asleep` flag, and a first-class terminal
+ * dead-by-cause state. This is the one source of mortality/consciousness truth —
+ * `CombatantTrait` and `NpcTrait` no longer carry their own `isAlive`/`isConscious`.
+ *
+ * Data only — no methods. All derivation (alive/conscious/can-act) and mutation
+ * (takeDamage/heal/kill) live in {@link HealthBehavior}, because a getter on the
+ * trait does not survive `loadJSON()` deserialization (the `npc-service` `canAct`
+ * footgun this layer removes).
+ *
+ * Public interface: read life-state via `HealthBehavior.{isAlive,isConscious,canAct}`
+ * and mutate via `HealthBehavior.{takeDamage,heal,kill}`.
+ * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
+ */
+import { ITrait } from '../trait';
+/**
+ * Constructor/serialization data for {@link HealthTrait}. Every field is optional;
+ * see the class constructor for defaults.
+ */
+export interface IHealthData {
+    /** Current health. Defaults to `maxHealth`. */
+    health?: number;
+    /** Maximum health; `heal` clamps to this. Defaults to `health`, else 10. */
+    maxHealth?: number;
+    /** Terminal dead-by-cause flag (ADR-224). Defaults to `false`. */
+    dead?: boolean;
+    /** Cause recorded alongside `dead` (e.g. 'combat', 'grue', 'fall'). */
+    causeOfDeath?: string;
+    /** Full health but voluntarily not acting (a daemon/story concern). Defaults to `false`. */
+    asleep?: boolean;
     /**
-     * Computed property to check if combatant is alive based on health
+     * Fraction of `maxHealth` at/below which the entity is unconscious.
+     * Defaults to `0.2` (ADR-072 20%-health parity).
      */
-    get alive(): boolean;
-    /**
-     * Check if combatant can act (alive and conscious)
-     */
-    get canAct(): boolean;
-    /**
-     * Knock out this combatant (unconscious but alive)
-     */
-    knockOut(recoveryTurns?: number): void;
-    /**
-     * Wake up this combatant
-     */
-    wakeUp(): void;
-    /**
-     * Kill this combatant
-     */
-    kill(): void;
-    /**
-     * Take damage
-     * @returns true if combatant was killed
-     */
-    takeDamage(amount: number): boolean;
-    /**
-     * Heal this combatant
-     */
-    heal(amount: number): void;
+    unconsciousThreshold?: number;
+}
+/**
+ * The creature life-state trait. Data-only; see file header.
+ *
+ * Invariants (enforced by {@link HealthBehavior}, not by getters here):
+ * - `alive`   ⇔ `!dead && health > 0`
+ * - `conscious` ⇔ `alive && !asleep && health > maxHealth * unconsciousThreshold`
+ * There is no stored knocked-out flag and no recovery timer — consciousness is
+ * purely derived from `health` (ADR-226 §1 F1).
+ */
+export declare class HealthTrait implements ITrait, IHealthData {
+    static readonly type: "health";
+    readonly type: "health";
+    health: number;
+    maxHealth: number;
+    dead: boolean;
+    causeOfDeath?: string;
+    asleep: boolean;
+    unconsciousThreshold: number;
+    constructor(data?: IHealthData);
 }
 ```
 

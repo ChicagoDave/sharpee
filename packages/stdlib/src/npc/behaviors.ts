@@ -8,7 +8,7 @@
 
 import { NpcBehavior, NpcContext, NpcAction } from './types';
 import { NpcMessages } from './npc-messages';
-import { TraitType, CombatantTrait } from '@sharpee/world-model';
+import { TraitType, CombatantTrait, HealthTrait, HealthBehavior } from '@sharpee/world-model';
 import { nounPhraseFor } from '../utils';
 
 /**
@@ -25,9 +25,10 @@ export const guardBehavior: NpcBehavior = {
   name: 'Guard Behavior',
 
   onTurn(context: NpcContext): NpcAction[] {
-    // Check if NPC is alive and conscious
+    // Check if NPC is alive and conscious (life-state on HealthTrait — ADR-226)
     const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-    if (combatant && (!combatant.isAlive || !combatant.isConscious)) {
+    const health = context.npc.get(TraitType.HEALTH) as HealthTrait | undefined;
+    if (health && !HealthBehavior.canAct(health)) {
       return [];
     }
 
@@ -43,9 +44,9 @@ export const guardBehavior: NpcBehavior = {
   },
 
   onPlayerEnters(context: NpcContext): NpcAction[] {
-    // Check if NPC is alive and conscious
-    const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-    if (combatant && (!combatant.isAlive || !combatant.isConscious)) {
+    // Check if NPC is alive and conscious (life-state on HealthTrait — ADR-226)
+    const health = context.npc.get(TraitType.HEALTH) as HealthTrait | undefined;
+    if (health && !HealthBehavior.canAct(health)) {
       return [];
     }
 
@@ -60,9 +61,9 @@ export const guardBehavior: NpcBehavior = {
   },
 
   onAttacked(context: NpcContext, attacker): NpcAction[] {
-    // Check if NPC is alive and conscious
-    const combatant = context.npc.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-    if (combatant && (!combatant.isAlive || !combatant.isConscious)) {
+    // Check if NPC is alive and conscious (life-state on HealthTrait — ADR-226)
+    const health = context.npc.get(TraitType.HEALTH) as HealthTrait | undefined;
+    if (health && !HealthBehavior.canAct(health)) {
       return [];
     }
 

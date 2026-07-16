@@ -41,6 +41,9 @@ export * from './destructible';
 export * from './combatant';
 export * from './equipped';
 
+// Health / life-state (ADR-226, ADR-223 child A)
+export * from './health';
+
 // Transport traits
 export * from './vehicle';
 export * from './enterable';

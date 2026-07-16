@@ -53,6 +53,9 @@ export const TraitType = {
   COMBATANT: 'combatant',
   EQUIPPED: 'equipped',
 
+  // Health / life-state (ADR-226, ADR-223 child A)
+  HEALTH: 'health',
+
   // NPC traits (ADR-070)
   NPC: 'npc',
   OPEN_INVENTORY: 'openInventory',
@@ -142,6 +145,9 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.DESTRUCTIBLE]: TraitCategory.INTERACTIVE,
   [TraitType.COMBATANT]: TraitCategory.INTERACTIVE,
   [TraitType.EQUIPPED]: TraitCategory.INTERACTIVE,
+
+  // Health / life-state (ADR-226)
+  [TraitType.HEALTH]: TraitCategory.STANDARD,
 
   // NPC traits
   [TraitType.NPC]: TraitCategory.STANDARD,

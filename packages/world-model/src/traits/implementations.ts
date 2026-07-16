@@ -49,6 +49,9 @@ import { DestructibleTrait } from './destructible/destructibleTrait';
 import { CombatantTrait } from './combatant/combatantTrait';
 import { EquippedTrait } from './equipped/equippedTrait';
 
+// Health / life-state (ADR-226, ADR-223 child A)
+import { HealthTrait } from './health/healthTrait';
+
 // NPC traits (ADR-070)
 import { NpcTrait } from './npc/npcTrait';
 import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
@@ -118,6 +121,9 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.DESTRUCTIBLE]: DestructibleTrait,
   [TraitType.COMBATANT]: CombatantTrait,
   [TraitType.EQUIPPED]: EquippedTrait,
+
+  // Health / life-state (ADR-226, ADR-223 child A)
+  [TraitType.HEALTH]: HealthTrait,
 
   // NPC traits (ADR-070)
   [TraitType.NPC]: NpcTrait,
@@ -212,6 +218,9 @@ export {
   DestructibleTrait,
   CombatantTrait,
   EquippedTrait,
+
+  // Health / life-state (ADR-226, ADR-223 child A)
+  HealthTrait,
 
   // NPC traits (ADR-070)
   NpcTrait,

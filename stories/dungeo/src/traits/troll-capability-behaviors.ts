@@ -27,7 +27,8 @@ import {
   createEffect,
   IFEntity,
   WorldModel,
-  CombatantTrait,
+  HealthTrait,
+  HealthBehavior,
 } from '@sharpee/world-model';
 
 import { TrollTrait } from './troll-trait';
@@ -47,9 +48,9 @@ export const TrollCapabilityMessages = {
  * Check if the troll is incapacitated (dead or unconscious)
  */
 function isTrollIncapacitated(entity: IFEntity): boolean {
-  const combatant = entity.get?.(CombatantTrait);
-  if (!combatant) return false;
-  return !combatant.isAlive || !combatant.isConscious;
+  const health = entity.get?.(HealthTrait);
+  if (!health) return false;
+  return !HealthBehavior.canAct(health);
 }
 
 // ============================================================================

@@ -6,7 +6,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { IdentityTrait, NpcTrait, CombatantTrait, TraitType } from '@sharpee/world-model';
+import { IdentityTrait, HealthTrait, HealthBehavior, TraitType } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
 import { applyVillainDeathSideEffects } from '../../../interceptors/melee-interceptor';
 
@@ -87,19 +87,12 @@ export const klHandler: GDTCommandHandler = {
     const identity = targetEntity.get(IdentityTrait);
     const entityName = identity?.name || targetEntity.id;
 
-    // Mark entity as dead via NpcTrait
-    const npcTrait = targetEntity.get(NpcTrait);
-    if (npcTrait) {
-      npcTrait.kill();
-    }
-
-    // Also update CombatantTrait if present
-    const combatant = targetEntity.get<CombatantTrait>(TraitType.COMBATANT);
-    if (combatant) {
-      // Direct assignment — after loadJSON() traits may be plain objects without methods
-      combatant.health = 0;
-      combatant.isAlive = false;
-      combatant.isConscious = false;
+    // Mark entity dead via HealthTrait (life-state — ADR-226). HealthBehavior is a
+    // static method over plain trait data, so it survives world.loadJSON().
+    const health = targetEntity.get<HealthTrait>(TraitType.HEALTH);
+    if (health) {
+      health.health = 0;
+      HealthBehavior.kill(health, 'gdt');
     }
 
     // ADR-078: Killing the thief or troll via GDT applies the same death side

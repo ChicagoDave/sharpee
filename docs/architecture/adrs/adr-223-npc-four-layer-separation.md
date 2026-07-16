@@ -29,9 +29,11 @@
   "has a daemon"; the world has story daemons/fuses/sequences.
 - **HEALTH** — the single mortality/health model (`HealthTrait`, resolved
   2026-07-15). alive/dead/conscious **derive from health** (health > 0 = alive;
-  unconscious at ≤20%); **combat and destruction bend to operate on it**
-  (`CombatantTrait` keeps only combat *stats* and *requires* `HealthTrait`;
-  `DestructibleTrait.hitPoints` collapses in too). Replaces the "creature-state"
+  unconscious at ≤20%); **combat bends to operate on it**
+  (`CombatantTrait` keeps only combat *stats* and *requires* `HealthTrait`).
+  *(Reconciled 2026-07-15 per ADR-226 / child A OQ-1: `DestructibleTrait` is an
+  author-facing scenery mechanic, **not** health, and does **not** collapse in — this
+  layer unifies the **two creature models**, not three.)* Replaces the "creature-state"
   grab-bag: this layer is the **life-state** model (health + derived consciousness
   + `asleep` + a terminal dead-by-cause state, ADR-224) — **hostility decomposes
   out to disposition** (personhood's `CharacterModel`). Because
@@ -92,7 +94,7 @@ personhood (`world-model/.../character-model`, `packages/character`), Chord pers
 |---|---|---|
 | **AGENT** | `ActorTrait` (existing) | turn-participation substrate, inventory, pronouns, `isPlayer`; sight/scope is an AGENT capability |
 | **DAEMON** | one merged daemon model (`NpcService`/`NpcBehavior` **+** `SchedulerPlugin`) + a per-subject daemon binding | `behaviorId`/routine, `canMove`, movement policy, typed per-entity daemon state; attaches to a **person, animal, machine, or the world** (subject-agnostic) |
-| **HEALTH** | a new `HealthTrait` (combat + destruction bend to it) | `health` + a terminal **dead-state carrying a `cause`** (ADR-224); **alive/dead/conscious derive** from it (alive >0; unconscious at ≤20%); **`asleep`** (full health, not acting) a separate small flag; combat *stats* stay on `CombatantTrait` (which now *requires* `HealthTrait`); `DestructibleTrait.hitPoints` collapses in |
+| **HEALTH** | a new `HealthTrait` (combat bends to it) | `health` + a terminal **dead-state carrying a `cause`** (ADR-224); **alive/dead/conscious derive** from it (alive >0; unconscious at ≤20%); **`asleep`** (full health, not acting) a separate small flag; combat *stats* stay on `CombatantTrait` (which now *requires* `HealthTrait`). `DestructibleTrait` is **out of scope** (ADR-226 / child A — scenery mechanic, not health) |
 | **PERSONHOOD** | `CharacterModelTrait` re-homed under **AGENT** (not NPC) | personality, mood, **disposition (incl. hostility)**, knowledge, beliefs, goals-state, conversation, memory, relationships; `'player'`-hardcoded predicates become observer-relative |
 
 The duplicated `NpcTrait` copies of knowledge/goals are deleted (their single home
@@ -125,12 +127,15 @@ personhood reference (finishing it validates the personhood layer);
 
 ### 3. Child roadmap (each its own ADR + plan; sequence recommended, not strict)
 
-- **A — `HealthTrait`.** Unify the three health models (`CombatantTrait.health`,
-  `DestructibleTrait.hitPoints`, the NPC alive/dead flag) into one `HealthTrait`;
-  alive/dead derive from it; combat and destruction bend to operate on it
-  (`CombatantTrait` keeps stats, requires `HealthTrait`). **Fixes the live sync bug
-  by construction** (one source). Hostility is *not* here — it moves to disposition
-  (child C). Good first cut. **Shape (resolved 2026-07-15 — life-state trait):**
+- **A — `HealthTrait`.** Unify the **two creature life-state models**
+  (`CombatantTrait.{health,isAlive,isConscious}` and the `NpcTrait` alive/conscious
+  flags) into one `HealthTrait`; alive/dead derive from it; combat bends to operate on
+  it (`CombatantTrait` keeps stats, requires `HealthTrait`). *(Reconciled 2026-07-15
+  per ADR-226 / OQ-1: `DestructibleTrait.hitPoints` is **out of scope** — an
+  author-facing scenery mechanic, not creature health — so this unifies two models, not
+  three.)* **Fixes the live sync bug by construction** (one source). Hostility is *not*
+  here — it moves to disposition (child C). Good first cut. **Now fully specified in
+  the ACCEPTED ADR-226.** **Shape (resolved 2026-07-15 — life-state trait):**
   `HealthTrait` carries `health` **plus a terminal dead-state with a `cause`** —
   death is not only `health`=0; `killPlayer` (ADR-224) sets a first-class terminal
   cause, so non-damage deaths (falls, grue) have a home on the same trait.

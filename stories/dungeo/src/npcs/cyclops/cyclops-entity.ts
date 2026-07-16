@@ -18,6 +18,7 @@ import {
   ActorTrait,
   NpcTrait,
   CombatantTrait,
+  HealthTrait,
   EntityType,
   RoomBehavior,
   RoomTrait,
@@ -86,8 +87,6 @@ export function createCyclops(
   // Combat - very tough, difficult to kill
   // Health 30 and skill 60 = very hard fight
   cyclops.add(new CombatantTrait({
-    health: 30,
-    maxHealth: 30,
     skill: 60,           // Very skilled (Thief is 70, Troll is 40)
     baseDamage: 8,       // Hits HARD with those fists
     armor: 2,            // Tough hide
@@ -96,6 +95,7 @@ export function createCyclops(
     dropsInventory: false,  // Cyclops has no items
     deathMessage: 'The cyclops crashes to the ground with a tremendous thud!'
   }));
+  cyclops.add(new HealthTrait({ health: 30, maxHealth: 30 })); // life-state (ADR-226)
 
   // Place cyclops in its room
   world.moveEntity(cyclops.id, roomId);

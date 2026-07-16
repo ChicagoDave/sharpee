@@ -18,6 +18,7 @@ import {
   ActorTrait,
   NpcTrait,
   CombatantTrait,
+  HealthTrait,
   SceneryTrait,
   ContainerTrait,
   OpenableTrait,
@@ -320,8 +321,6 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     canMove: false
   }));
   troll.add(new CombatantTrait({
-    health: 10,
-    maxHealth: 10,
     skill: 40,
     baseDamage: 5,
     armor: 0,
@@ -330,6 +329,7 @@ function createTrollRoomObjects(world: WorldModel, roomId: string): void {
     dropsInventory: true,
     deathMessage: 'The troll lets out a final grunt and collapses!'
   }));
+  troll.add(new HealthTrait({ health: 10, maxHealth: 10 })); // life-state (ADR-226)
   // TrollTrait for capability dispatch (TAKE TROLL, unarmed ATTACK, TALK when incapacitated)
   troll.add(new TrollTrait({ roomId, axeId: axe.id }));
   world.moveEntity(troll.id, roomId);

@@ -6,7 +6,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { IdentityTrait, CombatantTrait, TraitType } from '@sharpee/world-model';
+import { IdentityTrait, CombatantTrait, HealthTrait, HealthBehavior, TraitType } from '@sharpee/world-model';
 
 export const wuHandler: GDTCommandHandler = {
   code: 'WU',
@@ -77,8 +77,18 @@ export const wuHandler: GDTCommandHandler = {
       };
     }
 
+    // Life-state lives on HealthTrait (ADR-226).
+    const health = targetEntity.get<HealthTrait>(TraitType.HEALTH);
+    if (!health) {
+      return {
+        success: false,
+        output: [`${entityName} has no HealthTrait - cannot wake up`],
+        error: 'NO_HEALTH'
+      };
+    }
+
     // Check if dead
-    if (!combatant.isAlive) {
+    if (!HealthBehavior.isAlive(health)) {
       return {
         success: false,
         output: [`${entityName} is dead - cannot wake up`],
@@ -87,7 +97,7 @@ export const wuHandler: GDTCommandHandler = {
     }
 
     // Check if already conscious
-    if (combatant.isConscious) {
+    if (HealthBehavior.isConscious(health)) {
       return {
         success: false,
         output: [`${entityName} is already conscious`],
@@ -95,10 +105,11 @@ export const wuHandler: GDTCommandHandler = {
       };
     }
 
-    // Wake up the entity
-    combatant.wakeUp();
+    // Wake up the entity: heal just above the unconsciousness threshold (derived
+    // consciousness — ADR-226).
+    health.health = Math.max(health.health, Math.floor(health.maxHealth * health.unconsciousThreshold) + 1);
     output.push(`Woke up: ${entityName} (${targetEntity.id})`);
-    output.push(`isAlive: ${combatant.isAlive}, isConscious: ${combatant.isConscious}`);
+    output.push(`isAlive: ${HealthBehavior.isAlive(health)}, isConscious: ${HealthBehavior.isConscious(health)}`);
 
     return {
       success: true,

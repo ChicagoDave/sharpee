@@ -8,7 +8,7 @@
 
 import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import { CombatantTrait } from '@sharpee/world-model';
+import { HealthTrait, HealthBehavior } from '@sharpee/world-model';
 
 export const TALK_TO_TROLL_ACTION_ID = 'dungeo.action.talk_to_troll';
 
@@ -65,9 +65,9 @@ export const talkToTrollAction: Action = {
 
     sharedData.trollId = troll.id;
 
-    // Check if troll is incapacitated
-    const combatant = troll.get(CombatantTrait);
-    sharedData.isIncapacitated = combatant && (!combatant.isAlive || !combatant.isConscious);
+    // Check if troll is incapacitated (life-state on HealthTrait — ADR-226)
+    const health = troll.get(HealthTrait);
+    sharedData.isIncapacitated = health ? !HealthBehavior.canAct(health) : false;
 
     return { valid: true };
   },

@@ -17,7 +17,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, CombatantTrait, RoomTrait, ActorTrait, IExitInfo } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, HealthTrait, HealthBehavior, RoomTrait, ActorTrait, IExitInfo } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Daemon ID
@@ -78,10 +78,10 @@ function isVillain(entity: any, world: WorldModel): boolean {
   if (!identity) return false;
 
   const name = identity.name?.toLowerCase() || '';
-  const combatant = entity.get?.(CombatantTrait);
+  const health = entity.get?.(HealthTrait);
 
   // Must be alive to trigger glow
-  if (combatant && !combatant.isAlive) return false;
+  if (health && !HealthBehavior.isAlive(health)) return false;
 
   // Check for troll, thief, or cyclops
   return name.includes('troll') || name.includes('thief') || name.includes('cyclops');

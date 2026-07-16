@@ -14,7 +14,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, CombatantTrait, IdentityTrait, NpcTrait, RoomBehavior, Direction } from '@sharpee/world-model';
+import { WorldModel, CombatantTrait, HealthTrait, HealthBehavior, IdentityTrait, RoomBehavior, Direction } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 
@@ -27,6 +27,10 @@ const TROLLDESC = 'A nasty-looking troll stands here, wielding a bloody axe. He 
 // Entity IDs - set during registration
 let trollId: string | null = null;
 let trollRoomId: string | null = null;
+
+// MDL growing-probability recovery accumulator (VILLAIN-PROBS element; melee.mud:67-76).
+// Grows +10 each unconscious turn; reset to 0 on revival.
+let recoveryAcc = 0;
 
 /**
  * Find the troll entity in the world
@@ -65,11 +69,11 @@ function createTrollRecoveryDaemon(): Daemon {
       const troll = ctx.world.getEntity(trollId);
       if (!troll) return false;
 
-      const combatant = troll.get(CombatantTrait);
-      if (!combatant) return false;
+      const health = troll.get(HealthTrait);
+      if (!health) return false;
 
-      // Only run when troll is alive but unconscious with recovery turns
-      return combatant.isAlive && !combatant.isConscious && combatant.recoveryTurns !== undefined;
+      // Run while the troll is alive but unconscious (health <= threshold) — ADR-226.
+      return HealthBehavior.isAlive(health) && !HealthBehavior.isConscious(health);
     },
 
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
@@ -78,23 +82,23 @@ function createTrollRecoveryDaemon(): Daemon {
       const troll = ctx.world.getEntity(trollId);
       if (!troll) return [];
 
-      const combatant = troll.get(CombatantTrait);
-      if (!combatant || combatant.recoveryTurns === undefined) return [];
+      const health = troll.get(HealthTrait);
+      if (!health) return [];
 
       const events: ISemanticEvent[] = [];
 
-      // Count down recovery
-      combatant.recoveryTurns--;
+      // MDL canon recovery (melee.mud:67-76 + PROB util.mud:195, restored 2026-07-15):
+      // growing-probability revival. Each unconscious turn the accumulator grows by 10
+      // (turn 1 cannot revive); revive when a seeded roll (1..100) <= accumulator. The
+      // port hardcodes LUCKY=T, so the good-luck branch prob = acc% is canon here.
+      if (recoveryAcc > 0 && ctx.random.int(1, 100) <= recoveryAcc) {
+        recoveryAcc = 0;
 
-      if (combatant.recoveryTurns <= 0) {
-        // Troll wakes up! (IN! transition)
-        combatant.wakeUp();
-
-        // Sync NpcTrait consciousness
-        const npcTrait = troll.get(NpcTrait);
-        if (npcTrait) {
-          npcTrait.isConscious = true;
-        }
+        // Revive WEAK: heal just above the unconsciousness threshold (health 3 for the
+        // troll, max 10) so it wakes barely conscious — one hit from death — matching
+        // MDL's "wakes at the strength it was beaten to". Consciousness derives from
+        // health (ADR-226), so there is no flag to flip.
+        health.health = Math.max(health.health, Math.floor(health.maxHealth * health.unconsciousThreshold) + 1);
 
         // Restore description to TROLLDESC
         const identity = troll.get(IdentityTrait);
@@ -111,8 +115,8 @@ function createTrollRecoveryDaemon(): Daemon {
         }
 
         // Note: Axe visibility is handled by TrollAxeVisibilityBehavior
-        // which checks combatant.isAlive && !combatant.isConscious
-        // It will automatically show the axe when isConscious becomes true
+        // which checks HealthBehavior.isAlive && !isConscious (derived from health)
+        // It will automatically show the axe once the troll is conscious again
 
         // Only emit wake-up message if player is in the troll room
         if (trollRoomId && ctx.playerLocation === trollRoomId) {
@@ -128,6 +132,9 @@ function createTrollRecoveryDaemon(): Daemon {
             narrate: true
           });
         }
+      } else {
+        // Not yet revived — grow the revival probability for next turn (MDL +10/turn).
+        recoveryAcc += 10;
       }
 
       return events;
@@ -174,13 +181,13 @@ export function getTrollState(world: WorldModel): {
   const troll = world.getEntity(trollId);
   if (!troll) return null;
 
-  const combatant = troll.get(CombatantTrait);
-  if (!combatant) return null;
+  const health = troll.get(HealthTrait);
+  if (!health) return null;
 
   return {
     id: trollId,
-    isAlive: combatant.isAlive,
-    isConscious: combatant.isConscious,
-    recoveryTurns: combatant.recoveryTurns
+    isAlive: HealthBehavior.isAlive(health),
+    isConscious: HealthBehavior.isConscious(health),
+    recoveryTurns: recoveryAcc // now the MDL growing-probability accumulator
   };
 }

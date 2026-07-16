@@ -81,6 +81,8 @@ export * from './traits/weapon/weaponTrait';
 export * from './traits/breakable/breakableTrait';
 export * from './traits/destructible/destructibleTrait';
 export * from './traits/combatant/combatantTrait';
+// Health trait (ADR-226) — trait file direct; HealthBehavior comes via `./behaviors`
+export * from './traits/health/healthTrait';
 
 // Extension system
 export * from './extensions';

@@ -21,6 +21,9 @@ export { DestructibleBehavior } from '../traits/destructible/destructibleBehavio
 export { CombatBehavior } from '../traits/combatant/combatantBehavior';
 export { AttackBehavior, IAttackResult } from './attack';
 
+// Health / life-state (ADR-226, ADR-223 child A)
+export { HealthBehavior } from '../traits/health/healthBehavior';
+
 // Export result types from behaviors
 export type { IOpenResult, ICloseResult } from '../traits/openable/openableBehavior';
 export type { IWeaponDamageResult } from '../traits/weapon/weaponBehavior';

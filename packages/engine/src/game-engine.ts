@@ -63,6 +63,7 @@ import {
 import { Story } from './story';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative';
 import { validateRoomSnippets } from './snippet-validation';
+import { validateCombatantHealth } from './combatant-health-validation';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
 import { createActionContext } from './action-context-factory';
@@ -372,6 +373,8 @@ export class GameEngine {
     // ADR-209 AC-5: fail load synchronously (naming room and marker) if any
     // snippet-bearing room's description carries an unbound {snippet:name}.
     validateRoomSnippets(this.world);
+    // ADR-226 AC-7: every combatant must carry the HealthTrait combat operates on.
+    validateCombatantHealth(this.world);
 
     // Configure language provider with narrative settings (ADR-089)
     this.configureLanguageProviderNarrative(newPlayer);

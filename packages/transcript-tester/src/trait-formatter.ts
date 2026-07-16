@@ -83,6 +83,8 @@ export function formatTraitProse(traitType: string, props: Record<string, any>):
       return formatWeapon(props);
     case 'combatant':
       return formatCombatant(props);
+    case 'health':
+      return formatHealth(props);
     case 'npc':
       return formatNpc(props);
     case 'scenery':
@@ -174,23 +176,28 @@ function formatWeapon(p: Record<string, any>): string {
 
 function formatCombatant(p: Record<string, any>): string {
   const parts: string[] = [];
-  if (p.health != null && p.maxHealth != null) parts.push(`HP ${p.health}/${p.maxHealth}`);
   if (p.skill != null) parts.push(`skill ${p.skill}`);
   if (p.baseDamage != null) parts.push(`dmg ${p.baseDamage}`);
   if (p.hostile) parts.push('HOSTILE');
-  if (!p.isAlive) parts.push('DEAD');
-  if (!p.isConscious) parts.push('unconscious');
   return `combat: ${parts.join(', ')}`;
+}
+
+// HealthTrait (ADR-226): the life-state layer — health, derived alive/conscious, and
+// the terminal dead-by-cause state. Combat/NPC no longer carry these.
+function formatHealth(p: Record<string, any>): string {
+  const parts: string[] = [];
+  if (p.health != null && p.maxHealth != null) parts.push(`HP ${p.health}/${p.maxHealth}`);
+  const threshold = (p.maxHealth ?? 0) * (p.unconsciousThreshold ?? 0.2);
+  if (p.dead) parts.push(`DEAD${p.causeOfDeath ? ` (${p.causeOfDeath})` : ''}`);
+  else if ((p.health ?? 1) <= 0) parts.push('DEAD');
+  else if (p.asleep) parts.push('asleep');
+  else if ((p.health ?? 0) <= threshold) parts.push('unconscious');
+  return `health: ${parts.join(', ')}`;
 }
 
 function formatNpc(p: Record<string, any>): string {
   const parts: string[] = [];
-  if (!p.isAlive) {
-    parts.push('DEAD');
-  } else {
-    parts.push('alive');
-  }
-  if (!p.isConscious) parts.push('unconscious');
+  // Life-state (alive/conscious) is on HealthTrait now (ADR-226) — see formatHealth.
   if (p.isHostile) parts.push('hostile');
 
   // Custom state

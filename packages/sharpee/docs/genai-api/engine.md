@@ -923,6 +923,48 @@ export declare function lintUnusedSnippetEntries(world: WorldModel): Array<{
 }>;
 ```
 
+### combatant-health-validation
+
+```typescript
+/**
+ * Load-time combatant/health validation (ADR-226 / ADR-223 child A, AC-7).
+ *
+ * After a story's `initializeWorld` returns, every entity carrying a
+ * `CombatantTrait` is checked for the `HealthTrait` it requires — health/life-state
+ * is the single source combat operates on (ADR-226 §2), so a combatant with no
+ * health has no target for damage. A missing health trait fails story load
+ * synchronously, naming every offending entity — the same fail-fast posture as
+ * `validateRoomSnippets`. This is a story-authoring mistake, not a
+ * runtime-recoverable state.
+ *
+ * Public interface: `validateCombatantHealth`, `CombatantHealthValidationError`.
+ *
+ * Owner context: `@sharpee/engine` — story-load orchestration (`GameEngine.setStory`).
+ */
+import type { WorldModel } from '@sharpee/world-model';
+/**
+ * Story-load failure: entities with `CombatantTrait` but no required `HealthTrait`.
+ */
+export declare class CombatantHealthValidationError extends Error {
+    /** `(id, name)` of every combatant missing a `HealthTrait`, in discovery order. */
+    readonly missing: ReadonlyArray<{
+        id: string;
+        name: string;
+    }>;
+    constructor(missing: Array<{
+        id: string;
+        name: string;
+    }>);
+}
+/**
+ * Validate that every combatant carries the health trait combat requires.
+ *
+ * @param world the initialized world model (after `initializeWorld`)
+ * @throws CombatantHealthValidationError naming every combatant with no `HealthTrait`
+ */
+export declare function validateCombatantHealth(world: WorldModel): void;
+```
+
 ### parser-interface
 
 ```typescript

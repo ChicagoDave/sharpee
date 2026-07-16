@@ -19,7 +19,8 @@ import {
   TraitType,
   AttackBehavior,
   IAttackResult,
-  CombatantTrait,
+  HealthTrait,
+  HealthBehavior,
   ActionInterceptor,
   InterceptorSharedData,
   createEffect,
@@ -148,8 +149,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // For combatants, check if target is already dead and if combat system is registered
     if (target.has(TraitType.COMBATANT)) {
-      const combatant = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-      if (combatant && !combatant.isAlive) {
+      const health = target.get(TraitType.HEALTH) as HealthTrait | undefined;
+      if (health && !HealthBehavior.isAlive(health)) {
         return { valid: false, error: 'already_dead', params: { target: nounPhraseFor(target) } };
       }
       // No combat interceptor registered — block with standard IF response

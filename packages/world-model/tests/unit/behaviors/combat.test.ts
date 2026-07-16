@@ -2,23 +2,22 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CombatBehavior } from '../../../src/traits/combatant/combatantBehavior';
 import { IFEntity, TraitType } from '../../../src';
 import { CombatantTrait } from '../../../src/traits/combatant/combatantTrait';
+import { HealthTrait } from '../../../src/traits/health/healthTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 
 describe('CombatBehavior', () => {
   let goblin: IFEntity;
   let mockWorld: any;
 
+  // Convenience: the goblin's life-state trait (ADR-226).
+  const health = () => goblin.get(TraitType.HEALTH) as HealthTrait;
+
   beforeEach(() => {
     goblin = new IFEntity('goblin', 'npc');
-    goblin.add({
-      type: TraitType.COMBATANT,
-      health: 20,
-      maxHealth: 20,
-      isAlive: true,
-      armor: 2,
-      dropsInventory: true
-    } as CombatantTrait);
-    
+    // Combat stats on CombatantTrait; life-state on the required HealthTrait (ADR-226).
+    goblin.add(new CombatantTrait({ armor: 2, dropsInventory: true }));
+    goblin.add(new HealthTrait({ health: 20, maxHealth: 20 }));
+
     goblin.add({
       type: TraitType.CONTAINER,
       canContain: true,
@@ -52,38 +51,37 @@ describe('CombatBehavior', () => {
   describe('attack', () => {
     it('should reduce health by damage minus armor', () => {
       const result = CombatBehavior.attack(goblin, 10, mockWorld);
-      
+
       expect(result.success).toBe(true);
       expect(result.killed).toBe(false);
       expect(result.damage).toBe(8); // 10 - 2 armor
       expect(result.remainingHealth).toBe(12); // 20 - 8
-      
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      expect(combatantTrait.health).toBe(12);
+
+      expect(health().health).toBe(12);
     });
 
     it('should handle armor reducing damage to 0', () => {
       const result = CombatBehavior.attack(goblin, 2, mockWorld);
-      
+
       expect(result.damage).toBe(1); // Min damage is 1
       expect(result.remainingHealth).toBe(19);
     });
 
     it('should kill when health reaches 0', () => {
       const result = CombatBehavior.attack(goblin, 22, mockWorld);
-      
+
       expect(result.success).toBe(true);
       expect(result.killed).toBe(true);
       expect(result.remainingHealth).toBe(0);
-      
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      expect(combatantTrait.health).toBe(0);
-      expect(combatantTrait.isAlive).toBe(false);
+
+      expect(health().health).toBe(0);
+      expect(health().dead).toBe(true);
+      expect(health().causeOfDeath).toBe('combat');
     });
 
     it('should drop inventory when killed', () => {
       const result = CombatBehavior.attack(goblin, 22, mockWorld);
-      
+
       expect(result.droppedItems).toEqual(['gold', 'dagger']);
       expect(mockWorld.moveEntity).toHaveBeenCalledWith('gold', 'room');
       expect(mockWorld.moveEntity).toHaveBeenCalledWith('dagger', 'room');
@@ -92,87 +90,81 @@ describe('CombatBehavior', () => {
     it('should not drop inventory if dropsInventory is false', () => {
       const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
       combatantTrait.dropsInventory = false;
-      
+
       const result = CombatBehavior.attack(goblin, 22, mockWorld);
-      
+
       expect(result.droppedItems).toBeUndefined();
       expect(mockWorld.moveEntity).not.toHaveBeenCalled();
     });
 
     it('should fail when attacking dead combatant', () => {
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      combatantTrait.isAlive = false;
-      
+      health().dead = true;
+
       const result = CombatBehavior.attack(goblin, 10, mockWorld);
-      
+
       expect(result.success).toBe(false);
     });
 
     it('should fail for non-combatant entities', () => {
       const nonCombatant = new IFEntity('rock', 'item');
       const result = CombatBehavior.attack(nonCombatant, 10, mockWorld);
-      
+
       expect(result.success).toBe(false);
     });
   });
 
   describe('heal', () => {
     it('should increase health up to max', () => {
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      combatantTrait.health = 10;
-      
+      health().health = 10;
+
       const healed = CombatBehavior.heal(goblin, 5);
-      
+
       expect(healed).toBe(5);
-      expect(combatantTrait.health).toBe(15);
+      expect(health().health).toBe(15);
     });
 
     it('should cap healing at max health', () => {
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      combatantTrait.health = 18;
-      
+      health().health = 18;
+
       const healed = CombatBehavior.heal(goblin, 5);
-      
+
       expect(healed).toBe(2);
-      expect(combatantTrait.health).toBe(20);
+      expect(health().health).toBe(20);
     });
 
     it('should fail when healing dead combatant', () => {
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      combatantTrait.isAlive = false;
-      
+      health().dead = true;
+
       const healed = CombatBehavior.heal(goblin, 10);
-      
+
       expect(healed).toBe(0);
     });
   });
 
   describe('resurrect', () => {
     it('should bring dead combatant back to life', () => {
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      combatantTrait.health = 0;
-      combatantTrait.isAlive = false;
-      
+      health().health = 0;
+      health().dead = true;
+
       const resurrected = CombatBehavior.resurrect(goblin);
-      
+
       expect(resurrected).toBe(true);
-      expect(combatantTrait.health).toBe(20);
-      expect(combatantTrait.isAlive).toBe(true);
+      expect(health().health).toBe(20);
+      expect(health().dead).toBe(false);
     });
 
     it('should resurrect to full health if no health specified', () => {
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      combatantTrait.health = 0;
-      combatantTrait.isAlive = false;
-      
-      const resurrected = CombatBehavior.resurrect(goblin);
-      
-      expect(combatantTrait.health).toBe(20);
+      health().health = 0;
+      health().dead = true;
+
+      CombatBehavior.resurrect(goblin);
+
+      expect(health().health).toBe(20);
     });
 
     it('should fail when resurrecting living combatant', () => {
       const resurrected = CombatBehavior.resurrect(goblin);
-      
+
       expect(resurrected).toBe(false);
     });
   });
@@ -183,9 +175,8 @@ describe('CombatBehavior', () => {
     });
 
     it('should return false for dead combatants', () => {
-      const combatantTrait = goblin.get(TraitType.COMBATANT) as CombatantTrait;
-      combatantTrait.isAlive = false;
-      
+      health().dead = true;
+
       expect(CombatBehavior.isAlive(goblin)).toBe(false);
     });
 

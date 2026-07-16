@@ -5,6 +5,7 @@ import { WeaponTrait } from '../../../src/traits/weapon/weaponTrait';
 import { BreakableTrait } from '../../../src/traits/breakable/breakableTrait';
 import { DestructibleTrait } from '../../../src/traits/destructible/destructibleTrait';
 import { CombatantTrait } from '../../../src/traits/combatant/combatantTrait';
+import { HealthTrait } from '../../../src/traits/health/healthTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 
 describe('AttackBehavior', () => {
@@ -166,14 +167,8 @@ describe('AttackBehavior', () => {
   describe('attack combatant entity', () => {
     it('should damage combatant with weapon', () => {
       const goblin = new IFEntity('goblin', 'npc');
-      goblin.add({
-        type: TraitType.COMBATANT,
-        health: 20,
-        maxHealth: 20,
-        isAlive: true,
-        armor: 2,
-        dropsInventory: true
-      } as CombatantTrait);
+      goblin.add(new CombatantTrait({ armor: 2, dropsInventory: true }));
+      goblin.add(new HealthTrait({ health: 20, maxHealth: 20 }));
 
       mockWorld.getEntity.mockImplementation((id) => {
         if (id === 'goblin') return goblin;
@@ -190,15 +185,9 @@ describe('AttackBehavior', () => {
 
     it('should kill combatant when health reaches 0', () => {
       const goblin = new IFEntity('goblin', 'npc');
-      goblin.add({
-        type: TraitType.COMBATANT,
-        health: 2,
-        maxHealth: 20,
-        isAlive: true,
-        armor: 0,
-        dropsInventory: true
-      } as CombatantTrait);
-      
+      goblin.add(new CombatantTrait({ armor: 0, dropsInventory: true }));
+      goblin.add(new HealthTrait({ health: 2, maxHealth: 20 }));
+
       goblin.add({
         type: TraitType.CONTAINER,
         canContain: true,
@@ -226,13 +215,8 @@ describe('AttackBehavior', () => {
 
     it('should do unarmed damage without weapon', () => {
       const goblin = new IFEntity('goblin', 'npc');
-      goblin.add({
-        type: TraitType.COMBATANT,
-        health: 20,
-        maxHealth: 20,
-        isAlive: true,
-        armor: 0
-      } as CombatantTrait);
+      goblin.add(new CombatantTrait({ armor: 0 }));
+      goblin.add(new HealthTrait({ health: 20, maxHealth: 20 }));
 
       const result = AttackBehavior.attack(goblin, undefined, mockWorld);
 

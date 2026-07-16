@@ -24,6 +24,7 @@ export * from './capability-dispatch-helper';
 
 // Load-time room-snippet validation (ADR-209 AC-5)
 export * from './snippet-validation';
+export * from './combatant-health-validation';
 
 // Parser interface for engine integration
 export * from './parser-interface';

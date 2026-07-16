@@ -22,6 +22,7 @@ import {
   ReadableTrait,
   SceneryTrait,
   CombatantTrait,
+  HealthTrait,
   StoryInfoTrait,
   EntityType,
   Direction,
@@ -697,14 +698,16 @@ export class DungeoStory implements Story {
 
       if (!existingPlayer.has('combatant')) {
         existingPlayer.add(new CombatantTrait({
-          health: 100,
-          maxHealth: 100,
           skill: 50,
           baseDamage: 1,
           armor: 0,
           hostile: false,
           canRetaliate: false
         }));
+      }
+      if (!existingPlayer.has('health')) {
+        // Death-capable game: the player carries life-state (ADR-226 AC-1 / §3).
+        existingPlayer.add(new HealthTrait({ health: 100, maxHealth: 100 }));
       }
 
       return existingPlayer;
@@ -733,14 +736,14 @@ export class DungeoStory implements Story {
     }));
 
     player.add(new CombatantTrait({
-      health: 100,
-      maxHealth: 100,
       skill: 50,
       baseDamage: 1,
       armor: 0,
       hostile: false,
       canRetaliate: false
     }));
+    // Death-capable game: the player carries life-state (ADR-226 AC-1 / §3).
+    player.add(new HealthTrait({ health: 100, maxHealth: 100 }));
 
     return player;
   }

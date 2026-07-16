@@ -6,7 +6,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { IdentityTrait, CombatantTrait, NpcTrait, RoomBehavior, Direction, TraitType } from '@sharpee/world-model';
+import { IdentityTrait, CombatantTrait, HealthTrait, HealthBehavior, RoomBehavior, Direction, TraitType } from '@sharpee/world-model';
 
 export const koHandler: GDTCommandHandler = {
   code: 'KO',
@@ -77,8 +77,18 @@ export const koHandler: GDTCommandHandler = {
       };
     }
 
+    // Life-state lives on HealthTrait (ADR-226).
+    const health = targetEntity.get<HealthTrait>(TraitType.HEALTH);
+    if (!health) {
+      return {
+        success: false,
+        output: [`${entityName} has no HealthTrait - cannot knock out`],
+        error: 'NO_HEALTH'
+      };
+    }
+
     // Check if already unconscious or dead
-    if (!combatant.isAlive) {
+    if (!HealthBehavior.isAlive(health)) {
       return {
         success: false,
         output: [`${entityName} is already dead`],
@@ -86,7 +96,7 @@ export const koHandler: GDTCommandHandler = {
       };
     }
 
-    if (!combatant.isConscious) {
+    if (!HealthBehavior.isConscious(health)) {
       return {
         success: false,
         output: [`${entityName} is already unconscious`],
@@ -94,17 +104,11 @@ export const koHandler: GDTCommandHandler = {
       };
     }
 
-    // Knock out the entity
-    combatant.knockOut();
+    // Knock out the entity: drop health into the unconscious band; consciousness
+    // derives from health (ADR-226), so there is no separate flag to set.
+    health.health = Math.max(1, Math.floor(health.maxHealth * health.unconsciousThreshold));
     output.push(`Knocked out: ${entityName} (${targetEntity.id})`);
-    output.push(`isAlive: ${combatant.isAlive}, isConscious: ${combatant.isConscious}`);
-
-    // Apply knockout side effects inline (ISSUE-068: entity `on` handlers removed)
-    // Sync NpcTrait consciousness
-    const npcTrait = targetEntity.get(NpcTrait);
-    if (npcTrait) {
-      npcTrait.isConscious = false;
-    }
+    output.push(`isAlive: ${HealthBehavior.isAlive(health)}, isConscious: ${HealthBehavior.isConscious(health)}`);
 
     // Troll-specific: update description, unblock exit, set recovery turns
     if (entityName.toLowerCase().includes('troll')) {
@@ -117,8 +121,7 @@ export const koHandler: GDTCommandHandler = {
       if (trollRoom) {
         RoomBehavior.unblockExit(trollRoom, Direction.NORTH);
       }
-      combatant.recoveryTurns = 4;
-      output.push('(applied troll knockout effects: description, exit, recovery)');
+      output.push('(applied troll knockout effects: description, exit; recovery is daemon-driven)');
     }
 
     return {

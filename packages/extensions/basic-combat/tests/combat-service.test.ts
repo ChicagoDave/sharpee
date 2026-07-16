@@ -1,7 +1,10 @@
 /**
- * Tests for CombatService (ADR-072)
+ * Tests for CombatService (ADR-072; life-state migrated to HealthTrait per ADR-226).
  *
  * Moved from packages/stdlib/tests/unit/combat/ to basic-combat extension.
+ * Health/alive/conscious now live on HealthTrait (ADR-226 / ADR-223 child A); combat
+ * stats (skill/baseDamage/armor) stay on CombatantTrait. Entities under test carry
+ * both traits.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -12,7 +15,14 @@ import {
   CombatMessages,
 } from '../src';
 import { createSeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, CombatantTrait, WeaponTrait } from '@sharpee/world-model';
+import {
+  IFEntity,
+  WorldModel,
+  TraitType,
+  CombatantTrait,
+  HealthTrait,
+  WeaponTrait,
+} from '@sharpee/world-model';
 
 // Helper to create mock entity
 function createMockEntity(
@@ -88,7 +98,8 @@ describe('CombatService', () => {
       });
 
       const target = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ skill: 50, health: 10, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({ skill: 50 }),
+        [TraitType.HEALTH]: new HealthTrait({ health: 10, maxHealth: 10 }),
       });
 
       const context: CombatContext = {
@@ -120,7 +131,8 @@ describe('CombatService', () => {
       });
 
       const target = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ skill: 20, health: 10, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({ skill: 20 }),
+        [TraitType.HEALTH]: new HealthTrait({ health: 10, maxHealth: 10 }),
       });
 
       const context: CombatContext = {
@@ -148,7 +160,8 @@ describe('CombatService', () => {
       });
 
       const target = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ skill: 20, health: 10, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({ skill: 20 }),
+        [TraitType.HEALTH]: new HealthTrait({ health: 10, maxHealth: 10 }),
       });
 
       const context: CombatContext = {
@@ -173,7 +186,8 @@ describe('CombatService', () => {
       });
 
       const target = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ skill: 20, health: 10, maxHealth: 10, armor: 2 }),
+        [TraitType.COMBATANT]: new CombatantTrait({ skill: 20, armor: 2 }),
+        [TraitType.HEALTH]: new HealthTrait({ health: 10, maxHealth: 10 }),
       });
 
       const context: CombatContext = {
@@ -197,7 +211,8 @@ describe('CombatService', () => {
       });
 
       const target = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ skill: 10, health: 5, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({ skill: 10 }),
+        [TraitType.HEALTH]: new HealthTrait({ health: 5, maxHealth: 10 }),
       });
 
       const context: CombatContext = {
@@ -230,7 +245,8 @@ describe('CombatService', () => {
       // Damage = baseDamage 7, newHealth = 9 - 7 = 2
       // 2 / 10 = 20% → exactly at knockout threshold (<=20% and not killed)
       const target = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ skill: 10, health: 9, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({ skill: 10 }),
+        [TraitType.HEALTH]: new HealthTrait({ health: 9, maxHealth: 10 }),
       });
 
       const context: CombatContext = {
@@ -254,7 +270,8 @@ describe('CombatService', () => {
     it('should allow attacking combatant', () => {
       const attacker = createMockEntity('attacker', 'Attacker', {});
       const target = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ isAlive: true }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ health: 10, maxHealth: 10 }),
       });
 
       const result = service.canAttack(attacker, target);
@@ -275,7 +292,8 @@ describe('CombatService', () => {
     it('should reject attacking dead target', () => {
       const attacker = createMockEntity('attacker', 'Attacker', {});
       const target = createMockEntity('corpse', 'Corpse', {
-        [TraitType.COMBATANT]: new CombatantTrait({ isAlive: false }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ dead: true, causeOfDeath: 'combat' }),
       });
 
       const result = service.canAttack(attacker, target);
@@ -288,39 +306,50 @@ describe('CombatService', () => {
   describe('getHealthStatus', () => {
     it('should return healthy for full health', () => {
       const entity = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ health: 10, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ health: 10, maxHealth: 10 }),
       });
 
       expect(service.getHealthStatus(entity)).toBe('healthy');
     });
 
-    it('should return wounded for 70% health', () => {
+    it('should return wounded for 60% health', () => {
       const entity = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ health: 6, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ health: 6, maxHealth: 10 }),
       });
 
       expect(service.getHealthStatus(entity)).toBe('wounded');
     });
 
-    it('should return badly_wounded for 30% health', () => {
+    it('should return badly_wounded for 30% health (conscious, above the 20% threshold)', () => {
+      // 3/10 = 30%: still conscious (>20%), so the health-percent tier applies.
+      // (Was health:2 = 20% pre-ADR-226 — that is now derived-unconscious; see below.)
       const entity = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ health: 2, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ health: 3, maxHealth: 10 }),
       });
 
       expect(service.getHealthStatus(entity)).toBe('badly_wounded');
     });
 
-    it('should return near_death for 10% health', () => {
+    it('should return unconscious at/below 20% health (derived consciousness, ADR-226/ADR-072)', () => {
+      // 1/10 = 10%: at or below the 20% threshold the entity is unconscious by
+      // derivation, so getHealthStatus reports 'unconscious'. The 'near_death'
+      // percent tier is unreachable while conscious (it requires >20% health) —
+      // this matches ADR-072's own knockout-at-20% rule.
       const entity = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ health: 1, maxHealth: 10 }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ health: 1, maxHealth: 10 }),
       });
 
-      expect(service.getHealthStatus(entity)).toBe('near_death');
+      expect(service.getHealthStatus(entity)).toBe('unconscious');
     });
 
-    it('should return unconscious for unconscious entity', () => {
+    it('should return unconscious for an unconscious entity', () => {
       const entity = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ health: 5, maxHealth: 10, isConscious: false }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ health: 2, maxHealth: 10 }), // <=20% → unconscious
       });
 
       expect(service.getHealthStatus(entity)).toBe('unconscious');
@@ -328,7 +357,8 @@ describe('CombatService', () => {
 
     it('should return dead for dead entity', () => {
       const entity = createMockEntity('target', 'Target', {
-        [TraitType.COMBATANT]: new CombatantTrait({ health: 0, maxHealth: 10, isAlive: false }),
+        [TraitType.COMBATANT]: new CombatantTrait({}),
+        [TraitType.HEALTH]: new HealthTrait({ health: 0, maxHealth: 10, dead: true }),
       });
 
       expect(service.getHealthStatus(entity)).toBe('dead');
