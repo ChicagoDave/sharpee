@@ -103,8 +103,8 @@ describe('grammar reachability gate (ADR-230 D1)', () => {
 
   /** TEMPORARY: grammar-mapped ids with no registered action. */
   const documentedOrphans = new Set<string>([
-    // Scheduled by ADR-230 D3 (examining_carefully closed by Phase 3's remap):
-    'if.action.opening_with', // Phase 4 remaps `open X with Y` to opening + tool slot
+    // Scheduled by ADR-230 D3 (examining_carefully and opening_with closed
+    // by Phase 3's and Phase 4's remaps):
     'if.action.cutting', // Phase 5 implements cutting + CuttableTrait
     // DISCOVERED 2026-07-17 (gate landing, Phase 2): grammar exists, no action
     // registered anywhere in the platform. Disposition needs a David ruling

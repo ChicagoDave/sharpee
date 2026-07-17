@@ -81,7 +81,7 @@ A research pass against the live codebase (not just the ADR text) surfaced facts
   - `grammar.ts:530-537`: change `.mapsTo('if.action.opening_with')` to `.mapsTo('if.action.opening')`; delete the `if.action.opening_with` id.
   - R2-template pinning tests (mirrors ADR-229 R2's pattern): tool hook fires on an explicit tool, a tool-side `preValidate` veto blocks the action (state asserted), target→tool consultation order pinned, no consultation when the command names no tool. Follow the stdlib test convention: use `TEST_MARKER_TRAIT` as the interceptor registration key, never a borrowed real trait.
 - **Exit state**: `if.action.opening_with` removed from the gate's orphan exceptions list, gate green; new pinning tests green; walkthrough chain one clean run.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17 — toolId/toolIds + requiresTool/canOpenWith (world-model), shared validateToolRequirements in new tool-shared.ts (message ids no_tool/tool_not_held/wrong_tool + lang templates), opening descriptor target→tool slot, grammar remap, gate green with opening_with off the orphan list. 8 pinning/requirement tests all state-asserting (mutation-verification found one reporting-layer-only test; isOpen assertion added). stdlib 1482 / world-model 1362 / parser-en-us 252 green; chain 909/909 clean; live check: `open mailbox with mat` opens (no-requirement ignores tool). NOTE: intermittent pre-existing chain-runner failure signature observed (bimodal: ~190ms run with identical 10218/1210 counts vs normal ~1.4s clean run) — predates Phase 4, not chased; flagged in session open items.)
 
 ### Phase 5: D3c — cutting becomes a real full-citizen action
 - **Tier**: Large

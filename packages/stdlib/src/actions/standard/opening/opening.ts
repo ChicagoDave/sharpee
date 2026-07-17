@@ -20,6 +20,7 @@ import { OpenedEventData, ExitRevealedEventData } from './opening-events';
 import { ActionMetadata } from '../../../validation';
 import { ScopeLevel } from '../../../scope/types';
 import { OpeningMessages } from './opening-messages';
+import { validateToolRequirements } from '../tool-shared';
 import { nounPhraseFor } from '../../../utils';
 import {
   ActionLifecycleDescriptor,
@@ -33,8 +34,10 @@ import {
 } from '../../lifecycle';
 
 /**
- * Interceptor surface (ADR-228): the opened target is the only
- * consultable entity of an OPEN command.
+ * Interceptor surface (ADR-228, ADR-230 D3b): the opened target and any
+ * explicit tool are the consultable entities of an OPEN command, published
+ * order target → tool (D3-B). Explicit tools only — mirrors locking's key
+ * slot (ADR-229 R2).
  */
 export const openingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.OPENING,
@@ -42,7 +45,27 @@ export const openingLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.OPENING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => {
+        const tool = ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity;
+        return {
+          targetId: entity.id,
+          targetName: entity.name,
+          toolId: tool?.id,
+          toolName: tool?.name
+        };
+      }
+    },
+    {
+      id: 'tool',
+      actionIds: [IFActions.OPENING],
+      resolve: (ctx) => ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        toolId: entity.id,
+        toolName: entity.name,
+        targetId: ctx.command.directObject?.entity?.id,
+        targetName: ctx.command.directObject?.entity?.name
+      })
     }
   ]
 };
@@ -76,7 +99,10 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     'opened',
     'revealing',
     'its_empty',
-    'cant_reach'
+    'cant_reach',
+    'no_tool',
+    'tool_not_held',
+    'wrong_tool'
   ],
   metadata: {
     requiresDirectObject: true,
@@ -119,6 +145,21 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
         error: OpeningMessages.ALREADY_OPEN,
         params: { item: nounPhraseFor(noun) }
       };
+    }
+
+    // Author-configured tool requirement (ADR-230 D3b): a no-requirement
+    // openable ignores an offered tool; a requirement refuses on
+    // no_tool/tool_not_held/wrong_tool. Explicit tools only.
+    const tool = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
+    const toolValidation = validateToolRequirements(
+      context,
+      noun,
+      tool,
+      OpenableBehavior.requiresTool(noun),
+      (toolId) => OpenableBehavior.canOpenWith(noun, toolId)
+    );
+    if (toolValidation) {
+      return toolValidation;
     }
 
     // Check lock status using behavior

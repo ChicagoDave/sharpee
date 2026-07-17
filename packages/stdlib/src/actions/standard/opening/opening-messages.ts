@@ -12,6 +12,10 @@ export const OpeningMessages = {
   LOCKED: 'locked',
   CANT_REACH: 'cant_reach',
   CANNOT_OPEN: 'cannot_open',
+  // ADR-230 D3b tool requirement (shared ids from tool-shared.ts)
+  NO_TOOL: 'no_tool',
+  TOOL_NOT_HELD: 'tool_not_held',
+  WRONG_TOOL: 'wrong_tool',
 
   // Success messages
   OPENED: 'opened',

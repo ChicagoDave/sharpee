@@ -566,12 +566,13 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .pattern(':target')
     .build();
 
-  // Opening with tool
+  // Opening with tool (ADR-230 D3b: a tool slot on the standard opening
+  // action, not a separate id — if.action.opening_with had no action)
   grammar
     .define('open :container with|using :tool')
     .instrument('tool')
     .hasTrait('container', TraitType.OPENABLE)
-    .mapsTo('if.action.opening_with')
+    .mapsTo('if.action.opening')
     .withPriority(110)
     .build();
 
