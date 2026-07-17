@@ -22,6 +22,13 @@
 ## Interview + review
 - ADR-231 flipped DRAFT → ACCEPTED (all 6 questions ruled); adr-review: 14/16, READY FOR IMPLEMENTATION. Two FAILs converted to plan pins (provenance shape, topic field location/type, content-word + scoring definition) + three named rejection tests (D5a pairing, D4 free-text non-rejection, D6 restore-determinism); staleness in Decision intro/Consequences fixed post-review.
 
+## Plan + Phase 1 (same session)
+- session-planner wrote docs/work/player-surface-contracts/plan.md (11 phases; .current-plan updated); plan-review clean, 1 advisory tension (Phase 10 must re-verify troll-family flake signature). David's design-lens preface added to the plan.
+- Planner's "D2a traitFilters is live" contradiction RESOLVED by direct trace: two same-named fields — rule-level SlotConstraint.traitFilters has zero consumers (dead, ADR basis stands); scope-builder ScopeConstraint.traitFilters inside .where() is the live one, kept.
+- Planner scope corrections: D1b dotted keys = 4 chord parser call sites (Small); D4 TextSlotConsumer already wired (Phase 7 narrower).
+- ADR-231 + session summary committed 0e533129 (local).
+- **Phase 1 COMPLETE**: pins.md written + all 5 pins signed off (David): PIN 1 errorQualified flag + shared blockedMessageId() helper; PIN 2 computed-on-demand vocabulary, stopwords {the,a,an,of}, exact>all-words-match tiered scoring; PIN 3 topic {text, entity?: EntityId} on both interfaces; PIN 4 D2a basis verified, no re-scope; PIN 5 single analyze.starts-state-pairing diagnostic + starts-dispatch lookahead.
+
 ## Open items
 - Plan not yet written (session-planner next); plain-defect list rides in ADR-231 Consequences.
 - Parked (unchanged from 907f28): chain RNG-death flake investigation; vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.
