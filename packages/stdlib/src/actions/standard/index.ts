@@ -23,6 +23,7 @@ export * from './help';
 export * from './about';
 export * from './version';
 export * from './locking';
+export * from './cutting';
 export * from './unlocking';
 export * from './switching_on';
 export * from './switching_off';
@@ -96,6 +97,7 @@ import { helpAction } from './help'; // Now from folder
 import { aboutAction } from './about'; // Now from folder
 import { versionAction } from './version'; // Now from folder
 import { lockingAction } from './locking'; // Now from folder
+import { cuttingAction } from './cutting'; // ADR-230 D3c
 import { unlockingAction } from './unlocking'; // Now from folder
 import { switchingOnAction } from './switching_on'; // Now from folder
 import { switchingOffAction } from './switching_off'; // Now from folder
@@ -165,6 +167,7 @@ export const standardActions = [
   versionAction,
   lockingAction,
   unlockingAction,
+  cuttingAction,
   switchingOnAction,
   switchingOffAction,
   enteringAction,

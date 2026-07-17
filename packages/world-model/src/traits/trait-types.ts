@@ -21,6 +21,7 @@ export const TraitType = {
   // Interactive traits
   OPENABLE: 'openable',
   LOCKABLE: 'lockable',
+  CUTTABLE: 'cuttable',
   SWITCHABLE: 'switchable',
   READABLE: 'readable',
   LIGHT_SOURCE: 'lightSource',
@@ -119,6 +120,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   // Interactive
   [TraitType.OPENABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LOCKABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.CUTTABLE]: TraitCategory.INTERACTIVE,
   [TraitType.SWITCHABLE]: TraitCategory.INTERACTIVE,
   [TraitType.READABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LIGHT_SOURCE]: TraitCategory.INTERACTIVE,

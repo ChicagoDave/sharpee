@@ -96,6 +96,7 @@ import { wearingLanguage } from './wearing';
 import { takingOffLanguage } from './taking-off';
 import { lockingLanguage } from './locking';
 import { unlockingLanguage } from './unlocking';
+import { cuttingLanguage } from './cutting';
 import { enteringLanguage } from './entering';
 import { exitingLanguage } from './exiting';
 import { climbingLanguage } from './climbing';
@@ -161,6 +162,7 @@ export const standardActionLanguage = [
   // Lock actions
   lockingLanguage,
   unlockingLanguage,
+  cuttingLanguage,
   
   // Movement actions
   enteringLanguage,

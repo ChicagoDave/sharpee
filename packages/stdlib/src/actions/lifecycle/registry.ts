@@ -24,6 +24,7 @@ import { ActionLifecycleDescriptor } from './descriptor';
 import { attackingLifecycle } from '../standard/attacking/attacking';
 import { climbingLifecycle } from '../standard/climbing/climbing';
 import { closingLifecycle } from '../standard/closing/closing';
+import { cuttingLifecycle } from '../standard/cutting/cutting';
 import { drinkingLifecycle } from '../standard/drinking/drinking';
 import { droppingLifecycle } from '../standard/dropping/dropping';
 import { eatingLifecycle } from '../standard/eating/eating';
@@ -56,15 +57,17 @@ import { unlockingLifecycle } from '../standard/unlocking/unlocking';
 import { wearingLifecycle } from '../standard/wearing/wearing';
 
 /**
- * The descriptor table: all 33 entity-keyed standard actions (ADR-228
- * Consequences). Structural exemptions (no entity to key on: about, waiting,
- * looking, … and the full-delegation capability actions lowering/raising)
- * are absent by design — see ADR-228 Context.
+ * The descriptor table: all 34 entity-keyed standard actions (33 per
+ * ADR-228 Consequences + cutting per ADR-230 D3c). Structural exemptions
+ * (no entity to key on: about, waiting, looking, … and the full-delegation
+ * capability actions lowering/raising) are absent by design — see ADR-228
+ * Context.
  */
 export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = Object.freeze([
   attackingLifecycle,
   climbingLifecycle,
   closingLifecycle,
+  cuttingLifecycle,
   drinkingLifecycle,
   droppingLifecycle,
   eatingLifecycle,

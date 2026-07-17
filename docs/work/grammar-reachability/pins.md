@@ -51,6 +51,15 @@ toolIds?: EntityId[];   // multiple accepted tools
   `with <key> <article> <name>` trait-config machinery (`packages/chord/src/parser.ts:632-733`).
   Tool name → world-id resolution must be correct from the start (do NOT copy the
   pre-Phase-9 lockable bugs).
+- **RE-PINNED (David, 2026-07-17, Phase 5): dual-surface implementation.**
+  Discovery: Chord `on cutting it` clauses load as ADR-228 interceptors (capability
+  routing is reserved for `chord.action.*` dispatch verbs by the analyzer's §5.4
+  invariant), so a capability-behavior-only check would reject every pure-Chord
+  cuttable. Ruling: a cut implementation is EITHER an ADR-090 capability behavior
+  (TS authors) OR an `on cutting it` interceptor whose postExecute owns the mutation
+  (Chord authors). Load-time check accepts either, errors when BOTH exist (one
+  implementation per entity, ADR-228 D6 spirit); validate's runtime safety net
+  refuses when neither exists.
 - **RULED (David, 2026-07-17): story-loader post-load pass**:
   after full load, for every entity carrying `CuttableTrait`, assert a registered
   capability behavior for `if.action.cutting` exists on it. Loader-side (not Chord

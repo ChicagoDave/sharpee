@@ -19,6 +19,7 @@ import { SceneryTrait } from './scenery/sceneryTrait';
 
 import { OpenableTrait } from './openable/openableTrait';
 import { LockableTrait } from './lockable/lockableTrait';
+import { CuttableTrait } from './cuttable/cuttableTrait';
 import { SwitchableTrait } from './switchable/switchableTrait';
 import { ReadableTrait } from './readable/readableTrait';
 import { LightSourceTrait } from './light-source/lightSourceTrait';
@@ -93,6 +94,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   // Interactive traits
   [TraitType.OPENABLE]: OpenableTrait,
   [TraitType.LOCKABLE]: LockableTrait,
+  [TraitType.CUTTABLE]: CuttableTrait,
   [TraitType.SWITCHABLE]: SwitchableTrait,
   [TraitType.READABLE]: ReadableTrait,
   [TraitType.LIGHT_SOURCE]: LightSourceTrait,
@@ -191,6 +193,7 @@ export {
   // Interactive
   OpenableTrait,
   LockableTrait,
+  CuttableTrait,
   SwitchableTrait,
   ReadableTrait,
   LightSourceTrait,

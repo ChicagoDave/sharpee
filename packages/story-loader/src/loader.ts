@@ -47,11 +47,13 @@ import {
   CapabilityBehavior,
   ClimbableTrait,
   ContainerTrait,
+  CuttableTrait,
   DeadlyRoomTrait,
   Direction,
   DirectionType,
   EdibleTrait,
   EnterableTrait,
+  findTraitWithCapability,
   IFEntity,
   IdentityTrait,
   IParsedCommand,
@@ -151,6 +153,18 @@ export class ChordStory implements Story {
   private readonly evaluator: Evaluator;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
   private readonly worldIds = new Map<string, string>();
+
+  /**
+   * Cuttable tool references awaiting world-id resolution (ADR-230 D3c):
+   * `cuttable with tool the knife` may name an entity built AFTER its
+   * owner, so the trait is stamped once every entity exists.
+   */
+  private readonly pendingCuttableTools: Array<{
+    trait: CuttableTrait;
+    irToolId: string;
+    ownerName: string;
+    span: unknown;
+  }> = [];
 
   /**
    * Deadly exits (ADR-227): world room id → DIRECTION → derived
@@ -353,9 +367,18 @@ export class ChordStory implements Story {
     // matches them, a loader-owned state-clause provider for everything else.
     this.compileDetailChannels(world);
 
+    // ADR-230 D3c: stamp cuttable tool world-ids now that every entity
+    // exists (forward references resolve here).
+    this.resolveCuttableTools();
+
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
     // derived-property chains (all per-world, keyed — ADR-207/208).
     this.runtime.bind(world);
+
+    // ADR-230 D3c (PIN 3, dual-surface re-pin): an unimplemented cuttable
+    // is an authoring error at load, never a silent runtime no-op.
+    this.checkCuttableImplementations(world);
+
     this.worldBuilt = true;
 
     // Engine order (GameEngine.setStory): createPlayer ran before world
@@ -710,6 +733,74 @@ export class ChordStory implements Story {
     return entity;
   }
 
+  /**
+   * Resolve `cuttable with tool X` references to world entity ids
+   * (ADR-230 D3c) — runs once, after every entity is built.
+   */
+  private resolveCuttableTools(): void {
+    for (const pending of this.pendingCuttableTools) {
+      const worldId = this.worldIds.get(pending.irToolId);
+      if (!worldId) {
+        throw new LoadError(
+          `\`${pending.ownerName}\`: the cuttable tool entity was never built.`,
+          pending.span as never,
+        );
+      }
+      pending.trait.toolId = worldId;
+    }
+    this.pendingCuttableTools.length = 0;
+  }
+
+  /**
+   * ADR-230 D3c load-time check (PIN 3, dual-surface re-pin, 2026-07-17):
+   * every cuttable entity must register exactly ONE cut implementation —
+   * an `on cutting it` clause (entity- or trait-level, loads as an
+   * ADR-228 interceptor) or an ADR-090 capability behavior for
+   * `if.action.cutting` (TS/hatch surface). Zero implementations would
+   * silently no-op at runtime; two would double-fire (ADR-228 D6 spirit).
+   * Chord surfaces are counted from the IR (precise per entity); the
+   * capability surface from the live world.
+   */
+  private checkCuttableImplementations(world: WorldModel): void {
+    for (const irEntity of this.ir.entities) {
+      if (!irEntity.traits.some((t) => t.name === 'cuttable')) continue;
+      const worldId = this.worldIds.get(irEntity.id);
+      const entity = worldId ? world.getEntity(worldId) : undefined;
+      if (!entity) continue;
+
+      let surfaces = 0;
+      // Entity-level `on cutting it` clause.
+      if (irEntity.onClauses.some((c) => c.clauseKind === 'on' && c.action === 'cutting' && c.binding !== 'every-turn')) {
+        surfaces++;
+      }
+      // Composed `define trait` with an `on cutting it` clause.
+      for (const comp of irEntity.traits) {
+        const def = this.ir.traits.find((t) => t.name === comp.name);
+        if (def?.onClauses.some((c) => c.clauseKind === 'on' && c.action === 'cutting' && c.binding !== 'every-turn')) {
+          surfaces++;
+        }
+      }
+      // ADR-090 capability behavior (TS/hatch surface).
+      const capabilityTrait = findTraitWithCapability(entity, 'if.action.cutting');
+      if (capabilityTrait && world.getBehaviorForCapability(capabilityTrait, 'if.action.cutting')) {
+        surfaces++;
+      }
+
+      if (surfaces === 0) {
+        throw new LoadError(
+          `\`${irEntity.name}\` is cuttable but registers no cutting implementation — add \`on cutting it:\` (or compose a trait that has one).`,
+          irEntity.span,
+        );
+      }
+      if (surfaces > 1) {
+        throw new LoadError(
+          `\`${irEntity.name}\` has ${surfaces} cutting implementations — a cuttable entity registers exactly one (one \`on cutting it\` clause or one capability behavior).`,
+          irEntity.span,
+        );
+      }
+    }
+  }
+
   private applyTraitAdjectives(entity: IFEntity, irEntity: IREntity, kind: string | null): void {
     for (const trait of irEntity.traits) {
       if (trait.condition !== null) {
@@ -745,6 +836,31 @@ export class ChordStory implements Story {
         case 'lockable':
           if (!entity.has(TraitType.LOCKABLE)) entity.add(new LockableTrait({ keyId: configValue(trait, 'key') }));
           break;
+        case 'cuttable': {
+          // ADR-230 D3c. Tool names resolve name → IR entity here and
+          // IR → world id after every entity is built (forward refs are
+          // legal) — do NOT copy the lockable raw-string config bug.
+          if (entity.has(TraitType.CUTTABLE)) break;
+          const cuttable = new CuttableTrait();
+          const toolName = configValue(trait, 'tool');
+          if (toolName !== undefined) {
+            const lower = toolName.toLowerCase();
+            const target = this.ir.entities.find(
+              (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
+            );
+            if (!target) {
+              throw new LoadError(`\`${toolName}\` (config \`tool\`) names no entity.`, trait.span);
+            }
+            this.pendingCuttableTools.push({
+              trait: cuttable,
+              irToolId: target.id,
+              ownerName: irEntity.name,
+              span: trait.span,
+            });
+          }
+          entity.add(cuttable);
+          break;
+        }
         case 'switchable':
           entity.add(new SwitchableTrait());
           break;

@@ -21,10 +21,11 @@ import { IFActions } from '../../../src/actions/constants';
 import { standardActions } from '../../../src/actions/standard';
 
 describe('wired-action registry (ADR-228 D5)', () => {
-  test('covers all 33 entity-keyed standard actions with unique primary ids', () => {
-    expect(actionLifecycleDescriptors).toHaveLength(33);
+  test('covers all 34 entity-keyed standard actions with unique primary ids', () => {
+    // 33 per ADR-228 Consequences + cutting (ADR-230 D3c)
+    expect(actionLifecycleDescriptors).toHaveLength(34);
     const primaryIds = actionLifecycleDescriptors.map((d) => d.actionId);
-    expect(new Set(primaryIds).size).toBe(33);
+    expect(new Set(primaryIds).size).toBe(34);
     for (const descriptor of actionLifecycleDescriptors) {
       expect(descriptor.slots.length).toBeGreaterThan(0);
       for (const slot of descriptor.slots) {
@@ -103,9 +104,8 @@ describe('grammar reachability gate (ADR-230 D1)', () => {
 
   /** TEMPORARY: grammar-mapped ids with no registered action. */
   const documentedOrphans = new Set<string>([
-    // Scheduled by ADR-230 D3 (examining_carefully and opening_with closed
-    // by Phase 3's and Phase 4's remaps):
-    'if.action.cutting', // Phase 5 implements cutting + CuttableTrait
+    // (All three ADR-230 D3 orphans closed: examining_carefully and
+    // opening_with by the Phase 3/4 remaps, cutting by Phase 5's action.)
     // DISCOVERED 2026-07-17 (gate landing, Phase 2): grammar exists, no action
     // registered anywhere in the platform. Disposition needs a David ruling
     // (pins.md amendment pending) — do not silently implement or delete.

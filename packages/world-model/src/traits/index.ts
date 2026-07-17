@@ -12,6 +12,7 @@ export * from './container';
 export * from './room';
 export * from './openable';
 export * from './lockable';
+export * from './cuttable';
 export * from './readable';
 export * from './light-source';
 export * from './exit';

@@ -29,6 +29,14 @@
 - A1 ruled: folded into Phase 6 sketches (conversation/writing/tool-verb families).
 - 6 D2 grammar additions (lock bare+keyed, keyless unlock, remove-from @110, listen/listen-to, smell/sniff bare+target, sleep) + D3a remap (`look [carefully] at` → examining). Gate temporary list now empty; gate 10/10; walkthrough chain 951/951 clean; all 8 forms live-verified against the bundle; 1 obsolete parser test updated; parser-en-us 252 + stdlib 1474 green. Uncommitted (with Phase 2).
 
+## Phase 4 (2026-07-17) — COMPLETE (committed d5335d27)
+- D3b landed: OpenableTrait toolId/toolIds, shared tool-shared.ts helper, opening target→tool slot, open-with remap, lang templates, 8 state-asserting tests (+1 mutation-verification fix). Chain 909/909 clean.
+- Pre-existing intermittent chain-runner failure signature observed (bimodal ~190ms/identical-counts vs ~1.4s clean) — predates ADR-230 phases, unchased, needs its own investigation.
+
+## Phase 5 (2026-07-17) — in progress
+- Dual-surface re-pin (David): cut implementation = ADR-090 capability behavior (TS) OR `on cutting it` interceptor (Chord); loader check accepts either, errors on 0 or 2+.
+- Landed: CuttableTrait/Behavior (+barrels, implementations map), cutting action (descriptor target→tool, registry 33→34, no-mutation execute, dual-surface dispatch), lang cutting.ts, chord catalog `cuttable`, loader case + resolveCuttableTools (name→WORLD id, forward refs) + checkCuttableImplementations post-bind. 11 stdlib tests + 5 loader tests (incl. REAL-PATH: chord story → loader → stdlib cuttingAction → world.getLocation asserted). All 6 package suites green.
+- **DISCOVERY (fix-after candidate): `carries the knife` in a player block compiles SILENTLY and does nothing** — Chord IR has only `wears`; no carries-at-start surface. Silent-accept parse bug candidate + missing feature; needs David ruling (Phase 6 sketch pile or defect list).
+
 ## Open items
-- Phase 4 (D3b opening tool slot) awaiting David's go.
-- Phases 2+3 uncommitted.
+- Phase 5: bundle rebuild + walkthrough chain pending; mutation-verification pending.
