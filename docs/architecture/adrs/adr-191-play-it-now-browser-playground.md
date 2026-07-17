@@ -2,7 +2,23 @@
 
 ## Status: PROPOSED
 
-## Date: 2026-06-25
+## Date: 2026-06-25 (amended 2026-07-17)
+
+> **Amendment (2026-07-17, ruled by David, session 1befbd): the playground
+> is dual-mode, Chord-default.** ADR-191 predates the Chord story language
+> (ADR-210); the original design is TypeScript-only. As amended, the page
+> carries two editor modes: **Chord** (`.story` — the default tab and the
+> Phase 1 MVP) and **TypeScript** (the original esbuild-wasm design,
+> retained unchanged as a later phase on the same page). Chord changes the
+> MVP's economics: the chord compiler (parse → analyze → IR) and the
+> story-loader are pure TypeScript with no wasm toolchain, so "Play" is
+> compile-in-page + hand the loaded world to `@sharpee/platform-browser` —
+> no esbuild-wasm download, no transpile step, fast cold start — and it
+> matches Chord's interpreter-primary positioning as the author-facing
+> surface (ADR-210) and the 100% Sharpee==Chord parity goal. Sections
+> below annotated `[Mode A — Chord]` / `[Mode B — TS]` where the modes
+> diverge; unannotated content (site chrome, sandboxed iframe, player
+> pane, versioning, error area) is shared.
 
 ## Terminology
 
@@ -43,7 +59,18 @@ Add a **"Play It Now" playground page** to the website. Layout: a code editor pa
 resulting story in the standard browser client. Compilation happens **client-side, in the
 browser** — the site stays fully static.
 
-### How it works (client-side compile pipeline)
+### How it works — Mode A: Chord (default tab, Phase 1 MVP)
+
+1. **Edit.** The user edits a single `.story` file. The page seeds a runnable Chord
+   starter (a small room + object + one `on` clause, phrasebook-fixture style).
+2. **Compile.** On "Play", the page runs the **chord compiler** (parse → analyze → IR)
+   directly — pure TypeScript already in the platform browser bundle; no wasm, no
+   transpile. Diagnostics (parse/analyze errors with spans) render in the errors area.
+3. **Load + run.** The IR is handed to the **story-loader**, the loaded world to the
+   engine, and `@sharpee/platform-browser` renders in the player pane — the identical
+   runtime path of a `--browser`-built Chord story.
+
+### How it works — Mode B: TypeScript (later phase, original design retained)
 
 1. **Edit.** The user edits a single-file story (the `src/index.ts` shape: imports from
    `@sharpee/*`, a `Story` class/object, `export const story`). The page seeds a runnable
@@ -57,9 +84,15 @@ browser** — the site stays fully static.
 4. **Load + run.** The transpiled story is loaded as a Blob-URL ES module, its `story`
    export is handed to the engine, and `@sharpee/platform-browser` is attached to the player
    pane — the identical runtime path of every published story.
-5. **Isolate.** The compiled story + client run inside a **sandboxed `<iframe>`** so user
-   code cannot touch the parent page, and each "Play" gets a clean world. Errors (transpile
-   or runtime) surface in the errors area rather than the console.
+
+### Shared isolation
+
+Both modes run the compiled story + client inside a **sandboxed `<iframe>`** so user
+code cannot touch the parent page, and each "Play" gets a clean world. Errors (compile,
+transpile, or runtime) surface in the errors area rather than the console. One caveat the
+Chord mode inherits deliberately: a `.story` using the `define … from "./file.ts"` impure
+hatch is out of playground scope (single-file, declarative-only) — the analyzer's normal
+diagnostic for an unresolvable hatch is the answer, not a special case.
 
 ### Editor
 
@@ -92,19 +125,26 @@ republish, not a silent break. The page shows which version it is running.
 
 ## Scope
 
-**MVP (Phase 1):**
+**MVP (Phase 1) — Chord mode [amended 2026-07-17]:**
 
 - One static page, `site/play.html` (linked from nav and the homepage), framework-free,
   reusing the site chrome (`style.css`, `components.js`, `theme.js`).
-- Single-file story; seeded starter template; **Play**, **Reset**, and an errors area.
-- CodeMirror 6 editor with TS highlighting.
-- `esbuild-wasm` transpile + import-map resolution against a hosted, version-pinned
-  platform browser-ESM bundle.
+- Single-file `.story`; seeded Chord starter; **Play**, **Reset**, and an errors area
+  showing chord diagnostics with spans.
+- CodeMirror 6 editor with a Chord highlighting mode (a small CM6 language definition —
+  keywords/kinds/adjectives from `catalog.ts`; new asset, sized small).
+- Chord compiler + story-loader + platform, all from one hosted, version-pinned
+  browser-ESM platform bundle. No wasm.
 - Player pane = `@sharpee/platform-browser` in a sandboxed iframe.
+- Example picker seeded from the phrasebook fixtures (`docs/work/stdlib-phrasebook/
+  fixtures/*.story`) — already verified stories, zero new content needed.
 
 **Later phases:**
 
-- Monaco editor + full `@sharpee/*` IntelliSense from bundled `.d.ts`.
+- **TypeScript tab (Mode B)** — the original esbuild-wasm design, unchanged, added to
+  the same page.
+- Monaco editor + full `@sharpee/*` IntelliSense from bundled `.d.ts` (TS mode); Chord
+  mode gains diagnostics-as-you-type by running the analyzer on idle.
 - **Shareable URLs** (encode the story in the URL/hash, like the TS Playground) and/or
   gist import, for blog posts and the book.
 - A library of **starter examples** (the book's per-chapter snippets, the Family Zoo
@@ -132,24 +172,34 @@ republish, not a silent break. The page shows which version it is running.
 
 ## Acceptance criteria
 
+Phase 1 (Chord mode) [amended 2026-07-17]:
+
 - AC-1: A "Play It Now" page exists, linked from the site nav, using the shared site chrome.
-- AC-2: The page loads a runnable starter story in the editor by default.
-- AC-3: Pressing **Play** transpiles the editor's TypeScript in-browser and runs the
-  resulting story in the player pane via `@sharpee/platform-browser`, with no network call to
-  a compile backend.
-- AC-4: A story that imports `@sharpee/*` resolves against the hosted, version-pinned platform
-  ESM bundle and runs (e.g. the Family Zoo first room is playable: `look`, `examine sign`).
-- AC-5: Transpile and runtime errors are shown in an errors area, not only the console, and
-  do not break the page.
+- AC-2: The page loads a runnable Chord starter story in the editor by default.
+- AC-3: Pressing **Play** compiles the editor's `.story` in-browser (chord compiler +
+  story-loader, no wasm) and runs it in the player pane via `@sharpee/platform-browser`,
+  with no network call to a compile backend.
+- AC-4: A phrasebook fixture pasted verbatim compiles and plays (e.g. locking-unlocking:
+  `unlock strongbox with key`, `open strongbox`).
+- AC-5: Chord parse/analyze diagnostics (with line spans) and runtime errors are shown in
+  an errors area, not only the console, and do not break the page.
 - AC-6: **Reset** restores a clean world (and the starter template).
 - AC-7: User code runs sandboxed (iframe) and cannot mutate the host page.
 - AC-8: The page displays the platform version it is running.
+
+Mode B phase (TypeScript tab) additionally:
+
+- AC-9: Pressing **Play** on the TS tab transpiles in-browser (esbuild-wasm) and runs the
+  story with no compile backend; `@sharpee/*` resolves against the hosted, version-pinned
+  platform ESM bundle (e.g. the Family Zoo first room is playable: `look`, `examine sign`).
 
 ## Open questions
 
 - Does the platform's runtime path import any Node-only modules (`fs`, `path`, `process`)
   that would block a clean browser-ESM bundle? (Validate against the existing `--browser`
-  output first — it should already be clean.)
+  output first — it should already be clean.) [Amended 2026-07-17: the same validation now
+  covers `packages/chord` and `packages/story-loader` on the compile-at-runtime path — the
+  CLI wraps them in Node I/O, but the compiler/loader cores must be import-clean of it.]
 - Bundle size/cold-start budget for `esbuild-wasm` (~MBs) plus the platform bundle — is the
   first-Play latency acceptable, and should the wasm/platform load be deferred until the
   user focuses the editor or clicks Play?
@@ -164,6 +214,9 @@ republish, not a silent break. The page shows which version it is running.
 - **Extends / relies on** ADR-170 (framework-free browser UI) and ADR-163 (channels as the
   universal UI surface) — the playground reuses `@sharpee/platform-browser` and the channel
   renderer unchanged.
+- **Amended for** ADR-210 (Chord story language): Chord mode is the default tab and the
+  Phase 1 MVP; the playground becomes Chord's zero-install front door, consistent with
+  interpreter-primary positioning and the 100% Sharpee==Chord parity goal.
 - **Reuses** the `--browser` build output (ADR-187 repokit / ADR-180 devkit split): the
   playground is "the browser client, with the story supplied at runtime."
 - **Synergizes with** the book's code-snippet page (this session) — snippets and Family Zoo
