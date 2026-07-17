@@ -622,14 +622,20 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // returns with the conversation/writing systems; stories (e.g. dungeo's
   // SAY) keep their own story-grammar verbs meanwhile.
 
+  // ADR-231 D4: `:topic` is a TOPIC slot — free text captured verbatim by
+  // the TextSlotConsumer, never a positional entity slot. The validator's
+  // entity-first attempt resolves an in-scope entity quietly; a topic is
+  // never scope-rejected.
   grammar
     .define('tell :recipient about :topic')
+    .topic('topic')
     .mapsTo('if.action.telling')
     .withPriority(100)
     .build();
 
   grammar
     .define('ask :recipient about :topic')
+    .topic('topic')
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
@@ -638,18 +644,21 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // interceptable stubs)
   grammar
     .define('question :recipient about :topic')
+    .topic('topic')
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
 
   grammar
     .define('inquire of :recipient about :topic')
+    .topic('topic')
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
 
   grammar
     .define('inform :recipient about :topic')
+    .topic('topic')
     .mapsTo('if.action.telling')
     .withPriority(100)
     .build();

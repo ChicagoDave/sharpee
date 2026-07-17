@@ -4,6 +4,7 @@
  * with entities and action IDs identified
  */
 
+import type { EntityId } from '@sharpee/core';
 import type { IParsedObjectReference, IParsedCommand } from './parsed-command';
 import type { IFEntity } from '../entities/if-entity';
 
@@ -40,6 +41,20 @@ export interface IValidatedCommand {
    * e.g., "attack troll with sword" where sword is the instrument
    */
   instrument?: IValidatedObjectReference;
+
+  /**
+   * Conversation topic if present (ADR-231 D4)
+   * Entity-first resolution with text fallback: `entity` is the EntityId of
+   * the single in-scope entity the topic text named (resolved quietly — no
+   * disambiguation prompt, never a scope rejection); free text flows
+   * through with `entity` undefined.
+   */
+  topic?: {
+    /** Verbatim topic text as typed */
+    text: string;
+    /** Resolved in-scope entity, when the text named exactly one */
+    entity?: EntityId;
+  };
 
   /** Validation metadata */
   metadata?: {

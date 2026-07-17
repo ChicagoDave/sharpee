@@ -8,7 +8,8 @@
 import type {
   ISystemEvent,
   IGenericEventSource,
-  Result
+  Result,
+  EntityId
 } from '@sharpee/core';
 
 import type {
@@ -225,6 +226,12 @@ export class CommandValidator implements CommandValidator {
       instrument = resolved.value;
     }
 
+    // 3c. Resolve topic if present (ADR-231 D4): entity-first with text
+    // fallback. Quiet resolution only — a topic NEVER produces
+    // ENTITY_NOT_FOUND or a disambiguation prompt; on miss or tie the
+    // verbatim text flows through with entity undefined.
+    const topic = command.topic ? this.resolveTopic(command.topic.text) : undefined;
+
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
 
@@ -340,6 +347,7 @@ export class CommandValidator implements CommandValidator {
       directObject,
       indirectObject,
       instrument,
+      topic,
       metadata: {
         validationTime,
         warnings: warnings.length > 0 ? warnings : undefined
@@ -498,6 +506,10 @@ export class CommandValidator implements CommandValidator {
       }
     }
 
+    // 3c. Resolve topic if present (ADR-231 D4) — same quiet entity-first
+    // pass as validate(); topics are never disambiguation slots.
+    const topic = command.topic ? this.resolveTopic(command.topic.text) : undefined;
+
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
 
@@ -609,6 +621,7 @@ export class CommandValidator implements CommandValidator {
       directObject,
       indirectObject,
       instrument,
+      topic,
       metadata: {
         validationTime,
         warnings: warnings.length > 0 ? warnings : undefined
@@ -871,6 +884,40 @@ export class CommandValidator implements CommandValidator {
         parsed: ref
       }
     };
+  }
+
+  /**
+   * Resolve a topic's text against VISIBLE scope, quietly (ADR-231 D4).
+   *
+   * Entity-first with text fallback: reuses the D3 tiered matcher, but a
+   * topic is NEVER an entity slot — no ENTITY_NOT_FOUND, no scope
+   * rejection, no disambiguation prompt. Exactly one dominant in-scope
+   * match carries its EntityId (interceptors and future conversation
+   * systems key on it); a miss or a tie falls back to the verbatim text.
+   *
+   * @param text Verbatim topic text as typed (articles preserved)
+   * @returns The validated topic — `entity` set only on a unique match
+   */
+  private resolveTopic(text: string): { text: string; entity?: EntityId } {
+    const words = this.stripLeadingArticles(text.toLowerCase().trim()).split(/\s+/);
+    const ref: INounPhrase = {
+      tokens: [],
+      text,
+      head: words[words.length - 1] || text,
+      modifiers: [],
+      articles: [],
+      determiners: [],
+      candidates: [text]
+    };
+
+    const candidates = this.findCandidates(ref);
+    const inScope = this.filterByScope(candidates, ScopeLevel.VISIBLE);
+    const viable = this.dominantMatches(this.scoreEntities(inScope, ref));
+
+    if (viable.length === 1) {
+      return { text, entity: viable[0].entity.id };
+    }
+    return { text };
   }
 
   /**

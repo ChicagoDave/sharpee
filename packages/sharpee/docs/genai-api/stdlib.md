@@ -2088,6 +2088,19 @@ export declare class CommandValidator implements CommandValidator {
      */
     private resolveEntity;
     /**
+     * Resolve a topic's text against VISIBLE scope, quietly (ADR-231 D4).
+     *
+     * Entity-first with text fallback: reuses the D3 tiered matcher, but a
+     * topic is NEVER an entity slot — no ENTITY_NOT_FOUND, no scope
+     * rejection, no disambiguation prompt. Exactly one dominant in-scope
+     * match carries its EntityId (interceptors and future conversation
+     * systems key on it); a miss or a tie falls back to the verbatim text.
+     *
+     * @param text Verbatim topic text as typed (articles preserved)
+     * @returns The validated topic — `entity` set only on a unique match
+     */
+    private resolveTopic;
+    /**
      * Find candidate entities the noun phrase matches at any tier
      * (ADR-231 D3). Rooms are skipped; the player IS resolvable here: a
      * player with an IdentityTrait ("yourself", aliases me/self/myself)

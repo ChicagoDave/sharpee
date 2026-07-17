@@ -109,6 +109,8 @@ interface RichCandidate {
   textSlots?: Map<string, string>;
   instrument?: INounPhrase;
   excluded?: INounPhrase[]; // For "all but X" patterns
+  // ADR-231 D4: first-class conversation topic (verbatim free text)
+  topic?: { text: string };
   // ADR-082 additions
   vocabularySlots?: Map<string, { word: string; category: string }>;
   manner?: string;
@@ -448,6 +450,8 @@ export class EnglishParser implements Parser {
       textSlots: best.textSlots,
       instrument: best.instrument,
       excluded: best.excluded,
+      // ADR-231 D4 addition
+      topic: best.topic,
       // ADR-082 additions
       vocabularySlots: best.vocabularySlots,
       manner: best.manner
@@ -824,6 +828,9 @@ export class EnglishParser implements Parser {
     let instrument: INounPhrase | undefined;
     let excluded: INounPhrase[] | undefined;
 
+    // ADR-231 D4: Track the conversation topic
+    let topic: { text: string } | undefined;
+
     // ADR-082: Track vocabulary slots and manner
     let vocabularySlots: Map<string, { word: string; category: string }> | undefined;
     let manner: string | undefined;
@@ -839,6 +846,15 @@ export class EnglishParser implements Parser {
           textSlots = new Map();
         }
         textSlots.set(slotName, slotData.text);
+        continue; // Don't also add to direct/indirect objects
+      }
+
+      // ADR-231 D4: Handle topic slots — first-class conversation topic.
+      // Verbatim free text (TextSlotConsumer, multi-word, articles kept);
+      // NOT a positional noun phrase, so it never becomes indirectObject
+      // and never enters entity resolution as a scope-rejectable slot.
+      if (slotType === SlotType.TOPIC) {
+        topic = { text: slotData.text };
         continue; // Don't also add to direct/indirect objects
       }
 
@@ -1059,6 +1075,8 @@ export class EnglishParser implements Parser {
       textSlots,
       instrument,
       excluded,
+      // ADR-231 D4 addition
+      topic,
       // ADR-082 additions
       vocabularySlots,
       manner

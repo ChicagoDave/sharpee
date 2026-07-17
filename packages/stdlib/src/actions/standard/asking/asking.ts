@@ -112,8 +112,10 @@ export const askingAction: Action & { metadata: ActionMetadata } = {
 
   report(context: ActionContext): ISemanticEvent[] {
     const target = context.command.directObject!.entity!;
-    const topic = context.command.indirectObject?.parsed?.text ??
-      (context.command.parsed?.structure as { extras?: { topic?: string } } | undefined)?.extras?.topic;
+    // ADR-231 D4: the first-class validated topic — verbatim free text,
+    // plus the EntityId when the topic named an in-scope entity (quiet
+    // entity-first resolution; interceptors key on topicEntityId).
+    const topic = context.command.topic?.text;
 
     const events: ISemanticEvent[] = [
       context.event('if.event.asked', {
@@ -121,7 +123,8 @@ export const askingAction: Action & { metadata: ActionMetadata } = {
         params: { target: nounPhraseFor(target), topic },
         targetId: target.id,
         targetName: target.name,
-        topic
+        topic,
+        topicEntityId: context.command.topic?.entity
       })
     ];
 
