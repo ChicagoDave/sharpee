@@ -11,11 +11,14 @@
 import { describe, test, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { EnglishParser } from '@sharpee/parser-en-us';
+import EnglishLanguageProvider from '@sharpee/lang-en-us';
 import {
   actionLifecycleDescriptors,
   interceptorConsultingActionIds
 } from '../../../src/actions/lifecycle/registry';
 import { IFActions } from '../../../src/actions/constants';
+import { standardActions } from '../../../src/actions/standard';
 
 describe('wired-action registry (ADR-228 D5)', () => {
   test('covers all 33 entity-keyed standard actions with unique primary ids', () => {
@@ -67,5 +70,93 @@ describe('wired-action registry (ADR-228 D5)', () => {
     expect(interceptorConsultingActionIds.has(IFActions.RAISING)).toBe(false);
     expect(interceptorConsultingActionIds.has('if.action.tasting')).toBe(false);
     expect(interceptorConsultingActionIds.has('if.action.looking')).toBe(false);
+  });
+});
+
+/**
+ * Grammar reachability gate — ADR-230 D1.
+ *
+ * Direction 1 (reachability): every wired action id must be reachable from
+ * core grammar, or sit on a documented exceptions list. Direction 2 (orphan
+ * inverse): every `if.action.*` id core grammar maps to must resolve to a
+ * registered standard action, or sit on its own documented list.
+ *
+ * Exception discipline (ADR-230 pins.md PIN 5, staged-exceptions plan): each
+ * TEMPORARY entry names the plan phase that removes it, and the staleness
+ * tests below fail the moment an exception becomes obsolete — the lists can
+ * only shrink honestly, never rot.
+ */
+describe('grammar reachability gate (ADR-230 D1)', () => {
+  // A freshly constructed parser carries exactly the core grammar.
+  const coreReachable = new EnglishParser(EnglishLanguageProvider).getReachableActionIds();
+  const registeredActionIds = new Set(standardActions.map((action) => action.id));
+
+  /** PERMANENT: internal redirect targets, by design never player-typeable. */
+  const permanentUnreachable = new Set<string>([
+    IFActions.ENTERING_ROOM, // ADR-126 room-entry consultation seam
+    'if.action.deadly_room_death' // ADR-227 internal death redirect
+  ]);
+
+  /** TEMPORARY: ADR-230 D2 gaps — each entry is removed by the named phase.
+   *  (Phase 3 closed all five D2 gaps on 2026-07-17 — list currently empty.) */
+  const temporaryUnreachable = new Set<string>([]);
+
+  /** TEMPORARY: grammar-mapped ids with no registered action. */
+  const documentedOrphans = new Set<string>([
+    // Scheduled by ADR-230 D3 (examining_carefully closed by Phase 3's remap):
+    'if.action.opening_with', // Phase 4 remaps `open X with Y` to opening + tool slot
+    'if.action.cutting', // Phase 5 implements cutting + CuttableTrait
+    // DISCOVERED 2026-07-17 (gate landing, Phase 2): grammar exists, no action
+    // registered anywhere in the platform. Disposition needs a David ruling
+    // (pins.md amendment pending) — do not silently implement or delete.
+    'if.action.asking', // action parked in src/actions/removed/ ("conversation extension" is a stub)
+    'if.action.telling', // action parked in src/actions/removed/
+    'if.action.saying',
+    'if.action.saying_to',
+    'if.action.shouting',
+    'if.action.whispering',
+    'if.action.writing',
+    'if.action.writing_on',
+    'if.action.digging',
+    'if.action.taking_with' // `take X from Y with|using Z`
+  ]);
+
+  test('every wired action id is grammar-reachable or a documented exception', () => {
+    const unreachable = [...interceptorConsultingActionIds].filter(
+      (id) =>
+        !coreReachable.has(id) &&
+        !permanentUnreachable.has(id) &&
+        !temporaryUnreachable.has(id)
+    );
+    expect(unreachable).toEqual([]);
+  });
+
+  test('every grammar-mapped if.action.* id resolves to a registered action or documented orphan', () => {
+    const orphans = [...coreReachable].filter(
+      (id) =>
+        id.startsWith('if.action.') &&
+        !registeredActionIds.has(id) &&
+        !documentedOrphans.has(id)
+    );
+    expect(orphans.sort()).toEqual([]);
+  });
+
+  test('temporary unreachable exceptions stay honest (delete entries as phases close them)', () => {
+    const stale = [...temporaryUnreachable].filter((id) => coreReachable.has(id));
+    expect(stale).toEqual([]);
+  });
+
+  test('orphan exceptions stay honest (delete entries as ids gain actions or lose grammar)', () => {
+    const stale = [...documentedOrphans].filter(
+      (id) => registeredActionIds.has(id) || !coreReachable.has(id)
+    );
+    expect(stale).toEqual([]);
+  });
+
+  test('keyless unlock is a grammar-form gap, not a registry mismatch', () => {
+    // ADR-230 plan Phase 2 exit-state check: unlocking is registered AND
+    // reachable (keyed form), so it must never appear on an exceptions list.
+    expect(coreReachable.has(IFActions.UNLOCKING)).toBe(true);
+    expect(registeredActionIds.has(IFActions.UNLOCKING)).toBe(true);
   });
 });

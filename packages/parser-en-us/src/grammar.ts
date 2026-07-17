@@ -40,10 +40,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(95)
     .build();
 
-  // Looking with optional adverbs
+  // Looking with optional adverbs (ADR-230 D3a: the adverb form is just
+  // examining — if.action.examining_carefully had no action behind it)
   grammar
     .define('look [carefully] at :target')
-    .mapsTo('if.action.examining_carefully')
+    .mapsTo('if.action.examining')
     .withPriority(96)
     .build(); // Slightly higher priority, but confidence penalty for skipped optionals
 
@@ -336,6 +337,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Sleeping (ADR-230 D2)
+  grammar
+    .forAction('if.action.sleeping')
+    .verbs(['sleep'])
+    .build();
+
   // Quitting (ADR-087: using forAction)
   grammar
     .forAction('if.action.quitting')
@@ -519,12 +526,44 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(110)
     .build();
 
+  // Removing from a container (ADR-230 D2). Priority 110 like the other
+  // multi-preposition patterns here, so the from-form outranks taking_off's
+  // bare `remove :target` when the command names a source.
+  grammar
+    .define('remove :item from :container')
+    .mapsTo('if.action.removing')
+    .withPriority(110)
+    .build();
+
   // Unlocking with key
   grammar
     .define('unlock :door with|using :key')
     .instrument('key')
     .mapsTo('if.action.unlocking')
     .withPriority(110)
+    .build();
+
+  // Locking and keyless unlocking (ADR-230 D2). No trait constraint,
+  // mirroring the keyed unlock pattern: the action's validate owns
+  // not-lockable/no-key messaging (validateKeyRequirements refuses with
+  // no_key when the lockable requires a key).
+  grammar
+    .forAction('if.action.locking')
+    .verbs(['lock'])
+    .pattern(':target')
+    .build();
+
+  grammar
+    .define('lock :target with|using :key')
+    .instrument('key')
+    .mapsTo('if.action.locking')
+    .withPriority(110)
+    .build();
+
+  grammar
+    .forAction('if.action.unlocking')
+    .verbs(['unlock'])
+    .pattern(':target')
     .build();
 
   // Opening with tool
@@ -677,6 +716,31 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .forAction('if.action.touching')
     .verbs(['touch', 'rub', 'feel', 'pat', 'stroke', 'poke', 'prod'])
+    .pattern(':target')
+    .build();
+
+  // Listening and smelling (ADR-230 D2) — bare and targeted forms; both
+  // actions support the bare shape (ambient sound / room smell).
+  grammar
+    .define('listen')
+    .mapsTo('if.action.listening')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('listen to :target')
+    .mapsTo('if.action.listening')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .forAction('if.action.smelling')
+    .verbs(['smell', 'sniff'])
+    .build();
+
+  grammar
+    .forAction('if.action.smelling')
+    .verbs(['smell', 'sniff'])
     .pattern(':target')
     .build();
 

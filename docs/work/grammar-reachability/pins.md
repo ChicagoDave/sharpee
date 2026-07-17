@@ -153,6 +153,28 @@ by-design entries (`if.action.entering_room`, `if.action.deadly_room_death`).
 
 ---
 
+## Amendment A1 (Phase 2 discovery, 2026-07-17) — 10 undocumented orphan grammar ids **[DAVID]**
+
+Landing the gate's orphan-inverse surfaced 10 grammar-mapped `if.action.*` ids with no
+registered action anywhere in the platform, beyond ADR-230's three:
+
+- **Conversation family**: `asking`, `telling` (real actions exist but are parked in
+  `stdlib/src/actions/removed/*.ts.removed`; the `@sharpee/ext-conversation` package is a
+  5-line stub), `saying`, `saying_to`, `shouting`, `whispering` — grammar like
+  `ask :recipient about :topic`, `say :message`, `whisper :message to :recipient` all
+  parse today and fail at runtime.
+- **Writing family**: `writing`, `writing_on` (`write :message [on :surface]`).
+- **Tool-verb family**: `digging` (`dig :location with|using :tool`), `taking_with`
+  (`take :item from :container with|using :tool`) — same shape as opening_with/cutting;
+  candidates for the same D3 treatment (remap-with-tool-slot or implement-with-trait).
+
+All 10 are documented pending-decision exceptions in the gate (each gate list is
+self-cleaning: a staleness test fails the moment an entry becomes obsolete).
+**RULED (David, 2026-07-17): folded into Phase 6's design-sketch deliverable** — same
+treatment as turning/using/answering: Phase 6 delivers a short sketch per family
+(conversation, writing, tool-verbs digging/taking_with) and David rules dispositions
+there. Gate exceptions stay until those rulings execute.
+
 ## Checkpoint rulings (David, 2026-07-17)
 
 1. PIN 2 tool-field clones: ACCEPTED — no master/auto equivalents.

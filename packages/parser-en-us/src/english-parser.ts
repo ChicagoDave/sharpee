@@ -1082,6 +1082,20 @@ export class EnglishParser implements Parser {
   }
 
   /**
+   * Action ids reachable from this parser's registered grammar rules.
+   *
+   * On a freshly constructed parser this is exactly the core-grammar surface;
+   * after story grammar registration it includes story-added ids too. Consumed
+   * by the stdlib reachability gate (ADR-230 D1), which asserts every wired
+   * action is player-reachable.
+   *
+   * @returns set of action ids some grammar pattern maps to
+   */
+  getReachableActionIds(): Set<string> {
+    return new Set(this.grammarEngine.getRules().map((rule) => rule.action));
+  }
+
+  /**
    * Get candidate interpretations for a token
    */
   private getTokenCandidates(word: string): InternalTokenCandidate[] {

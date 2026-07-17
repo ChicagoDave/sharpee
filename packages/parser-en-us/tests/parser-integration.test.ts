@@ -343,7 +343,8 @@ describe('Parser Grammar Engine Integration', () => {
       
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.action).toBe('if.action.examining_carefully');
+        // ADR-230 D3a: the adverb form maps to plain examining
+        expect(result.value.action).toBe('if.action.examining');
         expect(result.value.structure.directObject?.text).toBe('painting');
       }
     });

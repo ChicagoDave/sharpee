@@ -21,5 +21,14 @@
 - Planner research findings: D5 resolution path already wired (Phase 8 = truncation fix only); loader `with key` = 3 bugs incl. requiredKey/keyId typo in 3 TS builder sites; too_heavy is live (off cleanup list); turning/using/answering = orphan verb constants.
 - Phase 1 COMPLETE: pins.md written + signed off. Rulings: PIN 1 getReachableActionIds() export; PIN 2 toolId/toolIds only (no master/auto clones), shared Openable+Cuttable; PIN 3 cuttable-with-tool syntax + loader post-load unimplemented-cuttable check; PIN 4 full verb table; turning/using/answering DEFERRED (Phase 6 design sketches); find/locate removed ("recall" idea parked); move → pushing/putting patterns, leaves going; PIN 4b patterns arrays get one-time manual reconciliation in Phase 6; PIN 5 gate lands early with staged exceptions.
 
+## Phase 2 (2026-07-17) — COMPLETE
+- `EnglishParser.getReachableActionIds()` (parser-en-us) + reachability gate in `lifecycle-registry.test.ts`: registry⊆grammar direction (2 permanent + 5 temporary exceptions), orphan inverse (13 documented), two staleness self-cleaning tests, keyless-unlock pin. 10/10 green first run; parser-en-us tsc clean. Uncommitted.
+- **DISCOVERY (pins.md A1, needs David)**: 10 orphan grammar ids beyond the ADR's 3 — asking/telling (actions parked in `removed/`, ext-conversation is a stub), saying/saying_to/shouting/whispering, writing/writing_on, digging, taking_with. All parse today and fail at runtime.
+
+## Phase 3 (2026-07-17) — COMPLETE
+- A1 ruled: folded into Phase 6 sketches (conversation/writing/tool-verb families).
+- 6 D2 grammar additions (lock bare+keyed, keyless unlock, remove-from @110, listen/listen-to, smell/sniff bare+target, sleep) + D3a remap (`look [carefully] at` → examining). Gate temporary list now empty; gate 10/10; walkthrough chain 951/951 clean; all 8 forms live-verified against the bundle; 1 obsolete parser test updated; parser-en-us 252 + stdlib 1474 green. Uncommitted (with Phase 2).
+
 ## Open items
-- Phase 2 (D1 gate infrastructure) awaiting David's go — first platform-code phase.
+- Phase 4 (D3b opening tool slot) awaiting David's go.
+- Phases 2+3 uncommitted.
