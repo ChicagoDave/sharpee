@@ -1023,9 +1023,17 @@ class Parser {
     c.next();
     c.next(); // define phrase
     const keyTok = c.next();
-    const key = keyTok && keyTok.kind === 'word' ? keyTok.text : '';
+    let key = keyTok && keyTok.kind === 'word' ? keyTok.text : '';
     if (!key) {
       this.diagnostics.error('parse.phrase-key', 'Expected a phrase key after `define phrase`.', lineSpan(headLine));
+    }
+    // EBNF: phrase-key = WORD { "." WORD } (ADR-230 D5). The lexer splits at
+    // dots, so consume `.WORD` segments — previously the parser silently
+    // registered only the first segment (`if.action.taking` became `if`),
+    // which made story-wide overrides of platform message ids impossible.
+    while (key && c.peek()?.kind === 'punct' && c.peek()?.text === '.' && c.peek(1)?.kind === 'word') {
+      c.next(); // consume '.'
+      key += '.' + c.next()!.text;
     }
     let strategy: string | null = null;
     let verbatim = false;

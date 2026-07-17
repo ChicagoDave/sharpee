@@ -1652,7 +1652,7 @@ export class WorldModel implements IWorldModel {
     if (opts.isLocked !== undefined || opts.keyId) {
       door.add(new LockableTrait({
         isLocked: opts.isLocked ?? true,
-        ...(opts.keyId ? { requiredKey: opts.keyId } : {}),
+        ...(opts.keyId ? { keyId: opts.keyId } : {}),
       }));
     }
 

@@ -1029,6 +1029,7 @@ export declare class ClimbableBehavior {
 ### traits/openable/openableBehavior
 
 ```typescript
+import { EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
 /**
@@ -1068,6 +1069,15 @@ export declare class OpenableBehavior extends Behavior {
      * Check if an entity can be closed
      */
     static canClose(entity: IFEntity): boolean;
+    /**
+     * Check if this entity requires a tool to open (ADR-230 D3b;
+     * mirrors LockableBehavior.requiresKey)
+     */
+    static requiresTool(entity: IFEntity): boolean;
+    /**
+     * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
+     */
+    static canOpenWith(entity: IFEntity, toolId: EntityId): boolean;
     /**
      * Open the entity
      * @returns Result describing what happened
@@ -2097,6 +2107,8 @@ export declare const TraitType: {
     readonly SCENERY: "scenery";
     readonly OPENABLE: "openable";
     readonly LOCKABLE: "lockable";
+    readonly CUTTABLE: "cuttable";
+    readonly DIGGABLE: "diggable";
     readonly SWITCHABLE: "switchable";
     readonly READABLE: "readable";
     readonly LIGHT_SOURCE: "lightSource";
@@ -2192,6 +2204,8 @@ import { EdibleTrait } from './edible/edibleTrait';
 import { SceneryTrait } from './scenery/sceneryTrait';
 import { OpenableTrait } from './openable/openableTrait';
 import { LockableTrait } from './lockable/lockableTrait';
+import { CuttableTrait } from './cuttable/cuttableTrait';
+import { DiggableTrait } from './diggable/diggableTrait';
 import { SwitchableTrait } from './switchable/switchableTrait';
 import { ReadableTrait } from './readable/readableTrait';
 import { LightSourceTrait } from './light-source/lightSourceTrait';
@@ -2231,7 +2245,7 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -2793,6 +2807,7 @@ export declare class RoomBehavior extends Behavior {
 ### traits/openable/openableTrait
 
 ```typescript
+import { EntityId } from '@sharpee/core';
 import { ITrait } from '../trait';
 export interface IOpenableData {
     /** Whether the entity is currently open */
@@ -2819,6 +2834,10 @@ export interface IOpenableData {
     openDescription?: string;
     /** Description when closed (used by computed description getter on IFEntity) */
     closedDescription?: string;
+    /** Single tool entity required to open this (ADR-230 D3b; mirrors ILockableData.keyId) */
+    toolId?: EntityId;
+    /** Multiple tool entities that can open this (mirrors ILockableData.keyIds) */
+    toolIds?: EntityId[];
 }
 /**
  * Openable trait for entities that can be opened and closed.
@@ -2842,6 +2861,8 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
     closeSound?: string;
     openDescription?: string;
     closedDescription?: string;
+    toolId?: EntityId;
+    toolIds?: EntityId[];
     constructor(data?: IOpenableData);
 }
 ```
@@ -2906,6 +2927,142 @@ export declare class LockableTrait implements ITrait, ILockableData {
     lockSound?: string;
     unlockSound?: string;
     constructor(data?: ILockableData);
+}
+```
+
+### traits/cuttable/cuttableTrait
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { ITrait } from '../trait';
+/**
+ * Data for the cuttable trait (ADR-230 D3c).
+ *
+ * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
+ * OpenableTrait's tool fields): a declared requirement makes the cutting
+ * action refuse wrong/missing tools; no requirement means any explicit
+ * tool (or none) passes validation.
+ */
+export interface ICuttableData {
+    /** Single tool entity required to cut this (mirrors ILockableData.keyId) */
+    toolId?: EntityId;
+    /** Multiple tool entities that can cut this (mirrors ILockableData.keyIds) */
+    toolIds?: EntityId[];
+}
+/**
+ * Cuttable trait — marks an entity the cutting action may target.
+ *
+ * The trait gates eligibility only. The cut OUTCOME is the entity's own
+ * registered implementation (ADR-090 capability behavior from TS, or a
+ * Chord `on cutting it` interceptor) — the standard cutting action never
+ * mutates state itself. An entity with this trait and no registered
+ * implementation is an authoring error (load-time in Chord; runtime
+ * safety-net refusal otherwise).
+ *
+ * This trait contains only data - eligibility/tool logic is in
+ * CuttableBehavior.
+ */
+export declare class CuttableTrait implements ITrait, ICuttableData {
+    static readonly type: "cuttable";
+    readonly type: "cuttable";
+    toolId?: EntityId;
+    toolIds?: EntityId[];
+    constructor(data?: ICuttableData);
+}
+```
+
+### traits/cuttable/cuttableBehavior
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior';
+import { IFEntity } from '../../entities/if-entity';
+/**
+ * Behavior for cuttable entities (ADR-230 D3c).
+ *
+ * Pure predicates only — the cutting action's validate() consults these;
+ * the cut mutation itself belongs to the entity's registered
+ * implementation, never here.
+ */
+export declare class CuttableBehavior extends Behavior {
+    static requiredTraits: "cuttable"[];
+    /**
+     * Check if this entity requires a tool to cut (mirrors
+     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
+     */
+    static requiresTool(entity: IFEntity): boolean;
+    /**
+     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
+     */
+    static canCutWith(entity: IFEntity, toolId: EntityId): boolean;
+}
+```
+
+### traits/diggable/diggableTrait
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { ITrait } from '../trait';
+/**
+ * Data for the diggable trait (ADR-230 Phase 6 (sketch ruling 6)).
+ *
+ * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
+ * OpenableTrait's tool fields): a declared requirement makes the digging
+ * action refuse wrong/missing tools; no requirement means any explicit
+ * tool (or none) passes validation.
+ */
+export interface IDiggableData {
+    /** Single tool entity required to dig this (mirrors ILockableData.keyId) */
+    toolId?: EntityId;
+    /** Multiple tool entities that can dig this (mirrors ILockableData.keyIds) */
+    toolIds?: EntityId[];
+}
+/**
+ * Diggable trait — marks an entity the digging action may target.
+ *
+ * The trait gates eligibility only. The dig OUTCOME is the entity's own
+ * registered implementation (ADR-090 capability behavior from TS, or a
+ * Chord `on digging it` interceptor) — the standard digging action never
+ * mutates state itself. An entity with this trait and no registered
+ * implementation is an authoring error (load-time in Chord; runtime
+ * safety-net refusal otherwise).
+ *
+ * This trait contains only data - eligibility/tool logic is in
+ * DiggableBehavior.
+ */
+export declare class DiggableTrait implements ITrait, IDiggableData {
+    static readonly type: "diggable";
+    readonly type: "diggable";
+    toolId?: EntityId;
+    toolIds?: EntityId[];
+    constructor(data?: IDiggableData);
+}
+```
+
+### traits/diggable/diggableBehavior
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior';
+import { IFEntity } from '../../entities/if-entity';
+/**
+ * Behavior for diggable entities (ADR-230 Phase 6 (sketch ruling 6)).
+ *
+ * Pure predicates only — the digging action's validate() consults these;
+ * the cut mutation itself belongs to the entity's registered
+ * implementation, never here.
+ */
+export declare class DiggableBehavior extends Behavior {
+    static requiredTraits: "diggable"[];
+    /**
+     * Check if this entity requires a tool to cut (mirrors
+     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
+     */
+    static requiresTool(entity: IFEntity): boolean;
+    /**
+     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
+     */
+    static canDigWith(entity: IFEntity, toolId: EntityId): boolean;
 }
 ```
 

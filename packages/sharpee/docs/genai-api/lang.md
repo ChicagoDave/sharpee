@@ -542,6 +542,7 @@ export * from './version';
 export * from './saving';
 export * from './restoring';
 export * from './quitting';
+export * from './restarting';
 export * from './undoing';
 export * from './again';
 /**
@@ -552,13 +553,24 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        not_held: string;
-        nothing_to_drop: string;
-        dropped: string;
-        still_worn: string;
-        dropped_in: string;
-        dropped_on: string;
-        dropped_multi: string;
+        not_visible: string;
+        not_reachable: string;
+        feels_normal: string;
+        feels_warm: string;
+        feels_hot: string;
+        feels_soft: string;
+        feels_hard: string;
+        feels_smooth: string;
+        feels_wet: string;
+        device_vibrating: string;
+        immovable_object: string;
+        liquid_container: string;
+        touched: string;
+        touched_gently: string;
+        poked: string;
+        prodded: string;
+        patted: string;
+        stroked: string;
     };
     help: {
         description: string;
@@ -581,6 +593,24 @@ export declare const standardActionLanguage: ({
         nothing_to_take: string;
         taken_from: string;
         taken_multi: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_held: string;
+        nothing_to_drop: string;
+        dropped: string;
+        still_worn: string;
+        dropped_in: string;
+        dropped_on: string;
+        dropped_multi: string;
     };
     help: {
         description: string;
@@ -707,6 +737,9 @@ export declare const standardActionLanguage: ({
         revealing: string;
         its_empty: string;
         cant_reach: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
     };
     help: {
         description: string;
@@ -867,6 +900,40 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         not_enterable: string;
         already_inside: string;
         container_closed: string;
@@ -994,37 +1061,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_visible: string;
-        not_reachable: string;
-        feels_normal: string;
-        feels_warm: string;
-        feels_hot: string;
-        feels_cold: string;
-        feels_soft: string;
-        feels_hard: string;
-        feels_smooth: string;
-        feels_rough: string;
-        feels_wet: string;
-        device_vibrating: string;
-        immovable_object: string;
-        liquid_container: string;
-        touched: string;
-        touched_gently: string;
-        poked: string;
-        prodded: string;
-        patted: string;
-        stroked: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         what_to_read: string;
         not_readable: string;
         cannot_read_now: string;
@@ -1117,23 +1153,11 @@ export declare const standardActionLanguage: ({
         no_target: string;
         not_visible: string;
         not_reachable: string;
-        too_heavy: string;
-        wearing_it: string;
-        wont_budge: string;
-        lever_pulled: string;
-        lever_clicks: string;
-        lever_toggled: string;
-        cord_pulled: string;
-        bell_rings: string;
-        cord_activates: string;
-        comes_loose: string;
-        firmly_attached: string;
-        tugging_useless: string;
-        pulled_direction: string;
-        pulled_nudged: string;
-        pulled_with_effort: string;
-        pulling_does_nothing: string;
-        fixed_in_place: string;
+        cant_pull_that: string;
+        worn: string;
+        already_pulled: string;
+        pulled: string;
+        nothing_happens: string;
     };
     help: {
         description: string;
@@ -1749,6 +1773,22 @@ export declare const standardActionLanguage: ({
         cancel: string;
         save_and_quit: string;
         quit_without_saving: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        restart_confirm: string;
+        restart_unsaved: string;
+        restart_requested: string;
+        game_restarting: string;
+        starting_over: string;
+        new_game: string;
     };
     help: {
         description: string;

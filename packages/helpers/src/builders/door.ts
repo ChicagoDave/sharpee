@@ -144,7 +144,7 @@ export class DoorBuilder {
     if (this._lockable) {
       entity.add(new LockableTrait({
         isLocked: this._lockable.isLocked ?? true,
-        ...(this._lockable.keyId ? { requiredKey: this._lockable.keyId } : {}),
+        ...(this._lockable.keyId ? { keyId: this._lockable.keyId } : {}),
       }));
     }
 

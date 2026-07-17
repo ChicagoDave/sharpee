@@ -1105,6 +1105,8 @@ export declare const IFActions: {
     readonly EMPTYING: "if.action.emptying";
     readonly LOCKING: "if.action.locking";
     readonly UNLOCKING: "if.action.unlocking";
+    readonly CUTTING: "if.action.cutting";
+    readonly DIGGING: "if.action.digging";
     readonly WEARING: "if.action.wearing";
     readonly TAKING_OFF: "if.action.taking_off";
     readonly SWITCHING_ON: "if.action.switching_on";
@@ -1576,10 +1578,12 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor';
 /**
- * The descriptor table: all 33 entity-keyed standard actions (ADR-228
- * Consequences). Structural exemptions (no entity to key on: about, waiting,
- * looking, … and the full-delegation capability actions lowering/raising)
- * are absent by design — see ADR-228 Context.
+ * The descriptor table: all 37 entity-keyed standard actions (33 per
+ * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
+ * ADR-230 Phase 6). Structural exemptions
+ * (no entity to key on: about, waiting, looking, … and the full-delegation
+ * capability actions lowering/raising) are absent by design — see ADR-228
+ * Context.
  */
 export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[];
 /**
@@ -1617,6 +1621,11 @@ export * from './help';
 export * from './about';
 export * from './version';
 export * from './locking';
+export * from './cutting';
+export * from './turning';
+export * from './asking';
+export * from './telling';
+export * from './digging';
 export * from './unlocking';
 export * from './switching_on';
 export * from './switching_off';
@@ -1656,7 +1665,7 @@ export * from './undoing';
 export * from './again';
 export * from './hiding';
 import { TraceAction } from '../author';
-export declare const standardActions: (import("..").Action | TraceAction)[];
+export declare const standardActions: (TraceAction | import("..").Action)[];
 ```
 
 ### actions/author/trace

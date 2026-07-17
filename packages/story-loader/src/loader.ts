@@ -156,16 +156,37 @@ export class ChordStory implements Story {
   private readonly worldIds = new Map<string, string>();
 
   /**
-   * Cuttable tool references awaiting world-id resolution (ADR-230 D3c):
-   * `cuttable with tool the knife` may name an entity built AFTER its
-   * owner, so the trait is stamped once every entity exists.
+   * Trait-config entity references awaiting world-id resolution (ADR-230
+   * D3c / Phase 9a): `cuttable with tool the knife`, `lockable with key the
+   * brass key` may name entities built AFTER their owner, so trait fields
+   * are stamped once every entity exists — config values are NEVER left as
+   * raw display-name strings.
    */
-  private readonly pendingCuttableTools: Array<{
-    trait: CuttableTrait | DiggableTrait;
-    irToolId: string;
+  private readonly pendingEntityRefs: Array<{
+    irRefId: string;
     ownerName: string;
     span: unknown;
+    apply: (worldId: string) => void;
   }> = [];
+
+  /** Resolve a trait-config entity NAME to an IR entity and queue the
+   *  world-id application (throws LoadError when nothing matches). */
+  private entityRefFor(
+    name: string,
+    configKey: string,
+    owner: IREntity,
+    span: unknown,
+    apply: (worldId: string) => void,
+  ): { irRefId: string; ownerName: string; span: unknown; apply: (worldId: string) => void } {
+    const lower = name.toLowerCase();
+    const target = this.ir.entities.find(
+      (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
+    );
+    if (!target) {
+      throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span as never);
+    }
+    return { irRefId: target.id, ownerName: owner.name, span, apply };
+  }
 
   /**
    * Deadly exits (ADR-227): world room id → DIRECTION → derived
@@ -368,9 +389,9 @@ export class ChordStory implements Story {
     // matches them, a loader-owned state-clause provider for everything else.
     this.compileDetailChannels(world);
 
-    // ADR-230 D3c: stamp cuttable tool world-ids now that every entity
-    // exists (forward references resolve here).
-    this.resolveCuttableTools();
+    // ADR-230 D3c / Phase 9a: stamp trait-config entity references (tools,
+    // keys) now that every entity exists (forward references resolve here).
+    this.resolvePendingEntityRefs();
 
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
     // derived-property chains (all per-world, keyed — ADR-207/208).
@@ -700,7 +721,9 @@ export class ChordStory implements Story {
         if (description) builder.description(description);
         if (irEntity.aka.length) builder.aliases(...irEntity.aka);
         if (irEntity.traits.some((t) => t.name === 'openable')) builder.openable();
-        if (irEntity.traits.some((t) => t.name === 'lockable')) builder.lockable();
+        // NOTE: no `builder.lockable()` pre-add — applyTraitAdjectives owns
+        // the lockable composition so `with key X` config is never dropped
+        // (ADR-230 Phase 9a: the keyless pre-add made the keyed re-add skip).
         entity = builder.build();
         this.applyContainerConfig(entity, irEntity.kinds[0]);
         break;
@@ -740,21 +763,22 @@ export class ChordStory implements Story {
   }
 
   /**
-   * Resolve `cuttable with tool X` references to world entity ids
-   * (ADR-230 D3c) — runs once, after every entity is built.
+   * Resolve trait-config entity references (`with tool X`, `with key X`)
+   * to world entity ids (ADR-230 D3c / Phase 9a) — runs once, after every
+   * entity is built.
    */
-  private resolveCuttableTools(): void {
-    for (const pending of this.pendingCuttableTools) {
-      const worldId = this.worldIds.get(pending.irToolId);
+  private resolvePendingEntityRefs(): void {
+    for (const pending of this.pendingEntityRefs) {
+      const worldId = this.worldIds.get(pending.irRefId);
       if (!worldId) {
         throw new LoadError(
-          `\`${pending.ownerName}\`: the cuttable tool entity was never built.`,
+          `\`${pending.ownerName}\`: a trait-config entity reference was never built.`,
           pending.span as never,
         );
       }
-      pending.trait.toolId = worldId;
+      pending.apply(worldId);
     }
-    this.pendingCuttableTools.length = 0;
+    this.pendingEntityRefs.length = 0;
   }
 
   /**
@@ -845,9 +869,23 @@ export class ChordStory implements Story {
         case 'openable':
           if (!entity.has(TraitType.OPENABLE)) entity.add(new OpenableTrait());
           break;
-        case 'lockable':
-          if (!entity.has(TraitType.LOCKABLE)) entity.add(new LockableTrait({ keyId: configValue(trait, 'key') }));
+        case 'lockable': {
+          // ADR-230 Phase 9a: `with key X` resolves name → world id through
+          // the shared pending mechanism (forward refs legal) — the raw
+          // display-name string never reaches LockableTrait.keyId.
+          if (entity.has(TraitType.LOCKABLE)) break;
+          const lockable = new LockableTrait({});
+          const keyName = configValue(trait, 'key');
+          if (keyName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(keyName, 'key', irEntity, trait.span, (worldId) => {
+                lockable.keyId = worldId;
+              }),
+            );
+          }
+          entity.add(lockable);
           break;
+        }
         case 'cuttable':
         case 'diggable': {
           // ADR-230 D3c / Phase 6. Tool names resolve name → IR entity here
@@ -858,19 +896,11 @@ export class ChordStory implements Story {
           const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : new DiggableTrait();
           const toolName = configValue(trait, 'tool');
           if (toolName !== undefined) {
-            const lower = toolName.toLowerCase();
-            const target = this.ir.entities.find(
-              (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
+            this.pendingEntityRefs.push(
+              this.entityRefFor(toolName, 'tool', irEntity, trait.span, (worldId) => {
+                toolGated.toolId = worldId;
+              }),
             );
-            if (!target) {
-              throw new LoadError(`\`${toolName}\` (config \`tool\`) names no entity.`, trait.span);
-            }
-            this.pendingCuttableTools.push({
-              trait: toolGated,
-              irToolId: target.id,
-              ownerName: irEntity.name,
-              span: trait.span,
-            });
           }
           entity.add(toolGated);
           break;

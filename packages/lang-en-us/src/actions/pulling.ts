@@ -15,38 +15,22 @@ export const pullingLanguage = {
     'yank [something]',
   ],
   
+  // ADR-230 Phase 9b: rewritten to the action's ACTUAL requiredMessages —
+  // pulled/worn/already_pulled had no English anywhere, while a rich
+  // legacy vocabulary (lever_*/cord_*/comes_loose/pulled_direction/…) was
+  // never emitted by any code path (and no story used it). Deleted.
   messages: {
     // Error messages
     'no_target': "Pull what?",
     'not_visible': "{You} {can't} see {the target}.",
     'not_reachable': "{You} {can't} reach {the target}.",
-    'too_heavy': "{capitalize the target} {verb:is target} too heavy to pull (weighs {weight}kg).",
-    'wearing_it': "{You} {can't} pull {the target} while wearing it.",
-    'wont_budge': "{capitalize the target} won't budge.",
+    'cant_pull_that': "{capitalize the target} {verb:is target} not something {you} can pull.",
+    'worn': "{You} {can't} pull {the target} while wearing it.",
+    'already_pulled': "{capitalize the target} has already been pulled.",
 
-    // Success messages - levers/handles
-    'lever_pulled': "{You} {pull} {the target}.",
-    'lever_clicks': "{You} {pull} {the target} with a satisfying click.",
-    'lever_toggled': "{You} {pull} {the target}, switching it {newState}.",
-
-    // Success messages - cords/ropes
-    'cord_pulled': "{You} {pull} {the target}.",
-    'bell_rings': "{You} {pull} {the target}. A bell rings somewhere!",
-    'cord_activates': "{You} {give} {the target} a firm tug.",
-
-    // Success messages - attached objects
-    'comes_loose': "{You} {pull} {the target} and it comes loose!",
-    'firmly_attached': "{You} {pull} {the target}, but it's firmly attached.",
-    'tugging_useless': "Tugging on {the target} accomplishes nothing.",
-
-    // Success messages - moveable objects
-    'pulled_direction': "{You} {pull} {the target} {verbatim:direction}.",
-    'pulled_nudged': "{You} {tug} at {the target}, moving it slightly.",
-    'pulled_with_effort': "With effort, {you} {drag} {the target} {verbatim:direction}.",
-
-    // Success messages - fixed objects
-    'pulling_does_nothing': "Pulling {the target} has no effect.",
-    'fixed_in_place': "{capitalize the target} {verb:is target} fixed in place."
+    // Success messages
+    'pulled': "{You} {pull} {the target}.",
+    'nothing_happens': "{You} {pull} {the target}, but nothing happens."
   },
   
   help: {

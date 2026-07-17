@@ -122,8 +122,7 @@ A research pass against the live codebase (not just the ADR text) surfaced facts
 - **Entry state**: Phases 2-6 landed; every temporary exception entered in Phase 2 should now be closeable.
 - **Deliverable**: remove all temporary exceptions from both the registry⊆grammar list and the orphan-inverse list, leaving only the two permanent by-design entries (`if.action.entering_room`, `if.action.deadly_room_death`); re-run the full stdlib unit suite and the dungeo walkthrough chain.
 - **Exit state**: ADR-230's Consequences claim ("ADR-229's 'every wired action is reachable' consequence becomes true and stays true mechanically") is verified true with an empty temporary-exceptions list — not asserted, verified by the gate test's own pass/fail. `pnpm --filter '@sharpee/stdlib' test` green; walkthrough chain one clean run; `./repokit verify` clean.
-- **Status**: PENDING
-- **David-review checkpoint**: recommended — this is the natural point to confirm the reachability program is actually closed before moving to the unrelated D5 and defect-fix phases.
+- **Status**: COMPLETE (2026-07-17 — exception lists emptied incrementally during Phases 3-6; gate 12/12 with only the two permanent by-design entries (entering_room, deadly_room_death); stdlib 1495 green; chain three clean runs (Phase 6 build). CAVEAT: `./repokit verify`'s final publish dry-run step fails environmentally — @sharpee/chord 3.0.0 already published 2026-07-14, pre-dating this work; build+pack half passes. Unblocks at the next version bump.)
 
 ### Phase 8: D5 — Chord phrase-key parser fix
 - **Tier**: Small

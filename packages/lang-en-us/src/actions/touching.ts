@@ -24,11 +24,9 @@ export const touchingLanguage = {
     'feels_normal': "{capitalize the target} feels as {you}'d expect.",
     'feels_warm': "{capitalize the target} feels warm to the touch.",
     'feels_hot': "{capitalize the target} {verb:is target} hot! {You} {pull} {your} hand back quickly.",
-    'feels_cold': "{capitalize the target} feels cold.",
     'feels_soft': "{capitalize the target} feels soft.",
     'feels_hard': "{capitalize the target} feels hard and solid.",
     'feels_smooth': "{capitalize the target} feels smooth.",
-    'feels_rough': "{capitalize the target} feels rough.",
     'feels_wet': "{capitalize the target} feels damp.",
 
     // Success messages - specific objects

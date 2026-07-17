@@ -120,6 +120,26 @@ export declare class EnglishParser implements Parser {
      */
     getStoryGrammar(): GrammarBuilder;
     /**
+     * Action ids reachable from this parser's registered grammar rules.
+     *
+     * On a freshly constructed parser this is exactly the core-grammar surface;
+     * after story grammar registration it includes story-added ids too. Consumed
+     * by the stdlib reachability gate (ADR-230 D1), which asserts every wired
+     * action is player-reachable.
+     *
+     * @returns set of action ids some grammar pattern maps to
+     */
+    getReachableActionIds(): Set<string>;
+    /**
+     * Source pattern strings of this parser's registered grammar rules
+     * (e.g. `"lock :target with|using :key"`). Consumed by the stdlib
+     * verb-reachability gate (ADR-230 D4 — PIN 1 amendment, 2026-07-17)
+     * to assert every lang-declared verb phrase leads some pattern.
+     *
+     * @returns pattern strings, one per rule
+     */
+    getGrammarPatterns(): string[];
+    /**
      * Get candidate interpretations for a token
      */
     private getTokenCandidates;

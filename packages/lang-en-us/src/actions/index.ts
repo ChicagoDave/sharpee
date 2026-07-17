@@ -77,6 +77,7 @@ export * from './version';
 export * from './saving';
 export * from './restoring';
 export * from './quitting';
+export * from './restarting';
 export * from './undoing';
 export * from './again';
 
@@ -134,6 +135,7 @@ import { versionLanguage } from './version';
 import { savingLanguage } from './saving';
 import { restoringLanguage } from './restoring';
 import { quittingLanguage } from './quitting';
+import { restartingLanguage } from './restarting';
 import { undoingLanguage } from './undoing';
 import { againLanguage } from './again';
 
@@ -213,6 +215,7 @@ export const standardActionLanguage = [
   savingLanguage,
   restoringLanguage,
   quittingLanguage,
+  restartingLanguage,
   undoingLanguage,
   againLanguage,
   // Concealment actions (ADR-148)
