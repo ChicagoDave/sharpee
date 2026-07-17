@@ -12,7 +12,7 @@ import { describe, test, expect } from 'vitest';
 import { removingAction } from '../../../src/actions/standard/removing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
-import { setupBasicWorld, createRealTestContext, createCommand } from '../../test-utils';
+import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -21,8 +21,8 @@ const setup = () => {
   box.add({ type: TraitType.OPENABLE, isOpen: true } as any);
   world.moveEntity(box.id, room.id);
   const axe = world.createEntity('bloody axe', 'object');
-  // Benign trait used purely as the interceptor registration key.
-  axe.add({ type: TraitType.READABLE, text: '' } as any);
+  // Inert marker trait — the interceptor registration key.
+  axe.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(axe.id, box.id);
   return { world, player, room, box, axe };
 };
@@ -46,7 +46,7 @@ describe('Removing consults taking-id interceptors (ADR-228 D6-B — TrollAxe by
   test('a TAKING-guard preValidate veto blocks REMOVE FROM — the item stays in the container', () => {
     const { world, box, axe } = setup();
     // The white-hot-axe shape: guard registered under if.action.taking ONLY.
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.TAKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.TAKING, {
       preValidate() {
         return { valid: false, error: 'dungeo.troll.axe.white_hot' };
       },
@@ -63,10 +63,10 @@ describe('Removing consults taking-id interceptors (ADR-228 D6-B — TrollAxe by
   test('removing-id and taking-id hooks BOTH fire on the item, specific id first', () => {
     const { world, player, box, axe } = setup();
     const fired: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.REMOVING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.REMOVING, {
       postExecute() { fired.push('removing'); },
     });
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.TAKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.TAKING, {
       postExecute(entity, w) {
         fired.push('taking');
         expect(entity.id).toBe(axe.id);
@@ -85,8 +85,8 @@ describe('Removing consults taking-id interceptors (ADR-228 D6-B — TrollAxe by
     const { world, player, room, box, axe } = setup();
     const coin = world.createEntity('copper coin', 'object');
     world.moveEntity(coin.id, box.id);
-    // Guard only the axe (READABLE); coin has no interceptor.
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.TAKING, {
+    // Guard only the axe (marker trait); coin has no interceptor.
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.TAKING, {
       preValidate() {
         return { valid: false, error: 'dungeo.troll.axe.white_hot' };
       },

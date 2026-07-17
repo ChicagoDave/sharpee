@@ -116,6 +116,18 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'cant_remove', params: { item: nounPhraseFor(item) } };
     }
 
+    // Folded execute-phase refusals (ADR-229 R1): both are pure reads, so
+    // they run as standard validation and their failures flow through
+    // blocked() → onBlocked like every other refusal.
+    const wearableContext = analyzeWearableContext(context, item, actor);
+    const blockingItem = checkRemovalBlockers(wearableContext);
+    if (blockingItem) {
+      return { valid: false, error: 'prevents_removal', params: { blocking: nounPhraseFor(blockingItem) } };
+    }
+    if (hasRemovalRestrictions(wearableContext.wearableTrait)) {
+      return { valid: false, error: 'cant_remove', params: { item: nounPhraseFor(item) } };
+    }
+
     // Canonical placement (ADR-228): postValidate runs after ALL standard validation
     const postVeto = runPostValidate(context, state);
     if (postVeto) return postVeto;
@@ -140,25 +152,9 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     sharedData.bodyPart = wearableTrait.bodyPart;
     sharedData.layer = wearableTrait.layer;
 
-    // Check for layering conflicts using shared helper
-    const blockingItem = checkRemovalBlockers(wearableContext);
-    if (blockingItem) {
-      sharedData.failed = true;
-      sharedData.errorMessageId = 'prevents_removal';
-      sharedData.errorReason = 'prevents_removal';
-      sharedData.errorParams = { blocking: nounPhraseFor(blockingItem) };
-      return;
-    }
-
-    // Check if removing this would cause problems (e.g., cursed items).
-    // params carry EntityInfo for the formatter chain (ADR-158).
-    if (hasRemovalRestrictions(wearableTrait)) {
-      sharedData.failed = true;
-      sharedData.errorMessageId = 'cant_remove';
-      sharedData.errorReason = 'cant_remove';
-      sharedData.errorParams = { item: nounPhraseFor(item) };
-      return;
-    }
+    // Layering blockers and removal restrictions are validate-phase
+    // refusals now (ADR-229 R1) — execute only keeps the behavior-result
+    // defensive branch below as the true safety net.
 
     // Delegate state change to behavior
     const result = WearableBehavior.remove(item, actor);
@@ -188,9 +184,9 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = 'removed';
 
     // Interceptor lifecycle (ADR-228): postExecute runs after the successful
-    // mutation only — the ad-hoc refusal paths above (layering blockers,
-    // removal restrictions) early-return with sharedData.failed and skip it,
-    // matching the switching_on precedent.
+    // mutation only — the defensive behavior-failure branch above
+    // early-returns with sharedData.failed and skips it, matching the
+    // switching_on precedent.
     const state = getLifecycleState(context);
     if (state) runPostExecute(context, state);
   },

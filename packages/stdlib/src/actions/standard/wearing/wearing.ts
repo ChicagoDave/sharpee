@@ -125,6 +125,19 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'cant_wear_that' };
     }
 
+    // Folded execute-phase refusal (ADR-229 R1): a pure read, so it runs
+    // as standard validation and its failure flows through blocked() →
+    // onBlocked like every other refusal.
+    const wearableContext = analyzeWearableContext(context, item, actor);
+    const conflictingItem = checkWearingConflicts(wearableContext);
+    if (conflictingItem) {
+      return {
+        valid: false,
+        error: wearableContext.wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing',
+        params: { item: nounPhraseFor(conflictingItem) }
+      };
+    }
+
     // Canonical placement (ADR-228): postValidate runs after ALL standard validation
     const postVeto = runPostValidate(context, state);
     if (postVeto) return postVeto;
@@ -149,15 +162,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     sharedData.bodyPart = wearableTrait.bodyPart;
     sharedData.layer = wearableTrait.layer;
 
-    // Check for wearing conflicts using shared helper
-    const conflictingItem = checkWearingConflicts(wearableContext);
-    if (conflictingItem) {
-      sharedData.failed = true;
-      sharedData.errorMessageId = wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing';
-      sharedData.errorReason = sharedData.errorMessageId;
-      sharedData.errorParams = { item: nounPhraseFor(conflictingItem) };
-      return;
-    }
+    // Wearing conflicts are a validate-phase refusal now (ADR-229 R1) —
+    // execute only keeps the behavior-result defensive branch below as
+    // the true safety net.
 
     // Delegate state change to behavior
     const result = WearableBehavior.wear(item, actor);

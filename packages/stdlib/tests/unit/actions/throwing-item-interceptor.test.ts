@@ -17,14 +17,16 @@ import {
   createRealTestContext,
   setupBasicWorld,
   createCommand,
+  TEST_MARKER_TRAIT,
+  SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const bomb = world.createEntity('round bomb', 'object');
   world.moveEntity(bomb.id, player.id); // carried
-  // Benign trait used purely as the interceptor registration key.
-  bomb.add({ type: TraitType.READABLE, text: '' } as any);
+  // Inert marker trait — the interceptor registration key.
+  bomb.add({ type: TEST_MARKER_TRAIT } as any);
   return { world, player, room, bomb };
 };
 
@@ -43,7 +45,7 @@ describe('Thrown-item interceptor resolution (ADR-118 extension)', () => {
   test('a general throw fires the ITEM-keyed interceptor (postExecute + postReport)', () => {
     const { world, bomb } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.THROWING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.THROWING, {
       postExecute(entity, w) {
         calls.push('postExecute');
         // The hook receives the ITEM as the keyed entity.
@@ -68,15 +70,15 @@ describe('Thrown-item interceptor resolution (ADR-118 extension)', () => {
     const { world, room, bomb } = setup();
     const statue = world.createEntity('stone statue', 'object');
     statue.add({ type: TraitType.SCENERY } as any);
-    // Distinct registration key for the target.
-    statue.add({ type: TraitType.PUSHABLE, pushType: 'button' } as any);
+    // Inert marker trait — a distinct interceptor registration key for the target.
+    statue.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
     world.moveEntity(statue.id, room.id);
 
     const fired: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.THROWING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.THROWING, {
       postExecute() { fired.push('item'); },
     });
-    world.registerActionInterceptor(TraitType.PUSHABLE, IFActions.THROWING, {
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.THROWING, {
       postExecute(entity) {
         fired.push('target');
         expect(entity.id).toBe(statue.id);
@@ -129,7 +131,7 @@ describe('Capability path runs interceptor hooks after the behavior (ADR-228 D7.
       },
       blocked() { return []; },
     } as any);
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.THROWING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.THROWING, {
       postExecute() { order.push('item.postExecute'); },
       postReport() {
         order.push('item.postReport');

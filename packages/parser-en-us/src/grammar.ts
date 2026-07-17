@@ -642,6 +642,36 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Talking (ADR-229 R3): the core route to if.action.talking — the action
+  // was wired for interceptors (ADR-228 Phase 5) but previously reachable
+  // only via story grammar. Deliberately NO hasTrait(ACTOR) constraint:
+  // talking's validate owns not_actor/too_far, so those refusals flow
+  // through blocked() → onBlocked (interceptor-visible) instead of dying
+  // as a parse failure. Story grammar outranks these on priority as usual.
+  grammar
+    .define('talk to|with :target')
+    .mapsTo('if.action.talking')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('speak to|with :target')
+    .mapsTo('if.action.talking')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('chat with :target')
+    .mapsTo('if.action.talking')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('converse with :target')
+    .mapsTo('if.action.talking')
+    .withPriority(100)
+    .build();
+
   // Touching/sensory actions (ADR-087: using forAction)
   // Scope handled by action validation
   grammar

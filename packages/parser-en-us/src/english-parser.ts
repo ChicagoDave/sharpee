@@ -911,11 +911,13 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Determine where this slot should go based on the pattern
-      if (rule.pattern.includes(' with :' + slotName)) {
-        // This slot comes after 'with', put it in extras
-        extras[slotName] = phrase;
-      } else if (rule.pattern.includes('give :recipient :item')) {
+      // Determine where this slot should go based on the pattern.
+      // (Deleted 2026-07-16, David's ruling during ADR-229 R3: the legacy
+      // "slot after literal 'with' → extras" shunt is superseded by
+      // ADR-080's `.instrument()` slot typing — handled above — and had no
+      // remaining consumer. With-slots now follow positional assignment
+      // like any other slot.)
+      if (rule.pattern.includes('give :recipient :item')) {
         // Special case for give patterns
         if (slotName === 'item') {
           directObject = phrase;

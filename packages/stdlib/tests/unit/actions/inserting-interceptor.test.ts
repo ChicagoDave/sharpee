@@ -12,7 +12,7 @@ import { describe, test, expect } from 'vitest';
 import { insertingAction } from '../../../src/actions/standard/inserting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
-import { setupBasicWorld, createRealTestContext, createCommand } from '../../test-utils';
+import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -21,8 +21,8 @@ const setup = () => {
   box.add({ type: TraitType.OPENABLE, isOpen: true } as any);
   world.moveEntity(box.id, room.id);
   const gem = world.createEntity('green gem', 'object');
-  // Benign trait used purely as the interceptor registration key.
-  gem.add({ type: TraitType.READABLE, text: '' } as any);
+  // Inert marker trait — the interceptor registration key.
+  gem.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(gem.id, player.id);
   return { world, player, room, box, gem };
 };
@@ -45,7 +45,7 @@ const drive = (world: WorldModel, item: IFEntity, container: IFEntity) => {
 describe('Inserting interceptor surface (ADR-228 D6-B)', () => {
   test('`on inserting it` fires: an inserting-id preValidate veto blocks — item stays held', () => {
     const { world, player, box, gem } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.INSERTING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.INSERTING, {
       preValidate() {
         return { valid: false, error: 'test.gem_refuses_insertion' };
       },
@@ -63,7 +63,7 @@ describe('Inserting interceptor surface (ADR-228 D6-B)', () => {
   test('putting-id hooks still fire for an INSERT command (delegation), inserting-id first', () => {
     const { world, box, gem } = setup();
     const fired: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.INSERTING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.INSERTING, {
       preValidate() { fired.push('inserting.preValidate'); return null; },
       postExecute() { fired.push('inserting.postExecute'); },
     });

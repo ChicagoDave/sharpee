@@ -101,6 +101,37 @@ define trait prickly
   end on
 end trait
 
+define action waving
+  grammar
+    wave :thing
+  refuse without thing: wave-what
+  otherwise refuse cant-wave
+  phrase waved
+
+  phrases en-US
+    wave-what:
+      Wave what?
+    cant-wave:
+      Nothing to wave.
+    waved:
+      You wave it about.
+
+define trait wavable
+  on waving it while wild-day
+    phrase taken-wild
+  end on
+end trait
+
+define trait perky
+  on prodding it
+    phrase perked-up
+  end on
+end trait
+
+define phrase perked-up
+  It perks right up.
+end phrase
+
 create the Camp
   a room
 
@@ -151,6 +182,19 @@ create the marten
 
   A marten.
 
+create the shrew
+  poddable
+  perky
+  in the Camp
+
+  A shrew.
+
+create the flag
+  wavable
+  in the Camp
+
+  A flag.
+
 create the player
   starts in the Camp
 
@@ -173,8 +217,8 @@ function fireInterceptor(loaded: Loaded, irId: string, actionId = 'if.action.tak
   return { pre, report, data };
 }
 
-/** Drive the prodding dispatch action end-to-end (capability route). */
-function prod(loaded: Loaded, irId: string) {
+/** Drive a dispatch action end-to-end (capability route). */
+function dispatch(loaded: Loaded, verb: string, irId: string) {
   interface DispatchAction {
     id: string;
     validate(ctx: unknown): { valid: boolean; error?: string };
@@ -183,7 +227,7 @@ function prod(loaded: Loaded, irId: string) {
     blocked(ctx: unknown, result: { error?: string }): ISemanticEvent[];
   }
   const action = (loaded.story.getCustomActions() as DispatchAction[]).find(
-    (a) => a.id === 'chord.action.prodding',
+    (a) => a.id === `chord.action.${verb}`,
   )!;
   const target = loaded.world.getEntity(loaded.story.entityId(irId)!)!;
   const ctx = {
@@ -274,45 +318,69 @@ describe('D8: trait-clause `, once` behaves identically to the entity path', () 
   });
 });
 
-describe('D8: while/once on the capability route (dispatch verb, trait clause)', () => {
-  it('sits the whole clause out when the gate is false — validates, but no refusal, mutation, or report', () => {
+describe('D8/R5: while/once on the capability route (dispatch verb, trait clause)', () => {
+  it('R5: a gated-out clause does not claim — the dispatch falls through to the miss, never a blank turn', () => {
     const loaded = load(GATES_STORY);
-    const result = prod(loaded, 'ferret');
-    expect(result.validation.valid).toBe(true);
+    const result = dispatch(loaded, 'prodding', 'ferret');
+    expect(result.validation).toEqual({ valid: false, error: 'cant-prod' });
+    expect(messageIdsOf(result.events)).toContain('cant-prod');
     expect(stateOf(loaded, 'ferret')).toBe('tame');
-    expect(messageIdsOf(result.events)).not.toContain('taken-wild');
+    // The gated-out probe left no trace: its occurrence counter was never written.
+    expect(loaded.world.getStateValue(`${CHORD_OCCURRENCE_PREFIX}trait.poddable.prodding.ferret`)).toBeUndefined();
   });
 
   it('refuses normally when the gate is true, and runs the body once un-refused', () => {
     const loaded = load(GATES_STORY);
     loaded.world.setStateValue(CHORD_STORY_STATE_KEY, 'wild-day');
 
-    const refused = prod(loaded, 'ferret');
+    const refused = dispatch(loaded, 'prodding', 'ferret');
     expect(refused.validation).toEqual({ valid: false, error: 'taboo' });
     expect(stateOf(loaded, 'ferret')).toBe('tame');
 
     loaded.world.setStateValue(CHORD_STATE_PREFIX + 'ferret', 'feral');
-    const allowed = prod(loaded, 'ferret');
+    const allowed = dispatch(loaded, 'prodding', 'ferret');
     expect(allowed.validation.valid).toBe(true);
     expect(messageIdsOf(allowed.events)).toContain('taken-wild');
   });
 
-  it('honors `, once`: second firing mutates nothing and reports nothing, counter frozen at 1', () => {
+  it('R5: a `, once`-consumed clause falls through to the miss on its second firing, counter frozen at 1', () => {
     const loaded = load(GATES_STORY);
     // Capability occurrence keys end in the IR id (host.irIdOf) — 'marten'.
     const counterKey = `${CHORD_OCCURRENCE_PREFIX}trait.prickly.prodding.marten`;
 
-    const first = prod(loaded, 'marten');
+    const first = dispatch(loaded, 'prodding', 'marten');
     expect(first.validation.valid).toBe(true);
     expect(stateOf(loaded, 'marten')).toBe('feral');
     expect(messageIdsOf(first.events)).toContain('taken-wild');
     expect(loaded.world.getStateValue(counterKey)).toBe(1);
 
     loaded.world.setStateValue(CHORD_STATE_PREFIX + 'marten', 'tame');
-    const second = prod(loaded, 'marten');
-    expect(second.validation.valid).toBe(true);
+    const second = dispatch(loaded, 'prodding', 'marten');
+    expect(second.validation).toEqual({ valid: false, error: 'cant-prod' });
+    expect(messageIdsOf(second.events)).toContain('cant-prod');
     expect(stateOf(loaded, 'marten')).toBe('tame');
-    expect(messageIdsOf(second.events)).not.toContain('taken-wild');
     expect(loaded.world.getStateValue(counterKey)).toBe(1);
+  });
+
+  it('R5: a gated-out clause falls through to the action body when one exists', () => {
+    const loaded = load(GATES_STORY);
+    const result = dispatch(loaded, 'waving', 'flag');
+    expect(result.validation.valid).toBe(true);
+    expect(messageIdsOf(result.events)).toContain('waved');
+    expect(messageIdsOf(result.events)).not.toContain('taken-wild');
+    expect(loaded.world.getStateValue(`${CHORD_OCCURRENCE_PREFIX}trait.wavable.waving.flag`)).toBeUndefined();
+  });
+
+  it("R5: a gated-out clause falls through to another trait's live behavior", () => {
+    const loaded = load(GATES_STORY);
+    // shrew composes poddable (gated off on calm-day) then perky (live):
+    // perky must claim and run; poddable's states stay untouched.
+    const result = dispatch(loaded, 'prodding', 'shrew');
+    expect(result.validation.valid).toBe(true);
+    expect(stateOf(loaded, 'shrew')).toBe('tame');
+    expect(messageIdsOf(result.events)).toContain('perked-up');
+    // The skipped poddable probe wrote nothing; the claiming perky one did.
+    expect(loaded.world.getStateValue(`${CHORD_OCCURRENCE_PREFIX}trait.poddable.prodding.shrew`)).toBeUndefined();
+    expect(loaded.world.getStateValue(`${CHORD_OCCURRENCE_PREFIX}trait.perky.prodding.shrew`)).toBe(1);
   });
 });

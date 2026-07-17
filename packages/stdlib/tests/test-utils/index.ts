@@ -558,3 +558,23 @@ export function executeWithValidation(
   action.execute(context);
   return action.report(context);
 }
+
+/**
+ * Inert marker trait types for interceptor/behavior registration in tests.
+ *
+ * The ADR-208 registry is keyed (traitType, actionId) and resolves over an
+ * entity's trait-type strings, so a test needs SOME trait on the entity to
+ * hang a registration on. Use these dedicated markers — never borrow a real
+ * trait (e.g. READABLE with empty text) as a registration key: no action
+ * consults these types, so they cannot perturb the action under test.
+ *
+ * `TEST_MARKER_TRAIT` is the default; `SECOND_TEST_MARKER_TRAIT` gives a
+ * distinct key when a test registers on two slots (target vs weapon/key).
+ */
+export const TEST_MARKER_TRAIT = 'test.trait.marker';
+export const SECOND_TEST_MARKER_TRAIT = 'test.trait.marker_second';
+
+/** Attach an inert marker trait to an entity (registration key only). */
+export function addTestMarker(entity: { add(trait: unknown): void }, type: string = TEST_MARKER_TRAIT): void {
+  entity.add({ type });
+}

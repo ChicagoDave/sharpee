@@ -217,6 +217,13 @@ test('should actually move item to player inventory', () => {
 });
 ```
 
+**Interceptor registration keys in tests** (decision 2026-07-16, David): never
+borrow a real trait (READABLE with empty text, dummy PUSHABLE) as the
+`registerActionInterceptor` key — use the inert markers `TEST_MARKER_TRAIT` /
+`SECOND_TEST_MARKER_TRAIT` from `tests/test-utils`. A real trait is only a valid
+key when the action semantically requires it on that entity (e.g. ACTOR on a
+give/show recipient).
+
 **Helper utilities** in `tests/test-utils/index.ts`:
 
 - `expectLocation(world, entityId, expected)` — Assert current location

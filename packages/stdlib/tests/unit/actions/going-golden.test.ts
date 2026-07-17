@@ -19,7 +19,8 @@ import {
   expectEvent,
   executeWithValidation,
   TestData,
-  createCommand
+  createCommand,
+  TEST_MARKER_TRAIT
 } from '../../test-utils';
 
 describe('goingAction (Golden Pattern)', () => {
@@ -900,12 +901,12 @@ describe('Going interceptor hooks on the dark path (ADR-228 D7.1)', () => {
     const { world, player, room } = setupBasicWorld();
     const cave = world.createEntity('Dark Cave', 'object');
     cave.add({ type: TraitType.ROOM, requiresLight: true });
-    // Benign trait used purely as the interceptor registration key.
-    cave.add({ type: TraitType.READABLE, text: '' });
+    // Inert marker trait — the interceptor registration key.
+    cave.add({ type: TEST_MARKER_TRAIT } as any);
     const roomTrait = room.getTrait(RoomTrait)!;
     roomTrait.exits = { [Direction.NORTH]: { destination: cave.id } };
 
-    world.registerActionInterceptor(TraitType.READABLE, 'if.action.entering_room', {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, 'if.action.entering_room', {
       postReport(_entity, w) {
         w.setStateValue('cave.post_report_ran', true);
         return { emit: [{ type: 'cave.whisper', payload: { messageId: 'cave.voice' } }] };

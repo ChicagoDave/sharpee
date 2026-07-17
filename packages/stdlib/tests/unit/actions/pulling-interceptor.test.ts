@@ -17,6 +17,7 @@ import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
@@ -27,8 +28,8 @@ const setup = () => {
       state: 'default',
       pullCount: 0
     },
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -50,7 +51,7 @@ const drive = (world: WorldModel, object: any) => {
 describe('Pulling interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the pull — pullable state unchanged', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.PULLING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.PULLING, {
       preValidate() {
         return { valid: false, error: 'test.rope_electrified' };
       },
@@ -71,7 +72,7 @@ describe('Pulling interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard pull and its mutation persists', () => {
     const { world, object } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.PULLING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.PULLING, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard pull already happened (interceptor runs post).
@@ -96,7 +97,7 @@ describe('Pulling interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the pulled messageId', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.PULLING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.PULLING, {
       postReport() {
         return {
           override: { messageId: 'rope.custom_pulled' },

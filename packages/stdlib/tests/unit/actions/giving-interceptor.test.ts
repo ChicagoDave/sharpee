@@ -18,13 +18,14 @@ import {
   createRealTestContext,
   setupBasicWorld,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const coin = world.createEntity('gold coin', 'object');
-  // Benign trait used purely as the item-side interceptor registration key.
-  coin.add({ type: TraitType.READABLE, text: '' } as any);
+  // Inert marker trait — the item-side interceptor registration key.
+  coin.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(coin.id, player.id); // carried
   const npc = world.createEntity('old sailor', 'actor');
   npc.add({ type: TraitType.ACTOR });
@@ -66,7 +67,7 @@ describe('Giving interceptor hooks (ADR-118)', () => {
 
   test('item-side preValidate veto also blocks (previously fully-dead slot)', () => {
     const { world, player, coin, npc } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.GIVING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.GIVING, {
       preValidate(_entity, _w, _actorId, sharedData) {
         // Symmetric seedData: the item side knows the recipient.
         expect(sharedData.recipientId).toBe(npc.id);
@@ -84,7 +85,7 @@ describe('Giving interceptor hooks (ADR-118)', () => {
   test('both slots fire postExecute after the transfer, item (direct object) first (ADR-228 D3-B)', () => {
     const { world, coin, npc } = setup();
     const fired: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.GIVING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.GIVING, {
       postExecute(entity, w, _actorId, sharedData) {
         fired.push('item');
         expect(entity.id).toBe(coin.id);

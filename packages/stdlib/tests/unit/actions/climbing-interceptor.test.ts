@@ -17,14 +17,15 @@ import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const result = TestData.withObject('stone ledge', {
     // Enterable supporter — climbable per validateObjectClimbing.
     [TraitType.SUPPORTER]: { type: TraitType.SUPPORTER, enterable: true },
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -46,7 +47,7 @@ const drive = (world: WorldModel, object: any) => {
 describe('Climbing interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the climb — the player does not move', () => {
     const { world, player, room, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.CLIMBING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.CLIMBING, {
       preValidate() {
         return { valid: false, error: 'test.too_slippery' };
       },
@@ -65,7 +66,7 @@ describe('Climbing interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard move and its mutation persists', () => {
     const { world, player, object } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.CLIMBING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.CLIMBING, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard move already happened (interceptor runs post).
@@ -88,7 +89,7 @@ describe('Climbing interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the climbed messageId', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.CLIMBING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.CLIMBING, {
       postReport() {
         return {
           override: { messageId: 'ledge.custom_climbed' },

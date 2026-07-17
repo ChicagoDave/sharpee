@@ -23,6 +23,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
+  InterceptorReportResult,
   CapabilityEffect,
   createEffect,
   IFEntity,
@@ -42,6 +43,10 @@ export const TrollCapabilityMessages = {
 
   // TALK (incapacitated) response
   CANT_HEAR_YOU: 'dungeo.troll.cant_hear_you',
+
+  // TALK (conscious) response — ADR-229 R4: the GROWLS canon moved here
+  // from the deleted talk_to_troll story action
+  GROWLS: 'dungeo.troll.growls_at_player',
 } as const;
 
 /**
@@ -108,7 +113,24 @@ export const TrollTalkingInterceptor: ActionInterceptor = {
       };
     }
 
-    // Troll is alive and conscious — let stdlib handle it
+    // Troll is alive and conscious — proceed to the standard action;
+    // postReport below swaps the greeting for the GROWLS canon.
     return null;
+  },
+
+  postReport(
+    entity: IFEntity,
+    _world: WorldModel,
+    _actorId: string,
+    _sharedData: InterceptorSharedData
+  ): InterceptorReportResult {
+    const trait = entity.get(TrollTrait);
+    if (!trait) return {};
+
+    // ADR-229 R4: every phrasing yields the same canon pair — the KO'd
+    // veto above renders CANT_HEAR_YOU; a conscious troll GROWLS instead
+    // of stdlib's generic greeting. (postReport only runs when validation
+    // passed, so the troll is conscious here.)
+    return { override: { messageId: TrollCapabilityMessages.GROWLS } };
   }
 };

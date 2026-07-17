@@ -14,7 +14,7 @@ import { describe, test, expect } from 'vitest';
 import { attackingAction, attackingLifecycle } from '../../../src/actions/standard/attacking';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
-import { setupBasicWorld, createRealTestContext, createCommand } from '../../test-utils';
+import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT, SECOND_TEST_MARKER_TRAIT } from '../../test-utils';
 
 describe('Attacking interceptor surface (ADR-228)', () => {
   test('declares the postExecuteReplacesCore special contract on the descriptor, not a comment', () => {
@@ -26,16 +26,16 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     const troll = world.createEntity('nasty troll', 'actor');
     troll.add({ type: TraitType.ACTOR } as any);
     troll.add({ type: TraitType.COMBATANT } as any);
-    // Benign trait used purely as the target's registration key.
-    troll.add({ type: TraitType.READABLE, text: '' } as any);
+    // Inert marker trait — the target's interceptor registration key.
+    troll.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(troll.id, room.id);
     const sword = world.createEntity('elvish sword', 'object');
-    // Distinct registration key for the weapon slot.
-    sword.add({ type: TraitType.PUSHABLE, pushType: 'button' } as any);
+    // Distinct inert marker — the weapon slot's registration key.
+    sword.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
     world.moveEntity(sword.id, world.getPlayer()!.id);
 
     const fired: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.ATTACKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.ATTACKING, {
       postExecute(entity, w, _actor, data) {
         fired.push('target');
         // The action seeded combat context before the hook ran.
@@ -53,7 +53,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
         w.setStateValue('combat.resolved_by_hook', true);
       },
     });
-    world.registerActionInterceptor(TraitType.PUSHABLE, IFActions.ATTACKING, {
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.ATTACKING, {
       postExecute(entity) {
         fired.push('weapon');
         expect(entity.id).toBe(sword.id);
@@ -106,10 +106,11 @@ describe('Attacking interceptor surface (ADR-228)', () => {
   test('non-combatant: hooks now run unconditionally (D7.3 — previously skipped)', () => {
     const { world, room } = setupBasicWorld();
     const vase = world.createEntity('china vase', 'object');
-    vase.add({ type: TraitType.READABLE, text: '' } as any);
+    // Inert marker trait — the interceptor registration key.
+    vase.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(vase.id, room.id);
 
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.ATTACKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.ATTACKING, {
       postExecute(_e, w) {
         w.setStateValue('vase.hook_ran', true);
       },

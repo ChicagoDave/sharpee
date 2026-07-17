@@ -477,3 +477,27 @@ describe('Parser Grammar Engine Integration', () => {
   // and extras.tool/extras.weapon don't exist yet. Revisit when instrument
   // parsing is implemented.
 });
+describe('Talking core patterns (ADR-229 R3)', () => {
+  let parser: EnglishParser;
+
+  beforeEach(() => {
+    vocabularyRegistry.clear();
+    parser = new EnglishParser(new EnglishLanguageProvider());
+  });
+
+  it.each([
+    'talk to guard',
+    'talk with guard',
+    'speak to guard',
+    'speak with guard',
+    'chat with guard',
+    'converse with guard'
+  ])('parses "%s" to if.action.talking', (input) => {
+    const result = parser.parse(input);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.talking');
+      expect(result.value.structure.directObject?.text).toBe('guard');
+    }
+  });
+});

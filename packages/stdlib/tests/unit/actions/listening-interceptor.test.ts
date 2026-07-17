@@ -20,14 +20,15 @@ import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const result = TestData.withObject('humming generator', {
     // Switched-on device — gives the deterministic 'device_running' message.
     [TraitType.SWITCHABLE]: { type: TraitType.SWITCHABLE, isOn: true },
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -49,7 +50,7 @@ const drive = (world: WorldModel, object: any) => {
 describe('Listening interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the listen — postExecute never runs, no state change', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.LISTENING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.LISTENING, {
       preValidate() {
         return { valid: false, error: 'test.deafening_roar' };
       },
@@ -71,7 +72,7 @@ describe('Listening interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard execute and its mutation persists', () => {
     const { world, object } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.LISTENING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.LISTENING, {
       postExecute(_target, w) {
         calls.push('postExecute');
         w.setStateValue('generator.noticed', true);
@@ -91,7 +92,7 @@ describe('Listening interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the listened messageId', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.LISTENING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.LISTENING, {
       postReport() {
         return {
           override: { messageId: 'generator.custom_listened' },

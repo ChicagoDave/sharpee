@@ -16,6 +16,7 @@ import {
   createRealTestContext,
   setupBasicWorld,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
@@ -23,8 +24,8 @@ const setup = () => {
 
   const crate = world.createEntity('wooden crate', 'object');
   crate.add({ type: TraitType.CONTAINER, capacity: 10 });
-  // Benign trait used purely as the interceptor registration key.
-  crate.add({ type: TraitType.READABLE, text: '' });
+  // Inert marker trait — the interceptor registration key.
+  crate.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(crate.id, room.id);
 
   const coin = world.createEntity('gold coin', 'object');
@@ -51,7 +52,7 @@ const drive = (world: WorldModel, target: any) => {
 describe('Searching interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the search — concealed item stays concealed', () => {
     const { world, crate, coin } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SEARCHING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SEARCHING, {
       preValidate() {
         return { valid: false, error: 'test.too_dark_to_search' };
       },
@@ -69,7 +70,7 @@ describe('Searching interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard reveal and its mutation persists', () => {
     const { world, crate, coin } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SEARCHING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SEARCHING, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard reveal already happened (interceptor runs post).
@@ -92,7 +93,7 @@ describe('Searching interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the searched messageId', () => {
     const { world, crate } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SEARCHING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SEARCHING, {
       postReport() {
         return {
           override: { messageId: 'crate.custom_searched' },

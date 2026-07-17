@@ -508,9 +508,10 @@ export class ChordRuntime {
         const ctx = ctxOf(entity, world, actorId, data);
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
         // validate time, BEFORE findRefusal — a gated-out clause sits out
-        // entirely, refusals included (the dispatch action itself still
-        // proceeds; execute/report honor chordSkip). Do not move this
-        // evaluation.
+        // entirely, refusals included. ADR-229 R5: the dispatch action
+        // reads `chordSkip` as "not claiming" and falls through to the
+        // next candidate / body / miss; the execute/report guards below
+        // stay as defense in depth. Do not move this evaluation.
         if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
           data.chordSkip = true;
           return { valid: true };
@@ -682,22 +683,32 @@ export class ChordRuntime {
         // Instance-type lookup: ChordDataTrait types are per-instance, so
         // the constructor-static path (getBehaviorForCapability) can't see
         // them.
+        //
+        // ADR-229 R5: a gated-out behavior does NOT claim the dispatch.
+        // A candidate whose validate returns valid with `chordSkip` set
+        // (false `while` gate, or consumed `, once` — both side-effect-free
+        // probes) is treated as if its clause were never declared: selection
+        // falls through to the next trait's behavior, the action body, or
+        // the `otherwise refuse` miss. A real refusal (valid: false) still
+        // claims immediately, exactly as before.
         let behavior: CapabilityBehavior | undefined;
+        let capShared: CapabilitySharedData = { chordSlots: slots };
         for (const trait of entity.traits.values()) {
-          behavior = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
-          if (behavior) break;
+          const candidate = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
+          if (!candidate) continue;
+          const candidateShared: CapabilitySharedData = { chordSlots: slots };
+          const result = candidate.validate(entity, context.world, context.player.id, candidateShared);
+          if (!result.valid) return { valid: false, error: result.error };
+          if (candidateShared.chordSkip === true) continue; // gated out — not claiming
+          behavior = candidate;
+          capShared = candidateShared;
+          break;
         }
         // A behavior host is optional when the action carries its own body
         // (§5.4: the body IS the action's semantics — photographing has no
-        // per-trait behavior by design). No behavior AND no body = the
-        // dispatch miss, exactly as before.
+        // per-trait behavior by design). No claiming behavior AND no body =
+        // the dispatch miss.
         if (!behavior && def.body.length === 0) return { valid: false, error: def.otherwise ?? 'cant' };
-
-        const capShared: CapabilitySharedData = { chordSlots: slots };
-        if (behavior) {
-          const result = behavior.validate(entity, context.world, context.player.id, capShared);
-          if (!result.valid) return { valid: false, error: result.error };
-        }
         if (def.body.length) {
           // The body's own validate partition (leading refusals/musts) and
           // the pre-mutation decision snapshot (§5.4).

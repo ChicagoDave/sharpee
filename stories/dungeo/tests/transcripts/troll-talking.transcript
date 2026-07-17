@@ -1,11 +1,15 @@
-title: Troll Talking Interceptor (ADR-228 Phase 5)
+title: Troll Talking Interceptor (ADR-228 Phase 5 + ADR-229 R4)
 story: dungeo
-description: Regression test for the live bug where TrollTalkingInterceptor (MDL "Unfortunately, the troll can't hear you.") was registered on if.action.talking but never fired because talking was unwired. The conscious-troll passthrough is unit-covered (talking-interceptor.test.ts); this transcript minimizes live-troll exposure to dodge combat RNG.
+description: TrollTalkingInterceptor owns the full talk-to-troll canon through
+  stdlib if.action.talking — GROWLS override while the troll is conscious
+  (postReport, ADR-229 R4), the MDL "can't hear you" veto when KO'd. The
+  bespoke talk_to_troll action is deleted; all phrasings ride the core talk
+  patterns (ADR-229 R3) plus the story's `hello :target`. The conscious-troll
+  check runs FIRST and briefly (troll combat RNG — one-good-run rule).
 
 ---
 
-# Setup — lantern, teleport, and KO the troll all in one GDT session
-# (the troll attacks every turn we spend in his room while conscious)
+# Setup — lantern + teleport in one GDT session (no turns pass inside GDT)
 > GDT
 [OK: contains "GDT"]
 
@@ -15,9 +19,6 @@ description: Regression test for the live bug where TrollTalkingInterceptor (MDL
 > AH Troll Room
 [OK: contains "Teleported"]
 
-> KO troll
-[OK: contains "Knocked out"]
-
 > EX
 [OK: contains "Returning"]
 
@@ -25,14 +26,34 @@ description: Regression test for the live bug where TrollTalkingInterceptor (MDL
 [OK: contains "on"]
 
 # ============================================================
-# The dead-registration fix: "speak to troll" routes through
-# stdlib if.action.talking, where the newly-wired
-# TrollTalkingInterceptor vetoes with the MDL canon line
+# Conscious troll: postReport override — GROWLS canon, not the
+# stdlib greeting (ADR-229 R4). Core R3 pattern carries it.
 # ============================================================
 
+> talk to troll
+[OK: contains "growls menacingly"]
+
+# ============================================================
+# KO the troll, then the preValidate veto renders the MDL line
+# ============================================================
+
+> GDT
+[OK: contains "GDT"]
+
+> KO troll
+[OK: contains "Knocked out"]
+
+> EX
+[OK: contains "Returning"]
+
+# Core R3 pattern (speak to)
 > speak to troll
 [OK: contains "can't hear you"]
 
-# The story action's literal phrasing still works too
+# Core R3 pattern (talk to) — previously a bespoke-action literal
 > talk to troll
+[OK: contains "can't hear you"]
+
+# Story `hello :target` slot pattern (replaces the old literal)
+> hello troll
 [OK: contains "can't hear you"]

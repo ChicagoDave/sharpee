@@ -15,17 +15,18 @@
 import { describe, test, expect } from 'vitest';
 import { touchingAction } from '../../../src/actions/standard/touching';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const result = TestData.withObject('marble statue', {
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -47,7 +48,7 @@ const drive = (world: WorldModel, object: any) => {
 describe('Touching interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the touch — postExecute never runs, no state change', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.TOUCHING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.TOUCHING, {
       preValidate() {
         return { valid: false, error: 'test.statue_cursed' };
       },
@@ -69,7 +70,7 @@ describe('Touching interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard execute and its mutation persists', () => {
     const { world, object } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.TOUCHING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.TOUCHING, {
       postExecute(_target, w) {
         calls.push('postExecute');
         w.setStateValue('statue.awakened', true);
@@ -89,7 +90,7 @@ describe('Touching interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the touched messageId', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.TOUCHING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.TOUCHING, {
       postReport() {
         return {
           override: { messageId: 'statue.custom_touched' },

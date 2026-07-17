@@ -12,17 +12,18 @@
 import { describe, test, expect } from 'vitest';
 import { hidingAction } from '../../../src/actions/standard/hiding/hiding';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, ConcealmentTrait, isConcealed } from '@sharpee/world-model';
+import { WorldModel, ConcealmentTrait, isConcealed } from '@sharpee/world-model';
 import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const result = TestData.withObject('velvet curtain', {
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   result.object.add(new ConcealmentTrait({
     positions: ['behind'],
@@ -48,7 +49,7 @@ const drive = (world: WorldModel, object: any) => {
 describe('Hiding interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the hide — the player is not concealed', () => {
     const { world, player, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.HIDING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.HIDING, {
       preValidate() {
         return { valid: false, error: 'test.curtain_too_thin' };
       },
@@ -67,7 +68,7 @@ describe('Hiding interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard concealment and its mutation persists', () => {
     const { world, player, object } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.HIDING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.HIDING, {
       postExecute(_target, w) {
         calls.push('postExecute');
         // Standard concealment already happened (interceptor runs post).
@@ -90,7 +91,7 @@ describe('Hiding interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the concealed messageId', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.HIDING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.HIDING, {
       postReport() {
         return {
           override: { messageId: 'curtain.custom_hidden' },

@@ -11,15 +11,15 @@ import { describe, test, expect } from 'vitest';
 import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
-import { setupBasicWorld, createRealTestContext, createCommand } from '../../test-utils';
+import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const cage = world.createEntity('iron cage', 'object');
   cage.add({ type: TraitType.CONTAINER } as any);
   cage.add({ type: TraitType.ENTERABLE, canEnter: true } as any);
-  // Benign trait used purely as the interceptor registration key.
-  cage.add({ type: TraitType.READABLE, text: '' } as any);
+  // Inert marker trait — the interceptor registration key.
+  cage.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(cage.id, room.id);
   world.moveEntity(player.id, cage.id); // player starts inside
   return { world, player, room, cage };
@@ -39,7 +39,7 @@ const drive = (world: WorldModel) => {
 describe('Exiting interceptor hooks on the implicit container (ADR-228)', () => {
   test('preValidate veto blocks the exit — the actor stays inside; onBlocked decorates', () => {
     const { world, player, cage } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.EXITING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.EXITING, {
       preValidate(entity) {
         expect(entity.id).toBe(cage.id); // implicit resolution found the cage
         return { valid: false, error: 'test.cage_sealed' };
@@ -63,7 +63,7 @@ describe('Exiting interceptor hooks on the implicit container (ADR-228)', () => 
   test('postExecute runs after the move; postReport override lands on if.event.exited', () => {
     const { world, player, room, cage } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.EXITING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.EXITING, {
       postExecute(_e, w) {
         calls.push('postExecute');
         // The move already happened (hook runs post).
@@ -89,7 +89,7 @@ describe('Exiting interceptor hooks on the implicit container (ADR-228)', () => 
     const { world, player, room, cage } = setup();
     world.moveEntity(player.id, room.id); // not inside anything
     const fired: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.EXITING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.EXITING, {
       preValidate() { fired.push('cage'); return null; },
     });
 

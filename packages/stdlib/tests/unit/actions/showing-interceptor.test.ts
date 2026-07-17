@@ -18,13 +18,14 @@ import {
   createRealTestContext,
   setupBasicWorld,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
   const amulet = world.createEntity('strange amulet', 'object');
-  // Benign trait used purely as the item-side interceptor registration key.
-  amulet.add({ type: TraitType.READABLE, text: '' } as any);
+  // Inert marker trait — the item-side interceptor registration key.
+  amulet.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(amulet.id, player.id); // carried
   const npc = world.createEntity('tower guard', 'actor');
   npc.add({ type: TraitType.ACTOR });
@@ -65,7 +66,7 @@ describe('Showing interceptor hooks (ADR-118)', () => {
   test('both slots fire postExecute in D3-B order (item first) with symmetric seedData', () => {
     const { world, amulet, npc } = setup();
     const fired: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SHOWING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SHOWING, {
       postExecute(entity, _w, _actorId, sharedData) {
         fired.push('item');
         expect(entity.id).toBe(amulet.id);

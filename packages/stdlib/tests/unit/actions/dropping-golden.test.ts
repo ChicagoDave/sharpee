@@ -19,7 +19,8 @@ import {
   executeWithValidation,
   expectLocation,
   TestData,
-  createCommand
+  createCommand,
+  TEST_MARKER_TRAIT
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
@@ -627,8 +628,8 @@ describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)'
   const setup = () => {
     const { world, player, room } = setupBasicWorld();
     const token = world.createEntity('brass token', 'object');
-    // Benign trait used purely as the interceptor registration key.
-    token.add({ type: TraitType.READABLE, text: '' } as any);
+    // Inert marker trait — the interceptor registration key.
+    token.add({ type: TEST_MARKER_TRAIT } as any);
     world.moveEntity(token.id, player.id);
     return { world, player, room, token };
   };
@@ -649,7 +650,7 @@ describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)'
 
   test('preValidate veto blocks the drop — the item stays held, onBlocked decorates the blocked event', () => {
     const { world, player, token } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.DROPPING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DROPPING, {
       preValidate() {
         return { valid: false, error: 'test.token_stuck' };
       },
@@ -673,7 +674,7 @@ describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)'
   test('postExecute runs after the standard move and its mutation persists; postReport override lands', () => {
     const { world, room, token } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.DROPPING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DROPPING, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard move already happened (hook runs post).
@@ -704,12 +705,13 @@ describe('Multi-object dropping drives per-item interceptor hooks (ADR-228 D4)',
     const gem = world.createEntity('green gem', 'object');
     world.moveEntity(coin.id, player.id);
     world.moveEntity(gem.id, player.id);
-    coin.add({ type: TraitType.READABLE, text: '' } as any);
-    gem.add({ type: TraitType.READABLE, text: '' } as any);
+    // Inert marker trait — the interceptor registration key.
+    coin.add({ type: TEST_MARKER_TRAIT } as any);
+    gem.add({ type: TEST_MARKER_TRAIT } as any);
 
     const executed: string[] = [];
     const reported: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.DROPPING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DROPPING, {
       postValidate(target, _w, _a, data) {
         // Per-item phase data isolation (D3/D4).
         (data as any).mark = target.name;

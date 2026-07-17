@@ -20,14 +20,15 @@ import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
   const result = TestData.withObject('ripe cheese', {
     // Edible (non-liquid) — gives the deterministic 'food_scent' message.
     [TraitType.EDIBLE]: { type: TraitType.EDIBLE, servings: 1 },
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -49,7 +50,7 @@ const drive = (world: WorldModel, object: any) => {
 describe('Smelling interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the smell — postExecute never runs, no state change', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SMELLING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SMELLING, {
       preValidate() {
         return { valid: false, error: 'test.nose_blocked' };
       },
@@ -71,7 +72,7 @@ describe('Smelling interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard execute and its mutation persists', () => {
     const { world, object } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SMELLING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SMELLING, {
       postExecute(_target, w) {
         calls.push('postExecute');
         w.setStateValue('cheese.noticed', true);
@@ -91,7 +92,7 @@ describe('Smelling interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the smelled messageId', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SMELLING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SMELLING, {
       postReport() {
         return {
           override: { messageId: 'cheese.custom_smelled' },

@@ -32,10 +32,11 @@ import {
 } from '../../lifecycle';
 
 /**
- * Interceptor surface (ADR-228): the unlocked target is the consultable
- * entity of an UNLOCK command. The key (indirect object / instrument) is
- * NOT a slot in this phase — single-slot only; a key surface can be a
- * later declaration.
+ * Interceptor surface (ADR-228/229 R2): the unlocked target and the
+ * explicit key are the consultable entities of an UNLOCK command,
+ * published order target → key (D3-B). Explicit keys only — an
+ * auto-inferred key is not a command entity (same documented rule as
+ * attacking's inferred weapons). Symmetric seedData mirrors putting.
  */
 export const unlockingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.UNLOCKING,
@@ -43,7 +44,27 @@ export const unlockingLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.UNLOCKING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => {
+        const key = ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity;
+        return {
+          targetId: entity.id,
+          targetName: entity.name,
+          keyId: key?.id,
+          keyName: key?.name
+        };
+      }
+    },
+    {
+      id: 'key',
+      actionIds: [IFActions.UNLOCKING],
+      resolve: (ctx) => ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        keyId: entity.id,
+        keyName: entity.name,
+        targetId: ctx.command.directObject?.entity?.id,
+        targetName: ctx.command.directObject?.entity?.name
+      })
     }
   ]
 };

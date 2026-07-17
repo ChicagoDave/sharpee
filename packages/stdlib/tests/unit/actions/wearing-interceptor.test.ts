@@ -16,6 +16,7 @@ import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
@@ -25,8 +26,8 @@ const setup = () => {
       worn: false,
       bodyPart: 'torso'
     },
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -48,7 +49,7 @@ const drive = (world: WorldModel, item: any) => {
 describe('Wearing interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the wear — item is not worn', () => {
     const { world, item } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.WEARING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.WEARING, {
       preValidate() {
         return { valid: false, error: 'test.cloak_is_cursed' };
       },
@@ -67,7 +68,7 @@ describe('Wearing interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard wear and its mutation persists', () => {
     const { world, item } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.WEARING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.WEARING, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard wear already happened (interceptor runs post).
@@ -91,7 +92,7 @@ describe('Wearing interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the worn messageId', () => {
     const { world, item } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.WEARING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.WEARING, {
       postReport() {
         return {
           override: { messageId: 'cloak.custom_worn' },
@@ -119,5 +120,38 @@ describe('Wearing interceptor hooks (ADR-118)', () => {
     expect((item.get(TraitType.WEARABLE) as WearableTrait).worn).toBe(true);
     const worn = events.find(e => e.type === 'if.event.worn')!;
     expect((worn.data as any).messageId).toBe('if.action.wearing.worn');
+  });
+});
+
+describe('Folded execute-phase refusal (ADR-229 R1)', () => {
+  test('a wearing conflict refuses in validate and reaches onBlocked — item stays unworn', () => {
+    const { world, player, item } = setup();
+    // Another unlayered item already worn on the same body part conflicts.
+    const vest = world.createEntity('quilted vest', 'object');
+    vest.add({
+      type: TraitType.WEARABLE,
+      worn: true,
+      wornBy: player.id,
+      bodyPart: 'torso'
+    });
+    world.moveEntity(vest.id, player.id);
+
+    let blockedError: string | undefined;
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.WEARING, {
+      onBlocked(_e, _w, _a, error) {
+        blockedError = error;
+        return { override: { messageId: 'test.no_room_over_vest' } };
+      },
+    });
+
+    const { validation, events } = drive(world, item);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('already_wearing');
+    expect(blockedError).toBe('already_wearing');
+    const blocked = events.find(e => e.type === 'if.event.wear_blocked')!;
+    expect((blocked.data as any).messageId).toBe('test.no_room_over_vest');
+    // THE state assertion: still not worn.
+    expect((item.get(TraitType.WEARABLE) as WearableTrait).worn).toBe(false);
   });
 });

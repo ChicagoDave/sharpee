@@ -17,6 +17,7 @@ import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
@@ -26,8 +27,8 @@ const setup = () => {
       servings: 1,
       liquid: true
     },
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -49,7 +50,7 @@ const drive = (world: WorldModel, item: any) => {
 describe('Drinking interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the drink — nothing is consumed', () => {
     const { world, item } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.DRINKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DRINKING, {
       preValidate() {
         return { valid: false, error: 'test.too_hot_to_drink' };
       },
@@ -69,7 +70,7 @@ describe('Drinking interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard consumption and its mutation persists', () => {
     const { world, item } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.DRINKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DRINKING, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard consumption already happened (interceptor runs post).
@@ -93,7 +94,7 @@ describe('Drinking interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the drunk messageId', () => {
     const { world, item } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.DRINKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DRINKING, {
       postReport() {
         return {
           override: { messageId: 'elixir.custom_drunk' },

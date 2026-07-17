@@ -142,9 +142,6 @@ export * from './chimney-blocked';
 // Commanding (Robot commands - tell robot to X)
 export * from './commanding';
 
-// Talk to Troll (minor MDL edge case)
-export * from './talk-to-troll';
-
 // Diagnose (health status)
 export * from './diagnose';
 
@@ -206,7 +203,6 @@ import { grueDeathAction, GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './grue
 import { chimneyBlockedAction, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './chimney-blocked';
 import { commandingAction, COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
 import { launchAction, LAUNCH_ACTION_ID, LaunchMessages } from './launch';
-import { talkToTrollAction, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
 import { diagnoseAction, DIAGNOSE_ACTION_ID, DiagnoseMessages } from './diagnose';
 import { meltAction, MELT_ACTION_ID, MeltMessages } from './melt';
 import { roomInfoActions, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages } from './room-info';
@@ -246,9 +242,6 @@ export { LAUNCH_ACTION_ID, LaunchMessages } from './launch';
 
 // Re-export commanding action for use in index.ts
 export { COMMANDING_ACTION_ID, CommandingMessages } from './commanding';
-
-// Re-export talk-to-troll action for use in index.ts
-export { TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages } from './talk-to-troll';
 
 // Re-export diagnose action for use in index.ts
 export { DIAGNOSE_ACTION_ID, DiagnoseMessages } from './diagnose';
@@ -306,7 +299,6 @@ export const customActions = [
   chimneyBlockedAction,
   commandingAction,
   launchAction,
-  talkToTrollAction,
   diagnoseAction,
   meltAction,
   ...roomInfoActions

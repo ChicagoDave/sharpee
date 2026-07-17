@@ -17,6 +17,8 @@ import {
   createRealTestContext,
   createCommand,
   setupBasicWorld,
+  TEST_MARKER_TRAIT,
+  SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
@@ -28,8 +30,8 @@ const setup = () => {
     isLocked: true,
     keyId: key.id
   });
-  // Benign trait used purely as the interceptor registration key.
-  chest.add({ type: TraitType.READABLE, text: '' });
+  // Inert marker trait — the interceptor registration key.
+  chest.add({ type: TEST_MARKER_TRAIT } as any);
   world.moveEntity(chest.id, room.id);
   world.moveEntity(key.id, player.id);
   return { world, player, room, chest, key };
@@ -56,7 +58,7 @@ const drive = (world: WorldModel, chest: any, key: any) => {
 describe('Unlocking interceptor hooks (ADR-118 / ADR-228)', () => {
   test('preValidate veto blocks the unlock — target stays locked', () => {
     const { world, chest, key } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.UNLOCKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.UNLOCKING, {
       preValidate() {
         return { valid: false, error: 'test.lock_is_jammed' };
       },
@@ -75,7 +77,7 @@ describe('Unlocking interceptor hooks (ADR-118 / ADR-228)', () => {
   test('postExecute runs after the standard unlock and its mutation persists', () => {
     const { world, chest, key } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.UNLOCKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.UNLOCKING, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard unlock already happened (interceptor runs post).
@@ -99,7 +101,7 @@ describe('Unlocking interceptor hooks (ADR-118 / ADR-228)', () => {
 
   test('postReport emit appends events and override rewrites the unlocked messageId', () => {
     const { world, chest, key } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.UNLOCKING, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.UNLOCKING, {
       postReport() {
         return {
           override: { messageId: 'chest.custom_unlocked' },
@@ -127,5 +129,86 @@ describe('Unlocking interceptor hooks (ADR-118 / ADR-228)', () => {
     expect((chest.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);
     const unlocked = events.find(e => e.type === 'if.event.unlocked')!;
     expect((unlocked.data as any).messageId).toBe('if.action.unlocking.unlocked_with');
+  });
+});
+
+describe('Key slot (ADR-229 R2)', () => {
+  test('explicit key is consulted after the target, with seeded target context', () => {
+    const { world, chest, key } = setup();
+    // Inert marker trait — a distinct interceptor registration key for the key slot.
+    key.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
+
+    const fired: string[] = [];
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.UNLOCKING, {
+      postExecute(entity, _w, _a, data) {
+        fired.push('target');
+        expect(entity.id).toBe(chest.id);
+        expect(data.keyId).toBe(key.id); // symmetric seedData
+      },
+    });
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.UNLOCKING, {
+      postExecute(entity, _w, _a, data) {
+        fired.push('key');
+        expect(entity.id).toBe(key.id);
+        expect(data.targetId).toBe(chest.id); // key consultation sees the target
+      },
+    });
+
+    drive(world, chest, key);
+
+    // Published order (D3-B): target first, key second.
+    expect(fired).toEqual(['target', 'key']);
+  });
+
+  test('a key-side preValidate veto blocks the unlock — target stays locked', () => {
+    const { world, chest, key } = setup();
+    // Inert marker trait — a distinct interceptor registration key for the key slot.
+    key.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.UNLOCKING, {
+      preValidate() {
+        return { valid: false, error: 'test.key_crumbles' };
+      },
+    });
+
+    const { validation, events } = drive(world, chest, key);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('test.key_crumbles');
+    // THE state assertion: still locked.
+    expect((chest.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(true);
+    expect(events.some(e => e.type === 'if.event.unlock_blocked')).toBe(true);
+  });
+
+  test('no key named: the key slot is not consulted', () => {
+    const { world, player, room } = setupBasicWorld();
+    // Keyless lock so UNLOCK CHEST is valid with no key in the command.
+    const chest = world.createEntity('plain chest', 'object');
+    chest.add({ type: TraitType.LOCKABLE, isLocked: true });
+    world.moveEntity(chest.id, room.id);
+    const key = world.createEntity('iron key', 'object');
+    // Inert marker trait — a distinct interceptor registration key for the key slot.
+    key.add({ type: SECOND_TEST_MARKER_TRAIT } as any);
+    world.moveEntity(key.id, player.id);
+
+    let keyConsulted = false;
+    world.registerActionInterceptor(SECOND_TEST_MARKER_TRAIT, IFActions.UNLOCKING, {
+      preValidate() {
+        keyConsulted = true;
+        return null;
+      },
+    });
+
+    const context = createRealTestContext(
+      unlockingAction,
+      world,
+      createCommand(IFActions.UNLOCKING, { entity: chest })
+    );
+    const validation = unlockingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    unlockingAction.execute(context);
+    unlockingAction.report(context);
+
+    expect(keyConsulted).toBe(false);
+    expect((chest.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);
   });
 });

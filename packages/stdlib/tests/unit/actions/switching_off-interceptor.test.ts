@@ -17,6 +17,7 @@ import {
   createRealTestContext,
   TestData,
   createCommand,
+  TEST_MARKER_TRAIT,
 } from '../../test-utils';
 
 const setup = () => {
@@ -25,8 +26,8 @@ const setup = () => {
       type: TraitType.SWITCHABLE,
       isOn: true
     },
-    // Benign trait used purely as the interceptor registration key.
-    [TraitType.READABLE]: { type: TraitType.READABLE, text: '' }
+    // Inert marker trait — the interceptor registration key.
+    [TEST_MARKER_TRAIT]: { type: TEST_MARKER_TRAIT }
   });
   return result;
 };
@@ -48,7 +49,7 @@ const drive = (world: WorldModel, target: any) => {
 describe('Switching off interceptor hooks (ADR-118)', () => {
   test('preValidate veto blocks the switch-off — device stays on', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SWITCHING_OFF, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SWITCHING_OFF, {
       preValidate() {
         return { valid: false, error: 'test.switch_is_stuck' };
       },
@@ -67,7 +68,7 @@ describe('Switching off interceptor hooks (ADR-118)', () => {
   test('postExecute runs after the standard switch-off and its mutation persists', () => {
     const { world, object } = setup();
     const calls: string[] = [];
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SWITCHING_OFF, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SWITCHING_OFF, {
       postExecute(target, w) {
         calls.push('postExecute');
         // Standard switch-off already happened (interceptor runs post).
@@ -91,7 +92,7 @@ describe('Switching off interceptor hooks (ADR-118)', () => {
 
   test('postReport emit appends events and override rewrites the switched_off messageId', () => {
     const { world, object } = setup();
-    world.registerActionInterceptor(TraitType.READABLE, IFActions.SWITCHING_OFF, {
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.SWITCHING_OFF, {
       postReport() {
         return {
           override: { messageId: 'lantern.custom_off' },
