@@ -740,7 +740,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   }
 
   // exiting alias
-  grammar.define('go out').mapsTo('if.action.exiting').withPriority(100).build();
+  grammar.define('go out').mapsTo('if.action.exiting').withPriority(105).build(); // ADR-231 D2b: phrasal form above bare verb-plus-slot
 
   // listening alias (hear)
   grammar.define('hear').mapsTo('if.action.listening').withPriority(100).build();
@@ -859,28 +859,33 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Prepositional/phrasal entering forms sit at 105 (ADR-231 D2b): the file's
+  // guideline puts semantic/phrasal forms above bare verb-plus-slot forms, and
+  // these previously tied taking's `get :item` / climbing's `climb :target` at
+  // 100 (`exit game` at 105 is the precedent). The literal-before-slot
+  // specificity tiebreak also resolves this class structurally.
   grammar
     .define('get in :portal')
     .mapsTo('if.action.entering')
-    .withPriority(100)
+    .withPriority(105)
     .build();
 
   grammar
     .define('get into :portal')
     .mapsTo('if.action.entering')
-    .withPriority(100)
+    .withPriority(105)
     .build();
 
   grammar
     .define('climb in :portal')
     .mapsTo('if.action.entering')
-    .withPriority(100)
+    .withPriority(105)
     .build();
 
   grammar
     .define('climb into :portal')
     .mapsTo('if.action.entering')
-    .withPriority(100)
+    .withPriority(105)
     .build();
 
   // Climb a climbable object (priority 100) — ADR-218 §1a (ratchet F2).
@@ -929,13 +934,13 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('go in :portal')
     .mapsTo('if.action.entering')
-    .withPriority(100)
+    .withPriority(105) // ADR-231 D2b: phrasal form above bare verb-plus-slot
     .build();
 
   grammar
     .define('go into :portal')
     .mapsTo('if.action.entering')
-    .withPriority(100)
+    .withPriority(105) // ADR-231 D2b: phrasal form above bare verb-plus-slot
     .build();
 
   // Exiting (bare command, no target - exits current container/location)
@@ -948,7 +953,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('get out')
     .mapsTo('if.action.exiting')
-    .withPriority(100)
+    .withPriority(105) // ADR-231 D2b: outranks taking's `get :item` ("out" is not an item)
     .build();
 
   grammar
@@ -960,7 +965,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('climb out')
     .mapsTo('if.action.exiting')
-    .withPriority(100)
+    .withPriority(105) // ADR-231 D2b: outranks climbing's `climb :target`
     .build();
 
   // Vehicle-specific synonyms (map to entering/exiting actions)
@@ -973,7 +978,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('get on :vehicle')
     .mapsTo('if.action.entering')
-    .withPriority(100)
+    .withPriority(105) // ADR-231 D2b: phrasal form above taking's `get :item`
     .build();
 
   // Exiting with a target (exit specific container/vehicle)
@@ -998,7 +1003,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('get off :vehicle')
     .mapsTo('if.action.exiting')
-    .withPriority(100)
+    .withPriority(105) // ADR-231 D2b: phrasal form above taking's `get :item`
     .build();
 
   grammar

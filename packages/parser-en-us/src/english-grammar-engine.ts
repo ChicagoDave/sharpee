@@ -100,13 +100,23 @@ export class EnglishGrammarEngine extends GrammarEngine {
     // Store failures for later retrieval
     this.lastFailures = failures;
 
-    // Sort by confidence descending, then by priority descending
+    // Full match ordering (ADR-231 D2b):
+    // confidence desc → rule priority desc → literal specificity desc →
+    // stable registration order (rules are iterated priority-first with
+    // stable insertion order, and Array.prototype.sort is stable).
+    // Explicit .withPriority() remains the override on top of specificity;
+    // specificity replaces registration order as the tiebreak within equal
+    // confidence AND equal priority.
     matches.sort((a, b) => {
       if (b.confidence !== a.confidence) {
         return b.confidence - a.confidence;
       }
-      // If confidence is equal, sort by rule priority
-      return b.rule.priority - a.rule.priority;
+      if (b.rule.priority !== a.rule.priority) {
+        return b.rule.priority - a.rule.priority;
+      }
+      // Literal-before-slot: literal tokens consuming words outrank an
+      // unconstrained slot swallowing the same words.
+      return (b.literalSpecificity ?? 0) - (a.literalSpecificity ?? 0);
     });
 
     return matches;
@@ -137,6 +147,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     let tokenIndex = 0;
     let confidence = 1.0;
     let skippedOptionals = 0;
+    // ADR-231 D2b: words consumed by literal/alternate pattern tokens
+    let literalSpecificity = 0;
     const matchedTokens: any = {}; // Track which tokens matched which parts
     
     // Try to match each pattern token
@@ -162,6 +174,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
               matchedTokens.verb = token.normalized;
             }
             tokenIndex++;
+            literalSpecificity++;
           } else if (patternToken.optional) {
             // Optional literal doesn't match, skip it
             skippedOptionals++;
@@ -187,6 +200,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
               console.log(`Alternates match: token '${token.normalized}' matches alternates [${patternToken.alternates!.join(', ')}]`);
             }
             tokenIndex++;
+            literalSpecificity++;
             // Don't reduce confidence for alternate matches - they're equally valid
           } else if (patternToken.optional) {
             // Optional alternates don't match, skip
@@ -277,6 +291,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
       confidence,
       slots,
       consumed: tokenIndex,
+      literalSpecificity,
       semantics,
       matchedTokens
     };
@@ -314,6 +329,8 @@ export class EnglishGrammarEngine extends GrammarEngine {
     let patternIndex = 0;
     let confidence = 1.0;
     let skippedOptionals = 0;
+    // ADR-231 D2b: words consumed by literal/alternate pattern tokens
+    let literalSpecificity = 0;
     const matchedTokens: any = {};
     let matchedVerb: string | undefined;
 
@@ -351,6 +368,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
               matchedVerb = token.normalized;
             }
             tokenIndex++;
+            literalSpecificity++;
           } else if (patternToken.optional) {
             skippedOptionals++;
             continue;
@@ -380,6 +398,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
               matchedVerb = token.normalized;
             }
             tokenIndex++;
+            literalSpecificity++;
           } else if (patternToken.optional) {
             skippedOptionals++;
             continue;
@@ -487,6 +506,7 @@ export class EnglishGrammarEngine extends GrammarEngine {
         confidence,
         slots,
         consumed: tokenIndex,
+        literalSpecificity,
         semantics,
         matchedTokens
       }

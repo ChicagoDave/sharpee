@@ -539,6 +539,14 @@ export interface PatternMatch {
   confidence: number;
   slots: Map<string, SlotMatch>;
   consumed: number; // Number of tokens consumed
+  /**
+   * Literal specificity (ADR-231 D2b): count of input words consumed by the
+   * pattern's literal/alternate tokens (as opposed to slots). A rule whose
+   * literals consume words outranks a rule whose unconstrained slot swallows
+   * the same words. Tiebreak order: confidence desc → rule priority desc →
+   * literalSpecificity desc → stable registration order.
+   */
+  literalSpecificity?: number;
   semantics?: SemanticProperties; // Derived semantic properties
   matchedTokens?: { // Track which tokens matched which parts
     verb?: string;

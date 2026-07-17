@@ -100,6 +100,10 @@ interface RichCandidate {
   indirectObject?: INounPhrase;
   pattern: string;
   confidence: number;
+  /** Grammar rule priority (explicit .withPriority() override; ADR-231 D2b ordering) */
+  priority: number;
+  /** Words consumed by literal pattern tokens (ADR-231 D2b literal-before-slot tiebreak) */
+  literalSpecificity: number;
   action: string;
   // ADR-080 additions
   textSlots?: Map<string, string>;
@@ -391,8 +395,20 @@ export class EnglishParser implements Parser {
       };
     }
     
-    // Sort by confidence and take the best
-    candidates.sort((a, b) => b.confidence - a.confidence);
+    // Full candidate ordering (ADR-231 D2b): confidence desc → rule priority
+    // desc → literal specificity desc → stable registration order (candidates
+    // arrive in engine order; Array.prototype.sort is stable). This mirrors
+    // EnglishGrammarEngine.findMatches — a confidence-only re-sort here would
+    // silently drop the priority and specificity tiebreaks.
+    candidates.sort((a, b) => {
+      if (b.confidence !== a.confidence) {
+        return b.confidence - a.confidence;
+      }
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority;
+      }
+      return b.literalSpecificity - a.literalSpecificity;
+    });
     const best = candidates[0];
     
     // Emit candidate selection debug event
@@ -998,6 +1014,8 @@ export class EnglishParser implements Parser {
           verb: verbPhrase,
           pattern: 'DIRECTION_ONLY',
           confidence: match.confidence,
+          priority: rule.priority,
+          literalSpecificity: match.literalSpecificity ?? 0,
           action: rule.action,
           direction: directionToken.normalized
         };
@@ -1024,6 +1042,8 @@ export class EnglishParser implements Parser {
       indirectObject,
       pattern,
       confidence: match.confidence,
+      priority: rule.priority,
+      literalSpecificity: match.literalSpecificity ?? 0,
       action: rule.action,
       // ADR-080 additions
       textSlots,
