@@ -8,11 +8,13 @@ document teaches the language and its `define trait` / `define action` / hatch
 escape hatches; this one catalogs everything already built in, so you know what
 *not* to define before reaching for those hatches.
 
-> **Status: CONTENT-FINAL** (2026-07-16) — written against the
-> post-ADR-228/229 surface. Examples are hand-written Chord syntax,
-> compile-checked ad hoc during drafting. Platform gaps discovered while
-> writing are marked as **platform notes** in place, honestly, rather
-> than papered over; they are tracked for a fix pass.
+> **Status: CONTENT-FINAL** (2026-07-16; truth-refreshed 2026-07-17
+> after ADR-230 landed) — written against the post-ADR-228/229/230
+> surface. Examples are hand-written Chord syntax, compile-checked ad
+> hoc during drafting. The reachability gaps the first draft flagged
+> (no-grammar actions, orphan ids, dead help synonyms, dotted phrase
+> keys) were closed by ADR-230 and those notes are gone; the platform
+> notes that remain are still-honest gaps.
 
 ## 1. How to read this reference
 
@@ -40,25 +42,28 @@ and the **events** it emits for story reactions.
 
 Most verbs have one canonical behavior — TAKE moves a thing to your
 hands, OPEN opens it — and stdlib implements it once, for every entity.
-A few verbs (LOWER, RAISE — and unbound cousins like TURN, WAVE, WIND)
+A few verbs (LOWER, RAISE, TURN — and unbound cousins like WAVE, WIND)
 have no single meaning; the platform refuses to invent one (ADR-090), and
 each entity that supports the verb defines what it means. §2.7 shows the
-Chord pattern in full.
+Chord pattern in full. A related pair — CUT and DIG (§2.8) — gate on a
+trait and validate a tool, but the outcome is likewise each entity's own.
 
 ### 1.4 Messages are IDs, not fixed text
 
 Standard actions never speak English; they emit message IDs
 (`if.action.taking.fixed_in_place`) that the language layer renders. Per
 entity, you replace a moment's text with `on`/`after` clauses carrying
-your own phrases (§2 opening shows the pattern); in a TypeScript story
-you can also override the IDs themselves. Chord currently has no
-story-wide override of a platform ID — a flagged gap.
+your own phrases (§2 opening shows the pattern); story-wide, a `define
+phrase` under the dotted ID itself (`define phrase
+if.action.taking.fixed_in_place`) replaces the platform text everywhere
+(ADR-230 D5; chord-language.md §5.2 teaches it), and a TypeScript story
+can override the IDs through the language provider.
 
 ### 1.5 Intercepting standard actions
 
 The `on <gerund> it` / `after <gerund> it` clause surface
 (chord-language.md §3 owns the syntax) works on exactly the actions the
-platform wires for consultation — 33 of them, fail-fast: a gerund nothing
+platform wires for consultation — 37 of them, fail-fast: a gerund nothing
 consults is a load error, with a pointed message. Each entry here states
 what gets consulted, including the multi-entity commands where both sides
 are heard (give: item and recipient; lock: target then key; go: the room
@@ -79,11 +84,12 @@ instead of English (the `lang` layer supplies the words). They matter three
 ways. In a `.story` file, you replace a moment's text *per entity* with an
 `on`/`after` clause carrying your own phrase — a refusal key of yours
 instead of the standard refusal, or a reaction that speaks after the action
-commits (syntax: chord-language.md §3). In a TypeScript story, you override
-the ID itself through the language provider. And in transcripts and event
-payloads, the ID is how you recognize which moment fired. (Chord has no
-story-wide override of a platform ID today — the dotted keys don't parse as
-phrase keys; that gap is on the platform's list.)
+commits (syntax: chord-language.md §3). Story-wide, a Chord `define phrase`
+under the dotted ID itself replaces the platform text for every entity
+(dotted phrase keys register whole since ADR-230 D5 — chord-language.md
+§5.2), and a TypeScript story overrides the ID through the language
+provider. And in transcripts and event payloads, the ID is how you
+recognize which moment fired.
 
 The per-entity pattern, which recurs all through this chapter:
 
@@ -104,9 +110,11 @@ create the iron ring
 
 ### 2.1 taking and dropping
 
-**take** (`if.action.taking`) — verbs `take`, `get`, `grab`, and `pick up`.
-The parser also accepts multi-object forms inside the slot: `take all`,
-`take all but the lamp`, `take the key and the bottle`.
+**take** (`if.action.taking`) — verbs `take`, `get`, `grab`, `acquire`,
+`collect`, `pick up`, and `take up` (bare `pick` is deliberately absent —
+it would outmatch `pick up`). The parser also accepts multi-object forms
+inside the slot: `take all`, `take all but the lamp`, `take the key and
+the bottle`.
 
 Anything is takeable by default — portability is the rule, not a trait. What
 blocks taking: the `scenery` trait (the classic "that's fixed in place"),
@@ -131,8 +139,9 @@ Interceptors: taking consults `on taking it` / `after taking it` clauses on
 the item. Note that REMOVE-FROM phrasing cannot dodge a taking guard — see
 §2.3.
 
-**drop** (`if.action.dropping`) — verbs `drop`, `discard`, `put down`, plus
-`drop all` and friends. The destination is wherever the player is: the
+**drop** (`if.action.dropping`) — verbs `drop`, `discard`, `put down`,
+`throw away`, plus `drop all` and friends. The destination is wherever the
+player is: the
 room, or the container or supporter the player is inside or on.
 
 Checks: not holding it → `not_held`; still wearing it → `still_worn` (worn
@@ -152,8 +161,11 @@ Two actions share the surface English of "put". `put X on/onto Y` (and
 `hang X on Y`) is **putting** (`if.action.putting`); `put X in/into/inside Y`
 and `insert X in Y` parse as **inserting** (`if.action.inserting`), which
 delegates its work back into putting with the preposition forced to "in".
-An author rarely needs the distinction, with one exception spelled out
-below.
+`place` works in both phrasings, and one more form lands in putting since
+ADR-230 D4: `move X to Y`, with the destination's kind deciding in versus
+on (the D4 ruling: `move` is a manipulation verb, never movement — see
+also pushing, §2.6). An author rarely needs the distinction, with one
+exception spelled out below.
 
 The destination decides eligibility: `on` needs a supporter (`a supporter`),
 `in` needs a container (`a container`). The item does not need to be in
@@ -185,16 +197,12 @@ clause runs once per deposited item.
 
 ### 2.3 removing (taking from)
 
-> **Platform note (2026-07-16):** `if.action.removing` currently has **no
-> core grammar** — `remove X` parses as taking-off (§5), and `take X from Y
-> with Z` is a different action again (`taking_with`). In practice players
-> take things out of open containers with plain TAKE, which handles
-> containment fine. The removing action exists, works, and is documented
-> here for completeness, but today a story must bind its own grammar to
-> reach it. Flagged as a platform gap.
-
 **remove X from Y** (`if.action.removing`) — take an item out of a container
-or off a supporter, named source and all.
+or off a supporter, named source and all. Core grammar since ADR-230:
+`remove X from Y`, `extract X from Y`, and `take X from Y` — the last
+optionally `with/using Z`, a tool form whose named tool becomes a consulted
+command entity (the old orphan `taking_with` id was retired onto removing
+in the same pass). Bare `remove X` still means undressing (§5).
 
 Checks: no item → `no_target`; no source → `no_source`; already holding it →
 `already_have`; not actually in/on the source → `not_in_container` /
@@ -209,8 +217,9 @@ in the payload.
 
 Interceptors: the item slot consults `on removing it` and then `on taking
 it`, in that order — a taking guard (the troll's axe) cannot be bypassed by
-naming the source. The source consults `on removing it` only. As with
-putting/inserting, register per entity under one gerund.
+naming the source. The source consults `on removing it` only, and so does
+an explicitly named tool, after item and source. As with putting/inserting,
+register per entity under one gerund.
 
 ### 2.4 giving and showing
 
@@ -258,7 +267,8 @@ viewer — `on showing it` — which can do anything.) Errors: `no_item`,
 
 ### 2.5 throwing
 
-**throw** (`if.action.throwing`) — `throw X at Y` and `throw X to Y`. (The
+**throw** (`if.action.throwing`) — `throw X at Y` and `throw X to Y`, with
+`toss` and `hurl` in both forms. (The
 action also implements bare and directional throws — `throw the rock`,
 `throw the rock north` — but no core grammar reaches them today; a story
 must add those patterns itself.) The item is implicitly taken if needed;
@@ -294,7 +304,10 @@ explosive reacts to being thrown. A capability behavior registered for
 
 ### 2.6 pushing, pulling, touching
 
-**push** (`if.action.pushing`) — `push`, `press`, `shove`, `move`. Needs the
+**push** (`if.action.pushing`) — `push`, `press`, `shove`, `move`, and the
+directional form `move X <direction>` (ADR-230 D4 ruling: `move` is
+manipulation, never movement — the direction rides the same channel as
+`push X north`). Needs the
 `pushable` trait; pushing anything else gets `fixed_in_place` (scenery) or
 `pushing_does_nothing`. What pushing *does* depends on the trait's
 `pushType`:
@@ -315,19 +328,12 @@ but does not relocate anything — "pushed north" is a message and an
 that event (or an `after pushing it` clause) to actually change the world.
 That is deliberate: which wall opens is puzzle logic, not platform logic.
 
-**pull** (`if.action.pulling`) — `pull`, `drag`, `yank`. Needs `pullable`.
-A successful pull sets the trait's state to `pulled` (a second PULL refuses
-with `already_pulled`) and bumps its `pullCount`; a worn item refuses with
-`worn`. Everything a pull *means* — the lever opens the sluice — is story
-logic reacting to `if.event.pulled` or written as an `on pulling it` /
-`after pulling it` clause.
-
-> **Platform note (2026-07-16):** pulling's success key `pulled` and its
-> `worn`/`already_pulled` errors currently ship **without default English**
-> (the lang package carries an older, unused pulling vocabulary instead).
-> Flagged to the platform owner; until it is fixed, treat pullables' default
-> text as unreliable and give important pullables their own `on pulling it`
-> clause.
+**pull** (`if.action.pulling`) — `pull`, `drag`, `yank`, `tug`. Needs
+`pullable`. A successful pull sets the trait's state to `pulled` (a second
+PULL refuses with `already_pulled`) and bumps its `pullCount`; a worn item
+refuses with `worn`. Everything a pull *means* — the lever opens the
+sluice — is story logic reacting to `if.event.pulled` or written as an
+`on pulling it` / `after pulling it` clause.
 
 **touch** (`if.action.touching`) — `touch`, `feel`, `rub`, `pat`, `stroke`,
 `poke`, `prod`. No trait needed, no state changed. The reply is inferred
@@ -395,12 +401,42 @@ Two boundaries to know: an `on lowering it` clause directly on an *entity*
 is a load error with a pointed message (these verbs never consult
 entity-level interceptors — the trait/action pattern above is the way),
 and from TypeScript the equivalent is a capability behavior registered for
-`if.action.lowering` (the Sharpee Way, how Dungeo's basket works). TURN,
-WAVE, and WIND — the other classic per-entity verbs — currently have no
-binding at all: no grammar, no action. A story wanting them defines the
-whole verb with `define action`, exactly as above.
+`if.action.lowering` (the Sharpee Way, how Dungeo's basket works). TURN
+joined this family in ADR-230: `turn`/`rotate`/`twist X` parse (just below
+the switching phrasal forms, so `turn lamp on` still switches, §7.1), the
+unhandled refusal is `if.action.turning.cant_turn_that`, and an entity that
+can be turned claims the verb exactly as the basket claims lowering. WAVE
+and WIND — the other classic per-entity verbs — still have no binding at
+all: no grammar, no action. A story wanting them defines the whole verb
+with `define action`, exactly as above.
 
-### 2.8 Manipulation traits
+### 2.8 cutting and digging
+
+Two tool verbs with one design (ADR-230 D3c): the platform action gates
+eligibility and validates the tool; the *outcome* belongs to the entity.
+**cut** (`if.action.cutting`) parses as `cut X with/using Y`; **dig**
+(`if.action.digging`) as `dig X with/using Y`. Eligibility is a trait —
+`cuttable` / `diggable` — and the tool contract mirrors the lockable key
+contract exactly: `with tool <entity>` in Chord (`toolId`/`toolIds` in
+TypeScript) declares what works, forward references legal. A trait with
+no tool configured accepts any attempt. Checks, in order: no such trait →
+`not_cuttable` / `not_diggable`; a declared requirement with no tool
+named → `no_tool`; a named tool not in hand → `tool_not_held`; the wrong
+one → `wrong_tool`.
+
+The stdlib action then performs **no mutation of its own**. What a cut or
+dig does — rope into pieces, sand yielding a scarab — is the entity's
+registered implementation, and it is *required*: exactly one per entity,
+either an `on cutting it` / `on digging it` clause (Chord — the entity's
+own or a composed trait's) or a capability behavior for the action id
+(TypeScript, ADR-090). Zero or two is a load error, never a silent
+runtime no-op ("… is cuttable but registers no cutting implementation").
+Success renders the entity's own text over the generic `cut` / `dug`
+stub; events `if.event.cut` / `if.event.dug`, blocked forms
+`if.event.cut_blocked` / `dug_blocked`. Interceptors consult the target
+first, then an explicitly named tool — a cursed knife can veto the cut.
+
+### 2.9 Manipulation traits
 
 **container** (`a container` — a kind noun, so it takes the article).
 Holds things inside. Composes on one line with `openable`, `lockable`, and
@@ -412,11 +448,6 @@ closed), `allowedTypes`/`excludedTypes`, and the liquid fields
 Capacity counts what is directly inside; a container "bears the weight" of
 nested contents rather than passing it up. Read by putting, inserting,
 removing, searching, opening/closing, dropping, throwing, and looking.
-
-> **Platform note (2026-07-16):** on a container-kind entity, `lockable
-> with key X` currently drops the key setting during loading (plain
-> things keep it — the zoo's keycard cabinet works). Flagged; until fixed,
-> keyed locks on containers need the Sharpee Way.
 
 **supporter** (`a supporter`). Holds things on top. Setting: `with
 capacity N` — the number of items it holds (the Cloak of Darkness brass
@@ -438,6 +469,18 @@ mutates two fields — `state` (→ `'pulled'`, which is what gates
 `activates`, `linkedTo`, `detachesOnPull`, `maxPulls`, `effects`) as data
 for story handlers reacting to `if.event.pulled`.
 
+**cuttable** (`cuttable`, optionally `with tool <entity>` — adjective).
+Makes an entity eligible for cutting (§2.8) and carries the tool contract
+mirroring lockable's keys: `toolId` (one tool — what Chord's `with tool`
+sets), `toolIds` (several, TypeScript), with `CuttableBehavior`'s
+`requiresTool`/`canCutWith` predicates. Composing it obliges the entity to
+register exactly one cut implementation — the load check enforces it.
+
+**diggable** (`diggable`, optionally `with tool <entity>` — adjective).
+The same shape for digging: `toolId`/`toolIds`,
+`DiggableBehavior.requiresTool`/`canDigWith`, and the same
+one-implementation rule (§2.8).
+
 **moveable-scenery** and **attached** — two traits in the catalog that are
 **dormant today**: no standard action reads either, they have no behavior
 classes, and neither is composable from Chord. `moveable-scenery` sketches
@@ -454,7 +497,10 @@ get inside or on top of, and things you can climb.
 
 ### 3.1 going
 
-**go** (`if.action.going`) — `go north`, or just the direction. Twelve
+**go** (`if.action.going`) — `go north`, `walk`/`run`/`head`/`travel
+north` (the synonym forms landed with ADR-230 D4, which also fixed a
+long-broken `go <direction>` rule — `go north` itself parses reliably
+now), or just the direction. Twelve
 direction words parse, ten of them compass-and-vertical (`north`/`n`,
 `south`/`s`, `east`/`e`, `west`/`w`, `northeast`/`ne`, `northwest`/`nw`,
 `southeast`/`se`, `southwest`/`sw`, `up`/`u`, `down`/`d`) plus `in`/`inside`
@@ -510,8 +556,8 @@ setting, its preposition, decides whether you are *in* the bathtub or *on*
 the park bench (`entered` vs `entered_on`). There is no occupancy limit
 today (`too_full` is reserved but never fires). Events: `if.event.entered`.
 
-**exit** (`if.action.exiting`) — bare `exit`, `leave`, `get out`, `climb
-out`, `disembark`, `alight` (a named target parses too, but the action
+**exit** (`if.action.exiting`) — bare `exit`, `leave`, `get out`, `go
+out`, `climb out`, `disembark`, `alight` (a named target parses too, but the action
 always exits your *current* container). It undoes an ENTER: out of the
 container, off the supporter. Standing in a plain room refuses with
 `already_outside` — leaving rooms is GO's job. A closed openable container
@@ -594,12 +640,18 @@ actions read them uniformly.
 ### 4.1 opening and closing
 
 **open** (`if.action.opening`) and **close** (`if.action.closing`) — the
-verbs are exactly `open` and `close`; the parser gates both on the
-`openable` trait, so `open the boulder` never reaches the action. (The
-synonyms listed in the help vocabulary — `shut`, `unwrap`, `uncover` — do
-not parse today; grammar rules, not the verb list, decide what parses.
-Same story for `open X with Y`, which maps to an action id nothing
-implements. Both flagged.)
+verbs: `open`, `unwrap`, `uncover`, and `open up` all open; `close`,
+`shut`, and `cover` all close (the synonym forms landed with ADR-230 D4).
+The parser gates every form on the `openable` trait, so `open the
+boulder` never reaches the action.
+
+`open X with Y` maps to opening too (ADR-230 D3b — no separate action),
+with the named tool as a consulted command entity. An openable can
+declare a required tool exactly as a lockable declares a key —
+`toolId`/`toolIds` on the trait (TypeScript today; Chord's `openable`
+composes with defaults only) — refusing `no_tool`/`tool_not_held`/
+`wrong_tool`; an openable with no tool requirement ignores an offered
+tool exactly as a keyless lockable ignores keyless LOCK.
 
 Opening refuses when there is nothing openable named (`no_target`,
 `not_openable`), when it is already open (`already_open`), and when the
@@ -621,20 +673,17 @@ rich payload (door/container flags, contents count) for story reactions.
 
 Both actions consult the target's `on opening it` / `on closing it`
 clauses — the humming hive box in chord-language.md §3.1 is exactly this
-seam.
+seam — and opening consults an explicitly named tool after the target
+(target → tool, the same ordering discipline as lock-and-key).
 
 ### 4.2 locking and unlocking
 
-> **Platform note (2026-07-16, CLI-verified):** as shipped, the core
-> grammar has **no `lock` pattern at all** — `lock the door` does not
-> parse — and `unlock` parses **only** in the `unlock X with/using Y`
-> form (keyless `unlock X` is not understood). The actions themselves
-> are complete; the gap is parse-level, mirroring `removing` (§2.3), and
-> is on the platform list. A story can bind the missing patterns with
-> its own grammar today.
-
 **lock** (`if.action.locking`) and **unlock** (`if.action.unlocking`)
-operate on the `lockable` trait. A lock either requires a key — it names
+operate on the `lockable` trait. Every form parses since ADR-230 D2:
+`lock X`, `lock X with/using Y`, keyless `unlock X`, `unlock X with/using
+Y`, plus the `secure`/`unsecure` aliases (D4). The keyless forms are safe
+by construction — a keyed lock still refuses `no_key` when no key is
+named. A lock either requires a key — it names
 one (`with key <entity>` in Chord; `keyId`/`keyIds` in TypeScript) — or it
 is keyless and turns freely. The key rules, shared by both actions: a
 keyed lock with no key named asks `no_key` ("What do you want to unlock it
@@ -656,8 +705,9 @@ key), and each side's clause sees the other's identity in its context.
 Only an *explicitly named* key is consulted; a key the platform infers is
 not a command entity. In Chord, composition is one line — the zoo's
 `scenery, openable, lockable with key the staff keycard` is the shipped
-example — but note the §2.8 flag: on a **container-kind** entity the
-`with key` setting is currently dropped by the loader.
+example — and the key name resolves to its entity wherever in the story
+that entity is declared (forward references are legal; the
+container-kind key-drop bug the first draft flagged here is fixed).
 
 ### 4.3 Openable, lockable, and door
 
@@ -788,8 +838,10 @@ them on; use the room's `after entering it` or an `on every turn` daemon
 instead.
 
 **examine** (`if.action.examining`) — `examine X`, `x X`, `inspect X`,
-`look at X` (`check`/`view`/`observe` are help-list-only and do not
-parse — flagged). Needs only visibility, not reach. The reply is the
+`check`/`view`/`observe X` (ADR-230 D4), `look at X`, and `look
+[carefully] at X` — the adverb adds nothing; the separate
+`examining_carefully` id it used to parse to is gone (ADR-230 D3a).
+Needs only visibility, not reach. The reply is the
 entity's description plus one trait-aware tail, first match wins:
 containers report open/closed (an open one lists contents), then
 supporters, switchables (on/off), readables with text, wearables (worn or
@@ -805,15 +857,13 @@ have built-in detail slots. Keys under `if.action.examining.`:
 (the robin in chord-language.md §2.10 rides the sibling watching seam the
 zoo defines).
 
-One orphan to know about: `look carefully at X` parses to
-`if.action.examining_carefully`, an action id nothing implements —
-flagged alongside `opening_with` (§4.1).
-
 ### 6.2 searching and reading
 
 **search** (`if.action.searching`) — `search X`, `look in/inside X`, `look
 through X`, `rummage in/through X`, or bare `search` for the room
-(`find`/`locate` are help-only, do not parse). A closed openable container
+(`find`/`locate` were removed from the help vocabulary in ADR-230 — any
+alias would be too story-specific, and searching is the wrong semantics).
+A closed openable container
 refuses `container_closed`; otherwise searching reports contents
 (`container_contents`, `supporter_contents`, `empty_container`,
 `searched_location`, `searched_object`, `nothing_special`) — and it is
@@ -841,12 +891,8 @@ today. Event `if.event.read`; `on reading it` clauses consulted.
 
 ### 6.3 listening and smelling
 
-> **Platform note (2026-07-16, CLI-verified):** neither action parses.
-> `listen`, `listen to X`, `smell`, `smell X`, `sniff X` all fail as
-> not-understood — the actions are fully implemented and interceptor-wired
-> (D5), but core grammar has **no patterns for either**. They join
-> `locking` and `removing` on the wired-but-unreachable list. Documented
-> here for when the grammar lands (or for stories that bind it themselves).
+Both parse since ADR-230 D2: `listen`, `listen to X`, and the `hear [X]`
+alias; `smell` and `sniff`, bare or with a target.
 
 **listen** (`if.action.listening`) — with a target: a running device
 reports `device_running`, a stopped one `device_off`, a container sloshes
@@ -910,9 +956,11 @@ story pushes back the dark rooms of §3.1.
 **switch on / switch off** (`if.action.switching_on` /
 `if.action.switching_off`) — `turn on X`, `switch on X`, `flip on X`, and
 the reversed `turn X on` / `turn X off` (only `turn` gets the reversed
-form — `switch X on` does not parse; nor do the help-listed
-`activate`/`start`/`deactivate`/`stop` — flagged with the other synonym
-gaps). All forms are parser-gated on the `switchable` trait.
+form — `switch X on` does not parse). The bare transitive synonyms landed
+with ADR-230 D4: `activate`/`start`/`power on X` switch on,
+`deactivate`/`stop`/`power off X` switch off. All forms are parser-gated
+on the `switchable` trait. (Bare `turn X` with no on/off is the separate
+per-entity turning verb, §2.7.)
 
 Switching on refuses `not_switchable`, `already_on`, and `no_power` (for
 devices that declare a power requirement); off refuses `already_off`.
@@ -979,7 +1027,7 @@ inconsistency).
 The people a story writes, and the rougher ways a player interacts with
 the world: talk, fight, eat, hide.
 
-### 8.1 talking
+### 8.1 talking, asking, telling
 
 **talk** (`if.action.talking`) — `talk to/with X`, `speak to/with X`,
 `chat with X`, `converse with X` (core grammar since ADR-229; story
@@ -1002,12 +1050,31 @@ standard message, keep the event) is available to any talk target. The
 zoo's characters skip talking entirely and speak through every-turn
 daemons — also a legitimate pattern. Event: `if.event.talked`.
 
+**ask** (`if.action.asking`) and **tell** (`if.action.telling`) — `ask X
+about Y` (also `question X about Y`, `inquire of X about Y`) and `tell X
+about Y` (also `inform X about Y`), parser-gated on the recipient being
+a person. New with ADR-230, and deliberately minimal: there is no
+platform conversation system yet, so each validates the social
+preconditions (`no_target`, `not_visible`, `too_far`, `not_actor`),
+mutates nothing, and reports an interceptable default — asking's
+`unknown_topic` ("I don't know anything about that.") and telling's
+`not_interested` ("… doesn't seem interested."). The person asked or
+told is the consulted entity (`on asking it` / `on telling it`), which
+is where story dialogue hooks in until a real conversation system lands.
+
+The rest of the old conversation grammar went the other way in the same
+pass: `say X [to Y]`, `shout`, and `whisper X to Y` patterns were
+**removed** (their action ids had no implementations — they parsed and
+then runtime-failed in every story), as was the `write X [on Y]` family.
+Both return with real conversation/writing systems; story-grammar verbs
+(Dungeo's SAY) are unaffected.
+
 ### 8.2 attacking and combat
 
 **attack** (`if.action.attacking`) — `attack/hit/strike/kill/fight/slay/
-murder X`, plus `attack/hit/strike/kill X with/using Y` (the weapon form
-skips fight/slay/murder; `break`/`smash`/`destroy` don't parse — flagged
-with the synonym gaps). An explicitly named weapon is implicitly taken if
+murder/break/smash/destroy X` (the last three landed with ADR-230 D4),
+plus `attack/hit/strike/kill X with/using Y` (the weapon form
+skips fight/slay/murder). An explicitly named weapon is implicitly taken if
 needed, and is a consulted command entity — a cursed sword's `on
 attacking it` clause fires; a weapon *inferred* from inventory is not.
 
@@ -1036,7 +1103,8 @@ families the extension renders.
 
 ### 8.3 eating and drinking
 
-**eat** (`if.action.eating`) — `eat/consume/devour X`, gated on the
+**eat** (`if.action.eating`) — `eat/consume/devour X`, plus `munch` and
+`nibble [on] X`, gated on the
 `edible` trait in validation (`not_edible`). Liquids refuse with
 `is_drink` ("You should drink that, not eat it") and vice versa — there
 is no cross-routing. Food is implicitly taken first. Multi-serving food
@@ -1049,8 +1117,9 @@ the item** — a fully consumed apple stays in inventory at zero servings;
 remove it with an `after eating it` clause if you care. Event:
 `if.event.eaten`.
 
-**drink** (`if.action.drinking`) — `drink/sip/quaff X` (`swallow` is
-help-only and does not parse). Two things are drinkable: an edible marked
+**drink** (`if.action.drinking`) — `drink/sip/quaff/swallow/imbibe X`,
+plus `drink from X` and `sip from X`. Two things are drinkable: an edible
+marked
 liquid, or a **container of liquid** (`containsLiquid`), open if
 openable. Container drinking decrements `liquidAmount` and reports
 `from_container` / `empty_now`; an emptied vessel stays nominally
@@ -1135,8 +1204,9 @@ hit-point model (armor, weapon requirements, `transformTo`,
 Killing the player. Death is not `lose`: `lose` (chord-language.md §4.6)
 ends the game with an ending event, while the constructs here run the
 platform's death machinery — a died event, a story-visible veto window,
-and then the defeat ending. These constructs are not yet in
-chord-language.md, so this chapter teaches the syntax itself.
+and then the defeat ending. chord-language.md §4.7 teaches the same
+constructs from the author's side; this chapter carries the machinery
+detail.
 
 ### 9.1 kill the player
 
@@ -1231,6 +1301,10 @@ the same machinery is Dungeo's Aragain Falls (a TypeScript transformer on
 the identical seam — `falls-deadly-exit.transcript` pins the behavior),
 plus its gas, grue, and poison deaths through `killPlayer`.
 
+The author-side syntax for all three constructs is now taught in
+chord-language.md §4.7; this chapter remains the reference for the
+machinery underneath.
+
 ## 10. Meta & system actions
 
 The actions every story gets for free — no traits, no eligibility, and
@@ -1247,11 +1321,10 @@ trait, §11.1). A TypeScript story can add credits, ported-by, and build
 fields. About emits a single overridable message,
 `if.action.about.success`.
 
-**help** (`help` — `?` and `commands` are help-list-only and don't
-parse). Renders the platform's general help; a first-time asker gets
-`first_time`. Topic help (`help movement`) is implemented in the action
-but unreachable — the core pattern takes no topic slot (flagged, with
-`save <name>` in the same boat).
+**help** (`help`, `?`, `commands`). Renders the platform's general help;
+a first-time asker gets `first_time`. Topic help (`help movement`) is
+implemented in the action but unreachable — the core pattern takes no
+topic slot (flagged, with `save <name>` in the same boat).
 
 **inventory** (`inventory`, `inv`, `i`). Splits what you carry from what
 you wear (`carrying`, `wearing`, `carrying_and_wearing`, plus the
@@ -1259,7 +1332,7 @@ you wear (`carrying`, `wearing`, `carrying_and_wearing`, plus the
 variant. The abbreviations set a `brief` flag in the event for clients
 that care. Burden/weight messages exist but are dormant.
 
-**score** (`score`; `points` doesn't parse). Reads the platform score
+**score** (`score`, `points`). Reads the platform score
 ledger — which is exactly where Chord's `score <name> worth N` /
 `award <name>` system deposits (chord-language.md §2.8, §4.5): max score
 is summed from the declared worths at load, awards are idempotent, and
@@ -1274,16 +1347,15 @@ These four are signals, not implementations: each emits a platform event
 (`platform.save_requested`, `restore_requested`, `restart_requested`,
 `quit_requested`) that the engine processes after the turn through
 client-registered hooks — the client owns persistence and confirmation
-UI. Verbs that parse: `save`, `restore`, `quit`/`q`, `restart` (the
-help-listed `load`, `save game`, `exit game` don't). Named saves are
+UI. Verbs that parse: `save`/`save game`, `restore`/`load`/`load game`/
+`restore game`, `quit`/`q`/`exit game`, `restart`. Named saves are
 dormant (no slot in the grammar). Quit asks for confirmation through a
 client query — but with no client hook registered it auto-confirms and
 stops; restart computes whether confirmation is warranted (unsaved
 progress, more than a few moves) and leaves honoring it to the hook.
 Saving can refuse (`save_not_allowed`, `save_in_progress`,
 `invalid_save_name`); restoring can refuse (`restore_not_allowed`,
-`no_saves`). One gap flagged: restarting's message keys have no lang
-backing at all today.
+`no_saves`).
 
 ### 10.3 Turns and undo: waiting, sleeping, again, undoing
 
@@ -1294,10 +1366,10 @@ N waits let N rounds of scheduled behavior (§12.2) play out. One message,
 flagged). Stories react to `if.event.waited`, or gate things on turns
 passing.
 
-**sleep** — *does not parse*. The action exists (flavor-only if reached:
-no turns skipped, no health interaction), the help lists five verbs, but
-core grammar has none of them; `z` is a wait. Flagged with the other
-no-grammar actions; a story can bind it in one grammar line.
+**sleep** (`sleep`, `nap`, `doze`, `rest`, `slumber` — all five parse
+since ADR-230 D2/D4). Flavor-only: no turns skipped beyond its own, no
+health interaction — give it story meaning with story logic if a story
+needs real sleep. `z` remains a wait.
 
 **again** (`again`, `g`) re-runs the last successful non-meta command by
 re-parsing its original text — so the repeat is honest: it can fail where
@@ -1325,12 +1397,14 @@ is. The four structural traits no verb owns get their full entries in
 
 | Trait | In Chord | One line | Entry |
 |---|---|---|---|
-| `container` | `a container` (+ `with max items/weight N`) | holds things inside | §2.8 |
-| `supporter` | `a supporter` (+ `with capacity N`) | holds things on top | §2.8 |
-| `pushable` | `pushable` | eligible for PUSH; pushType picks behavior | §2.8 |
-| `pullable` | `pullable` | eligible for PULL; state + count mutate | §2.8 |
-| `moveable-scenery` | — | dormant (nothing reads it) | §2.8 |
-| `attached` | — | dormant (nothing reads it) | §2.8 |
+| `container` | `a container` (+ `with max items/weight N`) | holds things inside | §2.9 |
+| `supporter` | `a supporter` (+ `with capacity N`) | holds things on top | §2.9 |
+| `pushable` | `pushable` | eligible for PUSH; pushType picks behavior | §2.9 |
+| `pullable` | `pullable` | eligible for PULL; state + count mutate | §2.9 |
+| `cuttable` | `cuttable` (+ `with tool <entity>`) | eligible for CUT; outcome is the entity's own implementation | §2.9 |
+| `diggable` | `diggable` (+ `with tool <entity>`) | eligible for DIG; same contract as cuttable | §2.9 |
+| `moveable-scenery` | — | dormant (nothing reads it) | §2.9 |
+| `attached` | — | dormant (nothing reads it) | §2.9 |
 | `room` | `a room` | a place; exits, darkness, first-visit text | §3.4 |
 | `exit` | — | passage entity a room exit routes via | §3.4 |
 | `enterable` | `enterable` | can be gotten into / onto | §3.4 |
@@ -1402,7 +1476,7 @@ never touches it directly — the header (`story "…" by "…"`, `version:`,
 ## 12. Plugins & daemons
 
 The runtime services behind timed and NPC behavior — what a Chord
-`define sequence` or `on every turn` clause (chord-language.md §4.7, §3)
+`define sequence` or `on every turn` clause (chord-language.md §4.8, §3)
 actually runs on top of.
 
 ### 12.1 Turn plugins and priority

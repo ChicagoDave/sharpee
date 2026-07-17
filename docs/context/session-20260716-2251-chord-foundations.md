@@ -52,5 +52,11 @@
 - All sketch recommendations accepted (digging corrected: dungeo is a live consumer → implemented via cutting template). Executed: turning capability action; using/answering verbs dropped; conversation grammar deleted + asking/telling revived minimal (registry 37); writing grammar deleted; taking_with→removing+tool slot; DiggableTrait + digging action + chord `diggable` + generalized loader check; `carries the X` start inventory (parser→IR→loader, silent-accept killed); 9 patterns trims; `say` trimmed from telling (verb gate caught it live).
 - Gate exception lists ALL EMPTY (Phase 7's strip deliverable satisfied incrementally). Obsolete tests updated: quoted-string parser tests → story grammar; chord goldens re-snapshotted (carries field).
 
+## Phases 7-9 (2026-07-17) — COMPLETE (committed d271f3e1)
+- Phase 7: gate closed formally (only 2 permanent exceptions); repokit verify's publish dry-run fails ENVIRONMENTALLY (chord 3.0.0 published 2026-07-14 pre-session; unblocks at next version bump) — build+pack passes.
+- Phase 8 (D5): chord parser consumes dotted phrase-key segments; story-wide platform-message overrides live; regression test.
+- Phase 9: lockable-with-key 3-bug fix (container pre-add removed, generalized pending-entity-ref name→world-id resolution shared with tools, requiredKey→keyId at 3 TS sites) + REAL-PATH keyed-container unlock test; pulling lang rewritten to actual ids (dead lever_/cord_ vocabulary deleted, no story used it); restarting lang file created; feels_cold/feels_rough removed (golden updated). Two clean chain runs.
+
 ## Open items
-- Phase 7 formal closure pass (full suite + repokit verify), then Phases 8-10.
+- Phase 10 (docs refresh: chord-language.md death/phrase-key/cuttable/diggable/carries + stdlib-reference truth pass + site re-render) — delegated to agent, in progress.
+- Parked/flagged for future: dungeo dig→platform consolidation (R4-style, own item); chain RNG-death flake-rate investigation; vitest src-alias-vs-dist resolution oddity in stdlib tests; version bump to un-block repokit verify.

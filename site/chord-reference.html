@@ -75,6 +75,19 @@ create the player
 
   A scarred oak workbench.</code></pre>
     <p><code>with</code> attaches settings. The last token of each setting is its value and the words before it are the key (<code>capacity 3</code>); several settings join with <code>and</code>. When a value is an entity name, the article marks where the name starts (<code>lockable with key the staff keycard</code>).</p>
+    <p>Two trait adjectives carry a contract along with their data: <code>cuttable</code> and <code>diggable</code>. Each takes an optional tool setting (<code>cuttable with tool the rusty knife</code>) naming the implement the player must be holding; with no tool named, any attempt reaches the entity. What the cut or dig actually <em>does</em> is never platform policy: a cuttable entity must carry exactly one implementation — an <code>on cutting it</code> clause (§3), its own or from a composed trait — and the story fails to load with none, or with two. The same rule binds <code>diggable</code> to <code>on digging it</code>.</p>
+    <pre><code>create the straw bale
+  aka bale, twine
+  cuttable with tool the rusty knife
+  in the Potting Shed
+  states: bound, loose
+
+  A bale of straw, bound tight with orange twine.
+
+  on cutting it
+    change it to loose
+    phrase twine-cut
+  end on</code></pre>
     <p>A trait can be conditional: <code>while</code> puts it under the control of a condition, live at play time.</p>
     <pre><code>create the Root Cellar
   a room, dark while the oil lantern is not lit
@@ -83,7 +96,7 @@ create the player
   Earthen walls swallow what little light there is.</code></pre>
     <p>The blank line matters: composition lines come before the first blank line in the block, and prose comes after it (§2.6). That rule is what keeps a description that happens to start with a trait-like word from being read as composition.</p>
     <h3>2.4 Placing and wearing</h3>
-    <p>Three placement forms position an entity when the story starts: <code>in</code> puts it inside a room or container, <code>on</code> puts it on a supporter, and <code>starts in</code> is how actors (usually the player) name their starting room. <code>wears</code> puts a wearable onto an actor already dressed in it.</p>
+    <p>Three placement forms position an entity when the story starts: <code>in</code> puts it inside a room or container, <code>on</code> puts it on a supporter, and <code>starts in</code> is how actors (usually the player) name their starting room. Two more lines dress and equip an actor: <code>wears</code> puts a wearable onto an actor already dressed in it, and <code>carries</code> puts an item into an actor's hands — starting inventory, carried but not worn.</p>
     <pre><code>create the seed packet
   on the potting table
 
@@ -92,6 +105,7 @@ create the player
 create the player
   starts in the Greenhouse
   wears the straw hat
+  carries the trowel
 
   Mud on your boots, dirt under your nails.</code></pre>
     <p>Note the disambiguation: <code>on</code> followed by an article is placement (<code>on the potting table</code>); <code>on</code> followed by a bare word opens a behavior clause (<code>on watching it</code>, §3).</p>
@@ -305,7 +319,7 @@ define condition vine-tomato: it is a tomato and it is not in the harvest basket
   end on</code></pre>
     <p>Refusing on a negated condition (<code>refuse when not …</code>) is flagged (<code>analysis.negated-requirement</code>): that is a requirement in disguise, and <code>must</code> says it better.</p>
     <h3>3.7 The statements</h3>
-    <p>Nine statements do the story's work. The pumpkin below uses most of them:</p>
+    <p>Ten statements do the story's work. The pumpkin below uses most of them:</p>
     <pre><code>  on measuring it
     set its tally to 3
     phrase tape-reading with girth = its tally
@@ -339,6 +353,8 @@ end after</code></pre>
       <li><strong><code>award &lt;name&gt;</code></strong> grants an owner-scoped score (§2.8, §4.5); the explicit <code>, once</code> is available but dedupe already makes awards idempotent.
     </li>
       <li><strong><code>win [&lt;phrase&gt;]</code></strong> and <strong><code>lose [&lt;phrase&gt;]</code></strong> end the story (§4.6), optionally speaking a named phrase on the way out.
+    </li>
+      <li><strong><code>kill the player [&lt;phrase-key&gt;]</code></strong> runs the platform's death machinery — not the same thing as <code>lose</code>; §4.7 owns the difference.
       <pre><code>  on emptying it
     remove the champion slug
     phrase trap-emptied
@@ -347,9 +363,9 @@ end after</code></pre>
     </li>
     </ul>
     <h3>3.8 The when suffix</h3>
-    <p>Any of <code>phrase</code>, <code>emit</code>, <code>change</code>, <code>move</code>, <code>remove</code>, <code>award</code>, <code>win</code>, and <code>lose</code> can carry a trailing <code>when &lt;condition&gt;</code>, making that one statement conditional without any block structure; several examples above use it. <code>set</code> and bare <code>refuse</code> do not take the suffix. Do not confuse it with the <code>when &lt;value&gt;</code> arm header inside <code>select on</code> (§4.1): same word, different position, different job.</p>
+    <p>Any of <code>phrase</code>, <code>emit</code>, <code>change</code>, <code>move</code>, <code>remove</code>, <code>award</code>, <code>win</code>, <code>lose</code>, and <code>kill the player</code> can carry a trailing <code>when &lt;condition&gt;</code>, making that one statement conditional without any block structure; several examples above use it. <code>set</code> and bare <code>refuse</code> do not take the suffix. Do not confuse it with the <code>when &lt;value&gt;</code> arm header inside <code>select on</code> (§4.1): same word, different position, different job.</p>
     <h2>4. Branching, iteration, and progression</h2>
-    <p>The statements in §3 each do one thing. This chapter is about shaping what happens over time: choosing between several bodies, doing something once per matching entity, keeping score, ending the story, and running a scripted timeline. All of it is still made of the statements you already have; these are the blocks that route between them.</p>
+    <p>The statements in §3 each do one thing. This chapter is about shaping what happens over time: choosing between several bodies, doing something once per matching entity, keeping score, ending the story — in victory, defeat, or death — and running a scripted timeline. All of it is still made of the statements you already have; these are the blocks that route between them.</p>
     <h3>4.1 select on a value</h3>
     <p><code>select on &lt;value&gt;</code> dispatches to the arm whose <code>when</code> matches the value, and runs nothing if none do. The classic use is a state machine: one arm per declared state, each speaking for that state.</p>
     <pre><code>  on examining it
@@ -492,7 +508,30 @@ end trait</code></pre>
     phrase near-miss
   end on</code></pre>
     <p>The first ends in victory, speaking <code>garden-perfect</code>. The second loses only on a coin-flip (<code>when one chance in 2</code>); when the flip spares you, the <code>lose</code> is skipped and <code>near-miss</code> speaks instead. The phrase name is optional — bare <code>win</code> and bare <code>lose</code> end the story with only the platform's default ending text.</p>
-    <h3>4.7 Sequences</h3>
+    <h3>4.7 Death: kill the player and deadly places</h3>
+    <p>Death is not <code>lose</code>. <code>lose</code> ends the game directly; the three constructs here run the platform's death machinery instead — the death text speaks, a died event fires, and at the end of the turn the engine re-checks whether the player is actually dead. That re-check is a real window: a story policy that revives the player during the turn (a reincarnation rule, a guardian angel) vetoes the ending and play continues. With no such policy, the story ends in defeat.</p>
+    <p><strong><code>kill the player [&lt;phrase-key&gt;] [when &lt;condition&gt;]</code></strong> is a statement, peer to <code>win</code> and <code>lose</code> (§3.7), legal anywhere statements go — <code>on</code> and <code>after</code> clauses, <code>every turn</code> daemons, action bodies, inside <code>select</code> and <code>each</code>. The phrase key is the death text (define it like any phrase) and doubles as the recorded cause; bare <code>kill the player</code> records the cause <code>killed</code> and shows only the platform's ending text. The <code>when</code> suffix gates it like any statement (§3.8):</p>
+    <pre><code>  on crossing it
+    kill the player bridge-death when it is frayed
+    phrase bridge-holds
+  end on</code></pre>
+    <p>While the bridge is whole, the <code>kill</code> is skipped and <code>bridge-holds</code> speaks instead — the same shape as the conditional <code>lose</code> in §4.6.</p>
+    <p><strong><code>&lt;direction&gt; is deadly: &lt;phrase-key&gt;</code></strong> marks a fatal exit, mirroring <code>is blocked:</code> (§2.5). The fatal direction is deliberately not an exit at all: typing it never runs the going action — the command is rewritten into the platform's internal death action, so the player sees the death text and nothing else, no movement prose, no refusal. The player retreats another way.</p>
+    <pre><code>create Aragain Falls
+  a room
+  west to the Rocky Ledge
+  south is deadly: falls-death
+
+  The roar of the water is everything.</code></pre>
+    <p>The conditional form <code>is deadly while &lt;condition&gt;:</code> parses but is not wired yet — a load error tells you so; the live equivalent is an <code>on going it</code> clause carrying <code>kill the player when &lt;condition&gt;</code>.</p>
+    <p><strong><code>deadly: &lt;phrase-key&gt;</code></strong> marks the whole room as a no-escape position: every verb except a safe allowlist — look and examine, by default — is fatal, including objectless ones like WAIT and INVENTORY that no per-entity clause could catch. Reserve it for the genuinely inescapable spot, not as a generic hazard flag:</p>
+    <pre><code>create Over the Falls
+  a room
+  deadly: over-falls-death
+
+  You are over the falls. This was a mistake.</code></pre>
+    <p>In TypeScript the underlying trait adds two more dials: <code>safeVerbs</code> widens the allowlist, and <code>chance</code> makes the room probabilistically deadly — a survived roll simply lets the verb run normally, with no message. Neither dial is expressible from Chord today. The standard library reference (stdlib-reference.md §9) documents the machinery underneath all three constructs: the died event's shape, the veto window's mechanics, the health trait, and the internal redirect action.</p>
+    <h3>4.8 Sequences</h3>
     <p>A <code>define sequence</code> is a scripted timeline: a named list of steps, each anchored to <em>when</em> it fires and carrying a body of ordinary statements. It replaces the hand-rolled turn-counting daemons of the old platform with one declarative block. There are three anchor forms, and this story uses all three across three sequences.</p>
     <p>The first two anchors are clock-based. <code>at turn N</code> fires at an absolute turn counted from the story's start; <code>N turns later</code> fires relative to the previous step, so you can chain a timeline without arithmetic:</p>
     <pre><code>define sequence gathering storm
@@ -563,6 +602,11 @@ end phrase</code></pre>
   Please do not tap the glass
 end phrase</code></pre>
     <p>A <code>verbatim</code> phrase can be spoken by a <code>phrase</code> statement but cannot splice at a description marker (<code>analysis.verbatim-marker</code>): its whole point is preserved line structure, which a mid-sentence splice would break.</p>
+    <p>A phrase key may be dotted — <code>if.action.taking.fixed_in_place</code> is one key, registered whole — and dotting is how a story overrides the platform's own text. Every standard-action message lives under a dotted id (the stdlib reference catalogs them entry by entry); a <code>define phrase</code> under that exact key replaces the platform default story-wide, for every entity, every time that moment renders:</p>
+    <pre><code>define phrase if.action.taking.fixed_in_place
+  It will not budge, and neither will anything else bolted to this place.
+end phrase</code></pre>
+    <p>Now every fixed-in-place refusal in the story speaks this line instead of the standard one. The per-entity routes still sit on top: an <code>on</code> clause's own refusal (§3.6) or a per-entity override (§2.10) speaks for its one entity, and the story-wide dotted override sets the default underneath them.</p>
     <h3>5.3 define phrases (locale blocks)</h3>
     <p>Where <code>define phrase</code> declares one key with variants, <code>define phrases &lt;locale&gt;</code> declares many plain keys at once, under a named locale. This is the localizable form — the same block stdlib uses — and the one to reach for when your text is a flat catalog of keyed strings rather than a single choice:</p>
     <pre><code>define phrases en-US
@@ -728,7 +772,7 @@ set is `states, reversible: …`.</code></pre>
       <tbody>
         <tr><td>top-level <code>when &lt;actor&gt; &lt;verb&gt;s …</code> rule</td><td><code>parse.removed-when</code></td><td>an <code>on</code>/<code>after</code> clause on the owner (§3.1)</td></tr>
         <tr><td>top-level <code>once &lt;condition&gt;</code> rule</td><td><code>parse.removed-once</code></td><td>the <code>, once</code> clause modifier (§3.3)</td></tr>
-        <tr><td>top-level <code>every N turns</code> rule</td><td><code>parse.removed-every</code></td><td>a <code>define sequence</code> (§4.7) or <code>every turn</code> clause (§3.2)</td></tr>
+        <tr><td>top-level <code>every N turns</code> rule</td><td><code>parse.removed-every</code></td><td>a <code>define sequence</code> (§4.8) or <code>every turn</code> clause (§3.2)</td></tr>
         <tr><td><code>define flag &lt;name&gt;</code></td><td><code>parse.removed-flag</code></td><td>owner <code>states:</code> (§2.7) or a derived condition (§5.1)</td></tr>
         <tr><td><code>flag</code> trait-field type</td><td><code>parse.removed-flag-field</code></td><td>trait <code>states</code> (§5.7)</td></tr>
         <tr><td><code>if</code> / <code>else</code> / <code>end if</code></td><td><code>parse.removed-if</code></td><td><code>must</code> (§3.5), the <code>when</code> suffix (§3.8), or <code>select</code> (§4.1)</td></tr>

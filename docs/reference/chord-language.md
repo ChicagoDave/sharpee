@@ -141,6 +141,31 @@ and the words before it are the key (`capacity 3`); several settings
 join with `and`. When a value is an entity name, the article marks where
 the name starts (`lockable with key the staff keycard`).
 
+Two trait adjectives carry a contract along with their data: `cuttable`
+and `diggable`. Each takes an optional tool setting (`cuttable with tool
+the rusty knife`) naming the implement the player must be holding; with
+no tool named, any attempt reaches the entity. What the cut or dig
+actually *does* is never platform policy: a cuttable entity must carry
+exactly one implementation — an `on cutting it` clause (§3), its own or
+from a composed trait — and the story fails to load with none, or with
+two. The same rule binds `diggable` to `on digging it`.
+
+<!-- fixture: world/cuttable.story -->
+```story
+create the straw bale
+  aka bale, twine
+  cuttable with tool the rusty knife
+  in the Potting Shed
+  states: bound, loose
+
+  A bale of straw, bound tight with orange twine.
+
+  on cutting it
+    change it to loose
+    phrase twine-cut
+  end on
+```
+
 A trait can be conditional: `while` puts it under the control of a
 condition, live at play time.
 
@@ -163,7 +188,9 @@ being read as composition.
 Three placement forms position an entity when the story starts: `in`
 puts it inside a room or container, `on` puts it on a supporter, and
 `starts in` is how actors (usually the player) name their starting
-room. `wears` puts a wearable onto an actor already dressed in it.
+room. Two more lines dress and equip an actor: `wears` puts a wearable
+onto an actor already dressed in it, and `carries` puts an item into an
+actor's hands — starting inventory, carried but not worn.
 
 <!-- fixture: world/placement.story -->
 ```story
@@ -175,6 +202,7 @@ create the seed packet
 create the player
   starts in the Greenhouse
   wears the straw hat
+  carries the trowel
 
   Mud on your boots, dirt under your nails.
 ```
@@ -623,7 +651,7 @@ Refusing on a negated condition (`refuse when not …`) is flagged
 
 ### 3.7 The statements
 
-Nine statements do the story's work. The pumpkin below uses most of
+Ten statements do the story's work. The pumpkin below uses most of
 them:
 
 <!-- fixture: behavior/statements.story -->
@@ -675,6 +703,8 @@ them:
   idempotent.
 - **`win [<phrase>]`** and **`lose [<phrase>]`** end the story (§4.6),
   optionally speaking a named phrase on the way out.
+- **`kill the player [<phrase-key>]`** runs the platform's death
+  machinery — not the same thing as `lose`; §4.7 owns the difference.
 
 <!-- fixture: behavior/statements.story -->
 ```story
@@ -688,7 +718,8 @@ them:
 ### 3.8 The when suffix
 
 Any of `phrase`, `emit`, `change`, `move`, `remove`, `award`, `win`,
-and `lose` can carry a trailing `when <condition>`, making that one
+`lose`, and `kill the player` can carry a trailing `when <condition>`,
+making that one
 statement conditional without any block structure; several examples
 above use it. `set` and bare `refuse` do not take the suffix. Do not
 confuse it with the `when <value>` arm header inside `select on`
@@ -698,9 +729,10 @@ confuse it with the `when <value>` arm header inside `select on`
 
 The statements in §3 each do one thing. This chapter is about shaping
 what happens over time: choosing between several bodies, doing something
-once per matching entity, keeping score, ending the story, and running a
-scripted timeline. All of it is still made of the statements you already
-have; these are the blocks that route between them.
+once per matching entity, keeping score, ending the story — in victory,
+defeat, or death — and running a scripted timeline. All of it is still
+made of the statements you already have; these are the blocks that route
+between them.
 
 ### 4.1 select on a value
 
@@ -1000,7 +1032,80 @@ the `lose` is skipped and `near-miss` speaks instead. The phrase name is
 optional — bare `win` and bare `lose` end the story with only the
 platform's default ending text.
 
-### 4.7 Sequences
+### 4.7 Death: kill the player and deadly places
+
+Death is not `lose`. `lose` ends the game directly; the three constructs
+here run the platform's death machinery instead — the death text speaks,
+a died event fires, and at the end of the turn the engine re-checks
+whether the player is actually dead. That re-check is a real window: a
+story policy that revives the player during the turn (a reincarnation
+rule, a guardian angel) vetoes the ending and play continues. With no
+such policy, the story ends in defeat.
+
+**`kill the player [<phrase-key>] [when <condition>]`** is a statement,
+peer to `win` and `lose` (§3.7), legal anywhere statements go — `on` and
+`after` clauses, `every turn` daemons, action bodies, inside `select` and
+`each`. The phrase key is the death text (define it like any phrase) and
+doubles as the recorded cause; bare `kill the player` records the cause
+`killed` and shows only the platform's ending text. The `when` suffix
+gates it like any statement (§3.8):
+
+<!-- fixture: flow/death.story -->
+```story
+  on crossing it
+    kill the player bridge-death when it is frayed
+    phrase bridge-holds
+  end on
+```
+
+While the bridge is whole, the `kill` is skipped and `bridge-holds`
+speaks instead — the same shape as the conditional `lose` in §4.6.
+
+**`<direction> is deadly: <phrase-key>`** marks a fatal exit, mirroring
+`is blocked:` (§2.5). The fatal direction is deliberately not an exit at
+all: typing it never runs the going action — the command is rewritten
+into the platform's internal death action, so the player sees the death
+text and nothing else, no movement prose, no refusal. The player
+retreats another way.
+
+<!-- fixture: flow/death.story -->
+```story
+create Aragain Falls
+  a room
+  west to the Rocky Ledge
+  south is deadly: falls-death
+
+  The roar of the water is everything.
+```
+
+The conditional form `is deadly while <condition>:` parses but is not
+wired yet — a load error tells you so; the live equivalent is an
+`on going it` clause carrying `kill the player when <condition>`.
+
+**`deadly: <phrase-key>`** marks the whole room as a no-escape position:
+every verb except a safe allowlist — look and examine, by default — is
+fatal, including objectless ones like WAIT and INVENTORY that no
+per-entity clause could catch. Reserve it for the genuinely inescapable
+spot, not as a generic hazard flag:
+
+<!-- fixture: flow/death.story -->
+```story
+create Over the Falls
+  a room
+  deadly: over-falls-death
+
+  You are over the falls. This was a mistake.
+```
+
+In TypeScript the underlying trait adds two more dials: `safeVerbs`
+widens the allowlist, and `chance` makes the room probabilistically
+deadly — a survived roll simply lets the verb run normally, with no
+message. Neither dial is expressible from Chord today. The standard
+library reference (stdlib-reference.md §9) documents the machinery
+underneath all three constructs: the died event's shape, the veto
+window's mechanics, the health trait, and the internal redirect action.
+
+### 4.8 Sequences
 
 A `define sequence` is a scripted timeline: a named list of steps, each
 anchored to *when* it fires and carrying a body of ordinary statements.
@@ -1175,6 +1280,26 @@ A `verbatim` phrase can be spoken by a `phrase` statement but cannot
 splice at a description marker (`analysis.verbatim-marker`): its
 whole point is preserved line structure, which a mid-sentence splice
 would break.
+
+A phrase key may be dotted — `if.action.taking.fixed_in_place` is one
+key, registered whole — and dotting is how a story overrides the
+platform's own text. Every standard-action message lives under a dotted
+id (the stdlib reference catalogs them entry by entry); a `define
+phrase` under that exact key replaces the platform default story-wide,
+for every entity, every time that moment renders:
+
+<!-- fixture: define/dotted-override.story -->
+```story
+define phrase if.action.taking.fixed_in_place
+  It will not budge, and neither will anything else bolted to this place.
+end phrase
+```
+
+Now every fixed-in-place refusal in the story speaks this line instead
+of the standard one. The per-entity routes still sit on top: an `on`
+clause's own refusal (§3.6) or a per-entity override (§2.10) speaks for
+its one entity, and the story-wide dotted override sets the default
+underneath them.
 
 ### 5.3 define phrases (locale blocks)
 
@@ -1521,7 +1646,7 @@ harness, which asserts the exact code still fires.
 |---|---|---|
 | top-level `when <actor> <verb>s …` rule | `parse.removed-when` | an `on`/`after` clause on the owner (§3.1) |
 | top-level `once <condition>` rule | `parse.removed-once` | the `, once` clause modifier (§3.3) |
-| top-level `every N turns` rule | `parse.removed-every` | a `define sequence` (§4.7) or `every turn` clause (§3.2) |
+| top-level `every N turns` rule | `parse.removed-every` | a `define sequence` (§4.8) or `every turn` clause (§3.2) |
 | `define flag <name>` | `parse.removed-flag` | owner `states:` (§2.7) or a derived condition (§5.1) |
 | `flag` trait-field type | `parse.removed-flag-field` | trait `states` (§5.7) |
 | `if` / `else` / `end if` | `parse.removed-if` | `must` (§3.5), the `when` suffix (§3.8), or `select` (§4.1) |
