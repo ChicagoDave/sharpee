@@ -742,7 +742,8 @@ class Parser {
   private parsePhraseOverride(line: Line): PhraseOverride {
     const c = new Cursor(line.tokens, line);
     c.matchWord('phrase');
-    const key = c.next()!; // validated by caller
+    // Key word validated by the caller; phrase-key = WORD { "." WORD } (ADR-231 D1b).
+    const key = this.readDottedKey(c)!;
 
     // CP3: optional `, <strategy>` (the Z5 adverb set, retired fix-its
     // included) — `phrase present, cycling:`.
@@ -798,7 +799,7 @@ class Parser {
     const last = variants[variants.length - 1];
     return {
       kind: 'phrase-override',
-      key: key.text,
+      key,
       strategy,
       condition,
       variants,
@@ -1022,18 +1023,14 @@ class Parser {
     const c = new Cursor(headLine.tokens, headLine);
     c.next();
     c.next(); // define phrase
-    const keyTok = c.next();
-    let key = keyTok && keyTok.kind === 'word' ? keyTok.text : '';
+    // EBNF: phrase-key = WORD { "." WORD } (ADR-230 D5). Previously the
+    // parser silently registered only the first segment (`if.action.taking`
+    // became `if`), which made story-wide overrides of platform message ids
+    // impossible.
+    const key = this.readDottedKey(c) ?? '';
     if (!key) {
       this.diagnostics.error('parse.phrase-key', 'Expected a phrase key after `define phrase`.', lineSpan(headLine));
-    }
-    // EBNF: phrase-key = WORD { "." WORD } (ADR-230 D5). The lexer splits at
-    // dots, so consume `.WORD` segments — previously the parser silently
-    // registered only the first segment (`if.action.taking` became `if`),
-    // which made story-wide overrides of platform message ids impossible.
-    while (key && c.peek()?.kind === 'punct' && c.peek()?.text === '.' && c.peek(1)?.kind === 'word') {
-      c.next(); // consume '.'
-      key += '.' + c.next()!.text;
+      c.next(); // skip the offending token so header options still parse
     }
     let strategy: string | null = null;
     let verbatim = false;
@@ -1121,16 +1118,18 @@ class Parser {
     let span = lineSpan(headLine);
     while (this.pos < this.lines.length && this.lines[this.pos].indent > headLine.indent) {
       const line = this.lines[this.pos];
-      const key = line.tokens[0];
-      const colon = line.tokens[1];
-      if (!key || key.kind !== 'word' || !colon || colon.kind !== 'colon') {
+      const ec = new Cursor(line.tokens, line);
+      const key = this.readDottedKey(ec); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+      const colon = ec.peek();
+      if (!key || !colon || colon.kind !== 'colon') {
         this.diagnostics.error('parse.phrase-entry', 'Expected `key: <text>` in the phrases block.', lineSpan(line));
         this.pos++;
         continue;
       }
+      ec.next(); // colon
       this.pos++;
       let value: TextValue;
-      const inline = line.tokens[2];
+      const inline = ec.peek();
       if (inline && inline.kind === 'string') {
         this.reportSameLineText(inline.span);
         value = this.textFromString(inline); // recovery: keep the text so analysis continues
@@ -1145,10 +1144,10 @@ class Parser {
       } else {
         value = this.parseProseParagraph(line.indent + 1, line.indent);
         if (value.text === '') {
-          this.diagnostics.error('parse.phrase-entry-empty', `Phrase \`${key.text}\` has no text.`, lineSpan(line));
+          this.diagnostics.error('parse.phrase-entry-empty', `Phrase \`${key}\` has no text.`, lineSpan(line));
         }
       }
-      entries.push({ key: key.text, value, span: mergeSpans(lineSpan(line), value.span) });
+      entries.push({ key, value, span: mergeSpans(lineSpan(line), value.span) });
       span = mergeSpans(span, entries[entries.length - 1].span);
     }
 
@@ -1414,8 +1413,8 @@ class Parser {
         if (!oc.matchWord('refuse')) {
           this.diagnostics.error('parse.action-otherwise', 'Expected `otherwise refuse <phrase-key>`.', lineSpan(line));
         } else {
-          const key = oc.next();
-          if (key && key.kind === 'word') otherwise = { phraseKey: key.text, span: lineSpan(line) };
+          const key = this.readDottedKey(oc); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+          if (key) otherwise = { phraseKey: key, span: lineSpan(line) };
           else this.diagnostics.error('parse.action-otherwise', 'Expected a phrase key after `otherwise refuse`.', oc.restSpan());
         }
       } else if (word === 'phrases') {
@@ -1438,13 +1437,14 @@ class Parser {
    */
   private parseMustLine(line: Line): MustRequirement | null {
     const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
-    if (colonIndex === -1 || colonIndex !== line.tokens.length - 2) {
+    if (colonIndex === -1 || colonIndex >= line.tokens.length - 1) {
       this.diagnostics.error('parse.must', 'Expected `<subject> must <predicate>: <phrase-key>`.', lineSpan(line));
       return null;
     }
-    const keyTok = line.tokens[colonIndex + 1];
-    if (keyTok.kind !== 'word') {
-      this.diagnostics.error('parse.must', 'Expected a phrase key after the colon in the `must` requirement.', keyTok.span);
+    const keyCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
+    const phraseKey = this.readDottedKey(keyCursor); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+    if (!phraseKey || !keyCursor.atEnd()) {
+      this.diagnostics.error('parse.must', 'Expected a phrase key after the colon in the `must` requirement.', line.tokens[colonIndex + 1].span);
       return null;
     }
     const c = new Cursor(line.tokens.slice(0, colonIndex), line);
@@ -1461,7 +1461,7 @@ class Parser {
     }
     const predicate = this.parseInfinitivePredicate(c, line);
     if (!predicate) return null;
-    return { kind: 'must', subject, predicate, phraseKey: keyTok.text, span: lineSpan(line) };
+    return { kind: 'must', subject, predicate, phraseKey, span: lineSpan(line) };
   }
 
   /** Infinitive predicate after `must`: be / have / hold / wear / see / reach. */
@@ -1600,27 +1600,32 @@ class Parser {
     if (form === 'without') {
       const slot = c.next();
       const colon = c.next();
-      const key = c.next();
-      if (!slot || slot.kind !== 'word' || !colon || colon.kind !== 'colon' || !key || key.kind !== 'word') {
+      if (!slot || slot.kind !== 'word' || !colon || colon.kind !== 'colon') {
         this.diagnostics.error('parse.action-refusal', 'Expected `refuse without <slot>: <phrase-key>`.', lineSpan(line));
         return null;
       }
-      return { kind: 'without', slot: slot.text, condition: null, phraseKey: key.text, span: lineSpan(line) };
+      const key = this.readDottedKey(c); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+      if (!key) {
+        this.diagnostics.error('parse.action-refusal', 'Expected `refuse without <slot>: <phrase-key>`.', lineSpan(line));
+        return null;
+      }
+      return { kind: 'without', slot: slot.text, condition: null, phraseKey: key, span: lineSpan(line) };
     }
     // when: condition runs to the LAST colon; the key follows it.
     const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
-    if (colonIndex === -1 || colonIndex !== line.tokens.length - 2) {
+    if (colonIndex === -1 || colonIndex >= line.tokens.length - 1) {
       this.diagnostics.error('parse.action-refusal', 'Expected `refuse when <condition>: <phrase-key>`.', lineSpan(line));
       return null;
     }
     const condCursor = new Cursor(line.tokens.slice(2, colonIndex), line);
     const condition = this.parseCondition(condCursor, line);
-    const key = line.tokens[colonIndex + 1];
-    if (!key || key.kind !== 'word') {
+    const keyCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
+    const key = this.readDottedKey(keyCursor); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+    if (!key || !keyCursor.atEnd()) {
       this.diagnostics.error('parse.action-refusal', 'Expected a phrase key after the colon.', lineSpan(line));
       return null;
     }
-    return { kind: 'when', slot: null, condition, phraseKey: key.text, span: lineSpan(line) };
+    return { kind: 'when', slot: null, condition, phraseKey: key, span: lineSpan(line) };
   }
 
   /** `define behavior <name> from "<module>"` — CapabilityBehavior hatch. */
@@ -2029,18 +2034,19 @@ class Parser {
   /** `refuse when <condition>: <key>` as a body statement (prohibition, D6). */
   private parseRefuseWhenStatement(line: Line): Statement | null {
     const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
-    if (colonIndex === -1 || colonIndex !== line.tokens.length - 2) {
+    if (colonIndex === -1 || colonIndex >= line.tokens.length - 1) {
       this.diagnostics.error('parse.refuse-when', 'Expected `refuse when <condition>: <phrase-key>`.', lineSpan(line));
       return null;
     }
-    const keyTok = line.tokens[colonIndex + 1];
-    if (keyTok.kind !== 'word') {
-      this.diagnostics.error('parse.refuse-when', 'Expected a phrase key after the colon.', keyTok.span);
+    const keyCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
+    const key = this.readDottedKey(keyCursor); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+    if (!key || !keyCursor.atEnd()) {
+      this.diagnostics.error('parse.refuse-when', 'Expected a phrase key after the colon.', line.tokens[colonIndex + 1].span);
       return null;
     }
     const condCursor = new Cursor(line.tokens.slice(2, colonIndex), line);
     const condition = this.parseCondition(condCursor, line);
-    return { kind: 'refuse-when', condition, phraseKey: keyTok.text, span: lineSpan(line) };
+    return { kind: 'refuse-when', condition, phraseKey: key, span: lineSpan(line) };
   }
 
   /** `refuse`/`must` inside an `after` clause — reactions cannot refuse (D3). */

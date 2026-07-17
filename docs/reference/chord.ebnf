@@ -99,7 +99,7 @@ create-line  = "aka" alias { "," alias } NL
                                                               consecutive bare paragraphs
                                                               append *)
 
-phrase-override = "phrase" WORD
+phrase-override = "phrase" phrase-key
                   [ "," STRATEGY ] [ "while" condition ] ":" NL
                   variant { "or" NL variant } ;
                   (* `or` stands alone at the header's indent; repeating
@@ -125,14 +125,14 @@ DIRECTION    = "north" | "south" | "east" | "west"
 (* ---- define ------------------------------------------------------------ *)
 
 define-condition = "define" "condition" WORD ":" condition NL ;
-define-phrase    = "define" "phrase" WORD [ "," ( STRATEGY | "verbatim" ) ]
+define-phrase    = "define" "phrase" phrase-key [ "," ( STRATEGY | "verbatim" ) ]
                    [ "while" condition ] NL                (* CP1' trailing gate *)
                    variant { "or" NL variant } "end" "phrase" NL ;
                    (* verbatim: single variant, line structure + relative
                       indentation preserved; no strategies, no "or" variants *)
 variant          = prose-paragraph ;
 define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
-phrase-entry     = WORD ":" NL prose-paragraph ;           (* prose block only *)
+phrase-entry     = phrase-key ":" NL prose-paragraph ;     (* prose block only *)
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
 pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; "br" reserved *)
@@ -165,9 +165,9 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
                | must-line                                 (* D6 requirement (has colon) *)
                | score-line
-               | "refuse" "without" WORD ":" WORD NL
-               | "refuse" "when" condition ":" WORD NL
-               | "otherwise" "refuse" WORD NL              (* dispatch miss *)
+               | "refuse" "without" WORD ":" phrase-key NL
+               | "refuse" "when" condition ":" phrase-key NL
+               | "otherwise" "refuse" phrase-key NL        (* dispatch miss *)
                | "phrases" LOCALE NL >>> { phrase-entry }
                | statement ;
 pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ; (* → = cardinality *)
@@ -188,7 +188,7 @@ step-anchor    = "at" "turn" NUMBER                        (* absolute from stor
    stays prose. `must not …` and `must be no <name>` are parse errors —
    prohibitions use `refuse when <condition>: <key>`. *)
 
-must-line    = must-subject "must" infinitive ":" WORD NL ;
+must-line    = must-subject "must" infinitive ":" phrase-key NL ;
 must-subject = value-expr ;
 infinitive   = "be" ( ( "a" | "an" ) WORD { WORD }         (* is-a *)
                     | "in" name                            (* is-in *)
@@ -202,7 +202,7 @@ infinitive   = "be" ( ( "a" | "an" ) WORD { WORD }         (* is-a *)
 (* ---- Statements --------------------------------------------------------- *)
 
 statement    = "refuse" phrase-key { param } NL            (* not in `after` bodies *)
-             | "refuse" "when" condition ":" WORD NL       (* prohibition; not in `after` *)
+             | "refuse" "when" condition ":" phrase-key NL (* prohibition; not in `after` *)
              | must-line                                   (* not in `after` *)
              | "phrase" phrase-key { param } [ stmt-when ] NL [ inline-prose ]
              | "emit" WORD { WORD } [ stmt-when ] NL
