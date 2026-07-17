@@ -57,6 +57,19 @@
 - Phase 8 (D5): chord parser consumes dotted phrase-key segments; story-wide platform-message overrides live; regression test.
 - Phase 9: lockable-with-key 3-bug fix (container pre-add removed, generalized pending-entity-ref name→world-id resolution shared with tools, requiredKey→keyId at 3 TS sites) + REAL-PATH keyed-container unlock test; pulling lang rewritten to actual ids (dead lever_/cord_ vocabulary deleted, no story used it); restarting lang file created; feels_cold/feels_rough removed (golden updated). Two clean chain runs.
 
+## Phase 10 + release + phrasebook (2026-07-17)
+- Phase 10 COMPLETE (4540c770): chord-language.md §4.7 Death + dotted keys + cuttable/diggable/carries; stdlib-reference truth pass (8 stale callouts removed, new actions added); both site pages re-rendered. ALL 10 PLAN PHASES COMPLETE; pushed.
+- David released **3.1.0** (all 30 tsf-managed packages, lockstep; publish boundary = ts-forge.config.json projects list). Site badge bumped 3.0→3.1.
+- NEW: **stdlib-phrasebook** (docs/reference/stdlib-phrasebook.md → site/stdlib-phrasebook.html, sidebar-linked): 8 category tables (49 actions), 17 fixture-backed worked examples (story scene + transcript pairs), verify harness replays 68/68 commands byte-identically (docs/work/stdlib-phrasebook/verify.mjs; one anyOf gate for throwing RNG).
+
+## PLATFORM GAPS surfaced by phrasebook verification (for David, next session)
+1. **Chord custom refusals on standard actions render BLANK** (bare key prefixed into unregistered id by stdlib blocked(); affects shipped stdlib-reference §2 iron-ring example + chord hive-box fixture; dotted-key workaround covers only ~8 actions; giving/showing/throwing/attacking/wearing always prefix; conditional refusals reject dotted keys at parse). ADR-worthy — touches ADR-229 R1 spirit.
+2. wearing not_wearable/already_wearing + giving self render blank (unbound template param).
+3. Parser: article+multiword name (`x the brass key`) misses without alias.
+4. `get in/into X` loses to taking's `get :item`; `get out` misparses.
+5. Ask/tell topics must be in-scope entities (free text → "can't see any such thing").
+6. No `starts locked` in Chord; container-kind vs adjective `openable` default open/closed inconsistency.
+7. Throwing uses raw Math.random outside the seeded stream.
+
 ## Open items
-- Phase 10 (docs refresh: chord-language.md death/phrase-key/cuttable/diggable/carries + stdlib-reference truth pass + site re-render) — delegated to agent, in progress.
 - Parked/flagged for future: dungeo dig→platform consolidation (R4-style, own item); chain RNG-death flake-rate investigation; vitest src-alias-vs-dist resolution oddity in stdlib tests; version bump to un-block repokit verify.

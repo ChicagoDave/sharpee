@@ -27,6 +27,7 @@
       link('chord.html', 'The Chord Language') +
       link('chord-reference.html', 'Chord Reference') +
       link('stdlib-reference.html', 'Standard Library') +
+      link('stdlib-phrasebook.html', 'Phrasebook') +
       '<hr>' +
       link('cloak-of-darkness.html', 'Cloak of Darkness') +
       sidebarLink('family-zoo.html', 'Family Zoo') +

@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Standard Library Phrasebook — Sharpee</title>
+  <meta name="description" content="The phrasebook companion to Sharpee's standard library reference: every action's phrasings, traits, and refusal keys, with fixture-verified worked examples in story context.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+  <main class="content">
+    <h1>The Sharpee Standard Library — Phrasebook</h1>
+    <p>A table-first companion to the standard library reference (<code>stdlib-reference.md</code>): every standard action's phrasings, the trait that makes an entity eligible, and the refusal keys it speaks — then, for the actions you will reach for most, a worked example in story context: the Chord <code>.story</code> scene an author writes, and the transcript a player sees.</p>
+    <h2>How to read this</h2>
+    <p>Each category opens with a table: the action, the phrasings that actually parse (grounded in the parser's grammar, not the help lists), what an entity <strong>needs</strong> to be eligible, and the message keys the action <strong>refuses with</strong>. Refusal keys prefix as <code>if.action.&lt;action&gt;.&lt;key&gt;</code> — they are IDs, not fixed text; <code>stdlib-reference.md</code> §1.4 explains how a story retargets them. Success keys, events, and the full check order live in the corresponding <code>stdlib-reference.md</code> entry; this document is the quick lookup and the gallery.</p>
+    <p>Below each table, the worked examples come in pairs — <em>the author writes</em> a small scene, <em>the player sees</em> a few commands against it, always including at least one refusal and one success. <code>&lt;direction&gt;</code> in a phrasing means any of the twelve direction words (<code>north</code>/<code>n</code> … <code>up</code>/<code>u</code>, <code>in</code>, <code>out</code>).</p>
+    <p>Two authoring notes that recur in the examples:</p>
+    <ul>
+      <li>Give every multiword entity an <code>aka</code> alias. Besides being kind to players, it is currently what makes the article form parse — with no alias, <code>x the iron key</code> misses while <code>x iron key</code> hits.
+    </li>
+      <li>Where an example carries a custom refusal on a <em>standard</em> action, its phrase is declared under the fully-qualified dotted key (`define phrase if.action.taking.ring-fused<code>) and named in full by </code>refuse`. That is the form that renders today: the short form (<code>refuse ring-fused</code> with a local phrase) blocks the action but currently prints no text, and a handful of actions (giving, showing, throwing, wearing among them) don't render custom refusal keys at all — platform note, under review. Refusals inside a <code>define action</code> (see turning, §6) are free of all this: short keys render fine on the dispatch path.
+    </li>
+    </ul>
+    <h2>1. Manipulation</h2>
+    <p>Moving things by hand — and by mouth. <code>stdlib-reference.md</code> §2 (and §8.3 for eating/drinking) carries the full entries.</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>take</strong></td><td><code>take</code>/<code>get</code>/<code>grab</code>/<code>acquire</code>/<code>collect X</code> · <code>take up X</code> · <code>pick up X</code> · <code>take all</code> / <code>take X and Y</code> / <code>take all but X</code></td><td>anything portable (scenery blocks)</td><td><code>fixed_in_place</code>, <code>already_have</code>, <code>cant_take_self</code>, <code>cant_take_room</code>, <code>container_full</code>, <code>too_heavy</code>, <code>nothing_to_take</code></td></tr>
+        <tr><td><strong>drop</strong></td><td><code>drop</code>/<code>discard</code>/<code>release X</code> · <code>put down X</code> · <code>throw away X</code> · <code>let go of X</code> · <code>drop all</code></td><td>a held item</td><td><code>not_held</code>, <code>still_worn</code>, <code>container_full</code>, <code>cant_drop_here</code>, <code>nothing_to_drop</code></td></tr>
+        <tr><td><strong>put (on)</strong></td><td><code>put</code>/<code>place X on</code>/<code>onto Y</code> · <code>hang X on Y</code> · <code>move X to Y</code></td><td>destination: <code>a supporter</code></td><td><code>no_destination</code>, <code>not_surface</code>, <code>cant_put_on_itself</code>, <code>already_there</code>, <code>no_space</code></td></tr>
+        <tr><td><strong>insert</strong></td><td><code>put</code>/<code>place X in</code>/<code>into</code>/<code>inside Y</code> · <code>insert X in</code>/<code>into Y</code></td><td>destination: <code>a container</code></td><td><code>not_container</code>, <code>container_closed</code>, <code>cant_put_in_itself</code>, <code>already_there</code>, <code>no_room</code></td></tr>
+        <tr><td><strong>remove (from)</strong></td><td><code>remove</code>/<code>extract X from Y</code> · <code>take X from Y [with</code>/<code>using Z]</code></td><td>a container or supporter source</td><td><code>no_source</code>, <code>not_in_container</code>, <code>not_on_surface</code>, <code>container_closed</code>, <code>already_have</code>, <code>nothing_to_remove</code></td></tr>
+        <tr><td><strong>push</strong></td><td><code>push</code>/<code>press</code>/<code>shove</code>/<code>move X</code> · <code>move X &lt;direction&gt;</code></td><td><code>pushable</code></td><td><code>fixed_in_place</code>, <code>pushing_does_nothing</code>, <code>wont_budge</code>, <code>too_heavy</code></td></tr>
+        <tr><td><strong>pull</strong></td><td><code>pull</code>/<code>drag</code>/<code>yank</code>/<code>tug X</code></td><td><code>pullable</code></td><td><code>cant_pull_that</code>, <code>already_pulled</code>, <code>worn</code></td></tr>
+        <tr><td><strong>lower</strong></td><td><code>lower X</code></td><td>a capability behavior (ADR-090)</td><td><code>cant_lower_that</code></td></tr>
+        <tr><td><strong>raise</strong></td><td><code>raise</code>/<code>lift X</code></td><td>a capability behavior (ADR-090)</td><td><code>cant_raise_that</code></td></tr>
+        <tr><td><strong>eat</strong></td><td><code>eat</code>/<code>consume</code>/<code>devour</code>/<code>munch</code>/<code>nibble X</code> · <code>munch</code>/<code>nibble on X</code></td><td><code>edible</code></td><td><code>not_edible</code>, <code>is_drink</code>, <code>already_consumed</code></td></tr>
+        <tr><td><strong>drink</strong></td><td><code>drink</code>/<code>sip</code>/<code>quaff</code>/<code>swallow</code>/<code>imbibe X</code> · <code>drink</code>/<code>sip from X</code></td><td><code>edible</code> liquid, or a liquid container (TypeScript today)</td><td><code>not_drinkable</code>, <code>already_consumed</code>, <code>container_closed</code></td></tr>
+      </tbody>
+    </table>
+    <h3>taking and dropping</h3>
+    <p>Anything is takeable unless something says otherwise. The two classic "otherwise"s: the <code>scenery</code> trait, which refuses with the platform's <code>fixed_in_place</code>, and an <code>on taking it</code> guard, which refuses with the entity's own words.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Lamp Room
+  a room
+
+  Shelves of unlit lamps line every wall.
+
+create the brass lantern
+  aka lantern
+  in the Lamp Room
+
+  A dented brass lantern with a wire handle.
+
+create the marble statue
+  aka statue
+  scenery
+  in the Lamp Room
+
+  A blank-eyed statue, far too heavy to move.
+
+create the iron ring
+  aka ring
+  scenery
+  in the Lamp Room
+
+  A ring set into the floor slab.
+
+  on taking it
+    refuse if.action.taking.ring-fused
+  end on
+
+create the player
+  starts in the Lamp Room
+
+define phrase if.action.taking.ring-fused
+  The ring is fused to the slab; your fingers just slip off it.
+end phrase</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; take the statue
+The marble statue is fixed in place.
+
+&gt; take the ring
+The ring is fused to the slab; your fingers just slip off it.
+
+&gt; take the lantern
+Taken.
+
+&gt; drop the lantern
+Dropped.</code></pre>
+    <h3>putting and inserting</h3>
+    <p><code>put X on Y</code> needs a supporter; <code>put X in Y</code> (which parses as inserting) needs a container — and an openable container must be open. Neither requires the item in hand: putting performs the take for you.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Kitchen
+  a room
+
+  A stone-flagged kitchen, warm from the oven.
+
+create the breadbox
+  a container, openable
+  in the Kitchen
+
+  A rolltop breadbox of waxed pine.
+
+create the kitchen table
+  aka table
+  a supporter
+  scenery
+  in the Kitchen
+
+  A long oak table, scrubbed pale.
+
+create the loaf
+  in the Kitchen
+
+  A round loaf, still warm.
+
+create the carving knife
+  aka knife
+  in the Kitchen
+
+  A carving knife with a worn horn handle.
+
+create the player
+  starts in the Kitchen</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; put the loaf in the breadbox
+(first taking the loaf)
+
+Taken.
+
+You put the loaf in the breadbox.
+
+&gt; close the breadbox
+You close the breadbox.
+
+&gt; insert the knife in the breadbox
+The breadbox is closed.
+
+&gt; put the knife on the table
+You put the carving knife on the kitchen table.</code></pre>
+    <p>(A Chord <code>a container, openable</code> starts <strong>open</strong>; a plain thing composed with the <code>openable</code> adjective starts closed — which is why the transcript closes the breadbox itself before showing the refusal.)</p>
+    <h2>2. Movement</h2>
+    <p>Getting an actor from place to place. Full entries: <code>stdlib-reference.md</code> §3 (hiding: §8.4).</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>go</strong></td><td><code>&lt;direction&gt;</code> · <code>go</code>/<code>walk</code>/<code>run</code>/<code>head</code>/<code>travel &lt;direction&gt;</code></td><td>a room exit that way</td><td><code>no_exit_that_way</code>, <code>movement_blocked</code>, <code>door_closed</code>, <code>door_locked</code>, <code>not_in_room</code>, <code>no_exits</code></td></tr>
+        <tr><td><strong>enter</strong></td><td><code>enter X</code> · <code>get in</code>/<code>into X</code> · <code>climb in</code>/<code>into X</code> · <code>go in</code>/<code>into X</code> · <code>board X</code> · <code>get on X</code></td><td><code>enterable</code></td><td><code>container_closed</code>, <code>already_inside</code>, <code>not_enterable</code></td></tr>
+        <tr><td><strong>exit</strong></td><td><code>exit</code> · <code>leave</code> · <code>get out</code> · <code>go out</code> · <code>climb out</code> · <code>disembark</code> · <code>alight</code></td><td>being inside or on something</td><td><code>already_outside</code>, <code>container_closed</code>, <code>nowhere_to_go</code></td></tr>
+        <tr><td><strong>climb</strong></td><td><code>climb [up</code>/<code>down] X</code> · <code>scale</code>/<code>ascend</code>/<code>descend X</code></td><td><code>climbable</code></td><td><code>not_climbable</code>, <code>already_there</code>, <code>cant_go_that_way</code></td></tr>
+        <tr><td><strong>hide</strong></td><td><code>hide</code>/<code>duck</code>/<code>crouch behind</code>/<code>under X</code> · <code>hide [in</code>/<code>inside</code>/<code>on] X</code></td><td><code>concealment</code> (TypeScript today)</td><td><code>cant_hide_there</code></td></tr>
+        <tr><td><strong>reveal</strong></td><td><code>stand up</code> · <code>come out</code> · <code>unhide</code> · <code>stop hiding</code></td><td>being hidden</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <h3>going</h3>
+    <p>Exits are lines in the room's <code>create</code> block; a blocked exit speaks the story's own phrase. <code>go north</code> and the <code>walk</code>/<code>run</code>/<code>head</code>/<code>travel</code> synonyms all parse since ADR-230 — as does the bare direction, which is what players actually type.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Meadow
+  a room
+  north to the Orchard
+  east is blocked: hedge-thick
+
+  Knee-high grass, and a dark hedge along the eastern edge.
+
+create the Orchard
+  a room
+  south to the Meadow
+
+  Apple trees in crooked rows.
+
+create the player
+  starts in the Meadow
+
+define phrases en-US
+  hedge-thick:
+    The hedge is a wall of blackthorn. Not that way.</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; east
+The hedge is a wall of blackthorn. Not that way.
+
+&gt; go north
+Orchard
+Apple trees in crooked rows.
+
+&gt; walk south
+Meadow
+Knee-high grass, and a dark hedge along the eastern edge.
+
+&gt; west
+You can't go that way.</code></pre>
+    <h3>entering and exiting</h3>
+    <p>One trait — <code>enterable</code> — and the parser will not even match the ENTER patterns against anything else. Compose <code>openable</code> alongside it and a closed door refuses entry with <code>container_closed</code>. (Prefer <code>enter X</code> in play and in tests: the <code>get in</code>/<code>get into</code> forms currently lose to taking's <code>get X</code> when the target is scenery — platform note.)</p>
+    <p>The author writes:</p>
+    <pre><code>create the Carriage House
+  a room
+
+  Straw on the flagstones and one relic of better days.
+
+create the sedan chair
+  aka chair, sedan
+  enterable, openable
+  scenery
+  in the Carriage House
+
+  A gilt sedan chair with a door on the near side.
+
+create the player
+  starts in the Carriage House</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; enter the sedan chair
+The sedan chair is closed.
+
+&gt; open the sedan chair
+You open the sedan chair.
+
+&gt; enter the sedan chair
+You get into the sedan chair.
+
+&gt; exit
+You get out of the sedan chair.</code></pre>
+    <h2>3. Containers &amp; locks</h2>
+    <p>Getting things open, and locked. Full entries: <code>stdlib-reference.md</code> §4.</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>open</strong></td><td><code>open X</code> · <code>open up X</code> · <code>unwrap</code>/<code>uncover X</code> · <code>open X with</code>/<code>using Y</code></td><td><code>openable</code></td><td><code>already_open</code>, <code>locked</code>, <code>no_tool</code>, <code>tool_not_held</code>, <code>wrong_tool</code></td></tr>
+        <tr><td><strong>close</strong></td><td><code>close</code>/<code>shut</code>/<code>cover X</code></td><td><code>openable</code></td><td><code>already_closed</code>, <code>not_closable</code>, <code>prevents_closing</code></td></tr>
+        <tr><td><strong>lock</strong></td><td><code>lock X [with</code>/<code>using Y]</code> · <code>secure X</code></td><td><code>lockable</code></td><td><code>no_key</code>, <code>key_not_held</code>, <code>wrong_key</code>, <code>not_closed</code>, <code>already_locked</code>, <code>not_lockable</code></td></tr>
+        <tr><td><strong>unlock</strong></td><td><code>unlock X [with</code>/<code>using Y]</code> · <code>unsecure X</code></td><td><code>lockable</code></td><td><code>no_key</code>, <code>key_not_held</code>, <code>wrong_key</code>, <code>already_unlocked</code>, <code>not_lockable</code></td></tr>
+      </tbody>
+    </table>
+    <h3>opening, with a tool in the command</h3>
+    <p><code>open X with Y</code> maps onto the standard opening action (ADR-230 D3b), and an explicitly named tool is a consulted command entity — the tool itself can veto the operation. (The trait-side tool <em>requirement</em> — <code>toolId</code>/<code>toolIds</code> on the openable — is TypeScript territory today.)</p>
+    <p>The author writes:</p>
+    <pre><code>create the Cellar
+  a room
+
+  Brick arches, cold air, one bare bulb.
+
+create the shipping crate
+  aka crate
+  openable
+  scenery
+  in the Cellar
+
+  A pine crate. The lid sits loose on top.
+
+create the letter opener
+  aka opener
+
+  Your grandfather's silver letter opener.
+
+  on opening it
+    refuse if.action.opening.opener-precious
+  end on
+
+create the player
+  starts in the Cellar
+  carries the letter opener
+
+define phrase if.action.opening.opener-precious
+  You are not prying anything with your grandfather's letter opener.
+end phrase</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; open the crate with the letter opener
+You are not prying anything with your grandfather's letter opener.
+
+&gt; open the crate
+You open the shipping crate.</code></pre>
+    <h3>locking and unlocking, with a key</h3>
+    <p><code>lockable with key &lt;entity&gt;</code> declares the key contract in one line — forward references are legal. Keyless LOCK on a keyed lock asks for the key; the wrong key refuses; lock state then gates opening. (A Chord lockable starts unlocked — there is no <code>starts locked</code> yet, which is why the transcript locks the box itself first.)</p>
+    <p>The author writes:</p>
+    <pre><code>create the Strong Room
+  a room
+
+  A windowless room with one iron shelf.
+
+create the strongbox
+  a container, openable, lockable with key the brass key
+  in the Strong Room
+
+  A squat strongbox with a bright keyhole.
+
+create the brass key
+  aka key
+  in the Strong Room
+
+  A small brass key.
+
+create the hairpin
+  in the Strong Room
+
+  A sturdy steel hairpin.
+
+create the deed
+  in the strongbox
+
+  A property deed, folded in thirds.
+
+create the player
+  starts in the Strong Room</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; take the brass key
+Taken.
+
+&gt; take the hairpin
+Taken.
+
+&gt; close the strongbox
+You close the strongbox.
+
+&gt; lock the strongbox
+What do you want to lock it with?
+
+&gt; lock the strongbox with the brass key
+You lock the strongbox with the brass key.
+
+&gt; open the strongbox
+The strongbox is locked.
+
+&gt; unlock the strongbox with the hairpin
+The hairpin doesn't fit the strongbox.
+
+&gt; unlock the strongbox with the brass key
+You unlock the strongbox with the brass key.
+
+&gt; open the strongbox
+You open the strongbox.
+
+Inside the strongbox you see deed.</code></pre>
+    <h2>4. Wearing</h2>
+    <p>One trait powers the whole family. Full entries: <code>stdlib-reference.md</code> §5.</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>wear</strong></td><td><code>wear</code>/<code>don</code>/<code>equip X</code> · <code>put on X</code></td><td><code>wearable</code></td><td><code>not_wearable</code>, <code>already_wearing</code>, <code>hands_full</code>, <code>cant_wear_that</code></td></tr>
+        <tr><td><strong>take off</strong></td><td><code>take off X</code> · <code>take X off</code> · <code>remove X</code> · <code>doff</code>/<code>unequip X</code></td><td>a worn item</td><td><code>not_wearing</code>, <code>prevents_removal</code>, <code>cant_remove</code></td></tr>
+      </tbody>
+    </table>
+    <h3>wearing and taking off</h3>
+    <p>You don't have to be holding a garment — wearing takes it first. A worn garment blocks dropping (<code>still_worn</code> lives on the <em>dropping</em> action): take it off, then drop it.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Dressing Room
+  a room
+
+  A tall mirror, a rack, and not much else.
+
+create the velvet cloak
+  aka cloak
+  wearable
+  in the Dressing Room
+
+  A midnight-blue cloak with a silver clasp.
+
+create the anvil
+  in the Dressing Room
+
+  A blacksmith's anvil, inexplicably.
+
+create the player
+  starts in the Dressing Room</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; wear the cloak
+(first taking the velvet cloak)
+
+Taken.
+
+You put on the velvet cloak.
+
+&gt; drop the cloak
+You'll need to take off the velvet cloak first.
+
+&gt; take off the cloak
+You take off the velvet cloak.
+
+&gt; drop the cloak
+Dropped.</code></pre>
+    <h2>5. Senses</h2>
+    <p>How the player perceives the world. Full entries: <code>stdlib-reference.md</code> §6 (touching: §2.6).</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>look</strong></td><td><code>look</code> · <code>l</code> · <code>look around</code></td><td>—</td><td>(<code>room_dark</code> in the dark)</td></tr>
+        <tr><td><strong>examine</strong></td><td><code>examine</code>/<code>x</code>/<code>inspect</code>/<code>check</code>/<code>view</code>/<code>observe X</code> · <code>look [carefully] at X</code></td><td>visibility only</td><td><code>no_target</code>, <code>not_visible</code></td></tr>
+        <tr><td><strong>search</strong></td><td><code>search [X]</code> · <code>look in</code>/<code>inside X</code> · <code>look through X</code> · <code>rummage in</code>/<code>through X</code></td><td>—</td><td><code>container_closed</code></td></tr>
+        <tr><td><strong>read</strong></td><td><code>read</code>/<code>peruse</code>/<code>study X</code></td><td><code>readable</code></td><td><code>not_readable</code>, <code>cannot_read_now</code></td></tr>
+        <tr><td><strong>listen</strong></td><td><code>listen [to X]</code> · <code>hear [X]</code></td><td>—</td><td>(<code>no_sound</code>, <code>silence</code> as the miss)</td></tr>
+        <tr><td><strong>smell</strong></td><td><code>smell</code>/<code>sniff [X]</code></td><td>—</td><td><code>too_far</code> (<code>no_scent</code>, <code>no_particular_scent</code> as the miss)</td></tr>
+        <tr><td><strong>touch</strong></td><td><code>touch</code>/<code>feel</code>/<code>rub</code>/<code>pat</code>/<code>stroke</code>/<code>poke</code>/<code>prod X</code></td><td>reach</td><td><code>not_reachable</code>, <code>not_visible</code></td></tr>
+      </tbody>
+    </table>
+    <h3>examining and searching</h3>
+    <p>Examining is trait-aware — a container reports its open state and contents. Searching is the action that looks <em>inside</em> on purpose, and the one that reveals <code>concealed</code> items; a closed openable refuses first.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Study
+  a room
+
+  Book-lined walls and a smell of pipe smoke.
+
+create the portrait
+  aka painting
+  scenery
+  in the Study
+
+  A stern woman in oils, following you with her eyes.
+
+create the sea chest
+  aka chest
+  a container, openable
+  in the Study
+
+  A brass-bound sea chest.
+
+create the ship's log
+  aka log, logbook
+  in the sea chest
+
+  A salt-stained logbook.
+
+create the player
+  starts in the Study</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; examine the portrait
+A stern woman in oils, following you with her eyes.
+
+&gt; examine the sea chest
+A brass-bound sea chest.
+
+In the sea chest you see a ship's log.
+
+&gt; close the sea chest
+You close the sea chest.
+
+&gt; search the sea chest
+The sea chest is closed.
+
+&gt; open the sea chest
+You open the sea chest.
+
+Inside the sea chest you see ship's log.
+
+&gt; search the sea chest
+In the sea chest you see: a ship's log.</code></pre>
+    <h3>listening and smelling</h3>
+    <p>Pure flavor seams with no preconditions — the platform answers from what things are: a running device hums, food smells like food, and the misses (<code>no_sound</code>, <code>no_scent</code>) are honest rather than errors. Both are favorites for <code>on listening it</code> / <code>on smelling it</code> clauses.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Bakery
+  a room
+
+  Floured counters and a cold brick oven.
+
+create the wireless
+  aka radio
+  switchable
+  in the Bakery
+
+  A walnut-cased wireless set.
+
+create the warm loaf
+  aka loaf, bread
+  edible
+  in the Bakery
+
+  A loaf fresh enough to fog its own crust.
+
+create the player
+  starts in the Bakery</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; listen
+You hear nothing out of the ordinary.
+
+&gt; turn on the wireless
+The wireless hums to life.
+
+&gt; listen to the wireless
+The wireless is making a soft humming sound.
+
+&gt; smell the warm loaf
+The warm loaf smells delicious.
+
+&gt; smell
+You smell food nearby.</code></pre>
+    <h2>6. Devices &amp; tools</h2>
+    <p>Things that switch on and off, and the three verbs whose <em>outcome</em> belongs to the entity: cutting, digging, turning. Full entries: <code>stdlib-reference.md</code> §7, §2.7–2.8.</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>switch on</strong></td><td><code>turn</code>/<code>switch</code>/<code>flip on X</code> · <code>turn X on</code> · <code>activate</code>/<code>start X</code> · <code>power on X</code></td><td><code>switchable</code></td><td><code>already_on</code>, <code>no_power</code>, <code>not_switchable</code></td></tr>
+        <tr><td><strong>switch off</strong></td><td><code>turn</code>/<code>switch</code>/<code>flip off X</code> · <code>turn X off</code> · <code>deactivate</code>/<code>stop X</code> · <code>power off X</code></td><td><code>switchable</code></td><td><code>already_off</code>, <code>not_switchable</code></td></tr>
+        <tr><td><strong>turn</strong></td><td><code>turn</code>/<code>rotate</code>/<code>twist X</code></td><td>per-entity behavior (dispatch)</td><td><code>cant_turn_that</code></td></tr>
+        <tr><td><strong>cut</strong></td><td><code>cut X with</code>/<code>using Y</code> (no bare <code>cut X</code> in core grammar)</td><td><code>cuttable</code> + exactly one cut implementation</td><td><code>not_cuttable</code>, <code>no_tool</code>, <code>tool_not_held</code>, <code>wrong_tool</code></td></tr>
+        <tr><td><strong>dig</strong></td><td><code>dig X with</code>/<code>using Y</code> (no bare <code>dig X</code> in core grammar)</td><td><code>diggable</code> + exactly one dig implementation</td><td><code>not_diggable</code>, <code>no_tool</code>, <code>tool_not_held</code>, <code>wrong_tool</code></td></tr>
+      </tbody>
+    </table>
+    <h3>switching on and off</h3>
+    <p>All forms are parser-gated on <code>switchable</code>. A <code>light-source</code> that switches on in a dark room banishes the darkness and describes the room; switching the sole light off plunges you back.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Parlor
+  a room
+  dark
+
+  Heavy curtains keep the Parlor in permanent dusk. A ceiling fan hangs
+  overhead.
+
+create the brass lamp
+  aka lamp
+  switchable, light-source
+  in the Parlor
+
+  A brass oil lamp converted to electricity.
+
+create the ceiling fan
+  aka fan
+  switchable
+  scenery
+  in the Parlor
+
+  A four-bladed ceiling fan.
+
+create the player
+  starts in the Parlor
+  carries the brass lamp</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; look
+It's pitch dark, and you can't see a thing.
+
+&gt; turn on the lamp
+Parlor
+Heavy curtains keep the Parlor in permanent dusk. A ceiling fan hangs overhead.
+
+The brass lamp switches on, banishing the darkness.
+
+&gt; switch on the lamp
+The brass lamp is already on.
+
+&gt; activate the ceiling fan
+The ceiling fan hums to life.
+
+&gt; power off the lamp
+You switch off the brass lamp, plunging the area into darkness.</code></pre>
+    <h3>cutting</h3>
+    <p>The platform gates eligibility (<code>cuttable</code>) and validates the tool (<code>with tool &lt;entity&gt;</code> — the same contract as lockable keys); the outcome is the entity's own <code>on cutting it</code> clause, and exactly one implementation is required at load. Note there is no bare <code>cut X</code> in the core grammar — the tool is part of the phrasing.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Bell Tower
+  a room
+
+  Dust, bird droppings, and one taut bell rope.
+
+create the bell rope
+  aka rope
+  cuttable with tool the shears
+  scenery
+  in the Bell Tower
+  states: taut, severed
+
+  A rope as thick as your wrist, humming with tension.
+
+  on cutting it
+    change it to severed
+    phrase rope-severed
+  end on
+
+create the shears
+  in the Bell Tower
+
+  Heavy tin shears.
+
+create the butter knife
+  aka knife
+
+  A knife for butter, and butter only.
+
+create the player
+  starts in the Bell Tower
+  carries the butter knife
+
+define phrases en-US
+  rope-severed:
+    The shears bite through strand after strand until the rope parts with
+    a crack. Somewhere above, the bell swings free.</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; cut the rope with the butter knife
+The butter knife won't cut the bell rope.
+
+&gt; take the shears
+Taken.
+
+&gt; cut the rope with the shears
+The shears bite through strand after strand until the rope parts with a crack. Somewhere above, the bell swings free.</code></pre>
+    <h3>digging</h3>
+    <p>The same design as cutting, and the classic use: something buried. The clause is the mutation — here <code>move</code> brings an off-stage entity into play, and <code>, once</code> spends the discovery.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Strand
+  a room
+
+  Wet sand, low tide, and gulls arguing over the wrack line.
+
+create the sandy patch
+  aka sand, patch
+  diggable with tool the spade
+  scenery
+  in the Strand
+
+  A patch of sand a shade darker than the rest.
+
+  on digging it, once
+    move the scarab to the Strand
+    phrase sand-yields
+  end on
+
+create the spade
+  in the Strand
+
+  A short garden spade.
+
+create the scarab
+  aka beetle
+
+  A faience scarab, blue as a kingfisher.
+
+create the seashell
+  aka shell
+
+  A scallop shell, pretty and useless.
+
+create the player
+  starts in the Strand
+  carries the seashell
+
+define phrases en-US
+  sand-yields:
+    Two spadefuls down, the blade rings against something small and hard.
+    You lift out a faience scarab.</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; dig the sand with the seashell
+The seashell won't dig the sandy patch.
+
+&gt; take the spade
+Taken.
+
+&gt; dig the sand with the spade
+Two spadefuls down, the blade rings against something small and hard. You lift out a faience scarab.
+
+&gt; take the scarab
+Taken.</code></pre>
+    <h3>turning (a per-entity verb)</h3>
+    <p><code>turn</code>/<code>rotate</code>/<code>twist X</code> parse out of the box, but the platform refuses to invent what turning <em>means</em> (<code>cant_turn_that</code>, ADR-090). An entity claims the verb through the dispatch-action pattern — a <code>define action</code> owns the verb, a trait's <code>on turning it</code> clause carries the behavior — and everything else falls through to the action's own refusals, which render from plain short keys on this path.</p>
+    <p>The author writes:</p>
+    <pre><code>define action turning
+  grammar
+    turn :target
+    rotate :target
+    twist :target
+  the target must be reachable
+  refuse without target: turn-what
+  otherwise refuse cant-turn
+
+  phrases en-US
+    turn-what:
+      Turn what?
+    cant-turn:
+      That isn't something you can turn.
+
+define trait stiff-valve
+  states, reversible: shut, wide-open
+
+  phrases en-US
+    valve-opened:
+      The wheel gives with a squeal of rust, and water hammers through the
+      pipes below.
+    valve-already-open:
+      It's already open as far as it goes.
+
+  on turning it
+    it must be shut: valve-already-open
+    change it to wide-open
+    phrase valve-opened
+  end on
+end trait
+
+create the Pump Room
+  a room
+
+  Pipes crowd every wall, all of them leading to one bronze valve.
+
+create the bronze valve
+  aka valve, wheel
+  stiff-valve
+  scenery
+  in the Pump Room
+
+  A wheel-valve the size of a dinner plate, painted bronze.
+
+create the workbench
+  aka bench
+  scenery
+  in the Pump Room
+
+  A workbench bolted to the floor.
+
+create the player
+  starts in the Pump Room</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; turn the workbench
+That isn't something you can turn.
+
+&gt; turn the valve
+The wheel gives with a squeal of rust, and water hammers through the pipes below.
+
+&gt; turn the valve
+It's already open as far as it goes.</code></pre>
+    <h2>7. Social</h2>
+    <p>The people a story writes, and the rougher interactions. Full entries: <code>stdlib-reference.md</code> §8 (throwing: §2.5).</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>talk</strong></td><td><code>talk to</code>/<code>with X</code> · <code>speak to</code>/<code>with X</code> · <code>chat with X</code> · <code>converse with X</code></td><td>a person (checked in validate, not the parser)</td><td><code>not_actor</code>, <code>too_far</code>, <code>self</code>, <code>not_available</code></td></tr>
+        <tr><td><strong>ask</strong></td><td><code>ask X about Y</code> · <code>question X about Y</code> · <code>inquire of X about Y</code></td><td>a person; the topic must name something in scope</td><td><code>not_actor</code>, <code>too_far</code>, <code>not_visible</code> (<code>unknown_topic</code> as the default reply)</td></tr>
+        <tr><td><strong>tell</strong></td><td><code>tell X about Y</code> · <code>inform X about Y</code></td><td>a person; topic as above</td><td><code>not_actor</code>, <code>too_far</code>, <code>not_visible</code> (<code>not_interested</code> as the default reply)</td></tr>
+        <tr><td><strong>give</strong></td><td><code>give</code>/<code>hand X to Y</code> · <code>give</code>/<code>hand Y X</code> · <code>offer X to Y</code></td><td>recipient: <code>a person</code></td><td><code>not_actor</code>, <code>self</code>, <code>not_interested</code>, <code>inventory_full</code>, <code>too_heavy</code></td></tr>
+        <tr><td><strong>show</strong></td><td><code>show X to Y</code> · <code>show Y X</code> · <code>display</code>/<code>present X to Y</code></td><td>recipient: <code>a person</code>, same room</td><td><code>not_actor</code>, <code>self</code>, <code>viewer_too_far</code>, <code>not_carrying</code></td></tr>
+        <tr><td><strong>attack</strong></td><td><code>attack</code>/<code>kill</code>/<code>fight</code>/<code>slay</code>/<code>murder</code>/<code>hit</code>/<code>strike</code>/<code>break</code>/<code>smash</code>/<code>destroy X</code> · <code>attack</code>/<code>kill</code>/<code>hit</code>/<code>strike X with</code>/<code>using Y</code></td><td>anything (combat needs <code>combatant</code> + an interceptor)</td><td><code>self</code>, <code>not_reachable</code>, <code>not_holding_weapon</code></td></tr>
+        <tr><td><strong>throw</strong></td><td><code>throw</code>/<code>toss</code>/<code>hurl X at Y</code> · <code>throw</code>/<code>toss</code>/<code>hurl X to Y</code></td><td>a visible target in the room</td><td><code>self</code>, <code>too_heavy</code>, <code>target_not_here</code>, <code>not_holding</code></td></tr>
+      </tbody>
+    </table>
+    <h3>giving and showing</h3>
+    <p>Giving moves the item; showing is purely social. The recipient must be a person — hand something to the furniture and the action tells you so. The default NPC accepts anything; richer reactions are <code>on giving it</code> / <code>on showing it</code> clauses on the item or the recipient.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Gatehouse
+  a room
+
+  A stone arch, a brazier, and one unimpressed sentry.
+
+create the sentry
+  aka guard
+  a person
+  in the Gatehouse
+
+  A sentry in a rain-dark cloak, eyes on the road.
+
+create the brazier
+  scenery
+  in the Gatehouse
+
+  An iron brazier, down to embers.
+
+create the silver medallion
+  aka medallion
+
+  A silver medallion stamped with the garrison's crest.
+
+create the player
+  starts in the Gatehouse
+  carries the silver medallion</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; give the medallion to the brazier
+You can only give things to people.
+
+&gt; show the medallion to the sentry
+You show the silver medallion to the sentry.
+
+&gt; give the medallion to the sentry
+You give the silver medallion to the sentry.</code></pre>
+    <h3>asking and telling</h3>
+    <p>Deliberately minimal (ADR-230): the platform validates the social preconditions and reports an interceptable default — asking's <code>unknown_topic</code>, telling's <code>not_interested</code>. An <code>on asking it</code> clause on the person is where real dialogue hooks in; note the topic slot must name something in scope (<code>ask the hermit about the gull</code> parses; a topic that matches nothing gets the parser's "can't see any such thing").</p>
+    <p>The author writes:</p>
+    <pre><code>create the Hermitage
+  a room
+
+  A driftwood hut above the tide line.
+
+create the hermit
+  a person
+  in the Hermitage
+
+  A weathered hermit mending a net.
+
+  on asking it
+    phrase hermit-answers
+  end on
+
+create the gull
+  aka seagull
+  a person
+  in the Hermitage
+
+  A herring gull with an air of officialdom.
+
+create the player
+  starts in the Hermitage
+
+define phrases en-US
+  hermit-answers:
+    The hermit squints seaward. "Weather's turning. It always is."</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; ask the gull about the hermit
+The gull says, "I don't know anything about that."
+
+&gt; ask the hermit about the gull
+The hermit squints seaward. "Weather's turning. It always is."
+
+&gt; tell the gull about the hermit
+The gull doesn't seem interested.</code></pre>
+    <h3>attacking</h3>
+    <p>Real combat is the <code>combatant</code> trait plus a combat interceptor (TypeScript today — <code>stdlib-reference.md</code> §8.2). What a <code>.story</code> file does have is the reaction seam: an <code>on attacking it</code> clause whose phrase replaces the standard reply.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Training Yard
+  a room
+
+  Packed dirt and a straw dummy on a post.
+
+create the training dummy
+  aka dummy
+  scenery
+  in the Training Yard
+
+  A straw man on a post, much abused.
+
+  on attacking it
+    phrase dummy-thud
+  end on
+
+create the player
+  starts in the Training Yard
+
+define phrases en-US
+  dummy-thud:
+    You catch the dummy square in the chest. It rocks back on its post,
+    then swings around to face you again, unimproved.</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; attack me
+Violence against yourself isn't the answer.
+
+&gt; hit the training dummy
+You catch the dummy square in the chest. It rocks back on its post, then swings around to face you again, unimproved.</code></pre>
+    <h3>throwing</h3>
+    <p>The one dice-rolling action in this document — where a thrown thing lands is probabilistic by design (and per project policy the dice stay live). Thrown at an open container, a hit lands inside; the miss line is the other genuine outcome you may see.</p>
+    <p>The author writes:</p>
+    <pre><code>create the Courtyard
+  a room
+
+  A cobbled courtyard with a rain barrel under the downspout.
+
+create the rain barrel
+  aka barrel
+  a container
+  scenery
+  in the Courtyard
+
+  An open rain barrel, half full.
+
+create the horseshoe
+  in the Courtyard
+
+  A lucky horseshoe. Allegedly.
+
+create the player
+  starts in the Courtyard</code></pre>
+    <p>The player sees:</p>
+    <pre><code>&gt; take the horseshoe
+Taken.
+
+&gt; throw the horseshoe at me
+You can't throw things at yourself.
+
+&gt; throw the horseshoe at the rain barrel
+The horseshoe lands in the rain barrel.</code></pre>
+    <h2>8. Meta</h2>
+    <p>Free with every story; no traits, no interceptors, no worked examples needed. Full entries: <code>stdlib-reference.md</code> §10.</p>
+    <table>
+      <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
+      <tbody>
+        <tr><td><strong>inventory</strong></td><td><code>inventory</code> · <code>inv</code> · <code>i</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>wait</strong></td><td><code>wait</code> · <code>z</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>sleep</strong></td><td><code>sleep</code> · <code>nap</code> · <code>doze</code> · <code>rest</code> · <code>slumber</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>score</strong></td><td><code>score</code> · <code>points</code></td><td>—</td><td><code>no_scoring</code></td></tr>
+        <tr><td><strong>help</strong></td><td><code>help</code> · <code>?</code> · <code>commands</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>about</strong></td><td><code>about</code> · <code>info</code> · <code>credits</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>version</strong></td><td><code>version</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>save</strong></td><td><code>save</code> · <code>save game</code></td><td>a client save hook</td><td><code>save_not_allowed</code>, <code>save_in_progress</code></td></tr>
+        <tr><td><strong>restore</strong></td><td><code>restore</code> · <code>load</code> · <code>load game</code> · <code>restore game</code></td><td>a client restore hook</td><td><code>restore_not_allowed</code>, <code>no_saves</code></td></tr>
+        <tr><td><strong>restart</strong></td><td><code>restart</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>quit</strong></td><td><code>quit</code> · <code>q</code> · <code>exit game</code></td><td>—</td><td>—</td></tr>
+        <tr><td><strong>undo</strong></td><td><code>undo</code></td><td>a prior substantive turn</td><td><code>nothing_to_undo</code>, <code>undo_failed</code></td></tr>
+        <tr><td><strong>again</strong></td><td><code>again</code> · <code>g</code></td><td>a repeatable last command</td><td><code>nothing_to_repeat</code></td></tr>
+      </tbody>
+    </table>
+    <h2>Appendix: what this document leans on</h2>
+    <ul>
+      <li><strong><code>stdlib-reference.md</code></strong> — the full catalog this phrasebook indexes: check order, success keys, events, traits, and the honest platform notes.
+    </li>
+      <li><strong><code>chord-language.md</code></strong> — the <code>.story</code> language the "author writes" halves are written in.
+    </li>
+      <li><strong><code>docs/work/stdlib-phrasebook/</code></strong> — the fixtures and the <code>verify.mjs</code> harness that replays every transcript above against the real engine. If the engine's words change, verification fails and this document gets refreshed — that is the drift protection.
+    </li>
+    </ul>
+  </main>
+
+  <aside id="sidebar" class="sidebar"></aside>
+  <footer id="footer" class="footer"></footer>
+</div>
+
+<script src="components.js"></script>
+<script src="theme.js"></script>
+</body>
+</html>
