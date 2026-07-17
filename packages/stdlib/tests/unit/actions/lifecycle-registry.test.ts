@@ -12,7 +12,7 @@ import { describe, test, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { EnglishParser } from '@sharpee/parser-en-us';
-import EnglishLanguageProvider from '@sharpee/lang-en-us';
+import EnglishLanguageProvider, { englishVerbs } from '@sharpee/lang-en-us';
 import {
   actionLifecycleDescriptors,
   interceptorConsultingActionIds
@@ -149,6 +149,68 @@ describe('grammar reachability gate (ADR-230 D1)', () => {
   test('orphan exceptions stay honest (delete entries as ids gain actions or lose grammar)', () => {
     const stale = [...documentedOrphans].filter(
       (id) => registeredActionIds.has(id) || !coreReachable.has(id)
+    );
+    expect(stale).toEqual([]);
+  });
+
+  /**
+   * D4 verb-reachability (ADR-230): every verb phrase the lang-en-us help
+   * surface declares must lead some core grammar pattern. DEFERRED verbs
+   * belong to actions whose disposition awaits the Phase 6 design-sketch
+   * rulings (turning/using/answering + conversation family) — pins.md.
+   */
+  const deferredDesignVerbs = new Set<string>([
+    'rotate', 'twist', // turning — deferred (Phase 6 sketch)
+    'use', 'utilize', 'employ', // using — deferred
+    'answer', 'respond', 'reply', // answering — deferred
+    'inquire', 'question', // asking is an A1 orphan — conversation family
+    'inform' // telling — conversation family
+  ]);
+
+  /** A verb phrase "leads" a pattern when its first word matches the
+   *  pattern's first token and its remaining words appear in order among
+   *  the pattern's literal tokens — slots may intervene, so split
+   *  phrasals like `put in` match `put :item in|into|inside :container`.
+   *  Alternations expand; `[optional]` tokens are stripped. */
+  const patternLeadsWith = (pattern: string, verbPhrase: string): boolean => {
+    const verbTokens = verbPhrase.split(' ');
+    const patternTokens = pattern.split(' ').filter((t) => !t.startsWith('['));
+    if (patternTokens.length === 0) return false;
+    if (!patternTokens[0].split('|').includes(verbTokens[0])) return false;
+    let cursor = 1;
+    for (const vt of verbTokens.slice(1)) {
+      let found = false;
+      while (cursor < patternTokens.length) {
+        const token = patternTokens[cursor++];
+        if (token.startsWith(':')) continue; // slot — may intervene
+        if (token.split('|').includes(vt)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) return false;
+    }
+    return true;
+  };
+
+  test('every lang-declared verb phrase leads some core grammar pattern', () => {
+    const patterns = new EnglishParser(EnglishLanguageProvider).getGrammarPatterns();
+    const unparsed: string[] = [];
+    for (const definition of englishVerbs) {
+      for (const verb of definition.verbs) {
+        if (deferredDesignVerbs.has(verb)) continue;
+        if (!patterns.some((p) => patternLeadsWith(p, verb))) {
+          unparsed.push(`${verb} (${definition.action})`);
+        }
+      }
+    }
+    expect(unparsed).toEqual([]);
+  });
+
+  test('deferred-design verb exceptions stay honest (delete entries once they parse)', () => {
+    const patterns = new EnglishParser(EnglishLanguageProvider).getGrammarPatterns();
+    const stale = [...deferredDesignVerbs].filter((verb) =>
+      patterns.some((p) => patternLeadsWith(p, verb))
     );
     expect(stale).toEqual([]);
   });

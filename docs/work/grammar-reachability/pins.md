@@ -25,6 +25,11 @@ getReachableActionIds(): Set<string> {
   `createParserWithLanguage` test pattern (`packages/stdlib/tests/test-utils/parser-helpers.ts`).
 - Known possible amendment: Phase 6's verb-level assertion may need pattern-shape data,
   not just ids. If so, that is a recorded amendment to this pin, not a silent addition.
+- **AMENDED (Phase 6, 2026-07-17):** the anticipated need materialized —
+  `getGrammarPatterns(): string[]` (rule pattern source strings) added alongside
+  `getReachableActionIds()`; the D4 gate matches verb phrases as leading literals
+  (slots may intervene, alternations expand). Also: `englishVerbs` is now a named
+  export of lang-en-us (the declared-verb contract the gate consumes).
 
 ## PIN 2 — tool-field shape (OpenableTrait + CuttableTrait, shared verbatim)
 

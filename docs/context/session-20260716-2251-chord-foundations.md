@@ -38,5 +38,15 @@
 - Landed: CuttableTrait/Behavior (+barrels, implementations map), cutting action (descriptor target→tool, registry 33→34, no-mutation execute, dual-surface dispatch), lang cutting.ts, chord catalog `cuttable`, loader case + resolveCuttableTools (name→WORLD id, forward refs) + checkCuttableImplementations post-bind. 11 stdlib tests + 5 loader tests (incl. REAL-PATH: chord story → loader → stdlib cuttingAction → world.getLocation asserted). All 6 package suites green.
 - **DISCOVERY (fix-after candidate): `carries the knife` in a player block compiles SILENTLY and does nothing** — Chord IR has only `wears`; no carries-at-start surface. Silent-accept parse bug candidate + missing feature; needs David ruling (Phase 6 sketch pile or defect list).
 
+## Phase 5 — COMPLETE (committed e8c3e32b)
+- Chain 873/873 clean; mutation-verification clean (1 test fix); Integration Reality Statement produced.
+
+## Phase 6 — implementation COMPLETE (sketch rulings pending)
+- D4 promotion: ~50 aliases incl. verb×direction literal expansion; putting accepts `to`; verbs.ts trims; patterns reconciliation (10 promotions, unclose deleted); verb-reachability gate live (12/12, 11 deferred verbs self-cleaning); PIN 1 amended (getGrammarPatterns, englishVerbs export).
+- BONUS FIX: `go :direction` define was always broken (PropertyConstraint error) — deleted; `go north` works for the first time via literals.
+- Regression caught by parser suite: bare `pick` would beat `pick up` — omitted deliberately.
+- sketches.md (8 areas) AWAITING DAVID: turning/using/answering, conversation family, writing family, digging/taking_with, carries-at-start, 9 unmappable patterns entries.
+- Noted: stdlib vitest resolves parser/lang to dist despite src aliases (rebuild before gate runs); chain RNG-death flake rate ~50% this session — pre-existing, worth its own investigation.
+
 ## Open items
-- Phase 5: bundle rebuild + walkthrough chain pending; mutation-verification pending.
+- Phase 6 sketch rulings (David) → then execute dispositions; Phases 7-10 pending.

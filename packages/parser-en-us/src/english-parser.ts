@@ -1096,6 +1096,18 @@ export class EnglishParser implements Parser {
   }
 
   /**
+   * Source pattern strings of this parser's registered grammar rules
+   * (e.g. `"lock :target with|using :key"`). Consumed by the stdlib
+   * verb-reachability gate (ADR-230 D4 — PIN 1 amendment, 2026-07-17)
+   * to assert every lang-declared verb phrase leads some pattern.
+   *
+   * @returns pattern strings, one per rule
+   */
+  getGrammarPatterns(): string[] {
+    return this.grammarEngine.getRules().map((rule) => rule.pattern);
+  }
+
+  /**
    * Get candidate interpretations for a token
    */
   private getTokenCandidates(word: string): InternalTokenCandidate[] {

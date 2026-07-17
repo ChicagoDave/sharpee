@@ -88,7 +88,9 @@ export const englishVerbs: VerbDefinition[] = [
   // Movement
   {
     action: IFActions.GOING,
-    verbs: ['go', 'move', 'walk', 'run', 'head', 'travel'],
+    // `move` removed (ADR-230 Phase 1 ruling): move is manipulation-only —
+    // `move :target :direction` → pushing, `move :item to :dest` → putting.
+    verbs: ['go', 'walk', 'run', 'head', 'travel'],
     requiresObject: true
   },
   {
@@ -125,7 +127,10 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.SEARCHING,
-    verbs: ['search', 'find', 'locate'],
+    // find/locate removed (ADR-230 Phase 1 ruling): searching is the wrong
+    // semantics for them; a "recall/remind me of" meta action is parked in
+    // docs/work/grammar-reachability/pins.md as a future design.
+    verbs: ['search'],
     requiresObject: true
   },
   {

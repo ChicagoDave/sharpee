@@ -15,6 +15,8 @@ export { EnglishLanguageProvider as LanguageProvider } from './language-provider
 
 // Export types that might be used by consumers
 export type { VerbDefinition } from './data/verbs';
+// The declared-verb contract, consumed by the ADR-230 D4 verb-reachability gate.
+export { englishVerbs } from './data/verbs';
 
 // Export grammar types and constants
 export * from './grammar';

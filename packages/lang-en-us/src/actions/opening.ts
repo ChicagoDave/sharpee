@@ -8,7 +8,7 @@ export const openingLanguage = {
   patterns: [
     'open [something]',
     'open up [something]',
-    'unclose [something]'
+    'open [something] with [something]'
   ],
   
   messages: {

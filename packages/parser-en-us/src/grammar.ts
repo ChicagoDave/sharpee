@@ -29,7 +29,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Scope handled by action validation - tries see/feel/hear/smell cascade
   grammar
     .forAction('if.action.examining')
-    .verbs(['examine', 'x', 'inspect'])
+    .verbs(['examine', 'x', 'inspect', 'check', 'view', 'observe']) // +check/view/observe (ADR-230 D4)
     .pattern(':target')
     .build();
 
@@ -89,7 +89,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Scope handled by action validation; SceneryTrait blocks non-portable items
   grammar
     .forAction('if.action.taking')
-    .verbs(['take', 'get', 'grab'])
+    .verbs(['take', 'get', 'grab', 'acquire', 'collect']) // +acquire/collect (ADR-230 D4; bare `pick` deliberately absent — it would outmatch the `pick up :item` compound)
     .pattern(':item')
     .build();
 
@@ -103,7 +103,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Scope (carried) handled by action validation
   grammar
     .forAction('if.action.dropping')
-    .verbs(['drop', 'discard'])
+    .verbs(['drop', 'discard', 'release']) // +release (ADR-230 D4 patterns reconciliation)
     .pattern(':item')
     .build();
 
@@ -153,14 +153,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Eating (ADR-087: using forAction)
   grammar
     .forAction('if.action.eating')
-    .verbs(['eat', 'consume', 'devour'])
+    .verbs(['eat', 'consume', 'devour', 'munch', 'nibble']) // +munch/nibble (ADR-230 D4 patterns reconciliation)
     .pattern(':item')
     .build();
 
   // Drinking (ADR-087: using forAction)
   grammar
     .forAction('if.action.drinking')
-    .verbs(['drink', 'sip', 'quaff'])
+    .verbs(['drink', 'sip', 'quaff', 'swallow', 'imbibe']) // +swallow/imbibe (ADR-230 D4)
     .pattern(':item')
     .build();
 
@@ -214,13 +214,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .verbs(['inventory', 'inv', 'i'])
     .build();
 
-  // Movement (ADR-087: using forAction with directions)
-  grammar
-    .define('go :direction')
-    .where('direction', { type: 'direction' })
-    .mapsTo('if.action.going')
-    .withPriority(100)
-    .build();
+  // Movement (ADR-087). The old `go :direction` define was DELETED in
+  // ADR-230 Phase 6: a `:direction` slot with a `{ type: 'direction' }`
+  // constraint always failed at runtime ("PropertyConstraint in slot
+  // constraints not yet supported"), so `go north` never worked — the
+  // verb+direction literals in the D4 block below replace it.
 
   // Bare direction commands (ADR-087: consolidated with forAction)
   grammar
@@ -295,7 +293,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .forAction('if.action.pulling')
-    .verbs(['pull', 'drag', 'yank'])
+    .verbs(['pull', 'drag', 'yank', 'tug']) // +tug (ADR-230 D4)
     .pattern(':target')
     .build();
 
@@ -337,10 +335,10 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
-  // Sleeping (ADR-230 D2)
+  // Sleeping (ADR-230 D2; +nap/doze/rest/slumber D4)
   grammar
     .forAction('if.action.sleeping')
-    .verbs(['sleep'])
+    .verbs(['sleep', 'nap', 'doze', 'rest', 'slumber'])
     .build();
 
   // Quitting (ADR-087: using forAction)
@@ -587,7 +585,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Attacking - simple patterns (ADR-087: using forAction)
   grammar
     .forAction('if.action.attacking')
-    .verbs(['attack', 'kill', 'fight', 'slay', 'murder', 'hit', 'strike'])
+    .verbs(['attack', 'kill', 'fight', 'slay', 'murder', 'hit', 'strike', 'break', 'smash', 'destroy']) // +break/smash/destroy (ADR-230 D4)
     .pattern(':target')
     .build();
 
@@ -711,6 +709,128 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .mapsTo('if.action.talking')
     .withPriority(100)
     .build();
+
+  // ==========================================================================
+  // D4 SYNONYM PROMOTION (ADR-230): every verbs.ts synonym parses.
+  // Mechanical aliases of existing actions; phrasal/complex forms use
+  // .define() per the ADR-087 convention.
+  // ==========================================================================
+
+  // going aliases (verbs.ts: walk/run/head/travel; `move` LEFT the going
+  // list — Phase 1 ruling, move is manipulation-only).
+  // Literal expansion per direction alias, exactly like the bare-direction
+  // block below: a `:direction` slot inside .define() does NOT match
+  // direction words (the `go :direction` rule above yields
+  // "PropertyConstraint not yet supported" — pre-existing; bare directions
+  // are what players actually use). These literals also make `go north`
+  // work for the first time.
+  {
+    const directionAliases: Record<string, string[]> = {
+      north: ['north', 'n'],
+      south: ['south', 's'],
+      east: ['east', 'e'],
+      west: ['west', 'w'],
+      northeast: ['northeast', 'ne'],
+      northwest: ['northwest', 'nw'],
+      southeast: ['southeast', 'se'],
+      southwest: ['southwest', 'sw'],
+      up: ['up', 'u'],
+      down: ['down', 'd'],
+      in: ['in', 'inside'],
+      out: ['out', 'outside'],
+    };
+    for (const verb of ['go', 'walk', 'run', 'head', 'travel']) {
+      for (const [canonical, aliases] of Object.entries(directionAliases)) {
+        for (const alias of aliases) {
+          grammar
+            .define(`${verb} ${alias}`)
+            .mapsTo('if.action.going')
+            .withPriority(alias.length === 1 ? 90 : 100)
+            .withDefaultSemantics({ direction: canonical as never })
+            .build();
+        }
+      }
+    }
+    // `move :target <direction>` → pushing (Phase 1 move ruling), same
+    // literal expansion.
+    for (const aliases of Object.values(directionAliases)) {
+      for (const alias of aliases) {
+        grammar
+          .define(`move :target ${alias}`)
+          .mapsTo('if.action.pushing')
+          .withPriority(105)
+          .build();
+      }
+    }
+  }
+
+  // exiting alias
+  grammar.define('go out').mapsTo('if.action.exiting').withPriority(100).build();
+
+  // listening alias (hear)
+  grammar.define('hear').mapsTo('if.action.listening').withPriority(100).build();
+  grammar.define('hear :target').mapsTo('if.action.listening').withPriority(100).build();
+
+  // taking/dropping phrasal aliases
+  grammar.define('take up :item').mapsTo('if.action.taking').withPriority(100).build();
+  grammar.define('throw away :item').mapsTo('if.action.dropping').withPriority(100).build();
+
+  // putting aliases (place; move-to per the Phase 1 move ruling — putting
+  // resolves in/on by destination type when the preposition is `to`)
+  grammar.define('place :item in|into|inside :container').mapsTo('if.action.putting').withPriority(100).build();
+  grammar.define('place :item on|onto :supporter').mapsTo('if.action.putting').withPriority(100).build();
+  // 110 so the to-form outranks pushing's bare `move :target`
+  grammar.define('move :item to :destination').mapsTo('if.action.putting').withPriority(110).build();
+
+  // opening/closing aliases
+  grammar.define('unwrap :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.opening').withPriority(100).build();
+  grammar.define('uncover :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.opening').withPriority(100).build();
+  grammar.define('shut :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.closing').withPriority(100).build();
+  grammar.define('cover :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.closing').withPriority(100).build();
+
+  // locking/unlocking aliases
+  grammar.define('secure :target').mapsTo('if.action.locking').withPriority(100).build();
+  grammar.define('unsecure :target').mapsTo('if.action.unlocking').withPriority(100).build();
+
+  // switching aliases (bare transitive forms — activate/start/deactivate/stop)
+  grammar.define('activate :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_on').withPriority(100).build();
+  grammar.define('start :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_on').withPriority(100).build();
+  grammar.define('deactivate :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_off').withPriority(100).build();
+  grammar.define('stop :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_off').withPriority(100).build();
+
+  // giving/showing aliases
+  grammar.define('hand :item to :recipient').mapsTo('if.action.giving').withPriority(100).build();
+  grammar.define('hand :recipient :item').mapsTo('if.action.giving').withPriority(100).build();
+  grammar.define('display :item to :recipient').mapsTo('if.action.showing').withPriority(100).build();
+  grammar.define('present :item to :recipient').mapsTo('if.action.showing').withPriority(100).build();
+
+  // throwing aliases
+  grammar.define('toss :item at :target').mapsTo('if.action.throwing').withPriority(100).build();
+  grammar.define('toss :item to :recipient').mapsTo('if.action.throwing').withPriority(100).build();
+  grammar.define('hurl :item at :target').mapsTo('if.action.throwing').withPriority(100).build();
+  grammar.define('hurl :item to :recipient').mapsTo('if.action.throwing').withPriority(100).build();
+
+  // patterns-array reconciliation promotions (PIN 4b): phrasal forms the
+  // lang help surface advertises
+  grammar.define('munch on :item').mapsTo('if.action.eating').withPriority(100).build();
+  grammar.define('nibble on :item').mapsTo('if.action.eating').withPriority(100).build();
+  grammar.define('drink from :target').mapsTo('if.action.drinking').withPriority(100).build();
+  grammar.define('sip from :target').mapsTo('if.action.drinking').withPriority(100).build();
+  grammar.define('let go of :item').mapsTo('if.action.dropping').withPriority(100).build();
+  grammar.define('open up :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.opening').withPriority(100).build();
+  grammar.define('power on :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_on').withPriority(100).build();
+  grammar.define('power off :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_off').withPriority(100).build();
+  grammar.define('extract :item from :container').mapsTo('if.action.removing').withPriority(110).build();
+
+  // meta aliases
+  grammar.define('save game').mapsTo('if.action.saving').withPriority(100).build();
+  grammar.define('load').mapsTo('if.action.restoring').withPriority(100).build();
+  grammar.define('load game').mapsTo('if.action.restoring').withPriority(100).build();
+  grammar.define('restore game').mapsTo('if.action.restoring').withPriority(100).build();
+  grammar.define('exit game').mapsTo('if.action.quitting').withPriority(105).build(); // outranks `exit :container`
+  grammar.define('?').mapsTo('if.action.help').withPriority(100).build();
+  grammar.define('commands').mapsTo('if.action.help').withPriority(100).build();
+  grammar.define('points').mapsTo('if.action.scoring').withPriority(100).build();
 
   // Touching/sensory actions (ADR-087: using forAction)
   // Scope handled by action validation

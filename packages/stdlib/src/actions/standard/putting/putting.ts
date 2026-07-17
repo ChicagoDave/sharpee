@@ -109,6 +109,12 @@ function determineTargetPreposition(
   const isContainer = target.has(TraitType.CONTAINER);
   const isSupporter = target.has(TraitType.SUPPORTER);
 
+  // `move X to Y` (ADR-230 D4, Phase 1 move ruling): `to` names no
+  // in/on choice — resolve by destination type like the bare form.
+  if (preposition === 'to') {
+    preposition = undefined;
+  }
+
   if (preposition) {
     // User specified a preposition
     if ((preposition === 'in' || preposition === 'into' || preposition === 'inside') && isContainer) {
