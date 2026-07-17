@@ -301,6 +301,34 @@ describe('Cross-action helper key survives the consuming action', () => {
     // State: the statue went nowhere.
     expect(world.getLocation(statue.id)).toBe(room.id);
   });
+
+  test('TAKING scenery with an authored cantTakeMessage: the story id survives unprefixed', () => {
+    // Regression pin (dungeo frame-after-thief): SceneryTrait's
+    // cantTakeMessage is a story-registered id, fully-qualified as
+    // written — before the producer mark it double-qualified into
+    // 'if.action.taking.dungeo.frame.cant_take' and rendered blank.
+    const { world, room } = setupBasicWorld();
+    const frame = world.createEntity('gilded frame', 'object');
+    frame.add({ type: TraitType.SCENERY, cantTakeMessage: 'story.frame.wall-mounted' });
+    world.moveEntity(frame.id, room.id);
+
+    const context = createRealTestContext(
+      takingAction,
+      world,
+      createCommand(IFActions.TAKING, { entity: frame })
+    );
+    const validation = takingAction.validate(context);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('story.frame.wall-mounted');
+    expect(validation.errorQualified).toBe(true);
+
+    const events = takingAction.blocked(context, validation);
+    const blocked = events.find(e => e.type === 'if.event.take_blocked')!;
+    expect(blocked).toBeDefined();
+    expect((blocked.data as any).messageId).toBe('story.frame.wall-mounted');
+    expect(world.getLocation(frame.id)).toBe(room.id);
+  });
 });
 
 describe('Multi-object provenance (ADR-228 D4 + ADR-231 D1)', () => {

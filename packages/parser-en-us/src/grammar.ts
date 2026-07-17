@@ -3,16 +3,19 @@
  * @description Standard grammar patterns for English interactive fiction
  *
  * Rule Priority Guidelines:
- * - 100+: Semantic rules with trait constraints (e.g., .hasTrait(TraitType.ENTERABLE))
+ * - 100+: Specific/phrasal patterns that must outrank broader ones
  * - 100: Standard patterns
  * - 95: Synonyms/alternatives
  * - 90: Abbreviations
  *
- * Semantic rules should come first to match before fallback patterns.
+ * Parse-time gating: `.where()` scope constraints are the one parse-time
+ * gating mechanism. Trait-based refusal ("that's not something you can
+ * enter/climb/open") lives in each action's validate(), never in grammar —
+ * the former rule-level `.hasTrait()` API was a parse-time no-op and was
+ * deleted (ADR-231 D2a, 2026-07-17).
  */
 
 import { GrammarBuilder } from '@sharpee/if-domain';
-import { TraitType } from '@sharpee/world-model';
 
 /**
  * Define English grammar rules
@@ -172,17 +175,15 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // - "take all but sword" matches "take :item", parser detects exclusion
 
   // Container operations
-  // Scope handled by action validation; traits declare semantic constraints only
+  // Scope and trait-based refusal handled by action validation
   grammar
     .define('put :item in|into|inside :container')
-    .hasTrait('container', TraitType.CONTAINER)
     .mapsTo('if.action.inserting')
     .withPriority(100)
     .build();
 
   grammar
     .define('insert :item in|into :container')
-    .hasTrait('container', TraitType.CONTAINER)
     .mapsTo('if.action.inserting')
     .withPriority(100)
     .build();
@@ -190,7 +191,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Supporter operations (including hanging!)
   grammar
     .define('put :item on|onto :supporter')
-    .hasTrait('supporter', TraitType.SUPPORTER)
     .mapsTo('if.action.putting')
     .withPriority(100)
     .build();
@@ -240,17 +240,15 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .build();
 
   // Opening and closing
-  // Scope handled by action validation; traits declare semantic constraints only
+  // Scope and trait-based refusal handled by action validation
   grammar
     .define('open :door')
-    .hasTrait('door', TraitType.OPENABLE)
     .mapsTo('if.action.opening')
     .withPriority(100)
     .build();
 
   grammar
     .define('close :door')
-    .hasTrait('door', TraitType.OPENABLE)
     .mapsTo('if.action.closing')
     .withPriority(100)
     .build();
@@ -260,26 +258,22 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .forAction('if.action.switching_on')
     .verbs(['turn', 'switch', 'flip'])
     .pattern('on :device')
-    .hasTrait('device', TraitType.SWITCHABLE)
     .build();
 
   grammar
     .forAction('if.action.switching_off')
     .verbs(['turn', 'switch', 'flip'])
     .pattern('off :device')
-    .hasTrait('device', TraitType.SWITCHABLE)
     .build();
 
   // Alternative phrasal verb order: "turn lamp on" / "turn lamp off"
   grammar
     .define('turn :device on')
-    .hasTrait('device', TraitType.SWITCHABLE)
     .mapsTo('if.action.switching_on')
     .build();
 
   grammar
     .define('turn :device off')
-    .hasTrait('device', TraitType.SWITCHABLE)
     .mapsTo('if.action.switching_off')
     .build();
 
@@ -461,26 +455,23 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .build();
 
   // VERB_NOUN_NOUN patterns (Phase 2)
-  // Scope handled by action validation; traits declare semantic constraints only
+  // Scope and trait-based refusal handled by action validation
 
   // Giving
   grammar
     .define('give :item to :recipient')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.giving')
     .withPriority(100)
     .build();
 
   grammar
     .define('give :recipient :item')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.giving')
     .withPriority(95)
     .build(); // Slightly lower priority than explicit "to"
 
   grammar
     .define('offer :item to :recipient')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.giving')
     .withPriority(100)
     .build();
@@ -488,14 +479,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Showing
   grammar
     .define('show :item to :recipient')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.showing')
     .withPriority(100)
     .build();
 
   grammar
     .define('show :recipient :item')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.showing')
     .withPriority(95)
     .build();
@@ -571,7 +560,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('open :container with|using :tool')
     .instrument('tool')
-    .hasTrait('container', TraitType.OPENABLE)
     .mapsTo('if.action.opening')
     .withPriority(110)
     .build();
@@ -636,14 +624,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .define('tell :recipient about :topic')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.telling')
     .withPriority(100)
     .build();
 
   grammar
     .define('ask :recipient about :topic')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
@@ -652,31 +638,29 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // interceptable stubs)
   grammar
     .define('question :recipient about :topic')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
 
   grammar
     .define('inquire of :recipient about :topic')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.asking')
     .withPriority(100)
     .build();
 
   grammar
     .define('inform :recipient about :topic')
-    .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.telling')
     .withPriority(100)
     .build();
 
   // Talking (ADR-229 R3): the core route to if.action.talking — the action
   // was wired for interceptors (ADR-228 Phase 5) but previously reachable
-  // only via story grammar. Deliberately NO hasTrait(ACTOR) constraint:
-  // talking's validate owns not_actor/too_far, so those refusals flow
-  // through blocked() → onBlocked (interceptor-visible) instead of dying
-  // as a parse failure. Story grammar outranks these on priority as usual.
+  // only via story grammar. No parse-time actor gate (the pattern all
+  // trait-gated verbs now follow, ADR-231 D2a): talking's validate owns
+  // not_actor/too_far, so those refusals flow through blocked() →
+  // onBlocked (interceptor-visible) instead of dying as a parse failure.
+  // Story grammar outranks these on priority as usual.
   grammar
     .define('talk to|with :target')
     .mapsTo('if.action.talking')
@@ -774,10 +758,10 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define('move :item to :destination').mapsTo('if.action.putting').withPriority(110).build();
 
   // opening/closing aliases
-  grammar.define('unwrap :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.opening').withPriority(100).build();
-  grammar.define('uncover :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.opening').withPriority(100).build();
-  grammar.define('shut :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.closing').withPriority(100).build();
-  grammar.define('cover :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.closing').withPriority(100).build();
+  grammar.define('unwrap :door').mapsTo('if.action.opening').withPriority(100).build();
+  grammar.define('uncover :door').mapsTo('if.action.opening').withPriority(100).build();
+  grammar.define('shut :door').mapsTo('if.action.closing').withPriority(100).build();
+  grammar.define('cover :door').mapsTo('if.action.closing').withPriority(100).build();
 
   // turning (ADR-230 Phase 6 sketch ruling 1: capability dispatch like
   // lowering/raising). Priority 95 so the switching phrasal forms
@@ -791,10 +775,10 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define('unsecure :target').mapsTo('if.action.unlocking').withPriority(100).build();
 
   // switching aliases (bare transitive forms — activate/start/deactivate/stop)
-  grammar.define('activate :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_on').withPriority(100).build();
-  grammar.define('start :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_on').withPriority(100).build();
-  grammar.define('deactivate :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_off').withPriority(100).build();
-  grammar.define('stop :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_off').withPriority(100).build();
+  grammar.define('activate :device').mapsTo('if.action.switching_on').withPriority(100).build();
+  grammar.define('start :device').mapsTo('if.action.switching_on').withPriority(100).build();
+  grammar.define('deactivate :device').mapsTo('if.action.switching_off').withPriority(100).build();
+  grammar.define('stop :device').mapsTo('if.action.switching_off').withPriority(100).build();
 
   // giving/showing aliases
   grammar.define('hand :item to :recipient').mapsTo('if.action.giving').withPriority(100).build();
@@ -815,9 +799,9 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define('drink from :target').mapsTo('if.action.drinking').withPriority(100).build();
   grammar.define('sip from :target').mapsTo('if.action.drinking').withPriority(100).build();
   grammar.define('let go of :item').mapsTo('if.action.dropping').withPriority(100).build();
-  grammar.define('open up :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.opening').withPriority(100).build();
-  grammar.define('power on :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_on').withPriority(100).build();
-  grammar.define('power off :device').hasTrait('device', TraitType.SWITCHABLE).mapsTo('if.action.switching_off').withPriority(100).build();
+  grammar.define('open up :door').mapsTo('if.action.opening').withPriority(100).build();
+  grammar.define('power on :device').mapsTo('if.action.switching_on').withPriority(100).build();
+  grammar.define('power off :device').mapsTo('if.action.switching_off').withPriority(100).build();
   grammar.define('extract :item from :container').mapsTo('if.action.removing').withPriority(110).build();
 
   // meta aliases
@@ -865,102 +849,91 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   // ============================================================================
   // ENTERING AND EXITING
-  // Scope handled by action validation; traits declare semantic constraints only
+  // Scope and trait-based refusal handled by action validation
   // ============================================================================
 
   // Semantic: enter specific enterable thing (priority 100)
   grammar
     .define('enter :portal')
-    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('get in :portal')
-    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('get into :portal')
-    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('climb in :portal')
-    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('climb into :portal')
-    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
-  // Semantic: climb a climbable object (priority 100) — ADR-218 §1a (ratchet F2).
+  // Climb a climbable object (priority 100) — ADR-218 §1a (ratchet F2).
   // Routes `climb <thing>` and its synonyms to the climbing action's object-climb
-  // path, gated on CLIMBABLE exactly as `enter :portal` is gated on ENTERABLE.
+  // path. [2026-07-17, ADR-231 D2a] This block originally claimed parse-time
+  // CLIMBABLE gating via .hasTrait(); that call was a no-op and has been
+  // deleted — climbing's validate() owns the not_climbable refusal.
   // The prepositional `climb in/into :portal` (entering) and `climb out` (exiting)
   // forms are unaffected — they carry a preposition token these bare forms do not.
   grammar
     .define('climb :target')
-    .hasTrait('target', TraitType.CLIMBABLE)
     .mapsTo('if.action.climbing')
     .withPriority(100)
     .build();
 
   grammar
     .define('climb up :target')
-    .hasTrait('target', TraitType.CLIMBABLE)
     .mapsTo('if.action.climbing')
     .withPriority(100)
     .build();
 
   grammar
     .define('climb down :target')
-    .hasTrait('target', TraitType.CLIMBABLE)
     .mapsTo('if.action.climbing')
     .withPriority(100)
     .build();
 
   grammar
     .define('scale :target')
-    .hasTrait('target', TraitType.CLIMBABLE)
     .mapsTo('if.action.climbing')
     .withPriority(100)
     .build();
 
   grammar
     .define('ascend :target')
-    .hasTrait('target', TraitType.CLIMBABLE)
     .mapsTo('if.action.climbing')
     .withPriority(100)
     .build();
 
   grammar
     .define('descend :target')
-    .hasTrait('target', TraitType.CLIMBABLE)
     .mapsTo('if.action.climbing')
     .withPriority(100)
     .build();
 
   grammar
     .define('go in :portal')
-    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('go into :portal')
-    .hasTrait('portal', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
@@ -993,14 +966,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Vehicle-specific synonyms (map to entering/exiting actions)
   grammar
     .define('board :vehicle')
-    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
 
   grammar
     .define('get on :vehicle')
-    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(100)
     .build();
@@ -1008,7 +979,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Exiting with a target (exit specific container/vehicle)
   grammar
     .define('exit :container')
-    .hasTrait('container', TraitType.ENTERABLE)
     .mapsTo('if.action.exiting')
     .withPriority(100)
     .build();
@@ -1021,14 +991,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
 
   grammar
     .define('disembark :vehicle')
-    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.exiting')
     .withPriority(100)
     .build();
 
   grammar
     .define('get off :vehicle')
-    .hasTrait('vehicle', TraitType.ENTERABLE)
     .mapsTo('if.action.exiting')
     .withPriority(100)
     .build();

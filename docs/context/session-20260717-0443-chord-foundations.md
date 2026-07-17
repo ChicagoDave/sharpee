@@ -37,6 +37,17 @@
 - Latent defects fixed by sweep: multi-object all-fail dropped provenance; inserting delegation double-prefixed putting-interceptor vetoes.
 - Verification: tsc clean; stdlib 1503 green (incl. new adr-231-provenance.test.ts, 8 GREEN-graded pins; 5 obsolete assertions updated); engine 509; lang 405; story-loader 166; phrasebook 68/68; BOTH shipped examples render live (iron-ring, hive-box); chain 873/873 clean on run 2 (run 1 = known pre-existing ~50% grue-death flake, wt-12, no thief/lamp signature, cascade-only failures).
 
+## Phase 3 (D1b) — COMPLETE (committed 42cb9f8d)
+- Dotted keys at 8 chord parser sites (broader than the 4-site estimate: + must-lines, otherwise-refuse, per-entity phrase headers, define-phrase refactor); 7 EBNF site productions aligned. chord 245/245, story-loader 168/168.
+- **NEEDS DAVID RULING**: blocked/deadly EXIT phrase keys still single-token (parser ~605/631, chord.ebnf line 92 deliberately says WORD) — exits weren't in ADR-231 D1's enumerated key sites; 10-minute follow-up if "ALL key sites" is meant literally.
+
+## Phase 4 (D2a) — implementation COMPLETE, verification in progress
+- Audit: 12/13 formerly-'gated' actions have validate() refusals; **exiting DEFECT (pre-existing): targeted forms ignore the direct object** (`exit hairpin` in a basket exits the basket) — needs David ruling, not fixed.
+- Deleted: 49 grammar.ts sites + 1 dungeo boat-grammar site + both builder impls + SlotConstraint.traitFilters; scope-builder .hasTrait/.where untouched. ADR-218 §1a correction appended; grammar header rewritten. PIN 4 held: zero parse-behavior change, all suites green untouched (if-domain 90, parser 248, stdlib 1505).
+- REGRESSION found+fixed during verification (actually Phase 2 fallout — unit transcripts weren't in Phase 2's gate): SceneryTrait cantTakeMessage (authored story id) double-qualified → frame-after-thief blank. Producer marked errorQualified (taking.ts); regression pin added (provenance suite now 11). Third producer class: trait-configured message ids.
+- Chain 873/873 clean; phrasebook 68/68; frame/cyclops/grue transcripts clean individually. Troll-family: all 6 transcripts achieved clean runs (one-good-run); recovery ~40% clean rate, all failures = accepted signature (villain_attack kill → cascade; verified live: unarmed GDT-teleport setup, "Conquering his fears..."). 
+- ATTRIBUTION CAUTION: first baseline comparison was BOGUS (worktree install failed silently → MODULE_NOT_FOUND counted as passes; "baseline 10/10" and "troll doesn't attack in baseline" both artifacts). Proper baseline build running; flake-rate attribution (pre-existing vs ADR-231-worsened) pending its result.
+
 ## Open items
 - Plan not yet written (session-planner next); plain-defect list rides in ADR-231 Consequences.
 - Parked (unchanged from 907f28): chain RNG-death flake investigation; vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.

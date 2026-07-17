@@ -5,7 +5,6 @@
  */
 
 import { GrammarBuilder } from '@sharpee/if-domain';
-import { TraitType } from '@sharpee/world-model';
 import {
   INFLATE_ACTION_ID,
   DEFLATE_ACTION_ID,
@@ -69,7 +68,6 @@ export function registerBoatGrammar(grammar: GrammarBuilder): void {
   // ============================================================
   grammar
     .define('board :target')
-    .hasTrait('target', TraitType.ENTERABLE)
     .mapsTo('if.action.entering')
     .withPriority(150)
     .build();

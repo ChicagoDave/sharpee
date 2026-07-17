@@ -111,10 +111,14 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 
   // Can't take scenery (fixed in place)
   if (noun.has(TraitType.SCENERY)) {
+    // An author-configured cantTakeMessage is a story-registered message
+    // id, fully-qualified as written (ADR-231 D1) — only the stdlib
+    // fallback key takes the action prefix.
     const customMessage = SceneryBehavior.getCantTakeMessage(noun);
     return {
       valid: false,
       error: customMessage || TakingMessages.FIXED_IN_PLACE,
+      errorQualified: customMessage != null,
       params: { item: nounPhraseFor(noun) }
     };
   }

@@ -104,6 +104,16 @@ there is no per-kind enterability config. This keeps the catalog uniform (one
 adjective = one trait, no special cases). Each lands as its own dated
 `chord-grammar-changes.md` ratchet entry with a fixture story.
 
+> **[2026-07-17, ADR-231 D2a — correction]** This section's implementation
+> (grammar.ts's `climb :target` block, ratchet F2) claimed the new rules were
+> parse-time gated on ENTERABLE/CLIMBABLE via rule-level `.hasTrait()`. That
+> claim was wrong: rule-level `.hasTrait()` wrote `SlotConstraint.traitFilters`,
+> which no parser code ever consumed — it was a parse-time no-op and has been
+> deleted. `.where()` scope constraints are the one parse-time gating mechanism;
+> trait-based refusal (not_enterable/not_climbable) lives in the actions'
+> `validate()`, which is where these verbs' refusals always actually came from.
+> The adjectives, traits, and loader mappings above are unaffected.
+
 #### 1b. The liquid model — `drinkable`, `liquid`, and container contents
 
 "Drinkable" is **drink-eligibility**, not liquid-ness (interview, 2026-07-14):

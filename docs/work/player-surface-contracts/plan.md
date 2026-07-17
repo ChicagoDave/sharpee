@@ -73,7 +73,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
 - **Tier**: Large
 - **Budget**: 400
 - **Domain focus**: ADR-228 lifecycle engine (provenance marking), stdlib `blocked()` implementations across all actions (qualification removal), `requireCarriedOrImplicitTake` (fixed_in_place producer fix), engine prose-pipeline renderer (dev-warning), wearing's missing message params (same-file defect, rides here).
-- **Entry state**: Phase 1's PIN D1 confirmed. **Status: CURRENT.**
+- **Entry state**: Phase 1's PIN D1 confirmed. **Status: COMPLETE (2026-07-17, commit b3f2588f — incl. two discoveries: scope.* registration + entity-scoped refusal-key resolution; 4 MV test gaps closed same-phase).**
 - **Deliverable**:
   - The lifecycle engine marks provenance on an interceptor-consultation result per PIN D1's confirmed shape, as it crosses from consultation into the blocked path.
   - Every `blocked()` implementation across stdlib's action directories stops qualifying interceptor-originated errors (checks the PIN D1 discriminant before building `${action.id}.${error}`); action-internal validation errors keep today's qualification. The 8 ad-hoc dotted-key escape sites (asking, closing, cutting, digging, opening, talking, taking, telling) are removed as dead branches once the general provenance check supersedes them.
@@ -91,7 +91,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
 - **Entry state**: Phase 1 confirmed (no new pin needed — `readDottedKey` is an existing, already-correct precedent per ADR-230 Phase 8).
 - **Deliverable**: `parseActionRefusal` (~1018), `parseRefuseWhenStatement` (~1033), and `parsePhrasesBlock` entry parsing (~1058) switch from single-token key reads to `readDottedKey(c)`; `parseDefinePhrase`'s hand-rolled dot-continuation loop is refactored to call the same helper for consistency (optional, do if it doesn't risk the ADR-230 Phase 8 regression coverage). `chord.ebnf` confirmed already states `phrase-key = WORD { "." WORD }` generically — no EBNF change needed, this is a parser-conformance fix; `chord-language.md`'s phrase-key section gets a note (fold into Phase 11's doc pass, not duplicated here).
 - **Exit state**: unit tests on the Chord parser/analyzer assert dotted keys register whole at all 4 sites (IR phrase-key field, not just "no diagnostic"); `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit 42cb9f8d — 8 sites landed incl. must-lines/otherwise-refuse/phrase headers; 7 EBNF productions aligned; exit blocked/deadly keys flagged for David's ruling, not converted)
 
 ### Phase 4: D2a — delete parse-time trait gating (audit + removal)
 - **Tier**: Large
