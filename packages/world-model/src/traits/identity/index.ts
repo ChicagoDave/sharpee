@@ -2,3 +2,4 @@
 
 export * from './identityTrait';
 export * from './identityBehavior';
+export * from './name-vocabulary';

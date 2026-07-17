@@ -830,8 +830,6 @@ export class EnglishParser implements Parser {
 
     // Process slots based on the pattern structure
     for (const [slotName, slotData] of slotEntries) {
-      const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
-
       // Check slot type from the match data (set by grammar engine)
       const slotType = slotData.slotType;
 
@@ -870,15 +868,21 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Build base noun phrase
+      // Build base noun phrase.
+      // ADR-231 D3: leading ARTICLE-tagged tokens are split into the
+      // `articles` field and stripped from text/head/candidates. The
+      // validator restores the full text (articles + text) first when
+      // matching, so proper names beginning with an article-like word
+      // survive.
+      const np = this.splitLeadingArticles(slotData.tokens, tokens, slotData.text);
       const phrase: INounPhrase = {
         tokens: slotData.tokens,
-        text: slotData.text,
-        head: slotTokens[slotTokens.length - 1]?.normalized || slotData.text,
+        text: np.text,
+        head: np.head,
         modifiers: [],
-        articles: [],
+        articles: np.articles,
         determiners: [],
-        candidates: [slotData.text]
+        candidates: [np.text]
       };
 
       // ADR-080 Phase 2: Add multi-object support
@@ -886,29 +890,35 @@ export class EnglishParser implements Parser {
         phrase.isAll = true;
         // Extract excluded items for "all but X" patterns
         if (slotData.excluded && slotData.excluded.length > 0) {
-          excluded = slotData.excluded.map((item) => ({
-            tokens: item.tokens,
-            text: item.text,
-            head: item.text.split(' ').pop() || item.text,
-            modifiers: [],
-            articles: [],
-            determiners: [],
-            candidates: [item.text]
-          }));
+          excluded = slotData.excluded.map((item) => {
+            const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
+            return {
+              tokens: item.tokens,
+              text: itemNp.text,
+              head: itemNp.head,
+              modifiers: [],
+              articles: itemNp.articles,
+              determiners: [],
+              candidates: [itemNp.text]
+            };
+          });
         }
       }
       if (slotData.isList && slotData.items) {
         phrase.isList = true;
-        phrase.items = slotData.items.map((item) => ({
-          tokens: item.tokens,
-          text: item.text,
-          head: item.text.split(' ').pop() || item.text,
-          modifiers: [],
-          articles: [],
-          determiners: [],
-          candidates: [item.text],
-          entityId: item.entityId // ADR-089: preserve pre-resolved entity ID
-        }));
+        phrase.items = slotData.items.map((item) => {
+          const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
+          return {
+            tokens: item.tokens,
+            text: itemNp.text,
+            head: itemNp.head,
+            modifiers: [],
+            articles: itemNp.articles,
+            determiners: [],
+            candidates: [itemNp.text],
+            entityId: item.entityId // ADR-089: preserve pre-resolved entity ID
+          };
+        });
       }
 
       // ADR-089: Copy pre-resolved entity ID from pronoun resolution
@@ -1070,6 +1080,61 @@ export class EnglishParser implements Parser {
     }
 
     return candidate;
+  }
+
+  /**
+   * Split leading ARTICLE-tagged tokens off a consumed noun-phrase span
+   * (ADR-231 D3 defect fix — `INounPhrase.articles` was hardcoded `[]`).
+   *
+   * @param tokenIndices Indices of the consumed span into `tokens`.
+   * @param tokens The full rich-token array for the input.
+   * @param originalText The slot's consumed text (used verbatim when the
+   *   span does not textually reconstruct it, e.g. pronoun-resolved text).
+   * @returns The leading articles, the article-stripped text, and the head
+   *   (last word of the stripped text, normalized). When every token is an
+   *   article, nothing is stripped (the phrase keeps at least one word).
+   */
+  private splitLeadingArticles(
+    tokenIndices: number[],
+    tokens: IToken[],
+    originalText: string
+  ): { articles: string[]; text: string; head: string } {
+    const spanTokens = tokenIndices.map(i => tokens[i]);
+    const fallback = {
+      articles: [] as string[],
+      text: originalText,
+      head: originalText.split(' ').pop() || originalText
+    };
+
+    // Only strip when the span textually reconstructs the slot text —
+    // pronoun-resolved slots carry substituted text ("them" → "brass
+    // lantern") whose tokens don't correspond word-for-word.
+    if (spanTokens.some(t => !t) ||
+        spanTokens.map(t => t.word).join(' ') !== originalText) {
+      return fallback;
+    }
+
+    let start = 0;
+    while (
+      start < spanTokens.length - 1 &&
+      spanTokens[start].partOfSpeech.includes(PartOfSpeech.ARTICLE)
+    ) {
+      start++;
+    }
+    if (start === 0) {
+      return {
+        articles: [],
+        text: originalText,
+        head: spanTokens[spanTokens.length - 1].normalized
+      };
+    }
+
+    const rest = spanTokens.slice(start);
+    return {
+      articles: spanTokens.slice(0, start).map(t => t.normalized),
+      text: rest.map(t => t.word).join(' '),
+      head: rest[rest.length - 1].normalized
+    };
   }
 
   /**

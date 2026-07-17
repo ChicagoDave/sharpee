@@ -48,6 +48,14 @@
 - Chain 873/873 clean; phrasebook 68/68; frame/cyclops/grue transcripts clean individually. Troll-family: all 6 transcripts achieved clean runs (one-good-run); recovery ~40% clean rate, all failures = accepted signature (villain_attack kill → cascade; verified live: unarmed GDT-teleport setup, "Conquering his fears..."). 
 - ATTRIBUTION CAUTION: first baseline comparison was BOGUS (worktree install failed silently → MODULE_NOT_FOUND counted as passes; "baseline 10/10" and "troll doesn't attack in baseline" both artifacts). Proper baseline build running; flake-rate attribution (pre-existing vs ADR-231-worsened) pending its result.
 
+## Phase 5 (D2b) + rulings — COMPLETE (e2a1bbda, 2f3b7fdd)
+- literalSpecificity metric + full ordering (confidence > priority > specificity > registration) incl. fixing english-parser's re-sort that DROPPED priority (pre-existing ordering bug); 11 bumps 100→105. `get in strongbox` → entering refusal, `get out`/`climb out` fixed. Chain clean FIRST run; phrasebook 68/68 byte-identical; parser 255.
+- David rulings executed: exit blocked/deadly dotted keys (parser both sites + EBNF; "ALL key sites" now literal); exiting target-aware (not_in_that/not_on_that, 3 state-asserting tests) — Phase 4 audit defect closed.
+- Suites after both: stdlib 1509, lang 407, chord 246, story-loader 168; chain one good run (re-run; first = death flake).
+
+## ADR-191 amendment (dc3b49bb)
+- David ruled: playground is dual-mode, Chord default. Chord tab = Phase 1 MVP (no wasm — chord compiler + loader in-page, phrasebook fixtures as example library); TS esbuild-wasm design retained as later-phase tab. Status stays PROPOSED (implementation is separate future work, not in the ADR-231 plan).
+
 ## Open items
 - Plan not yet written (session-planner next); plain-defect list rides in ADR-231 Consequences.
 - Parked (unchanged from 907f28): chain RNG-death flake investigation; vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.

@@ -84,8 +84,13 @@ The brochure describes, for the edification of the prospective student, the stri
   // MDL: dung.355:6049-6082
   const stamp = world.createEntity('stamp', EntityType.ITEM);
   stamp.add(new IdentityTrait({
+    // Word-level matching (ADR-231 D3) derives 'stamp'/'woods' from the
+    // name, so bare-word aliases are redundant — and an explicit 'stamp'
+    // alias would tie at EXACT tier with the volcano treasure literally
+    // named 'stamp', forcing disambiguation where the name-holder should
+    // win outright.
+    aliases: ['woods stamp', 'postage stamp', 'commemorative stamp'],
     name: 'Don Woods stamp',
-    aliases: ['stamp', 'woods stamp', 'postage stamp', 'commemorative stamp'],
     description: 'A small commemorative postage stamp depicting a spelunker.',
     properName: false,
     article: 'a',

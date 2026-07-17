@@ -552,25 +552,16 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_visible: string;
-        not_reachable: string;
-        feels_normal: string;
-        feels_warm: string;
-        feels_hot: string;
-        feels_soft: string;
-        feels_hard: string;
-        feels_smooth: string;
-        feels_wet: string;
-        device_vibrating: string;
-        immovable_object: string;
-        liquid_container: string;
-        touched: string;
-        touched_gently: string;
-        poked: string;
-        prodded: string;
-        patted: string;
-        stroked: string;
+        already_outside: string;
+        container_closed: string;
+        cant_exit: string;
+        exited: string;
+        exited_from: string;
+        nowhere_to_go: string;
+        not_in_that: string;
+        not_on_that: string;
+        exit_blocked: string;
+        must_stand_first: string;
     };
     help: {
         description: string;
@@ -954,24 +945,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        already_outside: string;
-        container_closed: string;
-        cant_exit: string;
-        exited: string;
-        exited_from: string;
-        nowhere_to_go: string;
-        exit_blocked: string;
-        must_stand_first: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         no_target: string;
         not_climbable: string;
         cant_go_that_way: string;
@@ -1051,6 +1024,35 @@ export declare const standardActionLanguage: ({
         fresh_scent: string;
         smelled: string;
         smelled_environment: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_visible: string;
+        not_reachable: string;
+        feels_normal: string;
+        feels_warm: string;
+        feels_hot: string;
+        feels_soft: string;
+        feels_hard: string;
+        feels_smooth: string;
+        feels_wet: string;
+        device_vibrating: string;
+        immovable_object: string;
+        liquid_container: string;
+        touched: string;
+        touched_gently: string;
+        poked: string;
+        prodded: string;
+        patted: string;
+        stroked: string;
     };
     help: {
         description: string;

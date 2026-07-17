@@ -2088,33 +2088,61 @@ export declare class CommandValidator implements CommandValidator {
      */
     private resolveEntity;
     /**
-     * Find candidate entities by name, type, or synonym for a given search term.
-     * Returns deduplicated results.
+     * Find candidate entities the noun phrase matches at any tier
+     * (ADR-231 D3). Rooms are skipped; the player IS resolvable here: a
+     * player with an IdentityTrait ("yourself", aliases me/self/myself)
+     * must match "examine me", "x yourself", etc. (ISSUE #154).
      */
-    private findCandidatesByTerm;
+    private findCandidates;
     /**
-     * Get entities by exact name match
+     * Match a noun phrase against one entity's naming surface (ADR-231 D3,
+     * PIN 2's tiered model).
+     *
+     * Tier EXACT: the query text — tried with its leading articles restored
+     * first (so proper names beginning with an article-like word survive),
+     * then as parsed, then article-stripped — equals the full name, a full
+     * alias, or the entity type, case-insensitively.
+     *
+     * Tier WORDS: EVERY query content word (stopwords dropped by
+     * `deriveNameVocabulary`) matches a word of the entity's vocabulary
+     * (name content words + alias content words + authored adjectives).
+     * Any query word matching nothing DISQUALIFIES the candidate:
+     * "x brass sword" never resolves to the brass key.
+     *
+     * @returns The tier and matched-word count, or null when neither
+     *   tier matches.
      */
-    private getEntitiesByName;
+    private matchEntityName;
     /**
-     * Get entities by type
+     * The entity's word-level matching vocabulary (PIN 2): name content
+     * words + alias content words + authored adjectives (per-side for walls
+     * via getEntityAdjectives). Always derived on demand from the CURRENT
+     * name — never stored — so renames can't leave stale vocabulary and
+     * Chord-loaded and TS-authored entities are uniform by construction.
      */
-    private getEntitiesByType;
+    private getEntityVocabulary;
     /**
-     * Get entities by synonym
+     * Strip leading articles ("the", "a", "an") from query text, always
+     * keeping at least one word.
      */
-    private getEntitiesBySynonym;
+    private stripLeadingArticles;
     /**
-     * Get entities by adjective (fallback for "press yellow" style commands)
-     * When no name/alias match exists, find entities where the search term is an adjective
+     * Keep only the dominant (tier, wordsMatched) group of an already-sorted
+     * scored list (PIN 2: higher tier wins; within a tier, more matched
+     * words win; only true ties reach disambiguation).
      */
-    private getEntitiesByAdjective;
+    private dominantMatches;
     /**
      * Filter entities by scope level
      */
     private filterByScope;
     /**
-     * Score entities against a reference
+     * Score entities against a reference (ADR-231 D3 tiered model).
+     *
+     * The tier and matched-word count come from `matchEntityName` and carry
+     * PIN 2's ranking; the numeric `score` is the within-tie heuristic
+     * (modifier/visibility/inventory/author scope priority bonuses) that the
+     * normal disambiguation flow uses to break residual ties.
      */
     private scoreEntities;
     /**

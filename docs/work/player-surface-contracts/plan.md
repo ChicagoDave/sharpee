@@ -104,7 +104,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
   - `docs/architecture/adrs/adr-218-chord-foundations.md` §1a's comments and `packages/parser-en-us/src/grammar.ts`'s file header (line 6, "100+: Semantic rules with trait constraints (e.g., .hasTrait(...))") are corrected to state `.where()` function constraints are the one parse-time gating mechanism.
   - `.where()` constraints are left untouched — they are not part of this deletion.
 - **Exit state**: no `.hasTrait(` occurrences remain in `packages/parser-en-us/src`; every audited action's `validate()` refuses correctly (asserted by tests, not just "didn't throw"); `pnpm --filter '@sharpee/parser-en-us' test` and `pnpm --filter '@sharpee/stdlib' test` green; dungeo walkthrough chain one clean run (RNG death flakes not regressions); phrasebook verify 68/68.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit f56b88fa — zero parse-behavior change per PIN 4; exiting target-blindness defect flagged for ruling; troll-flake attribution grounded via 0aaf30fe baseline worktree)
 
 ### Phase 5: D2b — literal-before-slot confidence rule + priority bumps
 - **Tier**: Medium
@@ -115,7 +115,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
   - The ~10 mechanical priority bumps land first, as defect fixes independent of the confidence-rule logic (the grammar file's own header mandates 100+ for semantic rules — some current entries are below that).
   - A general confidence rule: a rule whose literal tokens consume words outranks a rule whose unconstrained slot swallows the same words (`get in :portal` beats `get :item` for "get in basket" structurally). Per-rule `.withPriority()` remains an explicit override layered on top, not replaced.
 - **Exit state**: `pnpm --filter '@sharpee/parser-en-us' test` green; `pnpm --filter '@sharpee/stdlib' test` green; **full dungeo walkthrough chain** (one clean run, explicit ADR requirement since this re-scores many parses subtly) + unit transcripts green; phrasebook verify 68/68.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit e2a1bbda; also fixed english-parser's re-sort dropping priority. Riders committed 2f3b7fdd per David rulings: exit dotted keys, target-aware exiting)
 
 ### Phase 6: D3 — word-level name vocabulary + scored matching
 - **Tier**: Large

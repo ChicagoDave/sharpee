@@ -107,6 +107,19 @@ export declare class EnglishParser implements Parser {
      */
     private convertGrammarMatch;
     /**
+     * Split leading ARTICLE-tagged tokens off a consumed noun-phrase span
+     * (ADR-231 D3 defect fix — `INounPhrase.articles` was hardcoded `[]`).
+     *
+     * @param tokenIndices Indices of the consumed span into `tokens`.
+     * @param tokens The full rich-token array for the input.
+     * @param originalText The slot's consumed text (used verbatim when the
+     *   span does not textually reconstruct it, e.g. pronoun-resolved text).
+     * @returns The leading articles, the article-stripped text, and the head
+     *   (last word of the stripped text, normalized). When every token is an
+     *   article, nothing is stripped (the phrase keeps at least one word).
+     */
+    private splitLeadingArticles;
+    /**
      * Register story-specific grammar rules
      * @deprecated Use getStoryGrammar() for full API
      */

@@ -310,8 +310,10 @@ describe('Parser Grammar Engine Integration', () => {
       
       expect(result.success).toBe(true);
       if (result.success) {
-        // The structure only contains text strings, not rich objects
-        expect(result.value.structure.directObject?.text).toBe('the golden sword');
+        // ADR-231 D3: the leading article is split into `articles` and
+        // stripped from the noun-phrase text
+        expect(result.value.structure.directObject?.text).toBe('golden sword');
+        expect(result.value.structure.directObject?.articles).toEqual(['the']);
       }
     });
     
