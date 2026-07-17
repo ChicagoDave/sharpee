@@ -42,7 +42,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 // Import our data builders
@@ -528,7 +529,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [context.event('if.event.went', {
       blocked: true,
       reason: result.error,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       actorId: context.player.id
     })];

@@ -19,6 +19,7 @@ import {
 import { ScopeResolver, ScopeLevel } from '../scope/types';
 import { StandardScopeResolver } from '../scope/scope-resolver';
 import { ValidatedCommand } from '../validation/types';
+import { nounPhraseFor } from '../utils';
 
 // Import taking action for implicit takes
 // This is safe from circular dependencies because:
@@ -149,12 +150,17 @@ class InternalActionContext implements ActionContext {
     // Case 3: Reachable but not carried - attempt implicit take
     // Check if entity can be taken (not scenery, room, etc.)
     if (!this.canTake(entity)) {
+      // This is taking's refusal whatever action invoked the helper, so
+      // the key is emitted fully-qualified (ADR-231 D1) — a consuming
+      // action's blocked() must render taking's message, never prefix
+      // the key into its own namespace.
       return {
         ok: false,
         error: {
           valid: false,
-          error: 'fixed_in_place',
-          params: { item: entity.name }
+          error: `${takingAction.id}.fixed_in_place`,
+          errorQualified: true,
+          params: { item: nounPhraseFor(entity) }
         }
       };
     }
@@ -259,31 +265,34 @@ class InternalActionContext implements ActionContext {
     required: ScopeLevel,
     actual: ScopeLevel,
     entity: IFEntity
-  ): { valid: false; error: string; params?: Record<string, any> } {
-    const params = { item: entity.name };
+  ): { valid: false; error: string; errorQualified: true; params?: Record<string, any> } {
+    // The `scope.*` keys are a shared namespace registered once in
+    // lang-en-us (ADR-231 D1) — fully-qualified, so no consuming
+    // action's blocked() may prefix them into its own namespace.
+    const params = { item: nounPhraseFor(entity) };
 
     // If they don't know about it at all
     if (actual === ScopeLevel.UNAWARE) {
-      return { valid: false, error: ScopeErrors.NOT_KNOWN, params };
+      return { valid: false, error: ScopeErrors.NOT_KNOWN, errorQualified: true, params };
     }
 
     // They know about it but can't see it
     if (required >= ScopeLevel.VISIBLE && actual < ScopeLevel.VISIBLE) {
-      return { valid: false, error: ScopeErrors.NOT_VISIBLE, params };
+      return { valid: false, error: ScopeErrors.NOT_VISIBLE, errorQualified: true, params };
     }
 
     // They can see it but can't reach it
     if (required >= ScopeLevel.REACHABLE && actual < ScopeLevel.REACHABLE) {
-      return { valid: false, error: ScopeErrors.NOT_REACHABLE, params };
+      return { valid: false, error: ScopeErrors.NOT_REACHABLE, errorQualified: true, params };
     }
 
     // They need to be carrying it but aren't
     if (required >= ScopeLevel.CARRIED && actual < ScopeLevel.CARRIED) {
-      return { valid: false, error: ScopeErrors.NOT_CARRIED, params };
+      return { valid: false, error: ScopeErrors.NOT_CARRIED, errorQualified: true, params };
     }
 
     // Generic fallback
-    return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, params };
+    return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, errorQualified: true, params };
   }
   
   /**

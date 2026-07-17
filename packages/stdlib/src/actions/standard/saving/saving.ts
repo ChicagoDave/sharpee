@@ -12,6 +12,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent, createSaveRequestedEvent, ISaveContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -154,7 +155,7 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('if.event.save_blocked', {
-      messageId: `if.action.saving.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

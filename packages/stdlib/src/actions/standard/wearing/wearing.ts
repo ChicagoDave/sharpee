@@ -36,7 +36,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -107,7 +108,7 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     if (preVeto) return preVeto;
 
     if (!item.has(TraitType.WEARABLE)) {
-      return { valid: false, error: 'not_wearable' };
+      return { valid: false, error: 'not_wearable', params: { item: nounPhraseFor(item) } };
     }
 
     // Item must be carried (or implicitly takeable)
@@ -120,9 +121,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     if (!WearableBehavior.canWear(item, actor)) {
       const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
       if (wearable.worn) {
-        return { valid: false, error: 'already_wearing' };
+        return { valid: false, error: 'already_wearing', params: { item: nounPhraseFor(item) } };
       }
-      return { valid: false, error: 'cant_wear_that' };
+      return { valid: false, error: 'cant_wear_that', params: { item: nounPhraseFor(item) } };
     }
 
     // Folded execute-phase refusal (ADR-229 R1): a pure read, so it runs
@@ -252,7 +253,7 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
 
     const events: ISemanticEvent[] = [context.event('if.event.wear_blocked', {
       // Rendering data
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       // Domain data
       itemId: item?.id,

@@ -27,7 +27,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -89,8 +90,7 @@ export const askingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    const error = result.error || '';
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
+    const messageId = blockedMessageId(context, result);
 
     const events: ISemanticEvent[] = [
       context.event('if.event.ask_blocked', {

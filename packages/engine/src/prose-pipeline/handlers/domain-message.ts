@@ -77,8 +77,17 @@ export function tryProcessDomainEventMessage(
     if (typeof fallback === 'string' && fallback) {
       return createBlocks(blockKey, fallback);
     }
-    // No inline text — skip silently. Domain events (if.event.*) carry a
-    // messageId for semantic association, not for text rendering.
+    // No inline text — skip silently for result events (domain if.event.*
+    // ids carry semantic association, not text). A BLOCKED event ending
+    // here is different: the player sees nothing where a refusal belongs
+    // (ADR-231 D1 — every historical blank-refusal bug exited on this
+    // path), so it warns instead of vanishing.
+    if (blockKey === BLOCK_KEYS.ACTION_BLOCKED) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[phrase] blocked event "${event.type}" rendered blank: no template registered for "${data.messageId}" and no inline fallback`
+      );
+    }
     return null;
   };
 

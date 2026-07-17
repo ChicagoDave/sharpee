@@ -193,7 +193,11 @@ describe('Implicit Takes (requireCarriedOrImplicitTake)', () => {
 
       expect(result.ok).toBe(false);
       expect(result.error).toBeDefined();
-      expect(result.error!.error).toBe('fixed_in_place');
+      // ADR-231 D1: the helper emits taking's key fully-qualified with
+      // provenance marked, so a consuming action's blocked() never
+      // prefixes it into its own namespace.
+      expect(result.error!.error).toBe('if.action.taking.fixed_in_place');
+      expect(result.error!.errorQualified).toBe(true);
     });
 
     test('should not attempt to take scenery', () => {

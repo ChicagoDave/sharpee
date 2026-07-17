@@ -161,12 +161,37 @@ export function getLifecycleState(context: ActionContext): LifecycleState | unde
 /**
  * D1 veto test: a hook result acts iff it is non-null AND `valid === false`.
  * Everything else — null, `{valid: true}`, any truthy shape — falls through.
+ *
+ * Every veto is marked `errorQualified: true` (ADR-231 D1): an
+ * interceptor-originated error key is a fully-qualified message id —
+ * story-registered keys resolve as the author wrote them — and
+ * `blockedMessageId` must never prefix it with the action id.
  */
 function vetoOf(result: { valid: boolean; error?: string; params?: Record<string, unknown> } | null): ValidationResult | null {
   if (result !== null && result.valid === false) {
-    return { valid: false, error: result.error, params: result.params };
+    return { valid: false, error: result.error, errorQualified: true, params: result.params };
   }
   return null;
+}
+
+/**
+ * Resolve the message id for a blocked action (ADR-231 D1) — the ONE
+ * place the qualification convention lives.
+ *
+ * Interceptor-originated errors (and helper-produced cross-action keys)
+ * carry `errorQualified: true` and pass through untouched; an action's
+ * own validation errors are qualified as `<action.id>.<error>` exactly
+ * as before. `blocked()` implementations call this instead of building
+ * ids by hand; key shape (dots, hyphens) is NOT the discriminator —
+ * provenance is.
+ *
+ * @param context - The action context (supplies the action id).
+ * @param result - The failed validation result carrying the error key.
+ * @returns The message id to emit from `blocked()`.
+ */
+export function blockedMessageId(context: ActionContext, result: ValidationResult): string {
+  const error = result.error ?? 'action_failed';
+  return result.errorQualified === true ? error : `${context.action.id}.${error}`;
 }
 
 /**

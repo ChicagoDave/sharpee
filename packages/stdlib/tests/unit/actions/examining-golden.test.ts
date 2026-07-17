@@ -80,7 +80,9 @@ describe('examiningAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.examined', {
         blocked: true,
-        messageId: 'if.action.examining.scope.not_known',
+        // ADR-231 D1: scope.* keys are a shared registered namespace,
+        // fully-qualified at the producer — never action-prefixed.
+        messageId: 'scope.not_known',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'red ball' })
         })

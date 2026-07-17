@@ -9,6 +9,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, RoomBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
@@ -156,7 +157,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     return [context.event('if.event.looked', {
       blocked: true,
       reason: result.error,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params,
       actorId: context.player.id
     })];

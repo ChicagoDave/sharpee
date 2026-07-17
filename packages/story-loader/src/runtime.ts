@@ -1292,18 +1292,31 @@ export class ChordRuntime {
    */
   private findRefusal(body: IRStatement[], ctx: ExecContext): string | null {
     for (const stmt of body) {
-      if (stmt.kind === 'refuse') return stmt.phraseKey;
+      if (stmt.kind === 'refuse') return this.resolvePhraseKey(stmt.phraseKey, ctx);
       if (stmt.kind === 'must') {
-        if (!this.evaluator.evalCondition(stmt.condition, ctx)) return stmt.phraseKey;
+        if (!this.evaluator.evalCondition(stmt.condition, ctx)) return this.resolvePhraseKey(stmt.phraseKey, ctx);
         continue;
       }
       if (stmt.kind === 'refuse-when') {
-        if (this.evaluator.evalCondition(stmt.condition, ctx)) return stmt.phraseKey;
+        if (this.evaluator.evalCondition(stmt.condition, ctx)) return this.resolvePhraseKey(stmt.phraseKey, ctx);
         continue;
       }
       break; // first non-refusal statement ends the validate partition
     }
     return null;
+  }
+
+  /**
+   * Resolve a refusal phrase key to its registered message id. A
+   * per-entity `phrase <key>:` declaration registers entity-scoped as
+   * `<irId>.<key>` — the same override rule `phraseEvent` applies at emit
+   * time — so a bare refusal key written inside that entity's clause must
+   * travel as the scoped id: the key crosses into stdlib's blocked() as a
+   * fully-qualified message id (ADR-231 D1) and is rendered verbatim.
+   */
+  private resolvePhraseKey(key: string, ctx: ExecContext): string {
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    return ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
   }
 
   /**

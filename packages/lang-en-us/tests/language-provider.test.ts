@@ -4,11 +4,12 @@
  */
 
 import { EnglishLanguageProvider } from '../src/language-provider';
-import type { 
-  VerbVocabulary, 
-  DirectionVocabulary, 
-  SpecialVocabulary, 
-  LanguageGrammarPattern 
+import type {
+  VerbVocabulary,
+  DirectionVocabulary,
+  SpecialVocabulary,
+  LanguageGrammarPattern,
+  RenderContext
 } from '@sharpee/if-domain';
 
 describe('EnglishLanguageProvider', () => {
@@ -352,6 +353,47 @@ describe('EnglishLanguageProvider', () => {
 
       const formatted = provider.formatList(withArticles);
       expect(formatted).toBe('an apple, an orange, and an umbrella');
+    });
+  });
+
+  describe('Scope refusal templates (ADR-231)', () => {
+    /** Minimal inert render context (mirrors render-message.test.ts makeCtx). */
+    function makeCtx(): RenderContext {
+      return {
+        world: { getEntity: () => undefined, getEntityContents: () => [], getContainingRoom: () => undefined },
+        params: {},
+        settings: { serialComma: true },
+        narrative: { person: 'third' },
+        reference: { lastMentioned: () => undefined, note: () => undefined },
+        textState: { get: () => undefined, set: () => undefined },
+        contribute: () => undefined,
+      };
+    }
+
+    it('registers scope.not_reachable as a core template', () => {
+      expect(provider.getTemplate('scope.not_reachable')).toBeDefined();
+    });
+
+    it('renders scope.not_reachable with a NounPhrase-shaped item param — no unbound-param failure', () => {
+      const item = {
+        kind: 'noun' as const,
+        name: 'ruby gem',
+        number: 'singular' as const,
+        articleType: 'indefinite' as const,
+        referableId: 'i1',
+      };
+
+      // A throw here (PhraseParseError: unbound param) would fail the test —
+      // the render must bind {the item} from the NounPhrase param.
+      const blocks = provider.renderMessage('scope.not_reachable', { item }, makeCtx());
+      const rendered = blocks
+        .flatMap(b => b.content)
+        .map(c => (typeof c === 'string' ? c : ''))
+        .join('');
+
+      expect(rendered).toContain('ruby gem');
+      // Not the echoed-id fallback for an unregistered/broken template.
+      expect(rendered).not.toBe('scope.not_reachable');
     });
   });
 

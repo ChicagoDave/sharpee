@@ -30,7 +30,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -238,11 +239,7 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
 
-    // Fully-qualified message IDs (containing dots) are used as-is —
-    // e.g. an interceptor veto like 'dungeo.troll.cant_hear_you';
-    // short keys (e.g. 'not_visible') get the action ID prefix
-    const error = result.error || '';
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
+    const messageId = blockedMessageId(context, result);
 
     const events: ISemanticEvent[] = [context.event('if.event.talk_blocked', {
       blocked: true,

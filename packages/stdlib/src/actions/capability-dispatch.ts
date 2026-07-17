@@ -16,6 +16,7 @@ import {
 import { ActionMetadata } from '../validation';
 import { ScopeLevel } from '../scope/types';
 import { nounPhraseFor } from '../utils';
+import { blockedMessageId } from './lifecycle';
 
 /**
  * Configuration for creating a capability-dispatch action.
@@ -146,9 +147,16 @@ export function createCapabilityDispatchAction(
       const behaviorResult = behavior.validate(entity, context.world, context.player.id, sharedData);
 
       if (!behaviorResult.valid) {
+        // ADR-231 D1: behavior-originated error keys are fully-qualified by
+        // policy (capability-effect messageIds MUST be fully-qualified —
+        // stdlib CLAUDE.md), so mark provenance and never re-prefix them.
+        // A veto with NO key falls back to the factory's cantDoThatError,
+        // which is action-local and must keep the prefix — so the mark
+        // applies only when the behavior actually supplied a key.
         return {
           valid: false,
           error: behaviorResult.error,
+          errorQualified: behaviorResult.error != null,
           params: behaviorResult.params
         };
       }
@@ -195,14 +203,16 @@ export function createCapabilityDispatchAction(
         return effectsToEvents(effects, context, config.actionId);
       }
 
-      // Default blocked event - use domain event pattern
-      // Short error keys get prefixed by effectsToEvents
+      // Default blocked event - use domain event pattern.
+      // ADR-231 D1: qualification is by provenance via blockedMessageId —
+      // behavior/interceptor errors carry errorQualified and pass through;
+      // the factory's own short keys get the action-id prefix.
       const error = result.error || config.cantDoThatError;
       return effectsToEvents([{
         type: 'if.event.capability_blocked',
         payload: {
           blocked: true,
-          messageId: error,
+          messageId: blockedMessageId(context, { ...result, error }),
           actionId: config.actionId,
           reason: error,
           targetId: entity?.id,

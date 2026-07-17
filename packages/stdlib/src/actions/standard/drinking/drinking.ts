@@ -30,7 +30,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -354,7 +355,7 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity;
     const events: ISemanticEvent[] = [context.event('if.event.drunk', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: { item: item ? nounPhraseFor(item) : undefined, ...result.params },
       reason: result.error,

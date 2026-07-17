@@ -12,6 +12,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent, createRestartRequestedEvent, IRestartContext } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -110,7 +111,7 @@ export const restartingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Restarting always succeeds, but include blocked for consistency
     return [context.event('if.event.restart_blocked', {
-      messageId: `if.action.restarting.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

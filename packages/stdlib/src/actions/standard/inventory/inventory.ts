@@ -15,6 +15,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
@@ -261,7 +262,7 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     // Inventory always succeeds, so this should never be called
     return [context.event('if.event.inventory', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       reason: result.error
     })];

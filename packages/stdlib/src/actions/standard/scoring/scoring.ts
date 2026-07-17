@@ -17,6 +17,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent } from '@sharpee/core';
 import { StandardCapabilities } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
@@ -141,7 +142,7 @@ export const scoringAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('if.event.score_displayed', {
-      messageId: `if.action.scoring.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

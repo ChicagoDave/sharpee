@@ -29,6 +29,14 @@
 - ADR-231 + session summary committed 0e533129 (local).
 - **Phase 1 COMPLETE**: pins.md written + all 5 pins signed off (David): PIN 1 errorQualified flag + shared blockedMessageId() helper; PIN 2 computed-on-demand vocabulary, stopwords {the,a,an,of}, exact>all-words-match tiered scoring; PIN 3 topic {text, entity?: EntityId} on both interfaces; PIN 4 D2a basis verified, no re-scope; PIN 5 single analyze.starts-state-pairing diagnostic + starts-dispatch lookahead.
 
+## Phase 2 (D1a) — implementation complete, verification green
+- Core seam: errorQualified on both ValidationResult interfaces; vetoOf marks all interceptor vetoes; shared blockedMessageId() helper (lifecycle barrel); multi-object propagates provenance, reportBlocked callback now takes ValidationResult.
+- Sweep (4 parallel agents + reconciliation): all ~45 standard actions route blocked() through the helper; 8 dotted escapes deleted; capability wraps (factory/digging/cutting) mark errorQualified only when the behavior supplied a key; requireCarriedOrImplicitTake emits qualified taking key + NounPhrase params; wearing params fixed; blank-blocked warning at domain-message no-fallback path (not renderViaPhrase — routine inline-fallback events must stay silent).
+- DISCOVERY 1: scope.* keys (requireScope) were unregistered in lang-en-us — every scope refusal reaching blocked() rendered blank on ALL paths (pre-existing). Fixed: 5 scope.* core templates + errorQualified at getScopeError.
+- DISCOVERY 2: per-entity `phrase <key>:` + `refuse <key>` NEVER rendered on any action — per-entity phrases register entity-scoped (`<irId>.<key>`) but findRefusal returned bare keys. Fixed: runtime resolvePhraseKey mirrors phraseEvent's override rule. This was the actual remaining blocker for the shipped iron-ring example.
+- Latent defects fixed by sweep: multi-object all-fail dropped provenance; inserting delegation double-prefixed putting-interceptor vetoes.
+- Verification: tsc clean; stdlib 1503 green (incl. new adr-231-provenance.test.ts, 8 GREEN-graded pins; 5 obsolete assertions updated); engine 509; lang 405; story-loader 166; phrasebook 68/68; BOTH shipped examples render live (iron-ring, hive-box); chain 873/873 clean on run 2 (run 1 = known pre-existing ~50% grue-death flake, wt-12, no thief/lamp signature, cascade-only failures).
+
 ## Open items
 - Plan not yet written (session-planner next); plain-defect list rides in ADR-231 Consequences.
 - Parked (unchanged from 907f28): chain RNG-death flake investigation; vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.

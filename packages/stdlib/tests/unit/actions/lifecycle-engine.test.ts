@@ -207,7 +207,9 @@ describe('validate hooks (D1 veto-only, D3 first-veto-wins)', () => {
     const state = resolveLifecycle(context, descriptor);
     const veto = runPreValidate(context, state);
 
-    expect(veto).toEqual({ valid: false, error: 'test.item_says_no', params: { who: 'item' } });
+    // errorQualified: interceptor vetoes are marked fully-qualified at
+    // vetoOf (ADR-231 D1) — blockedMessageId passes them through unprefixed.
+    expect(veto).toEqual({ valid: false, error: 'test.item_says_no', errorQualified: true, params: { who: 'item' } });
     expect(calls).toEqual(['item']);
   });
 
@@ -228,7 +230,7 @@ describe('validate hooks (D1 veto-only, D3 first-veto-wins)', () => {
     const state = resolveLifecycle(context, descriptor);
     const veto = runPostValidate(context, state);
 
-    expect(veto).toEqual({ valid: false, error: 'test.container_says_no', params: undefined });
+    expect(veto).toEqual({ valid: false, error: 'test.container_says_no', errorQualified: true, params: undefined });
   });
 
   test('sharedData written in preValidate is visible to the SAME consultation later, not to others', () => {
@@ -578,8 +580,8 @@ describe('multi-object lifecycle (D4)', () => {
       (_ctx, item, _d, evts) => {
         evts.push(context.event('if.event.frobbed', { messageId: 'test.frobbed', item: item.name }));
       },
-      (_ctx, item, error, _p, evts) => {
-        evts.push(context.event('if.event.frob_blocked', { messageId: error, item: item.name }));
+      (_ctx, item, result, evts) => {
+        evts.push(context.event('if.event.frob_blocked', { messageId: result.error, item: item.name }));
       }
     );
 

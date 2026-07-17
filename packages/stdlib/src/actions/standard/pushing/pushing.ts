@@ -39,7 +39,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -275,7 +276,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
     // formatter chain (ADR-158); top-level fields stay strings for handlers.
     const events: ISemanticEvent[] = [context.event('if.event.pushed', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,

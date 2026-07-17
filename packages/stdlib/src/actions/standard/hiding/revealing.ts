@@ -16,6 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
 import { ISemanticEvent } from '@sharpee/core';
+import { blockedMessageId } from '../../lifecycle';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
 import {
@@ -76,7 +77,7 @@ export const revealingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('if.event.reveal_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       reason: result.error,
     })];

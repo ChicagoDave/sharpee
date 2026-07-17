@@ -32,7 +32,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -264,9 +265,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
 
-    const error = result.error || '';
-    // If error already contains dots (e.g., story interceptor ID), use as-is; otherwise prefix with action ID
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
+    const messageId = blockedMessageId(context, result);
 
     const events: ISemanticEvent[] = [context.event('if.event.close_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)

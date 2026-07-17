@@ -16,6 +16,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent } from '@sharpee/core';
 import { StandardCapabilities } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
@@ -137,7 +138,7 @@ export const helpAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Help always succeeds, but include blocked for consistency
     return [context.event('if.event.help_displayed', {
-      messageId: `if.action.help.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

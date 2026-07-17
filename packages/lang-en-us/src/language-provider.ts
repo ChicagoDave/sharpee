@@ -71,6 +71,15 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
       'core.command_failed': "I don't understand that.",
+      // Shared scope-refusal messages (ADR-231 D1): produced by stdlib's
+      // requireScope/requireSlotScope as fully-qualified ids — every action
+      // shares these; an action wanting different wording returns its own
+      // action-local key instead of calling requireScope.
+      'scope.not_known': "You can't see any such thing.",
+      'scope.not_visible': "{You} {can't} see {the item}.",
+      'scope.not_reachable': "{You} {can't} reach {the item}.",
+      'scope.not_carried': "{You} aren't holding {the item}.",
+      'scope.out_of_scope': "{You} {can't} do that.",
       // Room description body (ADR-192/195): the room's prose realized through the
       // phrase pipeline, carrying the `{slot:here}` room-occupant channel so present
       // occupants append a presence clause at realize time (the room name is a

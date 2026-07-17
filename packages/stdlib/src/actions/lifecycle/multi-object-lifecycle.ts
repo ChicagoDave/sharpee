@@ -54,6 +54,12 @@ export interface MultiObjectItemState {
   success: boolean;
   /** Validation error code when `success` is false. */
   error?: string;
+  /**
+   * True when `error` is already a fully-qualified message id
+   * (interceptor-originated — ADR-231 D1); `blockedMessageId` must not
+   * prefix it.
+   */
+  errorQualified?: boolean;
   /** Error params when `success` is false. */
   errorParams?: Record<string, unknown>;
   /** The item's resolved interceptor consultations (own sharedData each). */
@@ -98,17 +104,17 @@ export function runMultiObjectValidate(
 
     const preVeto = runPreValidate(context, state);
     if (preVeto) {
-      return { entity: item, success: false, error: preVeto.error, errorParams: preVeto.params, state, itemData };
+      return { entity: item, success: false, error: preVeto.error, errorQualified: preVeto.errorQualified, errorParams: preVeto.params, state, itemData };
     }
 
     const standard = validateItem(context, item, itemData);
     if (!standard.valid) {
-      return { entity: item, success: false, error: standard.error, errorParams: standard.params, state, itemData };
+      return { entity: item, success: false, error: standard.error, errorQualified: standard.errorQualified, errorParams: standard.params, state, itemData };
     }
 
     const postVeto = runPostValidate(context, state);
     if (postVeto) {
-      return { entity: item, success: false, error: postVeto.error, errorParams: postVeto.params, state, itemData };
+      return { entity: item, success: false, error: postVeto.error, errorQualified: postVeto.errorQualified, errorParams: postVeto.params, state, itemData };
     }
 
     return { entity: item, success: true, state, itemData };
@@ -165,7 +171,9 @@ export function runMultiObjectExecute(
  * @param primaryEventType - Event type a success `override` targets.
  * @param blockedEventType - Event type a blocked `override` targets.
  * @param reportSuccess - Pushes the item's standard success event(s).
- * @param reportBlocked - Pushes the item's standard blocked event.
+ * @param reportBlocked - Pushes the item's standard blocked event. Receives
+ *   the item's failure as a `ValidationResult` (error + errorQualified +
+ *   params) so it can resolve the message id via `blockedMessageId`.
  */
 export function runMultiObjectReport(
   context: ActionContext,
@@ -174,7 +182,7 @@ export function runMultiObjectReport(
   primaryEventType: string,
   blockedEventType: string,
   reportSuccess: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>, events: ISemanticEvent[]) => void,
-  reportBlocked: (context: ActionContext, item: IFEntity, error: string, errorParams: Record<string, unknown> | undefined, events: ISemanticEvent[]) => void
+  reportBlocked: (context: ActionContext, item: IFEntity, result: ValidationResult, events: ISemanticEvent[]) => void
 ): void {
   for (const itemState of itemStates) {
     const searchFrom = events.length;
@@ -182,7 +190,12 @@ export function runMultiObjectReport(
       reportSuccess(context, itemState.entity, itemState.itemData, events);
       runPostReport(context, itemState.state, events, primaryEventType, searchFrom);
     } else {
-      reportBlocked(context, itemState.entity, itemState.error ?? '', itemState.errorParams, events);
+      reportBlocked(
+        context,
+        itemState.entity,
+        { valid: false, error: itemState.error ?? '', errorQualified: itemState.errorQualified, params: itemState.errorParams },
+        events
+      );
       runOnBlocked(context, itemState.state, events, blockedEventType, itemState.error ?? '', searchFrom);
     }
   }

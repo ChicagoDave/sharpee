@@ -34,7 +34,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -277,7 +278,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
 
     const events: ISemanticEvent[] = [context.event('if.event.insert_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: {
         ...result.params,
         item: item ? nounPhraseFor(item) : undefined,

@@ -42,7 +42,8 @@ import {
   runMultiObjectValidate,
   getMultiObjectLifecycle,
   runMultiObjectExecute,
-  runMultiObjectReport
+  runMultiObjectReport,
+  blockedMessageId
 } from '../../lifecycle';
 
 // Import our data builder
@@ -239,18 +240,17 @@ function reportSingleSuccess(
 function reportSingleBlocked(
   context: ActionContext,
   noun: IFEntity,
-  error: string,
-  errorParams: Record<string, unknown> | undefined,
+  result: ValidationResult,
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.drop_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
-    messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: nounPhraseFor(noun) },
+    messageId: blockedMessageId(context, result),
+    params: { ...result.params, item: nounPhraseFor(noun) },
     // Domain data — strings for handlers
     item: noun.name,
     itemId: noun.id,
-    reason: error
+    reason: result.error
   }));
 }
 
@@ -304,7 +304,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
       // Valid if at least one can be dropped; all-fail returns the first error
       if (!results.some(r => r.success)) {
-        return { valid: false, error: results[0].error, params: results[0].errorParams };
+        return { valid: false, error: results[0].error, errorQualified: results[0].errorQualified, params: results[0].errorParams };
       }
       return { valid: true };
     }
@@ -372,8 +372,8 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         (ctx, item, itemData, evts) => {
           reportSingleSuccess(ctx, item, itemData as DroppingItemScratch, evts, isMultiObject);
         },
-        (ctx, item, error, errorParams, evts) => {
-          reportSingleBlocked(ctx, item, error, errorParams, evts);
+        (ctx, item, itemResult, evts) => {
+          reportSingleBlocked(ctx, item, itemResult, evts);
         }
       );
       return events;
@@ -412,7 +412,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     const events: ISemanticEvent[] = [context.event('if.event.drop_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: { ...result.params, item: noun ? nounPhraseFor(noun) : undefined },
       // Domain data — strings for handlers
       item: noun?.name,

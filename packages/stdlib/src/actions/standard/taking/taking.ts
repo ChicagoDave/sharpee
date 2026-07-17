@@ -38,7 +38,8 @@ import {
   runMultiObjectValidate,
   getMultiObjectLifecycle,
   runMultiObjectExecute,
-  runMultiObjectReport
+  runMultiObjectReport,
+  blockedMessageId
 } from '../../lifecycle';
 
 // Import type guards and typed interfaces
@@ -288,17 +289,17 @@ function reportSingleSuccess(
 function reportSingleBlocked(
   context: ActionContext,
   noun: IFEntity,
-  error: string,
+  result: ValidationResult,
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.take_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
-    messageId: `${context.action.id}.${error}`,
-    params: { item: nounPhraseFor(noun) },
+    messageId: blockedMessageId(context, result),
+    params: { ...result.params, item: nounPhraseFor(noun) },
     // Domain data — strings for handlers
     item: noun.name,
     itemId: noun.id,
-    reason: error
+    reason: result.error
   }));
 }
 
@@ -354,7 +355,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
 
       // Valid if at least one can be taken; all-fail returns the first error
       if (!results.some(r => r.success)) {
-        return { valid: false, error: results[0].error, params: results[0].errorParams };
+        return { valid: false, error: results[0].error, errorQualified: results[0].errorQualified, params: results[0].errorParams };
       }
       return { valid: true };
     }
@@ -410,8 +411,8 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
         (ctx, item, itemData, evts) => {
           reportSingleSuccess(ctx, item, itemData as TakingItemScratch, evts, isMultiObject);
         },
-        (ctx, item, error, _errorParams, evts) => {
-          reportSingleBlocked(ctx, item, error, evts);
+        (ctx, item, itemResult, evts) => {
+          reportSingleBlocked(ctx, item, itemResult, evts);
         }
       );
       return events;
@@ -431,14 +432,9 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Uses simplified event pattern (ADR-097)
     const noun = context.command.directObject?.entity;
 
-    // Fully-qualified message IDs (containing dots) are used as-is;
-    // short keys (e.g., 'fixed_in_place') get the action ID prefix
-    const error = result.error || '';
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
-
     const events: ISemanticEvent[] = [context.event('if.event.take_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
-      messageId,
+      messageId: blockedMessageId(context, result),
       params: {
         ...result.params,
         item: noun ? nounPhraseFor(noun) : undefined

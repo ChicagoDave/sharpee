@@ -35,6 +35,8 @@ export interface ScopeCheckResult {
     error?: {
         valid: false;
         error: string;
+        /** Scope keys are a shared registered namespace — never prefixed (ADR-231 D1). */
+        errorQualified?: boolean;
         params?: Record<string, any>;
     };
     /** The actual scope level of the entity (for debugging/logging) */
@@ -73,6 +75,8 @@ export interface ImplicitTakeResult {
     error?: {
         valid: false;
         error: string;
+        /** True when `error` is a fully-qualified id (scope.* / cross-action keys — ADR-231 D1). */
+        errorQualified?: boolean;
         params?: Record<string, any>;
     };
     /**
@@ -367,6 +371,14 @@ export interface ValidationResult {
      * Used to look up appropriate error messages
      */
     error?: string;
+    /**
+     * When true, `error` is already a fully-qualified message id and must
+     * not be prefixed with the action id (ADR-231 D1 provenance
+     * pass-through). Set by the lifecycle engine for interceptor vetoes
+     * and by helpers that emit another action's key; never set by an
+     * action's own validation.
+     */
+    errorQualified?: boolean;
     /**
      * Additional context for error messages
      */
@@ -1373,6 +1385,22 @@ export declare function resolveLifecycle(context: ActionContext, descriptor: Act
  */
 export declare function getLifecycleState(context: ActionContext): LifecycleState | undefined;
 /**
+ * Resolve the message id for a blocked action (ADR-231 D1) — the ONE
+ * place the qualification convention lives.
+ *
+ * Interceptor-originated errors (and helper-produced cross-action keys)
+ * carry `errorQualified: true` and pass through untouched; an action's
+ * own validation errors are qualified as `<action.id>.<error>` exactly
+ * as before. `blocked()` implementations call this instead of building
+ * ids by hand; key shape (dots, hyphens) is NOT the discriminator —
+ * provenance is.
+ *
+ * @param context - The action context (supplies the action id).
+ * @param result - The failed validation result carrying the error key.
+ * @returns The message id to emit from `blocked()`.
+ */
+export declare function blockedMessageId(context: ActionContext, result: ValidationResult): string;
+/**
  * Run every consultation's `preValidate` hook in order (D3-B).
  *
  * First veto wins: returns that veto as a `ValidationResult` and stops
@@ -1486,6 +1514,12 @@ export interface MultiObjectItemState {
     success: boolean;
     /** Validation error code when `success` is false. */
     error?: string;
+    /**
+     * True when `error` is already a fully-qualified message id
+     * (interceptor-originated — ADR-231 D1); `blockedMessageId` must not
+     * prefix it.
+     */
+    errorQualified?: boolean;
     /** Error params when `success` is false. */
     errorParams?: Record<string, unknown>;
     /** The item's resolved interceptor consultations (own sharedData each). */
@@ -1548,9 +1582,11 @@ export declare function runMultiObjectExecute(context: ActionContext, itemStates
  * @param primaryEventType - Event type a success `override` targets.
  * @param blockedEventType - Event type a blocked `override` targets.
  * @param reportSuccess - Pushes the item's standard success event(s).
- * @param reportBlocked - Pushes the item's standard blocked event.
+ * @param reportBlocked - Pushes the item's standard blocked event. Receives
+ *   the item's failure as a `ValidationResult` (error + errorQualified +
+ *   params) so it can resolve the message id via `blockedMessageId`.
  */
-export declare function runMultiObjectReport(context: ActionContext, itemStates: MultiObjectItemState[], events: ISemanticEvent[], primaryEventType: string, blockedEventType: string, reportSuccess: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>, events: ISemanticEvent[]) => void, reportBlocked: (context: ActionContext, item: IFEntity, error: string, errorParams: Record<string, unknown> | undefined, events: ISemanticEvent[]) => void): void;
+export declare function runMultiObjectReport(context: ActionContext, itemStates: MultiObjectItemState[], events: ISemanticEvent[], primaryEventType: string, blockedEventType: string, reportSuccess: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>, events: ISemanticEvent[]) => void, reportBlocked: (context: ActionContext, item: IFEntity, result: ValidationResult, events: ISemanticEvent[]) => void): void;
 ```
 
 ### actions/lifecycle/registry
@@ -1665,7 +1701,7 @@ export * from './undoing';
 export * from './again';
 export * from './hiding';
 import { TraceAction } from '../author';
-export declare const standardActions: (TraceAction | import("..").Action)[];
+export declare const standardActions: (import("..").Action | TraceAction)[];
 ```
 
 ### actions/author/trace

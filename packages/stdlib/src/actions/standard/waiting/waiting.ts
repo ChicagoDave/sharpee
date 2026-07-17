@@ -12,6 +12,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants';
 import { ActionMetadata } from '../../../validation';
@@ -61,7 +62,7 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     // Waiting always succeeds, but include blocked for consistency
     return [context.event('if.event.wait_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params,
       reason: result.error
     })];

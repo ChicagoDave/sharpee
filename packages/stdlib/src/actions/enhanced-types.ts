@@ -29,6 +29,8 @@ export interface ScopeCheckResult {
   error?: {
     valid: false;
     error: string;
+    /** Scope keys are a shared registered namespace — never prefixed (ADR-231 D1). */
+    errorQualified?: boolean;
     params?: Record<string, any>;
   };
 
@@ -75,6 +77,8 @@ export interface ImplicitTakeResult {
   error?: {
     valid: false;
     error: string;
+    /** True when `error` is a fully-qualified id (scope.* / cross-action keys — ADR-231 D1). */
+    errorQualified?: boolean;
     params?: Record<string, any>;
   };
 
@@ -401,6 +405,15 @@ export interface ValidationResult {
    * Used to look up appropriate error messages
    */
   error?: string;
+
+  /**
+   * When true, `error` is already a fully-qualified message id and must
+   * not be prefixed with the action id (ADR-231 D1 provenance
+   * pass-through). Set by the lifecycle engine for interceptor vetoes
+   * and by helpers that emit another action's key; never set by an
+   * action's own validation.
+   */
+  errorQualified?: boolean;
 
   /**
    * Additional context for error messages

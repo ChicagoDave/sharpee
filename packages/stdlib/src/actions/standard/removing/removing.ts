@@ -54,7 +54,8 @@ import {
   runMultiObjectValidate,
   getMultiObjectLifecycle,
   runMultiObjectExecute,
-  runMultiObjectReport
+  runMultiObjectReport,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -339,20 +340,19 @@ function reportSingleBlocked(
   context: ActionContext,
   item: IFEntity,
   source: IFEntity,
-  error: string,
-  errorParams: Record<string, unknown> | undefined,
+  result: ValidationResult,
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.remove_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
-    messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: nounPhraseFor(item), source: nounPhraseFor(source) },
+    messageId: blockedMessageId(context, result),
+    params: { ...result.params, item: nounPhraseFor(item), source: nounPhraseFor(source) },
     // Domain data — strings for handlers
     itemId: item.id,
     itemName: item.name,
     sourceId: source.id,
     sourceName: source.name,
-    reason: error
+    reason: result.error
   }));
 }
 
@@ -420,7 +420,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
 
       // Valid if at least one can be removed; all-fail returns the first error
       if (!results.some(r => r.success)) {
-        return { valid: false, error: results[0].error, params: results[0].errorParams };
+        return { valid: false, error: results[0].error, errorQualified: results[0].errorQualified, params: results[0].errorParams };
       }
       return { valid: true };
     }
@@ -498,8 +498,8 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
         (ctx, item, itemData, evts) => {
           reportSingleSuccess(ctx, item, source, itemData as RemovingItemScratch, evts);
         },
-        (ctx, item, error, errorParams, evts) => {
-          reportSingleBlocked(ctx, item, source, error, errorParams, evts);
+        (ctx, item, itemResult, evts) => {
+          reportSingleBlocked(ctx, item, source, itemResult, evts);
         }
       );
       return events;
@@ -560,7 +560,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
 
     const events: ISemanticEvent[] = [context.event('if.event.remove_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: {
         ...result.params,
         item: item ? nounPhraseFor(item) : undefined,

@@ -25,7 +25,8 @@ export {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from './lifecycle-engine';
 
 export {

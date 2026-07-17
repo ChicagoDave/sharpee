@@ -43,7 +43,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -191,6 +192,11 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
         return {
           valid: false,
           error: behaviorResult.error,
+          // Capability-behavior error codes are fully-qualified by policy
+          // (stdlib CLAUDE.md capability-effect rule) — ADR-231 D1 provenance.
+          // Keyless vetoes fall back to an action-local id, so only a
+          // supplied key carries the mark.
+          errorQualified: behaviorResult.error != null,
           params: behaviorResult.params
         };
       }
@@ -260,8 +266,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
 
-    const error = result.error || '';
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
+    const messageId = blockedMessageId(context, result);
 
     const events: ISemanticEvent[] = [
       context.event('if.event.dug_blocked', {

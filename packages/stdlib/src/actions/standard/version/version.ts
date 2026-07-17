@@ -13,6 +13,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { blockedMessageId } from '../../lifecycle';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants';
@@ -39,7 +40,7 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Version always succeeds, but include blocked for consistency
     return [context.event('if.event.version_displayed', {
-      messageId: `if.action.version.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

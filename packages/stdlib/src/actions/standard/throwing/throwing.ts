@@ -42,7 +42,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -450,7 +451,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Standard blocked handling — params carry EntityInfo (ADR-158)
     const events: ISemanticEvent[] = [context.event('if.event.throw_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: {
         ...result.params,
         item: item ? nounPhraseFor(item) : undefined,

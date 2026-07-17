@@ -30,7 +30,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -264,7 +265,7 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
     const events: ISemanticEvent[] = [context.event('if.event.touch_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,

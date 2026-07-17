@@ -44,7 +44,8 @@ import {
   runMultiObjectValidate,
   getMultiObjectLifecycle,
   runMultiObjectExecute,
-  runMultiObjectReport
+  runMultiObjectReport,
+  blockedMessageId
 } from '../../lifecycle';
 
 // Import types
@@ -312,20 +313,19 @@ function reportSingleBlocked(
   context: ActionContext,
   item: IFEntity,
   target: IFEntity,
-  error: string,
-  errorParams: Record<string, unknown> | undefined,
+  result: ValidationResult,
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.put_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
-    messageId: `${context.action.id}.${error}`,
-    params: { ...errorParams, item: nounPhraseFor(item), destination: nounPhraseFor(target) },
+    messageId: blockedMessageId(context, result),
+    params: { ...result.params, item: nounPhraseFor(item), destination: nounPhraseFor(target) },
     // Domain data — strings for handlers
     itemId: item.id,
     itemName: item.name,
     targetId: target.id,
     targetName: target.name,
-    reason: error
+    reason: result.error
   }));
 }
 
@@ -398,7 +398,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
 
       // Valid if at least one can be put; all-fail returns the first error
       if (!results.some(r => r.success)) {
-        return { valid: false, error: results[0].error, params: results[0].errorParams };
+        return { valid: false, error: results[0].error, errorQualified: results[0].errorQualified, params: results[0].errorParams };
       }
       return { valid: true };
     }
@@ -496,8 +496,8 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         (ctx, item, itemData, evts) => {
           reportSingleSuccess(ctx, item, target, itemData as PuttingItemScratch, evts);
         },
-        (ctx, item, error, errorParams, evts) => {
-          reportSingleBlocked(ctx, item, target, error, errorParams, evts);
+        (ctx, item, itemResult, evts) => {
+          reportSingleBlocked(ctx, item, target, itemResult, evts);
         }
       );
       return events;
@@ -562,7 +562,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
 
     // Standard blocked handling — EntityInfo for formatter chain (ADR-158)
     const events: ISemanticEvent[] = [context.event('if.event.put_blocked', {
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: {
         ...result.params,
         item: item ? nounPhraseFor(item) : undefined,

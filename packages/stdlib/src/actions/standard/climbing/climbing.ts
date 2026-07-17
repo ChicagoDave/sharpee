@@ -30,7 +30,8 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked
+  runOnBlocked,
+  blockedMessageId
 } from '../../lifecycle';
 
 /**
@@ -167,7 +168,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     const direction = context.command.parsed.extras?.direction as string;
     const events: ISemanticEvent[] = [context.event('if.event.climbed', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
