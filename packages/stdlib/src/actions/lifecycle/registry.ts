@@ -21,9 +21,11 @@
 
 import { ActionLifecycleDescriptor } from './descriptor';
 
+import { askingLifecycle } from '../standard/asking/asking';
 import { attackingLifecycle } from '../standard/attacking/attacking';
 import { climbingLifecycle } from '../standard/climbing/climbing';
 import { closingLifecycle } from '../standard/closing/closing';
+import { diggingLifecycle } from '../standard/digging/digging';
 import { cuttingLifecycle } from '../standard/cutting/cutting';
 import { drinkingLifecycle } from '../standard/drinking/drinking';
 import { droppingLifecycle } from '../standard/dropping/dropping';
@@ -51,23 +53,27 @@ import { switchingOnLifecycle } from '../standard/switching_on/switching_on';
 import { takingLifecycle } from '../standard/taking/taking';
 import { takingOffLifecycle } from '../standard/taking_off/taking-off';
 import { talkingLifecycle } from '../standard/talking/talking';
+import { tellingLifecycle } from '../standard/telling/telling';
 import { throwingLifecycle } from '../standard/throwing/throwing';
 import { touchingLifecycle } from '../standard/touching/touching';
 import { unlockingLifecycle } from '../standard/unlocking/unlocking';
 import { wearingLifecycle } from '../standard/wearing/wearing';
 
 /**
- * The descriptor table: all 34 entity-keyed standard actions (33 per
- * ADR-228 Consequences + cutting per ADR-230 D3c). Structural exemptions
+ * The descriptor table: all 37 entity-keyed standard actions (33 per
+ * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
+ * ADR-230 Phase 6). Structural exemptions
  * (no entity to key on: about, waiting, looking, … and the full-delegation
  * capability actions lowering/raising) are absent by design — see ADR-228
  * Context.
  */
 export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = Object.freeze([
+  askingLifecycle,
   attackingLifecycle,
   climbingLifecycle,
   closingLifecycle,
   cuttingLifecycle,
+  diggingLifecycle,
   drinkingLifecycle,
   droppingLifecycle,
   eatingLifecycle,
@@ -94,6 +100,7 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   takingLifecycle,
   takingOffLifecycle,
   talkingLifecycle,
+  tellingLifecycle,
   throwingLifecycle,
   touchingLifecycle,
   unlockingLifecycle,

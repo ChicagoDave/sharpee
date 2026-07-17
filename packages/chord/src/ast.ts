@@ -112,6 +112,9 @@ export interface CreateDecl {
   placement: Placement | null;
   /** `wears <thing>` lines (the player wears the cloak). */
   wears: NameRef[];
+
+  /** `carries <thing>` lines — start inventory, not worn (ADR-230 Phase 6). */
+  carries: NameRef[];
   exits: ExitDecl[];
   blockedExits: BlockedExitDecl[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */

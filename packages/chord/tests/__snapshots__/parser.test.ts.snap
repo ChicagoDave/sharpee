@@ -6,6 +6,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -128,6 +129,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -290,6 +292,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],
@@ -580,6 +583,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           },
         },
       ],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -698,6 +702,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "cloakroom",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -764,6 +769,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "bar",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -1012,6 +1018,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],
@@ -1103,6 +1110,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "cloak",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,
@@ -1171,6 +1179,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "peg",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,
@@ -1292,6 +1301,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "writing",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,

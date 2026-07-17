@@ -24,6 +24,10 @@ export * from './about';
 export * from './version';
 export * from './locking';
 export * from './cutting';
+export * from './turning';
+export * from './asking';
+export * from './telling';
+export * from './digging';
 export * from './unlocking';
 export * from './switching_on';
 export * from './switching_off';
@@ -98,6 +102,10 @@ import { aboutAction } from './about'; // Now from folder
 import { versionAction } from './version'; // Now from folder
 import { lockingAction } from './locking'; // Now from folder
 import { cuttingAction } from './cutting'; // ADR-230 D3c
+import { turningAction } from './turning'; // ADR-230 Phase 6
+import { diggingAction } from './digging'; // ADR-230 Phase 6
+import { askingAction } from './asking'; // ADR-230 Phase 6
+import { tellingAction } from './telling'; // ADR-230 Phase 6
 import { unlockingAction } from './unlocking'; // Now from folder
 import { switchingOnAction } from './switching_on'; // Now from folder
 import { switchingOffAction } from './switching_off'; // Now from folder
@@ -168,6 +176,7 @@ export const standardActions = [
   lockingAction,
   unlockingAction,
   cuttingAction,
+  diggingAction,
   switchingOnAction,
   switchingOffAction,
   enteringAction,
@@ -186,19 +195,19 @@ export const standardActions = [
   throwingAction,
   pushingAction,
   pullingAction,
-  // turningAction, // Removed - TURNABLE trait doesn't exist
   // usingAction, // Removed - USE is not idiomatic IF
   // Capability-dispatch actions (ADR-090)
   loweringAction,
   raisingAction,
+  turningAction, // ADR-230 Phase 6: capability dispatch like lowering/raising
   wearingAction,
   takingOffAction,
   eatingAction,
   drinkingAction,
   talkingAction,
-  // askingAction, // Moved to conversation extension
-  // tellingAction, // Moved to conversation extension
-  // answeringAction, // Moved to conversation extension
+  askingAction, // ADR-230 Phase 6: minimal interceptable ASK (conversation system TBD)
+  tellingAction, // ADR-230 Phase 6: minimal interceptable TELL
+  // answeringAction, // Removed pending a question system (ADR-230 Phase 6 ruling)
   attackingAction,
   deadlyRoomDeathAction,
   savingAction,

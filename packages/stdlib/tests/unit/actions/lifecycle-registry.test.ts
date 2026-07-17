@@ -21,11 +21,12 @@ import { IFActions } from '../../../src/actions/constants';
 import { standardActions } from '../../../src/actions/standard';
 
 describe('wired-action registry (ADR-228 D5)', () => {
-  test('covers all 34 entity-keyed standard actions with unique primary ids', () => {
-    // 33 per ADR-228 Consequences + cutting (ADR-230 D3c)
-    expect(actionLifecycleDescriptors).toHaveLength(34);
+  test('covers all 37 entity-keyed standard actions with unique primary ids', () => {
+    // 33 per ADR-228 Consequences + cutting (ADR-230 D3c) + digging,
+    // asking, telling (ADR-230 Phase 6)
+    expect(actionLifecycleDescriptors).toHaveLength(37);
     const primaryIds = actionLifecycleDescriptors.map((d) => d.actionId);
-    expect(new Set(primaryIds).size).toBe(34);
+    expect(new Set(primaryIds).size).toBe(37);
     for (const descriptor of actionLifecycleDescriptors) {
       expect(descriptor.slots.length).toBeGreaterThan(0);
       for (const slot of descriptor.slots) {
@@ -102,24 +103,13 @@ describe('grammar reachability gate (ADR-230 D1)', () => {
    *  (Phase 3 closed all five D2 gaps on 2026-07-17 — list currently empty.) */
   const temporaryUnreachable = new Set<string>([]);
 
-  /** TEMPORARY: grammar-mapped ids with no registered action. */
-  const documentedOrphans = new Set<string>([
-    // (All three ADR-230 D3 orphans closed: examining_carefully and
-    // opening_with by the Phase 3/4 remaps, cutting by Phase 5's action.)
-    // DISCOVERED 2026-07-17 (gate landing, Phase 2): grammar exists, no action
-    // registered anywhere in the platform. Disposition needs a David ruling
-    // (pins.md amendment pending) — do not silently implement or delete.
-    'if.action.asking', // action parked in src/actions/removed/ ("conversation extension" is a stub)
-    'if.action.telling', // action parked in src/actions/removed/
-    'if.action.saying',
-    'if.action.saying_to',
-    'if.action.shouting',
-    'if.action.whispering',
-    'if.action.writing',
-    'if.action.writing_on',
-    'if.action.digging',
-    'if.action.taking_with' // `take X from Y with|using Z`
-  ]);
+  /** TEMPORARY: grammar-mapped ids with no registered action.
+   *  EMPTY since the Phase 6 sketch rulings executed (2026-07-17): the D3
+   *  orphans were remapped/implemented (Phases 3-5); asking/telling/digging
+   *  became real actions; saying/saying_to/shouting/whispering/writing/
+   *  writing_on lost their grammar pending real systems; taking_with was
+   *  remapped onto removing. */
+  const documentedOrphans = new Set<string>([]);
 
   test('every wired action id is grammar-reachable or a documented exception', () => {
     const unreachable = [...interceptorConsultingActionIds].filter(
@@ -159,13 +149,10 @@ describe('grammar reachability gate (ADR-230 D1)', () => {
    * belong to actions whose disposition awaits the Phase 6 design-sketch
    * rulings (turning/using/answering + conversation family) — pins.md.
    */
-  const deferredDesignVerbs = new Set<string>([
-    'rotate', 'twist', // turning — deferred (Phase 6 sketch)
-    'use', 'utilize', 'employ', // using — deferred
-    'answer', 'respond', 'reply', // answering — deferred
-    'inquire', 'question', // asking is an A1 orphan — conversation family
-    'inform' // telling — conversation family
-  ]);
+  /** EMPTY since the Phase 6 sketch rulings executed: turning became a
+   *  capability action (rotate/twist parse); using/answering left verbs.ts;
+   *  inquire/question/inform ride the revived asking/telling actions. */
+  const deferredDesignVerbs = new Set<string>([]);
 
   /** A verb phrase "leads" a pattern when its first word matches the
    *  pattern's first token and its remaining words appear in order among

@@ -949,6 +949,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           },
         },
       ],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -1016,6 +1017,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "basket",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],
@@ -1173,6 +1175,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -1238,6 +1241,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],
@@ -2370,6 +2374,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "goats",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,
@@ -2579,6 +2584,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "feed",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],
@@ -2654,6 +2660,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "snake",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,
@@ -2789,6 +2796,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -2853,6 +2861,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],
@@ -3655,6 +3664,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -3723,6 +3733,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
         "zookeeper",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -3966,6 +3977,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",

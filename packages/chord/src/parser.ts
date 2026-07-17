@@ -413,6 +413,7 @@ class Parser {
       compositions: [],
       placement: null,
       wears: [],
+      carries: [],
       exits: [],
       blockedExits: [],
       deadlyExits: [],
@@ -455,6 +456,12 @@ class Parser {
         this.pos++;
         cur.matchWord('wears');
         decl.wears.push(this.parseNameRef(cur, () => false));
+      } else if (word === 'carries') {
+        // ADR-230 Phase 6 (sketch ruling 7): start inventory, the missing
+        // half of `wears` — previously accepted silently and dropped.
+        this.pos++;
+        cur.matchWord('carries');
+        decl.carries.push(this.parseNameRef(cur, () => false));
       } else if (word === 'starts' && cur.isWord('in', 1)) {
         this.pos++;
         cur.next();

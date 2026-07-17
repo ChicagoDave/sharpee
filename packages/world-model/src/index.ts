@@ -39,6 +39,7 @@ export * from './traits/room';
 export * from './traits/openable';
 export * from './traits/lockable';
 export * from './traits/cuttable';
+export * from './traits/diggable';
 export * from './traits/readable';
 export * from './traits/light-source';
 export * from './traits/exit';

@@ -113,6 +113,63 @@ end phrase`);
     expect(() => loadStory(source)).toThrowError(/`chainsaw` \(config `tool`\) names no entity/);
   });
 
+  it('diggable rides the same machinery, and `carries` lands start inventory (ADR-230 Phase 6)', () => {
+    const source = `story "Dig" by "T"
+  id: dig
+  version: 0.0.1
+
+create the Beach
+  a room
+
+  A beach.
+
+create the player
+  starts in the Beach
+  carries the shovel
+
+  You.
+
+create the shovel
+
+  A shovel.
+
+create the sand
+  in the Beach
+  diggable with tool the shovel
+
+  Sand.
+
+  on digging it
+    phrase sand-shifts
+  end on
+
+define phrase sand-shifts
+  The sand shifts.
+end phrase
+`;
+    const { story, world, player } = loadStory(source);
+    const sand = world.getEntity(story.entityId('sand')!)!;
+    const shovelWorldId = story.entityId('shovel')!;
+
+    // Diggable trait stamped with the resolved WORLD id.
+    const diggable = sand.get('diggable' as never) as { toolId?: string };
+    expect(diggable).toBeDefined();
+    expect(diggable.toolId).toBe(shovelWorldId);
+
+    // `carries the shovel` actually lands in the player's inventory —
+    // previously this line compiled silently and did nothing.
+    expect(world.getLocation(shovelWorldId)).toBe(player.id);
+  });
+
+  it('rejects a diggable with no digging implementation at load time', () => {
+    const source = storyWith(`create the sand
+  in the Shed
+  diggable
+
+  Sand.`);
+    expect(() => loadStory(source)).toThrowError(/registers no digging implementation/);
+  });
+
   it('rejects TWO cutting implementations (entity clause + composed trait clause)', () => {
     const source = storyWith(`define trait severable
   phrases en-US

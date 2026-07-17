@@ -48,5 +48,9 @@
 - sketches.md (8 areas) AWAITING DAVID: turning/using/answering, conversation family, writing family, digging/taking_with, carries-at-start, 9 unmappable patterns entries.
 - Noted: stdlib vitest resolves parser/lang to dist despite src aliases (rebuild before gate runs); chain RNG-death flake rate ~50% this session — pre-existing, worth its own investigation.
 
+## Phase 6 dispositions (2026-07-17) — COMPLETE
+- All sketch recommendations accepted (digging corrected: dungeo is a live consumer → implemented via cutting template). Executed: turning capability action; using/answering verbs dropped; conversation grammar deleted + asking/telling revived minimal (registry 37); writing grammar deleted; taking_with→removing+tool slot; DiggableTrait + digging action + chord `diggable` + generalized loader check; `carries the X` start inventory (parser→IR→loader, silent-accept killed); 9 patterns trims; `say` trimmed from telling (verb gate caught it live).
+- Gate exception lists ALL EMPTY (Phase 7's strip deliverable satisfied incrementally). Obsolete tests updated: quoted-string parser tests → story grammar; chord goldens re-snapshotted (carries field).
+
 ## Open items
-- Phase 6 sketch rulings (David) → then execute dispositions; Phases 7-10 pending.
+- Phase 7 formal closure pass (full suite + repokit verify), then Phases 8-10.

@@ -1,8 +1,8 @@
 # Phase 6 Design Sketches — deferred verbs, orphan families, and flagged surfaces
 
-Status: AWAITING DAVID RULINGS (Phase 6 review deliverable per pins.md rulings 3 + A1)
-Each sketch ends with **Options** — nothing here is implemented; the gate carries
-documented exceptions until each ruling executes.
+Status: RULED — David accepted all recommendations 2026-07-17 (with §6 digging
+corrected to IMPLEMENT: dungeo is a live consumer). All dispositions executed
+same-day; the gate's exception lists are empty. Kept for the record.
 
 ## 1. `turning` (turn/rotate/twist)
 
@@ -68,17 +68,23 @@ when one does.
 ## 6. Tool-verbs: `digging`, `taking_with`
 
 Same shape as opening_with/cutting were:
-- `dig :location with|using :tool` — cutting-template candidate: DiggableTrait
-  (tool config) + per-entity implementation (dual-surface), loader check included.
+- `dig :location with|using :tool` — **dungeo is a live consumer** (CORRECTED
+  2026-07-17, David): the sand/scarab puzzle ships a bespoke `dig` story action
+  + story grammar (`dig with :tool` / `dig :target` / `dig in :target`,
+  puzzle-grammar.ts:420-433) + story messages — hand-rolled precisely because
+  the core grammar id has no platform action. That's the ADR-229 R4
+  two-mechanisms pattern: platform gap → story workaround.
 - `take :item from :container with|using :tool` (`taking_with`) — remap candidate:
   map to `if.action.removing` with an `.instrument()` tool slot (the D3b opening
   treatment: removing's descriptor gains target→tool consultation; a tool
   requirement could ride ContainerTrait or stay interceptor-only).
 
-**Recommend:** taking_with → remap onto removing (D3b treatment); digging →
-implement via the cutting template only when a story needs it, else delete the
-grammar (it predates any consumer). Both are mechanical now that the templates
-exist.
+**Recommend:** digging → implement via the cutting template (DiggableTrait with
+tool config + dual-surface per-entity implementation + loader check); dungeo's
+bespoke action keeps working via its higher-priority story grammar and can be
+consolidated onto the platform action later (R4-style, own work item — dig has
+per-room dig-count state worth a careful migration). taking_with → remap onto
+removing (D3b treatment). Both are mechanical now that the templates exist.
 
 ## 7. `carries the <entity>` (player start inventory) — Phase 5 discovery
 

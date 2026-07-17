@@ -711,6 +711,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           },
         },
       ],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -776,6 +777,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],
@@ -836,6 +838,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
       "deadly": null,
       "deadlyExits": [],

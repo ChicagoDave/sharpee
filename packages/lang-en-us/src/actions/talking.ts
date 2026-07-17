@@ -10,8 +10,6 @@ export const talkingLanguage = {
     'talk [someone]',
     'speak to [someone]',
     'speak with [someone]',
-    'greet [someone]',
-    'say hello to [someone]',
     'chat with [someone]'
   ],
   

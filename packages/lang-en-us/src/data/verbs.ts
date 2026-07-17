@@ -217,12 +217,9 @@ export const englishVerbs: VerbDefinition[] = [
     verbs: ['turn', 'rotate', 'twist'],
     requiresObject: true
   },
-  {
-    action: IFActions.USING,
-    verbs: ['use', 'utilize', 'employ'],
-    requiresObject: true,
-    allowsIndirectObject: true
-  },
+  // USING entry removed (ADR-230 Phase 6 sketch ruling 2): a generic USE
+  // has no semantics — better absent than advertised. Constant retained
+  // for reference only.
   {
     action: IFActions.GIVING,
     verbs: ['give', 'hand', 'offer'],
@@ -281,15 +278,15 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.TELLING,
-    verbs: ['tell', 'inform', 'say'],
+    // `say` removed (ADR-230 Phase 6): saying's grammar left with the
+    // conversation-family ruling, and say was never a telling synonym —
+    // stories provide SAY as a story verb (e.g. dungeo).
+    verbs: ['tell', 'inform'],
     requiresObject: true,
     allowsIndirectObject: true
   },
-  {
-    action: IFActions.ANSWERING,
-    verbs: ['answer', 'respond', 'reply'],
-    requiresObject: true
-  },
+  // ANSWERING entry removed (ADR-230 Phase 6 sketch ruling 3): no question
+  // system to answer into; revisit with the conversation system.
   
   // Meta commands
   {

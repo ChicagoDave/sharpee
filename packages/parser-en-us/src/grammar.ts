@@ -516,11 +516,13 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Multiple preposition patterns (Phase 2.1)
   // Scope handled by action validation; state checks (locked, open) in action validate()
 
-  // Taking from container with tool
+  // Taking from container with tool (ADR-230 Phase 6: remapped from the
+  // orphan if.action.taking_with onto removing — the tool rides the
+  // instrument slot and is interceptor-consultable)
   grammar
     .define('take :item from :container with|using :tool')
     .instrument('tool')
-    .mapsTo('if.action.taking_with')
+    .mapsTo('if.action.removing')
     .withPriority(110)
     .build();
 
@@ -626,45 +628,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(110)
     .build();
 
-  // Communication patterns with quoted strings
-  // Scope handled by action validation; traits declare semantic constraints only
-  grammar
-    .define('say :message')
-    .mapsTo('if.action.saying')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('say :message to :recipient')
-    .hasTrait('recipient', TraitType.ACTOR)
-    .mapsTo('if.action.saying_to')
-    .withPriority(105)
-    .build();
-
-  grammar
-    .define('write :message')
-    .mapsTo('if.action.writing')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('write :message on :surface')
-    .mapsTo('if.action.writing_on')
-    .withPriority(105)
-    .build();
-
-  grammar
-    .define('shout :message')
-    .mapsTo('if.action.shouting')
-    .withPriority(100)
-    .build();
-
-  grammar
-    .define('whisper :message to :recipient')
-    .hasTrait('recipient', TraitType.ACTOR)
-    .mapsTo('if.action.whispering')
-    .withPriority(100)
-    .build();
+  // Communication patterns (saying/saying_to/writing/writing_on/shouting/
+  // whispering) DELETED in ADR-230 Phase 6 (sketch ruling 4/5): the ids had
+  // no actions — they parsed and runtime-failed in every story. Grammar
+  // returns with the conversation/writing systems; stories (e.g. dungeo's
+  // SAY) keep their own story-grammar verbs meanwhile.
 
   grammar
     .define('tell :recipient about :topic')
@@ -677,6 +645,29 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('ask :recipient about :topic')
     .hasTrait('recipient', TraitType.ACTOR)
     .mapsTo('if.action.asking')
+    .withPriority(100)
+    .build();
+
+  // asking/telling aliases (ADR-230 Phase 6 — actions revived as minimal
+  // interceptable stubs)
+  grammar
+    .define('question :recipient about :topic')
+    .hasTrait('recipient', TraitType.ACTOR)
+    .mapsTo('if.action.asking')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('inquire of :recipient about :topic')
+    .hasTrait('recipient', TraitType.ACTOR)
+    .mapsTo('if.action.asking')
+    .withPriority(100)
+    .build();
+
+  grammar
+    .define('inform :recipient about :topic')
+    .hasTrait('recipient', TraitType.ACTOR)
+    .mapsTo('if.action.telling')
     .withPriority(100)
     .build();
 
@@ -787,6 +778,13 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define('uncover :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.opening').withPriority(100).build();
   grammar.define('shut :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.closing').withPriority(100).build();
   grammar.define('cover :door').hasTrait('door', TraitType.OPENABLE).mapsTo('if.action.closing').withPriority(100).build();
+
+  // turning (ADR-230 Phase 6 sketch ruling 1: capability dispatch like
+  // lowering/raising). Priority 95 so the switching phrasal forms
+  // (`turn :device on`, `turn on :device`) always win.
+  grammar.define('turn :target').mapsTo('if.action.turning').withPriority(95).build();
+  grammar.define('rotate :target').mapsTo('if.action.turning').withPriority(95).build();
+  grammar.define('twist :target').mapsTo('if.action.turning').withPriority(95).build();
 
   // locking/unlocking aliases
   grammar.define('secure :target').mapsTo('if.action.locking').withPriority(100).build();

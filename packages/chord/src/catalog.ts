@@ -40,6 +40,7 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'enterable', // ADR-218 §1a (ratchet F1) — composes EnterableTrait; always explicit
   'climbable', // ADR-218 §1a (ratchet F2) — composes ClimbableTrait
   'cuttable', // ADR-230 D3c — composes CuttableTrait; `with tool <entity>` config; requires a cut implementation
+  'diggable', // ADR-230 Phase 6 — composes DiggableTrait; same tool config + implementation rule as cuttable
 ]);
 
 /**

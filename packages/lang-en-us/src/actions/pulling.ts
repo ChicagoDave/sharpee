@@ -13,7 +13,6 @@ export const pullingLanguage = {
     'drag [something]',
     'drag [something] [direction]',
     'yank [something]',
-    'draw [something]'
   ],
   
   messages: {

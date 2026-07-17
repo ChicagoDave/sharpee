@@ -67,6 +67,9 @@ export interface IREntity {
   placement: IRPlacement | null;
   /** Entity IDs this entity wears at start (player wears the cloak). */
   wears: string[];
+
+  /** Entity IDs carried at start, not worn (player carries the knife — ADR-230 Phase 6). */
+  carries: string[];
   exits: IRExit[];
   blockedExits: IRBlockedExit[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */

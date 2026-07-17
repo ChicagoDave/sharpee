@@ -1010,6 +1010,7 @@ class Analyzer {
           }
         : null,
       wears: decl.wears.map((w) => this.resolveEntityId(w) ?? '').filter((w) => w !== ''),
+      carries: decl.carries.map((c) => this.resolveEntityId(c) ?? '').filter((c) => c !== ''),
       exits: decl.exits.map((e) => ({ direction: e.direction, to: this.resolveEntityId(e.to) ?? '', span: e.span })),
       blockedExits: decl.blockedExits.map((b) => {
         this.requirePhrase(b.phraseKey, b.span);

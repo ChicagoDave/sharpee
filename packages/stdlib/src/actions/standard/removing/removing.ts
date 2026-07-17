@@ -95,6 +95,21 @@ export const removingLifecycle: ActionLifecycleDescriptor = {
           sourceName: entity.name
         };
       }
+    },
+    {
+      // ADR-230 Phase 6 (sketch ruling 6): `take X from Y with Z` remapped
+      // from the orphan if.action.taking_with onto removing; the explicit
+      // tool is consultable (D3b treatment, interceptor-only — no trait
+      // requirement). Published order item → source → tool.
+      id: 'tool',
+      actionIds: [IFActions.REMOVING],
+      resolve: (ctx) => ctx.command.instrument?.entity,
+      seedData: (ctx, entity) => ({
+        toolId: entity.id,
+        toolName: entity.name,
+        itemId: ctx.command.directObject?.entity?.id,
+        sourceId: ctx.command.indirectObject?.entity?.id
+      })
     }
   ]
 };
