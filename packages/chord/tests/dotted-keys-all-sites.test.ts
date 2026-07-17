@@ -27,6 +27,9 @@ create the Barn
 
   A straw-floored barn.
 
+  north is blocked: zoo.barn.gate.shut
+  down is deadly: zoo.barn.pit.death
+
 create the player
   starts in the Barn
 
@@ -82,6 +85,12 @@ describe('dotted phrase keys at all key sites (ADR-231 D1b)', () => {
   const ast = parsedClean(SOURCE);
   const decls = ast.declarations;
   const gate = decls.find((d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'gate')!;
+  const barn = decls.find((d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'Barn')!;
+
+  it('blocked-exit and deadly-exit keys register whole (exit sites ruled in, 2026-07-17)', () => {
+    expect(barn.blockedExits[0]).toMatchObject({ direction: 'north', phraseKey: 'zoo.barn.gate.shut' });
+    expect(barn.deadlyExits[0]).toMatchObject({ direction: 'down', phraseKey: 'zoo.barn.pit.death' });
+  });
   const petting = decls.find((d): d is DefineAction => d.kind === 'define-action' && d.name === 'petting')!;
 
   it('parses dotted keys in define-action refusals (without, when, otherwise)', () => {

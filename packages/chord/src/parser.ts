@@ -602,12 +602,12 @@ class Parser {
       this.diagnostics.error('parse.blocked-exit', 'Expected `: <phrase-key>` after `is blocked`.', lineSpan(line));
       return null;
     }
-    const key = c.next();
-    if (!key || key.kind !== 'word') {
+    const key = this.readDottedKey(c); // phrase-key = WORD { "." WORD } (ADR-231 D1b, exit keys ruled in)
+    if (!key) {
       this.diagnostics.error('parse.blocked-exit', 'Expected a phrase key after `is blocked:`.', lineSpan(line));
       return null;
     }
-    return { kind: 'blocked-exit', direction, phraseKey: key.text, condition, span: lineSpan(line) };
+    return { kind: 'blocked-exit', direction, phraseKey: key, condition, span: lineSpan(line) };
   }
 
   private parseDeadlyExit(direction: string, line: Line): DeadlyExitDecl | null {
@@ -628,12 +628,12 @@ class Parser {
       this.diagnostics.error('parse.deadly-exit', 'Expected `: <phrase-key>` after `is deadly`.', lineSpan(line));
       return null;
     }
-    const key = c.next();
-    if (!key || key.kind !== 'word') {
+    const key = this.readDottedKey(c); // phrase-key = WORD { "." WORD } (ADR-231 D1b, exit keys ruled in)
+    if (!key) {
       this.diagnostics.error('parse.deadly-exit', 'Expected a phrase key after `is deadly:`.', lineSpan(line));
       return null;
     }
-    return { kind: 'deadly-exit', direction, phraseKey: key.text, condition, span: lineSpan(line) };
+    return { kind: 'deadly-exit', direction, phraseKey: key, condition, span: lineSpan(line) };
   }
 
   private parseCompositionLine(c: Cursor, line: Line): CompositionItem[] {

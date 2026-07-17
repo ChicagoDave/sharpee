@@ -89,8 +89,8 @@ create-line  = "aka" alias { "," alias } NL
              | placement NL
              | "wears" name NL
              | DIRECTION "to" name NL                      (* exit *)
-             | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
-                                                           (* blocked exit, phrase key *)
+             | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
+                                                           (* blocked exit *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
              | "first" "time" NL >>> prose-paragraph       (* Z1: first-visit description;
                                                               rooms only *)

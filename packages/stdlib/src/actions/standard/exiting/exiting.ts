@@ -85,7 +85,9 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     'cant_exit',
     'exited',
     'exited_from',
-    'nowhere_to_go'
+    'nowhere_to_go',
+    'not_in_that',
+    'not_on_that'
   ],
   group: 'movement',
   
@@ -109,6 +111,24 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: ExitingMessages.NOWHERE_TO_GO
+      };
+    }
+
+    // Targeted forms (`exit :container`, `get off :vehicle`, `disembark
+    // :vehicle`) name what the player believes they occupy — the named
+    // target must BE the current container, else refuse (ADR-231 Phase 4
+    // audit defect: validate() previously ignored the direct object and
+    // exited whatever the player was in). Checked before the room check so
+    // `exit basket` from open ground refuses as "not in/on that", not
+    // "you're not inside anything".
+    const target = context.command.directObject?.entity;
+    if (target && target.id !== currentLocation) {
+      return {
+        valid: false,
+        error: target.has(TraitType.SUPPORTER)
+          ? ExitingMessages.NOT_ON_THAT
+          : ExitingMessages.NOT_IN_THAT,
+        params: { container: nounPhraseFor(target) }
       };
     }
 

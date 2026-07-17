@@ -57,6 +57,70 @@ describe('exitingAction (Golden Pattern)', () => {
       });
     });
 
+    test('targeted exit naming an entity the player is NOT in refuses with not_in_that', () => {
+      // ADR-231 Phase 4 audit defect: `exit hairpin` while in a basket
+      // used to exit the basket — the target was ignored entirely.
+      const { world, player, room } = setupBasicWorld();
+      const basket = world.createEntity('wicker basket', EntityType.CONTAINER);
+      basket.add({ type: TraitType.CONTAINER, enterable: true });
+      world.moveEntity(basket.id, room.id);
+      const hairpin = world.createEntity('steel hairpin', EntityType.OBJECT);
+      world.moveEntity(hairpin.id, room.id);
+      world.moveEntity(player.id, basket.id);
+
+      const command = createCommand(IFActions.EXITING, { entity: hairpin });
+      const context = createRealTestContext(exitingAction, world, command);
+      const events = executeWithValidation(exitingAction, context);
+
+      expectEvent(events, 'if.event.exited', {
+        blocked: true,
+        messageId: 'if.action.exiting.not_in_that',
+        reason: 'not_in_that'
+      });
+      // State: the player did NOT exit the basket.
+      expect(world.getLocation(player.id)).toBe(basket.id);
+    });
+
+    test('targeted exit naming a supporter the player is not on refuses with not_on_that', () => {
+      const { world, player, room } = setupBasicWorld();
+      const basket = world.createEntity('wicker basket', EntityType.CONTAINER);
+      basket.add({ type: TraitType.CONTAINER, enterable: true });
+      world.moveEntity(basket.id, room.id);
+      const table = world.createEntity('oak table', EntityType.SUPPORTER);
+      table.add({ type: TraitType.SUPPORTER });
+      world.moveEntity(table.id, room.id);
+      world.moveEntity(player.id, basket.id);
+
+      const command = createCommand(IFActions.EXITING, { entity: table });
+      const context = createRealTestContext(exitingAction, world, command);
+      const events = executeWithValidation(exitingAction, context);
+
+      expectEvent(events, 'if.event.exited', {
+        blocked: true,
+        messageId: 'if.action.exiting.not_on_that',
+        reason: 'not_on_that'
+      });
+      expect(world.getLocation(player.id)).toBe(basket.id);
+    });
+
+    test('targeted exit naming the ACTUAL container proceeds', () => {
+      const { world, player, room } = setupBasicWorld();
+      const basket = world.createEntity('wicker basket', EntityType.CONTAINER);
+      basket.add({ type: TraitType.CONTAINER, enterable: true });
+      world.moveEntity(basket.id, room.id);
+      world.moveEntity(player.id, basket.id);
+
+      const command = createCommand(IFActions.EXITING, { entity: basket });
+      const context = createRealTestContext(exitingAction, world, command);
+      const events = executeWithValidation(exitingAction, context);
+
+      expectEvent(events, 'if.event.exited', {
+        fromLocation: basket.id
+      });
+      // State: the player actually left the basket.
+      expect(world.getLocation(player.id)).toBe(room.id);
+    });
+
     test.skip('should fail when no location set', () => {
       // SKIPPED: The new context creation requires player to have a valid location
       const world = new WorldModel();
