@@ -496,6 +496,27 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(100)
     .build();
 
+  // Bare general throw (no target) — reaches the action's general-throw
+  // branch; `throw away :item` (dropping) still wins via D2b literal
+  // specificity, and the at/to forms via their extra literal.
+  grammar
+    .define('throw :item')
+    .mapsTo('if.action.throwing')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('toss :item')
+    .mapsTo('if.action.throwing')
+    .withPriority(95)
+    .build();
+
+  grammar
+    .define('hurl :item')
+    .mapsTo('if.action.throwing')
+    .withPriority(95)
+    .build();
+
   grammar
     .define('throw :item to :recipient')
     .mapsTo('if.action.throwing')
@@ -995,6 +1016,18 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('exit :container')
     .mapsTo('if.action.exiting')
     .withPriority(100)
+    .build();
+
+  grammar
+    .define('get out of :container')
+    .mapsTo('if.action.exiting')
+    .withPriority(105) // ADR-231 D2b: phrasal form above taking's `get :item`
+    .build();
+
+  grammar
+    .define('climb out of :container')
+    .mapsTo('if.action.exiting')
+    .withPriority(105) // ADR-231 D2b: phrasal form above climbing's `climb :target`
     .build();
 
   grammar

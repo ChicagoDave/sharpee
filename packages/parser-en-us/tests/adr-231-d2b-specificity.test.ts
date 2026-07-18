@@ -105,6 +105,46 @@ describe('ADR-231 D2b — literal-before-slot specificity (full grammar)', () =>
     }
   });
 
+  it('parses "get out of basket" as exiting WITH the container target', () => {
+    const result = parser.parse('get out of basket');
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.exiting');
+      expect(result.value.structure.directObject?.text).toBe('basket');
+    }
+  });
+
+  it('parses "climb out of basket" as exiting with the container target', () => {
+    const result = parser.parse('climb out of basket');
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.exiting');
+      expect(result.value.structure.directObject?.text).toBe('basket');
+    }
+  });
+
+  it('parses bare "throw coin" as throwing (general throw, no target)', () => {
+    const result = parser.parse('throw coin');
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.throwing');
+      expect(result.value.structure.directObject?.text).toBe('coin');
+      expect(result.value.structure.indirectObject).toBeUndefined();
+    }
+  });
+
+  it('still parses "throw away coin" as dropping — literal specificity beats the bare form', () => {
+    const result = parser.parse('throw away coin');
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.dropping');
+    }
+  });
+
   it('parses "climb out" as exiting, not climbing an object named "out"', () => {
     const result = parser.parse('climb out');
 
