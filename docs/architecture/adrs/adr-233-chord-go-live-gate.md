@@ -45,11 +45,18 @@ no-scope-reduction rule of the parity north star applies).
   four parts: actions, daemons, plugins, browser emits) and committed
   as the refreshed parity map.
 - `a door` loads from Chord and behaves (open/close/lock via existing
-  traits) via a child ADR. [Q-1 resolved 2026-07-17, session f5c22c]:
+  traits) via a child ADR — **ADR-234 (chord door loading), ACCEPTED
+  2026-07-17, session 615882**; implementation is its own follow-on
+  plan. [Q-1 resolved 2026-07-17, session f5c22c]:
   - Two authoring forms ship in the gate: placement on the door
     (`a door between the Kitchen and the Hall`) and exit-line sugar
     (`north to the Hall through the oak door` — reverse side
     inferred, no matching line needed in the far room).
+    **[Superseded 2026-07-17, session 615882: David struck the
+    `between` placement form while reviewing the ADR-234 draft —
+    "between leaves too much inferred (directions)." ONE form ships:
+    the exit-line sugar, direction explicit, reverse = opposite
+    cardinal. ADR-234 D1 records the ruling.]**
   - Invariant: the door entity's own declaration is identical
     whichever form is used (`a door, lockable with the iron key`) —
     traits stay orthogonal to the two-room relationship.
@@ -82,7 +89,18 @@ no-scope-reduction rule of the parity north star applies).
     extension's traits/verbs into the composable vocabulary —
     systemic combat, NPC library, channel registration) is drafted
     and interviewed before launch. Implementation scope is decided
-    by that child ADR, not assumed here.
+    by that child ADR, not assumed here. — **ADR-235 (extension
+    surface go-live disposition), ACCEPTED 2026-07-17, session 615882:
+    adopts ADR-215/216 (the design already existed, ACCEPTED
+    2026-07-14) rather than re-drafting; carries the behavior-hatch
+    (audit D2) resolution and the implementation-slice ruling.**
+  - **[Added 2026-07-17, session 615882 — ADR-235 interview rulings]**:
+    behavior hatch REMOVED (D2); implementation slice = **S3, the
+    full ADR-215/216 design implemented before launch**; and a new
+    in-gate item: **AREAS** — a Chord surface for the ADR-149 region
+    system (named room lists) with attached daemons (story-level
+    daemons not excluded) — ruled in-gate, design AND implementation,
+    via its own child ADR + follow-on plan, sequenced before G4.
 
 ### G2 — Outside-author pipeline
 

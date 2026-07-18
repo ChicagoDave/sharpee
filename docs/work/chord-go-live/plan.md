@@ -51,7 +51,7 @@
 - **Entry state**: Phase 1 complete (done). Q1's ruling fixes the scope; no conditional branches remain.
 - **Deliverable**: Draft the door-loading child ADR (design only) per the Q-1 ruling: BOTH authoring forms in-gate — `a door between the Kitchen and the Hall` (placement on the door) and `north to the Hall through the oak door` (exit-line sugar, reverse side inferred); invariant door declaration across forms (`a door, lockable with the iron key`); carries the `with key`-redundancy ratchet entry (composition clause becomes `lockable with the iron key`; existing fixtures update when it lands); explicitly EXCLUDES the general cross-room `between` primitive (windows/bridges — parked by David for its own design conversation) while not foreclosing it. Run the child ADR's own open-questions interview if it carries any. **Implementation is out of scope for this plan** — an ACCEPTED door ADR gets its own follow-on plan.
 - **Exit state**: A DRAFT or ACCEPTED child ADR for door loading exists, linked from ADR-233.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, session 615882) — **ADR-234 ACCEPTED** (adr-review 15/16, fixes applied pre-flip). Scope shifted during the interview: David STRUCK the `between` placement form (supersedes part of ADR-233's Q-1 ruling; recorded in both ADRs) — one form ships (`north to the Hall through the oak door`, reverse inferred). Also ruled: lockable doors start locked (`starts unlocked` overrides); bare `a door` auto-openable starts closed; R3 keyless-`with` is uniform across all single-entity configs; `, one-way` exit modifier reserved. Implementation = follow-on plan (not this plan).
 
 ### Phase 5: G1 — extension/plugin opt-in surface child ADR (Q2 RESOLVED — in-gate)
 - **Tier**: Large (design-heavy; the child ADR likely carries its own interview + follow-on plan)
@@ -60,7 +60,7 @@
 - **Entry state**: Phase 2 complete (done). Q-2 ruled 2026-07-17: IN-GATE. The capability-verb half needs no design phase — audit verified `define action` + `on <verb> it` live (lowering/raising CAN); turning's lifecycle row moves to the mechanical shortlist.
 - **Deliverable**: Draft the extension-surface child ADR (design only): what an author writes to opt in, what the opt-in admits (traits, verbs, channels), how it composes with the pure-IR profile and the ratchet, and how the dead behavior-hatch path (audit Defect D2) is resolved or subsumed. Run its open-questions interview. **Implementation is out of scope for this plan** — an ACCEPTED child ADR gets its own follow-on plan, and G1 closes on that ADR's own gate definition.
 - **Exit state**: A DRAFT or ACCEPTED extension-surface child ADR exists, linked from ADR-233; G1's design-heavy remainder line is fully dispositioned.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, session 615882) — **ADR-235 ACCEPTED** (adr-review 14/14). Key discovery: ADR-215/216 already carried the whole design (ACCEPTED 2026-07-14, zero implementation) — ADR-235 adopts them instead of re-drafting. Rulings: behavior hatch REMOVED (audit D2); **gate slice = S3 (full ADR-215/216 implemented before launch)**; **AREAS ruled in-gate, design + implementation** (Chord surface for ADR-149 regions + attached daemons; story-level daemons not excluded) via its own child ADR. Two new launch workstreams follow: the ADR-215/216 implementation plan and the areas child ADR + implementation plan — both sequenced before Phase 8 (G4).
 
 ### Phase 6: G2 — ADR-180 Phase U2 delivery (outside-author pipeline)
 - **Tier**: Large
