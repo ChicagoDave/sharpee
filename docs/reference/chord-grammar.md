@@ -207,6 +207,52 @@ DIRECTION    = north | south | east | west | northeast | northwest
              | southeast | southwest | up | down ;
 ```
 
+## Extension surface (ADR-215/216, 2026-07-18)
+
+- **`use <extension>`** — a story-header body line, one trusted platform
+  extension per line (`combat`, `state-machines`). Admits that extension's
+  static vocabulary manifest (`packages/chord/src/manifests/`) into the
+  catalog and triggers its runtime registration from the loader's trusted
+  registry — a `use`-only story stays pure IR. Unknown/duplicate names are
+  compile errors; NPC vocabulary is CORE (always on; `use npc` is
+  `analysis.extension-core`). `define behavior … from` was REMOVED
+  (ADR-235 D2).
+- **Extension trait adjectives** carry manifest-typed `with`-fields:
+  `combatant with health 20 and skill 40 and hostile true` (health routes
+  to the required HealthTrait per ADR-226), `weapon with damage 5 and
+  skill-bonus 2`; the CORE NPC library `guard`/`passive`/`wanderer`/
+  `follower`/`patrol` with params (`move-chance` is a percentage;
+  `patrol with route [the Gate, the Yard]` uses the `[ … ]` name-list
+  value — legal only where a manifest declares a list field). Unknown
+  keys and mistyped values are compile errors.
+- **`define machine … end machine`** under `use state-machines` (spelling
+  A): `role <name> is <entity>`, `starts <state>`, `state <name>[,
+  terminal]` blocks with `when <trigger>[ while <cond>]: <target>` lines
+  and `on enter`/`on exit` bodies. Machines are story-owned (`it` is a
+  compile error). Triggers: action-on-role/entity, `event <key>`,
+  conditions; a bare word resolves as condition/story state first, else an
+  action gerund. The existing `states:`/`select`/`change` surface is
+  UNTOUCHED — this is additive depth.
+- **Payloaded `emit`** — `emit <event.key> with <field> <value> [and …]
+  [when <cond>]`: literals, value expressions (entity refs → world ids,
+  `true`/`false` → booleans; plain strings are quoted), `[ … ]` arrays,
+  `{ <field> <value>, … }` nested objects (commas inside brackets/braces,
+  `and` at the flat level). Keys pass verbatim into `event.data`.
+- **Media sugar + declared assets** — `define sound|image|music <name>
+  from "<file>"` (DATA references, never hatches — `hasHatches` is
+  untouched); `play sound <asset>`, `play music <asset> [looping]`,
+  `stop music`, `show image <asset> [in <layer>]`, `hide image`,
+  `play ambient <asset>` (a sound asset), `stop ambient`, `transition
+  <kind>`, `clear` — all lower at compile onto payloaded `media.*` emits.
+- **`define channel … end channel`** (spelling A) — a JSON data
+  projection: `mode replace|append|event`, optional `gated by
+  <capability>`, `from event <key>`, `take <field>, …` (the turn's last
+  matching event, taken fields only). Renderers ship platform-side.
+- **`client has <capability>`** — a condition reading the LIVE negotiated
+  client capabilities (closed flag set in Chord spelling: `sound`,
+  `images`, `split-pane`, …); false for every gateable flag on a
+  text-only client, so stories degrade deliberately.
+
 ## define
 
 ```

@@ -30,7 +30,7 @@ import {
   IRTraitDef,
   StoryIR,
 } from '@sharpee/chord';
-import type { Choice, Literal, Phrase, SnippetEntry } from '@sharpee/if-domain';
+import type { Choice, IChannelRegistry, IOChannel, Literal, Phrase, SnippetEntry } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
   DEADLY_ROOM_DEATH_ACTION_ID,
@@ -562,7 +562,14 @@ export class ChordStory implements Story {
     getPluginRegistry(): { register(plugin: unknown): void };
     registerSlotEntry?(entry: ChordSlotEntry): void;
     registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
+    getClientCapabilities?(): object;
   }): void {
+    // ADR-216 `client has`: wire the LIVE capability source (the engine
+    // negotiates capabilities at start(); reads happen per evaluation).
+    // Engines without the accessor leave the text-only default in place.
+    if (engine.getClientCapabilities) {
+      this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities!() as Record<string, unknown>);
+    }
     // ADR-215 Q4: NPCs are CORE — the plugin auto-wires unconditionally
     // (unlike the scheduler's daemon-gated registration below), and each
     // factory-configured behavior registers under its per-entity id.
@@ -610,6 +617,44 @@ export class ChordStory implements Story {
     // declarative slot entry — no synthesized closures; the platform's
     // built-in contributor evaluates them.
     this.registerPresentEntries(engine);
+  }
+
+  /**
+   * ADR-216 custom channels + ADR-215's third contribution part: every
+   * `define channel` lowers to a real IOChannel (JSON data projection —
+   * the turn's last event of the declared type, `take` fields projected
+   * from its data), and every `use`d extension gets its reserved
+   * `registerChannels` slot invoked (no bundled extension registers one
+   * today — the leg is live but unexercised; a novel renderer would ship
+   * there, keeping stories pure IR). The engine invokes this hook once at
+   * start (`Story.registerChannels`, engine/src/game-engine.ts).
+   */
+  registerChannels(registry: IChannelRegistry): void {
+    for (const channel of this.ir.channels ?? []) {
+      const { fromEvent, take } = channel;
+      const definition: IOChannel = {
+        id: channel.name,
+        contentType: 'json',
+        mode: channel.mode,
+        emit: 'sparse',
+        ...(channel.gatedBy ? { gatedBy: channel.gatedBy as IOChannel['gatedBy'] } : {}),
+        produce: (ctx) => {
+          for (let i = ctx.events.length - 1; i >= 0; i--) {
+            const event = ctx.events[i];
+            if (event.type !== fromEvent) continue;
+            const data = (event.data ?? {}) as Record<string, unknown>;
+            const projected: Record<string, unknown> = {};
+            for (const field of take) projected[field] = data[field];
+            return channel.mode === 'append' ? [projected] : projected;
+          }
+          return undefined;
+        },
+      };
+      registry.add(definition);
+    }
+    for (const name of this.ir.uses ?? []) {
+      EXTENSION_REGISTRY.get(name)?.registerChannels?.(registry);
+    }
   }
 
   /**

@@ -111,6 +111,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       },
     },
   ],
+  "channels": [],
   "conditions": [],
   "entities": [
     {

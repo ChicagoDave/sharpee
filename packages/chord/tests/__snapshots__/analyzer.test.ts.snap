@@ -3,6 +3,7 @@
 exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
 {
   "actions": [],
+  "channels": [],
   "conditions": [
     {
       "condition": {

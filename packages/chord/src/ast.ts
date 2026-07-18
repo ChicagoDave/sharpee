@@ -80,7 +80,32 @@ export type Declaration =
   | DefineHatch
   | DefineSequence
   // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
-  | DefineMachine;
+  | DefineMachine
+  // ADR-216 declared media assets (DATA references, never hatches):
+  | DefineAsset
+  // ADR-216 custom channels (spelling A, David 2026-07-18):
+  | DefineChannel;
+
+/**
+ * `define channel <name> … end channel` (ADR-216; spelling A ratified by
+ * David 2026-07-18) — a declarative data projection: JSON content, a
+ * mode, an optional capability gate, and a produce rule taking fields
+ * from the turn's last event of the named type. Pure IR — a novel
+ * RENDERER for it ships via an ADR-215 trusted extension, never here.
+ */
+export interface DefineChannel {
+  kind: 'define-channel';
+  name: string;
+  /** `mode replace|append|event` (null = parse error reported). */
+  mode: string | null;
+  /** `gated by <capability>` — a client capability flag, or null (ungated). */
+  gatedBy: string | null;
+  /** `from event <dotted.key>` — the source event type (null = error reported). */
+  fromEvent: string | null;
+  /** `take <field>, …` — data fields projected from the event. */
+  take: string[];
+  span: Span;
+}
 // Removed by the ownership package (ratchet 2026-07-11): DefineFlag,
 // DefineScore, WhenRule, OnceRule, EveryRule — the parser emits removal
 // diagnostics with fix-its pointing at the owner-attached replacements.
@@ -380,6 +405,51 @@ export type PatternPart =
   | { kind: 'word'; word: string; span: Span }
   | { kind: 'slot'; word: string; span: Span };
 
+/**
+ * `define sound|image|music <name> from "<file>"` (ADR-216) — a declared
+ * media asset: a DATA reference (static file path), never a code hatch —
+ * it does NOT set `hasHatches` and keeps the pure-IR profile. Referenced
+ * by name from the media sugar statements (typo-checked at compile).
+ */
+export interface DefineAsset {
+  kind: 'define-asset';
+  assetKind: 'sound' | 'image' | 'music';
+  name: string;
+  path: string;
+  span: Span;
+}
+
+/**
+ * ADR-216 typed media sugar — each form lowers AT ANALYSIS onto a
+ * payloaded `media.*` emit (no runtime surface of its own): `play sound
+ * <asset>`, `play music <asset> [looping]`, `stop music`, `show image
+ * <asset> [in <layer>]`, `hide image`, `play ambient <asset>`,
+ * `stop ambient`, `transition <kind>`, `clear`.
+ */
+export interface MediaStmt {
+  kind: 'media';
+  form:
+    | 'play-sound'
+    | 'play-music'
+    | 'stop-music'
+    | 'show-image'
+    | 'hide-image'
+    | 'play-ambient'
+    | 'stop-ambient'
+    | 'transition'
+    | 'clear';
+  /** Declared asset name for the play/show forms; null otherwise. */
+  asset: string | null;
+  /** `in <layer>` on show-image; null otherwise. */
+  layer: string | null;
+  /** `looping` modifier on play-music. */
+  looping: boolean;
+  /** The transition kind word (`transition fade`); null otherwise. */
+  transitionKind: string | null;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
 /** `define text <name> from "<module>"` — TS escape hatch declaration. */
 export interface DefineText {
   kind: 'define-text';
@@ -607,6 +677,7 @@ export type Statement =
   | RefuseWhenStmt
   | PhraseStmt
   | EmitStmt
+  | MediaStmt
   | SetStmt
   | ChangeStmt
   | MoveStmt
@@ -836,7 +907,21 @@ export type ConditionNode =
   | ChanceNode
   | NamedConditionRef
   | AnyOfNode
-  | NoneOfNode;
+  | NoneOfNode
+  | ClientHasNode;
+
+/**
+ * `client has <capability>` (ADR-216) — reads the live negotiated client
+ * capability at evaluation time so a story can degrade deliberately.
+ * Capability words are the platform's boolean flags in Chord spelling
+ * (`sound`, `split-pane`, …); `client` is reserved in condition-subject
+ * position.
+ */
+export interface ClientHasNode {
+  kind: 'client-has';
+  capability: string;
+  span: Span;
+}
 
 /**
  * `any <condition-name>` — existential over a named open condition

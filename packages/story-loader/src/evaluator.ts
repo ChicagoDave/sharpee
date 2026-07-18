@@ -73,6 +73,19 @@ export class Evaluator {
   private readonly irEntities: IREntity[];
   private readonly irEntityById = new Map<string, IREntity>();
 
+  /**
+   * Live client-capability source for `client has` (ADR-216) — set by the
+   * loader at engine-ready from the engine's negotiated capabilities.
+   * Null (load time, headless tests) means the text-only default: every
+   * gateable flag reads false.
+   */
+  private capabilitiesProvider: (() => Record<string, unknown> | undefined) | null = null;
+
+  /** Wire the live capability source (loader-only; ADR-216). */
+  setCapabilitiesProvider(provider: () => Record<string, unknown> | undefined): void {
+    this.capabilitiesProvider = provider;
+  }
+
   constructor(
     ir: StoryIR,
     private readonly ids: EntityIdResolver,
@@ -110,6 +123,15 @@ export class Evaluator {
       case 'story-state':
         // The story object's phase (`while after-hours`, ratchet D2).
         return ctx.world.getStateValue(CHORD_STORY_STATE_KEY) === cond.state;
+      case 'client-has': {
+        // ADR-216: the live negotiated client capability. Without a
+        // provider (load time, headless tests) the engine's text-only
+        // default applies: only `text` is true, and `text` cannot be
+        // written in a `client has` (the compiler's closed flag set).
+        const capabilities = this.capabilitiesProvider?.();
+        if (!capabilities) return false;
+        return (capabilities as Record<string, unknown>)[cond.capability] === true;
+      }
       case 'any-of':
         // E1 (ratchet 2026-07-12): true iff some entity satisfies the
         // named open condition; false over the empty set. Short-circuits.

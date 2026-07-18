@@ -106,3 +106,34 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
  * reaction — the loader refuses it on any other owner.
  */
 export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering', 'leaving']);
+
+/**
+ * Client capability flags (ADR-216 `client has <capability>` and channel
+ * `gated by` lines), in Chord spelling — hyphenated words mapping
+ * mechanically to the platform's camelCase `ClientCapabilities` boolean
+ * keys (`split-pane` → `splitPane`). `text` is excluded: it is always
+ * true and cannot gate. The loader-side conformance test pins this list
+ * against the platform's real flag set.
+ */
+export const CLIENT_CAPABILITY_FLAGS: ReadonlySet<string> = new Set([
+  'images',
+  'animations',
+  'video',
+  'sound',
+  'music',
+  'speech',
+  'split-pane',
+  'status-bar',
+  'sidebar',
+  'clickable-text',
+  'clickable-image',
+  'drag-drop',
+  'transitions',
+  'layers',
+  'custom-fonts',
+]);
+
+/** Chord capability word → the platform's camelCase key (`split-pane` → `splitPane`). */
+export function capabilityKeyOf(word: string): string {
+  return word.replace(/-([a-z])/g, (_, ch: string) => ch.toUpperCase());
+}

@@ -21,7 +21,7 @@ import { parseStory } from './parser';
 export * from './ast';
 export * from './ir';
 export { analyze } from './analyzer';
-export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS } from './catalog';
+export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf } from './catalog';
 export { EXTENSION_MANIFESTS, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests';
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests';
 export { Diagnostic, DiagnosticSeverity, DiagnosticBag } from './diagnostics';

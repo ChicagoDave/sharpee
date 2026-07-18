@@ -69,6 +69,17 @@ describe('manifest ↔ registry conformance (ADR-215 AC-2)', () => {
     }
   });
 
+  it('the chord capability flag set matches the platform boolean flags exactly (ADR-216)', async () => {
+    const { CLIENT_CAPABILITY_FLAGS, capabilityKeyOf } = await import('@sharpee/chord');
+    const { DEFAULT_TEXT_CAPABILITIES } = await import('@sharpee/engine');
+    const platformFlags = Object.entries(DEFAULT_TEXT_CAPABILITIES)
+      .filter(([key, value]) => typeof value === 'boolean' && key !== 'text')
+      .map(([key]) => key)
+      .sort();
+    const chordFlags = [...CLIENT_CAPABILITY_FLAGS].map(capabilityKeyOf).sort();
+    expect(chordFlags).toEqual(platformFlags);
+  });
+
   it('every NPC route lands on a real, constructor-persisted NpcTrait field', () => {
     const probe: Record<string, unknown> = {};
     for (const route of NPC_FIELD_ROUTES.values()) {

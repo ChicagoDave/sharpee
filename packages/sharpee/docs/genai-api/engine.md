@@ -1408,6 +1408,13 @@ export declare class GameEngine {
      */
     getPluginRegistry(): PluginRegistry;
     /**
+     * The negotiated client capabilities for this session (ADR-216): the
+     * `client has <capability>` predicate reads these live, and channel
+     * gating uses the same flags at manifest time. Text-only before
+     * `start({ capabilities })` runs or when none were negotiated.
+     */
+    getClientCapabilities(): ClientCapabilities;
+    /**
      * Get the dedicated action RNG stream (ADR-231 D6). Part of the
      * ISaveRestoreStateProvider contract — the save service persists this
      * stream's seed and the restore path re-seeds it.

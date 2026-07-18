@@ -22,6 +22,7 @@ import {
   ConditionNode,
   CreateDecl,
   DefineAction,
+  DefineChannel,
   DefineCondition,
   DefineMachine,
   DefinePhrase,
@@ -30,6 +31,7 @@ import {
   EmitField,
   EmitValue,
   MachineTransition,
+  MediaStmt,
   NameRef,
   OnClause,
   StateName,
@@ -39,7 +41,7 @@ import {
   TraitField,
   ValueExpr,
 } from './ast';
-import { EVENT_VERBS, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests';
 import { DiagnosticBag } from './diagnostics';
 import {
@@ -47,6 +49,7 @@ import {
   IRActionDef,
   IRCondition,
   IREntity,
+  IRChannelDef,
   IREmitField,
   IREmitValue,
   IRMachineDef,
@@ -124,6 +127,8 @@ function conditionFingerprint(cond: ConditionNode): string {
       return `not(${conditionFingerprint(cond.operand)})`;
     case 'chance':
       return `chance:${cond.n}`;
+    case 'client-has':
+      return `client-has:${cond.capability}`;
     case 'condition-ref':
       return `cond:${cond.name}`;
     case 'any-of':
@@ -235,6 +240,7 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
       return conditionReferencesIt(cond.operand);
     case 'chance':
     case 'condition-ref':
+    case 'client-has':
       return false;
     case 'any-of':
     case 'none-of':
@@ -395,6 +401,7 @@ class Analyzer {
       scores: this.scoreDecls,
       sequences: [],
       machines: [],
+      channels: [],
       hasHatches: false,
     };
 
@@ -433,6 +440,12 @@ class Analyzer {
         case 'define-machine':
           ir.machines.push(this.buildMachine(decl));
           break;
+        case 'define-asset':
+          break; // collected in pass 1 — data references, nothing to emit
+        case 'define-channel':
+          ir.channels.push(this.buildChannel(decl));
+          break;
+
         case 'define-sequence':
           ir.sequences.push({
             name: decl.name.join(' '),
@@ -567,6 +580,9 @@ class Analyzer {
 
   /** Machine names seen (duplicate gate). */
   private readonly machineNames = new Set<string>();
+
+  /** Declared media assets (ADR-216): name → kind + path. */
+  private readonly assets = new Map<string, { kind: 'sound' | 'image' | 'music'; path: string; span: Span }>();
 
   /**
    * Build one `define machine` (ADR-215 `use state-machines` depth):
@@ -862,6 +878,14 @@ class Analyzer {
       }
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
+      else if (decl.kind === 'define-asset') {
+        // ADR-216: declared media assets — DATA references, one namespace.
+        if (this.assets.has(decl.name)) {
+          this.diagnostics.error('analysis.duplicate-asset', `An asset named \`${decl.name}\` already exists.`, decl.span);
+        } else {
+          this.assets.set(decl.name, { kind: decl.assetKind, path: decl.path, span: decl.span });
+        }
+      }
       else if (decl.kind === 'define-trait') {
         this.traitNames.add(decl.name);
         for (const field of decl.data) {
@@ -1678,6 +1702,8 @@ class Analyzer {
           span: stmt.span,
         };
       }
+      case 'media':
+        return this.lowerMediaStatement(stmt, scope);
       case 'select-on': {
         const subject = this.resolveValue(stmt.subject, scope);
         const stateOwner = this.stateOwnerOf(subject, scope);
@@ -1801,6 +1827,127 @@ class Analyzer {
       case 'match':
         return this.resolveMatch(expr.span, scope);
     }
+  }
+
+  /**
+   * Lower one media sugar statement (ADR-216) onto a payloaded `media.*`
+   * emit — pure compile-time sugar, no runtime surface of its own. Asset
+   * references are typo-checked with a nearest-match suggestion; kind
+   * mismatches gate (`play ambient` plays SOUND assets — an ambient loop
+   * is a sound file).
+   */
+  private lowerMediaStatement(stmt: MediaStmt, scope: Scope): IRStatement {
+    const stmtWhen = this.resolveStmtWhen(stmt.stmtWhen, scope);
+    const fields: IREmitField[] = [];
+    let event = '';
+    const requireAsset = (expected: 'sound' | 'image' | 'music'): void => {
+      if (!stmt.asset) return; // the parser already reported
+      const found = this.assets.get(stmt.asset);
+      if (!found) {
+        this.diagnostics.error(
+          'analysis.unknown-asset',
+          `\`${stmt.asset}\` names no declared asset${this.suggestText(stmt.asset, [...this.assets.keys()])}. Declare it: \`define ${expected} ${stmt.asset} from "<file>"\`.`,
+          stmt.span,
+        );
+        return;
+      }
+      if (found.kind !== expected) {
+        this.diagnostics.error(
+          'analysis.asset-kind',
+          `\`${stmt.asset}\` is a ${found.kind} asset — this statement needs a ${expected} asset.`,
+          stmt.span,
+        );
+        return;
+      }
+      fields.push({ key: 'src', value: { kind: 'literal', value: found.path, valueType: 'string' } });
+    };
+    switch (stmt.form) {
+      case 'play-sound':
+        event = 'media.sound.play';
+        requireAsset('sound');
+        break;
+      case 'play-music':
+        event = 'media.music.play';
+        requireAsset('music');
+        if (stmt.looping) fields.push({ key: 'loop', value: { kind: 'value', value: { kind: 'symbol', name: 'true' } } });
+        break;
+      case 'stop-music':
+        event = 'media.music.stop';
+        break;
+      case 'play-ambient':
+        event = 'media.ambient.play';
+        requireAsset('sound');
+        break;
+      case 'stop-ambient':
+        event = 'media.ambient.stop';
+        break;
+      case 'show-image':
+        event = 'media.image.show';
+        requireAsset('image');
+        if (stmt.layer) fields.push({ key: 'layer', value: { kind: 'literal', value: stmt.layer, valueType: 'string' } });
+        break;
+      case 'hide-image':
+        event = 'media.image.hide';
+        break;
+      case 'transition':
+        event = 'media.transition';
+        fields.push({ key: 'kind', value: { kind: 'literal', value: stmt.transitionKind ?? '', valueType: 'string' } });
+        break;
+      case 'clear':
+        event = 'media.clear';
+        break;
+    }
+    return { kind: 'emit', event, ...(fields.length > 0 ? { payload: fields } : {}), stmtWhen, span: stmt.span };
+  }
+
+  /** Channel names seen (duplicate gate). */
+  private readonly channelNames = new Set<string>();
+
+  /**
+   * Build one `define channel` (ADR-216; spelling A): mode/from/take are
+   * required, `gated by` must name a client capability flag (Chord
+   * spelling, lowered to the platform's camelCase key). Re-declaring a
+   * STANDARD channel id is legal platform behavior (story override);
+   * duplicating a story channel is not.
+   */
+  private buildChannel(decl: DefineChannel): IRChannelDef {
+    if (this.channelNames.has(decl.name)) {
+      this.diagnostics.error('analysis.duplicate-channel', `A channel named \`${decl.name}\` already exists.`, decl.span);
+    }
+    this.channelNames.add(decl.name);
+    if (decl.mode === null || !['replace', 'append', 'event'].includes(decl.mode)) {
+      this.diagnostics.error(
+        'analysis.channel-mode',
+        `Channel \`${decl.name}\` needs \`mode replace\`, \`mode append\`, or \`mode event\`${decl.mode ? ` — got \`${decl.mode}\`` : ''}.`,
+        decl.span,
+      );
+    }
+    if (decl.fromEvent === null) {
+      this.diagnostics.error('analysis.channel-from', `Channel \`${decl.name}\` needs a \`from event <event.key>\` line.`, decl.span);
+    }
+    if (decl.take.length === 0) {
+      this.diagnostics.error('analysis.channel-take', `Channel \`${decl.name}\` needs a \`take <field>[, …]\` line — it projects data, it cannot project nothing.`, decl.span);
+    }
+    let gatedBy: string | null = null;
+    if (decl.gatedBy !== null) {
+      if (!CLIENT_CAPABILITY_FLAGS.has(decl.gatedBy)) {
+        this.diagnostics.error(
+          'analysis.unknown-capability',
+          `\`${decl.gatedBy}\` is not a client capability flag${this.suggestText(decl.gatedBy, [...CLIENT_CAPABILITY_FLAGS])}.`,
+          decl.span,
+        );
+      } else {
+        gatedBy = capabilityKeyOf(decl.gatedBy);
+      }
+    }
+    return {
+      name: decl.name,
+      mode: (decl.mode ?? 'event') as IRChannelDef['mode'],
+      gatedBy,
+      fromEvent: decl.fromEvent ?? '',
+      take: decl.take,
+      span: decl.span,
+    };
   }
 
   /** Resolve one emit-payload field (ADR-216) — key words join with a space, passed verbatim. */
@@ -1971,6 +2118,18 @@ class Analyzer {
         return { kind: 'not', operand: this.resolveCondition(cond.operand, scope) };
       case 'chance':
         return { kind: 'chance', n: cond.n };
+      case 'client-has': {
+        // ADR-216: capability words are the closed platform flag set —
+        // validated here, lowered to the camelCase platform key.
+        if (!CLIENT_CAPABILITY_FLAGS.has(cond.capability)) {
+          this.diagnostics.error(
+            'analysis.unknown-capability',
+            `\`${cond.capability}\` is not a client capability flag${this.suggestText(cond.capability, [...CLIENT_CAPABILITY_FLAGS])}.`,
+            cond.span,
+          );
+        }
+        return { kind: 'client-has', capability: capabilityKeyOf(cond.capability) };
+      }
       case 'condition-ref': {
         if (this.conditionNames.has(cond.name)) {
           // Never-guess gate (grammar log 2026-07-11): an OPEN condition is a

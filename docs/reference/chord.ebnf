@@ -43,8 +43,21 @@ LOCALE  = WORD ;                                           (* e.g. en-US *)
 
 story-file   = [ story-header ] { declaration } ;
 story-header = "story" STRING [ "by" STRING ] NL
-               >>> { states-line | score-line | story-on-clause
+               >>> { states-line | score-line | story-on-clause | use-line
                    | WORD ":" rest-of-line NL } ;
+use-line     = "use" WORD NL ;                             (* ADR-215: one trusted
+                                                              platform extension per
+                                                              line (combat,
+                                                              state-machines); admits
+                                                              the extension's manifest
+                                                              vocabulary and triggers
+                                                              its runtime registration.
+                                                              Unknown/duplicate names
+                                                              and `use` of CORE
+                                                              vocabulary (npc) are
+                                                              compile errors; top-level
+                                                              placement gets a header
+                                                              fix-it *)
 story-on-clause = on-clause ;                              (* ADR-236 D7 (ratchet R4):
                                                               `on every turn` ONLY —
                                                               any other clause form is
@@ -56,7 +69,13 @@ story-on-clause = on-clause ;                              (* ADR-236 D7 (ratche
 declaration  = create | define-condition | define-phrase | define-phrases
              | define-verb | define-text
              | define-trait | define-action | define-hatch
-             | define-sequence ;
+             | define-sequence
+             | define-machine                              (* ADR-215, use-gated *)
+             | define-asset | define-channel ;             (* ADR-216 *)
+
+(* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
+   error with a fix-it naming `define trait` + clauses or `define action
+   … from`. *)
 
 (* Removed from the top level (ownership ratchet 2026-07-11) — parse errors
    with owner-attached fix-its, so they have no productions: `when` rules,
@@ -151,7 +170,20 @@ composition  = [ ARTICLE ] WORD                            (* article => kind no
                                                               parse error *)
 STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
              | "off" | "on" ;
-setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
+setting      = WORD { WORD }
+               ( NUMBER | STRING | WORD | name-list-value ) ;
+                                                           (* last token(s) = the value.
+                                                              Extension adjectives
+                                                              (ADR-215: combatant,
+                                                              weapon, the NPC library)
+                                                              take manifest-typed
+                                                              fields — unknown keys and
+                                                              mistyped values are
+                                                              compile errors *)
+name-list-value = "[" name { "," name } "]" ;              (* ADR-215: only where a
+                                                              manifest declares a list
+                                                              field (patrol route,
+                                                              allowed-rooms, …) *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement; *)
              | "starts" "in" name ;                        (* on + bare word = on-clause *)
 DIRECTION    = "north" | "south" | "east" | "west"
@@ -209,10 +241,56 @@ action-line    = "grammar" NL >>> { pattern-line }
                | statement ;
 pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ; (* → = cardinality *)
 
-define-hatch   = "define" ( "action" | "behavior" ) WORD "from" STRING NL ;
+define-hatch   = "define" "action" WORD "from" STRING NL ; (* `define behavior` REMOVED
+                                                              (ADR-235 D2) — parse error
+                                                              with fix-it *)
 
 define-sequence= "define" "sequence" WORD { WORD } NL
                  { sequence-step } "end" "sequence" NL ;
+
+(* ---- ADR-215 state-machine depth (`use state-machines`; spelling A) ---- *)
+
+define-machine = "define" "machine" WORD { WORD } NL
+                 >>> { "role" WORD "is" name NL
+                     | "starts" WORD NL
+                     | machine-state }
+                 "end" "machine" NL ;
+machine-state  = "state" WORD [ "," "terminal" ] NL
+                 >>> { machine-when | machine-on } ;
+machine-when   = "when" machine-trigger [ "while" condition ] ":" WORD NL ;
+machine-trigger= "event" phrase-key                        (* event trigger *)
+               | WORD name                                 (* action on a role/entity:
+                                                              `turning the winch` — a
+                                                              declared role name lowers
+                                                              to the $role binding *)
+               | WORD                                      (* bare word: a declared
+                                                              condition/story state wins,
+                                                              else an action gerund *)
+               | condition ;
+machine-on     = ( "on" "enter" | "on" "exit" ) NL
+                 >>> { statement } "end" "on" NL ;
+                                                           (* machines are story-owned:
+                                                              `it` in a body/trigger is a
+                                                              compile error *)
+
+(* ---- ADR-216 declared assets + custom channels ------------------------- *)
+
+define-asset   = "define" ( "sound" | "image" | "music" )
+                 WORD "from" STRING NL ;                   (* a DATA reference — never a
+                                                              hatch; does not set
+                                                              hasHatches *)
+
+define-channel = "define" "channel" WORD NL                (* spelling A, 2026-07-18 *)
+                 >>> { "mode" ( "replace" | "append" | "event" ) NL
+                     | "gated" "by" WORD NL                (* a client capability flag *)
+                     | "from" "event" phrase-key NL
+                     | "take" WORD { "," WORD } NL }
+                 "end" "channel" NL ;
+                                                           (* a JSON data projection:
+                                                              the turn's last matching
+                                                              event, `take` fields only;
+                                                              renderers ship platform-
+                                                              side (ADR-215 registry) *)
 sequence-step  = step-anchor NL >>> { statement } ;
 step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)
                | NUMBER "turns" "later"                    (* relative to previous step *)
@@ -242,7 +320,14 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "refuse" "when" condition ":" phrase-key NL (* prohibition; not in `after` *)
              | must-line                                   (* not in `after` *)
              | "phrase" phrase-key { param } [ stmt-when ] NL [ inline-prose ]
-             | "emit" WORD { WORD } [ stmt-when ] NL
+             | "emit" phrase-key { phrase-key }
+               [ "with" emit-field { "and" emit-field } ]
+               [ stmt-when ] NL                            (* ADR-216 payloaded emit:
+                                                              event segments are dotted
+                                                              keys (media.sound.play);
+                                                              keys pass verbatim into
+                                                              event.data *)
+             | media-statement                             (* ADR-216 sugar, below *)
              | "set" value-expr "to" value-expr NL
              | "change" name "to" WORD [ stmt-when ] NL    (* name may be `the story`
                                                               or any entity *)
@@ -259,6 +344,36 @@ stmt-when    = "when" condition ;                          (* statement-final su
                                                               not on set or bare refuse *)
 phrase-key   = WORD { "." WORD } ;                         (* dotted keys: zoo.pa.closing-3 *)
 param        = "with" WORD { WORD } "=" value-expr ;
+
+(* ---- ADR-216 emit payload + media sugar -------------------------------- *)
+
+emit-field   = WORD { WORD } emit-value ;                  (* key words, then the value *)
+emit-value   = NUMBER | STRING                             (* literals *)
+             | "[" [ emit-value { "," emit-value } ] "]"   (* arrays *)
+             | "{" [ emit-field { "," emit-field } ] "}"   (* nested objects *)
+             | value-expr ;                                (* world-state reads; entity
+                                                              refs → world ids;
+                                                              true/false → booleans;
+                                                              unquoted words resolve as
+                                                              words always do — plain
+                                                              strings are QUOTED *)
+
+media-statement                                            (* each lowers at compile
+                                                              onto a payloaded media.*
+                                                              emit; stmt-when composes *)
+             = "play" "sound" WORD [ stmt-when ] NL
+             | "play" "music" WORD [ "looping" ] [ stmt-when ] NL
+             | "play" "ambient" WORD [ stmt-when ] NL      (* plays a SOUND asset *)
+             | "stop" ( "music" | "ambient" ) [ stmt-when ] NL
+             | "show" "image" WORD [ "in" WORD ] [ stmt-when ] NL
+             | "hide" "image" [ stmt-when ] NL
+             | "transition" WORD [ stmt-when ] NL          (* → media.transition kind *)
+             | "clear" [ stmt-when ] NL ;
+                                                           (* asset WORDs must name a
+                                                              `define sound|image|music`
+                                                              declaration — typo-checked
+                                                              with suggestions; kind
+                                                              mismatches gate *)
 select-on    = "select" "on" value-expr NL
                >>> { "when" WORD NL >>> { statement } } "end" "select" NL ;
 select-strategy = "select" STRATEGY NL
@@ -281,6 +396,11 @@ and-expr     = unary { "and" unary } ;
 unary        = "not" unary
              | "(" condition ")"
              | "one" "chance" "in" NUMBER
+             | "client" "has" WORD                         (* ADR-216: live client
+                                                              capability flag (sound,
+                                                              split-pane, …); `client`
+                                                              reserved in subject
+                                                              position; closed flag set *)
              | ( "any" | "no" ) WORD                       (* E1/E2 quantifiers: only when
                                                               the WORD stands alone *)
              | WORD                                        (* bare => named-condition or

@@ -121,7 +121,7 @@ not wired — pre-existing, documented.)
 | telling (NEW) | same shape | same | ⚠️ | CHORD-GAP | same |
 | eating | EDIBLE, not liquid, servings | `edible` | ✅ | CAN | — |
 | drinking | EDIBLE.liquid OR CONTAINER.containsLiquid (`drinking.ts:236-246`) | `drinkable` adjective → `EdibleTrait({ liquid: true })` (ratchet G1, 2026-07-17; order-independent with `edible`) | ✅ | CAN | — |
-| attacking | any target validates; plain target → inert "no effect"; COMBATANT combat needs a registered combat interceptor | verb + **scripted combat ✅**: `on attacking it` refuses/overrides freely (kill the player, change, remove, lose). Systemic combat ❌: no combatant/weapon/health adjectives, no extension opt-in surface | ⚠️ | CAN (narrative) / CHORD-GAP (systemic) | extension-use surface (Part 3); narrative fights need nothing |
+| attacking | any target validates; plain target → inert "no effect"; COMBATANT combat needs a registered combat interceptor | verb + scripted combat ✅ (`on attacking it`); **systemic combat ✅ (2026-07-18)**: `use combat` + `combatant with health/skill/…` + `weapon with damage/…` reach `registerBasicCombat` for real resolution (ADR-215 Phase 1; REAL-PATH attack test) | ✅ | CAN | — |
 
 ## Meta & system (§9) — 13 ✅
 
@@ -267,14 +267,43 @@ runtime check before recording as a defect (Defect D5).
 | D6 | `Fuse.entityId` auto-cleanup: `cleanupEntity` has zero callers platform-wide; Chord's `remove <entity>` doesn't invoke it either | TS latent gap |
 | D7 | runtime.ts:784 comment advertises grammar forms removed 2026-07-11 | stale comment |
 
-## Parity scoreboard (all four parts, 2026-07-17)
+## Extension-surface closure (2026-07-18, session 501cac — ADR-215/216 SHIPPED)
+
+The full S3 slice landed (docs/work/chord-extension-surface/plan.md, all 7
+phases). Rows above/below that read "unreachable / no opt-in surface" are
+superseded as follows:
+
+- **Opt-in surface**: `use <extension>` header line + static vocabulary
+  manifests + trusted runtime registry. `combatant`/`weapon` (systemic
+  combat via `registerBasicCombat`) are live; the "notably absent"
+  adjectives list is closed for combat (health/max-health route to
+  HealthTrait per ADR-226).
+- **NPC plugin**: auto-wires for every Chord story (CORE, no `use npcs`);
+  guard/passive/wanderer/follower/patrol are composable vocabulary with
+  params (incl. `patrol route [ … ]` lists).
+- **State-machine plugin**: `use state-machines` gates the full ADR-119
+  depth via `define machine` (roles, onEnter/onExit, terminal, triggers);
+  existing `states:`/`select`/`change` untouched.
+- **Media/browser emits**: payloaded `emit` (dotted event types FIXED —
+  the lexer mangle is gone), full media sugar + declared assets, custom
+  `define channel` projections, `client has <capability>` degradation.
+  Every `media.*` channel and `clear` are now reachable; channel
+  DECLARATION has a Chord surface (novel renderers ship via the trusted
+  registry's `registerChannels` slot — live, unexercised by bundled
+  extensions today). Story-global daemons landed separately (ADR-236 D7).
+- Still open (unchanged): imperative timer management (ADR-235 D4
+  non-goal), topic surface (asking/telling), `audibility` spatial-sound
+  channel, legacy `audio.*` (reachable via raw emit only), third-party
+  extensions (deferred ADR).
+
+## Parity scoreboard (all four parts, 2026-07-17; superseded in part by the 2026-07-18 closure above)
 
 | Surface | Reachable today | Gap |
 |---|---|---|
-| **Actions** | 50/54 full + 4 partial (2026-07-17 shortlist closure) | 0 hard gaps; door construct still doesn't load (child ADR ruled, Q-1) |
-| **Daemons/fuses** | fixed timelines + presence-gated recurring | imperative timer management (cancel, inline delay, period, reschedule, priority) + **no story-global daemon** |
-| **Plugins/extensions** | scheduler only; in-language define trait/action strong | NPC + state-machine plugins never registered for Chord; no opt-in surface; systemic combat unreachable; behavior hatch dead (D2) |
-| **Browser emits** | all text surfaces (incl. `kill the player`) | all media/audio channels; dotted event types unlexable; no payload; no channel registration (ADR-215/216 ACCEPTED, unimplemented) |
+| **Actions** | 51/54 full + 3 partial (attacking ✅ 2026-07-18) | 0 hard gaps; door construct still doesn't load (child ADR ruled, Q-1) |
+| **Daemons/fuses** | fixed timelines + presence/region-gated recurring + story-global (ADR-236) | imperative timer management (cancel, inline delay, period, reschedule, priority) |
+| **Plugins/extensions** | scheduler + NPC (auto-wired) + state-machines (`use`) + combat (`use`); in-language define trait/action strong | third-party extensions (deferred ADR); behavior hatch REMOVED (D2, by design) |
+| **Browser emits** | all text surfaces + all media/audio channels (payloaded emit, sugar, assets, custom channels, `client has`) | `audibility` spatial channel; legacy `audio.*` via raw emit only |
 
 **The load-bearing design-heavy gaps** (unchanged in kind, sharper in detail):
 1. **Door loading** — child ADR ruled (ADR-233 Q-1): `between` + `through`, both in-gate.

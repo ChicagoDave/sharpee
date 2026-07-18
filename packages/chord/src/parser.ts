@@ -35,10 +35,13 @@ import {
   DefineHatch,
   DefinePhrase,
   DefinePhrases,
+  DefineAsset,
+  DefineChannel,
   DefineMachine,
   DefineSequence,
   EmitField,
   EmitValue,
+  MediaStmt,
   MachineState,
   MachineTransition,
   DefineText,
@@ -1187,6 +1190,14 @@ class Parser {
         // ADR-215 `use state-machines` depth (spelling A, 2026-07-18) —
         // the `use` requirement is the analyzer's gate.
         return this.parseDefineMachine();
+      case 'sound':
+      case 'image':
+      case 'music':
+        // ADR-216 declared assets — DATA references, never hatches.
+        return this.parseDefineAsset(subWord as 'sound' | 'image' | 'music');
+      case 'channel':
+        // ADR-216 custom channels (spelling A, 2026-07-18) — data projections.
+        return this.parseDefineChannel();
       default:
         this.diagnostics.error('parse.unknown-define', `Unknown declaration \`define ${subWord ?? ''}\`.`, lineSpan(line));
         this.recoverToTopLevel(true);
@@ -1990,6 +2001,184 @@ class Parser {
     };
   }
 
+  /**
+   * ADR-216 media sugar statements: `play sound|music|ambient <asset>
+   * [looping]`, `stop music|ambient`, `show image <asset> [in <layer>]`,
+   * `hide image`, `transition <kind>`, `clear` — each with the standard
+   * `when` suffix. Asset resolution/kind-checking is the analyzer's.
+   */
+  private parseMediaStatement(first: string, c: Cursor, line: Line): MediaStmt | null {
+    c.next(); // the keyword
+    const fail = (message: string): null => {
+      this.diagnostics.error('parse.media', message, lineSpan(line));
+      return null;
+    };
+    let form: MediaStmt['form'];
+    let asset: string | null = null;
+    let layer: string | null = null;
+    let looping = false;
+    let transitionKind: string | null = null;
+
+    if (first === 'play') {
+      const what = c.next();
+      if (!what || what.kind !== 'word' || !['sound', 'music', 'ambient'].includes(what.text)) {
+        return fail('Expected `play sound|music|ambient <asset>`.');
+      }
+      const assetTok = c.next();
+      if (!assetTok || assetTok.kind !== 'word') return fail(`Expected a declared asset name after \`play ${what.text}\`.`);
+      asset = assetTok.text;
+      if (what.text === 'music' && c.isWord('looping')) {
+        c.next();
+        looping = true;
+      }
+      form = `play-${what.text}` as MediaStmt['form'];
+    } else if (first === 'stop') {
+      const what = c.next();
+      if (!what || what.kind !== 'word' || !['music', 'ambient'].includes(what.text)) {
+        return fail('Expected `stop music` or `stop ambient`.');
+      }
+      form = `stop-${what.text}` as MediaStmt['form'];
+    } else if (first === 'show') {
+      if (!c.matchWord('image')) return fail('Expected `show image <asset> [in <layer>]`.');
+      const assetTok = c.next();
+      if (!assetTok || assetTok.kind !== 'word') return fail('Expected a declared asset name after `show image`.');
+      asset = assetTok.text;
+      if (c.matchWord('in')) {
+        const layerTok = c.next();
+        if (!layerTok || layerTok.kind !== 'word') return fail('Expected a layer word after `in`.');
+        layer = layerTok.text;
+      }
+      form = 'show-image';
+    } else if (first === 'hide') {
+      if (!c.matchWord('image')) return fail('Expected `hide image`.');
+      form = 'hide-image';
+    } else if (first === 'transition') {
+      const kindTok = c.next();
+      if (!kindTok || kindTok.kind !== 'word') return fail('Expected a transition kind after `transition` (e.g. `transition fade`).');
+      transitionKind = kindTok.text;
+      form = 'transition';
+    } else {
+      form = 'clear';
+    }
+
+    const stmtWhen = this.parseStatementWhen(c, line);
+    if (!c.atEnd()) return fail(`Unexpected trailing text: \`${c.peek()!.text}\`.`);
+    return { kind: 'media', form, asset, layer, looping, transitionKind, stmtWhen, span: lineSpan(line) };
+  }
+
+  /**
+   * `define channel <name> … end channel` (ADR-216; spelling A): keyword
+   * body lines `mode <word>`, `gated by <capability>`, `from event
+   * <dotted.key>`, `take <field>, …`. Value validation (mode set,
+   * capability flags, required lines) is the analyzer's.
+   */
+  private parseDefineChannel(): DefineChannel | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define channel
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.channel-name', 'Expected a channel name after `define channel`.', lineSpan(headLine));
+      return null;
+    }
+    const decl: DefineChannel = {
+      kind: 'define-channel',
+      name: nameTok.text,
+      mode: null,
+      gatedBy: null,
+      fromEvent: null,
+      take: [],
+      span: lineSpan(headLine),
+    };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('channel', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      if (word === 'mode') {
+        lc.next();
+        const modeTok = lc.next();
+        if (!modeTok || modeTok.kind !== 'word' || !lc.atEnd()) {
+          this.diagnostics.error('parse.channel-mode', 'Expected `mode replace|append|event`.', lineSpan(line));
+        } else {
+          decl.mode = modeTok.text;
+        }
+        continue;
+      }
+      if (word === 'gated' && lc.isWord('by', 1)) {
+        lc.next();
+        lc.next();
+        const capTok = lc.next();
+        if (!capTok || capTok.kind !== 'word' || !lc.atEnd()) {
+          this.diagnostics.error('parse.channel-gate', 'Expected `gated by <capability>`.', lineSpan(line));
+        } else {
+          decl.gatedBy = capTok.text;
+        }
+        continue;
+      }
+      if (word === 'from' && lc.isWord('event', 1)) {
+        lc.next();
+        lc.next();
+        const key = this.readDottedKey(lc);
+        if (!key || !lc.atEnd()) {
+          this.diagnostics.error('parse.channel-from', 'Expected `from event <event.key>`.', lineSpan(line));
+        } else {
+          decl.fromEvent = key;
+        }
+        continue;
+      }
+      if (word === 'take') {
+        lc.next();
+        const fields = this.parseCommaWords(lc);
+        if (fields.length === 0) {
+          this.diagnostics.error('parse.channel-take', 'Expected `take <field>[, <field>…]`.', lineSpan(line));
+        } else {
+          decl.take.push(...fields);
+        }
+        continue;
+      }
+      this.diagnostics.error(
+        'parse.channel-body',
+        `Unrecognized line in \`define channel\`: \`${line.raw.trim()}\` — expected \`mode\`, \`gated by\`, \`from event\`, \`take\`, or \`end channel\`.`,
+        lineSpan(line),
+      );
+    }
+    this.diagnostics.error('parse.channel-end', 'Expected `end channel` to close the block.', decl.span);
+    return decl;
+  }
+
+  /** `define sound|image|music <name> from "<file>"` (ADR-216) — data asset. */
+  private parseDefineAsset(assetKind: 'sound' | 'image' | 'music'): DefineAsset | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define <kind>
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.asset-name', `Expected an asset name after \`define ${assetKind}\`.`, c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('from')) {
+      this.diagnostics.error('parse.asset-from', `Expected \`from "<file>"\` in the ${assetKind} declaration.`, c.restSpan());
+      return null;
+    }
+    const pathTok = c.next();
+    if (!pathTok || pathTok.kind !== 'string') {
+      this.diagnostics.error('parse.asset-path', 'Expected a quoted file path after `from`.', c.restSpan());
+      return null;
+    }
+    return { kind: 'define-asset', assetKind, name: nameTok.text, path: pathTok.text, span: lineSpan(line) };
+  }
+
   // ---------------------------------------------------------- emit payload
 
   /**
@@ -2366,6 +2555,15 @@ class Parser {
         }
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'emit', event, payload, stmtWhen, span: lineSpan(line) } as EmitStmt;
+      }
+      case 'play':
+      case 'stop':
+      case 'show':
+      case 'hide':
+      case 'transition':
+      case 'clear': {
+        this.pos++;
+        return this.parseMediaStatement(word, c, line);
       }
       case 'set': {
         this.pos++;
@@ -2866,6 +3064,19 @@ class Parser {
       c.next();
       const operand = this.parseConditionUnary(c, line);
       return { kind: 'not', operand, span: mergeSpans(t.span, operand.span) };
+    }
+
+    // `client has <capability>` (ADR-216) — `client` is reserved in
+    // condition-subject position; the capability word is the analyzer's gate.
+    if (t.kind === 'word' && t.text === 'client' && c.isWord('has', 1)) {
+      c.next();
+      c.next(); // client has
+      const capability = c.next();
+      if (!capability || capability.kind !== 'word') {
+        this.diagnostics.error('parse.client-has', 'Expected a capability word after `client has` (sound, images, …).', c.restSpan());
+        return { kind: 'condition-ref', name: '', span: lineSpan(line) };
+      }
+      return { kind: 'client-has', capability: capability.text, span: mergeSpans(t.span, capability.span) };
     }
 
     if (t.kind === 'lparen') {

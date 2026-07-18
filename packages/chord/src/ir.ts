@@ -48,6 +48,8 @@ export interface StoryIR {
   sequences: IRSequenceDef[];
   /** `define machine` blocks (ADR-215 `use state-machines` depth). */
   machines: IRMachineDef[];
+  /** `define channel` data projections (ADR-216) — pure IR; renderers are platform/extension territory. */
+  channels: IRChannelDef[];
   /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
   hasHatches: boolean;
 }
@@ -439,6 +441,22 @@ export interface IRMachineTransition {
   span: Span;
 }
 
+/**
+ * `define channel` (ADR-216; spelling A, 2026-07-18): a declarative JSON
+ * data projection — the loader lowers it to a real IOChannel whose
+ * produce takes the turn's last event of `fromEvent` and projects the
+ * `take` fields from its data. `gatedBy` carries the PLATFORM camelCase
+ * capability key.
+ */
+export interface IRChannelDef {
+  name: string;
+  mode: 'replace' | 'append' | 'event';
+  gatedBy: string | null;
+  fromEvent: string;
+  take: string[];
+  span: Span;
+}
+
 // --------------------------------------------------------------------------
 // statements
 // --------------------------------------------------------------------------
@@ -544,6 +562,12 @@ export type IRCondition =
    * condition's `it` bound to the subject).
    */
   | { kind: 'satisfies'; subject: IRValue; condition: string }
+  /**
+   * `client has <capability>` (ADR-216): the live negotiated client
+   * capability flag, by its PLATFORM camelCase key. Text-only when no
+   * client negotiated.
+   */
+  | { kind: 'client-has'; capability: string }
   | {
       kind: 'predicate';
       /** 'can-see'/'can-reach' land with Phase B (design.md §2.7). */

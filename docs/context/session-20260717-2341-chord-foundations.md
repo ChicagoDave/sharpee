@@ -43,7 +43,15 @@
 
 - **Phase 4 COMPLETE (payloaded emit)**: full nested payload grammar (literals/value-exprs/arrays/`{ }` objects; `and` flat separator per Given-7 normalization, commas inside brackets; unquoted words resolve as words always do — strings are quoted); runtime evaluates live at emit time (entity→world id, true/false→boolean, possessive reads). Bonus fix: dotted event types no longer mangle (`media.sound.play` was `media . sound . play`). 5 chord + 4 loader REAL-PATH tests (real soundChannel.produce with its channel→bus rename; live-state re-read). 1 ratchet row. Suites: chord 306, story-loader 236.
 
-## Status: IN PROGRESS (extension-surface Phase 5 next: media sugar + declared assets)
+- Phases 1-4 committed 7ff300ac (45 files).
+- **Phase 5 COMPLETE (media sugar + declared assets)**: nine sugar forms lowered entirely at analysis onto payloaded emits (zero runtime surface); `define sound|image|music … from` data assets with typo/kind/duplicate gates; hasHatches untouched. 5 chord + 3 loader REAL-PATH tests (real sound/music/image channels produce). 1 ratchet row. Suites: chord 311, story-loader 239.
+
+- **Phase 6 COMPLETE (custom channels + client has)**: David ratified channel spelling A (keyword-line block). `define channel` → real IOChannel via Story.registerChannels (projection produce, gate, story-override semantics); extension registerChannels leg live (unexercised — stated); `client has <capability>` condition with chord flag catalog (15 flags — planner's "no `layers` flag" grounding was WRONG, it exists) → camelCase lowering; **the pre-flagged platform seam landed as exactly one engine getter: `GameEngine.getClientCapabilities()`** (text-only default), wired to the evaluator at onEngineReady. Conformance pins chord flags against DEFAULT_TEXT_CAPABILITIES. 8 chord + 5 loader REAL-PATH (AC-3 dual capability sets) + 1 conformance tests. 1 ratchet row. Suites: chord 319, story-loader 245.
+
+- **Phase 7 COMPLETE (closure)**: chord.ebnf + chord-grammar.md carry the whole surface (new "Extension surface" section); 13 ratchet rows verified; audit closed (attacking ✅, extension-surface closure section, refreshed scoreboard); `gatehouse.story` elegance fixture — the FULL S3 stack in ~90 lines of pure IR with a REAL-plugin composition smoke. Full regression: chord 319, story-loader 246, stdlib 1534, engine 513, repokit build, cloak 81/81, zoo 71/71+56/56.
+- **ALL 7 EXTENSION-SURFACE PHASES DONE** — ADR-215/216 fully implemented (the ADR-235 S3 gate slice); `.current-plan` returned to chord-go-live; umbrella notes BOTH G1 lines (regions + extension surface) closed. Remaining pre-G4 workstream: doors (ADR-234) implementation plan.
+
+## Status: COMPLETE (regions + extension surface both shipped this session; Phases 5-7 not yet committed)
 
 ## Next session
 - **Do NOT re-flag the troll-GDT ruling as open** — it is closed (see Key decisions above).

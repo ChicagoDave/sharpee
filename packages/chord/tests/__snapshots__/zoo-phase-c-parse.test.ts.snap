@@ -227,6 +227,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       },
     },
   ],
+  "channels": [],
   "conditions": [],
   "entities": [
     {
