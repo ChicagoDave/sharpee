@@ -224,9 +224,10 @@ register per entity under one gerund.
 ### 2.4 giving and showing
 
 **give** (`if.action.giving`) — `give X to Y`, `give Y X`, `offer X to Y`.
-The recipient must be a person (`a person` — the actor trait); the parser
-enforces that at match time, so `give the sword to the door` never even
-reaches the action. Giving does an implicit take if the item is not in hand.
+The recipient must be a person (`a person` — the actor trait); the action
+enforces that in validation, so `give the sword to the door` refuses with
+`not_actor` ("You can only give things to people."). Giving does an
+implicit take if the item is not in hand.
 
 The default NPC accepts anything: the item moves into their inventory and
 the player sees `given`. Three data-driven wrinkles, all read from the
@@ -549,21 +550,23 @@ refusing exit), and the door being passed through. First refusal wins.
 
 **enter** (`if.action.entering`) — `enter X`, `get in/into X`, `climb
 in/into X`, `go in/into X`, `board X`, `get on X`. One gate: the target
-needs the `enterable` trait — the parser will not even match these
-patterns against anything else. A closed openable refuses with
+needs the `enterable` trait — anything else refuses with
+`not_enterable` (checked in the action: parse by syntax, refuse by
+world, since ADR-231). A closed openable refuses with
 `container_closed`; already inside → `already_inside`. The trait's one
 setting, its preposition, decides whether you are *in* the bathtub or *on*
 the park bench (`entered` vs `entered_on`). There is no occupancy limit
 today (`too_full` is reserved but never fires). Events: `if.event.entered`.
 
 **exit** (`if.action.exiting`) — bare `exit`, `leave`, `get out`, `go
-out`, `climb out`, `disembark`, `alight` (a named target parses too, but the action
-always exits your *current* container). It undoes an ENTER: out of the
+out`, `climb out`, `disembark`, `alight` (a named target parses too —
+`exit the chair` — and the action honors it: naming something you aren't
+inside refuses `not_in_that`, since ADR-231). It undoes an ENTER: out of the
 container, off the supporter. Standing in a plain room refuses with
 `already_outside` — leaving rooms is GO's job. A closed openable container
 refuses with `container_closed` (you can shut yourself in). Keys:
 `exited`, `exited_from`, `nowhere_to_go`, `already_outside`,
-`container_closed`; event `if.event.exited`.
+`not_in_that`, `container_closed`; event `if.event.exited`.
 
 ### 3.3 climbing
 
@@ -642,8 +645,8 @@ actions read them uniformly.
 **open** (`if.action.opening`) and **close** (`if.action.closing`) — the
 verbs: `open`, `unwrap`, `uncover`, and `open up` all open; `close`,
 `shut`, and `cover` all close (the synonym forms landed with ADR-230 D4).
-The parser gates every form on the `openable` trait, so `open the
-boulder` never reaches the action.
+Every form checks the `openable` trait in validation, so `open the
+boulder` refuses with `not_openable` ("The boulder can't be opened.").
 
 `open X with Y` maps to opening too (ADR-230 D3b — no separate action),
 with the named tool as a consulted command entity. An openable can
@@ -716,11 +719,14 @@ by the platform (`startsOpen` defaults to closed). Beyond the state:
 `canClose: false` makes a one-way openable, `closeRequirements` names an
 obstacle, `openSound`/`closeSound` ride along in events, and
 `open/closedDescription` swap description text. From Chord the adjective
-composes with defaults; the settings are TypeScript territory today.
+composes closed; `starts open` on the composition line seeds it open
+(ADR-231; chord-language.md §2.11). The other settings are TypeScript
+territory today.
 
 **lockable** (`lockable`, optionally `with key <entity>` — adjective).
-Locked/unlocked state plus the key contract: `keyId` (one key), `keyIds`
-(several). A lock without keys is a latch anyone can turn. `lockSound` /
+Locked/unlocked state (starts unlocked; Chord seeds `starts locked` on
+the composition line, ADR-231) plus the key contract: `keyId` (one key),
+`keyIds` (several). A lock without keys is a latch anyone can turn. `lockSound` /
 `unlockSound` decorate the events. Two declared fields are inert today —
 `autoLock` (relock-on-close is implemented but never invoked) and
 `acceptsMasterKey` (never read) — don't build a puzzle on them; flagged.
@@ -958,9 +964,9 @@ story pushes back the dark rooms of §3.1.
 the reversed `turn X on` / `turn X off` (only `turn` gets the reversed
 form — `switch X on` does not parse). The bare transitive synonyms landed
 with ADR-230 D4: `activate`/`start`/`power on X` switch on,
-`deactivate`/`stop`/`power off X` switch off. All forms are parser-gated
-on the `switchable` trait. (Bare `turn X` with no on/off is the separate
-per-entity turning verb, §2.7.)
+`deactivate`/`stop`/`power off X` switch off. All forms check the
+`switchable` trait in validation. (Bare `turn X` with no on/off is the
+separate per-entity turning verb, §2.7.)
 
 Switching on refuses `not_switchable`, `already_on`, and `no_power` (for
 devices that declare a power requirement); off refuses `already_off`.
@@ -1002,7 +1008,8 @@ lowers to (the zoo's radio and flashlight both use it). Dormant today:
 the auto-off timer (`autoOffTime` is honored at switch-on but nothing
 ticks the countdown) and the per-trait message overrides
 (`onMessage`/`alreadyOnMessage`/…) — flagged. Chord composes the
-adjective with defaults only.
+adjective off by default; `starts on` seeds it running (ADR-231;
+chord-language.md §2.11).
 
 **light-source** (`light-source` — adjective). Makes a switchable shed
 light: `isLit` (managed by the switching actions), `brightness`,
@@ -1031,8 +1038,8 @@ the world: talk, fight, eat, hide.
 
 **talk** (`if.action.talking`) — `talk to/with X`, `speak to/with X`,
 `chat with X`, `converse with X` (core grammar since ADR-229; story
-grammar still outranks it). Deliberately *not* parser-gated on being a
-person: talking to the mailbox reaches the action and refuses with
+grammar still outranks it). Not gated on being a person: talking to the
+mailbox reaches the action and refuses with
 `not_actor` — hook-visibly, so a story can intercept even that. Other
 refusals: `too_far` (same room required), `self`, and `not_available`
 (a conversation marked unavailable).
@@ -1052,10 +1059,14 @@ daemons — also a legitimate pattern. Event: `if.event.talked`.
 
 **ask** (`if.action.asking`) and **tell** (`if.action.telling`) — `ask X
 about Y` (also `question X about Y`, `inquire of X about Y`) and `tell X
-about Y` (also `inform X about Y`), parser-gated on the recipient being
-a person. New with ADR-230, and deliberately minimal: there is no
-platform conversation system yet, so each validates the social
-preconditions (`no_target`, `not_visible`, `too_far`, `not_actor`),
+about Y` (also `inform X about Y`); a non-person recipient refuses
+`not_actor`. The topic is a first-class free-text slot (ADR-231),
+resolved entity-first: a topic naming something in scope carries that
+entity along for story handlers, and any other wording flows through as
+plain text — a topic is never scope-rejected. New with ADR-230, and
+deliberately minimal: there is no platform conversation system yet, so
+each validates the social preconditions (`no_target`, `not_visible`,
+`too_far`, `not_actor`),
 mutates nothing, and reports an interceptable default — asking's
 `unknown_topic` ("I don't know anything about that.") and telling's
 `not_interested` ("… doesn't seem interested."). The person asked or

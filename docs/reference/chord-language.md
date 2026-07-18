@@ -229,7 +229,8 @@ create the Rose Walk
 ```
 
 A blocked exit refuses travel and speaks the named phrase (the key after
-the colon must be a phrase the story defines, §5.3). The block can be
+the colon names a phrase the story defines, §5.3; a dotted key is legal
+too, ADR-231). The block can be
 conditional:
 
 <!-- fixture: world/exits.story -->
@@ -692,6 +693,12 @@ things that are simply never allowed:
     refuse all-thorns
   end on
 ```
+
+The named key resolves entity-scoped first (ADR-231): a
+`phrase all-thorns:` override in the refusing entity's own `create`
+block (§2.10) wins over a story-wide `all-thorns`, and a bare key
+renders on standard actions just as it does on story-defined ones. A
+dotted key is legal here too (§5.2).
 
 Refusing on a negated condition (`refuse when not …`) is flagged
 (`analysis.negated-requirement`): that is a requirement in disguise, and
@@ -1349,6 +1356,12 @@ clause's own refusal (§3.6) or a per-entity override (§2.10) speaks for
 its one entity, and the story-wide dotted override sets the default
 underneath them.
 
+A dotted key is legal at every site a phrase key appears (ADR-231), not
+just here: `refuse` and `refuse when` (§3.6), `must … otherwise refuse`
+(§3.5), per-entity `phrase` headers (§2.10), `define phrases` entries
+(§5.3), and the blocked and deadly exit keys (§2.5, §4.7) all read a
+dotted key whole.
+
 ### 5.3 define phrases (locale blocks)
 
 Where `define phrase` declares one key with variants, `define phrases
@@ -1370,7 +1383,9 @@ define phrases en-US
 Each entry is `key:` on its own line followed by an indented prose
 block. The block is dedent-terminated — there is no `end phrases`. A key
 here is a plain phrase with no strategy; for variants or a strategy, use
-`define phrase` (§5.2) instead. Throughout this reference the small
+`define phrase` (§5.2) instead. A key here may be dotted (ADR-231): an
+entry under `if.action.taking.fixed_in_place:` overrides the platform
+default exactly as §5.2's form does. Throughout this reference the small
 supporting texts live in exactly this kind of block at the foot of each
 fixture.
 

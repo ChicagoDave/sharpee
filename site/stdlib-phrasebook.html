@@ -18,9 +18,9 @@
     <p>Below each table, the worked examples come in pairs — <em>the author writes</em> a small scene, <em>the player sees</em> a few commands against it, always including at least one refusal and one success. <code>&lt;direction&gt;</code> in a phrasing means any of the twelve direction words (<code>north</code>/<code>n</code> … <code>up</code>/<code>u</code>, <code>in</code>, <code>out</code>).</p>
     <p>Two authoring notes that recur in the examples:</p>
     <ul>
-      <li>Give every multiword entity an <code>aka</code> alias. Besides being kind to players, it is currently what makes the article form parse — with no alias, <code>x the iron key</code> misses while <code>x iron key</code> hits.
+      <li>Give every multiword entity an <code>aka</code> alias. It is a kindness to players, not a requirement: the full name parses in every form, article or no — <code>x the iron key</code> and <code>x iron key</code> both hit (ADR-231).
     </li>
-      <li>Where an example carries a custom refusal on a <em>standard</em> action, its phrase is declared under the fully-qualified dotted key (`define phrase if.action.taking.ring-fused<code>) and named in full by </code>refuse`. That is the form that renders today: the short form (<code>refuse ring-fused</code> with a local phrase) blocks the action but currently prints no text, and a handful of actions (giving, showing, throwing, wearing among them) don't render custom refusal keys at all — platform note, under review. Refusals inside a <code>define action</code> (see turning, §6) are free of all this: short keys render fine on the dispatch path.
+      <li>Where an example carries a custom refusal on a <em>standard</em> action, its phrase is declared under the fully-qualified dotted key (`define phrase if.action.taking.ring-fused<code>) and named in full by </code>refuse`. That is a style choice, not a workaround: the short form (<code>refuse ring-fused</code> with the phrase declared under the bare key) renders the same text, and both forms work on every standard action — giving, showing, throwing, and wearing included (ADR-231). Refusals inside a <code>define action</code> (see turning, §6) take short keys as they always have.
     </li>
     </ul>
     <h2>1. Manipulation</h2>
@@ -100,7 +100,7 @@ Dropped.</code></pre>
   A stone-flagged kitchen, warm from the oven.
 
 create the breadbox
-  a container, openable
+  a container, openable, starts open
   in the Kitchen
 
   A rolltop breadbox of waxed pine.
@@ -142,7 +142,7 @@ The breadbox is closed.
 
 &gt; put the knife on the table
 You put the carving knife on the kitchen table.</code></pre>
-    <p>(A Chord <code>a container, openable</code> starts <strong>open</strong>; a plain thing composed with the <code>openable</code> adjective starts closed — which is why the transcript closes the breadbox itself before showing the refusal.)</p>
+    <p>(Openable things start <strong>closed</strong> (ADR-231); the breadbox declares <code>starts open</code>, which is why the first <code>put</code> succeeds and the transcript closes the breadbox itself before showing the refusal.)</p>
     <h2>2. Movement</h2>
     <p>Getting an actor from place to place. Full entries: <code>stdlib-reference.md</code> §3 (hiding: §8.4).</p>
     <table>
@@ -193,7 +193,7 @@ Knee-high grass, and a dark hedge along the eastern edge.
 &gt; west
 You can't go that way.</code></pre>
     <h3>entering and exiting</h3>
-    <p>One trait — <code>enterable</code> — and the parser will not even match the ENTER patterns against anything else. Compose <code>openable</code> alongside it and a closed door refuses entry with <code>container_closed</code>. (Prefer <code>enter X</code> in play and in tests: the <code>get in</code>/<code>get into</code> forms currently lose to taking's <code>get X</code> when the target is scenery — platform note.)</p>
+    <p>One trait — <code>enterable</code> — checked in the action, which turns everything else away with <code>not_enterable</code>. Compose <code>openable</code> alongside it and a closed door refuses entry with <code>container_closed</code>. All the phrasings are equivalent — <code>get in</code>/<code>get into</code> land on the enterable target even when it is scenery (ADR-231).</p>
     <p>The author writes:</p>
     <pre><code>create the Carriage House
   a room
@@ -272,7 +272,7 @@ You are not prying anything with your grandfather's letter opener.
 &gt; open the crate
 You open the shipping crate.</code></pre>
     <h3>locking and unlocking, with a key</h3>
-    <p><code>lockable with key &lt;entity&gt;</code> declares the key contract in one line — forward references are legal. Keyless LOCK on a keyed lock asks for the key; the wrong key refuses; lock state then gates opening. (A Chord lockable starts unlocked — there is no <code>starts locked</code> yet, which is why the transcript locks the box itself first.)</p>
+    <p><code>lockable with key &lt;entity&gt;</code> declares the key contract in one line — forward references are legal. Keyless LOCK on a keyed lock asks for the key; the wrong key refuses; lock state then gates opening. (A Chord lockable starts unlocked, and this strongbox declares <code>starts open</code>; the transcript locks the box itself first — a story could seed the state instead with <code>starts locked</code>.)</p>
     <p>The author writes:</p>
     <pre><code>create the Strong Room
   a room
@@ -280,7 +280,7 @@ You open the shipping crate.</code></pre>
   A windowless room with one iron shelf.
 
 create the strongbox
-  a container, openable, lockable with key the brass key
+  a container, openable, lockable with key the brass key, starts open
   in the Strong Room
 
   A squat strongbox with a bright keyhole.
@@ -410,7 +410,7 @@ create the portrait
 
 create the sea chest
   aka chest
-  a container, openable
+  a container, openable, starts open
   in the Study
 
   A brass-bound sea chest.
@@ -719,7 +719,7 @@ It's already open as far as it goes.</code></pre>
       <thead><tr><th>Action</th><th>Phrasings</th><th>Needs</th><th>Refuses with</th></tr></thead>
       <tbody>
         <tr><td><strong>talk</strong></td><td><code>talk to</code>/<code>with X</code> · <code>speak to</code>/<code>with X</code> · <code>chat with X</code> · <code>converse with X</code></td><td>a person (checked in validate, not the parser)</td><td><code>not_actor</code>, <code>too_far</code>, <code>self</code>, <code>not_available</code></td></tr>
-        <tr><td><strong>ask</strong></td><td><code>ask X about Y</code> · <code>question X about Y</code> · <code>inquire of X about Y</code></td><td>a person; the topic must name something in scope</td><td><code>not_actor</code>, <code>too_far</code>, <code>not_visible</code> (<code>unknown_topic</code> as the default reply)</td></tr>
+        <tr><td><strong>ask</strong></td><td><code>ask X about Y</code> · <code>question X about Y</code> · <code>inquire of X about Y</code></td><td>a person; the topic is free text (never scope-checked)</td><td><code>not_actor</code>, <code>too_far</code>, <code>not_visible</code> (<code>unknown_topic</code> as the default reply)</td></tr>
         <tr><td><strong>tell</strong></td><td><code>tell X about Y</code> · <code>inform X about Y</code></td><td>a person; topic as above</td><td><code>not_actor</code>, <code>too_far</code>, <code>not_visible</code> (<code>not_interested</code> as the default reply)</td></tr>
         <tr><td><strong>give</strong></td><td><code>give</code>/<code>hand X to Y</code> · <code>give</code>/<code>hand Y X</code> · <code>offer X to Y</code></td><td>recipient: <code>a person</code></td><td><code>not_actor</code>, <code>self</code>, <code>not_interested</code>, <code>inventory_full</code>, <code>too_heavy</code></td></tr>
         <tr><td><strong>show</strong></td><td><code>show X to Y</code> · <code>show Y X</code> · <code>display</code>/<code>present X to Y</code></td><td>recipient: <code>a person</code>, same room</td><td><code>not_actor</code>, <code>self</code>, <code>viewer_too_far</code>, <code>not_carrying</code></td></tr>
@@ -766,7 +766,7 @@ You show the silver medallion to the sentry.
 &gt; give the medallion to the sentry
 You give the silver medallion to the sentry.</code></pre>
     <h3>asking and telling</h3>
-    <p>Deliberately minimal (ADR-230): the platform validates the social preconditions and reports an interceptable default — asking's <code>unknown_topic</code>, telling's <code>not_interested</code>. An <code>on asking it</code> clause on the person is where real dialogue hooks in; note the topic slot must name something in scope (<code>ask the hermit about the gull</code> parses; a topic that matches nothing gets the parser's "can't see any such thing").</p>
+    <p>Deliberately minimal (ADR-230): the platform validates the social preconditions and reports an interceptable default — asking's <code>unknown_topic</code>, telling's <code>not_interested</code>. An <code>on asking it</code> clause on the person is where real dialogue hooks in; the topic slot is free text, resolved entity-first (ADR-231): a topic naming something in scope carries that entity along, and anything else — <code>ask the hermit about the weather</code> — flows through as plain text. A topic is never scope-rejected.</p>
     <p>The author writes:</p>
     <pre><code>create the Hermitage
   a room

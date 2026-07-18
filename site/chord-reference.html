@@ -118,7 +118,7 @@ create the player
   south is blocked: hedge-too-thick
 
   Gravel crunches underfoot between the rose beds.</code></pre>
-    <p>A blocked exit refuses travel and speaks the named phrase (the key after the colon must be a phrase the story defines, §5.3). The block can be conditional:</p>
+    <p>A blocked exit refuses travel and speaks the named phrase (the key after the colon names a phrase the story defines, §5.3; a dotted key is legal too, ADR-231). The block can be conditional:</p>
     <pre><code>create the Orchard
   a room
   west to the Rose Walk
@@ -217,6 +217,21 @@ end phrase</code></pre>
     It hops from perch to perch as you watch.</code></pre>
     <p>The story-wide <code>robin-watched</code> text (defined in <code>define phrases</code>) is the default; the robin's own cycling variants win whenever the robin is the one being watched. Under the hood the override registers a derived key scoped to the entity (<code>garden-robin.robin-watched</code>), which is also how descriptions get their keys (<code>garden-robin.description</code>).</p>
     <p>The <code>detail</code> key is special: it appends a live detail sentence to the entity's description and requires a <code>while</code> condition. On ordinary overrides, <code>while</code> is not allowed (<code>analysis.override-gate</code>); use a strategy or variants instead.</p>
+    <h3>2.11 Starting state</h3>
+    <p>A stateful trait opens for business in its default state: a lockable thing starts unlocked, a switchable thing starts off, and an openable thing starts closed — declare <code>starts open</code> to begin open (ADR-231 D5b: the trait default is authoritative everywhere; container kinds are no exception). When the story needs otherwise, a safe that stays locked until the player finds the key, a space heater already running, <code>starts &lt;state&gt;</code> on the composition line sets the trait's initial value.</p>
+    <pre><code>create the safe
+  a container, openable, lockable with key the brass key, starts locked
+  in the Back Office
+
+  A squat floor safe with a brass keyhole.</code></pre>
+    <p>Six state words are accepted, each paired with the trait it initializes: <code>locked</code> and <code>unlocked</code> set <code>lockable</code>, <code>closed</code> and <code>open</code> set <code>openable</code>, <code>off</code> and <code>on</code> set <code>switchable</code>. The pairing is enforced: <code>starts locked</code> on an entity that does not compose <code>lockable</code> is a load error (<code>analysis.starts-state-pairing</code>), never a silent no-op. Any other word after <code>starts</code> is a parse error (<code>parse.starts-state</code>) — except <code>in</code>, which is the placement line from §2.4. <code>starts in</code> names where something begins; <code>starts &lt;state&gt;</code> names how.</p>
+    <pre><code>create the space heater
+  switchable, starts on
+  in the Back Office
+  aka heater
+
+  An old space heater, ticking as it warms.</code></pre>
+    <p>Note what <code>starts</code> does not do: the state word is an initializer, not stored story state. <code>locked</code>, <code>open</code>, and <code>on</code> remain derivable facts read live from the trait (the state adjectives of §3.4), and a <code>states:</code> line reproducing one of those pairs is still the shadow-state error (§6.2's boolean-state gate). <code>starts</code> merely chooses the trait's first value; from there the world moves it the usual ways — keys, hands, and switches.</p>
     <h2>3. Giving things behavior</h2>
     <h3>3.1 on and after</h3>
     <p>Behavior attaches to its owner as an <code>on</code> or <code>after</code> clause inside the owner's <code>create</code> block (or inside a trait, §5.7). The two words divide one moment: <code>on</code> runs before the action commits and may stop it; <code>after</code> runs once it has happened and reacts.</p>
@@ -317,6 +332,7 @@ define condition vine-tomato: it is a tomato and it is not in the harvest basket
     <pre><code>  on taking it
     refuse all-thorns
   end on</code></pre>
+    <p>The named key resolves entity-scoped first (ADR-231): a <code>phrase all-thorns:</code> override in the refusing entity's own <code>create</code> block (§2.10) wins over a story-wide <code>all-thorns</code>, and a bare key renders on standard actions just as it does on story-defined ones. A dotted key is legal here too (§5.2).</p>
     <p>Refusing on a negated condition (<code>refuse when not …</code>) is flagged (<code>analysis.negated-requirement</code>): that is a requirement in disguise, and <code>must</code> says it better.</p>
     <h3>3.7 The statements</h3>
     <p>Ten statements do the story's work. The pumpkin below uses most of them:</p>
@@ -607,6 +623,7 @@ end phrase</code></pre>
   It will not budge, and neither will anything else bolted to this place.
 end phrase</code></pre>
     <p>Now every fixed-in-place refusal in the story speaks this line instead of the standard one. The per-entity routes still sit on top: an <code>on</code> clause's own refusal (§3.6) or a per-entity override (§2.10) speaks for its one entity, and the story-wide dotted override sets the default underneath them.</p>
+    <p>A dotted key is legal at every site a phrase key appears (ADR-231), not just here: <code>refuse</code> and <code>refuse when</code> (§3.6), <code>must … otherwise refuse</code> (§3.5), per-entity <code>phrase</code> headers (§2.10), <code>define phrases</code> entries (§5.3), and the blocked and deadly exit keys (§2.5, §4.7) all read a dotted key whole.</p>
     <h3>5.3 define phrases (locale blocks)</h3>
     <p>Where <code>define phrase</code> declares one key with variants, <code>define phrases &lt;locale&gt;</code> declares many plain keys at once, under a named locale. This is the localizable form — the same block stdlib uses — and the one to reach for when your text is a flat catalog of keyed strings rather than a single choice:</p>
     <pre><code>define phrases en-US
@@ -615,7 +632,7 @@ end phrase</code></pre>
   rack-back:
     Each back is pre-stamped, as if the zoo expects you to write home
     before you have even seen it.</code></pre>
-    <p>Each entry is <code>key:</code> on its own line followed by an indented prose block. The block is dedent-terminated — there is no <code>end phrases</code>. A key here is a plain phrase with no strategy; for variants or a strategy, use <code>define phrase</code> (§5.2) instead. Throughout this reference the small supporting texts live in exactly this kind of block at the foot of each fixture.</p>
+    <p>Each entry is <code>key:</code> on its own line followed by an indented prose block. The block is dedent-terminated — there is no <code>end phrases</code>. A key here is a plain phrase with no strategy; for variants or a strategy, use <code>define phrase</code> (§5.2) instead. A key here may be dotted (ADR-231): an entry under <code>if.action.taking.fixed_in_place:</code> overrides the platform default exactly as §5.2's form does. Throughout this reference the small supporting texts live in exactly this kind of block at the foot of each fixture.</p>
     <h3>5.4 define verb</h3>
     <p><code>define verb &lt;word&gt; {or &lt;word&gt;} means &lt;pattern&gt;</code> teaches the parser a new surface verb by mapping it onto an existing action's pattern. A <code>(something)</code> in the pattern is a slot the parser fills from the player's input:</p>
     <pre><code>define verb hang or hook means put (something) on (something)

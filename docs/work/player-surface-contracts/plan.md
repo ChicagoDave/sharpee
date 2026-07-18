@@ -184,7 +184,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
   - `inventory.ts:140`'s message-variant `Math.random()` switches to `context.random`.
   - **Rejection/determinism test named per the ADR's explicit requirement**: post-restore action-roll determinism — save mid-combat (or mid-throw), restore, replay the same action sequence, and assert the roll outcomes are identical to a fresh run seeded the same way (Integration Reality Statement: REAL-PATH test drives the actual save/restore service, not a hand-rolled RNG stub standing in for it).
 - **Exit state**: `pnpm --filter '@sharpee/engine' test`, `pnpm --filter '@sharpee/stdlib' test`, `pnpm --filter '@sharpee/world-model' test` green; the determinism test passes against the real save/restore path; no `Math.random()` remains in `throwing.ts`, `weaponBehavior.ts`, or `inventory.ts`'s message-variant pick; story-level RNG (dungeo's thief/combat/carousel) is untouched and dungeo walkthrough chain one clean run confirms no accidental determinism regression there (RNG death flakes still not regressions — this phase does not seed or disable story randomness).
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit 5b5d03ef — troll signature verified unchanged in kind; neutered throwing-golden mocks surfaced+converted; rider: implicit-take errorQualified propagation)
 
 ### Phase 11: Doc + site refresh
 - **Tier**: Small

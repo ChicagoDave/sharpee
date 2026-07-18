@@ -35,18 +35,18 @@ phrasing means any of the twelve direction words (`north`/`n` … `up`/`u`,
 
 Two authoring notes that recur in the examples:
 
-- Give every multiword entity an `aka` alias. Besides being kind to
-  players, it is currently what makes the article form parse — with no
-  alias, `x the iron key` misses while `x iron key` hits.
+- Give every multiword entity an `aka` alias. It is a kindness to
+  players, not a requirement: the full name parses in every form,
+  article or no — `x the iron key` and `x iron key` both hit
+  (ADR-231).
 - Where an example carries a custom refusal on a *standard* action, its
   phrase is declared under the fully-qualified dotted key (`define phrase
   if.action.taking.ring-fused`) and named in full by `refuse`. That is
-  the form that renders today: the short form (`refuse ring-fused` with a
-  local phrase) blocks the action but currently prints no text, and a
-  handful of actions (giving, showing, throwing, wearing among them)
-  don't render custom refusal keys at all — platform note, under review.
-  Refusals inside a `define action` (see turning, §6) are free of all
-  this: short keys render fine on the dispatch path.
+  a style choice, not a workaround: the short form (`refuse ring-fused`
+  with the phrase declared under the bare key) renders the same text,
+  and both forms work on every standard action — giving, showing,
+  throwing, and wearing included (ADR-231). Refusals inside a
+  `define action` (see turning, §6) take short keys as they always have.
 
 ## 1. Manipulation
 
@@ -268,11 +268,11 @@ You can't go that way.
 
 ### entering and exiting
 
-One trait — `enterable` — and the parser will not even match the ENTER
-patterns against anything else. Compose `openable` alongside it and a
-closed door refuses entry with `container_closed`. (Prefer `enter X` in
-play and in tests: the `get in`/`get into` forms currently lose to
-taking's `get X` when the target is scenery — platform note.)
+One trait — `enterable` — checked in the action, which turns everything
+else away with `not_enterable`. Compose `openable` alongside it and a
+closed door refuses entry with `container_closed`. All the phrasings are
+equivalent — `get in`/`get into` land on the enterable target even when
+it is scenery (ADR-231).
 
 The author writes:
 
@@ -950,7 +950,7 @@ The people a story writes, and the rougher interactions. Full entries:
 | Action | Phrasings | Needs | Refuses with |
 |---|---|---|---|
 | **talk** | `talk to`/`with X` · `speak to`/`with X` · `chat with X` · `converse with X` | a person (checked in validate, not the parser) | `not_actor`, `too_far`, `self`, `not_available` |
-| **ask** | `ask X about Y` · `question X about Y` · `inquire of X about Y` | a person; the topic must name something in scope | `not_actor`, `too_far`, `not_visible` (`unknown_topic` as the default reply) |
+| **ask** | `ask X about Y` · `question X about Y` · `inquire of X about Y` | a person; the topic is free text (never scope-checked) | `not_actor`, `too_far`, `not_visible` (`unknown_topic` as the default reply) |
 | **tell** | `tell X about Y` · `inform X about Y` | a person; topic as above | `not_actor`, `too_far`, `not_visible` (`not_interested` as the default reply) |
 | **give** | `give`/`hand X to Y` · `give`/`hand Y X` · `offer X to Y` | recipient: `a person` | `not_actor`, `self`, `not_interested`, `inventory_full`, `too_heavy` |
 | **show** | `show X to Y` · `show Y X` · `display`/`present X to Y` | recipient: `a person`, same room | `not_actor`, `self`, `viewer_too_far`, `not_carrying` |
@@ -1015,9 +1015,11 @@ You give the silver medallion to the sentry.
 Deliberately minimal (ADR-230): the platform validates the social
 preconditions and reports an interceptable default — asking's
 `unknown_topic`, telling's `not_interested`. An `on asking it` clause on
-the person is where real dialogue hooks in; note the topic slot must
-name something in scope (`ask the hermit about the gull` parses; a topic
-that matches nothing gets the parser's "can't see any such thing").
+the person is where real dialogue hooks in; the topic slot is free text,
+resolved entity-first (ADR-231): a topic naming something in scope
+carries that entity along, and anything else — `ask the hermit about
+the weather` — flows through as plain text. A topic is never
+scope-rejected.
 
 The author writes:
 
