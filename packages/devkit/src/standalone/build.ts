@@ -11,6 +11,8 @@ import { execSync } from 'child_process';
 import { zipSync, strToU8 } from 'fflate';
 import { runBuildBrowserCommand } from './build-browser';
 import { stampVersion } from './version-stamp';
+import { findStoryFile, loadAuthorGame } from './author-game';
+import { lintHatchSources } from '../hatch-lint';
 
 interface SharpeeConfig {
   title?: string;
@@ -74,10 +76,30 @@ export async function runBuildCommand(args: string[], projectDirArg?: string): P
   const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
   const config: SharpeeConfig = pkg.sharpee || {};
   const storyName = config.title?.toLowerCase().replace(/\s+/g, '-') || pkg.name?.replace(/^@.*\//, '') || 'story';
+
+  // A Chord project (exactly one root `.story` file) builds through the
+  // compiler's load-time gates; a module project compiles TypeScript.
+  let chordStoryFile: string | null;
+  try {
+    chordStoryFile = findStoryFile(projectDir);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+    return;
+  }
+  if (chordStoryFile) {
+    await runChordBuild(projectDir, chordStoryFile, config.title || storyName, args, {
+      runTests,
+      verbose,
+      stopOnFailure,
+    });
+    return;
+  }
+
   const storySrc = path.join(projectDir, 'src', 'index.ts');
 
   if (!fs.existsSync(storySrc)) {
-    console.error('Error: src/index.ts not found.');
+    console.error('Error: src/index.ts not found (and no .story file — nothing to build).');
     process.exit(1);
   }
 
@@ -205,6 +227,88 @@ export async function runBuildCommand(args: string[], projectDirArg?: string): P
 }
 
 /**
+ * Build a Chord (`.story`) project: run the compiler as the fail-fast
+ * validation gate (diagnostics surface here, on the author's machine —
+ * never first as a broken page), lint hatch sources, then build the
+ * browser client when one is wired and run transcript tests when asked.
+ * Per David's ruling (2026-07-18) the shipped browser bundle carries the
+ * `.story` SOURCE + the compiler and compiles at boot — so this build
+ * emits no IR artifact; validation is its compile step. The `.sharpee`
+ * bundle format for Chord projects is deferred (chord-author-pipeline
+ * plan), not silently faked.
+ */
+async function runChordBuild(
+  projectDir: string,
+  storyFile: string,
+  title: string,
+  args: string[],
+  options: { runTests: boolean; verbose: boolean; stopOnFailure: boolean },
+): Promise<void> {
+  console.log(`\nBuilding: ${title} (Chord)\n`);
+  console.log('--- Validating story (load-time gates) ---\n');
+
+  // Lazy require (compose.ts pattern): pull the compiler only when building.
+  const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
+  const rel = path.relative(projectDir, storyFile) || storyFile;
+  const result = chord.compile(fs.readFileSync(storyFile, 'utf-8'));
+  for (const d of result.diagnostics) {
+    console.error(`  ${rel}:${d.span.line}:${d.span.column} ${d.severity} [${d.code}] ${d.message}`);
+  }
+  if (!result.ok) {
+    const errors = result.diagnostics.filter((d) => d.severity === 'error').length;
+    console.error(`\n  ${rel} failed the load-time gates (${errors} error(s))`);
+    process.exit(1);
+  }
+
+  // Hatch source lint (design.md §5.6) — same gate `sharpee compose` runs.
+  const hatchFindings = lintHatchSources(
+    path.dirname(path.resolve(storyFile)),
+    result.ir.hatches.map((h) => h.modulePath),
+  );
+  for (const f of hatchFindings) {
+    console.error(
+      `  ${f.file}:${f.line} error [hatch.chord-namespace] \`${f.text}\` — the chord.* state namespace is loader-private`,
+    );
+  }
+  if (hatchFindings.length > 0) process.exit(1);
+
+  console.log(`  ${rel} is gate-clean — ${result.ir.entities.length} entities, ${result.ir.actions.length} action(s)\n`);
+
+  // Story IR artifact (David, 2026-07-18: "the IDE will want the IR") — the
+  // gate already compiled; write the versioned IR where tooling can read it.
+  // The BROWSER bundle still ships the source (ruling 2); this file is for
+  // the IDE/tooling surface (ADR-184/185), not the page.
+  const distDir = path.join(projectDir, 'dist');
+  fs.mkdirSync(distDir, { recursive: true });
+  const irOut = path.join(distDir, `${path.basename(storyFile, '.story')}.ir.json`);
+  fs.writeFileSync(irOut, JSON.stringify(result.ir, null, 2) + '\n');
+  console.log(`  Story IR → ${path.relative(projectDir, irOut)}\n`);
+
+  console.log('--- Story Bundle (.sharpee) ---\n');
+  console.log('  Skipped: the .sharpee bundle format for Chord projects is not defined yet.\n');
+
+  // --- Browser client (the shipped artifact: story source + compiler) ---
+  console.log('--- Browser Client ---\n');
+  const browserEntry = path.join(projectDir, 'src', 'browser-entry.ts');
+  if (fs.existsSync(browserEntry)) {
+    await runBuildBrowserCommand(
+      args.filter((a) => a !== '--help' && a !== '-h' && a !== '--test' && a !== '--verbose' && a !== '-v' && a !== '--stop-on-failure'),
+      projectDir,
+    );
+  } else {
+    console.log('  Skipped (no src/browser-entry.ts)\n');
+    console.log('  Run "sharpee init-browser" to add browser support.\n');
+  }
+
+  if (options.runTests) {
+    console.log('--- Running Transcript Tests ---\n');
+    await runTranscriptTests(projectDir, { verbose: options.verbose, stopOnFailure: options.stopOnFailure });
+  }
+
+  console.log('Build complete!\n');
+}
+
+/**
  * Snippet lint (ADR-209 AC-6): load the compiled story and warn, naming room
  * and entry, for every snippet entry whose marker appears in neither of its
  * room's description texts. Warnings never fail the build; an unbound MARKER
@@ -247,15 +351,17 @@ async function runTranscriptTests(
   projectDir: string,
   options: { verbose: boolean; stopOnFailure: boolean }
 ): Promise<void> {
-  // Lazy-load transcript-tester to avoid import issues when not testing
+  // Lazy-load transcript-tester to avoid import issues when not testing.
+  // Story loading goes through the shared author-game loader (Chord `.story`
+  // projects and module projects alike — one resolution, ADR-180).
   const {
-    loadStory,
     parseTranscriptFile,
     runTranscript,
     reportTranscript,
     reportTestRun,
     getExitCode
   } = require('@sharpee/transcript-tester');
+  const loadStory = (dir: string, entry?: string) => loadAuthorGame(dir, { entry });
 
   const { TranscriptResult, TestRunResult } = require('@sharpee/transcript-tester');
 

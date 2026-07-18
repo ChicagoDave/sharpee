@@ -15,6 +15,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { stampVersion } from './version-stamp';
+import { findStoryFile } from './author-game';
 
 // In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
 const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))
@@ -253,6 +254,52 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
 
   const outDir = path.join(projectDir, 'dist', 'web');
   fs.mkdirSync(outDir, { recursive: true });
+
+  // Chord project: the shipped bundle carries the `.story` SOURCE and the
+  // compiler, compiling at boot (David's ruling, 2026-07-18). Run the
+  // compiler HERE as the fail-fast gate — diagnostics belong on the
+  // author's machine, never first as a broken page — then ship the source
+  // as dist/web/story.story (the entry fetches that fixed name).
+  let chordStoryFile: string | null;
+  try {
+    chordStoryFile = findStoryFile(projectDir);
+  } catch (error) {
+    console.error(`\nError: ${error instanceof Error ? error.message : error}`);
+    process.exit(1);
+    return;
+  }
+  if (chordStoryFile) {
+    const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
+    const rel = path.relative(projectDir, chordStoryFile) || chordStoryFile;
+    const result = chord.compile(fs.readFileSync(chordStoryFile, 'utf-8'));
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    for (const d of errors) {
+      console.error(`  ${rel}:${d.span.line}:${d.span.column} error [${d.code}] ${d.message}`);
+    }
+    if (!result.ok) {
+      console.error(`\nError: ${rel} failed the load-time gates (${errors.length} error(s)).`);
+      process.exit(1);
+    }
+    if (result.ir.hasHatches) {
+      // The browser cannot load author hatch modules (no module resolution
+      // in the page); refuse legibly rather than shipping a bundle that
+      // dies at boot. Pure-IR stories (the scaffold's shape) build fine.
+      console.error(
+        '\nError: this story declares TypeScript hatches (`define text/action … from "…"`) — ' +
+          'the browser build does not support hatch modules yet. Remove the hatches, or use the TypeScript project form.',
+      );
+      process.exit(1);
+    }
+    fs.copyFileSync(chordStoryFile, path.join(outDir, 'story.story'));
+    console.log(`  ✓ Validated ${rel} (gate-clean) and shipped it as story.story`);
+
+    // Story IR artifact for the IDE/tooling surface (David, 2026-07-18:
+    // "the IDE will want the IR"). dist/, not dist/web/ — a tooling file,
+    // not a page asset; the page compiles the shipped SOURCE at boot.
+    const irOut = path.join(projectDir, 'dist', `${path.basename(chordStoryFile, '.story')}.ir.json`);
+    fs.writeFileSync(irOut, JSON.stringify(result.ir, null, 2) + '\n');
+    console.log(`  ✓ Story IR → ${path.relative(projectDir, irOut)}`);
+  }
 
   // browser-entry.ts imports ./version — stamp it fresh before bundling.
   stampVersion(projectDir, info.storyId);

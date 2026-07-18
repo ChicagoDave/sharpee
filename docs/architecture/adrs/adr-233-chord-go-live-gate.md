@@ -140,6 +140,25 @@ no-scope-reduction rule of the parity north star applies).
   the browser client — the ADR-180 Phase U2 delivery, proven by a
   scripted end-to-end run in CI or a documented manual protocol
   executed at least once per release.
+  **[SATISFIED 2026-07-18, session 80ff54 — David confirmed. The
+  chord-author-pipeline workstream (docs/work/chord-author-pipeline/
+  plan.md, all 4 phases DONE) delivered the Chord-first author
+  pipeline: `sharpee init` scaffolds a `.story` project by default
+  (`--ts` opt-out — David's ruling), `sharpee build --browser` ships
+  the story SOURCE + the Chord compiler and compiles at boot (David's
+  ruling; the build still runs the compiler as the author-machine
+  fail-fast gate, and emits `dist/<story>.ir.json` for the IDE/tooling
+  surface), and `sharpee test`/`play` complete the author command set
+  (ADR-187 R1). Proof (form ruled by David: scripted, run locally):
+  `scripts/g2-clean-machine-proof.mjs` with its passing log at
+  `docs/work/chord-author-pipeline/proof/g2-proof-run.log` — staged
+  tarball install of @sharpee/devkit into an out-of-repo directory
+  (npm's real bin-shim mechanism), bare `sharpee` → init → install →
+  build --browser → the served page boots in a real Chromium,
+  compiles the story in-browser, and plays real turns. ONE named
+  deferral, not a scope reduction: proving the literal `npm i -g
+  @sharpee/devkit` against the PUBLIC registry rides on G4's publish
+  (Phase 8) — nothing is published until the version bump.]**
 
 ### G3 — Launch tutorial
 

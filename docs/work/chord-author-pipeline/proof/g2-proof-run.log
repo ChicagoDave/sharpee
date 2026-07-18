@@ -1,0 +1,15 @@
+[g2-proof] clean-machine dir: /var/folders/wb/k_3t0zsd7yq4hzylynb6fz3h0000gn/T/sharpee-g2-proof-3Ga1Cx
+[g2-proof] step 1: installing @sharpee/devkit from staged tarballs (npm bin shim = the global-install mechanism)
+[g2-proof]   ✓ bare `sharpee` resolves and runs
+[g2-proof] step 2: `sharpee init first-light -y` (Chord default scaffold)
+[g2-proof]   ✓ .story project scaffolded, browser-ready
+[g2-proof] step 3: npm install in the project (@sharpee/* from staged tarballs — the Phase 8 carve-out; esbuild etc. from the registry)
+[g2-proof]   ✓ project installed
+[g2-proof] step 4: `sharpee build --browser` (compile gate on the author machine; bundle ships source + compiler)
+[g2-proof]   ✓ dist/web built (game.js 1199 KB, compiler included, source shipped, IR artifact emitted)
+[g2-proof] step 5: serving dist/web and booting in Chrome (playwright-core, system channel)
+[g2-proof]   ✓ page booted: story compiled in-browser and rendered the opening room
+[g2-proof]   ✓ first turns played: inventory + examine answered from the compiled story
+[g2-proof] 
+[g2-proof] PASS — G2 end-to-end: staged install → sharpee init (Chord) → sharpee build --browser → served page boots and plays.
+[g2-proof] Deferred to Phase 8 (G4), explicitly: the literal `npm i -g @sharpee/devkit` against the PUBLIC registry (unpublished until the version bump).

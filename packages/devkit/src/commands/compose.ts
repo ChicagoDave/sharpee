@@ -14,31 +14,11 @@
 import * as path from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { lintHatchSources } from '../hatch-lint';
+// Shared hatch-module resolution policy (one implementation — also used by
+// the author-game loader behind `sharpee test`/`play`).
+import { requireHatchModule } from '../standalone/author-game';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [-o <ir.json>]';
-
-/**
- * Resolve one hatch module path (e.g. `"./extras.ts"`) to a loadable compiled
- * module, relative to the `.story` file's directory: `dist/<base>.js` (tsc
- * output) first, then `<base>.js` beside the source. Same policy as the CLI
- * bundle's `requireHatchModule` (scripts/bundle-entry.js) — the host owns
- * module resolution; the loader is filesystem-free (ADR-210 §5.6).
- *
- * @throws if no candidate exists.
- */
-function requireHatchModule(storyDir: string, modulePath: string): Record<string, unknown> {
-  const base = modulePath.replace(/\.(ts|js)$/, '');
-  const candidates = [
-    path.resolve(storyDir, 'dist', `${base}.js`),
-    path.resolve(storyDir, `${base}.js`),
-  ];
-  const found = candidates.find((p) => existsSync(p));
-  if (!found) {
-    throw new Error(`hatch module "${modulePath}" not found. Tried:\n  ${candidates.join('\n  ')}`);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require(found) as Record<string, unknown>;
-}
 
 /**
  * Run `sharpee compose`.

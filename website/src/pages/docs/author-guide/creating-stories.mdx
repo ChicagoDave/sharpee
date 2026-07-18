@@ -312,11 +312,14 @@ Create `.transcript` files to test your story:
 ### Running Transcripts
 
 ```bash
-# Run a transcript test
-npx sharpee --test tests/transcripts/basic.transcript
+# Run a transcript test (global sharpee command — no npx)
+sharpee test tests/transcripts/basic.transcript
+
+# Run every transcript under tests/
+sharpee test
 
 # Interactive play
-npx sharpee --play
+sharpee play
 ```
 
 ## Troubleshooting

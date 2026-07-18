@@ -49,7 +49,10 @@ describe('browser scaffold (real path)', () => {
     tmp = mkdtempSync(join(REPO_ROOT, '.tmp-browser-verify-'));
     projectDir = join(tmp, 'my-story'); // basename → storyId 'my-story'
 
-    await runInitCommand([projectDir, '-y']);
+    // `--ts`: this test pins the preserved TypeScript scaffold/build path
+    // (Chord is the default scaffold since David's 2026-07-18 ruling; the
+    // Chord browser build is covered by chord-build.test.ts).
+    await runInitCommand([projectDir, '-y', '--ts']);
     await runInitBrowserCommand([], projectDir);
 
     // init-browser: entry wired + override seeded + runtime deps added.

@@ -21,6 +21,8 @@ import { runInitCommand } from './standalone/init';
 import { runInitBrowserCommand } from './standalone/init-browser';
 import { runIfidCommand } from './standalone/ifid';
 import { runRegister, runList } from './commands/register';
+import { runTestCommand } from './commands/test';
+import { runPlayCommand } from './commands/play';
 import { lookupStory } from './registry';
 
 const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
@@ -35,6 +37,9 @@ Usage:
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
+  sharpee test [name|path] [transcripts…] [--chain] [--stop-on-failure] [--verbose]
+                                         Run the project's transcript tests
+  sharpee play [name|path]               Play the project interactively (REPL)
 
 build (author project): compiles src/ + emits the .sharpee bundle; --browser also
   builds the self-contained browser client (dist/web/, with the project's assets/).
@@ -48,9 +53,7 @@ compose options:
 
 Note: platform/in-repo builds — the packages, the CLI bundle, verify, test:npm — are
 repokit's job. In the monorepo use ./repokit; devkit is the author tool. A workspace
-story passed to \`sharpee build\` is redirected to repokit.
-
-Reserved (later): test, play`;
+story passed to \`sharpee build\` is redirected to repokit.`;
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -120,9 +123,9 @@ async function main(argv: string[]): Promise<number> {
       runList();
       return 0;
     case 'test':
+      return runTestCommand(rest);
     case 'play':
-      console.error(`sharpee ${command}: not yet implemented`);
-      return 2;
+      return runPlayCommand(rest);
     default:
       console.error(`unknown command: ${command}\n`);
       console.log(USAGE);

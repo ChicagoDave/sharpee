@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { platformRanges } from './init';
 import { stampVersion } from './version-stamp';
+import { findStoryFile } from './author-game';
 
 // In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
 const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))
@@ -26,6 +27,9 @@ const BROWSER_RUNTIME_DEPS = [
   '@sharpee/stdlib',
   '@sharpee/platform-browser',
 ];
+
+/** Extra runtime deps of the CHORD browser entry (compiles .story at boot). */
+const CHORD_BROWSER_RUNTIME_DEPS = ['@sharpee/chord', '@sharpee/story-loader'];
 
 interface ProjectInfo {
   storyId: string;
@@ -76,7 +80,7 @@ function processTemplate(content: string, info: ProjectInfo): string {
  * Deps pin to the platform major line this devkit shipped with (same source as
  * `sharpee init`). Existing entries are left untouched.
  */
-function updatePackageJson(projectDir: string): void {
+function updatePackageJson(projectDir: string, isChord: boolean): void {
   const packagePath = path.join(projectDir, 'package.json');
   if (!fs.existsSync(packagePath)) {
     console.warn('  ⚠ No package.json — skipped dependency wiring');
@@ -87,7 +91,8 @@ function updatePackageJson(projectDir: string): void {
     const { sharpeeRange } = platformRanges();
 
     pkg.dependencies = pkg.dependencies || {};
-    for (const dep of BROWSER_RUNTIME_DEPS) {
+    const deps = isChord ? [...BROWSER_RUNTIME_DEPS, ...CHORD_BROWSER_RUNTIME_DEPS] : BROWSER_RUNTIME_DEPS;
+    for (const dep of deps) {
       if (!pkg.dependencies[dep]) pkg.dependencies[dep] = sharpeeRange;
     }
 
@@ -124,6 +129,11 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
 
   console.log(`  Story: ${info.storyTitle} (${info.storyId})`);
 
+  // A Chord project (root `.story` file) gets the compile-at-boot entry
+  // (the bundle ships the story source + the Chord compiler — David's
+  // ruling, 2026-07-18); a module project gets the import-the-story entry.
+  const isChord = findStoryFile(projectDir) !== null;
+
   // Entry point — the one wiring file authors may customize.
   const browserEntryPath = path.join(projectDir, 'src', 'browser-entry.ts');
   if (fs.existsSync(browserEntryPath)) {
@@ -131,13 +141,15 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
     console.error('Remove it first if you want to regenerate.');
     process.exit(1);
   }
-  const browserEntryTemplate = path.join(TEMPLATES_DIR, 'browser-entry.ts.template');
+  const templateName = isChord ? 'chord-browser-entry.ts.template' : 'browser-entry.ts.template';
+  const browserEntryTemplate = path.join(TEMPLATES_DIR, templateName);
   if (!fs.existsSync(browserEntryTemplate)) {
-    console.error('  ✗ Template not found: browser-entry.ts.template');
+    console.error(`  ✗ Template not found: ${templateName}`);
     process.exit(1);
   }
+  fs.mkdirSync(path.dirname(browserEntryPath), { recursive: true });
   fs.writeFileSync(browserEntryPath, processTemplate(fs.readFileSync(browserEntryTemplate, 'utf-8'), info));
-  console.log('  ✓ Created src/browser-entry.ts');
+  console.log(`  ✓ Created src/browser-entry.ts${isChord ? ' (Chord — compiles story.story at boot)' : ''}`);
 
   // Seed src/version.ts now (browser-entry imports it) so the project compiles immediately,
   // before any build runs. `sharpee build` / `build-browser` refresh it with current values.
@@ -159,7 +171,7 @@ export async function runInitBrowserCommand(args: string[], projectDirArg?: stri
     console.log(`  ✓ Created browser/${info.storyId}.css`);
   }
 
-  updatePackageJson(projectDir);
+  updatePackageJson(projectDir, isChord);
 
   console.log('\n✅ Browser client added!\n');
   console.log('Next steps:');
