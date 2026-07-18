@@ -729,6 +729,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -780,6 +781,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": null,
@@ -842,6 +844,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": null,
@@ -1429,6 +1432,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "version": "0.0.1",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,

@@ -318,8 +318,30 @@ class Parser {
     const states: StateName[] = [];
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
+    const onClauses: OnClause[] = [];
     let span = lineSpan(line);
     while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
+      const peeked = this.lines[this.pos];
+      const peekedWord = firstWord(peeked);
+      // `on every turn [while <cond>][, once]` — the story-owned daemon
+      // (ADR-236 D7, ratchet R4). The only clause form the header hosts;
+      // anything else keeps its owner-attached home.
+      if (peekedWord === 'on' || peekedWord === 'after') {
+        const clause = this.parseOnClause(peeked.indent, peekedWord);
+        span = mergeSpans(span, clause.span);
+        if (clause.clauseKind === 'on' && clause.binding === 'every-turn') {
+          onClauses.push(clause);
+        } else if (!(clause.clauseKind === 'after' && clause.binding === 'every-turn')) {
+          // (`after every turn` already got its own parse error inside
+          // parseOnClause — don't stack a second diagnostic on it.)
+          this.diagnostics.error(
+            'parse.story-clause',
+            'The story header hosts only `on every turn` clauses (ADR-236 D7) — action and event clauses belong to the entity they are about.',
+            clause.span,
+          );
+        }
+        continue;
+      }
       const fieldLine = this.lines[this.pos++];
       span = mergeSpans(span, lineSpan(fieldLine));
       const key = firstWord(fieldLine);
@@ -349,7 +371,7 @@ class Parser {
       fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
     }
 
-    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, span };
+    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, span };
   }
 
   /**
@@ -417,6 +439,7 @@ class Parser {
       placement: null,
       wears: [],
       carries: [],
+      containing: [],
       exits: [],
       blockedExits: [],
       deadlyExits: [],
@@ -465,6 +488,13 @@ class Parser {
         this.pos++;
         cur.matchWord('carries');
         decl.carries.push(this.parseNameRef(cur, () => false));
+      } else if (word === 'containing') {
+        // ADR-236 D2 (ratchet R2): region membership — `containing the
+        // Clearing, the Forest Path, and the Canyon View`. Additive across
+        // lines; region-block-only legality is the analyzer's gate.
+        this.pos++;
+        cur.matchWord('containing');
+        decl.containing.push(...this.parseNameRefList(cur, line));
       } else if (word === 'starts' && cur.isWord('in', 1)) {
         // The `starts` dispatch is one-token lookahead (ADR-231 D5a):
         // `starts in <place>` is placement (here); `starts <known-state>` is
@@ -881,6 +911,33 @@ class Parser {
     }
     if (current.length) out.push(current.join(' '));
     return out;
+  }
+
+  /**
+   * A comma-separated list of entity name references, Oxford-`and` welcome
+   * (`the Clearing, the Forest Path, and the Canyon View`). Each reference
+   * keeps its own article and span; an empty list is a parse error.
+   */
+  private parseNameRefList(c: Cursor, line: Line): NameRef[] {
+    const refs: NameRef[] = [];
+    for (;;) {
+      const ref = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'and');
+      if (ref.words.length === 0) {
+        this.diagnostics.error('parse.name-list', 'Expected an entity name.', c.atEnd() ? lineSpan(line) : c.restSpan());
+        break;
+      }
+      refs.push(ref);
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        c.matchWord('and'); // Oxford `and` after the comma
+      } else if (!c.matchWord('and')) {
+        break;
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.name-list', `Unexpected trailing text in name list: \`${c.peek()!.text}\`.`, c.restSpan());
+    }
+    return refs;
   }
 
   private parseStateList(c: Cursor): StateName[] {

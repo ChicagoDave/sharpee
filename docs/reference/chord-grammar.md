@@ -79,12 +79,20 @@ MARKER  = "{" content "}"                                  (* inside text only *
 ```
 story-file   = [ story-header ] { declaration } ;
 story-header = "story" STRING [ "by" STRING ] NL
-               >>> { states-line | score-line | WORD ":" rest-of-line NL } ;
+               >>> { states-line | score-line | story-on-clause
+                   | WORD ":" rest-of-line NL } ;
+story-on-clause = on-clause ;   (* `on every turn` only — ADR-236 D7, R4 *)
 declaration  = create | define-condition | define-phrase | define-phrases
              | define-verb | define-text
              | define-trait | define-action | define-hatch
              | define-sequence ;
 ```
+
+The story header hosts exactly one clause form: `on every turn [while
+<cond>][, once]` (ADR-236 D7, ratchet R4) — the story-owned daemon. No
+presence gate (it fires every turn wherever the player is), narration
+broadcasts, and `it` is unbound in the body (`analysis.story-clause-it`).
+Any other clause form in the header is `parse.story-clause`.
 
 Removed from the top level (ownership package, ratchet 2026-07-11):
 `when` rules, `once <condition>` rules, `every N turns` rules,
@@ -135,6 +143,11 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
 - `while` is legal on every binding; comma modifiers repeat and follow it.
 - Owner-scoped narration (D11) is semantics, not syntax: entity-owned
   every-turn clauses fire only in the owner's presence.
+- **Region blocks** (ADR-236) are a legal clause home: `on every turn`
+  fires while the player is in a member room, transitive through nesting
+  (D4); `after entering it` / `after leaving it` bind to the region's
+  crossing events, fired per boundary actually crossed (D6). `leaving`
+  (ratchet R3) exists ONLY on region blocks — a load error anywhere else.
 
 ## create
 
@@ -146,6 +159,15 @@ create-line  = "aka" alias { "," alias } NL
              | composition { "," composition } NL          (* pre-blank paragraph only *)
              | placement NL
              | "wears" name NL
+             | "containing" name { [ "," ] [ "and" ] name } NL
+                                                           (* region membership (ADR-236 D2,
+                                                              ratchet R2): region blocks only;
+                                                              additive across lines; members
+                                                              are rooms or nested regions
+                                                              (nesting sets parentRegionId,
+                                                              D3). Placement lines on a
+                                                              region are `analysis.region-
+                                                              placement` *)
              | DIRECTION "to" name NL                      (* exit *)
              | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
                                                            (* blocked exit, phrase key *)
@@ -454,10 +476,12 @@ review; if any is wrong it becomes a grammar-changes entry:
 9. **Descriptions and per-entity overrides become derived phrase keys**
    (`<entity-id>.description`, `<entity-id>.<key>`) registered in the
    story's default locale (Phase A: `en-US`), per given 3.
-10. **Event-verb set: `entering`** (`EVENT_VERBS` in `catalog.ts`, gerund
-    register since the ownership package). An `on`/`after` clause verb is
-    either a known event verb or a dispatch-action gerund; growing the set
-    is a grammar change (governance log).
+10. **Event-verb set: `entering`, `leaving`** (`EVENT_VERBS` in
+    `catalog.ts`, gerund register since the ownership package; `leaving`
+    added by ratchet R3, ADR-236 D6 — region blocks only, loader-refused
+    elsewhere). An `on`/`after` clause verb is either a known event verb or
+    a dispatch-action gerund; growing the set is a grammar change
+    (governance log).
 11. **`is <word>` objects** must be a declared state of the subject entity,
     a v1 trait adjective, a state adjective (D1), a literal, or an entity
     name — anything else is the unknown-value gate with a nearest-valid

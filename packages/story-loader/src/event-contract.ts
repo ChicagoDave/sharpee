@@ -45,3 +45,30 @@ export function enteringDestination(data: unknown): ActorMovedEventData['toRoom'
   const value = (data as Record<string, unknown>)[EVENT_PAYLOAD_FIELDS.entering];
   return typeof value === 'string' ? value : undefined;
 }
+
+/**
+ * Chord event verb → crossing event type when the clause owner is a REGION
+ * (ADR-236 D6): going.ts emits one event per boundary actually crossed
+ * (`getRegionCrossings` is the source of truth), so nesting transitivity —
+ * a parent's reaction fires only when the parent boundary is crossed — is
+ * the emitter's guarantee, not a runtime filter.
+ */
+export const REGION_EVENT_TRIGGERS: Record<string, string> = {
+  entering: 'if.event.region_entered',
+  leaving: 'if.event.region_exited', // ratchet R3 — the verb exists only for regions
+};
+
+/**
+ * Type-guarded read of a crossing event's region — which region's boundary
+ * was crossed (the WORLD entity id going.ts stamps as `regionId`). No
+ * stdlib payload type exists for the crossing events (going.ts emits
+ * inline objects), so the runtime pin is tests/event-selector.test.ts plus
+ * the region-crossing REAL-PATH suite.
+ * @param data the raw event payload (unknown shape at the seam)
+ * @returns the crossed region's world entity id, or undefined
+ */
+export function crossingRegionId(data: unknown): string | undefined {
+  if (typeof data !== 'object' || data === null) return undefined;
+  const value = (data as Record<string, unknown>)['regionId'];
+  return typeof value === 'string' ? value : undefined;
+}

@@ -52,7 +52,7 @@ import {
 } from './state-keys';
 import { withLineBreaks } from './text';
 import { stagingRenderContext } from './hatch-context';
-import { enteringDestination, EVENT_TRIGGERS } from './event-contract';
+import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract';
 
 /**
  * Chord strategy adverb → phrase-algebra Choice selector (ADR-196).
@@ -135,10 +135,21 @@ export class ChordRuntime {
         if (clause.binding === 'every-turn') return;
         // Event clauses (`after entering it`) bind to the event stream per
         // the selector contract — the ownership package's replacement for
-        // floating `when` rules.
-        if (EVENT_TRIGGERS[clause.action]) {
-          this.bindEventClause(world, entity, clause, clauseIndex);
+        // floating `when` rules. A REGION owner re-homes the verb onto the
+        // crossing events (ADR-236 D6): entering → region_entered, leaving
+        // → region_exited.
+        const trigger = this.eventTriggerFor(entity, clause);
+        if (trigger) {
+          this.bindEventClause(world, entity, clause, clauseIndex, trigger);
           return;
+        }
+        if (REGION_EVENT_TRIGGERS[clause.action]) {
+          // `leaving` exists only as a region crossing reaction (D6) — on
+          // any other owner it would silently never fire. Refuse at load.
+          throw new LoadError(
+            `\`${clause.clauseKind} ${clause.action} it\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
+            clause.span,
+          );
         }
         // D5 fail-fast (ADR-228): only bind clauses something will consult.
         if (!this.isConsultedGerund(clause.action)) {
@@ -273,13 +284,12 @@ export class ChordRuntime {
   // ---------------------------------------------------------- event clauses
 
   /**
-   * Bind an event clause (`after entering it` on a room) to its trigger
-   * event per the selector contract — the ownership package's replacement
-   * for floating `when` rules: the same firing semantics, owned by the
-   * entity the event is about.
+   * Bind an event clause (`after entering it` on a room or region) to its
+   * trigger event per the selector contract — the ownership package's
+   * replacement for floating `when` rules: the same firing semantics,
+   * owned by the entity the event is about.
    */
-  private bindEventClause(world: WorldModel, entity: IREntity, clause: IROnClause, clauseIndex: number): void {
-    const trigger = EVENT_TRIGGERS[clause.action];
+  private bindEventClause(world: WorldModel, entity: IREntity, clause: IROnClause, clauseIndex: number, trigger: string): void {
     const key = `chord.clause.${entity.id}.${clause.action}.${clauseIndex}`;
     world.chainEvent(
       trigger,
@@ -288,12 +298,18 @@ export class ChordRuntime {
     );
   }
 
+  /** The clause's trigger event type by owner kind, or undefined for non-event clauses. */
+  private eventTriggerFor(entity: IREntity, clause: IROnClause): string | undefined {
+    const isRegionOwner = entity.kinds.some((k) => k.name === 'region');
+    return isRegionOwner ? REGION_EVENT_TRIGGERS[clause.action] : EVENT_TRIGGERS[clause.action];
+  }
+
   /** Test/debug entry: run every event clause bound to this event type. */
   fireEventClauses(world: WorldModel, event: ISemanticEvent): ISemanticEvent[] {
     const out: ISemanticEvent[] = [];
     for (const entity of this.ir.entities) {
       entity.onClauses.forEach((clause, clauseIndex) => {
-        if (clause.binding === 'every-turn' || EVENT_TRIGGERS[clause.action] !== event.type) return;
+        if (clause.binding === 'every-turn' || this.eventTriggerFor(entity, clause) !== event.type) return;
         const key = `chord.clause.${entity.id}.${clause.action}.${clauseIndex}`;
         const produced = this.fireEventClause(entity, clause, key, event, world);
         if (produced) out.push(...produced);
@@ -309,10 +325,18 @@ export class ChordRuntime {
     event: ISemanticEvent,
     world: WorldModel,
   ): ISemanticEvent[] | null {
-    // The clause is about its owner: `after entering it` fires when the
-    // movement's destination IS the owner — read through the AC-9 payload
-    // guard, never a blind cast (the stdlib event is a foreign surface).
-    if (clause.action === 'entering' && enteringDestination(event.data) !== this.host.entityId(entity.id)) return null;
+    // The clause is about its owner. Region owners (ADR-236 D6): the
+    // crossing event names which boundary was crossed — fire only for this
+    // region's own boundary (the emitter's getRegionCrossings already made
+    // parent reactions crossing-accurate; no transitive widening here).
+    if (entity.kinds.some((k) => k.name === 'region')) {
+      if (crossingRegionId(event.data) !== this.host.entityId(entity.id)) return null;
+    } else if (clause.action === 'entering' && enteringDestination(event.data) !== this.host.entityId(entity.id)) {
+      // Room/enterable owners: `after entering it` fires when the
+      // movement's destination IS the owner — read through the AC-9 payload
+      // guard, never a blind cast (the stdlib event is a foreign surface).
+      return null;
+    }
 
     const ctx: ExecContext = { world, it: entity.id };
     if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return null;
@@ -862,6 +886,29 @@ export class ChordRuntime {
       });
     });
 
+    // Story-owned every-turn clauses (`on every turn` in the story header
+    // body — ADR-236 D7, ratchet R4): one daemon per clause with NO
+    // presence gate — the story is everywhere ("a background clock for the
+    // whole game"); narration broadcasts. `it` never appears in the body
+    // (the analyzer's story-clause-it gate refused it at compile).
+    (this.ir.story.onClauses ?? []).forEach((clause, clauseIndex) => {
+      if (clause.binding !== 'every-turn') return;
+      const key = `${CHORD_OCCURRENCE_PREFIX}story-turn.${clauseIndex}`;
+      daemons.push({
+        id: `chord.story-turn.${clauseIndex}`,
+        name: 'on every turn (story)',
+        run: (ctx) => {
+          const evalCtx: ExecContext = { world: ctx.world };
+          if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
+          const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
+          if (clause.once && fired > 1) return []; // `, once` (D5)
+          ctx.world.setStateValue(key, fired);
+          evalCtx.occurrence = fired;
+          return this.narrated(this.execStatements(clause.body, evalCtx));
+        },
+      });
+    });
+
     // Every-turn trait clauses (`on every turn while …[, once]`): one
     // daemon per clause, evaluated per entity carrying the trait. The
     // composition condition (`chatty while not after-hours`) gates per
@@ -925,17 +972,20 @@ export class ChordRuntime {
 
   /**
    * Decision 10 presence semantics: the player shares the owner's location.
-   * A room owner means the player is IN that room; for anything else the
-   * two share a containing room (same co-location rule as can-see/can-reach
-   * — presence, not sight, so the snake speaks in darkness).
+   * A room owner means the player is IN that room; a region owner "is" at
+   * every member room — presence is `isInRegion(player, region)`, transitive
+   * through nesting (ADR-236 D4); for anything else the two share a
+   * containing room (same co-location rule as can-see/can-reach — presence,
+   * not sight, so the snake speaks in darkness).
    */
   private playerPresentAt(world: WorldModel, irEntityId: string): boolean {
     const ownerId = this.host.entityId(irEntityId);
     const playerId = world.getPlayer()?.id;
     if (!ownerId || !playerId) return false;
     if (ownerId === playerId) return true;
-    const playerRoom = world.getContainingRoom(playerId)?.id ?? world.getLocation(playerId);
     const owner = world.getEntity(ownerId);
+    if (owner?.has(TraitType.REGION)) return world.isInRegion(playerId, ownerId);
+    const playerRoom = world.getContainingRoom(playerId)?.id ?? world.getLocation(playerId);
     if (owner?.has(TraitType.ROOM)) return playerRoom === ownerId;
     const ownerRoom = world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId);
     return ownerRoom !== undefined && ownerRoom === playerRoom;

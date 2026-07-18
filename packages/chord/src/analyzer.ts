@@ -167,9 +167,18 @@ interface Scope {
   scoreOwner: string | null;
   /** Inside an `each` block body — the `the match` binder is in scope (E3). */
   inEach: boolean;
+  /**
+   * A story-owned clause body (ADR-236 D7): `it`/`its` has no entity
+   * referent — referencing it is `analysis.story-clause-it`, the
+   * unbound-referent gate this scope makes reachable.
+   */
+  storyOwned?: boolean;
 }
 
 const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null, inEach: false };
+
+/** Scope of a story-owned clause (ADR-236 D7): no owner, `it` unbound. */
+const STORY_SCOPE: Scope = { ...TOP_SCOPE, storyOwned: true };
 
 function entityScope(owner: EntitySymbol | null): Scope {
   return { owner, fields: null, slots: null, ownStates: null, scoreOwner: owner?.id ?? null, inEach: false };
@@ -325,6 +334,13 @@ class Analyzer {
       story: {
         states: this.storyStates,
         reversible: this.ast.header?.statesReversible ?? false,
+        // Story-owned every-turn clauses (ADR-236 D7): built in STORY_SCOPE
+        // so `it` reports the unbound-referent gate; narration broadcasts
+        // (the story is everywhere — D11 satisfied trivially).
+        onClauses: (this.ast.header?.onClauses ?? []).map((c) => ({
+          ...this.buildOnClause(c, STORY_SCOPE),
+          narration: 'broadcast' as const,
+        })),
       },
       entities: [],
       conditions: [],
@@ -404,9 +420,102 @@ class Analyzer {
     }
     ir.hasHatches = ir.hatches.length > 0;
 
+    this.checkRegions(ir.entities);
     this.checkMarkers();
     this.checkDescriptionMarkers();
     return ir;
+  }
+
+  /**
+   * ADR-236 D2/D3 never-guess gates over the whole region graph: member
+   * kinds (rooms or regions only), single direct membership (RoomTrait's
+   * `regionId` is single-valued — an ancestor+descendant listing is the
+   * same error), single parent per region, no memberless regions, no
+   * containment cycles. Runs after every entity is built so cross-entity
+   * lookups and spans are all available.
+   */
+  private checkRegions(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const isRegionEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'region');
+    const regions = entities.filter(isRegionEntity);
+
+    // Memberless region: declared-but-unanswerable, uniformly hard (D2 —
+    // ruled no warning tier; its daemon could otherwise silently never fire).
+    for (const region of regions) {
+      if (region.containing.length === 0) {
+        this.diagnostics.error(
+          'analysis.region-memberless',
+          `Region \`${region.name}\` has no \`containing\` line — an empty region is unanswerable (its daemons and crossings could never fire). List its member rooms.`,
+          region.span,
+        );
+      }
+    }
+
+    // Direct membership is stated exactly once, graph-wide.
+    const roomMemberOf = new Map<string, { region: IREntity; span: Span }>();
+    const parentOf = new Map<string, { parent: IREntity; span: Span }>();
+    for (const region of regions) {
+      for (const member of region.containing) {
+        const target = byId.get(member.id);
+        if (!target) continue; // unresolved — already reported by resolveEntityId
+        if (isRegionEntity(target)) {
+          const prior = parentOf.get(member.id);
+          if (prior) {
+            this.diagnostics.error(
+              'analysis.region-two-parents',
+              `Region \`${target.name}\` is already contained by region \`${prior.parent.name}\` (line ${prior.span.line}) — a region has exactly one parent.`,
+              member.span,
+            );
+          } else {
+            parentOf.set(member.id, { parent: region, span: member.span });
+          }
+        } else if (target.kinds.some((k) => k.name === 'room')) {
+          const prior = roomMemberOf.get(member.id);
+          if (prior) {
+            this.diagnostics.error(
+              'analysis.region-double-membership',
+              `\`${target.name}\` is already a member of region \`${prior.region.name}\` (line ${prior.span.line}) — direct membership is stated exactly once (nesting already makes a room part of every ancestor region).`,
+              member.span,
+            );
+          } else {
+            roomMemberOf.set(member.id, { region, span: member.span });
+          }
+        } else {
+          const kind = target.kinds[0]?.name ?? 'plain thing';
+          this.diagnostics.error(
+            'analysis.region-member-kind',
+            `\`${target.name}\` is a ${kind} — \`containing\` members must be rooms or regions.`,
+            member.span,
+          );
+        }
+      }
+    }
+
+    // Containment cycles (walking child → parent; two-parents kept the
+    // first edge, so the graph is functional and one walk per region ends).
+    const walked = new Map<string, 'visiting' | 'done'>();
+    for (const region of regions) {
+      if (walked.has(region.id)) continue;
+      const path: string[] = [];
+      let cur: string | undefined = region.id;
+      while (cur !== undefined && !walked.has(cur)) {
+        walked.set(cur, 'visiting');
+        path.push(cur);
+        const edge = parentOf.get(cur);
+        const next: string | undefined = edge?.parent.id;
+        if (next !== undefined && walked.get(next) === 'visiting') {
+          const names = [...path.slice(path.indexOf(next)), next].map((id) => byId.get(id)?.name ?? id);
+          this.diagnostics.error(
+            'analysis.region-cycle',
+            `Region containment cycle: ${names.map((n) => `\`${n}\``).join(' → ')}.`,
+            edge!.span,
+          );
+          break;
+        }
+        cur = next;
+      }
+      for (const id of path) walked.set(id, 'done');
+    }
   }
 
   /** Resolve a `when <owner> becomes <state>` step anchor (ratchet D10). */
@@ -1004,6 +1113,27 @@ class Analyzer {
       startsStates.push(s.state);
     }
 
+    // ADR-236 D1: a region's "location" IS its member list — placement
+    // lines on a region block are a load error (mirror of ADR-234 D3's
+    // door-placement gate).
+    const isRegion = kinds.some((k) => k.name === 'region');
+    if (isRegion && decl.placement) {
+      this.diagnostics.error(
+        'analysis.region-placement',
+        `A region has no location — its place IS its member list. Remove this line; membership is \`containing <rooms>\`.`,
+        decl.placement.span,
+      );
+    }
+    // ADR-236 D2: `containing` is region membership — on any other block it
+    // would be a silent no-op, so it is a load error, never a guess.
+    if (!isRegion && decl.containing.length > 0) {
+      this.diagnostics.error(
+        'analysis.region-containing-host',
+        `\`containing\` declares region membership — \`${decl.name.words.join(' ')}\` is not a region. (Contents are placed with \`in\`/\`on\` lines on the contained entity.)`,
+        decl.containing[0].span,
+      );
+    }
+
     // Z1: `first time` prose compiles to RoomTrait.initialDescription —
     // only rooms carry that field, so any other kind is a load error
     // until a platform surface exists (never a guess).
@@ -1033,6 +1163,9 @@ class Analyzer {
         : null,
       wears: decl.wears.map((w) => this.resolveEntityId(w) ?? '').filter((w) => w !== ''),
       carries: decl.carries.map((c) => this.resolveEntityId(c) ?? '').filter((c) => c !== ''),
+      containing: decl.containing
+        .map((m) => ({ id: this.resolveEntityId(m) ?? '', span: m.span }))
+        .filter((m) => m.id !== ''),
       exits: decl.exits.map((e) => ({ direction: e.direction, to: this.resolveEntityId(e.to) ?? '', span: e.span })),
       blockedExits: decl.blockedExits.map((b) => {
         this.requirePhrase(b.phraseKey, b.span);
@@ -1444,6 +1577,19 @@ class Analyzer {
   }
 
   /**
+   * `it` in a story-owned clause (ADR-236 D7): the story is the owner and
+   * has no entity referent — the unbound-referent case no other clause
+   * home can produce. A load error, never a silent undefined.
+   */
+  private reportStoryClauseIt(span: Span): void {
+    this.diagnostics.error(
+      'analysis.story-clause-it',
+      '`it` is not bound in a story-owned clause — the story has no entity referent. Name the entity, or use `the player`.',
+      span,
+    );
+  }
+
+  /**
    * `the match` — the `each`-block binder (ratchet E3). Legal only inside
    * an `each` body, at any nesting depth (the runtime binds innermost).
    * Outside one there is no match to reference — a load error, never a
@@ -1484,7 +1630,10 @@ class Analyzer {
 
   private resolveRefValue(ref: NameRef, scope: Scope): IRValue {
     const words = ref.words.map((w) => w.toLowerCase());
-    if (words.length === 1 && words[0] === 'it') return { kind: 'it' };
+    if (words.length === 1 && words[0] === 'it') {
+      if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
+      return { kind: 'it' };
+    }
     // `the match` in NameRef positions (`change`/`move` targets, predicate
     // things) resolves to the binder exactly as `it` does — before entity
     // lookup; the name itself is reserved at declaration (E3/P3).
@@ -1496,6 +1645,7 @@ class Analyzer {
     }
     // `its <field>` in name position (`the actor has its food`).
     if (words.length > 1 && words[0] === 'its') {
+      if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
       return { kind: 'field', base: { kind: 'it' }, field: words.slice(1).join(' ') };
     }
     const scoped = this.resolveScopedWords(ref.words, scope);

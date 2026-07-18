@@ -24,6 +24,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -148,6 +149,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -296,6 +298,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -457,6 +460,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "version": "1.0.0",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -604,6 +608,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -724,6 +729,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -860,6 +866,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -1026,6 +1033,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -1135,6 +1143,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -1234,6 +1243,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -1328,6 +1338,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": null,
@@ -1776,6 +1787,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "version": "1.0.0",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,

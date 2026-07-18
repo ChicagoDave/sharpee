@@ -43,7 +43,16 @@ LOCALE  = WORD ;                                           (* e.g. en-US *)
 
 story-file   = [ story-header ] { declaration } ;
 story-header = "story" STRING [ "by" STRING ] NL
-               >>> { states-line | score-line | WORD ":" rest-of-line NL } ;
+               >>> { states-line | score-line | story-on-clause
+                   | WORD ":" rest-of-line NL } ;
+story-on-clause = on-clause ;                              (* ADR-236 D7 (ratchet R4):
+                                                              `on every turn` ONLY —
+                                                              any other clause form is
+                                                              parse.story-clause. Story-
+                                                              owned daemon: no presence
+                                                              gate, narration broadcasts,
+                                                              `it` unbound (compile error
+                                                              analysis.story-clause-it) *)
 declaration  = create | define-condition | define-phrase | define-phrases
              | define-verb | define-text
              | define-trait | define-action | define-hatch
@@ -79,6 +88,14 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
 (* `refuse`/`refuse when`/`must` inside an `after` body are parse errors;
    `after every turn` is a parse error. *)
 
+(* Event verbs (catalog EVENT_VERBS, gerund register): `entering` on rooms/
+   enterables binds to the movement event; on REGION blocks (ADR-236 D6)
+   `after entering it` / `after leaving it` bind to the region's crossing
+   events (region_entered/region_exited), fired per boundary actually
+   crossed. `leaving` (ratchet R3) exists ONLY on region blocks — a load
+   error anywhere else. Region blocks also host `on every turn` (D4):
+   presence = the player is in a member room, transitive through nesting. *)
+
 
 (* ---- create ------------------------------------------------------------ *)
 
@@ -89,6 +106,15 @@ create-line  = "aka" alias { "," alias } NL
              | composition { "," composition } NL          (* pre-blank paragraph only *)
              | placement NL
              | "wears" name NL
+             | "containing" name { [ "," ] [ "and" ] name } NL
+                                                           (* region membership (ADR-236
+                                                              D2, ratchet R2): region
+                                                              blocks only (analyzer gate);
+                                                              additive across lines;
+                                                              members are rooms or nested
+                                                              regions. Placement lines on
+                                                              a region block are a load
+                                                              error *)
              | DIRECTION "to" name NL                      (* exit *)
              | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
                                                            (* blocked exit *)

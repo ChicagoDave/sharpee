@@ -967,6 +967,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -1020,6 +1021,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -1131,6 +1133,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "version": "0.0.1",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -1195,6 +1198,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -1246,6 +1250,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -2454,6 +2459,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": null,
@@ -2591,6 +2597,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -2698,6 +2705,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -2776,6 +2784,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "version": "0.0.1",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -2821,6 +2830,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -2871,6 +2881,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "blockedExits": [],
       "carries": [],
       "compositions": [],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -3691,6 +3702,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -3761,6 +3773,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -4063,6 +4076,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           ],
         },
       ],
+      "containing": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -4172,6 +4186,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "version": "0.0.1",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,

@@ -36,6 +36,13 @@ export interface StoryHeader {
   statesReversible: boolean;
   /** `score <name> worth N` lines — story-owned score identities (D12). */
   scores: ScoreDecl[];
+  /**
+   * `on every turn [while <cond>][, once]` clauses in the header's indented
+   * body (ADR-236 D7, ratchet R4) — story-owned daemons: no presence gate,
+   * `it` unbound (a compile error if referenced). The only clause form the
+   * header hosts.
+   */
+  onClauses: OnClause[];
   span: Span;
 }
 
@@ -121,6 +128,12 @@ export interface CreateDecl {
 
   /** `carries <thing>` lines — start inventory, not worn (ADR-230 Phase 6). */
   carries: NameRef[];
+  /**
+   * `containing <name list>` region-membership lines (ADR-236 D2, ratchet
+   * R2) — additive across lines; members are rooms or nested regions. Legal
+   * only on region blocks (the analyzer's gate).
+   */
+  containing: NameRef[];
   exits: ExitDecl[];
   blockedExits: BlockedExitDecl[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */

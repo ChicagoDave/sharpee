@@ -144,7 +144,7 @@ describe('zoo-timeline IR (§3.3 + ownership package)', () => {
   });
 
   it('carries story states and resolves them in composition conditions (D2)', () => {
-    expect(ir.story).toEqual({ states: ['open', 'after-hours'], reversible: false });
+    expect(ir.story).toEqual({ states: ['open', 'after-hours'], reversible: false, onClauses: [] });
     const parrot = ir.entities.find((e) => e.id === 'parrot')!;
     expect(parrot.traits.map((t) => t.name)).toEqual(['chatty', 'candid']);
     expect(parrot.traits[0].condition).toEqual({ kind: 'not', operand: { kind: 'story-state', state: 'after-hours' } });

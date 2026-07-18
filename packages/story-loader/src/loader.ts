@@ -316,9 +316,16 @@ export class ChordStory implements Story {
     this.world = world;
     const built: Array<{ ir: IREntity; entity: IFEntity }> = [];
 
-    // Pass 1 — create every non-player entity.
+    // Pass 0 — regions, parents before children (ADR-236 D3): a nested
+    // region's `parentRegionId` is validated by `createRegion` at creation,
+    // so the parent's world entity must already exist.
+    for (const irEntity of this.regionsInParentFirstOrder()) {
+      built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
+    }
+
+    // Pass 1 — create every remaining non-player entity.
     for (const irEntity of this.ir.entities) {
-      if (irEntity.isPlayer) continue;
+      if (irEntity.isPlayer || this.worldIds.has(irEntity.id)) continue;
       built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
 
@@ -326,6 +333,16 @@ export class ChordStory implements Story {
     for (const { ir: irEntity, entity } of built) {
       if (irEntity.placement && irEntity.placement.relation !== 'starts-in') {
         world.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+      }
+      // ADR-236 D2: region membership through the platform seam —
+      // `assignRoom` sets RoomTrait.regionId (never touched directly here);
+      // member regions were parented at creation (pass 0), so only room
+      // members remain to wire.
+      for (const member of irEntity.containing ?? []) {
+        const memberIr = this.ir.entities.find((e) => e.id === member.id);
+        if (memberIr && memberIr.kinds.some((k) => k.name === 'room')) {
+          world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
+        }
       }
       for (const exit of irEntity.exits) {
         world.connectRooms(entity.id, this.requireWorldId(exit.to, irEntity), toDirection(exit.direction, irEntity));
@@ -694,6 +711,47 @@ export class ChordStory implements Story {
 
   // ------------------------------------------------------- entity build
 
+  /** Region IR id → parent region IR id (the parent's `containing` lists the child — ADR-236 D3). */
+  private readonly regionParents = new Map<string, string>();
+
+  /**
+   * Region entities in parent-first order, filling `regionParents` on the
+   * way (ADR-236 D3). The compiler's cycle gate guarantees the walk ends; a
+   * cycle here means rogue IR and is a LoadError, never a hang.
+   */
+  private regionsInParentFirstOrder(): IREntity[] {
+    const regions = this.ir.entities.filter(
+      (e) => !e.isPlayer && e.kinds.some((k) => k.name === 'region'),
+    );
+    const byId = new Map(regions.map((r) => [r.id, r]));
+    this.regionParents.clear();
+    for (const region of regions) {
+      for (const member of region.containing ?? []) {
+        if (byId.has(member.id)) this.regionParents.set(member.id, region.id);
+      }
+    }
+    const ordered: IREntity[] = [];
+    const state = new Map<string, 'visiting' | 'done'>();
+    const visit = (region: IREntity): void => {
+      const s = state.get(region.id);
+      if (s === 'done') return;
+      if (s === 'visiting') {
+        throw new LoadError(
+          `Region containment cycle at \`${region.name}\` — the compiler gate should have refused this story.`,
+          region.span,
+        );
+      }
+      state.set(region.id, 'visiting');
+      const parentId = this.regionParents.get(region.id);
+      const parent = parentId ? byId.get(parentId) : undefined;
+      if (parent) visit(parent);
+      state.set(region.id, 'done');
+      ordered.push(region);
+    };
+    for (const region of regions) visit(region);
+    return ordered;
+  }
+
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
     if (irEntity.kinds.length > 1) {
       throw new LoadError(`\`${irEntity.name}\` declares more than one kind noun.`, irEntity.span);
@@ -748,6 +806,30 @@ export class ChordStory implements Story {
         if (irEntity.aka.length) builder.aliases(...irEntity.aka);
         entity = builder.build();
         entity.add(new SupporterTrait({ capacity: supporterCapacity(irEntity.kinds[0]) }));
+        break;
+      }
+      case 'region': {
+        // ADR-236 D1: built on the shipped platform seam — createRegion +
+        // assignRoom ARE the shared mechanics (RoomTrait.regionId is never
+        // set directly). Pass 0 built parents first, so a nested child's
+        // parentRegionId resolves here.
+        const parentIr = this.regionParents.get(irEntity.id);
+        const parentRegionId = parentIr ? this.worldIds.get(parentIr) : undefined;
+        entity = world.createRegion(`rg-${irEntity.id}`, {
+          name: irEntity.name,
+          ...(parentRegionId ? { parentRegionId } : {}),
+        });
+        // A region block composes like any entity block (aka, description):
+        // both live on IdentityTrait; whether any action surfaces them is
+        // the platform's business (ADR-236 D1).
+        entity.add(
+          new IdentityTrait({
+            name: irEntity.name,
+            ...(description ? { description } : {}),
+            aliases: irEntity.aka,
+            article: irEntity.article ?? 'the',
+          }),
+        );
         break;
       }
       case 'door':

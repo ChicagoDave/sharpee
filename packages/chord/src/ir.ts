@@ -22,8 +22,13 @@ export const IR_FORMAT = 'story language 1';
 export interface StoryIR {
   format: typeof IR_FORMAT;
   meta: IRMeta;
-  /** The story object's declared phases (ownership package D2). */
-  story: { states: string[]; reversible: boolean };
+  /**
+   * The story object's declared phases (ownership package D2) and its
+   * owned `on every turn` clauses (ADR-236 D7, ratchet R4) — daemons with
+   * NO presence gate; `it` is unbound (compile-gated), narration
+   * broadcasts.
+   */
+  story: { states: string[]; reversible: boolean; onClauses: IROnClause[] };
   entities: IREntity[];
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
@@ -78,6 +83,14 @@ export interface IREntity {
 
   /** Entity IDs carried at start, not worn (player carries the knife — ADR-230 Phase 6). */
   carries: string[];
+  /**
+   * Region membership (`containing <list>`, ADR-236 D2/D3) — resolved member
+   * entity IDs in declaration order, additive across lines. Members are
+   * rooms (loader: `assignRoom`) or nested regions (member's
+   * `parentRegionId` = this region). Non-empty only on region-kind entities
+   * (analyzer-gated).
+   */
+  containing: IRContainedMember[];
   exits: IRExit[];
   blockedExits: IRBlockedExit[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */
@@ -121,6 +134,13 @@ export interface IRConfigSetting {
   value: string;
   /** 'name' = multi-word entity-name value (`with food the handful of feed`, Phase B). */
   valueKind: 'number' | 'string' | 'word' | 'name';
+}
+
+/** One resolved `containing` member (ADR-236 D2) — a room or nested region. */
+export interface IRContainedMember {
+  /** Entity ID of the member. */
+  id: string;
+  span: Span;
 }
 
 export interface IRPlacement {

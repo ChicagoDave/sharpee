@@ -38,7 +38,7 @@ describe('cloak.story IR', () => {
         blurb: 'A basic IF demonstration - hang up your cloak!',
       },
     });
-    expect(ir.story).toEqual({ states: [], reversible: false });
+    expect(ir.story).toEqual({ states: [], reversible: false, onClauses: [] });
   });
 
   it('resolves entities to canonical IDs', () => {

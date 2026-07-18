@@ -21,6 +21,7 @@ export const KIND_NOUNS: ReadonlySet<string> = new Set([
   'person',
   'container',
   'supporter',
+  'region', // ratchet R1 (ADR-236 D1, 2026-07-17) — named room group; membership via `containing`
 ]);
 
 /** v1 trait adjectives (bare, no article). */
@@ -101,5 +102,7 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
  * (the curated event-selector map's language side; the if.event.* bindings
  * are the loader's side of Interface Contract 2). Gerund register since
  * the ownership package (ratchet D3): `after entering it`.
+ * `leaving` (ratchet R3, ADR-236 D6) exists only as a region crossing
+ * reaction — the loader refuses it on any other owner.
  */
-export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering']);
+export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering', 'leaving']);
