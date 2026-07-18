@@ -53,6 +53,7 @@ create the rat
   A watchful rat.
 
 create the player
+  a person, combatant with health 30 and skill 10
   starts in the Gate
 
   You.

@@ -51,7 +51,10 @@
 - **Phase 7 COMPLETE (closure)**: chord.ebnf + chord-grammar.md carry the whole surface (new "Extension surface" section); 13 ratchet rows verified; audit closed (attacking ✅, extension-surface closure section, refreshed scoreboard); `gatehouse.story` elegance fixture — the FULL S3 stack in ~90 lines of pure IR with a REAL-plugin composition smoke. Full regression: chord 319, story-loader 246, stdlib 1534, engine 513, repokit build, cloak 81/81, zoo 71/71+56/56.
 - **ALL 7 EXTENSION-SURFACE PHASES DONE** — ADR-215/216 fully implemented (the ADR-235 S3 gate slice); `.current-plan` returned to chord-go-live; umbrella notes BOTH G1 lines (regions + extension surface) closed. Remaining pre-G4 workstream: doors (ADR-234) implementation plan.
 
-## Status: COMPLETE (regions + extension surface both shipped this session; Phases 5-7 not yet committed)
+- Phases 5-7 committed ca688adb (33 files).
+- **Four-gap ruling (David, 2026-07-18)**: (1) engine `getClientCapabilities()` getter KEPT as-shipped; (2) **player block composes like any entity — IMPLEMENTED**: trait adjectives + starts states via the shared loader path in finalizePlayer (both lifecycle orders); gates `analysis.player-kind` (only `a person`, a no-op) and `analysis.player-behavior` (NPC adjectives refused); npc-behaviors fixture/test now compose player combat traits in-story; (3) flat `with` separator RATIFIED as `and` (commas inside brackets/braces); (4) renderer leg stays unexercised until needed. 1 ratchet row (14 today). Suites: chord 321, story-loader 246; repokit build + cloak/zoo gates re-run green after the loader change.
+
+## Status: COMPLETE (regions + extension surface + gap rulings shipped; gap-ruling commit pending)
 
 ## Next session
 - **Do NOT re-flag the troll-GDT ruling as open** — it is closed (see Key decisions above).

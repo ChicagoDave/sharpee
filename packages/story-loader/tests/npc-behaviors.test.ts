@@ -103,13 +103,14 @@ describe('core NPC behaviors through the real loader (ADR-215 AC-4)', () => {
   });
 
   it('a hostile guard attacks through the real combat resolver (use combat) and mutates health', () => {
-    // The player's combat traits are world setup (the loader's
-    // createPlayer does not apply player-block compositions — pre-existing
-    // gap, surfaced separately); the guard, resolver, and CombatService
-    // are all real.
-    player.add(new CombatantTrait({ skill: 10 }));
-    player.add(new HealthTrait({ health: 30 }));
-    const initial = 30;
+    // The player's combat traits COMPOSE from the story block (Gap-2
+    // ruling, David 2026-07-18): `a person, combatant with health 30 and
+    // skill 10` on `create the player` lands on the real traits.
+    const combatant = player.get(TraitType.COMBATANT) as CombatantTrait;
+    expect(combatant, 'player-block combatant composed').toBeDefined();
+    expect(combatant.skill).toBe(10);
+    const initial = (player.get(TraitType.HEALTH) as HealthTrait).health;
+    expect(initial).toBe(30);
     let health = initial;
     for (let i = 0; i < 8 && health >= initial; i++) {
       tick();

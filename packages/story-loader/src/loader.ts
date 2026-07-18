@@ -503,6 +503,18 @@ export class ChordStory implements Story {
       world.moveEntity(player.id, this.requireWorldId(startIr, irPlayer ?? undefined));
     }
 
+    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
+    // player composes trait adjectives + `starts` states through the SAME
+    // loader path as any entity (`a person` is analyzer-gated to a no-op;
+    // NPC behaviors are refused at compile). Runs here — the second
+    // lifecycle hook — so entity-valued configs resolve against the
+    // fully-built world regardless of createPlayer/initializeWorld order.
+    if (irPlayer) {
+      this.applyTraitAdjectives(player, irPlayer, null);
+      this.applyStartsStates(player, irPlayer);
+      this.resolvePendingEntityRefs();
+    }
+
     // Carried items: into inventory (ADR-230 Phase 6 — `carries the X`).
     for (const carriedIrId of irPlayer?.carries ?? []) {
       world.moveEntity(this.requireWorldId(carriedIrId, irPlayer ?? undefined), player.id);

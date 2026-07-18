@@ -181,3 +181,21 @@ describe('CORE npc vocabulary (ADR-215 Q4)', () => {
     ).toEqual(['analysis.unknown-entity']);
   });
 });
+
+describe('player-block composition gates (Gap-2 ruling, 2026-07-18)', () => {
+  it('`a person` is legal on the player; other kind nouns are analysis.player-kind', () => {
+    expect(
+      errorCodes(
+        story('', '').replace('create the player', 'create the player\n  a region\n  containing the Arena'),
+      ),
+    ).toContain('analysis.player-kind');
+    const ok = compile(story('', '').replace('create the player', 'create the player\n  a person'));
+    expect(ok.diagnostics).toEqual([]);
+  });
+
+  it('an NPC behavior adjective on the player → analysis.player-behavior', () => {
+    expect(
+      errorCodes(story('', '').replace('create the player', 'create the player\n  a person, wanderer')),
+    ).toEqual(['analysis.player-behavior']);
+  });
+});

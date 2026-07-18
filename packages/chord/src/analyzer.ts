@@ -1356,6 +1356,32 @@ class Analyzer {
       startsStates.push(s.state);
     }
 
+    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
+    // player composes like any entity — but only `a person` is a legal
+    // kind (a no-op; the player is already an actor), and NPC behavior
+    // adjectives would hand the player to the NPC service. Both gate.
+    if (isPlayer) {
+      for (const kind of kinds) {
+        if (kind.name !== 'person') {
+          this.diagnostics.error(
+            'analysis.player-kind',
+            `The player cannot be \`a ${kind.name}\` — only \`a person\` composes on the player block (as a no-op).`,
+            kind.span,
+          );
+        }
+      }
+      for (const trait of traits) {
+        const contributed = manifestForAdjective(trait.name);
+        if (contributed?.manifest.name === 'npc') {
+          this.diagnostics.error(
+            'analysis.player-behavior',
+            `\`${trait.name}\` is an NPC behavior — the player is not driven by the NPC service.`,
+            trait.span,
+          );
+        }
+      }
+    }
+
     // ADR-236 D1: a region's "location" IS its member list — placement
     // lines on a region block are a load error (mirror of ADR-234 D3's
     // door-placement gate).
