@@ -100,7 +100,13 @@ no-scope-reduction rule of the parity north star applies).
     in-gate item: **AREAS** — a Chord surface for the ADR-149 region
     system (named room lists) with attached daemons (story-level
     daemons not excluded) — ruled in-gate, design AND implementation,
-    via its own child ADR + follow-on plan, sequenced before G4.
+    via its own child ADR + follow-on plan, sequenced before G4. —
+    **ADR-236 (chord regions), ACCEPTED 2026-07-17, session d2863f:
+    `region` kind noun (David: reuse the platform name — "areas" was
+    the working name) + `containing` membership/nesting + region-owned
+    `on every turn` daemons + crossing reactions both sides + the
+    story-owned every-turn clause (the story-level daemon, designed
+    in); implementation is its own follow-on plan.**
 
 ### G2 — Outside-author pipeline
 
