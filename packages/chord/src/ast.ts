@@ -84,7 +84,39 @@ export type Declaration =
   // ADR-216 declared media assets (DATA references, never hatches):
   | DefineAsset
   // ADR-216 custom channels (spelling A, David 2026-07-18):
-  | DefineChannel;
+  | DefineChannel
+  // ADR-239 topic conversation (D3 as amended, David 2026-07-18):
+  | DefineTopics;
+
+/**
+ * `define topics for <entity> … end topics` (ADR-239 D3 as amended) — the
+ * entity's declared table of ask/tell topics + responses: a closed,
+ * compile-visible set (D4 — lookup, never fuzzy). One block per entity
+ * (duplicate = analyzer error); any number of `about` rows.
+ */
+export interface DefineTopics {
+  kind: 'define-topics';
+  /** The owning entity (`for the porter`) — must be a person kind (analyzer gate). */
+  owner: NameRef;
+  rows: TopicRow[];
+  span: Span;
+}
+
+/**
+ * One `about …: <response>` table row. Entity tier: `about the <entity>`
+ * (the platform's quiet `topicEntityId` resolution). Free-text tier:
+ * `about "<text>"[, "<text>" …]` — comma-separated declared aliases
+ * (spelling ruled by David 2026-07-18). The response is a one-line
+ * statement or an indented statement body; `it` inside binds to the owner.
+ */
+export interface TopicRow {
+  kind: 'topic-row';
+  filter:
+    | { kind: 'entity'; ref: NameRef }
+    | { kind: 'text'; primary: string; aliases: string[]; span: Span };
+  body: Statement[];
+  span: Span;
+}
 
 /**
  * `define channel <name> … end channel` (ADR-216; spelling A ratified by

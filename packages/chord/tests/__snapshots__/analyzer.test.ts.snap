@@ -110,6 +110,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -153,6 +154,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -285,6 +287,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [
         {
           "condition": {
@@ -346,6 +349,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [
         "velvet-cloak",
@@ -379,6 +383,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [
         {
           "condition": null,
@@ -450,6 +455,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [
         {
           "condition": null,
@@ -638,6 +644,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "obliterated",
       ],
       "statesReversible": false,
+      "topics": [],
       "traits": [
         {
           "condition": null,

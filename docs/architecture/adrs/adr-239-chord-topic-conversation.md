@@ -80,6 +80,10 @@ end topics
   (entity tier — the platform's quiet `topicEntityId` resolution) and
   `about "<text>"` (free-text tier); `or` declares aliases on a row
   (D4).
+  **[Amendment, 2026-07-18, session 80ff54: the alias separator is a
+  COMMA list — `about "treasure", "the hoard": …` — ruled by David at
+  ratchet time per D4's "fixed at ratchet time" clause. The `or`
+  spelling in the example above is superseded.]**
 - A one-line row names its response directly; a row may instead open
   an indented statement body for rich beats (state changes,
   conditions) — one construct scaling from simple to rich, no

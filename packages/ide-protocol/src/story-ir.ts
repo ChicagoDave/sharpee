@@ -21,6 +21,7 @@ export type {
   IRExit,
   IRBlockedExit,
   IROnClause,
+  IRTopicRow,
   IRPhrases,
   IRPhrase,
   IRPhraseVariant,

@@ -45,6 +45,7 @@ import {
   MachineState,
   MachineTransition,
   DefineText,
+  DefineTopics,
   DefineTrait,
   DefineVerb,
   EachStmt,
@@ -77,6 +78,7 @@ import {
   TraitField,
   StoryFile,
   StoryHeader,
+  TopicRow,
   UseDecl,
   TextMarker,
   TextValue,
@@ -1261,6 +1263,9 @@ class Parser {
       case 'channel':
         // ADR-216 custom channels (spelling A, 2026-07-18) — data projections.
         return this.parseDefineChannel();
+      case 'topics':
+        // ADR-239 D3 (as amended) — the ask/tell topic table block.
+        return this.parseDefineTopics();
       default:
         this.diagnostics.error('parse.unknown-define', `Unknown declaration \`define ${subWord ?? ''}\`.`, lineSpan(line));
         this.recoverToTopLevel(true);
@@ -1971,6 +1976,140 @@ class Parser {
     }
     const endSpan = this.consumeEnd('sequence', headLine);
     return { kind: 'define-sequence', name, steps, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `define topics for <entity> … end topics` (ADR-239 D3 as amended) —
+   * the ask/tell topic table: `about` rows in two tiers (entity /
+   * quoted free-text with comma-separated aliases), each answering with
+   * a one-line statement or an indented statement body.
+   */
+  private parseDefineTopics(): DefineTopics {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define topics
+    let owner: NameRef;
+    if (!c.matchWord('for')) {
+      this.diagnostics.error('parse.topics-for', 'Expected `for <entity>` after `define topics`.', c.restSpan());
+      owner = { kind: 'name', article: null, words: [], span: lineSpan(headLine) };
+    } else {
+      owner = this.parseNameRef(c, () => false);
+      if (owner.words.length === 0 || !c.atEnd()) {
+        this.diagnostics.error('parse.topics-for', 'Expected `define topics for <entity>` — the owner name runs to the end of the line.', c.restSpan());
+      }
+    }
+
+    const decl: DefineTopics = { kind: 'define-topics', owner, rows: [], span: lineSpan(headLine) };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('topics', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.rows.length === 0) {
+          this.diagnostics.error('parse.topics-empty', 'This `define topics` block declares no rows — add `about …: <response>` rows, or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (line.indent === 0) break; // dedent without `end topics` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      if (word === 'about') {
+        const row = this.parseTopicRow(line);
+        if (row) {
+          decl.rows.push(row);
+          decl.span = mergeSpans(decl.span, row.span);
+        }
+        continue;
+      }
+      this.diagnostics.error(
+        'parse.topics-row',
+        `Unrecognized line in \`define topics\`: \`${line.raw.trim()}\` — expected an \`about …: <response>\` row or \`end topics\`.`,
+        lineSpan(line),
+      );
+      this.pos++;
+    }
+    this.diagnostics.error('parse.topics-end', 'Expected `end topics` to close the block.', decl.span);
+    if (decl.rows.length === 0) {
+      this.diagnostics.error('parse.topics-empty', 'This `define topics` block declares no rows — add `about …: <response>` rows, or remove the block.', decl.span);
+    }
+    return decl;
+  }
+
+  /**
+   * One `about …: <response>` row. Entity tier: `about the <entity>:`.
+   * Free-text tier: `about "<text>"[, "<text>" …]:` — comma-separated
+   * quoted aliases (spelling ruled 2026-07-18). The response is either the
+   * rest of the line (one statement) or an indented statement body.
+   */
+  private parseTopicRow(headLine: Line): TopicRow | null {
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next(); // about
+    let filter: TopicRow['filter'];
+    const first = c.peek();
+    if (first && first.kind === 'string') {
+      c.next();
+      if (first.text.trim() === '') {
+        this.diagnostics.error('parse.topics-row', 'A quoted topic cannot be empty.', first.span);
+        this.pos++;
+        return null;
+      }
+      const aliases: string[] = [];
+      let span = first.span;
+      while (c.peek()?.kind === 'comma') {
+        c.next();
+        const alias = c.next();
+        if (!alias || alias.kind !== 'string' || alias.text.trim() === '') {
+          this.diagnostics.error(
+            'parse.topics-alias',
+            'Expected a quoted alias after the comma — aliases are declared quoted spellings: `about "treasure", "the hoard": …`.',
+            alias?.span ?? c.restSpan(),
+          );
+          this.pos++;
+          return null;
+        }
+        aliases.push(alias.text);
+        span = mergeSpans(span, alias.span);
+      }
+      filter = { kind: 'text', primary: first.text, aliases, span };
+    } else {
+      const ref = this.parseNameRef(c, () => false);
+      if (ref.words.length === 0) {
+        this.diagnostics.error('parse.topics-row', 'Expected an entity name or a quoted topic after `about`.', c.restSpan());
+        this.pos++;
+        return null;
+      }
+      filter = { kind: 'entity', ref };
+    }
+
+    const colon = c.next();
+    if (!colon || colon.kind !== 'colon') {
+      this.diagnostics.error('parse.topics-colon', 'Expected `:` after the topic key.', colon?.span ?? c.restSpan());
+      this.pos++;
+      return null;
+    }
+
+    let body: Statement[];
+    let span = lineSpan(headLine);
+    if (!c.atEnd()) {
+      // One-line response: the rest of the line is a single statement.
+      // parseStatement consumes this.lines[this.pos] (the row line itself).
+      const rest: Line = { ...headLine, tokens: headLine.tokens.slice(c.i) };
+      const stmt = this.parseStatement(rest, 'topics');
+      if (!stmt) return null; // the statement error is already reported
+      body = [stmt];
+    } else {
+      // Indented statement body on the following lines.
+      this.pos++;
+      body = this.parseStatements(headLine.indent, 'topics');
+      if (body.length > 0) span = mergeSpans(span, body[body.length - 1].span);
+    }
+    if (body.length === 0) {
+      this.diagnostics.error('parse.topics-response', 'Expected a response — a one-line statement after the `:`, or an indented statement body.', lineSpan(headLine));
+      return null;
+    }
+    return { kind: 'topic-row', filter, body, span };
   }
 
   // ------------------------------------------------------------- on clause

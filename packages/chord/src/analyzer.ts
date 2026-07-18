@@ -59,6 +59,7 @@ import {
   IRPhrase,
   IRScoreDef,
   IRStatement,
+  IRTopicRow,
   IRTraitDef,
   IRValue,
   StoryIR,
@@ -95,6 +96,17 @@ const RESERVED_CHANNEL_KEYS = new Set(['present', 'entered', 'exited', 'disappea
 
 /** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
+
+/**
+ * ADR-239 D4 topic normalization — the compile-time half of the runtime
+ * lookup contract: case-insensitive, leading article stripped, whitespace
+ * collapsed. Whole-topic equality only; never substring matching.
+ */
+function normalizeTopic(text: string): string {
+  const words = text.trim().toLowerCase().split(/\s+/);
+  if (words.length > 1 && (words[0] === 'the' || words[0] === 'a' || words[0] === 'an')) words.shift();
+  return words.join(' ');
+}
 
 /**
  * Negation prefixes/suffix for ring 3 of the boolean-state gate (D9):
@@ -485,6 +497,8 @@ class Analyzer {
           break;
         case 'define-phrases':
           break; // collected in pass 1
+        case 'define-topics':
+          break; // applied onto owners after all entities are built (applyTopics)
       }
     }
 
@@ -493,6 +507,7 @@ class Analyzer {
     }
     ir.hasHatches = ir.hatches.length > 0;
 
+    this.applyTopics(ir.entities);
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
     this.checkMarkers();
@@ -665,6 +680,132 @@ class Analyzer {
           door.span,
         );
       }
+    }
+  }
+
+  /**
+   * ADR-239 D4's never-guess table gates + lowering: resolve each
+   * `define topics` block onto its owner entity's `topics` rows. Runs
+   * after every entity is built so owner kinds and cross-tier name
+   * lookups are all available. Gates (each its own diagnostic): a second
+   * block for the same owner, a non-person host, a duplicate topic
+   * (entity or normalized quoted text, aliases included), and a quoted
+   * entry colliding with the name/aka of an entity used in an
+   * entity-tier row of the same table.
+   */
+  private applyTopics(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-topics') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-topics-block',
+          `\`${owner.name}\` already has a \`define topics\` block at line ${first.line} — the table lives in one place; merge the rows.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.topics-host',
+          `\`define topics\` needs a person — \`${owner.name}\` is ${kind}, and only people answer \`ask\`/\`tell\` (a table here could never be reached).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      // Entity-tier refs resolve once, up front: the cross-tier collision
+      // gate must see every entity-tier row's names, even those declared
+      // AFTER a colliding quoted row.
+      const resolvedRefs = decl.rows.map((row) =>
+        row.filter.kind === 'entity' ? this.resolveEntityId(row.filter.ref) : null,
+      );
+      /** normalized name/aka of entity-tier row entities → display name. */
+      const entityTierNames = new Map<string, string>();
+      for (const id of resolvedRefs) {
+        if (!id) continue;
+        const rowSym = this.byId.get(id);
+        if (!rowSym) continue;
+        entityTierNames.set(normalizeTopic(rowSym.nameLower), rowSym.nameLower);
+        for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRTopicRow[] = [];
+      const seenEntities = new Map<string, Span>();
+      const seenTexts = new Map<string, Span>();
+
+      for (let i = 0; i < decl.rows.length; i++) {
+        const row = decl.rows[i];
+        if (row.filter.kind === 'entity') {
+          const id = resolvedRefs[i];
+          if (!id) continue; // unresolved — already reported
+          const dup = seenEntities.get(id);
+          if (dup) {
+            this.diagnostics.error(
+              'analysis.duplicate-topic',
+              `\`${this.byId.get(id)?.nameLower ?? id}\` is already a topic of this table (line ${dup.line}) — a topic answers in one place; merge the rows.`,
+              row.span,
+            );
+            continue;
+          }
+          seenEntities.set(id, row.span);
+          rows.push({
+            filter: { kind: 'entity', id },
+            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            span: row.span,
+          });
+        } else {
+          const texts = [row.filter.primary, ...row.filter.aliases];
+          let rejected = false;
+          for (const text of texts) {
+            const norm = normalizeTopic(text);
+            const dup = seenTexts.get(norm);
+            if (dup) {
+              this.diagnostics.error(
+                'analysis.duplicate-topic',
+                `"${text}" is already declared in this table (line ${dup.line}) — aliases included, a topic answers in one place.`,
+                row.filter.span,
+              );
+              rejected = true;
+              continue;
+            }
+            seenTexts.set(norm, row.span);
+            const collidesWith = entityTierNames.get(norm);
+            if (collidesWith) {
+              this.diagnostics.error(
+                'analysis.topic-entity-collision',
+                `"${text}" collides with \`${collidesWith}\` — that entity is already an entity-tier row of this table, and the quoted spelling would shadow its quiet entity resolution. Remove one.`,
+                row.filter.span,
+              );
+              rejected = true;
+            }
+          }
+          if (rejected) continue;
+          rows.push({
+            filter: { kind: 'text', primary: row.filter.primary, aliases: row.filter.aliases },
+            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            span: row.span,
+          });
+        }
+        this.checkPhaseOrder(row.body, { mutated: false });
+      }
+
+      owner.topics = rows;
     }
   }
 
@@ -1128,6 +1269,33 @@ class Analyzer {
       // declaring `phrase confession` must not collide (Phase C P3).
       for (const clause of e.decl.onClauses) this.collectInlineTexts(clause.body, e.id);
     }
+
+    // Topic-table row bodies are entity-owned (ADR-239): their inline
+    // phrases register owner-scoped like clause bodies. Owner resolution
+    // here is silent — an unresolved owner is pass 2's error (applyTopics).
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-topics') continue;
+      const owner = this.findEntitySilent(decl.owner);
+      if (!owner) continue;
+      for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+    }
+  }
+
+  /**
+   * Resolve a name to an entity symbol with resolveEntityId's exact
+   * precedence (exact name → alias → unique in-order subset) but NO
+   * diagnostics — for pass-1 uses where pass 2 will report the miss.
+   */
+  private findEntitySilent(ref: NameRef): EntitySymbol | null {
+    const lower = ref.words.join(' ').toLowerCase();
+    const exact = this.entities.filter((e) => e.nameLower === lower);
+    if (exact.length === 1) return exact[0];
+    const byAlias = this.entities.filter((e) => e.aka.includes(lower));
+    if (byAlias.length === 1) return byAlias[0];
+    const refWords = ref.words.map((w) => w.toLowerCase());
+    const subset = this.entities.filter((e) => isInOrderSubset(refWords, e.nameWords));
+    if (subset.length === 1) return subset[0];
+    return null;
   }
 
   /**
@@ -1576,6 +1744,8 @@ class Analyzer {
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
         this.buildOnClause(c, entityScope(sym ?? null)),
       ),
+      // Filled by applyTopics after every entity is built (ADR-239).
+      topics: [],
       span: decl.span,
     };
   }

@@ -101,10 +101,13 @@ ADR-239's Context section states the platform half is complete and "no stdlib/pa
 
 ## Status tracking
 ### Phase 1: Chord grammar — the `define topics` table block, compile gates
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-18, session 80ff54) — alias separator ruled COMMA list (David; ADR-239 D3 amendment note + ratchet row record it). Parser (`parseDefineTopics`/`parseTopicRow`), AST (`DefineTopics`/`TopicRow`), IR (`IREntity.topics: IRTopicRow[]`, additive — golden churn verified as exactly 66 × `"topics": []`), analyzer (`applyTopics` after entity build: duplicate-topic / topic-entity-collision (order-independent, per-table) / duplicate-topics-block / topics-host, unknown names via the standard gate). 19-test suite `packages/chord/tests/topics.test.ts` (IR-shape + one rejection per gate); chord 357/357; story-loader 261/261; repo tsc clean. Ratchet row appended; `IRTopicRow` re-exported from `@sharpee/ide-protocol`.
+
+### Phase 2 entry note
+- Phase 1's stop-and-ask (alias spelling) CLEARED. Phase 2's own stop-and-ask (the stdlib `seedData` platform seam) remains OPEN — go/no-go with David before any `packages/stdlib` edit.
 
 ### Phase 2: story-loader runtime — table lookup, catch-all suppression, telling symmetry
-- **Status**: PENDING
+- **Status**: CURRENT (entry gate: David's go/no-go on the `seedData` platform seam)
 
 ### Phase 3: Grammar docs, ratchet closure, audit closure, elegance-parity fixture, full regression
 - **Status**: PENDING

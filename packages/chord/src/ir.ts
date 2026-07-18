@@ -127,6 +127,27 @@ export interface IREntity {
    */
   initialDescriptionKey: string | null;
   onClauses: IROnClause[];
+  /**
+   * The entity's declared ask/tell topic table (`define topics for …`,
+   * ADR-239 D3/D4) — rows in declaration order; empty when no block is
+   * declared. Runtime matching is normalized whole-topic lookup, never
+   * fuzzy; a miss falls to the owner's `on asking it` catch-all (D5).
+   */
+  topics: IRTopicRow[];
+  span: Span;
+}
+
+/**
+ * One resolved topic-table row (ADR-239). Entity tier carries the resolved
+ * entity id (matched against the platform's `topicEntityId`); free-text
+ * tier carries the primary spelling plus declared aliases (matched against
+ * the normalized asked text). The body executes with `it` = the owner.
+ */
+export interface IRTopicRow {
+  filter:
+    | { kind: 'entity'; id: string }
+    | { kind: 'text'; primary: string; aliases: string[] };
+  body: IRStatement[];
   span: Span;
 }
 

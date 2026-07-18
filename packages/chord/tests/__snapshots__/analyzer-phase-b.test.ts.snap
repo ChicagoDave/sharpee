@@ -152,6 +152,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -190,6 +191,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -267,6 +269,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
         "content",
       ],
       "statesReversible": false,
+      "topics": [],
       "traits": [
         {
           "condition": null,
@@ -353,6 +356,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -393,6 +397,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [
         {
           "condition": null,
