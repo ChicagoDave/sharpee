@@ -391,6 +391,16 @@ export class AuthorModel implements IWorldModel {
     return this.worldModel.getBehaviorForCapability(trait, capability);
   }
 
+  // Evaluator Registry (ADR-240) — delegates to the underlying WorldModel,
+  // which owns the per-world map.
+  registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void {
+    this.worldModel.registerEvaluator(key, fn);
+  }
+
+  evaluate(key: string): unknown {
+    return this.worldModel.evaluate(key);
+  }
+
   getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
     return this.worldModel.getBehaviorBinding(traitType, capability);
   }

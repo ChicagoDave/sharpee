@@ -242,6 +242,31 @@ export interface IWorldModel {
     behavior: CapabilityBehavior,
     options?: BehaviorRegistrationOptions<T>
   ): void;
+
+  // Evaluator Registry (ADR-240 — live derived state)
+  /**
+   * Register a named world-evaluator on this world. Read points consult
+   * evaluators at the moment of use ("mutations are instant; anything
+   * checking state gets the most current results") — nothing is cached,
+   * so nothing can go stale. Key conventions are owned by each read
+   * point's module (e.g. `dark.<roomId>`, `exit.blocked.<roomId>.<dir>`).
+   *
+   * Idempotent: re-registering a key overwrites the previous evaluator
+   * (last-registration-wins). Scoped to this world instance only.
+   *
+   * @param key - Namespaced evaluator key (built by the read point's exported key builder)
+   * @param fn - Evaluated against the live world at every consult
+   */
+  registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+  /**
+   * Evaluate the named registered evaluator against the live world.
+   *
+   * @param key - The evaluator key
+   * @returns The evaluator's result, or `undefined` when nothing is
+   *   registered under the key (the caller's signal to fall through to
+   *   its static behavior)
+   */
+  evaluate(key: string): unknown;
   /**
    * Resolve the behavior bound to a trait instance's capability on this world.
    *
@@ -514,6 +539,13 @@ export class WorldModel implements IWorldModel {
   // from both maps above despite the shared "wiring" flavor.
   private interceptorBindings: Map<string, TraitInterceptorBinding> = new Map();
 
+  /**
+   * ADR-240: the per-world evaluator registry — named world-evaluators
+   * consulted at point of use (live derived state; no cached derivations).
+   * Lives and dies with this WorldModel instance, like the binding maps.
+   */
+  private evaluators: Map<string, (world: IWorldModel) => unknown> = new Map();
+
   // Score Ledger (ADR-129)
   private scoreLedger = new ScoreLedger();
 
@@ -683,6 +715,19 @@ export class WorldModel implements IWorldModel {
       mode: options?.mode,
       validateBinding: options?.validateBinding as ((trait: ITrait) => boolean) | undefined
     });
+  }
+
+  // Evaluator Registry (ADR-240 — live derived state). Same ownership model
+  // as the binding maps above: per-world, idempotent last-wins, never
+  // serialized (registrars re-register on every load).
+
+  registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void {
+    this.evaluators.set(key, fn);
+  }
+
+  evaluate(key: string): unknown {
+    const fn = this.evaluators.get(key);
+    return fn ? fn(this) : undefined;
   }
 
   getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {

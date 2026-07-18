@@ -1,0 +1,83 @@
+title: Fernhill D2 — the fuse: cut it and live
+story: fernhill
+description: Entering the folly lights the old fuse (once); the anchored
+  sequence gives three turns of hissing stakes; the shears (B2's second
+  edge) cut it dead. The lose branch is fuse-lose.transcript.
+---
+
+# The long road to the folly: key, sherry toll not needed — but shears,
+# boiler startup, and Tobias's blessing are
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> east
+[OK: contains "Kitchen"]
+
+> take the garden shears
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+> south
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+> turn the stopcock
+[OK: contains "water gurgles"]
+
+> push the primer
+[OK: contains "thumps home"]
+
+> turn on the boiler
+[OK: contains "warmth crawls"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "enters"]
+[UNTIL "enters from the"]
+
+> ask tobias about the fire
+[OK: contains "warped, not cursed"]
+
+> west
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> north
+[OK: contains "Folly Hill"]
+
+> open the folly door
+[OK: contains "You open the folly door"]
+
+# Entering lights the fuse — once
+> north
+[OK: contains "wakes a thread of sparks"]
+[OK: contains "It is racing you"]
+
+# CUT: the shears end it
+> cut the fuse with the garden shears
+[OK: contains "gutters, and dies"]
+
+# Three-plus turns later: no blast — the kill's `when` saw a cut fuse
+> wait
+[OK: not contains "white roar"]
+
+> wait
+[OK: not contains "white roar"]
+
+> wait
+[OK: not contains "white roar"]
+
+> look
+[OK: contains "Soot still ghosts the walls"]

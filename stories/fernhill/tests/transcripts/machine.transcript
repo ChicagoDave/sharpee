@@ -1,0 +1,46 @@
+title: Fernhill D5 — the boiler's three-stage startup, order enforced
+story: fernhill
+description: The `define machine` flagship — FILL, PRIME, LIGHT, in that
+  order. Out-of-order attempts are rejected with their own voices (the dry
+  primer, the clanking cold light); each legal transition mirrors onto the
+  boiler's visible states and speaks its on-enter line.
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+# Out of order: prime before filling — the dry wheeze
+> push the primer
+[OK: contains "Nothing to prime"]
+
+# Out of order: light before priming — the clank
+> turn on the boiler
+[OK: contains "hollow CLANK"]
+
+# FILL
+> turn the stopcock
+[OK: contains "You crank the stopcock"]
+[OK: contains "water gurgles"]
+
+# Still can't light: primed is the gate, filled is not enough
+> turn on the boiler
+[OK: contains "hollow CLANK"]
+
+# PRIME
+> push the primer
+[OK: contains "thumps home"]
+
+# LIGHT
+> turn on the boiler
+[OK: contains "warmth crawls toward the greenhouse"]
+
+# The machine's terminal state is mirrored onto the entity's states —
+# and the A5 frost seal reads the switchable flank of the same beat
+> examine the boiler
+[OK: contains "FILL. PRIME. LIGHT."]

@@ -1,0 +1,78 @@
+title: Fernhill A2/A3 — the cellar door (locked default) and the two-sided pantry door
+story: fernhill
+description: A2 — the cellar door loads LOCKED (kind-scoped lockable default,
+  one exit line + one door block); unlock with the tarnished key, open, descend.
+  A3 — the pantry door is present from BOTH sides (ADR-238): open it from the
+  kitchen, walk through, close it from the pantry side.
+---
+
+# Pick up the key on the way in (temporary Phase-2 placement; B3 hides it later)
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> search the doormat
+[OK: contains "key"]
+
+> take the tarnished key
+[OK: contains "You take the tarnished key"]
+
+# A2: the locked cellar door refuses passage before the key is used
+> north
+[OK: contains "Entrance Hall"]
+
+> north
+[OK: contains "Cellar Stairs"]
+
+> down
+[OK: contains "locked"]
+[OK: not contains "Brick vaults"]
+
+> unlock the cellar door with the tarnished key
+[OK: contains "unlock"]
+
+> down
+[OK: contains "closed"]
+
+> open the cellar door
+[OK: contains "open"]
+
+# A3 half 1: the pantry door from the kitchen side (still on the stairs — the
+# descent itself is cellar-dark.transcript's business)
+> south
+[OK: contains "Entrance Hall"]
+
+> east
+[OK: contains "Kitchen"]
+
+> open the pantry door
+[OK: contains "open"]
+
+> north
+[OK: contains "Narrow shelves of preserves"]
+
+# A3 half 2 (ADR-238): the SAME door is present and workable from inside —
+# the hide beat: shut it, bolt it, and the kitchen is another world
+> close the pantry door
+[OK: contains "close"]
+
+> examine the pantry door
+[OK: contains "plain white-painted door"]
+
+> lock the pantry door
+[OK: contains "lock"]
+
+> south
+[OK: contains "locked"]
+[OK: not contains "Copper pans"]
+
+> unlock the pantry door
+[OK: contains "unlock"]
+
+> open the pantry door
+[OK: contains "open"]
+
+> south
+[OK: contains "Kitchen"]

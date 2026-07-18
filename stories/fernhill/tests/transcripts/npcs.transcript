@@ -1,0 +1,120 @@
+title: Fernhill C1–C4 — Kettle's block and bribe, Tobias's patrol and topics
+story: fernhill
+description: The guard block (conditional exit on Mrs Kettle's state) lifts on
+  the sherry bribe (give-gating, possession-conditioned state change). Tobias
+  patrols his route (caught with wait-UNTIL); his topics table answers the
+  free-text alias ("the fire"), the entity tier (the boiler, in scope in the
+  shed), the red-herring row, and misses fall to his catch-all shrug — never
+  appended to a hit. Kettle's second table has NO catch-all: her miss takes
+  the stdlib unknown_topic default. The folly door unjams once Tobias is
+  shaken.
+---
+
+# --- C2: the guard block ---
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> west
+[OK: contains "The study is not for visitors"]
+[OK: not contains "leather-topped desk"]
+
+# --- C4 table 2 (Mrs Kettle): entity tier, free-text alias, and the
+# no-catch-all miss (stdlib default speaks) ---
+> take the grey overcoat
+[OK: contains "Taken"]
+
+> ask kettle about the overcoat
+[OK: contains "Her walking coat"]
+
+> ask kettle about verity's study
+[OK: contains "something that made the evening kinder"]
+
+> ask kettle about the weather
+[OK: not contains "knitting"]
+
+# --- C3: the bribe — give the sherry, her state flips, the block lifts ---
+> east
+[OK: contains "Kitchen"]
+
+> take the sherry bottle
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+> give the sherry bottle to kettle
+[OK: contains "Her ladyship's oloroso"]
+
+> west
+[OK: contains "Verity's study"]
+
+> east
+[OK: contains "Entrance Hall"]
+
+# --- C1: catch Tobias on his rounds (route: Drive, Court, Shed; wait-turns 5;
+# "Tobias arrives." is the patrol announcement) ---
+> south
+[OK: contains "Fountain Court"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "enters"]
+[UNTIL "enters from the"]
+
+# --- C4 table 1 (Tobias): free-text ALIAS hit (the row's primary is
+# "the folly") — his answer owns the response; the shrug never appends ---
+> ask tobias about the fire
+[OK: contains "The door's only warped, not cursed"]
+[OK: not contains "spits"]
+
+# Miss → the catch-all shrug (D5's miss path)
+> ask tobias about the weather
+[OK: contains "spits"]
+
+# Red-herring row: the bank theory dies here
+> ask tobias about the bank
+[OK: contains "Bank never had it"]
+
+# --- Entity-tier hit: the boiler, asked IN the shed (both in scope) ---
+> east
+[OK: contains "old coal dust"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "enters"]
+[UNTIL "enters from the"]
+
+> ask tobias about the boiler
+[OK: contains "Fill her, set the valve, then light"]
+
+# Thaw the way (the A5 condition, live) — full startup order
+> turn the stopcock
+[OK: contains "water gurgles"]
+
+> push the primer
+[OK: contains "thumps home"]
+
+> turn on the boiler
+[OK: contains "warmth crawls toward the greenhouse"]
+
+# --- The folly door unjams now that Tobias is shaken ---
+> west
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> north
+[OK: contains "Folly Hill"]
+
+> open the folly door
+[OK: contains "You open the folly door"]
+
+> north
+[OK: contains "Soot still ghosts the walls"]

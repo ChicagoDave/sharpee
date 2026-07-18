@@ -463,4 +463,18 @@ export class Evaluator {
     world.setStateValue(CHORD_RNG_KEY, this.rng.getSeed());
     return hit;
   }
+
+  /**
+   * Pick a 0-based index in [0, n) through the seeded story RNG (the same
+   * world-state seed chain `chance` uses — deterministic under a fixed
+   * seed, AC-5 class). Used by `randomly`/`sticky` phrase selection at
+   * point of use (ADR-240's live blocked-message resolution).
+   */
+  pickIndex(n: number, world: WorldModel): number {
+    const stored = world.getStateValue(CHORD_RNG_KEY);
+    if (typeof stored === 'number') this.rng.setSeed(stored);
+    const pick = this.rng.int(1, n) - 1;
+    world.setStateValue(CHORD_RNG_KEY, this.rng.getSeed());
+    return pick;
+  }
 }

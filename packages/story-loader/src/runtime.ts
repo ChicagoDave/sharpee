@@ -37,12 +37,12 @@ import {
   InterceptorResult,
   InterceptorSharedData,
   ReadableTrait,
-  RoomBehavior,
   RoomTrait,
+  darkKey,
   TraitType,
   WorldModel,
 } from '@sharpee/world-model';
-import { interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
+import { exitBlockedKey, exitMessageKey, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
 import { Evaluator, EvalContext } from './evaluator';
 import { LoadError } from './errors';
 import {
@@ -235,29 +235,46 @@ export class ChordRuntime {
       }
     }
 
-    // Derived properties (`dark while`, `is blocked while`) — recompute
-    // when possession, location, or openable/switchable state changes.
-    if (this.derivedDarkRooms().length > 0 || this.hasConditionalBlockedExits()) {
-      for (const trigger of [
-        'if.event.taken',
-        'if.event.dropped',
-        'if.event.worn',
-        'if.event.removed',
-        'if.event.put_on',
-        'if.event.put_in',
-        'if.event.actor_moved',
-        'if.event.opened',
-        'if.event.closed',
-        'if.event.switched_on',
-        'if.event.switched_off',
-      ]) {
-        world.chainEvent(
-          trigger,
-          (_event, w) => {
-            this.recomputeDerived(w as WorldModel);
-            return null;
-          },
-          { key: `chord.derived.${trigger}`, priority: 100 },
+    // Derived properties (`dark while`, blocked exits) — ADR-240: registered
+    // as live evaluators consulted at point of use. Nothing is stamped and
+    // nothing recomputes: mutations are instant, every reader sees current
+    // truth (the former eleven-event recompute trigger list is gone).
+    this.registerDerivedEvaluators(world);
+  }
+
+  /**
+   * ADR-240 D2/D3: register every derived property as a named world-evaluator.
+   * `dark while` rooms register on `dark.<roomId>`; EVERY blocked exit —
+   * conditional or not (a constant-true predicate) — registers on
+   * `exit.blocked.<roomId>.<direction>`, with its refusal message on
+   * `exit.message.*` resolved AT REFUSAL TIME (phrase strategies vary per
+   * attempt). Registration is idempotent per world; re-binding re-registers.
+   */
+  private registerDerivedEvaluators(world: WorldModel): void {
+    for (const { entity, condition } of this.derivedDarkRooms()) {
+      const worldId = this.host.entityId(entity.id);
+      if (!worldId) continue;
+      world.registerEvaluator(darkKey(worldId), (w) =>
+        this.evaluator.evalCondition(condition, { world: w as WorldModel }),
+      );
+    }
+
+    for (const irEntity of this.ir.entities) {
+      if (irEntity.blockedExits.length === 0) continue;
+      const worldId = this.host.entityId(irEntity.id);
+      if (!worldId) continue;
+      for (const blocked of irEntity.blockedExits) {
+        const direction = (Direction as Record<string, DirectionType>)[blocked.direction.toUpperCase()];
+        if (!direction) continue;
+        const condition = blocked.condition;
+        world.registerEvaluator(
+          exitBlockedKey(worldId, direction),
+          condition
+            ? (w) => this.evaluator.evalCondition(condition, { world: w as WorldModel, it: irEntity.id })
+            : () => true,
+        );
+        world.registerEvaluator(exitMessageKey(worldId, direction), (w) =>
+          this.blockedPhraseText(blocked.phraseKey, w as WorldModel),
         );
       }
     }
@@ -1185,46 +1202,51 @@ export class ChordRuntime {
     return out;
   }
 
-  /**
-   * Re-evaluate derived properties: `dark while` into `RoomTrait.requiresLight`,
-   * and `is blocked while <cond>` into blockedExits (block/unblock per the
-   * condition's current truth — grammar log 2026-07-10).
-   */
-  recomputeDerived(world: WorldModel): void {
-    for (const { entity, condition } of this.derivedDarkRooms()) {
-      const worldId = this.host.entityId(entity.id);
-      const room = worldId ? (world.getEntity(worldId)?.get(TraitType.ROOM) as RoomTrait | undefined) : undefined;
-      if (!room) continue;
-      room.requiresLight = this.evaluator.evalCondition(condition, { world });
-    }
+  // ADR-240 D4: `recomputeDerived` and its trigger wiring are DELETED — the
+  // registered evaluators above are consulted live at every read; there is
+  // no cached derivation left to refresh.
 
-    for (const irEntity of this.ir.entities) {
-      for (const blocked of irEntity.blockedExits) {
-        if (!blocked.condition) continue;
-        const worldId = this.host.entityId(irEntity.id);
-        const room = worldId ? world.getEntity(worldId) : undefined;
-        if (!room) continue;
-        const direction = (Direction as Record<string, DirectionType>)[blocked.direction.toUpperCase()];
-        if (!direction) continue;
-        const holds = this.evaluator.evalCondition(blocked.condition, { world, it: irEntity.id });
-        if (holds) {
-          RoomBehavior.blockExit(room, direction, this.blockedPhraseText(blocked.phraseKey));
-        } else {
-          RoomBehavior.unblockExit(room, direction);
-        }
+  /**
+   * Blocked-exit refusal text, resolved AT REFUSAL TIME (ADR-240 D6): a
+   * multi-variant phrase honors its strategy per attempt — `randomly`
+   * through the seeded story RNG, `cycling`/`stopping`/`first-time`
+   * through a world-state counter, `sticky` through a stored pick — so
+   * refusal text varies exactly as ADR-211 phrase semantics intend.
+   */
+  private blockedPhraseText(key: string, world: WorldModel): string {
+    const phrase = this.ir.phrases.locales[this.ir.phrases.defaultLocale]?.[key];
+    if (!phrase) return '';
+    const variants = phrase.variants;
+    if (variants.length <= 1) return variants[0]?.text ?? '';
+
+    const stateKey = `${CHORD_OCCURRENCE_PREFIX}blocked.${key}`;
+    switch (phrase.strategy) {
+      case 'randomly':
+        return variants[this.evaluator.pickIndex(variants.length, world)].text;
+      case 'sticky': {
+        const stored = world.getStateValue(stateKey);
+        if (typeof stored === 'number') return variants[stored]!.text;
+        const pick = this.evaluator.pickIndex(variants.length, world);
+        world.setStateValue(stateKey, pick);
+        return variants[pick]!.text;
+      }
+      case 'stopping': {
+        const n = (world.getStateValue(stateKey) as number | undefined) ?? 0;
+        world.setStateValue(stateKey, Math.min(n + 1, variants.length - 1));
+        return variants[Math.min(n, variants.length - 1)]!.text;
+      }
+      case 'first-time': {
+        const n = (world.getStateValue(stateKey) as number | undefined) ?? 0;
+        world.setStateValue(stateKey, n + 1);
+        return variants[n === 0 ? 0 : Math.min(1, variants.length - 1)]!.text;
+      }
+      case 'cycling':
+      default: {
+        const n = (world.getStateValue(stateKey) as number | undefined) ?? 0;
+        world.setStateValue(stateKey, n + 1);
+        return variants[n % variants.length]!.text;
       }
     }
-  }
-
-  /** Single-variant text of a blocked-exit phrase (mirrors the loader's read). */
-  private blockedPhraseText(key: string): string {
-    const phrase = this.ir.phrases.locales[this.ir.phrases.defaultLocale]?.[key];
-    return phrase?.variants[0]?.text ?? '';
-  }
-
-  /** True when any entity declares a conditional blocked exit. */
-  private hasConditionalBlockedExits(): boolean {
-    return this.ir.entities.some((e) => e.blockedExits.some((b) => b.condition !== null));
   }
 
   // ------------------------------------------------------------ statements

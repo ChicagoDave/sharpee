@@ -1,0 +1,63 @@
+title: Fernhill A1/A7/A9 — compass network, first-visit prose, region crossings
+story: fernhill
+description: The estate's navigable shape (design doc map). Iron Gates first-time
+  prose fires once (A9); the Grounds/House crossing reactions fire on the
+  boundary moves (A7); the south exit is blocked with the long-road phrase.
+---
+
+# A9: the first look is still the first visit — arrival prose
+> look
+[OK: contains "The cab is already grinding away"]
+
+# …and the standing description takes over on the next look
+> look
+[OK: contains "Wrought-iron gates stand open on one hinge"]
+[OK: not contains "The cab is already grinding away"]
+
+# The blocked south exit speaks the long-road refusal
+> south
+[OK: contains "You are not leaving without what you came for"]
+
+> north
+[OK: contains "Gravel Drive"]
+
+# Crossing into the House region (A7): the hush line fires
+> north
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+[OK: contains "The house holds its old hush"]
+
+# West wing — guarded (C2): the block message, not the study (npcs.transcript
+# proves the lift)
+> west
+[OK: contains "The study is not for visitors"]
+
+# East wing
+> east
+[OK: contains "Copper pans hang in ranks"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+# North passage
+> north
+[OK: contains "Cellar Stairs"]
+
+> south
+[OK: contains "Entrance Hall"]
+
+# Crossing back OUT of the House into the Grounds: cold-returns fires (A7 both sides)
+> south
+[OK: contains "Fountain Court"]
+[OK: contains "The cold finds you again"]
+
+> west
+[OK: contains "Glass panes furred with frost"]
+
+> east
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "bitter with old coal dust"]

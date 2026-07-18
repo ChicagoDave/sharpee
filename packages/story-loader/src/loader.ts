@@ -62,6 +62,7 @@ import {
   ConcealmentTrait,
   ContainerTrait,
   HealthTrait,
+  AuthorModel,
   CuttableTrait,
   DiggableTrait,
   DeadlyRoomTrait,
@@ -354,9 +355,15 @@ export class ChordStory implements Story {
     }
 
     // Pass 2 — placement, exits, blocked exits, initial states.
+    // Placement is WORLD CONSTRUCTION, not a runtime action: it goes through
+    // AuthorModel.moveEntity, which bypasses the runtime containment rules
+    // (a closed trunk can hold its contents at load — the plain
+    // world.moveEntity refusal was a silent drop; David-approved fix,
+    // 2026-07-18, matching the TS story path's established pattern).
+    const author = new AuthorModel(world.getDataStore(), world);
     for (const { ir: irEntity, entity } of built) {
       if (irEntity.placement && irEntity.placement.relation !== 'starts-in') {
-        world.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+        author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
       }
       // ADR-236 D2: region membership through the platform seam —
       // `assignRoom` sets RoomTrait.regionId (never touched directly here);
@@ -398,14 +405,11 @@ export class ChordStory implements Story {
         door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
         world.connectRooms(entity.id, toId, direction, doorId);
       }
-      for (const blocked of irEntity.blockedExits) {
-        // Unconditional blocks are static; `is blocked while <cond>` blocks
-        // are derived — the runtime recomputes them with dark-while (grammar
-        // log 2026-07-10; initial evaluation at player finalization).
-        if (blocked.condition === null) {
-          RoomBehavior.blockExit(entity, toDirection(blocked.direction, irEntity), this.phraseText(blocked.phraseKey));
-        }
-      }
+      // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
+      // unconditional alike, are registered as live evaluators by the
+      // runtime's bind(); nothing is stamped onto RoomTrait.blockedExits
+      // here anymore (the trait map remains the hand-written TS stories'
+      // surface, consulted by going as the fall-through).
       // ADR-227: `deadly: <phrase>` — the no-escape room marker lowers to
       // DeadlyRoomTrait (safeVerbs default look/examine); the ENGINE
       // auto-registers the deadly-room transformer, so no runtime code here.
@@ -572,9 +576,8 @@ export class ChordStory implements Story {
       wearable.wornBy = player.id;
     }
 
-    // Initial evaluation of derived properties (`dark while`) — the player
-    // and their possessions now exist, so conditions are decidable.
-    this.runtime.recomputeDerived(world);
+    // ADR-240: no initial derived-property evaluation — derived state is
+    // registered evaluators, consulted live at every read.
   }
 
   extendLanguage(language: LanguageProvider): void {

@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
-import { RoomTrait, TraitType, WearableTrait, WorldModel } from '@sharpee/world-model';
+import {RoomTrait, TraitType, WearableTrait, WorldModel , darkKey } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
@@ -66,23 +66,22 @@ function hangCloak({ story, world }: CloakWorld): void {
   const wearable = world.getEntity(cloakId)!.get(TraitType.WEARABLE) as WearableTrait;
   wearable.worn = false;
   wearable.wornBy = undefined;
-  story.runtime.recomputeDerived(world);
+  // ADR-240: no recompute — derived state is live at the next read.
 }
 
 describe('derived darkness (dark while the player has the velvet cloak)', () => {
   it('starts dark, lightens when the cloak is shed, re-darkens on retrieval', () => {
     const cw = loadCloak();
-    const bar = cw.world.getEntity(cw.story.entityId('foyer-bar')!)!;
-    const room = bar.get(TraitType.ROOM) as RoomTrait;
+    const barId = cw.story.entityId('foyer-bar')!;
 
-    expect(room.requiresLight).toBe(true); // initial evaluation: player wears the cloak
+    // ADR-240: the registered dark.<roomId> evaluator answers LIVE.
+    expect(cw.world.evaluate(darkKey(barId))).toBe(true); // player wears the cloak
 
     hangCloak(cw);
-    expect(room.requiresLight).toBe(false);
+    expect(cw.world.evaluate(darkKey(barId))).toBe(false);
 
     cw.world.moveEntity(cw.story.entityId('velvet-cloak')!, cw.playerId);
-    cw.story.runtime.recomputeDerived(cw.world);
-    expect(room.requiresLight).toBe(true);
+    expect(cw.world.evaluate(darkKey(barId))).toBe(true); // no recompute, no event — instant
   });
 });
 

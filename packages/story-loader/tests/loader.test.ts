@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
+import { exitBlockedKey, exitMessageKey } from '@sharpee/stdlib';
 import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
 import {
   ContainerTrait,
@@ -22,6 +23,7 @@ import {
   TraitType,
   WearableTrait,
   WorldModel,
+  darkKey,
 } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, ChordStory, createStory, LoadError } from '../src';
 
@@ -75,9 +77,13 @@ describe('cloak.story loads into a playable world', () => {
     expect(barRoom.exits?.[Direction.NORTH]?.destination).toBe(foyer.id);
   });
 
-  it('writes the blocked north exit with the cant-leave phrase text', () => {
+  it('registers the blocked north exit as a live evaluator with the cant-leave text (ADR-240)', () => {
+    const foyerId = entity('foyer-of-the-opera-house').id;
+    expect(world.evaluate(exitBlockedKey(foyerId, Direction.NORTH))).toBe(true);
+    expect(world.evaluate(exitMessageKey(foyerId, Direction.NORTH))).toContain("You've only just arrived");
+    // Nothing is stamped on the trait map anymore — the registry owns it.
     const foyerRoom = entity('foyer-of-the-opera-house').get(TraitType.ROOM) as RoomTrait;
-    expect(foyerRoom.blockedExits?.[Direction.NORTH]).toContain("You've only just arrived");
+    expect(foyerRoom.blockedExits?.[Direction.NORTH]).toBeUndefined();
   });
 
   it('builds the hook as scenery supporter with capacity 1, in the cloakroom', () => {
@@ -97,9 +103,8 @@ describe('cloak.story loads into a playable world', () => {
     expect(world.getStateValue(CHORD_STATE_PREFIX + 'message-in-the-sawdust')).toBe('intact');
   });
 
-  it('darkens the bar at load (dark-while initial evaluation: the player wears the cloak)', () => {
-    const barRoom = entity('foyer-bar').get(TraitType.ROOM) as RoomTrait;
-    expect(barRoom.requiresLight).toBe(true);
+  it('darkens the bar live (ADR-240: the dark.<roomId> evaluator, no stamped flag)', () => {
+    expect(world.evaluate(darkKey(entity('foyer-bar').id))).toBe(true);
   });
 
   it('creates the default player with the story description, placed in the foyer', () => {
@@ -173,8 +178,7 @@ describe('engine lifecycle order: createPlayer BEFORE initializeWorld (GameEngin
     const wearable = cloak.get(TraitType.WEARABLE) as WearableTrait;
     expect(wearable.worn).toBe(true);
     expect(wearable.wornBy).toBe(player.id);
-    const barRoom = world.getEntity(story.entityId('foyer-bar')!)!.get(TraitType.ROOM) as RoomTrait;
-    expect(barRoom.requiresLight).toBe(true);
+    expect(world.evaluate(darkKey(story.entityId('foyer-bar')!))).toBe(true);
   });
 });
 

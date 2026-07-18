@@ -1,0 +1,107 @@
+title: Fernhill B2 — keyless tool gates (R3 spelling): crowbar → crate → opener → tin
+story: fernhill
+description: Two chained tool gates in the current R3 keyless `with` spelling —
+  the nailed crate needs the crowbar (fetched from the dark cellar, so the A4
+  lamp chain is exercised for real), and the kipper tin needs the tin opener
+  found inside the crate. Each gate is asserted failing WITHOUT its tool first.
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+# Gate 1 fails bare-handed
+> east
+[OK: contains "old coal dust"]
+
+> open the nailed crate
+[OK: not contains "tin opener"]
+
+# Fetch the crowbar: key from the mat, lamp from the niche, down into the dark
+> west
+[OK: contains "Fountain Court"]
+
+> search the doormat
+[OK: contains "key"]
+
+> take the tarnished key
+[OK: contains "You take the tarnished key"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> north
+[OK: contains "Cellar Stairs"]
+
+> take the oil lamp
+[OK: contains "Taken"]
+
+> turn on the oil lamp
+[OK: contains "on"]
+
+> unlock the cellar door with the tarnished key
+[OK: contains "unlock"]
+
+> open the cellar door
+[OK: contains "open"]
+
+> down
+[OK: contains "Brick vaults"]
+
+> take the crowbar
+[OK: contains "Taken"]
+
+# Gate 1 with the tool (explicit instrument — mirrors locking's key syntax)
+> up
+[OK: contains "Cellar Stairs"]
+
+> south
+[OK: contains "Entrance Hall"]
+
+> south
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+> open the nailed crate with the crowbar
+[OK: contains "open"]
+
+> take the tin opener
+[OK: contains "You take the tin opener"]
+
+> take the brass valve handle
+[OK: contains "You take the brass valve handle"]
+
+# Gate 2: the kipper tin, without and with the opener
+> west
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> east
+[OK: contains "Kitchen"]
+
+> open the pantry door
+[OK: contains "open"]
+
+> north
+[OK: contains "Narrow shelves"]
+
+> drop the tin opener
+[OK: contains "Dropped"]
+
+> open the kipper tin
+[OK: not contains "kipper."]
+
+> take the tin opener
+[OK: contains "Taken"]
+
+> open the kipper tin with the tin opener
+[OK: contains "kipper"]
+
+> take the kipper
+[OK: contains "You take the kipper"]

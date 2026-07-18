@@ -93,4 +93,14 @@ Format per row: what the pattern teaches → the Chord surface it exercises → 
 - **G4/G5 only shine in the browser client** — worth including only if the tutorial's canonical playthrough is browser-first.
 - The ☆ spine (23 patterns) fits one estate-mystery-shaped story: grounds + house, one guard NPC, one patrol NPC, a boiler/greenhouse machine chain, a timeline with a fuse, scored discoveries, two endings.
 
-**Next step (Q-3 ruling step 2)**: David selects the must-include set; step 3 designs the story around the selection and writes `docs/work/chord-tutorial-story/plan.md`.
+## SELECTION (Q-3 ruling step 2 — David, 2026-07-18, session 80ff54)
+
+**RULED: the ☆ spine, plus G4 + G5 — the canonical playthrough is BROWSER-FIRST.**
+
+- Must-include set: **A1–A5, A7–A9, B1–B3, B5, B7, B9, C1–C4, D1–D3, D5, E1–E4, F1–F2, G1–G2, G4, G5** (the ☆ rows + the two browser-presentation rows).
+- Browser-first: the tutorial teaches the full browser experience (ambient sound/images/custom channels via G4/G5) — matching the G2 author pipeline where `sharpee build --browser` and dist/web are the default authoring output. The logic beats stay transcript-testable; the media layer degrades gracefully in text (`client has` is G4's own surface).
+- C4 note: ADR-239 SHIPPED 2026-07-18 (same session, before this selection) — topics are ordinary surface, no platform work rides on the tutorial.
+- Not selected (reference-only for the tutorial): A6, B6, B8, C5, C6, D4, E5–E7, F3, F4, G3.
+- **Amendment (David, 2026-07-18, later the same session): B4 (wearables + starting inventory) ADDED** — a cheap-win from comparing against the 124-pattern design catalog (web-save design-patterns page): Verity's overcoat closes the wearable hole in one block. (The design catalog itself is headed to ifwiki and will likely be renumbered — the tutorial does NOT bake its pattern ids anywhere.) Selected set is now 33.
+
+**Next step (Q-3 ruling step 3)**: design the story around this selection and write `docs/work/chord-tutorial-story/plan.md` (story design + prose + transcripts — the multi-session follow-on whose completion closes G3).

@@ -40,7 +40,7 @@ export {
 
 // Export other classes
 export { SpatialIndex } from './SpatialIndex';
-export { VisibilityBehavior } from './VisibilityBehavior';
+export { VisibilityBehavior, darkKey } from './VisibilityBehavior';
 export { AuthorModel, IDataStore, IItemSpec } from './AuthorModel';
 
 // Wall Adjacency (ADR-173)

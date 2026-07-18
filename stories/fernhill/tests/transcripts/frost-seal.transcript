@@ -1,0 +1,57 @@
+title: Fernhill A5 — the frost-sealed glasshouse door thaws when the boiler runs
+story: fernhill
+description: The Greenhouse's north exit is blocked while the boiler is off
+  (conditional blocked exit reading live switchable state). Turning the boiler
+  on flips the condition; the way to Folly Hill (and the warped folly door)
+  opens up. (Phase 5 replaces the bare switchable flip with the 3-stage
+  machine — this transcript pins the A5 condition itself.)
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass panes furred with frost"]
+
+# Frost-sealed while the boiler is off
+> north
+[OK: contains "sealed fast under a rind of frost"]
+[OK: not contains "Folly Hill"]
+
+# Wake the boiler — the full D5 startup: FILL, PRIME, LIGHT, in that order
+> east
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+> turn the stopcock
+[OK: contains "water gurgles"]
+
+> push the primer
+[OK: contains "thumps home"]
+
+> turn on the boiler
+[OK: contains "warmth crawls toward the greenhouse"]
+
+# The condition has flipped: north now opens
+> west
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> north
+[OK: contains "Folly Hill"]
+[OK: contains "fire-scarred"]
+
+# The warped folly door is jammed until Tobias's blessing (the topics beat —
+# see npcs.transcript for the full lift; this pins the refusal)
+> open the folly door
+[OK: contains "Twenty years of weather have set it like a jaw"]
+
+> north
+[OK: not contains "Soot still ghosts the walls"]

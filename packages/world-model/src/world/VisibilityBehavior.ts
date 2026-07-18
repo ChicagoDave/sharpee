@@ -21,8 +21,31 @@ import { findTraitWithCapability } from '../capabilities';
  */
 export const VISIBILITY_CAPABILITY = 'if.scope.visible';
 
+/**
+ * ADR-240 evaluator key for a room's derived darkness (`dark.<roomId>`).
+ * Owned by this read point; registrars (e.g. the story-loader's
+ * `dark while` conditions) build the key with this function, never by
+ * hand — the string is constructed in exactly two places, both pinned.
+ */
+export function darkKey(roomId: string): string {
+  return `dark.${roomId}`;
+}
+
 export class VisibilityBehavior extends Behavior {
   static requiredTraits = [];
+
+  /**
+   * The live answer to "does this room require light?" (ADR-240): a
+   * registered `dark.<roomId>` evaluator is authoritative (point-of-use
+   * truth, never stale); with nothing registered, the stamped trait
+   * fact applies unchanged (static `dark`, hand-written TS stories).
+   */
+  private static roomRequiresLight(room: IFEntity, world: WorldModel): boolean {
+    const derived = world.evaluate(darkKey(room.id));
+    if (typeof derived === 'boolean') return derived;
+    const roomTrait = room.getTrait(RoomTrait);
+    return Boolean(roomTrait && roomTrait.requiresLight);
+  }
 
   /**
    * Determines if a room is effectively dark (no usable light sources).
@@ -37,9 +60,8 @@ export class VisibilityBehavior extends Behavior {
    * @returns true if the room is dark and has no accessible light sources
    */
   static isDark(room: IFEntity, world: WorldModel): boolean {
-    const roomTrait = room.getTrait(RoomTrait);
-    if (!roomTrait || !roomTrait.requiresLight) {
-      return false; // Room isn't marked as dark
+    if (!this.roomRequiresLight(room, world)) {
+      return false; // Room isn't dark (live evaluator or static trait fact)
     }
     return !this.hasLightSource(room, world);
   }
@@ -120,9 +142,8 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    // Check if room is dark
-    const roomTrait = observerRoom.getTrait(RoomTrait);
-    if (roomTrait && roomTrait.requiresLight) {
+    // Check if room is dark (live evaluator first — ADR-240)
+    if (this.roomRequiresLight(observerRoom, world)) {
       // In a dark room, need light to see
       if (!this.hasLightSource(observerRoom, world)) {
         // Special cases in darkness:
@@ -168,9 +189,8 @@ export class VisibilityBehavior extends Behavior {
       seen.add(observerRoom.id);
     }
 
-    // Check if room is dark
-    const roomTrait = observerRoom.getTrait(RoomTrait);
-    const isDark = roomTrait && roomTrait.requiresLight;
+    // Check if room is dark (live evaluator first — ADR-240)
+    const isDark = this.roomRequiresLight(observerRoom, world);
     const hasLight = this.hasLightSource(observerRoom, world);
     
     // If it's dark and no light, only see specific things

@@ -105,13 +105,46 @@ function resolveSourceRoom(context: ActionContext): IFEntity | undefined {
   return currentRoom?.has(TraitType.ROOM) ? currentRoom : undefined;
 }
 
+/**
+ * ADR-240 evaluator keys for a room exit's derived blocking. Owned by this
+ * read point; registrars (the story-loader's blocked-exit lines) build
+ * the keys with these functions, never by hand.
+ */
+export function exitBlockedKey(roomId: string, direction: string): string {
+  return `exit.blocked.${roomId}.${direction}`;
+}
+
+/** Key for the blocked exit's refusal message, resolved AT REFUSAL TIME. */
+export function exitMessageKey(roomId: string, direction: string): string {
+  return `exit.message.${roomId}.${direction}`;
+}
+
+/**
+ * The live answer to "is this exit blocked?" (ADR-240): a registered
+ * `exit.blocked.*` evaluator is authoritative (point-of-use truth); with
+ * nothing registered, the stamped RoomTrait.blockedExits map applies
+ * unchanged (hand-written TS stories).
+ */
+function isExitBlockedLive(context: ActionContext, room: IFEntity, direction: DirectionType): boolean {
+  const derived = context.world.evaluate(exitBlockedKey(room.id, direction));
+  if (typeof derived === 'boolean') return derived;
+  return RoomBehavior.isExitBlocked(room, direction);
+}
+
+/** The blocked exit's message: registered evaluator first, trait map fallback. */
+function blockedMessageLive(context: ActionContext, room: IFEntity, direction: DirectionType): string | undefined {
+  const derived = context.world.evaluate(exitMessageKey(room.id, direction));
+  if (typeof derived === 'string') return derived;
+  return RoomBehavior.getBlockedMessage(room, direction);
+}
+
 /** The exit's door (via) and destination room, when the exit exists. */
 function resolveExitEntities(context: ActionContext): { door?: IFEntity; destination?: IFEntity } {
   const sourceRoom = resolveSourceRoom(context);
   const direction = resolveDirection(context);
   if (!sourceRoom || !direction) return {};
   // A blocked-only direction has no traversable exit (Chord `north is blocked:`)
-  if (RoomBehavior.isExitBlocked(sourceRoom, direction)) return {};
+  if (isExitBlockedLive(context, sourceRoom, direction)) return {};
   const exitConfig = RoomBehavior.getExit(sourceRoom, direction);
   if (!exitConfig) return {};
   const door = exitConfig.via ? (context.world.getEntity(exitConfig.via) ?? undefined) : undefined;
@@ -242,8 +275,8 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // with this message" whether or not an exit exists (a blocked-only
     // direction has no destination — e.g. Chord's `north is blocked:`,
     // ADR-210).
-    if (RoomBehavior.isExitBlocked(currentRoom, direction)) {
-      const blockedMessage = RoomBehavior.getBlockedMessage(currentRoom, direction) || "You can't go that way.";
+    if (isExitBlockedLive(context, currentRoom, direction)) {
+      const blockedMessage = blockedMessageLive(context, currentRoom, direction) || "You can't go that way.";
       return {
         valid: false,
         error: GoingMessages.MOVEMENT_BLOCKED,

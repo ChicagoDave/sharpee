@@ -6930,6 +6930,29 @@ export interface IWorldModel {
      */
     registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
     /**
+     * Register a named world-evaluator on this world. Read points consult
+     * evaluators at the moment of use ("mutations are instant; anything
+     * checking state gets the most current results") — nothing is cached,
+     * so nothing can go stale. Key conventions are owned by each read
+     * point's module (e.g. `dark.<roomId>`, `exit.blocked.<roomId>.<dir>`).
+     *
+     * Idempotent: re-registering a key overwrites the previous evaluator
+     * (last-registration-wins). Scoped to this world instance only.
+     *
+     * @param key - Namespaced evaluator key (built by the read point's exported key builder)
+     * @param fn - Evaluated against the live world at every consult
+     */
+    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+    /**
+     * Evaluate the named registered evaluator against the live world.
+     *
+     * @param key - The evaluator key
+     * @returns The evaluator's result, or `undefined` when nothing is
+     *   registered under the key (the caller's signal to fall through to
+     *   its static behavior)
+     */
+    evaluate(key: string): unknown;
+    /**
      * Resolve the behavior bound to a trait instance's capability on this world.
      *
      * @param trait - The trait instance claiming the capability
@@ -7124,6 +7147,12 @@ export declare class WorldModel implements IWorldModel {
     private capabilities;
     private capabilityBindings;
     private interceptorBindings;
+    /**
+     * ADR-240: the per-world evaluator registry — named world-evaluators
+     * consulted at point of use (live derived state; no cached derivations).
+     * Lives and dies with this WorldModel instance, like the binding maps.
+     */
+    private evaluators;
     private scoreLedger;
     private sceneConditions;
     private idCounters;
@@ -7140,6 +7169,8 @@ export declare class WorldModel implements IWorldModel {
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
     registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+    evaluate(key: string): unknown;
     getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
     getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
     getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
@@ -7442,8 +7473,22 @@ import { WorldModel } from './WorldModel';
  * Entities can claim this capability to control their own visibility.
  */
 export declare const VISIBILITY_CAPABILITY = "if.scope.visible";
+/**
+ * ADR-240 evaluator key for a room's derived darkness (`dark.<roomId>`).
+ * Owned by this read point; registrars (e.g. the story-loader's
+ * `dark while` conditions) build the key with this function, never by
+ * hand — the string is constructed in exactly two places, both pinned.
+ */
+export declare function darkKey(roomId: string): string;
 export declare class VisibilityBehavior extends Behavior {
     static requiredTraits: never[];
+    /**
+     * The live answer to "does this room require light?" (ADR-240): a
+     * registered `dark.<roomId>` evaluator is authoritative (point-of-use
+     * truth, never stale); with nothing registered, the stamped trait
+     * fact applies unchanged (static `dark`, hand-written TS stories).
+     */
+    private static roomRequiresLight;
     /**
      * Determines if a room is effectively dark (no usable light sources).
      * This is the single source of truth for darkness checking.
@@ -7684,6 +7729,8 @@ export declare class AuthorModel implements IWorldModel {
     hasCapability(name: string): boolean;
     registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
     getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+    evaluate(key: string): unknown;
     getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
     getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
     registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;

@@ -71,7 +71,7 @@ function trampleAndRead(cw: CloakWorld) {
   const wearable = cw.world.getEntity(cloakId)!.get(TraitType.WEARABLE) as { worn: boolean; wornBy?: string };
   wearable.worn = false;
   wearable.wornBy = undefined;
-  cw.story.runtime.recomputeDerived(cw.world);
+  // ADR-240: no recompute — the darkness evaluator answers live.
 
   const message = cw.world.getEntity(cw.story.entityId('message-in-the-sawdust')!)!;
   const lookup = cw.world.getInterceptorForAction(message, 'if.action.reading')!;

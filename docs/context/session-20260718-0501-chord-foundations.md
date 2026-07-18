@@ -40,8 +40,32 @@
 
 - **Phase 4 COMPLETE — WORKSTREAM COMPLETE; ADR-233 G2 CONFIRMED SATISFIED (David)**: amendment note in ADR-233 (proof linked; public-registry `npm i -g` deferral named, rides on Phase 8/G4); umbrella Phase 6 SHIPPED note; `.current-plan` → chord-go-live.
 
+## G3 started (post-G2, same session)
+- **Pattern selection RULED (David)**: the ☆ spine + G4/G5, canonical playthrough BROWSER-FIRST — recorded in the catalog's SELECTION section (32 patterns; C4 topics shipped earlier this session, no platform work rides on it).
+- session-planner wrote `docs/work/chord-tutorial-story/plan.md` (10 phases, 2,700 budget; review clean, one advisory on Phase 9 doc shape). `.current-plan` → chord-tutorial-story.
+- **Phase 1 design doc WRITTEN**: `docs/work/chord-tutorial-story/story-design.md` — "The Folly at Fernhill" (slug `fernhill`, stories/fernhill/ in-repo canonical + devkit-taught outside path recorded); 13 rooms/2 regions, 3 NPCs (Kettle guard, Tobias patrol+topics, Smoke follower/feedable), coupled D5→A5+E1 boiler/greenhouse chain as the logic centerpiece, fuse finale, 8 scores, two endings, all 32 patterns checklisted. **AWAITING DAVID'S SIGN-OFF (the Phase 1 blocking checkpoint) — no story prose at scale until it clears.**
+
+- **Phase 1 SIGNED OFF (David)**; B4 + red-herring cheap wins folded pre-sign-off (from the 124-pattern web-save design-catalog comparison; ifwiki renumbering pending — no external ids referenced).
+- **Phase 2 COMPLETE**: `stories/fernhill/fernhill.story` A-group skeleton (13 rooms/2 regions, 3 doors, dark cellar+lamp, live-state frost seal, crossing reactions, 2 daemons, first-time gates). 4 transcripts 62/62. Gotchas: additive `containing` lines (no trailing-comma continuation); negative assertions are `[OK: not contains "…"]` (`[NOT:]` silently dropped); first `look` = first visit; boiler switch-on line is "hums to life".
+
+- **Phase 3 COMPLETE (B-group)**: trunk/mantel with capacities, crowbar→crate→opener→tin R3 tool chain (explicit instrument), concealed keys (mat + overcoat pocket), curtains hiding-spot, both readable forms (clause prose + `with text` config), 15-entity scenery pass. 7 transcripts 129/129; cloak/zoo re-proven.
+- **PLATFORM FIX (David-approved)**: loader placement pass → `AuthorModel.moveEntity` (closed-container contents were silently dropped from `.story`; TS path always used AuthorModel). `closed-container-contents.test.ts`; story-loader 275/275; bundle rebuilt.
+- Gotchas: placement lines need article form (possessive entity names misparse as trait adjectives); container/supporter takes say "You take X from Y"; tool-openables need `open X with Y`.
+
+## ADR-240 detour (live derived state) — COMPLETE this session
+- Tutorial Phase 4's Kettle beat exposed the recompute-staleness class; David: "Remove the urgency… rethink" → elegance pass → **principle ruled: "Mutations are instant. Anything checking state should get the most current results."** ADR-240 drafted → reviewed 8/15 → fixed (D6 contract, D7 ACs, Q-format) → interview 3/3 (ONE generic per-world evaluator registry in world-model, David's "why not one?"; ALL blocks through the seam; audit-complete deletions) → ACCEPTED, review 15/15 → 3-phase plan → **implemented same session**.
+- Landed: `registerEvaluator`/`evaluate` (WorldModel/AuthorModel); `darkKey` + 3 visibility sites; `exitBlockedKey`/`exitMessageKey` + 2 going sites; loader registers ALL blocks + dark-whiles; blocked messages resolved AT REFUSAL TIME with all five strategies; recomputeDerived + trigger list + stamping DELETED. 15 new tests + 10 legacy tests moved to live reads.
+- Regression: world-model 1390, stdlib 1537, story-loader 278, chord 357, engine 513, repokit build, cloak 81/81 (incl. save/restore + re-darkening = AC-5 real-path), zoo both, fernhill 175/175. **ACs flagged to David, awaiting confirmation.**
+- Fernhill Phase 4 (C-group) went fully green en route: npcs 41/41 (guard block lifts LIVE on the softened state — ADR-240's AC-1; both topics tables; patrol caught via `[DO]…[UNTIL "enters from the"]`; entity-tier boiler ask; folly unjam). Story: Tobias `wait-turns 5 and announces-movement true`.
+- Gotchas: transcript UNTIL needs a `[DO]` opener; NPC announcements default OFF (`announces-movement true`); arrival text is "enters from the <dir>", and **"The Tobias enters…" article bug on proper-named NPCs (entityInfoFrom class) — cosmetic platform flag, not fixed**.
+
+## Tutorial Phases 4-5 closed (post-ADR-240)
+- Phase 4 DONE (gate met by the ADR-240 AC-1 run). **Phase 5 DONE**: boiler machine (3-stage, order-enforced, states mirrored via on-enter `change`), fuse both branches (incl. real `kill`), `at turn 14` timeline + story states, cellar drip + once-startle. Fernhill: 12 transcripts, 254/254. Phase 6 (E-group) CURRENT.
+
 ## Next session
-- Remaining pre-launch gates: **G3** (tutorial — umbrella Phase 7 step 2, David's pattern-catalog spine selection) and **G4** (Phase 8: version bump + `repokit verify` green + publish; also unlocks the deferred public-registry install proof step).
+- David confirms ADR-240 ACs → mark tutorial plan Phase 4 DONE (its gate is met) → Phase 5 (time/machine chain) or 6. Then 7, 8 (browser/media), 9 (docs+site), 10 (closure → G3 confirmation).
+- Remaining after G3: **G4** (Phase 8 umbrella: version bump + `repokit verify` + publish; unlocks the deferred public-registry install proof step).
+- Commit backlog: everything since 9a400668 (G3 phases 1-4 content, ADR-240 + implementation, loader AuthorModel fix) is uncommitted.
 - Open item for David (carried): actor `article: undefined` quirk.
 - Untracked noise: `docs/context/.devarch-events-*.jsonl` (a .gitignore entry would quiet them); `packages/sharpee/docs/genai-api/index.md` auto-regenerated by repokit builds (uncommitted, harmless).
 - No pre-G4 child workstreams remain. Umbrella Phase 6+ (G2 devkit/U2 pipeline) awaits its platform-change go-ahead; tutorial pattern-catalog spine selection (umbrella Phase 7 step 2) still awaits David.
