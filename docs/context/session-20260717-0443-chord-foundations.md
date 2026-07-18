@@ -65,7 +65,8 @@
 - Phase 11: 18 falsified doc claims fixed (phrasebook 4, stdlib-reference 10, chord-language 4), each live-verified before rewriting; 3 site pages re-rendered tag-balanced; phrasebook 68/68; chord harnesses 45/45 + 64/64.
 
 ## Open items
-- **Fix-after candidates for David**: `get out of X` doesn't parse as an exit form (grammar gap, docs never claimed it); bare `throw :item` grammar absent (throwing's general-throw branch parser-unreachable); thealderman's story `ask` pattern un-topiced (story-level); entity-level `phrases en-US` blocks not allowed per-entity (works as documented — observation only).
+- ~~`get out of X` + bare `throw :item`~~ FIXED (9202e462, David go-ahead): get/climb out of :container → exiting with target; throw/toss/hurl :item → general throw; 6 parser pins; all gates green.
+- Remaining fix-after candidates: thealderman's story `ask` pattern un-topiced (story-level); entity-level `phrases en-US` blocks not allowed per-entity (works as documented — observation only).
 - ADR-232 (Chord-first web presence) DRAFT, parked — David: website work will be more complex; treat as a fuller design conversation next time.
 - Parked (unchanged): chain RNG-death flake investigation (fresh evidence: ~1-in-3 clean chain runs this session, pre-existing per 0aaf30fe baseline); vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.
 - NOT pushed — all work is local commits on chord-foundations awaiting David's push call.
