@@ -21,12 +21,13 @@ import { IFActions } from '../../../src/actions/constants';
 import { standardActions } from '../../../src/actions/standard';
 
 describe('wired-action registry (ADR-228 D5)', () => {
-  test('covers all 37 entity-keyed standard actions with unique primary ids', () => {
+  test('covers all 38 entity-keyed standard actions with unique primary ids', () => {
     // 33 per ADR-228 Consequences + cutting (ADR-230 D3c) + digging,
-    // asking, telling (ADR-230 Phase 6)
-    expect(actionLifecycleDescriptors).toHaveLength(37);
+    // asking, telling (ADR-230 Phase 6) + turning (chord go-live G1
+    // shortlist, 2026-07-17)
+    expect(actionLifecycleDescriptors).toHaveLength(38);
     const primaryIds = actionLifecycleDescriptors.map((d) => d.actionId);
-    expect(new Set(primaryIds).size).toBe(37);
+    expect(new Set(primaryIds).size).toBe(38);
     for (const descriptor of actionLifecycleDescriptors) {
       expect(descriptor.slots.length).toBeGreaterThan(0);
       for (const slot of descriptor.slots) {

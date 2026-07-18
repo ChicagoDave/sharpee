@@ -1629,9 +1629,10 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor';
 /**
- * The descriptor table: all 37 entity-keyed standard actions (33 per
+ * The descriptor table: all 38 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
- * ADR-230 Phase 6). Structural exemptions
+ * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17).
+ * Structural exemptions
  * (no entity to key on: about, waiting, looking, … and the full-delegation
  * capability actions lowering/raising) are absent by design — see ADR-228
  * Context.

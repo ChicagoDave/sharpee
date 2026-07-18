@@ -5,6 +5,11 @@ standard action, daemon, plugin, and platform-browser emit must be expressible
 from a `.story` file — not just reachable in TypeScript. Chord is meant to be a
 complete authoring surface for the platform, not a subset.
 
+**Update 2026-07-17 (session 615882, go-live plan Phase 3)**: the mechanical
+shortlist closed — all 5 ❌ action gaps and 3 ⚠️ fixed (ratchet G1–G4 + D1/D3
+defect fixes + bare cut/dig grammar + turning lifecycle row). Part 1 now reads
+**50 ✅ / 4 ⚠️ / 0 ❌**; rows updated in place.
+
 **This revision**: full re-run 2026-07-17 (session f5c22c, ADR-233 go-live plan
 Phase 2). Seven parallel code-grounded investigators re-verified every Part 1
 verdict and re-audited Parts 2–4 against current code (post ADR-230/231, the
@@ -30,21 +35,20 @@ parity instrument.
 **Kind nouns** (take an article): `room`, `door`†, `person`, `container`,
 `supporter`.
 **Trait adjectives** (bare or with config): `scenery`, `wearable`, `readable`
-(`with text …`), `openable`, `lockable` (`with key <entity>`), `switchable`,
-`edible`, `light-source`, `plural`, `dark`, `enterable` (ratchet F1),
+(`with text …`), `openable` (`with tool <entity>`, ratchet G4), `lockable`
+(`with key <entity>`), `switchable`, `edible`, `drinkable` (ratchet G1),
+`concealed` (ratchet G2), `hiding-spot` (`with position <word>`, ratchet G3),
+`light-source`, `plural`, `dark`, `enterable` (ratchet F1),
 `climbable` (ratchet F2), `cuttable` (`with tool <entity>`), `diggable`
-(`with tool <entity>`), `pushable`‡, `pullable`‡.
+(`with tool <entity>`), `pushable`, `pullable` (both live since the Defect D1
+fix, 2026-07-17).
 **State initializers**: `starts open/closed/locked/unlocked/on/off` +
 generic `starts <state-adjective>` (ADR-231 D5).
 
 † `a door` **throws a LoadError** (`loader.ts:750-751` — "doors need `between`
 placement") — the door child ADR (ADR-233 G1, Q-1 ruled) closes this.
-‡ `pushable`/`pullable` are **catalog-listed but broken**: the loader's
-`applyTraitAdjectives` switch has no case for either, so they compile and then
-fail at load with a misleading "not a v1 adjective" error. See Defects.
 
-Notably **absent**: `drinkable`/liquid marking, `concealed`, a concealment
-("hiding-spot") adjective, `combatant`, `weapon`, `health`, `breakable`,
+Notably **absent**: `combatant`, `weapon`, `health`, `breakable`,
 `destructible`, any sound/listener trait, `npc`, `vehicle`, `region`.
 
 ## Verdict legend
@@ -52,7 +56,7 @@ Notably **absent**: `drinkable`/liquid marking, `concealed`, a concealment
 - **⚠️ partial** — the basic path works; a real dimension of the action has no Chord surface.
 - **❌ gap** — unreachable from Chord without platform work.
 
-## Manipulation (§2) — 11 ✅, 2 ❌
+## Manipulation (§2) — 13 ✅
 
 | Action | Requirement | Chord path | Verdict | Class | To close |
 |---|---|---|---|---|---|
@@ -64,13 +68,13 @@ Notably **absent**: `drinkable`/liquid marking, `concealed`, a concealment
 | giving | recipient ACTOR | `a person`; `on giving it` refusals | ✅ | CAN | — |
 | showing | viewer ACTOR, same room | `a person`; `on showing it` | ✅ | CAN | — |
 | throwing | none; bare + at/to forms | grammar complete (incl. bare `throw :item`, 9202e462) | ✅ | CAN | — |
-| pushing | PUSHABLE (`pushing.ts:133`) | **catalog has `pushable` (catalog.ts:35) but loader has no case → LoadError** | ❌ | CHORD-GAP | 1-line loader case `new PushableTrait({})` + fixture (Defect D1) |
-| pulling | PULLABLE (`pulling.ts:112`) | same break (catalog.ts:36) | ❌ | CHORD-GAP | same (Defect D1) |
+| pushing | PUSHABLE (`pushing.ts:133`) | `pushable` — loader case added (Defect D1 fixed 2026-07-17, default button-style config) | ✅ | CAN | — |
+| pulling | PULLABLE (`pulling.ts:112`) | `pullable` — same fix (default lever-style config) | ✅ | CAN | — |
 | touching | REACHABLE scope only | grammar complete | ✅ | CAN | — |
 | lowering | ADR-090 capability dispatch | **`define action lowering`** + `define trait … on lowering it` → CapabilityBehavior dispatch; story grammar @150 shadows core verb; the loader's dead-gerund diagnostic recommends exactly this path (`runtime.ts:261-266`) | ✅ | CAN | — (verdict FLIPPED from ❌: the binding surface exists now) |
 | raising | same | same; author must declare both `raise` and `lift` patterns to cover core aliases | ✅ | CAN | doc note only |
 
-## Movement (§3) & Senses (§6) — 8 ✅, 2 ⚠️, 1 ❌
+## Movement (§3) & Senses (§6) — 10 ✅, 1 ⚠️
 
 | Action | Requirement | Chord path | Verdict | Class | To close |
 |---|---|---|---|---|---|
@@ -80,17 +84,17 @@ Notably **absent**: `drinkable`/liquid marking, `concealed`, a concealment
 | climbing | CLIMBABLE or enterable supporter; directional via exits | `climbable` (ratchet F2) + `climb :target` family. (No bare `climb up/down` core rule — `go up` covers it; observation, not a gap) | ✅ | CAN | — |
 | examining | visible object | any entity + description | ✅ | CAN | — |
 | looking | always valid | any room | ✅ | CAN | — |
-| searching | closed container blocks; payoff = revealing `IdentityTrait.concealed` items | base search ✅; **no Chord surface sets `concealed`** (zero hits in chord/story-loader) | ⚠️ | CAN (base) / CHORD-GAP (reveal) | `concealed` marker adjective → `IdentityTrait.concealed = true`; searching then works with zero further platform work |
+| searching | closed container blocks; payoff = revealing `IdentityTrait.concealed` items | base search + `concealed` marker adjective (ratchet G2, 2026-07-17) | ✅ | CAN | — |
 | reading | READABLE | `readable with text …` | ✅ | CAN | — |
 | listening | always valid | text-varying traits composable | ✅ | CAN | — |
 | smelling | same-room target | composable | ✅ | CAN | — |
-| hiding | ConcealmentTrait + position extra | grammar DONE (`hide behind/under/in :target` supplies position via semantics, grammar.ts:1082-1098); **no adjective maps to ConcealmentTrait** | ❌ | CHORD-GAP | single missing piece: catalog adjective (e.g. `hiding-spot`) + loader case with positions config (cuttable-style) |
+| hiding | ConcealmentTrait + position extra | `hiding-spot [with position <word>]` (ratchet G3, 2026-07-17) + the existing `hide behind/under/in :target` grammar | ✅ | CAN | — |
 
-## Containers, wearing, devices, tools (§4/§5/§7) — 8 ✅, 2 ⚠️, 1 ❌
+## Containers, wearing, devices, tools (§4/§5/§7) — 11 ✅
 
 | Action | Requirement | Chord path | Verdict | Class | To close |
 |---|---|---|---|---|---|
-| opening | OPENABLE; optional tool gate (`OpenableBehavior.requiresTool`) | `openable`; D5b closed-default confirmed in code; **`with tool` config silently ignored by loader** (Defect D3) | ✅ | CAN | read tool config in loader `openable` case (pendingEntityRefs, cuttable precedent) |
+| opening | OPENABLE; optional tool gate (`OpenableBehavior.requiresTool`) | `openable [with tool <entity>]`; D5b closed-default confirmed in code; tool config wired (Defect D3 fixed 2026-07-17, ratchet G4) | ✅ | CAN | — |
 | closing | OPENABLE, open | `openable` | ✅ | CAN | — |
 | locking | LOCKABLE, closed, key if required | `lockable with key <entity>` (ADR-230 P9a) + `starts locked/unlocked` — old "keyed variant" caveat CLOSED | ✅ | CAN | — |
 | unlocking | LOCKABLE, locked | same | ✅ | CAN | — |
@@ -98,9 +102,9 @@ Notably **absent**: `drinkable`/liquid marking, `concealed`, a concealment
 | taking_off | worn by actor | same | ✅ | CAN | — |
 | switching_on | SWITCHABLE; power gate | `switchable` + `starts on/off` (requiresPower not composable — default trait only) | ✅ | CAN | — |
 | switching_off | SWITCHABLE, on | same | ✅ | CAN | — |
-| turning (NEW) | pure ADR-090 dispatch; grammar `turn/rotate/twist :target` exists | **no route**: `on turning it` = load-time dead-gerund error (no `turningLifecycle` in registry.ts:70-108); trait-clause behaviors register `chord.action.*` only; behavior hatch dead (Defect D2) | ❌ | CHORD-GAP | add `turningLifecycle` descriptor + registry row (cutting-style dual surface) — platform change, needs discussion |
-| cutting (NEW) | CUTTABLE + exactly-one implementation (behavior XOR interceptor) | `cuttable [with tool …]` + `on cutting it` both compose; **but grammar has ONLY `cut :object with :tool` — no bare `cut :target` anywhere** | ⚠️ | SHARPEE-GAP | bare `cut/slice/chop :target` grammar family — an untooled cuttable is unreachable for TS and Chord alike |
-| digging (NEW) | DIGGABLE, same structure | `diggable [with tool …]` + `on digging it`; same bare-grammar hole (`dig :location with :tool` only) | ⚠️ | SHARPEE-GAP | bare `dig :target` grammar |
+| turning (NEW) | dual surface (behavior XOR interceptor) since 2026-07-17; grammar `turn/rotate/twist :target` | `on turning it` — turning rewrote cutting-style with a `turningLifecycle` registry row, so the dead-gerund gate now passes (real-path test in quickwin-adjectives.test.ts) | ✅ | CAN | — |
+| cutting (NEW) | CUTTABLE + exactly-one implementation (behavior XOR interceptor) | `cuttable [with tool …]` + `on cutting it`; bare `cut/slice/chop :target` grammar added 2026-07-17 (untooled cuttables now reachable for TS and Chord alike) | ✅ | CAN | — |
+| digging (NEW) | DIGGABLE, same structure | `diggable [with tool …]` + `on digging it`; bare `dig :target` grammar added 2026-07-17 | ✅ | CAN | — |
 
 `deadly-room-death` is an internal system action (no grammar by design; redirect
 target of the engine's deadly-room transformer). Its authoring surface —
@@ -108,7 +112,7 @@ target of the engine's deadly-room transformer). Its authoring surface —
 from player-action counts. (`is deadly while <cond>` parses but is explicitly
 not wired — pre-existing, documented.)
 
-## NPCs, conversation & consumption (§8) — 2 ✅, 3 ⚠️, 1 ❌
+## NPCs, conversation & consumption (§8) — 3 ✅, 3 ⚠️
 
 | Action | Requirement | Chord path | Verdict | Class | To close |
 |---|---|---|---|---|---|
@@ -116,7 +120,7 @@ not wired — pre-existing, documented.)
 | asking (NEW) | ACTOR; reads `command.topic` (ADR-231 D4) | eligibility + `:topic` grammar ✅; `on asking it` gives ONE blanket answer; **Chord has zero topic surface** (no `topic` anywhere in chord/story-loader) — no per-topic branching | ⚠️ | CHORD-GAP | expose topic to on-clauses, e.g. `on asking it about "sword"` or a `the topic is …` condition (one surface serves asking+telling) |
 | telling (NEW) | same shape | same | ⚠️ | CHORD-GAP | same |
 | eating | EDIBLE, not liquid, servings | `edible` | ✅ | CAN | — |
-| drinking | EDIBLE.liquid OR CONTAINER.containsLiquid (`drinking.ts:236-246`) | **no path**: no `drinkable` adjective, loader's `edible` never sets `liquid`, `containsLiquid` unreachable, custom traits are `chord.trait.*` not EDIBLE, interceptors can't force validity | ❌ | CHORD-GAP | `drinkable` adjective → `EdibleTrait({ liquid: true })` (or `edible with liquid`) — plan Phase 3 quick win |
+| drinking | EDIBLE.liquid OR CONTAINER.containsLiquid (`drinking.ts:236-246`) | `drinkable` adjective → `EdibleTrait({ liquid: true })` (ratchet G1, 2026-07-17; order-independent with `edible`) | ✅ | CAN | — |
 | attacking | any target validates; plain target → inert "no effect"; COMBATANT combat needs a registered combat interceptor | verb + **scripted combat ✅**: `on attacking it` refuses/overrides freely (kill the player, change, remove, lose). Systemic combat ❌: no combatant/weapon/health adjectives, no extension opt-in surface | ⚠️ | CAN (narrative) / CHORD-GAP (systemic) | extension-use surface (Part 3); narrative fights need nothing |
 
 ## Meta & system (§9) — 13 ✅
@@ -128,20 +132,24 @@ trait. All parse. All CAN.
 
 ## Part 1 result — 54 player-facing actions
 
-**42 ✅ full · 7 ⚠️ partial · 5 ❌ gaps** (the set grew from 49 to 54:
-asking, telling, turning, cutting, digging now have rows; deadly-room-death
-excluded as internal).
+**50 ✅ full · 4 ⚠️ partial · 0 ❌ gaps** (updated 2026-07-17, session 615882:
+the go-live plan Phase 3 mechanical shortlist closed all 5 ❌ gaps and 3 of the
+7 ⚠️ — every item individually signed off by David).
 
 | Bucket | Actions |
 |---|---|
-| ❌ gaps (5) | pushing, pulling (Defect D1 — loader cases missing), hiding (adjective add), turning (lifecycle row — discuss), drinking (quick win, plan Phase 3) |
-| ⚠️ partial (7) | going (doors → child ADR), searching (`concealed` adjective), cutting, digging (bare-verb grammar, SHARPEE-GAP), asking, telling (topic surface), attacking (systemic combat → extension surface) |
+| ⚠️ partial (4) | going (doors → child ADR, Phase 4), asking, telling (topic surface), attacking (systemic combat → extension surface, Phase 5) |
 
-Changes vs the 2026-07-15 audit: pushing/pulling ✅→❌ (were never actually
-loadable); lowering/raising ❌→✅ (`define action` shadowing path is live and
-recommended by the loader's own diagnostic); going/searching ✅→⚠️; attacking
-❌→⚠️; hiding's gap narrowed (grammar half already done); locking's caveat
-closed; 5 new rows.
+Shortlist closures 2026-07-17 (session 615882): pushing, pulling (D1 loader
+fix), drinking (`drinkable`, G1), searching (`concealed`, G2), hiding
+(`hiding-spot`, G3), opening tool config (D3/G4), cutting, digging (bare-verb
+grammar, SHARPEE-GAP closed), turning (lifecycle row + cutting-style rewrite).
+
+Changes vs the 2026-07-15 audit (recorded by the f5c22c re-run): pushing/pulling
+✅→❌ (were never actually loadable); lowering/raising ❌→✅ (`define action`
+shadowing path is live and recommended by the loader's own diagnostic);
+going/searching ✅→⚠️; attacking ❌→⚠️; hiding's gap narrowed (grammar half
+already done); locking's caveat closed; 5 new rows.
 
 ## Part 2 — Daemons & fuses (re-verified 2026-07-17)
 
@@ -251,9 +259,9 @@ runtime check before recording as a defect (Defect D5).
 
 | # | Finding | Nature |
 |---|---|---|
-| D1 | `pushable`/`pullable`: catalog accepts, loader throws misleading "not a v1 adjective" — compile/load contract break (`--check` passes a story that load rejects) | defect; ~6-line fix + fixtures |
-| D2 | `define behavior … from` hatch: bound, validated, never consumed (`boundBehaviors` has no reader) — can never fire; root of turning gap | defect (dead feature) |
-| D3 | `openable with tool X` compiles and is silently ignored (no per-adjective config-key validation in analyzer) | defect (silent drop) |
+| D1 | ~~`pushable`/`pullable`: catalog accepts, loader throws misleading "not a v1 adjective" — compile/load contract break~~ **FIXED 2026-07-17** (session 615882): loader cases added + fixtures | fixed |
+| D2 | `define behavior … from` hatch: bound, validated, never consumed (`boundBehaviors` has no reader) — can never fire; ~~root of turning gap~~ (turning re-routed via its lifecycle row 2026-07-17; hatch itself still dead — Phase 5 extension-surface ADR resolves or subsumes it) | defect (dead feature) |
+| D3 | ~~`openable with tool X` compiles and is silently ignored~~ **FIXED 2026-07-17** (session 615882): loader reads the tool config (resolved world id). The broader gap — no per-adjective config-key validation in the analyzer, so unknown config keys on any adjective still drop silently — remains open | fixed (narrow); analyzer validation open |
 | D4 | `death` channel: `data.message` vs `messageId` producer/consumer mismatch — channel is never fed by anything | SHARPEE wire gap |
 | D5 | `endgame` channel: `game.won/lost` emitted after packet build + turn-event clear — channel delivery doubtful (UNVERIFIED at runtime) | needs runtime check |
 | D6 | `Fuse.entityId` auto-cleanup: `cleanupEntity` has zero callers platform-wide; Chord's `remove <entity>` doesn't invoke it either | TS latent gap |
@@ -263,7 +271,7 @@ runtime check before recording as a defect (Defect D5).
 
 | Surface | Reachable today | Gap |
 |---|---|---|
-| **Actions** | 42/54 full + 7 partial | 5 gaps; door construct still doesn't load (child ADR ruled, Q-1) |
+| **Actions** | 50/54 full + 4 partial (2026-07-17 shortlist closure) | 0 hard gaps; door construct still doesn't load (child ADR ruled, Q-1) |
 | **Daemons/fuses** | fixed timelines + presence-gated recurring | imperative timer management (cancel, inline delay, period, reschedule, priority) + **no story-global daemon** |
 | **Plugins/extensions** | scheduler only; in-language define trait/action strong | NPC + state-machine plugins never registered for Chord; no opt-in surface; systemic combat unreachable; behavior hatch dead (D2) |
 | **Browser emits** | all text surfaces (incl. `kill the player`) | all media/audio channels; dotted event types unlexable; no payload; no channel registration (ADR-215/216 ACCEPTED, unimplemented) |
@@ -274,10 +282,11 @@ runtime check before recording as a defect (Defect D5).
 3. **Emit payload + media** — ADR-215/216 accepted, unimplemented.
 4. **Topic surface for asking/telling** — new since last audit (the actions grew topics; Chord can't see them).
 
-**The mechanical shortlist** (small, high-value): D1 pushable/pullable loader
-cases; `drinkable` (plan Phase 3); `concealed` adjective; hiding-spot adjective;
-bare `cut`/`dig` grammar (SHARPEE-GAP); openable tool config (D3); turning
-lifecycle row.
+**The mechanical shortlist — CLOSED 2026-07-17** (session 615882, plan Phase 3;
+each item signed off by David, ratchet entries G1–G4 + recorded closures): D1
+pushable/pullable loader cases ✅; `drinkable` ✅; `concealed` ✅; `hiding-spot`
+✅; bare `cut`/`dig` grammar ✅; openable tool config (D3) ✅; turning lifecycle
+row ✅.
 
 ## Process
 

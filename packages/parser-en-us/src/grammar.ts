@@ -593,6 +593,15 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .withPriority(110)
     .build();
 
+  // Cutting — bare form (2026-07-17, chord go-live G1 shortlist): an
+  // untooled cuttable was unreachable for TS and Chord alike; the tooled
+  // form above keeps priority 110 so it wins when a tool is named.
+  grammar
+    .forAction('if.action.cutting')
+    .verbs(['cut', 'slice', 'chop'])
+    .pattern(':target')
+    .build();
+
   // Attacking - simple patterns (ADR-087: using forAction)
   grammar
     .forAction('if.action.attacking')
@@ -635,6 +644,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .instrument('tool')
     .mapsTo('if.action.digging')
     .withPriority(110)
+    .build();
+
+  // Digging — bare form (2026-07-17, chord go-live G1 shortlist): same
+  // bare-grammar hole as cutting.
+  grammar
+    .forAction('if.action.digging')
+    .verbs(['dig'])
+    .pattern(':target')
     .build();
 
   // Communication patterns (saying/saying_to/writing/writing_on/shouting/

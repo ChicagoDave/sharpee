@@ -41,6 +41,9 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'climbable', // ADR-218 §1a (ratchet F2) — composes ClimbableTrait
   'cuttable', // ADR-230 D3c — composes CuttableTrait; `with tool <entity>` config; requires a cut implementation
   'diggable', // ADR-230 Phase 6 — composes DiggableTrait; same tool config + implementation rule as cuttable
+  'drinkable', // ratchet G1 (2026-07-17) — composes EdibleTrait with liquid=true (drunk, not eaten)
+  'concealed', // ratchet G2 (2026-07-17) — marker: IdentityTrait.concealed = true; searching reveals
+  'hiding-spot', // ratchet G3 (2026-07-17) — composes ConcealmentTrait; bare = all positions, `with position <word>` narrows
 ]);
 
 /**

@@ -42,7 +42,7 @@
 - **Entry state**: Phase 2's refreshed audit (or the existing one — `enterable`/`climbable` are already closed per ADR-218 §1a; the only open mechanical item is the `drinkable`-class liquid marker).
 - **Deliverable**: Each remaining mechanical quick-win adjective is either closed (ratchet entry in `docs/architecture/chord-grammar-changes.md` + catalog/loader change, David's sign-off per the ratchet process) or individually ruled out by David with the ruling recorded — no silent deferrals, per ADR-233's G1 wording.
 - **Exit state**: G1's "quick wins" line item is fully dispositioned — nothing left unstated.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, session 615882) — all 7 shortlist items signed off CLOSE by David and implemented: D1 pushable/pullable loader cases, `drinkable` (ratchet G1), `concealed` (G2), `hiding-spot` (G3), openable `with tool` config (G4/D3), bare cut/slice/chop + dig grammar (parser-en-us), turning lifecycle row (cutting-style rewrite, registry 37→38). Ratchet entries logged; audit updated to 50 ✅ / 4 ⚠️ / 0 ❌; suites green (stdlib 1530, story-loader 187 incl. 12 new, parser 271, chord 257); cloak + zoo story gates green; dungeo unit suite at its known combat-RNG baseline (troll-GDT flake class, pre-existing open decision).
 
 ### Phase 4: G1 — door loading child ADR (Q1 RESOLVED — scope fixed)
 - **Tier**: Medium

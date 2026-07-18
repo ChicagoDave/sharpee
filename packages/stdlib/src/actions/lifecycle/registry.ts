@@ -56,13 +56,15 @@ import { talkingLifecycle } from '../standard/talking/talking';
 import { tellingLifecycle } from '../standard/telling/telling';
 import { throwingLifecycle } from '../standard/throwing/throwing';
 import { touchingLifecycle } from '../standard/touching/touching';
+import { turningLifecycle } from '../standard/turning/turning';
 import { unlockingLifecycle } from '../standard/unlocking/unlocking';
 import { wearingLifecycle } from '../standard/wearing/wearing';
 
 /**
- * The descriptor table: all 37 entity-keyed standard actions (33 per
+ * The descriptor table: all 38 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
- * ADR-230 Phase 6). Structural exemptions
+ * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17).
+ * Structural exemptions
  * (no entity to key on: about, waiting, looking, … and the full-delegation
  * capability actions lowering/raising) are absent by design — see ADR-228
  * Context.
@@ -103,6 +105,7 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   tellingLifecycle,
   throwingLifecycle,
   touchingLifecycle,
+  turningLifecycle,
   unlockingLifecycle,
   wearingLifecycle
 ]);

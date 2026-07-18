@@ -46,6 +46,7 @@ import {
   ActorTrait,
   CapabilityBehavior,
   ClimbableTrait,
+  ConcealmentTrait,
   ContainerTrait,
   CuttableTrait,
   DiggableTrait,
@@ -62,6 +63,8 @@ import {
   LightSourceTrait,
   LockableTrait,
   OpenableTrait,
+  PullableTrait,
+  PushableTrait,
   ReadableTrait,
   registerClauseContributor,
   RoomBehavior,
@@ -902,9 +905,24 @@ export class ChordStory implements Story {
         case 'readable':
           entity.add(new ReadableTrait({ text: configValue(trait, 'text') ?? '' }));
           break;
-        case 'openable':
-          if (!entity.has(TraitType.OPENABLE)) entity.add(new OpenableTrait());
+        case 'openable': {
+          // Defect D3 fix (2026-07-17, ratchet G4): `openable with tool the
+          // crowbar` gates opening on holding the tool (OpenableTrait.toolId,
+          // ADR-230 D3b). Name → world id via the shared pending mechanism —
+          // never the raw display-name string (the lockable-bug class).
+          if (entity.has(TraitType.OPENABLE)) break;
+          const openable = new OpenableTrait();
+          const openToolName = configValue(trait, 'tool');
+          if (openToolName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(openToolName, 'tool', irEntity, trait.span, (worldId) => {
+                openable.toolId = worldId;
+              }),
+            );
+          }
+          entity.add(openable);
           break;
+        }
         case 'lockable': {
           // ADR-230 Phase 9a: `with key X` resolves name → world id through
           // the shared pending mechanism (forward refs legal) — the raw
@@ -945,8 +963,55 @@ export class ChordStory implements Story {
           entity.add(new SwitchableTrait());
           break;
         case 'edible':
-          entity.add(new EdibleTrait());
+          // Guarded so `edible, drinkable` composes order-independently —
+          // a bare re-add here would drop drinkable's liquid flag.
+          if (!entity.has(TraitType.EDIBLE)) entity.add(new EdibleTrait());
           break;
+        case 'drinkable': {
+          // Ratchet G1 (2026-07-17): the liquid marker — EDIBLE.liquid is
+          // what routes the entity to drinking instead of eating.
+          const edible = entity.get(TraitType.EDIBLE) as EdibleTrait | undefined;
+          if (edible) edible.liquid = true;
+          else entity.add(new EdibleTrait({ liquid: true }));
+          break;
+        }
+        case 'pushable':
+          // Defect D1 fix (2026-07-17): the catalog accepted these two but
+          // the loader had no case — `--check` passed stories that load
+          // rejected. Default config (button-style, repeatable).
+          if (!entity.has(TraitType.PUSHABLE)) entity.add(new PushableTrait({}));
+          break;
+        case 'pullable':
+          if (!entity.has(TraitType.PULLABLE)) entity.add(new PullableTrait({}));
+          break;
+        case 'concealed': {
+          // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
+          // view until searching reveals it (IdentityTrait.concealed).
+          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+          if (identity) identity.concealed = true;
+          break;
+        }
+        case 'hiding-spot': {
+          // Ratchet G3 (2026-07-17): bare = the actor may hide at any
+          // position; `with position <word>` narrows to exactly one.
+          const HIDING_POSITIONS = ['behind', 'under', 'on', 'inside'] as const;
+          const position = configValue(trait, 'position');
+          if (position !== undefined && !(HIDING_POSITIONS as readonly string[]).includes(position)) {
+            throw new LoadError(
+              `\`${position}\` is not a hiding position — use behind, under, on, or inside.`,
+              trait.span,
+            );
+          }
+          entity.add(
+            new ConcealmentTrait({
+              positions: position
+                ? [position as (typeof HIDING_POSITIONS)[number]]
+                : [...HIDING_POSITIONS],
+              quality: 'good',
+            }),
+          );
+          break;
+        }
         case 'enterable': // ADR-218 §1a (ratchet F1) — default config, preposition `in`
           if (!entity.has(TraitType.ENTERABLE)) entity.add(new EnterableTrait());
           break;
