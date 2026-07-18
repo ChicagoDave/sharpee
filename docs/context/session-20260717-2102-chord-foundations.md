@@ -19,8 +19,14 @@
 - Part 2 new findings: presence gating (no story-global daemon surface at all); sequences can't be suspended; TS runOnce vs `, once` semantic delta. Part 3: NpcPlugin/StateMachinePlugin NEVER registered for Chord stories; behavior hatch (`define behavior from`) is dead code — boundBehaviors has no consumer (root of turning gap; 2 agents independently confirmed). Part 4: dotted event types unlexable (sharper than "no payload"); audibility channel missed by old audit; ADR-215/216 accepted but zero implementation; death-channel wire mismatch (message vs messageId); endgame-channel delivery doubtful (unverified).
 - 7 defects/latents recorded in the audit's new "Defects & latent findings" table (D1-D7), surfaced per no-silent-gaps policy.
 
-## Open items
-- **Q-2 re-raised to David** (his deferral trigger fired: Phase 2 audit numbers now current) — capability-dispatch/extension surface in-gate vs post-launch. ADR-233 ACCEPTED flip available once ruled.
-- Defects D1-D7 need David's disposition (fix now as ratchet/defect work vs fold into gate phases).
+## Close-out
+- **Q-2 RULED: extension/plugin opt-in surface IN-GATE** (option 1) — plan Phase 5 re-scoped as the extension-surface child ADR (design only; must also resolve/subsume dead behavior hatch D2). Capability-verb half needs no design phase (audit verified `define action` path live; turning row → mechanical shortlist).
+- **ADR-233 ACCEPTED** (David: "accept and finalize"): adr-review scored 8/10 with 2 staleness FAILs, both fixed pre-flip (G1 quick-wins line → refreshed mechanical shortlist; G4 playground reference dropped; Consequences decomposition + Session updated).
+- Defect disposition (D1–D7): David did not rule separately; D2 is folded into Phase 5's deliverable, D1/D3 + turning row sit in the mechanical shortlist under G1 (each still needs per-item sign-off or rule-out). D4/D5/D6/D7 recorded in the audit, undispositioned.
+
+## Status: COMPLETE
+
+## Next session
+- Natural openers, all unblocked and independent: Phase 3 (mechanical shortlist — needs David's per-item sign-off), Phase 4 (door child ADR draft, scope fully ruled), Phase 5 (extension-surface child ADR draft), Phase 6 (U2 delivery — needs discussion-first go-ahead), Phase 7 step 1 (IF-pattern catalog for the tutorial).
 - Planner's side note: ADR-233 cites ADR-180 U2 without noting ADR-187 partially superseded that checklist — optional one-line amendment, David's call.
 - Nothing committed yet this session (plan + ADR-233 amendments + this file uncommitted).

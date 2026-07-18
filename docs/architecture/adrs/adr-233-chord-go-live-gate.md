@@ -1,6 +1,6 @@
 # ADR-233: Chord Go-Live Gate — what "ready for outside authors" means
 
-## Status: DRAFT (1 open question — Q-2, deferred until the parity audit re-run)
+## Status: ACCEPTED (2026-07-17 — all four open questions ruled by David, session f5c22c; adr-review passed post-fix)
 
 ## Date: 2026-07-17
 
@@ -63,12 +63,26 @@ no-scope-reduction rule of the parity north star applies).
     own design conversation later. The door design must not foreclose
     that generalization (door `between` should remain a compatible
     special case of whatever the future primitive becomes).
-- The audit's mechanical quick wins (trait adjectives on the
-  closed-list model: `enterable`, `climbable`, drinkable-class) are
-  closed or individually ruled out by David — no silent deferrals.
-- Design-heavy remainder (capability-dispatch verb exposure, the
-  extension surface) is explicitly dispositioned: in-gate, or
-  ruled post-launch by David with the ruling recorded here.
+- The audit's mechanical quick wins are closed or individually ruled
+  out by David — no silent deferrals. Per the 2026-07-17 refreshed
+  audit, the mechanical shortlist is: `drinkable`, `concealed`,
+  a hiding-spot adjective, bare `cut`/`dig` grammar (SHARPEE-GAP),
+  the pushable/pullable loader cases (defect D1), openable tool
+  config (D3), and the turning lifecycle row. (`enterable`/
+  `climbable` were already closed pre-ADR by ADR-218 §1a.)
+- Design-heavy remainder — dispositioned [Q-2 resolved 2026-07-17,
+  session f5c22c, ruled on the refreshed audit's numbers]:
+  - Capability-dispatch verb exposure largely closed itself: the
+    2026-07-17 audit verified `define action <verb>` + `define trait
+    … on <verb> it` is the live, loader-recommended Chord path
+    (lowering/raising now CAN). `turning` needs one mechanical
+    lifecycle-registry row — quick-win class, not design work.
+  - **The extension/plugin opt-in surface is IN-GATE**: its child
+    ADR (design for `use <extension>`-class opt-in admitting an
+    extension's traits/verbs into the composable vocabulary —
+    systemic combat, NPC library, channel registration) is drafted
+    and interviewed before launch. Implementation scope is decided
+    by that child ADR, not assumed here.
 
 ### G2 — Outside-author pipeline
 
@@ -101,8 +115,9 @@ no-scope-reduction rule of the parity north star applies).
 ### G4 — Release hygiene
 
 - Version bumped; `repokit verify` fully green including the publish
-  dry-run; the published npm packages are the ones the playground and
-  tutorial reference.
+  dry-run; the published npm packages are the ones the tutorial
+  references. (Playground reference dropped 2026-07-17 — out of the
+  gate per the Q-4 ruling.)
 
 **Explicitly NOT in the gate:** the Chord-Zork completeness matrix
 (P1–P33 + melee) — that remains the post-launch north star; go-live
@@ -110,11 +125,13 @@ needs a door to open, not a dungeon to finish.
 
 ## Consequences
 
-- Go-live work decomposes into: audit re-run (session-sized), a door
-  ADR (child of this one), quick-win trait adjectives (ratchet
-  entries), U2 delivery, one tutorial, and a release. Each is
-  plannable independently; this ADR is the umbrella and is never
-  implemented directly (ADR-first policy) — children carry the work.
+- Go-live work decomposes into: audit re-run (done 2026-07-17), a
+  door ADR (child of this one), an extension-surface ADR (child,
+  in-gate per Q-2), mechanical quick wins + defect fixes (ratchet/
+  defect entries), U2 delivery, the pattern-first tutorial (own
+  plan), and a release. Each is plannable independently; this ADR is
+  the umbrella and is never implemented directly (ADR-first policy) —
+  children carry the work.
 - ADR-232 (site restructure) and ADR-191 (playground) are post-launch
   work: ruled out of the gate 2026-07-17. ADR-232 stays parked as a
   fuller design conversation; ADR-191 stays PROPOSED with its own
@@ -128,20 +145,7 @@ needs a door to open, not a dungeon to finish.
 Session 1befbd (2026-07-17, chord-foundations). Drafted from the
 go-live assessment David requested after ADR-231's completion; door
 LoadError and audit staleness verified live before drafting.
+All four open questions ruled by David in session f5c22c (2026-07-17):
+Q-4 by direct ruling, Q-1/Q-3 via /devarch:adr-interview, Q-2 after
+the Phase 2 audit re-run per its deferral trigger.
 
-## Open Questions
-
-### Q-2: Capability-dispatch verbs and the extension surface — in-gate or post-launch?
-- **Why it matters**: lowering/raising/wave-class verbs and `use
-  <extension>` exposure are the design-heavy half of parity; ruling
-  them post-launch shrinks the gate materially without breaking the
-  no-scope-reduction rule only if David rules it explicitly.
-- **Blocks**: G1's disposition line.
-- **Deferred 2026-07-17 (session f5c22c)**: David ruled to decide
-  this AFTER the parity audit re-run (plan Phase 2) delivers current
-  numbers — re-raise it then, not before.
-
-### ~~Q-4: Is the playground a hard G3 gate or a fast-follow?~~ RESOLVED 2026-07-17
-- David ruled the playground (and the ADR-232 site restructure) out of
-  the launch gate entirely — post-launch work. Folded into G3's
-  amendment above.

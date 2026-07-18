@@ -33,7 +33,7 @@
 - **Entry state**: None (independent of Phase 1's Q&A — this is a mechanical re-verification, not a design decision). May run before, after, or interleaved with Phase 1.
 - **Deliverable**: Refreshed `docs/work/stdlib-reference/chord-availability-audit.md` — Part 1 (actions) re-verified against current platform state (several gaps already closed by ADR-230/231, e.g. `enterable`/`climbable`), and Parts 2–4 (daemons/fuses, plugins/extensions, browser emits) run for the first time, each with the same CAN/CHORD-GAP/SHARPEE-GAP/HATCH taxonomy.
 - **Exit state**: A single committed, current parity map covering all four parts — the input document Phases 3–5 read from instead of the stale one. **On completion, re-raise Q-2 to David** (his deferral trigger: rule capability-dispatch/extension disposition with current numbers).
-- **Status**: CURRENT
+- **Status**: COMPLETE (2026-07-17, e277bd1a) — 54 actions 42✅/7⚠️/5❌; Parts 2–4 re-verified; defects D1–D7 recorded; Q-2 re-raised and ruled (in-gate)
 
 ### Phase 3: G1 — quick-win trait adjectives (ratchet entries)
 - **Tier**: Small
@@ -53,16 +53,13 @@
 - **Exit state**: A DRAFT or ACCEPTED child ADR for door loading exists, linked from ADR-233.
 - **Status**: PENDING
 
-### Phase 5: G1 — capability-dispatch verbs + extension surface disposition (CONDITIONAL on Q2)
-- **Tier**: Medium
-- **Budget**: 250 (applies only to the in-gate branch; see below)
-- **Domain focus**: capability dispatch (ADR-090), lowering/raising/wave-class verb exposure, `use <extension>` surface
-- **Entry state**: Phase 2 complete — Q-2 was deferred by David's ruling (2026-07-17) until the refreshed audit delivers current numbers; Phase 2's exit re-raises it, and this phase runs only after that ruling.
-- **Deliverable**: depends entirely on the branch below.
-- **Exit state**: G1's "design-heavy remainder" line item is explicitly dispositioned in ADR-233, per the no-scope-reduction rule (a post-launch ruling must be recorded by David, not assumed).
-- **CONDITIONAL branches** (do not size further until Q2 resolves):
-  - **If Q2 rules in-gate**: this phase drafts the capability-dispatch-verb-exposure child ADR(s) (design only, no implementation) — the design-heavy half of parity, likely warranting its own plan.
-  - **If Q2 rules post-launch**: this phase collapses to recording David's ruling in ADR-233 (already largely done by Phase 1's interview) — no further design or implementation work is needed for go-live.
+### Phase 5: G1 — extension/plugin opt-in surface child ADR (Q2 RESOLVED — in-gate)
+- **Tier**: Large (design-heavy; the child ADR likely carries its own interview + follow-on plan)
+- **Budget**: 300
+- **Domain focus**: a Chord opt-in surface (`use <extension>`-class) admitting an extension's traits/verbs into the composable vocabulary — systemic combat (combatant/weapon/health + registerBasicCombat), NPC plugin/behavior library, channel registration (the ADR-215/216 registration leg)
+- **Entry state**: Phase 2 complete (done). Q-2 ruled 2026-07-17: IN-GATE. The capability-verb half needs no design phase — audit verified `define action` + `on <verb> it` live (lowering/raising CAN); turning's lifecycle row moves to the mechanical shortlist.
+- **Deliverable**: Draft the extension-surface child ADR (design only): what an author writes to opt in, what the opt-in admits (traits, verbs, channels), how it composes with the pure-IR profile and the ratchet, and how the dead behavior-hatch path (audit Defect D2) is resolved or subsumed. Run its open-questions interview. **Implementation is out of scope for this plan** — an ACCEPTED child ADR gets its own follow-on plan, and G1 closes on that ADR's own gate definition.
+- **Exit state**: A DRAFT or ACCEPTED extension-surface child ADR exists, linked from ADR-233; G1's design-heavy remainder line is fully dispositioned.
 - **Status**: PENDING
 
 ### Phase 6: G2 — ADR-180 Phase U2 delivery (outside-author pipeline)
@@ -95,6 +92,6 @@
 - **Status**: PENDING
 
 ## Dependency summary
-- Phase 1 is COMPLETE (2026-07-17): Q-1 and Q-3 ruled; Q-2 deferred until Phase 2's audit lands — Phase 2's exit re-raises it, and Phase 5 waits on that ruling.
-- Phases 2 (CURRENT), 3, 4, 6, 7 are now all unconditionally shaped and independent of each other — any order.
+- Phases 1 and 2 are COMPLETE (2026-07-17): all ADR-233 questions ruled (Q-2 in-gate, on the refreshed audit's numbers); refreshed audit committed. **ADR-233 is ACCEPTED** (adr-review passed after two staleness fixes).
+- Phases 3, 4, 5, 6, 7 are all unconditionally shaped and independent of each other — any order. Phase 3's quick-win list grew per the audit's mechanical shortlist (drinkable + concealed + hiding-spot + bare cut/dig grammar + D1/D3 defect fixes + turning lifecycle row — each still needs David's per-item sign-off or rule-out per G1).
 - Phase 8 is the terminal phase — it depends on every other phase's *disposition* (closed, ruled out, or explicitly deferred), not necessarily every phase's full completion. Note G3 closes on the tutorial *shipping*, which extends beyond Phase 7's catalog/selection/planning step.
