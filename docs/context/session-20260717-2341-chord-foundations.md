@@ -30,7 +30,20 @@
 - Platform-alignment assessment (David asked): no platform redesign needed; four named touch-points — trait field-enumeration consts for conformance, story-loader deps on plugin-npc/plugin-state-machine/basic-combat, a possible capability-read seam for `client has` (raise if missing, don't bridge), the extension renderer leg only if a novel renderer is actually needed.
 - `.current-plan` → docs/work/chord-extension-surface/plan.md (Phase 1 CURRENT).
 
-## Status: COMPLETE (regions shipped + extension-surface plan ready; committing, then Phase 1)
+## Extension-surface Phase 1 (post-commit a9e2f655/c226a4c9)
+- **Phase 1 COMPLETE (D2 removal + `use` + manifests + registry + combat)**: `define behavior` hatch removed (parse error + fix-it, loader map deleted, 4 test sites migrated); `use <name>` header line → `StoryIR.uses`; manifest mechanism (packages/chord/src/manifests/ — pure data; 5 analyzer gate diagnostics); loader trusted registry (combat → registerBasicCombat) + `applyCombatAdjective` with exported COMBAT_FIELD_ROUTES (health→HealthTrait auto-attach per ADR-226); manifest-conformance test (probe-value introspection; registry names pinned to manifest names). AC-1 REAL-PATH: real attackingAction through BasicCombatInterceptor mutates troll HealthTrait. 3 ratchet rows. Suites: chord 289, story-loader 220; cloak/zoo compile unchanged.
+- Build-infra fix: basic-combat lacked dist-esm (CJS-only build script) — given the workspace-standard `tsc && tsc -p tsconfig.esm.json` + tsconfig.esm.json (plugin-scheduler pattern).
+- **Flag for David**: ADR-215's example `combatant with health 20, skill 40` uses commas, but the existing config grammar separates with `and` — normalized to `and` (one grammar, Given 7), noted in the combat ratchet row.
+
+- **Phase 2 COMPLETE (NPC auto-wire + behavior vocabulary)**: core manifest mechanism (`core: true` — always admitted, `use npc` refused via `analysis.extension-core`); NpcPlugin unconditional in onEngineReady; five behavior adjectives; NEW `[ … ]` config-list grammar (lexer brackets; manifest-declared list fields only); loader routing (percent→fraction move-chance, per-entity behavior ids, patrol routes resolved at engine-ready, room-list NpcTrait fields via pending refs). 4 chord + 5 loader REAL-PATH + 2 conformance tests; 2 ratchet rows. Suites: chord 293, story-loader 227; cloak/zoo compile unchanged.
+- **SURFACED for David (pre-existing, not bridged)**: `createPlayer` never applies the player create-block's trait compositions — e.g. a player-side `combatant` composition silently drops (the NPC guard test adds player combat traits as world setup instead). Needs a ruling on whether the player block should compose traits like any entity.
+- `NpcTrait.goals` not surfaced (structured Goal objects have no config spelling) — recorded in the NPC ratchet row as a future conversation.
+
+- **Phase 3 COMPLETE (state-machine depth)**: David ratified spelling A (define-machine block; three candidates previewed). Full construct through parser/AST/IR/analyzer (8 gate diagnostics incl. bare-word trigger resolution and story-owned `it`); loader lowers onto the real StateMachinePlugin (`$role` bindings, custom guards over the evaluator, bodies via new public `runtime.execMachineBody`). 8 chord + 5 loader REAL-PATH tests (plugin ticks: role-bound triggers, condition triggers, terminal stop). 1 ratchet row. Suites: chord 301, story-loader 232; cloak/zoo unchanged; existing states:/select/change surface untouched (zoo fixtures green).
+
+- **Phase 4 COMPLETE (payloaded emit)**: full nested payload grammar (literals/value-exprs/arrays/`{ }` objects; `and` flat separator per Given-7 normalization, commas inside brackets; unquoted words resolve as words always do — strings are quoted); runtime evaluates live at emit time (entity→world id, true/false→boolean, possessive reads). Bonus fix: dotted event types no longer mangle (`media.sound.play` was `media . sound . play`). 5 chord + 4 loader REAL-PATH tests (real soundChannel.produce with its channel→bus rename; live-state re-read). 1 ratchet row. Suites: chord 306, story-loader 236.
+
+## Status: IN PROGRESS (extension-surface Phase 5 next: media sugar + declared assets)
 
 ## Next session
 - **Do NOT re-flag the troll-GDT ruling as open** — it is closed (see Key decisions above).

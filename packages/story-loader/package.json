@@ -24,9 +24,12 @@
     "@sharpee/chord": "workspace:*",
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
+    "@sharpee/ext-basic-combat": "workspace:*",
     "@sharpee/helpers": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
+    "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
+    "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },

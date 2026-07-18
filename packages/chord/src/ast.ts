@@ -43,6 +43,19 @@ export interface StoryHeader {
    * header hosts.
    */
   onClauses: OnClause[];
+  /**
+   * `use <extension>` lines in the header's indented body (ADR-215):
+   * static, one trusted platform-extension name per line. Each admits that
+   * extension's manifest vocabulary at compile time and triggers its
+   * runtime registration at load.
+   */
+  uses: UseDecl[];
+  span: Span;
+}
+
+/** One `use <extension>` line (ADR-215). */
+export interface UseDecl {
+  name: string;
   span: Span;
 }
 
@@ -65,7 +78,9 @@ export type Declaration =
   | DefineTrait
   | DefineAction
   | DefineHatch
-  | DefineSequence;
+  | DefineSequence
+  // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
+  | DefineMachine;
 // Removed by the ownership package (ratchet 2026-07-11): DefineFlag,
 // DefineScore, WhenRule, OnceRule, EveryRule — the parser emits removal
 // diagnostics with fix-its pointing at the owner-attached replacements.
@@ -188,12 +203,16 @@ export interface CompositionItem {
 /**
  * One `with` setting. Values are a trailing number/string/word, or — when an
  * article introduces the tail (`with food the handful of feed`, Phase B) — a
- * multi-word entity name (`valueKind: 'name'`, article stripped).
+ * multi-word entity name (`valueKind: 'name'`, article stripped), or — when
+ * a bracket opens the tail (`with route [Hall, Study, Hall]`, ADR-215) — a
+ * list of name references (`valueKind: 'list'`, entries in `listValues`).
  */
 export interface ConfigSetting {
   key: string[];
   value: string;
-  valueKind: 'number' | 'string' | 'word' | 'name';
+  valueKind: 'number' | 'string' | 'word' | 'name' | 'list';
+  /** List entries when valueKind is 'list' (resolution is the analyzer's). */
+  listValues?: NameRef[];
   span: Span;
 }
 
@@ -475,10 +494,14 @@ export interface ActionRefusal {
   span: Span;
 }
 
-/** `define action X from "./mod.ts"` / `define behavior X from "./mod.ts"` — TS hatches. */
+/**
+ * `define action X from "./mod.ts"` — TS action hatch. (`define behavior …
+ * from` was removed by ADR-235 D2, 2026-07-18 — it had no binding key and
+ * could never fire; the parser emits a fix-it error.)
+ */
 export interface DefineHatch {
   kind: 'define-hatch';
-  hatchKind: 'action' | 'behavior';
+  hatchKind: 'action';
   name: string;
   modulePath: string;
   span: Span;
@@ -488,6 +511,66 @@ export interface DefineHatch {
 // rules were removed (ownership package, ratchet 2026-07-11) — scores
 // attach to owners (ScoreDecl); once/every become owner clause modifiers
 // and story-owned schedules.
+
+/**
+ * `define machine <name> … end machine` — the ADR-119 depth under
+ * `use state-machines` (ADR-215; spelling A ratified by David 2026-07-18).
+ * Role lines bind names to entities; `starts <state>`; one `state` block
+ * per state carrying transition lines and `on enter`/`on exit` bodies.
+ */
+export interface DefineMachine {
+  kind: 'define-machine';
+  /** Machine name words (`drawbridge works`). */
+  name: string[];
+  /** `role <name> is <entity>` bindings, in declaration order. */
+  roles: MachineRole[];
+  /** `starts <state>` — the initial state name (null = parse error reported). */
+  initialState: string | null;
+  states: MachineState[];
+  span: Span;
+}
+
+/** One `role <name> is <entity>` binding line. */
+export interface MachineRole {
+  name: string;
+  entity: NameRef;
+  span: Span;
+}
+
+/** One `state <name>[, terminal]` block. */
+export interface MachineState {
+  name: string;
+  terminal: boolean;
+  transitions: MachineTransition[];
+  onEnter: Statement[];
+  onExit: Statement[];
+  span: Span;
+}
+
+/**
+ * One `when <trigger>[ while <condition>]: <target>` transition line.
+ * Triggers: an action (`turning the winch` — gerund + role/entity), an
+ * event (`event if.event.opened`), or a bare condition (`the bridge is
+ * down`).
+ */
+export interface MachineTransition {
+  trigger:
+    | { kind: 'action'; action: string; target: NameRef | null }
+    | { kind: 'event'; event: string }
+    | { kind: 'condition'; condition: ConditionNode }
+    /**
+     * A single bare word — grammatically either an action gerund
+     * (`waiting`) or a condition ref/story state (`stormy`). The parser is
+     * vocabulary-free; the ANALYZER resolves it (declared condition/story
+     * state wins, else action gerund).
+     */
+    | { kind: 'word'; word: string; span: Span };
+  /** Optional `while <condition>` guard riding any trigger form. */
+  condition: ConditionNode | null;
+  /** Target state name. */
+  target: string;
+  span: Span;
+}
 
 /** `define sequence <name> … end sequence` — timeline of chained steps. */
 export interface DefineSequence {
@@ -598,13 +681,38 @@ export interface ParamBinding {
   span: Span;
 }
 
-/** `emit <event-words> [when <cond>]` */
+/**
+ * `emit <event> [with <field> <value> [and …]] [when <cond>]` (ADR-216) —
+ * the payloaded emit. Event segments are dotted keys (`media.sound.play`).
+ * Flat payload fields separate with `and` (the create-data grammar);
+ * bracketed/braced structures separate with commas.
+ */
 export interface EmitStmt {
   kind: 'emit';
   event: string[];
+  /** `with` payload fields, empty when none (ADR-216). */
+  payload: EmitField[];
   stmtWhen: ConditionNode | null;
   span: Span;
 }
+
+/** One `<field> <value>` payload entry (top level or inside `{ … }`). */
+export interface EmitField {
+  /** Field key words (`skill bonus` → one payload key). */
+  key: string[];
+  value: EmitValue;
+  span: Span;
+}
+
+/**
+ * One payload value: a literal, a value expression (world-state read), an
+ * `[ … ]` array of values, or a `{ <field> <value>, … }` nested object.
+ */
+export type EmitValue =
+  | { kind: 'literal'; value: string; literalKind: 'number' | 'string'; span: Span }
+  | { kind: 'expr'; expr: ValueExpr; span: Span }
+  | { kind: 'array'; items: EmitValue[]; span: Span }
+  | { kind: 'object'; fields: EmitField[]; span: Span };
 
 /** `set <field-path> to <value>` */
 export interface SetStmt {

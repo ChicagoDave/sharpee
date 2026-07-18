@@ -29,6 +29,12 @@ export interface StoryIR {
    * broadcasts.
    */
   story: { states: string[]; reversible: boolean; onClauses: IROnClause[] };
+  /**
+   * `use <extension>` names (ADR-215), validated against the manifest
+   * registry — the loader registers each against its trusted runtime
+   * registry at load (unknown names there are load errors).
+   */
+  uses: string[];
   entities: IREntity[];
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
@@ -40,6 +46,8 @@ export interface StoryIR {
   /** Owner-attached score identities (D12) — names are owner-qualified (`pygmy-goats.fed`). */
   scores: IRScoreDef[];
   sequences: IRSequenceDef[];
+  /** `define machine` blocks (ADR-215 `use state-machines` depth). */
+  machines: IRMachineDef[];
   /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
   hasHatches: boolean;
 }
@@ -132,8 +140,14 @@ export interface IRConfigSetting {
   /** Setting key words joined with a space (`max items`). */
   key: string;
   value: string;
-  /** 'name' = multi-word entity-name value (`with food the handful of feed`, Phase B). */
-  valueKind: 'number' | 'string' | 'word' | 'name';
+  /**
+   * 'name' = multi-word entity-name value (`with food the handful of
+   * feed`, Phase B); 'list' = bracketed name list (`with route [Hall,
+   * Study]`, ADR-215) — resolved entity IDs in `values`, `value` empty.
+   */
+  valueKind: 'number' | 'string' | 'word' | 'name' | 'list';
+  /** Resolved entity IDs when valueKind is 'list'. */
+  values?: string[];
 }
 
 /** One resolved `containing` member (ADR-236 D2) — a room or nested region. */
@@ -288,8 +302,12 @@ export type IRPatternPart = { kind: 'word'; word: string } | { kind: 'slot'; wor
 export interface IRHatch {
   name: string;
   modulePath: string;
-  /** Target interface: dynamic-text producer, Action, or CapabilityBehavior. */
-  hatchKind: 'text' | 'action' | 'behavior';
+  /**
+   * Target interface: dynamic-text producer or Action. (`behavior` was
+   * removed by ADR-235 D2 — the hatch had no binding key and could never
+   * fire.)
+   */
+  hatchKind: 'text' | 'action';
   span: Span;
 }
 
@@ -383,6 +401,44 @@ export interface IRSequenceStep {
   span: Span;
 }
 
+/**
+ * `define machine` (ADR-215 `use state-machines` depth; spelling A,
+ * 2026-07-18). The loader lowers onto the ADR-119 plugin: platform machine
+ * id `chord.machine.<slug>`, role bindings as `$<role>` refs, Chord
+ * conditions as custom guards, Chord bodies as custom effects.
+ */
+export interface IRMachineDef {
+  /** Name words joined with a space (`drawbridge works`). */
+  name: string;
+  /** Role name → resolved entity id (the machine's bindings). */
+  roles: Array<{ name: string; entity: string }>;
+  initialState: string;
+  states: IRMachineState[];
+  span: Span;
+}
+
+export interface IRMachineState {
+  name: string;
+  terminal: boolean;
+  transitions: IRMachineTransition[];
+  onEnter: IRStatement[];
+  onExit: IRStatement[];
+  span: Span;
+}
+
+export interface IRMachineTransition {
+  /** Resolved trigger: action targets are `$<role>` refs or entity ids. */
+  trigger:
+    | { kind: 'action'; action: string; target: string | null }
+    | { kind: 'event'; event: string }
+    | { kind: 'condition'; condition: IRCondition };
+  /** Optional `while` guard riding the trigger. */
+  condition: IRCondition | null;
+  /** Target state name. */
+  target: string;
+  span: Span;
+}
+
 // --------------------------------------------------------------------------
 // statements
 // --------------------------------------------------------------------------
@@ -390,7 +446,8 @@ export interface IRSequenceStep {
 export type IRStatement =
   | { kind: 'refuse'; phraseKey: string; params: IRParam[]; span: Span }
   | { kind: 'phrase'; phraseKey: string; params: IRParam[]; stmtWhen?: IRCondition | null; span: Span }
-  | { kind: 'emit'; event: string; stmtWhen?: IRCondition | null; span: Span }
+  /** Payload present only when authored (`with …`, ADR-216) — additive field. */
+  | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'set'; target: IRValue; value: IRValue; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
@@ -426,6 +483,23 @@ export interface IRParam {
   value: IRValue;
   span: Span;
 }
+
+/** One resolved emit-payload field (ADR-216): key words joined with a space, passed VERBATIM to the event data. */
+export interface IREmitField {
+  key: string;
+  value: IREmitValue;
+}
+
+/**
+ * One resolved emit-payload value (ADR-216): a literal, a resolved value
+ * expression (evaluated live at emit time — `true`/`false` symbols become
+ * booleans), an array, or a nested object.
+ */
+export type IREmitValue =
+  | { kind: 'literal'; value: string; valueType: 'number' | 'string' }
+  | { kind: 'value'; value: IRValue }
+  | { kind: 'array'; items: IREmitValue[] }
+  | { kind: 'object'; fields: IREmitField[] };
 
 // --------------------------------------------------------------------------
 // values and conditions

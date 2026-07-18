@@ -4085,6 +4085,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       },
     },
   ],
+  "machines": [],
   "meta": {
     "author": "Sharpee Team",
     "fields": {
@@ -6315,6 +6316,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "statesReversible": false,
     },
   ],
+  "uses": [],
   "verbs": [],
 }
 `;

@@ -471,6 +471,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     "states": [],
     "statesReversible": false,
     "title": "Determinism Fixture",
+    "uses": [],
   },
   "kind": "story-file",
   "span": {
@@ -1798,6 +1799,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
     "states": [],
     "statesReversible": false,
     "title": "Cloak of Darkness",
+    "uses": [],
   },
   "kind": "story-file",
   "span": {

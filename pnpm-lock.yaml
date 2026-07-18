@@ -937,15 +937,24 @@ importers:
       '@sharpee/engine':
         specifier: workspace:*
         version: link:../engine
+      '@sharpee/ext-basic-combat':
+        specifier: workspace:*
+        version: link:../extensions/basic-combat
       '@sharpee/helpers':
         specifier: workspace:*
         version: link:../helpers
       '@sharpee/if-domain':
         specifier: workspace:*
         version: link:../if-domain
+      '@sharpee/plugin-npc':
+        specifier: workspace:*
+        version: link:../plugin-npc
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../plugin-scheduler
+      '@sharpee/plugin-state-machine':
+        specifier: workspace:*
+        version: link:../plugin-state-machine
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib

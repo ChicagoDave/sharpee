@@ -105,6 +105,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
                 "unsealed",
               ],
               "kind": "emit",
+              "payload": [],
               "span": {
                 "column": 5,
                 "endColumn": 18,
@@ -913,18 +914,6 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       },
     },
     {
-      "hatchKind": "behavior",
-      "kind": "define-hatch",
-      "modulePath": "./stunts.ts",
-      "name": "crowd-control",
-      "span": {
-        "column": 1,
-        "endColumn": 49,
-        "endLine": 65,
-        "line": 65,
-      },
-    },
-    {
       "aka": [],
       "blockedExits": [
         {
@@ -934,8 +923,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "span": {
               "column": 26,
               "endColumn": 37,
-              "endLine": 69,
-              "line": 69,
+              "endLine": 68,
+              "line": 68,
             },
           },
           "direction": "north",
@@ -944,8 +933,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 48,
-            "endLine": 69,
-            "line": 69,
+            "endLine": 68,
+            "line": 68,
           },
         },
       ],
@@ -959,8 +948,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 68,
-            "line": 68,
+            "endLine": 67,
+            "line": 67,
           },
           "words": [
             "room",
@@ -977,8 +966,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 40,
-          "endLine": 71,
-          "line": 71,
+          "endLine": 70,
+          "line": 70,
         },
         "text": "Lockers, a kettle, one sagging couch.",
       },
@@ -991,8 +980,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 8,
           "endColumn": 22,
-          "endLine": 67,
-          "line": 67,
+          "endLine": 66,
+          "line": 66,
         },
         "words": [
           "Break",
@@ -1006,8 +995,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 40,
-        "endLine": 71,
-        "line": 67,
+        "endLine": 70,
+        "line": 66,
       },
       "startsStates": [],
       "states": [],
@@ -1031,8 +1020,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 41,
-          "endLine": 77,
-          "line": 77,
+          "endLine": 76,
+          "line": 76,
         },
         "text": "Woven this morning, regretted by noon.",
       },
@@ -1045,8 +1034,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 8,
           "endColumn": 25,
-          "endLine": 73,
-          "line": 73,
+          "endLine": 72,
+          "line": 72,
         },
         "words": [
           "flimsy",
@@ -1063,8 +1052,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 6,
             "endColumn": 20,
-            "endLine": 75,
-            "line": 75,
+            "endLine": 74,
+            "line": 74,
           },
           "words": [
             "Break",
@@ -1075,16 +1064,16 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 20,
-          "endLine": 75,
-          "line": 75,
+          "endLine": 74,
+          "line": 74,
         },
       },
       "scores": [],
       "span": {
         "column": 1,
         "endColumn": 41,
-        "endLine": 77,
-        "line": 73,
+        "endLine": 76,
+        "line": 72,
       },
       "startsStates": [],
       "states": [],
@@ -1098,8 +1087,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 42,
-            "endLine": 81,
-            "line": 80,
+            "endLine": 80,
+            "line": 79,
           },
           "value": {
             "form": "prose",
@@ -1108,8 +1097,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "span": {
               "column": 5,
               "endColumn": 42,
-              "endLine": 81,
-              "line": 81,
+              "endLine": 80,
+              "line": 80,
             },
             "text": "The north door is bolted after hours.",
           },
@@ -1120,8 +1109,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 42,
-        "endLine": 81,
-        "line": 79,
+        "endLine": 80,
+        "line": 78,
       },
     },
   ],
@@ -1163,12 +1152,13 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
     ],
     "statesReversible": false,
     "title": "Trait Declarations Fixture",
+    "uses": [],
   },
   "kind": "story-file",
   "span": {
     "column": 1,
     "endColumn": 42,
-    "endLine": 81,
+    "endLine": 80,
     "line": 1,
   },
 }
@@ -1766,6 +1756,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
                 "petted",
               ],
               "kind": "emit",
+              "payload": [],
               "span": {
                 "column": 5,
                 "endColumn": 16,
@@ -2199,6 +2190,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
                 "fed",
               ],
               "kind": "emit",
+              "payload": [],
               "span": {
                 "column": 5,
                 "endColumn": 13,
@@ -2795,6 +2787,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
     "states": [],
     "statesReversible": false,
     "title": "Zoo Actions Fixture",
+    "uses": [],
   },
   "kind": "story-file",
   "span": {
@@ -4216,6 +4209,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
     ],
     "statesReversible": false,
     "title": "Zoo Timeline Fixture",
+    "uses": [],
   },
   "kind": "story-file",
   "span": {

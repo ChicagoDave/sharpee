@@ -35,7 +35,12 @@ import {
   DefineHatch,
   DefinePhrase,
   DefinePhrases,
+  DefineMachine,
   DefineSequence,
+  EmitField,
+  EmitValue,
+  MachineState,
+  MachineTransition,
   DefineText,
   DefineTrait,
   DefineVerb,
@@ -69,6 +74,7 @@ import {
   TraitField,
   StoryFile,
   StoryHeader,
+  UseDecl,
   TextMarker,
   TextValue,
   ValueExpr,
@@ -94,6 +100,8 @@ const ORDINALS: Record<string, number> = {
 };
 /** Words that terminate a noun phrase in condition/statement positions. */
 const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'and', 'or', 'then', 'to', 'while', 'with']);
+/** Stop words ending an emit-payload value expression (ADR-216). */
+const EMIT_VALUE_STOPS = new Set(['and', 'when']);
 const TOP_KEYWORDS = new Set(['story', 'create', 'define', 'when', 'once', 'every']);
 
 /**
@@ -251,6 +259,16 @@ class Parser {
           );
           this.recoverToTopLevel(true);
           break;
+        case 'use':
+          // ADR-215: `use` lives in the story header's indented body, not
+          // at the top level — a pointed fix-it, never a generic error.
+          this.diagnostics.error(
+            'parse.use-top-level',
+            '`use <extension>` goes inside the story header\'s indented body (with `states:`, scores, …), not at the top level.',
+            lineSpan(line),
+          );
+          this.recoverToTopLevel(true);
+          break;
         case 'each':
           // Never top-level (given 9: all behavior is owned) — ratchet E3.
           this.diagnostics.error(
@@ -319,10 +337,27 @@ class Parser {
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
     const onClauses: OnClause[] = [];
+    const uses: UseDecl[] = [];
     let span = lineSpan(line);
     while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
       const peeked = this.lines[this.pos];
       const peekedWord = firstWord(peeked);
+      // `use <extension>` — a trusted platform extension (ADR-215): static,
+      // one name per line; the analyzer gates the name against the manifest
+      // registry.
+      if (peekedWord === 'use') {
+        const useLine = this.lines[this.pos++];
+        span = mergeSpans(span, lineSpan(useLine));
+        const uc = new Cursor(useLine.tokens, useLine);
+        uc.matchWord('use');
+        const nameTok = uc.next();
+        if (!nameTok || nameTok.kind !== 'word' || !uc.atEnd()) {
+          this.diagnostics.error('parse.use', 'Expected `use <extension>` — one extension name per line.', lineSpan(useLine));
+        } else {
+          uses.push({ name: nameTok.text, span: lineSpan(useLine) });
+        }
+        continue;
+      }
       // `on every turn [while <cond>][, once]` — the story-owned daemon
       // (ADR-236 D7, ratchet R4). The only clause form the header hosts;
       // anything else keeps its owner-attached home.
@@ -371,7 +406,7 @@ class Parser {
       fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
     }
 
-    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, span };
+    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, span };
   }
 
   /**
@@ -803,6 +838,45 @@ class Parser {
         if (!c.matchWord('and')) break;
         continue;
       }
+      // `[ … ]` list value (ADR-215): a bracketed, comma-separated list of
+      // name references (`patrol route [Hall, Study, Hall]`). Narrower than
+      // ADR-216's statement-payload arrays — config lists hold names only.
+      const bracketTok = c.peek();
+      if (bracketTok && bracketTok.kind === 'lbracket' && key.length > 0) {
+        c.next(); // [
+        const listValues: NameRef[] = [];
+        for (;;) {
+          if (c.peek()?.kind === 'rbracket') break;
+          const ref = this.parseNameRef(c, () => false);
+          if (ref.words.length === 0) {
+            this.diagnostics.error('parse.config-list', 'Expected an entity name inside the `[ … ]` list.', c.restSpan());
+            while (!c.atEnd() && c.peek()!.kind !== 'rbracket') c.next();
+            break;
+          }
+          listValues.push(ref);
+          if (c.peek()?.kind === 'comma') c.next();
+          else break;
+        }
+        const close = c.next();
+        let lastSpan = bracketTok.span;
+        if (!close || close.kind !== 'rbracket') {
+          this.diagnostics.error('parse.config-list', 'Expected `]` to close the list.', c.restSpan());
+        } else {
+          lastSpan = close.span;
+        }
+        if (listValues.length === 0) {
+          this.diagnostics.error('parse.config-list', 'A `[ … ]` list needs at least one entry.', lastSpan);
+        }
+        settings.push({
+          key,
+          value: '',
+          valueKind: 'list',
+          listValues,
+          span: startTok ? mergeSpans(startTok.span, lastSpan) : lastSpan,
+        });
+        if (!c.matchWord('and')) break;
+        continue;
+      }
       const valueTok = c.peek();
       if (!valueTok || (valueTok.kind !== 'number' && valueTok.kind !== 'string' && valueTok.kind !== 'word')) {
         this.diagnostics.error('parse.config-value', 'Expected a value to end this `with` setting.', c.restSpan());
@@ -1088,7 +1162,16 @@ class Parser {
       case 'action':
         return this.parseDefineAction();
       case 'behavior':
-        return this.parseDefineBehaviorHatch();
+        // ADR-235 D2 (removal, 2026-07-18): the behavior hatch carried no
+        // trait/action binding key, so it structurally could never fire —
+        // removed rather than repaired.
+        this.diagnostics.error(
+          'parse.removed-behavior-hatch',
+          '`define behavior … from` was removed (ADR-235 D2) — it had no binding key and could never fire. Author the behavior in-language (`define trait <name>` with `on <verb> it` clauses, composed on the entity), or ship a full action with `define action <name> from "<module>"`.',
+          lineSpan(this.lines[this.pos]),
+        );
+        this.pos++;
+        return null;
       case 'score':
         // Removed — ratchet D12/CP5 (2026-07-11).
         this.diagnostics.error(
@@ -1100,6 +1183,10 @@ class Parser {
         return null;
       case 'sequence':
         return this.parseDefineSequence();
+      case 'machine':
+        // ADR-215 `use state-machines` depth (spelling A, 2026-07-18) —
+        // the `use` requirement is the analyzer's gate.
+        return this.parseDefineMachine();
       default:
         this.diagnostics.error('parse.unknown-define', `Unknown declaration \`define ${subWord ?? ''}\`.`, lineSpan(line));
         this.recoverToTopLevel(true);
@@ -1736,23 +1823,8 @@ class Parser {
     return { kind: 'when', slot: null, condition, phraseKey: key, span: lineSpan(line) };
   }
 
-  /** `define behavior <name> from "<module>"` — CapabilityBehavior hatch. */
-  private parseDefineBehaviorHatch(): DefineHatch | null {
-    const line = this.lines[this.pos];
-    const c = new Cursor(line.tokens, line);
-    c.next();
-    c.next(); // define behavior
-    const nameTok = c.next();
-    if (!nameTok || nameTok.kind !== 'word') {
-      this.diagnostics.error('parse.behavior-name', 'Expected a behavior name after `define behavior`.', c.restSpan());
-      this.pos++;
-      return null;
-    }
-    return this.parseHatchTail(line, c, 'behavior', nameTok.text);
-  }
-
-  /** Shared `from "<module>"` tail for action/behavior hatches. */
-  private parseHatchTail(line: Line, c: Cursor, hatchKind: 'action' | 'behavior', name: string): DefineHatch | null {
+  /** Shared `from "<module>"` tail for action hatches. */
+  private parseHatchTail(line: Line, c: Cursor, hatchKind: 'action', name: string): DefineHatch | null {
     this.pos++;
     if (!c.matchWord('from')) {
       this.diagnostics.error('parse.hatch-from', 'Expected `from "<module>"` in the hatch declaration.', c.restSpan());
@@ -1918,6 +1990,285 @@ class Parser {
     };
   }
 
+  // ---------------------------------------------------------- emit payload
+
+  /**
+   * ADR-216 payload fields: `<field> <value>` separated by `and` at the
+   * flat (statement) level, by commas inside `{ … }` objects. Values:
+   * literals, `[ … ]` arrays, `{ … }` objects, or value expressions
+   * (world-state reads).
+   */
+  private parseEmitFields(c: Cursor, line: Line, mode: 'flat' | 'braced'): EmitField[] {
+    const fields: EmitField[] = [];
+    for (;;) {
+      if (mode === 'braced' && c.peek()?.kind === 'rbrace') break;
+      if (mode === 'flat' && (c.atEnd() || c.isWord('when'))) break;
+      const startTok = c.peek();
+      const key: string[] = [];
+      while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and') && !c.isWord('when')) {
+        const t = c.peek()!;
+        if (ARTICLES.has(t.text) && key.length > 0) break;
+        const after = c.peek(1);
+        const atValuePosition =
+          !after ||
+          after.kind === 'comma' ||
+          after.kind === 'rbrace' ||
+          (after.kind === 'word' && (after.text === 'and' || after.text === 'when'));
+        if (atValuePosition && key.length > 0) break;
+        key.push(t.text);
+        c.next();
+      }
+      if (key.length === 0) {
+        this.diagnostics.error('parse.emit-payload', 'Expected a payload field name.', c.restSpan());
+        break;
+      }
+      const value = this.parseEmitValue(c, line);
+      if (!value) break;
+      fields.push({ key, value, span: startTok ? mergeSpans(startTok.span, value.span) : value.span });
+      if (mode === 'flat') {
+        if (!c.matchWord('and')) break;
+      } else if (c.peek()?.kind === 'comma') {
+        c.next();
+      } else {
+        break;
+      }
+    }
+    return fields;
+  }
+
+  /** One ADR-216 payload value (recursive: literals, arrays, objects, value exprs). */
+  private parseEmitValue(c: Cursor, line: Line): EmitValue | null {
+    const t = c.peek();
+    if (!t) {
+      this.diagnostics.error('parse.emit-payload', 'Expected a payload value.', c.restSpan());
+      return null;
+    }
+    if (t.kind === 'number' || t.kind === 'string') {
+      c.next();
+      return { kind: 'literal', value: t.text, literalKind: t.kind, span: t.span };
+    }
+    if (t.kind === 'lbracket') {
+      c.next();
+      const items: EmitValue[] = [];
+      while (c.peek() && c.peek()!.kind !== 'rbracket') {
+        const item = this.parseEmitValue(c, line);
+        if (!item) break;
+        items.push(item);
+        if (c.peek()?.kind === 'comma') c.next();
+        else break;
+      }
+      const close = c.next();
+      let endSpan = t.span;
+      if (!close || close.kind !== 'rbracket') {
+        this.diagnostics.error('parse.emit-payload', 'Expected `]` to close the array.', c.restSpan());
+      } else {
+        endSpan = close.span;
+      }
+      return { kind: 'array', items, span: mergeSpans(t.span, endSpan) };
+    }
+    if (t.kind === 'lbrace') {
+      c.next();
+      const fields = this.parseEmitFields(c, line, 'braced');
+      const close = c.next();
+      let endSpan = t.span;
+      if (!close || close.kind !== 'rbrace') {
+        this.diagnostics.error('parse.emit-payload', 'Expected `}` to close the object.', c.restSpan());
+      } else {
+        endSpan = close.span;
+      }
+      return { kind: 'object', fields, span: mergeSpans(t.span, endSpan) };
+    }
+    const expr = this.parseValueExpr(c, line, EMIT_VALUE_STOPS);
+    return { kind: 'expr', expr, span: expr.span };
+  }
+
+  // -------------------------------------------------------------- machines
+
+  /**
+   * `define machine <name> … end machine` (ADR-215 `use state-machines`
+   * depth; spelling A ratified 2026-07-18): `role <name> is <entity>`
+   * bindings, `starts <state>`, and `state <name>[, terminal]` blocks. The
+   * `use` requirement is the analyzer's gate.
+   */
+  private parseDefineMachine(): DefineMachine | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define machine
+    const name: string[] = [];
+    while (!c.atEnd() && c.peek()!.kind === 'word') name.push(c.next()!.text);
+    if (name.length === 0) {
+      this.diagnostics.error('parse.machine-name', 'Expected a machine name after `define machine`.', lineSpan(headLine));
+    }
+    const decl: DefineMachine = { kind: 'define-machine', name, roles: [], initialState: null, states: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('machine', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (line.indent === 0) break; // dedent without `end machine` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      if (word === 'role') {
+        this.pos++;
+        lc.next();
+        const roleTok = lc.next();
+        if (!roleTok || roleTok.kind !== 'word' || !lc.matchWord('is')) {
+          this.diagnostics.error('parse.machine-role', 'Expected `role <name> is <entity>`.', lineSpan(line));
+          continue;
+        }
+        const entity = this.parseNameRef(lc, () => false);
+        if (entity.words.length === 0 || !lc.atEnd()) {
+          this.diagnostics.error('parse.machine-role', 'Expected `role <name> is <entity>`.', lineSpan(line));
+          continue;
+        }
+        decl.roles.push({ name: roleTok.text, entity, span: lineSpan(line) });
+        continue;
+      }
+      if (word === 'starts') {
+        this.pos++;
+        lc.next();
+        const stateTok = lc.next();
+        if (!stateTok || stateTok.kind !== 'word' || !lc.atEnd()) {
+          this.diagnostics.error('parse.machine-starts', 'Expected `starts <state>`.', lineSpan(line));
+          continue;
+        }
+        if (decl.initialState !== null) {
+          this.diagnostics.error('parse.machine-starts', 'This machine already declared its `starts` state.', lineSpan(line));
+          continue;
+        }
+        decl.initialState = stateTok.text;
+        continue;
+      }
+      if (word === 'state') {
+        const state = this.parseMachineState(line);
+        if (state) {
+          decl.states.push(state);
+          decl.span = mergeSpans(decl.span, state.span);
+        }
+        continue;
+      }
+      this.diagnostics.error('parse.machine-body', `Unrecognized line in \`define machine\`: \`${line.raw.trim()}\` — expected \`role\`, \`starts\`, \`state\`, or \`end machine\`.`, lineSpan(line));
+      this.pos++;
+    }
+    this.diagnostics.error('parse.machine-end', 'Expected `end machine` to close the block.', decl.span);
+    return decl;
+  }
+
+  /** One `state <name>[, terminal]` block: transition lines + `on enter`/`on exit` bodies. */
+  private parseMachineState(headLine: Line): MachineState | null {
+    this.pos++;
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next(); // state
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.machine-state', 'Expected a state name after `state`.', lineSpan(headLine));
+      return null;
+    }
+    let terminal = false;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (c.matchWord('terminal')) terminal = true;
+      else this.diagnostics.error('parse.machine-state', 'Only `, terminal` may follow the state name.', c.restSpan());
+    }
+    const state: MachineState = { name: nameTok.text, terminal, transitions: [], onEnter: [], onExit: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break; // next state / end machine
+      state.span = mergeSpans(state.span, lineSpan(line));
+      const word = firstWord(line);
+      if (word === 'when') {
+        const transition = this.parseMachineTransition(line);
+        if (transition) state.transitions.push(transition);
+        continue;
+      }
+      if (word === 'on') {
+        const lc = new Cursor(line.tokens, line);
+        lc.next();
+        const which = lc.next();
+        if (which && which.kind === 'word' && (which.text === 'enter' || which.text === 'exit') && lc.atEnd()) {
+          this.pos++;
+          const body = this.parseStatements(line.indent, 'on');
+          const endSpan = this.consumeEnd('on', line);
+          state.span = mergeSpans(state.span, endSpan);
+          if (which.text === 'enter') state.onEnter.push(...body);
+          else state.onExit.push(...body);
+          continue;
+        }
+        this.diagnostics.error('parse.machine-on', 'Only `on enter` and `on exit` blocks live in a machine `state`.', lineSpan(line));
+        this.pos++;
+        continue;
+      }
+      this.diagnostics.error('parse.machine-state-body', `Unrecognized line in a machine \`state\` block: \`${line.raw.trim()}\` — expected \`when …: <state>\`, \`on enter\`, or \`on exit\`.`, lineSpan(line));
+      this.pos++;
+    }
+    return state;
+  }
+
+  /**
+   * `when <trigger>[ while <condition>]: <target-state>`. Triggers:
+   * `event <dotted.key>`, `<gerund> <entity name>` (action on a target),
+   * a single bare word (analyzer resolves condition-vs-gerund), or a
+   * condition.
+   */
+  private parseMachineTransition(line: Line): MachineTransition | null {
+    this.pos++;
+    const tokens = line.tokens;
+    const colonIndex = tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
+    if (colonIndex === -1 || colonIndex !== tokens.length - 2 || tokens[tokens.length - 1].kind !== 'word') {
+      this.diagnostics.error('parse.machine-when', 'Expected `when <trigger>[ while <condition>]: <target-state>`.', lineSpan(line));
+      return null;
+    }
+    const target = tokens[tokens.length - 1].text;
+    let head = tokens.slice(1, colonIndex);
+    let condition: ConditionNode | null = null;
+    const whileIndex = head.findIndex((t) => t.kind === 'word' && t.text === 'while');
+    if (whileIndex !== -1) {
+      condition = this.parseCondition(new Cursor(head.slice(whileIndex + 1), line), line);
+      head = head.slice(0, whileIndex);
+    }
+    const hc = new Cursor(head, line);
+    const first = hc.peek();
+    if (!first) {
+      this.diagnostics.error('parse.machine-when', 'Expected a trigger after `when`.', lineSpan(line));
+      return null;
+    }
+    let trigger: MachineTransition['trigger'];
+    if (first.kind === 'word' && first.text === 'event') {
+      hc.next();
+      const key = this.readDottedKey(hc);
+      if (!key || !hc.atEnd()) {
+        this.diagnostics.error('parse.machine-when', 'Expected `event <event.key>`.', lineSpan(line));
+        return null;
+      }
+      trigger = { kind: 'event', event: key };
+    } else if (first.kind === 'word' && !ARTICLES.has(first.text) && head.length === 1) {
+      trigger = { kind: 'word', word: first.text, span: first.span };
+    } else if (first.kind === 'word' && !ARTICLES.has(first.text) && head[1]?.kind === 'word' && (ARTICLES.has(head[1].text) || head[1].text === 'it')) {
+      const action = hc.next()!.text;
+      if (hc.isWord('it')) {
+        // Machines are story-owned — there is no `it` (mirror of the
+        // story-clause rule); name the entity or role.
+        this.diagnostics.error('parse.machine-when', '`it` is not bound in a machine — name the entity or a declared role.', lineSpan(line));
+        return null;
+      }
+      const targetRef = this.parseNameRef(hc, () => false);
+      if (targetRef.words.length === 0 || !hc.atEnd()) {
+        this.diagnostics.error('parse.machine-when', `Expected an entity or role name after \`${action}\`.`, lineSpan(line));
+        return null;
+      }
+      trigger = { kind: 'action', action, target: targetRef };
+    } else {
+      trigger = { kind: 'condition', condition: this.parseCondition(hc, line) };
+    }
+    return { trigger, condition, target, span: lineSpan(line) };
+  }
+
   // ------------------------------------------------------------ statements
 
   /**
@@ -1995,14 +2346,26 @@ class Parser {
       case 'emit': {
         this.pos++;
         c.next();
+        // Event segments are dotted keys (`media.sound.play`) — previously
+        // the raw token texts, which mangled dots into ` . ` (ADR-216 fix).
         const event: string[] = [];
-        while (!c.atEnd() && !c.isWord('when')) event.push(c.next()!.text);
+        while (!c.atEnd() && !c.isWord('when') && !c.isWord('with')) {
+          const segment = this.readDottedKey(c);
+          if (!segment) break;
+          event.push(segment);
+        }
         if (event.length === 0) {
           this.diagnostics.error('parse.emit', 'Expected an event name after `emit`.', lineSpan(line));
           return null;
         }
+        // ADR-216 payload: `with <field> <value> [and …]` — the create-data
+        // grammar; bracketed/braced structures inside separate with commas.
+        const payload: EmitField[] = [];
+        if (c.matchWord('with')) {
+          payload.push(...this.parseEmitFields(c, line, 'flat'));
+        }
         const stmtWhen = this.parseStatementWhen(c, line);
-        return { kind: 'emit', event, stmtWhen, span: lineSpan(line) } as EmitStmt;
+        return { kind: 'emit', event, payload, stmtWhen, span: lineSpan(line) } as EmitStmt;
       }
       case 'set': {
         this.pos++;

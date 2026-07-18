@@ -666,6 +666,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
     },
   ],
+  "machines": [],
   "meta": {
     "author": "Roger Firth (Sharpee implementation)",
     "fields": {
@@ -857,6 +858,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     "states": [],
   },
   "traits": [],
+  "uses": [],
   "verbs": [
     {
       "pattern": [

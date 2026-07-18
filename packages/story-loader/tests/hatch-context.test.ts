@@ -151,10 +151,9 @@ describe("bind-time 'chord.' lint (the backstop)", () => {
       report: () => [],
       blocked: () => [],
     };
-    const crowdControl = { validate: () => ({ valid: true }), execute: () => {}, report: () => [], blocked: () => [] };
     expect(() =>
       createStory(compileFixture('traits-basic.story'), {
-        hatchModules: { './stunts.ts': { juggling, 'crowd-control': crowdControl } },
+        hatchModules: { './stunts.ts': { juggling } },
       })
     ).toThrow(/`juggling`.*loader-private/);
   });

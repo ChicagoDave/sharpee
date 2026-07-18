@@ -18,7 +18,7 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IREntity, IROnClause, IRStatement, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IREmitField, IREmitValue, IREntity, IROnClause, IRStatement, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
@@ -971,6 +971,17 @@ export class ChordRuntime {
   }
 
   /**
+   * Execute a machine body (`on enter`/`on exit`/transition effects,
+   * ADR-215 state-machines depth) — story-owned: no `it` (compile-gated),
+   * narration broadcasts like any story-owned surface.
+   * @param statements the resolved IR statement tree
+   * @param world the live world the effect runs against
+   */
+  execMachineBody(statements: IRStatement[], world: WorldModel): ISemanticEvent[] {
+    return this.narrated(this.execStatements(statements, { world }));
+  }
+
+  /**
    * Decision 10 presence semantics: the player shares the owner's location.
    * A room owner means the player is IN that room; a region owner "is" at
    * every member room — presence is `isInRegion(player, region)`, transitive
@@ -1098,7 +1109,10 @@ export class ChordRuntime {
           if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.phraseEvent(stmt.phraseKey, ctx, stmt.params));
           break;
         case 'emit':
-          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.rawEvent(stmt.event, {}));
+          // ADR-216: the payload evaluates live against the turn context —
+          // literals as numbers/strings, value expressions through the
+          // shared evaluator, arrays/objects recursively.
+          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.rawEvent(stmt.event, this.emitPayload(stmt.payload, ctx)));
           break;
         case 'win':
         case 'lose':
@@ -1579,6 +1593,39 @@ export class ChordRuntime {
     }
 
     return this.rawEvent('chord.phrase', { messageId: overrideKey, params });
+  }
+
+  /**
+   * Evaluate an emit payload (ADR-216) against the live turn context.
+   * Keys pass VERBATIM; number literals become numbers; `true`/`false`
+   * symbols become booleans; other value expressions evaluate through the
+   * shared evaluator (entity refs → world ids, field reads → live values).
+   */
+  private emitPayload(fields: IREmitField[] | undefined, ctx: ExecContext): Record<string, unknown> {
+    const data: Record<string, unknown> = {};
+    for (const field of fields ?? []) {
+      data[field.key] = this.emitValue(field.value, ctx);
+    }
+    return data;
+  }
+
+  private emitValue(value: IREmitValue, ctx: ExecContext): unknown {
+    switch (value.kind) {
+      case 'literal':
+        return value.valueType === 'number' ? Number(value.value) : value.value;
+      case 'value':
+        if (value.value.kind === 'symbol' && (value.value.name === 'true' || value.value.name === 'false')) {
+          return value.value.name === 'true';
+        }
+        return this.evaluator.evalValue(value.value, ctx);
+      case 'array':
+        return value.items.map((item) => this.emitValue(item, ctx));
+      case 'object': {
+        const nested: Record<string, unknown> = {};
+        for (const field of value.fields) nested[field.key] = this.emitValue(field.value, ctx);
+        return nested;
+      }
+    }
   }
 
   private rawEvent(type: string, data: Record<string, unknown>): ISemanticEvent {

@@ -202,10 +202,9 @@ describe('traits-basic IR (§2.2/§3.2 + ownership package)', () => {
     expect(snoozing.scores).toMatchObject([{ name: 'action.snoozing.napped', worth: 1 }]);
   });
 
-  it('records hatch kinds and hasHatches', () => {
+  it('records hatch kinds and hasHatches (`define behavior` removed by ADR-235 D2)', () => {
     expect(ir.hatches.map((h) => [h.name, h.hatchKind])).toEqual([
       ['juggling', 'action'],
-      ['crowd-control', 'behavior'],
     ]);
     expect(ir.hasHatches).toBe(true);
   });

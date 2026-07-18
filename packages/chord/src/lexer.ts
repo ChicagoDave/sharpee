@@ -28,6 +28,10 @@ export type TokenKind =
   | 'comma'
   | 'lparen'
   | 'rparen'
+  | 'lbracket' // `[` — list values (ADR-215 config lists; ADR-216 emit arrays)
+  | 'rbracket' // `]`
+  | 'lbrace' // `{` — nested emit-payload objects (ADR-216); prose markers are extracted from raw text, not tokens
+  | 'rbrace' // `}`
   | 'punct'; // any other single non-space character (prose punctuation)
 
 export interface Token {
@@ -141,7 +145,7 @@ function tokenizeLine(raw: string, lineNo: number, start: number, diagnostics: D
       continue;
     }
 
-    const single: Record<string, TokenKind> = { ':': 'colon', ',': 'comma', '(': 'lparen', ')': 'rparen' };
+    const single: Record<string, TokenKind> = { ':': 'colon', ',': 'comma', '(': 'lparen', ')': 'rparen', '[': 'lbracket', ']': 'rbracket', '{': 'lbrace', '}': 'rbrace' };
     tokens.push({ kind: single[ch] ?? 'punct', text: ch, span: spanOf(lineNo, column) });
     pos++;
   }

@@ -23,9 +23,13 @@ import {
   CreateDecl,
   DefineAction,
   DefineCondition,
+  DefineMachine,
   DefinePhrase,
   DefinePhrases,
   DefineTrait,
+  EmitField,
+  EmitValue,
+  MachineTransition,
   NameRef,
   OnClause,
   StateName,
@@ -36,12 +40,17 @@ import {
   ValueExpr,
 } from './ast';
 import { EVENT_VERBS, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
+import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests';
 import { DiagnosticBag } from './diagnostics';
 import {
   IR_FORMAT,
   IRActionDef,
   IRCondition,
   IREntity,
+  IREmitField,
+  IREmitValue,
+  IRMachineDef,
+  IRMachineTransition,
   IROnClause,
   IRPhrase,
   IRScoreDef,
@@ -321,8 +330,41 @@ class Analyzer {
     private readonly diagnostics: DiagnosticBag,
   ) {}
 
+  /** Extensions admitted by validated `use` lines (ADR-215). */
+  private usedExtensions = new Set<string>();
+
   run(): StoryIR {
     this.collect();
+
+    // ADR-215: validate `use` lines against the manifest registry — an
+    // unknown name is a compile error (the loader's trusted registry check
+    // backstops rogue IR), a duplicate is one-`use`-per-extension.
+    for (const use of this.ast.header?.uses ?? []) {
+      const manifest = EXTENSION_MANIFESTS.get(use.name);
+      if (!manifest) {
+        const gated = [...EXTENSION_MANIFESTS.values()].filter((m) => !m.core).map((m) => m.name);
+        this.diagnostics.error(
+          'analysis.unknown-extension',
+          `\`use ${use.name}\` names no trusted extension — known: ${gated.join(', ')}.`,
+          use.span,
+        );
+      } else if (manifest.core) {
+        // ADR-215 Q4: NPC vocabulary is CORE — always on, never `use`d.
+        this.diagnostics.error(
+          'analysis.extension-core',
+          `\`${use.name}\` vocabulary is core — it is always available; remove the \`use\` line.`,
+          use.span,
+        );
+      } else if (this.usedExtensions.has(use.name)) {
+        this.diagnostics.error(
+          'analysis.duplicate-use',
+          `\`use ${use.name}\` is already declared — one \`use\` per extension.`,
+          use.span,
+        );
+      } else {
+        this.usedExtensions.add(use.name);
+      }
+    }
 
     const ir: StoryIR = {
       format: IR_FORMAT,
@@ -331,6 +373,7 @@ class Analyzer {
         author: this.ast.header?.author ?? '',
         fields: this.ast.header?.fields ?? {},
       },
+      uses: [...this.usedExtensions],
       story: {
         states: this.storyStates,
         reversible: this.ast.header?.statesReversible ?? false,
@@ -351,6 +394,7 @@ class Analyzer {
       actions: [],
       scores: this.scoreDecls,
       sequences: [],
+      machines: [],
       hasHatches: false,
     };
 
@@ -385,6 +429,9 @@ class Analyzer {
           break;
         case 'define-action':
           ir.actions.push(this.buildAction(decl));
+          break;
+        case 'define-machine':
+          ir.machines.push(this.buildMachine(decl));
           break;
         case 'define-sequence':
           ir.sequences.push({
@@ -516,6 +563,121 @@ class Analyzer {
       }
       for (const id of path) walked.set(id, 'done');
     }
+  }
+
+  /** Machine names seen (duplicate gate). */
+  private readonly machineNames = new Set<string>();
+
+  /**
+   * Build one `define machine` (ADR-215 `use state-machines` depth):
+   * gated on the `use`, states/targets/roles validated, single-word
+   * triggers resolved (declared condition or story state wins, else an
+   * action gerund), bodies in STORY_SCOPE (`it` unbound — the machine is
+   * story-owned).
+   */
+  private buildMachine(decl: DefineMachine): IRMachineDef {
+    if (!this.usedExtensions.has('state-machines')) {
+      this.diagnostics.error(
+        'analysis.extension-not-used',
+        '`define machine` is `state-machines` extension vocabulary — add `use state-machines` to the story header.',
+        decl.span,
+      );
+    }
+    const name = decl.name.join(' ');
+    if (this.machineNames.has(name)) {
+      this.diagnostics.error('analysis.duplicate-machine', `A machine named \`${name}\` already exists.`, decl.span);
+    }
+    this.machineNames.add(name);
+
+    const stateNames = new Set(decl.states.map((s) => s.name));
+    if (decl.states.length === 0) {
+      this.diagnostics.error('analysis.machine-states', `Machine \`${name}\` declares no states.`, decl.span);
+    }
+    if (decl.initialState === null) {
+      this.diagnostics.error('analysis.machine-starts', `Machine \`${name}\` needs a \`starts <state>\` line.`, decl.span);
+    } else if (!stateNames.has(decl.initialState)) {
+      this.diagnostics.error(
+        'analysis.machine-starts',
+        `\`starts ${decl.initialState}\` names no declared state of \`${name}\`${this.suggestText(decl.initialState, [...stateNames])}.`,
+        decl.span,
+      );
+    }
+
+    const roles = new Map<string, string>();
+    for (const role of decl.roles) {
+      if (roles.has(role.name)) {
+        this.diagnostics.error('analysis.machine-role', `Role \`${role.name}\` is declared twice on \`${name}\`.`, role.span);
+        continue;
+      }
+      const entity = this.resolveEntityId(role.entity);
+      if (entity !== null) roles.set(role.name, entity);
+    }
+
+    const buildTransition = (t: MachineTransition): IRMachineTransition => {
+      if (!stateNames.has(t.target)) {
+        this.diagnostics.error(
+          'analysis.machine-target',
+          `\`${t.target}\` names no declared state of \`${name}\`${this.suggestText(t.target, [...stateNames])}.`,
+          t.span,
+        );
+      }
+      let trigger: IRMachineTransition['trigger'];
+      switch (t.trigger.kind) {
+        case 'event':
+          trigger = { kind: 'event', event: t.trigger.event };
+          break;
+        case 'condition':
+          trigger = { kind: 'condition', condition: this.resolveCondition(t.trigger.condition, STORY_SCOPE) };
+          break;
+        case 'word': {
+          // Vocabulary-free parse: a declared condition or story state is a
+          // condition trigger; anything else is an action gerund.
+          if (this.conditionNames.has(t.trigger.word) || this.storyStates.includes(t.trigger.word)) {
+            trigger = {
+              kind: 'condition',
+              condition: this.resolveCondition({ kind: 'condition-ref', name: t.trigger.word, span: t.trigger.span }, STORY_SCOPE),
+            };
+          } else {
+            trigger = { kind: 'action', action: t.trigger.word, target: null };
+          }
+          break;
+        }
+        case 'action': {
+          let target: string | null = null;
+          if (t.trigger.target) {
+            const words = t.trigger.target.words.map((w) => w.toLowerCase());
+            if (words.length === 1 && roles.has(words[0])) {
+              target = `$${words[0]}`; // the platform binding convention
+            } else {
+              target = this.resolveEntityId(t.trigger.target);
+            }
+          }
+          trigger = { kind: 'action', action: t.trigger.action, target };
+          break;
+        }
+      }
+      return {
+        trigger,
+        condition: t.condition ? this.resolveCondition(t.condition, STORY_SCOPE) : null,
+        target: t.target,
+        span: t.span,
+      };
+    };
+
+    return {
+      name,
+      roles: [...roles].map(([roleName, entity]) => ({ name: roleName, entity })),
+      initialState: decl.initialState ?? decl.states[0]?.name ?? '',
+      states: decl.states.map((s) => ({
+        name: s.name,
+        terminal: s.terminal,
+        transitions: s.transitions.map(buildTransition),
+        onEnter: s.onEnter.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
+        onExit: s.onExit.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
+        span: s.span,
+      })),
+      span: decl.span,
+    };
   }
 
   /** Resolve a `when <owner> becomes <state>` step anchor (ratchet D10). */
@@ -1084,12 +1246,69 @@ class Analyzer {
     for (const comp of decl.compositions) {
       const built = {
         name: comp.words.join(' ').toLowerCase(),
-        config: comp.config.map((c) => ({ key: c.key.join(' '), value: c.value, valueKind: c.valueKind })),
+        config: comp.config.map((c) => ({
+          key: c.key.join(' '),
+          value: c.value,
+          valueKind: c.valueKind,
+          // `[ … ]` list entries resolve to entity IDs here (ADR-215) —
+          // unresolved names report through the standard unknown-entity gate.
+          ...(c.valueKind === 'list'
+            ? { values: (c.listValues ?? []).map((ref) => this.resolveEntityId(ref) ?? '').filter((id) => id !== '') }
+            : {}),
+        })),
         condition: comp.condition ? this.resolveCondition(comp.condition, entityScope(sym ?? null)) : null,
         span: comp.span,
       };
       if (comp.article) kinds.push(built);
       else traits.push(built);
+
+      // ADR-215: extension vocabulary is admitted only when its `use` is
+      // declared (core manifests — npc — are always admitted), and its
+      // `with`-fields are the manifest's closed, typed set — unknown keys
+      // and mistyped values are compile errors, never a silent drop at the
+      // loader. `[ … ]` list values exist only as manifest list fields.
+      if (!comp.article) {
+        const contributed = manifestForAdjective(built.name);
+        if (!contributed) {
+          for (const cfg of comp.config) {
+            if (cfg.valueKind === 'list') {
+              this.diagnostics.error(
+                'analysis.config-list-host',
+                `\`[ … ]\` list values belong to extension fields that declare them (e.g. \`patrol route [ … ]\`) — \`${built.name}\` has none.`,
+                cfg.span,
+              );
+            }
+          }
+        }
+        if (contributed) {
+          if (!contributed.manifest.core && !this.usedExtensions.has(contributed.manifest.name)) {
+            this.diagnostics.error(
+              'analysis.extension-not-used',
+              `\`${built.name}\` is \`${contributed.manifest.name}\` extension vocabulary — add \`use ${contributed.manifest.name}\` to the story header.`,
+              comp.span,
+            );
+          } else {
+            for (const cfg of comp.config) {
+              const key = cfg.key.join(' ');
+              const field = contributed.adjective.fields.find((f) => f.key === key);
+              if (!field) {
+                const known = contributed.adjective.fields.map((f) => f.key).join(', ');
+                this.diagnostics.error(
+                  'analysis.extension-config-key',
+                  `\`${key}\` is not a \`${built.name}\` field — known fields: ${known}.`,
+                  cfg.span,
+                );
+              } else if (field.valueKind !== cfg.valueKind) {
+                this.diagnostics.error(
+                  'analysis.extension-config-value',
+                  `\`${key}\` takes a ${field.valueKind} value, not ${cfg.valueKind === 'name' ? 'an entity name' : `a ${cfg.valueKind}`}.`,
+                  cfg.span,
+                );
+              }
+            }
+          }
+        }
+      }
     }
 
     // ADR-231 D5a pairing gate: each `starts <state>` initializer requires
@@ -1333,8 +1552,16 @@ class Analyzer {
           span: stmt.span,
         };
       }
-      case 'emit':
-        return { kind: 'emit', event: stmt.event.join(' '), stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      case 'emit': {
+        const payload = stmt.payload.map((f) => this.resolveEmitField(f, scope));
+        return {
+          kind: 'emit',
+          event: stmt.event.join(' '),
+          ...(payload.length > 0 ? { payload } : {}),
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
+      }
       case 'set':
         return {
           kind: 'set',
@@ -1573,6 +1800,25 @@ class Analyzer {
       }
       case 'match':
         return this.resolveMatch(expr.span, scope);
+    }
+  }
+
+  /** Resolve one emit-payload field (ADR-216) — key words join with a space, passed verbatim. */
+  private resolveEmitField(field: EmitField, scope: Scope): IREmitField {
+    return { key: field.key.join(' '), value: this.resolveEmitValue(field.value, scope) };
+  }
+
+  /** Resolve one emit-payload value (ADR-216) — recursive over arrays/objects. */
+  private resolveEmitValue(value: EmitValue, scope: Scope): IREmitValue {
+    switch (value.kind) {
+      case 'literal':
+        return { kind: 'literal', value: value.value, valueType: value.literalKind };
+      case 'expr':
+        return { kind: 'value', value: this.resolveValue(value.expr, scope) };
+      case 'array':
+        return { kind: 'array', items: value.items.map((i) => this.resolveEmitValue(i, scope)) };
+      case 'object':
+        return { kind: 'object', fields: value.fields.map((f) => this.resolveEmitField(f, scope)) };
     }
   }
 

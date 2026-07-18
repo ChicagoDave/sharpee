@@ -23,6 +23,7 @@
 import {
   IR_FORMAT,
   IRComposition,
+  IRConfigSetting,
   IRCondition,
   IREntity,
   IRPhrase,
@@ -41,13 +42,27 @@ import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
 import { createHelpers } from '@sharpee/helpers';
+import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
+import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
+import type {
+  EntityBindings,
+  StateDefinition,
+  StateMachineDefinition,
+  TransitionDefinition,
+} from '@sharpee/plugin-state-machine';
+import {
+  createFollowerBehavior,
+  createPatrolBehavior,
+  createWandererBehavior,
+} from '@sharpee/stdlib';
 import {
   ActorTrait,
-  CapabilityBehavior,
   ClimbableTrait,
+  CombatantTrait,
   ConcealmentTrait,
   ContainerTrait,
+  HealthTrait,
   CuttableTrait,
   DiggableTrait,
   DeadlyRoomTrait,
@@ -62,6 +77,7 @@ import {
   ITrait,
   LightSourceTrait,
   LockableTrait,
+  NpcTrait,
   OpenableTrait,
   PullableTrait,
   PushableTrait,
@@ -73,10 +89,12 @@ import {
   SupporterTrait,
   SwitchableTrait,
   TraitType,
+  WeaponTrait,
   WearableTrait,
   WorldModel,
 } from '@sharpee/world-model';
 import { LoadError } from './errors';
+import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry';
 import { Evaluator } from './evaluator';
 import { findChordLiteral } from './hatch-context';
 import { ChordRuntime, STRATEGY_SELECTOR } from './runtime';
@@ -149,8 +167,6 @@ export class ChordStory implements Story {
   readonly producers = new Map<string, PhraseProducer>();
   /** Bound `define action X from` hatches: four-phase Action objects by name. */
   readonly boundActions = new Map<string, unknown>();
-  /** Bound `define behavior X from` hatches: CapabilityBehaviors by name. */
-  readonly boundBehaviors = new Map<string, CapabilityBehavior>();
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
@@ -295,17 +311,9 @@ export class ChordStory implements Story {
           this.boundActions.set(hatch.name, bound);
           break;
         }
-        case 'behavior': {
-          const behavior = bound as { validate?: unknown; execute?: unknown; report?: unknown } | undefined;
-          if (!behavior || typeof behavior !== 'object' || typeof behavior.validate !== 'function' || typeof behavior.execute !== 'function' || typeof behavior.report !== 'function') {
-            throw new LoadError(
-              `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a CapabilityBehavior'} — expected a validate/execute/report export.`,
-              hatch.span,
-            );
-          }
-          this.boundBehaviors.set(hatch.name, bound as CapabilityBehavior);
-          break;
-        }
+        // The `behavior` hatch kind was removed (ADR-235 D2, 2026-07-18) —
+        // it carried no binding key and could never fire; the compiler now
+        // refuses the declaration outright.
       }
     }
   }
@@ -314,6 +322,22 @@ export class ChordStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     this.world = world;
+
+    // ADR-215: `use`-declared trusted extensions register FIRST — their
+    // world-side registrations (interceptors, resolvers) must exist before
+    // any entity composes their vocabulary. Unknown names are LoadErrors
+    // (the compiler's manifest gate catches them first; this backstops
+    // rogue IR).
+    for (const name of this.ir.uses ?? []) {
+      const registration = EXTENSION_REGISTRY.get(name);
+      if (!registration) {
+        throw new LoadError(
+          `\`use ${name}\` names no trusted extension — known: ${[...EXTENSION_REGISTRY.keys()].join(', ')}.`,
+        );
+      }
+      registration.registerWorld?.(world);
+    }
+
     const built: Array<{ ir: IREntity; entity: IFEntity }> = [];
 
     // Pass 0 — regions, parents before children (ADR-236 D3): a nested
@@ -539,6 +563,33 @@ export class ChordStory implements Story {
     registerSlotEntry?(entry: ChordSlotEntry): void;
     registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
   }): void {
+    // ADR-215 Q4: NPCs are CORE — the plugin auto-wires unconditionally
+    // (unlike the scheduler's daemon-gated registration below), and each
+    // factory-configured behavior registers under its per-entity id.
+    const npcPlugin = new NpcPlugin();
+    engine.getPluginRegistry().register(npcPlugin);
+    const npcService = npcPlugin.getNpcService();
+    for (const pending of this.npcBehaviors) {
+      npcService.registerBehavior(this.buildNpcBehavior(pending) as never);
+    }
+
+    // ADR-215 `use state-machines`: the plugin registers engine-side and
+    // every `define machine` lowers into its registry (Chord conditions
+    // ride as custom guards, Chord bodies as custom effects). Machines in
+    // rogue IR without the `use` are a LoadError, never silently dead.
+    if ((this.ir.machines ?? []).length > 0 && !(this.ir.uses ?? []).includes('state-machines')) {
+      throw new LoadError('`define machine` needs `use state-machines` in the story header.', this.ir.machines[0].span);
+    }
+    if ((this.ir.uses ?? []).includes('state-machines')) {
+      const smPlugin = new StateMachinePlugin();
+      engine.getPluginRegistry().register(smPlugin);
+      const smRegistry = smPlugin.getRegistry();
+      for (const machine of this.ir.machines ?? []) {
+        const { definition, bindings } = this.buildMachineDefinition(machine);
+        smRegistry.register(definition, bindings);
+      }
+    }
+
     const daemons = this.runtime.buildSchedulerDaemons();
     if (daemons.length > 0) {
       const plugin = new SchedulerPlugin();
@@ -1103,6 +1154,29 @@ export class ChordStory implements Story {
         case 'light-source':
           entity.add(new LightSourceTrait());
           break;
+        case 'guard':
+        case 'passive':
+        case 'wanderer':
+        case 'follower':
+        case 'patrol': {
+          // ADR-215 Q4: CORE NPC behavior vocabulary — no `use` gate.
+          this.applyNpcAdjective(entity, irEntity, trait);
+          break;
+        }
+        case 'combatant':
+        case 'weapon': {
+          // ADR-215 combat vocabulary — `use combat` extension adjectives.
+          // The analyzer gated use-declaration and field names/types; this
+          // check is the rogue-IR backstop.
+          if (!(this.ir.uses ?? []).includes('combat')) {
+            throw new LoadError(
+              `\`${trait.name}\` is \`combat\` extension vocabulary — add \`use combat\` to the story header.`,
+              trait.span,
+            );
+          }
+          this.applyCombatAdjective(entity, irEntity, trait);
+          break;
+        }
         case 'plural': {
           const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
           if (identity) (identity as unknown as Record<string, unknown>).grammaticalNumber = 'plural';
@@ -1130,6 +1204,247 @@ export class ChordStory implements Story {
         }
       }
     }
+  }
+
+  /**
+   * Per-entity NPC behavior configs stashed at composition time and
+   * registered with the NPC service at engine-ready (world ids exist by
+   * then, so patrol routes resolve). guard/passive use the plugin's
+   * pre-registered behaviors; the factory-built three get per-entity ids.
+   */
+  private readonly npcBehaviors: Array<{ irId: string; adjective: string; config: IRConfigSetting[]; span: unknown }> = [];
+
+  /**
+   * ADR-215 Q4 core NPC routing: compose NpcTrait from a behavior
+   * adjective — behaviorId (`guard`/`passive` built-in; factory behaviors
+   * get `chord.npc.<id>`), movement defaults (movement behaviors default
+   * `canMove: true`), boolean fields via NPC_FIELD_ROUTES, and room-list
+   * fields (`allowed-rooms`/`forbidden-rooms`) filled through the shared
+   * pending-entity-ref mechanism once every entity exists.
+   */
+  private applyNpcAdjective(entity: IFEntity, irEntity: IREntity, trait: IRComposition): void {
+    const isFactory = trait.name === 'wanderer' || trait.name === 'follower' || trait.name === 'patrol';
+    const data: Record<string, unknown> = {
+      behaviorId: isFactory ? `chord.npc.${irEntity.id}` : trait.name,
+      // Movement behaviors move by definition; `can-move false` overrides.
+      canMove: isFactory,
+    };
+    for (const setting of trait.config) {
+      const route = NPC_FIELD_ROUTES.get(setting.key);
+      if (!route) continue; // behavior-factory params — consumed at engine-ready
+      if (route.convert === 'boolean') {
+        if (setting.value !== 'true' && setting.value !== 'false') {
+          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
+        }
+        data[route.field] = setting.value === 'true';
+      }
+    }
+    const npcTrait = new NpcTrait(data);
+    entity.add(npcTrait);
+    // Room lists resolve after every entity exists (pass-1 ordering).
+    for (const setting of trait.config) {
+      const route = NPC_FIELD_ROUTES.get(setting.key);
+      if (route?.convert !== 'rooms') continue;
+      const target: string[] = [];
+      (npcTrait as unknown as Record<string, unknown>)[route.field] = target;
+      for (const memberIrId of setting.values ?? []) {
+        this.pendingEntityRefs.push({
+          irRefId: memberIrId,
+          ownerName: irEntity.name,
+          span: trait.span,
+          apply: (worldId) => target.push(worldId),
+        });
+      }
+    }
+    if (isFactory) {
+      this.npcBehaviors.push({ irId: irEntity.id, adjective: trait.name, config: trait.config, span: trait.span });
+    }
+  }
+
+  /**
+   * Build one per-entity NPC behavior instance from its stashed config
+   * (engine-ready time — world ids exist). Chord percentages convert to
+   * the platform's fractions here (`move-chance 50` → 0.5).
+   */
+  private buildNpcBehavior(pending: { irId: string; adjective: string; config: IRConfigSetting[]; span: unknown }): { id: string } {
+    const numberOf = (key: string): number | undefined => {
+      const setting = pending.config.find((s) => s.key === key);
+      return setting ? Number(setting.value) : undefined;
+    };
+    const boolOf = (key: string): boolean | undefined => {
+      const setting = pending.config.find((s) => s.key === key);
+      return setting ? setting.value === 'true' : undefined;
+    };
+    let behavior: { id: string };
+    switch (pending.adjective) {
+      case 'wanderer': {
+        const percent = numberOf('move-chance');
+        behavior = createWandererBehavior(percent === undefined ? {} : { moveChance: percent / 100 });
+        break;
+      }
+      case 'follower':
+        behavior = createFollowerBehavior(boolOf('immediate') === undefined ? {} : { immediate: boolOf('immediate') });
+        break;
+      case 'patrol': {
+        const routeSetting = pending.config.find((s) => s.key === 'route');
+        if (!routeSetting || (routeSetting.values ?? []).length === 0) {
+          throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span as never);
+        }
+        const route = (routeSetting.values ?? []).map((irId) => {
+          const worldId = this.worldIds.get(irId);
+          if (!worldId) throw new LoadError(`A patrol route entry was never built.`, pending.span as never);
+          return worldId;
+        });
+        behavior = createPatrolBehavior({
+          route,
+          ...(boolOf('loop') === undefined ? {} : { loop: boolOf('loop') }),
+          ...(numberOf('wait-turns') === undefined ? {} : { waitTurns: numberOf('wait-turns') }),
+        });
+        break;
+      }
+      default:
+        throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span as never);
+    }
+    behavior.id = `chord.npc.${pending.irId}`;
+    return behavior;
+  }
+
+  /**
+   * Lower one `define machine` onto the ADR-119 shapes: platform id
+   * `chord.machine.<slug>`, role bindings as `$<role>` entries (world
+   * ids), action triggers on `if.action.<gerund>`, Chord conditions as
+   * custom guards over the shared evaluator, Chord bodies as one custom
+   * effect each through the runtime's statement executor.
+   */
+  private buildMachineDefinition(machine: NonNullable<StoryIR['machines']>[number]): {
+    definition: StateMachineDefinition;
+    bindings: EntityBindings;
+  } {
+    const bindings: EntityBindings = {};
+    for (const role of machine.roles) {
+      const worldId = this.worldIds.get(role.entity);
+      if (!worldId) {
+        throw new LoadError(`Machine \`${machine.name}\`: role \`${role.name}\`'s entity was never built.`, machine.span);
+      }
+      bindings[`$${role.name}`] = worldId;
+    }
+
+    const chordGuard = (condition: IRCondition) => ({
+      type: 'custom' as const,
+      evaluate: (world: unknown) => this.evaluator.evalCondition(condition, { world: world as WorldModel }),
+    });
+    const chordEffect = (statements: Parameters<ChordRuntime['execMachineBody']>[0]) => ({
+      type: 'custom' as const,
+      execute: (world: unknown) => ({
+        events: this.runtime
+          .execMachineBody(statements, world as WorldModel)
+          .map((e) => ({ type: e.type, data: e.data, entities: e.entities as Record<string, string> })),
+      }),
+    });
+
+    const states: Record<string, StateDefinition> = {};
+    for (const state of machine.states) {
+      const transitions: TransitionDefinition[] = state.transitions.map((t) => {
+        let trigger: TransitionDefinition['trigger'];
+        switch (t.trigger.kind) {
+          case 'action': {
+            let targetEntity: string | undefined;
+            if (t.trigger.target) {
+              targetEntity = t.trigger.target.startsWith('$')
+                ? t.trigger.target
+                : this.worldIds.get(t.trigger.target);
+              if (targetEntity === undefined) {
+                throw new LoadError(`Machine \`${machine.name}\`: a trigger target was never built.`, t.span);
+              }
+            }
+            trigger = {
+              type: 'action',
+              actionId: `if.action.${t.trigger.action}`,
+              ...(targetEntity !== undefined ? { targetEntity } : {}),
+            };
+            break;
+          }
+          case 'event':
+            trigger = { type: 'event', eventId: t.trigger.event };
+            break;
+          case 'condition':
+            trigger = { type: 'condition', condition: chordGuard(t.trigger.condition) };
+            break;
+        }
+        return {
+          target: t.target,
+          trigger,
+          ...(t.condition ? { guard: chordGuard(t.condition) } : {}),
+        };
+      });
+      states[state.name] = {
+        ...(state.terminal ? { terminal: true } : {}),
+        ...(state.onEnter.length > 0 ? { onEnter: [chordEffect(state.onEnter)] } : {}),
+        ...(state.onExit.length > 0 ? { onExit: [chordEffect(state.onExit)] } : {}),
+        ...(transitions.length > 0 ? { transitions } : {}),
+      };
+    }
+
+    return {
+      definition: {
+        id: `chord.machine.${machine.name.replace(/\s+/g, '-')}`,
+        initialState: machine.initialState,
+        states,
+      },
+      bindings,
+    };
+  }
+
+  /**
+   * ADR-215 combat routing: compose `combatant` (CombatantTrait + the
+   * REQUIRED HealthTrait per ADR-226 — health/max-health route THERE) or
+   * `weapon` (WeaponTrait) from a composition's `with`-fields, via the
+   * exported COMBAT_FIELD_ROUTES table the manifest-conformance test pins.
+   */
+  private applyCombatAdjective(entity: IFEntity, irEntity: IREntity, trait: IRComposition): void {
+    const values: Record<'combatant' | 'health' | 'weapon', Record<string, unknown>> = {
+      combatant: {},
+      health: {},
+      weapon: {},
+    };
+    for (const setting of trait.config) {
+      const route = COMBAT_FIELD_ROUTES.get(setting.key);
+      if (!route) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: \`${setting.key}\` has no combat field route — the compiler manifest and loader routes are out of step.`,
+          trait.span,
+        );
+      }
+      if (route.convert === 'number') {
+        const parsed = Number(setting.value);
+        if (Number.isNaN(parsed)) {
+          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` needs a number, got \`${setting.value}\`.`, trait.span);
+        }
+        values[route.trait][route.field] = parsed;
+      } else {
+        if (setting.value !== 'true' && setting.value !== 'false') {
+          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
+        }
+        values[route.trait][route.field] = setting.value === 'true';
+      }
+    }
+
+    if (trait.name === 'weapon') {
+      entity.add(new WeaponTrait(values.weapon));
+      return;
+    }
+    // CombatantTrait REQUIRES a HealthTrait (ADR-226 §2) — auto-attach,
+    // seeded from the health/max-health fields (defaults when omitted).
+    if (!entity.has(TraitType.HEALTH)) {
+      entity.add(new HealthTrait(values.health));
+    } else if (Object.keys(values.health).length > 0) {
+      const health = entity.get(TraitType.HEALTH) as HealthTrait;
+      Object.assign(health, values.health);
+      if (values.health.health !== undefined && values.health.maxHealth === undefined) {
+        health.maxHealth = Math.max(health.maxHealth, health.health);
+      }
+    }
+    entity.add(new CombatantTrait(values.combatant));
   }
 
   /**

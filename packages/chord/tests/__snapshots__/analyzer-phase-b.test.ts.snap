@@ -417,6 +417,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
   "format": "story language 1",
   "hasHatches": false,
   "hatches": [],
+  "machines": [],
   "meta": {
     "author": "Sharpee Platform",
     "fields": {
@@ -1042,6 +1043,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "statesReversible": true,
     },
   ],
+  "uses": [],
   "verbs": [],
 }
 `;
