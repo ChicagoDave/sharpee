@@ -1,5 +1,17 @@
 # Session Plan: Implement ADR-220 (Doors & Portals) — Roadmap W4
 
+> **ARCHIVED 2026-07-18 (David's ruling, session d02586).** This plan was
+> written against ADR-218 §2's `between`-form door — a foundation ADR-234
+> D1 struck from the grammar entirely ("the `between` word does NOT enter
+> the grammar at all"). Basic door loading has since shipped through the
+> `through` exit-line form (ADR-234, `docs/work/chord-door-loading/plan.md`,
+> all phases DONE 2026-07-18, with ADR-237 one-wiring-path and ADR-238
+> two-sided presence). ADR-220 itself remains ACCEPTED; if its richer door
+> cases (conditional/computed-destination exits, `when` guards,
+> directionless doors) are picked up later, that workstream starts from a
+> FRESH plan grounded on the shipped `through` surface — this document is
+> kept for historical reference only and must not be executed.
+
 **Created**: 2026-07-14
 **Overall scope**: Add two *optional* fields to `IExitInfo` — a `when` traversal guard and a computed `destination` — plus the small `going`-action hook that consults them, so richer doors (conditional, dynamic-destination, concealed, two-doors-on-a-wall, directionless) become expressible without growing the exit data model's shape. Then spell both fields in Chord as ratchet entries and close the loop with compiled fixtures. This is **W4** of the Chord parity roadmap (`docs/work/chord-parity/roadmap.md`) — additive on top of **W1**'s (ADR-218 §2) direct two-room `between` door.
 **Bounded contexts touched**: World model exits (`packages/world-model/src/traits/room/roomTrait.ts`, `roomBehavior.ts`), the `going` action (`packages/stdlib/src/actions/standard/going/`), the Chord composable vocabulary and loader's exit-wiring pass (`packages/chord/src/catalog.ts`, `packages/story-loader/src/loader.ts`), and the ADR-210 grammar ratchet. **No** change to `parser-en-us` is expected (door disambiguation is ordinary entity resolution) — Phase 1 confirms this explicitly rather than assuming it.

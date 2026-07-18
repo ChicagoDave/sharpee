@@ -47,7 +47,16 @@ no-scope-reduction rule of the parity north star applies).
 - `a door` loads from Chord and behaves (open/close/lock via existing
   traits) via a child ADR — **ADR-234 (chord door loading), ACCEPTED
   2026-07-17, session 615882**; implementation is its own follow-on
-  plan. [Q-1 resolved 2026-07-17, session f5c22c]:
+  plan. **[SATISFIED 2026-07-18, session d02586 — David confirmed:
+  ADR-234 implemented in full (docs/work/chord-door-loading/plan.md,
+  all 5 phases DONE). `a door` loads via the `through` exit-line form
+  and behaves — open/close/lock/traverse exercised REAL-PATH from a
+  Chord-loaded world plus a full-parser far-side transcript. Ratchets
+  R2/R3 landed (the keyless `with` breaking migration executed
+  in-gate); ADR-237 (helpers boundary, one wiring path) and ADR-238
+  (two-sided door presence) landed en route; the audit records the
+  parity table's last ❌ closed (52 ✅ / 2 ⚠️ / 0 ❌).]**
+  [Q-1 resolved 2026-07-17, session f5c22c]:
   - Two authoring forms ship in the gate: placement on the door
     (`a door between the Kitchen and the Hall`) and exit-line sugar
     (`north to the Hall through the oak door` — reverse side

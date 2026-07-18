@@ -33,7 +33,8 @@
 
 ## Next session
 - Commit Phases 4–5.
-- **Two open flags for David**: (1) confirm ADR-233's G1 door line is satisfied (umbrella gate — not self-marked); (2) disposition of the stale `docs/work/chord-doors/plan.md` (ADR-220, `between`-form foundation struck) — rename+refresh vs archive.
+- ADR-233 G1 door line CONFIRMED SATISFIED (David, this session) — amendment note recorded in the ADR itself. No open flags remain from the door workstream.
+- ADR-220 plan disposition RULED (David, this session): **archived** to `docs/work/archive/chord-doors/plan.md` with an archival header (ADR-220 stays ACCEPTED; future pickup = fresh plan on the `through` surface). Archive move uncommitted.
 - With all G1 child workstreams closed, the umbrella's next queued phases (Phase 6+, toward G4 release) are the natural continuation.
 - Open items for David: (1) actor `article: undefined` quirk above; (2) ADR-220 plan file disposition (rename vs archive).
 - Still parked (unchanged): chain RNG-death flake investigation; troll-GDT ruling remains CLOSED — do not re-flag.
