@@ -60,6 +60,12 @@
 - Phase 7 (D4) COMPLETE: topic { text, entity? } on both command interfaces; 5 rules .topic(); TOPIC structure branch; quiet entity-first resolveTopic (D3 matcher, no disambiguation for topics); asking/telling read command.topic + emit topicEntityId. 15 tests incl. the named free-text non-rejection pin. Chain 874/874; phrasebook fences 68/68 (PROSE stale on topic scoping — Phase 11). Noted: thealderman story grammar has its own un-topiced ask pattern (story-level, parked).
 - **ADR-232 drafted (DRAFT, 3 open questions)**: Chord-first web presence — one site, author-facing front door, Platform section for TS/book content (David ruled shape from 3 options; hard split + two-track rejected). Interview offered; David PARKED it ("no I'll wait - the website work will be more complex") — the 3 drafted questions likely under-scope the effort; treat ADR-232 as the opening of a fuller design conversation in a future session, not a quick interview. Do not re-raise this session.
 
+## Phases 10 + 11 — COMPLETE (5b5d03ef, c165405e). ALL 11 PLAN PHASES DONE.
+- Phase 10 (D6): GameEngine actionRandom (dedicated, persisted via IEngineState.actionRngSeed); throwing/WeaponBehavior(rng param)/inventory converted; REAL-PATH save→restore→replay determinism test; troll signature verified unchanged in kind; neutered throwing-golden Math.random mocks surfaced+converted to forceRandom; rider: implicit-take errorQualified propagation. Chain good run on attempt 3.
+- Phase 11: 18 falsified doc claims fixed (phrasebook 4, stdlib-reference 10, chord-language 4), each live-verified before rewriting; 3 site pages re-rendered tag-balanced; phrasebook 68/68; chord harnesses 45/45 + 64/64.
+
 ## Open items
-- Plan not yet written (session-planner next); plain-defect list rides in ADR-231 Consequences.
-- Parked (unchanged from 907f28): chain RNG-death flake investigation; vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.
+- **Fix-after candidates for David**: `get out of X` doesn't parse as an exit form (grammar gap, docs never claimed it); bare `throw :item` grammar absent (throwing's general-throw branch parser-unreachable); thealderman's story `ask` pattern un-topiced (story-level); entity-level `phrases en-US` blocks not allowed per-entity (works as documented — observation only).
+- ADR-232 (Chord-first web presence) DRAFT, parked — David: website work will be more complex; treat as a fuller design conversation next time.
+- Parked (unchanged): chain RNG-death flake investigation (fresh evidence: ~1-in-3 clean chain runs this session, pre-existing per 0aaf30fe baseline); vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.
+- NOT pushed — all work is local commits on chord-foundations awaiting David's push call.

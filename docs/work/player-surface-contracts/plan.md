@@ -193,4 +193,4 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
 - **Entry state**: Phases 2-10 landed.
 - **Deliverable**: `stdlib-reference.md` §2 touch-up confirming the two shipped-doc blanks (iron-ring, hive-box) now render correct text under D1's pass-through; `chord-language.md` gains the dotted-key narrative-doc subsection (D1b, folded from Phase 3), confirms D5a's `starts <state>` spec text landed with Phase 8 rather than being duplicated here, and documents D5b's closed-by-default change with `starts open` as the escape. Phrasebook (`docs/reference/stdlib-phrasebook.md`) and its fixtures regenerated/re-verified. Site re-render per the existing build process.
 - **Exit state**: `node docs/work/stdlib-phrasebook/verify.mjs` (or its documented invocation) reports 68/68; stdlib-reference.md and chord-language.md no longer contradict shipped platform behavior; site re-rendered, tag-balanced, new content spot-checked.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit c165405e — 18 claims fixed, all live-verified; ALL 11 PLAN PHASES COMPLETE)
