@@ -64,6 +64,10 @@
 - Phase 10 (D6): GameEngine actionRandom (dedicated, persisted via IEngineState.actionRngSeed); throwing/WeaponBehavior(rng param)/inventory converted; REAL-PATH save→restore→replay determinism test; troll signature verified unchanged in kind; neutered throwing-golden Math.random mocks surfaced+converted to forceRandom; rider: implicit-take errorQualified propagation. Chain good run on attempt 3.
 - Phase 11: 18 falsified doc claims fixed (phrasebook 4, stdlib-reference 10, chord-language 4), each live-verified before rewriting; 3 site pages re-rendered tag-balanced; phrasebook 68/68; chord harnesses 45/45 + 64/64.
 
+## Post-finalize addendum: go-live assessment + ADR-233 (501ea895, pushed)
+- David asked "is Chord ready to go live?" — assessment: language core launch-quality; NOT ready. Verified live: `a door` still throws a LoadError from Chord. Blockers: parity (stale 42/49 audit, parts 2-4 never audited), no outside-author pipeline (ADR-180 U2 undelivered), no front door (ADR-232 parked, no playground, no Chord tutorial), repokit verify blocked.
+- **ADR-233 drafted (DRAFT, 4 open questions)**: go-live gate — G1 parity floor / G2 outside-author pipeline / G3 front door / G4 release hygiene; Chord-Zork completeness explicitly post-launch; umbrella, children carry work. Interview offered; David finalized instead — treat as deferred, don't re-ask this session. Next session: ADR-233 interview is the natural opener.
+
 ## Open items
 - ~~`get out of X` + bare `throw :item`~~ FIXED (9202e462, David go-ahead): get/climb out of :container → exiting with target; throw/toss/hurl :item → general throw; 6 parser pins; all gates green.
 - Remaining fix-after candidates: thealderman's story `ask` pattern un-topiced (story-level); entity-level `phrases en-US` blocks not allowed per-entity (works as documented — observation only).
