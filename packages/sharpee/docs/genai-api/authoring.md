@@ -311,7 +311,11 @@ export declare class ContainerBuilder {
     /**
      * Make the container openable.
      *
-     * @param opts - Openable options
+     * Openable containers start CLOSED unless `isOpen: true` is passed —
+     * the world-model trait's own default (`OpenableTrait`, ADR-231 D5b)
+     * is authoritative; this builder adds no default of its own.
+     *
+     * @param opts - Openable options (`isOpen` to override the closed default)
      * @returns this (for chaining)
      */
     openable(opts?: {

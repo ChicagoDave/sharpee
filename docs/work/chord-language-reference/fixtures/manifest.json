@@ -5,7 +5,7 @@
   },
   "behavior/starts-state-pairing.story": {
     "expect": "fail",
-    "codes": ["analyze.starts-state-pairing"]
+    "codes": ["analysis.starts-state-pairing"]
   },
   "migration/removed-when.story": {
     "expect": "fail",

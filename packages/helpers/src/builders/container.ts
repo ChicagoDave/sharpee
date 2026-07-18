@@ -80,7 +80,11 @@ export class ContainerBuilder {
   /**
    * Make the container openable.
    *
-   * @param opts - Openable options
+   * Openable containers start CLOSED unless `isOpen: true` is passed —
+   * the world-model trait's own default (`OpenableTrait`, ADR-231 D5b)
+   * is authoritative; this builder adds no default of its own.
+   *
+   * @param opts - Openable options (`isOpen` to override the closed default)
    * @returns this (for chaining)
    */
   openable(opts: { isOpen?: boolean } = {}): this {
@@ -135,7 +139,9 @@ export class ContainerBuilder {
     entity.add(new ContainerTrait());
 
     if (this._openable) {
-      entity.add(new OpenableTrait({ isOpen: this._openable.isOpen ?? true }));
+      // ADR-231 D5b: pass isOpen through untouched — when the author does
+      // not set it, OpenableTrait's own default (closed) decides.
+      entity.add(new OpenableTrait(this._openable));
     }
 
     if (this._lockable) {

@@ -1,10 +1,12 @@
 /**
- * starts-state.test.ts — ADR-231 D5a: `starts <state>` initializers
+ * starts-state.test.ts — ADR-231 D5a/D5b: `starts <state>` initializers
  * round-trip through the REAL loader into trait initial-value fields:
  * locked → LockableTrait.isLocked true, closed → OpenableTrait.isOpen
- * false (beating the container builder's `openable()` pre-add, which
- * defaults isOpen true until ADR-231 Phase 9 removes it), on →
- * SwitchableTrait.isOn true. REAL-PATH per Integration Reality: real
+ * false, open → isOpen true, on → SwitchableTrait.isOn true — and the
+ * D5b uniform default: with the container branch's `openable()` pre-add
+ * removed (Phase 9), an openable with no initializer starts CLOSED on
+ * both the container-kind and adjective-only composition paths.
+ * REAL-PATH per Integration Reality: real
  * @sharpee/chord compile, real createStory/initializeWorld — no stubs of
  * any owned dependency; assertions are on world trait state, and the
  * locked case additionally drives stdlib's unlockingAction against the
@@ -51,6 +53,18 @@ create the hamper
   in the Vault
 
   A hamper.
+
+create the bin
+  a container, openable, starts open
+  in the Vault
+
+  A bin.
+
+create the locket
+  openable
+  in the Vault
+
+  A locket.
 
 create the generator
   switchable, starts on
@@ -120,19 +134,34 @@ describe('starts <state> through the real loader (ADR-231 D5a)', () => {
     expect((safe.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);
   });
 
-  it('starts closed beats the container builder openable() pre-add: isOpen is false', () => {
+  it('starts closed: OpenableTrait.isOpen is false on the loaded world', () => {
     const { entity } = load();
     const openable = entity('crate').get(TraitType.OPENABLE) as OpenableTrait;
     expect(openable).toBeDefined();
     expect(openable.isOpen).toBe(false);
   });
 
-  it('control: without an initializer the container pre-add still opens (pins what `starts closed` beat)', () => {
-    // Phase 9 (D5b) will flip this default; today it documents that the
-    // crate assertion above is a genuine override, not the builder default.
+  it('starts open flips the D5b closed default: isOpen is true', () => {
+    const { entity } = load();
+    const openable = entity('bin').get(TraitType.OPENABLE) as OpenableTrait;
+    expect(openable).toBeDefined();
+    expect(openable.isOpen).toBe(true);
+  });
+
+  it('control (D5b): without an initializer an openable container starts CLOSED — the trait default, no pre-add', () => {
+    // Phase 9 removed the container branch's `builder.openable()` pre-add
+    // (isOpen ?? true); OpenableTrait's own default (closed) now rules.
     const { entity } = load();
     const openable = entity('hamper').get(TraitType.OPENABLE) as OpenableTrait;
-    expect(openable.isOpen).toBe(true);
+    expect(openable).toBeDefined();
+    expect(openable.isOpen).toBe(false);
+  });
+
+  it('D5b uniformity: the adjective-only path agrees — a plain `openable` thing starts CLOSED', () => {
+    const { entity } = load();
+    const openable = entity('locket').get(TraitType.OPENABLE) as OpenableTrait;
+    expect(openable).toBeDefined();
+    expect(openable.isOpen).toBe(false);
   });
 
   it('starts on: SwitchableTrait.isOn is true on the loaded world', () => {

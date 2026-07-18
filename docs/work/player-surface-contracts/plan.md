@@ -129,7 +129,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
   - `INounPhrase.articles` (currently hardcoded `[]` at 3 sites in `english-parser.ts`) is populated; articles are stripped before matching, full-text-first so proper names beginning with an article-like word survive.
   - Story-wide behavior change is expected and accepted per the ruling: entities sharing a word now disambiguate where they previously missed silently.
 - **Exit state**: `pnpm --filter '@sharpee/world-model' test`, `pnpm --filter '@sharpee/stdlib' test`, `pnpm --filter '@sharpee/parser-en-us' test`, `pnpm --filter '@sharpee/story-loader' test` all green; `x key`, `x brass key`, `x bag` (of holding)-class names resolve with zero authoring, verified live against the CLI bundle; **full dungeo walkthrough chain** one clean run + unit transcripts (explicit ADR requirement — story-wide parser behavior change); phrasebook verify 68/68.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit 110aaf87 — one new-ambiguity site found and fixed at story level: Don Woods stamp redundant alias; chain 930/930 clean)
 
 ### Phase 7: D4 — first-class topic field, entity-first resolution
 - **Tier**: Medium
@@ -160,7 +160,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
   - `chord.ebnf` gains the `starts <state>` production; `chord-language.md` gets spec text (the narrative half; fold delivery here since it's new-feature documentation, not a truth-refresh — distinct from Phase 11's touch-up pass).
   - **Rejection test named per the ADR's explicit requirement**: `starts locked` on an entity without `lockable` composed produces the pinned analyzer diagnostic and fails to load (Integration Reality Statement: REAL-PATH test drives a Chord source string through the actual parser→analyzer pipeline, not a hand-built AST fixture).
 - **Exit state**: `create the safe, container, lockable with key the brass key, starts locked` round-trips through the real loader into a `LockableTrait` with `isLocked: true` (REAL-PATH test, not a stub); pairing-violation fixtures produce the correct diagnostic and load error; `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit 14e2e172 — PIN 5 errata: diagnostic is analysis.starts-state-pairing per repo convention; spec landed as chord-language §2.11)
 
 ### Phase 9: D5b — closed-by-default containers
 - **Tier**: Medium

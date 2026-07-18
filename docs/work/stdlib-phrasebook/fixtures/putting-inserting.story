@@ -8,7 +8,7 @@ create the Kitchen
   A stone-flagged kitchen, warm from the oven.
 
 create the breadbox
-  a container, openable
+  a container, openable, starts open
   in the Kitchen
 
   A rolltop breadbox of waxed pine.

@@ -448,6 +448,9 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/ide-protocol:
     dependencies:
@@ -943,13 +946,13 @@ importers:
       '@sharpee/plugin-scheduler':
         specifier: workspace:*
         version: link:../plugin-scheduler
+      '@sharpee/stdlib':
+        specifier: workspace:*
+        version: link:../stdlib
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../world-model
     devDependencies:
-      '@sharpee/stdlib':
-        specifier: workspace:*
-        version: link:../stdlib
       '@types/node':
         specifier: ^20.11.19
         version: 20.19.27

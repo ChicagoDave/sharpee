@@ -8,7 +8,7 @@ create the Strong Room
   A windowless room with one iron shelf.
 
 create the strongbox
-  a container, openable, lockable with key the brass key
+  a container, openable, lockable with key the brass key, starts open
   in the Strong Room
 
   A squat strongbox with a bright keyhole.

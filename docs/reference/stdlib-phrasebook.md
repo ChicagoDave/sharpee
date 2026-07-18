@@ -148,7 +148,7 @@ create the Kitchen
   A stone-flagged kitchen, warm from the oven.
 
 create the breadbox
-  a container, openable
+  a container, openable, starts open
   in the Kitchen
 
   A rolltop breadbox of waxed pine.
@@ -197,8 +197,8 @@ The breadbox is closed.
 You put the carving knife on the kitchen table.
 ```
 
-(A Chord `a container, openable` starts **open**; a plain thing composed
-with the `openable` adjective starts closed — which is why the transcript
+(Openable things start **closed** (ADR-231); the breadbox declares
+`starts open`, which is why the first `put` succeeds and the transcript
 closes the breadbox itself before showing the refusal.)
 
 ## 2. Movement
@@ -381,8 +381,9 @@ You open the shipping crate.
 `lockable with key <entity>` declares the key contract in one line —
 forward references are legal. Keyless LOCK on a keyed lock asks for the
 key; the wrong key refuses; lock state then gates opening. (A Chord
-lockable starts unlocked — there is no `starts locked` yet, which is why
-the transcript locks the box itself first.)
+lockable starts unlocked, and this strongbox declares `starts open`; the
+transcript locks the box itself first — a story could seed the state
+instead with `starts locked`.)
 
 The author writes:
 
@@ -394,7 +395,7 @@ create the Strong Room
   A windowless room with one iron shelf.
 
 create the strongbox
-  a container, openable, lockable with key the brass key
+  a container, openable, lockable with key the brass key, starts open
   in the Strong Room
 
   A squat strongbox with a bright keyhole.
@@ -553,7 +554,7 @@ create the portrait
 
 create the sea chest
   aka chest
-  a container, openable
+  a container, openable, starts open
   in the Study
 
   A brass-bound sea chest.

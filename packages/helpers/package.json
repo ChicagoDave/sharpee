@@ -14,7 +14,9 @@
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo",
-    "build:npm": "tsc --outDir dist"
+    "build:npm": "tsc --outDir dist",
+    "test": "vitest",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@sharpee/world-model": "workspace:*"
@@ -22,7 +24,8 @@
   "devDependencies": {
     "@types/node": "^20.11.19",
     "typescript": "^5.3.3",
-    "rimraf": "^5.0.5"
+    "rimraf": "^5.0.5",
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist"

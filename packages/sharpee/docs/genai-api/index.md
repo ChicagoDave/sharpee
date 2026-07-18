@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.
 
-Generated: 2026-07-18 00:06:25 UTC
+Generated: 2026-07-18 00:15:18 UTC
 
 ## Quick Start
 
@@ -39,6 +39,6 @@ Generated: 2026-07-18 00:06:25 UTC
 | [event-processor.md](event-processor.md) | @sharpee/event-processor | Event sequencing and effect processing. (6 files, ~366 lines) |
 | [combat.md](combat.md) | @sharpee/ext-basic-combat | Basic combat extension — attack/defend mechanics. (5 files, ~261 lines) |
 | [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (31 files, ~3134 lines) |
-| [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~788 lines) |
+| [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~792 lines) |
 | [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (23 files, ~2298 lines) |
 | [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (9 files, ~532 lines) |

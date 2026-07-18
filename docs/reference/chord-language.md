@@ -424,8 +424,10 @@ strategy or variants instead.
 ### 2.11 Starting state
 
 A stateful trait opens for business in its default state: a lockable
-thing starts unlocked, a switchable thing starts off, and — today — an
-openable container starts open. When the story needs otherwise, a safe
+thing starts unlocked, a switchable thing starts off, and an openable
+thing starts closed — declare `starts open` to begin open (ADR-231
+D5b: the trait default is authoritative everywhere; container kinds are
+no exception). When the story needs otherwise, a safe
 that stays locked until the player finds the key, a space heater
 already running, `starts <state>` on the composition line sets the
 trait's initial value.

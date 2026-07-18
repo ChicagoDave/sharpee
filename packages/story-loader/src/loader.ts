@@ -720,10 +720,14 @@ export class ChordStory implements Story {
         const builder = h.container(irEntity.name);
         if (description) builder.description(description);
         if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        if (irEntity.traits.some((t) => t.name === 'openable')) builder.openable();
-        // NOTE: no `builder.lockable()` pre-add — applyTraitAdjectives owns
-        // the lockable composition so `with key X` config is never dropped
-        // (ADR-230 Phase 9a: the keyless pre-add made the keyed re-add skip).
+        // NOTE: no `builder.openable()` or `builder.lockable()` pre-adds —
+        // applyTraitAdjectives owns both compositions uniformly. For lockable,
+        // a keyless pre-add made the keyed re-add skip, dropping `with key X`
+        // config (ADR-230 Phase 9a). For openable, the pre-add carried the
+        // builder's own open-by-default, splitting container-kind entities
+        // from adjective-only ones; ADR-231 D5b removed it so OpenableTrait's
+        // default (closed) is authoritative everywhere — `starts open` is the
+        // author's escape hatch.
         entity = builder.build();
         this.applyContainerConfig(entity, irEntity.kinds[0]);
         break;
@@ -766,10 +770,10 @@ export class ChordStory implements Story {
   /**
    * ADR-231 D5a: map each accepted `starts <state>` initializer to the
    * paired trait's initial-value field (locked→isLocked:true, closed→
-   * isOpen:false, on→isOn:true, …). Runs AFTER trait composition — both the
-   * adjective-composed traits and the container builder's `openable()`
-   * pre-add (isOpen true) — so a declared initializer always wins over any
-   * builder default. Only the trait boolean is set; the state adjective
+   * isOpen:false, on→isOn:true, …). Runs AFTER trait composition (the
+   * adjective-composed traits, ADR-231 D5b: there are no builder pre-adds
+   * left) — so a declared initializer always wins over any
+   * trait default. Only the trait boolean is set; the state adjective
    * itself is never stored story state (the shadow-state ratchet).
    * The analyzer's pairing gate guarantees the trait is present; a missing
    * trait here is a defect, reported as a LoadError, never a silent skip.

@@ -16,7 +16,7 @@ create the portrait
 
 create the sea chest
   aka chest
-  a container, openable
+  a container, openable, starts open
   in the Study
 
   A brass-bound sea chest.
