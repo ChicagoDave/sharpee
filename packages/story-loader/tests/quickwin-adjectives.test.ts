@@ -6,7 +6,7 @@
  *   - G1: `drinkable` → EdibleTrait liquid marker, order-independent with `edible`
  *   - G2: `concealed` → IdentityTrait.concealed marker
  *   - G3: `hiding-spot` → ConcealmentTrait (bare = all positions; narrowed)
- *   - G4/D3: `openable with tool X` resolved to a WORLD id (was silently dropped)
+ *   - G4/D3: `openable with the <tool>` (keyless per R3) resolved to a WORLD id (was silently dropped)
  *   - turning: REAL-PATH — a Chord `on turning it` clause drives stdlib's
  *     rewritten turningAction end-to-end (real compiler, real loader, real
  *     registered interceptor; the ADR-228 D5 registry row is what un-deads
@@ -168,7 +168,7 @@ describe('G4/D3: openable tool config', () => {
   it('stamps the tool as a resolved WORLD id, not a raw name (was silently dropped)', () => {
     const { story, world } = loadStory(storyWith(`create the crate
   in the Shed
-  openable with tool the crowbar
+  openable with the crowbar
 
   A crate.
 
@@ -187,7 +187,7 @@ create the crowbar
   it('rejects a tool name that matches no entity', () => {
     const source = storyWith(`create the crate
   in the Shed
-  openable with tool the ghostbar
+  openable with the ghostbar
 
   A crate.`);
     expect(() => loadStory(source)).toThrowError(/`ghostbar` \(config `tool`\) names no entity/);

@@ -1,8 +1,10 @@
 /**
- * lockable-key.test.ts — ADR-230 Phase 9a: `lockable with key X` survives
- * the loader on CONTAINER kinds (previously the container branch pre-added
- * a keyless LockableTrait and the keyed re-add was guard-skipped), and the
- * key config is a resolved WORLD id, never the raw display-name string.
+ * lockable-key.test.ts — ADR-230 Phase 9a: the key-entity config
+ * (`lockable with the brass key` — keyless per ratchet R3, ADR-234 D6)
+ * survives the loader on CONTAINER kinds (previously the container branch
+ * pre-added a bare LockableTrait and the configured re-add was
+ * guard-skipped), and the key config is a resolved WORLD id, never the
+ * raw display-name string.
  * REAL-PATH: the loaded world drives stdlib's unlockingAction end-to-end.
  */
 import { describe, expect, it } from 'vitest';
@@ -32,7 +34,7 @@ create the Vault
 create the strongbox
   a container
   in the Vault
-  openable, lockable with key the brass key
+  openable, lockable with the brass key
 
   A strongbox.
 

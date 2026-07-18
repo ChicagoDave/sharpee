@@ -60,7 +60,7 @@ create the knife
 
 const CUTTABLE_ROPE = `create the rope
   in the Shed
-  cuttable with tool the knife
+  cuttable with the knife
 
   A rope.
 
@@ -89,7 +89,7 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
   it('rejects a cuttable with no cutting implementation at load time', () => {
     const source = storyWith(`create the rope
   in the Shed
-  cuttable with tool the knife
+  cuttable with the knife
 
   A rope.`);
     expect(() => loadStory(source)).toThrowError(LoadError);
@@ -99,7 +99,7 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
   it('rejects a tool name that matches no entity', () => {
     const source = storyWith(`create the rope
   in the Shed
-  cuttable with tool the chainsaw
+  cuttable with the chainsaw
 
   A rope.
 
@@ -135,7 +135,7 @@ create the shovel
 
 create the sand
   in the Beach
-  diggable with tool the shovel
+  diggable with the shovel
 
   Sand.
 
@@ -183,7 +183,7 @@ end trait
 
 create the rope
   in the Shed
-  severable, cuttable with tool the knife
+  severable, cuttable with the knife
 
   A rope.
 

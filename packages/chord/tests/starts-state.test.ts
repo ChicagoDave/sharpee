@@ -41,7 +41,7 @@ const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
 describe('starts <state> parses through composition (ADR-231 D5a)', () => {
-  const source = story('  a container, openable, lockable with key the brass key, starts locked');
+  const source = story('  a container, openable, lockable with the brass key, starts locked');
 
   it('parses the flagship composition line into AST startsStates', () => {
     const result = parse(source);
@@ -103,7 +103,7 @@ describe('analysis.starts-state-pairing (THE ADR-named rejection gate)', () => {
     const bad = compile(story('  a container, starts unlocked'));
     expect(bad.ok).toBe(false);
     expect(bad.diagnostics.map((d) => d.code)).toContain('analysis.starts-state-pairing');
-    const good = compile(story('  a container, openable, lockable with key the brass key, starts unlocked'));
+    const good = compile(story('  a container, openable, lockable with the brass key, starts unlocked'));
     expect(good.diagnostics).toEqual([]);
     expect(good.ir.entities.find((e) => e.id === 'safe')!.startsStates).toEqual(['unlocked']);
   });

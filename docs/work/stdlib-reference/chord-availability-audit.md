@@ -45,8 +45,9 @@ fix, 2026-07-17).
 **State initializers**: `starts open/closed/locked/unlocked/on/off` +
 generic `starts <state-adjective>` (ADR-231 D5).
 
-† `a door` **throws a LoadError** (`loader.ts:750-751` — "doors need `between`
-placement") — the door child ADR (ADR-233 G1, Q-1 ruled) closes this.
+† ~~`a door` throws a LoadError~~ **CLOSED 2026-07-18 (session d02586)**:
+doors load via the `through` exit-line tail (ADR-234, ratchet R2) — the
+audit's last ❌ construct. See the going row and the closure note below.
 
 Notably **absent**: `combatant`, `weapon`, `health`, `breakable`,
 `destructible`, any sound/listener trait, `npc`, `vehicle`, `region`.
@@ -78,7 +79,7 @@ Notably **absent**: `combatant`, `weapon`, `health`, `breakable`,
 
 | Action | Requirement | Chord path | Verdict | Class | To close |
 |---|---|---|---|---|---|
-| going | ROOM + exit config; door via `exit.via` (`going.ts:273-301`) | exits + static/conditional blocked exits ✅; **door-gated exits unreachable** — `a door` LoadError, `connectRooms` never sets `via`, so going's door_closed/door_locked branches are dead from Chord | ⚠️ | CAN (plain/blocked) / CHORD-GAP (doors) | door child ADR (ADR-233 Q-1 ruled: `between` on door + `through` exit sugar) |
+| going | ROOM + exit config; door via `exit.via` (`going.ts:273-301`) | exits + static/conditional blocked exits ✅; **doors ✅ (2026-07-18, ADR-234)** — `through the <door>` exit tail wires `via` both directions through `connectRooms(…, doorId)` (ADR-237 D4); going's door_closed/door_locked branches exercised REAL-PATH from Chord (locked default, unlock/open, both directions) + full-parser far-side transcript (ADR-238 two-sided presence) | ✅ | CAN | — (`, one-way` reserved, not wired) |
 | exiting | containment state; target-aware (ADR-231 P5) | `enterable` + full exit grammar incl. `get/climb out of :container` | ✅ | CAN | — |
 | entering | ENTERABLE, open if openable | `enterable` (ratchet F1) | ✅ | CAN | — |
 | climbing | CLIMBABLE or enterable supporter; directional via exits | `climbable` (ratchet F2) + `climb :target` family. (No bare `climb up/down` core rule — `go up` covers it; observation, not a gap) | ✅ | CAN | — |
@@ -132,13 +133,17 @@ trait. All parse. All CAN.
 
 ## Part 1 result — 54 player-facing actions
 
-**50 ✅ full · 4 ⚠️ partial · 0 ❌ gaps** (updated 2026-07-17, session 615882:
-the go-live plan Phase 3 mechanical shortlist closed all 5 ❌ gaps and 3 of the
-7 ⚠️ — every item individually signed off by David).
+**52 ✅ full · 2 ⚠️ partial · 0 ❌ gaps** (updated 2026-07-18, session d02586:
+going's door half closed by ADR-234 — the parity table's last ❌ construct;
+attacking closed earlier the same day by the extension surface, session
+501cac — this Part-1 count now matches the scoreboard. Previous update
+2026-07-17, session 615882: the go-live plan Phase 3 mechanical shortlist
+closed all 5 ❌ gaps and 3 of the 7 ⚠️ — every item individually signed off
+by David).
 
 | Bucket | Actions |
 |---|---|
-| ⚠️ partial (4) | going (doors → child ADR, Phase 4), asking, telling (topic surface), attacking (systemic combat → extension surface, Phase 5) |
+| ⚠️ partial (2) | asking, telling (topic surface) |
 
 Shortlist closures 2026-07-17 (session 615882): pushing, pulling (D1 loader
 fix), drinking (`drinkable`, G1), searching (`concealed`, G2), hiding
@@ -300,13 +305,13 @@ superseded as follows:
 
 | Surface | Reachable today | Gap |
 |---|---|---|
-| **Actions** | 51/54 full + 3 partial (attacking ✅ 2026-07-18) | 0 hard gaps; door construct still doesn't load (child ADR ruled, Q-1) |
+| **Actions** | 52/54 full + 2 partial-in-kind (attacking ✅, going/doors ✅ 2026-07-18) | 0 hard gaps; door construct LOADS (ADR-234 shipped — `through` tail, R2/R3, two-sided presence ADR-238) |
 | **Daemons/fuses** | fixed timelines + presence/region-gated recurring + story-global (ADR-236) | imperative timer management (cancel, inline delay, period, reschedule, priority) |
 | **Plugins/extensions** | scheduler + NPC (auto-wired) + state-machines (`use`) + combat (`use`); in-language define trait/action strong | third-party extensions (deferred ADR); behavior hatch REMOVED (D2, by design) |
 | **Browser emits** | all text surfaces + all media/audio channels (payloaded emit, sugar, assets, custom channels, `client has`) | `audibility` spatial channel; legacy `audio.*` via raw emit only |
 
 **The load-bearing design-heavy gaps** (unchanged in kind, sharper in detail):
-1. **Door loading** — child ADR ruled (ADR-233 Q-1): `between` + `through`, both in-gate.
+1. **Door loading** — ✅ **CLOSED 2026-07-18** (ADR-234 implemented, session d02586: `through` exit sugar only — `between` struck by David's Q-1 supersession; ratchets R2/R3; ADR-237 one-wiring-path; ADR-238 two-sided presence).
 2. **Extension/plugin opt-in surface** — gates systemic combat, NPC library, ambient channels. (ADR-233 Q-2, deferred to this audit's numbers.)
 3. **Emit payload + media** — ADR-215/216 accepted, unimplemented.
 4. **Topic surface for asking/telling** — new since last audit (the actions grew topics; Chord can't see them).

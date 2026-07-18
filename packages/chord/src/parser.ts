@@ -830,6 +830,32 @@ class Parser {
     const settings: ConfigSetting[] = [];
     for (;;) {
       const startTok = c.peek();
+      // Ratchet R3 (ADR-234 D6): an article directly after `with`/`and`
+      // starts the adjective's single-entity config value — no keyword
+      // (`lockable with the iron key`). Keyed named fields (`with food the
+      // handful of feed` on authored traits) still parse below: their key
+      // words come first, so the article is not in first position.
+      if (startTok && startTok.kind === 'word' && ARTICLES.has(startTok.text)) {
+        c.next(); // article
+        const nameWords: string[] = [];
+        let lastTok = startTok;
+        while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and') && !c.isWord('while')) {
+          lastTok = c.next()!;
+          nameWords.push(lastTok.text);
+        }
+        if (nameWords.length === 0) {
+          this.diagnostics.error('parse.config-value', 'Expected an entity name after the article.', c.restSpan());
+          break;
+        }
+        settings.push({
+          key: [],
+          value: nameWords.join(' '),
+          valueKind: 'name',
+          span: mergeSpans(startTok.span, lastTok.span),
+        });
+        if (!c.matchWord('and')) break;
+        continue;
+      }
       const key: string[] = [];
       while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and') && !c.isWord('while')) {
         const t = c.peek()!;
@@ -856,6 +882,18 @@ class Parser {
         if (nameWords.length === 0) {
           this.diagnostics.error('parse.config-value', 'Expected an entity name after the article.', c.restSpan());
           break;
+        }
+        // Ratchet R3 (ADR-234 D6): the `key`/`tool` config keywords are
+        // removed — the entity is written directly after `with`. One form
+        // per concept (Given 7); the fix-it names the replacement.
+        if (key.length === 1 && (key[0] === 'key' || key[0] === 'tool')) {
+          this.diagnostics.error(
+            'parse.removed-config-keyword',
+            `\`with ${key[0]} the …\` was removed (ratchet R3) — write the entity directly: \`with the ${nameWords.join(' ')}\`.`,
+            startTok ? mergeSpans(startTok.span, lastTok.span) : lastTok.span,
+          );
+          if (!c.matchWord('and')) break;
+          continue;
         }
         settings.push({
           key,

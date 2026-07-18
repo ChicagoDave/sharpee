@@ -1131,7 +1131,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "condition": null,
           "config": [
             {
-              "key": "key",
+              "key": "",
               "value": "staff keycard",
               "valueKind": "name",
             },
@@ -1139,7 +1139,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "name": "lockable",
           "span": {
             "column": 22,
-            "endColumn": 57,
+            "endColumn": 53,
             "endLine": 132,
             "line": 132,
           },

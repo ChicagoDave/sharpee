@@ -168,7 +168,9 @@ create-line  = "aka" alias { "," alias } NL
                                                               D3). Placement lines on a
                                                               region are `analysis.region-
                                                               placement` *)
-             | DIRECTION "to" name NL                      (* exit *)
+             | DIRECTION "to" name [ "through" name ] NL   (* exit; `through the <door>` tail
+                                                              (ADR-234 D1, ratchet R2) — see
+                                                              "Doors" below *)
              | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
                                                            (* blocked exit, phrase key *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
@@ -200,12 +202,66 @@ composition  = [ ARTICLE ] WORD                            (* article ⇒ kind n
                                                               other word is `parse.starts-state` *)
 STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
              | "off" | "on" ;
-setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
+setting      = ARTICLE name                                (* ratchet R3 (ADR-234 D6): article
+                                                              directly after `with`/`and` = the
+                                                              adjective's single-entity value —
+                                                              `lockable with the iron key`,
+                                                              `cuttable with the knife`,
+                                                              `diggable with the shovel`,
+                                                              `openable with the crowbar`. The
+                                                              removed `key`/`tool` keywords are
+                                                              `parse.removed-config-keyword`
+                                                              with fix-its *)
+             | WORD { WORD }
+               ( NUMBER | STRING | WORD | ARTICLE name ) ; (* last token(s) = the value; keyed
+                                                              ARTICLE-name values remain for
+                                                              authored-trait NAMED data fields
+                                                              (`feedable with food the handful
+                                                              of feed` — the keyword is the
+                                                              field name) and word/number/string
+                                                              configs keep their keyword
+                                                              (`hiding-spot with position
+                                                              behind`) *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement… *)
              | "starts" "in" name ;                        (* …on + bare word = on-clause *)
 DIRECTION    = north | south | east | west | northeast | northwest
              | southeast | southwest | up | down ;
 ```
+
+## Doors (ADR-234/237/238, ratchets R2/R3, 2026-07-18)
+
+- **One authoring form** — the exit-line tail: `north to the Hall through
+  the oak door`. Direction explicit on the line; the reverse exit is
+  inferred as the opposite direction (`connectRooms`'s established
+  convention) — no matching line needed in the far room. A mirrored
+  far-room line is legal only as the exact mirror (other side, opposite
+  direction, stated at most once — `analysis.door-pair-mismatch`
+  otherwise). `through` references a DECLARED door and never creates one
+  (unknown name = `analysis.unknown-entity`; a non-door target =
+  `analysis.door-through-kind`). `through` is a reserved word on exit-line
+  destination names. The `between` placement form was struck before ever
+  entering the grammar (David, 2026-07-17).
+- **The door block is pure entity declaration** — kind, traits, aka,
+  description, phrases, `on`/`after` clauses; it never names the rooms.
+  Placement lines on it are `analysis.door-placement`: a door's location
+  IS its room pair (the loader places it in the declaring room; it is
+  present at BOTH rooms for scope and visibility, and only the door is —
+  the far room never leaks — ADR-238). A door referenced by no `through`
+  line is `analysis.door-unconnected` (hard); more than one room pair is
+  `analysis.door-multi-pair`.
+- **Defaults (D4)**: `a door` composes SceneryTrait + OpenableTrait
+  starting CLOSED (`starts open` overrides). `lockable` is composed
+  explicitly, and on a door starts LOCKED — the kind-scoped IF-convention
+  default; `a door, lockable with the iron key, starts unlocked` is the
+  override. A permanently open passage needs no door entity at all.
+- **`, one-way`** is reserved, not wired: `parse.exit-one-way-reserved`
+  names the reservation legibly. Doors and exits are bidirectional until
+  its own ratchet entry lands.
+- **Wiring (ADR-237 D4)**: the loader composes the door by direct trait
+  composition and wires it exactly once through
+  `connectRooms(room1, room2, direction, doorId)` — the platform's one
+  exit-wiring implementation (via stamped both directions + room1
+  placement; the primitive owns the DoorTrait-vs-exits invariant).
 
 ## Extension surface (ADR-215/216, 2026-07-18)
 

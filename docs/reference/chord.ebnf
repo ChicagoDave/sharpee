@@ -134,7 +134,24 @@ create-line  = "aka" alias { "," alias } NL
                                                               regions. Placement lines on
                                                               a region block are a load
                                                               error *)
-             | DIRECTION "to" name NL                      (* exit *)
+             | DIRECTION "to" name [ "through" name ] NL   (* exit; `through the <door>`
+                                                              tail (ADR-234 D1, ratchet
+                                                              R2) is the ONE door
+                                                              relationship form — the
+                                                              door must be declared, the
+                                                              reverse exit is inferred
+                                                              (opposite direction), a
+                                                              mirrored far-room line is
+                                                              legal only as the exact
+                                                              mirror. `, one-way` is
+                                                              reserved, not wired (parse
+                                                              error names it). Placement
+                                                              lines on a door block are
+                                                              a load error — a door's
+                                                              location IS its room pair
+                                                              (loader places it in the
+                                                              declaring room; present at
+                                                              BOTH rooms, ADR-238) *)
              | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
                                                            (* blocked exit *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
@@ -170,10 +187,25 @@ composition  = [ ARTICLE ] WORD                            (* article => kind no
                                                               parse error *)
 STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
              | "off" | "on" ;
-setting      = WORD { WORD }
-               ( NUMBER | STRING | WORD | name-list-value ) ;
+setting      = ARTICLE name                                (* ratchet R3 (ADR-234 D6):
+                                                              article directly after
+                                                              `with`/`and` = the
+                                                              adjective's single-entity
+                                                              value (`lockable with the
+                                                              iron key`, `cuttable with
+                                                              the knife`). The old
+                                                              `key`/`tool` keywords are
+                                                              parse errors with fix-its *)
+             | WORD { WORD }
+               ( NUMBER | STRING | WORD | name-list-value
+               | ARTICLE name ) ;
                                                            (* last token(s) = the value.
-                                                              Extension adjectives
+                                                              Keyed ARTICLE-name values
+                                                              remain for authored-trait
+                                                              NAMED data fields (`with
+                                                              food the handful of feed`)
+                                                              — the keyword is the field
+                                                              name. Extension adjectives
                                                               (ADR-215: combatant,
                                                               weapon, the NPC library)
                                                               take manifest-typed

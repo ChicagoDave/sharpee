@@ -1145,13 +1145,14 @@ export class ChordStory implements Story {
           entity.add(new ReadableTrait({ text: configValue(trait, 'text') ?? '' }));
           break;
         case 'openable': {
-          // Defect D3 fix (2026-07-17, ratchet G4): `openable with tool the
-          // crowbar` gates opening on holding the tool (OpenableTrait.toolId,
-          // ADR-230 D3b). Name → world id via the shared pending mechanism —
-          // never the raw display-name string (the lockable-bug class).
+          // Defect D3 fix (2026-07-17, ratchet G4): `openable with the
+          // crowbar` (keyless per R3) gates opening on holding the tool
+          // (OpenableTrait.toolId, ADR-230 D3b). Name → world id via the
+          // shared pending mechanism — never the raw display-name string
+          // (the lockable-bug class).
           if (entity.has(TraitType.OPENABLE)) break;
           const openable = new OpenableTrait();
-          const openToolName = configValue(trait, 'tool');
+          const openToolName = entityConfigValue(trait);
           if (openToolName !== undefined) {
             this.pendingEntityRefs.push(
               this.entityRefFor(openToolName, 'tool', irEntity, trait.span, (worldId) => {
@@ -1163,9 +1164,10 @@ export class ChordStory implements Story {
           break;
         }
         case 'lockable': {
-          // ADR-230 Phase 9a: `with key X` resolves name → world id through
-          // the shared pending mechanism (forward refs legal) — the raw
-          // display-name string never reaches LockableTrait.keyId.
+          // ADR-230 Phase 9a: the key entity (`lockable with the iron key`,
+          // keyless per R3) resolves name → world id through the shared
+          // pending mechanism (forward refs legal) — the raw display-name
+          // string never reaches LockableTrait.keyId.
           if (entity.has(TraitType.LOCKABLE)) break;
           // ADR-234 D4 kind-scoped default: a lockable DOOR starts locked
           // (the IF convention; createDoor's `isLocked ?? true` parity) —
@@ -1173,7 +1175,7 @@ export class ChordStory implements Story {
           // `starts unlocked` is the author's override: applyStartsStates
           // runs after composition, so a declared initializer always wins.
           const lockable = new LockableTrait(kind === 'door' ? { isLocked: true } : {});
-          const keyName = configValue(trait, 'key');
+          const keyName = entityConfigValue(trait);
           if (keyName !== undefined) {
             this.pendingEntityRefs.push(
               this.entityRefFor(keyName, 'key', irEntity, trait.span, (worldId) => {
@@ -1192,7 +1194,7 @@ export class ChordStory implements Story {
           const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : TraitType.DIGGABLE;
           if (entity.has(traitType)) break;
           const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : new DiggableTrait();
-          const toolName = configValue(trait, 'tool');
+          const toolName = entityConfigValue(trait);
           if (toolName !== undefined) {
             this.pendingEntityRefs.push(
               this.entityRefFor(toolName, 'tool', irEntity, trait.span, (worldId) => {
@@ -1882,6 +1884,15 @@ function supporterCapacity(kind: IRComposition): { maxItems?: number } {
 
 function configValue(comp: IRComposition, key: string): string | undefined {
   return comp.config.find((c) => c.key === key)?.value;
+}
+
+/**
+ * Ratchet R3 (ADR-234 D6): the adjective's single-entity `with` value —
+ * keyless (`lockable with the iron key`). The parser stores it under the
+ * empty key with valueKind 'name'.
+ */
+function entityConfigValue(comp: IRComposition): string | undefined {
+  return comp.config.find((c) => c.key === '' && c.valueKind === 'name')?.value;
 }
 
 /**

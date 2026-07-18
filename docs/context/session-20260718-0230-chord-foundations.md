@@ -24,11 +24,16 @@
 
 - **Phase 3 COMPLETE (door defaults + action integration + save/restore)**: kind-scoped locked-by-default lockable on doors (override + non-door pins); `parse.exit-one-way-reserved` legible stub. **Platform gap found by AC-3's verified-live clause: no far-side door scope existed** (engine vocabulary-manager runs on `world.getInScope`; default rules were room-contents + inventory only). **David's ruling: a door is located in BOTH of its rooms — and only the door; the far room and its contents must never become referenceable through it** (the classic IF-platform gotcha). Landed as `default_door_visibility` core scope rule + `VisibilityBehavior` two-sided door case, with no-leak world-model pins. REAL-PATH AC-2/3/4 green (real going/examine/open/close/lock/unlock, save/restore) + full-parser transcript proof (close from the far room, 6/6 via bundle). Suites: world-model 1381, chord 333, story-loader 260, stdlib 1534; cloak + zoo gates green.
 
-## Status: IN PROGRESS (Phases 1–3 done, uncommitted; Phases 4–5 pending)
+- Phases 1–3 committed 41f51170 (28 files) after ADR-238 was written (ACCEPTED — two-sided door presence, David's ruling).
+- **Phase 4 COMPLETE (ratchet R3, breaking migration David-confirmed)**: keyless single-entity `with` config (`lockable with the iron key`); `with key/tool the …` → `parse.removed-config-keyword` + fix-it; carve-outs pinned (word-valued keyed configs, authored-trait named fields like `feedable with food …`); loader `entityConfigValue`; full fixture/story migration sweep to zero keyed usages (zoo.story included, cloak clean); zoo golden churn exactly key→''; R3 ratchet row appended. chord 338, story-loader 260, cloak + zoo gates green.
+
+- **Phase 5 COMPLETE (closure) — ALL 5 DOOR PHASES DONE, workstream COMPLETE**: chord-grammar.md "Doors" section + R3 productions, chord.ebnf updated, zero stale keyed examples; R2/R3 rows verified; availability audit door/going rows closed and Part-1 count reconciled with the scoreboard (52 ✅ / 2 ⚠️ / 0 ❌ — the parity table's last ❌ construct is gone); elegance fixture `door-vignette.story` + REAL-PATH take→unlock→open→walk-through demo; full regression (chord 338, story-loader 261, world-model 1381, helpers 6, stdlib 1534, engine 513, repokit build, cloak 81/81, zoo 71/71+56/56). `.current-plan` back on chord-go-live; umbrella records the G1 door line closed — **no pre-G4 child workstreams remain**.
+
+## Status: COMPLETE (all 5 door phases done; Phases 1–3 committed 41f51170, Phases 4–5 uncommitted)
 
 ## Next session
-- Commit Phases 1–3 (nothing committed yet this session).
-- Phase 4 next: ratchet R3 keyless `with` config — **carries its own stop-and-ask** (confirm the breaking migration before parser code).
-- Possible ADR ask outstanding: record the two-sided-door-presence ruling (door at both rooms, no far-room leak) — currently pinned in code/tests + plan log only.
+- Commit Phases 4–5.
+- **Two open flags for David**: (1) confirm ADR-233's G1 door line is satisfied (umbrella gate — not self-marked); (2) disposition of the stale `docs/work/chord-doors/plan.md` (ADR-220, `between`-form foundation struck) — rename+refresh vs archive.
+- With all G1 child workstreams closed, the umbrella's next queued phases (Phase 6+, toward G4 release) are the natural continuation.
 - Open items for David: (1) actor `article: undefined` quirk above; (2) ADR-220 plan file disposition (rename vs archive).
 - Still parked (unchanged): chain RNG-death flake investigation; troll-GDT ruling remains CLOSED — do not re-flag.

@@ -140,7 +140,7 @@ create the staff keycard
 
 create the staff gate
   aka gate, metal gate, staff door
-  scenery, openable, lockable with key the staff keycard
+  scenery, openable, lockable with the staff keycard
   in the Main Path
 
   A sturdy metal gate with a "STAFF ONLY" sign.

@@ -37,7 +37,7 @@ create the Vault
   A vault.
 
 create the safe
-  a container, openable, lockable with key the brass key, starts locked
+  a container, openable, lockable with the brass key, starts locked
   in the Vault
 
   A safe.

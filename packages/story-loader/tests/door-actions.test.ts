@@ -56,7 +56,7 @@ create the Hall
   A long hall.
 
 create the oak door
-  a door, lockable with key the brass key
+  a door, lockable with the brass key
 
   A heavy oak door.
 
@@ -79,8 +79,8 @@ create the player
 `;
 
 const STORY_UNLOCKED = STORY.replace(
-  'a door, lockable with key the brass key',
-  'a door, lockable with key the brass key, starts unlocked',
+  'a door, lockable with the brass key',
+  'a door, lockable with the brass key, starts unlocked',
 );
 
 interface Loaded {

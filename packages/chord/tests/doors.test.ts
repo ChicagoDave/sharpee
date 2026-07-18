@@ -117,6 +117,72 @@ create the Hall
   });
 });
 
+describe('ratchet R3 — keyless single-entity `with` config (ADR-234 D6, AC-6)', () => {
+  const LOCK_STORY = (composition: string) => story(`create the Vault
+  a room
+
+create the strongbox
+  a container
+  in the Vault
+  openable, ${composition}
+
+create the brass key
+
+`);
+
+  it('the keyless form parses: empty key, name value', () => {
+    const result = compile(LOCK_STORY('lockable with the brass key'));
+    expect(result.diagnostics).toEqual([]);
+    const strongbox = result.ir.entities.find((e) => e.id === 'strongbox')!;
+    const lockable = strongbox.traits.find((t) => t.name === 'lockable')!;
+    expect(lockable.config).toEqual([{ key: '', value: 'brass key', valueKind: 'name' }]);
+  });
+
+  it('`with key the …` is a parse error with the fix-it naming the new form', () => {
+    const result = compile(LOCK_STORY('lockable with key the brass key'));
+    const removed = result.diagnostics.find((d) => d.code === 'parse.removed-config-keyword')!;
+    expect(removed).toBeDefined();
+    expect(removed.message).toContain('`with the brass key`');
+  });
+
+  it('`with tool the …` is the same parse error', () => {
+    expect(errorCodes(story(`create the crate
+  openable with tool the crowbar
+
+create the crowbar
+
+`))).toContain('parse.removed-config-keyword');
+  });
+
+  it('keyed NAMED fields on authored traits keep their keyword (the carve-out)', () => {
+    const result = compile(story(`define trait feedable
+  data food: entity
+end trait
+
+create the goat
+  feedable with food the handful of feed
+
+create the handful of feed
+
+`));
+    const goat = result.ir.entities.find((e) => e.id === 'goat')!;
+    const feedable = goat.traits.find((t) => t.name === 'feedable')!;
+    expect(feedable.config).toMatchObject([{ key: 'food', value: 'handful of feed', valueKind: 'name' }]);
+  });
+
+  it('word-valued configs keep their keyword (`with position behind`)', () => {
+    const result = compile(story(`create the sofa
+
+create the mouse
+  hiding-spot with position behind
+
+`));
+    const mouse = result.ir.entities.find((e) => e.id === 'mouse')!;
+    const spot = mouse.traits.find((t) => t.name === 'hiding-spot')!;
+    expect(spot.config).toMatchObject([{ key: 'position', value: 'behind', valueKind: 'word' }]);
+  });
+});
+
 describe('door never-guess gates (ADR-234 D3, AC-5)', () => {
   it('rejects `through` naming a non-door (analysis.door-through-kind)', () => {
     expect(errorCodes(story(`create the Kitchen
