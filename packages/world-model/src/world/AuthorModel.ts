@@ -291,8 +291,8 @@ export class AuthorModel implements IWorldModel {
   }
 
   // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void {
-    this.worldModel.connectRooms(room1Id, room2Id, direction);
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void {
+    this.worldModel.connectRooms(room1Id, room2Id, direction, doorId);
   }
 
   createDoor(displayName: string, opts: {

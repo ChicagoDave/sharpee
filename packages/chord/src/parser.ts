@@ -600,8 +600,33 @@ class Parser {
         this.pos++;
         cur.next();
         cur.next();
-        const to = this.parseNameRef(cur, () => false);
-        decl.exits.push({ kind: 'exit', direction: word, to, span: lineSpan(line) } as ExitDecl);
+        // `through` is reserved on exit lines as the door tail (ADR-234 D1,
+        // ratchet R2) — it stops the destination name.
+        const to = this.parseNameRef(cur, (t) => t.kind === 'word' && t.text === 'through');
+        let via: NameRef | null = null;
+        if (cur.matchWord('through')) {
+          const doorRef = this.parseNameRef(cur, () => false);
+          if (doorRef.words.length === 0) {
+            this.diagnostics.error(
+              'parse.exit-through',
+              'Expected a door name after `through` (e.g. `north to the Hall through the oak door`).',
+              lineSpan(line),
+            );
+          } else {
+            via = doorRef;
+          }
+        }
+        // ADR-234 D4: `, one-way` is reserved (traversable in the written
+        // direction only) but NOT wired — a legible reservation error, not
+        // a generic parse failure, until its own ratchet entry lands.
+        if (cur.peek()?.kind === 'comma' && cur.isWord('one-way', 1)) {
+          this.diagnostics.error(
+            'parse.exit-one-way-reserved',
+            '`, one-way` is reserved but not yet wired — exits and doors are bidirectional for now.',
+            lineSpan(line),
+          );
+        }
+        decl.exits.push({ kind: 'exit', direction: word, to, via, span: lineSpan(line) } as ExitDecl);
       } else if (word && DIRECTIONS.has(word) && cur.isWord('is', 1) && cur.isWord('blocked', 2)) {
         this.pos++;
         const blocked = this.parseBlockedExit(word, line);

@@ -170,6 +170,12 @@ export interface IRExit {
   direction: string;
   /** Entity ID of the destination room. */
   to: string;
+  /**
+   * Entity ID of the door this exit passes through (`through the <door>`,
+   * ADR-234 D1) — null on plain exits. The loader stamps it as `via` on
+   * both directions and places the door in the declaring room.
+   */
+  via: string | null;
   span: Span;
 }
 

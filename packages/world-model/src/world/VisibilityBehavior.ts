@@ -12,6 +12,7 @@ import { OpenableTrait } from '../traits/openable/openableTrait';
 import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
 import { SceneryTrait } from '../traits/scenery/sceneryTrait';
 import { IdentityTrait } from '../traits/identity/identityTrait';
+import { DoorTrait } from '../traits/door/doorTrait';
 import { findTraitWithCapability } from '../capabilities';
 
 /**
@@ -108,7 +109,14 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    if (!observerRoom || observerRoom.id !== targetRoom?.id) {
+    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
+    // 2026-07-18): visible from either side. Only the door itself is
+    // two-sided — the far room and its contents stay unseen.
+    const targetDoor = target.getTrait(DoorTrait);
+    const doorPresent = !!targetDoor && !!observerRoom &&
+      (targetDoor.room1 === observerRoom.id || targetDoor.room2 === observerRoom.id);
+
+    if (!observerRoom || (!doorPresent && observerRoom.id !== targetRoom?.id)) {
       return false;
     }
 
@@ -131,6 +139,12 @@ export class VisibilityBehavior extends Behavior {
         // Otherwise can't see in darkness
         return false;
       }
+    }
+
+    // A far-side door sits at the room boundary — container occlusion
+    // cannot apply across it.
+    if (doorPresent && observerRoom.id !== targetRoom?.id) {
+      return true;
     }
 
     // Check line of sight through containers
@@ -226,13 +240,25 @@ export class VisibilityBehavior extends Behavior {
       }
     }
     
+    // Doors of this room whose spatial home is the far side (ADR-234 AC-3;
+    // David's ruling 2026-07-18): a door is present at both of its rooms.
+    for (const door of world.findByTrait(TraitType.DOOR)) {
+      if (seen.has(door.id)) continue;
+      const doorTrait = door.getTrait(DoorTrait);
+      if (!doorTrait || (doorTrait.room1 !== observerRoom.id && doorTrait.room2 !== observerRoom.id)) continue;
+      if (this.canSee(observer, door, world)) {
+        visible.push(door);
+        seen.add(door.id);
+      }
+    }
+
     // Add carried items
     const carried = world.getContents(observer.id);
     for (const entity of carried) {
       if (!seen.has(entity.id)) {
         visible.push(entity);
         seen.add(entity.id);
-        
+
         // Check contents of carried containers
         if (entity.hasTrait(TraitType.CONTAINER) || entity.hasTrait(TraitType.SUPPORTER)) {
           this.addVisibleContents(entity, visible, seen, world);

@@ -7049,7 +7049,7 @@ export interface IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -7279,8 +7279,15 @@ export declare class WorldModel implements IWorldModel {
     /**
      * Create a bidirectional connection between two rooms.
      * Sets exits in both directions (e.g. NORTH on room1, SOUTH on room2).
+     *
+     * With `doorId` (ADR-237 D4) this is the platform's one door-wiring
+     * implementation: the door id is stamped on both exits (`via`) and the
+     * door entity is placed in room1 for scope resolution. Throws if the id
+     * resolves to no entity or to an entity without DoorTrait, or if the
+     * trait's room pair disagrees with the rooms passed — the primitive owns
+     * the invariant that DoorTrait and the exits never disagree.
      */
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
     /**
      * Create a door entity and wire it into both rooms' exit data.
      * The door is placed in room1 spatially (for scope resolution).
@@ -7648,7 +7655,7 @@ export declare class AuthorModel implements IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;

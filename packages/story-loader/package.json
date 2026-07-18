@@ -25,7 +25,6 @@
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/ext-basic-combat": "workspace:*",
-    "@sharpee/helpers": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",

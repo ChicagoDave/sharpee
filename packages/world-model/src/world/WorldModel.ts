@@ -386,7 +386,7 @@ export interface IWorldModel {
   setPlayer(entityId: string): void;
 
   // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
   createDoor(displayName: string, opts: {
     room1Id: string;
     room2Id: string;
@@ -1530,6 +1530,24 @@ export class WorldModel implements IWorldModel {
       priority: 100,
       source: 'core'
     });
+
+    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
+    // 2026-07-18): referenceable from either side. Only the door enters
+    // scope this way — the far room and its contents never do.
+    this.addScopeRule({
+      id: 'default_door_visibility',
+      fromLocations: '*',
+      includeEntities: (context) =>
+        this.findByTrait(TraitType.DOOR)
+          .filter((door) => {
+            const doorTrait = door.get(TraitType.DOOR) as DoorTrait | undefined;
+            return doorTrait !== undefined
+              && (doorTrait.room1 === context.currentLocation || doorTrait.room2 === context.currentLocation);
+          })
+          .map((door) => door.id),
+      priority: 50,
+      source: 'core'
+    });
   }
 
   /**
@@ -1603,8 +1621,15 @@ export class WorldModel implements IWorldModel {
   /**
    * Create a bidirectional connection between two rooms.
    * Sets exits in both directions (e.g. NORTH on room1, SOUTH on room2).
+   *
+   * With `doorId` (ADR-237 D4) this is the platform's one door-wiring
+   * implementation: the door id is stamped on both exits (`via`) and the
+   * door entity is placed in room1 for scope resolution. Throws if the id
+   * resolves to no entity or to an entity without DoorTrait, or if the
+   * trait's room pair disagrees with the rooms passed — the primitive owns
+   * the invariant that DoorTrait and the exits never disagree.
    */
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void {
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void {
     const room1 = this.getEntity(room1Id);
     const room2 = this.getEntity(room2Id);
     if (!room1 || !room2) {
@@ -1612,8 +1637,34 @@ export class WorldModel implements IWorldModel {
     }
 
     const opposite = getOppositeDirection(direction);
-    RoomBehavior.setExit(room1, direction, room2Id);
-    RoomBehavior.setExit(room2, opposite, room1Id);
+
+    if (doorId === undefined) {
+      RoomBehavior.setExit(room1, direction, room2Id);
+      RoomBehavior.setExit(room2, opposite, room1Id);
+      return;
+    }
+
+    const door = this.getEntity(doorId);
+    if (!door) {
+      throw new Error(`connectRooms: door must exist (${doorId})`);
+    }
+    const doorTrait = door.get(TraitType.DOOR) as DoorTrait | undefined;
+    if (!doorTrait) {
+      throw new Error(`connectRooms: \`${doorId}\` has no DoorTrait — compose the trait before wiring`);
+    }
+    // DoorTrait's constructor requires both rooms, so the pair is always
+    // pre-set: verify it names the rooms being wired (room1 = placement).
+    if (doorTrait.room1 !== room1Id || doorTrait.room2 !== room2Id) {
+      throw new Error(
+        `connectRooms: DoorTrait on \`${doorId}\` connects (${doorTrait.room1}, ${doorTrait.room2}), not (${room1Id}, ${room2Id})`
+      );
+    }
+
+    RoomBehavior.setExit(room1, direction, room2Id, doorId);
+    RoomBehavior.setExit(room2, opposite, room1Id, doorId);
+
+    // Place door in room1 for scope resolution
+    this.moveEntity(doorId, room1Id);
   }
 
   /**
@@ -1656,13 +1707,8 @@ export class WorldModel implements IWorldModel {
       }));
     }
 
-    // Wire exits through the door
-    const opposite = getOppositeDirection(opts.direction);
-    RoomBehavior.setExit(room1, opts.direction, opts.room2Id, door.id);
-    RoomBehavior.setExit(room2, opposite, opts.room1Id, door.id);
-
-    // Place door in room1 for scope resolution
-    this.moveEntity(door.id, opts.room1Id);
+    // One wiring path (ADR-237 D4)
+    this.connectRooms(opts.room1Id, opts.room2Id, opts.direction, door.id);
 
     return door;
   }

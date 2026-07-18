@@ -68,6 +68,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
             "line": 11,
           },
           "to": "cloakroom",
+          "via": null,
         },
         {
           "direction": "south",
@@ -78,6 +79,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
             "line": 12,
           },
           "to": "foyer-bar",
+          "via": null,
         },
       ],
       "id": "foyer-of-the-opera-house",

@@ -253,6 +253,12 @@ export interface ExitDecl {
   kind: 'exit';
   direction: string;
   to: NameRef;
+  /**
+   * `through the <door>` tail (ADR-234 D1, ratchet R2) — the one door
+   * relationship form. Null on plain exits. References a declared door;
+   * never creates one.
+   */
+  via: NameRef | null;
   span: Span;
 }
 

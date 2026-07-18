@@ -49,6 +49,7 @@ import {
   IRActionDef,
   IRCondition,
   IREntity,
+  IRExit,
   IRChannelDef,
   IREmitField,
   IREmitValue,
@@ -66,6 +67,18 @@ import { Span } from './span';
 
 /** Phase A stories register text in this locale (design.md §2.6). */
 const DEFAULT_LOCALE = 'en-US';
+
+/**
+ * Exit-direction opposites (parser DIRECTIONS vocabulary) — the same
+ * inference every plain exit line performs platform-side; here it backs
+ * the door mirror-line check (ADR-234 D2/D3, `checkDoors`).
+ */
+const OPPOSITE_DIRECTION: Record<string, string> = {
+  north: 'south', south: 'north', east: 'west', west: 'east',
+  northeast: 'southwest', southwest: 'northeast',
+  northwest: 'southeast', southeast: 'northwest',
+  up: 'down', down: 'up',
+};
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
 
 /** Reserved-name gate text (David, 2026-07-12 — each package P3). */
@@ -481,6 +494,7 @@ class Analyzer {
     ir.hasHatches = ir.hatches.length > 0;
 
     this.checkRegions(ir.entities);
+    this.checkDoors(ir.entities);
     this.checkMarkers();
     this.checkDescriptionMarkers();
     return ir;
@@ -575,6 +589,82 @@ class Analyzer {
         cur = next;
       }
       for (const id of path) walked.set(id, 'done');
+    }
+  }
+
+  /**
+   * ADR-234 D3 never-guess gates over the whole door graph: every
+   * `through` target is a door, a door connects exactly one room pair
+   * (the only legal second reference is the exact mirror — other side,
+   * opposite direction), and every declared door is referenced somewhere
+   * (an unconnected door is unanswerable, same hard class as a
+   * memberless region). Runs after every entity is built so cross-entity
+   * lookups and spans are all available.
+   */
+  private checkDoors(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const isDoorEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'door');
+
+    // First `through` reference per door — the canonical pair.
+    const firstRef = new Map<string, { owner: IREntity; exit: IRExit }>();
+    // Doors whose mirror side has already been stated.
+    const mirrored = new Set<string>();
+
+    for (const owner of entities) {
+      for (const exit of owner.exits) {
+        if (exit.via === null || exit.via === '') continue; // plain, or unresolved (already reported)
+        const door = byId.get(exit.via);
+        if (!door) continue;
+        if (!isDoorEntity(door)) {
+          const kind = door.kinds[0]?.name ?? 'plain thing';
+          this.diagnostics.error(
+            'analysis.door-through-kind',
+            `\`${door.name}\` is a ${kind} — \`through\` names a door (\`create the ${door.name} / a door\`).`,
+            exit.span,
+          );
+          continue;
+        }
+        const first = firstRef.get(door.id);
+        if (!first) {
+          firstRef.set(door.id, { owner, exit });
+          continue;
+        }
+        const samePair = (owner.id === first.owner.id && exit.to === first.exit.to)
+          || (owner.id === first.exit.to && exit.to === first.owner.id);
+        if (!samePair) {
+          this.diagnostics.error(
+            'analysis.door-multi-pair',
+            `\`${door.name}\` already connects \`${first.owner.name}\` and \`${byId.get(first.exit.to)?.name ?? first.exit.to}\` (line ${first.exit.span.line}) — a door connects exactly two rooms.`,
+            exit.span,
+          );
+          continue;
+        }
+        const isMirror = owner.id === first.exit.to
+          && exit.to === first.owner.id
+          && exit.direction === OPPOSITE_DIRECTION[first.exit.direction]
+          && !mirrored.has(door.id);
+        if (isMirror) {
+          mirrored.add(door.id);
+        } else {
+          this.diagnostics.error(
+            'analysis.door-pair-mismatch',
+            `\`${door.name}\` is already wired by \`${first.owner.name}\`'s \`${first.exit.direction}\` line (line ${first.exit.span.line}) — the only legal second reference is the exact mirror (\`${OPPOSITE_DIRECTION[first.exit.direction] ?? '?'} to the ${first.owner.name} through the ${door.name}\` in \`${byId.get(first.exit.to)?.name ?? first.exit.to}\`), stated at most once.`,
+            exit.span,
+          );
+        }
+      }
+    }
+
+    // Unconnected door: declared-but-unanswerable, uniformly hard (D3 —
+    // same class as region-memberless; its room pair could never resolve).
+    for (const door of entities.filter(isDoorEntity)) {
+      if (!firstRef.has(door.id)) {
+        this.diagnostics.error(
+          'analysis.door-unconnected',
+          `Door \`${door.name}\` is never referenced by a \`through\` exit line — an unconnected door is unanswerable (its room pair could never resolve). Add \`<direction> to the <room> through the ${door.name}\` on a room.`,
+          door.span,
+        );
+      }
     }
   }
 
@@ -1382,6 +1472,17 @@ class Analyzer {
       }
     }
 
+    // ADR-234 D3: a door's location IS its room pair — the loader places
+    // it in room1 per the platform convention; a placement line is a load
+    // error (the region-placement gate is the direct precedent).
+    if (kinds.some((k) => k.name === 'door') && decl.placement) {
+      this.diagnostics.error(
+        'analysis.door-placement',
+        `A door has no placement — its location IS its room pair (the loader places it in the first room of its \`through\` exit line). Remove this line.`,
+        decl.placement.span,
+      );
+    }
+
     // ADR-236 D1: a region's "location" IS its member list — placement
     // lines on a region block are a load error (mirror of ADR-234 D3's
     // door-placement gate).
@@ -1435,7 +1536,15 @@ class Analyzer {
       containing: decl.containing
         .map((m) => ({ id: this.resolveEntityId(m) ?? '', span: m.span }))
         .filter((m) => m.id !== ''),
-      exits: decl.exits.map((e) => ({ direction: e.direction, to: this.resolveEntityId(e.to) ?? '', span: e.span })),
+      exits: decl.exits.map((e) => ({
+        direction: e.direction,
+        to: this.resolveEntityId(e.to) ?? '',
+        // `through the <door>` (ADR-234 D1): resolved like any entity
+        // reference — an unknown name is the standard unresolved-entity
+        // error; '' marks it so checkDoors skips what is already reported.
+        via: e.via ? (this.resolveEntityId(e.via) ?? '') : null,
+        span: e.span,
+      })),
       blockedExits: decl.blockedExits.map((b) => {
         this.requirePhrase(b.phraseKey, b.span);
         return {

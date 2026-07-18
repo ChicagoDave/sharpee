@@ -41,7 +41,6 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
-import { createHelpers } from '@sharpee/helpers';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
@@ -67,6 +66,7 @@ import {
   DiggableTrait,
   DeadlyRoomTrait,
   Direction,
+  DoorTrait,
   DirectionType,
   EdibleTrait,
   EnterableTrait,
@@ -369,7 +369,34 @@ export class ChordStory implements Story {
         }
       }
       for (const exit of irEntity.exits) {
-        world.connectRooms(entity.id, this.requireWorldId(exit.to, irEntity), toDirection(exit.direction, irEntity));
+        const toId = this.requireWorldId(exit.to, irEntity);
+        const direction = toDirection(exit.direction, irEntity);
+        if (exit.via === null) {
+          world.connectRooms(entity.id, toId, direction);
+          continue;
+        }
+        // ADR-234 D1/D2 via ADR-237 D4: the door exit wires through the
+        // one platform primitive — DoorTrait attached here (room1 = the
+        // declaring room, per the createDoor placement convention), then
+        // connectRooms stamps `via` both directions and places the door.
+        // A door wires exactly once: the analyzer's checkDoors gates
+        // guarantee any second reference is the exact mirror, whose exits
+        // the first wiring already stamped — verified, then skipped.
+        const doorId = this.requireWorldId(exit.via, irEntity);
+        const door = world.getEntity(doorId);
+        const doorTrait = door?.get(TraitType.DOOR) as DoorTrait | undefined;
+        if (doorTrait) {
+          const isMirror = doorTrait.room1 === toId && doorTrait.room2 === entity.id;
+          if (!isMirror) {
+            throw new LoadError(
+              `\`${irEntity.name}\`: door \`${exit.via}\` is already wired to a different room pair — rogue IR (the compiler's door gates refuse this).`,
+              exit.span,
+            );
+          }
+          continue;
+        }
+        door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
+        world.connectRooms(entity.id, toId, direction, doorId);
       }
       for (const blocked of irEntity.blockedExits) {
         // Unconditional blocks are static; `is blocked while <cond>` blocks
@@ -411,6 +438,18 @@ export class ChordStory implements Story {
       // load-time `validateRoomSnippets` gate ever sees the texts.
       if (entity.has(TraitType.ROOM)) {
         this.compileRoomSnippets(world, irEntity, entity);
+      }
+    }
+
+    // ADR-234 D3 backstop (rogue IR — the compiler's `door-unconnected`
+    // gate refuses this): a door no `through` exit wired has no room pair
+    // and could never resolve in play.
+    for (const { ir: irEntity, entity } of built) {
+      if (irEntity.kinds.some((k) => k.name === 'door') && !entity.has(TraitType.DOOR)) {
+        throw new LoadError(
+          `Door \`${irEntity.name}\` was never wired by a \`through\` exit line — rogue IR (the compiler's door gates refuse this).`,
+          irEntity.span,
+        );
       }
     }
 
@@ -866,53 +905,55 @@ export class ChordStory implements Story {
     }
     const kind = irEntity.kinds[0]?.name ?? null;
     const description = irEntity.descriptionKey ? this.phraseText(irEntity.descriptionKey) : undefined;
-    const h = createHelpers(world);
+    // ADR-237 D3: direct trait composition — the loader builds on the
+    // world-model surface itself; `@sharpee/helpers` is author-facing only.
+    const aliases = irEntity.aka.length ? irEntity.aka : undefined;
     let entity: IFEntity;
 
     switch (kind) {
       case 'room': {
-        const builder = h.room(irEntity.name);
-        if (description) builder.description(description);
         // Z1: `first time` prose → RoomTrait.initialDescription (first look
         // shows it, later looks show the standard description — stdlib's
         // looking-data reads the field; no stdlib change).
         const initialDescription = irEntity.initialDescriptionKey
           ? this.phraseText(irEntity.initialDescriptionKey)
           : undefined;
-        if (initialDescription) builder.initialDescription(initialDescription);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        if (irEntity.traits.some((t) => t.name === 'dark' && t.condition === null)) builder.dark();
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'room');
+        entity.add(new RoomTrait({
+          requiresLight: irEntity.traits.some((t) => t.name === 'dark' && t.condition === null),
+          initialDescription,
+        }));
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
         break;
       }
       case 'container': {
-        const builder = h.container(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        // NOTE: no `builder.openable()` or `builder.lockable()` pre-adds —
-        // applyTraitAdjectives owns both compositions uniformly. For lockable,
-        // a keyless pre-add made the keyed re-add skip, dropping `with key X`
-        // config (ADR-230 Phase 9a). For openable, the pre-add carried the
-        // builder's own open-by-default, splitting container-kind entities
-        // from adjective-only ones; ADR-231 D5b removed it so OpenableTrait's
-        // default (closed) is authoritative everywhere — `starts open` is the
-        // author's escape hatch.
-        entity = builder.build();
+        // NOTE: no OpenableTrait/LockableTrait pre-adds — applyTraitAdjectives
+        // owns both compositions uniformly. For lockable, a keyless pre-add
+        // made the keyed re-add skip, dropping `with key X` config (ADR-230
+        // Phase 9a). For openable, the pre-add carried an open-by-default,
+        // splitting container-kind entities from adjective-only ones; ADR-231
+        // D5b removed it so OpenableTrait's default (closed) is authoritative
+        // everywhere — `starts open` is the author's escape hatch.
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new ContainerTrait());
         this.applyContainerConfig(entity, irEntity.kinds[0]);
         break;
       }
       case 'person': {
-        const builder = h.actor(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'actor');
+        entity.add(new ActorTrait());
+        // `article: undefined` is load-bearing: the helpers actor builder
+        // always clobbered IdentityTrait's `article = 'a'` default this way
+        // (properName ? '' : undefined), and the ADR-237 D6 parity gate pins
+        // the loaded world byte-identical. Whether actors SHOULD carry an
+        // undefined article is a question for David, not this refactor.
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases, article: undefined }));
         break;
       }
       case 'supporter': {
-        const builder = h.object(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
         entity.add(new SupporterTrait({ capacity: supporterCapacity(irEntity.kinds[0]) }));
         break;
       }
@@ -940,13 +981,21 @@ export class ChordStory implements Story {
         );
         break;
       }
-      case 'door':
-        throw new LoadError(`\`${irEntity.name}\`: doors need \`between\` placement, which the Phase A loader does not support yet.`, irEntity.span);
+      case 'door': {
+        // ADR-234 D4: SceneryTrait + OpenableTrait starting closed compose
+        // automatically (createDoor parity; `starts open` is the author's
+        // override via applyStartsStates). DoorTrait is attached at exit
+        // wiring — its room pair comes from the `through` exit line, and
+        // the trait's constructor requires both rooms.
+        entity = world.createEntity(irEntity.name, 'door');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new SceneryTrait());
+        entity.add(new OpenableTrait({ isOpen: false }));
+        break;
+      }
       case null: {
-        const builder = h.object(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
         break;
       }
       default:
@@ -1118,7 +1167,12 @@ export class ChordStory implements Story {
           // the shared pending mechanism (forward refs legal) — the raw
           // display-name string never reaches LockableTrait.keyId.
           if (entity.has(TraitType.LOCKABLE)) break;
-          const lockable = new LockableTrait({});
+          // ADR-234 D4 kind-scoped default: a lockable DOOR starts locked
+          // (the IF convention; createDoor's `isLocked ?? true` parity) —
+          // everywhere else the trait-wide default (unlocked) stands.
+          // `starts unlocked` is the author's override: applyStartsStates
+          // runs after composition, so a declared initializer always wins.
+          const lockable = new LockableTrait(kind === 'door' ? { isLocked: true } : {});
           const keyName = configValue(trait, 'key');
           if (keyName !== undefined) {
             this.pendingEntityRefs.push(
