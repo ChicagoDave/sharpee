@@ -1,0 +1,100 @@
+# Session Plan: Chord Go-Live (ADR-233 gate)
+
+**Created**: 2026-07-17
+**Overall scope**: Close the four go-live gates (G1 parity floor, G2 outside-author pipeline, G3 launch tutorial, G4 release hygiene) defined by ADR-233 — G3 reshaped 2026-07-17: David ruled the website restructure (ADR-232) and playground (ADR-191) are NOT launch requirements; both are post-launch work, out of this plan so Chord can be publicly positioned as ready for outside authors. ADR-233 is an umbrella and is never implemented directly — every phase below either resolves an open question, drafts a child ADR, or executes work already specced by an accepted ADR/plan. Design-heavy phases stop at "child ADR drafted (+ its own interview)"; implementation of a child ADR is a separate future plan.
+**Bounded contexts touched**: `packages/chord` (compiler frontend), `packages/story-loader`, `packages/parser-en-us` (grammar ratchet), `packages/devkit` / `packages/sharpee` (author CLI), `site/` (tutorial page only), release/build tooling (`repokit`).
+**Key domain language**: parity gate (G1–G4), ratchet entry, quick win vs design-heavy gap, child ADR, no-scope-reduction rule.
+
+## References consulted
+- `docs/architecture/adrs/adr-233-chord-go-live-gate.md` — the umbrella ADR itself: defines G1–G4, explicitly excludes the Chord-Zork completeness matrix from the gate, and requires every phase to be independently plannable (never implemented directly).
+- `docs/architecture/adrs/adr-232-chord-first-web-presence.md` — DRAFT, 3 open questions, explicitly **parked by David** ("website work will be more complex... treat as a fuller design conversation next time"); this plan must not re-raise or resolve it, only schedule its own resumption.
+- `docs/architecture/adrs/adr-191-play-it-now-browser-playground.md` — PROPOSED, amended 2026-07-17 to dual-mode/Chord-default; Phase 1 MVP scope (AC-1..AC-8) and the browser-ESM-bundle risk are the constraint surface for the playground phase.
+- `docs/architecture/adrs/adr-180-build-test-devkit.md` + `docs/architecture/adrs/adr-187-devkit-author-only-split-inrepo-build.md` — ACCEPTED; devkit is author-only, repokit is the in-repo platform build; ADR-180's Amendment 1 unification is itself amended by ADR-187's split, and Phase U2 (bin handoff, global install) is the undelivered piece G2 needs.
+- `docs/work/sharpee-devkit/plan-20260618-unify-sharpee-cli.md` — carries the actual Phase U2 checklist (bin rename, ADR-180 amendment landing, standalone build mode, website doc sweep) that G2's delivery phase must execute against.
+- `docs/work/stdlib-reference/chord-availability-audit.md` — stale audit (42/49 actions, Parts 2-4 never run); already shows `enterable`/`climbable` closed via ADR-218 §1a ratchet entries, leaving `drinkable`-class as the real remaining mechanical quick win — this shapes the quick-win phase's actual scope down from three adjectives to one plus confirmation.
+- `docs/context/project-profile.md` — confirms the two-build-CLI split (`./repokit` vs `./sharpee`) and Chord as an active, tracked domain; nothing in this plan may conflate the two CLIs.
+- `docs/context/session-20260717-0443-chord-foundations.md` — most recent session's open items: ADR-233 interview was offered and explicitly deferred ("next session: ADR-233 interview is the natural opener"); ADR-232 parked; version bump blocking `repokit verify` is a known parked item that G4 must resolve, not rediscover.
+
+## Phases
+
+### Phase 1: ADR-233 open-questions interview
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: ADR-233 itself (Q1 door scope, Q2 capability-dispatch/extension-surface disposition, Q3 tutorial choice; Q4 already resolved by David 2026-07-17 — playground/website out of the gate)
+- **Entry state**: David's explicit consent to start `/devarch:adr-interview` for ADR-233 (rule 11a — never started unasked; the prior session deferred this exact interview to "next session," which is now).
+- **Deliverable**: The three remaining open questions (Q1–Q3) folded into ADR-233 one at a time; if all resolve, offer and (on David's word) execute the DRAFT → ACCEPTED flip; auto-run `adr-review` on the accepted ADR.
+- **Exit state**: ADR-233 has 0 open questions (or explicitly parks specific ones with David's rationale recorded), and its ruling text for Q1–Q3 is available to shape Phases 4, 5, and 7 below.
+- **Status**: COMPLETE (2026-07-17, session f5c22c) — Q-1 resolved (full-stack door ADR: `between` on the door + `through` exit sugar both in-gate; invariant entity declaration; `with key` dropped as redundant; general cross-room primitive excluded, needs its own design conversation). Q-3 resolved (new pattern-first tutorial story — catalog patterns → David selects → design story; own plan). Q-2 deferred by ruling until Phase 2's refreshed audit lands.
+
+### Phase 2: G1 — parity audit re-run (Parts 1–4)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: `packages/chord/src/catalog.ts`, `packages/story-loader`, `packages/parser-en-us` grammar surface, daemons/plugins/browser-emit surfaces
+- **Entry state**: None (independent of Phase 1's Q&A — this is a mechanical re-verification, not a design decision). May run before, after, or interleaved with Phase 1.
+- **Deliverable**: Refreshed `docs/work/stdlib-reference/chord-availability-audit.md` — Part 1 (actions) re-verified against current platform state (several gaps already closed by ADR-230/231, e.g. `enterable`/`climbable`), and Parts 2–4 (daemons/fuses, plugins/extensions, browser emits) run for the first time, each with the same CAN/CHORD-GAP/SHARPEE-GAP/HATCH taxonomy.
+- **Exit state**: A single committed, current parity map covering all four parts — the input document Phases 3–5 read from instead of the stale one. **On completion, re-raise Q-2 to David** (his deferral trigger: rule capability-dispatch/extension disposition with current numbers).
+- **Status**: CURRENT
+
+### Phase 3: G1 — quick-win trait adjectives (ratchet entries)
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: Chord's composable trait-adjective vocabulary (`packages/chord/src/catalog.ts`, story-loader adjective wiring, ADR-210 grammar ratchet)
+- **Entry state**: Phase 2's refreshed audit (or the existing one — `enterable`/`climbable` are already closed per ADR-218 §1a; the only open mechanical item is the `drinkable`-class liquid marker).
+- **Deliverable**: Each remaining mechanical quick-win adjective is either closed (ratchet entry in `docs/architecture/chord-grammar-changes.md` + catalog/loader change, David's sign-off per the ratchet process) or individually ruled out by David with the ruling recorded — no silent deferrals, per ADR-233's G1 wording.
+- **Exit state**: G1's "quick wins" line item is fully dispositioned — nothing left unstated.
+- **Status**: PENDING
+
+### Phase 4: G1 — door loading child ADR (Q1 RESOLVED — scope fixed)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: door loading — `between` placement on the door + `through` exit-line sugar, exit binding, composition with existing OPENABLE/LOCKABLE traits
+- **Entry state**: Phase 1 complete (done). Q1's ruling fixes the scope; no conditional branches remain.
+- **Deliverable**: Draft the door-loading child ADR (design only) per the Q-1 ruling: BOTH authoring forms in-gate — `a door between the Kitchen and the Hall` (placement on the door) and `north to the Hall through the oak door` (exit-line sugar, reverse side inferred); invariant door declaration across forms (`a door, lockable with the iron key`); carries the `with key`-redundancy ratchet entry (composition clause becomes `lockable with the iron key`; existing fixtures update when it lands); explicitly EXCLUDES the general cross-room `between` primitive (windows/bridges — parked by David for its own design conversation) while not foreclosing it. Run the child ADR's own open-questions interview if it carries any. **Implementation is out of scope for this plan** — an ACCEPTED door ADR gets its own follow-on plan.
+- **Exit state**: A DRAFT or ACCEPTED child ADR for door loading exists, linked from ADR-233.
+- **Status**: PENDING
+
+### Phase 5: G1 — capability-dispatch verbs + extension surface disposition (CONDITIONAL on Q2)
+- **Tier**: Medium
+- **Budget**: 250 (applies only to the in-gate branch; see below)
+- **Domain focus**: capability dispatch (ADR-090), lowering/raising/wave-class verb exposure, `use <extension>` surface
+- **Entry state**: Phase 2 complete — Q-2 was deferred by David's ruling (2026-07-17) until the refreshed audit delivers current numbers; Phase 2's exit re-raises it, and this phase runs only after that ruling.
+- **Deliverable**: depends entirely on the branch below.
+- **Exit state**: G1's "design-heavy remainder" line item is explicitly dispositioned in ADR-233, per the no-scope-reduction rule (a post-launch ruling must be recorded by David, not assumed).
+- **CONDITIONAL branches** (do not size further until Q2 resolves):
+  - **If Q2 rules in-gate**: this phase drafts the capability-dispatch-verb-exposure child ADR(s) (design only, no implementation) — the design-heavy half of parity, likely warranting its own plan.
+  - **If Q2 rules post-launch**: this phase collapses to recording David's ruling in ADR-233 (already largely done by Phase 1's interview) — no further design or implementation work is needed for go-live.
+- **Status**: PENDING
+
+### Phase 6: G2 — ADR-180 Phase U2 delivery (outside-author pipeline)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: `packages/devkit` (author tool, bin `sharpee`), `tools/repokit` (in-repo platform build, unaffected), `~/.sharpee/devkit` registry
+- **Entry state**: David's explicit go-ahead to make platform changes under `packages/` (CLAUDE.md: platform changes require discussion first — this is not story-level work). Phase 1 is not a hard prerequisite (Q1–Q4 don't touch U2), but should have run first since it may be a natural session bundle.
+- **Deliverable**: Execute the *still-current* parts of the U2 checklist in `docs/work/sharpee-devkit/plan-20260618-unify-sharpee-cli.md` (bin rename `devkit`→`sharpee`, atomic drop of `@sharpee/sharpee`'s CLI bin, global-install story, website-docs `npx` sweep). **Do not implement that checklist's "standalone build mode / devkit detects mode from workspace context" item** — ADR-187 (ACCEPTED, later than the U2 checklist) withdrew ADR-180 Amendment 1's "one command, two depths" and its AC-3 bans exactly this location-sniffing: devkit is author-only, `repokit` is the separate in-repo build, chosen by the user rather than detected. The bin-handoff/global-install work is unaffected by ADR-187 and can proceed; only the mode-detection sub-item is superseded. Land any remaining ADR-180 amendment text needed for the parts that do proceed. Produce G2's required proof: a scripted end-to-end run (install → scaffold `.story` → build → play in the browser client) in CI, or a documented manual protocol executed at least once.
+- **Exit state**: A user on a clean machine (no repo checkout) can go from `npm i -g @sharpee/devkit` to a playing browser story, using devkit's author-only build (no mode detection); the proof artifact is committed/linked from ADR-233's G2 line.
+- **Status**: PENDING
+
+> **Removed 2026-07-17 (David's ruling)**: the two former G3 phases — ADR-232 site restructure and ADR-191 Phase 1 playground — are NOT launch requirements. Both remain post-launch work on their own schedules (ADR-232 stays parked as a fuller design conversation; ADR-191 stays PROPOSED with its own open questions). Ruling recorded in ADR-233's G3 amendment; resolves Q4.
+
+### Phase 7: G3 — pattern-first Chord tutorial story (Q3 RESOLVED — new story, pattern-driven)
+- **Tier**: Large (multi-session — this phase produces the catalog + selection + a follow-on plan, not the finished tutorial)
+- **Budget**: 250 (for the catalog/selection/planning step only)
+- **Domain focus**: complex IF logic patterns as tutorial curriculum; a new story purpose-built for Chord
+- **Entry state**: Phase 1 complete (done). Q-3 ruling: NOT a Family Zoo port — a bigger, new tutorial story exercising as many complex IF logic patterns as practical.
+- **Deliverable**: Execute the ruling's three steps in order: (1) catalog the candidate complex IF logic patterns (containers/locks, NPCs, daemons/fuses, multi-room puzzles incl. the new door forms, state machines, scoring, and the rest — the catalog is the first artifact, reviewed with David); (2) David selects which patterns the tutorial must include; (3) design the new story around the selected set and write its own plan (story design + prose + transcripts are a separate follow-on effort, likely spanning sessions).
+- **Exit state**: Pattern catalog committed, David's selection recorded, and a follow-on tutorial-story plan exists; the finished tutorial (written, transcript-tested, linked from the existing site nav) is that plan's exit, and G3 closes only when it ships.
+- **Status**: PENDING
+
+### Phase 8: G4 — release (version bump + repokit verify green)
+- **Tier**: Small
+- **Budget**: 150
+- **Domain focus**: release/build tooling, `repokit verify`, npm publish dry-run
+- **Entry state**: G1 fully dispositioned (Phases 2, 3, 4, 5's outcomes recorded — a design-heavy item ruled post-launch counts as dispositioned, not blocking); G2 proof delivered (Phase 6); G3 satisfied (Phase 7's tutorial live).
+- **Deliverable**: Resolve the known parked version-bump blocker, bump the version, and get `repokit verify` fully green including the publish dry-run.
+- **Exit state**: The published npm packages are the ones the tutorial actually references — ADR-233's G4 holds, and go-live's public positioning can change from "Chord is coming."
+- **Status**: PENDING
+
+## Dependency summary
+- Phase 1 is COMPLETE (2026-07-17): Q-1 and Q-3 ruled; Q-2 deferred until Phase 2's audit lands — Phase 2's exit re-raises it, and Phase 5 waits on that ruling.
+- Phases 2 (CURRENT), 3, 4, 6, 7 are now all unconditionally shaped and independent of each other — any order.
+- Phase 8 is the terminal phase — it depends on every other phase's *disposition* (closed, ruled out, or explicitly deferred), not necessarily every phase's full completion. Note G3 closes on the tutorial *shipping*, which extends beyond Phase 7's catalog/selection/planning step.
