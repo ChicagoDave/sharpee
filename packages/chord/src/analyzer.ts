@@ -35,7 +35,7 @@ import {
   TraitField,
   ValueExpr,
 } from './ast';
-import { EVENT_VERBS, PLATFORM_STATE_PAIRS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
+import { EVENT_VERBS, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
 import { DiagnosticBag } from './diagnostics';
 import {
   IR_FORMAT,
@@ -983,6 +983,27 @@ class Analyzer {
       else traits.push(built);
     }
 
+    // ADR-231 D5a pairing gate: each `starts <state>` initializer requires
+    // its paired trait composed on the same entity (`starts locked` needs
+    // `lockable`, `starts closed`/`open` need `openable`, `starts off`/`on`
+    // need `switchable`). Table-driven — STARTS_STATE_PAIRINGS is the one
+    // place future stateful traits extend. Mismatch = load-time error, never
+    // a silent no-op.
+    const startsStates: string[] = [];
+    for (const s of decl.startsStates) {
+      const requiredTrait = STARTS_STATE_PAIRINGS.get(s.state);
+      if (!requiredTrait) continue; // parser already rejected the word
+      if (!traits.some((t) => t.name === requiredTrait)) {
+        this.diagnostics.error(
+          'analysis.starts-state-pairing',
+          `\`starts ${s.state}\` requires \`${requiredTrait}\` composed on this entity.`,
+          s.span,
+        );
+        continue;
+      }
+      startsStates.push(s.state);
+    }
+
     // Z1: `first time` prose compiles to RoomTrait.initialDescription —
     // only rooms carry that field, so any other kind is a load error
     // until a platform surface exists (never a guess).
@@ -1002,6 +1023,7 @@ class Analyzer {
       isPlayer,
       kinds,
       traits,
+      startsStates,
       placement: decl.placement
         ? {
             relation: decl.placement.relation,

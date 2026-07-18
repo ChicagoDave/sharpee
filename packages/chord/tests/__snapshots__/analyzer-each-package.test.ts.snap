@@ -243,6 +243,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 49,
         "line": 45,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -279,6 +280,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 52,
         "line": 51,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -315,6 +317,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 56,
         "line": 54,
       },
+      "startsStates": [],
       "states": [
         "calm",
         "spooked",
@@ -478,6 +481,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 62,
         "line": 58,
       },
+      "startsStates": [],
       "states": [
         "hungry",
         "content",

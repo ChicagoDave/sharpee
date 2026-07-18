@@ -108,6 +108,12 @@ export interface CreateDecl {
   aka: string[];
   /** Kind-noun and trait-adjective composition items. */
   compositions: CompositionItem[];
+  /**
+   * `starts <state>` initial-state clauses (ADR-231 D5a) riding the
+   * composition lines, in declaration order (`starts locked`). Pairing with
+   * the required trait (`lockable`, …) is the analyzer's gate.
+   */
+  startsStates: StartsStateDecl[];
   /** `in <place>` / `on <place>` / `starts in <place>`. */
   placement: Placement | null;
   /** `wears <thing>` lines (the player wears the cloak). */
@@ -137,6 +143,19 @@ export interface CreateDecl {
   /** Per-entity phrase overrides: `phrase <key>: <text>` lines. */
   phraseOverrides: PhraseOverride[];
   onClauses: OnClause[];
+  span: Span;
+}
+
+/**
+ * One `starts <state>` initializer clause on a composition line (ADR-231
+ * D5a): `starts locked`, `starts open`, … — the state word is one of the
+ * catalog's STARTS_STATE_PAIRINGS keys (parse-gated; unknown words after
+ * `starts` are parse errors, `starts in` stays placement).
+ */
+export interface StartsStateDecl {
+  kind: 'starts-state';
+  /** The accepted state word (`locked`, `unlocked`, `closed`, `open`, `off`, `on`). */
+  state: string;
   span: Span;
 }
 

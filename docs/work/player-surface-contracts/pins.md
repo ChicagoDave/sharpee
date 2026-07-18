@@ -126,8 +126,11 @@ pin).
 **Decision: one parameterized diagnostic code; `starts <state>` reuses
 the existing `starts` dispatch with one-token lookahead.**
 
-- Diagnostic: a single code `analyze.starts-state-pairing` (matching
-  the existing `parse.*`/`analyze.*` code convention), parameterized
+- Diagnostic: a single code `analysis.starts-state-pairing`
+  (ERRATA 2026-07-17: the pin originally wrote `analyze.` while
+  explicitly intending to match the existing convention — the repo's
+  analyzer codes are all `analysis.*`; intent honored, literal
+  corrected at delivery), parameterized
   with the state word and the required trait — "`starts locked`
   requires `lockable` composed on this entity". One code, three
   pairings (locked→lockable, closed/open→openable, off/on→switchable);

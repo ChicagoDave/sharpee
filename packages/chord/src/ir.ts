@@ -64,6 +64,14 @@ export interface IREntity {
   kinds: IRComposition[];
   /** Trait-adjective compositions (`scenery`, `dark while …`). */
   traits: IRComposition[];
+  /**
+   * `starts <state>` initializers (ADR-231 D5a), in declaration order —
+   * accepted state words (`locked`, `open`, `on`, …) whose pairing with a
+   * composed trait the analyzer has already enforced. The loader maps each
+   * to the paired trait's initial-value field (`isLocked`, `isOpen`,
+   * `isOn`); the state adjective itself is never stored story state.
+   */
+  startsStates: string[];
   placement: IRPlacement | null;
   /** Entity IDs this entity wears at start (player wears the cloak). */
   wears: string[];

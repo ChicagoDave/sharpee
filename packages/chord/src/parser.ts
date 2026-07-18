@@ -65,6 +65,7 @@ import {
   SetStmt,
   Statement,
   StateName,
+  StartsStateDecl,
   TraitField,
   StoryFile,
   StoryHeader,
@@ -72,6 +73,7 @@ import {
   TextValue,
   ValueExpr,
 } from './ast';
+import { STARTS_STATE_PAIRINGS } from './catalog';
 import { DiagnosticBag } from './diagnostics';
 import { lex, Line, Token } from './lexer';
 import { mergeSpans, Span, spanOf } from './span';
@@ -411,6 +413,7 @@ class Parser {
       name,
       aka: [],
       compositions: [],
+      startsStates: [],
       placement: null,
       wears: [],
       carries: [],
@@ -463,6 +466,11 @@ class Parser {
         cur.matchWord('carries');
         decl.carries.push(this.parseNameRef(cur, () => false));
       } else if (word === 'starts' && cur.isWord('in', 1)) {
+        // The `starts` dispatch is one-token lookahead (ADR-231 D5a):
+        // `starts in <place>` is placement (here); `starts <known-state>` is
+        // an initializer clause, handled by the composition-line fallthrough
+        // below (parseCompositionLine's `starts` branch — same branch that
+        // rejects unknown words after `starts`).
         this.pos++;
         cur.next();
         cur.next();
@@ -554,7 +562,7 @@ class Parser {
           this.pos++;
         } else {
           this.pos++;
-          decl.compositions.push(...this.parseCompositionLine(cur, line));
+          decl.compositions.push(...this.parseCompositionLine(cur, line, decl.startsStates));
         }
       } else {
         const prose = this.parseProseParagraph(line.indent);
@@ -636,10 +644,53 @@ class Parser {
     return { kind: 'deadly-exit', direction, phraseKey: key, condition, span: lineSpan(line) };
   }
 
-  private parseCompositionLine(c: Cursor, line: Line): CompositionItem[] {
+  private parseCompositionLine(c: Cursor, line: Line, startsStates: StartsStateDecl[]): CompositionItem[] {
     const items: CompositionItem[] = [];
     while (!c.atEnd()) {
       const startTok = c.peek()!;
+
+      // `starts <state>` initializer clause (ADR-231 D5a) — one-token
+      // lookahead on the `starts` word Chord already owns: a known state
+      // word (`locked`, `open`, …) initializes the paired trait's initial
+      // value; `in` is the placement line's spelling and can't ride a
+      // composition list; anything else is its own parse error, never a
+      // silent pass into trait-name resolution.
+      if (c.isWord('starts')) {
+        const startsTok = c.next()!;
+        const stateTok = c.peek();
+        if (stateTok && stateTok.kind === 'word' && STARTS_STATE_PAIRINGS.has(stateTok.text)) {
+          c.next();
+          startsStates.push({
+            kind: 'starts-state',
+            state: stateTok.text,
+            span: mergeSpans(startsTok.span, stateTok.span),
+          });
+          if (c.peek()?.kind === 'comma') {
+            c.next();
+            continue;
+          }
+          break;
+        }
+        if (stateTok && stateTok.kind === 'word' && stateTok.text === 'in') {
+          this.diagnostics.error(
+            'parse.starts-state',
+            '`starts in <place>` is a placement line of its own — it cannot ride a composition list.',
+            mergeSpans(startsTok.span, stateTok.span),
+          );
+        } else {
+          const known = [...STARTS_STATE_PAIRINGS.keys()].join(', ');
+          this.diagnostics.error(
+            'parse.starts-state',
+            stateTok
+              ? `\`${stateTok.text}\` is not a state \`starts\` can initialize — known states: ${known} (placement is \`starts in <place>\`).`
+              : `Expected a state after \`starts\` — known states: ${known} (placement is \`starts in <place>\`).`,
+            stateTok ? stateTok.span : startsTok.span,
+          );
+        }
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
       let article: string | null = null;
       const first = c.peek();
       if (first && first.kind === 'word' && ARTICLES.has(first.text)) {

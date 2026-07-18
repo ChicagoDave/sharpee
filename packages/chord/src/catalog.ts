@@ -8,7 +8,7 @@
  * only so the compiler stays platform-free.
  *
  * Public interface: KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES,
- * PLATFORM_STATE_PAIRS, EVENT_VERBS.
+ * PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  * Growing any of these sets is a grammar change — owner approval via
  * docs/architecture/chord-grammar-changes.md.
@@ -72,6 +72,26 @@ export const PLATFORM_STATE_PAIRS: ReadonlyArray<{ pair: [string, string]; trait
   { pair: ['lit', 'unlit'], trait: 'light-source' },
   { pair: ['worn', 'unworn'], trait: 'wearable' },
 ];
+
+/**
+ * `starts <state>` initializer pairings (ADR-231 D5a, approved 2026-07-17):
+ * each accepted state word after `starts` on a composition line, mapped to
+ * the trait adjective that must be composed on the same entity — the
+ * analyzer's pairing gate (`analysis.starts-state-pairing`). The state
+ * adjective is an *initializer* of the trait's initial-value field, never
+ * stored story state (the shadow-state ratchet survives: `locked`, `open`,
+ * `on`, … stay derivable). Future stateful traits extend this table, not
+ * the code. Platform field mappings (`isLocked`, `isOpen`, `isOn`) live in
+ * @sharpee/story-loader, keeping this file names-only.
+ */
+export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
+  ['locked', 'lockable'],
+  ['unlocked', 'lockable'],
+  ['closed', 'openable'],
+  ['open', 'openable'],
+  ['off', 'switchable'],
+  ['on', 'switchable'],
+]);
 
 /**
  * Event verbs entity `on`/`after` clauses recognize beyond action gerunds

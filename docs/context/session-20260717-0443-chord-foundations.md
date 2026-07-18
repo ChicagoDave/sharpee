@@ -56,6 +56,10 @@
 ## ADR-191 amendment (dc3b49bb)
 - David ruled: playground is dual-mode, Chord default. Chord tab = Phase 1 MVP (no wasm — chord compiler + loader in-page, phrasebook fixtures as example library); TS esbuild-wasm design retained as later-phase tab. Status stays PROPOSED (implementation is separate future work, not in the ADR-231 plan).
 
+## Phases 7 + ADR-232 (cfde01a3, 93e0edd6)
+- Phase 7 (D4) COMPLETE: topic { text, entity? } on both command interfaces; 5 rules .topic(); TOPIC structure branch; quiet entity-first resolveTopic (D3 matcher, no disambiguation for topics); asking/telling read command.topic + emit topicEntityId. 15 tests incl. the named free-text non-rejection pin. Chain 874/874; phrasebook fences 68/68 (PROSE stale on topic scoping — Phase 11). Noted: thealderman story grammar has its own un-topiced ask pattern (story-level, parked).
+- **ADR-232 drafted (DRAFT, 3 open questions)**: Chord-first web presence — one site, author-facing front door, Platform section for TS/book content (David ruled shape from 3 options; hard split + two-track rejected). Interview offered, David deferred ("back to player surface contracts work") — do not re-ask this session. Qs: landing shape, stdlib-reference home, sequencing vs Phase 11.
+
 ## Open items
 - Plan not yet written (session-planner next); plain-defect list rides in ADR-231 Consequences.
 - Parked (unchanged from 907f28): chain RNG-death flake investigation; vitest src-alias-vs-dist oddity; version bump to unblock repokit verify; dungeo dig→platform consolidation.

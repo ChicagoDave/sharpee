@@ -770,6 +770,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 48,
         "line": 44,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -831,6 +832,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 51,
         "line": 50,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -1102,6 +1104,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 57,
         "line": 53,
       },
+      "startsStates": [],
       "states": [
         {
           "name": "hungry",

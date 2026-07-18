@@ -21,7 +21,7 @@ import { parseStory } from './parser';
 export * from './ast';
 export * from './ir';
 export { analyze } from './analyzer';
-export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, EVENT_VERBS } from './catalog';
+export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS } from './catalog';
 export { Diagnostic, DiagnosticSeverity, DiagnosticBag } from './diagnostics';
 export { Span, spanOf, mergeSpans } from './span';
 export { lex, Line, Token, TokenKind } from './lexer';

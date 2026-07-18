@@ -9,7 +9,8 @@
 
    Coverage: Phase A subset + Phase B declarations + Phase C ownership
    package + the each package (E1–E3) + ADR-211/zoo-surfaces (Z1/Z4/Z5,
-   CP1'/CP3/Z3b/Z6), as of 2026-07-14.
+   CP1'/CP3/Z3b/Z6) + ADR-231 D5a (`starts <state>` initializers), as of
+   2026-07-17.
 
    Notation:
      UPPER      = token class          "quoted" = literal word
@@ -113,7 +114,17 @@ phrase-override = "phrase" phrase-key
 composition  = [ ARTICLE ] WORD                            (* article => kind noun;
                                                               bare => trait *)
                [ "with" setting { "and" setting } ]
-               [ "while" condition ] ;                     (* conditional trait *)
+               [ "while" condition ]
+             | "starts" STATE-INIT ;                       (* ADR-231 D5a initializer:
+                                                              sets the paired trait's
+                                                              initial value; pairing
+                                                              analyzer-gated. One-token
+                                                              lookahead: "starts" "in"
+                                                              stays placement; any other
+                                                              word after "starts" is a
+                                                              parse error *)
+STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
+             | "off" | "on" ;
 setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement; *)
              | "starts" "in" name ;                        (* on + bare word = on-clause *)

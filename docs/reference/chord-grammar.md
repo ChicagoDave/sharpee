@@ -168,7 +168,16 @@ phrase-override = "phrase" WORD [ "," STRATEGY ] [ "while" condition ] ":" NL
 
 composition  = [ ARTICLE ] WORD                            (* article ⇒ kind noun; bare ⇒ trait *)
                [ "with" setting { "and" setting } ]
-               [ "while" condition ] ;                     (* conditional trait, e.g. dark while … *)
+               [ "while" condition ]                       (* conditional trait, e.g. dark while … *)
+             | "starts" STATE-INIT ;                       (* ADR-231 D5a: initializer of the paired
+                                                              trait's initial-value field; pairing
+                                                              (`lockable`/`openable`/`switchable`
+                                                              composed) is `analyze.starts-state-
+                                                              pairing`. One-token lookahead:
+                                                              "starts" "in" stays placement; any
+                                                              other word is `parse.starts-state` *)
+STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
+             | "off" | "on" ;
 setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement… *)
              | "starts" "in" name ;                        (* …on + bare word = on-clause *)

@@ -103,6 +103,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 15,
         "line": 8,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -144,6 +145,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 23,
         "line": 19,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -274,6 +276,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 34,
         "line": 26,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -333,6 +336,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 46,
         "line": 42,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -364,6 +368,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 52,
         "line": 48,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -433,6 +438,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 61,
         "line": 56,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -615,6 +621,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "endLine": 69,
         "line": 63,
       },
+      "startsStates": [],
       "states": [
         "intact",
         "trampled",

@@ -421,6 +421,52 @@ entity's description and requires a `while` condition. On ordinary
 overrides, `while` is not allowed (`analysis.override-gate`); use a
 strategy or variants instead.
 
+### 2.11 Starting state
+
+A stateful trait opens for business in its default state: a lockable
+thing starts unlocked, a switchable thing starts off, and — today — an
+openable container starts open. When the story needs otherwise, a safe
+that stays locked until the player finds the key, a space heater
+already running, `starts <state>` on the composition line sets the
+trait's initial value.
+
+<!-- fixture: world/starts-state.story -->
+```story
+create the safe
+  a container, openable, lockable with key the brass key, starts locked
+  in the Back Office
+
+  A squat floor safe with a brass keyhole.
+```
+
+Six state words are accepted, each paired with the trait it
+initializes: `locked` and `unlocked` set `lockable`, `closed` and
+`open` set `openable`, `off` and `on` set `switchable`. The pairing is
+enforced: `starts locked` on an entity that does not compose
+`lockable` is a load error (`analysis.starts-state-pairing`), never a
+silent no-op. Any other word after `starts` is a parse error
+(`parse.starts-state`) — except `in`, which is the placement line from
+§2.4. `starts in` names where something begins; `starts <state>` names
+how.
+
+<!-- fixture: world/starts-state.story -->
+```story
+create the space heater
+  switchable, starts on
+  in the Back Office
+  aka heater
+
+  An old space heater, ticking as it warms.
+```
+
+Note what `starts` does not do: the state word is an initializer, not
+stored story state. `locked`, `open`, and `on` remain derivable facts
+read live from the trait (the state adjectives of §3.4), and a `states:`
+line reproducing one of those pairs is still the shadow-state error
+(§6.2's boolean-state gate). `starts` merely chooses the trait's first
+value; from there the
+world moves it the usual ways — keys, hands, and switches.
+
 ## 3. Giving things behavior
 
 ### 3.1 on and after

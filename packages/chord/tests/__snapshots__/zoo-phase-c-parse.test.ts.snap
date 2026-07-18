@@ -278,6 +278,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 12,
         "line": 7,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -375,6 +376,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 25,
         "line": 17,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -451,6 +453,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 39,
         "line": 30,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -609,6 +612,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 64,
         "line": 43,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -720,6 +724,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 82,
         "line": 70,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -797,6 +802,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 96,
         "line": 86,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -885,6 +891,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 109,
         "line": 100,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -924,6 +931,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 116,
         "line": 113,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -960,6 +968,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 121,
         "line": 118,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -1001,6 +1010,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 127,
         "line": 123,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -1073,6 +1083,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 137,
         "line": 130,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1151,6 +1162,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 149,
         "line": 144,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1201,6 +1213,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 156,
         "line": 151,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1252,6 +1265,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 163,
         "line": 158,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1303,6 +1317,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 170,
         "line": 165,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1364,6 +1379,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 177,
         "line": 172,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1426,6 +1442,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 184,
         "line": 179,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1476,6 +1493,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 191,
         "line": 186,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1527,6 +1545,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 198,
         "line": 193,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1578,6 +1597,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 205,
         "line": 200,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1640,6 +1660,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 212,
         "line": 207,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1701,6 +1722,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 219,
         "line": 214,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1762,6 +1784,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 226,
         "line": 221,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1823,6 +1846,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 233,
         "line": 228,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1923,6 +1947,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 244,
         "line": 235,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -1974,6 +1999,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 259,
         "line": 254,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2036,6 +2062,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 266,
         "line": 261,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2100,6 +2127,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 273,
         "line": 268,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2162,6 +2190,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 281,
         "line": 276,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2245,6 +2274,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 291,
         "line": 284,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2338,6 +2368,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 307,
         "line": 300,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2432,6 +2463,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 323,
         "line": 316,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2541,6 +2573,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 338,
         "line": 330,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2626,6 +2659,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 350,
         "line": 343,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -2677,6 +2711,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 359,
         "line": 354,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -2718,6 +2753,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 365,
         "line": 361,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -2757,6 +2793,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 371,
         "line": 367,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -2815,6 +2852,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 378,
         "line": 373,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2878,6 +2916,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 385,
         "line": 380,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -2929,6 +2968,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 391,
         "line": 387,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -2979,6 +3019,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 398,
         "line": 393,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -3054,6 +3095,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 406,
         "line": 401,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -3106,6 +3148,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 415,
         "line": 410,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -3167,6 +3210,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 422,
         "line": 417,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -3228,6 +3272,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 430,
         "line": 426,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -3345,6 +3390,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 539,
         "line": 528,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [],
@@ -3476,6 +3522,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 576,
         "line": 550,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [
@@ -3640,6 +3687,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 612,
         "line": 586,
       },
+      "startsStates": [],
       "states": [
         "hungry",
         "content",
@@ -3826,6 +3874,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 645,
         "line": 621,
       },
+      "startsStates": [],
       "states": [
         "hungry",
         "content",
@@ -3919,6 +3968,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "endLine": 660,
         "line": 655,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "traits": [

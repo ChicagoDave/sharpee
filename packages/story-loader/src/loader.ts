@@ -757,9 +757,41 @@ export class ChordStory implements Story {
     }
 
     this.applyTraitAdjectives(entity, irEntity, kind);
+    this.applyStartsStates(entity, irEntity);
     this.worldIds.set(irEntity.id, entity.id);
     this.irIds.set(entity.id, irEntity.id);
     return entity;
+  }
+
+  /**
+   * ADR-231 D5a: map each accepted `starts <state>` initializer to the
+   * paired trait's initial-value field (locked→isLocked:true, closed→
+   * isOpen:false, on→isOn:true, …). Runs AFTER trait composition — both the
+   * adjective-composed traits and the container builder's `openable()`
+   * pre-add (isOpen true) — so a declared initializer always wins over any
+   * builder default. Only the trait boolean is set; the state adjective
+   * itself is never stored story state (the shadow-state ratchet).
+   * The analyzer's pairing gate guarantees the trait is present; a missing
+   * trait here is a defect, reported as a LoadError, never a silent skip.
+   */
+  private applyStartsStates(entity: IFEntity, irEntity: IREntity): void {
+    for (const state of irEntity.startsStates ?? []) {
+      const mapping = STARTS_STATE_TRAIT_FIELDS.get(state);
+      if (!mapping) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: \`starts ${state}\` has no trait-field mapping — the compiler and loader tables are out of step.`,
+          irEntity.span,
+        );
+      }
+      const trait = entity.get(mapping.traitType);
+      if (!trait) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: \`starts ${state}\` needs the \`${mapping.traitName}\` trait composed — the analyzer pairing gate should have refused this story.`,
+          irEntity.span,
+        );
+      }
+      (trait as unknown as Record<string, unknown>)[mapping.field] = mapping.value;
+    }
   }
 
   /**
@@ -1238,6 +1270,25 @@ function presenceSubject(cond: IRCondition, roomIrId: string): string | null {
   }
   return null;
 }
+
+/**
+ * ADR-231 D5a platform mapping: `starts <state>` word → the paired trait's
+ * initial-value field and the boolean it sets. The language-side pairing
+ * table (which trait must be composed) is @sharpee/chord's
+ * STARTS_STATE_PAIRINGS; this is the loader's platform half — future
+ * stateful traits extend both tables, not the code.
+ */
+const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
+  string,
+  { traitType: TraitType; traitName: string; field: string; value: boolean }
+> = new Map([
+  ['locked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', field: 'isLocked', value: true }],
+  ['unlocked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', field: 'isLocked', value: false }],
+  ['closed', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: false }],
+  ['open', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: true }],
+  ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: false }],
+  ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: true }],
+]);
 
 /** Chord direction word → world-model DirectionType. */
 function toDirection(word: string, at?: IREntity): DirectionType {
