@@ -21,7 +21,8 @@ import {
   executeWithValidation,
   TestData,
   createCommand,
-  setupBasicWorld
+  setupBasicWorld,
+  forceRandom
 } from '../../test-utils';
 
 describe('throwingAction (Golden Pattern)', () => {
@@ -190,10 +191,7 @@ describe('throwingAction (Golden Pattern)', () => {
           entity: vase
         })
       );
-      
-      // Mock random to control outcome (30% chance to break = 0.7 threshold)
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.6); // Won't break (0.6 <= 0.7)
+      forceRandom(context, [0.4]); // chance(0.3) break roll: 0.4 >= 0.3 -> will not break
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -204,10 +202,7 @@ describe('throwingAction (Golden Pattern)', () => {
         isFragile: true,
         willBreak: false,
         messageId: expect.stringContaining('thrown_gently')
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test('should break fragile item when dropped carelessly', () => {
       const { world, player, item: bottle } = TestData.withInventoryItem('wine bottle', {
@@ -222,10 +217,7 @@ describe('throwingAction (Golden Pattern)', () => {
           entity: bottle
         })
       );
-      
-      // Mock random to ensure breaking
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.8); // Will break (0.8 > 0.7)
+      forceRandom(context, [0.2]); // chance(0.3) break roll: 0.2 < 0.3 -> will break
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -243,10 +235,7 @@ describe('throwingAction (Golden Pattern)', () => {
         item: bottle.id,
         itemName: 'wine bottle',
         cause: 'thrown'
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
   });
 
   describe('Targeted Throwing', () => {
@@ -262,10 +251,7 @@ describe('throwingAction (Golden Pattern)', () => {
           preposition: 'at'
         })
       );
-      
-      // Mock random for hit (90% chance = 0.1 threshold)
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.2); // Will hit
+      forceRandom(context, [0.8]); // chance(0.9) hit roll: 0.8 < 0.9 -> will hit
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -277,10 +263,7 @@ describe('throwingAction (Golden Pattern)', () => {
         throwType: 'at_target',
         hit: true,
         messageId: expect.stringContaining('hits_target')
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test.skip('should miss moving actor - implementation bug: duck/catch logic only runs on hit', () => {
       const { world, player, room, item: stone } = TestData.withInventoryItem('small stone');
@@ -298,10 +281,7 @@ describe('throwingAction (Golden Pattern)', () => {
           preposition: 'at'
         })
       );
-      
-      // Mock random for miss
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.2); // Will miss (0.2 <= 0.3)
+      forceRandom(context, [0.8]); // chance(0.7) hit roll: 0.8 >= 0.7 -> will miss
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -310,10 +290,7 @@ describe('throwingAction (Golden Pattern)', () => {
         target: npc.id,
         hit: false,
         messageId: expect.stringContaining('target_ducks')
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test.skip('should allow NPC to catch thrown item - implementation bug: catch logic only runs on hit', () => {
       const { world, player, room, item: apple } = TestData.withInventoryItem('red apple');
@@ -332,12 +309,10 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      // Mock random for catch - need TWO random calls
-      const originalRandom = Math.random;
-      Math.random = vi.fn()
-        .mockReturnValueOnce(0.5)  // First call: will hit (0.5 > 0.3)
-        .mockReturnValueOnce(0.8); // Second call: will catch (0.8 > 0.7)
-      
+      // Force two rolls: hit (chance(0.7): 0.5 < 0.7), catch (chance(0.3): 0.2 < 0.3)
+      forceRandom(context, [0.5, 0.2]);
+
+
       const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event with target_catches message
@@ -346,10 +321,7 @@ describe('throwingAction (Golden Pattern)', () => {
         hit: false,
         finalLocation: child.id,
         messageId: expect.stringContaining('target_catches')
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test('should land on supporter when hit', () => {
       const { world, player, room, item: coin } = TestData.withInventoryItem('silver coin');
@@ -366,10 +338,7 @@ describe('throwingAction (Golden Pattern)', () => {
           preposition: 'at'
         })
       );
-      
-      // Mock random for hit
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.5); // Will hit
+      forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -379,10 +348,7 @@ describe('throwingAction (Golden Pattern)', () => {
         hit: true,
         finalLocation: table.id,
         messageId: expect.stringContaining('lands_on')
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test('should land in open container', () => {
       const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
@@ -403,10 +369,7 @@ describe('throwingAction (Golden Pattern)', () => {
           preposition: 'at'
         })
       );
-      
-      // Mock random for hit
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.5); // Will hit
+      forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -416,10 +379,7 @@ describe('throwingAction (Golden Pattern)', () => {
         hit: true,
         finalLocation: box.id,
         messageId: expect.stringContaining('lands_in')
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test('should bounce off closed container', () => {
       const { world, player, room, item: pebble } = TestData.withInventoryItem('small pebble');
@@ -440,10 +400,7 @@ describe('throwingAction (Golden Pattern)', () => {
           preposition: 'at'
         })
       );
-      
-      // Mock random for hit
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.5); // Will hit
+      forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -453,10 +410,7 @@ describe('throwingAction (Golden Pattern)', () => {
         hit: true,
         finalLocation: world.getLocation(player.id),
         messageId: expect.stringContaining('bounces_off')
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test('should break fragile item on impact', () => {
       const { world, player, room, item: ornament } = TestData.withInventoryItem('fragile ornament', {
@@ -476,12 +430,10 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      // Mock random for hit and break
-      const originalRandom = Math.random;
-      Math.random = vi.fn()
-        .mockReturnValueOnce(0.5) // Will hit (0.5 > 0.1)
-        .mockReturnValueOnce(0.3); // Will break (0.3 > 0.2)
-      
+      // Force two rolls: hit (chance(0.9): 0.5 < 0.9), break (chance(0.8): 0.7 < 0.8)
+      forceRandom(context, [0.5, 0.7]);
+
+
       const events = executeWithValidation(throwingAction, context);
       
       // Should emit THROWN event with breaks_against message
@@ -496,10 +448,7 @@ describe('throwingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.item_destroyed', {
         item: ornament.id,
         cause: 'thrown'
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
 
     test('should anger hit NPC', () => {
       const { world, player, room, item: rock } = TestData.withInventoryItem('heavy rock');
@@ -516,10 +465,7 @@ describe('throwingAction (Golden Pattern)', () => {
           preposition: 'at'
         })
       );
-      
-      // Mock random for hit
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.5); // Will hit
+      forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -531,10 +477,7 @@ describe('throwingAction (Golden Pattern)', () => {
       expect(thrownEvents[0].data.messageId).toContain('hits_target');
 
       // Second should be target_angry
-      expect(thrownEvents[1].data.messageId).toContain('target_angry');
-      
-      Math.random = originalRandom;
-    });
+      expect(thrownEvents[1].data.messageId).toContain('target_angry');    });
   });
 
 
@@ -643,10 +586,7 @@ describe('throwingAction (Golden Pattern)', () => {
           preposition: 'at'
         })
       );
-      
-      // Mock random for hit
-      const originalRandom = Math.random;
-      Math.random = vi.fn(() => 0.5); // Will hit
+      forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
       
       const events = executeWithValidation(throwingAction, context);
       
@@ -664,10 +604,7 @@ describe('throwingAction (Golden Pattern)', () => {
             expect(event.data.target).toBe(table.id);
           }
         }
-      });
-      
-      Math.random = originalRandom;
-    });
+      });    });
   });
 });
 
@@ -713,20 +650,14 @@ describe('World State Mutations', () => {
       preposition: 'at'
     });
     const context = createRealTestContext(throwingAction, world, command);
-
-    // Mock random for hit
-    const originalRandom = Math.random;
-    Math.random = vi.fn(() => 0.5); // Will hit
+    forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
 
     const validation = throwingAction.validate(context);
     expect(validation.valid).toBe(true);
     throwingAction.execute(context);
 
     // VERIFY POSTCONDITION: coin is now on the table
-    expect(world.getLocation(coin.id)).toBe(table.id);
-
-    Math.random = originalRandom;
-  });
+    expect(world.getLocation(coin.id)).toBe(table.id);  });
 
   test('should actually move item into open container when thrown at it', () => {
     const { world, player, room, item: ball } = TestData.withInventoryItem('rubber ball');
@@ -744,20 +675,14 @@ describe('World State Mutations', () => {
       preposition: 'at'
     });
     const context = createRealTestContext(throwingAction, world, command);
-
-    // Mock random for hit
-    const originalRandom = Math.random;
-    Math.random = vi.fn(() => 0.5); // Will hit
+    forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
 
     const validation = throwingAction.validate(context);
     expect(validation.valid).toBe(true);
     throwingAction.execute(context);
 
     // VERIFY POSTCONDITION: ball is now in the box
-    expect(world.getLocation(ball.id)).toBe(box.id);
-
-    Math.random = originalRandom;
-  });
+    expect(world.getLocation(ball.id)).toBe(box.id);  });
 
   test('should move item to floor when bouncing off closed container', () => {
     const { world, player, room, item: pebble } = TestData.withInventoryItem('small pebble');
@@ -775,20 +700,14 @@ describe('World State Mutations', () => {
       preposition: 'at'
     });
     const context = createRealTestContext(throwingAction, world, command);
-
-    // Mock random for hit
-    const originalRandom = Math.random;
-    Math.random = vi.fn(() => 0.5); // Will hit
+    forceRandom(context, [0.5]); // hit roll: 0.5 under both chance(0.9) and chance(0.7) -> will hit
 
     const validation = throwingAction.validate(context);
     expect(validation.valid).toBe(true);
     throwingAction.execute(context);
 
     // VERIFY POSTCONDITION: pebble bounces to the room floor
-    expect(world.getLocation(pebble.id)).toBe(room.id);
-
-    Math.random = originalRandom;
-  });
+    expect(world.getLocation(pebble.id)).toBe(room.id);  });
 
   test('should NOT move item when validation fails (too heavy)', () => {
     const { world, player, room, item: boulder } = TestData.withInventoryItem('massive boulder', {

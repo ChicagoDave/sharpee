@@ -2,6 +2,7 @@
  * Behavior for weapon entities
  */
 
+import { SeededRandom } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
 import { TraitType } from '../trait-types';
@@ -26,20 +27,25 @@ export class WeaponBehavior extends Behavior {
   static requiredTraits = [TraitType.WEAPON];
   
   /**
-   * Calculate damage for a weapon
+   * Calculate damage for a weapon.
+   *
+   * @param weapon the entity carrying a WeaponTrait
+   * @param rng the caller's seeded RNG stream (ADR-231 D6: injected as a
+   *        parameter — world-model stays engine-free; stdlib actions pass
+   *        `context.random`). Draws: one damage roll, one crit check.
+   * @throws if the entity has no WeaponTrait
    */
-  static calculateDamage(weapon: IFEntity): IWeaponDamageResult {
+  static calculateDamage(weapon: IFEntity, rng: SeededRandom): IWeaponDamageResult {
     if (!weapon.has(TraitType.WEAPON)) {
       throw new Error(`Entity "${weapon.id}" is not a weapon`);
     }
     const weaponTrait = weapon.get<WeaponTrait>(TraitType.WEAPON)!;
-    
-    // Calculate base damage (random between min and max)
-    const range = weaponTrait.maxDamage - weaponTrait.minDamage;
-    const damage = weaponTrait.minDamage + Math.floor(Math.random() * (range + 1));
-    
+
+    // Calculate base damage (random between min and max, inclusive)
+    const damage = rng.int(weaponTrait.minDamage, weaponTrait.maxDamage);
+
     // Check for critical hit (10% chance)
-    const criticalHit = Math.random() < 0.1;
+    const criticalHit = rng.chance(0.1);
     const finalDamage = criticalHit ? damage * 2 : damage;
     
     // Handle durability if weapon is breakable

@@ -169,7 +169,7 @@ Also noted, not scope-changing: the 8 ad-hoc dotted-key `blocked()` sites match 
 - **Entry state**: Phase 8 landed — `starts open` (D5a) is the author's explicit escape hatch this phase relies on before flipping the default; landing D5b first would silently break every currently-open-by-default story with no way to declare open.
 - **Deliverable**: `packages/helpers/src/builders/container.ts:138`'s `isOpen: this._openable.isOpen ?? true` is aligned to the world-model trait's own default (`?? false`, `openableTrait.ts:80-81`); `loader.ts`'s pre-add of `builder.openable()` on the container branch (the lockable Phase 9a pattern per the grammar-reachability plan) is removed so the keyed/configured add always wins and the trait default (now closed) is authoritative everywhere. Fixture and transcript sweep: every `a container, openable` (no explicit state) across `stories/*` that assumed open-by-default gets an explicit `starts open` line or an updated transcript expectation.
 - **Exit state**: `pnpm --filter '@sharpee/helpers' test`, `pnpm --filter '@sharpee/story-loader' test`, `pnpm --filter '@sharpee/world-model' test` green; dungeo walkthrough chain one clean run + unit transcripts (behavior change across every story with openable containers); phrasebook verify 68/68 (any fixture container states referenced there checked against the new default).
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-17, commit 47d2b0c6 — chain 893/893 first run; 3 phrasebook fixtures gained starts open; friendly-zoo Chord containers now match TS canon closed; helpers gained test infra)
 
 ### Phase 10: D6 — dedicated persisted action RNG stream
 - **Tier**: Large

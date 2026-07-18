@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createSeededRandom } from '@sharpee/core';
 import { WeaponBehavior } from '../../../src/traits/weapon/weaponBehavior';
 import { IFEntity, TraitType } from '../../../src';
 import { WeaponTrait } from '../../../src/traits/weapon/weaponTrait';
 
 describe('WeaponBehavior', () => {
   let weapon: IFEntity;
+  // Fixed-seed stream: harness determinism, not story policy (ADR-231 D6)
+  const rng = createSeededRandom(12345);
 
   beforeEach(() => {
     weapon = new IFEntity('sword', 'weapon');
@@ -20,7 +23,7 @@ describe('WeaponBehavior', () => {
   describe('calculateDamage', () => {
     it('should return damage within min-max range', () => {
       for (let i = 0; i < 20; i++) {
-        const result = WeaponBehavior.calculateDamage(weapon);
+        const result = WeaponBehavior.calculateDamage(weapon, rng);
         expect(result.damage).toBeGreaterThanOrEqual(5);
         expect(result.damage).toBeLessThanOrEqual(20); // Could be critical hit (2x)
       }
@@ -28,7 +31,7 @@ describe('WeaponBehavior', () => {
 
     it('should throw for non-weapon entities', () => {
       const nonWeapon = new IFEntity('item', 'item');
-      expect(() => WeaponBehavior.calculateDamage(nonWeapon)).toThrow();
+      expect(() => WeaponBehavior.calculateDamage(nonWeapon, rng)).toThrow();
     });
 
     it('should handle broken weapons', () => {
@@ -41,7 +44,7 @@ describe('WeaponBehavior', () => {
         durability: 0,
         breakable: true
       } as WeaponTrait);
-      const result = WeaponBehavior.calculateDamage(brokenWeapon);
+      const result = WeaponBehavior.calculateDamage(brokenWeapon, rng);
       expect(result.weaponBroke).toBe(true);
     });
 
@@ -53,7 +56,7 @@ describe('WeaponBehavior', () => {
         maxDamage: 7,
         weaponType: 'blade'
       } as WeaponTrait);
-      const result = WeaponBehavior.calculateDamage(fixedWeapon);
+      const result = WeaponBehavior.calculateDamage(fixedWeapon, rng);
       // Base damage is 7; critical hit (10% chance) doubles to 14
       expect([7, 14]).toContain(result.damage);
     });

@@ -172,11 +172,14 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     const modifiedCommand = createModifiedCommand(context);
 
     // Create a new context for the putting action with the modified command
+    // (inherits the outer context's action RNG stream — ADR-231 D6)
     const modifiedContext = createActionContext(
       context.world,
       context.player,
       puttingAction,
-      modifiedCommand
+      modifiedCommand,
+      undefined,
+      context.random
     );
 
     // Store modified context for execute/report phases (preserves implicit take events)
@@ -211,7 +214,9 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
         context.world,
         context.player,
         puttingAction,
-        modifiedCommand
+        modifiedCommand,
+        undefined,
+        context.random
       );
     }
 

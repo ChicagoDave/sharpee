@@ -136,9 +136,9 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   
   if (carried.length === 0) {
     messageId = 'inventory_empty';
-    // Vary the empty message
+    // Vary the empty message (drawn from the action RNG stream — ADR-231 D6)
     const emptyMessages = ['inventory_empty', 'nothing_at_all', 'hands_empty', 'pockets_empty'];
-    messageId = emptyMessages[Math.floor(Math.random() * emptyMessages.length)];
+    messageId = context.random.pick(emptyMessages);
   } else if (holding.length > 0 && worn.length > 0) {
     messageId = 'carrying_and_wearing';
     params.holdingCount = holding.length;

@@ -183,6 +183,14 @@ export class GameEngine {
    */
   private soundDispatcher: SoundDispatcher = new SoundDispatcher();
   private random: SeededRandom;
+  /**
+   * Dedicated action RNG stream (ADR-231 D6), exposed to actions as
+   * `ActionContext.random`. A separate instance from `random` (the
+   * turn-plugin stream) so plugin draws can never shift action rolls;
+   * its seed rides the save blob (`IEngineState.actionRngSeed`) so
+   * post-restore action outcomes replay deterministically.
+   */
+  private actionRandom: SeededRandom;
   private narrativeSettings: NarrativeSettings;
 
   // Alternate input mode handlers (ADR-137)
@@ -296,6 +304,9 @@ export class GameEngine {
     this.pluginRegistry = new PluginRegistry();
     this.pluginRegistry.register(new SceneEvaluationPlugin());
     this.random = createSeededRandom();
+    // ADR-231 D6: dedicated action stream — unseeded construction gives a
+    // time-based initial seed (same pattern as `random` above)
+    this.actionRandom = createSeededRandom();
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
     // Initialize extracted services (Phase 4 remediation)
@@ -326,7 +337,8 @@ export class GameEngine {
       this.actionRegistry,
       this.eventProcessor,
       this.parser,
-      this.systemEventSource
+      this.systemEventSource,
+      this.actionRandom
     );
 
     // ADR-224: auto-register the deadly-room death transformer so every story
@@ -1344,7 +1356,7 @@ export class GameEngine {
 
       // Create action context for meta-command execution
       const scopeResolver = createScopeResolver(this.world);
-      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver);
+      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver, undefined, this.actionRandom);
 
       // Run action's four-phase pattern
       const actionValidation = action.validate(actionContext);
@@ -1736,6 +1748,15 @@ export class GameEngine {
    */
   getPluginRegistry(): PluginRegistry {
     return this.pluginRegistry;
+  }
+
+  /**
+   * Get the dedicated action RNG stream (ADR-231 D6). Part of the
+   * ISaveRestoreStateProvider contract — the save service persists this
+   * stream's seed and the restore path re-seeds it.
+   */
+  getActionRandom(): SeededRandom {
+    return this.actionRandom;
   }
 
   /**

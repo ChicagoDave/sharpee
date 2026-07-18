@@ -10,7 +10,7 @@
  * All event creation is owned by the action components themselves.
  */
 
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType, Result } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType, Result, SeededRandom } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
 import { hasWorldContext } from './parser-interface';
@@ -82,13 +82,20 @@ export class CommandExecutor {
   private scopeResolver?: ScopeResolver;
   private parsedCommandTransformers: ParsedCommandTransformer[] = [];
   private beforeActionListeners: BeforeActionHookListener[] = [];
+  /**
+   * Engine-owned dedicated action RNG stream (ADR-231 D6), threaded into
+   * every ActionContext this executor creates. Optional so bare test
+   * harnesses still work; the engine always provides it.
+   */
+  private actionRandom?: SeededRandom;
 
   constructor(
     world: WorldModel,
     actionRegistry: ActionRegistry,
     eventProcessor: EventProcessor,
     parser: IParser,
-    systemEvents?: IGenericEventSource<ISystemEvent>
+    systemEvents?: IGenericEventSource<ISystemEvent>,
+    actionRandom?: SeededRandom
   ) {
     if (!world) throw new Error('World model is required');
     if (!actionRegistry) throw new Error('Action registry is required');
@@ -102,6 +109,7 @@ export class CommandExecutor {
     }
     this.actionRegistry = actionRegistry;
     this.eventProcessor = eventProcessor;
+    this.actionRandom = actionRandom;
   }
 
   /**
@@ -251,7 +259,7 @@ export class CommandExecutor {
       if (!this.scopeResolver) {
         this.scopeResolver = createScopeResolver(world);
       }
-      const actionContext = createActionContext(world, context, command, action, this.scopeResolver, soundBuffer);
+      const actionContext = createActionContext(world, context, command, action, this.scopeResolver, soundBuffer, this.actionRandom);
 
       // Pre-action hook (ADR-148): listeners can modify world state before validation
       this.emitBeforeAction({
@@ -329,6 +337,7 @@ export class CommandExecutor {
               action,
               this.scopeResolver!,
               soundBuffer,
+              this.actionRandom,
             );
 
             // Mark that inference occurred (for "(the leaflet)" message)
@@ -485,7 +494,8 @@ export function createCommandExecutor(
   actionRegistry: ActionRegistry,
   eventProcessor: EventProcessor,
   parser: IParser,
-  systemEvents?: IGenericEventSource<ISystemEvent>
+  systemEvents?: IGenericEventSource<ISystemEvent>,
+  actionRandom?: SeededRandom
 ): CommandExecutor {
-  return new CommandExecutor(world, actionRegistry, eventProcessor, parser, systemEvents);
+  return new CommandExecutor(world, actionRegistry, eventProcessor, parser, systemEvents, actionRandom);
 }

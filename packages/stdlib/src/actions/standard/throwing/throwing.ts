@@ -340,7 +340,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       // Calculate hit/miss
       let hitTarget = false;
       if (target.has(TraitType.ACTOR)) {
-        hitTarget = Math.random() > 0.3; // 70% chance to hit
+        hitTarget = context.random.chance(0.7); // 70% chance to hit
 
         const agility = ActorBehavior.getCustomProperty(target, 'agility');
         const canCatch = ActorBehavior.getCustomProperty(target, 'canCatch');
@@ -348,14 +348,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         if (!hitTarget && agility > 5) {
           sharedData.targetDucked = true;
           sharedData.messageId = 'target_ducks';
-        } else if (canCatch && Math.random() > 0.7) {
+        } else if (canCatch && context.random.chance(0.3)) {
           sharedData.targetCaught = true;
           hitTarget = false;
           finalLocation = target.id;
           sharedData.messageId = 'target_catches';
         }
       } else {
-        hitTarget = Math.random() > 0.1; // 90% chance to hit stationary objects
+        hitTarget = context.random.chance(0.9); // 90% chance to hit stationary objects
       }
 
       sharedData.hit = hitTarget;
@@ -365,7 +365,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         sharedData.targetAngry = target.has(TraitType.ACTOR);
 
         if (sharedData.isFragile) {
-          sharedData.willBreak = Math.random() > 0.2;
+          sharedData.willBreak = context.random.chance(0.8);
           if (sharedData.willBreak) {
             sharedData.messageId = 'breaks_against';
           }
@@ -404,7 +404,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           sharedData.messageId = 'sails_through';
 
           if (sharedData.isFragile) {
-            sharedData.willBreak = Math.random() > 0.5;
+            sharedData.willBreak = context.random.chance(0.5);
             if (sharedData.willBreak) {
               sharedData.messageId = 'breaks_on_impact';
             }
@@ -416,7 +416,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     } else {
       // General throw
       if (sharedData.isFragile) {
-        sharedData.willBreak = Math.random() > 0.7;
+        sharedData.willBreak = context.random.chance(0.3);
         if (sharedData.willBreak) {
           sharedData.messageId = 'fragile_breaks';
         } else {

@@ -14,7 +14,7 @@ All 43 standard actions, validation, scope builders, NPC support, combat, action
  * maintaining the event-driven architecture. Actions return events,
  * but the enhanced context makes it easy to create those events.
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
 import { ScopeResolver, ScopeLevel } from '../scope/types';
@@ -115,6 +115,20 @@ export interface ActionContext {
      * The scope resolver for determining what's perceivable
      */
     readonly scopeResolver: ScopeResolver;
+    /**
+     * Dedicated action RNG stream (ADR-231 D6).
+     *
+     * The engine owns a seeded stream reserved for actions — separate from
+     * the turn-plugin, scheduler, and basic-combat streams, so no other
+     * subsystem's draws can shift an action's rolls. Its seed is persisted
+     * across save/restore, making post-restore action outcomes
+     * deterministic with an unbroken run.
+     *
+     * Contract: actions draw ALL randomness from this stream — never
+     * `Math.random()`. World-model behaviors that need randomness take an
+     * rng parameter and callers pass this stream.
+     */
+    readonly random: SeededRandom;
     /**
      * Check if an entity is visible to the player
      */
@@ -756,6 +770,7 @@ export declare const EventTypes: {
  * Provides helper methods that make it easy to create properly
  * formatted events while maintaining the event-driven architecture.
  */
+import { SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ActionContext, Action } from './enhanced-types';
 import { ScopeResolver } from '../scope/types';
@@ -765,7 +780,7 @@ import { ValidatedCommand } from '../validation/types';
  *
  * Phase 2: Factory pattern implementation
  */
-export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, scopeResolver?: ScopeResolver): ActionContext;
+export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, scopeResolver?: ScopeResolver, random?: SeededRandom): ActionContext;
 /**
  * Helper to create a mock action context for testing
  */

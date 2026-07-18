@@ -1202,6 +1202,7 @@ export declare class LockableBehavior extends Behavior {
 /**
  * Behavior for weapon entities
  */
+import { SeededRandom } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior';
 import { IFEntity } from '../../entities/if-entity';
 /**
@@ -1221,9 +1222,15 @@ export interface IWeaponDamageResult {
 export declare class WeaponBehavior extends Behavior {
     static requiredTraits: "weapon"[];
     /**
-     * Calculate damage for a weapon
+     * Calculate damage for a weapon.
+     *
+     * @param weapon the entity carrying a WeaponTrait
+     * @param rng the caller's seeded RNG stream (ADR-231 D6: injected as a
+     *        parameter — world-model stays engine-free; stdlib actions pass
+     *        `context.random`). Draws: one damage roll, one crit check.
+     * @throws if the entity has no WeaponTrait
      */
-    static calculateDamage(weapon: IFEntity): IWeaponDamageResult;
+    static calculateDamage(weapon: IFEntity, rng: SeededRandom): IWeaponDamageResult;
     /**
      * Check if a weapon can damage a specific target type
      */
@@ -1444,7 +1451,7 @@ export declare class CombatBehavior extends Behavior {
  */
 import { IFEntity } from '../entities/if-entity';
 import { WorldModel } from '../world/WorldModel';
-import { EntityId } from '@sharpee/core';
+import { EntityId, SeededRandom } from '@sharpee/core';
 /**
  * Combined result of an attack
  */
@@ -1474,9 +1481,12 @@ export declare class AttackBehavior {
      * @param target The entity being attacked
      * @param weapon Optional weapon being used
      * @param world The world model
+     * @param rng The caller's seeded RNG stream, threaded to
+     *        WeaponBehavior.calculateDamage (ADR-231 D6 — world-model stays
+     *        engine-free; stdlib's attacking action passes `context.random`)
      * @returns Combined attack result
      */
-    static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel): IAttackResult;
+    static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel, rng: SeededRandom): IAttackResult;
     /**
      * Check if a target can be attacked
      */

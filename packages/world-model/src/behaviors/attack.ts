@@ -9,7 +9,7 @@ import { WorldModel } from '../world/WorldModel';
 import { TraitType } from '../traits/trait-types';
 import { EquippedTrait } from '../traits/equipped/equippedTrait';
 import { WeaponTrait } from '../traits/weapon/weaponTrait';
-import { EntityId } from '@sharpee/core';
+import { EntityId, SeededRandom } from '@sharpee/core';
 import { WeaponBehavior, IWeaponDamageResult } from '../traits/weapon/weaponBehavior';
 import { BreakableBehavior, IBreakResult } from '../traits/breakable/breakableBehavior';
 import { DestructibleBehavior, IDamageResult } from '../traits/destructible/destructibleBehavior';
@@ -45,16 +45,19 @@ export class AttackBehavior {
    * @param target The entity being attacked
    * @param weapon Optional weapon being used
    * @param world The world model
+   * @param rng The caller's seeded RNG stream, threaded to
+   *        WeaponBehavior.calculateDamage (ADR-231 D6 — world-model stays
+   *        engine-free; stdlib's attacking action passes `context.random`)
    * @returns Combined attack result
    */
-  static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel): IAttackResult {
+  static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel, rng: SeededRandom): IAttackResult {
     // Calculate weapon damage if using a weapon
     let weaponDamage = 1; // Default unarmed damage
     let weaponType: string | undefined;
     let weaponResult: IWeaponDamageResult | undefined;
-    
+
     if (weapon && weapon.has(TraitType.WEAPON)) {
-      weaponResult = WeaponBehavior.calculateDamage(weapon);
+      weaponResult = WeaponBehavior.calculateDamage(weapon, rng);
       weaponDamage = weaponResult.damage;
       weaponType = weaponResult.weaponType;
     }

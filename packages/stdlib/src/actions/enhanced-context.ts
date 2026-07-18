@@ -5,7 +5,7 @@
  * formatted events while maintaining the event-driven architecture.
  */
 
-import { createEvent as coreCreateEvent, ISemanticEvent } from '@sharpee/core';
+import { createEvent as coreCreateEvent, createSeededRandom, ISemanticEvent, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
 import {
   ActionContext,
@@ -36,17 +36,28 @@ class InternalActionContext implements ActionContext {
   private sequenceCounter = 0;
   public readonly scopeResolver: ScopeResolver;
   public sharedData: Record<string, any> = {};
-  
+
+  /**
+   * Action RNG stream (ADR-231 D6). Production execution flows through
+   * the engine's `createActionContext` factory, which threads the
+   * engine-owned persisted stream; this stdlib factory (interceptor
+   * binding, unit tests) falls back to a fresh time-seeded stream when
+   * none is provided.
+   */
+  public readonly random: SeededRandom;
+
   constructor(
     public readonly world: WorldModel,
     public readonly player: IFEntity,
     public readonly currentLocation: IFEntity,
     public readonly action: Action,
     public readonly command: ValidatedCommand,
-    scopeResolver?: ScopeResolver
+    scopeResolver?: ScopeResolver,
+    random?: SeededRandom
   ) {
     // Use provided scope resolver or create a standard one
     this.scopeResolver = scopeResolver || new StandardScopeResolver(world);
+    this.random = random ?? createSeededRandom();
   }
   
   // World querying methods
@@ -185,25 +196,31 @@ class InternalActionContext implements ActionContext {
       }
     };
 
-    // Create a sub-context for the taking action
+    // Create a sub-context for the taking action (inherits this
+    // context's RNG stream so draws stay on the one action stream)
     const takeContext = new InternalActionContext(
       this.world,
       this.player,
       this.currentLocation,
       takingAction,
       takeCommand,
-      this.scopeResolver
+      this.scopeResolver,
+      this.random
     );
 
     // Run the taking action's validate phase
     const validation = takingAction.validate(takeContext);
     if (!validation.valid) {
-      // Take validation failed - return the error
+      // Take validation failed - return the error. Provenance rides along
+      // (ADR-231 D1): a qualified inner error (scope key, interceptor
+      // veto, authored cantTakeMessage) must not get re-prefixed by the
+      // consuming action's blocked().
       return {
         ok: false,
         error: {
           valid: false,
           error: validation.error || 'cannot_take',
+          errorQualified: validation.errorQualified,
           params: validation.params
         }
       };
@@ -411,7 +428,7 @@ class InternalActionContext implements ActionContext {
    * Helper to create context for another action (used in composite actions)
    */
   createSubContext(action: Action): ActionContext {
-    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver);
+    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver, this.random);
     // Share the same data store with sub-context
     subContext.sharedData = this.sharedData;
     return subContext;
@@ -428,7 +445,8 @@ export function createActionContext(
   player: IFEntity,
   action: Action,
   command: ValidatedCommand,
-  scopeResolver?: ScopeResolver
+  scopeResolver?: ScopeResolver,
+  random?: SeededRandom
 ): ActionContext {
   // Get immediate location (container/supporter/room that player is in)
   const locationId = world.getLocation(player.id);
@@ -436,7 +454,7 @@ export function createActionContext(
   if (!currentLocation) {
     throw new Error('Player has no valid location');
   }
-  return new InternalActionContext(world, player, currentLocation, action, command, scopeResolver);
+  return new InternalActionContext(world, player, currentLocation, action, command, scopeResolver, random);
 }
 
 /**

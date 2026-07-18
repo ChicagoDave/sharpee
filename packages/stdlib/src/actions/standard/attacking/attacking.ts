@@ -290,7 +290,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }
     } else {
       // Use AttackBehavior for object destruction
-      const result: IAttackResult = AttackBehavior.attack(target, weapon, context.world);
+      const result: IAttackResult = AttackBehavior.attack(target, weapon, context.world, context.random);
 
       // Convert to our AttackResult type for consistency
       const attackResult: AttackResult = {

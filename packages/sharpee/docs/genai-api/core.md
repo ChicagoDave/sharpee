@@ -298,6 +298,17 @@ export interface IEngineState {
     schedulerState?: ISerializedSchedulerState;
     /** Optional: Plugin states for all registered plugins (ADR-120) */
     pluginStates?: Record<string, unknown>;
+    /**
+     * Optional: current seed of the engine's dedicated action RNG stream
+     * (ADR-231 D6, exposed to actions as `ActionContext.random`).
+     *
+     * The seed IS the full LCG stream state, so persisting it makes
+     * post-restore action outcomes (throw hit/break rolls, weapon damage,
+     * message-variant picks) deterministic with an unbroken run. Saves
+     * written before this field existed restore fine — the engine reseeds
+     * the stream time-based when the field is absent.
+     */
+    actionRngSeed?: number;
 }
 /**
  * Serialized scheduler state for save/load

@@ -4,7 +4,7 @@
 
 import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel, ScopeCheckResult, ScopeErrors, ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
-import { ISemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
+import { ISemanticEvent, createEvent as coreCreateEvent, createSeededRandom, SeededRandom } from '@sharpee/core';
 import { ISound } from '@sharpee/if-domain';
 import { GameContext } from './types';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
@@ -62,6 +62,12 @@ function getScopeError(
  *                    passes its turn-scoped buffer here; recursive
  *                    sub-contexts (implicit take) inherit the same buffer
  *                    so a nested action's sounds also reach the dispatcher.
+ * @param actionRandom The engine-owned dedicated action RNG stream
+ *                    (ADR-231 D6), exposed as `context.random`. Separate
+ *                    from the turn-plugin/scheduler/basic-combat streams;
+ *                    its seed is persisted across save/restore. When
+ *                    absent (bare test harnesses), a fresh time-seeded
+ *                    stream is created so `context.random` always exists.
  */
 export function createActionContext(
   world: WorldModel,
@@ -69,9 +75,11 @@ export function createActionContext(
   command: ValidatedCommand,
   action: Action,
   scopeResolver: ScopeResolver,
-  soundBuffer?: ISound[]
+  soundBuffer?: ISound[],
+  actionRandom?: SeededRandom
 ): ActionContext {
   const player = gameContext.player;
+  const random = actionRandom ?? createSeededRandom();
   const currentLocation = world.getLocation(player.id)
     ? world.getEntity(world.getLocation(player.id)!)
     : player;
@@ -121,6 +129,10 @@ export function createActionContext(
 
     // Shared data for passing information between phases
     sharedData,
+
+    // Dedicated action RNG stream (ADR-231 D6) — actions must draw all
+    // randomness here, never from Math.random()
+    random,
 
     // Validation result - set by CommandExecutor after validate() phase
     validationResult: undefined,
@@ -267,7 +279,8 @@ export function createActionContext(
         takeCommand,
         takingAction,
         scopeResolver,
-        soundBuffer
+        soundBuffer,
+        random
       );
 
       // Run the taking action's validate phase

@@ -58,7 +58,7 @@
 
 ## Phases 7 + ADR-232 (cfde01a3, 93e0edd6)
 - Phase 7 (D4) COMPLETE: topic { text, entity? } on both command interfaces; 5 rules .topic(); TOPIC structure branch; quiet entity-first resolveTopic (D3 matcher, no disambiguation for topics); asking/telling read command.topic + emit topicEntityId. 15 tests incl. the named free-text non-rejection pin. Chain 874/874; phrasebook fences 68/68 (PROSE stale on topic scoping — Phase 11). Noted: thealderman story grammar has its own un-topiced ask pattern (story-level, parked).
-- **ADR-232 drafted (DRAFT, 3 open questions)**: Chord-first web presence — one site, author-facing front door, Platform section for TS/book content (David ruled shape from 3 options; hard split + two-track rejected). Interview offered, David deferred ("back to player surface contracts work") — do not re-ask this session. Qs: landing shape, stdlib-reference home, sequencing vs Phase 11.
+- **ADR-232 drafted (DRAFT, 3 open questions)**: Chord-first web presence — one site, author-facing front door, Platform section for TS/book content (David ruled shape from 3 options; hard split + two-track rejected). Interview offered; David PARKED it ("no I'll wait - the website work will be more complex") — the 3 drafted questions likely under-scope the effort; treat ADR-232 as the opening of a fuller design conversation in a future session, not a quick interview. Do not re-raise this session.
 
 ## Open items
 - Plan not yet written (session-planner next); plain-defect list rides in ADR-231 Consequences.
