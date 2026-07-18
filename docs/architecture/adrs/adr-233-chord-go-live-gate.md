@@ -116,6 +116,22 @@ no-scope-reduction rule of the parity north star applies).
     `on every turn` daemons + crossing reactions both sides + the
     story-owned every-turn clause (the story-level daemon, designed
     in); implementation is its own follow-on plan.**
+- **[Added 2026-07-18, session d02586 — David ruled ask/tell IN-GATE
+  ("needs to be available on the platform and chord"), reopening the
+  audit's last two ⚠️ rows (asking/telling) under this parity floor.
+  Child ADR: ADR-239 (chord topic conversation), ACCEPTED + D3-amended
+  the same session — the `define topics for <entity>` table block.]**
+  **[SATISFIED 2026-07-18, session 80ff54 — David confirmed: ADR-239
+  implemented in full (docs/work/chord-topics/plan.md, all 3 phases
+  DONE). The topic table compiles with D4's four overlap gates,
+  dispatches at runtime through the David-approved
+  `askingLifecycle`/`tellingLifecycle` seedData seam (normalized
+  lookup, hit-owns-response with the catch-all suppressed, telling
+  symmetric — AC-1..AC-6 REAL-PATH green); the comma alias separator
+  was ruled at ratchet time; the audit's last two ⚠️ rows closed —
+  **54 ✅ / 0 ⚠️ / 0 ❌, the action table is completely clean**. With
+  this line closed, every G1 construct loads: no pre-G4 child
+  workstreams remain.]**
 
 ### G2 — Outside-author pipeline
 

@@ -5,9 +5,13 @@ standard action, daemon, plugin, and platform-browser emit must be expressible
 from a `.story` file — not just reachable in TypeScript. Chord is meant to be a
 complete authoring surface for the platform, not a subset.
 
+**Update 2026-07-18 (session 80ff54, ADR-239 topics)**: asking/telling closed —
+the audit's last two ⚠️ rows. Part 1 now reads **54 ✅ / 0 ⚠️ / 0 ❌** — a
+completely clean action table (AC-6).
+
 **Update 2026-07-17 (session 615882, go-live plan Phase 3)**: the mechanical
 shortlist closed — all 5 ❌ action gaps and 3 ⚠️ fixed (ratchet G1–G4 + D1/D3
-defect fixes + bare cut/dig grammar + turning lifecycle row). Part 1 now reads
+defect fixes + bare cut/dig grammar + turning lifecycle row). Part 1 then read
 **50 ✅ / 4 ⚠️ / 0 ❌**; rows updated in place.
 
 **This revision**: full re-run 2026-07-17 (session f5c22c, ADR-233 go-live plan
@@ -113,13 +117,13 @@ target of the engine's deadly-room transformer). Its authoring surface —
 from player-action counts. (`is deadly while <cond>` parses but is explicitly
 not wired — pre-existing, documented.)
 
-## NPCs, conversation & consumption (§8) — 3 ✅, 3 ⚠️
+## NPCs, conversation & consumption (§8) — 6 ✅
 
 | Action | Requirement | Chord path | Verdict | Class | To close |
 |---|---|---|---|---|---|
 | talking | ACTOR | `a person`; `on talking it` overrides the response | ✅ | CAN | richer conversation trees remain surface-less (see Part 3) |
-| asking (NEW) | ACTOR; reads `command.topic` (ADR-231 D4) | eligibility + `:topic` grammar ✅; `on asking it` gives ONE blanket answer; **Chord has zero topic surface** (no `topic` anywhere in chord/story-loader) — no per-topic branching | ⚠️ | CHORD-GAP | expose topic to on-clauses, e.g. `on asking it about "sword"` or a `the topic is …` condition (one surface serves asking+telling) |
-| telling (NEW) | same shape | same | ⚠️ | CHORD-GAP | same |
+| asking (NEW) | ACTOR; reads `command.topic` (ADR-231 D4) | **`define topics for <entity>` table block (ADR-239, 2026-07-18)**: entity-tier rows via the quiet `topicEntityId` resolution + free-text rows with comma-declared aliases, normalized lookup (never fuzzy); a hit fully owns the response, the `on asking it` catch-all fires only on a miss; REAL-PATH tests drive the real askingAction (topic-dispatch.test.ts) | ✅ | CAN | — |
+| telling (NEW) | same shape | the SAME table serves telling (D1); `on telling it` is the telling catch-all; proven symmetric per-tier | ✅ | CAN | — |
 | eating | EDIBLE, not liquid, servings | `edible` | ✅ | CAN | — |
 | drinking | EDIBLE.liquid OR CONTAINER.containsLiquid (`drinking.ts:236-246`) | `drinkable` adjective → `EdibleTrait({ liquid: true })` (ratchet G1, 2026-07-17; order-independent with `edible`) | ✅ | CAN | — |
 | attacking | any target validates; plain target → inert "no effect"; COMBATANT combat needs a registered combat interceptor | verb + scripted combat ✅ (`on attacking it`); **systemic combat ✅ (2026-07-18)**: `use combat` + `combatant with health/skill/…` + `weapon with damage/…` reach `registerBasicCombat` for real resolution (ADR-215 Phase 1; REAL-PATH attack test) | ✅ | CAN | — |
@@ -133,17 +137,18 @@ trait. All parse. All CAN.
 
 ## Part 1 result — 54 player-facing actions
 
-**52 ✅ full · 2 ⚠️ partial · 0 ❌ gaps** (updated 2026-07-18, session d02586:
-going's door half closed by ADR-234 — the parity table's last ❌ construct;
-attacking closed earlier the same day by the extension surface, session
-501cac — this Part-1 count now matches the scoreboard. Previous update
-2026-07-17, session 615882: the go-live plan Phase 3 mechanical shortlist
-closed all 5 ❌ gaps and 3 of the 7 ⚠️ — every item individually signed off
-by David).
+**54 ✅ full · 0 ⚠️ partial · 0 ❌ gaps** — a completely clean action table
+(updated 2026-07-18, session 80ff54: the last two ⚠️ rows — asking/telling —
+closed by ADR-239's `define topics` table block, AC-6. Previous update same
+day, session d02586: going's door half closed by ADR-234 — the parity
+table's last ❌ construct; attacking closed earlier the same day by the
+extension surface, session 501cac. Update before that, 2026-07-17, session
+615882: the go-live plan Phase 3 mechanical shortlist closed all 5 ❌ gaps
+and 3 of the 7 ⚠️ — every item individually signed off by David).
 
 | Bucket | Actions |
 |---|---|
-| ⚠️ partial (2) | asking, telling (topic surface) |
+| ⚠️ partial (0) | — |
 
 Shortlist closures 2026-07-17 (session 615882): pushing, pulling (D1 loader
 fix), drinking (`drinkable`, G1), searching (`concealed`, G2), hiding
@@ -297,15 +302,16 @@ superseded as follows:
   registry's `registerChannels` slot — live, unexercised by bundled
   extensions today). Story-global daemons landed separately (ADR-236 D7).
 - Still open (unchanged): imperative timer management (ADR-235 D4
-  non-goal), topic surface (asking/telling), `audibility` spatial-sound
-  channel, legacy `audio.*` (reachable via raw emit only), third-party
-  extensions (deferred ADR).
+  non-goal), `audibility` spatial-sound channel, legacy `audio.*`
+  (reachable via raw emit only), third-party extensions (deferred ADR).
+  The topic surface left this list 2026-07-18 (ADR-239 shipped, session
+  80ff54).
 
 ## Parity scoreboard (all four parts, 2026-07-17; superseded in part by the 2026-07-18 closure above)
 
 | Surface | Reachable today | Gap |
 |---|---|---|
-| **Actions** | 52/54 full + 2 partial-in-kind (attacking ✅, going/doors ✅ 2026-07-18) | 0 hard gaps; door construct LOADS (ADR-234 shipped — `through` tail, R2/R3, two-sided presence ADR-238) |
+| **Actions** | **54/54 full** (attacking ✅, going/doors ✅, asking/telling topics ✅ — all 2026-07-18) | none — the action table is clean (ADR-234 doors + ADR-239 topics shipped) |
 | **Daemons/fuses** | fixed timelines + presence/region-gated recurring + story-global (ADR-236) | imperative timer management (cancel, inline delay, period, reschedule, priority) |
 | **Plugins/extensions** | scheduler + NPC (auto-wired) + state-machines (`use`) + combat (`use`); in-language define trait/action strong | third-party extensions (deferred ADR); behavior hatch REMOVED (D2, by design) |
 | **Browser emits** | all text surfaces + all media/audio channels (payloaded emit, sugar, assets, custom channels, `client has`) | `audibility` spatial channel; legacy `audio.*` via raw emit only |
@@ -314,7 +320,7 @@ superseded as follows:
 1. **Door loading** — ✅ **CLOSED 2026-07-18** (ADR-234 implemented, session d02586: `through` exit sugar only — `between` struck by David's Q-1 supersession; ratchets R2/R3; ADR-237 one-wiring-path; ADR-238 two-sided presence).
 2. **Extension/plugin opt-in surface** — gates systemic combat, NPC library, ambient channels. (ADR-233 Q-2, deferred to this audit's numbers.)
 3. **Emit payload + media** — ADR-215/216 accepted, unimplemented.
-4. **Topic surface for asking/telling** — new since last audit (the actions grew topics; Chord can't see them).
+4. **Topic surface for asking/telling** — ✅ **CLOSED 2026-07-18** (ADR-239 implemented, session 80ff54: `define topics for <entity>` table block, normalized lookup, catch-all suppression, telling symmetric; seedData seam approved by David).
 
 **The mechanical shortlist — CLOSED 2026-07-17** (session 615882, plan Phase 3;
 each item signed off by David, ratchet entries G1–G4 + recorded closures): D1

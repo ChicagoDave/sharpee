@@ -41,7 +41,14 @@ export const tellingLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.TELLING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      // ADR-239 (approved by David 2026-07-18): the told topic reaches the
+      // target's hooks through sharedData — the ADR-231 D4 first-class
+      // topic, mirrored exactly as report() puts it on `if.event.told`.
+      seedData: (ctx) => ({
+        topic: ctx.command.topic?.text,
+        topicEntityId: ctx.command.topic?.entity
+      })
     }
   ]
 };

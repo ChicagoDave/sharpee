@@ -41,7 +41,14 @@ export const askingLifecycle: ActionLifecycleDescriptor = {
     {
       id: 'target',
       actionIds: [IFActions.ASKING],
-      resolve: (ctx) => ctx.command.directObject?.entity
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      // ADR-239 (approved by David 2026-07-18): the asked topic reaches the
+      // target's hooks through sharedData — the ADR-231 D4 first-class
+      // topic, mirrored exactly as report() puts it on `if.event.asked`.
+      seedData: (ctx) => ({
+        topic: ctx.command.topic?.text,
+        topicEntityId: ctx.command.topic?.entity
+      })
     }
   ]
 };

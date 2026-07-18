@@ -98,11 +98,13 @@ const RESERVED_CHANNEL_KEYS = new Set(['present', 'entered', 'exited', 'disappea
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
 
 /**
- * ADR-239 D4 topic normalization — the compile-time half of the runtime
- * lookup contract: case-insensitive, leading article stripped, whitespace
- * collapsed. Whole-topic equality only; never substring matching.
+ * ADR-239 D4 topic normalization — ONE implementation for both halves of
+ * the lookup contract: the analyzer's overlap gates here, and the
+ * story-loader's runtime table lookup (which imports this). Rules:
+ * case-insensitive, leading article stripped, whitespace collapsed.
+ * Whole-topic equality only; never substring matching.
  */
-function normalizeTopic(text: string): string {
+export function normalizeTopic(text: string): string {
   const words = text.trim().toLowerCase().split(/\s+/);
   if (words.length > 1 && (words[0] === 'the' || words[0] === 'a' || words[0] === 'an')) words.shift();
   return words.join(' ');

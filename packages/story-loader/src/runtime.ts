@@ -18,8 +18,9 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IREmitField, IREmitValue, IREntity, IROnClause, IRStatement, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IREmitField, IREmitValue, IREntity, IROnClause, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
+import { normalizeTopic } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import {
@@ -76,6 +77,12 @@ export class ChordBehaviorTrait implements ITrait {
   readonly type = ChordBehaviorTrait.type;
 }
 
+/**
+ * The two gerunds a topic table serves (ADR-239 D1 — one table, ask and
+ * tell alike). The table rides these actions' interceptor dispatch.
+ */
+const TOPIC_GERUNDS = ['asking', 'telling'] as const;
+
 /** Hooks the runtime needs from the story (implemented by ChordStory). */
 export interface RuntimeHost {
   entityId(irId: string): string | undefined;
@@ -128,7 +135,7 @@ export class ChordRuntime {
     // disabling earlier entities' clauses. Group clauses by action and
     // register one dispatching interceptor per action that routes by the
     // action's target entity.
-    const byAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause }>>();
+    const byAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause | null }>>();
     for (const entity of this.ir.entities) {
       entity.onClauses.forEach((clause, clauseIndex) => {
         // Entity every-turn clauses are scheduler daemons, not interceptors.
@@ -172,11 +179,27 @@ export class ChordRuntime {
         byAction.set(clause.action, list);
       });
     }
+    // ADR-239: topic tables ride the asking/telling dispatch. Every table
+    // owner gets an arm — with or without a catch-all clause (D5: with no
+    // catch-all declared, a miss simply returns {} and the action's
+    // unconditional unknown_topic/not_interested default stands).
+    for (const gerund of TOPIC_GERUNDS) {
+      for (const entity of this.ir.entities) {
+        if (!(entity.topics ?? []).length) continue;
+        const list = byAction.get(gerund) ?? [];
+        if (!list.some((c) => c.entity.id === entity.id)) {
+          this.prepareTopicTarget(world, entity);
+          list.push({ entity, clause: null });
+          byAction.set(gerund, list);
+        }
+      }
+    }
+
     for (const [action, clauses] of byAction) {
       world.registerActionInterceptor(
         ChordBehaviorTrait.type,
         `if.action.${action}`,
-        this.buildDispatchingInterceptor(clauses),
+        this.buildDispatchingInterceptor(action, clauses),
       );
     }
 
@@ -369,17 +392,35 @@ export class ChordRuntime {
     }
   }
 
+  /** Mark a topic-table owner so interceptor resolution finds it (no clause needed). */
+  private prepareTopicTarget(world: WorldModel, entity: IREntity): void {
+    const worldId = this.host.entityId(entity.id);
+    if (!worldId) throw new LoadError(`Entity \`${entity.id}\` has no world instance.`, entity.span);
+    const target = world.getEntity(worldId);
+    if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, entity.span);
+    if (!target.has(ChordBehaviorTrait.type)) {
+      target.add(new ChordBehaviorTrait());
+    }
+  }
+
   /**
    * One interceptor per action: each hook forwards to the clause whose
    * entity is the action's target (per-clause interceptors keep their own
-   * occurrence keys and decision snapshots).
+   * occurrence keys and decision snapshots). On the topic gerunds
+   * (asking/telling, ADR-239) a table owner's arm consults its declared
+   * topic table first; the plain clause interceptor serves as the
+   * catch-all, firing only on a table miss (D5).
    */
-  private buildDispatchingInterceptor(clauses: Array<{ entity: IREntity; clause: IROnClause }>): ActionInterceptor {
+  private buildDispatchingInterceptor(action: string, clauses: Array<{ entity: IREntity; clause: IROnClause | null }>): ActionInterceptor {
     const runtime = this;
-    const arms = clauses.map(({ entity, clause }) => ({
-      entity,
-      interceptor: this.buildInterceptor(entity, clause),
-    }));
+    const isTopicAction = (TOPIC_GERUNDS as readonly string[]).includes(action);
+    const arms = clauses.map(({ entity, clause }) => {
+      const catchAll = clause ? this.buildInterceptor(entity, clause) : undefined;
+      const interceptor = isTopicAction && (entity.topics ?? []).length
+        ? this.buildTopicArm(entity, catchAll)
+        : catchAll ?? {};
+      return { entity, interceptor };
+    });
     const armFor = (target: IFEntity): ActionInterceptor | undefined =>
       arms.find((a) => runtime.host.entityId(a.entity.id) === target.id)?.interceptor;
 
@@ -492,6 +533,108 @@ export class ChordRuntime {
       it: itIrId,
       occurrence: data.chordOccurrence as number | undefined,
       decisions: data.chordDecisions as Map<IRStatement, string> | undefined,
+    };
+  }
+
+  // ------------------------------------------------- topic tables (ADR-239)
+
+  /**
+   * Runtime dispatch for one topic-table owner (ADR-239 D4/D5): normalized
+   * whole-topic lookup against the declared rows — entity tier first (the
+   * platform's quiet `topicEntityId` resolution), then free-text tier
+   * (primary or declared alias; the SAME normalizeTopic the analyzer's
+   * overlap gates used — one implementation, imported from chord). A hit
+   * runs the matched ROW's body exactly like a one-clause `on` firing
+   * (its first phrase OVERRIDES the primary message; the catch-all never
+   * runs — suppression, not append). A miss falls to the owner's
+   * catch-all clause when one is declared; with none, `{}` leaves the
+   * action's unconditional unknown_topic/not_interested default standing.
+   * The asked topic reaches `data` via the lifecycle seedData hook.
+   */
+  private buildTopicArm(entity: IREntity, catchAll: ActionInterceptor | undefined): ActionInterceptor {
+    const runtime = this;
+    const rows = entity.topics ?? [];
+
+    /** Match once per firing; memoized on the consultation's sharedData. */
+    const rowIndexFor = (data: InterceptorSharedData): number => {
+      if (typeof data.chordTopicRow === 'number') return data.chordTopicRow;
+      const askedEntity = typeof data.topicEntityId === 'string' ? data.topicEntityId : null;
+      const askedText = typeof data.topic === 'string' ? normalizeTopic(data.topic) : null;
+      let index = -1;
+      if (askedEntity !== null) {
+        index = rows.findIndex((r) => r.filter.kind === 'entity' && runtime.host.entityId(r.filter.id) === askedEntity);
+      }
+      if (index === -1 && askedText !== null && askedText !== '') {
+        index = rows.findIndex(
+          (r) =>
+            r.filter.kind === 'text' &&
+            (normalizeTopic(r.filter.primary) === askedText || r.filter.aliases.some((a) => normalizeTopic(a) === askedText)),
+        );
+      }
+      data.chordTopicRow = index;
+      return index;
+    };
+    // One occurrence namespace per ROW, shared across ask and tell (D1 —
+    // one table serves both): a row-body `first time` ordinal counts
+    // deliveries of that response, however it was reached.
+    const occurrenceKeyOf = (rowIndex: number) => `${CHORD_OCCURRENCE_PREFIX}topic.${entity.id}.${rowIndex}`;
+
+    return {
+      preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        const row = rows[rowIndexFor(data)];
+        if (!row) return catchAll?.preValidate?.(target, world, actorId, data) ?? null;
+        const ctx: ExecContext = { world, it: entity.id };
+        const refusal = runtime.findRefusal(row.body, ctx);
+        return refusal ? { valid: false, error: refusal } : null;
+      },
+
+      postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        const index = rowIndexFor(data);
+        const row = rows[index];
+        if (!row) return catchAll?.postValidate?.(target, world, actorId, data) ?? null;
+        const ctx: ExecContext = { world, it: entity.id };
+        const key = occurrenceKeyOf(index);
+        const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+        world.setStateValue(key, occurrence);
+        ctx.occurrence = occurrence;
+        data.chordOccurrence = occurrence;
+        data.chordDecisions = runtime.snapshotDecisions(row.body, ctx);
+        return null;
+      },
+
+      postExecute(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): void {
+        const row = rows[rowIndexFor(data)];
+        if (!row) {
+          catchAll?.postExecute?.(target, world, actorId, data);
+          return;
+        }
+        const ctx = runtime.restoreCtx(world, entity.id, data);
+        runtime.execStatements(row.body, ctx, 'mutations');
+      },
+
+      postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
+        const row = rows[rowIndexFor(data)];
+        if (!row) return catchAll?.postReport?.(target, world, actorId, data) ?? {};
+        const ctx = runtime.restoreCtx(world, entity.id, data);
+        const reports = runtime.execStatements(row.body, ctx, 'reports');
+
+        const result: InterceptorReportResult = {};
+        const emit: CapabilityEffect[] = [];
+        for (const event of reports) {
+          const payload = (event.data ?? {}) as Record<string, unknown>;
+          if (event.type === 'chord.phrase' && !result.override) {
+            // A hit fully owns the response (D5) — override, never append.
+            result.override = {
+              messageId: String(payload.messageId),
+              params: (payload.params as Record<string, unknown>) ?? {},
+            };
+          } else {
+            emit.push({ type: event.type, payload });
+          }
+        }
+        if (emit.length) result.emit = emit;
+        return result;
+      },
     };
   }
 

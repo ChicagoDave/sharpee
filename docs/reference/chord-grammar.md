@@ -263,6 +263,48 @@ DIRECTION    = north | south | east | west | northeast | northwest
   exit-wiring implementation (via stamped both directions + room1
   placement; the primitive owns the DoorTrait-vs-exits invariant).
 
+## Topics (ADR-239, 2026-07-18)
+
+- **The `define topics` table block** is the one topic surface — the
+  entity's declared table of ask/tell topics + responses, a closed,
+  compile-visible set (D4: the story declares what can be asked about;
+  lookup, never fuzzy):
+
+  ```
+  define topics for the porter
+    about the sword: phrase sword-reply
+    about "treasure", "the hoard": phrase treasure-reply
+    about "the folly":
+      phrase folly-reply
+      change it to nervous
+  end topics
+  ```
+
+- **Two row tiers.** `about the <entity>:` (entity tier) matches through
+  the platform's quiet `topicEntityId` resolution — checked first.
+  `about "<text>"[, "<text>" …]:` (free-text tier) declares the primary
+  spelling plus comma-separated aliases (comma ruled by David 2026-07-18,
+  superseding ADR-239's `or` example); matching is normalized whole-topic
+  equality (case-insensitive, leading article stripped) — the SAME
+  `normalizeTopic` the compile gates use.
+- **Responses scale.** A one-line row names its statement directly (the
+  common `phrase <key>` case, declare-and-emit prose sugar included); a
+  row may instead open an indented statement body for rich beats. `it`
+  inside a row body binds to the owner.
+- **One table per entity** (`analysis.duplicate-topics-block`), on
+  person-kind entities only (`analysis.topics-host` — only people answer
+  ask/tell). The same table serves `ask` AND `tell` (D1). Overlaps are
+  compile errors, never runtime tie-breaks: a duplicate entity or
+  normalized quoted entry (aliases included) is `analysis.duplicate-topic`;
+  a quoted entry colliding with the name/aka of an entity used in an
+  entity-tier row of the same table is `analysis.topic-entity-collision`.
+- **The catch-all is the existing unfiltered `on asking it` clause** — no
+  on-clause grammar changed. It fires ONLY when the asked topic matches no
+  declared entry (the NPC's own "couldn't say" voice); on a hit the
+  matched row fully owns the response — the catch-all is suppressed, never
+  appended (D5). With no catch-all declared, stdlib's `unknown_topic` /
+  `not_interested` default speaks. `on telling it` mirrors identically.
+
 ## Extension surface (ADR-215/216, 2026-07-18)
 
 - **`use <extension>`** — a story-header body line, one trusted platform

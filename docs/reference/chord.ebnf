@@ -71,7 +71,8 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-trait | define-action | define-hatch
              | define-sequence
              | define-machine                              (* ADR-215, use-gated *)
-             | define-asset | define-channel ;             (* ADR-216 *)
+             | define-asset | define-channel               (* ADR-216 *)
+             | define-topics ;                             (* ADR-239 *)
 
 (* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
    error with a fix-it naming `define trait` + clauses or `define action
@@ -323,6 +324,37 @@ define-channel = "define" "channel" WORD NL                (* spelling A, 2026-0
                                                               event, `take` fields only;
                                                               renderers ship platform-
                                                               side (ADR-215 registry) *)
+define-topics  = "define" "topics" "for" name NL           (* ADR-239 D3 as amended:
+                                                              the ask/tell topic table.
+                                                              One block per entity
+                                                              (analysis.duplicate-topics-
+                                                              block); person-kind owners
+                                                              only (analysis.topics-host);
+                                                              at least one row
+                                                              (parse.topics-empty) *)
+                 >>> { topic-row }
+                 "end" "topics" NL ;
+topic-row      = "about" topic-key ":" ( statement         (* one-line response *)
+                                       | NL >>> { statement } ) ;
+                                                           (* indented statement body;
+                                                              `it` = the owner; the
+                                                              phrase declare-and-emit
+                                                              prose sugar applies *)
+topic-key      = name                                      (* entity tier — matched via
+                                                              the platform's quiet
+                                                              topicEntityId resolution *)
+               | STRING { "," STRING } ;                   (* free-text tier: primary +
+                                                              declared aliases (comma
+                                                              list, David 2026-07-18).
+                                                              Lookup is normalized whole-
+                                                              topic equality — never
+                                                              fuzzy (D4). Duplicates and
+                                                              quoted-vs-entity-tier
+                                                              collisions are compile
+                                                              errors (analysis.duplicate-
+                                                              topic / analysis.topic-
+                                                              entity-collision) *)
+
 sequence-step  = step-anchor NL >>> { statement } ;
 step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)
                | NUMBER "turns" "later"                    (* relative to previous step *)
