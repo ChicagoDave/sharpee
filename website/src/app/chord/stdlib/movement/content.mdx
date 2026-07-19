@@ -1,0 +1,147 @@
+Getting an actor from place to place: rooms and their exits, things you can
+get inside or on top of, and things you can climb.
+
+## 3.1 going
+
+**go** (`if.action.going`) — `go north`, `walk`/`run`/`head`/`travel
+north` (the synonym forms landed with ADR-230 D4, which also fixed a
+long-broken `go <direction>` rule — `go north` itself parses reliably
+now), or just the direction. Twelve
+direction words parse, ten of them compass-and-vertical (`north`/`n`,
+`south`/`s`, `east`/`e`, `west`/`w`, `northeast`/`ne`, `northwest`/`nw`,
+`southeast`/`se`, `southwest`/`sw`, `up`/`u`, `down`/`d`) plus `in`/`inside`
+and `out`/`outside`.
+
+Exits are room data — in a `.story` file they are the direction lines of a
+room's `create` block, including blocked and conditionally blocked exits
+(chord-language.md §2.5 owns that syntax) and deadly exits (§9.2 here).
+What going checks, in order: you must actually be in a room (see the
+vehicle note below) → `not_in_room`; a blocked exit refuses with
+`movement_blocked`, speaking the story's own blocked phrase — and a
+direction can be blocked without leading anywhere, which is how "the hedge
+is too thick" works; no exit that way → `no_exit_that_way` (or `no_exits`
+in a room with none at all); a door in the way that is locked →
+`door_locked`, closed → `door_closed`; a destination that fails to resolve
+→ `destination_not_found`.
+
+Darkness does not stop movement. Walking into a dark room succeeds — what
+you lose is the arrival description, replaced by `too_dark`. Whether a room
+is dark comes from its light requirement (`dark`, or the live `dark while <condition>` form) weighed against light sources present; looking has the
+same rule (§6.1). Anything worse than not-seeing — a grue — is death
+machinery ([§9](/chord/stdlib/death)), not the going action.
+
+Vehicles change whose feet move: in an enterable vehicle that blocks
+walking (the default), GO refuses with `not_in_room` ("you're in the
+basket, not the room"); in one configured to move with its passenger, GO
+moves the **vehicle**, carrying everyone aboard. See the vehicle trait in
+§3.4 — TypeScript-only today.
+
+Message keys under `if.action.going.`: `no_direction`, `not_in_room`,
+`no_exits`, `no_exit_that_way`, `movement_blocked`, `door_closed`,
+`door_locked`, `destination_not_found`, plus the arrival keys `moved`,
+`moved_to`, `first_visit`, `too_dark`. Success emits a small parade of
+events — `if.event.actor_exited`, `if.event.actor_moved`,
+`if.event.actor_entered`, region crossings (`if.event.region_exited` /
+`region_entered`), then the new room's description — which is what `after
+going` clauses and daemons key off. Regions can also react to those
+crossings themselves — `after entering it` / `after leaving it` on the
+region's own block (§3.4).
+
+Interceptors: going consults three parties in order — the room being left
+(`on going it`), the room being entered (its clauses bind as
+`entering_room` conditions — this is how a room refuses entry rather than
+refusing exit), and the door being passed through. First refusal wins.
+
+## 3.2 entering and exiting
+
+**enter** (`if.action.entering`) — `enter X`, `get in/into X`, `climb
+in/into X`, `go in/into X`, `board X`, `get on X`. One gate: the target
+needs the `enterable` trait — anything else refuses with
+`not_enterable` (checked in the action: parse by syntax, refuse by
+world, since ADR-231). A closed openable refuses with
+`container_closed`; already inside → `already_inside`. The trait's one
+setting, its preposition, decides whether you are *in* the bathtub or *on*
+the park bench (`entered` vs `entered_on`). There is no occupancy limit
+today (`too_full` is reserved but never fires). Events: `if.event.entered`.
+
+**exit** (`if.action.exiting`) — bare `exit`, `leave`, `get out`, `go
+out`, `climb out`, `disembark`, `alight` (a named target parses too —
+`exit the chair` — and the action honors it: naming something you aren't
+inside refuses `not_in_that`, since ADR-231). It undoes an ENTER: out of the
+container, off the supporter. Standing in a plain room refuses with
+`already_outside` — leaving rooms is GO's job. A closed openable container
+refuses with `container_closed` (you can shut yourself in). Keys:
+`exited`, `exited_from`, `nowhere_to_go`, `already_outside`,
+`not_in_that`, `container_closed`; event `if.event.exited`.
+
+## 3.3 climbing
+
+**climb** (`if.action.climbing`) — `climb X`, `climb up/down X`, `scale`,
+`ascend`, `descend X`, all gated on the `climbable` trait (`climb into the
+basket` is entering; `climb out` is exiting). Climbing something puts you
+*on* it — the same place putting yourself on an enterable supporter gets
+you; an unclimbable target refuses with `not_climbable`, being already up
+there with `already_there`.
+
+The action also implements directional climbing — `climb up` meaning "take
+the up exit" — but no core grammar reaches it today (bare `up`/`down`
+parse as going, which is usually what you want); a story adding `climb up`
+as grammar gets room-exit climbing for free, refusing off-vertical
+directions with `cant_go_that_way`.
+
+Two honest footnotes: the trait carries `destination` and `direction`
+fields the standard action does not consume yet (climbing an object never
+teleports you to a destination room — put an `after climbing it` clause on
+the cliff if you want that), and `blockedMessage`/`successMessage` are
+likewise data for story use. Keys: `no_target`, `not_climbable`,
+`cant_go_that_way`, `already_there`, `climbed_up`, `climbed_down`,
+`climbed_onto` (`too_high`/`too_dangerous` reserved). Events:
+`if.event.climbed`, plus `if.event.moved` (directional) or
+`if.event.entered` (object).
+
+## 3.4 Movement traits
+
+**room** (`a room` — kind noun). The place actors stand. Everything a
+room does in a `.story` file happens in its `create` block: direction
+lines and blocked exits (chord-language.md §2.5), `dark` / `dark while <condition>` (§2.3 there), a `first time` arrival description (§2.9
+there), `deadly:` (§9.2 here), states, scores, and `on`/`after` clauses —
+including `after entering it`, the room-arrival reaction the Cloak of
+Darkness bar uses. Room exits may also route through a door — `down to
+the Cellar through the cellar door` — which is where
+`door_closed`/`door_locked` in §3.1 come from; §4.3 has the door story.
+
+**enterable** (`enterable` — adjective). Marks a thing the player can get
+inside or on top of. Composes with defaults (preposition `in`); the `on`
+preposition — benches, roofs — is a TypeScript setting today. First
+documented here: no story in the repo uses it yet.
+
+**climbable** (`climbable` — adjective). Marks a thing the CLIMB family
+accepts. Defaults only from Chord (`canClimb: true`); the trait's
+`destination`/`direction`/message fields are story-handler data (§3.3).
+
+**exit** (trait). A passage *entity* — the "xyzzy" magic word, a tunnel
+that is a thing in its own right. A room exit can route `via` such an
+entity (or via a door), and pathfinding resolves it; going checks a via
+entity only for open/locked state. No standard action reads the trait's
+richer fields (aliases, visibility, bidirectionality) today, and it has
+no Chord surface — treat it as Sharpee-Way plumbing.
+
+**vehicle** (trait — TypeScript-only, no Chord surface). Rides on top of
+`enterable`: the trait's `blocksWalkingMovement` (default true) is what
+makes GO say "you're in something" instead of walking; set it false and GO
+moves the vehicle itself along the room's exits, passengers and all
+(`movesWithContents`). `positionRooms`/`currentPosition` track multi-stop
+vehicles (the Dungeo basket's counterweight shape); `isOperational` and
+`requiresExitBeforeLeaving` are read by vehicle helpers for story use.
+
+**region** (`a region` — kind noun, since ADR-236). A named room group,
+authored region-side: `containing the Drive, the Hall` lists members
+(additive — regions nest by containing each other), `after entering it` /
+`after leaving it` react to boundary crossings (`leaving` exists only
+here), and an `on every turn` clause on the region block is a region
+daemon, firing while the player is anywhere in a member room. The
+`region_entered`/`region_exited` events going emits (§3.1) are what
+these bind to. Full entry in §11.1.
+
+**scene** — a structural trait with no Chord surface and no verb;
+cataloged in [§11](/chord/stdlib/traits).

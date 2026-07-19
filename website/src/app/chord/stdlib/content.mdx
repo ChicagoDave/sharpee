@@ -1,0 +1,98 @@
+A writer-facing catalog of what Sharpee gives you for free: every standard
+action a player can type, every trait you compose onto an entity, and the
+runtime services (plugins and daemons) behind timed and NPC behavior. This
+is the companion to the [Author guide](/chord/guide/reading): that teaches
+the language and its `define trait` / `define action` / hatch escape
+hatches; this one catalogs everything already built in, so you know what
+*not* to define before reaching for those hatches.
+
+<Callout kind="note">
+  Current at Sharpee 3.2 — swept against the shipped extension surface
+  (`use combat`, `use state-machines`), doors, regions, topics, and person
+  identity, with every entry's Chord availability stated per the parity
+  audit (54/54 standard actions reachable from a `.story` file).
+</Callout>
+
+## 1.1 What the standard library is
+
+The standard library is everything Sharpee gives a story before the story
+says anything: fifty-odd actions the player can attempt, forty-odd traits
+an entity can be composed from, the behaviors that own their state changes,
+and the runtime services (plugins, daemons, channels) underneath. A Chord
+`.story` file builds directly on this vocabulary — the point of this
+reference is to know what is already there, so you reach for
+`define trait` / `define action` only when you are genuinely adding
+something new.
+
+The reference is organized by author task:
+
+| Pages | What they cover |
+|---|---|
+| [Manipulation](/chord/stdlib/manipulation) | take, drop, put, give, throw, push, pull, touch — and the per-entity verbs (lower, raise, turn, cut, dig) |
+| [Movement](/chord/stdlib/movement) | go, enter, exit, climb — rooms, exits, doors-in-motion, regions |
+| [Containers & openables](/chord/stdlib/containers) | open, close, lock, unlock — and the door entry |
+| [Wearing](/chord/stdlib/wearing) | wear, take off — wearable, clothing, equipment |
+| [Senses & examination](/chord/stdlib/senses) | examine, look, search, read, listen, smell |
+| [Devices](/chord/stdlib/devices) | switch on/off — switchable, light sources, buttons |
+| [NPCs & conversation](/chord/stdlib/npcs) | talk, ask, tell (topics), attack (combat), eat, drink, hide |
+| [Death](/chord/stdlib/death) | kill the player, deadly exits and rooms, the health trait |
+| [Meta & system](/chord/stdlib/meta) | about, help, inventory, score, save, undo, and friends |
+| [Traits catalog](/chord/stdlib/traits) | all forty-odd traits in one lookup table |
+| [Plugins & daemons](/chord/stdlib/plugins) | the scheduler, NPC and state-machine plugins, extensions |
+
+## 1.2 How an action entry is laid out
+
+Each action entry tells you: the **verbs that actually parse** (grounded
+in the parser's grammar, not the help lists — where a listed synonym does
+not parse, the entry says so), the **trait** that makes an entity
+eligible (or "anything"), the **checks** in the order the action makes
+them and the refusal each produces, the **message keys** you can retarget,
+and the **events** it emits for story reactions.
+
+## 1.3 Standard behavior vs. per-entity verbs
+
+Most verbs have one canonical behavior — TAKE moves a thing to your
+hands, OPEN opens it — and stdlib implements it once, for every entity.
+A few verbs (LOWER, RAISE — and unbound cousins like WAVE, WIND) have no
+single meaning; the platform refuses to invent one (ADR-090), and each
+entity that supports the verb defines what it means. §2.7 shows the Chord
+pattern in full. TURN, once of this family, now consults the entity
+directly instead (§2.7). A related pair — CUT and DIG (§2.8) — gate on a
+trait and validate a tool, but the outcome is likewise each entity's own.
+
+## 1.4 Messages are IDs, not fixed text
+
+Standard actions never speak English; they emit message IDs
+(`if.action.taking.fixed_in_place`) that the language layer renders. Per
+entity, you replace a moment's text with `on`/`after` clauses carrying
+your own phrases (the [Manipulation](/chord/stdlib/manipulation) opening
+shows the pattern); story-wide, a `define phrase` under the dotted ID
+itself (`define phrase if.action.taking.fixed_in_place`) replaces the
+platform text everywhere (ADR-230), and a TypeScript story can override
+the IDs through the language provider.
+
+## 1.5 Intercepting standard actions
+
+The `on <gerund> it` / `after <gerund> it` clause surface works on
+exactly the actions the platform wires for consultation — 38 of them,
+fail-fast: a gerund nothing consults is a load error, with a pointed
+message. Each entry here states what gets consulted, including the
+multi-entity commands where both sides are heard (give: item and
+recipient; lock: target then key; go: the room left, the room entered,
+and the door between). Meta actions and LOOK consult nothing — there is
+no entity to key on.
+
+## Related references
+
+- The **[Author guide](/chord/guide/reading)** — the `.story` language
+  itself: syntax, clause semantics, `define` forms, tooling. Read it to
+  *write*; read this reference to know what is already built.
+- The **[Grammar reference](/chord/reference/grammar)** — the formal
+  grammar, for tool authors and the terminally curious.
+- The **[Phrasebook](/chord/phrasebook)** — the table-first quick lookup:
+  phrasings, refusal keys, and worked scene/transcript pairs for the
+  actions you reach for most.
+- **`packages/sharpee/docs/genai-api/`** (in the npm package) — the
+  generated TypeScript API reference, for the Sharpee Way: trait classes,
+  behaviors, world-model and engine interfaces. Where this reference says
+  "TypeScript-only," that is where the types live.

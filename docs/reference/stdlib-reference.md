@@ -8,21 +8,24 @@ document teaches the language and its `define trait` / `define action` / hatch
 escape hatches; this one catalogs everything already built in, so you know what
 *not* to define before reaching for those hatches.
 
-> **Status: CONTENT-FINAL** (2026-07-16; truth-refreshed 2026-07-17
-> after ADR-230 landed) — written against the post-ADR-228/229/230
-> surface. Examples are hand-written Chord syntax, compile-checked ad
-> hoc during drafting. The reachability gaps the first draft flagged
-> (no-grammar actions, orphan ids, dead help synonyms, dotted phrase
-> keys) were closed by ADR-230 and those notes are gone; the platform
-> notes that remain are still-honest gaps.
+> **Status: CURRENT at Sharpee 3.2** (currency-swept 2026-07-19 against
+> the post-ADR-242 surface; previously content-final 2026-07-16,
+> truth-refreshed 2026-07-17 after ADR-230). The 2026-07-19 sweep folded
+> the extension surface (ADR-215/235: `use combat`, NPC auto-wire, `use
+> state-machines`), doors (ADR-234/237/238), regions and story-global
+> daemons (ADR-236), topics (ADR-239), the R3 keyless key/tool forms,
+> and person identity (ADR-242), with every entry's Chord availability
+> stated per the parity audit (54/54 actions reachable). Examples are
+> hand-written Chord syntax, compile-checked ad hoc during drafting.
+> The platform notes that remain are still-honest gaps.
 
 ## 1. How to read this reference
 
 ### 1.1 What the standard library is
 
 The standard library is everything Sharpee gives a story before the story
-says anything: fifty-odd actions the player can attempt, forty traits an
-entity can be composed from, the behaviors that own their state changes,
+says anything: fifty-odd actions the player can attempt, forty-odd traits
+an entity can be composed from, the behaviors that own their state changes,
 and the runtime services (plugins, daemons, channels) underneath. A Chord
 `.story` file builds directly on this vocabulary — the point of this
 reference is to know what is already there, so you reach for
@@ -42,10 +45,11 @@ and the **events** it emits for story reactions.
 
 Most verbs have one canonical behavior — TAKE moves a thing to your
 hands, OPEN opens it — and stdlib implements it once, for every entity.
-A few verbs (LOWER, RAISE, TURN — and unbound cousins like WAVE, WIND)
-have no single meaning; the platform refuses to invent one (ADR-090), and
-each entity that supports the verb defines what it means. §2.7 shows the
-Chord pattern in full. A related pair — CUT and DIG (§2.8) — gate on a
+A few verbs (LOWER, RAISE — and unbound cousins like WAVE, WIND) have no
+single meaning; the platform refuses to invent one (ADR-090), and each
+entity that supports the verb defines what it means. §2.7 shows the Chord
+pattern in full. TURN, once of this family, now consults the entity
+directly instead (§2.7). A related pair — CUT and DIG (§2.8) — gate on a
 trait and validate a tool, but the outcome is likewise each entity's own.
 
 ### 1.4 Messages are IDs, not fixed text
@@ -63,7 +67,7 @@ can override the IDs through the language provider.
 
 The `on <gerund> it` / `after <gerund> it` clause surface
 (chord-language.md §3 owns the syntax) works on exactly the actions the
-platform wires for consultation — 37 of them, fail-fast: a gerund nothing
+platform wires for consultation — 38 of them, fail-fast: a gerund nothing
 consults is a load error, with a pointed message. Each entry here states
 what gets consulted, including the multi-entity commands where both sides
 are heard (give: item and recipient; lock: target then key; go: the room
@@ -403,20 +407,26 @@ is a load error with a pointed message (these verbs never consult
 entity-level interceptors — the trait/action pattern above is the way),
 and from TypeScript the equivalent is a capability behavior registered for
 `if.action.lowering` (the Sharpee Way, how Dungeo's basket works). TURN
-joined this family in ADR-230: `turn`/`rotate`/`twist X` parse (just below
-the switching phrasal forms, so `turn lamp on` still switches, §7.1), the
-unhandled refusal is `if.action.turning.cant_turn_that`, and an entity that
-can be turned claims the verb exactly as the basket claims lowering. WAVE
-and WIND — the other classic per-entity verbs — still have no binding at
-all: no grammar, no action. A story wanting them defines the whole verb
-with `define action`, exactly as above.
+left this family on its own terms: `turn`/`rotate`/`twist X` still parse
+(just below the switching phrasal forms, so `turn lamp on` still switches,
+§7.1) and the unhandled refusal is still `if.action.turning.cant_turn_that`,
+but turning now wears cutting's dual surface without the trait gate (§2.8)
+— an `on turning it` clause directly on the entity is consulted (turning is
+one of the 38 wired actions), or a TypeScript capability behavior for
+`if.action.turning` takes the whole turn; no eligibility trait, no
+define-action scaffolding needed. WAVE and WIND — the other classic
+per-entity verbs — still have no binding at all: no grammar, no action. A
+story wanting them defines the whole verb with `define action`, exactly as
+above.
 
 ### 2.8 cutting and digging
 
 Two tool verbs with one design (ADR-230 D3c): the platform action gates
 eligibility and validates the tool; the *outcome* belongs to the entity.
-**cut** (`if.action.cutting`) parses as `cut X with/using Y`; **dig**
-(`if.action.digging`) as `dig X with/using Y`. Eligibility is a trait —
+**cut** (`if.action.cutting`) parses bare — `cut X` (also `slice`,
+`chop`) — and tooled as `cut X with/using Y` (the tooled form outranks
+when a tool is named); **dig** (`if.action.digging`) likewise as `dig X`
+and `dig X with/using Y`. Eligibility is a trait —
 `cuttable` / `diggable` — and the tool contract mirrors the lockable key
 contract exactly: `with tool <entity>` in Chord (`toolId`/`toolIds` in
 TypeScript) declares what works, forward references legal. A trait with
@@ -539,7 +549,9 @@ Message keys under `if.action.going.`: `no_direction`, `not_in_room`,
 events — `if.event.actor_exited`, `if.event.actor_moved`,
 `if.event.actor_entered`, region crossings (`if.event.region_exited` /
 `region_entered`), then the new room's description — which is what `after
-going` clauses and daemons key off.
+going` clauses and daemons key off. Regions can also react to those
+crossings themselves — `after entering it` / `after leaving it` on the
+region's own block (§3.4).
 
 Interceptors: going consults three parties in order — the room being left
 (`on going it`), the room being entered (its clauses bind as
@@ -601,9 +613,9 @@ lines and blocked exits (chord-language.md §2.5), `dark` / `dark while
 <condition>` (§2.3 there), a `first time` arrival description (§2.9
 there), `deadly:` (§9.2 here), states, scores, and `on`/`after` clauses —
 including `after entering it`, the room-arrival reaction the Cloak of
-Darkness bar uses. Room exits may also name a door to pass through
-(`door_closed`/`door_locked` in §3.1 come from that) — but see §4.3:
-authoring a door needs TypeScript today.
+Darkness bar uses. Room exits may also route through a door — `down to
+the Cellar through the cellar door` — which is where
+`door_closed`/`door_locked` in §3.1 come from; §4.3 has the door story.
 
 **enterable** (`enterable` — adjective). Marks a thing the player can get
 inside or on top of. Composes with defaults (preposition `in`); the `on`
@@ -629,10 +641,17 @@ moves the vehicle itself along the room's exits, passengers and all
 vehicles (the Dungeo basket's counterweight shape); `isOperational` and
 `requiresExitBeforeLeaving` are read by vehicle helpers for story use.
 
-**region** and **scene** — structural traits with no Chord surface and no
-verb; cataloged in §11. Regions matter to movement only through the
-`region_entered`/`region_exited` events going emits when a walk crosses a
-region boundary.
+**region** (`a region` — kind noun, since ADR-236). A named room group,
+authored region-side: `containing the Drive, the Hall` lists members
+(additive — regions nest by containing each other), `after entering it` /
+`after leaving it` react to boundary crossings (`leaving` exists only
+here), and an `on every turn` clause on the region block is a region
+daemon, firing while the player is anywhere in a member room. The
+`region_entered`/`region_exited` events going emits (§3.1) are what
+these bind to. Full entry in §11.1.
+
+**scene** — a structural trait with no Chord surface and no verb;
+cataloged in §11.
 
 ## 4. Containers & openables
 
@@ -651,8 +670,9 @@ boulder` refuses with `not_openable` ("The boulder can't be opened.").
 `open X with Y` maps to opening too (ADR-230 D3b — no separate action),
 with the named tool as a consulted command entity. An openable can
 declare a required tool exactly as a lockable declares a key —
-`toolId`/`toolIds` on the trait (TypeScript today; Chord's `openable`
-composes with defaults only) — refusing `no_tool`/`tool_not_held`/
+`toolId` on the trait; in Chord, `openable with the crowbar`, the same
+keyless `with` shape as a lockable's key (the several-tools list
+`toolIds` is TypeScript today) — refusing `no_tool`/`tool_not_held`/
 `wrong_tool`; an openable with no tool requirement ignores an offered
 tool exactly as a keyless lockable ignores keyless LOCK.
 
@@ -686,9 +706,9 @@ operate on the `lockable` trait. Every form parses since ADR-230 D2:
 `lock X`, `lock X with/using Y`, keyless `unlock X`, `unlock X with/using
 Y`, plus the `secure`/`unsecure` aliases (D4). The keyless forms are safe
 by construction — a keyed lock still refuses `no_key` when no key is
-named. A lock either requires a key — it names
-one (`with key <entity>` in Chord; `keyId`/`keyIds` in TypeScript) — or it
-is keyless and turns freely. The key rules, shared by both actions: a
+named. A lock either requires a key — it names one (`with the <key>` in
+Chord — `lockable with the iron key`; `keyId`/`keyIds` in TypeScript) —
+or it is keyless and turns freely. The key rules, shared by both actions: a
 keyed lock with no key named asks `no_key` ("What do you want to unlock it
 with?"); a named key you are not holding refuses `key_not_held`; the wrong
 key refuses `wrong_key`. Locking additionally requires the thing be closed
@@ -707,7 +727,7 @@ key** — so a cursed key can veto its own use (`on unlocking it` on the
 key), and each side's clause sees the other's identity in its context.
 Only an *explicitly named* key is consulted; a key the platform infers is
 not a command entity. In Chord, composition is one line — the zoo's
-`scenery, openable, lockable with key the staff keycard` is the shipped
+`scenery, openable, lockable with the staff keycard` is the shipped
 example — and the key name resolves to its entity wherever in the story
 that entity is declared (forward references are legal; the
 container-kind key-drop bug the first draft flagged here is fixed).
@@ -720,27 +740,42 @@ by the platform (`startsOpen` defaults to closed). Beyond the state:
 obstacle, `openSound`/`closeSound` ride along in events, and
 `open/closedDescription` swap description text. From Chord the adjective
 composes closed; `starts open` on the composition line seeds it open
-(ADR-231; chord-language.md §2.11). The other settings are TypeScript
-territory today.
+(ADR-231; chord-language.md §2.11), and a required tool composes too
+(`openable with the crowbar`, §4.1). The remaining settings — `canClose`,
+`closeRequirements`, sounds, description swaps — are TypeScript territory
+today.
 
-**lockable** (`lockable`, optionally `with key <entity>` — adjective).
-Locked/unlocked state (starts unlocked; Chord seeds `starts locked` on
-the composition line, ADR-231) plus the key contract: `keyId` (one key),
-`keyIds` (several). A lock without keys is a latch anyone can turn. `lockSound` /
+**lockable** (`lockable`, optionally `with the <key>` — adjective).
+Locked/unlocked state (starts unlocked everywhere except on a door,
+where a lockable door starts locked until the author says `starts
+unlocked` — ADR-234's one kind-scoped default; Chord also seeds `starts
+locked` on any composition line, ADR-231) plus the key contract: `keyId`
+(one key), `keyIds` (several, TypeScript). A lock without keys is a latch anyone can turn. `lockSound` /
 `unlockSound` decorate the events. Two declared fields are inert today —
 `autoLock` (relock-on-close is implemented but never invoked) and
 `acceptsMasterKey` (never read) — don't build a puzzle on them; flagged.
 
-**door** (trait — **TypeScript-only today**). A door is an entity that
-*is* the connection: its trait names the two rooms it joins (`room1`,
-`room2`, `bidirectional` — one-way doors traverse room1 → room2 only),
-and each room's exit routes `via` the door entity. Open/closed and
-locked/unlocked state come from composing `openable` and `lockable` on
-the same entity — going then refuses with `door_closed`/`door_locked`
-(§3.1) with no story code at all. In Chord, `a door` parses but the
-loader still refuses it ("doors need `between` placement, which the
-Phase A loader does not support yet") — the audited gap stands; author
-doors in `initializeWorld()` for now.
+**door** (`a door` — kind noun, since ADR-234). A door is an entity that
+*is* the connection — but in a `.story` file the connection is written on
+the room's exit line, not the door's block: `down to the Cellar through
+the cellar door`. The reverse exit is inferred (opposite direction, no
+far-room line needed; a mirrored line is legal but must agree exactly).
+The door block itself is pure declaration — `a door, lockable with the
+tarnished key`, a description, clauses — and `a door` composes scenery
+and openable automatically, starting closed (`starts open` overrides)
+and, when lockable, locked (`starts unlocked` overrides — the platform's
+one kind-scoped default). `through` never creates a door, and the
+compiler refuses what it can't answer: a declared door no exit line
+connects, a placement line on a door block (its location IS its room
+pair), `through` naming a non-door, conflicting room pairs — each with
+its own diagnostic. The loader wires everything through the one platform
+path (`connectRooms` with a door id, ADR-237); going then refuses
+`door_closed`/`door_locked` (§3.1) with no story code at all, and the
+door answers from both of its rooms — ADR-238's two-sided presence,
+without leaking the far room. Under the trait: `room1`, `room2`,
+`bidirectional` — one-way doors (`bidirectional: false`, traversing
+room1 → room2 only) are TypeScript-only, and the `, one-way` exit-line
+modifier is reserved but a parse error today.
 
 ## 5. Wearing
 
@@ -874,7 +909,8 @@ refuses `container_closed`; otherwise searching reports contents
 (`container_contents`, `supporter_contents`, `empty_container`,
 `searched_location`, `searched_object`, `nothing_special`) — and it is
 the action that **reveals hidden items**: a thing whose identity is marked
-`concealed` does not appear in look or contents lists until a search
+`concealed` (in Chord, the `concealed` adjective on the composition
+line) does not appear in look or contents lists until a search
 finds it, permanently reveals it, and announces `found_concealed` ("Hidden
 inside, you discover: …"). Note this hidden-*item* mechanism is the
 identity flag, not the `concealment` trait (§6.4), which is about hiding
@@ -939,8 +975,9 @@ entity as a hiding spot: which positions it supports (behind, under, on,
 inside), how good the cover is, how many can hide there. The hiding
 action (§8.4) validates against it and marks the hider with a dynamic
 concealed-state trait whose visibility behavior makes them unseeable —
-story-overridable. Not composable from Chord; hidden *items* use the
-identity `concealed` flag instead (§6.2).
+story-overridable. Composable as the `hiding-spot` adjective — bare it
+supports every position, `with position <word>` narrows to one; hidden
+*items* use the identity `concealed` flag instead (§6.2).
 
 **acoustic** and **listener** (traits — the sound-propagation pair,
 ADR-172/173, TypeScript-only). `acoustic` sits on walls and rates how
@@ -1048,8 +1085,10 @@ A bare person answers `no_response` ("The zookeeper doesn't respond.") —
 which is honest: stdlib's built-in conversation is shallow. A
 `conversation` object in the actor's custom properties unlocks greeting
 flavor (first meeting vs. `greets_again`, `formal_`/`casual_greeting`,
-`remembers_you`, `has_topics` / `nothing_to_say`), but *real* dialogue is
-story territory: an `on talking it` clause, or an interceptor. The
+`remembers_you`, `has_topics` / `nothing_to_say`), but real dialogue on
+*talk* is story territory: an `on talking it` clause, or an interceptor
+— per-topic dialogue lives on ask/tell's declared table instead (below);
+talk itself stays shallow by design. The
 canonical example is Dungeo's troll — `preValidate` vetoes with its own
 message when the troll is out cold, and `postReport` **overrides** the
 core reply with GROWLS when he isn't. That override seam (swap the
@@ -1063,15 +1102,24 @@ about Y` (also `inform X about Y`); a non-person recipient refuses
 `not_actor`. The topic is a first-class free-text slot (ADR-231),
 resolved entity-first: a topic naming something in scope carries that
 entity along for story handlers, and any other wording flows through as
-plain text — a topic is never scope-rejected. New with ADR-230, and
-deliberately minimal: there is no platform conversation system yet, so
-each validates the social preconditions (`no_target`, `not_visible`,
-`too_far`, `not_actor`),
-mutates nothing, and reports an interceptable default — asking's
-`unknown_topic` ("I don't know anything about that.") and telling's
-`not_interested` ("… doesn't seem interested."). The person asked or
-told is the consulted entity (`on asking it` / `on telling it`), which
-is where story dialogue hooks in until a real conversation system lands.
+plain text — a topic is never scope-rejected. In stdlib the actions stay
+deliberately minimal: each validates the social preconditions
+(`no_target`, `not_visible`, `too_far`, `not_actor`), mutates nothing,
+and reports a default — asking's `unknown_topic` ("I don't know anything
+about that.") and telling's `not_interested` ("… doesn't seem
+interested."). Since ADR-239, though, real per-topic dialogue is a
+declared Chord table: `define topics for <person> … end topics`, one
+block per person. Entity rows (`about the locket: <response>`) ride the
+platform's quiet topic-entity resolution and are checked first; quoted
+rows (`about "the fire", "the blaze": <response>`) match free text, with
+comma-separated aliases; a response is a one-line statement or an
+indented body (`it` binds the person). Matching is normalized
+whole-topic lookup — case-insensitive, article-stripped, never fuzzy.
+One table serves ask AND tell. On a hit the row fully owns the reply;
+the person's `on asking it` / `on telling it` clause is the catch-all,
+firing only on a miss; with neither, the stdlib defaults above speak.
+The topic also reaches interceptor data (`topic`, `topicEntityId`)
+via the lifecycle seed, for `while` conditions and TypeScript hooks.
 
 The rest of the old conversation grammar went the other way in the same
 pass: `say X [to Y]`, `shout`, and `whisper X to Y` patterns were
@@ -1094,7 +1142,10 @@ What happens depends on the target:
 - **A combatant** (the `combatant` trait): stdlib refuses with
   `violence_not_the_answer` unless a combat interceptor is registered —
   real combat *is* the interceptor (normally the basic-combat extension,
-  §12.4), whose post-execute hook is contractually the combat resolution:
+  §12.4), and since ADR-215 a `.story` registers it itself: `use combat`
+  in the story header wires the extension at load, no TypeScript, pure
+  IR preserved. The interceptor's post-execute hook is contractually
+  the combat resolution:
   it rolls the dice (seeded, in the extension — outcomes vary run to run
   and stay that way per project policy), damages through the health
   trait, and hands stdlib the result to narrate. Kills emit death events;
@@ -1137,12 +1188,12 @@ openable. Container drinking decrements `liquidAmount` and reports
 drinkable and keeps saying `empty_now` (caveat, flagged). Verb flavor:
 `sipped`, `quaffed`. Event: `if.event.drunk`.
 
-> **Chord gap (already in the parity audit):** the `edible` adjective
-> takes no configuration, so a `.story` cannot mark a liquid — every
-> Chord edible is a one-serving solid, and DRINK on it refuses. Liquids
-> need TypeScript today (or the promised `drinkable`/config surface).
-> Neither shipped story exercises eat/drink; the zoo's feeding is its own
-> `feedable` trait.
+> **Closed since the first draft:** a `.story` marks a liquid with the
+> `drinkable` adjective — it composes the edible trait with the liquid
+> flag set, order-independent with `edible` (ratchet G1). The
+> container-of-liquid path (`containsLiquid`, `liquidAmount`) remains
+> TypeScript territory. Neither shipped story exercises eat/drink; the
+> zoo's feeding is its own `feedable` trait.
 
 ### 8.4 hiding
 
@@ -1172,10 +1223,14 @@ conversation (§8.1) and giving preferences (§2.4) read. In Chord,
 `a person` composes exactly this (plus identity); everything richer is
 layered on top.
 
-**npc** (trait — TypeScript-only). The platform's NPC bookkeeping:
-hostility flag, movement permissions (`canMove`, allowed/forbidden
-rooms), announced-movement messages, a behavior id for the NPC turn
-plugin (§12.3), and conversation-state/knowledge/goals bags. Life-state
+**npc** (trait; Chord via the core behavior adjectives — `guard`,
+`passive`, `wanderer with move-chance 50`, `follower`, `patrol with
+route [ … ]`, always available, no `use` line — or TypeScript). The
+platform's NPC bookkeeping: hostility flag, movement permissions
+(`canMove`, allowed/forbidden rooms — in Chord, `can-move`,
+`allowed-rooms`, `forbidden-rooms`), announced-movement messages, a
+behavior id for the NPC turn plugin (§12.3), and
+conversation-state/knowledge/goals bags. Life-state
 does *not* live here — that moved to `health` (ADR-226). Neither talking
 nor attacking reads it; it belongs to the NPC plugin layer.
 
@@ -1185,19 +1240,24 @@ the substrate of the character-knowledge systems. Pointer only here; it
 rides alongside `npc` and is consumed by its own subsystem, not by
 standard actions.
 
-**combatant** (trait — TypeScript-only). Combat *stats* — skill, base
-damage, armor, retaliation and inventory-drop flags — and, since ADR-226,
-nothing else: health, consciousness, and death live on the required
-`health` trait. To stdlib its mere presence means "combat handles this";
-the stats are the extension's business (§12.4).
+**combatant** (trait; Chord under `use combat` — `a person, combatant
+with health 20 and skill 40 and hostile true` — or TypeScript). Combat
+*stats* — skill, base damage, armor, retaliation and inventory-drop
+flags — and, since ADR-226, nothing else: health, consciousness, and
+death live on the required `health` trait, and `health`/`max-health` on
+the composition line quietly route there (the loader attaches it for
+you). To stdlib its mere presence means "combat handles this"; the
+stats are the extension's business (§12.4).
 
-**weapon** (trait — TypeScript-only). `damage` (drives best-weapon
+**weapon** (trait; Chord under `use combat` — `weapon with damage 5 and
+skill-bonus 2`, plus `is-blessed`/`glows-near-danger`; durability fields
+are TypeScript-only). `damage` (drives best-weapon
 inference), type, blessed/glowing flags, durability fields. Prefer
 equipping (§5.2) to make a weapon the inferred choice; name it explicitly
 to make it a consulted command entity.
 
-**edible** (`edible` — adjective). `servings`, `liquid` (the eat/drink
-router — not settable from Chord, see §8.3), `taste`, `effects`,
+**edible** (`edible` — adjective; a liquid composes as `drinkable`,
+§8.3). `servings`, `liquid` (the eat/drink router), `taste`, `effects`,
 `satisfiesHunger`/`satisfiesThirst`. The behavior-side extras
 (`remainsType`, `consumeMessage`) are dormant in the stdlib path. One
 type wrinkle: the drink-taste vocabulary (`refreshing`, `bitter`,
@@ -1290,8 +1350,11 @@ expressible from Chord today.
 for `safeVerbs`/`chance`). Fields: `cause` (defaults to the phrase key
 from Chord, `'hazard'` in TS), `messageId`, `safeVerbs`, `chance`.
 
-**health** (trait — engine-only, no Chord surface). The single life-state
-model (ADR-226): `health`/`maxHealth`, a consciousness threshold, an
+**health** (trait — Chord-reachable only through combat: under `use
+combat`, `combatant with health 20 and max-health 30` seeds it,
+auto-attached; there is no standalone `health` adjective). The single
+life-state model (ADR-226): `health`/`maxHealth`, a consciousness
+threshold, an
 `asleep` flag, and the terminal `dead`/`causeOfDeath` pair; the behavior
 owns `takeDamage`/`heal`/`kill` and the derived `isAlive`/`isConscious`.
 Entities without it are simply alive — it is opt-in, and the platform
@@ -1421,33 +1484,33 @@ is. The four structural traits no verb owns get their full entries in
 | `enterable` | `enterable` | can be gotten into / onto | §3.4 |
 | `climbable` | `climbable` | eligible for CLIMB | §3.4 |
 | `vehicle` | — | enterable that moves with its passengers | §3.4 |
-| `openable` | `openable` | open/closed state | §4.3 |
-| `lockable` | `lockable` (+ `with key <entity>`) | locked/unlocked + key contract | §4.3 |
-| `door` | — (`a door` refuses to load) | an entity that *is* the connection between two rooms | §4.3 |
+| `openable` | `openable` (+ `with tool <entity>`) | open/closed state | §4.3 |
+| `lockable` | `lockable` (+ `with the <key>`) | locked/unlocked + key contract | §4.3 |
+| `door` | `a door` + an exit's `through the <door>` tail | an entity that *is* the connection between two rooms | §4.3 |
 | `wearable` | `wearable` | can be worn; body part + layer rules | §5.2 |
 | `clothing` | — | dormant — and not wearable by itself | §5.2 |
 | `equipped` | — | equipment slots/stats; read by combat | §5.2 |
 | `open-inventory` | — | NPC's carried items become reachable | §5.2 |
 | `readable` | `readable` (+ `with text …`) | text, pages, read-gate | §6.4 |
 | `scenery` | `scenery` | fixed in place, unlisted | §6.4 |
-| `concealment` | — | a hiding spot for actors | §6.4 |
+| `concealment` | `hiding-spot` (+ `with position <word>`) | a hiding spot for actors | §6.4 |
 | `acoustic` | — | wall sound-cost tier (engine sound system) | §6.4 |
 | `listener` | — | receives propagated sounds | §6.4 |
 | `switchable` | `switchable` | on/off, power, sounds | §7.2 |
 | `light-source` | `light-source` | sheds light when lit; fuel model | §7.2 |
 | `button` | — | descriptive; upgrades a push to a click | §7.2 |
 | `actor` | `a person` | a someone: pronouns, capacity, custom bags | §8.5 |
-| `npc` | — | NPC bookkeeping for the NPC plugin | §8.5 |
+| `npc` | `guard`/`passive`/`wanderer`/`follower`/`patrol` (core; plugin auto-wires) | NPC bookkeeping for the NPC plugin | §8.5 |
 | `character-model` | — | deep NPC internals (personality, beliefs) | §8.5 |
-| `combatant` | — | combat stats; presence routes ATTACK to combat | §8.5 |
-| `weapon` | — | damage, type, durability | §8.5 |
-| `edible` | `edible` | food/drink data; servings, liquid flag | §8.5 |
+| `combatant` | `combatant` (+ stats config; needs `use combat`) | combat stats; presence routes ATTACK to combat | §8.5 |
+| `weapon` | `weapon` (+ `with damage N …`; needs `use combat`) | damage, type, durability | §8.5 |
+| `edible` | `edible` / `drinkable` (liquid) | food/drink data; servings, liquid flag | §8.5 |
 | `breakable` | — | one-hit breakage (via ATTACK) | §8.5 |
 | `destructible` | — | hit-pointed destruction (via ATTACK) | §8.5 |
 | `deadly-room` | `deadly: <phrase>` | every non-safe verb kills | §9.3 |
-| `health` | — | the life-state model (attached lazily) | §9.3 |
-| `identity` | implicit in every `create` | name, aliases, article, description | §11.1 |
-| `region` | — | groups rooms; crossing emits events | §11.1 |
+| `health` | via `combatant with health N` (`use combat`) | the life-state model (attached lazily) | §9.3 |
+| `identity` | implicit in every `create` (+ `proper`, `pronouns` on persons) | name, aliases, article, pronouns, description | §11.1 |
+| `region` | `a region` (+ `containing …`) | groups rooms; crossing emits events | §11.1 |
 | `scene` | — | begin/end narrative phases, engine-evaluated each turn | §11.1 |
 | `story-info` | the story header | title/author/version for ABOUT | §11.1 |
 
@@ -1456,18 +1519,26 @@ is. The four structural traits no verb owns get their full entries in
 **identity** — every entity's who-am-I, composed implicitly by every
 `create` block: the name, `aka` aliases, and description all land here,
 along with the article/proper-name machinery the sentence assembler uses
-(`properName` suppresses the article — the Chord player is proper),
-grammatical number (Chord's `plural` adjective sets it), disambiguation
+(`properName` suppresses the article — the Chord player is proper, and
+any person can be with the person-only `proper` adjective, ADR-242),
+grammatical number (Chord's `plural` adjective sets it), the narration's
+pronoun set (`pronounSet` — a person's `pronouns he/she/it/they` body
+line, or a `define pronouns` named set for anything beyond the built-in
+four; absent means the by-number fallback, "it"), disambiguation
 adjectives, and three fields other chapters lean on: `concealed` (the
 hidden-item flag searching reveals, §6.2), `points` (score on first take,
 §2.1 — deduped per entity), and optional weight/volume/size. From Chord:
-name, aliases, description, and `plural`; the rest is TypeScript.
+name, aliases, description, `plural`, `concealed`, and on persons
+`proper` and `pronouns`; the rest is TypeScript.
 
 **region** — groups rooms into areas: a room carries a region id, regions
 nest, and going emits `region_exited`/`region_entered` events per crossed
 boundary (§3.1) — the platform hook for area-scoped music, weather, or
 prose. The trait's ambient-sound/smell fields are declared but nothing
-reads them yet (dormant). TypeScript-only.
+reads them yet (dormant). In Chord (ADR-236): `a region` with
+`containing` member lists (additive; regions nest by containing each
+other), plus `after entering it` / `after leaving it` boundary reactions
+and region-owned `on every turn` daemons — the full story is in §3.4.
 
 **scene** — narrative phases with a lifecycle: a scene waits, begins when
 its registered begin-condition fires, counts its active turns, and ends
@@ -1501,11 +1572,12 @@ that caused them. Each plugin sees the world, the turn, the player, the
 action's result, and the engine's seeded randomness; plugin state rides
 in saves.
 
-Only the scene evaluator (§11.1) is always on. Everything else is
-opted into per story: a TypeScript story registers the plugins it uses
-(Dungeo registers all three), and a Chord story gets the scheduler
-automatically — exactly when it compiled at least one daemon — and
-nothing else.
+Only the scene evaluator (§11.1) is always on at the engine level. A
+TypeScript story registers the plugins it uses (Dungeo registers all
+three). A Chord story gets the NPC plugin **unconditionally** — NPCs
+are core vocabulary, no opt-in (ADR-215) — the scheduler exactly when
+it compiled at least one daemon, and the state-machine plugin when the
+story header declares `use state-machines` (§12.3).
 
 ### 12.2 The scheduler: daemons and fuses
 
@@ -1521,11 +1593,16 @@ why sequence progress survives save, restore, and undo with no author
 effort — arming its steps strictly in order (`at turn N` against the
 wall clock, `N turns later` against the previous step's firing,
 `when <owner> becomes <state>` against the state value). An `on every
-turn [while …][, once]` clause becomes one daemon per clause,
-**presence-gated**: off-stage the clause neither fires, rolls dice, nor
-consumes its `once`. Chord never touches fuses at all — the imperative
-timer verbs (cancel a sequence, "in 3 turns", periodic timers,
-reschedule) remain the audited Chord gaps.
+turn [while …][, once]` clause becomes one daemon per clause. Owned by
+an entity, a trait, or a region, it is **presence-gated**: off-stage the
+clause neither fires, rolls dice, nor consumes its `once` (for a
+region, "present" means anywhere in a member room, nesting included).
+Hosted in the story header's own body it is the story's clause —
+one daemon, **no gate**: a background clock that ticks wherever the
+player is (weather, off-stage simulation; ADR-236). Chord never touches
+fuses at all — the imperative timer verbs (cancel a sequence, "in 3
+turns", periodic timers, reschedule) remain the audited Chord gaps
+(designed in ADR-217, not yet built).
 
 ### 12.3 The NPC and state-machine plugins
 
@@ -1535,15 +1612,25 @@ what comes back — attacks, emotes, movement (with `npc.moved` events and
 witnessed variants a story can narrate). It also fires enter/leave hooks
 when the player's action moved them — the greeting-guard pattern.
 Built-ins: `guard` (stationary, attacks the visible player when
-hostile), `passive`, and factory-made wanderers and patrol routes;
-stories register richer behaviors. Configuration lives on the trait
-(§8.5); the deep-NPC layers (character model, lucidity) tick here too.
+hostile), `passive`, and factory-made wanderers, followers, and patrol
+routes; stories register richer behaviors. A Chord story gets all of
+this without opting in — NPCs are core: `a person, a guard` (or
+`passive`, `wanderer with move-chance 50`, `follower`, `patrol with
+route [ … ]`) composes the built-ins directly, with `with`-fields for
+movement permissions, routes, and chances. Configuration lives on the
+trait (§8.5); the deep-NPC layers (character model, lucidity) tick here
+too.
 
 **The state-machine plugin** (priority 75) evaluates declarative
 machines — states, guarded transitions triggered by actions, events, or
 conditions, enter/exit effects, terminal states — at most one transition
-per machine per turn. It is TypeScript-only, and worth being precise
-about: **Chord's `states:`/`change`/`select on` do not use it.** Chord
+per machine per turn. A Chord story reaches it by opting in: `use
+state-machines` in the story header, then `define machine` — the full
+depth (roles, enter/exit effects, terminal states, guarded transitions),
+with Chord conditions as guards and Chord bodies as effects; `define
+machine` without the `use` line is a compile error. And worth being
+precise about: **Chord's `states:`/`change`/`select on` still do not
+use it.** Chord
 states are plain world-state values with a forward-march ratchet
 (`reversible` opts out) — the *effect* of a simple state machine without
 the plugin's machinery (no enter/exit effects, no terminal states, no
@@ -1565,10 +1652,16 @@ carries. Its dice are seeded but its own stream — combat outcomes vary
 run to run, by policy.
 
 A story wanting different combat registers its own interceptor on the
-same seam instead (Dungeo's melee does). And the audited boundary
-stands: none of this is reachable from a `.story` file — no combat
-traits in the catalog, no extension-enable surface — combat is the
-flagship case for the extension-use design work in the parity roadmap.
+same seam instead (Dungeo's melee does). And the boundary the audit
+once flagged is closed (ADR-215): a Chord story reaches all of this
+with one header line — `use combat` — which runs the same registration
+call at load. With it, `combatant` and `weapon` join the composable
+catalog with their typed fields (`skill`, `base-damage`, `hostile`,
+weapon `damage` and `skill-bonus`, …), and `health`/`max-health` land
+on the health trait like everywhere else (§8.5, §9.3). The `use` line
+resolves against a fixed, trusted, runtime-bundled registry — an
+unknown name is a load error, and a `use`-only story stays pure IR.
+Third-party extensions remain a deferred design.
 
 ## Appendix: related references
 

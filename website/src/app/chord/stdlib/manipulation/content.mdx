@@ -1,0 +1,424 @@
+Moving things by hand: picking them up, putting them down, putting them in
+and on other things, handing them over, and shoving them around. Everything
+in this chapter works out of the box — the point of each entry is to tell
+you what the platform already does, which trait (if any) makes an entity
+eligible, and which message keys to override when you want it said
+differently.
+
+Each entry below lists the action's **message keys** — the IDs stdlib emits
+instead of English (the `lang` layer supplies the words). They matter three
+ways. In a `.story` file, you replace a moment's text *per entity* with an
+`on`/`after` clause carrying your own phrase — a refusal key of yours
+instead of the standard refusal, or a reaction that speaks after the action
+commits (syntax: chord-language.md §3). Story-wide, a Chord `define phrase`
+under the dotted ID itself replaces the platform text for every entity
+(dotted phrase keys register whole since ADR-230 D5 — chord-language.md
+§5.2), and a TypeScript story overrides the ID through the language
+provider. And in transcripts and event payloads, the ID is how you
+recognize which moment fired.
+
+The per-entity pattern, which recurs all through this chapter:
+
+```chord
+create the iron ring
+  scenery
+  in the Crypt
+
+  A ring set into the floor slab.
+
+  on taking it
+    refuse ring-fused
+  end on
+
+  phrase ring-fused:
+    The ring is fused to the slab; your fingers just slip off it.
+```
+
+## 2.1 taking and dropping
+
+**take** (`if.action.taking`) — verbs `take`, `get`, `grab`, `acquire`,
+`collect`, `pick up`, and `take up` (bare `pick` is deliberately absent —
+it would outmatch `pick up`). The parser also accepts multi-object forms
+inside the slot: `take all`, `take all but the lamp`, `take the key and
+the bottle`.
+
+Anything is takeable by default — portability is the rule, not a trait. What
+blocks taking: the `scenery` trait (the classic "that's fixed in place"),
+rooms themselves, things the player already carries, and the player's own
+carrying capacity when the actor has container limits (item count or
+weight). Taking something currently worn quietly takes it off first. An item
+whose identity carries `points` awards score the first time it is taken
+(that is how treasure scoring works).
+
+Checks, in order: no object named → `no_target`; taking yourself →
+`cant_take_self`; already carried → `already_have`; it is a room →
+`cant_take_room`; it is scenery → `fixed_in_place` (or the entity's own
+custom refusal); carrying limits → `container_full`, `too_heavy`, or the
+generic `cannot_take`; `take all` with nothing available → `nothing_to_take`.
+
+Success keys: `taken`, `taken_from` (when it came out of or off something),
+and `taken_multi` (the compact form for `take all`). All keys prefix as
+`if.action.taking.<key>`. Events: `if.event.taken` on success,
+`if.event.take_blocked` when refused.
+
+Interceptors: taking consults `on taking it` / `after taking it` clauses on
+the item. Note that REMOVE-FROM phrasing cannot dodge a taking guard — see
+§2.3.
+
+**drop** (`if.action.dropping`) — verbs `drop`, `discard`, `put down`,
+`throw away`, plus `drop all` and friends. The destination is wherever the
+player is: the
+room, or the container or supporter the player is inside or on.
+
+Checks: not holding it → `not_held`; still wearing it → `still_worn` (worn
+things must be taken off first); the enclosing container will not accept it
+→ `container_full` or `cant_drop_here`; `drop all` with empty hands →
+`nothing_to_drop`.
+
+Success keys vary with where it lands and how it was said: `dropped` (a
+room), `dropped_in` (a container), `dropped_on` (a supporter),
+`dropped_quietly` (a room drop of something glass), `dropped_carelessly`
+(the verb was `discard`), `dropped_multi`. Prefix `if.action.dropping.<key>`;
+events `if.event.dropped` / `if.event.drop_blocked`.
+
+## 2.2 putting and inserting
+
+Two actions share the surface English of "put". `put X on/onto Y` (and
+`hang X on Y`) is **putting** (`if.action.putting`); `put X in/into/inside Y`
+and `insert X in Y` parse as **inserting** (`if.action.inserting`), which
+delegates its work back into putting with the preposition forced to "in".
+`place` works in both phrasings, and one more form lands in putting since
+ADR-230 D4: `move X to Y`, with the destination's kind deciding in versus
+on (the D4 ruling: `move` is a manipulation verb, never movement — see
+also pushing, §2.6). An author rarely needs the distinction, with one
+exception spelled out below.
+
+The destination decides eligibility: `on` needs a supporter (`a supporter`),
+`in` needs a container (`a container`). The item does not need to be in
+hand — putting performs an implicit take first, and refuses with the taking
+refusal if that fails (a fused-down ring cannot be put anywhere).
+
+Checks, in plain order: no item → `no_target`; no destination →
+`no_destination`; putting a thing in or on itself → `cant_put_in_itself` /
+`cant_put_on_itself`; already there → `already_there`; wrong kind of
+destination → `not_container` / `not_surface`; a closed openable container →
+`container_closed`; out of room → `no_room` (containers) / `no_space`
+(supporters).
+
+Success renders `put_in` or `put_on` — and because inserting delegates its
+report into putting, a successful INSERT also renders
+`if.action.putting.put_in`, while inserting's *failures* render under
+`if.action.inserting.<key>`. Override `if.action.putting.put_in` /
+`put_on` for success text in both phrasings. Events: `if.event.put_in`,
+`if.event.put_on`, blocked `if.event.put_blocked` / `if.event.insert_blocked`.
+
+The exception that makes the two-action split visible: interceptor clauses.
+An INSERT command consults `on inserting it` clauses first, then — through
+the delegation — `on putting it` clauses as well, on both the item and the
+container. Register a given entity's behavior under **one** of the two
+gerunds, not both, or it will run twice. If you only care that something
+went in, `on putting it` (or `after putting it`) covers both phrasings; the
+trophy case works this way, and in `put all in the case` its container-side
+clause runs once per deposited item.
+
+## 2.3 removing (taking from)
+
+**remove X from Y** (`if.action.removing`) — take an item out of a container
+or off a supporter, named source and all. Core grammar since ADR-230:
+`remove X from Y`, `extract X from Y`, and `take X from Y` — the last
+optionally `with/using Z`, a tool form whose named tool becomes a consulted
+command entity (the old orphan `taking_with` id was retired onto removing
+in the same pass). Bare `remove X` still means undressing ([§5](/chord/stdlib/wearing)).
+
+Checks: no item → `no_target`; no source → `no_source`; already holding it →
+`already_have`; not actually in/on the source → `not_in_container` /
+`not_on_surface`; the source is a closed openable container →
+`container_closed`; carrying capacity → `cannot_take`; `remove all from X`
+with nothing eligible → `nothing_to_remove`.
+
+Success keys: `removed_from` (a container) and `removed_from_surface` (a
+supporter), prefixed `if.action.removing.<key>`. The success **event** is
+`if.event.taken` — removing is semantically a take, with the source recorded
+in the payload.
+
+Interceptors: the item slot consults `on removing it` and then `on taking
+it`, in that order — a taking guard (the troll's axe) cannot be bypassed by
+naming the source. The source consults `on removing it` only, and so does
+an explicitly named tool, after item and source. As with putting/inserting,
+register per entity under one gerund.
+
+## 2.4 giving and showing
+
+**give** (`if.action.giving`) — `give X to Y`, `give Y X`, `offer X to Y`.
+The recipient must be a person (`a person` — the actor trait); the action
+enforces that in validation, so `give the sword to the door` refuses with
+`not_actor` ("You can only give things to people."). Giving does an
+implicit take if the item is not in hand.
+
+The default NPC accepts anything: the item moves into their inventory and
+the player sees `given`. Three data-driven wrinkles, all read from the
+recipient's actor data: a capacity (item count → `inventory_full`, weight →
+`too_heavy` — both phrased as the NPC declining), and a `preferences` object
+whose `refuses` list blocks matching items with `not_interested`, while
+`likes`/`dislikes` color acceptance as `gratefully_accepts` /
+`reluctantly_accepts`.
+
+Other checks: no item → `no_item`; no recipient → `no_recipient`; not a
+person → `not_actor`; giving to yourself → `self`.
+
+Keys under `if.action.giving.`: the errors above plus `not_holding`,
+`recipient_not_visible`, `recipient_not_reachable`, and success `given`,
+`accepts`, `gratefully_accepts`, `reluctantly_accepts` (`refuses` and
+`accepts` exist for story use — stdlib itself never picks them). Events:
+`if.event.given` / `if.event.give_blocked`.
+
+For richer behavior than the preference lists — a guard who takes the bribe
+and opens the gate — put an `on giving it` / `after giving it` clause on the
+item or the recipient, or (the Sharpee Way) register a capability behavior
+for `if.action.giving` on the recipient, which takes over the whole
+transaction.
+
+**show** (`if.action.showing`) — `show X to Y`, `show Y X`. Purely social:
+nothing moves, nothing changes hands. The viewer must be a person in the
+same room (`viewer_too_far` otherwise). The item is implicitly taken if
+needed.
+
+The default reaction is `shown` — or `wearing_shown` when the item is
+currently worn. A viewer with a `reactions` object in its actor data reacts
+by item-name match: `viewer_recognizes`, `viewer_impressed`,
+`viewer_unimpressed`, `viewer_examines`, falling back to `viewer_nods`.
+(The modern replacement for `reactions` is an interceptor clause on the
+viewer — `on showing it` — which can do anything.) Errors: `no_item`,
+`no_viewer`, `not_actor`, `self`, `not_carrying`, `viewer_not_visible`,
+`viewer_too_far`. Events: `if.event.shown` / `if.event.show_blocked`.
+
+## 2.5 throwing
+
+**throw** (`if.action.throwing`) — `throw X at Y` and `throw X to Y`, with
+`toss` and `hurl` in both forms. (The
+action also implements bare and directional throws — `throw the rock`,
+`throw the rock north` — but no core grammar reaches them today; a story
+must add those patterns itself.) The item is implicitly taken if needed;
+the target must be in the same room; anything heavier than 10 kg refuses
+with `too_heavy`.
+
+What happens next is probabilistic — document-worthy behavior, not a bug,
+and per project policy the dice are never disabled. The platform infers
+fragility from the item's name and description (glass, crystal, bottle,
+vase, china, porcelain, "delicate", "fragile"). Throwing **at a person**:
+about a 70% hit — a nimble target may duck (`target_ducks`), a catcher may
+catch (`target_catches`, and then they hold it), a hit lands `hits_target`
+and annoys them (`target_angry`); a fragile item that hits usually breaks
+(`breaks_against`). Throwing **at anything else**: about a 90% hit; the item
+lands on a supporter (`lands_on`), in an open container (`lands_in`),
+bounces off a closed one (`bounces_off`), and fragile items usually break.
+A broken item is removed from play entirely, with an
+`if.event.item_destroyed` event (`cause: 'thrown'`).
+
+Keys under `if.action.throwing.` — errors: `no_item`, `not_holding`,
+`target_not_visible`, `target_not_here`, `no_exit`, `too_heavy`, `self`;
+outcomes: `hits_target`, `misses_target`, `target_ducks`, `target_catches`,
+`target_angry`, `lands_on`, `lands_in`, `bounces_off`, `breaks_against`,
+`breaks_on_impact`, `fragile_breaks`, `thrown_down`, `thrown_gently`,
+`sails_through`. Events: `if.event.thrown` (with `throwType`, `hit`,
+`willBreak`, `finalLocation` in the payload — enough for a story reaction
+to know exactly what happened) and `if.event.throw_blocked`.
+
+Interceptors: both the item and the target are consulted (`on throwing it`
+on either) — a glacier can react to being hit in the same command as an
+explosive reacts to being thrown. A capability behavior registered for
+`if.action.throwing` on the target takes over the whole throw.
+
+## 2.6 pushing, pulling, touching
+
+**push** (`if.action.pushing`) — `push`, `press`, `shove`, `move`, and the
+directional form `move X <direction>` (ADR-230 D4 ruling: `move` is
+manipulation, never movement — the direction rides the same channel as
+`push X north`). Needs the
+`pushable` trait; pushing anything else gets `fixed_in_place` (scenery) or
+`pushing_does_nothing`. What pushing *does* depends on the trait's
+`pushType`:
+
+- `button` — the one genuinely stateful push: if the entity is also
+  `switchable`, pushing toggles it (`button_clicks` when it is a button,
+  `switch_toggled` otherwise); a non-switchable button just clicks
+  (`button_pushed`).
+- `heavy` — needs a direction to budge (`pushed_with_effort`), refuses
+  without one (`wont_budge`).
+- `moveable` — slides when pushed with a direction (`pushed_direction`, or
+  `reveals_passage` when the trait says it hides something), gets nudged
+  without one (`pushed_nudged`).
+
+One honest caveat: outside the button toggle, stdlib **narrates** movement
+but does not relocate anything — "pushed north" is a message and an
+`if.event.pushed` event carrying the direction, and the story reacts to
+that event (or an `after pushing it` clause) to actually change the world.
+That is deliberate: which wall opens is puzzle logic, not platform logic.
+
+**pull** (`if.action.pulling`) — `pull`, `drag`, `yank`, `tug`. Needs
+`pullable`. A successful pull sets the trait's state to `pulled` (a second
+PULL refuses with `already_pulled`) and bumps its `pullCount`; a worn item
+refuses with `worn`. Everything a pull *means* — the lever opens the
+sluice — is story logic reacting to `if.event.pulled` or written as an
+`on pulling it` / `after pulling it` clause.
+
+**touch** (`if.action.touching`) — `touch`, `feel`, `rub`, `pat`, `stroke`,
+`poke`, `prod`. No trait needed, no state changed. The reply is inferred
+from what the thing is: a lit light source `feels_hot`, a running device
+`feels_warm` (or `device_vibrating`), wearables `feels_soft`, doors
+`feels_smooth`, containers and supporters `feels_hard` (a container with
+drink in it sloshes — `liquid_container`), drinkables `feels_wet`, scenery
+`immovable_object`; otherwise the verb itself answers (`poked`, `patted`,
+`stroked`, `touched_gently`, `touched`). All under `if.action.touching.`;
+event `if.event.touched`. Touching is a favorite for `on touching it`
+clauses — a probe with no side effects the story can hang flavor on.
+
+## 2.7 lowering and raising (per-entity verbs)
+
+`lower :target` and `raise`/`lift :target` parse out of the box, but these
+verbs have **no standard behavior at all** — lowering the basket, the
+drawbridge, and your voice are three different mutations, so the platform
+refuses to invent one (ADR-090). Unhandled, the player sees
+`if.action.lowering.cant_lower_that` — "You can't lower that." — and
+`cant_raise_that` for raising.
+
+Giving an entity real lower/raise behavior from a `.story` file is the
+dispatch-action pattern (the same one behind the zoo's `pet` and `feed`):
+a `define action` owns the verb, and a trait's `on <verb>ing it` clause
+carries each entity's behavior. The friendly-zoo source is the canonical
+worked example; adapted to lowering:
+
+```chord
+define action lowering
+  grammar
+    lower :target
+  the target must be reachable
+  refuse without target: lower-what
+  otherwise refuse cant-lower
+
+  phrases en-US
+    lower-what:
+      Lower what?
+    cant-lower:
+      That isn't something you can lower.
+
+define trait windlass-basket
+  states, reversible: raised, lowered
+
+  phrases en-US
+    basket-lowered:
+      The windlass creaks as the basket descends into the shaft.
+    already-down:
+      The basket is already at the bottom.
+
+  on lowering it
+    it must be raised: already-down
+    change it to lowered
+    phrase basket-lowered
+  end on
+end trait
+```
+
+Compose `windlass-basket` onto the basket and `lower basket` does the real
+thing; `lower` on anything else falls to the action's `otherwise refuse`.
+The fall-through is well-defined (ADR-229): a clause gated out by `while`
+or a consumed `, once` simply sits out, and the command falls through to
+the action body, the next trait, and finally the `otherwise refuse` miss.
+Two boundaries to know: an `on lowering it` clause directly on an *entity*
+is a load error with a pointed message (these verbs never consult
+entity-level interceptors — the trait/action pattern above is the way),
+and from TypeScript the equivalent is a capability behavior registered for
+`if.action.lowering` (the Sharpee Way, how Dungeo's basket works). TURN
+left this family on its own terms: `turn`/`rotate`/`twist X` still parse
+(just below the switching phrasal forms, so `turn lamp on` still switches,
+§7.1) and the unhandled refusal is still `if.action.turning.cant_turn_that`,
+but turning now wears cutting's dual surface without the trait gate (§2.8)
+— an `on turning it` clause directly on the entity is consulted (turning is
+one of the 38 wired actions), or a TypeScript capability behavior for
+`if.action.turning` takes the whole turn; no eligibility trait, no
+define-action scaffolding needed. WAVE and WIND — the other classic
+per-entity verbs — still have no binding at all: no grammar, no action. A
+story wanting them defines the whole verb with `define action`, exactly as
+above.
+
+## 2.8 cutting and digging
+
+Two tool verbs with one design (ADR-230 D3c): the platform action gates
+eligibility and validates the tool; the *outcome* belongs to the entity.
+**cut** (`if.action.cutting`) parses bare — `cut X` (also `slice`,
+`chop`) — and tooled as `cut X with/using Y` (the tooled form outranks
+when a tool is named); **dig** (`if.action.digging`) likewise as `dig X`
+and `dig X with/using Y`. Eligibility is a trait —
+`cuttable` / `diggable` — and the tool contract mirrors the lockable key
+contract exactly: `with tool <entity>` in Chord (`toolId`/`toolIds` in
+TypeScript) declares what works, forward references legal. A trait with
+no tool configured accepts any attempt. Checks, in order: no such trait →
+`not_cuttable` / `not_diggable`; a declared requirement with no tool
+named → `no_tool`; a named tool not in hand → `tool_not_held`; the wrong
+one → `wrong_tool`.
+
+The stdlib action then performs **no mutation of its own**. What a cut or
+dig does — rope into pieces, sand yielding a scarab — is the entity's
+registered implementation, and it is *required*: exactly one per entity,
+either an `on cutting it` / `on digging it` clause (Chord — the entity's
+own or a composed trait's) or a capability behavior for the action id
+(TypeScript, ADR-090). Zero or two is a load error, never a silent
+runtime no-op ("… is cuttable but registers no cutting implementation").
+Success renders the entity's own text over the generic `cut` / `dug`
+stub; events `if.event.cut` / `if.event.dug`, blocked forms
+`if.event.cut_blocked` / `dug_blocked`. Interceptors consult the target
+first, then an explicitly named tool — a cursed knife can veto the cut.
+
+## 2.9 Manipulation traits
+
+**container** (`a container` — a kind noun, so it takes the article).
+Holds things inside. Composes on one line with `openable`, `lockable`, and
+`scenery` (`a container, openable, scenery`). Settings: `with max items N`
+and `with max weight N` limit capacity. Data fields beyond Chord's reach
+today (TypeScript territory): `isTransparent` (contents visible while
+closed), `allowedTypes`/`excludedTypes`, and the liquid fields
+(`containsLiquid`, `liquidType`, `liquidAmount` — see drinking, §8.3).
+Capacity counts what is directly inside; a container "bears the weight" of
+nested contents rather than passing it up. Read by putting, inserting,
+removing, searching, opening/closing, dropping, throwing, and looking.
+
+**supporter** (`a supporter`). Holds things on top. Setting: `with
+capacity N` — the number of items it holds (the Cloak of Darkness brass
+hook is `a supporter with capacity 1`). Unlike containers, a supporter's
+weight math includes nested contents recursively. Read by putting,
+removing, climbing, dropping, and looking.
+
+**pushable** (`pushable`). Makes an entity eligible for pushing, and its
+`pushType` — `button` (default), `heavy`, `moveable` — selects the behavior
+described in §2.6. The trait carries more fields for story handlers to
+read (`revealsPassage`, `pushSound`, `activates`, `maxPushes`,
+`pushDirection`, `effects`); apart from `pushType`, `revealsPassage`, and
+`pushSound`, stdlib treats them as data for *your* event handlers, not
+behavior it enforces.
+
+**pullable** (`pullable`). Makes an entity eligible for pulling. Stdlib
+mutates two fields — `state` (→ `'pulled'`, which is what gates
+`already_pulled`) and `pullCount` — and carries the rest (`pullType`,
+`activates`, `linkedTo`, `detachesOnPull`, `maxPulls`, `effects`) as data
+for story handlers reacting to `if.event.pulled`.
+
+**cuttable** (`cuttable`, optionally `with tool <entity>` — adjective).
+Makes an entity eligible for cutting (§2.8) and carries the tool contract
+mirroring lockable's keys: `toolId` (one tool — what Chord's `with tool`
+sets), `toolIds` (several, TypeScript), with `CuttableBehavior`'s
+`requiresTool`/`canCutWith` predicates. Composing it obliges the entity to
+register exactly one cut implementation — the load check enforces it.
+
+**diggable** (`diggable`, optionally `with tool <entity>` — adjective).
+The same shape for digging: `toolId`/`toolIds`,
+`DiggableBehavior.requiresTool`/`canDigWith`, and the same
+one-implementation rule (§2.8).
+
+**moveable-scenery** and **attached** — two traits in the catalog that are
+**dormant today**: no standard action reads either, they have no behavior
+classes, and neither is composable from Chord. `moveable-scenery` sketches
+a heavy-thing vocabulary (weight class, blocked exits, reveals-when-moved);
+`attached` sketches attachment (glued/nailed/tied, detachable, detach
+force). They are listed here so you know they are *not* the way to build a
+boulder puzzle right now — use `pushable`/`pullable` plus story logic, and
+watch the ADRs for when these wake up.

@@ -1,0 +1,79 @@
+The actions every story gets for free — no traits, no eligibility, and
+(deliberately) no interceptor surface: there is no entity to hang a
+clause on, so none of these consult `on`/`after` clauses.
+
+## 10.1 Information: about, help, inventory, scoring, version
+
+**about** (`about`, `info`, `credits`) and **version** (`version`) render
+the story's own metadata — which, for a Chord story, is simply the
+header: `story "Title" by "Author"` with `version:` and `blurb:` flow
+straight through (the platform materializes them into the story-info
+trait, §11.1). A TypeScript story can add credits, ported-by, and build
+fields. About emits a single overridable message,
+`if.action.about.success`.
+
+**help** (`help`, `?`, `commands`). Renders the platform's general help;
+a first-time asker gets `first_time`. Topic help (`help movement`) is
+implemented in the action but unreachable — the core pattern takes no
+topic slot (flagged, with `save <name>` in the same boat).
+
+**inventory** (`inventory`, `inv`, `i`). Splits what you carry from what
+you wear (`carrying`, `wearing`, `carrying_and_wearing`, plus the
+`holding_list`/`worn_list` lines); empty hands pick a random empty-message
+variant. The abbreviations set a `brief` flag in the event for clients
+that care. Burden/weight messages exist but are dormant.
+
+**score** (`score`, `points`). Reads the platform score
+ledger — which is exactly where Chord's `score <name> worth N` /
+`award <name>` system deposits (chord-language.md §2.8, §4.5): max score
+is summed from the declared worths at load, awards are idempotent, and
+SCORE works with zero extra setup. Ranks fall back to a computed ladder
+(Novice → Master); a story can override rank, moves, and achievements
+through the scoring capability (TypeScript today). `no_scoring` covers
+score-free stories.
+
+## 10.2 Saving state: saving, restoring, restarting, quitting
+
+These four are signals, not implementations: each emits a platform event
+(`platform.save_requested`, `restore_requested`, `restart_requested`,
+`quit_requested`) that the engine processes after the turn through
+client-registered hooks — the client owns persistence and confirmation
+UI. Verbs that parse: `save`/`save game`, `restore`/`load`/`load game`/
+`restore game`, `quit`/`q`/`exit game`, `restart`. Named saves are
+dormant (no slot in the grammar). Quit asks for confirmation through a
+client query — but with no client hook registered it auto-confirms and
+stops; restart computes whether confirmation is warranted (unsaved
+progress, more than a few moves) and leaves honoring it to the hook.
+Saving can refuse (`save_not_allowed`, `save_in_progress`,
+`invalid_save_name`); restoring can refuse (`restore_not_allowed`,
+`no_saves`).
+
+## 10.3 Turns and undo: waiting, sleeping, again, undoing
+
+**wait** (`wait`, `z`) is the canonical "let a turn pass": a full,
+snapshot-taking, daemon-ticking turn in which nothing else happens —
+N waits let N rounds of scheduled behavior (§12.2) play out. One message,
+`time_passes` (the lang file's twelve wait variants are dead inventory —
+flagged). Stories react to `if.event.waited`, or gate things on turns
+passing.
+
+**sleep** (`sleep`, `nap`, `doze`, `rest`, `slumber` — all five parse
+since ADR-230 D2/D4). Flavor-only: no turns skipped beyond its own, no
+health interaction — give it story meaning with story logic if a story
+needs real sleep. `z` remains a wait.
+
+**again** (`again`, `g`) re-runs the last successful non-meta command by
+re-parsing its original text — so the repeat is honest: it can fail where
+the original succeeded if the world changed. Meta commands (undo, save,
+again itself) never enter history, so they can't be repeated;
+`nothing_to_repeat` covers an empty history.
+
+**undo** (`undo`) rolls back one full-world snapshot, taken before every
+substantive turn (looks, examines, inventory, and the metas don't burn a
+slot). Depth is an engine setting, default 10; consecutive undos work to
+that depth. There is no per-story undo veto, and no undo-after-death —
+once the defeat ending lands the game has stopped (§9.1's veto window is
+the story's chance). For Chord stories, everything the language tracks —
+states, occurrence counters, `once` flags, sequence progress — lives in
+world state, so undo (and save/restore) cover it with no author effort
+(ADR-210 AC-6, transcript-pinned).

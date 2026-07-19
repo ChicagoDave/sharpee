@@ -1,4 +1,5 @@
-Moving things by hand — and by mouth. `stdlib-reference.md` §2 (and §8.3
+Moving things by hand — and by mouth. [The standard library reference
+§2](/chord/stdlib/manipulation) (and [§8.3](/chord/stdlib/npcs)
 for eating/drinking) carries the full entries.
 
 | Action | Phrasings | Needs | Refuses with |
@@ -13,7 +14,7 @@ for eating/drinking) carries the full entries.
 | **lower** | `lower X` | a capability behavior (ADR-090) | `cant_lower_that` |
 | **raise** | `raise`/`lift X` | a capability behavior (ADR-090) | `cant_raise_that` |
 | **eat** | `eat`/`consume`/`devour`/`munch`/`nibble X` · `munch`/`nibble on X` | `edible` | `not_edible`, `is_drink`, `already_consumed` |
-| **drink** | `drink`/`sip`/`quaff`/`swallow`/`imbibe X` · `drink`/`sip from X` | `edible` liquid, or a liquid container (TypeScript today) | `not_drinkable`, `already_consumed`, `container_closed` |
+| **drink** | `drink`/`sip`/`quaff`/`swallow`/`imbibe X` · `drink`/`sip from X` | `drinkable` (an `edible` liquid), or a liquid container (TypeScript today) | `not_drinkable`, `already_consumed`, `container_closed` |
 
 ## taking and dropping
 

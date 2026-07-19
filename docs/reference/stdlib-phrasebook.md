@@ -68,7 +68,7 @@ for eating/drinking) carries the full entries.
 | **lower** | `lower X` | a capability behavior (ADR-090) | `cant_lower_that` |
 | **raise** | `raise`/`lift X` | a capability behavior (ADR-090) | `cant_raise_that` |
 | **eat** | `eat`/`consume`/`devour`/`munch`/`nibble X` · `munch`/`nibble on X` | `edible` | `not_edible`, `is_drink`, `already_consumed` |
-| **drink** | `drink`/`sip`/`quaff`/`swallow`/`imbibe X` · `drink`/`sip from X` | `edible` liquid, or a liquid container (TypeScript today) | `not_drinkable`, `already_consumed`, `container_closed` |
+| **drink** | `drink`/`sip`/`quaff`/`swallow`/`imbibe X` · `drink`/`sip from X` | `drinkable` (an `edible` liquid), or a liquid container (TypeScript today) | `not_drinkable`, `already_consumed`, `container_closed` |
 
 ### taking and dropping
 
@@ -215,7 +215,7 @@ Getting an actor from place to place. Full entries: `stdlib-reference.md`
 | **enter** | `enter X` · `get in`/`into X` · `climb in`/`into X` · `go in`/`into X` · `board X` · `get on X` | `enterable` | `container_closed`, `already_inside`, `not_enterable` |
 | **exit** | `exit` · `leave` · `get out` · `go out` · `climb out` · `disembark` · `alight` | being inside or on something | `already_outside`, `container_closed`, `nowhere_to_go` |
 | **climb** | `climb [up`/`down] X` · `scale`/`ascend`/`descend X` | `climbable` | `not_climbable`, `already_there`, `cant_go_that_way` |
-| **hide** | `hide`/`duck`/`crouch behind`/`under X` · `hide [in`/`inside`/`on] X` | `concealment` (TypeScript today) | `cant_hide_there` |
+| **hide** | `hide`/`duck`/`crouch behind`/`under X` · `hide [in`/`inside`/`on] X` | `concealment` — the `hiding-spot` adjective | `cant_hide_there` |
 | **reveal** | `stand up` · `come out` · `unhide` · `stop hiding` | being hidden | — |
 
 ### going
@@ -1074,10 +1074,11 @@ The gull doesn't seem interested.
 
 ### attacking
 
-Real combat is the `combatant` trait plus a combat interceptor
-(TypeScript today — `stdlib-reference.md` §8.2). What a `.story` file
-does have is the reaction seam: an `on attacking it` clause whose phrase
-replaces the standard reply.
+Real combat is the `combatant` trait plus a combat interceptor,
+registered from a `.story` by one header line: `use combat`
+(`stdlib-reference.md` §8.2). A story that wants scripted fights instead
+has the reaction seam: an `on attacking it` clause whose phrase replaces
+the standard reply.
 
 The author writes:
 

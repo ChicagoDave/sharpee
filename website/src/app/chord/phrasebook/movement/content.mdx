@@ -1,5 +1,5 @@
-Getting an actor from place to place. Full entries: `stdlib-reference.md`
-§3 (hiding: §8.4).
+Getting an actor from place to place. Full entries: [the standard
+library reference §3](/chord/stdlib/movement) (hiding: [§8.4](/chord/stdlib/npcs)).
 
 | Action | Phrasings | Needs | Refuses with |
 |---|---|---|---|
@@ -7,7 +7,7 @@ Getting an actor from place to place. Full entries: `stdlib-reference.md`
 | **enter** | `enter X` · `get in`/`into X` · `climb in`/`into X` · `go in`/`into X` · `board X` · `get on X` | `enterable` | `container_closed`, `already_inside`, `not_enterable` |
 | **exit** | `exit` · `leave` · `get out` · `go out` · `climb out` · `disembark` · `alight` | being inside or on something | `already_outside`, `container_closed`, `nowhere_to_go` |
 | **climb** | `climb [up`/`down] X` · `scale`/`ascend`/`descend X` | `climbable` | `not_climbable`, `already_there`, `cant_go_that_way` |
-| **hide** | `hide`/`duck`/`crouch behind`/`under X` · `hide [in`/`inside`/`on] X` | `concealment` (TypeScript today) | `cant_hide_there` |
+| **hide** | `hide`/`duck`/`crouch behind`/`under X` · `hide [in`/`inside`/`on] X` | `concealment` — the `hiding-spot` adjective | `cant_hide_there` |
 | **reveal** | `stand up` · `come out` · `unhide` · `stop hiding` | being hidden | — |
 
 ## going
