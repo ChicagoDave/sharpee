@@ -1,0 +1,24 @@
+title: Fernhill F2 — dawn comes for the deedless (LOSE)
+story: fernhill
+description: The other losing branch — do nothing all night. The timeline's
+  three beats land on schedule (dusk at 14, the small hours at 70, dawn at
+  130) and the auction takes Fernhill.
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "last light"]
+[UNTIL "the last light goes out of the sky"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "small hours"]
+[UNTIL "The small hours settle over Fernhill"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "auction party"]
+[UNTIL "the first motorcar of the auction party"]

@@ -1,0 +1,120 @@
+title: Fernhill E2/C2 — feeding Smoke (authored trait) and gaining a shadow
+story: fernhill
+description: The authored `feedable` trait with its keyed data field
+  (`feedable with food the kipper`): feeding refuses without the food and
+  after the account is settled; the kipper (via the full tool chain)
+  settles it, the follower tags along, and her fed-state nose hint fires
+  once in the greenhouse.
+---
+
+# The tool chain to the kipper: key → lamp → cellar → crowbar → crate → opener
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> search the doormat
+[OK: contains "key"]
+
+> take the tarnished key
+[OK: contains "You take the tarnished key"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> north
+[OK: contains "Cellar Stairs"]
+
+> take the oil lamp
+[OK: contains "Taken"]
+
+> turn on the oil lamp
+[OK: contains "on"]
+
+> unlock the cellar door with the tarnished key
+[OK: contains "unlock"]
+
+> open the cellar door
+[OK: contains "open"]
+
+> down
+[OK: contains "Brick vaults"]
+
+> take the crowbar
+[OK: contains "Taken"]
+
+> up
+[OK: contains "Cellar Stairs"]
+
+> south
+[OK: contains "Entrance Hall"]
+
+> south
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+> open the nailed crate with the crowbar
+[OK: contains "open"]
+
+> take the tin opener
+[OK: contains "You take the tin opener"]
+
+# To the pantry — and the cat, unimpressed by empty hands
+> west
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> east
+[OK: contains "Kitchen"]
+
+> open the pantry door
+[OK: contains "open"]
+
+> north
+[OK: contains "Narrow shelves"]
+
+> feed smoke
+[OK: contains "nothing that would interest a cat of standing"]
+
+> open the kipper tin with the tin opener
+[OK: contains "kipper"]
+
+> take the kipper
+[OK: contains "You take the kipper"]
+
+> feed smoke
+[OK: contains "you have a shadow"]
+
+> feed smoke
+[OK: contains "account is already settled"]
+
+# The follower follows: she is present a room away
+> south
+[OK: contains "Kitchen"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+> examine smoke
+[OK: contains "lantern eyes"]
+
+# Fed + greenhouse: the once-only nose hint at what's buried
+> south
+[OK: contains "Fountain Court"]
+
+# The hint fires ON the entry turn — Smoke pads in with you, and the
+# `, once` daemon speaks immediately (and never again)
+> west
+[OK: contains "Glass"]
+[OK: contains "noses hard at the leaf mould"]
+
+> wait
+[OK: not contains "noses hard"]
+
+> wait
+[OK: not contains "noses hard"]

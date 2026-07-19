@@ -51,7 +51,7 @@ description: The estate's navigable shape (design doc map). Iron Gates first-tim
 # Crossing back OUT of the House into the Grounds: cold-returns fires (A7 both sides)
 > south
 [OK: contains "Fountain Court"]
-[OK: contains "The cold finds you again"]
+[OK: contains_any "The cold finds you the moment you step out" "The cold again, familiar now"]
 
 > west
 [OK: contains "Glass panes furred with frost"]

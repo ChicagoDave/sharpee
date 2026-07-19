@@ -1,0 +1,126 @@
+title: Fernhill E1/E3/E4 — the vine chain, prune and wind, the hot poker
+story: fernhill
+description: The greenhouse vine's forward state chain (seedling warms to
+  flowering via the machine, prunes to fruiting and yields the locket);
+  the custom verbs `prune` and `wind` (grammar + must-gates + authored
+  refusals over the stdlib default); the furnace poker's troll-axe-class
+  take-refusal while the boiler runs.
+---
+
+# The custom verbs exist and refuse nonsense with THEIR OWN voices
+> north
+[OK: contains "Gravel Drive"]
+
+> prune the lime trees
+[OK: contains "nothing to prune about that"]
+
+> wind the lime trees
+[OK: contains "That doesn't wind"]
+
+# E4 setup: the poker is takeable while the boiler is cold
+> north
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+> take the furnace poker
+[OK: contains "Taken"]
+
+> drop the furnace poker
+[OK: contains "Dropped"]
+
+# The vine, too young before warmth — and shears-gated
+> west
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> prune the vine
+[OK: contains "wants the garden shears"]
+
+> east
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> east
+[OK: contains "Kitchen"]
+
+> take the garden shears
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+> south
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> prune the vine
+[OK: contains "all stem and hope"]
+
+# Warmth: the machine's running state flowers the vine
+> east
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+> turn the stopcock
+[OK: contains "water gurgles"]
+
+> push the primer
+[OK: contains "thumps home"]
+
+> turn on the boiler
+[OK: contains "something green stirs"]
+
+# E4: NOW the poker bites
+> take the furnace poker
+[OK: contains "take the skin off your palm"]
+
+# E1: flowering prunes to fruiting — and the locket falls
+> west
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> prune the vine
+[OK: contains "something small and silver"]
+
+> take the silver locket
+[OK: contains "Taken"]
+
+> prune the vine
+[OK: contains "given everything it kept"]
+
+# E3: wind the clock — key-gated, then ticking
+> east
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> wind the clock
+[OK: contains "wants its crank key"]
+
+> take the grey overcoat
+[OK: contains "Taken"]
+
+> search the overcoat
+[OK: contains "winding key"]
+
+> take the winding key
+[OK: contains "You take the winding key"]
+
+> wind the clock
+[OK: contains "begins to walk again"]
+
+> wind the clock
+[OK: contains "wound and walking"]

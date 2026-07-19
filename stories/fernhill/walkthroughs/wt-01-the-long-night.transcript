@@ -1,0 +1,199 @@
+title: Fernhill — the long night, start to deed (WIN)
+story: fernhill
+description: The full estate arc: key from the mat, the coat and the clock,
+  the sherry toll, the diary and the mantel's gated hint, the cellar and
+  the crowbar, the boiler's three stages, Tobias's truth, the vine and the
+  locket, the folly, the fuse, the deed — and out the gates. Scores
+  asserted at milestones; ends on the WIN ending.
+---
+
+# Arrival
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+# The key (+5 = 5)
+> search the doormat
+[OK: contains "key"]
+
+> take the tarnished key
+[OK: contains "You take the tarnished key"]
+
+> score
+[OK: contains "scored 5 out of 50"]
+
+# The coat, the winding key, the clock
+> north
+[OK: contains "Entrance Hall"]
+
+> take the grey overcoat
+[OK: contains "Taken"]
+
+> wear the overcoat
+[OK: contains "put on"]
+
+> search the overcoat
+[OK: contains "winding key"]
+
+> take the winding key
+[OK: contains "You take the winding key"]
+
+> wind the clock
+[OK: contains "begins to walk again"]
+
+# The kitchen: shears and the housekeeper's price
+> east
+[OK: contains "Kitchen"]
+
+> take the garden shears
+[OK: contains "Taken"]
+
+> take the sherry bottle
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+> give the sherry bottle to kettle
+[OK: contains "Her ladyship's oloroso"]
+
+# The study: the diary (+5 = 10 for the softening)
+> west
+[OK: contains "Verity's study"]
+
+> open the trunk
+[OK: contains "diary page"]
+
+> read the diary page
+[OK: contains "only the little silver thing will open it"]
+
+# G2: the hall's gated hint appears only now
+> east
+[OK: contains "Entrance Hall"]
+
+> look
+[OK: contains "which you cannot stop looking"]
+
+> examine the photograph
+[OK: contains "a small steel box with a bright slot"]
+
+# The cellar: lamp, key, crowbar (+5 = 15)
+> north
+[OK: contains "Cellar Stairs"]
+
+> take the oil lamp
+[OK: contains "Taken"]
+
+> turn on the oil lamp
+[OK: contains "on"]
+
+> unlock the cellar door with the tarnished key
+[OK: contains "unlock"]
+
+> open the cellar door
+[OK: contains "open"]
+
+> down
+[OK: contains "Brick vaults"]
+
+> take the crowbar
+[OK: contains "Taken"]
+
+> up
+[OK: contains "Cellar Stairs"]
+
+> south
+[OK: contains "Entrance Hall"]
+
+> south
+[OK: contains "Fountain Court"]
+
+> score
+[OK: contains "scored 15 out of 50"]
+
+# The boiler: FILL, PRIME, LIGHT (+10 = 25)
+> east
+[OK: contains "old coal dust"]
+
+> open the nailed crate with the crowbar
+[OK: contains "open"]
+
+> turn the stopcock
+[OK: contains "water gurgles"]
+
+> push the primer
+[OK: contains "thumps home"]
+
+> turn on the boiler
+[OK: contains "something green stirs"]
+
+> score
+[OK: contains "scored 25 out of 50"]
+
+# Tobias's truth (+5 = 30)
+[DO]
+> wait
+[OK: contains_any "Time passes" "enters"]
+[UNTIL "enters from the"]
+
+> ask tobias about the fire
+[OK: contains "warped, not cursed"]
+
+# The vine and the locket (+5 = 35)
+> west
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> prune the vine
+[OK: contains "something small and silver"]
+
+> take the silver locket
+[OK: contains "Taken"]
+
+> score
+[OK: contains "scored 35 out of 50"]
+
+# The folly: the fuse (+5 = 40) and the deed (+10 = 50)
+> north
+[OK: contains "Folly Hill"]
+
+> open the folly door
+[OK: contains "You open the folly door"]
+
+> north
+[OK: contains "wakes a thread of sparks"]
+
+> cut the fuse with the garden shears
+[OK: contains "gutters, and dies"]
+
+> open the deed box with the silver locket
+[OK: contains "deed"]
+
+> take the deed
+[OK: contains "You take the deed"]
+
+> read the deed
+[OK: contains "held in perpetuity"]
+
+> score
+[OK: contains "perfect score of 50 points"]
+
+# Out the gates: the WIN
+> south
+[OK: contains "Folly Hill"]
+
+> south
+[OK: contains "Glass"]
+
+> east
+[OK: contains "Fountain Court"]
+
+> south
+[OK: contains "Gravel Drive"]
+
+> south
+[OK: contains "the hammer will fall on nothing"]

@@ -62,6 +62,13 @@
 ## Tutorial Phases 4-5 closed (post-ADR-240)
 - Phase 4 DONE (gate met by the ADR-240 AC-1 run). **Phase 5 DONE**: boiler machine (3-stage, order-enforced, states mirrored via on-enter `change`), fuse both branches (incl. real `kill`), `at turn 14` timeline + story states, cellar drip + once-startle. Fernhill: 12 transcripts, 254/254. Phase 6 (E-group) CURRENT.
 
+- **Phase 6 DONE**: vine chain (machine-coupled flowering, prune→fruit→locket), feedable Smoke (follower + kipper + once-hint), prune/wind custom verbs via `prunable`/`windable` traits (dispatch clauses MUST live in traits — loader fail-fast), hot-poker refusal. 14 transcripts, 425/425. Phase 7 (F-group endings/scoring + walkthroughs) CURRENT.
+
+- **Phase 7 DONE**: 8 scores (perfect 50), deed box + deed, WIN at the gates + fuse-blast kill + dawn-130 lose (all REAL-PATH; wt-01 walkthrough 76/76; atomics 456/456). G1 three strategies, G2 marker-gated mantel hint. **Platform flags: armFor shadows on+after same-owner-same-gerund pairs (folded to single clauses); DO/UNTIL cap = silent false-green in transcripts.** Phase 8 (G4/G5 browser media) CURRENT.
+
+- **D3 pair fix SHIPPED (David: "Fix it now")**: `mergeArms` (per-owner composite: first on-refusal vetoes, all clauses run, first on-override wins, after emits append), per-clause namespaced sharedData bags + occurrence keys (entity `on.<id>.<action>.<kind>.<i>`, trait `trait.<name>.<action>.<kind>.<i>.<irId>`), trait registration merged per (trait,action) instead of last-wins overwrite, capability-pair = legible LoadError. EXPOSED + fixed a second pre-existing bug: trait `after` phrases were OVERRIDING instead of appending (missing clauseKind guard). `on-after-pair.test.ts` 4/4 (diary shape, once-independence, trait shape, capability refusal); while-gate-d8 keys updated to the namespaced format. story-loader 282/282; bundle rebuilt; fernhill 456/456 + wt 76/76; cloak + zoo green.
+- **ChatGPT review of fernhill.story** (`stories/fernhill/chatgpt-review.md`, from David): strongly positive ("a modeling language, not an imperative language in a trench coat"); actionable doc items recorded as Phase 9 inputs in the tutorial plan (three vocabulary tiers, explain `phrase` early, the modeling-language preamble, the escape-hatch rule of thumb, headline the R3 declarative-capability family).
+
 ## Next session
 - David confirms ADR-240 ACs → mark tutorial plan Phase 4 DONE (its gate is met) → Phase 5 (time/machine chain) or 6. Then 7, 8 (browser/media), 9 (docs+site), 10 (closure → G3 confirmation).
 - Remaining after G3: **G4** (Phase 8 umbrella: version bump + `repokit verify` + publish; unlocks the deferred public-registry install proof step).

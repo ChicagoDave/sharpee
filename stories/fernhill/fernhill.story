@@ -41,6 +41,10 @@ create the Iron Gates
   north to the Gravel Drive
   south is blocked: long-road
 
+  after entering it while the player has the deed
+    win fernhill-saved
+  end after
+
   first time
     The cab is already grinding away down the lane, its lamps swallowed
     by the dark. An auction notice is nailed to the left-hand gate,
@@ -125,9 +129,9 @@ create the Entrance Hall
   north to the Cellar Stairs
 
   The heart of the house: a cold marble floor, a dead fireplace under
-  a wide mantel, and a tall case clock standing silent against the
-  stairs. Doors lead west to the study and east to the kitchen; a
-  colder passage runs north.
+  a wide mantel{mantel-hint}, and a tall case clock standing silent
+  against the stairs. Doors lead west to the study and east to the
+  kitchen; a colder passage runs north.
 
 create the Study
   a room
@@ -195,9 +199,14 @@ create the pantry door
 create the cellar door
   a door, lockable with the tarnished key
   aka grey door
+  score unsealed worth 5
 
   A heavy grey door, locked as long as anyone can remember. The
   keyhole is tarnished black.
+
+  after opening it, once
+    award unsealed
+  end after
 
 create the doormat
   aka mat
@@ -212,8 +221,13 @@ create the tarnished key
   aka key
   concealed
   on the doormat
+  score found worth 5
 
   A small key gone black with weather.
+
+  after taking it, once
+    award found
+  end after
 
 create the oil lamp
   aka lamp
@@ -227,14 +241,17 @@ create the boiler
   scenery, switchable
   in the Boiler Shed
   states: cold, filled, primed, running
+  score lit worth 10
 
   A cast-iron estate boiler, cold now, its dial at rest. Pipes run
   from its flank toward the greenhouse. A stopcock and a primer
   plunger stand ready on its flank, and a small brass plate reads:
   FILL. PRIME. LIGHT. IN THAT ORDER.
 
-  on switching_on it while it is cold or it is filled
-    refuse boiler-clank
+  on switching_on it
+    refuse when it is cold: boiler-clank
+    refuse when it is filled: boiler-clank
+    award lit, once
   end on
 
 create the stopcock
@@ -283,7 +300,9 @@ define machine the boiler works
   state running, terminal
     on enter
       change the boiler to running
+      change the vine to flowering
       phrase pipes-warm
+      phrase vine-stirs
     end on
 end machine
 
@@ -315,10 +334,12 @@ create the diary page
   aka page, diary
   readable
   in the travelling trunk
+  states: folded, read
 
   A page torn from a diary, the hand young and furious.
 
   on reading it
+    change it to read
     phrase diary-text
       "K. says the greenhouse will take the worst of the frost and the
       vine with it. Let it. What matters is safe where the fire went,
@@ -349,6 +370,11 @@ create the framed photograph
 
   Verity at thirty, on the folly steps, squinting into some summer
   long gone.
+
+  phrase detail while the diary page is read:
+    Knowing what the diary knows, you see it now: the folly whole
+    behind her, and on her knee a small steel box with a bright slot
+    in its lid.
 
 create the grey overcoat
   aka overcoat, coat, verity's overcoat
@@ -421,12 +447,130 @@ create the sherry bottle
   A dusty bottle of oloroso, the good stuff, hidden behind the pans at
   hip height where a housekeeper might know to look.
 
+create the vine
+  aka determined vine
+  scenery, prunable
+  in the Greenhouse
+  states: seedling, flowering, fruiting
+  score fruited worth 5
+
+  Verity's vine, at the warm end of the staging over the buried
+  pipes: barely more than a seedling now, twenty years after the
+  frost that should have killed it.
+
+  after pruning it while it is fruiting, once
+    award fruited
+  end after
+
+create Smoke
+  aka cat, grey cat
+  a person, follower
+  feedable with food the kipper
+  in the Pantry
+
+  A smoke-grey cat with lantern eyes, appointed to the pantry mice
+  and answerable to no one.
+
+  on every turn while it is fed and the player is in the Greenhouse, once
+    phrase smoke-nose
+  end on
+
+create the furnace poker
+  aka poker
+  in the Boiler Shed
+
+  A long iron poker for the furnace grate.
+
+  on taking it while the boiler is running
+    refuse poker-hot
+  end on
+
+define trait feedable
+  data
+    food: entity
+  states: peckish, fed
+
+  phrases en-US
+    no-morsel:
+      You have nothing that would interest a cat of standing.
+    already-fed-cat:
+      A slow blink. The account is already settled.
+    cat-eats:
+      The kipper vanishes with terrifying efficiency, and something is
+      decided about you. From now on, you have a shadow.
+
+  on feeding it
+    the actor must have its food: no-morsel
+    it must be peckish: already-fed-cat
+    change it to fed
+    phrase cat-eats
+  end on
+end trait
+
+define action feeding
+  grammar
+    feed :creature
+  the creature must be reachable
+  otherwise refuse not-feedable
+
+  phrases en-US
+    not-feedable:
+      That has no appetite you can help with.
+
+define trait prunable
+  on pruning it
+    the player must hold the garden shears: need-shears
+    select on its state
+      when seedling
+        phrase vine-too-young
+      when flowering
+        change it to fruiting
+        move the silver locket to the Greenhouse
+        phrase vine-fruits
+      when fruiting
+        phrase vine-done
+    end select
+  end on
+end trait
+
+define trait windable
+  on winding it
+    the player must hold the winding key: need-winding-key
+    it must be stopped: clock-already-going
+    change it to ticking
+    phrase clock-wound
+  end on
+end trait
+
+define action pruning
+  grammar
+    prune :target
+    trim :target
+  the target must be reachable
+  otherwise refuse cannot-prune
+
+  phrases en-US
+    cannot-prune:
+      There's nothing to prune about that.
+
+define action winding
+  grammar
+    wind :target
+    wind up :target
+  the target must be reachable
+  otherwise refuse cannot-wind
+
+  phrases en-US
+    cannot-wind:
+      That doesn't wind.
+
 create the fuse
   aka fireworks fuse
   scenery
   cuttable with the garden shears
   in the Folly
   states: coiled, lit, cut
+  score nerve worth 5
 
   A long waxed fuse snaking from the fireworks cache across the
   floor. Old, but not too old to burn.
@@ -437,6 +581,7 @@ create the fuse
 
   on cutting it
     change it to cut
+    award nerve, once
     phrase fuse-cut-through
   end on
 
@@ -451,19 +596,54 @@ define sequence the long night
   at turn 14
     phrase dusk-deepens
     change the story to midnight
+  at turn 70
+    phrase small-hours
+  at turn 130
+    lose dawn-comes
 end sequence
+
+create the deed box
+  aka box, steel box, silver box
+  a container
+  openable with the silver locket
+  in the Folly
+
+  A small steel box under a shroud of soot, unmarked but for a neat
+  bright slot in the lid — the exact size of a locket that does not
+  open like a locket.
+
+create the deed
+  aka title deed, title
+  readable
+  in the deed box
+  score recovered worth 10
+
+  Heavy paper, folded in oiled cloth, whole and legible after twenty
+  years in the dark: the original deed of Fernhill.
+
+  after taking it, once
+    award recovered
+  end after
+
+  on reading it
+    phrase deed-text
+      "…the house and grounds known as FERNHILL, held in perpetuity by
+      the family and heirs of the bearer of this instrument."
+  end on
 
 create Mrs Kettle
   aka housekeeper, kettle
   a person, guard
   in the Entrance Hall
   states: guarded, softened
+  score softened worth 5
 
   The housekeeper, planted before the study door with her knitting and
   no intention of moving. Her eyes say the study is not for visitors.
 
   on giving it
     change it to softened when it has the sherry bottle
+    award softened, once when it is softened
     phrase kettle-softened when it is softened
   end on
 
@@ -472,6 +652,7 @@ create Tobias
   a person, patrol with route [the Gravel Drive, the Fountain Court, the Boiler Shed] and wait-turns 5 and announces-movement true
   in the Gravel Drive
   states: steady, shaken
+  score truth worth 5
 
   The groundskeeper, out in all weathers on his rounds, a storm
   lantern swinging at his knee. Weathered, watchful, in no hurry to
@@ -494,8 +675,9 @@ define topics for tobias
   about the silver locket:
     phrase tobias-locket-reply
   about "the folly", "the fire":
-    phrase tobias-folly-reply
     change it to shaken
+    award truth, once
+    phrase tobias-folly-reply
   about "the bank": phrase tobias-bank-reply
 end topics
 
@@ -566,11 +748,16 @@ create the fireplace
 
 create the case clock
   aka clock, tall clock
-  scenery
+  scenery, windable
   in the Entrance Hall
+  states: stopped, ticking
 
   A tall case clock, stopped at some hour years gone. The winding
   hole waits behind the little brass door in its face.
+
+  on every turn while it is ticking and one chance in 8
+    phrase clock-chime
+  end on
 
 create the writing desk
   aka desk
@@ -650,8 +837,10 @@ define phrase distant-bell
   gone.
 end phrase
 
-define phrase cold-returns
-  The cold finds you again the moment you step out.
+define phrase cold-returns, first-time
+  The cold finds you the moment you step out, and means it.
+or
+  The cold again, familiar now.
 end phrase
 
 define phrase out-of-the-wind
@@ -781,6 +970,83 @@ end phrase
 
 define phrase lamplight-startle
   Something small skitters away from your lamplight and is gone.
+end phrase
+
+define phrase need-shears
+  Bare-fingered pinching will mangle it. This wants the garden shears.
+end phrase
+
+define phrase vine-too-young
+  It is all stem and hope — nothing to prune yet. What it wants is
+  warmth in these pipes.
+end phrase
+
+define phrase vine-fruits
+  You take the dead growth off in three clean cuts, and the vine
+  answers the warmth almost while you watch: a single heavy fruit
+  swells, splits — and something small and silver slides out into the
+  leaf mould. Verity's own way of banking.
+end phrase
+
+define phrase vine-done
+  The vine has given everything it kept.
+end phrase
+
+define phrase vine-stirs
+  At the warm end of the greenhouse staging, something green stirs.
+end phrase
+
+define phrase need-winding-key
+  The little brass door wants its crank key — the kind a careful
+  housekeeper leaves in a coat pocket.
+end phrase
+
+define phrase clock-already-going
+  It is wound and walking. Tick, tock.
+end phrase
+
+define phrase clock-wound
+  The key turns, the weights climb, and the old clock clears its
+  throat and begins to walk again: tick, tock, after twenty years.
+end phrase
+
+define phrase clock-chime
+  The case clock counts the quarter, bright and even, through the
+  whole house.
+end phrase
+
+define phrase poker-hot
+  The poker has been drinking the furnace's heat — it would take the
+  skin off your palm.
+end phrase
+
+define phrase smoke-nose
+  Smoke pads down the staging, ignores the vine entirely, and noses
+  hard at the leaf mould at the warm end. Cats know where things are
+  buried.
+end phrase
+
+define phrase mantel-hint while the diary page is read
+   — and over it Verity's photograph, which you cannot stop looking
+  at now
+end phrase
+
+define phrase small-hours
+  The small hours settle over Fernhill. Dawn — and the auction — are
+  no longer an abstraction.
+end phrase
+
+define phrase dawn-comes
+  Grey light finds the gates, and with it the first motorcar of the
+  auction party. Whatever Fernhill still hides, it will hide it for
+  strangers now.
+end phrase
+
+define phrase fernhill-saved
+  You come down the drive with the deed of Fernhill inside your coat,
+  and the iron gates, for the first time tonight, look like they are
+  holding the world out rather than you in. At dawn the hammer will
+  fall on nothing: the proof came out of the fire after all.
 end phrase
 
 define phrase folly-jammed

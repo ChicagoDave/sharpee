@@ -291,7 +291,7 @@ describe('D8: while-false gates out the leading refusal (trait interceptor route
 describe('D8: trait-clause `, once` behaves identically to the entity path', () => {
   it('trait route: fires once, then sits out with the counter frozen at 1', () => {
     const loaded = load(GATES_STORY);
-    const counterKey = `${CHORD_OCCURRENCE_PREFIX}trait.taking.weasel`;
+    const counterKey = `${CHORD_OCCURRENCE_PREFIX}trait.shy.taking.on.0.weasel`; // namespaced per-clause (D3 pair fix)
 
     const first = fireInterceptor(loaded, 'weasel');
     expect(first.report!.override?.messageId).toBe('taken-wild');
@@ -305,7 +305,7 @@ describe('D8: trait-clause `, once` behaves identically to the entity path', () 
 
   it('entity route (the pre-existing behavior the trait path now mirrors)', () => {
     const loaded = load(GATES_STORY);
-    const counterKey = `${CHORD_OCCURRENCE_PREFIX}on.vole.taking`;
+    const counterKey = `${CHORD_OCCURRENCE_PREFIX}on.vole.taking.on.0`; // namespaced per-clause (D3 pair fix)
 
     const first = fireInterceptor(loaded, 'vole');
     expect(first.report!.override?.messageId).toBe('taken-wild');
