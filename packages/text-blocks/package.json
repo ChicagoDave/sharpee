@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/text-blocks",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Pure interfaces for structured text output (ITextBlock, IDecoration)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WF-A — top bar, flat list nav</title>
+<link rel="stylesheet" href="../sharpee-palette.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font: 15px/1.5 -apple-system, 'Segoe UI', sans-serif; background:var(--sh-canvas); color:var(--sh-ink); }
+  .ph { border:2px dashed var(--sh-border); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--sh-muted); font-size:13px; background:var(--sh-surface); }
+  nav { background:var(--sh-navy-700, #294466); color:#fff; display:flex; align-items:center; gap:28px; padding:14px 32px; }
+  nav .brand { font-weight:700; font-size:18px; margin-right:auto; }
+  nav a { color:var(--sh-taupe-200); text-decoration:none; font-size:14px; }
+  nav a.active { color:#fff; border-bottom:2px solid var(--sh-rose-300); padding-bottom:2px; }
+  nav .burger { display:none; }
+  .hero { padding:56px 32px; text-align:center; }
+  .hero h1 { font-size:34px; margin-bottom:8px; }
+  .hero p { color:var(--sh-muted); margin-bottom:20px; }
+  .hero .cta { display:inline-block; background:var(--sh-button); color:var(--sh-button-text); padding:10px 22px; border-radius:8px; font-weight:600; }
+  main { max-width:1080px; margin:0 auto; padding:0 32px 48px; display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  main .ph { height:180px; }
+  main .wide { grid-column:1/-1; height:120px; }
+  footer { border-top:1px solid var(--sh-border); padding:20px 32px; color:var(--sh-muted); font-size:13px; display:flex; gap:24px; }
+  @media (max-width:600px) {
+    nav { flex-wrap:wrap; padding:12px 16px; }
+    nav .burger { display:block; margin-left:auto; background:none; border:1px solid var(--sh-taupe-200); color:#fff; border-radius:6px; padding:4px 10px; }
+    nav .links { display:none; width:100%; flex-direction:column; gap:0; padding-top:8px; }
+    nav.open .links { display:flex; }
+    nav .links a { padding:12px 4px; border-bottom:1px solid var(--sh-navy-600, #385C8A); font-size:16px; }
+    nav .brand { margin-right:0; }
+    main { grid-template-columns:1fr; padding:0 16px 32px; }
+    .hero { padding:36px 16px; }
+  }
+</style></head><body>
+<nav id="nav"><span class="brand">Sharpee</span>
+  <button class="burger" onclick="document.getElementById('nav').classList.toggle('open')">☰ Menu</button>
+  <div class="links" style="display:contents">
+    <a class="active" href="#">Home</a><a href="#">Chord</a><a href="#">Sharpee</a><a href="#">Tutorial</a><a href="#">Play</a><a href="#">Blog</a>
+  </div>
+</nav>
+<div class="hero"><h1>Parser IF, composed.</h1><p>One-line value prop placeholder — flat top nav, everything one click away.</p><span class="cta">Get started</span></div>
+<main>
+  <div class="ph wide">feature band — “what is Chord” strip</div>
+  <div class="ph">card: Chord getting-started</div>
+  <div class="ph">card: Sharpee getting-started</div>
+  <div class="ph">card: Fernhill tutorial</div>
+  <div class="ph">card: Play in the browser</div>
+</main>
+<footer><span>© Sharpee</span><span>GitHub</span><span>npm</span></footer>
+<script>
+  // Mobile screenshots want the menu open; ?menu=open forces it.
+  if (location.search.includes('menu=open')) document.getElementById('nav').classList.add('open');
+  // The display:contents wrapper defeats the mobile hiding — remove it at small widths.
+  if (matchMedia('(max-width:600px)').matches) document.querySelector('.links').style.display = '';
+</script>
+</body></html>

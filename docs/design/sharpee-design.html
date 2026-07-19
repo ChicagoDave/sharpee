@@ -1,0 +1,313 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Sharpee — Design Palette v1</title><style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font: 14px/1.5 -apple-system, 'Segoe UI', sans-serif; background:#FFFFFF; color:#121D2C; padding:48px; width:1280px; }
+  h1 { font-size:28px; letter-spacing:-0.02em; }
+  .sub { color:#6F7186; margin:4px 0 32px; }
+  h2 { font-size:15px; text-transform:uppercase; letter-spacing:0.08em; color:#585A6A; margin:36px 0 14px; }
+  .seeds { display:flex; gap:16px; }
+  .sw { flex:1; } .sw .chip { height:84px; border-radius:8px; }
+  .swl { display:flex; flex-direction:column; margin-top:6px; font-size:12px; color:#585A6A; }
+  .swl b { color:#1B2C41; font-size:13px; }
+  .ramp { display:flex; align-items:stretch; margin-bottom:8px; }
+  .rname { width:110px; font-weight:600; display:flex; flex-direction:column; justify-content:center; }
+  .rname span { font-weight:400; font-size:11px; color:#6F7186; }
+  .rstep { flex:1; height:64px; padding:6px 0 0 8px; font-size:10px; display:flex; flex-direction:column; }
+  .rstep:first-of-type { border-radius:8px 0 0 8px; } .rstep:last-of-type { border-radius:0 8px 8px 0; }
+  .rstep b { font-size:11px; } .rstep em { font-style:normal; font-size:9px; opacity:0.85; }
+  .themes { display:flex; gap:24px; }
+  .theme { flex:1; border-radius:12px; padding:20px; }
+  .theme h3 { margin-bottom:12px; }
+  .roles { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+  .role { display:flex; gap:8px; } .role .chip { width:40px; height:40px; border-radius:6px; flex:none; }
+  .role .swl { margin-top:0; font-size:10px; color:inherit; } .role .swl b { font-size:12px; color:inherit; }
+  .role .swl span { color:inherit; opacity:0.75; }
+  .mock { border-radius:10px; overflow:hidden; }
+  .mocknav { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; font-size:13px; }
+  .mockbody { padding:18px 16px; display:flex; flex-direction:column; gap:10px; }
+  .mockbody h4 { font-size:20px; } .mockbody a { text-decoration:underline; }
+  .mockbody code { font:12px ui-monospace, monospace; padding:8px 10px; border-radius:6px; display:inline-block; }
+  .mockbody button { border:0; padding:8px 16px; border-radius:6px; font-weight:600; font-size:13px; }
+  .tag { font-size:11px; padding:4px 8px; border-radius:99px; margin-left:10px; }
+  .foot { margin-top:36px; font-size:11px; color:#6F7186; }
+</style></head><body>
+  <h1>Sharpee — Design Palette v1</h1>
+  <div class="sub">Developed from David's seed set (docs/design/sharpee-colors.png, Coolors) · 2026-07-19 · contrast ratios are computed WCAG values</div>
+  <h2>Seeds</h2>
+  <div class="seeds">
+  <div class="sw"><div class="chip" style="background:#C6878F"></div>
+  <div class="swl"><b>rose</b><span>#C6878F</span><span>seed</span></div></div>
+  <div class="sw"><div class="chip" style="background:#B79D94"></div>
+  <div class="swl"><b>taupe</b><span>#B79D94</span><span>seed</span></div></div>
+  <div class="sw"><div class="chip" style="background:#969696"></div>
+  <div class="swl"><b>gray</b><span>#969696</span><span>seed</span></div></div>
+  <div class="sw"><div class="chip" style="background:#67697C"></div>
+  <div class="swl"><b>slate</b><span>#67697C</span><span>seed</span></div></div>
+  <div class="sw"><div class="chip" style="background:#253D5B"></div>
+  <div class="swl"><b>navy</b><span>#253D5B</span><span>seed</span></div></div></div>
+  <h2>Ramps</h2>
+  
+  <div class="ramp"><div class="rname">rose<span>#C6878F</span></div>
+  
+    <div class="rstep" style="background:#F6F3F4;color:#121D2C">
+      <b>50</b><span>F6F3F4</span></div>
+    <div class="rstep" style="background:#EBE0E1;color:#121D2C">
+      <b>100</b><span>EBE0E1</span></div>
+    <div class="rstep" style="background:#DDC5C8;color:#121D2C">
+      <b>200</b><span>DDC5C8</span></div>
+    <div class="rstep" style="background:#CEA1A7;color:#121D2C">
+      <b>300</b><span>CEA1A7</span></div>
+    <div class="rstep" style="background:#BD757E;color:#FFF">
+      <b>400</b><span>BD757E</span><em>≈ seed</em></div>
+    <div class="rstep" style="background:#A64F5A;color:#FFF">
+      <b>500</b><span>A64F5A</span></div>
+    <div class="rstep" style="background:#833E47;color:#FFF">
+      <b>600</b><span>833E47</span></div>
+    <div class="rstep" style="background:#612E34;color:#FFF">
+      <b>700</b><span>612E34</span></div>
+    <div class="rstep" style="background:#3E1E22;color:#FFF">
+      <b>800</b><span>3E1E22</span></div>
+    <div class="rstep" style="background:#291416;color:#FFF">
+      <b>900</b><span>291416</span></div>
+  </div>
+  <div class="ramp"><div class="rname">taupe<span>#B79D94</span></div>
+  
+    <div class="rstep" style="background:#F6F4F4;color:#121D2C">
+      <b>50</b><span>F6F4F4</span></div>
+    <div class="rstep" style="background:#E8E4E3;color:#121D2C">
+      <b>100</b><span>E8E4E3</span></div>
+    <div class="rstep" style="background:#D8CECA;color:#121D2C">
+      <b>200</b><span>D8CECA</span></div>
+    <div class="rstep" style="background:#C4B1AB;color:#121D2C">
+      <b>300</b><span>C4B1AB</span></div>
+    <div class="rstep" style="background:#AD8F85;color:#121D2C">
+      <b>400</b><span>AD8F85</span><em>≈ seed</em></div>
+    <div class="rstep" style="background:#926F62;color:#FFF">
+      <b>500</b><span>926F62</span></div>
+    <div class="rstep" style="background:#74584E;color:#FFF">
+      <b>600</b><span>74584E</span></div>
+    <div class="rstep" style="background:#554139;color:#FFF">
+      <b>700</b><span>554139</span></div>
+    <div class="rstep" style="background:#372A25;color:#FFF">
+      <b>800</b><span>372A25</span></div>
+    <div class="rstep" style="background:#251C19;color:#FFF">
+      <b>900</b><span>251C19</span></div>
+  </div>
+  <div class="ramp"><div class="rname">gray<span>#969696</span></div>
+  
+    <div class="rstep" style="background:#F5F5F5;color:#121D2C">
+      <b>50</b><span>F5F5F5</span></div>
+    <div class="rstep" style="background:#E6E6E6;color:#121D2C">
+      <b>100</b><span>E6E6E6</span></div>
+    <div class="rstep" style="background:#D1D1D1;color:#121D2C">
+      <b>200</b><span>D1D1D1</span></div>
+    <div class="rstep" style="background:#B8B8B8;color:#121D2C">
+      <b>300</b><span>B8B8B8</span></div>
+    <div class="rstep" style="background:#999999;color:#121D2C">
+      <b>400</b><span>999999</span><em>≈ seed</em></div>
+    <div class="rstep" style="background:#7A7A7A;color:#FFF">
+      <b>500</b><span>7A7A7A</span></div>
+    <div class="rstep" style="background:#616161;color:#FFF">
+      <b>600</b><span>616161</span></div>
+    <div class="rstep" style="background:#474747;color:#FFF">
+      <b>700</b><span>474747</span></div>
+    <div class="rstep" style="background:#2E2E2E;color:#FFF">
+      <b>800</b><span>2E2E2E</span></div>
+    <div class="rstep" style="background:#1F1F1F;color:#FFF">
+      <b>900</b><span>1F1F1F</span></div>
+  </div>
+  <div class="ramp"><div class="rname">slate<span>#67697C</span></div>
+  
+    <div class="rstep" style="background:#F4F4F5;color:#121D2C">
+      <b>50</b><span>F4F4F5</span></div>
+    <div class="rstep" style="background:#E4E4E7;color:#121D2C">
+      <b>100</b><span>E4E4E7</span></div>
+    <div class="rstep" style="background:#CECFD4;color:#121D2C">
+      <b>200</b><span>CECFD4</span></div>
+    <div class="rstep" style="background:#B2B3BE;color:#121D2C">
+      <b>300</b><span>B2B3BE</span></div>
+    <div class="rstep" style="background:#9091A2;color:#FFF">
+      <b>400</b><span>9091A2</span></div>
+    <div class="rstep" style="background:#6F7186;color:#FFF">
+      <b>500</b><span>6F7186</span><em>≈ seed</em></div>
+    <div class="rstep" style="background:#585A6A;color:#FFF">
+      <b>600</b><span>585A6A</span></div>
+    <div class="rstep" style="background:#41424E;color:#FFF">
+      <b>700</b><span>41424E</span></div>
+    <div class="rstep" style="background:#2A2A32;color:#FFF">
+      <b>800</b><span>2A2A32</span></div>
+    <div class="rstep" style="background:#1C1C21;color:#FFF">
+      <b>900</b><span>1C1C21</span></div>
+  </div>
+  <div class="ramp"><div class="rname">navy<span>#253D5B</span></div>
+  
+    <div class="rstep" style="background:#F3F5F7;color:#121D2C">
+      <b>50</b><span>F3F5F7</span></div>
+    <div class="rstep" style="background:#DFE5EC;color:#121D2C">
+      <b>100</b><span>DFE5EC</span></div>
+    <div class="rstep" style="background:#C3CFE0;color:#121D2C">
+      <b>200</b><span>C3CFE0</span></div>
+    <div class="rstep" style="background:#9CB5D3;color:#121D2C">
+      <b>300</b><span>9CB5D3</span></div>
+    <div class="rstep" style="background:#6E94C4;color:#FFF">
+      <b>400</b><span>6E94C4</span></div>
+    <div class="rstep" style="background:#4775AE;color:#FFF">
+      <b>500</b><span>4775AE</span></div>
+    <div class="rstep" style="background:#385C8A;color:#FFF">
+      <b>600</b><span>385C8A</span></div>
+    <div class="rstep" style="background:#294466;color:#FFF">
+      <b>700</b><span>294466</span><em>≈ seed</em></div>
+    <div class="rstep" style="background:#1B2C41;color:#FFF">
+      <b>800</b><span>1B2C41</span></div>
+    <div class="rstep" style="background:#121D2C;color:#FFF">
+      <b>900</b><span>121D2C</span></div>
+  </div>
+  <h2>Theme roles &amp; sample</h2>
+  <div class="themes">
+  <div class="theme" style="background:#F6F4F4;border:1px solid #D1D1D1">
+    <h3 style="color:#1B2C41">Light</h3>
+    <div class="roles">
+      
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#F6F4F4;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>canvas</b><span>#F6F4F4 · taupe·50</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#FFFFFF;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>surface</b><span>#FFFFFF · white</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#1B2C41;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>ink</b><span>#1B2C41 · navy·800</span>
+          <span>on canvas: 12.92 AAA</span><span>on surface: 14.16 AAA</span>
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#585A6A;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>muted</b><span>#585A6A · slate·600</span>
+          <span>on canvas: 6.21 AA</span><span>on surface: 6.81 AA</span>
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#833E47;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>link</b><span>#833E47 · rose·600</span>
+          <span>on canvas: 6.98 AA</span><span>on surface: 7.65 AAA</span>
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#D1D1D1;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>border</b><span>#D1D1D1 · gray·200</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#EBE0E1;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>wash</b><span>#EBE0E1 · rose·100</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#E4E4E7;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>codeBg</b><span>#E4E4E7 · slate·100</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#D1D1D1">
+          <div class="chip" style="background:#253D5B;border:1px solid #D1D1D1"></div>
+          <div class="swl" style="color:#1B2C41"><b>button</b><span>#253D5B · navy·seed</span>
+          
+          <span>label: 11.07 AAA</span></div>
+        </div>
+    </div>
+    <div class="mock" style="background:#FFFFFF;border:1px solid #D1D1D1">
+      <div class="mocknav" style="background:#253D5B;border-bottom:1px solid #D1D1D1">
+        <b style="color:#FFFFFF">Sharpee</b>
+        <span style="color:#D8CECA">Chord · Docs · Tutorial · Play</span>
+      </div>
+      <div class="mockbody">
+        <h4 style="color:#1B2C41">Parser IF, composed.</h4>
+        <p style="color:#585A6A">Write worlds in Chord, run them anywhere. <a style="color:#833E47">Read the Fernhill tutorial</a>.</p>
+        <code style="background:#E4E4E7;color:#1B2C41">create Tobias · a person, proper · pronouns he</code>
+        <div><button style="background:#253D5B;color:#FFFFFF">Get started</button>
+        <span class="tag" style="background:#EBE0E1;color:#1B2C41">v3.2.0</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="theme" style="background:#121D2C;border:1px solid #41424E">
+    <h3 style="color:#F6F4F4">Dark</h3>
+    <div class="roles">
+      
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#121D2C;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>canvas</b><span>#121D2C · navy·900</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#1B2C41;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>surface</b><span>#1B2C41 · navy·800</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#F6F4F4;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>ink</b><span>#F6F4F4 · taupe·50</span>
+          <span>on canvas: 15.48 AAA</span><span>on surface: 12.92 AAA</span>
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#B8B8B8;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>muted</b><span>#B8B8B8 · gray·300</span>
+          <span>on canvas: 8.55 AAA</span><span>on surface: 7.14 AAA</span>
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#CEA1A7;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>link</b><span>#CEA1A7 · rose·300</span>
+          <span>on canvas: 7.50 AAA</span><span>on surface: 6.26 AA</span>
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#41424E;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>border</b><span>#41424E · slate·700</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#2A2A32;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>wash</b><span>#2A2A32 · slate·800</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#294466;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>codeBg</b><span>#294466 · navy·700</span>
+          
+          </div>
+        </div>
+        <div class="role" style="border-color:#41424E">
+          <div class="chip" style="background:#BD757E;border:1px solid #41424E"></div>
+          <div class="swl" style="color:#F6F4F4"><b>button</b><span>#BD757E · rose·400</span>
+          
+          <span>label: 4.85 AA</span></div>
+        </div>
+    </div>
+    <div class="mock" style="background:#1B2C41;border:1px solid #41424E">
+      <div class="mocknav" style="background:#1B2C41;border-bottom:1px solid #41424E">
+        <b style="color:#F6F4F4">Sharpee</b>
+        <span style="color:#B8B8B8">Chord · Docs · Tutorial · Play</span>
+      </div>
+      <div class="mockbody">
+        <h4 style="color:#F6F4F4">Parser IF, composed.</h4>
+        <p style="color:#B8B8B8">Write worlds in Chord, run them anywhere. <a style="color:#CEA1A7">Read the Fernhill tutorial</a>.</p>
+        <code style="background:#294466;color:#F6F4F4">create Tobias · a person, proper · pronouns he</code>
+        <div><button style="background:#BD757E;color:#121D2C">Get started</button>
+        <span class="tag" style="background:#2A2A32;color:#F6F4F4">v3.2.0</span></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="foot">Roles: canvas/surface/ink/muted/link/border/wash/codeBg/button. Navy = brand &amp; structure, rose = accent &amp; action, slate = secondary voice, taupe = warm ground, gray = chrome. Generated by docs/design/generate-sharpee-design.mjs — edit mappings there and re-run.</div>
+</body></html>

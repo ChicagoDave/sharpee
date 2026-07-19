@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "./palette.css";
+
+/*
+ * Theme wiring: palette.css is GENERATED (docs/design/generate-sharpee-design.mjs
+ * in the repo root) and owns every color value — ramps (--sh-<name>-<step>) and
+ * semantic roles (--sh-canvas/-surface/-ink/-muted/-link/-border/-wash/-codeBg/
+ * -button), with dark mode flipping the roles via prefers-color-scheme. This
+ * file only maps those variables into Tailwind theme tokens; never write hex
+ * values here — change the generator and re-run it.
+ */
+@theme inline {
+  --color-canvas: var(--sh-canvas);
+  --color-surface: var(--sh-surface);
+  --color-ink: var(--sh-ink);
+  --color-muted: var(--sh-muted);
+  --color-link: var(--sh-link);
+  --color-border: var(--sh-border);
+  --color-wash: var(--sh-wash);
+  --color-code: var(--sh-codeBg);
+  --color-button: var(--sh-button);
+  --color-button-text: var(--sh-button-text);
+
+  --color-rose-50: var(--sh-rose-50);
+  --color-rose-100: var(--sh-rose-100);
+  --color-rose-200: var(--sh-rose-200);
+  --color-rose-300: var(--sh-rose-300);
+  --color-rose-400: var(--sh-rose-400);
+  --color-rose-500: var(--sh-rose-500);
+  --color-rose-600: var(--sh-rose-600);
+  --color-rose-700: var(--sh-rose-700);
+  --color-rose-800: var(--sh-rose-800);
+  --color-rose-900: var(--sh-rose-900);
+  --color-taupe-50: var(--sh-taupe-50);
+  --color-taupe-100: var(--sh-taupe-100);
+  --color-taupe-200: var(--sh-taupe-200);
+  --color-taupe-300: var(--sh-taupe-300);
+  --color-taupe-400: var(--sh-taupe-400);
+  --color-taupe-500: var(--sh-taupe-500);
+  --color-taupe-600: var(--sh-taupe-600);
+  --color-taupe-700: var(--sh-taupe-700);
+  --color-taupe-800: var(--sh-taupe-800);
+  --color-taupe-900: var(--sh-taupe-900);
+  --color-gray-50: var(--sh-gray-50);
+  --color-gray-100: var(--sh-gray-100);
+  --color-gray-200: var(--sh-gray-200);
+  --color-gray-300: var(--sh-gray-300);
+  --color-gray-400: var(--sh-gray-400);
+  --color-gray-500: var(--sh-gray-500);
+  --color-gray-600: var(--sh-gray-600);
+  --color-gray-700: var(--sh-gray-700);
+  --color-gray-800: var(--sh-gray-800);
+  --color-gray-900: var(--sh-gray-900);
+  --color-slate-50: var(--sh-slate-50);
+  --color-slate-100: var(--sh-slate-100);
+  --color-slate-200: var(--sh-slate-200);
+  --color-slate-300: var(--sh-slate-300);
+  --color-slate-400: var(--sh-slate-400);
+  --color-slate-500: var(--sh-slate-500);
+  --color-slate-600: var(--sh-slate-600);
+  --color-slate-700: var(--sh-slate-700);
+  --color-slate-800: var(--sh-slate-800);
+  --color-slate-900: var(--sh-slate-900);
+  --color-navy-50: var(--sh-navy-50);
+  --color-navy-100: var(--sh-navy-100);
+  --color-navy-200: var(--sh-navy-200);
+  --color-navy-300: var(--sh-navy-300);
+  --color-navy-400: var(--sh-navy-400);
+  --color-navy-500: var(--sh-navy-500);
+  --color-navy-600: var(--sh-navy-600);
+  --color-navy-700: var(--sh-navy-700);
+  --color-navy-800: var(--sh-navy-800);
+  --color-navy-900: var(--sh-navy-900);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--sh-canvas);
+  color: var(--sh-ink);
+  font-family: var(--font-geist-sans), -apple-system, "Segoe UI", sans-serif;
+}

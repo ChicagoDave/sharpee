@@ -1,0 +1,89 @@
+# Session Plan: Fill the new Sharpee website with real content
+
+**Created**: 2026-07-19
+**Overall scope**: The fresh Next.js 16 App Router site (`website/`, npm-managed, outside the pnpm workspace) shipped its WF-B shell (top bar + hierarchical left rail + mobile drawer, no on-page TOC) and 10 placeholder-stub routes this session. This plan replaces every placeholder with real, verified content — Chord getting-started + language + a new grammar reference, the Sharpee platform section, the 8-chapter Fernhill tutorial, a playable-story embedding, and home-page polish — while amending ADR-232 early with the framework/shell/pipeline decisions already made in practice.
+**Bounded contexts touched**: `website/` (Next.js site, npm-only, not in scope for platform packages), documentation sources under `docs/reference/`, `docs/tutorials/fernhill/`, `packages/sharpee/docs/genai-api/`, `packages/devkit` (read-only — CLI behavior verified, not modified), `docs/_archive/site/` (old site, porting reference only).
+**Key domain language**: WF-B shell, DocPage/Placeholder content frame, nav model (`nav.ts`), Chord-first IA (ADR-232), go-live gates (ADR-233), doc-accuracy REAL-PATH verification.
+
+## References consulted
+- `docs/architecture/adrs/adr-232-chord-first-web-presence.md` — DRAFT, 3 open questions (landing-page shape, stdlib-reference placement, restructure timing) still unresolved; this plan works inside its Chord-first IA (Chord section = front door, Platform section present but secondary) and amends the ADR with decisions already made in practice (Next.js 16 App Router, WF-B shell, generated-palette pipeline, Pages teardown executed, no-TOC ruling) — it must NOT silently resolve Q1–Q3, and the amendment needs David's sign-off per the ADR-first workflow.
+- `docs/architecture/adrs/adr-233-chord-go-live-gate.md` — G3 is CONFIRMED SATISFIED with one named deferral: the Fernhill site-nav link is recorded as a deliverable of the ADR-232 rebuild, not of G3 itself. G4 is IN PROGRESS, paused at the publish boundary (David's manual step, `docs/work/chord-go-live/plan.md` Phase 8) — this is the umbrella plan `.current-plan` currently points to, and the reason this workstream must record its return there at closure rather than leaving the pointer here indefinitely.
+- `docs/architecture/adrs/adr-191-play-it-now-browser-playground.md` — PROPOSED, ruled OUT of the go-live gate (post-launch, its own open questions); it describes a dual-mode, Chord-default, in-browser-compiler playground. This plan's Play section is a *different, narrower* thing — embedding already-built self-contained browser clients (`./repokit build <story> --browser`) as static assets. Do not conflate the two; ADR-191 stays untouched.
+- `docs/context/project-profile.md` — stale on exactly this point: it lists `website/` as an Astro site. It is now the fresh Next.js 16 App Router scaffold this plan fills; treat the profile's `website/` line as superseded by the state recorded here, not authoritative.
+- `docs/context/session-20260719-0200-chord-foundations.md` (most recent, session b381db) — records the old `website/`, `site/`, `web-save/` trees archived to `docs/_archive/` (commit 8693f54e, same session as the fresh Next.js scaffold) and G4 IN PROGRESS at the publish boundary with version-bump churn left uncommitted pending David's call — the reason this content workstream runs now, in parallel, without touching G4 or the version-bump state.
+- No `docs/ddd/notation.yaml` and no `docs/proposals/` directory exist — plain technical framing throughout (no DDD decomposition, no proposal items to plan from).
+
+## Phases
+
+### Phase 1: Content pipeline decision + ADR-232 amendment
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: `website/` build pipeline and shared content primitives (extending `website/src/components/doc-page.tsx`); ADR-232 (DRAFT) as the durable record of decisions already made.
+- **Entry state**: Next.js 16 scaffold with WF-B shell (`site-shell.tsx`, `doc-page.tsx`, `nav.ts`) and 10 placeholder-stub pages exists; no content-authoring pipeline has been chosen; ADR-232 is DRAFT with 3 open questions and an Owner-plan section that predates the actual Next.js pick.
+- **Deliverable**:
+  1. Read `website/node_modules/next/dist/docs/01-app/02-guides/mdx.md` and `.../mdx-components.md` (this Next version's own docs, per `website/AGENTS.md`'s warning that conventions may differ from training data) and decide: `@next/mdx` (compile `.mdx` route files) vs. hand-authored `.tsx` pages built from shared prose primitives (the current pattern — pages already import `DocPage`/`Placeholder`). Pin the decision with a one-paragraph rationale in this plan's phase notes.
+  2. Add the shared content primitives the decision requires (e.g., `<Prose>`, `<CodeBlock>`, `<Callout>` alongside the existing `DocPage`/`Placeholder` in `website/src/components/doc-page.tsx` or a sibling file) — the building blocks every later phase's real content uses, so they exist before content is written, not invented ad hoc per page.
+  3. Amend ADR-232 (stays DRAFT — do not flip to ACCEPTED; Q1–Q3 remain open) recording what is now fact rather than plan: Next.js 16 App Router chosen (supersedes the Owner-plan's "React or similar" placeholder text), WF-B shell shipped, the generated-palette pipeline (`docs/design/generate-sharpee-design.mjs` → `palette.css`, colors never hand-edited) shipped, GitHub Pages teardown executed (old `website/`/`site/`/`web-save/` archived to `docs/_archive/`, commit 8693f54e), and the no-on-page-TOC ruling (headings carry structure, per `doc-page.tsx`'s own header comment). Present the amendment to David for sign-off — do not treat silence as approval.
+- **Exit state**: A pinned content-pipeline decision; shared prose/code-sample primitives exist in `website/src/components/`; ADR-232 carries an amendment reflecting current reality, sent to David for review, with Q1–Q3 still explicitly open (not resolved by this plan).
+- **Status**: CURRENT
+
+### Phase 2: Chord section — getting started, language guide, grammar reference
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: The Chord section of `nav.ts` (getting-started: install/first-story/compose-and-run; language: people/doors-and-regions/topics) plus a new grammar-reference page; Chord is the site's front door per ADR-232.
+- **Entry state**: Phase 1's pipeline and primitives exist. The 6 existing Chord stub routes still render `Placeholder` blocks.
+- **Deliverable**:
+  - **Getting started (3 pages)**: content grounded in the *actual current* CLI surface (`packages/devkit/src/cli.ts`, the shipped ADR-233 G2 pipeline per `docs/work/chord-author-pipeline/plan.md`) — NOT `packages/devkit/README.md`, which is stale (missing `sharpee test`/`play`, missing the Chord-first `init` default with `--ts` opt-out). Run `sharpee init`, `sharpee build --browser`, `sharpee test`, `sharpee play` live before publishing any command sample or output text, per the doc-accuracy REAL-PATH precedent the Fernhill tutorial workstream established (ADR-233 G3 closure).
+  - **Language guide (3 pages)**: people & pronouns (ADR-242 — `proper` trait, `define pronouns … end pronouns` block), doors & regions (ADR-234/236/237/238), topics (ADR-239 — `define topics for <entity> … end topics`). Source from the ADRs and the relevant sections of `docs/reference/chord-grammar.md`; cross-check against the Fernhill tutorial chapters that already narrate these constructs (`docs/tutorials/fernhill/people.md`, `world.md`, `time.md`) rather than re-deriving from scratch.
+  - **New grammar-reference page**: `docs/reference/chord-grammar.md` + `docs/reference/chord.ebnf` have no nav slot yet. Add a "Reference" group under the Chord section in `nav.ts` with one new route. Render a curated, readable subset of the grammar (not a raw EBNF wall of text); link or make the full `.ebnf` downloadable for the reader who wants it.
+  - **Old-site porting**: `docs/_archive/site/chord.html` and `chord-reference.html` are porting/reference material only — anything ported must be re-verified against current behavior (there is a falsified-doc-claims history in this project), never copied blind.
+- **Exit state**: All 6 existing Chord stub pages have real, command-verified content; one new grammar-reference route exists, wired into `nav.ts` and deriving correct breadcrumbs.
+- **Status**: PENDING
+- **Verification**: `npm run build` green + `docs/design/wireframes/shoot-site.mjs` screenshot pass.
+
+### Phase 3: Sharpee section + Learn (Fernhill import)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: The Sharpee/Platform section of `nav.ts` (2 stub pages: Platform Overview, Actions & traits Overview) and the Learn section's Fernhill tutorial (currently 1 nav entry, 8 source chapters).
+- **Entry state**: Phase 1's primitives exist. Independent of Phase 2's specific page content (both sections read from `nav.ts` and the shared primitives, not from each other) — may run in parallel with Phase 2 if preferred, though sequencing after Phase 2 keeps nav diffs reviewable one section at a time.
+- **Deliverable**:
+  - **Sharpee > Platform Overview**: sourced from `docs/reference/core-concepts.md` + `docs/reference/phrase-algebra-primer.md`, framed for a reader who already knows Chord (per ADR-232's Chord-first ordering) and is now looking under the hood at the platform.
+  - **Sharpee > Actions & traits Overview**: decide the `packages/sharpee/docs/genai-api/` handling — link out to the auto-generated reference plus a curated summary/index of action categories, rather than importing the generated content wholesale (it regenerates elsewhere and would drift). Record this as an explicit judgment call, not a silent scope choice.
+  - **devkit author-guide scope check**: no standalone author-guide doc was found beyond the stale `packages/devkit/README.md` (already flagged in Phase 2). `nav.ts` has no TS-track getting-started entry today. Do not silently add one — flag to David whether the Sharpee section needs its own TS getting-started page, or whether Chord-first positioning means it's deliberately deferred (ADR-233 G3 shipped the Chord track as the launch tutorial; the TS track was not in scope there either).
+  - **Learn > Fernhill**: import all 8 chapters (`docs/tutorials/fernhill/{index,people,things,world,time,state,browser,endings}.md`). `nav.ts` currently has ONE entry ("Fernhill tutorial" → `/learn/fernhill`) for what is 8 chapters of source material — extend `nav.ts` with a Learn > Fernhill group of 8 chapter routes (mirroring the Chord getting-started/language pattern already established), rather than one long page. This is a nav-growth decision this phase makes and records.
+  - **Doc-accuracy note**: the Fernhill chapters were already doc-accuracy REAL-PATH verified against the finished story at ADR-233 G3 closure — importing them is a content move, not a from-scratch re-verification. Still, re-diff any embedded command sample against today's `sharpee init`/`build --browser` output, since the CLI's Chord-first default shipped in the same G2 workstream and command output can drift between sessions.
+- **Exit state**: Both Sharpee stub pages have real content with the genai-api and author-guide scope decisions explicitly recorded; Fernhill's 8 chapters live under `/learn/fernhill/*` with `nav.ts` extended and breadcrumbs deriving correctly.
+- **Status**: PENDING
+- **Verification**: `npm run build` green + `shoot-site.mjs` screenshot pass.
+
+### Phase 4: Play section + home polish + closure
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: The Play route (`/play`), the home page (`website/src/app/page.tsx`), and plan closure (returning the `.current-plan` pointer).
+- **Entry state**: Phases 2–3 content in place (home-page copy should reflect the finished Chord-first section, not placeholders).
+- **Deliverable**:
+  - **Play section**: embed self-contained browser clients built by `./repokit build <story> --browser` (output at `dist/web/<story>/`). `website/public/web/` is already `.gitignore`d — a pre-existing carve-out confirming the intended approach: sync a built browser client's static output into `website/public/web/<story>/` and serve it (iframe or direct link) from `/play`. Start with Fernhill (the launch tutorial story) as the first playable entry. This is static-asset embedding — explicitly distinct from the ADR-191 in-browser-compiler playground, which stays out of scope (see References consulted).
+  - **Home-page polish**: hero copy and first-click reflecting ADR-232's Chord-first decision (Chord content is the front door; Platform section present, linked, never the landing focus) per the Owner-plan direction already ruled in ADR-232.
+  - ~~Closure~~ (moved to Phase 5 — David ruled ADR-191 IN scope, 2026-07-19).
+- **Exit state**: `/play` serves at least one real, playable story; the home page has real content, not placeholders.
+- **Status**: PENDING
+- **Verification**: `npm run build` green + `shoot-site.mjs` screenshot pass.
+
+### Phase 5: "Play It Now" playground — ADR-191 Phase 1 (Chord mode) + closure
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: A playground route on the new site implementing ADR-191's Phase 1 MVP (Chord mode): editor pane → in-browser chord compile → play in the standard browser client. Added by David's ruling (2026-07-19): ADR-191 is IN scope for this workstream, superseding the earlier deferral.
+- **Entry state**: **ADR-191 ACCEPTED** — it is PROPOSED with 4 open questions and site-reality drift (it targets the old static `site/play.html` + Pages chrome; the site is now the Next.js app on David's server). Before implementation: amend for the new site reality, run the open-questions interview with David, flip to ACCEPTED. Evidence available to the interview: the primary technical risk (browser-clean chord compiler + story-loader path) is validated shipped reality — the G2 devkit `--browser` build compiles `.story` source at boot in real Chromium (clean-machine proof, ADR-233 G2); Q2 (esbuild-wasm cold start) is Mode-B-only and can be deferred with that later phase.
+- **Deliverable** (per the ADR's Phase 1 scope, adapted to the Next site): `/play` grows the playground (or a sibling route, per the interview's ruling): CodeMirror-or-Monaco editor (Q3 ruling) with a Chord highlighting mode sourced from `catalog.ts`'s closed sets; seeded runnable starter; **Play** = chord compile (parse → analyze → IR) + story-loader + `@sharpee/platform-browser` in a sandboxed iframe; diagnostics with spans in an errors area; **Reset**; platform-version display (plain `X.Y.Z` — no `-beta`); example picker seeded from the phrasebook fixtures (`docs/work/stdlib-phrasebook/fixtures/*.story`). Platform-bundle hosting per the Q4 ruling (likely `website/public/playground/v<version>/` produced from the `--browser` pipeline). AC-1..AC-8 are the gate; Mode B (TS tab), Monaco IntelliSense, shareable URLs stay later-phase per the ADR.
+- **Closure** (moved from Phase 4): repoint `docs/context/.current-plan` back to `docs/work/chord-go-live/plan.md` (G4 remains IN PROGRESS at the publish boundary, David's manual step). This plan file stays in place as the durable record.
+- **Exit state**: ADR-191 AC-1..AC-8 green on the new site; `.current-plan` returned to the umbrella.
+- **Status**: PENDING
+- **Verification**: `npm run build` green + `shoot-site.mjs` full-site screenshot pass (closing pass) + a REAL-PATH playground proof in the g2/g3 pattern (Chromium drives the editor: paste fixture → Play → assert rendered turns; AC-4's fixture verbatim).
+
+## Deferrals
+- **Deployment to David's Linux server is explicitly OUT of scope** for this plan (his infrastructure) — a named deferral, not silently dropped. Revisit when he rules on it.
+- ~~The ADR-191 in-browser-compiler playground~~ **RULED IN SCOPE (David, 2026-07-19)** — now Phase 5, gated on ADR-191's amendment + interview + acceptance. Only ADR-191's Mode B (TS tab) and later-phase items stay deferred, per the ADR's own phasing.
+- **ADR-232's Q1–Q3** (landing-page shape, stdlib-reference placement, restructure timing) are not resolved by this plan — Phase 1's amendment records facts already true, not answers to those questions.
+
+## Pointer discipline
+`docs/context/.current-plan` is repointed to this plan (`docs/work/website-content/plan.md`) for the duration of this workstream, mirroring the regions/extension-surface/topics/tutorial handoffs recorded in `docs/work/chord-go-live/plan.md`. **It must return to `docs/work/chord-go-live/plan.md` when Phase 4 closes** — that umbrella's G4 is IN PROGRESS, paused at the publish boundary (David's manual step), and waiting for this website workstream to finish rather than being abandoned.

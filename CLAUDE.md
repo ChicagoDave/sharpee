@@ -112,7 +112,7 @@ Use `./repokit build` (it orchestrates; tsf compiles) instead of manual `pnpm bu
 - `tools/zifmia/dist/` — zifmia multi-user server (`--zifmia`)
 
 **Version System**:
-- Versions use format `X.Y.Z-beta` (no timestamp)
+- Versions use plain `X.Y.Z` — no `-beta` suffix, no timestamp (the npm `beta` DIST-TAG is separate from the version string)
 - Version stamping runs FIRST, before any compilation
 
 **IMPORTANT**:

@@ -11,6 +11,10 @@ build/
 lib/
 out/
 
+# website/src/lib is app source (nav config), not a build artifact — carve out
+# from the blanket lib/ rule above.
+!website/src/lib/
+
 # The Sharpee Book — parked multi-page web build (scripts/build-book.sh <version> web)
 docs/book/*/web/
 
