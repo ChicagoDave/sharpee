@@ -33,6 +33,9 @@
 - `/play` iframe embed REAL-PATH proven (story compiled in-iframe, Iron Gates rendered, then screenshot). Home page real per the both-products ruling (Chord-first click, 4 cards, v3.2.0 badge). Pager "Overview" items now labeled by group title.
 - Build green (23 routes); home light/dark + play + pager shots reviewed.
 
+## Key decisions (additions)
+- **[ADR-243](../architecture/adrs/adr-243-chord-story-person.md) written (DRAFT, 4 open questions)** — Chord story person (1st/2nd/3rd narration). Raised by David mid-session; ADR-worthiness confirmed. Platform seam already half-exists (NounPhrase.person, Assembler agreement); open: spelling, message-row migration, third-person player identity, tense scope. Capture only — no implementation.
+
 ## Content-wave rulings (David, this session — four AskUserQuestion answers)
 - **ADR-232 Q-2 RESOLVED: stdlib reference lives Chord-side** ("Chord Standard Library reference", paused plan's framing stands, retargeted to the Next site). ADR status line updated (2 open questions remain).
 - **Chord Author Guide = chord-language.md imported/adapted** (currency sweep vs post-07-14 ratchets required, samples re-verified).
@@ -44,4 +47,13 @@
 - Fix: explicit `indent === 0` guard in the loop — one `parse.phrase-text-indent` diagnostic for the first flush-left line, the run consumed, `end phrase` still terminates. Both prose and verbatim paths covered.
 - Tests: 3 new in `packages/chord/tests/parser.test.ts` (one-diagnostic + block-terminates + later-decls-parse; verbatim; indented-unchanged). chord 389/389 green. E2E: the repro now yields `repro.story:5:1 error [parse.phrase-text-indent]`, exit 1, instant. Grammar doc prose-block section notes the diagnostic.
 
-## Status: IN PROGRESS — Phases 1–4 DONE (of 9 after restructure); parser OOM FIXED. Next: Phase 5 (Author Guide import) on David's go. Tree uncommitted (website + ADR + plan + parser fix). Remaining open: TS-getting-started scope (subsumed into book-3.2 child plan unless David wants it sooner).
+## Phases 5+6 (Author Guide + Phrasebook) — DONE same session
+- **Phase 5**: chord-language.md currency-swept to 3.2 (3 stale fixtures fixed — R3 ×2 + ADR-235 hatch; 5 new fixtures for doors/regions/proper-pronouns/topics/use; 50/50 gate-clean; new §2.12–2.14/§3.9/§5.9–5.10; status → CURRENT at 3.2). Imported as 6 chapters under `/chord/guide/*`; appendix replaced by a grammar-reference pointer (decision recorded).
+- **Phase 6**: stdlib-phrasebook.md re-verified at 3.2 by its RUNTIME harness (3 R3 fixtures fixed; 17 fences verbatim, 68 commands replayed); two prose `with key/tool <entity>` remnants caught by screenshot review, swept doc+site. Imported as Overview + 8 pages under `/chord/phrasebook/*`. Site 38 routes green.
+- **Finding (David to rule, NOT touched)**: `stories/friendly-zoo` fails the workspace build — `src/characters.ts` uses `isAlive` which no longer exists on `INpcData` (pre-existing platform drift; surfaced when a wrong-cwd npm build ran the root turbo build).
+
+## ADR-243 interview + review (same session)
+- **All four questions RESOLVED via /devarch:adr-interview** (David's rulings): Q-1 spelling = `narration: first person` (phrase field, closed set, tense room reserved); Q-2 = marker realization (`{You}`, 382 rows) + bounded sweep of 124 literal lines/9 files; Q-3 = third person REQUIRES declared player identity (compile error otherwise; `pronouns it` explicit escape; input stays imperative); Q-4 = tense OUT, room reserved for its own ADR.
+- **adr-review run**: 13/14 → three fixes applied (stale Q-3 text, Decision heading, AC-1..AC-7 added) → **14/14 READY FOR IMPLEMENTATION**. Status: **DRAFT — David has NOT flipped to ACCEPTED** (flip question outstanding at finalize time). Implementation not started (platform change; separate go-ahead required).
+
+## Status: IN PROGRESS — website plan Phases 1–6 DONE (of 9); parser OOM FIXED (in d0cc4807); this finalize commits Phases 5–6 + ADR-243. Next: Phase 7 (stdlib reference child plan) on David's go; ADR-243 ACCEPTED flip + implementation go-ahead outstanding. Open: friendly-zoo isAlive build break (David to rule); TS-getting-started scope (subsumed into book-3.2).

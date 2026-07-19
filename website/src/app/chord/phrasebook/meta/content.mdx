@@ -1,0 +1,18 @@
+Free with every story; no traits, no interceptors, no worked examples
+needed. Full entries: `stdlib-reference.md` §10.
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **inventory** | `inventory` · `inv` · `i` | — | — |
+| **wait** | `wait` · `z` | — | — |
+| **sleep** | `sleep` · `nap` · `doze` · `rest` · `slumber` | — | — |
+| **score** | `score` · `points` | — | `no_scoring` |
+| **help** | `help` · `?` · `commands` | — | — |
+| **about** | `about` · `info` · `credits` | — | — |
+| **version** | `version` | — | — |
+| **save** | `save` · `save game` | a client save hook | `save_not_allowed`, `save_in_progress` |
+| **restore** | `restore` · `load` · `load game` · `restore game` | a client restore hook | `restore_not_allowed`, `no_saves` |
+| **restart** | `restart` | — | — |
+| **quit** | `quit` · `q` · `exit game` | — | — |
+| **undo** | `undo` | a prior substantive turn | `nothing_to_undo`, `undo_failed` |
+| **again** | `again` · `g` | a repeatable last command | `nothing_to_repeat` |

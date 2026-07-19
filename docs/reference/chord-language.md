@@ -4,12 +4,15 @@ A writer-facing reference for Chord, Sharpee's story language (`.story`
 files), covering every construct in plain language with a working,
 compile-checked example. Companion to the formal grammar
 (`chord-grammar.md`, `chord.ebnf`); where they disagree, the grammar and the
-parser win. Chord v1 (locked 2026-07-14) ships with Sharpee 3.0.
+parser win.
 
-> **Status: DRAFT** — §1–§6 are written; every example is backed by a
-> fixture verified with `verify-examples.mjs` against `@sharpee/chord`. A
-> full verification sweep and site render remain (`docs/work/chord-language-reference/`
-> plan, Phases 6–7).
+> **Status: CURRENT at Sharpee 3.2** — every example is backed by a
+> fixture verified with `verify-examples.mjs` against `@sharpee/chord`
+> (50/50, 2026-07-19). Currency sweep 2026-07-19 folded the post-lock
+> ratchets: R3 capability settings (`lockable with the <key>`), the
+> ADR-235 behavior-hatch removal, doors (§2.12), regions (§2.13), person
+> identity (§2.14, §5.9), topics (§3.9), and the `use` extension surface
+> (§5.10). This document is the site's Chord Author Guide (ADR-232).
 
 ## 1. Reading a .story file
 
@@ -138,13 +141,17 @@ create the workbench
 
 `with` attaches settings. The last token of each setting is its value
 and the words before it are the key (`capacity 3`); several settings
-join with `and`. When a value is an entity name, the article marks where
-the name starts (`lockable with key the staff keycard`).
+join with `and`. When a keyed value is an entity name, the article marks
+where the name starts (`feedable with food the handful of feed` — the
+keyword names an authored trait's data field). The built-in capability
+adjectives take their entity *directly* after `with`, no keyword:
+`lockable with the staff keycard` (ratchet R3, 2026-07-18 — the old
+`key`/`tool` keywords are load errors with fix-its).
 
 Two trait adjectives carry a contract along with their data: `cuttable`
-and `diggable`. Each takes an optional tool setting (`cuttable with tool
-the rusty knife`) naming the implement the player must be holding; with
-no tool named, any attempt reaches the entity. What the cut or dig
+and `diggable`. Each takes an optional implement named directly after
+`with` (`cuttable with the rusty knife`) that the player must be
+holding; with no implement named, any attempt reaches the entity. What the cut or dig
 actually *does* is never platform policy: a cuttable entity must carry
 exactly one implementation — an `on cutting it` clause (§3), its own or
 from a composed trait — and the story fails to load with none, or with
@@ -154,7 +161,7 @@ two. The same rule binds `diggable` to `on digging it`.
 ```story
 create the straw bale
   aka bale, twine
-  cuttable with tool the rusty knife
+  cuttable with the rusty knife
   in the Potting Shed
   states: bound, loose
 
@@ -436,7 +443,7 @@ trait's initial value.
 <!-- fixture: world/starts-state.story -->
 ```story
 create the safe
-  a container, openable, lockable with key the brass key, starts locked
+  a container, openable, lockable with the brass key, starts locked
   in the Back Office
 
   A squat floor safe with a brass keyhole.
@@ -469,6 +476,80 @@ line reproducing one of those pairs is still the shadow-state error
 (§6.2's boolean-state gate). `starts` merely chooses the trait's first
 value; from there the
 world moves it the usual ways — keys, hands, and switches.
+
+### 2.12 Doors (2026-07-18, ADR-234/237/238)
+
+A door is its own entity, referenced from an exit line with `through` —
+the exit declares the geometry once and the reverse direction is
+inferred. The door block itself never names its rooms: a door's location
+*is* its room pair.
+
+<!-- fixture: world/doors.story -->
+```story
+create the Hall
+  a room
+  down to the Cellar through the cellar door
+
+create the cellar door
+  a door, lockable with the tarnished key
+  aka grey door
+
+  A grey door, locked as long as anyone can remember.
+```
+
+Defaults follow IF convention: `a door` starts closed (`starts open`
+overrides); `lockable` on a door starts locked, with the key named right
+on the adjective; a permanently open passage needs no door entity at
+all. With that one declaration OPEN, CLOSE, LOCK, and UNLOCK work and
+the door is visible from both sides. Full rules (mirrored far-room
+lines, the diagnostics): chord-grammar.md "Doors".
+
+### 2.13 Regions (2026-07-18, ADR-236)
+
+A region groups rooms and owns behavior for all of them: `containing`
+lists members (additive across lines; regions nest), an `on every turn`
+clause is a region daemon firing only while the player is in a member
+room, and `after entering it` / `after leaving it` bind to boundary
+crossings in either direction. `leaving` exists only on region blocks.
+
+<!-- fixture: world/regions.story -->
+```story
+create the Grounds
+  a region
+  containing the Drive, the Hall
+
+  on every turn while one chance in 6
+    phrase night-wind
+  end on
+
+  after entering it
+    phrase cold-returns
+  end after
+
+  after leaving it
+    phrase out-of-the-wind
+  end after
+```
+
+### 2.14 People: proper names and pronouns (2026-07-19, ADR-242)
+
+`proper` (person-only, unconditional) renders a person as a bare name —
+"You can see Tobias here." The create-line article is never read for
+identity: `create the zookeeper` and `create a zookeeper` load
+identically; if a person is proper-named, say so. A `pronouns` line
+names the narration's pronoun set — one of `he`, `she`, `it`, `they`,
+or a `define pronouns` set name (§5.9). Absent means absent: without
+the line, a person renders by number ("it"/"they") — nothing is
+inferred from a name.
+
+<!-- fixture: world/proper-pronouns.story -->
+```story
+create Tobias
+  aka groundskeeper
+  a person, proper
+  pronouns he
+  in the Gatehouse
+```
 
 ## 3. Giving things behavior
 
@@ -779,6 +860,29 @@ statement conditional without any block structure; several examples
 above use it. `set` and bare `refuse` do not take the suffix. Do not
 confuse it with the `when <value>` arm header inside `select on`
 (§4.1): same word, different position, different job.
+
+### 3.9 Topic tables (2026-07-18, ADR-239)
+
+Conversation is a declared table per person — one `define topics for
+<person> … end topics` block serving both ASK and TELL. Entity rows
+(`about the silver locket:`) resolve like any noun and are checked
+first; quoted rows declare a topic plus comma-separated aliases, matched
+by normalized whole-topic equality — a lookup, never a fuzzy guess. A
+row's body is ordinary statements (`it` binds the owner), so a
+conversation can change state anywhere in the world. A miss falls to
+the owner's plain `on asking it` catch-all if it has one; on a hit the
+row fully owns the response. Overlaps are compile errors, never runtime
+tie-breaks.
+
+<!-- fixture: behavior/topics.story -->
+```story
+define topics for tobias
+  about the silver locket: phrase tobias-locket-reply
+  about "the folly", "the fire":
+    change it to shaken
+    phrase tobias-folly-reply
+end topics
+```
 
 ## 4. Branching, iteration, and progression
 
@@ -1444,21 +1548,23 @@ every hatch example here is verified; the TypeScript stub is
 illustrative, checked by the author's toolchain, not by this document's
 harness.
 
-### 5.6 define action/behavior hatches
+### 5.6 define action hatches
 
-Text is one hatch kind; the other two bridge to whole actions and
-capability behaviors, for logic genuinely outside the language. The
-syntax mirrors the text hatch exactly:
+Text is one hatch kind; the other bridges to whole actions, for logic
+genuinely outside the language. The syntax mirrors the text hatch
+exactly:
 
 <!-- fixture: define/hatches.story -->
 ```story
 define action dowsing from "./extras.ts"
-define behavior tide-clock from "./extras.ts"
 ```
 
 `define action … from` binds an action implementing the platform's
-`Action` interface; `define behavior … from` binds a `CapabilityBehavior`
-(ADR-090). Both are governed by the hatch legitimacy rule (design.md
+`Action` interface. (A third hatch kind, `define behavior … from`, was
+removed — ADR-235 D2: it had no binding key and could never fire; author
+the behavior in-language with `define trait` and `on <verb> it` clauses,
+or ship a full action hatch.) Action hatches are governed by the hatch
+legitimacy rule (design.md
 §5.6): a hatch is legitimate only when it implements a public platform
 interface, or does pure non-IF computation, with data crossing the
 boundary through that interface. If the language can already express what
@@ -1588,6 +1694,52 @@ clause is how a *particular kind of thing* responds to that verb.
 Together they are the story-author's version of stdlib's action-plus-
 behavior pattern — the goats above are pettable because `petting` exists
 as an action and something makes the goats respond to it.
+
+### 5.9 define pronouns (2026-07-19, ADR-242)
+
+For pronouns beyond the standard four sets, declare a named set —
+exactly five rows (`subject`, `object`, `possessive`,
+`possessive-pronoun`, `reflexive`), order free — and name it from a
+person's `pronouns` line (§2.14). Missing or duplicate rows, shadowing
+a standard set, and redefinition are all compile errors.
+
+<!-- fixture: world/proper-pronouns.story -->
+```story
+define pronouns ze
+  subject ze
+  object zir
+  possessive zir
+  possessive-pronoun zirs
+  reflexive zirself
+end pronouns
+```
+
+### 5.10 use: platform extensions (2026-07-18, ADR-215/216/241)
+
+A `use <extension>` line in the story header admits one trusted platform
+extension's vocabulary — `combat`, `state-machines` — and triggers its
+runtime registration; a `use`-only story stays pure IR. (NPC vocabulary
+is core and always on.) Each extension brings manifest-typed trait
+adjectives (`combatant with health 20 and skill 40`, the NPC library's
+`guard`/`patrol`/…), and `use state-machines` adds the `define machine …
+end machine` block. Alongside these, the media surface — `define
+sound/image/music … from "<file>"`, `play sound`, `play ambient`, `show
+image`, `define channel` data projections, and the `client has
+<capability>` condition — lets a story drive the browser client with no
+story TypeScript; text-only clients degrade cleanly. The full catalog of
+forms lives in chord-grammar.md "Extension surface".
+
+<!-- fixture: define/use-extensions.story -->
+```story
+story "Extensions" by "ref"
+  id: ext-ref
+  version: 0.0.1
+  use combat
+
+create the sentry
+  a person, combatant with health 20 and skill 40
+  in the Guardhouse
+```
 
 ## 6. Tooling
 

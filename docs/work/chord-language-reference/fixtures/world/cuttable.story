@@ -15,7 +15,7 @@ create the rusty knife
 
 create the straw bale
   aka bale, twine
-  cuttable with tool the rusty knife
+  cuttable with the rusty knife
   in the Potting Shed
   states: bound, loose
 

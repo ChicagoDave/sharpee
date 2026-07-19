@@ -1,0 +1,210 @@
+The people a story writes, and the rougher interactions. Full entries:
+`stdlib-reference.md` §8 (throwing: §2.5).
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **talk** | `talk to`/`with X` · `speak to`/`with X` · `chat with X` · `converse with X` | a person (checked in validate, not the parser) | `not_actor`, `too_far`, `self`, `not_available` |
+| **ask** | `ask X about Y` · `question X about Y` · `inquire of X about Y` | a person; the topic is free text (never scope-checked) | `not_actor`, `too_far`, `not_visible` (`unknown_topic` as the default reply) |
+| **tell** | `tell X about Y` · `inform X about Y` | a person; topic as above | `not_actor`, `too_far`, `not_visible` (`not_interested` as the default reply) |
+| **give** | `give`/`hand X to Y` · `give`/`hand Y X` · `offer X to Y` | recipient: `a person` | `not_actor`, `self`, `not_interested`, `inventory_full`, `too_heavy` |
+| **show** | `show X to Y` · `show Y X` · `display`/`present X to Y` | recipient: `a person`, same room | `not_actor`, `self`, `viewer_too_far`, `not_carrying` |
+| **attack** | `attack`/`kill`/`fight`/`slay`/`murder`/`hit`/`strike`/`break`/`smash`/`destroy X` · `attack`/`kill`/`hit`/`strike X with`/`using Y` | anything (combat needs `combatant` + an interceptor) | `self`, `not_reachable`, `not_holding_weapon` |
+| **throw** | `throw`/`toss`/`hurl X at Y` · `throw`/`toss`/`hurl X to Y` | a visible target in the room | `self`, `too_heavy`, `target_not_here`, `not_holding` |
+
+## giving and showing
+
+Giving moves the item; showing is purely social. The recipient must be a
+person — hand something to the furniture and the action tells you so.
+The default NPC accepts anything; richer reactions are `on giving it` /
+`on showing it` clauses on the item or the recipient.
+
+The author writes:
+
+```chord
+create the Gatehouse
+  a room
+
+  A stone arch, a brazier, and one unimpressed sentry.
+
+create the sentry
+  aka guard
+  a person
+  in the Gatehouse
+
+  A sentry in a rain-dark cloak, eyes on the road.
+
+create the brazier
+  scenery
+  in the Gatehouse
+
+  An iron brazier, down to embers.
+
+create the silver medallion
+  aka medallion
+
+  A silver medallion stamped with the garrison's crest.
+
+create the player
+  starts in the Gatehouse
+  carries the silver medallion
+```
+
+The player sees:
+
+```text
+> give the medallion to the brazier
+You can only give things to people.
+
+> show the medallion to the sentry
+You show the silver medallion to the sentry.
+
+> give the medallion to the sentry
+You give the silver medallion to the sentry.
+```
+
+## asking and telling
+
+Deliberately minimal (ADR-230): the platform validates the social
+preconditions and reports an interceptable default — asking's
+`unknown_topic`, telling's `not_interested`. An `on asking it` clause on
+the person is where real dialogue hooks in; the topic slot is free text,
+resolved entity-first (ADR-231): a topic naming something in scope
+carries that entity along, and anything else — `ask the hermit about
+the weather` — flows through as plain text. A topic is never
+scope-rejected.
+
+The author writes:
+
+```chord
+create the Hermitage
+  a room
+
+  A driftwood hut above the tide line.
+
+create the hermit
+  a person
+  in the Hermitage
+
+  A weathered hermit mending a net.
+
+  on asking it
+    phrase hermit-answers
+  end on
+
+create the gull
+  aka seagull
+  a person
+  in the Hermitage
+
+  A herring gull with an air of officialdom.
+
+create the player
+  starts in the Hermitage
+
+define phrases en-US
+  hermit-answers:
+    The hermit squints seaward. "Weather's turning. It always is."
+```
+
+The player sees:
+
+```text
+> ask the gull about the hermit
+The gull says, "I don't know anything about that."
+
+> ask the hermit about the gull
+The hermit squints seaward. "Weather's turning. It always is."
+
+> tell the gull about the hermit
+The gull doesn't seem interested.
+```
+
+## attacking
+
+Real combat is the `combatant` trait plus a combat interceptor
+(TypeScript today — `stdlib-reference.md` §8.2). What a `.story` file
+does have is the reaction seam: an `on attacking it` clause whose phrase
+replaces the standard reply.
+
+The author writes:
+
+```chord
+create the Training Yard
+  a room
+
+  Packed dirt and a straw dummy on a post.
+
+create the training dummy
+  aka dummy
+  scenery
+  in the Training Yard
+
+  A straw man on a post, much abused.
+
+  on attacking it
+    phrase dummy-thud
+  end on
+
+create the player
+  starts in the Training Yard
+
+define phrases en-US
+  dummy-thud:
+    You catch the dummy square in the chest. It rocks back on its post,
+    then swings around to face you again, unimproved.
+```
+
+The player sees:
+
+```text
+> attack me
+Violence against yourself isn't the answer.
+
+> hit the training dummy
+You catch the dummy square in the chest. It rocks back on its post, then swings around to face you again, unimproved.
+```
+
+## throwing
+
+The one dice-rolling action in this document — where a thrown thing
+lands is probabilistic by design (and per project policy the dice stay
+live). Thrown at an open container, a hit lands inside; the miss line is
+the other genuine outcome you may see.
+
+The author writes:
+
+```chord
+create the Courtyard
+  a room
+
+  A cobbled courtyard with a rain barrel under the downspout.
+
+create the rain barrel
+  aka barrel
+  a container
+  scenery
+  in the Courtyard
+
+  An open rain barrel, half full.
+
+create the horseshoe
+  in the Courtyard
+
+  A lucky horseshoe. Allegedly.
+
+create the player
+  starts in the Courtyard
+```
+
+The player sees:
+
+```text
+> take the horseshoe
+Taken.
+
+> throw the horseshoe at me
+You can't throw things at yourself.
+
+> throw the horseshoe at the rain barrel
+The horseshoe lands in the rain barrel.
+```

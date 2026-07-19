@@ -9,7 +9,7 @@ create the Strand
 
 create the sandy patch
   aka sand, patch
-  diggable with tool the spade
+  diggable with the spade
   scenery
   in the Strand
 

@@ -48,6 +48,33 @@ export const NAV: NavSection[] = [
         ],
       },
       {
+        title: 'Author guide',
+        open: true,
+        items: [
+          { title: 'Reading a .story file', href: '/chord/guide/reading' },
+          { title: 'Building your world', href: '/chord/guide/world' },
+          { title: 'Giving things behavior', href: '/chord/guide/behavior' },
+          { title: 'Branching & progression', href: '/chord/guide/flow' },
+          { title: 'Vocabulary & text', href: '/chord/guide/vocabulary' },
+          { title: 'Tooling', href: '/chord/guide/tooling' },
+        ],
+      },
+      {
+        title: 'Phrasebook',
+        open: false,
+        items: [
+          { title: 'Overview', href: '/chord/phrasebook' },
+          { title: 'Manipulation', href: '/chord/phrasebook/manipulation' },
+          { title: 'Movement', href: '/chord/phrasebook/movement' },
+          { title: 'Containers & locks', href: '/chord/phrasebook/containers-and-locks' },
+          { title: 'Wearing', href: '/chord/phrasebook/wearing' },
+          { title: 'Senses', href: '/chord/phrasebook/senses' },
+          { title: 'Devices & tools', href: '/chord/phrasebook/devices-and-tools' },
+          { title: 'Social', href: '/chord/phrasebook/social' },
+          { title: 'Meta', href: '/chord/phrasebook/meta' },
+        ],
+      },
+      {
         title: 'Reference',
         open: true,
         items: [{ title: 'Grammar reference', href: '/chord/reference/grammar' }],

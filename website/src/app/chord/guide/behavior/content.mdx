@@ -1,0 +1,328 @@
+## 3.1 on and after
+
+Behavior attaches to its owner as an `on` or `after` clause inside the
+owner's `create` block (or inside a trait,
+[§5.7](/chord/guide/vocabulary)). The two words divide
+one moment: `on` runs before the action commits and may stop it; `after`
+runs once it has happened and reacts.
+
+```chord
+create the hive box
+  aka hive, box
+  scenery, openable
+  in the Apiary
+  states: humming, quiet
+
+  A white wooden hive box, lid held down by a brick.
+
+  on opening it
+    refuse when it is humming: bees-disturbed
+    change it to quiet
+  end on
+
+  after opening it
+    phrase honey-smell
+  end after
+```
+
+The division is enforced: `refuse`, `refuse when`, and `must` are parse
+errors inside an `after` body (`parse.react-refusal`). If a reaction
+wants to stop something, it is not a reaction; move it to `on`. Every
+clause closes with an `end` line matching its opener.
+
+## 3.2 What a clause can bind
+
+Three forms follow `on` or `after`. The common one binds a verb to the
+owner: `on opening it`, where `it` means this entity for the rest of the
+clause. The verb is a single word in its -ing form, and it must be a
+verb the story's actions or the platform's standard actions understand.
+
+The second form listens to a verb aimed at anything, and names the role
+the clause cares about. Roles belong to the action: `taking` has a
+`taker` and an `item`, so a scarecrow can watch every theft in the
+garden. The third form, `every turn`, ticks with the clock rather than
+reacting to an action; it is `on` only, since a turn is not something
+you react to after the fact.
+
+```chord
+create the scarecrow
+  scenery
+  in the Kitchen Garden
+
+  A scarecrow in a donated raincoat.
+
+  on taking anything as the taker
+    phrase scarecrow-stare
+  end on
+
+  on every turn while dusk, once
+    phrase scarecrow-shadow
+  end on
+```
+
+An entity-owned `every turn` clause fires only while the player is
+present with its owner; the scarecrow performs to an audience or not at
+all. Note `while dusk`: a story-level state ([§2.1](/chord/guide/world))
+is referenced as a
+bare word in conditions.
+
+## 3.3 while, once, before, after
+
+Every clause form takes an optional `while <condition>` gate, checked
+each time the clause would fire. After the gate, comma modifiers may
+follow. `, once` limits the clause to a single firing for the whole
+story, as the scarecrow's shadow moment above shows.
+
+`, before <trait>` and `, after <trait>` order clauses when several
+traits answer the same verb on one entity:
+
+```chord
+define trait creaky
+  phrases en-US
+    hinge-creak:
+      The hinges creak horribly.
+
+  on opening it, before alarmed
+    phrase hinge-creak
+  end on
+end trait
+```
+
+A cabinet composed `openable, alarmed, creaky` creaks first, then rings
+its alarm bell, regardless of the order the traits were listed in.
+
+## 3.4 Conditions
+
+Conditions appear after `while`, after `when`, in `refuse when`, and in
+blocked exits. The combinators are `and`, `or`, and `not`, in the usual
+precedence (`not` binds tightest, `or` loosest) with parentheses to
+override; `one chance in N` rolls dice.
+
+```chord
+  on petting it
+    phrase cat-tolerates when it is dozing
+    phrase cat-glare when it is alert and not one chance in 4
+    phrase cat-purr when (it is alert and one chance in 4) or it wears the ribbon
+    change it to alert when it is dozing
+  end on
+```
+
+The predicates test what an author would point at:
+
+```chord
+  on examining it
+    phrase barrow-contents when it holds the apple
+    phrase barrow-visible when the player can see it
+    phrase barrow-in-gate when it is in the Orchard Gate
+    phrase barrow-is-thing when it is a container
+  end on
+```
+
+In full: `is a`/`is an` tests kind or trait, `is in` tests location,
+`is here` tests whether an entity shares the player's location, plain
+`is` compares against a state, a state adjective, or a value, `has`,
+`holds`, and `wears` test possession, and `can see` / `can reach` test
+scope. Every predicate takes `not` after `is`, or `not` in front.
+Subjects and values are written the way you name anything: `it`, `the
+player`, an entity name, `its <field>`, or a possessive like `the
+player's location`. A multi-word name simply runs until the next
+structural word (`is`, `has`, `holds`, `wears`, `can`, `and`, `or`,
+`then`, `to`, `while`, `with`), so name your entities around those.
+
+State words resolve against their subject: `when it is dozing` works
+because the cat declares `dozing`. The closed catalog of platform state
+adjectives (`open`, `closed`, `locked`, `unlocked`, `on`, `off`,
+`worn`, `lit`) reads trait state the same way. An unknown word is a
+load error with a nearest-valid suggestion, not a silent false.
+
+A named condition ([§5.1](/chord/guide/vocabulary)) whose `it` is left
+free is an *open*
+condition: a test any entity might pass. `any` and `no` quantify over
+one:
+
+```chord
+define condition gathered-tomato: it is a tomato and it is in the harvest basket
+define condition vine-tomato: it is a tomato and it is not in the harvest basket
+```
+
+```chord
+  on examining it
+    phrase basket-empty when no gathered-tomato
+    phrase basket-laden when any gathered-tomato
+  end on
+```
+
+Quantifiers demand an open condition; `any` over a closed one (no free
+`it`, like `the story is dusk`) is `analysis.closed-condition-selection`.
+Inside an open condition, keep to predicates the analyzer can check for
+an arbitrary subject: kind, placement, and possession tests. A state
+test on `it` (`it is ripe`) is rejected as an unknown value, because no
+one subject owns the state word there.
+
+## 3.5 Requirements: must
+
+A `must` line states what has to be true for the action to proceed, and
+names the phrase spoken when it is not. The subject opens the line in
+lowercase (`the`, `it`, or `its`), which is how a requirement stays
+distinct from prose. One fixture exercises every form:
+
+```chord
+  on stocking it
+    it must be a tool: not-a-tool
+    it must be any loose-tool: already-racked
+    the player must be in the Potting Bench: too-far-away
+    the player must hold the secateurs: hands-empty
+    the player must see the tool rack: too-dark
+    the player must reach the tool rack: out-of-reach
+    phrase racked
+  end on
+```
+
+`must be a/an` tests kind, `must be in` tests place, `must be any`
+tests membership in an open condition (§3.4), plain `must be` compares
+a state or value, `must have`/`hold`/`wear` test possession, and `must
+see`/`reach` test scope. Requirements are legal in `on` bodies and as
+`define action` lines ([§5.8](/chord/guide/vocabulary)), never in
+`after` bodies.
+
+There is deliberately no `must not`. Requirements are positive;
+prohibitions are refusals, and the two forms sit naturally side by
+side:
+
+```chord
+  on sharpening it
+    it must be dull: already-sharp
+    refuse when the player wears the gardening mittens: mittens-on
+    change it to sharp
+    phrase sharpened
+  end on
+```
+
+Writing `must not …` (or `must be no …`) is a parse error
+(`parse.must-negative`) whose fix-it points at `refuse when`.
+
+## 3.6 Refusals: refuse
+
+`refuse` stops the action and speaks a phrase. The conditional form
+`refuse when <condition>: <key>` refuses only when its condition holds,
+as the mittens line above shows. The bare form refuses always, for
+things that are simply never allowed:
+
+```chord
+  on taking it
+    refuse all-thorns
+  end on
+```
+
+The named key resolves entity-scoped first (ADR-231): a
+`phrase all-thorns:` override in the refusing entity's own `create`
+block ([§2.10](/chord/guide/world)) wins over a story-wide
+`all-thorns`, and a bare key
+renders on standard actions just as it does on story-defined ones. A
+dotted key is legal here too ([§5.2](/chord/guide/vocabulary)).
+
+Refusing on a negated condition (`refuse when not …`) is flagged
+(`analysis.negated-requirement`): that is a requirement in disguise, and
+`must` says it better.
+
+## 3.7 The statements
+
+Ten statements do the story's work. The pumpkin below uses most of
+them:
+
+```chord
+  on measuring it
+    set its tally to 3
+    phrase tape-reading with girth = its tally
+    emit pumpkin-measured
+  end on
+
+  on picking it
+    change it to picked
+    award picked-the-champion, once
+    move it to the Compost Corner when it is picked
+    phrase picked-note
+    win harvest-glory when its tally is 3
+  end on
+```
+
+- **`phrase <key>`** speaks the named text
+  ([§5.2](/chord/guide/vocabulary), [§5.3](/chord/guide/vocabulary)).
+  Dotted keys
+  (`zoo.pa.closing-3`) are legal. `with <name> = <value>` passes a
+  value the phrase can format.
+
+  A phrase used in only one place does not need a separate definition:
+  indent prose directly under the `phrase` line and the text is declared
+  and spoken in one gesture. (A deeper line is read as a statement, not
+  prose, only when it opens with a lowercase statement keyword; prose
+  sentences start capitalized, so the two do not collide.)
+
+  ```chord
+  after entering it
+    phrase apiary-hum
+      The hum reaches you before the gate has even closed.
+  end after
+  ```
+- **`emit <word>`** raises a story event other clauses and the platform
+  can observe.
+- **`set <thing> to <value>`** writes a trait data field
+  ([§5.7](/chord/guide/vocabulary)), like
+  the pumpkin's `tally`.
+- **`change <name> to <state>`** moves an owner along its declared
+  states ([§2.7](/chord/guide/world)); `change the story to <state>`
+  moves the story.
+- **`move <name> to <name>`** relocates an entity.
+- **`remove <name>`** takes an entity out of play, permanently: there
+  is no `to`, nothing to get back, and removing the player is a load
+  error (`analysis.remove-player`).
+- **`award <name>`** grants an owner-scoped score
+  ([§2.8](/chord/guide/world), [§4.5](/chord/guide/flow)); the
+  explicit `, once` is available but dedupe already makes awards
+  idempotent.
+- **`win [<phrase>]`** and **`lose [<phrase>]`** end the story
+  ([§4.6](/chord/guide/flow)),
+  optionally speaking a named phrase on the way out.
+- **`kill the player [<phrase-key>]`** runs the platform's death
+  machinery — not the same thing as `lose`;
+  [§4.7](/chord/guide/flow) owns the difference.
+
+```chord
+  on emptying it
+    remove the champion slug
+    phrase trap-emptied
+    lose when the champion pumpkin is picked
+  end on
+```
+
+## 3.8 The when suffix
+
+Any of `phrase`, `emit`, `change`, `move`, `remove`, `award`, `win`,
+`lose`, and `kill the player` can carry a trailing `when <condition>`,
+making that one
+statement conditional without any block structure; several examples
+above use it. `set` and bare `refuse` do not take the suffix. Do not
+confuse it with the `when <value>` arm header inside `select on`
+([§4.1](/chord/guide/flow)): same word, different position, different job.
+
+## 3.9 Topic tables (2026-07-18, ADR-239)
+
+Conversation is a declared table per person — one `define topics for
+<person> … end topics` block serving both ASK and TELL. Entity rows
+(`about the silver locket:`) resolve like any noun and are checked
+first; quoted rows declare a topic plus comma-separated aliases, matched
+by normalized whole-topic equality — a lookup, never a fuzzy guess. A
+row's body is ordinary statements (`it` binds the owner), so a
+conversation can change state anywhere in the world. A miss falls to
+the owner's plain `on asking it` catch-all if it has one; on a hit the
+row fully owns the response. Overlaps are compile errors, never runtime
+tie-breaks.
+
+```chord
+define topics for tobias
+  about the silver locket: phrase tobias-locket-reply
+  about "the folly", "the fire":
+    change it to shaken
+    phrase tobias-folly-reply
+end topics
+```

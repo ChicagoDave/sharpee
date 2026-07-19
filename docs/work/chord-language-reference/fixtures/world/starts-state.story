@@ -9,7 +9,7 @@ create the Back Office
   Filing cabinets, a squat floor safe, and a humming space heater.
 
 create the safe
-  a container, openable, lockable with key the brass key, starts locked
+  a container, openable, lockable with the brass key, starts locked
   in the Back Office
 
   A squat floor safe with a brass keyhole.

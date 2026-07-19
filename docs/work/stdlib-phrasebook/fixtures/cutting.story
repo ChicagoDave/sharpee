@@ -9,7 +9,7 @@ create the Bell Tower
 
 create the bell rope
   aka rope
-  cuttable with tool the shears
+  cuttable with the shears
   scenery
   in the Bell Tower
   states: taut, severed

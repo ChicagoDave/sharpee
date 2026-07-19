@@ -94,16 +94,18 @@
 - **Domain focus**: `docs/reference/chord-language.md` (the completed ADR-210 author-facing language reference) imported as the Chord section's Author Guide. **RULED (David): the Author Guide IS this document, imported/adapted** — not a fresh narrative doc.
 - **Entry state**: chord-language.md is content-final as of 2026-07-14 with per-example fixtures (`docs/work/chord-language-reference/`); the site pipeline and primitives exist.
 - **Deliverable**: chapter-split import under a Chord > "Author guide" nav group. **Currency sweep required, not a blind move**: the doc predates the doors ratchets (ADR-234/237/238), topics (ADR-239), media/channels (ADR-241), and person identity (ADR-242) — diff each section against `docs/reference/chord-grammar.md`'s ratchet history and fold the deltas (the Phase 2 site pages are the cross-check for the newer constructs). Re-verify every code sample through `sharpee compose --check` at the current version (fixture re-run or fresh proof stories, Phase 2 mechanism).
-- **Status**: PENDING
+- **Status**: DONE (2026-07-19, session c331a9)
 - **Verification**: `npm run build` green + screenshot pass + all samples gate-clean.
+- **Phase notes (2026-07-19)**: harness-first sweep — `verify-examples.mjs` caught 3 stale fixtures (R3 `with key/tool` ×2, ADR-235 behavior hatch); fixed in source + fixtures. Five NEW fixtures for the post-lock constructs (doors, regions, proper/pronouns, topics, `use combat`) — **50/50 gate-clean**. Source doc re-badged **CURRENT at Sharpee 3.2** with new §2.12–2.14, §3.9, §5.9–5.10 and rewritten §5.6 (action hatches only). Site import: 6 chapters under `/chord/guide/*` (nav "Author guide" group); appendix NOT imported — the tooling page points at `/chord/reference/grammar` instead (recorded decision). 70 story fences → chord fences verified 1:1 by the conversion agent.
 
 ### Phase 6: Chord Phrasebook import (RULED: David, 2026-07-19)
 - **Tier**: Medium
 - **Budget**: 250
 - **Domain focus**: `docs/reference/stdlib-phrasebook.md` (1,197 lines, content-final) + its fixtures (`docs/work/stdlib-phrasebook/fixtures/*.story`).
 - **Deliverable**: import under the Chord section (nav placement decided at execution — likely Chord > Reference beside the grammar page, split into site-sized pages if the single-page render is unwieldy). Re-run the fixture set through compose at the current version before publishing; the old `render-site.mjs` (archived-site target) is superseded by the MDX pipeline and is not reused.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-19, session c331a9)
 - **Verification**: `npm run build` green + screenshot pass + fixtures gate-clean.
+- **Phase notes (2026-07-19)**: the runtime harness (`verify.mjs` — replays transcripts against the running engine, diffs byte-for-byte) caught the same R3 staleness in 3 fixtures (locking/cutting/digging); fixed in fixtures + doc + two surviving prose mentions (`with key <entity>` forms without articles — caught by screenshot review, swept from doc AND site pages). Harness fully green: 17 story fences verbatim, **68 commands replayed as genuine engine output**. Site import: Overview + 8 section pages under `/chord/phrasebook/*` (collapsed nav group); fences byte-diffed 1:1 by the conversion agent; status banner records the 3.2 re-verification. Site build 38 routes green.
 
 ### Phase 7: Chord Standard Library reference (UNPAUSED by David's ruling, 2026-07-19)
 - **Tier**: Large (multi-session; child plan governs)

@@ -6,7 +6,10 @@ makes an entity eligible, and the refusal keys it speaks — then, for the
 actions you will reach for most, a worked example in story context: the
 Chord `.story` scene an author writes, and the transcript a player sees.
 
-> **Status: FIXTURE-VERIFIED** (2026-07-17) — written against the
+> **Status: FIXTURE-VERIFIED** (2026-07-17; re-verified 2026-07-19 at
+> Sharpee 3.2 after folding ratchet R3's `lockable/cuttable/diggable
+> with the <entity>` forms — 17 story fences verbatim, 68 transcript
+> commands replayed) — written against the
 > post-ADR-230 grammar (`packages/parser-en-us/src/grammar.ts` is the
 > phrasings' source of truth). Every `.story` block below is a verbatim
 > excerpt of a complete, loadable fixture under
@@ -378,7 +381,7 @@ You open the shipping crate.
 
 ### locking and unlocking, with a key
 
-`lockable with key <entity>` declares the key contract in one line —
+`lockable with the <key entity>` declares the key contract in one line —
 forward references are legal. Keyless LOCK on a keyed lock asks for the
 key; the wrong key refuses; lock state then gates opening. (A Chord
 lockable starts unlocked, and this strongbox declares `starts open`; the
@@ -395,7 +398,7 @@ create the Strong Room
   A windowless room with one iron shelf.
 
 create the strongbox
-  a container, openable, lockable with key the brass key, starts open
+  a container, openable, lockable with the brass key, starts open
   in the Strong Room
 
   A squat strongbox with a bright keyhole.
@@ -727,7 +730,7 @@ You switch off the brass lamp, plunging the area into darkness.
 ### cutting
 
 The platform gates eligibility (`cuttable`) and validates the tool
-(`with tool <entity>` — the same contract as lockable keys); the outcome
+(`with the <tool entity>` — the same contract as lockable keys); the outcome
 is the entity's own `on cutting it` clause, and exactly one
 implementation is required at load. Note there is no bare `cut X` in the
 core grammar — the tool is part of the phrasing.
@@ -743,7 +746,7 @@ create the Bell Tower
 
 create the bell rope
   aka rope
-  cuttable with tool the shears
+  cuttable with the shears
   scenery
   in the Bell Tower
   states: taut, severed
@@ -806,7 +809,7 @@ create the Strand
 
 create the sandy patch
   aka sand, patch
-  diggable with tool the spade
+  diggable with the spade
   scenery
   in the Strand
 

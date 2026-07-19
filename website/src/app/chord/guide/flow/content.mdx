@@ -1,0 +1,437 @@
+The statements in [§3](/chord/guide/behavior) each do one thing. This
+chapter is about shaping
+what happens over time: choosing between several bodies, doing something
+once per matching entity, keeping score, ending the story — in victory,
+defeat, or death — and running a scripted timeline. All of it is still
+made of the statements you already have; these are the blocks that route
+between them.
+
+## 4.1 select on a value
+
+`select on <value>` dispatches to the arm whose `when` matches the
+value, and runs nothing if none do. The classic use is a state machine:
+one arm per declared state, each speaking for that state.
+
+```chord
+  on examining it
+    select on its state
+      when dormant
+        phrase bulb-dormant
+      when sprouting
+        phrase bulb-sprouting
+      when blooming
+        phrase bulb-blooming
+    end select
+  end on
+```
+
+The value after `on` is any value expression
+([§3.4](/chord/guide/behavior)): here `its state`,
+the amaryllis bulb's current state out of `dormant, sprouting,
+blooming`. Each `when <word>` heads an arm whose body is ordinary
+statements. The block closes with `end select`, and each `or`-free arm
+simply dedents. Coverage is not enforced — an unmatched value falls
+through silently, which is what you want for "react only to these
+states."
+
+Do not confuse this arm-header `when <word>` with the statement-final
+`when <condition>` suffix ([§3.8](/chord/guide/behavior)). Same word,
+different job: the suffix
+gates one statement on a condition, while the arm header names a value
+to match. `select on` compares values; it does not evaluate conditions.
+
+## 4.2 select with a strategy
+
+`select <strategy>` ignores the world and picks an arm by a rule about
+*how often the block has fired*. The arms are separated by `or`, exactly
+like the variants of a `define phrase`
+([§5.2](/chord/guide/vocabulary)), because it is the same
+machinery: the five strategies are the phrase-algebra Choice selectors
+under author-facing names.
+
+```chord
+  on ringing it
+    select cycling
+      phrase chime-bright
+        The chime rings a bright, clean note.
+    or
+      phrase chime-lower
+        It answers itself a third lower.
+    or
+      phrase chime-clatter
+        The tubes clatter together, all music gone.
+    end select
+  end on
+```
+
+The five strategies:
+
+| Strategy | Behavior |
+|---|---|
+| `cycling` | arms in order, wrapping back to the first forever |
+| `stopping` | arms in order, then stays on the last |
+| `randomly` | a fresh seeded random arm every firing |
+| `sticky` | one seeded random arm, then that same arm forever |
+| `first-time` | the first arm once, the second arm ever after |
+
+`randomly` and `sticky` draw from the same seeded, save-persistent
+stream as every other random effect in Chord, so a replay or a restored
+save reproduces the same choices (never `Math.random`). `first-time` is
+the "novelty then routine" shape — a drawer that is a discovery the
+first time and a shrug thereafter:
+
+```chord
+  on opening it
+    select first-time
+      phrase drawer-discovery
+        The drawer shrieks open on a jumble of twine, labels, and one
+        surprised spider.
+    or
+      phrase drawer-routine
+        The drawer shrieks open. The spider has moved out.
+    end select
+  end on
+```
+
+The retired adverbs `ordered` and `once` are gone
+([§6.3](/chord/guide/tooling)): `ordered` is
+now `stopping`, and there is no phrase-strategy `once` — its old job is
+covered by `first-time` and `stopping`. The clause modifier `, once`
+([§3.3](/chord/guide/behavior)) is a different construct at a different
+position and is
+untouched.
+
+## 4.3 Ordinal blocks
+
+An ordinal block runs its body only on the Nth time the enclosing clause
+fires. The ordinals `first time` through `tenth time` appear in
+statement position, interleaved with ordinary statements:
+
+```chord
+  on knocking it
+    phrase knock-echo
+    first time
+      phrase knock-first
+    second time
+      change it to smudged
+      phrase knock-second
+    fifth time
+      phrase knock-fifth
+  end on
+```
+
+Every knock speaks `knock-echo`; the ordinal blocks add to it on the
+first, second, and fifth knock only. The ordinals need not be
+contiguous — jumping `first`, `second`, `fifth` is fine, and the gaps
+simply do nothing. Each block dedents to close; there is no `end`
+keyword.
+
+This is the same keyword pair as the create-block `first time`
+description ([§2.9](/chord/guide/world)), and the collision is worth
+naming. Inside a `create`
+block, at the top level of the block, `first time` opens the room's
+first-visit description and only `first time` is legal there. Inside a
+behavior body, `first time` opens an ordinal block and the whole family
+through `tenth time` is available. Position decides which one you get:
+a `first time` directly under `create` is a description, a `first time`
+inside `on`/`after` is an ordinal.
+
+## 4.4 each blocks
+
+`each <condition>` runs its body once for every entity that satisfies a
+named *open* condition ([§3.4](/chord/guide/behavior)) — a condition
+whose `it` is left free, so
+it describes a set rather than testing one thing. Inside the body, `the
+match` is the current entity; `it` keeps meaning the clause's owner.
+
+```chord
+define condition frame-seedling: it is a seedling and it is in the cold frame
+define condition labeled-pot: it is a pot and it is in the potting shed
+```
+
+```chord
+  on planting it
+    each frame-seedling
+      move the match to the Nursery Bed
+      phrase planted-out with plant = the match
+    end each
+    phrase planting-done
+  end on
+```
+
+Each matching seedling is moved and announced; then, after the loop,
+`planting-done` speaks once. The body is ordinary statements, so `move`,
+`change`, `phrase`, and the rest all work, and `the match` is a value
+you can pass as a parameter (`with plant = the match`) or use as a
+`move`/`change` target. The iteration order is the order entities were
+created, and an empty match set simply runs the body zero times.
+
+`each` blocks nest. The binder `the match` always refers to the
+*innermost* loop:
+
+```chord
+  on auditing it
+    each frame-seedling
+      each labeled-pot
+        phrase audit-pair with pot = the match
+      end each
+    end each
+  end on
+```
+
+`each` is legal wherever statements are — `on` bodies, action bodies,
+trait clauses, sequence steps — and never at the top level
+(`parse.each-top-level`). Its condition must be a declared open
+condition; a closed condition or a story state is
+`analysis.closed-condition-selection`, and `the match` outside any
+`each` body is `analysis.match-outside-each`. `match` is a reserved
+name: you cannot call an entity, alias, trait field, or grammar slot
+`match`.
+
+## 4.5 Scoring
+
+A `score <name> worth N` line declares a scoring identity, and `award
+<name>` grants it (first seen in [§2.8](/chord/guide/world)). The line
+is legal under four
+owners — the story header, a `create` block, a `define trait`, and a
+`define action` — and this section shows all four in one story, because
+where a score lives is a real design choice.
+
+The story header owns scores that belong to the whole game:
+
+```chord
+story "Scoring" by "Sharpee Docs"
+  id: chord-ref-scoring
+  version: 0.0.1
+  score green-thumb worth 5
+```
+
+A trait owns a score every entity composed with it can grant, without
+the trait knowing which entities those are:
+
+```chord
+define trait prunable
+  score tidy-secateurs worth 5
+
+  phrases en-US
+    pruned:
+      You snip away the dead wood.
+
+  on pruning it
+    award tidy-secateurs
+    phrase pruned
+  end on
+end trait
+```
+
+A `create` block owns a score specific to that one entity — and here is
+the payoff of owner-scoping. The damask rose and the moss rose both
+declare `score deadheaded worth 5`, and those are *two different
+scores*, one per rose, because each is owned by its own entity:
+
+```chord
+create the damask rose
+  aka damask
+  prunable
+  in the Rose Border
+  score deadheaded worth 5
+
+  A crimson damask, badly overgrown.
+
+  after pruning it
+    award deadheaded
+    award green-thumb
+  end after
+```
+
+The damask's `after` clause awards its own `deadheaded`, and also the
+story-wide `green-thumb`. `award <name>` resolves owner-first: it looks
+for a score of that name on the enclosing owner, then falls back to the
+story header. So the same word `deadheaded` under the damask means the
+damask's score, and under the moss rose means the moss rose's — no
+collision, no prefixing.
+
+An action owns a score granted whenever the action succeeds:
+
+```chord
+define action composting
+  grammar
+    compost :stuff
+  score turned-the-heap worth 10
+  award turned-the-heap
+  phrase composted
+  phrases en-US
+    composted:
+      Straight onto the heap with it.
+```
+
+Two properties fall out of this model. First, the maximum score is the
+sum of every declared `worth`, computed at load time. Second, awards
+dedupe by identity (ADR-129): awarding the same score twice grants it
+once, so `award` is idempotent and the explicit `, once` modifier
+([§3.7](/chord/guide/behavior)) is never *needed* for correctness — it
+only documents intent.
+This is why the pattern is "declare the score on the owner, award it in
+an `after` clause" rather than guarding awards behind first-time checks.
+
+## 4.6 Endings: win and lose
+
+`win` and `lose` end the story. Each optionally names a phrase to speak
+on the way out, and each takes the statement-final `when` suffix
+([§3.8](/chord/guide/behavior)),
+so an ending can be conditional without a wrapping block.
+
+```chord
+  on pulling it
+    remove it
+    win garden-perfect
+  end on
+```
+
+```chord
+  on poking it
+    lose stung when one chance in 2
+    phrase near-miss
+  end on
+```
+
+The first ends in victory, speaking `garden-perfect`. The second loses
+only on a coin-flip (`when one chance in 2`); when the flip spares you,
+the `lose` is skipped and `near-miss` speaks instead. The phrase name is
+optional — bare `win` and bare `lose` end the story with only the
+platform's default ending text.
+
+## 4.7 Death: kill the player and deadly places
+
+Death is not `lose`. `lose` ends the game directly; the three constructs
+here run the platform's death machinery instead — the death text speaks,
+a died event fires, and at the end of the turn the engine re-checks
+whether the player is actually dead. That re-check is a real window: a
+story policy that revives the player during the turn (a reincarnation
+rule, a guardian angel) vetoes the ending and play continues. With no
+such policy, the story ends in defeat.
+
+**`kill the player [<phrase-key>] [when <condition>]`** is a statement,
+peer to `win` and `lose` ([§3.7](/chord/guide/behavior)), legal
+anywhere statements go — `on` and
+`after` clauses, `every turn` daemons, action bodies, inside `select` and
+`each`. The phrase key is the death text (define it like any phrase) and
+doubles as the recorded cause; bare `kill the player` records the cause
+`killed` and shows only the platform's ending text. The `when` suffix
+gates it like any statement ([§3.8](/chord/guide/behavior)):
+
+```chord
+  on crossing it
+    kill the player bridge-death when it is frayed
+    phrase bridge-holds
+  end on
+```
+
+While the bridge is whole, the `kill` is skipped and `bridge-holds`
+speaks instead — the same shape as the conditional `lose` in §4.6.
+
+**`<direction> is deadly: <phrase-key>`** marks a fatal exit, mirroring
+`is blocked:` ([§2.5](/chord/guide/world)). The fatal direction is
+deliberately not an exit at
+all: typing it never runs the going action — the command is rewritten
+into the platform's internal death action, so the player sees the death
+text and nothing else, no movement prose, no refusal. The player
+retreats another way.
+
+```chord
+create Aragain Falls
+  a room
+  west to the Rocky Ledge
+  south is deadly: falls-death
+
+  The roar of the water is everything.
+```
+
+The conditional form `is deadly while <condition>:` parses but is not
+wired yet — a load error tells you so; the live equivalent is an
+`on going it` clause carrying `kill the player when <condition>`.
+
+**`deadly: <phrase-key>`** marks the whole room as a no-escape position:
+every verb except a safe allowlist — look and examine, by default — is
+fatal, including objectless ones like WAIT and INVENTORY that no
+per-entity clause could catch. Reserve it for the genuinely inescapable
+spot, not as a generic hazard flag:
+
+```chord
+create Over the Falls
+  a room
+  deadly: over-falls-death
+
+  You are over the falls. This was a mistake.
+```
+
+In TypeScript the underlying trait adds two more dials: `safeVerbs`
+widens the allowlist, and `chance` makes the room probabilistically
+deadly — a survived roll simply lets the verb run normally, with no
+message. Neither dial is expressible from Chord today. The standard
+library reference (stdlib-reference.md §9) documents the machinery
+underneath all three constructs: the died event's shape, the veto
+window's mechanics, the health trait, and the internal redirect action.
+
+## 4.8 Sequences
+
+A `define sequence` is a scripted timeline: a named list of steps, each
+anchored to *when* it fires and carrying a body of ordinary statements.
+It replaces the hand-rolled turn-counting daemons of the old platform
+with one declarative block. There are three anchor forms, and this
+story uses all three across three sequences.
+
+The first two anchors are clock-based. `at turn N` fires at an absolute
+turn counted from the story's start; `N turns later` fires relative to
+the previous step, so you can chain a timeline without arithmetic:
+
+```chord
+define sequence gathering storm
+  at turn 2
+    phrase storm-distant
+      Thunder mutters somewhere beyond the wall.
+  3 turns later
+    phrase storm-near
+      The light goes pewter, and the first fat drops crater the dust.
+  2 turns later
+    phrase storm-breaks
+      The storm breaks all at once, rain hammering the gravel.
+    change the story to raining
+end sequence
+```
+
+The steps here land on turns 2, 5, and 7. A step body is ordinary
+statements: the last step both speaks and moves the story into its
+`raining` state.
+
+The third anchor is state-based. `when <name> becomes <state>` fires the
+step when that owner transitions into the named state — the story
+itself, or any entity. This lets one sequence react to another's effect.
+The storm above moved the story to `raining`; a second sequence waits on
+exactly that:
+
+```chord
+define sequence take shelter
+  when the story becomes raining
+    phrase shelter-note
+      Anywhere with a roof suddenly seems like a very good idea.
+end sequence
+```
+
+The same anchor works on an entity's own states. When the bonfire is lit
+and changes to `burning`, a third sequence notices:
+
+```chord
+define sequence smoke drifts
+  when the bonfire becomes burning
+    phrase smoke-note
+      A ribbon of blue smoke begins to drift across the garden.
+end sequence
+```
+
+A sequence name may be several words (`gathering storm`, `take
+shelter`), and the block always closes with an explicit `end sequence`.
+Within a step, prose indented under a `phrase` line is declare-and-emit
+text ([§3.7](/chord/guide/behavior)), which is why these steps need no
+separate `define phrases`
+block.
