@@ -473,16 +473,34 @@ export interface IRMachineTransition {
  * data projection — the loader lowers it to a real IOChannel whose
  * produce takes the turn's last event of `fromEvent` and projects the
  * `take` fields from its data. `gatedBy` carries the PLATFORM camelCase
- * capability key.
+ * capability key. The `family` discriminator is ADR-241's additive
+ * extension: every data projection reads as `family: 'data'`.
  */
-export interface IRChannelDef {
+export interface IRDataChannelDef {
   name: string;
+  family: 'data';
   mode: 'replace' | 'append' | 'event';
   gatedBy: string | null;
   fromEvent: string;
   take: string[];
   span: Span;
 }
+
+/**
+ * A named family channel (ADR-241 D2): `define ambient <word>` /
+ * `define layer <word>`, or the implied `main` bed when used. `name` is
+ * the author's word (`wind`); the registered id (`ambient:wind`,
+ * `image:wind`) and the channel's mode/gate/produce are the loader's
+ * business via stdlib's family builders — never carried here.
+ */
+export interface IRFamilyChannelDef {
+  name: string;
+  family: 'ambient' | 'layer';
+  span: Span;
+}
+
+/** Any story-declared dynamic channel (ADR-163 §7 / ADR-241 D1). */
+export type IRChannelDef = IRDataChannelDef | IRFamilyChannelDef;
 
 // --------------------------------------------------------------------------
 // statements

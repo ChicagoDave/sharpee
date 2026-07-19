@@ -36,6 +36,8 @@ import {
   DEADLY_ROOM_DEATH_ACTION_ID,
   DEADLY_ROOM_CAUSE_KEY,
   DEADLY_ROOM_MESSAGE_KEY,
+  createAmbientChannel,
+  createImageChannel,
 } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
@@ -682,9 +684,22 @@ export class ChordStory implements Story {
    * today — the leg is live but unexercised; a novel renderer would ship
    * there, keeping stories pure IR). The engine invokes this hook once at
    * start (`Story.registerChannels`, engine/src/game-engine.ts).
+   *
+   * ADR-241 D4: family channels (`define ambient`/`define layer`, plus
+   * the implied `main` bed) register through stdlib's family builders —
+   * `ambient:<word>` / `image:<word>` ids, capability gates inherited
+   * from the builders (`sound` / `images`). Data channels are untouched.
    */
   registerChannels(registry: IChannelRegistry): void {
     for (const channel of this.ir.channels ?? []) {
+      if (channel.family !== 'data') {
+        registry.add(
+          channel.family === 'ambient'
+            ? createAmbientChannel(channel.name)
+            : createImageChannel(channel.name),
+        );
+        continue;
+      }
       const { fromEvent, take } = channel;
       const definition: IOChannel = {
         id: channel.name,

@@ -50,7 +50,7 @@ import {
   IRCondition,
   IREntity,
   IRExit,
-  IRChannelDef,
+  IRDataChannelDef,
   IREmitField,
   IREmitValue,
   IRMachineDef,
@@ -93,6 +93,13 @@ const RESERVED_MATCH_MESSAGE =
  * block is the one authoring surface.
  */
 const RESERVED_CHANNEL_KEYS = new Set(['present', 'entered', 'exited', 'disappeared', 'detail']);
+
+/**
+ * Image layers the platform pre-registers (`image:background|main|
+ * overlay`, stdlib MEDIA_CHANNELS) — implied like the `main` ambient
+ * bed; `define layer` covers only layers beyond these (ADR-241 D3).
+ */
+const IMPLIED_IMAGE_LAYERS = new Set(['background', 'main', 'overlay']);
 
 /** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
@@ -469,6 +476,14 @@ class Analyzer {
           break;
         case 'define-asset':
           break; // collected in pass 1 — data references, nothing to emit
+        case 'define-family-channel':
+          // ADR-241 D2/D4: the declaration joins the channel manifest.
+          // The pass-1 span guard keeps an errored duplicate from
+          // producing a second entry.
+          if (this.familyChannels[decl.family].get(decl.name) === decl.span) {
+            ir.channels.push({ name: decl.name, family: decl.family, span: decl.span });
+          }
+          break;
         case 'define-channel':
           ir.channels.push(this.buildChannel(decl));
           break;
@@ -502,6 +517,13 @@ class Analyzer {
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
       }
+    }
+
+    // ADR-241 D3/D4: the implied `main` ambient bed — used by an ambient
+    // statement without a declaration — joins the channel manifest so the
+    // loader registers it (nothing platform-side pre-registers ambient).
+    if (this.impliedMainBedSpan && !this.familyChannels.ambient.has('main')) {
+      ir.channels.push({ name: 'main', family: 'ambient', span: this.impliedMainBedSpan });
     }
 
     for (const [locale, table] of this.phrases) {
@@ -1117,6 +1139,19 @@ class Analyzer {
           this.diagnostics.error('analysis.duplicate-asset', `An asset named \`${decl.name}\` already exists.`, decl.span);
         } else {
           this.assets.set(decl.name, { kind: decl.assetKind, path: decl.path, span: decl.span });
+        }
+      }
+      else if (decl.kind === 'define-family-channel') {
+        // ADR-241 D2: named family channels, per-family namespace.
+        const family = this.familyChannels[decl.family];
+        if (family.has(decl.name)) {
+          this.diagnostics.error(
+            'analysis.duplicate-channel',
+            `An ${decl.family === 'ambient' ? 'ambient bed' : 'image layer'} named \`${decl.name}\` is already declared.`,
+            decl.span,
+          );
+        } else {
+          family.set(decl.name, decl.span);
         }
       }
       else if (decl.kind === 'define-trait') {
@@ -2184,14 +2219,27 @@ class Analyzer {
       case 'play-ambient':
         event = 'media.ambient.play';
         requireAsset('sound');
+        this.stampAmbientChannel(stmt, fields);
         break;
       case 'stop-ambient':
         event = 'media.ambient.stop';
+        this.stampAmbientChannel(stmt, fields);
         break;
       case 'show-image':
         event = 'media.image.show';
         requireAsset('image');
-        if (stmt.layer) fields.push({ key: 'layer', value: { kind: 'literal', value: stmt.layer, valueType: 'string' } });
+        if (stmt.layer) {
+          // ADR-241 D3: layers beyond the platform's pre-registered three
+          // must be declared (`define layer <word>`) — never-guess.
+          if (!IMPLIED_IMAGE_LAYERS.has(stmt.layer) && !this.familyChannels.layer.has(stmt.layer)) {
+            this.diagnostics.error(
+              'analysis.unknown-channel',
+              `\`${stmt.layer}\` names no declared image layer${this.suggestText(stmt.layer, [...IMPLIED_IMAGE_LAYERS, ...this.familyChannels.layer.keys()])}. Declare it: \`define layer ${stmt.layer}\`.`,
+              stmt.span,
+            );
+          }
+          fields.push({ key: 'layer', value: { kind: 'literal', value: stmt.layer, valueType: 'string' } });
+        }
         break;
       case 'hide-image':
         event = 'media.image.hide';
@@ -2207,8 +2255,38 @@ class Analyzer {
     return { kind: 'emit', event, ...(fields.length > 0 ? { payload: fields } : {}), stmtWhen, span: stmt.span };
   }
 
+  /**
+   * ADR-241 D3: resolve an ambient statement's channel word (the default
+   * bed is `main` — Q-1), gate undeclared words (never-guess — Q-3), and
+   * stamp `channel` onto the payload — the field stdlib's ambient
+   * channels filter on. A bare use of the implied `main` bed records its
+   * first use-site so the bed joins the channel manifest (D4).
+   */
+  private stampAmbientChannel(stmt: MediaStmt, fields: IREmitField[]): void {
+    const word = stmt.channel ?? 'main';
+    if (word === 'main') {
+      if (!this.familyChannels.ambient.has('main')) this.impliedMainBedSpan ??= stmt.span;
+    } else if (!this.familyChannels.ambient.has(word)) {
+      this.diagnostics.error(
+        'analysis.unknown-channel',
+        `\`${word}\` names no declared ambient bed${this.suggestText(word, ['main', ...this.familyChannels.ambient.keys()])}. Declare it: \`define ambient ${word}\`.`,
+        stmt.span,
+      );
+    }
+    fields.push({ key: 'channel', value: { kind: 'literal', value: word, valueType: 'string' } });
+  }
+
   /** Channel names seen (duplicate gate). */
   private readonly channelNames = new Set<string>();
+
+  /** Declared family channels (ADR-241 D2) by family: word → first declaration span. */
+  private readonly familyChannels = {
+    ambient: new Map<string, Span>(),
+    layer: new Map<string, Span>(),
+  };
+
+  /** First use-site of the implied `main` ambient bed (ADR-241 D3), if any. */
+  private impliedMainBedSpan: Span | null = null;
 
   /**
    * Build one `define channel` (ADR-216; spelling A): mode/from/take are
@@ -2217,7 +2295,7 @@ class Analyzer {
    * STANDARD channel id is legal platform behavior (story override);
    * duplicating a story channel is not.
    */
-  private buildChannel(decl: DefineChannel): IRChannelDef {
+  private buildChannel(decl: DefineChannel): IRDataChannelDef {
     if (this.channelNames.has(decl.name)) {
       this.diagnostics.error('analysis.duplicate-channel', `A channel named \`${decl.name}\` already exists.`, decl.span);
     }
@@ -2249,7 +2327,8 @@ class Analyzer {
     }
     return {
       name: decl.name,
-      mode: (decl.mode ?? 'event') as IRChannelDef['mode'],
+      family: 'data',
+      mode: (decl.mode ?? 'event') as IRDataChannelDef['mode'],
       gatedBy,
       fromEvent: decl.fromEvent ?? '',
       take: decl.take,

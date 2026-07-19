@@ -38,8 +38,10 @@ import {
 import {
   createSoundChannelRenderer,
   createMusicChannelRenderer,
+  createAmbientChannelRenderer,
   type AudioManagerLike,
 } from './audio';
+import { createGenericPanelRenderer } from './panel';
 import {
   createAnimationChannelRenderer,
   createAnimateChannelRenderer,
@@ -78,6 +80,7 @@ export {
 };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
 export { createAmbientChannelRenderer } from './audio';
+export { createGenericPanelRenderer } from './panel';
 export { renderTextContent, flattenTextContent } from './text-content';
 
 /**
@@ -184,6 +187,24 @@ export function registerDefaultBrowserRenderers(
   // ── Audio channels ───────────────────────────────────────────────
   renderer.registerRenderer('sound', createSoundChannelRenderer(opts.audio));
   renderer.registerRenderer('music', createMusicChannelRenderer(opts.audio));
+
+  // ── Dynamic channels (ADR-241 D4): family binding + generic panel ─
+  // Any manifest channel with no exact-id renderer binds by family —
+  // `ambient:<id>` → the AudioManager ambient renderer, `image:<layer>`
+  // → the image-layer renderer — and everything else lands in the
+  // generic panel (one labelled box per channel id, in the sidebar).
+  // Exact-id story registrations run AFTER this helper and win
+  // (last-write-wins, ADR-165 §3); the console JSON tree stays as the
+  // debug view for consumers that register no factories.
+  renderer.registerRendererFactory('ambient:', (id) =>
+    createAmbientChannelRenderer(opts.audio, id.slice('ambient:'.length)),
+  );
+  renderer.registerRendererFactory('image:', (id) =>
+    createImageChannelRenderer(layout.media, id.slice('image:'.length), {
+      onHotspotCommand: opts.onHotspotCommand,
+    }),
+  );
+  renderer.registerRendererFactory('', (id) => createGenericPanelRenderer(layout.sidebar, id));
 
   // ── Animation / transition / layout / clear ──────────────────────
   renderer.registerRenderer('animation', createAnimationChannelRenderer(layout.media));

@@ -928,6 +928,7 @@ import { mountDefaultLayout, type BrowserDefaultLayout } from './layout';
 export { createMainChannelRenderer, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
 export { createAmbientChannelRenderer } from './audio';
+export { createGenericPanelRenderer } from './panel';
 export { renderTextContent, flattenTextContent } from './text-content';
 /**
  * Options for {@link registerDefaultBrowserRenderers}.
@@ -1455,6 +1456,16 @@ export interface Renderer {
      */
     registerRenderer(channelId: string, renderer: ChannelRenderer): void;
     /**
+     * Register a renderer FACTORY for a channel-id prefix (ADR-241 D4).
+     * When a manifest channel has no exact-id renderer, the longest
+     * matching registered prefix builds one lazily (cached per id, per
+     * manifest). The empty prefix `''` matches every channel — the
+     * consumer's generic default. Exact-id registrations always win;
+     * the JSON-tree fallback remains the last resort when no factory
+     * matches.
+     */
+    registerRendererFactory(prefix: string, factory: (channelId: string) => ChannelRenderer): void;
+    /**
      * Subscribe to `CommandPacket`s emitted by channel renderers.
      * The consumer's host loop pumps these back to the engine.
      * Multiple subscribers all receive each emission.
@@ -1544,6 +1555,8 @@ export interface RendererOptions {
  */
 export declare class Renderer implements RendererInterface {
     private renderers;
+    private rendererFactories;
+    private factoryRenderers;
     private fallbackRenderers;
     private state;
     private slots;
@@ -1557,6 +1570,13 @@ export declare class Renderer implements RendererInterface {
      * re-registering replaces the prior renderer for that id.
      */
     registerRenderer(channelId: string, renderer: ChannelRenderer): void;
+    /**
+     * Register a renderer factory for a channel-id prefix (ADR-241 D4).
+     * Longest matching prefix wins; `''` is the match-all default.
+     * Instances are built lazily per channel id and cached until the
+     * next manifest (their `onDestroy` runs with everyone else's).
+     */
+    registerRendererFactory(prefix: string, factory: (channelId: string) => ChannelRenderer): void;
     /**
      * Register a slot (ADR-165 §7). Stories that replace the
      * platform-default layout call this for each region.
@@ -1615,10 +1635,12 @@ export declare class Renderer implements RendererInterface {
      */
     private handleClear;
     /**
-     * Resolve the renderer for a channel id. Returns the registered
-     * renderer when present; otherwise lazily creates and caches a
-     * JSON-tree fallback (so the one-time warning fires once per
-     * channel id, not once per emission).
+     * Resolve the renderer for a channel id: exact registration first
+     * (last-write-wins, so story overrides beat every default), then
+     * the longest matching registered factory prefix (ADR-241 D4 —
+     * instances lazily built and cached per id), then the JSON-tree
+     * fallback (cached so the one-time warning fires once per channel
+     * id, not once per emission).
      */
     private resolveRenderer;
 }

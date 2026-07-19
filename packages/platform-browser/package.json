@@ -45,7 +45,7 @@
     "styles"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
     "clean": "rm -rf dist dist-esm tsconfig.tsbuildinfo",
     "test": "vitest",

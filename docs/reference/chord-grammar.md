@@ -340,8 +340,23 @@ DIRECTION    = north | south | east | west | northeast | northwest
   from "<file>"` (DATA references, never hatches — `hasHatches` is
   untouched); `play sound <asset>`, `play music <asset> [looping]`,
   `stop music`, `show image <asset> [in <layer>]`, `hide image`,
-  `play ambient <asset>` (a sound asset), `stop ambient`, `transition
-  <kind>`, `clear` — all lower at compile onto payloaded `media.*` emits.
+  `play ambient <asset> [in <channel>]` (a sound asset),
+  `stop ambient [in <channel>]`, `transition <kind>`, `clear` — all
+  lower at compile onto payloaded `media.*` emits. The ambient channel
+  word names a BED (ADR-241): omitted, both forms mean the default bed
+  `main` (mirroring `image:main`), and bare `stop ambient` stops the
+  default bed only. Ambient emits always carry the bed as a `channel`
+  payload field.
+- **`define ambient <word>` / `define layer <word>`** (ADR-241) — named
+  family channel declarations, one-liners beside the asset
+  declarations. Channel words beyond the implied set (the `main` bed;
+  the pre-registered `background`/`main`/`overlay` image layers) must
+  be declared — an undeclared word is `analysis.unknown-channel` with a
+  nearest-match suggestion, never a silent second bed. Declared and
+  implied-and-used family channels join the IR channel manifest
+  (`family: 'ambient' | 'layer'`; data projections read as `'data'`)
+  and the loader registers them platform-side — the browser renders
+  ambient beds and image layers with no story TypeScript.
 - **`define channel … end channel`** (spelling A) — a JSON data
   projection: `mode replace|append|event`, optional `gated by
   <capability>`, `from event <key>`, `take <field>, …` (the turn's last

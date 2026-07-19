@@ -36,6 +36,7 @@ import {
   DefinePhrase,
   DefinePhrases,
   DefineAsset,
+  DefineFamilyChannel,
   DefineChannel,
   DefineMachine,
   DefineSequence,
@@ -1260,6 +1261,11 @@ class Parser {
       case 'music':
         // ADR-216 declared assets — DATA references, never hatches.
         return this.parseDefineAsset(subWord as 'sound' | 'image' | 'music');
+      case 'ambient':
+      case 'layer':
+        // ADR-241 D2 — named family channels (an ambient bed / an image
+        // layer), one-liners beside the asset declarations.
+        return this.parseDefineFamilyChannel(subWord as 'ambient' | 'layer');
       case 'channel':
         // ADR-216 custom channels (spelling A, 2026-07-18) — data projections.
         return this.parseDefineChannel();
@@ -2218,8 +2224,21 @@ class Parser {
     let form: MediaStmt['form'];
     let asset: string | null = null;
     let layer: string | null = null;
+    let channel: string | null = null;
     let looping = false;
     let transitionKind: string | null = null;
+
+    /** ADR-241 D3: optional `in <channel-word>` tail on the ambient forms. */
+    const parseChannelTail = (): boolean => {
+      if (!c.matchWord('in')) return true;
+      const channelTok = c.next();
+      if (!channelTok || channelTok.kind !== 'word') {
+        fail('Expected a channel word after `in`.');
+        return false;
+      }
+      channel = channelTok.text;
+      return true;
+    };
 
     if (first === 'play') {
       const what = c.next();
@@ -2233,12 +2252,14 @@ class Parser {
         c.next();
         looping = true;
       }
+      if (what.text === 'ambient' && !parseChannelTail()) return null;
       form = `play-${what.text}` as MediaStmt['form'];
     } else if (first === 'stop') {
       const what = c.next();
       if (!what || what.kind !== 'word' || !['music', 'ambient'].includes(what.text)) {
         return fail('Expected `stop music` or `stop ambient`.');
       }
+      if (what.text === 'ambient' && !parseChannelTail()) return null;
       form = `stop-${what.text}` as MediaStmt['form'];
     } else if (first === 'show') {
       if (!c.matchWord('image')) return fail('Expected `show image <asset> [in <layer>]`.');
@@ -2265,7 +2286,7 @@ class Parser {
 
     const stmtWhen = this.parseStatementWhen(c, line);
     if (!c.atEnd()) return fail(`Unexpected trailing text: \`${c.peek()!.text}\`.`);
-    return { kind: 'media', form, asset, layer, looping, transitionKind, stmtWhen, span: lineSpan(line) };
+    return { kind: 'media', form, asset, layer, channel, looping, transitionKind, stmtWhen, span: lineSpan(line) };
   }
 
   /**
@@ -2379,6 +2400,36 @@ class Parser {
       return null;
     }
     return { kind: 'define-asset', assetKind, name: nameTok.text, path: pathTok.text, span: lineSpan(line) };
+  }
+
+  /**
+   * `define ambient <word>` / `define layer <word>` (ADR-241 D2): a
+   * one-line named family channel declaration. Exactly one word — the
+   * bed/layer name; the registered id is the loader's business.
+   */
+  private parseDefineFamilyChannel(family: 'ambient' | 'layer'): DefineFamilyChannel | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define ambient|layer
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error(
+        'parse.channel-name',
+        `Expected a ${family === 'ambient' ? 'bed' : 'layer'} name after \`define ${family}\`.`,
+        c.restSpan(),
+      );
+      return null;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error(
+        'parse.channel-name',
+        `Unexpected trailing text after \`define ${family} ${nameTok.text}\` — the declaration is one word.`,
+        c.restSpan(),
+      );
+      return null;
+    }
+    return { kind: 'define-family-channel', family, name: nameTok.text, span: lineSpan(line) };
   }
 
   // ---------------------------------------------------------- emit payload

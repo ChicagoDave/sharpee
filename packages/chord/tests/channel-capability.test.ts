@@ -33,6 +33,7 @@ describe('define channel (ADR-216, spelling A)', () => {
     expect(result.ir.channels).toEqual([
       {
         name: 'compass',
+        family: 'data', // ADR-241: every data projection reads as family 'data'
         mode: 'replace',
         gatedBy: 'images',
         fromEvent: 'chord.compass.updated',

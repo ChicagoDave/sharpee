@@ -164,6 +164,17 @@ export interface Renderer {
   registerRenderer(channelId: string, renderer: ChannelRenderer): void;
 
   /**
+   * Register a renderer FACTORY for a channel-id prefix (ADR-241 D4).
+   * When a manifest channel has no exact-id renderer, the longest
+   * matching registered prefix builds one lazily (cached per id, per
+   * manifest). The empty prefix `''` matches every channel — the
+   * consumer's generic default. Exact-id registrations always win;
+   * the JSON-tree fallback remains the last resort when no factory
+   * matches.
+   */
+  registerRendererFactory(prefix: string, factory: (channelId: string) => ChannelRenderer): void;
+
+  /**
    * Subscribe to `CommandPacket`s emitted by channel renderers.
    * The consumer's host loop pumps these back to the engine.
    * Multiple subscribers all receive each emission.

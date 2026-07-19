@@ -53,7 +53,17 @@ describe('media sugar + declared assets (ADR-216 AC-2)', () => {
       ],
       ['media.sound.play', undefined] as never, // placeholder — replaced below
       ['media.transition', [{ key: 'kind', value: { kind: 'literal', value: 'fade', valueType: 'string' } }]],
-    ].map((entry, i) => (i === 3 ? ['media.ambient.play', [{ key: 'src', value: { kind: 'literal', value: 'audio/rain.ogg', valueType: 'string' } }]] : entry)));
+    ].map((entry, i) => (i === 3
+      ? ['media.ambient.play', [
+          { key: 'src', value: { kind: 'literal', value: 'audio/rain.ogg', valueType: 'string' } },
+          // ADR-241 D3: ambient emits always carry the bed word (`main` default)
+          { key: 'channel', value: { kind: 'literal', value: 'main', valueType: 'string' } },
+        ]]
+      : entry)));
+    // ADR-241 D4: the implied `main` bed joins the channel manifest.
+    expect(result.ir.channels).toEqual([
+      { name: 'main', family: 'ambient', span: expect.anything() },
+    ]);
   });
 
   it('stop/hide/clear forms lower to their bare events, `when` composes', () => {

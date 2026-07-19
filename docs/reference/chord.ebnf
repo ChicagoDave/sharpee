@@ -72,6 +72,7 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-sequence
              | define-machine                              (* ADR-215, use-gated *)
              | define-asset | define-channel               (* ADR-216 *)
+             | define-family-channel                       (* ADR-241 *)
              | define-topics ;                             (* ADR-239 *)
 
 (* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
@@ -313,6 +314,14 @@ define-asset   = "define" ( "sound" | "image" | "music" )
                                                               hatch; does not set
                                                               hasHatches *)
 
+define-family-channel                                      (* ADR-241: a named ambient
+                                                              bed / image layer; words
+                                                              beyond the implied set
+                                                              (`main` bed; background/
+                                                              main/overlay layers) must
+                                                              be declared — never-guess *)
+             = "define" ( "ambient" | "layer" ) WORD NL ;
+
 define-channel = "define" "channel" WORD NL                (* spelling A, 2026-07-18 *)
                  >>> { "mode" ( "replace" | "append" | "event" ) NL
                      | "gated" "by" WORD NL                (* a client capability flag *)
@@ -427,8 +436,14 @@ media-statement                                            (* each lowers at com
                                                               emit; stmt-when composes *)
              = "play" "sound" WORD [ stmt-when ] NL
              | "play" "music" WORD [ "looping" ] [ stmt-when ] NL
-             | "play" "ambient" WORD [ stmt-when ] NL      (* plays a SOUND asset *)
-             | "stop" ( "music" | "ambient" ) [ stmt-when ] NL
+             | "play" "ambient" WORD [ "in" WORD ]
+               [ stmt-when ] NL                            (* plays a SOUND asset; the
+                                                              channel word names a bed —
+                                                              default `main` (ADR-241) *)
+             | "stop" "music" [ stmt-when ] NL
+             | "stop" "ambient" [ "in" WORD ]
+               [ stmt-when ] NL                            (* bare form stops the
+                                                              default bed only *)
              | "show" "image" WORD [ "in" WORD ] [ stmt-when ] NL
              | "hide" "image" [ stmt-when ] NL
              | "transition" WORD [ stmt-when ] NL          (* → media.transition kind *)

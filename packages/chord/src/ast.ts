@@ -83,6 +83,7 @@ export type Declaration =
   | DefineMachine
   // ADR-216 declared media assets (DATA references, never hatches):
   | DefineAsset
+  | DefineFamilyChannel
   // ADR-216 custom channels (spelling A, David 2026-07-18):
   | DefineChannel
   // ADR-239 topic conversation (D3 as amended, David 2026-07-18):
@@ -458,11 +459,25 @@ export interface DefineAsset {
 }
 
 /**
+ * `define ambient <word>` / `define layer <word>` (ADR-241 D2): a named
+ * family channel — an ambient bed or an image layer. One-liners beside
+ * the asset declarations; the registered ids (`ambient:<word>`,
+ * `image:<word>`) are an implementation detail, never author-facing.
+ */
+export interface DefineFamilyChannel {
+  kind: 'define-family-channel';
+  family: 'ambient' | 'layer';
+  name: string;
+  span: Span;
+}
+
+/**
  * ADR-216 typed media sugar — each form lowers AT ANALYSIS onto a
  * payloaded `media.*` emit (no runtime surface of its own): `play sound
  * <asset>`, `play music <asset> [looping]`, `stop music`, `show image
- * <asset> [in <layer>]`, `hide image`, `play ambient <asset>`,
- * `stop ambient`, `transition <kind>`, `clear`.
+ * <asset> [in <layer>]`, `hide image`, `play ambient <asset>
+ * [in <channel>]`, `stop ambient [in <channel>]` (ADR-241 D3),
+ * `transition <kind>`, `clear`.
  */
 export interface MediaStmt {
   kind: 'media';
@@ -480,6 +495,8 @@ export interface MediaStmt {
   asset: string | null;
   /** `in <layer>` on show-image; null otherwise. */
   layer: string | null;
+  /** `in <channel>` on play-ambient/stop-ambient (ADR-241 D3); null = the implied `main` bed. */
+  channel: string | null;
   /** `looping` modifier on play-music. */
   looping: boolean;
   /** The transition kind word (`transition fade`); null otherwise. */

@@ -124,6 +124,12 @@ world.evaluate(key): unknown | undefined;   // undefined = nothing registered
 
 ### D7 — Acceptance criteria for the follow-on implementation plan
 
+> **Amendment (2026-07-18, session 1e7652)**: implementation landed session
+> 80ff54 (evaluator registry, all sites migrated, recompute machinery
+> deleted; AC-1–AC-6 runs recorded in
+> `docs/context/session-20260718-0501-chord-foundations.md`). **ACs
+> CONFIRMED by David** — the implementation gate is closed.
+
 - **AC-1 (the staleness class, closed)**: a Chord `change` that flips a
   blocked-exit condition is visible on the very next command — the
   Fernhill Kettle beat's three currently-red transcripts (npcs,

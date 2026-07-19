@@ -20,9 +20,11 @@ create the Grounds
 
   after entering it
     phrase cold-returns
+    play ambient night-wind when client has sound
   end after
 
   after leaving it
+    stop ambient when client has sound
     phrase out-of-the-wind
   end after
 
@@ -42,6 +44,7 @@ create the Iron Gates
   south is blocked: long-road
 
   after entering it while the player has the deed
+    play music dawn-theme when client has music
     win fernhill-saved
   end after
 
@@ -303,6 +306,7 @@ define machine the boiler works
       change the vine to flowering
       phrase pipes-warm
       phrase vine-stirs
+      play sound boiler-thump when client has sound
     end on
 end machine
 
@@ -375,6 +379,10 @@ create the framed photograph
     Knowing what the diary knows, you see it now: the folly whole
     behind her, and on her knee a small steel box with a bright slot
     in its lid.
+
+  after examining it
+    show image folly-photograph when client has images
+  end after
 
 create the grey overcoat
   aka overcoat, coat, verity's overcoat
@@ -757,6 +765,8 @@ create the case clock
 
   on every turn while it is ticking and one chance in 8
     phrase clock-chime
+    emit estate.clock with hour "evening" when evening
+    emit estate.clock with hour "past midnight" when midnight
   end on
 
 create the writing desk
@@ -813,6 +823,18 @@ create the scorched dome
 
   The folly's little dome, breached by fire; the night sky shows
   through the black-edged hole.
+
+define sound night-wind from "audio/night-wind.wav"
+define sound boiler-thump from "audio/boiler-thump.wav"
+define music dawn-theme from "audio/dawn-theme.wav"
+define image folly-photograph from "images/folly-photograph.png"
+
+define channel clock
+  mode replace
+  gated by sidebar
+  from event estate.clock
+  take hour
+end channel
 
 define phrase long-road
   The lane runs three dark miles to the village, and the cab is gone.

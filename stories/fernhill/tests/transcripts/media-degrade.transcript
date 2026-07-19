@@ -1,0 +1,79 @@
+title: Fernhill G4/G5 — media and channel beats degrade legibly in text
+story: fernhill
+description: The browser-presentation layer (ambient wind, boiler thump,
+  folly photograph, clock channel) is gated on `client has` flags that all
+  read FALSE in the text client. Every media beat's turn must show its
+  prose degradation and never leak an asset name, event key, or payload
+  into the transcript.
+---
+
+# --- Grounds ambient (play ambient night-wind, gated on sound): the
+# crossing reactions still speak their prose lines and nothing leaks ---
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+# Crossing Grounds -> House: `stop ambient` sits before out-of-the-wind
+> north
+[OK: contains "out of the wind"]
+[OK: contains "old hush"]
+[OK: not contains "night-wind"]
+[OK: not contains "media."]
+
+# --- G4 image (show image folly-photograph on examining): in text the
+# description IS the degradation; the asset name never leaks ---
+> examine the photograph
+[OK: contains "squinting into some summer"]
+[OK: not contains "folly-photograph"]
+[OK: not contains "images/"]
+
+# --- G5 clock channel: wind the clock, then catch a chime. The emit
+# (estate.clock with hour ...) is channel-only — text clients hear the
+# chime prose and never see the event key or payload ---
+> take the grey overcoat
+[OK: contains "Taken"]
+
+> search the overcoat
+[OK: contains "winding key"]
+
+> take the winding key
+[OK: contains "take the winding key from"]
+
+> wind the clock
+[OK: contains "begins to walk again"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "counts the quarter"]
+[UNTIL "counts the quarter"]
+
+> wait
+[OK: not contains "estate.clock"]
+[OK: not contains "hour"]
+
+# --- Re-entering the Grounds (play ambient again, gated): the cold line
+# still speaks ---
+> south
+[OK: contains_any "The cold finds you" "The cold again"]
+[OK: not contains "audio/"]
+
+# --- G4 sound (play sound boiler-thump when the machine lights): the
+# on-enter prose is the degradation ---
+> east
+[OK: contains "old coal dust"]
+
+> turn the stopcock
+[OK: contains "water gurgles"]
+
+> push the primer
+[OK: contains "thumps home"]
+
+> turn on the boiler
+[OK: contains "warmth crawls toward the greenhouse"]
+[OK: not contains "boiler-thump"]
+[OK: not contains "media."]
+
+# The win-ending music cue (play music dawn-theme, gated on music) is
+# exercised by the wt-01 walkthrough chain reaching the win with no leak.
