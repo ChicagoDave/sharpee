@@ -67,6 +67,34 @@ Session 1befbd (2026-07-17, chord-foundations). Raised by David during
 the ADR-231 implementation run, same session as the ADR-191 dual-mode
 playground amendment; shape ruled from three options.
 
+## Owner plan recorded (2026-07-18, session 1e7652 — David's stated direction for the rebuild; the Open Questions below are interviewed within this frame)
+
+- **Tear down GitHub Pages.** The current static `site/` deployment is
+  going away, not being reshuffled — no incremental IA work on it.
+- **Rebuild in React or similar, deployed on David's Linux server.**
+  Astro is ruled out from experience ("I pretty much hate it" — the
+  repo's abandoned `website/` tree). Whether any CMS layer sits behind
+  the app is undecided and secondary.
+- **One common NAV control; distinct Chord and Sharpee sections**, each
+  with getting-started and a tutorial upfront (Chord track: getting
+  started → the Fernhill tutorial → chord reference/phrasebook;
+  Sharpee/platform track: getting started → the TS tutorials →
+  stdlib/API reference). The existing content maps onto both tracks
+  with no new authoring beyond the two getting-started pages.
+- Platform note for the rebuild: everything Sharpee ships to the web is
+  a static artifact or bundled client-side app (playable
+  `build --browser` pages, the ADR-191 playground — the Chord compiler
+  runs client-side), so the app can mount them as pages/islands; the
+  server also opens the door to zifmia multi-user play later.
+- **The playground needs a bundler, not a framework**: it is a
+  client-side app (editor + in-browser compiler + client) that any site
+  shell, custom CMS included, can mount as a page/island. The site
+  system's real job is weaving it through the content (try-it buttons
+  on tutorial code blocks, pre-loaded reference examples).
+- The Fernhill tutorial (8 chapters, `docs/tutorials/fernhill/`) is
+  written as site-agnostic markdown, deliberately parked for this redo
+  (tutorial plan Phase 9, David's hold ruling).
+
 ## Open Questions
 
 ### Q-1: What is the Chord-first landing page's shape?

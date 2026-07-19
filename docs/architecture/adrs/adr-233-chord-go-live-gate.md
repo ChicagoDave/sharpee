@@ -180,6 +180,23 @@ no-scope-reduction rule of the parity north star applies).
   schedules. Explicit disposition recorded per the no-scope-reduction
   rule; this resolves former Q-4.
 
+> **Amendment (2026-07-18, session 1e7652): G3 CONFIRMED SATISFIED
+> (David), with one named deferral.** The tutorial shipped: "The Folly
+> at Fernhill" (`stories/fernhill/`, 33 patterns per the David-selected
+> catalog spine, 16 atomic transcripts + a full walkthrough with three
+> real endings, real-Chromium browser proof with committed log) and its
+> 8-chapter teaching documentation (`docs/tutorials/fernhill/`,
+> doc-accuracy REAL-PATH check green: init/build/test/build --browser
+> against the finished story). En route the workstream surfaced and
+> closed two platform gates (ADR-240 live derived state; ADR-241
+> dynamic channels). **Named deferral — the "linked from the existing
+> site nav" clause**: David ruled same session that GitHub Pages comes
+> down and the site is rebuilt (React or similar, on his server, common
+> NAV, distinct Chord/Sharpee sections — recorded in ADR-232's Owner
+> plan), so there is no "existing site nav" for the link to land in;
+> the nav link is a named deliverable of the ADR-232 rebuild, exactly
+> as G2 carries its public-registry `npm i -g` proof on G4's publish.
+
 ### G4 — Release hygiene
 
 - Version bumped; `repokit verify` fully green including the publish
