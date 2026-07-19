@@ -47,6 +47,11 @@ export const NAV: NavSection[] = [
           { title: 'Topics', href: '/chord/language/topics' },
         ],
       },
+      {
+        title: 'Reference',
+        open: true,
+        items: [{ title: 'Grammar reference', href: '/chord/reference/grammar' }],
+      },
     ],
   },
   {
@@ -58,13 +63,44 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Learn',
-    groups: [],
-    items: [
-      { title: 'Fernhill tutorial', href: '/learn/fernhill' },
-      { title: 'Play', href: '/play' },
+    groups: [
+      {
+        title: 'Fernhill tutorial',
+        open: true,
+        items: [
+          { title: 'Overview', href: '/learn/fernhill' },
+          { title: 'The world', href: '/learn/fernhill/world' },
+          { title: 'Things', href: '/learn/fernhill/things' },
+          { title: 'People', href: '/learn/fernhill/people' },
+          { title: 'The long night', href: '/learn/fernhill/time' },
+          { title: 'State & verbs', href: '/learn/fernhill/state' },
+          { title: 'Endings & text', href: '/learn/fernhill/endings' },
+          { title: 'The browser', href: '/learn/fernhill/browser' },
+        ],
+      },
     ],
+    items: [{ title: 'Play', href: '/play' }],
   },
 ];
+
+/**
+ * Prev/next links for a path, derived from the nav model. Reading order is
+ * flattened WITHIN a section only — the pager never jumps a section
+ * boundary (Chord → Sharpee crosses audiences, not chapters). A generic
+ * "Overview" item is labeled with its group's title so the pager link
+ * says where it goes.
+ */
+export function pagerFor(pathname: string): { prev?: NavItem; next?: NavItem } {
+  for (const section of NAV) {
+    const flat = section.groups.flatMap((g) =>
+      g.items.map((item) => (item.title === 'Overview' ? { ...item, title: g.title } : item)),
+    );
+    flat.push(...(section.items ?? []));
+    const i = flat.findIndex((item) => item.href === pathname);
+    if (i !== -1) return { prev: flat[i - 1], next: flat[i + 1] };
+  }
+  return {};
+}
 
 /** Breadcrumb trail for a path, derived from the nav model. */
 export function crumbsFor(pathname: string): string[] {

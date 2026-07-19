@@ -150,6 +150,7 @@ docs/context/.work-log.txt
 docs/context/.session-state.json
 docs/context/.session-state-*.json
 docs/context/.devarch-gate-*
+.devarch-events-*.jsonl
 docs/context/.active-session
 docs/context/last-session.txt
 docs/context/tsf-*.txt

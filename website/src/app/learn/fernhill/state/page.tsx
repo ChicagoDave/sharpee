@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="Compose & run">
+    <DocPage title="State & verbs: authored traits, custom actions, refusals">
       <Content />
     </DocPage>
   );

@@ -1,0 +1,130 @@
+A Chord project has four everyday commands: **build**, **play**,
+**test**, and **compose**. All of them run from the project directory.
+
+## Build — including a playable web page
+
+```shell
+sharpee build --browser
+```
+
+```text
+🔨 Building browser bundle
+
+  ✓ Validated orchard.story (gate-clean) and shipped it as story.story
+  ✓ Story IR → dist/orchard.ir.json
+  Bundling game.js...
+  ✓ Built game.js
+  ✓ Copied index.html
+  ✓ Copied platform engine CSS (base, engine, decorations)
+  ✓ Copied orchard.css
+
+✅ Build complete! (game.js 1213.1 KB)
+
+Output: dist/web/
+```
+
+`dist/web/` is a self-contained, static web page — your story, the
+engine, and a browser client in one folder. Serve it locally with
+`npx serve dist/web`, or host it anywhere static files go. Plain
+`sharpee build` (no flag) builds the story bundle without the web
+client.
+
+## Play in the terminal
+
+```shell
+sharpee play
+```
+
+```text
+--- Play Mode ---  (/quit or /q to exit)
+
+orchard
+
+Story v0.1.0
+
+Landing
+A quiet place to begin. Doorways lead everywhere a story might go —
+for now, this landing is the whole world.
+
+> inventory
+You are carrying:
+
+a brass lantern
+
+>
+```
+
+Type commands at the prompt exactly as a player would; `/quit` exits.
+
+## Test with transcripts
+
+Transcripts are your story's test suite: player commands paired with
+assertions about the response. They live in the project's `tests/`
+directory as `.transcript` files:
+
+```text
+title: The lantern is in hand at the start
+story: orchard
+description: The player starts in the Landing carrying the brass lantern.
+---
+
+> look
+[OK: contains "Landing"]
+
+> inventory
+[OK: contains "brass lantern"]
+```
+
+```shell
+sharpee test
+```
+
+```text
+Found 1 transcript(s) to run
+
+Running: tests/lantern.transcript
+  "The lantern is in hand at the start"
+
+  > look                                             PASS
+  > inventory                                        PASS
+
+  2 passed (7ms)
+```
+
+`sharpee test` exits non-zero on failure, so it drops straight into CI.
+`--chain` runs several transcripts against one continuing game state,
+and `--stop-on-failure` halts at the first miss.
+
+## Compose — the compiler on its own
+
+`build` and `play` compile your story implicitly. `compose` is the same
+compiler as a standalone step:
+
+```shell
+sharpee compose orchard.story --check
+```
+
+```text
+compose: orchard.story is gate-clean (--check: IR not emitted)
+```
+
+`--check` runs every load-time gate and emits nothing — the fast
+CI answer to "does my story still compile?". With `-o` it writes the
+compiled story IR as JSON:
+
+```text
+compose: orchard.story loaded — 3 entities, 0 trait(s), 0 action(s), 0 hatch(es)
+compose: IR written to orchard.ir.json
+```
+
+<Callout title="Gate-clean, then playable">
+  Chord's compile gates catch unknown names, contradictory declarations,
+  and misspelled references before the story ever runs — each diagnostic
+  is named, line-anchored, and usually carries a nearest-match
+  suggestion. A story that composes gate-clean loads.
+</Callout>
+
+## Next
+
+The world model is where stories get interesting — start with
+[people and pronouns](/chord/language/people).

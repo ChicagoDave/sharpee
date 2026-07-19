@@ -348,3 +348,35 @@ describe('ownership-package removals — parse errors with fix-its (ratchet 2026
     expect(errors[0].message).toContain('refuse when');
   });
 });
+
+describe('define phrase — flush-left body text (OOM guard, 2026-07-19)', () => {
+  const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+
+  function errorsOf(source: string) {
+    return parse(source).diagnostics.filter((d) => d.severity === 'error');
+  }
+
+  it('column-1 prose: ONE indent diagnostic, the block terminates, later declarations parse', () => {
+    const result = parse(
+      `${HEADER}define phrase p\nProse at column zero.\nAnother flush-left line.\nend phrase\n\ncreate the Hall\n  a room\n\n  A hall.\n`,
+    );
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.phrase-text-indent');
+    expect(errors[0].span.line).toBe(6);
+    const phrase = result.ast.declarations.find((d): d is DefinePhrase => d.kind === 'define-phrase');
+    expect(phrase?.key).toBe('p');
+    expect(result.ast.declarations.some((d) => d.kind === 'create')).toBe(true);
+  });
+
+  it('verbatim variant: the same guard holds (parseVerbatimBlock also requires depth)', () => {
+    const errors = errorsOf(`${HEADER}define phrase v, verbatim\nFlush left.\nend phrase\n`);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('parse.phrase-text-indent');
+  });
+
+  it('indented prose is untouched: zero diagnostics', () => {
+    const errors = errorsOf(`${HEADER}define phrase ok\n  Properly indented prose.\nend phrase\n`);
+    expect(errors).toEqual([]);
+  });
+});

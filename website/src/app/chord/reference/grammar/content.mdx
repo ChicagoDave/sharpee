@@ -1,0 +1,138 @@
+This page is a reader's map of the Chord grammar — the shapes you will
+actually write, organized the way stories use them. The complete
+machine-oriented grammar is downloadable below.
+
+## How Chord reads
+
+- **Line-oriented.** Every fact, statement, and declaration is a line;
+  there are no braces or terminators.
+- **Indentation-scoped**, spaces only (a tab is a lex error). A block
+  opens with its header line and closes at dedent or its explicit
+  `end` line (`end on`, `end phrase`, `end topics`, …).
+- **Prose is first-class.** A bare paragraph inside a `create` block is
+  the entity's description; a blank line is a paragraph break.
+- **One mistake, one diagnostic.** After an error the parser
+  resynchronizes at the next `end` line or top-level keyword; compile
+  errors are named, line-anchored, and usually carry a nearest-match
+  suggestion.
+
+## The story file
+
+A `.story` file is a header followed by declarations:
+
+```chord
+story "The Folly at Fernhill" by "The Sharpee Project"
+  id: fernhill
+  version: 0.1.0
+  blurb: One winter night to find the deed.
+  states: evening, midnight
+  use state-machines
+```
+
+The header holds `key: value` facts, story-wide `states:`, `use`
+lines admitting platform extensions (`combat`, `state-machines`), and
+the story-owned daemon (`on every turn … end on`). Everything after it
+is declarations: `create` blocks and `define` forms.
+
+## Inside a create block
+
+`create <name>` opens an entity; each indented line is one kind of fact:
+
+| Line | Example |
+| ---- | ------- |
+| Composition (kinds and traits) | `a door, lockable with the iron key` |
+| Synonyms | `aka lamp, lantern` |
+| Placement | `in the Cellar` · `on the table` · `starts in the Hall` |
+| Carrying / wearing | `carries the map` · `wears the greatcoat` |
+| Declared states | `states: guarded, softened` (`states, reversible:` allows going back) |
+| Pronouns (people) | `pronouns she` |
+| Exits (rooms) | `north to the Hall through the oak door` |
+| Blocked exits (rooms) | `west is blocked while the boiler is off: frost-sealed` |
+| Region membership (regions) | `containing the Drive, the Hall` |
+| First-visit prose (rooms) | `first time` + indented paragraph |
+| Behavior clauses | `on giving it … end on` · `after entering it … end after` |
+| Description | any bare paragraph after a blank line |
+
+Composition reads naturally: an article starts a kind noun (`a room`),
+a bare word is a trait adjective (`dark`, `light-source`, `proper`),
+and `with` attaches configuration (`patrol with route [the Gate, the
+Yard] and wait-turns 5`).
+
+## Behavior clauses
+
+```chord
+on giving it while it is guarded, once
+  …statements…
+end on
+```
+
+`on <verb> it` intercepts an action and may refuse it; `after <verb>
+it` reacts once the action has happened (no refusals inside). `on every
+turn` is the owner's daemon, firing only in the owner's presence. Every
+clause takes an optional `while <condition>` gate and modifiers such as
+`, once` (fire a single time, ever).
+
+## Statements
+
+The working vocabulary inside clause and action bodies:
+
+| Statement | Does |
+| --------- | ---- |
+| `phrase <key>` | speak a declared phrase |
+| `refuse <key>` | block the action with a reason (in `on` clauses) |
+| `change <name> to <state>` | move an entity (or `the story`) to a declared state |
+| `move <name> to <name>` | relocate an entity |
+| `remove <name>` | take an entity out of play, permanently |
+| `award <words>` | score |
+| `win` / `lose` | end the game |
+| `emit <event.key>` | raise a custom event |
+| `select randomly … or … end select` | vary between alternatives |
+| `each <condition> … end each` | act on every matching entity |
+
+Most statements accept a trailing `when <condition>` — the gate that
+makes one line conditional without any `if` construct. (There is no
+`if`; guards, `when` tails, and `select` cover the ground on purpose.)
+
+## Conditions
+
+Conditions read as English predicates over live world state:
+
+```text
+the boiler is off
+Mrs Kettle has the sherry bottle
+the player can see the oil lamp
+it is here
+any lit-lamp
+one chance in 6
+not (the fuse is lit) and the study door is open
+```
+
+`and`, `or`, `not`, and parentheses combine them. State adjectives
+(`open`, `locked`, `lit`, …) resolve from trait state; declared states
+by name; `any` / `no` quantify over a named open condition.
+
+## The define forms
+
+| Form | Declares |
+| ---- | -------- |
+| `define phrase <key> … end phrase` | a text phrase, with `or` variants and a strategy (`randomly`, `cycling`, `stopping`, `sticky`, `first-time`) |
+| `define phrases <locale>` | a block of keyed phrases |
+| `define condition <name>: <condition>` | a named condition |
+| `define verb <word> means <pattern>` | a new player verb |
+| `define pronouns <name> … end pronouns` | a five-row pronoun set |
+| `define topics for <person> … end topics` | a conversation table |
+| `define trait <name> … end trait` | an authored trait: data fields, states, phrases, clauses |
+| `define action <name>` | an authored action: grammar, requirements, refusals, body |
+| `define sequence <name> … end sequence` | a timeline: `at turn N`, `N turns later`, `when <entity> becomes <state>` |
+| `define machine … end machine` | a state machine (`use state-machines`) |
+| `define sound/image/music <name> from "<file>"` | a media asset |
+
+## The full grammar
+
+The complete EBNF, exactly as the parser implements it, is one file:
+[download chord.ebnf](/chord.ebnf).
+
+Chord's surface is a closed set by design — every construct on this
+page is the whole of what parses, and anything else is a compile error
+with a pointed suggestion. New grammar arrives by explicit language
+revision, not by accident.

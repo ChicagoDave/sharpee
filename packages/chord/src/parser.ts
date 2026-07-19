@@ -1361,6 +1361,7 @@ class Parser {
 
     const variants: TextValue[] = [];
     let span = lineSpan(headLine);
+    let flaggedFlushLeft = false;
     for (;;) {
       const line = this.lines[this.pos];
       if (!line) {
@@ -1382,6 +1383,23 @@ class Parser {
       if (line.indent === 0 && TOP_KEYWORDS.has(firstWord(line) ?? '')) {
         this.diagnostics.error('parse.unterminated-block', 'Missing `end phrase`.', span);
         break;
+      }
+      if (line.indent === 0) {
+        // A flush-left non-keyword line makes zero progress in either
+        // variant parser below (both require depth > 0) — without this
+        // guard the loop appended empty variants until OOM. One diagnostic
+        // for the first offending line; the rest of the flush-left run is
+        // consumed so `end phrase` still terminates the block.
+        if (!flaggedFlushLeft) {
+          flaggedFlushLeft = true;
+          this.diagnostics.error(
+            'parse.phrase-text-indent',
+            'Phrase text must be indented under `define phrase`.',
+            lineSpan(line),
+          );
+        }
+        this.pos++;
+        continue;
       }
       const variant = verbatim ? this.parseVerbatimBlock() : this.parseProseParagraph(1, 0);
       variants.push(variant);

@@ -1,0 +1,72 @@
+The standard library ships 43 actions and the world model a full trait
+catalog. This page is the orientation map; the authoritative,
+always-current reference is generated from the type declarations and
+ships inside the npm package itself.
+
+## The trait catalog
+
+Traits compose capability onto entities. The core set, from
+`@sharpee/world-model`:
+
+| Trait | Grants |
+| ----- | ------ |
+| `Identity` | name, description, article, proper-name rendering |
+| `Room` | a location; darkness lives here |
+| `Door` | connects two rooms |
+| `Container` / `Supporter` | holds things / bears things on top |
+| `Openable` / `Lockable` | OPEN, CLOSE / LOCK, UNLOCK with a key |
+| `Switchable` | ON, OFF |
+| `LightSource` | illuminates dark rooms |
+| `Wearable` / `Edible` | WEAR, REMOVE / EAT, DRINK |
+| `Pushable` / `Pullable` | PUSH, PULL |
+| `Scenery` | fixed in place, not takeable |
+| `Actor` | the player and every NPC |
+
+Chord's trait adjectives (`lockable with …`, `light-source`, `dark`,
+`proper`) compose these same traits; authored traits (TypeScript or
+Chord `define trait`) sit beside them as peers.
+
+## The standard actions
+
+Three families:
+
+- **World-mutating** — taking, dropping, opening, closing, going,
+  entering, exiting, putting, inserting, giving, wearing, removing,
+  eating, drinking, pushing, pulling, switching, locking, unlocking.
+- **Query** — examining, looking, inventory: read state, mutate
+  nothing.
+- **Meta** — about, help, save, restore, quit: signals to the platform
+  rather than the world.
+
+Every one follows the four-phase pattern described in the
+[platform overview](/sharpee/platform), and every one checks capability
+dispatch first — so a story can give any entity its own answer to a
+standard verb without overriding the action.
+
+## The generated API reference
+
+The full API — every trait's fields, every action's contract, the
+`Story` interface, the world-model methods — is auto-generated from the
+`.d.ts` declarations and shipped in the `@sharpee/sharpee` npm package
+at `docs/genai-api/`:
+
+```text
+node_modules/@sharpee/sharpee/docs/genai-api/
+  index.md          ← start here (reading order for story authors)
+  engine.md         Story interface, GameEngine, turn cycle
+  world-model.md    WorldModel, IFEntity, all traits
+  stdlib.md         all 43 standard actions, validation, scope
+  parser.md         grammar extension for story-specific commands
+  …and 12 more
+```
+
+It is written for exactly two readers: you, and the AI assistant
+sitting next to you. Point your coding agent at `index.md` before it
+explores the source tree — the declarations are complete and far
+cheaper to read.
+
+<Callout title="Why the reference is not reproduced here">
+  The generated files regenerate with every platform release; a copy on
+  this site would drift the moment they do. The package ships them so
+  the reference you read always matches the version you installed.
+</Callout>

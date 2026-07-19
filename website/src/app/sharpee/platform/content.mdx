@@ -1,0 +1,87 @@
+Sharpee is the TypeScript platform underneath every Chord story — and a
+full authoring surface in its own right. This page is the under-the-hood
+tour for a reader who knows [Chord](/chord/getting-started/install) and
+wants to see the machinery, or who wants to author directly in
+TypeScript.
+
+## One engine, two authoring surfaces
+
+A Chord `.story` file compiles to a story IR; the story loader turns
+that IR into entities, traits, phrases, and wiring on the platform. A
+TypeScript story builds the same things directly against the API. Either
+way, the same engine runs the game — Chord is not a sandboxed subset,
+and the parity goal runs in both directions.
+
+## The layers
+
+Responsibility is deliberately split, and knowing the split tells you
+where anything lives:
+
+| Layer | Owns | Examples |
+| ----- | ---- | -------- |
+| `engine` | turn cycle, command execution, event dispatch | scheduler, prose pipeline |
+| `world-model` | entities, traits, behaviors, world state | `ContainerTrait`, `LightSourceBehavior` |
+| `stdlib` | the standard actions and common patterns | taking, opening, going (43 actions) |
+| `parser-en-us` | grammar patterns, command parsing | verb patterns, noun resolution |
+| `lang-en-us` | every piece of user-facing text | messages, formatters |
+| story | game-specific content and overrides | custom traits, puzzle logic |
+| client | rendering and input | browser client, terminal REPL |
+
+## Entities, traits, behaviors
+
+Everything in the world is an **entity**; capability comes from
+**traits** composed onto it (`Openable`, `Lockable`, `LightSource`,
+`Actor`, …). Traits are data; the logic that manipulates them lives in
+**behaviors**, and behaviors own *all* world mutations:
+
+```typescript
+const door = world.createEntity('cellar door', EntityType.DOOR);
+door.add(new OpenableTrait());
+door.add(new LockableTrait({ keyId: key.id }));
+```
+
+When Chord composes `a door, lockable with the tarnished key`, this is
+exactly what the loader builds.
+
+## Actions: the four-phase pattern
+
+Every action — standard or story-authored — runs the same four phases:
+
+- **validate** — can this happen? Return ok, or a named error.
+- **execute** — mutate the world, by delegating to behaviors. If your
+  execute phase is complex, the logic belongs in a behavior.
+- **report** — emit the domain events that describe what happened.
+- **blocked** — emit the events for a validation failure.
+
+Actions never print text. They emit **domain events** carrying a
+`messageId` plus parameters; at end of turn the engine's prose pipeline
+resolves those against the language layer and renders the output. That
+separation is what makes story-specific message overrides, perception
+filtering (darkness), and localization possible without touching action
+logic.
+
+## Text is a tree, not a string
+
+The rendering layer is the **phrase algebra**: a message realizes to a
+tree of typed `Phrase` values (noun phrases with number, article
+selector, pronoun set; verbs; lists; choices), and a single per-locale
+Assembler walks the finished tree to produce articles, agreement,
+punctuation, and pronoun references. Nothing collapses to a string
+early — which is why "You can see Tobias here." and "a brass lantern"
+both come out right with no author effort.
+
+## Capability dispatch
+
+Generic verbs get entity-specific meaning by registration, not by
+patching actions: a trait declares which action IDs it handles, a
+behavior implements the four phases for them, and the standard action
+delegates when it finds the trait. That is the platform's one extension
+seam for "this thing responds to LOWER differently," and it is the same
+seam Chord's authored traits compile onto.
+
+## Digging further
+
+- [Actions & traits](/sharpee/actions-and-traits) — the catalog, and
+  where the full generated API reference lives.
+- The [Fernhill tutorial](/learn/fernhill) — the Chord-side view of the
+  same machinery.

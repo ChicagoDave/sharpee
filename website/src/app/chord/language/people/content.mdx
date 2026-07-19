@@ -1,0 +1,107 @@
+A person is an entity with `a person` in its composition. People can be
+proper-named, carry declared pronouns, hold states, react to the player
+through `on`/`after` clauses, and take a role from the built-in NPC
+library.
+
+## Proper names
+
+By default an entity renders with an article: "You can see a zookeeper
+here." A person who should render as a bare name — "You can see Tobias
+here." — is declared `proper`:
+
+```chord
+create Tobias
+  aka groundskeeper
+  a person, proper
+  in the Gatehouse
+```
+
+`proper` is a person-only fact, and it is explicit: the article you use
+on the `create` line is never read for identity. `create the zookeeper`
+and `create a zookeeper` load identically — if a person is
+proper-named, say so.
+
+## Pronouns
+
+A `pronouns` line names the pronoun set the narration uses for that
+person:
+
+```chord
+create Mrs Kettle
+  aka housekeeper, kettle
+  a person, proper
+  pronouns she
+  in the Yard
+```
+
+The standard sets are `he`, `she`, `it`, and `they`. A person without a
+`pronouns` line is rendered by number — "it" for a singular person,
+"they" for a plural one. Nothing is inferred from a name: to gender a
+character, declare the line.
+
+For pronouns beyond the standard four, declare a named set with exactly
+five rows (in any order), then use its name like any standard set:
+
+```chord
+create Kit
+  a person, proper
+  pronouns ze
+  in the Yard
+
+define pronouns ze
+  subject ze
+  object zir
+  possessive zir
+  possessive-pronoun zirs
+  reflexive zirself
+end pronouns
+```
+
+A misspelled set name is a compile error with a nearest-match
+suggestion, not a silent "it".
+
+## States, and reacting to the player
+
+People commonly pair declared states with an `on` clause — here, a
+housekeeper who softens when given the right bottle:
+
+```chord
+create Mrs Kettle
+  a person, proper, guard
+  pronouns she
+  in the Yard
+  states: guarded, softened
+
+  on giving it
+    change it to softened when it has the sherry bottle
+    phrase kettle-softened when it is softened
+  end on
+```
+
+`states:` declares the person's states, starting in the first. Inside
+the clause, `it` is the owner (Mrs Kettle), and the trailing `when`
+gates each statement — the wrong gift softens no one. Anything else in
+the world (a blocked exit, another character's behavior) can read
+`Mrs Kettle is guarded` as a live condition.
+
+## Roles from the NPC library
+
+The core NPC library ships five roles you compose like any trait
+adjective: `guard`, `passive`, `wanderer`, `follower`, and `patrol`.
+Roles take their configuration inline:
+
+```chord
+create Tobias
+  a person, proper, patrol with route [the Gatehouse, the Yard] and wait-turns 5 and announces-movement true
+  pronouns he
+  in the Gatehouse
+```
+
+A `patrol` walks its route on its own schedule; `announces-movement
+true` narrates the comings and goings (off by default). Unknown
+configuration keys and mistyped values are compile errors.
+
+<Callout title="Conversation is its own page">
+  What a person can be asked or told about is a declared table — see
+  [Topics](/chord/language/topics).
+</Callout>

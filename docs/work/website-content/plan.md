@@ -25,7 +25,8 @@
   2. Add the shared content primitives the decision requires (e.g., `<Prose>`, `<CodeBlock>`, `<Callout>` alongside the existing `DocPage`/`Placeholder` in `website/src/components/doc-page.tsx` or a sibling file) — the building blocks every later phase's real content uses, so they exist before content is written, not invented ad hoc per page.
   3. Amend ADR-232 (stays DRAFT — do not flip to ACCEPTED; Q1–Q3 remain open) recording what is now fact rather than plan: Next.js 16 App Router chosen (supersedes the Owner-plan's "React or similar" placeholder text), WF-B shell shipped, the generated-palette pipeline (`docs/design/generate-sharpee-design.mjs` → `palette.css`, colors never hand-edited) shipped, GitHub Pages teardown executed (old `website/`/`site/`/`web-save/` archived to `docs/_archive/`, commit 8693f54e), and the no-on-page-TOC ruling (headings carry structure, per `doc-page.tsx`'s own header comment). Present the amendment to David for sign-off — do not treat silence as approval.
 - **Exit state**: A pinned content-pipeline decision; shared prose/code-sample primitives exist in `website/src/components/`; ADR-232 carries an amendment reflecting current reality, sent to David for review, with Q1–Q3 still explicitly open (not resolved by this plan).
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-19, session c331a9; ADR-232 amendment signed off by David same session).
+- **Phase notes (decision pinned, 2026-07-19)**: **`@next/mdx` with imported `.mdx` content files, wrapped by `.tsx` route files.** Rationale: the bulk of upcoming content (Fernhill's 8 chapters, reference material) already exists as markdown — hand-converting prose to JSX per page is busywork with drift risk; keeping `.tsx` route files that import a colocated `content.mdx` preserves `nav.ts`/`DocPage`/breadcrumbs exactly as shipped (imports, not MDX file-routing — no `pageExtensions` change); and this Next version's own bundled docs (`mdx.md`, `mdx-components.md`, read per AGENTS.md) document the import pattern first-class, including Turbopack support via string-form plugins (`remark-gfm` added for tables). Shipped: `next.config.ts` MDX wiring; `src/mdx-components.tsx` global element map; `src/components/prose.tsx` (`CodeBlock` w/ title bar, `Callout` note/warn, headings/links/lists/tables/blockquote/inline-code styles — dark callout washes are `-800`, not `-900`, because the dark canvas IS navy-900); `pagerFor()` in `nav.ts` + `Pager` in `doc-page.tsx` (within-section only — never jumps a section boundary); `/style-guide` (unlisted) as the REAL-PATH pipeline proof + authoring reference. Verified: `npm run build` green (15 routes), light/dark full-page screenshots + pager shot via the shoot-site pattern. Authoring rule for later phases: **every fence carries a language tag** (`text` at minimum) or it styles as inline code.
 
 ### Phase 2: Chord section — getting started, language guide, grammar reference
 - **Tier**: Large
@@ -38,8 +39,15 @@
   - **New grammar-reference page**: `docs/reference/chord-grammar.md` + `docs/reference/chord.ebnf` have no nav slot yet. Add a "Reference" group under the Chord section in `nav.ts` with one new route. Render a curated, readable subset of the grammar (not a raw EBNF wall of text); link or make the full `.ebnf` downloadable for the reader who wants it.
   - **Old-site porting**: `docs/_archive/site/chord.html` and `chord-reference.html` are porting/reference material only — anything ported must be re-verified against current behavior (there is a falsified-doc-claims history in this project), never copied blind.
 - **Exit state**: All 6 existing Chord stub pages have real, command-verified content; one new grammar-reference route exists, wired into `nav.ts` and deriving correct breadcrumbs.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-19, session c331a9)
 - **Verification**: `npm run build` green + `docs/design/wireframes/shoot-site.mjs` screenshot pass.
+- **Phase notes (2026-07-19)**:
+  - **REAL-PATH verification mechanism**: 3.2.0 is not yet on npm (G4 publish pending), so the author flow was proven against the publish-staged packages — `npm pack` of every `~/.tsf-publish/sharpee/*` dir, installed as tarballs into a scratch `sharpee init orchard -y` project. `init`, `build --browser`, `test` (incl. a written passing transcript), `play` (piped commands), and `compose --check`/`-o` all run live; every command output on the three getting-started pages is verbatim from those runs.
+  - **Every Chord sample compose-verified**: two proof stories (`people-proof.story`, `world-proof.story` in the scratch project) containing every construct the language pages show — `proper`, `pronouns`, `define pronouns` (ze), guard/patrol with route list, states + on/after clauses with `when` tails, topics table both tiers + catch-all, door `through` form, `lockable with`, dark/light-source, blocked-while, region containing + daemons + entering/leaving, `first time` — all gate-clean at 3.2.0.
+  - **PLATFORM BUG FOUND (reported to David, not fixed — packages/chord)**: a `define phrase` block whose prose line sits at column 0 sends the chord parser into an allocation loop until the 4 GB heap OOMs — no diagnostic. 6-line repro: story header + `define phrase p` + flush-left prose + `end phrase`, then `sharpee compose --check`. Correctly-indented prose parses fine.
+  - **Grammar page**: curated reader's map (layout rules, create-line table, statements table, conditions, define forms); full `chord.ebnf` copied to `website/public/chord.ebnf` for download. NOTE: manual copy — if the grammar changes, the site copy drifts; a build-step sync is future work.
+  - **Authoring**: `Callout`/`CodeBlock` now provided via the global MDX map (no per-file imports); `ProseLink` treats extension-suffixed internal hrefs as static assets (plain anchor), not routes.
+  - Old-site porting (`docs/_archive/site/chord*.html`) was not needed — all content written fresh from the grammar doc, ADRs 234–242, and the G3-verified Fernhill chapters.
 
 ### Phase 3: Sharpee section + Learn (Fernhill import)
 - **Tier**: Large
@@ -53,8 +61,14 @@
   - **Learn > Fernhill**: import all 8 chapters (`docs/tutorials/fernhill/{index,people,things,world,time,state,browser,endings}.md`). `nav.ts` currently has ONE entry ("Fernhill tutorial" → `/learn/fernhill`) for what is 8 chapters of source material — extend `nav.ts` with a Learn > Fernhill group of 8 chapter routes (mirroring the Chord getting-started/language pattern already established), rather than one long page. This is a nav-growth decision this phase makes and records.
   - **Doc-accuracy note**: the Fernhill chapters were already doc-accuracy REAL-PATH verified against the finished story at ADR-233 G3 closure — importing them is a content move, not a from-scratch re-verification. Still, re-diff any embedded command sample against today's `sharpee init`/`build --browser` output, since the CLI's Chord-first default shipped in the same G2 workstream and command output can drift between sessions.
 - **Exit state**: Both Sharpee stub pages have real content with the genai-api and author-guide scope decisions explicitly recorded; Fernhill's 8 chapters live under `/learn/fernhill/*` with `nav.ts` extended and breadcrumbs deriving correctly.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-19, session c331a9)
 - **Verification**: `npm run build` green + `shoot-site.mjs` screenshot pass.
+- **Phase notes (2026-07-19)**:
+  - **genai-api handling (recorded judgment call)**: link-out + curated summary. `/sharpee/actions-and-traits` carries the trait catalog table, the three action families, and a map of `node_modules/@sharpee/sharpee/docs/genai-api/` — the generated files are NOT imported into the site (they regenerate per release; a copy would drift). The page says so explicitly.
+  - **devkit author-guide scope (FLAGGED to David, not decided)**: the Sharpee section has no TS-track getting-started page; `/sharpee/platform` covers the platform for a Chord-knowing reader and points TS scaffolding at `sharpee init --ts`. Whether a dedicated TS getting-started page is wanted (or deliberately deferred per Chord-first) is David's call.
+  - **Fernhill import**: all 8 chapters moved verbatim (mechanical conversion by subagent; one wording change — in-repo grammar-doc path rewritten to `/chord/reference/grammar`). `nav.ts` Learn section now has a "Fernhill tutorial" group of 8 (order by chapter number: world, things, people, time, state, endings, browser). Chapter CLI samples re-diffed against the live 3.2.0 surface — no drift.
+  - Build green, 23 routes; screenshot pass over both Sharpee pages + 3 Fernhill chapters.
+  - Polish item carried to Phase 4: the pager label for the two Sharpee pages reads bare "Overview" (both nav items share that title) — disambiguate (e.g. group-qualified pager labels).
 
 ### Phase 4: Play section + home polish + closure
 - **Tier**: Medium
@@ -63,19 +77,58 @@
 - **Entry state**: Phases 2–3 content in place (home-page copy should reflect the finished Chord-first section, not placeholders).
 - **Deliverable**:
   - **Play section**: embed self-contained browser clients built by `./repokit build <story> --browser` (output at `dist/web/<story>/`). `website/public/web/` is already `.gitignore`d — a pre-existing carve-out confirming the intended approach: sync a built browser client's static output into `website/public/web/<story>/` and serve it (iframe or direct link) from `/play`. Start with Fernhill (the launch tutorial story) as the first playable entry. This is static-asset embedding — explicitly distinct from the ADR-191 in-browser-compiler playground, which stays out of scope (see References consulted).
-  - **Home-page polish**: hero copy and first-click reflecting ADR-232's Chord-first decision (Chord content is the front door; Platform section present, linked, never the landing focus) per the Owner-plan direction already ruled in ADR-232.
+  - **Home-page polish**: hero copy and first-click reflecting ADR-232's Chord-first decision (Chord content is the front door; Platform section present, linked, never the landing focus) per the Owner-plan direction already ruled in ADR-232. **RULED (David, 2026-07-19, mid-Phase-2)**: Home is a landing page that describes BOTH products — Sharpee (TypeScript) and Chord (an IF Modeling Language) — recorded against ADR-232 Q-1 (first click + relative prominence still open within Q-1's frame).
   - ~~Closure~~ (moved to Phase 5 — David ruled ADR-191 IN scope, 2026-07-19).
 - **Exit state**: `/play` serves at least one real, playable story; the home page has real content, not placeholders.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-19, session c331a9)
 - **Verification**: `npm run build` green + `shoot-site.mjs` screenshot pass.
+- **Phase notes (2026-07-19)**:
+  - **Fernhill embed built through the REAL author pipeline** using the `g3-fernhill-browser-proof.mjs` staging pattern (devkit `runInitCommand` in a repo-internal temp dir → substitute `fernhill.story` + assets + browser entry → `runBuildBrowserCommand`; byte-identical `story.story` asserted) — `repokit build fernhill --browser` still fails on the known chord-branch finding (`stories/fernhill/package.json` ENOENT; open item carried from session b381db). Sync target `website/public/web/fernhill/` (gitignored as intended). Rebuild script: session scratchpad `build-fernhill-web.mjs` — worth promoting to `scripts/` when the workflow recurs.
+  - `/play`: iframe embed + open-in-own-tab link; REAL-PATH proof — Playwright asserted the story compiled inside the iframe and rendered the Iron Gates opening before the screenshot.
+  - Home page per David's ruling (both products; Chord first click): hero describing Chord (IF Modeling Language) + Sharpee (TypeScript platform), Get-started → Chord install, four real cards. `v3.2.0` badge, plain X.Y.Z.
+  - Pager polish: `pagerFor` labels a generic "Overview" item with its group title (fixes the bare "Overview →" on the two Sharpee pages; Fernhill's Overview now reads "Fernhill tutorial" in pagers).
 
-### Phase 5: "Play It Now" playground — ADR-191 Phase 1 (Chord mode) + closure
+### Phase 5: Chord Author Guide — import chord-language.md (RULED: David, 2026-07-19)
+- **Tier**: Large
+- **Budget**: 300
+- **Domain focus**: `docs/reference/chord-language.md` (the completed ADR-210 author-facing language reference) imported as the Chord section's Author Guide. **RULED (David): the Author Guide IS this document, imported/adapted** — not a fresh narrative doc.
+- **Entry state**: chord-language.md is content-final as of 2026-07-14 with per-example fixtures (`docs/work/chord-language-reference/`); the site pipeline and primitives exist.
+- **Deliverable**: chapter-split import under a Chord > "Author guide" nav group. **Currency sweep required, not a blind move**: the doc predates the doors ratchets (ADR-234/237/238), topics (ADR-239), media/channels (ADR-241), and person identity (ADR-242) — diff each section against `docs/reference/chord-grammar.md`'s ratchet history and fold the deltas (the Phase 2 site pages are the cross-check for the newer constructs). Re-verify every code sample through `sharpee compose --check` at the current version (fixture re-run or fresh proof stories, Phase 2 mechanism).
+- **Status**: PENDING
+- **Verification**: `npm run build` green + screenshot pass + all samples gate-clean.
+
+### Phase 6: Chord Phrasebook import (RULED: David, 2026-07-19)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: `docs/reference/stdlib-phrasebook.md` (1,197 lines, content-final) + its fixtures (`docs/work/stdlib-phrasebook/fixtures/*.story`).
+- **Deliverable**: import under the Chord section (nav placement decided at execution — likely Chord > Reference beside the grammar page, split into site-sized pages if the single-page render is unwieldy). Re-run the fixture set through compose at the current version before publishing; the old `render-site.mjs` (archived-site target) is superseded by the MDX pipeline and is not reused.
+- **Status**: PENDING
+- **Verification**: `npm run build` green + screenshot pass + fixtures gate-clean.
+
+### Phase 7: Chord Standard Library reference (UNPAUSED by David's ruling, 2026-07-19)
+- **Tier**: Large (multi-session; child plan governs)
+- **Budget**: child plan's own budgets
+- **Domain focus**: the paused `docs/work/stdlib-reference/plan.md` workstream — 49 standard actions, 40 traits, plugins/daemons, framed entirely through the Chord surface. **ADR-232 Q-2 is now RESOLVED Chord-side (David), and David's content-wave instruction unpauses the workstream.**
+- **Entry state / adjustments**: the child plan targets the archived `site/` and mirrors the old chord-language render pipeline — retarget its render phase to this site's MDX pipeline. The chord-availability audit (`docs/work/stdlib-reference/chord-availability-audit.md`, the parity north star's artifact) is an INPUT: per-action Chord-availability status gets stated per entry, never silently bridged (standing memory: Chord-surfaced platform gaps go to David).
+- **Deliverable**: execute the child plan (its own phases) with the site as the render target; `.current-plan` may point at the child for its duration and must return here.
+- **Status**: PENDING
+- **Verification**: child plan's own gates + site build/screenshot pass on the rendered pages.
+
+### Phase 8: Sharpee dev manual — book v2.0.0 → 3.2 (RULED: David, 2026-07-19)
+- **Tier**: Large (multi-session; needs its own child plan FIRST)
+- **Budget**: child plan's own budgets
+- **Domain focus**: `docs/book/v2.0.0/` revised to 3.2 reality and published under the site's Sharpee section. **RULED (David): the dev manual is the book**, not `docs/guides/`.
+- **Deliverable**: (1) a session-planner pass producing `docs/work/book-3.2/plan.md` — revision scope per chapter, the naive-regression/verification approach (the book workflow memories apply), and the site import mechanics; (2) execute that child plan. This is the largest item of the wave and is deliberately LAST of the content phases.
+- **Status**: PENDING
+- **Verification**: child plan's own gates.
+
+### Phase 9: "Play It Now" playground — ADR-191 Phase 1 (Chord mode) + closure
 - **Tier**: Large
 - **Budget**: 400
 - **Domain focus**: A playground route on the new site implementing ADR-191's Phase 1 MVP (Chord mode): editor pane → in-browser chord compile → play in the standard browser client. Added by David's ruling (2026-07-19): ADR-191 is IN scope for this workstream, superseding the earlier deferral.
 - **Entry state**: **ADR-191 ACCEPTED** — it is PROPOSED with 4 open questions and site-reality drift (it targets the old static `site/play.html` + Pages chrome; the site is now the Next.js app on David's server). Before implementation: amend for the new site reality, run the open-questions interview with David, flip to ACCEPTED. Evidence available to the interview: the primary technical risk (browser-clean chord compiler + story-loader path) is validated shipped reality — the G2 devkit `--browser` build compiles `.story` source at boot in real Chromium (clean-machine proof, ADR-233 G2); Q2 (esbuild-wasm cold start) is Mode-B-only and can be deferred with that later phase.
 - **Deliverable** (per the ADR's Phase 1 scope, adapted to the Next site): `/play` grows the playground (or a sibling route, per the interview's ruling): CodeMirror-or-Monaco editor (Q3 ruling) with a Chord highlighting mode sourced from `catalog.ts`'s closed sets; seeded runnable starter; **Play** = chord compile (parse → analyze → IR) + story-loader + `@sharpee/platform-browser` in a sandboxed iframe; diagnostics with spans in an errors area; **Reset**; platform-version display (plain `X.Y.Z` — no `-beta`); example picker seeded from the phrasebook fixtures (`docs/work/stdlib-phrasebook/fixtures/*.story`). Platform-bundle hosting per the Q4 ruling (likely `website/public/playground/v<version>/` produced from the `--browser` pipeline). AC-1..AC-8 are the gate; Mode B (TS tab), Monaco IntelliSense, shareable URLs stay later-phase per the ADR.
-- **Closure** (moved from Phase 4): repoint `docs/context/.current-plan` back to `docs/work/chord-go-live/plan.md` (G4 remains IN PROGRESS at the publish boundary, David's manual step). This plan file stays in place as the durable record.
+- **Closure** (moved from Phase 4; stays with the LAST phase — David's sequencing ruling 2026-07-19 put the content wave (Phases 5–8) ahead of the playground): repoint `docs/context/.current-plan` back to `docs/work/chord-go-live/plan.md` (G4 remains IN PROGRESS at the publish boundary, David's manual step). This plan file stays in place as the durable record.
 - **Exit state**: ADR-191 AC-1..AC-8 green on the new site; `.current-plan` returned to the umbrella.
 - **Status**: PENDING
 - **Verification**: `npm run build` green + `shoot-site.mjs` full-site screenshot pass (closing pass) + a REAL-PATH playground proof in the g2/g3 pattern (Chromium drives the editor: paste fixture → Play → assert rendered turns; AC-4's fixture verbatim).

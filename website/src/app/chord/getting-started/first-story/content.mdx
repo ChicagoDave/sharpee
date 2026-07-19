@@ -1,0 +1,89 @@
+One command scaffolds a complete, playable story project:
+
+```shell
+sharpee init orchard
+```
+
+`init` asks a few questions (title, author, blurb); pass `-y` to accept
+the defaults. The scaffold is a Chord project — if you want the
+TypeScript story scaffold instead, that is `sharpee init orchard --ts`,
+and it belongs to the [Sharpee platform track](/sharpee/platform).
+
+```text
+📖 Create a new Sharpee story
+
+Creating project...
+
+  ✓ Created orchard.story
+  ✓ Created package.json
+  ✓ Created .gitignore
+
+🌐 Adding browser client to your Sharpee project
+
+  ✓ Created src/browser-entry.ts (Chord — compiles story.story at boot)
+  ✓ Created src/version.ts
+  ✓ Created browser/orchard.css
+  ✓ Updated package.json (deps + build:browser)
+
+✅ Project created!
+
+Next steps:
+  cd orchard
+  npm install
+  sharpee build --browser   # story + playable web client → dist/web/
+  sharpee play              # play in the terminal
+
+Your story lives in orchard.story — edit it and rebuild.
+```
+
+Run those next steps as printed: `cd orchard`, then `npm install` to
+fetch the platform packages.
+
+## The story file
+
+The whole game is `orchard.story`. The scaffold's version is a one-room
+world, and it already shows the shape of everything to come:
+
+```chord
+story "orchard" by "you"
+  id: orchard
+  version: 0.1.0
+  blurb: An interactive fiction adventure
+
+create the Landing
+  a room
+
+  A quiet place to begin. Doorways lead everywhere a story might go —
+  for now, this landing is the whole world.
+
+create the brass lantern
+  aka lamp
+
+  An old brass lantern, dented but serviceable.
+
+create the player
+  starts in the Landing
+  carries the brass lantern
+```
+
+Three things to notice, because they are the grammar of every Chord
+story:
+
+- **The story header** opens the file: title, author, and `key: value`
+  facts about the story as a whole.
+- **`create` blocks declare entities.** Indented lines state facts about
+  them — `a room` composes a kind, `aka lamp` adds a player-facing
+  synonym, `starts in` and `carries` place things.
+- **Bare prose is description.** A paragraph after a blank line inside a
+  `create` block is what the player sees. No quotes, no keywords — prose
+  is a first-class part of the language.
+
+Chord is line-oriented and indentation-scoped (spaces, not tabs). There
+are no braces and no statement terminators; the layout is the structure.
+
+## Edit and go
+
+Change the Landing's description, save, and the next
+[build or play](/chord/getting-started/compose-and-run) picks it up —
+the story compiles at build time, and mistakes come back as named,
+line-anchored diagnostics rather than runtime surprises.

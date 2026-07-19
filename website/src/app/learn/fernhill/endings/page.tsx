@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="Compose & run">
+    <DocPage title="Endings & text: scores, three ways out, living prose">
       <Content />
     </DocPage>
   );

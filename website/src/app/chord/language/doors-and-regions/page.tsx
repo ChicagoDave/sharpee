@@ -1,11 +1,10 @@
-import { DocPage, Placeholder } from "@/components/doc-page";
+import { DocPage } from "@/components/doc-page";
+import Content from "./content.mdx";
 
 export default function Page() {
   return (
     <DocPage title="Doors & regions">
-      <Placeholder label="prose block" />
-      <Placeholder label="code sample" />
-      <Placeholder label="next/prev pager" h={90} />
+      <Content />
     </DocPage>
   );
 }

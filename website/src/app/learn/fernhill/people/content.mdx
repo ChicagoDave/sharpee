@@ -1,0 +1,84 @@
+## A guard, and the state that moves her
+
+Mrs Kettle stands between you and the study. She is three facts working
+together — an NPC with the `guard` role, her own states, and the blocked
+exit from chapter 1 reading those states live:
+
+```chord
+create Mrs Kettle
+  aka housekeeper, kettle
+  a person, guard
+  in the Entrance Hall
+  states: guarded, softened
+
+  on giving it
+    change it to softened when it has the sherry bottle
+    award softened, once when it is softened
+    phrase kettle-softened when it is softened
+  end on
+```
+
+```chord
+create the Entrance Hall
+  west is blocked while Mrs Kettle is guarded: kettle-blocks
+```
+
+The `on giving it` clause is the **give-gate**: hand her the right bottle
+and she softens — and because the block is a live condition, the study
+door opens the same instant, no extra wiring. The `when` tails on each
+statement keep wrong gifts from softening anyone.
+
+## A patrol
+
+```chord
+create Tobias
+  aka groundskeeper
+  a person, patrol with route [the Gravel Drive, the Fountain Court, the Boiler Shed] and wait-turns 5 and announces-movement true
+  in the Gravel Drive
+  states: steady, shaken
+```
+
+The NPC library's `patrol` role takes its route as a name list and walks
+it on its own schedule. `announces-movement true` narrates his comings and
+goings (announcements default to off).
+
+## Topic tables
+
+Conversation is a declared table per person — `ask`/`tell` both consult
+it. Rows come in two tiers: entity rows (the player asked about a thing in
+the world) and quoted free-text rows with comma-separated aliases:
+
+```chord
+define topics for tobias
+  about the boiler:
+    phrase tobias-boiler-reply
+  about the silver locket:
+    phrase tobias-locket-reply
+  about "the folly", "the fire":
+    change it to shaken
+    award truth, once
+    phrase tobias-folly-reply
+  about "the bank": phrase tobias-bank-reply
+end topics
+```
+
+A row's body is ordinary statements — the folly row *changes Tobias's
+state* (which is what unsticks the folly door, next chapter but one) and
+scores the discovery. A miss falls to the owner's `on asking it`
+catch-all if it has one:
+
+```chord
+  on asking it
+    phrase tobias-shrug
+  end on
+```
+
+Mrs Kettle's table has no catch-all, so her misses get the platform's
+polite default. Both shapes are legitimate; pick per character.
+
+## A follower you recruit
+
+Smoke the cat previews the next chapters: she is `a person, follower` —
+but feeding her uses an *authored trait*, so she waits for the
+[state & verbs chapter](/learn/fernhill/state). The short
+version: bring the kipper.

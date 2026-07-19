@@ -465,6 +465,11 @@ are gone; facts are derived conditions or owner states (`parse.removed-flag`).
 - `define phrase X, verbatim` preserves line structure, interior blank
   lines, and relative indentation (the common leading indent is stripped);
   mutually exclusive with strategies and `or` variants.
+- Phrase body text must be indented under the `define phrase` header; a
+  column-1 non-keyword line is `parse.phrase-text-indent` (one diagnostic
+  for the run of flush-left lines; recovery still finds `end phrase`).
+  Guard added 2026-07-19 — before it, such a line looped the variant
+  parser to OOM.
 
 ## Traits, actions, hatches, sequences (Phase B, extended by Phase C)
 

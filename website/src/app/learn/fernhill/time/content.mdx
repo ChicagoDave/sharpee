@@ -1,0 +1,117 @@
+## The fixed timeline
+
+A `define sequence` is a schedule. Fernhill's clock is the whole game's
+pressure:
+
+```chord
+define sequence the long night
+  at turn 14
+    phrase dusk-deepens
+    change the story to midnight
+  at turn 70
+    phrase small-hours
+  at turn 130
+    lose dawn-comes
+end sequence
+```
+
+`at turn N` steps fire on schedule; the last one is the losing ending —
+dawn comes, the auction party arrives, the game ends. Note the story-state
+flip at turn 14: header `states:` plus `change the story to …` is how the
+world knows what hour it is.
+
+## The fuse: a countdown with stakes
+
+Entering the folly (once) lights an old blasting fuse. A second sequence
+anchors on that *event* rather than a turn number:
+
+```chord
+create the Folly
+  a room
+
+  after entering it, once
+    change the fuse to lit
+    phrase fuse-catches
+  end after
+```
+
+```chord
+define sequence the fuse burn
+  when the fuse becomes lit
+    phrase fuse-racing
+  3 turns later
+    kill the player fuse-blast when the fuse is lit
+end sequence
+```
+
+`when <entity> becomes <state>` starts the clock; `N turns later` steps
+follow; `kill the player` is the hard ending — gated `when the fuse is
+lit`, so cutting the fuse (`cuttable with the garden shears`, chapter 2)
+defuses the death. Both branches are real: the game will kill you.
+
+## Recurring events, gated on presence
+
+```chord
+create the Cellar
+  on every turn
+    phrase cellar-drip
+  end on
+
+  on every turn while the oil lamp is lit, once
+    phrase lamplight-startle
+  end on
+```
+
+An entity's `on every turn` clause fires only while the player is there
+to hear it. The `, once` modifier makes a beat that never repeats; a
+`while` gate makes one that tracks live state. (The fuse hisses the same
+way — `on every turn while it is lit`.)
+
+## The boiler: a state machine
+
+The estate's centerpiece. The brass plate says FILL. PRIME. LIGHT — and
+the machine enforces it. With `use state-machines` in the header:
+
+```chord
+define machine the boiler works
+  role furnace is the boiler
+  starts cold
+
+  state cold
+    when turning the stopcock: filled
+
+  state filled
+    on enter
+      change the boiler to filled
+      phrase water-gurgles
+    end on
+    when pushing the primer plunger: primed
+
+  state primed
+    on enter
+      change the boiler to primed
+      phrase primer-thumps
+    end on
+    when switching_on the furnace: running
+
+  state running, terminal
+    on enter
+      change the boiler to running
+      change the vine to flowering
+      phrase pipes-warm
+      phrase vine-stirs
+      play sound boiler-thump when client has sound
+    end on
+end machine
+```
+
+Transitions are *player actions on world entities* (`when turning the
+stopcock: filled`); `on enter` bodies mirror machine truth onto the
+boiler's visible states, narrate, and — note the last line — reach into
+the greenhouse: the `running` state flowers the vine. The machine is the
+causal spine of the estate: boiler → frost seal opens (chapter 1's live
+block) → vine flowers → the silver locket, next chapter.
+
+Out-of-order attempts get their own voices, authored as refusals on the
+entities themselves (`on pushing it while the boiler is cold → refuse
+primer-dry`; the cold boiler answers `switch on` with a hollow CLANK).

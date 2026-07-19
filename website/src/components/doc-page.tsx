@@ -8,8 +8,9 @@
  * Public interface: <DocPage title>{content}</DocPage>.
  */
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { crumbsFor } from '@/lib/nav';
+import { crumbsFor, pagerFor } from '@/lib/nav';
 
 export function DocPage({ title, children }: { title: string; children: React.ReactNode }) {
   const crumbs = crumbsFor(usePathname());
@@ -18,7 +19,30 @@ export function DocPage({ title, children }: { title: string; children: React.Re
       {crumbs.length > 0 && <div className="mb-5 text-[13px] text-muted">{crumbs.join(' / ')}</div>}
       <h1 className="mb-4 text-[28px] font-bold">{title}</h1>
       <div className="space-y-4">{children}</div>
+      <Pager />
     </article>
+  );
+}
+
+/** Prev/next footer links, derived from the nav model (within-section only). */
+function Pager() {
+  const { prev, next } = pagerFor(usePathname());
+  if (!prev && !next) return null;
+  return (
+    <nav className="mt-10 flex justify-between gap-4 border-t border-border pt-5 text-[14px]">
+      {prev ? (
+        <Link href={prev.href} className="text-link hover:underline">
+          ← {prev.title}
+        </Link>
+      ) : (
+        <span />
+      )}
+      {next && (
+        <Link href={next.href} className="text-link hover:underline">
+          {next.title} →
+        </Link>
+      )}
+    </nav>
   );
 }
 

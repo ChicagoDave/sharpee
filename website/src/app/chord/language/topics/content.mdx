@@ -1,0 +1,72 @@
+Conversation in Chord is declarative: each person carries one declared
+table of what they can be asked or told about. The story states what can
+be discussed; the compiler checks all of it before the game runs.
+
+## The topics table
+
+```chord
+define topics for tobias
+  about the sherry bottle: phrase tobias-sherry-reply
+  about "the folly", "the fire":
+    change it to shaken
+    phrase tobias-folly-reply
+  about "the weather": phrase tobias-weather-reply
+end topics
+```
+
+One table per person, and the same table serves both ASK and TELL.
+Rows come in two tiers:
+
+- **Entity rows** — `about the sherry bottle:` matches when the player
+  asks about a thing that exists in the world, resolved the same way
+  the parser resolves any noun. Entity rows are checked first.
+- **Free-text rows** — `about "the folly", "the fire":` declares a
+  quoted topic plus comma-separated aliases. Matching is whole-topic
+  equality, case-insensitive, with a leading article stripped — a
+  lookup, never a fuzzy guess.
+
+## Rows are ordinary statements
+
+A one-line row names its response directly — usually `phrase <key>`. A
+row may instead open an indented body of ordinary statements: the folly
+row above *changes Tobias's state* as well as replying, which is how a
+conversation can unstick a door elsewhere in the world. Inside a row
+body, `it` is the table's owner.
+
+## The catch-all
+
+A topic that matches no row falls to the owner's plain `on asking it`
+clause, if there is one:
+
+```chord
+create Tobias
+  a person, proper
+
+  on asking it
+    phrase tobias-shrug
+  end on
+```
+
+That clause is the character's own "couldn't say" voice, and it fires
+*only* on a miss — when a row matches, the row fully owns the response.
+A person with no catch-all gets the platform's polite default instead.
+Both shapes are legitimate; pick per character. `on telling it` mirrors
+the same pattern for TELL.
+
+## The compiler holds the table honest
+
+Topic collisions are compile errors, never runtime tie-breaks:
+
+| Mistake | Result |
+| ------- | ------ |
+| Two rows for the same entity or normalized text (aliases included) | duplicate-topic error |
+| A quoted row colliding with the name or `aka` of an entity used in the same table | collision error |
+| A second `define topics` block for the same person | duplicate-table error |
+| A topics table on something that is not a person | host error |
+
+<Callout title="Why a closed set?">
+  Because the table is declared, the compiler can see the whole
+  conversation surface: every reply reachable, every overlap caught,
+  nothing dependent on runtime matching order. The player's experience
+  is authored, not emergent from tie-breaks.
+</Callout>
