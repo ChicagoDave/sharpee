@@ -42,6 +42,8 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Committed proof-run logs are the exception (g2-proof-run.log precedent)
+!docs/work/**/proof/*.log
 
 # Editor directories and files
 .idea/
