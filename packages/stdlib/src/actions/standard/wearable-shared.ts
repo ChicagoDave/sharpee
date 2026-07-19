@@ -7,10 +7,10 @@
  * - Wearable validation helpers
  */
 
-import { ActionContext } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, TraitType, WearableTrait } from '@sharpee/world-model';
-import { nounPhraseFor } from '../../utils';
+import { nounPhraseFor } from '../../utils/index.js';
 
 /**
  * Context analysis for wearable actions

@@ -2,5 +2,5 @@
  * Talking action module exports
  */
 
-export { talkingAction } from './talking';
-export * from './talking-events';
+export { talkingAction } from './talking.js';
+export * from './talking-events.js';

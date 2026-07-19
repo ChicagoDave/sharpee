@@ -14,9 +14,9 @@
  * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
  */
 
-import { Behavior } from '../../behaviors/behavior';
-import { TraitType } from '../trait-types';
-import { HealthTrait } from './healthTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { TraitType } from '../trait-types.js';
+import { HealthTrait } from './healthTrait.js';
 
 export class HealthBehavior extends Behavior {
   static requiredTraits = [TraitType.HEALTH];

@@ -2,4 +2,4 @@
  * Debug types for diagnostic information
  */
 
-export * from './types';
+export * from './types.js';

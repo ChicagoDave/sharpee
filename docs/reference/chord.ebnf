@@ -73,7 +73,8 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-machine                              (* ADR-215, use-gated *)
              | define-asset | define-channel               (* ADR-216 *)
              | define-family-channel                       (* ADR-241 *)
-             | define-topics ;                             (* ADR-239 *)
+             | define-topics                               (* ADR-239 *)
+             | define-pronouns ;                           (* ADR-242 *)
 
 (* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
    error with a fix-it naming `define trait` + clauses or `define action
@@ -122,6 +123,13 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
 
 create       = "create" name NL >>> { create-line } ;
 create-line  = "aka" alias { "," alias } NL
+             | "pronouns" WORD NL                          (* ADR-242 D5 (ratchet H2):
+                                                              person blocks only (analyzer
+                                                              gate); a standard set
+                                                              (he|she|it|they) or a
+                                                              `define pronouns` name;
+                                                              absent = by-number fallback,
+                                                              never an injected default *)
              | states-line
              | score-line
              | composition { "," composition } NL          (* pre-blank paragraph only *)
@@ -363,6 +371,23 @@ topic-key      = name                                      (* entity tier — ma
                                                               errors (analysis.duplicate-
                                                               topic / analysis.topic-
                                                               entity-collision) *)
+
+define-pronouns = "define" "pronouns" WORD NL              (* ADR-242 D7 (ratchet H3):
+                                                              a named pronoun set — five
+                                                              named case rows, order
+                                                              free, all required
+                                                              (analysis.pronoun-set-rows /
+                                                              -duplicate-row); a name
+                                                              shadowing he|she|it|they is
+                                                              analysis.pronoun-set-
+                                                              shadows. Forms are DATA
+                                                              (ir.pronounSets) — the
+                                                              loader registers them into
+                                                              the language provider *)
+                  >>> { PRONOUN-CASE WORD NL }
+                  "end" "pronouns" NL ;
+PRONOUN-CASE    = "subject" | "object" | "possessive"
+                | "possessive-pronoun" | "reflexive" ;
 
 sequence-step  = step-anchor NL >>> { statement } ;
 step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)

@@ -4,8 +4,8 @@
 
 import { EntityId, ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { Effect, EntityBindings } from './types';
-import { resolveRef } from './guard-evaluator';
+import { Effect, EntityBindings } from './types.js';
+import { resolveRef } from './guard-evaluator.js';
 
 let eventCounter = 0;
 

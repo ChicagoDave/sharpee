@@ -8,11 +8,11 @@
  * testable and versionable.
  */
 
-import { IFEntity } from '../entities/if-entity';
-import { SpatialIndex } from './SpatialIndex';
-import { ICapabilityStore } from './capabilities';
-import type { ScoreLedger } from './ScoreLedger';
-import type { WorldEventSystem } from './WorldEventSystem';
+import { IFEntity } from '../entities/if-entity.js';
+import { SpatialIndex } from './SpatialIndex.js';
+import { ICapabilityStore } from './capabilities.js';
+import type { ScoreLedger } from './ScoreLedger.js';
+import type { WorldEventSystem } from './WorldEventSystem.js';
 
 /**
  * References to WorldModel's internal state needed for serialization.

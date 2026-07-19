@@ -2,6 +2,6 @@
  * Concealment trait module (ADR-148)
  */
 
-export * from './concealmentTrait';
-export * from './concealedStateTrait';
-export * from './concealedVisibilityBehavior';
+export * from './concealmentTrait.js';
+export * from './concealedStateTrait.js';
+export * from './concealedVisibilityBehavior.js';

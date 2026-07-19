@@ -9,10 +9,10 @@
  * Owner context: @sharpee/world-model / traits / concealment
  */
 
-import { CapabilityBehavior } from '../../capabilities/capability-behavior';
-import { WorldModel } from '../../world/WorldModel';
-import { VISIBILITY_CAPABILITY } from '../../world/VisibilityBehavior';
-import { ConcealedStateTrait } from './concealedStateTrait';
+import { CapabilityBehavior } from '../../capabilities/capability-behavior.js';
+import { WorldModel } from '../../world/WorldModel.js';
+import { VISIBILITY_CAPABILITY } from '../../world/VisibilityBehavior.js';
+import { ConcealedStateTrait } from './concealedStateTrait.js';
 
 /**
  * Default visibility behavior for concealed actors.

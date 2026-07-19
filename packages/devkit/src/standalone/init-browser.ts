@@ -10,9 +10,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { platformRanges } from './init';
-import { stampVersion } from './version-stamp';
-import { findStoryFile } from './author-game';
+import { platformRanges } from './init.js';
+import { stampVersion } from './version-stamp.js';
+import { findStoryFile } from './author-game.js';
 
 // In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
 const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))

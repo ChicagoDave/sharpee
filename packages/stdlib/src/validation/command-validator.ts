@@ -23,12 +23,12 @@ import type {
 } from '@sharpee/world-model';
 import { IdentityTrait, WallEntity, deriveNameVocabulary } from '@sharpee/world-model';
 
-import type { ValidatedCommand, ScopeInfo } from './types';
-import type { SenseType } from '../scope/types';
+import type { ValidatedCommand, ScopeInfo } from './types.js';
+import type { SenseType } from '../scope/types.js';
 
-import { ActionRegistry } from '../actions/registry';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
-import { StandardScopeResolver } from '../scope/scope-resolver';
+import { ActionRegistry } from '../actions/registry.js';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
+import { StandardScopeResolver } from '../scope/scope-resolver.js';
 
 /**
  * Action metadata interface for declaring requirements

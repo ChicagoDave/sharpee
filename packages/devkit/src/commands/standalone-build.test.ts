@@ -14,7 +14,7 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { generateConsumer } from '../consumer-gen';
+import { generateConsumer } from '../consumer-gen.js';
 
 // Local tsf npm staging (was DEFAULT_STAGING in the since-removed test-npm command,
 // now repokit's; this gate keeps its own constant — ADR-187 full separation).

@@ -11,14 +11,14 @@
  * 4. blocked: Generate error events when validation fails
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { emitIllustrations } from '../../helpers/emit-illustrations';
-import { buildEventData } from '../../data-builder-types';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
+import { emitIllustrations } from '../../helpers/emit-illustrations.js';
+import { buildEventData } from '../../data-builder-types.js';
 import { getStateClauses } from '@sharpee/world-model';
 import {
   ActionLifecycleDescriptor,
@@ -30,7 +30,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the examined target is the only
@@ -48,9 +48,9 @@ export const examiningLifecycle: ActionLifecycleDescriptor = {
 };
 
 // Import our data builder
-import { examiningDataConfig, buildExaminingMessageParams } from './examining-data';
-import { ExaminingMessages } from './examining-messages';
-import { nounPhraseFor } from '../../../utils';
+import { examiningDataConfig, buildExaminingMessageParams } from './examining-data.js';
+import { ExaminingMessages } from './examining-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 
 export const examiningAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EXAMINING,

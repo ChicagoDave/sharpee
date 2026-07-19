@@ -10,20 +10,20 @@
  *
  * Public interface: process argv -> subcommand dispatch -> process exit code.
  */
-import { runCompose } from './commands/compose';
-import { runIntrospect } from './commands/introspect';
-import { resolveStory, findMonorepoRoot } from './repo';
+import { runCompose } from './commands/compose.js';
+import { runIntrospect } from './commands/introspect.js';
+import { resolveStory, findMonorepoRoot } from './repo.js';
 // Author-project commands (devkit is the author tool; the in-repo platform build
 // is repokit — ADR-187). repo.ts is retained only for the workspace-story redirect.
-import { runBuildCommand } from './standalone/build';
-import { runBuildBrowserCommand } from './standalone/build-browser';
-import { runInitCommand } from './standalone/init';
-import { runInitBrowserCommand } from './standalone/init-browser';
-import { runIfidCommand } from './standalone/ifid';
-import { runRegister, runList } from './commands/register';
-import { runTestCommand } from './commands/test';
-import { runPlayCommand } from './commands/play';
-import { lookupStory } from './registry';
+import { runBuildCommand } from './standalone/build.js';
+import { runBuildBrowserCommand } from './standalone/build-browser.js';
+import { runInitCommand } from './standalone/init.js';
+import { runInitBrowserCommand } from './standalone/init-browser.js';
+import { runIfidCommand } from './standalone/ifid.js';
+import { runRegister, runList } from './commands/register.js';
+import { runTestCommand } from './commands/test.js';
+import { runPlayCommand } from './commands/play.js';
+import { lookupStory } from './registry.js';
 
 const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
 

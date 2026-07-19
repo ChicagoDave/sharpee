@@ -1,1 +1,1 @@
-export { EquippedTrait, IEquippedData } from './equippedTrait';
+export { EquippedTrait, IEquippedData } from './equippedTrait.js';

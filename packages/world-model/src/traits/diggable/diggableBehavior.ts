@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/diggable/diggableBehavior.ts
 
 import { EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { DiggableTrait } from './diggableTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { DiggableTrait } from './diggableTrait.js';
 
 /**
  * Behavior for diggable entities (ADR-230 Phase 6 (sketch ruling 6)).

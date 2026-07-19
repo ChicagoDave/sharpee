@@ -6,4 +6,4 @@
  * shared across actions and capability behaviors.
  */
 
-export { nounPhraseFor } from './noun-phrase';
+export { nounPhraseFor } from './noun-phrase.js';

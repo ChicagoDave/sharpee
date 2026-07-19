@@ -1,2 +1,2 @@
-export { HealthTrait, IHealthData } from './healthTrait';
-export { HealthBehavior } from './healthBehavior';
+export { HealthTrait, IHealthData } from './healthTrait.js';
+export { HealthBehavior } from './healthBehavior.js';

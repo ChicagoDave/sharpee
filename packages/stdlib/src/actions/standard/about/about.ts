@@ -12,13 +12,13 @@
  * 4. report: Emit about event
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { blockedMessageId } from '../../lifecycle';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { AboutDisplayedEventData } from './about-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { AboutDisplayedEventData } from './about-events.js';
 
 export const aboutAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ABOUT,

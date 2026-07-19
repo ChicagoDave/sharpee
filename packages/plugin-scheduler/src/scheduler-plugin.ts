@@ -7,8 +7,8 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-import { ISchedulerService, createSchedulerService } from './scheduler-service';
-import { SchedulerState } from './types';
+import { ISchedulerService, createSchedulerService } from './scheduler-service.js';
+import { SchedulerState } from './types.js';
 
 export class SchedulerPlugin implements TurnPlugin {
   id = 'sharpee.plugin.scheduler';

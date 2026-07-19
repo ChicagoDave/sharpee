@@ -1,11 +1,11 @@
 // packages/world-model/src/traits/supporter/supporterBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { SupporterTrait } from './supporterTrait';
-import { IdentityBehavior } from '../identity/identityBehavior';
-import { IWorldQuery } from '../container/containerBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { SupporterTrait } from './supporterTrait.js';
+import { IdentityBehavior } from '../identity/identityBehavior.js';
+import { IWorldQuery } from '../container/containerBehavior.js';
 
 /**
  * Result of adding an item to a supporter

@@ -9,7 +9,7 @@
  * Owner context: @sharpee/queries
  */
 
-export { EntityQuery } from './entity-query';
+export { EntityQuery } from './entity-query.js';
 
 // Side-effect import: patches WorldModel.prototype with query entry points
-import './augmentation';
+import './augmentation.js';

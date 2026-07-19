@@ -11,15 +11,15 @@
  * the manifest types.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
-import { COMBAT_MANIFEST } from './combat';
-import { NPC_MANIFEST } from './npc';
-import { STATE_MACHINES_MANIFEST } from './state-machines';
-import type { ExtensionManifest, ManifestAdjective } from './types';
+import { COMBAT_MANIFEST } from './combat.js';
+import { NPC_MANIFEST } from './npc.js';
+import { STATE_MACHINES_MANIFEST } from './state-machines.js';
+import type { ExtensionManifest, ManifestAdjective } from './types.js';
 
-export type { ExtensionManifest, ManifestAdjective, ManifestField } from './types';
-export { COMBAT_MANIFEST } from './combat';
-export { NPC_MANIFEST } from './npc';
-export { STATE_MACHINES_MANIFEST } from './state-machines';
+export type { ExtensionManifest, ManifestAdjective, ManifestField } from './types.js';
+export { COMBAT_MANIFEST } from './combat.js';
+export { NPC_MANIFEST } from './npc.js';
+export { STATE_MACHINES_MANIFEST } from './state-machines.js';
 
 /**
  * Name → manifest, for every extension the language knows. `use`-gated

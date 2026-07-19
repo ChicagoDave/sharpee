@@ -9,8 +9,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { runTestCommand } from './test';
-import { findStoryFile, loadAuthorGame } from '../standalone/author-game';
+import { runTestCommand } from './test.js';
+import { findStoryFile, loadAuthorGame } from '../standalone/author-game.js';
 
 const STORY = `story "Mini" by "T"
   id: mini

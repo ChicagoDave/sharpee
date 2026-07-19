@@ -1,7 +1,7 @@
 // SharedDataStore.ts - Shared state wrapper for WorldModel and AuthorModel
 
-import { IFEntity } from '../entities/if-entity';
-import { SpatialIndex } from './SpatialIndex';
+import { IFEntity } from '../entities/if-entity.js';
+import { SpatialIndex } from './SpatialIndex.js';
 
 /**
  * Wrapper class that holds references to shared state between WorldModel and AuthorModel.

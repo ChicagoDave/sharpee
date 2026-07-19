@@ -2,11 +2,11 @@
  * Behavior for destructible entities
  */
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
-import { TraitType } from '../trait-types';
-import { DestructibleTrait } from './destructibleTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
+import { TraitType } from '../trait-types.js';
+import { DestructibleTrait } from './destructibleTrait.js';
 import { EntityId } from '@sharpee/core';
 
 /**

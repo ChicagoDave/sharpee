@@ -5,5 +5,5 @@
  * for handling player queries and responses.
  */
 
-export * from './types';
-export * from './query-manager';
+export * from './types.js';
+export * from './query-manager.js';

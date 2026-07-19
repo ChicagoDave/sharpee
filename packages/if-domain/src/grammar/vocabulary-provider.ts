@@ -10,7 +10,7 @@
  * The parser only considers a pattern if its vocabulary is active in the current context.
  */
 
-import { GrammarContext } from './grammar-builder';
+import { GrammarContext } from './grammar-builder.js';
 
 /**
  * Configuration for a vocabulary category

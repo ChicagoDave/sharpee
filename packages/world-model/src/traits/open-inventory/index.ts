@@ -1,1 +1,1 @@
-export { OpenInventoryTrait } from './openInventoryTrait';
+export { OpenInventoryTrait } from './openInventoryTrait.js';

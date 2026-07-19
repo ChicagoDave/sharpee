@@ -14,8 +14,8 @@
  * - output contains "text"           - Last command output contains text
  */
 
-import { ConditionResult } from './types';
-import type { WorldModelLike } from './runner';
+import { ConditionResult } from './types.js';
+import type { WorldModelLike } from './runner.js';
 
 /**
  * Find an entity by name (searches identity.name and aliases)

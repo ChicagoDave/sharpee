@@ -32,7 +32,7 @@
  * without a separate import line.
  */
 
-export { channelRegistry, StdlibChannelRegistry } from './registry';
+export { channelRegistry, StdlibChannelRegistry } from './registry.js';
 
 export {
   // Channel objects
@@ -55,7 +55,7 @@ export {
   type StandardChannelId,
   type LifecycleEventKind,
   type LifecyclePayload,
-} from './standard';
+} from './standard.js';
 
 export {
   // Channel objects
@@ -81,7 +81,7 @@ export {
   // Types
   type MediaChannelId,
   type MediaEventType,
-} from './media';
+} from './media.js';
 
 // Spatial sound channel (ADR-172)
 export {
@@ -91,9 +91,9 @@ export {
   SOUND_EVENT_TYPES,
   type SoundChannelId,
   type SoundEventType,
-} from './sound-events';
+} from './sound-events.js';
 
-export { MAIN_KEYS } from './keys';
+export { MAIN_KEYS } from './keys.js';
 
 // Re-export the registry/channel types from if-domain for author
 // convenience — story code can `import { type IChannelRegistry } from

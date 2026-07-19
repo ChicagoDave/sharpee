@@ -22,8 +22,8 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity } from '@sharpee/world-model';
-import { ActionContext, ValidationResult } from '../enhanced-types';
-import { ActionLifecycleDescriptor } from './descriptor';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
+import { ActionLifecycleDescriptor } from './descriptor.js';
 import {
   LifecycleState,
   resolveLifecycle,
@@ -32,7 +32,7 @@ import {
   runPostExecute,
   runPostReport,
   runOnBlocked
-} from './lifecycle-engine';
+} from './lifecycle-engine.js';
 
 /**
  * Reserved sharedData key holding the command's per-item lifecycle states.

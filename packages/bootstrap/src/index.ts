@@ -11,7 +11,7 @@
  * Public interface: `resolveStoryModulePath`, `loadStory`, `assembleGame`, `LoadedGame`.
  */
 
-import { resolveStoryModulePath } from './resolve';
+import { resolveStoryModulePath } from './resolve.js';
 import { GameEngine, TurnResult } from '@sharpee/engine';
 import { ISemanticEvent } from '@sharpee/core';
 import { flattenContent } from '@sharpee/channel-service';
@@ -63,8 +63,8 @@ export interface LoadedGame {
   executeCommand(input: string): Promise<string>;
 }
 
-export { resolveStoryModulePath } from './resolve';
-export { buildManifest } from './introspect';
+export { resolveStoryModulePath } from './resolve.js';
+export { buildManifest } from './introspect.js';
 
 /**
  * Load a story by location (entry-aware) and assemble a runnable game.

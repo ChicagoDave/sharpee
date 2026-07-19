@@ -12,7 +12,7 @@
  * Owner context: `@sharpee/world-model` — combat stats (requires the HEALTH layer).
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 export interface ICombatantData {
   /** Combat skill (0-100, affects hit/dodge chance) - ADR-072 */

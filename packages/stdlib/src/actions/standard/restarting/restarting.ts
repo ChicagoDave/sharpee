@@ -11,12 +11,12 @@
  * 4. report: Emit platform event and notifications
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { blockedMessageId } from '../../lifecycle';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent, createRestartRequestedEvent, IRestartContext } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { RestartRequestedEventData } from './restarting-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { RestartRequestedEventData } from './restarting-events.js';
 
 interface RestartingSharedData {
   forceRestart: boolean;

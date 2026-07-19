@@ -12,22 +12,22 @@
  * never depend on platform-runtime packages (`if-domain` types at most);
  * the runtime platform never depends on it (ADR-210 Direction rule).
  */
-import { analyze } from './analyzer';
-import type { StoryFile } from './ast';
-import { Diagnostic, DiagnosticBag } from './diagnostics';
-import type { StoryIR } from './ir';
-import { parseStory } from './parser';
+import { analyze } from './analyzer.js';
+import type { StoryFile } from './ast.js';
+import { Diagnostic, DiagnosticBag } from './diagnostics.js';
+import type { StoryIR } from './ir.js';
+import { parseStory } from './parser.js';
 
-export * from './ast';
-export * from './ir';
-export { analyze, normalizeTopic } from './analyzer';
-export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf } from './catalog';
-export { EXTENSION_MANIFESTS, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests';
-export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests';
-export { Diagnostic, DiagnosticSeverity, DiagnosticBag } from './diagnostics';
-export { Span, spanOf, mergeSpans } from './span';
-export { lex, Line, Token, TokenKind } from './lexer';
-export { parseStory } from './parser';
+export * from './ast.js';
+export * from './ir.js';
+export { analyze, normalizeTopic } from './analyzer.js';
+export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES } from './catalog.js';
+export { EXTENSION_MANIFESTS, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests/index.js';
+export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests/index.js';
+export { Diagnostic, DiagnosticSeverity, DiagnosticBag } from './diagnostics.js';
+export { Span, spanOf, mergeSpans } from './span.js';
+export { lex, Line, Token, TokenKind } from './lexer.js';
+export { parseStory } from './parser.js';
 
 /** Result of parsing one `.story` source. */
 export interface ParseResult {

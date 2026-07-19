@@ -25,6 +25,7 @@ export type {
   IRChannelDef,
   IRDataChannelDef,
   IRFamilyChannelDef,
+  IRPronounSetDef,
   IRPhrases,
   IRPhrase,
   IRPhraseVariant,

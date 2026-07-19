@@ -20,7 +20,7 @@
  * ```
  */
 
-import { EntityId } from '../types/entity';
+import { EntityId } from '../types/entity.js';
 
 /**
  * Registry mapping event type strings to their data shapes.

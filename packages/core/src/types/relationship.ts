@@ -1,6 +1,6 @@
 // packages/core/src/types/relationship.ts
 
-import { EntityId } from './entity';
+import { EntityId } from './entity.js';
 
 /**
  * A generic relationship between two entities

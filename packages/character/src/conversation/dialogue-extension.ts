@@ -11,17 +11,17 @@
  */
 
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { DialogueExtension, DialogueResult } from './dialogue-types';
-import { TopicRegistry } from './topic-registry';
-import { ResponseCandidate } from './response-types';
-import { evaluateConstraints, ConstraintEvaluator } from './constraint-evaluator';
-import { ConversationLifecycle } from './lifecycle';
-import { buildResponseIntent } from './acl';
+import { DialogueExtension, DialogueResult } from './dialogue-types.js';
+import { TopicRegistry } from './topic-registry.js';
+import { ResponseCandidate } from './response-types.js';
+import { evaluateConstraints, ConstraintEvaluator } from './constraint-evaluator.js';
+import { ConversationLifecycle } from './lifecycle.js';
+import { buildResponseIntent } from './acl.js';
 import {
   ConversationData,
   AuthoredResponse,
   ResponseStateMutation,
-} from './builder';
+} from './builder.js';
 
 // ---------------------------------------------------------------------------
 // NPC registration

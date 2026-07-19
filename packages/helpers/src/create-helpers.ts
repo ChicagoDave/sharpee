@@ -8,11 +8,11 @@
  */
 
 import type { IWorldModel } from '@sharpee/world-model';
-import { RoomBuilder } from './builders/room';
-import { ObjectBuilder } from './builders/object';
-import { ContainerBuilder } from './builders/container';
-import { ActorBuilder } from './builders/actor';
-import { DoorBuilder } from './builders/door';
+import { RoomBuilder } from './builders/room.js';
+import { ObjectBuilder } from './builders/object.js';
+import { ContainerBuilder } from './builders/container.js';
+import { ActorBuilder } from './builders/actor.js';
+import { DoorBuilder } from './builders/door.js';
 
 /**
  * The set of builder factories returned by world.helpers().

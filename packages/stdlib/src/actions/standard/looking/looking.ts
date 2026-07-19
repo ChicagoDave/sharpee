@@ -8,24 +8,24 @@
  * 4. blocked: Generate error events (never called since looking always valid)
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { blockedMessageId } from '../../lifecycle';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, RoomBehavior } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { captureRoomSnapshot } from '../../base/snapshot-utils';
-import { emitIllustrations } from '../../helpers/emit-illustrations';
-import { buildEventData } from '../../data-builder-types';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { captureRoomSnapshot } from '../../base/snapshot-utils.js';
+import { emitIllustrations } from '../../helpers/emit-illustrations.js';
+import { buildEventData } from '../../data-builder-types.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   lookingEventDataConfig,
   roomDescriptionDataConfig,
   listContentsDataConfig,
   determineLookingMessage,
   ContainerContentsInfo
-} from './looking-data';
-import { LookingMessages } from './looking-messages';
+} from './looking-data.js';
+import { LookingMessages } from './looking-messages.js';
 
 export const lookingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOOKING,

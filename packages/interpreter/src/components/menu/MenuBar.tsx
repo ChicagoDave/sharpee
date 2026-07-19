@@ -3,8 +3,8 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { usePreferences, ILLUSTRATION_SIZES, FONT_FAMILIES, FONT_SIZES } from '../../hooks/usePreferences';
-import type { StoryMetadata } from '../../types/story-metadata';
+import { usePreferences, ILLUSTRATION_SIZES, FONT_FAMILIES, FONT_SIZES } from '../../hooks/usePreferences.js';
+import type { StoryMetadata } from '../../types/story-metadata.js';
 
 export interface MenuBarProps {
   onSave?: () => void;

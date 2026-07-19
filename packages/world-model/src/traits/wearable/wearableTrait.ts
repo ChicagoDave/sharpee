@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/wearable/wearableTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 export interface IWearableData {
   /** Whether the item is currently being worn */

@@ -5,10 +5,10 @@
 import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
 import { LanguageProvider, IChannelRegistry } from '@sharpee/if-domain';
 import { Parser } from '@sharpee/stdlib';
-import { EventEmitter } from './events/event-emitter';
+import { EventEmitter } from './events/event-emitter.js';
 import { ISemanticEvent } from '@sharpee/core';
-import type { GameEngine } from './game-engine';
-import { NarrativeConfig } from './narrative';
+import type { GameEngine } from './game-engine.js';
+import { NarrativeConfig } from './narrative/index.js';
 
 /**
  * Story configuration

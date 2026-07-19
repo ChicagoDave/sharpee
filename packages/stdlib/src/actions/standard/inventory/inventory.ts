@@ -14,14 +14,14 @@
  * 4. blocked: Generate error events (never called since always valid)
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { blockedMessageId } from '../../lifecycle';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, IFEntity } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { InventoryEventMap } from './inventory-events';
-import { InventoryMessages } from './inventory-messages';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { InventoryEventMap } from './inventory-events.js';
+import { InventoryMessages } from './inventory-messages.js';
 
 /**
  * Shared data passed between execute and report phases

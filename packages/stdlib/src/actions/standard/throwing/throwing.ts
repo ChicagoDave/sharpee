@@ -13,8 +13,8 @@
  * 4. report: standard events → postReport hook (additional effects)
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -30,10 +30,10 @@ import {
   CapabilityEffect,
   ITrait
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope/types';
-import { ThrowingEventMap } from './throwing-events';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { ThrowingEventMap } from './throwing-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -44,7 +44,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): BOTH the thrown item and the target are

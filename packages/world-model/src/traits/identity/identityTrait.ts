@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/identity/identityTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Identity trait provides basic naming and description for entities.
@@ -45,6 +45,14 @@ export class IdentityTrait implements ITrait {
   
   /** Article to use with the name ("a", "an", "the", "some", or empty for proper names) */
   article = 'a';
+
+  /**
+   * Pronoun set for gendered / neopronoun reference (ADR-242 D6): one of
+   * the standard sets ('he' | 'she' | 'it' | 'they') or a named set
+   * registered with the language provider. Absent = the phrase chain's
+   * by-number fallback — no default is injected anywhere.
+   */
+  pronounSet?: string;
 
   /**
    * Author-supplied plural form for irregular nouns (ADR-190), e.g. "geese" for

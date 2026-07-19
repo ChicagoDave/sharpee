@@ -5,9 +5,9 @@
  * Follows the same 4-phase pattern as stdlib actions for consistency.
  */
 
-import { IFEntity } from '../entities';
-import { WorldModel } from '../world';
-import { CapabilityValidationResult, CapabilityEffect } from './types';
+import { IFEntity } from '../entities/index.js';
+import { WorldModel } from '../world/index.js';
+import { CapabilityValidationResult, CapabilityEffect } from './types.js';
 
 /**
  * Shared data object for passing data between behavior phases.

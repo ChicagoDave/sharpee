@@ -2,7 +2,7 @@
  * Shared logic for switching_on and switching_off actions
  */
 
-import { ActionContext } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
 import { IFEntity, TraitType, LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
 
 export interface SwitchingAnalysis {

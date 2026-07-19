@@ -13,8 +13,8 @@
  * Owner context: @sharpee/world-model — traits / temporal
  */
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /** Possible states for a scene lifecycle. */
 export type SceneState = 'waiting' | 'active' | 'ended';

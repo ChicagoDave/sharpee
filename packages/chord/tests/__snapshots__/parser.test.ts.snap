@@ -117,6 +117,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       ],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -283,6 +284,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       ],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -357,6 +359,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "line": 31,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -699,6 +702,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -768,6 +772,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1021,6 +1026,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       ],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1098,6 +1104,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "line": 43,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1183,6 +1190,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1305,6 +1313,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "line": 59,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1550,6 +1559,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "line": 66,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useGameState } from '../context/GameContext';
+import { useGameState } from '../context/GameContext.js';
 
 /**
  * Tracks the current player character ID by watching for game.pc_switched events.

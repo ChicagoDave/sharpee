@@ -24,12 +24,12 @@ import type {
   ChannelStateStore,
   Renderer as RendererInterface,
   SlotHandle,
-} from './types';
+} from './types.js';
 import {
   createJsonTreeFallbackFactory,
   type FallbackOutputSink,
   type FallbackWarningSink,
-} from './json-tree-fallback';
+} from './json-tree-fallback.js';
 
 /**
  * Optional construction options for the `Renderer`.

@@ -12,7 +12,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { resolveEngineStylesDir } from './build-browser';
+import { resolveEngineStylesDir } from './build-browser.js';
 
 /** Create node_modules/@sharpee/platform-browser under `root` in the given layout. */
 function makePlatformBrowser(

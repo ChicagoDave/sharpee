@@ -764,6 +764,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -827,6 +828,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "line": 51,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1100,6 +1102,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "line": 54,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,

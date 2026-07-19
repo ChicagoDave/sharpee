@@ -10,16 +10,16 @@
  * 3. report: Generate events from sharedData
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, OpenableTrait, LockableBehavior, IUnlockResult } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope';
-import { UnlockedEventData } from './unlocking-events';
-import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared';
-import { MESSAGES } from './unlocking-messages';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/index.js';
+import { UnlockedEventData } from './unlocking-events.js';
+import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared.js';
+import { MESSAGES } from './unlocking-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -30,7 +30,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228/229 R2): the unlocked target and the

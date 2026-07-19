@@ -43,17 +43,17 @@ import {
   WorldModel,
 } from '@sharpee/world-model';
 import { exitBlockedKey, exitMessageKey, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
-import { Evaluator, EvalContext } from './evaluator';
-import { LoadError } from './errors';
+import { Evaluator, EvalContext } from './evaluator.js';
+import { LoadError } from './errors.js';
 import {
   CHORD_OCCURRENCE_PREFIX,
   CHORD_STATE_PREFIX,
   CHORD_STORY_STATE_KEY,
   CHORD_TRAIT_PREFIX,
-} from './state-keys';
-import { withLineBreaks } from './text';
-import { stagingRenderContext } from './hatch-context';
-import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract';
+} from './state-keys.js';
+import { withLineBreaks } from './text.js';
+import { stagingRenderContext } from './hatch-context.js';
+import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract.js';
 
 /**
  * Chord strategy adverb → phrase-algebra Choice selector (ADR-196).

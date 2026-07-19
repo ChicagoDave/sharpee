@@ -12,9 +12,9 @@
  * commands (SCORE/VERSION).
  */
 
-import { Action, ActionContext, ValidationResult } from './enhanced-types';
+import { Action, ActionContext, ValidationResult } from './enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { MetaCommandRegistry } from './meta-registry';
+import { MetaCommandRegistry } from './meta-registry.js';
 
 /**
  * Abstract base class for meta-commands

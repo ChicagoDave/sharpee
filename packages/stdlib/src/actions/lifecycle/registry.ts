@@ -19,46 +19,46 @@
  * cycle. It is exported from the actions barrel (`../index.ts`) instead.
  */
 
-import { ActionLifecycleDescriptor } from './descriptor';
+import { ActionLifecycleDescriptor } from './descriptor.js';
 
-import { askingLifecycle } from '../standard/asking/asking';
-import { attackingLifecycle } from '../standard/attacking/attacking';
-import { climbingLifecycle } from '../standard/climbing/climbing';
-import { closingLifecycle } from '../standard/closing/closing';
-import { diggingLifecycle } from '../standard/digging/digging';
-import { cuttingLifecycle } from '../standard/cutting/cutting';
-import { drinkingLifecycle } from '../standard/drinking/drinking';
-import { droppingLifecycle } from '../standard/dropping/dropping';
-import { eatingLifecycle } from '../standard/eating/eating';
-import { enteringLifecycle } from '../standard/entering/entering';
-import { examiningLifecycle } from '../standard/examining/examining';
-import { exitingLifecycle } from '../standard/exiting/exiting';
-import { givingLifecycle } from '../standard/giving/giving';
-import { goingLifecycle } from '../standard/going/going';
-import { hidingLifecycle } from '../standard/hiding/hiding';
-import { insertingLifecycle } from '../standard/inserting/inserting';
-import { listeningLifecycle } from '../standard/listening/listening';
-import { lockingLifecycle } from '../standard/locking/locking';
-import { openingLifecycle } from '../standard/opening/opening';
-import { pullingLifecycle } from '../standard/pulling/pulling';
-import { pushingLifecycle } from '../standard/pushing/pushing';
-import { puttingLifecycle } from '../standard/putting/putting';
-import { readingLifecycle } from '../standard/reading/reading';
-import { removingLifecycle } from '../standard/removing/removing';
-import { searchingLifecycle } from '../standard/searching/searching';
-import { showingLifecycle } from '../standard/showing/showing';
-import { smellingLifecycle } from '../standard/smelling/smelling';
-import { switchingOffLifecycle } from '../standard/switching_off/switching_off';
-import { switchingOnLifecycle } from '../standard/switching_on/switching_on';
-import { takingLifecycle } from '../standard/taking/taking';
-import { takingOffLifecycle } from '../standard/taking_off/taking-off';
-import { talkingLifecycle } from '../standard/talking/talking';
-import { tellingLifecycle } from '../standard/telling/telling';
-import { throwingLifecycle } from '../standard/throwing/throwing';
-import { touchingLifecycle } from '../standard/touching/touching';
-import { turningLifecycle } from '../standard/turning/turning';
-import { unlockingLifecycle } from '../standard/unlocking/unlocking';
-import { wearingLifecycle } from '../standard/wearing/wearing';
+import { askingLifecycle } from '../standard/asking/asking.js';
+import { attackingLifecycle } from '../standard/attacking/attacking.js';
+import { climbingLifecycle } from '../standard/climbing/climbing.js';
+import { closingLifecycle } from '../standard/closing/closing.js';
+import { diggingLifecycle } from '../standard/digging/digging.js';
+import { cuttingLifecycle } from '../standard/cutting/cutting.js';
+import { drinkingLifecycle } from '../standard/drinking/drinking.js';
+import { droppingLifecycle } from '../standard/dropping/dropping.js';
+import { eatingLifecycle } from '../standard/eating/eating.js';
+import { enteringLifecycle } from '../standard/entering/entering.js';
+import { examiningLifecycle } from '../standard/examining/examining.js';
+import { exitingLifecycle } from '../standard/exiting/exiting.js';
+import { givingLifecycle } from '../standard/giving/giving.js';
+import { goingLifecycle } from '../standard/going/going.js';
+import { hidingLifecycle } from '../standard/hiding/hiding.js';
+import { insertingLifecycle } from '../standard/inserting/inserting.js';
+import { listeningLifecycle } from '../standard/listening/listening.js';
+import { lockingLifecycle } from '../standard/locking/locking.js';
+import { openingLifecycle } from '../standard/opening/opening.js';
+import { pullingLifecycle } from '../standard/pulling/pulling.js';
+import { pushingLifecycle } from '../standard/pushing/pushing.js';
+import { puttingLifecycle } from '../standard/putting/putting.js';
+import { readingLifecycle } from '../standard/reading/reading.js';
+import { removingLifecycle } from '../standard/removing/removing.js';
+import { searchingLifecycle } from '../standard/searching/searching.js';
+import { showingLifecycle } from '../standard/showing/showing.js';
+import { smellingLifecycle } from '../standard/smelling/smelling.js';
+import { switchingOffLifecycle } from '../standard/switching_off/switching_off.js';
+import { switchingOnLifecycle } from '../standard/switching_on/switching_on.js';
+import { takingLifecycle } from '../standard/taking/taking.js';
+import { takingOffLifecycle } from '../standard/taking_off/taking-off.js';
+import { talkingLifecycle } from '../standard/talking/talking.js';
+import { tellingLifecycle } from '../standard/telling/telling.js';
+import { throwingLifecycle } from '../standard/throwing/throwing.js';
+import { touchingLifecycle } from '../standard/touching/touching.js';
+import { turningLifecycle } from '../standard/turning/turning.js';
+import { unlockingLifecycle } from '../standard/unlocking/unlocking.js';
+import { wearingLifecycle } from '../standard/wearing/wearing.js';
 
 /**
  * The descriptor table: all 38 entity-keyed standard actions (33 per

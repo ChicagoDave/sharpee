@@ -15,7 +15,8 @@ English language provider, message resolution, formatters.
  */
 import { ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
-import { NarrativeContext } from './perspective';
+import type { PronounSetForms } from './assembler/index.js';
+import { NarrativeContext } from './perspective/index.js';
 /**
  * English language data and rules
  */
@@ -202,6 +203,15 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      * @param template The message template with optional {param} placeholders
      */
     addMessage(messageId: string, template: string): void;
+    /**
+     * Register a named pronoun set (ADR-242 D7) — the loader's
+     * `extendLanguage` registration surface beside `addMessage` (probed
+     * structurally; the loader stays locale-neutral). Forms flow to the
+     * Assembler's pronoun authority, consulted before the standard rows.
+     * @param name The set name as declared (`define pronouns ze`)
+     * @param forms The five case forms (subject/object/possessive/possessivePronoun/reflexive)
+     */
+    registerPronounSet(name: string, forms: PronounSetForms): void;
     /**
      * Add help information for a custom action
      * @param actionId The action identifier (e.g., 'custom.action.foo')
@@ -481,7 +491,7 @@ export declare const EnglishGrammarUtils: {
 /**
  * Export all grammar types and constants
  */
-export * from './index';
+export * from './index.js';
 ```
 
 ### actions
@@ -492,83 +502,63 @@ export * from './index';
  *
  * Each action has its own file with patterns, messages, and help text
  */
-export * from './taking';
-export * from './dropping';
-export * from './looking';
-export * from './inventory';
-export * from './examining';
-export * from './going';
-export * from './opening';
-export * from './closing';
-export * from './putting';
-export * from './inserting';
-export * from './removing';
-export * from './wearing';
-export * from './taking-off';
-export * from './locking';
-export * from './unlocking';
-export * from './entering';
-export * from './exiting';
-export * from './climbing';
-export * from './searching';
-export * from './listening';
-export * from './smelling';
-export * from './touching';
-export * from './reading';
-export * from './switching-on';
-export * from './switching-off';
-export * from './pushing';
-export * from './pulling';
-export * from './turning';
-export * from './lowering';
-export * from './raising';
-export * from './giving';
-export * from './showing';
-export * from './talking';
-export * from './asking';
-export * from './telling';
-export * from './answering';
-export * from './throwing';
-export * from './eating';
-export * from './drinking';
-export * from './attacking';
-export * from './hiding';
-export * from './waiting';
-export * from './sleeping';
-export * from './scoring';
-export * from './help';
-export * from './about';
-export * from './version';
-export * from './saving';
-export * from './restoring';
-export * from './quitting';
-export * from './restarting';
-export * from './undoing';
-export * from './again';
+export * from './taking.js';
+export * from './dropping.js';
+export * from './looking.js';
+export * from './inventory.js';
+export * from './examining.js';
+export * from './going.js';
+export * from './opening.js';
+export * from './closing.js';
+export * from './putting.js';
+export * from './inserting.js';
+export * from './removing.js';
+export * from './wearing.js';
+export * from './taking-off.js';
+export * from './locking.js';
+export * from './unlocking.js';
+export * from './entering.js';
+export * from './exiting.js';
+export * from './climbing.js';
+export * from './searching.js';
+export * from './listening.js';
+export * from './smelling.js';
+export * from './touching.js';
+export * from './reading.js';
+export * from './switching-on.js';
+export * from './switching-off.js';
+export * from './pushing.js';
+export * from './pulling.js';
+export * from './turning.js';
+export * from './lowering.js';
+export * from './raising.js';
+export * from './giving.js';
+export * from './showing.js';
+export * from './talking.js';
+export * from './asking.js';
+export * from './telling.js';
+export * from './answering.js';
+export * from './throwing.js';
+export * from './eating.js';
+export * from './drinking.js';
+export * from './attacking.js';
+export * from './hiding.js';
+export * from './waiting.js';
+export * from './sleeping.js';
+export * from './scoring.js';
+export * from './help.js';
+export * from './about.js';
+export * from './version.js';
+export * from './saving.js';
+export * from './restoring.js';
+export * from './quitting.js';
+export * from './restarting.js';
+export * from './undoing.js';
+export * from './again.js';
 /**
  * All standard action language definitions
  */
 export declare const standardActionLanguage: ({
-    actionId: string;
-    patterns: string[];
-    messages: {
-        already_outside: string;
-        container_closed: string;
-        cant_exit: string;
-        exited: string;
-        exited_from: string;
-        nowhere_to_go: string;
-        not_in_that: string;
-        not_on_that: string;
-        exit_blocked: string;
-        must_stand_first: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
     actionId: string;
     patterns: string[];
     messages: {
@@ -935,6 +925,26 @@ export declare const standardActionLanguage: ({
         not_here: string;
         too_small: string;
         occupied: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        already_outside: string;
+        container_closed: string;
+        cant_exit: string;
+        exited: string;
+        exited_from: string;
+        nowhere_to_go: string;
+        not_in_that: string;
+        not_on_that: string;
+        exit_blocked: string;
+        must_stand_first: string;
     };
     help: {
         description: string;
@@ -2144,6 +2154,22 @@ import { ITextBlock } from '@sharpee/text-blocks';
  * wires per-event trees.
  */
 export declare const ASSEMBLER_DEFAULT_BLOCK_KEY: "action.result";
+/** The five case forms of a registered pronoun set (ADR-242 D7). */
+export interface PronounSetForms {
+    subject: string;
+    object: string;
+    possessive: string;
+    possessivePronoun: string;
+    reflexive: string;
+}
+/**
+ * Register a named pronoun set (ADR-242 D7). Called by the language
+ * provider's `registerPronounSet` (the loader's `extendLanguage` probe);
+ * a re-registration overwrites (last-wins, the `addMessage` convention).
+ * @param name the set name as declared (`define pronouns ze`)
+ * @param forms the five case forms
+ */
+export declare function registerPronounSet(name: string, forms: PronounSetForms): void;
 /**
  * Capitalize the first alphabetic character of a sentence. Exposed as the Case
  * authority; the explicit `{capitalize …}` template hint is wired to it by the

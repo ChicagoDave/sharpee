@@ -8,4 +8,4 @@ export {
   PerceptionService,
   PerceptionBlockReason,
   PerceptionBlockedData,
-} from './PerceptionService';
+} from './PerceptionService.js';

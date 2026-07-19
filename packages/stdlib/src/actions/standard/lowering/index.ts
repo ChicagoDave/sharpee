@@ -1,1 +1,1 @@
-export { loweringAction } from './lowering';
+export { loweringAction } from './lowering.js';

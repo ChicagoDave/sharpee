@@ -6,17 +6,17 @@
  * and delegate to the registered behavior.
  */
 
-import { Action, ActionContext, ValidationResult } from './enhanced-types';
+import { Action, ActionContext, ValidationResult } from './enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   findTraitWithCapability,
   CapabilityEffect,
   CapabilitySharedData
 } from '@sharpee/world-model';
-import { ActionMetadata } from '../validation';
-import { ScopeLevel } from '../scope/types';
-import { nounPhraseFor } from '../utils';
-import { blockedMessageId } from './lifecycle';
+import { ActionMetadata } from '../validation/index.js';
+import { ScopeLevel } from '../scope/types.js';
+import { nounPhraseFor } from '../utils/index.js';
+import { blockedMessageId } from './lifecycle/index.js';
 
 /**
  * Configuration for creating a capability-dispatch action.

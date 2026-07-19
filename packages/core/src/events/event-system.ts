@@ -1,8 +1,8 @@
 // packages/core/src/events/event-system.ts
 
-import { ISemanticEvent } from './types';
-import { EntityId } from '../types/entity';
-import { ISemanticEventSource, createSemanticEventSource } from './semantic-event-source';
+import { ISemanticEvent } from './types.js';
+import { EntityId } from '../types/entity.js';
+import { ISemanticEventSource, createSemanticEventSource } from './semantic-event-source.js';
 
 /**
  * Create a new semantic event
@@ -60,7 +60,7 @@ export function createEvent(
 
 // Event source implementation moved to semantic-event-source.ts
 // Re-export for backwards compatibility
-export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source';
+export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source.js';
 
 // Counter for ensuring unique IDs even with same timestamp
 let eventCounter = 0;
@@ -82,7 +82,7 @@ function generateEventId(): string {
 
 /**
  * Create a new event source
- * @deprecated Use createSemanticEventSource from './semantic-event-source'
+ * @deprecated Use createSemanticEventSource from './semantic-event-source.js'
  */
 export function createEventSource(): ISemanticEventSource {
   return createSemanticEventSource();

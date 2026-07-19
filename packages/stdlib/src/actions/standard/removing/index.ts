@@ -3,4 +3,4 @@
  * @module
  */
 
-export { removingAction } from './removing';
+export { removingAction } from './removing.js';

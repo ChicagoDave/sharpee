@@ -8,8 +8,8 @@
  * Examples: basket elevator, drawbridge, blinds, levers
  */
 
-import { createCapabilityDispatchAction } from '../../capability-dispatch';
-import { IFActions } from '../../constants';
+import { createCapabilityDispatchAction } from '../../capability-dispatch.js';
+import { IFActions } from '../../constants.js';
 
 /**
  * Lowering action - dispatches to capability behaviors.

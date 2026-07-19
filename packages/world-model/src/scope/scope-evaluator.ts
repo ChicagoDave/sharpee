@@ -20,8 +20,8 @@ import {
   IScopeEvaluationOptions, 
   IScopeEvaluationResult,
   IScopeRuleResult 
-} from './scope-rule';
-import { ScopeRegistry } from './scope-registry';
+} from './scope-rule.js';
+import { ScopeRegistry } from './scope-registry.js';
 
 /**
  * Evaluates scope rules to determine what entities are in scope

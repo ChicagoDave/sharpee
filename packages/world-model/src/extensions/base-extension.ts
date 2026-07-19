@@ -4,9 +4,9 @@
  * Provides a convenient base class for creating extensions
  */
 
-import { ITraitExtension, IExtensionRegistry, IExtensionMetadata } from './types';
-import { Behavior } from '../behaviors/behavior';
-import { ITraitConstructor } from '../traits/trait';
+import { ITraitExtension, IExtensionRegistry, IExtensionMetadata } from './types.js';
+import { Behavior } from '../behaviors/behavior.js';
+import { ITraitConstructor } from '../traits/trait.js';
 
 /**
  * Options for defining a trait in an extension

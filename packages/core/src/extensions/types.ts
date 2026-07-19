@@ -1,6 +1,6 @@
 // packages/core/src/extensions/types.ts
 
-import { ISemanticEvent } from '../events/types';
+import { ISemanticEvent } from '../events/types.js';
 
 /**
  * Base interface for all extensions

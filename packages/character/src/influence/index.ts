@@ -18,25 +18,25 @@ export {
   type ResistanceDef,
   type ActiveInfluenceEffect,
   type InfluenceResult,
-} from './influence-types';
+} from './influence-types.js';
 
 export {
   type InfluenceRoomEntity,
   checkResistance,
   evaluatePassiveInfluences,
   evaluateActiveInfluence,
-} from './influence-evaluator';
+} from './influence-evaluator.js';
 
-export { InfluenceTracker } from './influence-duration';
+export { InfluenceTracker } from './influence-duration.js';
 
 export {
   type PcInfluenceResult,
   evaluatePcInfluence,
-} from './pc-influence';
+} from './pc-influence.js';
 
-export { InfluenceBuilder } from './builder';
+export { InfluenceBuilder } from './builder.js';
 
 export {
   InfluenceMessages,
   type InfluenceMessageId,
-} from './influence-messages';
+} from './influence-messages.js';

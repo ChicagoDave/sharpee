@@ -6,16 +6,16 @@
  */
 
 // Export generic constants only
-export * from './entity-types';
-export * from './relationships';
-export * from './attributes';
-export * from './core-events';
+export * from './entity-types.js';
+export * from './relationships.js';
+export * from './attributes.js';
+export * from './core-events.js';
 
 // Convenience export
-import { CoreEntityType } from './entity-types';
-import { CoreRelationshipType } from './relationships';
-import { CoreAttributes } from './attributes';
-import { CoreEvents, CoreEventCategory } from './core-events';
+import { CoreEntityType } from './entity-types.js';
+import { CoreRelationshipType } from './relationships.js';
+import { CoreAttributes } from './attributes.js';
+import { CoreEvents, CoreEventCategory } from './core-events.js';
 
 export const CoreConstants = {
   EntityTypes: CoreEntityType,

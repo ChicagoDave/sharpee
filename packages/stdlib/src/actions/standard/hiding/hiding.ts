@@ -17,18 +17,18 @@
  * Owner context: @sharpee/stdlib / actions / hiding
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ConcealmentTrait,
   ConcealmentPosition,
   ConcealedStateTrait,
   isConcealed,
 } from '@sharpee/world-model';
-import { PlayerConcealedEventData } from './hiding-events';
+import { PlayerConcealedEventData } from './hiding-events.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -39,7 +39,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the hiding spot is the only consultable

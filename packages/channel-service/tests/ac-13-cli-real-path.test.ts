@@ -74,9 +74,11 @@ describe.skipIf(!BUNDLE_PRESENT || !WALKTHROUGH_PRESENT)(
       // Quick smoke: spawn the bundle with a single command. If the
       // bundle still references rule-based exports, it crashes during
       // setup with TypeError.
+      // --story is required for --exec since the dungeo default was
+      // removed (2026-07-19) — only --test infers from transcript paths.
       const result = spawnSync(
         process.execPath,
-        [CLI_BUNDLE, '--exec', 'look'],
+        [CLI_BUNDLE, '--exec', 'look', '--story', 'stories/dungeo'],
         {
           cwd: REPO_ROOT,
           encoding: 'utf-8',

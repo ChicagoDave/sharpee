@@ -14,14 +14,14 @@
  * engine (ADR-228) via `climbingLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ClimbedEventData } from './climbing-events';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ClimbedEventData } from './climbing-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -32,7 +32,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the climbed object is the only consultable

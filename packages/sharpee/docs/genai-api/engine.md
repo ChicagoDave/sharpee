@@ -402,8 +402,8 @@ import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/w
 import { LanguageProvider, IChannelRegistry } from '@sharpee/if-domain';
 import { Parser } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import type { GameEngine } from './game-engine';
-import { NarrativeConfig } from './narrative';
+import type { GameEngine } from './game-engine.js';
+import { NarrativeConfig } from './narrative/index.js';
 /**
  * Story configuration
  */
@@ -659,7 +659,7 @@ import { ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { ActionRegistry } from '@sharpee/stdlib';
-import { GameContext, TurnResult, EngineConfig } from './types';
+import { GameContext, TurnResult, EngineConfig } from './types.js';
 /**
  * Data passed to pre-action hook listeners (ADR-148).
  *
@@ -1121,14 +1121,14 @@ import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
-import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
+import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource, SeededRandom } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types';
-import { Story } from './story';
-import { NarrativeSettings } from './narrative';
-import { ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
+import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types.js';
+import { Story } from './story.js';
+import { NarrativeSettings } from './narrative/index.js';
+import { ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
 /**
  * Game engine events
  */
@@ -1735,8 +1735,8 @@ export declare function createVocabularyManager(): VocabularyManager;
 import { WorldModel } from '@sharpee/world-model';
 import { ISaveData, ISerializedTurn, ISemanticEventSource, SeededRandom } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { TurnResult, GameContext } from './types';
-import { Story } from './story';
+import { TurnResult, GameContext } from './types.js';
+import { Story } from './story.js';
 /**
  * Interface for accessing engine state needed for save/restore
  */
@@ -1850,7 +1850,7 @@ export declare function createSaveRestoreService(config?: UndoConfig): SaveResto
 import { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { IPerceptionService } from '@sharpee/stdlib';
-import { EngineConfig } from './types';
+import { EngineConfig } from './types.js';
 /**
  * Context for event processing pipeline
  */
@@ -1954,8 +1954,8 @@ export declare function createTurnEventProcessor(perceptionService?: IPerception
  */
 import { IPlatformEvent, ISemanticEvent, ISemanticEventSource, ISaveRestoreHooks } from '@sharpee/core';
 import type { IParser } from '@sharpee/world-model';
-import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
-import { VocabularyManager } from './vocabulary-manager';
+import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
+import { VocabularyManager } from './vocabulary-manager.js';
 /**
  * Context for platform operation handling
  */

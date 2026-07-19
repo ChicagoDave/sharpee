@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { EditorState, Room, Region, ViewState } from '../types/editor';
+import type { EditorState, Room, Region, ViewState } from '../types/editor.js';
 
 const DEFAULT_VIEW_STATE: ViewState = {
   zoom: 1,

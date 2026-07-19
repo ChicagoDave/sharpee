@@ -27,18 +27,18 @@
  * 4. blocked: standard blocked event through the lifecycle engine
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   findTraitWithCapability,
   CapabilityEffect,
   CapabilitySharedData
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { TurningMessages } from './turning-messages';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { TurningMessages } from './turning-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -49,7 +49,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the turned target is the single

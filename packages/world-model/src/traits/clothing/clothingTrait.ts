@@ -1,8 +1,8 @@
 // packages/world-model/src/traits/clothing/clothingTrait.ts
 
-import { ITrait } from '../trait';
-import { IWearableData } from '../wearable/wearableTrait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { IWearableData } from '../wearable/wearableTrait.js';
+import { TraitType } from '../trait-types.js';
 
 export interface IClothingData extends IWearableData {
   /** Material the clothing is made from */

@@ -15,7 +15,7 @@ import {
   PursuitMode,
   GoalStep,
   GoalDef,
-} from './goal-types';
+} from './goal-types.js';
 
 /**
  * Fluent builder for a single goal definition.

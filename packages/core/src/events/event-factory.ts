@@ -4,9 +4,9 @@
  * @see ADR-082 for design rationale
  */
 
-import { EventDataRegistry, EventType, MessageData } from './event-registry';
-import { TypedSemanticEvent } from './typed-event';
-import { ISemanticEvent } from './types';
+import { EventDataRegistry, EventType, MessageData } from './event-registry.js';
+import { TypedSemanticEvent } from './typed-event.js';
+import { ISemanticEvent } from './types.js';
 
 let eventCounter = 0;
 

@@ -20,10 +20,10 @@ import type {
   DuckPriority,
   AudioEffectType,
   AudioTarget,
-} from './types';
+} from './types.js';
 
 // Ensure declaration merging is active
-import './registry-merge';
+import './registry-merge.js';
 
 /**
  * An audio cue factory — returns a fresh event each invocation.

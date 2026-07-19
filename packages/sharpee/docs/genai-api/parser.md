@@ -17,7 +17,7 @@ import { Parser, ParserOptions, Token as InternalToken, InternalParseResult, Par
 import type { IParsedCommand, IValidatedCommand, IParseError as CoreParseError } from '@sharpee/world-model';
 import type { ISystemEvent, Result } from '@sharpee/core';
 import { GrammarBuilder } from '@sharpee/if-domain';
-import { PronounContextManager } from './pronoun-context';
+import { PronounContextManager } from './pronoun-context.js';
 type CommandResult<T, E> = Result<T, E>;
 /**
  * English parser with rich information preservation
@@ -419,13 +419,13 @@ export declare class PronounContextManager {
  * This package provides English-specific parsing functionality
  * for converting natural language commands into structured commands.
  */
-export { EnglishParser } from './english-parser';
-export { EnglishParser as Parser } from './english-parser';
+export { EnglishParser } from './english-parser.js';
+export { EnglishParser as Parser } from './english-parser.js';
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
-export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './parse-failure';
-export { analyzeBestFailure } from './parse-failure';
-export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context';
-export { PronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context';
+export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './parse-failure.js';
+export { analyzeBestFailure } from './parse-failure.js';
+export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
+export { PronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context.js';
 /**
  * Package metadata
  */

@@ -38,6 +38,7 @@ import {
   DefineAsset,
   DefineFamilyChannel,
   DefineChannel,
+  DefinePronouns,
   DefineMachine,
   DefineSequence,
   EmitField,
@@ -84,11 +85,11 @@ import {
   TextMarker,
   TextValue,
   ValueExpr,
-} from './ast';
-import { STARTS_STATE_PAIRINGS } from './catalog';
-import { DiagnosticBag } from './diagnostics';
-import { lex, Line, Token } from './lexer';
-import { mergeSpans, Span, spanOf } from './span';
+} from './ast.js';
+import { PRONOUN_CASES, STARTS_STATE_PAIRINGS } from './catalog.js';
+import { DiagnosticBag } from './diagnostics.js';
+import { lex, Line, Token } from './lexer.js';
+import { mergeSpans, Span, spanOf } from './span.js';
 
 const ARTICLES = new Set(['the', 'a', 'an']);
 const DIRECTIONS = new Set([
@@ -475,6 +476,7 @@ class Parser {
       kind: 'create',
       name,
       aka: [],
+      pronouns: [],
       compositions: [],
       startsStates: [],
       placement: null,
@@ -507,6 +509,18 @@ class Parser {
         this.pos++;
         cur.matchWord('aka');
         decl.aka.push(...this.parseCommaWords(cur));
+      } else if (word === 'pronouns') {
+        // ADR-242 D5: `pronouns <word>` — one word (a standard set or a
+        // `define pronouns` name). Person-only legality, word resolution,
+        // and duplicate-line rejection are the analyzer's gates.
+        this.pos++;
+        cur.matchWord('pronouns');
+        const wordTok = cur.next();
+        if (!wordTok || wordTok.kind !== 'word' || !cur.atEnd()) {
+          this.diagnostics.error('parse.pronouns-word', 'Expected one pronoun-set word after `pronouns` (e.g. `pronouns she`).', lineSpan(line));
+        } else {
+          decl.pronouns.push({ word: wordTok.text.toLowerCase(), span: lineSpan(line) });
+        }
       } else if (word === 'states' && (line.tokens[1]?.kind === 'colon' || line.tokens[1]?.kind === 'comma')) {
         this.pos++;
         cur.next();
@@ -1272,6 +1286,9 @@ class Parser {
       case 'topics':
         // ADR-239 D3 (as amended) — the ask/tell topic table block.
         return this.parseDefineTopics();
+      case 'pronouns':
+        // ADR-242 D7 (ruled Q-1) — named pronoun set, five named rows.
+        return this.parseDefinePronouns();
       default:
         this.diagnostics.error('parse.unknown-define', `Unknown declaration \`define ${subWord ?? ''}\`.`, lineSpan(line));
         this.recoverToTopLevel(true);
@@ -2376,6 +2393,62 @@ class Parser {
       );
     }
     this.diagnostics.error('parse.channel-end', 'Expected `end channel` to close the block.', decl.span);
+    return decl;
+  }
+
+  /**
+   * `define pronouns <name> … end pronouns` (ADR-242 D7, ruled Q-1):
+   * five named rows, each `<case> <form>` — `subject`, `object`,
+   * `possessive`, `possessive-pronoun`, `reflexive`. Row completeness,
+   * duplicates, and standard-word shadowing are the analyzer's gates
+   * (the parseDefineChannel split: parser collects, analyzer validates).
+   */
+  private parseDefinePronouns(): DefinePronouns | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define pronouns
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error('parse.pronouns-name', 'Expected a set name after `define pronouns` (e.g. `define pronouns ze`).', lineSpan(headLine));
+      return null;
+    }
+    const decl: DefinePronouns = {
+      kind: 'define-pronouns',
+      name: nameTok.text.toLowerCase(),
+      rows: [],
+      span: lineSpan(headLine),
+    };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('pronouns', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        return decl;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      if (word && PRONOUN_CASES.includes(word)) {
+        lc.next();
+        const formTok = lc.next();
+        if (!formTok || formTok.kind !== 'word' || !lc.atEnd()) {
+          this.diagnostics.error('parse.pronouns-row', `Expected one form word after \`${word}\` (e.g. \`${word} zir\`).`, lineSpan(line));
+        } else {
+          decl.rows.push({ case: word, form: formTok.text, span: lineSpan(line) });
+        }
+        continue;
+      }
+      this.diagnostics.error(
+        'parse.pronouns-body',
+        `Unrecognized line in \`define pronouns\`: \`${line.raw.trim()}\` — expected \`${PRONOUN_CASES.join('`, `')}\`, or \`end pronouns\`.`,
+        lineSpan(line),
+      );
+    }
+    this.diagnostics.error('parse.pronouns-end', 'Expected `end pronouns` to close the block.', decl.span);
     return decl;
   }
 

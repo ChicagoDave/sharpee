@@ -16,9 +16,9 @@ Event sequencing and effect processing.
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
-import type { StoryEventHandler } from './handler-types';
-export type { StoryEventHandler, IGameEvent } from './handler-types';
-export type { Effect, WorldQuery } from './effects';
+import type { StoryEventHandler } from './handler-types.js';
+export type { StoryEventHandler, IGameEvent } from './handler-types.js';
+export type { Effect, WorldQuery } from './effects/index.js';
 export declare class EventProcessor {
     private world;
     private options;
@@ -73,12 +73,12 @@ export declare class EventProcessor {
  *
  * Central module for registering all standard IF event handlers
  */
-export * from './movement';
-export * from './state-change';
-export * from './observation';
-export * from './meta';
-export * from './complex-manipulation';
-export * from './device';
+export * from './movement.js';
+export * from './state-change.js';
+export * from './observation/index.js';
+export * from './meta.js';
+export * from './complex-manipulation.js';
+export * from './device/index.js';
 import { WorldModel } from '@sharpee/world-model';
 /**
  * Register all standard IF event handlers with the world model
@@ -294,7 +294,7 @@ export declare function createWorldQuery(world: IWorldModel): WorldQuery;
  */
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { Effect, EffectResult } from './types';
+import { Effect, EffectResult } from './types.js';
 /**
  * Callback to emit events (provided by EventProcessor)
  */
@@ -347,8 +347,8 @@ export declare class EffectProcessor {
  * Only story-level handler types remain.
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { WorldQuery } from './effects/world-query';
-import type { Effect } from './effects/types';
+import type { WorldQuery } from './effects/world-query.js';
+import type { Effect } from './effects/types.js';
 /**
  * Game event that can be handled by the story
  */

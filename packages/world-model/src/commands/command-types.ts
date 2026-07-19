@@ -3,8 +3,8 @@
  */
 
 import type { ISemanticEvent } from '@sharpee/core';
-import type { IParseError } from './parsed-command';
-import type { IValidationError, IValidatedCommand } from './validated-command';
+import type { IParseError } from './parsed-command.js';
+import type { IValidationError, IValidatedCommand } from './validated-command.js';
 
 /**
  * Errors that can occur during execution

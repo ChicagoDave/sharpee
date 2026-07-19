@@ -13,9 +13,9 @@ import {
   TransitionTrigger,
   StateMachineInstanceState,
   StateMachineRegistryState,
-} from './types';
-import { evaluateGuard } from './guard-evaluator';
-import { executeEffects } from './effect-executor';
+} from './types.js';
+import { evaluateGuard } from './guard-evaluator.js';
+import { executeEffects } from './effect-executor.js';
 
 interface RegisteredMachine {
   definition: StateMachineDefinition;

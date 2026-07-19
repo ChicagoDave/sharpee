@@ -9,10 +9,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { zipSync, strToU8 } from 'fflate';
-import { runBuildBrowserCommand } from './build-browser';
-import { stampVersion } from './version-stamp';
-import { findStoryFile, loadAuthorGame } from './author-game';
-import { lintHatchSources } from '../hatch-lint';
+import { runBuildBrowserCommand } from './build-browser.js';
+import { stampVersion } from './version-stamp.js';
+import { findStoryFile, loadAuthorGame } from './author-game.js';
+import { lintHatchSources } from '../hatch-lint.js';
 
 interface SharpeeConfig {
   title?: string;

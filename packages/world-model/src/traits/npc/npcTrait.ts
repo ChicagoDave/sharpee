@@ -5,7 +5,7 @@
  * NPCs participate in the turn cycle and can have behaviors.
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import { EntityId } from '@sharpee/core';
 
 /**

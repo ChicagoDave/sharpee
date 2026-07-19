@@ -9,7 +9,7 @@
  * Owner context: world-model / character-model trait
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import {
   PersonalityTrait,
   PersonalityExpr,
@@ -34,7 +34,7 @@ import {
   LucidityConfig,
   PerceptionFilterConfig,
   PerceivedEvent,
-} from './character-vocabulary';
+} from './character-vocabulary.js';
 
 // ---------------------------------------------------------------------------
 // Data interface

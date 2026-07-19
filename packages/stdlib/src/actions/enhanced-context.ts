@@ -15,17 +15,17 @@ import {
   ScopeCheckResult,
   ScopeErrors,
   ImplicitTakeResult
-} from './enhanced-types';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
-import { StandardScopeResolver } from '../scope/scope-resolver';
-import { ValidatedCommand } from '../validation/types';
-import { nounPhraseFor } from '../utils';
+} from './enhanced-types.js';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
+import { StandardScopeResolver } from '../scope/scope-resolver.js';
+import { ValidatedCommand } from '../validation/types.js';
+import { nounPhraseFor } from '../utils/index.js';
 
 // Import taking action for implicit takes
 // This is safe from circular dependencies because:
 // - taking.ts imports from enhanced-types.ts (not enhanced-context.ts)
 // - enhanced-context.ts imports from taking.ts
-import { takingAction } from './standard/taking/taking';
+import { takingAction } from './standard/taking/taking.js';
 
 /**
  * Internal implementation of unified action context

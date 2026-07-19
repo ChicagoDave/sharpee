@@ -27,10 +27,10 @@
  * no punctuation or connective — that is the slot's authority in the Assembler.
  */
 
-import type { IFEntity } from './entities/if-entity';
-import { TraitType } from './traits/trait-types';
-import type { SwitchableTrait } from './traits/switchable/switchableTrait';
-import type { LightSourceTrait } from './traits/light-source/lightSourceTrait';
+import type { IFEntity } from './entities/if-entity.js';
+import { TraitType } from './traits/trait-types.js';
+import type { SwitchableTrait } from './traits/switchable/switchableTrait.js';
+import type { LightSourceTrait } from './traits/light-source/lightSourceTrait.js';
 
 /** Derive post-noun detail-clause fragments from an entity's live state. */
 export type ClauseContributor = (entity: IFEntity) => string[];

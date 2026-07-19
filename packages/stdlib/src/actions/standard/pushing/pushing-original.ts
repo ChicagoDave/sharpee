@@ -8,13 +8,13 @@
  * - General pushing feedback
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, PushableTrait, SwitchableTrait, IFEntity } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope/types';
-import { PushedEventData } from './pushing-events';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { PushedEventData } from './pushing-events.js';
 
 interface PushingState {
   target: IFEntity;

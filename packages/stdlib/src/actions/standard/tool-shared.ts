@@ -12,9 +12,9 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { ActionContext, ValidationResult } from '../enhanced-types';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { IFEntity } from '@sharpee/world-model';
-import { nounPhraseFor } from '../../utils';
+import { nounPhraseFor } from '../../utils/index.js';
 
 /**
  * Shared message constants for tool validation.

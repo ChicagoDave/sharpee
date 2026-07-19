@@ -7,7 +7,7 @@
  *   Linux:   ~/.local/share/sharpee/saves/{storyId}/
  */
 
-import type { StorageProvider, SaveSlotInfo } from './storage-provider';
+import type { StorageProvider, SaveSlotInfo } from './storage-provider.js';
 
 /** Type-safe wrapper around Tauri's invoke() */
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {

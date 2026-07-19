@@ -35,9 +35,9 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { IAudibilityEvent } from '@sharpee/if-domain';
-import type { HandlerContext } from './types';
-import { createBlocks } from '../assemble';
-import { phraseAvailable, renderViaPhrase, flattenBlocks } from '../phrase-render';
+import type { HandlerContext } from './types.js';
+import { createBlocks } from '../assemble.js';
+import { phraseAvailable, renderViaPhrase, flattenBlocks } from '../phrase-render.js';
 
 const AUDIBILITY_TEMPLATE_PREFIX = 'sound.heard';
 

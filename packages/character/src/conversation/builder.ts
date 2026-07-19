@@ -11,17 +11,17 @@
  */
 
 import { Mood, DispositionWord } from '@sharpee/world-model';
-import { CharacterBuilder } from '../character-builder';
-import { TopicDef } from './topic-registry';
+import { CharacterBuilder } from '../character-builder.js';
+import { TopicDef } from './topic-registry.js';
 import {
   ResponseAction,
   ResponseCandidate,
-} from './response-types';
+} from './response-types.js';
 import {
   ConversationIntent,
   ConversationStrength,
   InitiativeTrigger,
-} from './lifecycle';
+} from './lifecycle.js';
 
 // ---------------------------------------------------------------------------
 // Compiled conversation data

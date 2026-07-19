@@ -31,7 +31,7 @@ import type {
   SnippetText,
 } from '@sharpee/if-domain';
 import { SNIPPET_MARKER_PATTERN } from '@sharpee/if-domain';
-import { lookupSnippetGate } from './snippet-gate-registry';
+import { lookupSnippetGate } from './snippet-gate-registry.js';
 
 /**
  * The world surface the presence gate needs — a structural subset of

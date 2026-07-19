@@ -13,8 +13,8 @@
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType, Result, SeededRandom } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
-import { hasWorldContext } from './parser-interface';
-import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
+import { hasWorldContext } from './parser-interface.js';
+import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import {
@@ -26,8 +26,8 @@ import {
   tryInferTarget
 } from '@sharpee/stdlib';
 
-import { GameContext, TurnResult, EngineConfig } from './types';
-import { createActionContext } from './action-context-factory';
+import { GameContext, TurnResult, EngineConfig } from './types.js';
+import { createActionContext } from './action-context-factory.js';
 import {
   checkCapabilityDispatch,
   checkCapabilityDispatchMulti,
@@ -35,7 +35,7 @@ import {
   executeCapabilityExecute,
   executeCapabilityReport,
   executeCapabilityBlocked
-} from './capability-dispatch-helper';
+} from './capability-dispatch-helper.js';
 
 /**
  * Data passed to pre-action hook listeners (ADR-148).

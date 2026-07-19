@@ -31,4 +31,4 @@ export type {
   ClientCapabilities,
 } from '@sharpee/if-domain';
 
-export { createDecoder, type Decoder, type DecoderState } from './decoder';
+export { createDecoder, type Decoder, type DecoderState } from './decoder.js';

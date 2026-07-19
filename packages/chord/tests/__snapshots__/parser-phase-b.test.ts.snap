@@ -991,6 +991,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1068,6 +1069,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "line": 74,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1223,6 +1225,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1297,6 +1300,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "line": 12,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -2558,6 +2562,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "line": 98,
         },
       },
+      "pronouns": [],
       "scores": [
         {
           "kind": "score",
@@ -2648,6 +2653,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "line": 111,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -2755,6 +2761,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "line": 117,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -2857,6 +2864,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -2930,6 +2938,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           "line": 13,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -3730,6 +3739,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -3979,6 +3989,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           "line": 90,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -4125,6 +4136,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
           "line": 104,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,

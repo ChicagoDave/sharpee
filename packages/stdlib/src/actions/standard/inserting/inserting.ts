@@ -17,15 +17,15 @@
  * - "insert X and Y in box" - inserts multiple specified items
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { puttingAction } from '../putting';
-import { createActionContext } from '../../enhanced-context';
-import { InsertingMessages } from './inserting-messages';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { puttingAction } from '../putting/index.js';
+import { createActionContext } from '../../enhanced-context.js';
+import { InsertingMessages } from './inserting-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -36,7 +36,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228). D6-B delegation-seam ruling: inserting

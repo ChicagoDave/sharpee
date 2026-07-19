@@ -1,1 +1,1 @@
-export * from './buttonTrait';
+export * from './buttonTrait.js';

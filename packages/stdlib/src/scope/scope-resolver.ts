@@ -14,7 +14,7 @@
  */
 
 import { IFEntity, WorldModel, TraitType, IdentityTrait, OpenableTrait, DoorTrait } from '@sharpee/world-model';
-import { ScopeLevel, ScopeResolver } from './types';
+import { ScopeLevel, ScopeResolver } from './types.js';
 
 /**
  * Check if an entity is concealed (hidden until SEARCH reveals it).

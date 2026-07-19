@@ -1,2 +1,2 @@
-export { DestructibleTrait, IDestructibleData } from './destructibleTrait';
-export { DestructibleBehavior, IDamageResult } from './destructibleBehavior';
+export { DestructibleTrait, IDestructibleData } from './destructibleTrait.js';
+export { DestructibleBehavior, IDamageResult } from './destructibleBehavior.js';

@@ -17,7 +17,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { createEvent } from '@sharpee/core';
 import type { IFEntity, WorldModel } from '@sharpee/world-model';
 import { TraitType, HealthTrait, HealthBehavior } from '@sharpee/world-model';
-import { PLAYER_DIED_EVENT, IPlayerDiedPayload } from './player-death-events';
+import { PLAYER_DIED_EVENT, IPlayerDiedPayload } from './player-death-events.js';
 
 /**
  * Options for {@link killPlayer}.

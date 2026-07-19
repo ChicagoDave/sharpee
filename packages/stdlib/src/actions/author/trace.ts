@@ -13,9 +13,9 @@
  *   trace all on/off - Control all tracing
  */
 
-import { ActionContext } from '../enhanced-types';
-import { MetaAction } from '../meta-action';
-import { ValidationResult } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
+import { MetaAction } from '../meta-action.js';
+import { ValidationResult } from '../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 
 export class TraceAction extends MetaAction {

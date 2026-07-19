@@ -9,25 +9,25 @@
  * containers, etc.).
  */
 
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { SpatialIndex } from './SpatialIndex';
-import { ITrait } from '../traits/trait';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LockableTrait } from '../traits/lockable/lockableTrait';
-import { ICapabilityStore } from './capabilities';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { SpatialIndex } from './SpatialIndex.js';
+import { ITrait } from '../traits/trait.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LockableTrait } from '../traits/lockable/lockableTrait.js';
+import { ICapabilityStore } from './capabilities.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
 import type {
   TraitBehaviorBinding,
   BehaviorRegistrationOptions
-} from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
+} from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type {
   TraitInterceptorBinding,
   InterceptorRegistrationOptions,
   InterceptorLookupResult
-} from '../capabilities/interceptor-binding';
+} from '../capabilities/interceptor-binding.js';
 import type {
   IWorldModel,
   EntityRemovalObserver,
@@ -40,8 +40,8 @@ import type {
   RegionCrossings,
   SceneOptions,
   SceneConditions,
-} from './WorldModel';
-import type { ScoreEntry } from './ScoreLedger';
+} from './WorldModel.js';
+import type { ScoreEntry } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type {
   WorldState,
@@ -51,13 +51,13 @@ import type {
   GamePrompt,
   IGrammarVocabularyProvider,
 } from '@sharpee/if-domain';
-import type { DirectionType } from '../constants/directions';
-import type { ScopeRegistry } from '../scope/scope-registry';
-import type { IScopeRule } from '../scope/scope-rule';
+import type { DirectionType } from '../constants/directions.js';
+import type { ScopeRegistry } from '../scope/scope-registry.js';
+import type { IScopeRule } from '../scope/scope-rule.js';
 import type {
   ICapabilityData,
   ICapabilityRegistration,
-} from './capabilities';
+} from './capabilities.js';
 
 /**
  * Data store shared between WorldModel and AuthorModel.

@@ -12,4 +12,4 @@ export {
   tryInferTarget,
   meetsActionRequirements,
   findValidTargets
-} from './implicit-inference';
+} from './implicit-inference.js';

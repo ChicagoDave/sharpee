@@ -8,9 +8,9 @@ Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, an
 
 ```typescript
 import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
-import { ITrait, ITraitConstructor } from '../traits/trait';
-import { TraitType } from '../traits/trait-types';
-import { Annotation, AnnotationCondition } from '../annotations/types';
+import { ITrait, ITraitConstructor } from '../traits/trait.js';
+import { TraitType } from '../traits/trait-types.js';
+import { Annotation, AnnotationCondition } from '../annotations/types.js';
 /**
  * Interactive Fiction Entity with trait-based composition.
  * Implements the core Entity interface and adds trait management capabilities.
@@ -328,7 +328,7 @@ export declare class IFEntity implements IEntity {
 ### entities/entity-store
 
 ```typescript
-import { IFEntity } from './if-entity';
+import { IFEntity } from './if-entity.js';
 /**
  * Entity store that works with IFEntity instances.
  * Provides trait-aware entity management.
@@ -465,8 +465,8 @@ export declare function getEntityTypePrefix(type: EntityType): string;
  * Owner context: `@sharpee/world-model` — entities / spatial primitives.
  */
 import { EntityId, IEntityCreationParams } from '@sharpee/core';
-import { IFEntity } from './if-entity';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from './if-entity.js';
+import { ITrait } from '../traits/trait.js';
 /**
  * Per-side data for a wall (ADR-173).
  *
@@ -564,9 +564,9 @@ export type IWallEntity = WallEntity;
 ### behaviors/behavior
 
 ```typescript
-import { IFEntity } from '../entities/if-entity';
-import { TraitType } from '../traits/trait-types';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from '../entities/if-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { ITrait } from '../traits/trait.js';
 /**
  * Base class for all behaviors in the IF system.
  *
@@ -635,8 +635,8 @@ export declare function isWorldAwareBehavior(behavior: any): behavior is IWorldA
 ### traits/container/containerBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of an add item operation
  */
@@ -733,7 +733,7 @@ export declare class ContainerBehavior extends Behavior {
 ### traits/scenery/sceneryBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for scenery entities.
  * Handles logic related to fixed-in-place objects.
@@ -758,7 +758,7 @@ export declare class SceneryBehavior {
 ### traits/wearable/wearableBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 export interface IWearResult {
     success: boolean;
     alreadyWorn?: boolean;
@@ -826,7 +826,7 @@ export declare class WearableBehavior {
 ### traits/readable/readableBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for readable entities.
@@ -872,8 +872,8 @@ export declare class ReadableBehavior {
 ### traits/light-source/lightSourceBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for light source entities.
  *
@@ -933,8 +933,8 @@ export declare class LightSourceBehavior extends Behavior {
 ### traits/exit/exitBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
-import { ExitTrait } from './exitTrait';
+import { IFEntity } from '../../entities/if-entity.js';
+import { ExitTrait } from './exitTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for exit entities.
@@ -991,7 +991,7 @@ export declare class ExitBehavior {
 /**
  * Behavior functions for climbable objects
  */
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of attempting to climb
  */
@@ -1030,8 +1030,8 @@ export declare class ClimbableBehavior {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of an open operation
  */
@@ -1107,8 +1107,8 @@ export declare class OpenableBehavior extends Behavior {
 ### traits/lockable/lockableBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of a lock operation
@@ -1203,8 +1203,8 @@ export declare class LockableBehavior extends Behavior {
  * Behavior for weapon entities
  */
 import { SeededRandom } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of a weapon damage calculation
  */
@@ -1260,9 +1260,9 @@ export declare class WeaponBehavior extends Behavior {
 /**
  * Behavior for breakable entities
  */
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of breaking an entity
@@ -1307,9 +1307,9 @@ export declare class BreakableBehavior extends Behavior {
 /**
  * Behavior for destructible entities
  */
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of damaging a destructible entity
@@ -1378,9 +1378,9 @@ export declare class DestructibleBehavior extends Behavior {
  * `getHealth` / `getHealthPercentage` / `isHostile` / `setHostile`.
  * Owner context: `@sharpee/world-model` — combat (requires the HEALTH layer).
  */
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of a combat attack
@@ -1449,8 +1449,8 @@ export declare class CombatBehavior extends Behavior {
  *
  * Coordinates the various combat behaviors to handle attacks
  */
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from '../world/WorldModel';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from '../world/WorldModel.js';
 import { EntityId, SeededRandom } from '@sharpee/core';
 /**
  * Combined result of an attack
@@ -1518,8 +1518,8 @@ export declare class AttackBehavior {
  * and conscious by default — ADR-226 §3 opt-in rule — a check owned by the caller).
  * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
  */
-import { Behavior } from '../../behaviors/behavior';
-import { HealthTrait } from './healthTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { HealthTrait } from './healthTrait.js';
 export declare class HealthBehavior extends Behavior {
     static requiredTraits: "health"[];
     /**
@@ -1896,8 +1896,8 @@ export interface IParseError {
  * with entities and action IDs identified
  */
 import type { EntityId } from '@sharpee/core';
-import type { IParsedObjectReference, IParsedCommand } from './parsed-command';
-import type { IFEntity } from '../entities/if-entity';
+import type { IParsedObjectReference, IParsedCommand } from './parsed-command.js';
+import type { IFEntity } from '../entities/if-entity.js';
 /**
  * Resolved entity reference after validation
  */
@@ -1963,8 +1963,8 @@ export interface IValidationError {
 /**
  * Command processing error types and result types
  */
-import type { IParseError } from './parsed-command';
-import type { IValidationError, IValidatedCommand } from './validated-command';
+import type { IParseError } from './parsed-command.js';
+import type { IValidationError, IValidatedCommand } from './validated-command.js';
 /**
  * Errors that can occur during execution
  */
@@ -1997,7 +1997,7 @@ export type CommandResult<T, E = CommandError> = {
 /**
  * Parser interface for converting text input to parsed commands
  */
-import type { IParsedCommand, IParseError, CommandResult } from '../commands';
+import type { IParsedCommand, IParseError, CommandResult } from '../commands/index.js';
 /**
  * Parser interface - pure syntax, no world knowledge
  */
@@ -2017,7 +2017,7 @@ export interface IParser {
 /**
  * Command validator interface for resolving entities and checking preconditions
  */
-import type { IParsedCommand, IValidatedCommand, IValidationError } from '../commands';
+import type { IParsedCommand, IValidatedCommand, IValidationError } from '../commands/index.js';
 import type { Result } from '@sharpee/core';
 /**
  * Validator interface - resolves entities and checks preconditions
@@ -2039,7 +2039,7 @@ export interface ICommandValidator {
  * Command executor interface for executing validated commands
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { IValidatedCommand, IExecutionError, CommandResult } from '../commands';
+import type { IValidatedCommand, IExecutionError, CommandResult } from '../commands/index.js';
 /**
  * Executor interface - applies business logic
  */
@@ -2060,7 +2060,7 @@ export interface ICommandExecutor {
  * Command processor interface for the complete command pipeline
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { CommandError, CommandResult } from '../commands';
+import type { CommandError, CommandResult } from '../commands/index.js';
 /**
  * Combined command processor using all three phases
  */
@@ -2083,7 +2083,7 @@ export interface ICommandProcessor {
  * Traits are pure data structures with no behavior.
  * All logic belongs in behaviors.
  */
-import { TraitType } from './trait-types';
+import { TraitType } from './trait-types.js';
 /**
  * Base trait interface - just type identification
  */
@@ -2229,47 +2229,47 @@ export declare function registerTraitType(name: string, value: string, category?
  *
  * Maps trait types to their implementation classes
  */
-import { TraitType } from './trait-types';
-import { ITraitConstructor } from './trait';
-import { IdentityTrait } from './identity/identityTrait';
-import { ContainerTrait } from './container/containerTrait';
-import { SupporterTrait } from './supporter/supporterTrait';
-import { RoomTrait } from './room/roomTrait';
-import { WearableTrait } from './wearable/wearableTrait';
-import { ClothingTrait } from './clothing/clothingTrait';
-import { EdibleTrait } from './edible/edibleTrait';
-import { SceneryTrait } from './scenery/sceneryTrait';
-import { OpenableTrait } from './openable/openableTrait';
-import { LockableTrait } from './lockable/lockableTrait';
-import { CuttableTrait } from './cuttable/cuttableTrait';
-import { DiggableTrait } from './diggable/diggableTrait';
-import { SwitchableTrait } from './switchable/switchableTrait';
-import { ReadableTrait } from './readable/readableTrait';
-import { LightSourceTrait } from './light-source/lightSourceTrait';
-import { DoorTrait } from './door/doorTrait';
-import { ClimbableTrait } from './climbable/climbableTrait';
-import { RegionTrait } from './region/regionTrait';
-import { SceneTrait } from './scene/sceneTrait';
-import { ActorTrait } from './actor/actorTrait';
-import { ExitTrait } from './exit/exitTrait';
-import { PullableTrait } from './pullable/pullableTrait';
-import { AttachedTrait } from './attached/attachedTrait';
-import { PushableTrait } from './pushable/pushableTrait';
-import { ButtonTrait } from './button/buttonTrait';
-import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait';
-import { WeaponTrait } from './weapon/weaponTrait';
-import { BreakableTrait } from './breakable/breakableTrait';
-import { DestructibleTrait } from './destructible/destructibleTrait';
-import { CombatantTrait } from './combatant/combatantTrait';
-import { EquippedTrait } from './equipped/equippedTrait';
-import { HealthTrait } from './health/healthTrait';
-import { DeadlyRoomTrait } from './deadly-room/deadlyRoomTrait';
-import { NpcTrait } from './npc/npcTrait';
-import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
-import { CharacterModelTrait } from './character-model/characterModelTrait';
-import { VehicleTrait } from './vehicle/vehicleTrait';
-import { EnterableTrait } from './enterable/enterableTrait';
-import { StoryInfoTrait } from './story-info/storyInfoTrait';
+import { TraitType } from './trait-types.js';
+import { ITraitConstructor } from './trait.js';
+import { IdentityTrait } from './identity/identityTrait.js';
+import { ContainerTrait } from './container/containerTrait.js';
+import { SupporterTrait } from './supporter/supporterTrait.js';
+import { RoomTrait } from './room/roomTrait.js';
+import { WearableTrait } from './wearable/wearableTrait.js';
+import { ClothingTrait } from './clothing/clothingTrait.js';
+import { EdibleTrait } from './edible/edibleTrait.js';
+import { SceneryTrait } from './scenery/sceneryTrait.js';
+import { OpenableTrait } from './openable/openableTrait.js';
+import { LockableTrait } from './lockable/lockableTrait.js';
+import { CuttableTrait } from './cuttable/cuttableTrait.js';
+import { DiggableTrait } from './diggable/diggableTrait.js';
+import { SwitchableTrait } from './switchable/switchableTrait.js';
+import { ReadableTrait } from './readable/readableTrait.js';
+import { LightSourceTrait } from './light-source/lightSourceTrait.js';
+import { DoorTrait } from './door/doorTrait.js';
+import { ClimbableTrait } from './climbable/climbableTrait.js';
+import { RegionTrait } from './region/regionTrait.js';
+import { SceneTrait } from './scene/sceneTrait.js';
+import { ActorTrait } from './actor/actorTrait.js';
+import { ExitTrait } from './exit/exitTrait.js';
+import { PullableTrait } from './pullable/pullableTrait.js';
+import { AttachedTrait } from './attached/attachedTrait.js';
+import { PushableTrait } from './pushable/pushableTrait.js';
+import { ButtonTrait } from './button/buttonTrait.js';
+import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait.js';
+import { WeaponTrait } from './weapon/weaponTrait.js';
+import { BreakableTrait } from './breakable/breakableTrait.js';
+import { DestructibleTrait } from './destructible/destructibleTrait.js';
+import { CombatantTrait } from './combatant/combatantTrait.js';
+import { EquippedTrait } from './equipped/equippedTrait.js';
+import { HealthTrait } from './health/healthTrait.js';
+import { DeadlyRoomTrait } from './deadly-room/deadlyRoomTrait.js';
+import { NpcTrait } from './npc/npcTrait.js';
+import { OpenInventoryTrait } from './open-inventory/openInventoryTrait.js';
+import { CharacterModelTrait } from './character-model/characterModelTrait.js';
+import { VehicleTrait } from './vehicle/vehicleTrait.js';
+import { EnterableTrait } from './enterable/enterableTrait.js';
+import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 /**
  * Map of trait types to their constructors
  */
@@ -2304,7 +2304,7 @@ export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait
  * hooks here. INVARIANT: contributors return locale-neutral adjective *tokens*
  * (the English realization is the Assembler's); no article/grammar logic here.
  */
-import type { IFEntity } from './entities/if-entity';
+import type { IFEntity } from './entities/if-entity.js';
 /** Derive adjective tokens from an entity's live state. */
 export type AdjectiveContributor = (entity: IFEntity) => string[];
 /**
@@ -2357,7 +2357,7 @@ export declare function getStateAdjectives(entity: IFEntity): string[];
  * clause *content* an author supplied (e.g. the trait's `onDescription`); it adds
  * no punctuation or connective — that is the slot's authority in the Assembler.
  */
-import type { IFEntity } from './entities/if-entity';
+import type { IFEntity } from './entities/if-entity.js';
 /** Derive post-noun detail-clause fragments from an entity's live state. */
 export type ClauseContributor = (entity: IFEntity) => string[];
 /**
@@ -2383,7 +2383,7 @@ export declare function getStateClauses(entity: IFEntity): string[];
 ### traits/identity/identityTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Identity trait provides basic naming and description for entities.
  * This is one of the most fundamental traits in IF.
@@ -2418,6 +2418,13 @@ export declare class IdentityTrait implements ITrait {
     properName: boolean;
     /** Article to use with the name ("a", "an", "the", "some", or empty for proper names) */
     article: string;
+    /**
+     * Pronoun set for gendered / neopronoun reference (ADR-242 D6): one of
+     * the standard sets ('he' | 'she' | 'it' | 'they') or a named set
+     * registered with the language provider. Absent = the phrase chain's
+     * by-number fallback — no default is injected anywhere.
+     */
+    pronounSet?: string;
     /**
      * Author-supplied plural form for irregular nouns (ADR-190), e.g. "geese" for
      * "goose". The `list`/`count` formatters use this when set, else fall back to the
@@ -2474,8 +2481,8 @@ export declare class IdentityTrait implements ITrait {
 ### traits/identity/identityBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for entities with identity.
  *
@@ -2577,7 +2584,7 @@ export declare function deriveNameVocabulary(name: string): string[];
 ### traits/container/containerTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Container trait allows entities to hold other entities inside them.
  *
@@ -2617,8 +2624,8 @@ export declare class ContainerTrait implements ITrait {
 ### traits/container/container-utils
 
 ```typescript
-import { ITrait } from '../trait';
-import { IFEntity } from '../../entities/if-entity';
+import { ITrait } from '../trait.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Interface for traits that provide container functionality.
  * This includes ContainerTrait, RoomTrait, and ActorTrait.
@@ -2660,9 +2667,9 @@ export declare function hasContainerProperties(trait: any): trait is IContainerC
 ### traits/room/roomTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import { SnippetMap } from '@sharpee/if-domain';
-import { DirectionType } from '../../constants/directions';
+import { DirectionType } from '../../constants/directions.js';
 /**
  * Map position hint for an exit (ADR-113).
  * Overrides direction-based positioning in the auto-mapper.
@@ -2788,11 +2795,11 @@ export declare class RoomTrait implements ITrait, IRoomData {
 ### traits/room/roomBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { IExitInfo } from './roomTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { IExitInfo } from './roomTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { DirectionType } from '../../constants/directions';
+import { DirectionType } from '../../constants/directions.js';
 /**
  * Behavior for room entities.
  *
@@ -2880,7 +2887,7 @@ export declare class RoomBehavior extends Behavior {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IOpenableData {
     /** Whether the entity is currently open */
     isOpen?: boolean;
@@ -2943,7 +2950,7 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface ILockableData {
     /** Whether the entity is currently locked */
     isLocked?: boolean;
@@ -3006,7 +3013,7 @@ export declare class LockableTrait implements ITrait, ILockableData {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Data for the cuttable trait (ADR-230 D3c).
  *
@@ -3047,8 +3054,8 @@ export declare class CuttableTrait implements ITrait, ICuttableData {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for cuttable entities (ADR-230 D3c).
  *
@@ -3074,7 +3081,7 @@ export declare class CuttableBehavior extends Behavior {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Data for the diggable trait (ADR-230 Phase 6 (sketch ruling 6)).
  *
@@ -3115,8 +3122,8 @@ export declare class DiggableTrait implements ITrait, IDiggableData {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for diggable entities (ADR-230 Phase 6 (sketch ruling 6)).
  *
@@ -3141,7 +3148,7 @@ export declare class DiggableBehavior extends Behavior {
 ### traits/readable/readableTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Readable trait for entities that have text to read.
  * Used for books, signs, notes, inscriptions, etc.
@@ -3182,7 +3189,7 @@ export declare class ReadableTrait implements ITrait {
 ### traits/light-source/lightSourceTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * LightSource trait allows entities to provide illumination.
  *
@@ -3225,7 +3232,7 @@ export declare class LightSourceTrait implements ITrait {
 ### traits/exit/exitTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Exit trait for entities that represent passages between locations.
  * Used for doors, passages, portals, and any custom exits like "xyzzy".
@@ -3273,7 +3280,7 @@ export declare class ExitTrait implements ITrait {
 /**
  * Trait for objects that can be climbed (ladders, trees, mountains, etc.)
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Trait for climbable objects
  */
@@ -3305,7 +3312,7 @@ export declare function createClimbableTrait(options?: Partial<Omit<ClimbableTra
 ### traits/scenery/sceneryTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Scenery trait marks items as fixed in place and not takeable.
  *
@@ -3339,7 +3346,7 @@ export declare class SceneryTrait implements ITrait {
 ### traits/supporter/supporterTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Supporter trait allows entities to have other entities placed on top of them.
  *
@@ -3369,9 +3376,9 @@ export declare class SupporterTrait implements ITrait {
 ### traits/supporter/supporterBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { IWorldQuery } from '../container/containerBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { IWorldQuery } from '../container/containerBehavior.js';
 /**
  * Result of adding an item to a supporter
  */
@@ -3456,7 +3463,7 @@ export declare class SupporterBehavior extends Behavior {
 ### traits/switchable/switchableTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface ISwitchableData {
     /** Whether the entity is currently on */
     isOn?: boolean;
@@ -3536,8 +3543,8 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
 ### traits/switchable/switchableBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 import { ISemanticEvent } from '@sharpee/core';
 export interface ISwitchOnResult {
     success: boolean;
@@ -3613,7 +3620,7 @@ export declare class SwitchableBehavior extends Behavior {
 ### traits/wearable/wearableTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IWearableData {
     /** Whether the item is currently being worn */
     isWorn?: boolean;
@@ -3671,7 +3678,7 @@ export declare class WearableTrait implements ITrait, IWearableData {
 ### traits/edible/edibleTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /** Taste quality values */
 export type TasteQuality = 'delicious' | 'tasty' | 'good' | 'plain' | 'bland' | 'awful' | 'terrible';
 export interface IEdibleData {
@@ -3731,9 +3738,9 @@ export declare class EdibleTrait implements ITrait, IEdibleData {
 ### traits/edible/edibleBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TasteQuality } from './edibleTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TasteQuality } from './edibleTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for edible entities.
@@ -3793,7 +3800,7 @@ export declare class EdibleBehavior extends Behavior {
 ### traits/door/doorTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Door trait marks an entity as a connection between two rooms.
  *
@@ -3816,8 +3823,8 @@ export declare class DoorTrait implements ITrait {
 ### traits/door/doorBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for door entities.
  *
@@ -3862,7 +3869,7 @@ export declare class DoorBehavior extends Behavior {
 ### traits/actor/actorTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Full pronoun set for animate entities (ADR-089)
  */
@@ -4024,10 +4031,10 @@ export declare class ActorTrait implements ITrait, IActorTrait {
 ### traits/actor/actorBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { ActorTrait } from './actorTrait';
-import { IWorldQuery } from '../container/containerBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { ActorTrait } from './actorTrait.js';
+import { IWorldQuery } from '../container/containerBehavior.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of a take item operation
@@ -4152,7 +4159,7 @@ export declare class ActorBehavior extends Behavior {
 /**
  * Attached trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IAttachedData {
     /**
      * What this is attached to (entity ID)
@@ -4217,7 +4224,7 @@ export declare class AttachedTrait implements ITrait, IAttachedData {
 /**
  * Button trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IButtonData {
     /**
      * Whether the button stays pressed or pops back
@@ -4271,8 +4278,8 @@ export declare class ButtonTrait implements ITrait, IButtonData {
 ### traits/clothing/clothingTrait
 
 ```typescript
-import { ITrait } from '../trait';
-import { IWearableData } from '../wearable/wearableTrait';
+import { ITrait } from '../trait.js';
+import { IWearableData } from '../wearable/wearableTrait.js';
 export interface IClothingData extends IWearableData {
     /** Material the clothing is made from */
     material?: string;
@@ -4336,7 +4343,7 @@ export declare class ClothingTrait implements ITrait, IClothingData {
 /**
  * Moveable scenery trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IMoveableSceneryData {
     /**
      * Weight class of the object
@@ -4409,7 +4416,7 @@ export declare class MoveableSceneryTrait implements ITrait, IMoveableSceneryDat
 /**
  * Pullable trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IPullableData {
     /**
      * Type of pullable object - determines behavior
@@ -4494,7 +4501,7 @@ export declare class PullableTrait implements ITrait, IPullableData {
 /**
  * Pushable trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IPushableData {
     /**
      * Type of pushable object - determines behavior
@@ -4582,7 +4589,7 @@ export declare class PushableTrait implements ITrait, IPushableData {
  * Marks an entity as a Non-Player Character that can act autonomously.
  * NPCs participate in the turn cycle and can have behaviors.
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Interface for NPC trait data
@@ -4716,7 +4723,7 @@ export declare class NpcTrait implements ITrait, INpcData {
  *
  * Based on Infocom's vehicle concept from Zork.
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Vehicle type determines movement behavior
  */
@@ -4795,8 +4802,8 @@ export declare function createVehicleTrait(options?: Partial<Omit<VehicleTrait, 
  * - Checking if an actor is in a vehicle
  * - Getting the vehicle an actor is in
  */
-import { WorldModel } from '../../world/WorldModel';
-import { IFEntity } from '../../entities/if-entity';
+import { WorldModel } from '../../world/WorldModel.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Check if an entity is a vehicle
  */
@@ -4853,7 +4860,7 @@ export declare function canActorWalkInVehicle(world: WorldModel, actorId: string
 ### traits/story-info/storyInfoTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * StoryInfoTrait stores metadata about the game on a system entity.
  * Replaces scattered world['storyConfig'] / world['versionInfo'] casts.
@@ -4895,8 +4902,8 @@ export declare class StoryInfoTrait implements ITrait {
  * Public interface: ICharacterModelData, CharacterModelTrait, CharacterPredicate.
  * Owner context: world-model / character-model trait
  */
-import { ITrait } from '../trait';
-import { PersonalityTrait, PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, Fact, FactSource, Belief, ResistanceMode, Goal, LucidityConfig, PerceptionFilterConfig, PerceivedEvent } from './character-vocabulary';
+import { ITrait } from '../trait.js';
+import { PersonalityTrait, PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, Fact, FactSource, Belief, ResistanceMode, Goal, LucidityConfig, PerceptionFilterConfig, PerceivedEvent } from './character-vocabulary.js';
 /** Serializable data for constructing a CharacterModelTrait. */
 export interface ICharacterModelData {
     /** Personality traits with intensity values (0-1). */
@@ -5332,7 +5339,7 @@ export interface PerceivedEvent {
  * Public interface: ConcealmentTrait, ConcealmentPosition, isConcealmentTrait.
  * Owner context: @sharpee/world-model / traits
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /** How an actor can hide relative to the entity */
 export type ConcealmentPosition = 'behind' | 'under' | 'on' | 'inside';
 /** How well the hiding spot conceals — affects NPC detection at the story level */
@@ -5393,9 +5400,9 @@ export declare function isConcealmentTrait(trait: ITrait): trait is ConcealmentT
  * Public interface: ConcealedStateTrait, IConcealedStateTrait, isConcealed, getConcealmentState.
  * Owner context: @sharpee/world-model / traits
  */
-import { ITrait } from '../trait';
-import { IFEntity } from '../../entities';
-import { ConcealmentPosition, ConcealmentQuality } from './concealmentTrait';
+import { ITrait } from '../trait.js';
+import { IFEntity } from '../../entities/index.js';
+import { ConcealmentPosition, ConcealmentQuality } from './concealmentTrait.js';
 /**
  * Data interface for the concealed state.
  */
@@ -5453,8 +5460,8 @@ export declare function getConcealmentState(entity: IFEntity): IConcealedStateTr
  * Public interface: ConcealedVisibilityBehavior, registerConcealedVisibilityBehavior.
  * Owner context: @sharpee/world-model / traits / concealment
  */
-import { CapabilityBehavior } from '../../capabilities/capability-behavior';
-import { WorldModel } from '../../world/WorldModel';
+import { CapabilityBehavior } from '../../capabilities/capability-behavior.js';
+import { WorldModel } from '../../world/WorldModel.js';
 /**
  * Default visibility behavior for concealed actors.
  *
@@ -5502,7 +5509,7 @@ export declare function registerConcealedVisibilityBehavior(world: WorldModel): 
  * @see ADR-172 — Spatial Sound Propagation
  * @see ADR-173 — Wall Adjacency Primitive (taxonomy)
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * The four discrete acoustic tiers a wall material may have. Authored
  * qualitatively at world-load time; the propagation algorithm reads the
@@ -5577,7 +5584,7 @@ export declare class AcousticTrait implements ITrait {
  * @see ADR-172 — Spatial Sound Propagation
  * @see ADR-173 — Wall Adjacency Primitive (obstructor protocol)
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Acoustic dampener trait — attaches to obstructor entities (tapestry,
  * peephole, foam panel, heavy curtain).
@@ -5634,7 +5641,7 @@ export declare class AcousticDampenerTrait implements ITrait {
  *
  * @see ADR-172 — Spatial Sound Propagation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Listener trait — presence flag. Entities carrying it are enumerated
  * by the propagation function and receive `AudibilityEvent`s.
@@ -5684,9 +5691,9 @@ export declare class ListenerTrait implements ITrait {
  * Owner context: `@sharpee/world-model` — wall / spatial primitives.
  */
 import type { EntityId } from '@sharpee/core';
-import type { IFEntity } from '../entities/if-entity';
-import type { WallEntity } from '../entities/wall-entity';
-import type { ITrait } from './trait';
+import type { IFEntity } from '../entities/if-entity.js';
+import type { WallEntity } from '../entities/wall-entity.js';
+import type { ITrait } from './trait.js';
 /**
  * Narrow world-model surface required to evaluate obstructors. Implemented
  * by `WorldModel`; passed in by callers so the helper has no implicit
@@ -5762,7 +5769,7 @@ export declare function findTraitsOnObstructors<T extends ITrait>(wall: WallEnti
  * Separates the "can be entered" concern from ContainerTrait's "can hold items" concern.
  * Entities with EnterableTrait can have players/actors enter them.
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Configuration options for EnterableTrait
  */
@@ -5796,7 +5803,7 @@ export declare function createEnterableTrait(config?: EnterableTraitConfig): Ent
 /**
  * Equipped trait for items that are currently equipped by an actor
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IEquippedData {
     /** Which slot this item is equipped in */
     slot?: 'weapon' | 'armor' | 'shield' | 'helmet' | 'boots' | 'gloves' | 'ring' | 'amulet' | 'accessory';
@@ -5855,7 +5862,7 @@ export declare class EquippedTrait implements ITrait, IEquippedData {
  * @public OpenInventoryTrait
  * @owner world-model / scope
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * When applied to an actor, makes their carried items reachable by others.
  *
@@ -5886,7 +5893,7 @@ export declare class OpenInventoryTrait implements ITrait {
  * Public interface: RegionTrait, IRegionData.
  * Owner context: @sharpee/world-model — traits / spatial
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Data interface for RegionTrait construction.
  *
@@ -5944,7 +5951,7 @@ export declare class RegionTrait implements ITrait, IRegionData {
  * Public interface: SceneTrait, ISceneData, SceneState.
  * Owner context: @sharpee/world-model — traits / temporal
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /** Possible states for a scene lifecycle. */
 export type SceneState = 'waiting' | 'active' | 'ended';
 /**
@@ -5994,7 +6001,7 @@ export declare class SceneTrait implements ITrait, ISceneData {
 /**
  * Weapon trait for entities that can be used to attack
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IWeaponData {
     /** Damage bonus added to attacks - ADR-072 */
     damage?: number;
@@ -6065,7 +6072,7 @@ export declare class WeaponTrait implements ITrait, IWeaponData {
 /**
  * Breakable trait for entities that can be broken with a single hit
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IBreakableData {
     /** Whether this object is already broken */
     broken?: boolean;
@@ -6091,7 +6098,7 @@ export declare class BreakableTrait implements ITrait, IBreakableData {
 /**
  * Destructible trait for entities that require multiple hits or specific tools to destroy
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IDestructibleData {
     /** Current hit points */
     hitPoints?: number;
@@ -6154,7 +6161,7 @@ export declare class DestructibleTrait implements ITrait, IDestructibleData {
  * through `HealthBehavior`.
  * Owner context: `@sharpee/world-model` — combat stats (requires the HEALTH layer).
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface ICombatantData {
     /** Combat skill (0-100, affects hit/dodge chance) - ADR-072 */
     skill?: number;
@@ -6229,7 +6236,7 @@ export declare class CombatantTrait implements ITrait, ICombatantData {
  * and mutate via `HealthBehavior.{takeDamage,heal,kill}`.
  * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Constructor/serialization data for {@link HealthTrait}. Every field is optional;
  * see the class constructor for defaults.
@@ -6291,7 +6298,7 @@ export declare class HealthTrait implements ITrait, IHealthData {
  * Public interface: read the verdict via `DeadlyRoomBehavior.checkVerb`.
  * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Constructor/serialization data for {@link DeadlyRoomTrait}.
  */
@@ -6342,8 +6349,8 @@ export declare class DeadlyRoomTrait implements ITrait, IDeadlyRoomData {
  * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
  */
 import { SeededRandom } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { DeadlyRoomTrait } from './deadlyRoomTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { DeadlyRoomTrait } from './deadlyRoomTrait.js';
 /** Verdict returned by {@link DeadlyRoomBehavior.checkVerb}. */
 export interface DeadlyRoomVerdict {
     /** Whether this verb kills the player in this room. */
@@ -6389,8 +6396,8 @@ export declare class DeadlyRoomBehavior extends Behavior {
  * This module defines the contract for creating trait extensions
  * that can add new functionality to the world model.
  */
-import { ITraitConstructor } from '../traits/trait';
-import { Behavior } from '../behaviors/behavior';
+import { ITraitConstructor } from '../traits/trait.js';
+import { Behavior } from '../behaviors/behavior.js';
 /**
  * Extension metadata
  */
@@ -6619,8 +6626,8 @@ export type VersionString = string;
  * Manages registration and lookup of extension-provided traits,
  * events, actions, and other components.
  */
-import { ITraitConstructor } from '../traits/trait';
-import { IExtensionRegistry, IExtensionTraitDefinition, IExtensionEventDefinition, IExtensionActionDefinition } from './types';
+import { ITraitConstructor } from '../traits/trait.js';
+import { IExtensionRegistry, IExtensionTraitDefinition, IExtensionEventDefinition, IExtensionActionDefinition } from './types.js';
 /**
  * Default implementation of the extension registry
  */
@@ -6722,7 +6729,7 @@ export declare function getExtensionRegistry(): ExtensionRegistry;
  *
  * Manages loading, initialization, and lifecycle of trait extensions
  */
-import { IExtensionLoader, ITraitExtension, IExtensionRegistry } from './types';
+import { IExtensionLoader, ITraitExtension, IExtensionRegistry } from './types.js';
 /**
  * Extension loading error
  */
@@ -6773,22 +6780,22 @@ export declare const extensionLoader: ExtensionLoader;
 ### world/WorldModel
 
 ```typescript
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { DirectionType } from '../constants/directions';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { DirectionType } from '../constants/directions.js';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
-import { IDataStore } from './AuthorModel';
-import { ICapabilityData, ICapabilityRegistration } from './capabilities';
-import { ITrait } from '../traits/trait';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
-import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
-import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding';
+import { IDataStore } from './AuthorModel.js';
+import { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
+import { ITrait } from '../traits/trait.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
+import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
-import { ScopeRegistry } from '../scope/scope-registry';
-import { IScopeRule } from '../scope/scope-rule';
-import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem';
+import { ScopeRegistry } from '../scope/scope-registry.js';
+import { IScopeRule } from '../scope/scope-rule.js';
+import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem.js';
 export type { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions };
 export { WorldState, WorldConfig, ContentsOptions, WorldChange } from '@sharpee/if-domain';
 export interface RegionOptions {
@@ -6868,8 +6875,8 @@ export interface RegionCrossings {
     exited: string[];
     entered: string[];
 }
-import { ScoreEntry } from './ScoreLedger';
-export { ScoreEntry } from './ScoreLedger';
+import { ScoreEntry } from './ScoreLedger.js';
+export { ScoreEntry } from './ScoreLedger.js';
 /**
  * Pre-removal observer (ADR-213 §1).
  *
@@ -7465,9 +7472,9 @@ export declare class SpatialIndex {
 ### world/VisibilityBehavior
 
 ```typescript
-import { Behavior } from '../behaviors/behavior';
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from './WorldModel';
+import { Behavior } from '../behaviors/behavior.js';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from './WorldModel.js';
 /**
  * Standard capability ID for visibility control.
  * Entities can claim this capability to control their own visibility.
@@ -7593,24 +7600,24 @@ export declare class VisibilityBehavior extends Behavior {
  * setup that requires bypassing game rules (placing items in closed
  * containers, etc.).
  */
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { SpatialIndex } from './SpatialIndex';
-import { ITrait } from '../traits/trait';
-import { ICapabilityStore } from './capabilities';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
-import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
-import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding';
-import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel';
-import type { ScoreEntry } from './ScoreLedger';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { SpatialIndex } from './SpatialIndex.js';
+import { ITrait } from '../traits/trait.js';
+import { ICapabilityStore } from './capabilities.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
+import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
+import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel.js';
+import type { ScoreEntry } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
-import type { DirectionType } from '../constants/directions';
-import type { ScopeRegistry } from '../scope/scope-registry';
-import type { IScopeRule } from '../scope/scope-rule';
-import type { ICapabilityData, ICapabilityRegistration } from './capabilities';
+import type { DirectionType } from '../constants/directions.js';
+import type { ScopeRegistry } from '../scope/scope-registry.js';
+import type { IScopeRule } from '../scope/scope-rule.js';
+import type { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
 /**
  * Data store shared between WorldModel and AuthorModel.
  */
@@ -7785,8 +7792,8 @@ export declare class AuthorModel implements IWorldModel {
 ### world/wall-creation
 
 ```typescript
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 /**
  * The narrow world surface required for wall creation. Implemented by
  * `WorldModel`; not part of the public IWorldModel interface.
@@ -7844,8 +7851,8 @@ export declare function createWalls(world: IWallCreationWorld, spec: IWallsSpec)
  * Owner context: `@sharpee/world-model` — world / spatial primitives.
  */
 import { EntityId } from '@sharpee/core';
-import { IFEntity } from '../entities/if-entity';
-import { IWallSpec } from '../entities/wall-entity';
+import { IFEntity } from '../entities/if-entity.js';
+import { IWallSpec } from '../entities/wall-entity.js';
 /**
  * Read-only world surface this validator depends on. Limited to the
  * methods required so the validator can be invoked from tests with a
@@ -8017,7 +8024,7 @@ export interface IScopeEvaluationResult {
  * @file Scope Registry
  * @description Manages scope rules and provides registration/lookup
  */
-import { IScopeRule, IScopeContext } from './scope-rule';
+import { IScopeRule, IScopeContext } from './scope-rule.js';
 /**
  * Registry for managing scope rules
  */
@@ -8090,8 +8097,8 @@ export declare class ScopeRegistry {
  * evaluation) or the stdlib's StandardScopeResolver (validation-phase entity
  * resolution with disambiguation).
  */
-import { IScopeRule, IScopeContext, IScopeEvaluationOptions, IScopeEvaluationResult } from './scope-rule';
-import { ScopeRegistry } from './scope-registry';
+import { IScopeRule, IScopeContext, IScopeEvaluationOptions, IScopeEvaluationResult } from './scope-rule.js';
+import { ScopeRegistry } from './scope-registry.js';
 /**
  * Evaluates scope rules to determine what entities are in scope
  */
@@ -8219,9 +8226,9 @@ export declare function createEffect(type: string, payload: Record<string, any>)
  * Standard interface for behaviors that handle capability dispatch.
  * Follows the same 4-phase pattern as stdlib actions for consistency.
  */
-import { IFEntity } from '../entities';
-import { WorldModel } from '../world';
-import { CapabilityValidationResult, CapabilityEffect } from './types';
+import { IFEntity } from '../entities/index.js';
+import { WorldModel } from '../world/index.js';
+import { CapabilityValidationResult, CapabilityEffect } from './types.js';
 /**
  * Shared data object for passing data between behavior phases.
  * Mirrors ActionContext.sharedData pattern from stdlib.
@@ -8342,9 +8349,9 @@ export interface CapabilityBehavior {
  * Public interface: `TraitBehaviorBinding`, `BehaviorRegistrationOptions`.
  * Owner: world-model (capability dispatch storage, ADR-090/ADR-207).
  */
-import { ITrait } from '../traits/trait';
-import type { CapabilityBehavior } from './capability-behavior';
-import type { CapabilityResolution, CapabilityMode } from './capability-defaults';
+import { ITrait } from '../traits/trait.js';
+import type { CapabilityBehavior } from './capability-behavior.js';
+import type { CapabilityResolution, CapabilityMode } from './capability-defaults.js';
 /**
  * Options for registering a capability behavior on a `WorldModel`.
  */
@@ -8468,8 +8475,8 @@ export declare function getAllCapabilityDefaults(): Map<string, CapabilityConfig
  * Helper functions for working with trait capabilities.
  * Used by capability-dispatch actions to find and check capabilities.
  */
-import { ITrait } from '../traits/trait';
-import { IFEntity } from '../entities';
+import { ITrait } from '../traits/trait.js';
+import { IFEntity } from '../entities/index.js';
 /**
  * Find a trait on the entity that declares the given capability.
  *
@@ -8549,8 +8556,8 @@ export declare function getCapableTraits(entity: IFEntity): ITrait[];
  * conflict detection. When two traits claim the same capability,
  * TypeScript will error (and runtime will throw as backup).
  */
-import { IFEntity } from '../entities';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from '../entities/index.js';
+import { ITrait } from '../traits/trait.js';
 /**
  * Type-safe entity builder that tracks claimed capabilities.
  *
@@ -8638,9 +8645,9 @@ export declare function buildEntity(entity: IFEntity): EntityBuilder;
  * - ActionInterceptor: Hooks into phases, action owns core logic (ENTER, PUT)
  */
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity } from '../entities';
-import { WorldModel } from '../world';
-import { CapabilityEffect } from './types';
+import { IFEntity } from '../entities/index.js';
+import { WorldModel } from '../world/index.js';
+import { CapabilityEffect } from './types.js';
 /**
  * Shared data object for passing data between interceptor phases.
  * Mirrors CapabilitySharedData pattern from capability-behavior.ts.
@@ -9015,8 +9022,8 @@ export interface ActionInterceptor {
  * `InterceptorLookupResult`.
  * Owner: world-model (action-interceptor storage, ADR-118/ADR-208).
  */
-import { ITrait } from '../traits/trait';
-import type { ActionInterceptor } from './action-interceptor';
+import { ITrait } from '../traits/trait.js';
+import type { ActionInterceptor } from './action-interceptor.js';
 /**
  * Options for registering an action interceptor on a `WorldModel`.
  */
@@ -9068,8 +9075,8 @@ export declare function interceptorBindingKey(traitType: string, actionId: strin
  * Helper functions for working with trait interceptors.
  * Mirrors capability-helpers.ts pattern but for interceptors.
  */
-import { ITrait } from '../traits/trait';
-import { IFEntity } from '../entities';
+import { ITrait } from '../traits/trait.js';
+import { IFEntity } from '../entities/index.js';
 /**
  * Find a trait on the entity that has an interceptor registered for the given action.
  *

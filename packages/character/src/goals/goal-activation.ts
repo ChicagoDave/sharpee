@@ -14,7 +14,7 @@ import {
   GoalDef,
   ActiveGoal,
   GOAL_PRIORITY_VALUES,
-} from './goal-types';
+} from './goal-types.js';
 
 // ---------------------------------------------------------------------------
 // Goal manager

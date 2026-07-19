@@ -8,7 +8,7 @@
  * Owner context: transcript-tester display layer
  */
 
-import { EntityTraitSnapshot } from './types';
+import { EntityTraitSnapshot } from './types.js';
 
 /**
  * Format all entity trait snapshots as prose lines for CLI display.

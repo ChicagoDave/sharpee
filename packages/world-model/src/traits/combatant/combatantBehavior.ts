@@ -12,13 +12,13 @@
  * Owner context: `@sharpee/world-model` — combat (requires the HEALTH layer).
  */
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
-import { TraitType } from '../trait-types';
-import { CombatantTrait } from './combatantTrait';
-import { HealthTrait } from '../health/healthTrait';
-import { HealthBehavior } from '../health/healthBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
+import { TraitType } from '../trait-types.js';
+import { CombatantTrait } from './combatantTrait.js';
+import { HealthTrait } from '../health/healthTrait.js';
+import { HealthBehavior } from '../health/healthBehavior.js';
 import { EntityId } from '@sharpee/core';
 
 /**

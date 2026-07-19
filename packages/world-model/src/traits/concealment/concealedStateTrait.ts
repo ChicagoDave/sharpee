@@ -12,10 +12,10 @@
  * Owner context: @sharpee/world-model / traits
  */
 
-import { ITrait } from '../trait';
-import { IFEntity } from '../../entities';
-import { VISIBILITY_CAPABILITY } from '../../world/VisibilityBehavior';
-import { ConcealmentPosition, ConcealmentQuality } from './concealmentTrait';
+import { ITrait } from '../trait.js';
+import { IFEntity } from '../../entities/index.js';
+import { VISIBILITY_CAPABILITY } from '../../world/VisibilityBehavior.js';
+import { ConcealmentPosition, ConcealmentQuality } from './concealmentTrait.js';
 
 /**
  * Data interface for the concealed state.

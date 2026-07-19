@@ -11,17 +11,17 @@
  * 4. blocked: Generate error events when validation fails
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
-import { buildEventData } from '../../data-builder-types';
-import { IFActions } from '../../constants';
-import { OpenedEventData, ExitRevealedEventData } from './opening-events';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { OpeningMessages } from './opening-messages';
-import { validateToolRequirements } from '../tool-shared';
-import { nounPhraseFor } from '../../../utils';
+import { buildEventData } from '../../data-builder-types.js';
+import { IFActions } from '../../constants.js';
+import { OpenedEventData, ExitRevealedEventData } from './opening-events.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { OpeningMessages } from './opening-messages.js';
+import { validateToolRequirements } from '../tool-shared.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -32,7 +32,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228, ADR-230 D3b): the opened target and any
@@ -72,7 +72,7 @@ export const openingLifecycle: ActionLifecycleDescriptor = {
 };
 
 // Import our data builder
-import { openedDataConfig } from './opening-data';
+import { openedDataConfig } from './opening-data.js';
 
 export const openingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.OPENING,

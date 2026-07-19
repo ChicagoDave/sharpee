@@ -1,12 +1,12 @@
 // packages/world-model/src/traits/edible/edibleBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { EdibleTrait, TasteQuality } from './edibleTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { EdibleTrait, TasteQuality } from './edibleTrait.js';
 import { ISemanticEvent, createEvent } from '@sharpee/core';
-import { IFEvents } from '../../constants/if-events';
-import { ActionFailureReason } from '../../constants/action-failures';
+import { IFEvents } from '../../constants/if-events.js';
+import { ActionFailureReason } from '../../constants/action-failures.js';
 
 /**
  * Behavior for edible entities.

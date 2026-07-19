@@ -7,8 +7,8 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-import { StateMachineRegistry } from './state-machine-runtime';
-import { EvaluationContext, StateMachineRegistryState } from './types';
+import { StateMachineRegistry } from './state-machine-runtime.js';
+import { EvaluationContext, StateMachineRegistryState } from './types.js';
 
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).

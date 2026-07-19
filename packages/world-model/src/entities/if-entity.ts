@@ -1,15 +1,15 @@
 // packages/world-model/src/entities/if-entity.ts
 
 import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
-import { ITrait, ITraitConstructor, isTrait } from '../traits/trait';
-import { TraitType } from '../traits/trait-types';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LockableTrait } from '../traits/lockable/lockableTrait';
-import { ActorTrait } from '../traits/actor/actorTrait';
-import { IdentityTrait } from '../traits/identity/identityTrait';
-import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
-import { SwitchableTrait } from '../traits/switchable/switchableTrait';
-import { Annotation, AnnotationCondition } from '../annotations/types';
+import { ITrait, ITraitConstructor, isTrait } from '../traits/trait.js';
+import { TraitType } from '../traits/trait-types.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LockableTrait } from '../traits/lockable/lockableTrait.js';
+import { ActorTrait } from '../traits/actor/actorTrait.js';
+import { IdentityTrait } from '../traits/identity/identityTrait.js';
+import { LightSourceTrait } from '../traits/light-source/lightSourceTrait.js';
+import { SwitchableTrait } from '../traits/switchable/switchableTrait.js';
+import { Annotation, AnnotationCondition } from '../annotations/types.js';
 
 /**
  * Interactive Fiction Entity with trait-based composition.

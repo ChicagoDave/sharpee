@@ -8,7 +8,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runInitCommand } from './init';
+import { runInitCommand } from './init.js';
 
 describe('runInitCommand (scaffold)', () => {
   let dir = '';

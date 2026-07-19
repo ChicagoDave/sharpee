@@ -14,8 +14,8 @@
 import * as path from 'node:path';
 import { existsSync, statSync } from 'node:fs';
 import type { TestableGame, TranscriptResult, TestRunResult } from '@sharpee/transcript-tester';
-import { loadAuthorGame } from '../standalone/author-game';
-import { lookupStory } from '../registry';
+import { loadAuthorGame } from '../standalone/author-game.js';
+import { lookupStory } from '../registry.js';
 
 const USAGE =
   'usage: sharpee test [name|path] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v]';

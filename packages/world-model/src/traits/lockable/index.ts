@@ -1,4 +1,4 @@
 // packages/world-model/src/traits/lockable/index.ts
 
-export * from './lockableTrait';
-export * from './lockableBehavior';
+export * from './lockableTrait.js';
+export * from './lockableBehavior.js';

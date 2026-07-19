@@ -4,8 +4,8 @@
  */
 
 // Inserting typically delegates to putting, so it shares the same event types
-export { PutInEventData as InsertedEventData } from '../putting/putting-events';
+export { PutInEventData as InsertedEventData } from '../putting/putting-events.js';
 
 export interface InsertingEventMap {
-  'if.event.put_in': import('../putting/putting-events').PutInEventData;
+  'if.event.put_in': import('../putting/putting-events.js').PutInEventData;
 }

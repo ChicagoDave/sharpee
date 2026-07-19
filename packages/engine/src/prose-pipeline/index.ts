@@ -11,7 +11,7 @@
  */
 
 // Pipeline class and factory.
-export { ProsePipeline, createProsePipeline } from './pipeline';
+export { ProsePipeline, createProsePipeline } from './pipeline.js';
 
 // Service interface.
 export type {
@@ -19,7 +19,7 @@ export type {
   SlotContributor,
   SlotEntry,
   SlotEntryGate,
-} from './types';
+} from './types.js';
 
 // Render-context runtime for the phrase pipeline (ADR-192, W2).
 export {
@@ -27,7 +27,7 @@ export {
   createRenderContextFactory,
   type RenderContextFactory,
   type WorldModelLike,
-} from './render-context';
+} from './render-context.js';
 
 // Decoration primitives (re-exported for convenience to engine code
 // outside the prose-pipeline subdirectory; the canonical types live
@@ -40,15 +40,15 @@ export {
   type PlatformVocabularyName,
   type IDecoration,
   type TextContent,
-} from './decorations';
+} from './decorations/index.js';
 
 // Stage utilities (handy in tests).
-export { filterEvents } from './stages/filter';
+export { filterEvents } from './stages/filter.js';
 export {
   sortEventsForProse,
   getChainMetadata,
-} from './stages/sort';
-export { createBlock, createBlocks, extractValue } from './assemble';
+} from './stages/sort.js';
+export { createBlock, createBlocks, extractValue } from './assemble.js';
 
 // Handler families.
 export type {
@@ -56,7 +56,7 @@ export type {
   HandlerContext,
   ChainableEventData,
   GenericEventData,
-} from './handlers/types';
+} from './handlers/types.js';
 export {
   handleRoomDescription,
   handleRevealed,
@@ -68,4 +68,4 @@ export {
   handleImplicitTake,
   handleCommandFailed,
   handleClientQuery,
-} from './handlers';
+} from './handlers/index.js';

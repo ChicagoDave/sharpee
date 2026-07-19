@@ -12,7 +12,7 @@
  * Public interface: STATE_MACHINES_MANIFEST.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
-import type { ExtensionManifest } from './types';
+import type { ExtensionManifest } from './types.js';
 
 export const STATE_MACHINES_MANIFEST: ExtensionManifest = {
   name: 'state-machines',

@@ -10,7 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import { runInitBrowserCommand } from './init-browser';
+import { runInitBrowserCommand } from './init-browser.js';
 
 // Template directories relative to this file.
 // In source: src/standalone/ → ../../templates. In npm publish: standalone/ → ../templates.

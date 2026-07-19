@@ -2,10 +2,10 @@
  * Shared logic for locking and unlocking actions
  */
 
-import { ActionContext, ValidationResult } from '../enhanced-types';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { IFEntity, TraitType, LockableBehavior, OpenableBehavior } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
-import { nounPhraseFor } from '../../utils';
+import { nounPhraseFor } from '../../utils/index.js';
 
 /**
  * Shared message constants for lock/unlock validation

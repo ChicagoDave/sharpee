@@ -14,7 +14,7 @@ import {
   ActiveInfluenceEffect,
   InfluenceEffect,
   InfluenceDuration,
-} from './influence-types';
+} from './influence-types.js';
 
 /**
  * Tracks and manages active influence effects across turns.

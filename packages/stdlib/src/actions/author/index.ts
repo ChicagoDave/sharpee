@@ -2,4 +2,4 @@
  * Author commands for debugging and development
  */
 
-export { TraceAction } from './trace';
+export { TraceAction } from './trace.js';

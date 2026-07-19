@@ -2,7 +2,7 @@
  * Destructible trait for entities that require multiple hits or specific tools to destroy
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import { EntityId } from '@sharpee/core';
 
 export interface IDestructibleData {

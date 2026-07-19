@@ -1,13 +1,13 @@
 // packages/world-model/src/traits/actor/actorBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { ActorTrait } from './actorTrait';
-import { ContainerBehavior, IWorldQuery } from '../container/containerBehavior';
-import { IdentityBehavior } from '../identity/identityBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { ActorTrait } from './actorTrait.js';
+import { ContainerBehavior, IWorldQuery } from '../container/containerBehavior.js';
+import { IdentityBehavior } from '../identity/identityBehavior.js';
 import { EntityId } from '@sharpee/core';
-import { WearableBehavior } from '../wearable/wearableBehavior';
+import { WearableBehavior } from '../wearable/wearableBehavior.js';
 
 /**
  * Result of a take item operation

@@ -5,8 +5,8 @@
  */
 
 import type { EntityId } from '@sharpee/core';
-import type { IParsedObjectReference, IParsedCommand } from './parsed-command';
-import type { IFEntity } from '../entities/if-entity';
+import type { IParsedObjectReference, IParsedCommand } from './parsed-command.js';
+import type { IFEntity } from '../entities/if-entity.js';
 
 /**
  * Resolved entity reference after validation

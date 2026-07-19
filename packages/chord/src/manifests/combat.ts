@@ -11,7 +11,7 @@
  * Public interface: COMBAT_MANIFEST.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
-import type { ExtensionManifest } from './types';
+import type { ExtensionManifest } from './types.js';
 
 export const COMBAT_MANIFEST: ExtensionManifest = {
   name: 'combat',

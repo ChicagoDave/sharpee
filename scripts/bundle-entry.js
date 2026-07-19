@@ -122,7 +122,11 @@ if (require.main === module) {
       exec: null,
       debug: false,
       restore: null,
-      storyPath: 'stories/dungeo',
+      // No default story (removed 2026-07-19, David's ruling — the silent
+      // dungeo fallback ran transcripts against the wrong story). --story
+      // wins; otherwise the story is inferred from the transcript paths'
+      // stories/<name>/ prefix (resolveStoryPath); play/exec require --story.
+      storyPath: null,
       help: false
     };
 
@@ -199,16 +203,18 @@ Options:
   --verbose, -v        Show detailed output for each command
   --emit-traits        Show entity traits for objects referenced in events (implies --verbose)
   --stop-on-failure, -s Stop on first failure
-  --story <path>       Story directory, or a Chord .story file (default: stories/dungeo)
+  --story <path>       Story directory, or a Chord .story file (default: inferred
+                       from the transcript paths' stories/<name>/ prefix; required
+                       for --play/--exec)
   --help, -h           Show this help message
 
 Examples:
-  node dist/cli/sharpee.js --exec "look" --debug
-  node dist/cli/sharpee.js --exec "wait/wait/tie wire to hook" --restore wt-13a --debug
+  node dist/cli/sharpee.js --exec "look" --story stories/dungeo --debug
+  node dist/cli/sharpee.js --exec "wait/wait/tie wire to hook" --story stories/dungeo --restore wt-13a --debug
   node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/save-restore-basic.transcript
   node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
-  node dist/cli/sharpee.js --play
-  node dist/cli/sharpee.js --restore wt-11
+  node dist/cli/sharpee.js --play --story stories/fernhill/fernhill.story
+  node dist/cli/sharpee.js --restore wt-11 --story stories/dungeo
 `);
   }
 
@@ -413,6 +419,45 @@ Examples:
     prompt();
   }
 
+  /**
+   * Resolve the story to load when --story was not given.
+   *
+   * Inference (David's ruling, 2026-07-19): the transcript paths name the
+   * story themselves — every path must share one stories/<name>/ (or
+   * tutorials/<name>/) prefix; mixed prefixes are a hard error, never a
+   * pick. Inside the inferred directory a lone top-level `.story` file is
+   * preferred over a compiled dist (chord stories load from source; a stale
+   * dist is the trap). No transcripts to read (play/exec/world-json/
+   * introspect) → --story is required.
+   */
+  function resolveStoryPath(options) {
+    if (options.storyPath) return options.storyPath;
+
+    const roots = new Set();
+    for (const p of options.transcriptPaths) {
+      const match = /(^|\/)((?:stories|tutorials)\/[^/]+)(\/|$)/.exec(p.replace(/\\/g, '/'));
+      if (match) roots.add(p.slice(0, p.replace(/\\/g, '/').indexOf(match[2])) + match[2]);
+    }
+    if (roots.size === 1) {
+      const dir = [...roots][0];
+      const storyFiles = fs.existsSync(dir)
+        ? fs.readdirSync(dir).filter((f) => f.endsWith('.story'))
+        : [];
+      if (storyFiles.length === 1) return path.join(dir, storyFiles[0]);
+      if (storyFiles.length > 1) {
+        console.error(`Cannot infer the story: ${dir} contains ${storyFiles.length} .story files — pass --story <path>.`);
+        process.exit(1);
+      }
+      return dir;
+    }
+    if (roots.size > 1) {
+      console.error(`Cannot infer the story: transcripts span multiple story directories (${[...roots].join(', ')}) — pass --story <path> or run per story.`);
+      process.exit(1);
+    }
+    console.error('No story specified. Pass --story <dir | .story file>, or give transcript paths under stories/<name>/ so it can be inferred.');
+    process.exit(1);
+  }
+
   async function main() {
     const options = parseArgs(args);
 
@@ -420,6 +465,8 @@ Examples:
       printHelp();
       process.exit(0);
     }
+
+    options.storyPath = resolveStoryPath(options);
 
     if (options.exec) {
       const game = loadStoryAndCreateGame(options.storyPath);

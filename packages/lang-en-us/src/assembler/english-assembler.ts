@@ -419,6 +419,42 @@ const PRONOUNS: Record<'he' | 'she' | 'it' | 'they', Record<Pronoun['case'], str
   they: { subject: 'they', object: 'them', possessive: 'their', 'possessive-pronoun': 'theirs', reflexive: 'themselves' },
 };
 
+/** The five case forms of a registered pronoun set (ADR-242 D7). */
+export interface PronounSetForms {
+  subject: string;
+  object: string;
+  possessive: string;
+  possessivePronoun: string;
+  reflexive: string;
+}
+
+/**
+ * Story-registered pronoun sets (ADR-242 D7) — named sets beyond the
+ * standard four, consulted by `renderPronoun` BEFORE the standard rows
+ * and the by-number fallback. Module-level like the Assembler's other
+ * cross-call state (`activeChoicePicks`): the pronoun surface is a
+ * per-locale table, not per-provider — and a set name only ever reaches
+ * a render through a story whose compiler validated the declaration.
+ */
+const registeredPronounSets = new Map<string, Record<Pronoun['case'], string>>();
+
+/**
+ * Register a named pronoun set (ADR-242 D7). Called by the language
+ * provider's `registerPronounSet` (the loader's `extendLanguage` probe);
+ * a re-registration overwrites (last-wins, the `addMessage` convention).
+ * @param name the set name as declared (`define pronouns ze`)
+ * @param forms the five case forms
+ */
+export function registerPronounSet(name: string, forms: PronounSetForms): void {
+  registeredPronounSets.set(name.toLowerCase(), {
+    subject: forms.subject,
+    object: forms.object,
+    possessive: forms.possessive,
+    'possessive-pronoun': forms.possessivePronoun,
+    reflexive: forms.reflexive,
+  });
+}
+
 /** Pick the gender row for a referent: explicit pronounSet, else by number. */
 function genderOf(ref: { number: NounPhrase['number']; pronounSet?: string }): 'he' | 'she' | 'it' | 'they' {
   const set = ref.pronounSet?.toLowerCase();
@@ -432,6 +468,12 @@ function genderOf(ref: { number: NounPhrase['number']; pronounSet?: string }): '
 /** Realize a `Pronoun` (ADR-197): the last-mentioned referent in the requested case. */
 function renderPronoun(pronoun: Pronoun, ctx: RenderContext): string {
   const ref = ctx.reference.lastMentioned();
+  // Registered sets first (ADR-242 D7): a named set wins over the standard
+  // rows; an unregistered name falls through to genderOf's by-number path.
+  if (ref?.pronounSet) {
+    const custom = registeredPronounSets.get(ref.pronounSet.toLowerCase());
+    if (custom) return custom[pronoun.case];
+  }
   // Graceful: no antecedent → neuter singular for the case (no throw).
   const gender = ref ? genderOf(ref) : 'it';
   return PRONOUNS[gender][pronoun.case];

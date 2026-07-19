@@ -3,6 +3,6 @@
  * @description Exports for the scope management system
  */
 
-export * from './scope-rule';
-export * from './scope-registry';
-export * from './scope-evaluator';
+export * from './scope-rule.js';
+export * from './scope-registry.js';
+export * from './scope-evaluator.js';

@@ -14,7 +14,7 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { RenderContextFactory } from '../render-context';
+import type { RenderContextFactory } from '../render-context.js';
 
 /**
  * Context passed to event handlers.

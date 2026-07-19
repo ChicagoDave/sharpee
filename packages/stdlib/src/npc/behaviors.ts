@@ -6,10 +6,10 @@
  * Game-specific behaviors (thief, cyclops, etc.) should be defined in the story.
  */
 
-import { NpcBehavior, NpcContext, NpcAction } from './types';
-import { NpcMessages } from './npc-messages';
+import { NpcBehavior, NpcContext, NpcAction } from './types.js';
+import { NpcMessages } from './npc-messages.js';
 import { TraitType, CombatantTrait, HealthTrait, HealthBehavior } from '@sharpee/world-model';
-import { nounPhraseFor } from '../utils';
+import { nounPhraseFor } from '../utils/index.js';
 
 /**
  * Guard behavior - stationary NPC that blocks passage and fights back

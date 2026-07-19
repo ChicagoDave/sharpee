@@ -16,10 +16,10 @@
  * - "remove X and Y from box" - removes multiple specified items
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
 import {
   TraitType,
   OpenableBehavior,
@@ -31,17 +31,17 @@ import {
   ITakeItemResult,
   IFEntity
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope';
-import { RemovingEventMap } from './removing-events';
-import { RemovingMessages } from './removing-messages';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/index.js';
+import { RemovingEventMap } from './removing-events.js';
+import { RemovingMessages } from './removing-messages.js';
 
 // Import types
-import { getRemovingSharedData, RemovingItemScratch } from './removing-types';
+import { getRemovingSharedData, RemovingItemScratch } from './removing-types.js';
 
 // Import multi-object helpers
-import { isMultiObjectCommand, getExcludedNames } from '../../../helpers/multi-object-handler';
-import { nounPhraseFor } from '../../../utils';
+import { isMultiObjectCommand, getExcludedNames } from '../../../helpers/multi-object-handler.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -56,7 +56,7 @@ import {
   runMultiObjectExecute,
   runMultiObjectReport,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228). D6-B delegation-seam ruling: removing IS

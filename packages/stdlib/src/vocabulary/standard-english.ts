@@ -9,7 +9,7 @@ import {
   DirectionVocabulary, 
   SpecialVocabulary,
   vocabularyRegistry 
-} from '../parser';
+} from '../parser/index.js';
 
 /**
  * Standard verb vocabulary

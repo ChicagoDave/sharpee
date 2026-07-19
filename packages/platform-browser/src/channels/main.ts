@@ -17,7 +17,7 @@
 import type { ChannelRenderer } from '@sharpee/channel-service';
 import type { MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
-import { renderTextContent } from './text-content';
+import { renderTextContent } from './text-content.js';
 
 export interface MainChannelRendererOptions {
   /**

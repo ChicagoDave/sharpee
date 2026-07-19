@@ -22,12 +22,12 @@
  */
 
 // Side-effect import: patches WorldModel.prototype.helpers
-import './augment';
+import './augment.js';
 
 // Named exports for direct use
-export { createHelpers, EntityHelpers } from './create-helpers';
-export { RoomBuilder } from './builders/room';
-export { ObjectBuilder } from './builders/object';
-export { ContainerBuilder } from './builders/container';
-export { ActorBuilder } from './builders/actor';
-export { DoorBuilder } from './builders/door';
+export { createHelpers, EntityHelpers } from './create-helpers.js';
+export { RoomBuilder } from './builders/room.js';
+export { ObjectBuilder } from './builders/object.js';
+export { ContainerBuilder } from './builders/container.js';
+export { ActorBuilder } from './builders/actor.js';
+export { DoorBuilder } from './builders/door.js';

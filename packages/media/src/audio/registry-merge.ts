@@ -20,7 +20,7 @@ import type {
   AudioTarget,
   AudioEffectType,
   ProceduralRecipeName,
-} from './types';
+} from './types.js';
 
 // ── Event data shapes (what goes in the `data` field) ─────────────────
 

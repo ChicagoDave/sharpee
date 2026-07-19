@@ -438,7 +438,7 @@ export type WorldChangeType = 'move' | 'create' | 'delete' | 'modify' | 'relate'
  * - Localization and customization
  */
 import type { ITextBlock } from '@sharpee/text-blocks';
-import type { LocaleSettings, RenderContext } from './phrase';
+import type { LocaleSettings, RenderContext } from './phrase.js';
 /**
  * Structured help information for an action
  */
@@ -595,8 +595,8 @@ export interface LanguageProviderRegistry {
  * Language implementations must provide both text/messaging capabilities
  * and parser vocabulary/grammar rules.
  */
-import { LanguageProvider } from './language-provider';
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-contracts/vocabulary-types';
+import { LanguageProvider } from './language-provider.js';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-contracts/vocabulary-types.js';
 /**
  * Language-specific grammar pattern definition
  * Different from the vocabulary-types GrammarPattern
@@ -756,7 +756,7 @@ export interface ParserLanguageProvider extends LanguageProvider {
  * The parser is world-agnostic and produces parsed commands
  * that must be resolved against the world model.
  */
-import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types';
+import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types.js';
 import type { ISystemEvent } from '@sharpee/core';
 /**
  * Base parser interface that can be extended
@@ -890,7 +890,7 @@ export interface Parser extends BaseParser {
  *
  * @internal
  */
-import { Token } from './parser-types';
+import { Token } from './parser-types.js';
 /**
  * A candidate command from the parser
  * This is world-agnostic - just the grammatical structure
@@ -1018,7 +1018,7 @@ export declare enum ParseErrorType {
  * The actual parser implementations are in separate packages
  * and must be registered before use.
  */
-import { Parser } from './parser-types';
+import { Parser } from './parser-types.js';
 /**
  * Registry of parser constructors
  * Language providers are passed as 'any' to avoid coupling
@@ -1314,7 +1314,7 @@ export type GrammarPatternName = keyof typeof GrammarPatterns;
  * - Story-specific vocabulary
  * - Dynamic entity vocabulary
  */
-import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types';
+import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types.js';
 /**
  * Central vocabulary registry
  */
@@ -1411,8 +1411,8 @@ export declare const vocabularyRegistry: VocabularyRegistry;
  * Vocabulary adapters for converting language-specific vocabulary
  * to the standard vocabulary types used by the parser
  */
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types';
-import { ParserLanguageProvider } from '../parser-language-provider';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types.js';
+import { ParserLanguageProvider } from '../parser-language-provider.js';
 /**
  * Adapt verb vocabulary from language provider format
  */
@@ -1936,7 +1936,7 @@ export interface PatternMatch {
  * @file Pattern Compiler Interface
  * @description Language-agnostic interface for compiling grammar patterns
  */
-import { CompiledPattern } from './grammar-builder';
+import { CompiledPattern } from './grammar-builder.js';
 /**
  * Pattern compiler interface
  * Language-specific implementations handle their own syntax
@@ -1978,9 +1978,9 @@ export declare class PatternSyntaxError extends Error {
  * @file Grammar Engine Base
  * @description Abstract base class for grammar matching engines
  */
-import { Token } from '../parser-contracts/parser-types';
-import { GrammarRule, PatternMatch, GrammarContext, GrammarBuilder } from './grammar-builder';
-import { PatternCompiler } from './pattern-compiler';
+import { Token } from '../parser-contracts/parser-types.js';
+import { GrammarRule, PatternMatch, GrammarContext, GrammarBuilder } from './grammar-builder.js';
+import { PatternCompiler } from './pattern-compiler.js';
 /**
  * Grammar matching options
  */
@@ -2047,7 +2047,7 @@ export declare abstract class GrammarEngine {
  * @file Scope Builder Implementation
  * @description Concrete implementation of the scope builder interface
  */
-import { ScopeBuilder, ScopeConstraint, PropertyConstraint, FunctionConstraint } from './grammar-builder';
+import { ScopeBuilder, ScopeConstraint, PropertyConstraint, FunctionConstraint } from './grammar-builder.js';
 /**
  * Concrete scope builder implementation
  */
@@ -2084,7 +2084,7 @@ export declare function scope(): ScopeBuilder;
  * Vocabulary categories are registered with optional context predicates.
  * The parser only considers a pattern if its vocabulary is active in the current context.
  */
-import { GrammarContext } from './grammar-builder';
+import { GrammarContext } from './grammar-builder.js';
 /**
  * Configuration for a vocabulary category
  */
@@ -2537,7 +2537,7 @@ export interface IChannelRegistry {
  *
  * @see ADR-163 — Channel-Service Platform — §1, §3, §4, §5, §11
  */
-import type { ChannelContentType, ChannelEmitPolicy, ChannelMode, ClientCapabilities } from './types';
+import type { ChannelContentType, ChannelEmitPolicy, ChannelMode, ClientCapabilities } from './types.js';
 /**
  * Channel definition as it appears in a CMGT manifest (ADR-163 §11).
  *

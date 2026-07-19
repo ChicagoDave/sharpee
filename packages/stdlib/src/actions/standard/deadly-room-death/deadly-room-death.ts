@@ -13,13 +13,13 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import {
   killPlayer,
   DEADLY_ROOM_DEATH_ACTION_ID,
   DEADLY_ROOM_CAUSE_KEY,
   DEADLY_ROOM_MESSAGE_KEY,
-} from '../../../death';
+} from '../../../death/index.js';
 
 /** Cross-phase state: the death event produced in `execute`, emitted in `report`. */
 interface DeadlyRoomDeathSharedData {

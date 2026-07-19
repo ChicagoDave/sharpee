@@ -16,7 +16,7 @@ import {
   InfluenceEffect,
   InfluenceSchedule,
   InfluenceDef,
-} from './influence-types';
+} from './influence-types.js';
 
 /**
  * Fluent builder for a single influence definition.

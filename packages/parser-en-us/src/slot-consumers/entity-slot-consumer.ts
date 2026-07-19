@@ -12,9 +12,9 @@ import {
   ScopeBuilderImpl,
   ScopeConstraintBuilder
 } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer';
-import { GrammarScopeResolver } from '../grammar-scope-resolver';
-import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context';
+import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
+import { GrammarScopeResolver } from '../grammar-scope-resolver.js';
+import { isRecognizedPronoun, getPronounContextManager } from '../pronoun-context.js';
 
 /**
  * Consumer for entity slots (ENTITY, INSTRUMENT)

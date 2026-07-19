@@ -11,10 +11,10 @@ import {
   NpcBehavior,
   NpcContext,
   NpcAction,
-} from './types';
-import { NpcMessages } from './npc-messages';
-import { processLucidityDecay } from './lucidity-decay';
-import { nounPhraseFor } from '../utils';
+} from './types.js';
+import { NpcMessages } from './npc-messages.js';
+import { processLucidityDecay } from './lucidity-decay.js';
+import { nounPhraseFor } from '../utils/index.js';
 /**
  * A tick phase handler that runs during NPC turn processing.
  * Registered by higher-level packages (e.g., @sharpee/character).

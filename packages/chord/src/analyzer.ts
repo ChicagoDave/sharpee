@@ -27,6 +27,7 @@ import {
   DefineMachine,
   DefinePhrase,
   DefinePhrases,
+  DefinePronouns,
   DefineTrait,
   EmitField,
   EmitValue,
@@ -40,10 +41,10 @@ import {
   TextValue,
   TraitField,
   ValueExpr,
-} from './ast';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
-import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests';
-import { DiagnosticBag } from './diagnostics';
+} from './ast.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
+import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
+import { DiagnosticBag } from './diagnostics.js';
 import {
   IR_FORMAT,
   IRActionDef,
@@ -51,6 +52,7 @@ import {
   IREntity,
   IRExit,
   IRDataChannelDef,
+  IRPronounSetDef,
   IREmitField,
   IREmitValue,
   IRMachineDef,
@@ -63,8 +65,8 @@ import {
   IRTraitDef,
   IRValue,
   StoryIR,
-} from './ir';
-import { Span } from './span';
+} from './ir.js';
+import { Span } from './span.js';
 
 /** Phase A stories register text in this locale (design.md §2.6). */
 const DEFAULT_LOCALE = 'en-US';
@@ -364,6 +366,13 @@ class Analyzer {
    * feedable's `hungry` — resolution is across the composer's trait set).
    */
   private traitVisibleStates = new Map<string, string[]>();
+  /**
+   * `define pronouns` sets by name (ADR-242 D7), collected in pass 1 so a
+   * `pronouns <word>` line resolves against sets declared later in the
+   * file. Span doubles as the pass-2 emission guard (family-channel
+   * precedent: an errored duplicate never emits a second entry).
+   */
+  private pronounSetDecls = new Map<string, DefinePronouns>();
 
   constructor(
     private readonly ast: StoryFile,
@@ -436,6 +445,7 @@ class Analyzer {
       sequences: [],
       machines: [],
       channels: [],
+      pronounSets: [],
       hasHatches: false,
     };
 
@@ -486,6 +496,13 @@ class Analyzer {
           break;
         case 'define-channel':
           ir.channels.push(this.buildChannel(decl));
+          break;
+        case 'define-pronouns':
+          // ADR-242 D7 — the pass-1 span guard keeps a shadowing/duplicate
+          // declaration from emitting (family-channel precedent).
+          if (this.pronounSetDecls.get(decl.name) === decl) {
+            ir.pronounSets.push(this.buildPronounSet(decl));
+          }
           break;
 
         case 'define-sequence':
@@ -1154,6 +1171,21 @@ class Analyzer {
           family.set(decl.name, decl.span);
         }
       }
+      else if (decl.kind === 'define-pronouns') {
+        // ADR-242 D7: one namespace beside the standard four — shadowing a
+        // standard word and redefining a set are each errors, never a merge.
+        if (PRONOUN_WORDS.has(decl.name)) {
+          this.diagnostics.error(
+            'analysis.pronoun-set-shadows',
+            `\`${decl.name}\` is a standard pronoun set — \`define pronouns\` names a new set; pick another name.`,
+            decl.span,
+          );
+        } else if (this.pronounSetDecls.has(decl.name)) {
+          this.diagnostics.error('analysis.duplicate-pronoun-set', `A pronoun set named \`${decl.name}\` is already defined.`, decl.span);
+        } else {
+          this.pronounSetDecls.set(decl.name, decl);
+        }
+      }
       else if (decl.kind === 'define-trait') {
         this.traitNames.add(decl.name);
         for (const field of decl.data) {
@@ -1651,6 +1683,58 @@ class Analyzer {
       startsStates.push(s.state);
     }
 
+    // ADR-242 D1: `proper` is the first kind-scoped trait adjective —
+    // person-only and unconditional (identity is not turn state). Both
+    // gates are analyzer diagnostics so the author reads the specific
+    // reason, not the loader's generic conditional-composition error.
+    const isPerson = kinds.some((k) => k.name === 'person');
+    for (const comp of decl.compositions) {
+      if (comp.article || comp.words.join(' ').toLowerCase() !== 'proper') continue;
+      if (!isPerson) {
+        this.diagnostics.error(
+          'analysis.proper-person-only',
+          `\`proper\` composes only on a person (\`a person, proper\`) — \`${decl.name.words.join(' ')}\` is not a person.`,
+          comp.span,
+        );
+      }
+      if (comp.condition) {
+        this.diagnostics.error(
+          'analysis.proper-conditional',
+          'Identity is not conditional — `proper while …` is not supported; a name is proper or it is not.',
+          comp.span,
+        );
+      }
+    }
+
+    // ADR-242 D5: `pronouns <word>` — person-only, at most one line, and
+    // the word resolves against the standard four or a `define pronouns`
+    // set (never guessed; nearest-match suggestion on a miss, ruled Q-2:
+    // no default is injected when the line is absent).
+    let pronouns: string | undefined;
+    if (decl.pronouns.length > 0) {
+      if (!isPerson) {
+        this.diagnostics.error(
+          'analysis.pronouns-person-only',
+          `\`pronouns\` is a person line — \`${decl.name.words.join(' ')}\` is not a person.`,
+          decl.pronouns[0].span,
+        );
+      }
+      for (const extra of decl.pronouns.slice(1)) {
+        this.diagnostics.error('analysis.pronouns-duplicate', 'This `create` block already has a `pronouns` line.', extra.span);
+      }
+      const word = decl.pronouns[0].word;
+      if (PRONOUN_WORDS.has(word) || this.pronounSetDecls.has(word)) {
+        if (isPerson) pronouns = word;
+      } else {
+        const known = [...PRONOUN_WORDS, ...this.pronounSetDecls.keys()];
+        this.diagnostics.error(
+          'analysis.unknown-pronouns',
+          `\`${word}\` is not a pronoun set — the standard sets are ${[...PRONOUN_WORDS].map((w) => `\`${w}\``).join(', ')}, plus any \`define pronouns\` set${this.suggestText(word, known)}.`,
+          decl.pronouns[0].span,
+        );
+      }
+    }
+
     // Player-block composition (Gap-2 ruling, David 2026-07-18): the
     // player composes like any entity — but only `a person` is a legal
     // kind (a no-op; the player is already an actor), and NPC behavior
@@ -1725,6 +1809,9 @@ class Analyzer {
       name: decl.name.words.join(' '),
       article: decl.name.article,
       aka: decl.aka,
+      // Present only when declared and resolved (ruled Q-2: absent means
+      // the platform's by-number fallback — and zero golden churn).
+      ...(pronouns !== undefined ? { pronouns } : {}),
       isPlayer,
       kinds,
       traits,
@@ -2332,6 +2419,39 @@ class Analyzer {
       gatedBy,
       fromEvent: decl.fromEvent ?? '',
       take: decl.take,
+      span: decl.span,
+    };
+  }
+
+  /**
+   * `define pronouns` (ADR-242 D7): exactly the five case rows the
+   * assembler's pronoun table keys — a missing or duplicate row is an
+   * error (order is free; named rows, ruled Q-1). Forms pass through as
+   * data; the language provider owns rendering them.
+   */
+  private buildPronounSet(decl: DefinePronouns): IRPronounSetDef {
+    const byCase = new Map<string, string>();
+    for (const row of decl.rows) {
+      if (byCase.has(row.case)) {
+        this.diagnostics.error('analysis.pronoun-set-duplicate-row', `\`define pronouns ${decl.name}\` already has a \`${row.case}\` row.`, row.span);
+        continue;
+      }
+      byCase.set(row.case, row.form);
+    }
+    for (const c of PRONOUN_CASES) {
+      if (!byCase.has(c)) {
+        this.diagnostics.error('analysis.pronoun-set-rows', `\`define pronouns ${decl.name}\` is missing its \`${c}\` row — all five case rows are required.`, decl.span);
+      }
+    }
+    return {
+      name: decl.name,
+      forms: {
+        subject: byCase.get('subject') ?? '',
+        object: byCase.get('object') ?? '',
+        possessive: byCase.get('possessive') ?? '',
+        possessivePronoun: byCase.get('possessive-pronoun') ?? '',
+        reflexive: byCase.get('reflexive') ?? '',
+      },
       span: decl.span,
     };
   }

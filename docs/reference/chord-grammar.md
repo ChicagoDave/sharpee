@@ -154,6 +154,15 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
 ```
 create       = "create" name NL >>> { create-line } ;
 create-line  = "aka" alias { "," alias } NL
+             | "pronouns" WORD NL                          (* ADR-242 D5 (ratchet H2): person
+                                                              blocks only; a standard set
+                                                              (he|she|it|they) or a `define
+                                                              pronouns` name — unknown word is
+                                                              `analysis.unknown-pronouns` with
+                                                              a suggestion; duplicate line is
+                                                              `analysis.pronouns-duplicate`;
+                                                              absent = platform by-number
+                                                              fallback (no injected default) *)
              | states-line                                 (* ordered states, D2/D4 *)
              | score-line                                  (* owner-attached score, D12 *)
              | composition { "," composition } NL          (* pre-blank paragraph only *)
@@ -305,6 +314,51 @@ DIRECTION    = north | south | east | west | northeast | northwest
   appended (D5). With no catch-all declared, stdlib's `unknown_topic` /
   `not_interested` default speaks. `on telling it` mirrors identically.
 
+## Person identity (ADR-242, ratchet H1–H3, 2026-07-19)
+
+- **`proper`** — a person-only, unconditional trait adjective
+  (`a person, proper`): the person is proper-named — bare "Tobias" in
+  every rendering context (IdentityTrait `properName: true, article: ''`,
+  the player's own shape). On any non-person kind it is
+  `analysis.proper-person-only`; with a `while` tail it is
+  `analysis.proper-conditional` (identity is not turn state). The
+  create-line article is never read for identity — `create the
+  zookeeper` and `create a zookeeper` load identically (D4, a recorded
+  divergence from Inform 7's inference rule).
+- **`pronouns <word>`** — a person body line (beside `aka`) naming the
+  person's pronoun set: one of the standard four (`he`, `she`, `it`,
+  `they`) or a `define pronouns` set name. Unknown word:
+  `analysis.unknown-pronouns` with a nearest-match suggestion; second
+  line: `analysis.pronouns-duplicate`; non-person host:
+  `analysis.pronouns-person-only`. **Absent means absent** (ruled Q-2):
+  no default is injected — the platform's by-number fallback renders
+  "it"/"they", so gender a person by declaring the line.
+- **`define pronouns <name> … end pronouns`** — a named set for
+  non-standard gender identity: exactly five named rows (`subject`,
+  `object`, `possessive`, `possessive-pronoun`, `reflexive`), order
+  free. Missing row: `analysis.pronoun-set-rows`; duplicate row:
+  `analysis.pronoun-set-duplicate-row`; a name shadowing a standard set:
+  `analysis.pronoun-set-shadows`; redefinition:
+  `analysis.duplicate-pronoun-set`. Declared forms are DATA in the IR
+  (`ir.pronounSets`); the loader registers them into the language
+  provider (`extendLanguage`), where the assembler consults them before
+  the standard rows.
+
+  ```
+  create Kit
+    a person, proper
+    pronouns ze
+    in the Gatehouse
+
+  define pronouns ze
+    subject ze
+    object zir
+    possessive zir
+    possessive-pronoun zirs
+    reflexive zirself
+  end pronouns
+  ```
+
 ## Extension surface (ADR-215/216, 2026-07-18)
 
 - **`use <extension>`** — a story-header body line, one trusted platform
@@ -380,6 +434,11 @@ define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
 phrase-entry     = WORD ":" NL prose-paragraph ;           (* prose block only — the same-line
                                                               quoted/bare forms were removed
                                                               (grammar log 2026-07-10) *)
+define-pronouns  = "define" "pronouns" WORD NL             (* ADR-242 D7 (ratchet H3): five named
+                   >>> { PRONOUN-CASE WORD NL }               case rows, order free, all required;
+                   "end" "pronouns" NL ;                      analyzer gates rows + shadowing *)
+PRONOUN-CASE     = "subject" | "object" | "possessive"
+                 | "possessive-pronoun" | "reflexive" ;
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
 pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; name "br" reserved *)

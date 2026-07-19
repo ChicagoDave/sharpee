@@ -14,8 +14,8 @@
 import * as path from 'node:path';
 import * as readline from 'node:readline';
 import { existsSync, statSync } from 'node:fs';
-import { loadAuthorGame } from '../standalone/author-game';
-import { lookupStory } from '../registry';
+import { loadAuthorGame } from '../standalone/author-game.js';
+import { lookupStory } from '../registry.js';
 
 const USAGE = 'usage: sharpee play [name|path]';
 

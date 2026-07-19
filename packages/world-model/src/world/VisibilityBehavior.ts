@@ -1,19 +1,19 @@
 // VisibilityBehavior.ts - Visibility system for IF
 
-import { Behavior } from '../behaviors/behavior';
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from './WorldModel';
-import { TraitType } from '../traits/trait-types';
-import { SwitchableBehavior } from '../traits/switchable/switchableBehavior';
-import { VehicleTrait } from '../traits/vehicle/vehicleTrait';
-import { RoomTrait } from '../traits/room/roomTrait';
-import { ContainerTrait } from '../traits/container/containerTrait';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
-import { SceneryTrait } from '../traits/scenery/sceneryTrait';
-import { IdentityTrait } from '../traits/identity/identityTrait';
-import { DoorTrait } from '../traits/door/doorTrait';
-import { findTraitWithCapability } from '../capabilities';
+import { Behavior } from '../behaviors/behavior.js';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from './WorldModel.js';
+import { TraitType } from '../traits/trait-types.js';
+import { SwitchableBehavior } from '../traits/switchable/switchableBehavior.js';
+import { VehicleTrait } from '../traits/vehicle/vehicleTrait.js';
+import { RoomTrait } from '../traits/room/roomTrait.js';
+import { ContainerTrait } from '../traits/container/containerTrait.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LightSourceTrait } from '../traits/light-source/lightSourceTrait.js';
+import { SceneryTrait } from '../traits/scenery/sceneryTrait.js';
+import { IdentityTrait } from '../traits/identity/identityTrait.js';
+import { DoorTrait } from '../traits/door/doorTrait.js';
+import { findTraitWithCapability } from '../capabilities/index.js';
 
 /**
  * Standard capability ID for visibility control.

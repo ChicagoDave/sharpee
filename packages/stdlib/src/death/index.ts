@@ -12,12 +12,12 @@
  * - `IKillPlayerOptions` — `killPlayer`'s options.
  */
 
-export { killPlayer, type IKillPlayerOptions } from './kill-player';
-export { PLAYER_DIED_EVENT, type IPlayerDiedPayload } from './player-death-events';
-export { rollLethal } from './probabilistic-death';
+export { killPlayer, type IKillPlayerOptions } from './kill-player.js';
+export { PLAYER_DIED_EVENT, type IPlayerDiedPayload } from './player-death-events.js';
+export { rollLethal } from './probabilistic-death.js';
 export {
   createDeadlyRoomTransformer,
   DEADLY_ROOM_DEATH_ACTION_ID,
   DEADLY_ROOM_CAUSE_KEY,
   DEADLY_ROOM_MESSAGE_KEY,
-} from './deadly-room-transformer';
+} from './deadly-room-transformer.js';

@@ -6,8 +6,8 @@
  */
 
 import { IFEntity, WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
-import { ActionContext } from '../actions/enhanced-types';
-import { StandardScopeResolver } from '../scope/scope-resolver';
+import { ActionContext } from '../actions/enhanced-types.js';
+import { StandardScopeResolver } from '../scope/scope-resolver.js';
 import { INounPhrase } from '@sharpee/world-model';
 
 /**

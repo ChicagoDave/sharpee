@@ -3,8 +3,8 @@
  * These events are processed after turn completion but before text service
  */
 
-import { ISemanticEvent } from './types';
-import { IQuitContext, IRestartContext } from '../types/save-data';
+import { ISemanticEvent } from './types.js';
+import { IQuitContext, IRestartContext } from '../types/save-data.js';
 
 /**
  * Platform event types for save, restore, quit, and restart operations

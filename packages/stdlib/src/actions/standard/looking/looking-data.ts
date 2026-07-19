@@ -5,11 +5,11 @@
  * This separates data structure concerns from business logic.
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait, RoomTrait } from '@sharpee/world-model';
-import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
-import { nounPhraseFor } from '../../../utils';
+import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 
 /**
  * Check if a location is dark (needs light but has none).

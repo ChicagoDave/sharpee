@@ -1,8 +1,8 @@
 // packages/world-model/src/traits/lockable/lockableTrait.ts
 
 import { EntityId } from '@sharpee/core';
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 export interface ILockableData {
   /** Whether the entity is currently locked */

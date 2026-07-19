@@ -5,8 +5,8 @@
  * Used by capability-dispatch actions to find and check capabilities.
  */
 
-import { ITrait, ITraitConstructor } from '../traits/trait';
-import { IFEntity } from '../entities';
+import { ITrait, ITraitConstructor } from '../traits/trait.js';
+import { IFEntity } from '../entities/index.js';
 
 /**
  * Find a trait on the entity that declares the given capability.

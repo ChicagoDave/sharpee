@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useEditorStore } from '../../store/editor-store';
+import { useEditorStore } from '../../store/editor-store.js';
 import './RoomList.css';
 
 export function RoomList() {

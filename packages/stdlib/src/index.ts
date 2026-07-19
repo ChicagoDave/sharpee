@@ -12,22 +12,22 @@
  * All state changes go through events - no direct mutations
  */
 
-export * from './actions';
+export * from './actions/index.js';
 // Commands are now in language-specific packages like @sharpee/lang-en-us
 // Language providers are now in language-specific packages like @sharpee/lang-en-us
 // Messages are handled by language providers
-export * from './events';
-export * from './parser';
-export * from './validation';
-export * from './vocabulary';
-export * from './capabilities';
-export * from './query-handlers';
-export * from './scope';
-export * from './services';
-export * from './npc';
-export * from './combat';
-export * from './death';
-export * from './chains';
-export * from './inference';
-export * from './utils';
-export * from './channels';
+export * from './events/index.js';
+export * from './parser/index.js';
+export * from './validation/index.js';
+export * from './vocabulary/index.js';
+export * from './capabilities/index.js';
+export * from './query-handlers/index.js';
+export * from './scope/index.js';
+export * from './services/index.js';
+export * from './npc/index.js';
+export * from './combat/index.js';
+export * from './death/index.js';
+export * from './chains/index.js';
+export * from './inference/index.js';
+export * from './utils/index.js';
+export * from './channels/index.js';

@@ -28,8 +28,8 @@ import type {
   BrowserSaveEnvelope,
   SaveContext,
   SaveSlotMeta,
-} from '../types';
-import { AUTOSAVE_SLOT } from '../types';
+} from '../types.js';
+import { AUTOSAVE_SLOT } from '../types.js';
 
 export interface SaveManagerConfig {
   /** Storage key prefix (e.g., "dungeo-") */

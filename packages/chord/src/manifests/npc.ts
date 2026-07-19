@@ -14,7 +14,7 @@
  * Public interface: NPC_MANIFEST.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
-import type { ExtensionManifest, ManifestField } from './types';
+import type { ExtensionManifest, ManifestField } from './types.js';
 
 /** NpcTrait fields composable on every behavior adjective. */
 const NPC_COMMON_FIELDS: ManifestField[] = [

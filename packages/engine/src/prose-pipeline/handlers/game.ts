@@ -18,8 +18,8 @@
 
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { ISemanticEvent, GameLifecycleStartedData } from '@sharpee/core';
-import type { HandlerContext } from './types';
-import { buildBannerBlocks } from './banner';
+import type { HandlerContext } from './types.js';
+import { buildBannerBlocks } from './banner.js';
 
 /**
  * Handle the `game.started` event to produce the opening banner.

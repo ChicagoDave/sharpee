@@ -17,8 +17,8 @@
  * - Indentation is spaces only; a tab in leading whitespace is an error
  *   (reported once per line) and is measured as one column.
  */
-import { DiagnosticBag } from './diagnostics';
-import { Span, spanOf } from './span';
+import { DiagnosticBag } from './diagnostics.js';
+import { Span, spanOf } from './span.js';
 
 export type TokenKind =
   | 'word' // identifiers, keywords, hyphenated keys, contractions

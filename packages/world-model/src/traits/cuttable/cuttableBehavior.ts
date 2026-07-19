@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/cuttable/cuttableBehavior.ts
 
 import { EntityId } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { CuttableTrait } from './cuttableTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { CuttableTrait } from './cuttableTrait.js';
 
 /**
  * Behavior for cuttable entities (ADR-230 D3c).

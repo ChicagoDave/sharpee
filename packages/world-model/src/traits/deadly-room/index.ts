@@ -1,2 +1,2 @@
-export { DeadlyRoomTrait, IDeadlyRoomData } from './deadlyRoomTrait';
-export { DeadlyRoomBehavior, DeadlyRoomVerdict } from './deadlyRoomBehavior';
+export { DeadlyRoomTrait, IDeadlyRoomData } from './deadlyRoomTrait.js';
+export { DeadlyRoomBehavior, DeadlyRoomVerdict } from './deadlyRoomBehavior.js';

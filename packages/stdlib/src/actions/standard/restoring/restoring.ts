@@ -11,12 +11,12 @@
  * 4. report: Emit platform event and notifications
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { blockedMessageId } from '../../lifecycle';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent, createRestoreRequestedEvent, IRestoreContext } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { RestoreRequestedEventData } from './restoring-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { RestoreRequestedEventData } from './restoring-events.js';
 
 interface SaveInfo {
   slot: string;

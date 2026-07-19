@@ -7,7 +7,7 @@
  *
  * Public interface: runRegister(args), runList().
  */
-import { registerStory, listStories, registryPath } from '../registry';
+import { registerStory, listStories, registryPath } from '../registry.js';
 
 /** `sharpee register <location> [--name <n>]` — upsert a name→path mapping. */
 export function runRegister(args: string[]): void {

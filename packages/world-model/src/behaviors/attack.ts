@@ -4,16 +4,16 @@
  * Coordinates the various combat behaviors to handle attacks
  */
 
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from '../world/WorldModel';
-import { TraitType } from '../traits/trait-types';
-import { EquippedTrait } from '../traits/equipped/equippedTrait';
-import { WeaponTrait } from '../traits/weapon/weaponTrait';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from '../world/WorldModel.js';
+import { TraitType } from '../traits/trait-types.js';
+import { EquippedTrait } from '../traits/equipped/equippedTrait.js';
+import { WeaponTrait } from '../traits/weapon/weaponTrait.js';
 import { EntityId, SeededRandom } from '@sharpee/core';
-import { WeaponBehavior, IWeaponDamageResult } from '../traits/weapon/weaponBehavior';
-import { BreakableBehavior, IBreakResult } from '../traits/breakable/breakableBehavior';
-import { DestructibleBehavior, IDamageResult } from '../traits/destructible/destructibleBehavior';
-import { CombatBehavior, ICombatResult } from '../traits/combatant/combatantBehavior';
+import { WeaponBehavior, IWeaponDamageResult } from '../traits/weapon/weaponBehavior.js';
+import { BreakableBehavior, IBreakResult } from '../traits/breakable/breakableBehavior.js';
+import { DestructibleBehavior, IDamageResult } from '../traits/destructible/destructibleBehavior.js';
+import { CombatBehavior, ICombatResult } from '../traits/combatant/combatantBehavior.js';
 
 /**
  * Combined result of an attack

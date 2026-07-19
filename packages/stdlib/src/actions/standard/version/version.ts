@@ -12,13 +12,13 @@
  * 4. report: Emit version event with version data
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { blockedMessageId } from '../../lifecycle';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { VersionDisplayedEventData } from './version-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { VersionDisplayedEventData } from './version-events.js';
 
 /** Engine version - update this when engine version changes */
 export const ENGINE_VERSION = '0.9.43-beta.1';

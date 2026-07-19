@@ -22,9 +22,9 @@ import {
   RunnerOptions,
   TestEventInfo,
   EntityTraitSnapshot
-} from './types';
-import { evaluateCondition } from './condition-evaluator';
-import { executeNavigate } from './navigator';
+} from './types.js';
+import { evaluateCondition } from './condition-evaluator.js';
+import { executeNavigate } from './navigator.js';
 
 /**
  * Interface for the game engine

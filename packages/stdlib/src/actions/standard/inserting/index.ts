@@ -3,5 +3,5 @@
  * @module
  */
 
-export { insertingAction } from './inserting';
-export * from './inserting-events';
+export { insertingAction } from './inserting.js';
+export * from './inserting-events.js';

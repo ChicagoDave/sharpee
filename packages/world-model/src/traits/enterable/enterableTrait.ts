@@ -5,8 +5,8 @@
  * Entities with EnterableTrait can have players/actors enter them.
  */
 
-import { TraitType } from '../trait-types';
-import { ITrait } from '../trait';
+import { TraitType } from '../trait-types.js';
+import { ITrait } from '../trait.js';
 
 /**
  * Configuration options for EnterableTrait

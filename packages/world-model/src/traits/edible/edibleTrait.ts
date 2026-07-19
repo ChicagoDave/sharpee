@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/edible/edibleTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /** Taste quality values */
 export type TasteQuality = 'delicious' | 'tasty' | 'good' | 'plain' | 'bland' | 'awful' | 'terrible';

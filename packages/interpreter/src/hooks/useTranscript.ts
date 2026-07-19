@@ -3,8 +3,8 @@
  */
 
 import { useRef, useEffect, useCallback } from 'react';
-import { useGameState } from '../context/GameContext';
-import type { TranscriptEntry } from '../types/game-state';
+import { useGameState } from '../context/GameContext.js';
+import type { TranscriptEntry } from '../types/game-state.js';
 
 interface UseTranscriptResult {
   /** Transcript entries */

@@ -5,5 +5,5 @@ export {
   useGameState,
   useGameDispatch,
   useAssetMap,
-} from './GameContext';
-export type { GameProviderHandle } from './GameContext';
+} from './GameContext.js';
+export type { GameProviderHandle } from './GameContext.js';

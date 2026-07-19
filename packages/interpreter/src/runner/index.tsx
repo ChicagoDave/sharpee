@@ -11,15 +11,15 @@ import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
-import { GameProvider } from '../context';
-import { scopeCSS, rewriteCSSUrls } from '../utils/scope-css';
-import type { GameProviderHandle } from '../context';
-import type { GameState } from '../types/game-state';
-import { GameShell } from '../components';
-import { PreferencesProvider } from '../hooks/usePreferences';
-import { useTheme } from '../hooks/useTheme';
-import { loadBundle, releaseBundle } from '../loader';
-import type { LoadedBundle } from '../loader';
+import { GameProvider } from '../context/index.js';
+import { scopeCSS, rewriteCSSUrls } from '../utils/scope-css.js';
+import type { GameProviderHandle } from '../context/index.js';
+import type { GameState } from '../types/game-state.js';
+import { GameShell } from '../components/index.js';
+import { PreferencesProvider } from '../hooks/usePreferences.js';
+import { useTheme } from '../hooks/useTheme.js';
+import { loadBundle, releaseBundle } from '../loader/index.js';
+import type { LoadedBundle } from '../loader/index.js';
 import type { Story } from '@sharpee/engine';
 import { BrowserStorageProvider } from '../storage/index.js';
 import { SaveRestoreManager } from './save-integration.js';
@@ -27,7 +27,7 @@ import type { SaveData } from './save-integration.js';
 import { SaveDialog } from './SaveDialog.js';
 import { RestoreDialog } from './RestoreDialog.js';
 import { exportTranscriptMarkdown, exportWalkthrough, downloadFile } from './transcript-export.js';
-import { CLIENT_VERSION, ENGINE_VERSION } from '../version';
+import { CLIENT_VERSION, ENGINE_VERSION } from '../version.js';
 
 export interface ZifmiaRunnerProps {
   /** URL to fetch the .sharpee bundle from */

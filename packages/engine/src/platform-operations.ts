@@ -24,9 +24,9 @@ import {
   createUndoCompletedEvent
 } from '@sharpee/core';
 import type { IParser } from '@sharpee/world-model';
-import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
-import { VocabularyManager } from './vocabulary-manager';
-import { hasPronounContext } from './parser-interface';
+import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
+import { VocabularyManager } from './vocabulary-manager.js';
+import { hasPronounContext } from './parser-interface.js';
 
 /**
  * Context for platform operation handling

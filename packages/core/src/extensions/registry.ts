@@ -3,7 +3,7 @@
 // Using local import since we're in the same directory
 
 
-import { AnyExtension, ExtensionType } from './types';
+import { AnyExtension, ExtensionType } from './types.js';
 
 /**
  * Registry for extensions

@@ -3,5 +3,5 @@
  * @module
  */
 
-export { givingAction } from './giving';
-export * from './giving-events';
+export { givingAction } from './giving.js';
+export * from './giving-events.js';

@@ -13,7 +13,7 @@
  * 4. report: standard events → postReport hook (additional effects)
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -22,14 +22,14 @@ import {
   HealthTrait,
   HealthBehavior
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { killPlayer } from '../../../death';
-import { AttackedEventData } from './attacking-events';
-import { AttackingSharedData, AttackResult } from './attacking-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { findWieldedWeapon } from '../../../combat';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { killPlayer } from '../../../death/index.js';
+import { AttackedEventData } from './attacking-events.js';
+import { AttackingSharedData, AttackResult } from './attacking-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { findWieldedWeapon } from '../../../combat/index.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   LifecycleState,
@@ -42,7 +42,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the attacked target AND the wielded

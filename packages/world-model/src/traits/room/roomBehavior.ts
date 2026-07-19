@@ -1,13 +1,13 @@
 // packages/world-model/src/traits/room/roomBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { RoomTrait, IExitInfo } from './roomTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { RoomTrait, IExitInfo } from './roomTrait.js';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { IFEvents } from '../../constants/if-events';
-import { Direction, DirectionType, getOppositeDirection } from '../../constants/directions';
-import { IWorldQuery } from '../container/containerBehavior';
+import { IFEvents } from '../../constants/if-events.js';
+import { Direction, DirectionType, getOppositeDirection } from '../../constants/directions.js';
+import { IWorldQuery } from '../container/containerBehavior.js';
 
 /**
  * Behavior for room entities.

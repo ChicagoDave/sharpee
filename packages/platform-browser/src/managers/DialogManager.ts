@@ -9,9 +9,9 @@
  * `returnValue` before closing to communicate intent.
  */
 
-import type { DialogElements, SaveSlotMeta } from '../types';
-import { AUTOSAVE_SLOT } from '../types';
-import type { SaveManager } from './SaveManager';
+import type { DialogElements, SaveSlotMeta } from '../types.js';
+import { AUTOSAVE_SLOT } from '../types.js';
+import type { SaveManager } from './SaveManager.js';
 
 const RESULT_CONFIRM = 'confirm';
 const RESULT_CANCEL = 'cancel';

@@ -4,7 +4,7 @@
  */
 
 import { SlotType, SlotMatch } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer';
+import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
 
 /**
  * Consumer for text slots (TEXT, TEXT_GREEDY, QUOTED_TEXT, TOPIC)

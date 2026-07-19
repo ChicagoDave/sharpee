@@ -19,7 +19,7 @@ import {
   UpdateEntityEffect,
   SetStateEffect,
   UpdateExitsEffect,
-} from './types';
+} from './types.js';
 
 /**
  * Callback to emit events (provided by EventProcessor)

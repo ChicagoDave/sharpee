@@ -19,7 +19,7 @@
  */
 
 import { IFEntity } from '@sharpee/world-model';
-import { ActionContext } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
 
 /**
  * One consultable entity slot of a command.

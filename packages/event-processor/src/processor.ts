@@ -8,18 +8,18 @@
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
-import { registerStandardHandlers } from './handlers';
+import { registerStandardHandlers } from './handlers/index.js';
 import {
   Effect,
   EffectProcessor,
   createWorldQuery,
   WorldQuery
-} from './effects';
-import type { IGameEvent, StoryEventHandler } from './handler-types';
+} from './effects/index.js';
+import type { IGameEvent, StoryEventHandler } from './handler-types.js';
 
 // Re-export for convenience
-export type { StoryEventHandler, IGameEvent } from './handler-types';
-export type { Effect, WorldQuery } from './effects';
+export type { StoryEventHandler, IGameEvent } from './handler-types.js';
+export type { Effect, WorldQuery } from './effects/index.js';
 
 // Simple ID generator for error events
 let eventCounter = 0;

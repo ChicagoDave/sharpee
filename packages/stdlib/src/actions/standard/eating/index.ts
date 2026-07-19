@@ -2,5 +2,5 @@
  * Eating action - consume edible items
  */
 
-export { eatingAction } from './eating';
-export * from './eating-events';
+export { eatingAction } from './eating.js';
+export * from './eating-events.js';

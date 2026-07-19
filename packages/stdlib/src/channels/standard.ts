@@ -21,10 +21,10 @@
 import type { IOChannel, MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
-import type { ScoringData } from '../capabilities/scoring';
-import { PLAYER_DIED_EVENT } from '../death';
-import { MAIN_KEYS } from './keys';
-import { playerLocationName, readCapability } from './world-helpers';
+import type { ScoringData } from '../capabilities/scoring.js';
+import { PLAYER_DIED_EVENT } from '../death/index.js';
+import { MAIN_KEYS } from './keys.js';
+import { playerLocationName, readCapability } from './world-helpers.js';
 
 /**
  * Local copy of the `flattenContent` helper. stdlib intentionally does

@@ -58,7 +58,7 @@ export interface IEntityOperationOptions {
 ### types/relationship
 
 ```typescript
-import { EntityId } from './entity';
+import { EntityId } from './entity.js';
 /**
  * A generic relationship between two entities
  */
@@ -584,7 +584,7 @@ export interface StoryConfigValidationResult {
 ### events/types
 
 ```typescript
-import { EntityId } from '../types/entity';
+import { EntityId } from '../types/entity.js';
 /**
  * Represents a semantic event in the system
  */
@@ -648,7 +648,7 @@ export interface ISemanticEvent {
      */
     metadata?: Record<string, unknown>;
 }
-export { ISemanticEventSource as EventSource } from './semantic-event-source';
+export { ISemanticEventSource as EventSource } from './semantic-event-source.js';
 /**
  * Event listener for semantic events
  */
@@ -797,8 +797,8 @@ export declare function isSystemEvent(obj: unknown): obj is ISystemEvent;
  * Platform events for operations that require client/host intervention
  * These events are processed after turn completion but before text service
  */
-import { ISemanticEvent } from './types';
-import { IQuitContext, IRestartContext } from '../types/save-data';
+import { ISemanticEvent } from './types.js';
+import { IQuitContext, IRestartContext } from '../types/save-data.js';
 /**
  * Platform event types for save, restore, quit, and restart operations
  */
@@ -962,7 +962,7 @@ export declare function createAgainFailedEvent(error: string): IPlatformEvent;
  * Game lifecycle events for tracking game state transitions
  * These events mark important milestones in a game session
  */
-import { ISemanticEvent } from './types';
+import { ISemanticEvent } from './types.js';
 /** Story metadata included in game events */
 export interface GameEventStoryData {
     id?: string;
@@ -1244,7 +1244,7 @@ export declare function isGameAbortedEvent(event: ISemanticEvent): event is ISem
  * }
  * ```
  */
-import { EntityId } from '../types/entity';
+import { EntityId } from '../types/entity.js';
 /**
  * Registry mapping event type strings to their data shapes.
  *
@@ -1391,8 +1391,8 @@ export type EventDataFor<T extends EventType> = EventDataRegistry[T];
  *
  * @see ADR-082 for design rationale
  */
-import { EventDataRegistry, EventType } from './event-registry';
-import { ISemanticEvent } from './types';
+import { EventDataRegistry, EventType } from './event-registry.js';
+import { ISemanticEvent } from './types.js';
 /**
  * A semantic event with typed data based on the event type.
  *
@@ -1464,9 +1464,9 @@ export declare function isKnownEvent(event: ISemanticEvent): event is KnownSeman
  *
  * @see ADR-082 for design rationale
  */
-import { EventDataRegistry, EventType } from './event-registry';
-import { TypedSemanticEvent } from './typed-event';
-import { ISemanticEvent } from './types';
+import { EventDataRegistry, EventType } from './event-registry.js';
+import { TypedSemanticEvent } from './typed-event.js';
+import { ISemanticEvent } from './types.js';
 /**
  * Options for creating an event.
  */
@@ -1552,8 +1552,8 @@ export declare function resetEventCounter(): void;
  *
  * @see ADR-082 for design rationale
  */
-import { EventDataRegistry, EventType } from './event-registry';
-import { ISemanticEvent } from './types';
+import { EventDataRegistry, EventType } from './event-registry.js';
+import { ISemanticEvent } from './types.js';
 /**
  * Check if an event is of a specific type and narrow its type.
  *
@@ -1713,9 +1713,9 @@ export declare function createEventSource<T>(): IGenericEventSource<T>;
  * Semantic event source - specialized event source for story events
  * Builds on the generic event source infrastructure
  */
-import { IGenericEventSource, SimpleEventSource } from './event-source';
-import { ISemanticEvent, IEventEmitter } from './types';
-import { EntityId } from '../types/entity';
+import { IGenericEventSource, SimpleEventSource } from './event-source.js';
+import { ISemanticEvent, IEventEmitter } from './types.js';
+import { EntityId } from '../types/entity.js';
 /**
  * Specialized event source for semantic (story) events
  * Provides additional filtering and query capabilities
@@ -1798,9 +1798,9 @@ export declare function createEventSource(): EventSource;
 ### events/event-system
 
 ```typescript
-import { ISemanticEvent } from './types';
-import { EntityId } from '../types/entity';
-import { ISemanticEventSource } from './semantic-event-source';
+import { ISemanticEvent } from './types.js';
+import { EntityId } from '../types/entity.js';
+import { ISemanticEventSource } from './semantic-event-source.js';
 /**
  * Create a new semantic event
  */
@@ -1818,10 +1818,10 @@ export declare function createEvent(type: string, data?: Record<string, unknown>
     sessionId?: string;
     [key: string]: unknown;
 }): ISemanticEvent;
-export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source';
+export { SemanticEventSourceImpl as EventSourceImpl } from './semantic-event-source.js';
 /**
  * Create a new event source
- * @deprecated Use createSemanticEventSource from './semantic-event-source'
+ * @deprecated Use createSemanticEventSource from './semantic-event-source.js'
  */
 export declare function createEventSource(): ISemanticEventSource;
 ```
@@ -1829,7 +1829,7 @@ export declare function createEventSource(): ISemanticEventSource;
 ### extensions/types
 
 ```typescript
-import { ISemanticEvent } from '../events/types';
+import { ISemanticEvent } from '../events/types.js';
 /**
  * Base interface for all extensions
  */
@@ -2306,8 +2306,8 @@ export declare const StandardValidators: {
  * appropriate handlers.
  */
 import EventEmitter from 'eventemitter3';
-import { IPendingQuery, IQueryResponse, IQueryState, IQueryHandler, QueryValidator, IQueryEvents } from './types';
-import { ISemanticEventSource } from '../events';
+import { IPendingQuery, IQueryResponse, IQueryState, IQueryHandler, QueryValidator, IQueryEvents } from './types.js';
+import { ISemanticEventSource } from '../events/index.js';
 /**
  * Query Manager implementation
  */

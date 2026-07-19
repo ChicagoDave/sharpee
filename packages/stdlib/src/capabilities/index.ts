@@ -8,12 +8,12 @@
 import { StandardCapabilities } from '@sharpee/world-model';
 
 // Import individual capabilities
-import { ScoringCapabilitySchema, ScoringData } from './scoring';
-import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore';
-import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation';
-import { GameMetaCapabilitySchema, GameMetaData } from './game-meta';
-import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history';
-import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug';
+import { ScoringCapabilitySchema, ScoringData } from './scoring.js';
+import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore.js';
+import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation.js';
+import { GameMetaCapabilitySchema, GameMetaData } from './game-meta.js';
+import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history.js';
+import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug.js';
 
 // Re-export all schemas and types
 export {

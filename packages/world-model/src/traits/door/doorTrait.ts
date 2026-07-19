@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/door/doorTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Door trait marks an entity as a connection between two rooms.

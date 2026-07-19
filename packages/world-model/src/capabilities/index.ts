@@ -10,10 +10,10 @@ export {
   CapabilityValidationResult,
   CapabilityEffect,
   createEffect
-} from './types';
+} from './types.js';
 
 // Behavior interface
-export { CapabilityBehavior, CapabilitySharedData } from './capability-behavior';
+export { CapabilityBehavior, CapabilitySharedData } from './capability-behavior.js';
 
 // Binding types (ADR-090, ADR-207). The binding map itself is per-world —
 // it lives on WorldModel (registerCapabilityBehavior / getBehaviorForCapability /
@@ -23,7 +23,7 @@ export { CapabilityBehavior, CapabilitySharedData } from './capability-behavior'
 export {
   TraitBehaviorBinding,
   BehaviorRegistrationOptions
-} from './capability-binding';
+} from './capability-binding.js';
 
 // Defaults and configuration
 export {
@@ -35,7 +35,7 @@ export {
   hasCapabilityDefaults,
   clearCapabilityDefaults,
   getAllCapabilityDefaults
-} from './capability-defaults';
+} from './capability-defaults.js';
 
 // Helpers
 export {
@@ -44,13 +44,13 @@ export {
   getEntityCapabilities,
   traitHasCapability,
   getCapableTraits
-} from './capability-helpers';
+} from './capability-helpers.js';
 
 // Entity builder
 export {
   EntityBuilder,
   buildEntity
-} from './entity-builder';
+} from './entity-builder.js';
 
 // ============================================================================
 // Action Interceptors (ADR-118)
@@ -70,7 +70,7 @@ export {
   InterceptorEventContext,
   applyInterceptorReportResult,
   applyInterceptorBlockedResult
-} from './action-interceptor';
+} from './action-interceptor.js';
 
 // Binding types (ADR-118, ADR-208). The binding map itself is per-world —
 // it lives on WorldModel (registerActionInterceptor / getInterceptorForAction /
@@ -82,7 +82,7 @@ export {
   TraitInterceptorBinding,
   InterceptorRegistrationOptions,
   InterceptorLookupResult
-} from './interceptor-binding';
+} from './interceptor-binding.js';
 
 // Interceptor helpers
 export {
@@ -91,4 +91,4 @@ export {
   getEntityInterceptors,
   traitHasInterceptor,
   getInterceptorTraits
-} from './interceptor-helpers';
+} from './interceptor-helpers.js';

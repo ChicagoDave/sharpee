@@ -8,8 +8,8 @@
  * Owner context: @sharpee/world-model — traits / spatial
  */
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Data interface for RegionTrait construction.

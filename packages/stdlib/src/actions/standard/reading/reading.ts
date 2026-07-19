@@ -13,15 +13,15 @@
  * @module
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ReadableTrait } from '@sharpee/world-model';
-import { nounPhraseFor } from '../../../utils';
-import { IFActions } from '../../constants';
+import { nounPhraseFor } from '../../../utils/index.js';
+import { IFActions } from '../../constants.js';
 import {
   ReadingEventData,
   createReadingEvent
-} from './reading-events';
+} from './reading-events.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -32,7 +32,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the read target is the only consultable
@@ -72,7 +72,7 @@ function getReadingSharedData(context: ActionContext): ReadingSharedData {
  * - Tracking what has been read
  * - Implicit take for portable items
  */
-import { ScopeLevel } from '../../../scope/types';
+import { ScopeLevel } from '../../../scope/types.js';
 
 export const reading: Action = {
   id: IFActions.READING,

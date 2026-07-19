@@ -9,7 +9,7 @@
  * Owner context: @sharpee/character / conversation
  */
 
-import { ResponseIntent } from './response-types';
+import { ResponseIntent } from './response-types.js';
 
 // ---------------------------------------------------------------------------
 // Dialogue result

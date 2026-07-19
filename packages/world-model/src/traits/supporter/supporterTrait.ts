@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/supporter/supporterTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Supporter trait allows entities to have other entities placed on top of them.

@@ -43,12 +43,12 @@ import type {
 import { PartOfSpeech } from '@sharpee/world-model';
 
 import type { ISystemEvent, Result } from '@sharpee/core';
-import { EnglishGrammarEngine } from './english-grammar-engine';
-import { defineGrammar } from './grammar';
+import { EnglishGrammarEngine } from './english-grammar-engine.js';
+import { defineGrammar } from './grammar.js';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
-import { parseDirection } from './direction-mappings';
-import { analyzeBestFailure } from './parse-failure';
-import { PronounContextManager, setPronounContextManager } from './pronoun-context';
+import { parseDirection } from './direction-mappings.js';
+import { analyzeBestFailure } from './parse-failure.js';
+import { PronounContextManager, setPronounContextManager } from './pronoun-context.js';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;

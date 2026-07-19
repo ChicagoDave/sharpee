@@ -3,5 +3,5 @@
  * @module
  */
 
-export { reading } from './reading';
-export type { ReadingEventData, ReadingEventMap } from './reading-events';
+export { reading } from './reading.js';
+export type { ReadingEventData, ReadingEventMap } from './reading-events.js';

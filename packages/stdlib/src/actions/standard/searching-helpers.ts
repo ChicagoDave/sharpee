@@ -11,8 +11,8 @@ import {
   IdentityBehavior,
   IFEntity
 } from '@sharpee/world-model';
-import { ActionContext } from '../enhanced-types';
-import { nounPhraseFor } from '../../utils';
+import { ActionContext } from '../enhanced-types.js';
+import { nounPhraseFor } from '../../utils/index.js';
 
 /**
  * Context about what was searched and found

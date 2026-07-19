@@ -9,11 +9,11 @@ import {
   IExtensionLoader, 
   IExtensionDependency,
   VersionString 
-} from './types';
+} from './types.js';
 
 // Type alias for clarity
 type IExtension = ITraitExtension;
-import { ExtensionRegistry, getExtensionRegistry } from './registry';
+import { ExtensionRegistry, getExtensionRegistry } from './registry.js';
 
 /**
  * Interface for the extension manager

@@ -5,11 +5,11 @@
  * This separates data structure concerns from business logic.
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
-import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils';
-import { GoingSharedData, getGoingSharedData } from './going';
+import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils.js';
+import { GoingSharedData, getGoingSharedData } from './going.js';
 
 /**
  * Result from finding the source room

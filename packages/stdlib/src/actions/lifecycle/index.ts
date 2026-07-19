@@ -13,7 +13,7 @@ export {
   ActionLifecycleDescriptor,
   EntitySlotSpec,
   LifecycleContracts
-} from './descriptor';
+} from './descriptor.js';
 
 export {
   LifecycleState,
@@ -27,7 +27,7 @@ export {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from './lifecycle-engine';
+} from './lifecycle-engine.js';
 
 export {
   MultiObjectItemState,
@@ -35,4 +35,4 @@ export {
   getMultiObjectLifecycle,
   runMultiObjectExecute,
   runMultiObjectReport
-} from './multi-object-lifecycle';
+} from './multi-object-lifecycle.js';

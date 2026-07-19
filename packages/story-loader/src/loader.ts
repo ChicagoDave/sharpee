@@ -96,13 +96,13 @@ import {
   WearableTrait,
   WorldModel,
 } from '@sharpee/world-model';
-import { LoadError } from './errors';
-import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry';
-import { Evaluator } from './evaluator';
-import { findChordLiteral } from './hatch-context';
-import { ChordRuntime, STRATEGY_SELECTOR } from './runtime';
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
-import { withLineBreaks } from './text';
+import { LoadError } from './errors.js';
+import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
+import { Evaluator } from './evaluator.js';
+import { findChordLiteral } from './hatch-context.js';
+import { ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys.js';
+import { withLineBreaks } from './text.js';
 
 /**
  * Marker trait for entities carrying loader-compiled `detail` providers
@@ -586,13 +586,27 @@ export class ChordStory implements Story {
     // `addMessage` is the concrete providers' registration surface
     // (lang-en-us et al.), not part of if-domain's read interface — probe
     // structurally so the loader stays locale-neutral.
-    const registry = language as LanguageProvider & { addMessage?: (id: string, template: string) => void };
+    const registry = language as LanguageProvider & {
+      addMessage?: (id: string, template: string) => void;
+      registerPronounSet?: (name: string, forms: Record<string, string>) => void;
+    };
     if (typeof registry.addMessage !== 'function') {
       throw new LoadError('The language provider does not support message registration (addMessage).');
     }
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     for (const [key, phrase] of Object.entries(table)) {
       registry.addMessage(key, templateFor(phrase));
+    }
+    // ADR-242 D7: declared pronoun sets ride the same seam — the same
+    // structural probe, throwing a legible error only when a story
+    // actually declares sets the provider cannot take.
+    if (this.ir.pronounSets.length > 0) {
+      if (typeof registry.registerPronounSet !== 'function') {
+        throw new LoadError('The language provider does not support pronoun-set registration (registerPronounSet).');
+      }
+      for (const set of this.ir.pronounSets) {
+        registry.registerPronounSet(set.name, set.forms);
+      }
     }
   }
 
@@ -961,12 +975,22 @@ export class ChordStory implements Story {
       case 'person': {
         entity = world.createEntity(irEntity.name, 'actor');
         entity.add(new ActorTrait());
-        // `article: undefined` is load-bearing: the helpers actor builder
-        // always clobbered IdentityTrait's `article = 'a'` default this way
-        // (properName ? '' : undefined), and the ADR-237 D6 parity gate pins
-        // the loaded world byte-identical. Whether actors SHOULD carry an
-        // undefined article is a question for David, not this refactor.
-        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases, article: undefined }));
+        // ADR-242 D2/D3: `proper` → the player's own proper-name shape
+        // (properName + empty article); otherwise the plain IdentityTrait
+        // defaults stand ('a', contextual articles). The old helpers-era
+        // `article: undefined` pin is gone — no loader path constructs an
+        // undefined article. `pronouns` maps to pronounSet only when
+        // declared (ruled Q-2: no injected default — by-number fallback).
+        const proper = irEntity.traits.some((t) => t.name === 'proper' && t.condition === null);
+        entity.add(
+          new IdentityTrait({
+            name: irEntity.name,
+            description,
+            aliases,
+            ...(proper ? { properName: true, article: '' } : {}),
+            ...(irEntity.pronouns !== undefined ? { pronounSet: irEntity.pronouns } : {}),
+          }),
+        );
         break;
       }
       case 'supporter': {
@@ -1153,6 +1177,12 @@ export class ChordStory implements Story {
         );
       }
       switch (trait.name) {
+        case 'proper':
+          // ADR-242 D1: identity configuration, consumed by the person
+          // branch's IdentityTrait construction (like the room branch's
+          // `dark`) — without this case it would fall through to the
+          // authored-trait default and mint a spurious ChordDataTrait.
+          break;
         case 'scenery':
           if (!entity.has(TraitType.SCENERY)) entity.add(new SceneryTrait());
           break;

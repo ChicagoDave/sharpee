@@ -10,4 +10,4 @@ export {
   DEFAULT_NARRATIVE_CONTEXT,
   conjugateVerb,
   resolvePerspectivePlaceholders,
-} from './placeholder-resolver';
+} from './placeholder-resolver.js';

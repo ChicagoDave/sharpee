@@ -10,7 +10,7 @@
  * Public interface: every exported node type; StoryFile is the root.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
-import type { Span } from './span';
+import type { Span } from './span.js';
 
 /** Root of a parsed `.story` file. */
 export interface StoryFile {
@@ -87,7 +87,9 @@ export type Declaration =
   // ADR-216 custom channels (spelling A, David 2026-07-18):
   | DefineChannel
   // ADR-239 topic conversation (D3 as amended, David 2026-07-18):
-  | DefineTopics;
+  | DefineTopics
+  // ADR-242 person identity (ruled Q-1, David 2026-07-19):
+  | DefinePronouns;
 
 /**
  * `define topics for <entity> … end topics` (ADR-239 D3 as amended) — the
@@ -139,6 +141,34 @@ export interface DefineChannel {
   take: string[];
   span: Span;
 }
+/** One `pronouns <word>` person body line (ADR-242 D5). */
+export interface PronounsDecl {
+  word: string;
+  span: Span;
+}
+
+/**
+ * `define pronouns <name> … end pronouns` (ADR-242 D7, ruled Q-1) — a
+ * named pronoun set as a block with five named rows (`subject`, `object`,
+ * `possessive`, `possessive-pronoun`, `reflexive`), each `<case> <form>`.
+ * Row completeness, duplicates, and standard-word shadowing are the
+ * analyzer's gates; the declared forms are locale text carried as data
+ * (registered into the language provider at load, never rendered here).
+ */
+export interface DefinePronouns {
+  kind: 'define-pronouns';
+  name: string;
+  rows: PronounRow[];
+  span: Span;
+}
+
+/** One `<case> <form>` row of a `define pronouns` block. */
+export interface PronounRow {
+  case: string;
+  form: string;
+  span: Span;
+}
+
 // Removed by the ownership package (ratchet 2026-07-11): DefineFlag,
 // DefineScore, WhenRule, OnceRule, EveryRule — the parser emits removal
 // diagnostics with fix-its pointing at the owner-attached replacements.
@@ -186,6 +216,13 @@ export interface CreateDecl {
   name: NameRef;
   /** `aka` aliases, in declaration order. */
   aka: string[];
+  /**
+   * `pronouns <word>` lines (ADR-242 D5) — collected in order so the
+   * analyzer can reject duplicates with the second line's span. Legal
+   * only on person blocks; word resolution (standard four or a
+   * `define pronouns` set) is the analyzer's gate.
+   */
+  pronouns: PronounsDecl[];
   /** Kind-noun and trait-adjective composition items. */
   compositions: CompositionItem[];
   /**

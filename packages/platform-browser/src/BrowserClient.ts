@@ -18,20 +18,20 @@ import type {
   DOMElements,
   MenuHandlers,
   SaveContext,
-} from './types';
+} from './types.js';
 
-import { ThemeManager } from './managers/ThemeManager';
-import { SaveManager } from './managers/SaveManager';
-import { DialogManager } from './managers/DialogManager';
-import { MenuManager } from './managers/MenuManager';
-import { InputManager } from './managers/InputManager';
-import { TextDisplay } from './display/TextDisplay';
-import { StatusLine } from './display/StatusLine';
-import { AudioManager } from './audio/AudioManager';
+import { ThemeManager } from './managers/ThemeManager.js';
+import { SaveManager } from './managers/SaveManager.js';
+import { DialogManager } from './managers/DialogManager.js';
+import { MenuManager } from './managers/MenuManager.js';
+import { InputManager } from './managers/InputManager.js';
+import { TextDisplay } from './display/TextDisplay.js';
+import { StatusLine } from './display/StatusLine.js';
+import { AudioManager } from './audio/AudioManager.js';
 import {
   registerDefaultBrowserRenderers,
   type BrowserDefaultLayout,
-} from './channels';
+} from './channels/index.js';
 
 /**
  * Default `ClientCapabilities` profile for the browser surface — full

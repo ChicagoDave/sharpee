@@ -29,8 +29,8 @@ import {
   WearableTrait,
   WorldModel,
 } from '@sharpee/world-model';
-import { LoadError } from './errors';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
+import { LoadError } from './errors.js';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys.js';
 
 export interface EvalContext {
   world: WorldModel;

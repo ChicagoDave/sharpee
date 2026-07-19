@@ -3,4 +3,4 @@ export type {
   StoryMetadata,
   SharpeeConfig,
   StoryConfigValidationResult
-} from './story-metadata';
+} from './story-metadata.js';

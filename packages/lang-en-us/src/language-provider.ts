@@ -7,20 +7,21 @@
 
 import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
-import { EnglishAssembler } from './assembler';
-import { parsePhraseTemplate } from './parser';
-import { englishVerbs } from './data/verbs';
-import { englishWords, irregularPlurals, abbreviations } from './data/words';
-import { pluralize as pluralizeNoun } from './pluralize';
-import { standardActionLanguage } from './actions';
-import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc';
-import { platformLanguage } from './platform-messages';
-import { soundMessages } from './sound-messages';
+import { EnglishAssembler, registerPronounSet as registerAssemblerPronounSet } from './assembler/index.js';
+import type { PronounSetForms } from './assembler/index.js';
+import { parsePhraseTemplate } from './parser/index.js';
+import { englishVerbs } from './data/verbs.js';
+import { englishWords, irregularPlurals, abbreviations } from './data/words.js';
+import { pluralize as pluralizeNoun } from './pluralize.js';
+import { standardActionLanguage } from './actions/index.js';
+import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc/index.js';
+import { platformLanguage } from './platform-messages.js';
+import { soundMessages } from './sound-messages.js';
 import {
   NarrativeContext,
   DEFAULT_NARRATIVE_CONTEXT,
   resolvePerspectivePlaceholders,
-} from './perspective';
+} from './perspective/index.js';
 // Types are now imported from @sharpee/if-domain
 
 /**
@@ -638,6 +639,18 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    */
   addMessage(messageId: string, template: string): void {
     this.messages.set(messageId, template);
+  }
+
+  /**
+   * Register a named pronoun set (ADR-242 D7) — the loader's
+   * `extendLanguage` registration surface beside `addMessage` (probed
+   * structurally; the loader stays locale-neutral). Forms flow to the
+   * Assembler's pronoun authority, consulted before the standard rows.
+   * @param name The set name as declared (`define pronouns ze`)
+   * @param forms The five case forms (subject/object/possessive/possessivePronoun/reflexive)
+   */
+  registerPronounSet(name: string, forms: PronounSetForms): void {
+    registerAssemblerPronounSet(name, forms);
   }
 
   /**

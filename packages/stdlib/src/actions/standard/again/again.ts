@@ -12,12 +12,12 @@
  * 4. report: Emit platform.again_requested for engine
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { blockedMessageId } from '../../lifecycle';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent, createAgainRequestedEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { CommandHistoryData } from '../../../capabilities/command-history';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { CommandHistoryData } from '../../../capabilities/command-history.js';
 
 /**
  * Shared data passed between validate and report phases

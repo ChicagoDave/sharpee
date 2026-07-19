@@ -8,7 +8,8 @@
  * only so the compiler stays platform-free.
  *
  * Public interface: KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES,
- * PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS.
+ * PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS,
+ * PRONOUN_WORDS, PRONOUN_CASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  * Growing any of these sets is a grammar change — owner approval via
  * docs/architecture/chord-grammar-changes.md.
@@ -45,7 +46,23 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'drinkable', // ratchet G1 (2026-07-17) — composes EdibleTrait with liquid=true (drunk, not eaten)
   'concealed', // ratchet G2 (2026-07-17) — marker: IdentityTrait.concealed = true; searching reveals
   'hiding-spot', // ratchet G3 (2026-07-17) — composes ConcealmentTrait; bare = all positions, `with position <word>` narrows
+  'proper', // ratchet H1 (ADR-242 D1, 2026-07-19) — person-only, unconditional: IdentityTrait.properName (bare name, no article)
 ]);
+
+/**
+ * Standard pronoun sets (ADR-242 D5) — the four rows the lang-{locale}
+ * assembler ships. A `pronouns <word>` person line accepts these or a
+ * story-defined named set (`define pronouns <name>`); defining a set that
+ * shadows one of these is an error.
+ */
+export const PRONOUN_WORDS: ReadonlySet<string> = new Set(['he', 'she', 'it', 'they']);
+
+/**
+ * The five case rows of a `define pronouns` block (ADR-242 D7, ruled Q-1)
+ * — exactly the cases the assembler's pronoun table keys. All five are
+ * required; order is free (named rows, not positional).
+ */
+export const PRONOUN_CASES: ReadonlyArray<string> = ['subject', 'object', 'possessive', 'possessive-pronoun', 'reflexive'];
 
 /**
  * State adjectives (ratchet D1): `is [not] <adj>` predicates read live from

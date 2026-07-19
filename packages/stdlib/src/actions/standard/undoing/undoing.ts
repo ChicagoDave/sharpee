@@ -6,10 +6,10 @@
  * the previous game state.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent, createUndoRequestedEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
 
 export const undoingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.UNDOING,

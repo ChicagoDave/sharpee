@@ -34,8 +34,8 @@ import {
   createSemanticEventSource
 } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { TurnResult, GameContext } from './types';
-import { Story } from './story';
+import { TurnResult, GameContext } from './types.js';
+import { Story } from './story.js';
 
 /**
  * Save format version. Bumped from `1.0.0` → `2.0.0` when the partial

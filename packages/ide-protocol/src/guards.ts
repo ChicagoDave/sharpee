@@ -12,8 +12,8 @@ import type {
   EntityNode,
   EntityCategory,
   SourceRef,
-} from './types';
-import { SCHEMA_VERSION } from './types';
+} from './types.js';
+import { SCHEMA_VERSION } from './types.js';
 
 const CATEGORIES: ReadonlySet<EntityCategory> = new Set<EntityCategory>([
   'room',

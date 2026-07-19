@@ -1,50 +1,50 @@
 // WorldModel.ts - Core world model interface and implementation for Sharpee IF Platform
 
-import { IFEntity } from '../entities/if-entity';
-import { EntityType, isEntityType } from '../entities/entity-types';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { createWall as createWallImpl, createWalls as createWallsImpl } from './wall-creation';
-import { TraitType } from '../traits/trait-types';
-import { RoomTrait } from '../traits/room';
-import { RoomBehavior } from '../traits/room/roomBehavior';
-import { RegionTrait, IRegionData } from '../traits/region/regionTrait';
-import { SceneTrait } from '../traits/scene/sceneTrait';
-import { DoorTrait } from '../traits/door';
-import { SceneryTrait } from '../traits/scenery';
-import { DEFAULT_TRAITS } from './default-trait-registry';
-import { IdentityTrait } from '../traits/identity/identityTrait';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LockableTrait } from '../traits/lockable/lockableTrait';
-import { WearableTrait } from '../traits/wearable/wearableTrait';
-import { ClothingTrait } from '../traits/clothing/clothingTrait';
-import { ExitTrait } from '../traits/exit/exitTrait';
-import { DirectionType, getOppositeDirection } from '../constants/directions';
+import { IFEntity } from '../entities/if-entity.js';
+import { EntityType, isEntityType } from '../entities/entity-types.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { createWall as createWallImpl, createWalls as createWallsImpl } from './wall-creation.js';
+import { TraitType } from '../traits/trait-types.js';
+import { RoomTrait } from '../traits/room/index.js';
+import { RoomBehavior } from '../traits/room/roomBehavior.js';
+import { RegionTrait, IRegionData } from '../traits/region/regionTrait.js';
+import { SceneTrait } from '../traits/scene/sceneTrait.js';
+import { DoorTrait } from '../traits/door/index.js';
+import { SceneryTrait } from '../traits/scenery/index.js';
+import { DEFAULT_TRAITS } from './default-trait-registry.js';
+import { IdentityTrait } from '../traits/identity/identityTrait.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LockableTrait } from '../traits/lockable/lockableTrait.js';
+import { WearableTrait } from '../traits/wearable/wearableTrait.js';
+import { ClothingTrait } from '../traits/clothing/clothingTrait.js';
+import { ExitTrait } from '../traits/exit/exitTrait.js';
+import { DirectionType, getOppositeDirection } from '../constants/directions.js';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
-import { SpatialIndex } from './SpatialIndex';
-import { VisibilityBehavior } from './VisibilityBehavior';
-import { WorldSerializer } from './WorldSerializer';
-import { IDataStore } from './AuthorModel';
-import { canContain } from '../traits/container/container-utils';
+import { SpatialIndex } from './SpatialIndex.js';
+import { VisibilityBehavior } from './VisibilityBehavior.js';
+import { WorldSerializer } from './WorldSerializer.js';
+import { IDataStore } from './AuthorModel.js';
+import { canContain } from '../traits/container/container-utils.js';
 import {
   ICapabilityStore,
   ICapabilityData,
   ICapabilitySchema,
   ICapabilityRegistration
-} from './capabilities';
-import { ITrait, ITraitConstructor } from '../traits/trait';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+} from './capabilities.js';
+import { ITrait, ITraitConstructor } from '../traits/trait.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
 import type {
   TraitBehaviorBinding,
   BehaviorRegistrationOptions
-} from '../capabilities/capability-binding';
-import { capabilityBindingKey } from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
+} from '../capabilities/capability-binding.js';
+import { capabilityBindingKey } from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type {
   TraitInterceptorBinding,
   InterceptorRegistrationOptions,
   InterceptorLookupResult
-} from '../capabilities/interceptor-binding';
-import { interceptorBindingKey } from '../capabilities/interceptor-binding';
+} from '../capabilities/interceptor-binding.js';
+import { interceptorBindingKey } from '../capabilities/interceptor-binding.js';
 import {
   WorldState,
   WorldConfig,
@@ -57,9 +57,9 @@ import {
   DefaultPrompt,
   PROMPT_STATE_KEY
 } from '@sharpee/if-domain';
-import { ScopeRegistry } from '../scope/scope-registry';
-import { RuleScopeEvaluator } from '../scope/scope-evaluator';
-import { IScopeRule, IScopeContext } from '../scope/scope-rule';
+import { ScopeRegistry } from '../scope/scope-registry.js';
+import { RuleScopeEvaluator } from '../scope/scope-evaluator.js';
+import { IScopeRule, IScopeContext } from '../scope/scope-rule.js';
 
 // Event system — extracted to WorldEventSystem.ts, re-exported for backward compat
 import {
@@ -69,7 +69,7 @@ import {
   EventPreviewer,
   EventChainHandler,
   ChainEventOptions,
-} from './WorldEventSystem';
+} from './WorldEventSystem.js';
 export type { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions };
 
 // Re-export domain types for backward compatibility
@@ -166,8 +166,8 @@ export interface RegionCrossings {
 }
 
 // Score Ledger (ADR-129)
-import { ScoreLedger, ScoreEntry } from './ScoreLedger';
-export { ScoreEntry } from './ScoreLedger';
+import { ScoreLedger, ScoreEntry } from './ScoreLedger.js';
+export { ScoreEntry } from './ScoreLedger.js';
 
 /**
  * Pre-removal observer (ADR-213 §1).

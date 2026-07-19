@@ -1,4 +1,4 @@
 // packages/world-model/src/traits/wearable/index.ts
 
-export * from './wearableTrait';
-export * from './wearableBehavior';
+export * from './wearableTrait.js';
+export * from './wearableBehavior.js';

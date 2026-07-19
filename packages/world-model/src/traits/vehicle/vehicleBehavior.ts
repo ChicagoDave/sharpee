@@ -7,10 +7,10 @@
  * - Getting the vehicle an actor is in
  */
 
-import { WorldModel } from '../../world/WorldModel';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { VehicleTrait } from './vehicleTrait';
+import { WorldModel } from '../../world/WorldModel.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { VehicleTrait } from './vehicleTrait.js';
 
 /**
  * Check if an entity is a vehicle

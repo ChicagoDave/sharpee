@@ -18,7 +18,7 @@ import {
   FactOverride,
   PropagationSchedule,
   PropagationProfile,
-} from './propagation-types';
+} from './propagation-types.js';
 
 /**
  * Options for the .propagation() builder method.

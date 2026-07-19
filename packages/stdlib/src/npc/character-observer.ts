@@ -17,7 +17,7 @@ import {
   Mood,
   ThreatLevel,
 } from '@sharpee/world-model';
-import { CharacterMessages } from './character-messages';
+import { CharacterMessages } from './character-messages.js';
 
 // ---------------------------------------------------------------------------
 // State transition rules

@@ -16,9 +16,9 @@
  * - "put X and Y in box" - puts multiple specified items
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -29,9 +29,9 @@ import {
   IAddItemToSupporterResult,
   IFEntity
 } from '@sharpee/world-model';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { IFActions } from '../../constants';
-import { PuttingMessages } from './putting-messages';
+import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
+import { IFActions } from '../../constants.js';
+import { PuttingMessages } from './putting-messages.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -46,14 +46,14 @@ import {
   runMultiObjectExecute,
   runMultiObjectReport,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 // Import types
-import { getPuttingSharedData, PuttingItemScratch } from './putting-types';
+import { getPuttingSharedData, PuttingItemScratch } from './putting-types.js';
 
 // Import multi-object helpers
-import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
-import { nounPhraseFor } from '../../../utils';
+import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 
 /**
  * Interceptor surface (ADR-228): BOTH the item and the container/supporter

@@ -4,8 +4,8 @@
  * @see ADR-082 for design rationale
  */
 
-import { EventDataRegistry, EventType } from './event-registry';
-import { ISemanticEvent } from './types';
+import { EventDataRegistry, EventType } from './event-registry.js';
+import { ISemanticEvent } from './types.js';
 
 /**
  * A semantic event with typed data based on the event type.

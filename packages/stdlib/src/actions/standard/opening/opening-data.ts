@@ -4,9 +4,9 @@
  * Following atomic event principles - minimal data per event
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
-import { OpenedEventData } from './opening-events';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
+import { OpenedEventData } from './opening-events.js';
 
 export const buildOpenedData: ActionDataBuilder<OpenedEventData> = (
   context: ActionContext

@@ -14,10 +14,10 @@ import {
   SlotMatch
 } from '@sharpee/if-domain';
 import { Token } from '@sharpee/if-domain';
-import { EnglishPatternCompiler } from './english-pattern-compiler';
+import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
-import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry } from './slot-consumers';
-import type { PartialMatchFailure, SlotFailure } from './parse-failure';
+import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry } from './slot-consumers/index.js';
+import type { PartialMatchFailure, SlotFailure } from './parse-failure.js';
 
 /**
  * Result of attempting to match a rule - either success or failure with info

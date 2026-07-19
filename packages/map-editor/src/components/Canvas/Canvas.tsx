@@ -12,8 +12,8 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { useEditorStore } from '../../store/editor-store';
-import { nodeTypes, type RoomNodeData } from './RoomNode';
+import { useEditorStore } from '../../store/editor-store.js';
+import { nodeTypes, type RoomNodeData } from './RoomNode.js';
 import './Canvas.css';
 
 const GRID_SIZE = 80; // Pixels per grid unit

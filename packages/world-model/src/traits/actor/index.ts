@@ -7,5 +7,5 @@ export {
   type GrammaticalGender,
   PRONOUNS,
   HONORIFICS,
-} from './actorTrait';
-export { ActorBehavior, type ITakeItemResult, type IDropItemResult } from './actorBehavior';
+} from './actorTrait.js';
+export { ActorBehavior, type ITakeItemResult, type IDropItemResult } from './actorBehavior.js';

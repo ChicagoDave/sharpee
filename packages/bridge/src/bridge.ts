@@ -27,12 +27,12 @@ import type {
   InboundMessage,
   OutboundMessage,
   DomainEvent,
-} from './protocol';
+} from './protocol.js';
 import {
   BRIDGE_PROTOCOL_VERSION,
   isInboundMessage,
   shouldForwardEvent,
-} from './protocol';
+} from './protocol.js';
 
 /**
  * NativeEngineBridge

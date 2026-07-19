@@ -1,13 +1,13 @@
 // packages/world-model/src/traits/exit/exitBehavior.ts
 
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { ExitTrait } from './exitTrait';
-import { OpenableTrait } from '../openable/openableTrait';
-import { LockableTrait } from '../lockable/lockableTrait';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { ExitTrait } from './exitTrait.js';
+import { OpenableTrait } from '../openable/openableTrait.js';
+import { LockableTrait } from '../lockable/lockableTrait.js';
 import { ISemanticEvent, createEvent } from '@sharpee/core';
-import { IFEvents } from '../../constants/if-events';
-import { ActionFailureReason } from '../../constants/action-failures';
+import { IFEvents } from '../../constants/if-events.js';
+import { ActionFailureReason } from '../../constants/action-failures.js';
 
 /**
  * Behavior for exit entities.

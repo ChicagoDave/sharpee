@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/room/roomTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 import { EntityId } from '@sharpee/core';
 import { SnippetMap } from '@sharpee/if-domain';
-import { DirectionType } from '../../constants/directions';
+import { DirectionType } from '../../constants/directions.js';
 
 /**
  * Map position hint for an exit (ADR-113).

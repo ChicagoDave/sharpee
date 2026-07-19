@@ -641,7 +641,8 @@ create the deed
 
 create Mrs Kettle
   aka housekeeper, kettle
-  a person, guard
+  a person, proper, guard
+  pronouns she
   in the Entrance Hall
   states: guarded, softened
   score softened worth 5
@@ -657,7 +658,8 @@ create Mrs Kettle
 
 create Tobias
   aka groundskeeper
-  a person, patrol with route [the Gravel Drive, the Fountain Court, the Boiler Shed] and wait-turns 5 and announces-movement true
+  a person, proper, patrol with route [the Gravel Drive, the Fountain Court, the Boiler Shed] and wait-turns 5 and announces-movement true
+  pronouns he
   in the Gravel Drive
   states: steady, shaken
   score truth worth 5

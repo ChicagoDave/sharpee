@@ -1,2 +1,2 @@
-export { CombatantTrait, ICombatantData } from './combatantTrait';
-export { CombatBehavior, ICombatResult } from './combatantBehavior';
+export { CombatantTrait, ICombatantData } from './combatantTrait.js';
+export { CombatBehavior, ICombatResult } from './combatantBehavior.js';

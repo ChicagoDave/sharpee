@@ -2,10 +2,10 @@
  * Data builder for closing action
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType } from '@sharpee/world-model';
-import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
+import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
 
 export const buildClosedData: ActionDataBuilder<Record<string, unknown>> = (
   context: ActionContext

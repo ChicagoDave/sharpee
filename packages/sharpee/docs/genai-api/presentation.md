@@ -20,8 +20,8 @@ import type { WorldModel } from '@sharpee/world-model';
 import type { ISaveRestoreHooks } from '@sharpee/core';
 import type { ClientCapabilities } from '@sharpee/if-domain';
 import { type IRenderer } from '@sharpee/channel-service';
-import type { BrowserClientConfig, BrowserClientInterface, DOMElements } from './types';
-import { AudioManager } from './audio/AudioManager';
+import type { BrowserClientConfig, BrowserClientInterface, DOMElements } from './types.js';
+import { AudioManager } from './audio/AudioManager.js';
 /**
  * Default `ClientCapabilities` profile for the browser surface — full
  * graphical capabilities so every standard + media channel appears in
@@ -426,7 +426,7 @@ export declare const AUTOSAVE_SLOT = "autosave";
 /**
  * ThemeManager - handles theme switching and persistence
  */
-import type { ThemeConfig } from '../types';
+import type { ThemeConfig } from '../types.js';
 export interface ThemeManagerConfig {
     /** localStorage key for theme persistence */
     storageKey: string;
@@ -506,7 +506,7 @@ export declare class ThemeManager {
  */
 import type { ISaveData } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
-import type { BrowserSaveEnvelope, SaveContext, SaveSlotMeta } from '../types';
+import type { BrowserSaveEnvelope, SaveContext, SaveSlotMeta } from '../types.js';
 export interface SaveManagerConfig {
     /** Storage key prefix (e.g., "dungeo-") */
     storagePrefix: string;
@@ -605,8 +605,8 @@ export declare class SaveManager {
  * resolves the pending promise consistently. Buttons set the dialog's
  * `returnValue` before closing to communicate intent.
  */
-import type { DialogElements, SaveSlotMeta } from '../types';
-import type { SaveManager } from './SaveManager';
+import type { DialogElements, SaveSlotMeta } from '../types.js';
+import type { SaveManager } from './SaveManager.js';
 export interface DialogManagerConfig {
     elements: DialogElements;
     saveManager: SaveManager;
@@ -654,7 +654,7 @@ export declare class DialogManager {
  * State is expressed via the `--open` modifier on .sharpee-menu-bar-item
  * and the native `aria-expanded` attribute on the trigger button.
  */
-import type { MenuHandlers } from '../types';
+import type { MenuHandlers } from '../types.js';
 export interface MenuManagerConfig {
     menuBar: HTMLElement | null;
     handlers: MenuHandlers;
@@ -742,7 +742,7 @@ export declare class InputManager {
 /**
  * TextDisplay - handles text output to the main window
  */
-import type { DisplayElements } from '../types';
+import type { DisplayElements } from '../types.js';
 export declare class TextDisplay {
     private textContent;
     private mainWindow;
@@ -786,7 +786,7 @@ export declare class TextDisplay {
 /**
  * StatusLine - handles the status bar display (location, score, turns)
  */
-import type { StatusElements } from '../types';
+import type { StatusElements } from '../types.js';
 export declare class StatusLine {
     private statusLocation;
     private statusScore;
@@ -915,21 +915,21 @@ export declare class AudioManager {
  * @see ADR-165 — Renderer Architecture — §7, §8
  */
 import type { IRenderer } from '@sharpee/channel-service';
-import { createMainChannelRenderer } from './main';
-import { createPromptChannelRenderer } from './prompt';
-import { createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer } from './status';
-import { createInfoChannelRenderer, createIfidChannelRenderer } from './info';
-import { createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer } from './notify';
-import { createImageChannelRenderer, createImagePreloadChannelRenderer } from './image';
-import { createSoundChannelRenderer, createMusicChannelRenderer, type AudioManagerLike } from './audio';
-import { createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer } from './animation';
-import { createLifecycleChannelRenderer, type LifecycleChannelRendererOptions } from './lifecycle';
-import { mountDefaultLayout, type BrowserDefaultLayout } from './layout';
+import { createMainChannelRenderer } from './main.js';
+import { createPromptChannelRenderer } from './prompt.js';
+import { createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer } from './status.js';
+import { createInfoChannelRenderer, createIfidChannelRenderer } from './info.js';
+import { createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer } from './notify.js';
+import { createImageChannelRenderer, createImagePreloadChannelRenderer } from './image.js';
+import { createSoundChannelRenderer, createMusicChannelRenderer, type AudioManagerLike } from './audio.js';
+import { createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer } from './animation.js';
+import { createLifecycleChannelRenderer, type LifecycleChannelRendererOptions } from './lifecycle.js';
+import { mountDefaultLayout, type BrowserDefaultLayout } from './layout.js';
 export { createMainChannelRenderer, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
-export { createAmbientChannelRenderer } from './audio';
-export { createGenericPanelRenderer } from './panel';
-export { renderTextContent, flattenTextContent } from './text-content';
+export { createAmbientChannelRenderer } from './audio.js';
+export { createGenericPanelRenderer } from './panel.js';
+export { renderTextContent, flattenTextContent } from './text-content.js';
 /**
  * Options for {@link registerDefaultBrowserRenderers}.
  */
@@ -1514,8 +1514,8 @@ export interface Renderer {
  * @see ADR-165 — Renderer Architecture
  */
 import type { CmgtPacket, CommandPacket, TurnPacket } from '@sharpee/if-domain';
-import type { ChannelRenderer, ChannelStateStore, Renderer as RendererInterface, SlotHandle } from './types';
-import { type FallbackOutputSink, type FallbackWarningSink } from './json-tree-fallback';
+import type { ChannelRenderer, ChannelStateStore, Renderer as RendererInterface, SlotHandle } from './types.js';
+import { type FallbackOutputSink, type FallbackWarningSink } from './json-tree-fallback.js';
 /**
  * Optional construction options for the `Renderer`.
  */
@@ -1670,7 +1670,7 @@ export declare function createRenderer(opts?: RendererOptions): Renderer;
  *
  * @see ADR-165 — Renderer Architecture — §3, AC-3
  */
-import type { ChannelRenderer } from './types';
+import type { ChannelRenderer } from './types.js';
 /**
  * Sink for warnings emitted by the fallback. Defaults to
  * `console.warn`. Tests inject a recording sink; concrete platform
@@ -1760,7 +1760,7 @@ export type ProceduralRecipeName = BuiltinRecipeName | (string & {});
  * engine's event pipeline unchanged — clients that support audio render
  * them; others ignore them.
  */
-import type { Volume, DurationMs, StereoPan, PlaybackRate, AudioAssetPath, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types';
+import type { Volume, DurationMs, StereoPan, PlaybackRate, AudioAssetPath, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types.js';
 /**
  * Base interface for all audio events.
  * Audio events flow through the engine's event pipeline unchanged.
@@ -1938,7 +1938,7 @@ export declare function isAudioEvent(event: {
  *
  * Owner context: @sharpee/media (ADR-138)
  */
-import type { Volume, AudioFormat } from './types';
+import type { Volume, AudioFormat } from './types.js';
 /**
  * Audio capabilities declared by the client at session start.
  * Stories can check these before emitting audio events to avoid
@@ -1993,7 +1993,7 @@ export interface AudioPreferences {
  *
  * Owner context: @sharpee/media (ADR-138)
  */
-import type { AudioAssetPath, Volume, DurationMs, StereoPan, PlaybackRate, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types';
+import type { AudioAssetPath, Volume, DurationMs, StereoPan, PlaybackRate, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types.js';
 /** Data for audio.sfx events */
 export interface AudioSfxData {
     readonly src: AudioAssetPath;
@@ -2080,8 +2080,8 @@ declare module '@sharpee/core' {
  * Owner context: @sharpee/media (ADR-138)
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { AudioAssetPath, AmbientChannel, Volume, DurationMs, DuckPriority, AudioEffectType, AudioTarget } from './types';
-import './registry-merge';
+import type { AudioAssetPath, AmbientChannel, Volume, DurationMs, DuckPriority, AudioEffectType, AudioTarget } from './types.js';
+import './registry-merge.js';
 /**
  * An audio cue factory — returns a fresh event each invocation.
  * Factories (not constants) because each call needs a unique event id/timestamp.

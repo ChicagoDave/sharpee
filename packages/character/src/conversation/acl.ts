@@ -12,7 +12,7 @@
  */
 
 import { CharacterModelTrait, Mood, CognitiveProfile } from '@sharpee/world-model';
-import { ResponseCandidate, ResponseIntent } from './response-types';
+import { ResponseCandidate, ResponseIntent } from './response-types.js';
 
 // ---------------------------------------------------------------------------
 // Response intent construction

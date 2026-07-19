@@ -1,1 +1,1 @@
-export { deadlyRoomDeathAction } from './deadly-room-death';
+export { deadlyRoomDeathAction } from './deadly-room-death.js';

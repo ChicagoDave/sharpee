@@ -4,17 +4,17 @@
  */
 
 import { SlotType, SlotMatch } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext } from './slot-consumer';
-import { EntitySlotConsumer } from './entity-slot-consumer';
-import { TextSlotConsumer } from './text-slot-consumer';
-import { TypedSlotConsumer } from './typed-slot-consumer';
-import { VocabularySlotConsumer } from './vocabulary-slot-consumer';
+import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
+import { EntitySlotConsumer } from './entity-slot-consumer.js';
+import { TextSlotConsumer } from './text-slot-consumer.js';
+import { TypedSlotConsumer } from './typed-slot-consumer.js';
+import { VocabularySlotConsumer } from './vocabulary-slot-consumer.js';
 
-export { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer';
-export { EntitySlotConsumer } from './entity-slot-consumer';
-export { TextSlotConsumer } from './text-slot-consumer';
-export { TypedSlotConsumer } from './typed-slot-consumer';
-export { VocabularySlotConsumer } from './vocabulary-slot-consumer';
+export { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
+export { EntitySlotConsumer } from './entity-slot-consumer.js';
+export { TextSlotConsumer } from './text-slot-consumer.js';
+export { TypedSlotConsumer } from './typed-slot-consumer.js';
+export { VocabularySlotConsumer } from './vocabulary-slot-consumer.js';
 
 /**
  * Registry for slot consumers

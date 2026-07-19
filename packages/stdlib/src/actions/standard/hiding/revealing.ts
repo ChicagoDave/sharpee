@@ -14,17 +14,17 @@
  * Owner context: @sharpee/stdlib / actions / hiding
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { blockedMessageId } from '../../lifecycle';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
+import { blockedMessageId } from '../../lifecycle/index.js';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import {
   ConcealedStateTrait,
   getConcealmentState,
   isConcealed,
 } from '@sharpee/world-model';
-import { PlayerRevealedEventData } from './hiding-events';
+import { PlayerRevealedEventData } from './hiding-events.js';
 
 /**
  * Shared data passed between phases.

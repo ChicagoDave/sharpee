@@ -7,7 +7,7 @@
  * and the native `aria-expanded` attribute on the trigger button.
  */
 
-import type { MenuHandlers } from '../types';
+import type { MenuHandlers } from '../types.js';
 
 export interface MenuManagerConfig {
   menuBar: HTMLElement | null;

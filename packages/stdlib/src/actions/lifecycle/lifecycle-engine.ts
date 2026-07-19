@@ -38,8 +38,8 @@ import {
   applyInterceptorBlockedResult
 } from '@sharpee/world-model';
 import type { ActionInterceptor } from '@sharpee/world-model';
-import { ActionContext, ValidationResult } from '../enhanced-types';
-import { ActionLifecycleDescriptor } from './descriptor';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
+import { ActionLifecycleDescriptor } from './descriptor.js';
 
 /**
  * Reserved sharedData key holding the command's resolved lifecycle state.

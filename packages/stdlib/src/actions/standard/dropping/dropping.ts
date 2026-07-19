@@ -13,7 +13,7 @@
  * - "drop X and Y" - drops multiple specified items
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -24,12 +24,12 @@ import {
   IDropItemResult,
   IFEntity
 } from '@sharpee/world-model';
-import { buildEventData } from '../../data-builder-types';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { nounPhraseFor } from '../../../utils';
-import { DroppingMessages } from './dropping-messages';
+import { buildEventData } from '../../data-builder-types.js';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import { DroppingMessages } from './dropping-messages.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -44,16 +44,16 @@ import {
   runMultiObjectExecute,
   runMultiObjectReport,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 // Import our data builder
-import { droppedDataConfig, determineDroppingMessage } from './dropping-data';
+import { droppedDataConfig, determineDroppingMessage } from './dropping-data.js';
 
 // Import types
-import { getDroppingSharedData, DroppingItemScratch } from './dropping-types';
+import { getDroppingSharedData, DroppingItemScratch } from './dropping-types.js';
 
 // Import multi-object helpers
-import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
+import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler.js';
 
 /**
  * Interceptor surface (ADR-228): the dropped item is the only consultable

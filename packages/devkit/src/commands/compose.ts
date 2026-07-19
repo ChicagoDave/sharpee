@@ -13,10 +13,10 @@
  */
 import * as path from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { lintHatchSources } from '../hatch-lint';
+import { lintHatchSources } from '../hatch-lint.js';
 // Shared hatch-module resolution policy (one implementation — also used by
 // the author-game loader behind `sharpee test`/`play`).
-import { requireHatchModule } from '../standalone/author-game';
+import { requireHatchModule } from '../standalone/author-game.js';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [-o <ir.json>]';
 

@@ -11,7 +11,7 @@
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
-import type { LocaleSettings, RenderContext } from './phrase';
+import type { LocaleSettings, RenderContext } from './phrase.js';
 
 /**
  * Structured help information for an action

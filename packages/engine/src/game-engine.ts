@@ -41,13 +41,13 @@ import {
   createDeadlyRoomTransformer,
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
-import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
+import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
-import { SceneEvaluationPlugin } from './scene-evaluation-plugin';
+import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
 
 
 import {
@@ -63,22 +63,22 @@ import {
   TraitSummary,
   BehaviorBindingSummary,
   MessageSummary
-} from './types';
-import { Story } from './story';
-import { NarrativeSettings, buildNarrativeSettings } from './narrative';
-import { validateRoomSnippets } from './snippet-validation';
-import { validateCombatantHealth } from './combatant-health-validation';
+} from './types.js';
+import { Story } from './story.js';
+import { NarrativeSettings, buildNarrativeSettings } from './narrative/index.js';
+import { validateRoomSnippets } from './snippet-validation.js';
+import { validateCombatantHealth } from './combatant-health-validation.js';
 
-import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
-import { createActionContext } from './action-context-factory';
-import { SoundDispatcher } from './sound';
-import { processEvent } from './turn-event-processor';
-import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
-import { hasNarrativeSettings } from './language-provider-interface';
-import { VocabularyManager, createVocabularyManager } from './vocabulary-manager';
-import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
-import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor';
-import { PlatformOperationHandler, createPlatformOperationHandler, EngineCallbacks } from './platform-operations';
+import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
+import { createActionContext } from './action-context-factory.js';
+import { SoundDispatcher } from './sound/index.js';
+import { processEvent } from './turn-event-processor.js';
+import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface.js';
+import { hasNarrativeSettings } from './language-provider-interface.js';
+import { VocabularyManager, createVocabularyManager } from './vocabulary-manager.js';
+import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
+import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor.js';
+import { PlatformOperationHandler, createPlatformOperationHandler, EngineCallbacks } from './platform-operations.js';
 
 /**
  * Game engine events

@@ -14,7 +14,7 @@
  * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 /**
  * Constructor/serialization data for {@link DeadlyRoomTrait}.

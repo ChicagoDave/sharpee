@@ -3,8 +3,8 @@
  */
 
 import React, { useCallback, useRef, useEffect } from 'react';
-import { useGameContext } from '../../context/GameContext';
-import { useCommandHistory } from '../../hooks/useCommandHistory';
+import { useGameContext } from '../../context/GameContext.js';
+import { useCommandHistory } from '../../hooks/useCommandHistory.js';
 
 interface CommandInputProps {
   className?: string;

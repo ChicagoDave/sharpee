@@ -2,7 +2,7 @@
  * Command validator interface for resolving entities and checking preconditions
  */
 
-import type { IParsedCommand, IValidatedCommand, IValidationError } from '../commands';
+import type { IParsedCommand, IValidatedCommand, IValidationError } from '../commands/index.js';
 import type { Result } from '@sharpee/core';
 
 /**

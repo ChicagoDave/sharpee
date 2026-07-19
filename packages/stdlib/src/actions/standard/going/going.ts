@@ -11,7 +11,7 @@
  * 4. report: standard events → postReport hook (additional effects)
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -27,13 +27,13 @@ import {
   canActorWalkInVehicle,
   RegionCrossings,
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
-import { buildEventData } from '../../data-builder-types';
-import { GoingMessages } from './going-messages';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
+import { buildEventData } from '../../data-builder-types.js';
+import { GoingMessages } from './going-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -44,14 +44,14 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 // Import our data builders
 import {
   actorMovedDataConfig,
   actorExitedDataConfig,
   actorEnteredDataConfig,
-} from './going-data';
+} from './going-data.js';
 
 // Note: Room description is now built directly in report() using sharedData.currentLocation
 

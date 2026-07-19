@@ -31,8 +31,8 @@
  * @see ADR-173 — Wall Adjacency Primitive (obstructor protocol)
  */
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Acoustic dampener trait — attaches to obstructor entities (tapestry,

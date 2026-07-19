@@ -6,8 +6,8 @@
  * TypeScript will error (and runtime will throw as backup).
  */
 
-import { IFEntity } from '../entities';
-import { ITrait, ITraitConstructor } from '../traits/trait';
+import { IFEntity } from '../entities/index.js';
+import { ITrait, ITraitConstructor } from '../traits/trait.js';
 
 /**
  * Type-safe entity builder that tracks claimed capabilities.

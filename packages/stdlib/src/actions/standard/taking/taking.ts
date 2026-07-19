@@ -18,14 +18,14 @@
  * - "take X and Y" - takes multiple specified items
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope/types';
-import { TakingMessages } from './taking-messages';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { TakingMessages } from './taking-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -40,7 +40,7 @@ import {
   runMultiObjectExecute,
   runMultiObjectReport,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 // Import type guards and typed interfaces
 import {
@@ -48,10 +48,10 @@ import {
   hasCapacityLimit,
   getTakingSharedData,
   TakingItemScratch
-} from './taking-types';
+} from './taking-types.js';
 
 // Import multi-object helpers
-import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
+import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler.js';
 
 /**
  * Interceptor surface (ADR-228): the taken item is the only consultable

@@ -6,10 +6,10 @@
  * Actions are free to define their own event data types.
  */
 
-export * from './action-events';
-export * from './common-patterns';
-export * from './event-utils';
-export * from './event-registry';
+export * from './action-events.js';
+export * from './common-patterns.js';
+export * from './event-utils.js';
+export * from './event-registry.js';
 
 /**
  * Design principle: Each action defines its own event data types

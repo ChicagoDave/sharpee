@@ -17,8 +17,8 @@ All 43 standard actions, validation, scope builders, NPC support, combat, action
 import { ISemanticEvent, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
-import { ValidatedCommand } from '../validation/types';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
+import { ValidatedCommand } from '../validation/types.js';
 /**
  * Result of a scope requirement check.
  *
@@ -772,9 +772,9 @@ export declare const EventTypes: {
  */
 import { SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ActionContext, Action } from './enhanced-types';
-import { ScopeResolver } from '../scope/types';
-import { ValidatedCommand } from '../validation/types';
+import { ActionContext, Action } from './enhanced-types.js';
+import { ScopeResolver } from '../scope/types.js';
+import { ValidatedCommand } from '../validation/types.js';
 /**
  * Factory function to create unified action context
  *
@@ -803,7 +803,7 @@ export declare function createMockActionContext(world: WorldModel, player: IFEnt
  * Examples include debug commands, system commands (SAVE/RESTORE), and information
  * commands (SCORE/VERSION).
  */
-import { Action, ActionContext, ValidationResult } from './enhanced-types';
+import { Action, ActionContext, ValidationResult } from './enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Abstract base class for meta-commands
@@ -1026,9 +1026,9 @@ export declare class MetaCommandRegistry {
  * Manages registration and lookup of actions.
  * Actions are pure logic - patterns come from the language provider.
  */
-import { Action, ActionRegistry as IActionRegistry } from './enhanced-types';
+import { Action, ActionRegistry as IActionRegistry } from './enhanced-types.js';
 import { LanguageProvider } from '@sharpee/if-domain';
-export { ActionRegistry } from './enhanced-types';
+export { ActionRegistry } from './enhanced-types.js';
 export declare class StandardActionRegistry implements IActionRegistry {
     private actions;
     private actionsByPattern;
@@ -1202,7 +1202,7 @@ export type IFActionType = typeof IFActions[keyof typeof IFActions];
  * Owner: stdlib standard-action infrastructure (ADR-228).
  */
 import { IFEntity } from '@sharpee/world-model';
-import { ActionContext } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
 /**
  * One consultable entity slot of a command.
  *
@@ -1331,8 +1331,8 @@ export interface ActionLifecycleDescriptor {
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, InterceptorSharedData } from '@sharpee/world-model';
 import type { ActionInterceptor } from '@sharpee/world-model';
-import { ActionContext, ValidationResult } from '../enhanced-types';
-import { ActionLifecycleDescriptor } from './descriptor';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
+import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
  * One resolved (entity, actionId) interceptor consultation.
  *
@@ -1513,9 +1513,9 @@ export declare function runOnBlocked(context: ActionContext, state: LifecycleSta
  */
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity } from '@sharpee/world-model';
-import { ActionContext, ValidationResult } from '../enhanced-types';
-import { ActionLifecycleDescriptor } from './descriptor';
-import { LifecycleState } from './lifecycle-engine';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
+import { ActionLifecycleDescriptor } from './descriptor.js';
+import { LifecycleState } from './lifecycle-engine.js';
 /**
  * One item's lifecycle through a multi-object command.
  *
@@ -1627,7 +1627,7 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  * the actions, so routing it through the barrel would create an import
  * cycle. It is exported from the actions barrel (`../index.ts`) instead.
  */
-import { ActionLifecycleDescriptor } from './descriptor';
+import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
  * The descriptor table: all 38 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
@@ -1657,67 +1657,67 @@ export declare const interceptorConsultingActionIds: ReadonlySet<string>;
  * These are the core actions that most IF games will use.
  * Each action is a pure function that validates conditions and returns events.
  */
-export { takingAction } from './taking';
-export type { TakenEventData, TakingErrorData } from './taking/taking-events';
-export * from './dropping';
-export * from './examining';
-export * from './opening';
-export * from './closing/closing';
-export * from './going';
-export * from './looking';
-export * from './inventory';
-export * from './waiting';
-export * from './sleeping';
-export * from './scoring';
-export * from './help';
-export * from './about';
-export * from './version';
-export * from './locking';
-export * from './cutting';
-export * from './turning';
-export * from './asking';
-export * from './telling';
-export * from './digging';
-export * from './unlocking';
-export * from './switching_on';
-export * from './switching_off';
-export * from './entering';
-export * from './exiting';
-export * from './climbing';
-export * from './searching';
-export * from './listening';
-export * from './smelling';
-export * from './touching';
-export * from './putting';
-export * from './inserting';
-export * from './reading';
-export { removingAction } from './removing';
-export type { RemovingEventMap } from './removing/removing-events';
-export * from './giving';
-export * from './showing';
-export { throwingAction } from './throwing';
-export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events';
-export * from './pushing';
-export * from './pulling';
-export * from './lowering';
-export * from './raising';
-export { wearingAction } from './wearing';
-export { takingOffAction } from './taking_off';
-export type { WornEventData, ImplicitTakenEventData } from './wearing/wearing-events';
-export type { RemovedEventData as TakenOffEventData } from './taking_off/taking-off-events';
-export * from './eating';
-export * from './drinking';
-export * from './talking';
-export * from './attacking';
-export * from './saving';
-export * from './restoring';
-export * from './quitting';
-export * from './restarting';
-export * from './undoing';
-export * from './again';
-export * from './hiding';
-import { TraceAction } from '../author';
-export declare const standardActions: (TraceAction | import("..").Action)[];
+export { takingAction } from './taking/index.js';
+export type { TakenEventData, TakingErrorData } from './taking/taking-events.js';
+export * from './dropping/index.js';
+export * from './examining/index.js';
+export * from './opening/index.js';
+export * from './closing/closing.js';
+export * from './going/index.js';
+export * from './looking/index.js';
+export * from './inventory/index.js';
+export * from './waiting/index.js';
+export * from './sleeping/index.js';
+export * from './scoring/index.js';
+export * from './help/index.js';
+export * from './about/index.js';
+export * from './version/index.js';
+export * from './locking/index.js';
+export * from './cutting/index.js';
+export * from './turning/index.js';
+export * from './asking/index.js';
+export * from './telling/index.js';
+export * from './digging/index.js';
+export * from './unlocking/index.js';
+export * from './switching_on/index.js';
+export * from './switching_off/index.js';
+export * from './entering/index.js';
+export * from './exiting/index.js';
+export * from './climbing/index.js';
+export * from './searching/index.js';
+export * from './listening/index.js';
+export * from './smelling/index.js';
+export * from './touching/index.js';
+export * from './putting/index.js';
+export * from './inserting/index.js';
+export * from './reading/index.js';
+export { removingAction } from './removing/index.js';
+export type { RemovingEventMap } from './removing/removing-events.js';
+export * from './giving/index.js';
+export * from './showing/index.js';
+export { throwingAction } from './throwing/index.js';
+export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events.js';
+export * from './pushing/index.js';
+export * from './pulling/index.js';
+export * from './lowering/index.js';
+export * from './raising/index.js';
+export { wearingAction } from './wearing/index.js';
+export { takingOffAction } from './taking_off/index.js';
+export type { WornEventData, ImplicitTakenEventData } from './wearing/wearing-events.js';
+export type { RemovedEventData as TakenOffEventData } from './taking_off/taking-off-events.js';
+export * from './eating/index.js';
+export * from './drinking/index.js';
+export * from './talking/index.js';
+export * from './attacking/index.js';
+export * from './saving/index.js';
+export * from './restoring/index.js';
+export * from './quitting/index.js';
+export * from './restarting/index.js';
+export * from './undoing/index.js';
+export * from './again/index.js';
+export * from './hiding/index.js';
+import { TraceAction } from '../author/index.js';
+export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```
 
 ### actions/author/trace
@@ -1737,9 +1737,9 @@ export declare const standardActions: (TraceAction | import("..").Action)[];
  *   trace system on/off - Control system event tracing
  *   trace all on/off - Control all tracing
  */
-import { ActionContext } from '../enhanced-types';
-import { MetaAction } from '../meta-action';
-import { ValidationResult } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
+import { MetaAction } from '../meta-action.js';
+import { ValidationResult } from '../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 export declare class TraceAction extends MetaAction {
     id: string;
@@ -1923,40 +1923,40 @@ export declare function createMovementData(from: IFEntity, to: IFEntity): {
  * @see ADR-082 for the design rationale
  */
 import type { EntityId } from '@sharpee/core';
-export type { TakenEventData, TakingErrorData } from '../actions/standard/taking/taking-events';
-export type { DroppedEventData, DroppingErrorData } from '../actions/standard/dropping/dropping-events';
-export type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events';
-export type { ExaminedEventData, ExaminingErrorData } from '../actions/standard/examining/examining-events';
-export type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData, GoingErrorData } from '../actions/standard/going/going-events';
-export type { OpenedEventData, RevealedEventData, ExitRevealedEventData, OpeningErrorData } from '../actions/standard/opening/opening-events';
-export type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events';
-export type { LockedEventData, LockingErrorData } from '../actions/standard/locking/locking-events';
-export type { UnlockedEventData, UnlockingErrorData } from '../actions/standard/unlocking/unlocking-events';
-export type { WornEventData, WearingErrorData } from '../actions/standard/wearing/wearing-events';
-export type { RemovedEventData as TakingOffRemovedEventData, TakingOffErrorData } from '../actions/standard/taking_off/taking-off-events';
-export type { EnteredEventData, EnteringErrorData } from '../actions/standard/entering/entering-events';
-export type { ExitedEventData, ExitingErrorData } from '../actions/standard/exiting/exiting-events';
-export type { SwitchedOnEventData, SwitchingOnErrorData } from '../actions/standard/switching_on/switching_on-events';
-export type { SwitchedOffEventData, SwitchingOffErrorData } from '../actions/standard/switching_off/switching_off-events';
-export type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events';
-export type { InventoryEventData, InventoryItem } from '../actions/standard/inventory/inventory-events';
-import type { TakenEventData } from '../actions/standard/taking/taking-events';
-import type { DroppedEventData } from '../actions/standard/dropping/dropping-events';
-import type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events';
-import type { ExaminedEventData } from '../actions/standard/examining/examining-events';
-import type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData } from '../actions/standard/going/going-events';
-import type { OpenedEventData, RevealedEventData, ExitRevealedEventData } from '../actions/standard/opening/opening-events';
-import type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events';
-import type { LockedEventData } from '../actions/standard/locking/locking-events';
-import type { UnlockedEventData } from '../actions/standard/unlocking/unlocking-events';
-import type { WornEventData } from '../actions/standard/wearing/wearing-events';
-import type { RemovedEventData as TakingOffRemovedData } from '../actions/standard/taking_off/taking-off-events';
-import type { EnteredEventData } from '../actions/standard/entering/entering-events';
-import type { ExitedEventData } from '../actions/standard/exiting/exiting-events';
-import type { SwitchedOnEventData } from '../actions/standard/switching_on/switching_on-events';
-import type { SwitchedOffEventData } from '../actions/standard/switching_off/switching_off-events';
-import type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events';
-import type { InventoryEventData } from '../actions/standard/inventory/inventory-events';
+export type { TakenEventData, TakingErrorData } from '../actions/standard/taking/taking-events.js';
+export type { DroppedEventData, DroppingErrorData } from '../actions/standard/dropping/dropping-events.js';
+export type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events.js';
+export type { ExaminedEventData, ExaminingErrorData } from '../actions/standard/examining/examining-events.js';
+export type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData, GoingErrorData } from '../actions/standard/going/going-events.js';
+export type { OpenedEventData, RevealedEventData, ExitRevealedEventData, OpeningErrorData } from '../actions/standard/opening/opening-events.js';
+export type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events.js';
+export type { LockedEventData, LockingErrorData } from '../actions/standard/locking/locking-events.js';
+export type { UnlockedEventData, UnlockingErrorData } from '../actions/standard/unlocking/unlocking-events.js';
+export type { WornEventData, WearingErrorData } from '../actions/standard/wearing/wearing-events.js';
+export type { RemovedEventData as TakingOffRemovedEventData, TakingOffErrorData } from '../actions/standard/taking_off/taking-off-events.js';
+export type { EnteredEventData, EnteringErrorData } from '../actions/standard/entering/entering-events.js';
+export type { ExitedEventData, ExitingErrorData } from '../actions/standard/exiting/exiting-events.js';
+export type { SwitchedOnEventData, SwitchingOnErrorData } from '../actions/standard/switching_on/switching_on-events.js';
+export type { SwitchedOffEventData, SwitchingOffErrorData } from '../actions/standard/switching_off/switching_off-events.js';
+export type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events.js';
+export type { InventoryEventData, InventoryItem } from '../actions/standard/inventory/inventory-events.js';
+import type { TakenEventData } from '../actions/standard/taking/taking-events.js';
+import type { DroppedEventData } from '../actions/standard/dropping/dropping-events.js';
+import type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events.js';
+import type { ExaminedEventData } from '../actions/standard/examining/examining-events.js';
+import type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData } from '../actions/standard/going/going-events.js';
+import type { OpenedEventData, RevealedEventData, ExitRevealedEventData } from '../actions/standard/opening/opening-events.js';
+import type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events.js';
+import type { LockedEventData } from '../actions/standard/locking/locking-events.js';
+import type { UnlockedEventData } from '../actions/standard/unlocking/unlocking-events.js';
+import type { WornEventData } from '../actions/standard/wearing/wearing-events.js';
+import type { RemovedEventData as TakingOffRemovedData } from '../actions/standard/taking_off/taking-off-events.js';
+import type { EnteredEventData } from '../actions/standard/entering/entering-events.js';
+import type { ExitedEventData } from '../actions/standard/exiting/exiting-events.js';
+import type { SwitchedOnEventData } from '../actions/standard/switching_on/switching_on-events.js';
+import type { SwitchedOffEventData } from '../actions/standard/switching_off/switching_off-events.js';
+import type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events.js';
+import type { InventoryEventData } from '../actions/standard/inventory/inventory-events.js';
 /**
  * Standard success event data for actions
  */
@@ -2037,9 +2037,9 @@ export {};
  */
 import type { ISystemEvent, IGenericEventSource, Result } from '@sharpee/core';
 import type { IParsedCommand, INounPhrase, IValidatedObjectReference, IValidationError, WorldModel } from '@sharpee/world-model';
-import type { ValidatedCommand } from './types';
-import { ActionRegistry } from '../actions/registry';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
+import type { ValidatedCommand } from './types.js';
+import { ActionRegistry } from '../actions/registry.js';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
 /**
  * Action metadata interface for declaring requirements
  */
@@ -2257,7 +2257,7 @@ export declare class CommandValidator implements CommandValidator {
  * Extends the core validation types with scope information
  */
 import type { IValidatedCommand as CoreValidatedCommand } from '@sharpee/world-model';
-import type { ScopeLevel, SenseType } from '../scope/types';
+import type { ScopeLevel, SenseType } from '../scope/types.js';
 /**
  * Scope information for validated objects
  */
@@ -2295,7 +2295,7 @@ export type ValidationErrorCode = 'ENTITY_NOT_FOUND' | 'ENTITY_NOT_VISIBLE' | 'E
  *
  * This provides the base vocabulary for standard IF commands
  */
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from '../parser';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from '../parser/index.js';
 /**
  * Standard verb vocabulary
  */
@@ -2327,12 +2327,12 @@ export declare function registerStandardVocabulary(): void;
  * These capabilities provide common game state management patterns
  * that don't naturally fit in the entity-relationship model.
  */
-import { ScoringCapabilitySchema, ScoringData } from './scoring';
-import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore';
-import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation';
-import { GameMetaCapabilitySchema, GameMetaData } from './game-meta';
-import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history';
-import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug';
+import { ScoringCapabilitySchema, ScoringData } from './scoring.js';
+import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore.js';
+import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation.js';
+import { GameMetaCapabilitySchema, GameMetaData } from './game-meta.js';
+import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history.js';
+import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug.js';
 export { ScoringCapabilitySchema, ScoringData, SaveRestoreCapabilitySchema, SaveRestoreData, SaveData, ConversationCapabilitySchema, ConversationData, ConversationStateData, GameMetaCapabilitySchema, GameMetaData, CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry, DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData };
 /**
  * Map of standard capability names to their schemas
@@ -2711,7 +2711,7 @@ export type WitnessEvent = WitnessActionEvent | WitnessMovementEvent | WitnessSo
  * evaluation during parsing).
  */
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ScopeLevel, ScopeResolver } from './types';
+import { ScopeLevel, ScopeResolver } from './types.js';
 /**
  * Standard implementation of scope resolution for IF games
  */
@@ -2809,7 +2809,7 @@ export declare function createScopeResolver(world: WorldModel): ScopeResolver;
  * and updates their knowledge accordingly.
  */
 import { WorldModel } from '@sharpee/world-model';
-import { WitnessSystem, StateChange, WitnessRecord, EntityKnowledge, ScopeResolver } from './types';
+import { WitnessSystem, StateChange, WitnessRecord, EntityKnowledge, ScopeResolver } from './types.js';
 /**
  * Standard implementation of the witness system
  */
@@ -3231,7 +3231,7 @@ export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof Charact
  */
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { NpcBehavior } from './types';
+import { NpcBehavior } from './types.js';
 /**
  * A tick phase handler that runs during NPC turn processing.
  * Registered by higher-level packages (e.g., @sharpee/character).
@@ -3504,7 +3504,7 @@ export declare function enterLucidityWindow(trait: CharacterModelTrait, targetSt
  * These are generic behaviors that can be used in any IF game.
  * Game-specific behaviors (thief, cyclops, etc.) should be defined in the story.
  */
-import { NpcBehavior } from './types';
+import { NpcBehavior } from './types.js';
 /**
  * Guard behavior - stationary NPC that blocks passage and fights back
  *
@@ -3786,8 +3786,8 @@ import { WorldModel } from '@sharpee/world-model';
  * @param world - The WorldModel to register chains with
  */
 export declare function registerStandardChains(world: WorldModel): void;
-export { OPENED_REVEALED_CHAIN_KEY } from './opened-revealed';
-export { createOpenedRevealedChain } from './opened-revealed';
+export { OPENED_REVEALED_CHAIN_KEY } from './opened-revealed.js';
+export { createOpenedRevealedChain } from './opened-revealed.js';
 ```
 
 ### inference/implicit-inference
@@ -3804,7 +3804,7 @@ export { createOpenedRevealedChain } from './opened-revealed';
  * Explicit nouns ("read mailbox") should fail with the normal error.
  */
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { Action } from '../actions/enhanced-types';
+import { Action } from '../actions/enhanced-types.js';
 /**
  * Result of attempting implicit inference
  */
@@ -4455,20 +4455,20 @@ export declare const MAIN_KEYS: ReadonlySet<string>;
  *
  * All state changes go through events - no direct mutations
  */
-export * from './actions';
-export * from './events';
-export * from './parser';
-export * from './validation';
-export * from './vocabulary';
-export * from './capabilities';
-export * from './query-handlers';
-export * from './scope';
-export * from './services';
-export * from './npc';
-export * from './combat';
-export * from './death';
-export * from './chains';
-export * from './inference';
-export * from './utils';
-export * from './channels';
+export * from './actions/index.js';
+export * from './events/index.js';
+export * from './parser/index.js';
+export * from './validation/index.js';
+export * from './vocabulary/index.js';
+export * from './capabilities/index.js';
+export * from './query-handlers/index.js';
+export * from './scope/index.js';
+export * from './services/index.js';
+export * from './npc/index.js';
+export * from './combat/index.js';
+export * from './death/index.js';
+export * from './chains/index.js';
+export * from './inference/index.js';
+export * from './utils/index.js';
+export * from './channels/index.js';
 ```

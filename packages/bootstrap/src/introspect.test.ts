@@ -20,7 +20,7 @@ import {
   ExitTrait,
 } from '@sharpee/world-model';
 import { isProjectManifest, type ProjectManifest } from '@sharpee/ide-protocol';
-import { buildManifest } from './introspect';
+import { buildManifest } from './introspect.js';
 
 let world: WorldModel;
 let manifest: ProjectManifest;

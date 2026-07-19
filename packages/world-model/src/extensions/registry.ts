@@ -5,14 +5,14 @@
  * events, actions, and other components.
  */
 
-import { ITraitConstructor } from '../traits/trait';
+import { ITraitConstructor } from '../traits/trait.js';
 import { 
   IExtensionRegistry, 
   IExtensionTraitDefinition,
   IExtensionEventDefinition,
   IExtensionActionDefinition,
   createNamespacedId
-} from './types';
+} from './types.js';
 
 /**
  * Default implementation of the extension registry

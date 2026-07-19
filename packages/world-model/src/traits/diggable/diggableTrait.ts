@@ -1,8 +1,8 @@
 // packages/world-model/src/traits/diggable/diggableTrait.ts
 
 import { EntityId } from '@sharpee/core';
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Data for the diggable trait (ADR-230 Phase 6 (sketch ruling 6)).

@@ -13,9 +13,9 @@
  * Public interface: `DEFAULT_TRAITS`. Owner context: `@sharpee/world-model` — internal.
  */
 
-import { EntityType } from '../entities/entity-types';
-import { ITrait } from '../traits/trait';
-import { SceneryTrait } from '../traits/scenery';
+import { EntityType } from '../entities/entity-types.js';
+import { ITrait } from '../traits/trait.js';
+import { SceneryTrait } from '../traits/scenery/index.js';
 
 /** Produces a fresh trait instance for an entity's default-trait set. */
 export type DefaultTraitFactory = () => ITrait;

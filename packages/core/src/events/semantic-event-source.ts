@@ -3,9 +3,9 @@
  * Builds on the generic event source infrastructure
  */
 
-import { IGenericEventSource, SimpleEventSource } from './event-source';
-import { ISemanticEvent, IEventEmitter, EventListener } from './types';
-import { EntityId } from '../types/entity';
+import { IGenericEventSource, SimpleEventSource } from './event-source.js';
+import { ISemanticEvent, IEventEmitter, EventListener } from './types.js';
+import { EntityId } from '../types/entity.js';
 
 /**
  * Specialized event source for semantic (story) events

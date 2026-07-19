@@ -16,7 +16,7 @@
  */
 
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
-import type { HandlerContext } from './handlers/types';
+import type { HandlerContext } from './handlers/types.js';
 
 /**
  * Whether the phrase path is wired for this turn: a render-context factory (the

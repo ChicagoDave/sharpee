@@ -10,9 +10,9 @@
  */
 
 import { SeededRandom } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { TraitType } from '../trait-types';
-import { DeadlyRoomTrait } from './deadlyRoomTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { TraitType } from '../trait-types.js';
+import { DeadlyRoomTrait } from './deadlyRoomTrait.js';
 
 /** Verdict returned by {@link DeadlyRoomBehavior.checkVerb}. */
 export interface DeadlyRoomVerdict {

@@ -3,7 +3,7 @@
  * @description Abstract base class for grammar matching engines
  */
 
-import { Token } from '../parser-contracts/parser-types';
+import { Token } from '../parser-contracts/parser-types.js';
 import {
   GrammarRule,
   PatternMatch,
@@ -15,8 +15,8 @@ import {
   SemanticProperties,
   SlotType,
   Constraint
-} from './grammar-builder';
-import { PatternCompiler } from './pattern-compiler';
+} from './grammar-builder.js';
+import { PatternCompiler } from './pattern-compiler.js';
 
 /**
  * Grammar matching options

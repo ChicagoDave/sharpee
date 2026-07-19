@@ -14,16 +14,16 @@
  * engine (ADR-228) via `switchingOffLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, SwitchableTrait, OpenableTrait, SwitchableBehavior, LightSourceBehavior } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope';
-import { SwitchedOffEventData } from './switching_off-events';
-import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
-import { MESSAGES } from './switching_off-messages';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/index.js';
+import { SwitchedOffEventData } from './switching_off-events.js';
+import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared.js';
+import { MESSAGES } from './switching_off-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -34,7 +34,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the switched-off target is the only

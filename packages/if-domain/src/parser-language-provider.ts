@@ -6,12 +6,12 @@
  * and parser vocabulary/grammar rules.
  */
 
-import { LanguageProvider } from './language-provider';
+import { LanguageProvider } from './language-provider.js';
 import { 
   VerbVocabulary, 
   DirectionVocabulary, 
   SpecialVocabulary 
-} from './vocabulary-contracts/vocabulary-types';
+} from './vocabulary-contracts/vocabulary-types.js';
 
 /**
  * Language-specific grammar pattern definition

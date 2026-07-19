@@ -28,7 +28,7 @@ import {
   transferFact,
   getVisibilityResult,
   AlreadyToldRecord,
-} from './propagation';
+} from './propagation/index.js';
 import {
   GoalDef,
   MovementProfile,
@@ -36,7 +36,7 @@ import {
   GoalStepContext,
   evaluateGoalStep,
   SimpleRoomGraph,
-} from './goals';
+} from './goals/index.js';
 import {
   InfluenceDef,
   ResistanceDef,
@@ -44,7 +44,7 @@ import {
   InfluenceResult,
   evaluatePassiveInfluences,
   InfluenceTracker,
-} from './influence';
+} from './influence/index.js';
 
 // ---------------------------------------------------------------------------
 // Shared types

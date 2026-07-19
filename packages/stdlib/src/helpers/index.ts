@@ -2,4 +2,4 @@
  * Stdlib Helpers
  */
 
-export * from './multi-object-handler';
+export * from './multi-object-handler.js';

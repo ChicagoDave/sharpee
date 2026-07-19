@@ -3,7 +3,7 @@
  * These events mark important milestones in a game session
  */
 
-import { ISemanticEvent } from './types';
+import { ISemanticEvent } from './types.js';
 
 // =============================================================================
 // Typed Data Interfaces for Game Events (ADR-097 / IGameEvent Refactor)

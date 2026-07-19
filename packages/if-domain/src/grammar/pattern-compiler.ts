@@ -3,7 +3,7 @@
  * @description Language-agnostic interface for compiling grammar patterns
  */
 
-import { CompiledPattern, PatternToken } from './grammar-builder';
+import { CompiledPattern, PatternToken } from './grammar-builder.js';
 
 /**
  * Pattern compiler interface

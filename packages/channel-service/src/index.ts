@@ -32,8 +32,8 @@
  * @see ADR-165 — Renderer Architecture (consumer side)
  */
 
-export { ChannelService, PROTOCOL_VERSION } from './channel-service';
-export type { BuildInput } from './channel-service';
+export { ChannelService, PROTOCOL_VERSION } from './channel-service.js';
+export type { BuildInput } from './channel-service.js';
 
 export type {
   IOChannel,
@@ -52,9 +52,9 @@ export type {
   WirePacket,
 } from '@sharpee/if-domain';
 
-export { createDecoder, type Decoder, type DecoderState } from './wire';
+export { createDecoder, type Decoder, type DecoderState } from './wire/index.js';
 
-export { flattenContent } from './utils/flatten';
+export { flattenContent } from './utils/flatten.js';
 
 // Display flatteners (ADR-174 Phase 2 — `renderToString` / `renderStatusLine`
 // migrated here from `@sharpee/text-service` per OQ-1 resolution).
@@ -62,8 +62,8 @@ export { flattenContent } from './utils/flatten';
 // single string projection of an `ITextBlock[]`. `flattenContent` (above)
 // is the lower-level helper used inside producer closures; `renderToString`
 // adds smart block-joining, ANSI translation, and status-block filtering.
-export { renderToString, renderStatusLine } from './render-to-string';
-export type { CLIRenderOptions } from './render-to-string';
+export { renderToString, renderStatusLine } from './render-to-string.js';
+export type { CLIRenderOptions } from './render-to-string.js';
 
 // Consumer-side renderer (ADR-165) — see ./renderer.
 export {
@@ -73,10 +73,10 @@ export {
   type RendererOptions,
   type FallbackOutputSink,
   type FallbackWarningSink,
-} from './renderer';
+} from './renderer/index.js';
 export type {
   ChannelRenderer,
   IRenderer,
   ChannelStateStore,
   SlotHandle,
-} from './renderer';
+} from './renderer/index.js';

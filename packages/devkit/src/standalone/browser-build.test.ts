@@ -16,9 +16,9 @@
 import { describe, it, expect, afterEach, beforeAll, vi } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { runInitCommand } from './init';
-import { runInitBrowserCommand } from './init-browser';
-import { runBuildBrowserCommand } from './build-browser';
+import { runInitCommand } from './init.js';
+import { runInitBrowserCommand } from './init-browser.js';
+import { runBuildBrowserCommand } from './build-browser.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
 

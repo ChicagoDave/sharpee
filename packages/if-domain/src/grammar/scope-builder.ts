@@ -8,7 +8,7 @@ import {
   ScopeConstraint, 
   PropertyConstraint, 
   FunctionConstraint 
-} from './grammar-builder';
+} from './grammar-builder.js';
 import { IEntity } from '@sharpee/core';
 
 /**

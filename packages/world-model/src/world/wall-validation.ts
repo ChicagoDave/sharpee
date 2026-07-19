@@ -18,10 +18,10 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { IFEntity } from '../entities/if-entity';
-import { IWallSpec, IWallSideData } from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { RoomTrait } from '../traits/room/roomTrait';
+import { IFEntity } from '../entities/if-entity.js';
+import { IWallSpec, IWallSideData } from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { RoomTrait } from '../traits/room/roomTrait.js';
 
 /**
  * Resolves an `IFEntity | EntityId` reference to its id string.

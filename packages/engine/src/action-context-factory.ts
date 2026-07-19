@@ -6,8 +6,8 @@ import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel, Sco
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { ISemanticEvent, createEvent as coreCreateEvent, createSeededRandom, SeededRandom } from '@sharpee/core';
 import { ISound } from '@sharpee/if-domain';
-import { GameContext } from './types';
-import { SharedDataKeys, EngineSharedData } from './shared-data-keys';
+import { GameContext } from './types.js';
+import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 
 /**
  * Helper to get entity from command slot

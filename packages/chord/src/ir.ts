@@ -13,7 +13,7 @@
  * Contract 1, owner-confirmed 2026-07-10); @sharpee/ide-protocol re-exports
  * it. Invariant: pure data — JSON.parse(JSON.stringify(ir)) is identity.
  */
-import type { Span } from './span';
+import type { Span } from './span.js';
 
 /** Format stamp of this IR schema. Consumers refuse unknown formats. */
 export const IR_FORMAT = 'story language 1';
@@ -50,6 +50,13 @@ export interface StoryIR {
   machines: IRMachineDef[];
   /** `define channel` data projections (ADR-216) — pure IR; renderers are platform/extension territory. */
   channels: IRChannelDef[];
+  /**
+   * `define pronouns` named sets (ADR-242 D7) — declared case forms as
+   * DATA. The loader registers each into the language provider through
+   * the `extendLanguage` seam; the forms are locale text and render only
+   * in lang-{locale}, never here.
+   */
+  pronounSets: IRPronounSetDef[];
   /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
   hasHatches: boolean;
 }
@@ -73,6 +80,13 @@ export interface IREntity {
   /** Leading article as written (`the`), or null. */
   article: string | null;
   aka: string[];
+  /**
+   * `pronouns <word>` (ADR-242 D5) — a standard set (`he`/`she`/`it`/
+   * `they`) or a `define pronouns` set name. Present only when declared:
+   * no default is injected (ruled Q-2) — absent means the platform's
+   * by-number fallback.
+   */
+  pronouns?: string;
   /** True for the story's player entity (`create the player`). */
   isPlayer: boolean;
   /** Kind-noun compositions (`a room`), in declaration order. */
@@ -501,6 +515,23 @@ export interface IRFamilyChannelDef {
 
 /** Any story-declared dynamic channel (ADR-163 §7 / ADR-241 D1). */
 export type IRChannelDef = IRDataChannelDef | IRFamilyChannelDef;
+
+/**
+ * One `define pronouns <name>` set (ADR-242 D7) — the five case forms the
+ * lang-{locale} assembler's pronoun table keys. Forms are carried as data;
+ * they become rendered text only inside the language provider's registry.
+ */
+export interface IRPronounSetDef {
+  name: string;
+  forms: {
+    subject: string;
+    object: string;
+    possessive: string;
+    possessivePronoun: string;
+    reflexive: string;
+  };
+  span: Span;
+}
 
 // --------------------------------------------------------------------------
 // statements

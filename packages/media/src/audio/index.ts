@@ -21,7 +21,7 @@ export type {
   AudioFormat,
   BuiltinRecipeName,
   ProceduralRecipeName,
-} from './types';
+} from './types.js';
 
 export type {
   AudioEventBase,
@@ -35,14 +35,14 @@ export type {
   AudioEffectEvent,
   AudioEffectClearEvent,
   AudioEvent,
-} from './events';
+} from './events.js';
 
-export { isAudioEvent } from './events';
+export { isAudioEvent } from './events.js';
 
 export type {
   AudioCapabilities,
   AudioPreferences,
-} from './capabilities';
+} from './capabilities.js';
 
 export type {
   AudioSfxData,
@@ -54,10 +54,10 @@ export type {
   AudioProceduralData,
   AudioEffectData,
   AudioEffectClearData,
-} from './registry-merge';
+} from './registry-merge.js';
 
 // Side-effect import: activates declaration merging for audio event keys
-import './registry-merge';
+import './registry-merge.js';
 
 export type {
   AudioCue,
@@ -65,6 +65,6 @@ export type {
   DuckingConfig,
   RoomAtmosphere,
   FadeDefaults,
-} from './audio-registry';
+} from './audio-registry.js';
 
-export { AudioRegistry, AtmosphereBuilder } from './audio-registry';
+export { AudioRegistry, AtmosphereBuilder } from './audio-registry.js';

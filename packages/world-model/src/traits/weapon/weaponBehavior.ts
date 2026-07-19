@@ -3,10 +3,10 @@
  */
 
 import { SeededRandom } from '@sharpee/core';
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { WeaponTrait } from './weaponTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { WeaponTrait } from './weaponTrait.js';
 
 /**
  * Result of a weapon damage calculation

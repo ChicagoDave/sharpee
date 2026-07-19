@@ -2,6 +2,6 @@
  * Vocabulary contracts module exports
  */
 
-export * from './vocabulary-types';
-export * from './vocabulary-registry';
-export * from './vocabulary-adapters';
+export * from './vocabulary-types.js';
+export * from './vocabulary-registry.js';
+export * from './vocabulary-adapters.js';

@@ -11,19 +11,19 @@
  * 4. report: Generate success events with closed data
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
-import { buildEventData } from '../../data-builder-types';
-import { IFActions } from '../../constants';
-import { closedDataConfig } from './closing-data';
-import { ClosingMessages } from './closing-messages';
+import { buildEventData } from '../../data-builder-types.js';
+import { IFActions } from '../../constants.js';
+import { closedDataConfig } from './closing-data.js';
+import { ClosingMessages } from './closing-messages.js';
 
 // Import our payload types
-import { ClosedEventData } from './closing-event-data';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { nounPhraseFor } from '../../../utils';
+import { ClosedEventData } from './closing-event-data.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -34,7 +34,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the closed target is the only

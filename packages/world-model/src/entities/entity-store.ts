@@ -1,6 +1,6 @@
 // packages/world-model/src/entities/entity-store.ts
 
-import { IFEntity } from './if-entity';
+import { IFEntity } from './if-entity.js';
 
 /**
  * Entity store that works with IFEntity instances.

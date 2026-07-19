@@ -16,7 +16,7 @@
  * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 /**
  * Constructor/serialization data for {@link HealthTrait}. Every field is optional;

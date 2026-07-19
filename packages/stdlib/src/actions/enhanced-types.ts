@@ -9,8 +9,8 @@
 import { ISemanticEvent, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
-import { ValidatedCommand } from '../validation/types';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
+import { ValidatedCommand } from '../validation/types.js';
 
 /**
  * Result of a scope requirement check.

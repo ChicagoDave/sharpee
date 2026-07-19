@@ -13,10 +13,10 @@
 import { describe, it, expect, afterAll, beforeAll, vi } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { runInitCommand } from './init';
-import { runBuildBrowserCommand } from './build-browser';
-import { runBuildCommand } from './build';
-import { loadAuthorGame } from './author-game';
+import { runInitCommand } from './init.js';
+import { runBuildBrowserCommand } from './build-browser.js';
+import { runBuildCommand } from './build.js';
+import { loadAuthorGame } from './author-game.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
 

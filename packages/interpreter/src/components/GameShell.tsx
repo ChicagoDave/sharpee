@@ -7,10 +7,10 @@
  */
 
 import React from 'react';
-import { MenuBar } from './menu/MenuBar';
-import { StatusLine } from './status/StatusLine';
-import { TranscriptOverlay, ChatOverlay } from './overlays';
-import type { StoryMetadata } from '../types/story-metadata';
+import { MenuBar } from './menu/MenuBar.js';
+import { StatusLine } from './status/StatusLine.js';
+import { TranscriptOverlay, ChatOverlay } from './overlays/index.js';
+import type { StoryMetadata } from '../types/story-metadata.js';
 
 export interface GameShellProps {
   /** Story ID for persistence */

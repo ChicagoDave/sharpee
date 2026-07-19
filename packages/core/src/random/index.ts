@@ -2,4 +2,4 @@
  * Random utilities exports
  */
 
-export { SeededRandom, createSeededRandom } from './seeded-random';
+export { SeededRandom, createSeededRandom } from './seeded-random.js';

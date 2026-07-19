@@ -14,8 +14,8 @@
  * engine (ADR-228) via `switchingOnLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -26,13 +26,13 @@ import {
   LightSourceBehavior,
   VisibilityBehavior
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope';
-import { SwitchedOnEventData } from './switching_on-events';
-import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared';
-import { MESSAGES } from './switching_on-messages';
-import { nounPhraseFor } from '../../../utils';
-import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/index.js';
+import { SwitchedOnEventData } from './switching_on-events.js';
+import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared.js';
+import { MESSAGES } from './switching_on-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -43,7 +43,7 @@ import {
   runPostReport,
   runOnBlocked,
   blockedMessageId
-} from '../../lifecycle';
+} from '../../lifecycle/index.js';
 
 /**
  * Interceptor surface (ADR-228): the switched-on target is the only

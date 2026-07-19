@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/lockable/lockableBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { LockableTrait } from './lockableTrait';
-import { OpenableTrait } from '../openable/openableTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { LockableTrait } from './lockableTrait.js';
+import { OpenableTrait } from '../openable/openableTrait.js';
 import { EntityId } from '@sharpee/core';
 // No longer using ActionFailureReason enum
 

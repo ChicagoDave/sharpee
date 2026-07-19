@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/light-source/lightSourceBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { LightSourceTrait } from './lightSourceTrait';
-import { SwitchableBehavior } from '../switchable/switchableBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { LightSourceTrait } from './lightSourceTrait.js';
+import { SwitchableBehavior } from '../switchable/switchableBehavior.js';
 
 /**
  * Behavior for light source entities.

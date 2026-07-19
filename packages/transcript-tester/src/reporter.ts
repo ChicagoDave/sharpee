@@ -11,11 +11,11 @@ import {
   TestRunResult,
   CommandResult,
   AssertionResult
-} from './types';
+} from './types.js';
 
 // Use chalk for colors (chalk@4 for CommonJS compatibility)
 import chalk from 'chalk';
-import { formatEntityTraitLines } from './trait-formatter';
+import { formatEntityTraitLines } from './trait-formatter.js';
 
 /**
  * Report options

@@ -2,17 +2,17 @@
  * Manager exports
  */
 
-export { ThemeManager } from './ThemeManager';
-export type { ThemeManagerConfig } from './ThemeManager';
+export { ThemeManager } from './ThemeManager.js';
+export type { ThemeManagerConfig } from './ThemeManager.js';
 
-export { SaveManager } from './SaveManager';
-export type { SaveManagerConfig } from './SaveManager';
+export { SaveManager } from './SaveManager.js';
+export type { SaveManagerConfig } from './SaveManager.js';
 
-export { DialogManager } from './DialogManager';
-export type { DialogManagerConfig } from './DialogManager';
+export { DialogManager } from './DialogManager.js';
+export type { DialogManagerConfig } from './DialogManager.js';
 
-export { MenuManager } from './MenuManager';
-export type { MenuManagerConfig } from './MenuManager';
+export { MenuManager } from './MenuManager.js';
+export type { MenuManagerConfig } from './MenuManager.js';
 
-export { InputManager } from './InputManager';
-export type { InputManagerConfig } from './InputManager';
+export { InputManager } from './InputManager.js';
+export type { InputManagerConfig } from './InputManager.js';

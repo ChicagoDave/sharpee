@@ -2,7 +2,7 @@
  * Weapon trait for entities that can be used to attack
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 export interface IWeaponData {
   /** Damage bonus added to attacks - ADR-072 */

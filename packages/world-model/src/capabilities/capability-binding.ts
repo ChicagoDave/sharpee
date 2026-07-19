@@ -12,9 +12,9 @@
  * Owner: world-model (capability dispatch storage, ADR-090/ADR-207).
  */
 
-import { ITrait } from '../traits/trait';
-import type { CapabilityBehavior } from './capability-behavior';
-import type { CapabilityResolution, CapabilityMode } from './capability-defaults';
+import { ITrait } from '../traits/trait.js';
+import type { CapabilityBehavior } from './capability-behavior.js';
+import type { CapabilityResolution, CapabilityMode } from './capability-defaults.js';
 
 /**
  * Options for registering a capability behavior on a `WorldModel`.

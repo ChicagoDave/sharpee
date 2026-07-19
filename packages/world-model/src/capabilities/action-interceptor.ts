@@ -12,9 +12,9 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity } from '../entities';
-import { WorldModel } from '../world';
-import { CapabilityEffect } from './types';
+import { IFEntity } from '../entities/index.js';
+import { WorldModel } from '../world/index.js';
+import { CapabilityEffect } from './types.js';
 
 /**
  * Shared data object for passing data between interceptor phases.

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useEditorStore } from '../../store/editor-store';
+import { useEditorStore } from '../../store/editor-store.js';
 import './Header.css';
 
 export function Header() {
