@@ -10,8 +10,8 @@ is. The four structural traits no verb owns get their full entries in
 | `supporter` | `a supporter` (+ `with capacity N`) | holds things on top | §2.9 |
 | `pushable` | `pushable` | eligible for PUSH; pushType picks behavior | §2.9 |
 | `pullable` | `pullable` | eligible for PULL; state + count mutate | §2.9 |
-| `cuttable` | `cuttable` (+ `with tool <entity>`) | eligible for CUT; outcome is the entity's own implementation | §2.9 |
-| `diggable` | `diggable` (+ `with tool <entity>`) | eligible for DIG; same contract as cuttable | §2.9 |
+| `cuttable` | `cuttable` (+ `with the <entity>`) | eligible for CUT; outcome is the entity's own implementation | §2.9 |
+| `diggable` | `diggable` (+ `with the <entity>`) | eligible for DIG; same contract as cuttable | §2.9 |
 | `moveable-scenery` | — | dormant (nothing reads it) | §2.9 |
 | `attached` | — | dormant (nothing reads it) | §2.9 |
 | `room` | `a room` | a place; exits, darkness, first-visit text | §3.4 |
@@ -19,7 +19,7 @@ is. The four structural traits no verb owns get their full entries in
 | `enterable` | `enterable` | can be gotten into / onto | §3.4 |
 | `climbable` | `climbable` | eligible for CLIMB | §3.4 |
 | `vehicle` | — | enterable that moves with its passengers | §3.4 |
-| `openable` | `openable` (+ `with tool <entity>`) | open/closed state | §4.3 |
+| `openable` | `openable` (+ `with the <entity>`) | open/closed state | §4.3 |
 | `lockable` | `lockable` (+ `with the <key>`) | locked/unlocked + key contract | §4.3 |
 | `door` | `a door` + an exit's `through the <door>` tail | an entity that *is* the connection between two rooms | §4.3 |
 | `wearable` | `wearable` | can be worn; body part + layer rules | §5.2 |
@@ -49,43 +49,4 @@ is. The four structural traits no verb owns get their full entries in
 | `scene` | — | begin/end narrative phases, engine-evaluated each turn | §11.1 |
 | `story-info` | the story header | title/author/version for ABOUT | §11.1 |
 
-## 11.1 Structural & authoring traits
-
-**identity** — every entity's who-am-I, composed implicitly by every
-`create` block: the name, `aka` aliases, and description all land here,
-along with the article/proper-name machinery the sentence assembler uses
-(`properName` suppresses the article — the Chord player is proper, and
-any person can be with the person-only `proper` adjective, ADR-242),
-grammatical number (Chord's `plural` adjective sets it), the narration's
-pronoun set (`pronounSet` — a person's `pronouns he/she/it/they` body
-line, or a `define pronouns` named set for anything beyond the built-in
-four; absent means the by-number fallback, "it"), disambiguation
-adjectives, and three fields other chapters lean on: `concealed` (the
-hidden-item flag searching reveals, §6.2), `points` (score on first take,
-§2.1 — deduped per entity), and optional weight/volume/size. From Chord:
-name, aliases, description, `plural`, `concealed`, and on persons
-`proper` and `pronouns`; the rest is TypeScript.
-
-**region** — groups rooms into areas: a room carries a region id, regions
-nest, and going emits `region_exited`/`region_entered` events per crossed
-boundary (§3.1) — the platform hook for area-scoped music, weather, or
-prose. The trait's ambient-sound/smell fields are declared but nothing
-reads them yet (dormant). In Chord (ADR-236): `a region` with
-`containing` member lists (additive; regions nest by containing each
-other), plus `after entering it` / `after leaving it` boundary reactions
-and region-owned `on every turn` daemons — the full story is in §3.4.
-
-**scene** — narrative phases with a lifecycle: a scene waits, begins when
-its registered begin-condition fires, counts its active turns, and ends
-(or recurs) on its end-condition — evaluated every turn by an always-on
-engine plugin, emitting `if.event.scene_began` / `scene_ended` plus any
-registered reaction messages. The conditions are code (closures
-registered on the world, re-register after restore); the trait's state
-persists. TypeScript-only.
-
-**story-info** — the story's masthead on an invisible system entity:
-title, author, version, description, plus build metadata (build date,
-engine/client versions, ported-by, credits). ABOUT and VERSION read it
-(§10.1), the info channels and save metadata consume it. A Chord story
-never touches it directly — the header (`story "…" by "…"`, `version:`,
-`blurb:`) flows through and the engine materializes the trait.
+- [11.1 Structural traits](/chord/stdlib/traits/structural-traits)

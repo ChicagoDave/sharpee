@@ -1,0 +1,96 @@
+**attack** (`if.action.attacking`) — verbs `attack/hit/strike/kill/
+fight/slay/murder/break/smash/destroy X` (the last three landed with
+ADR-230 D4), plus `attack/hit/strike/kill X with/using Y` (the weapon
+form skips fight/slay/murder). An explicitly named weapon is implicitly
+taken if needed, and is a consulted command entity — a cursed sword's
+`on attacking it` clause fires; a weapon *inferred* from inventory is
+not. What happens depends on the target:
+
+- **A combatant** (the `combatant` trait) refuses
+  `violence_not_the_answer` unless a combat interceptor is registered —
+  real combat *is* the interceptor (normally the basic-combat extension,
+  §12.4), and since ADR-215 a `.story` registers it itself: `use combat`
+  in the story header wires the extension at load, no TypeScript, pure
+  IR preserved. The interceptor's post-execute hook is contractually the
+  combat resolution: it rolls the dice (seeded, in the extension —
+  outcomes vary run to run and stay that way per project policy),
+  damages through the `health` trait (§9.3), and hands stdlib the result
+  to narrate. Kills emit death events ([§9](/chord/stdlib/death)); a dead target refuses
+  `already_dead`.
+- **A breakable** (one-hit) or **destructible** (hit-pointed) thing
+  genuinely breaks — `target_broke`, or `target_damaged` /
+  `target_destroyed` across multiple blows, honoring armor,
+  weapon-required, and wrong-weapon-type rules, with `transformTo`
+  (shards replace the vase) and `revealExit` support.
+- **Anything else, including a plain person without `combatant`**: the
+  attack is ineffective — and today prints nothing at all (the path
+  carries a raw legacy string instead of a message ID, and the current
+  build renders it as blank output — flagged).
+
+The author writes:
+
+```chord
+story "Guard Post" by "stdlib reference"
+  id: ref-combat
+  version: 0.0.1
+  use combat
+
+create the Guard Post
+  a room
+
+  A narrow stone room smelling of oil and rust.
+
+create the rusty cutlass
+  aka cutlass
+  weapon with damage 5 and skill-bonus 2
+  in the Guard Post
+
+  Rust has not improved its edge, but it still has one.
+
+create the deserter
+  a person, combatant with health 8 and skill 30
+  in the Guard Post
+
+  A gaunt deserter with a wary eye on the door.
+
+create the water barrel
+  aka barrel
+  scenery
+  in the Guard Post
+
+  A barrel of stale drinking water.
+
+create the player
+  starts in the Guard Post
+```
+
+The player sees:
+
+```transcript
+> take the cutlass
+Taken.
+
+> attack the barrel
+
+
+> attack the deserter with the cutlass
+You land a solid blow on the deserter, dealing 6 damage!
+```
+
+One `use` line buys the whole combat layer: `combatant` and `weapon`
+compose with typed fields, and the attack resolves through real dice —
+the transcript shows one genuine run, and the same command may instead
+answer "You swing at the deserter but miss!" (outcomes vary run to run,
+by policy). The blank line after `attack the barrel` is the flagged
+ineffective path, verbatim.
+
+| | attack (`if.action.attacking.*`) |
+|---|---|
+| Refusals | `no_target` · `self` · `violence_not_the_answer` (combatant, no interceptor) · `already_dead` |
+| Success | combat narration via the `combat.*` message families (the extension's, carried by the lang layer) · `target_broke` · `target_damaged` / `target_destroyed` |
+| Events | `if.event.attacked` · death/knockout and exit-revealed events after the blow text |
+
+Interceptors: `on attacking it` on the target — a story wanting scripted
+fights replaces the reply there instead of registering combat — and on
+an explicitly named weapon; a story can also register its own combat
+interceptor on the same trait seam (§12.4).

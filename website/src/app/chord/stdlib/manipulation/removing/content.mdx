@@ -1,0 +1,87 @@
+**remove X from Y** (`if.action.removing`) — take an item out of a
+container or off a supporter, named source and all. Core grammar since
+ADR-230: `remove X from Y`, `extract X from Y`, and `take X from Y` — the
+last optionally `with/using Z`, a tool form whose named tool becomes a
+consulted command entity (the old orphan `taking_with` id was retired onto
+removing in the same pass). Success is semantically a take: the success
+**event** is `if.event.taken`, with the source recorded in the payload.
+
+The author writes:
+
+```chord
+create the Crypt Chapel
+  a room
+
+  A low chapel of niches and candle smoke.
+
+create the reliquary
+  a container
+  scenery
+  in the Crypt Chapel
+
+  A gilt reliquary, its lid long lost.
+
+create the stone bier
+  aka bier
+  a supporter
+  scenery
+  in the Crypt Chapel
+
+  A stone bier worn smooth at the edges.
+
+create the ivory comb
+  aka comb
+  in the reliquary
+
+  A carved ivory comb.
+
+create the fingerbone
+  aka bone
+  in the reliquary
+
+  A saint's fingerbone, brown with age.
+
+  on taking it
+    refuse bone-sacred
+  end on
+
+  phrase bone-sacred:
+    The relic is not for the living to carry off.
+
+create the linen shroud
+  aka shroud
+  on the stone bier
+
+  A folded linen shroud.
+
+create the player
+  starts in the Crypt Chapel
+```
+
+The player sees:
+
+```transcript
+> remove the comb from the reliquary
+You take the ivory comb from the reliquary.
+
+> remove the shroud from the bier
+You take the linen shroud from the stone bier.
+
+> remove the fingerbone from the reliquary
+The relic is not for the living to carry off.
+```
+
+Each source kind renders its own success key — and the fingerbone's
+*taking* guard stops REMOVE-FROM cold: naming the source dodges nothing.
+
+| | remove (`if.action.removing.*`) |
+|---|---|
+| Refusals | `no_target` · `no_source` · `already_have` · `not_in_container` / `not_on_surface` · `container_closed` · `cannot_take` (carrying capacity) · `nothing_to_remove` (`remove all from X` with nothing eligible) |
+| Success | `removed_from` (a container) · `removed_from_surface` (a supporter) |
+| Events | `if.event.taken` (source in the payload) |
+
+Interceptors: the item slot consults `on removing it` and then `on taking
+it`, in that order; the source consults `on removing it` only, and so does
+an explicitly named tool, after item and source — as with
+putting/inserting, register per entity under one gerund. Bare `remove X`
+still means undressing ([§5](/chord/stdlib/wearing)).

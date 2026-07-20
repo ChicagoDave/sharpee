@@ -1,0 +1,28 @@
+**wearable** (`wearable` — adjective). The one live trait here. Fields
+stdlib actually reads: the worn state (`worn`, `wornBy`), `bodyPart`
+(default `torso`) and `layer` (default 1) for the conflict rules, plus the
+undeclared `cursed` property the removal check probes. The layer-default
+quirk: because `layer` defaults to 1, the "same body part, no layers"
+conflict branch is unreachable, and garments built with the defaults never
+conflict at all — that is why the vest in §5.1 goes on over the worn tunic
+and the tunic comes off from underneath it. Set explicit layers (TypeScript
+today) and the layering rules engage: `hands_full` on wear,
+`prevents_removal` on removal. Several declared fields are dormant (`slot`,
+`blocksSlots`, `wearableOver`, `canRemove`, `weight`, `bulk`, the message
+overrides) — don't build on them yet.
+
+**clothing** (trait — dormant, and a gotcha). Duplicates the wearable
+fields and adds material/style/condition, but **no action reads it** — and
+because it is a *different* trait type, an item composed with only
+`clothing` fails wearing's `wearable` check and cannot be put on. Use
+`wearable` and keep fabric flavor in descriptions.
+
+**equipped** (trait — combat-adjacent). Equipment slots and stat modifiers;
+the wearing actions ignore it — `equip` the verb is just a synonym for wear
+— and its one live consumer is combat's weapon selection (§8.2).
+TypeScript-only.
+
+**open-inventory** (trait — a scope marker, no fields). Composed onto an
+NPC, it makes what they carry *reachable*, not just visible — the
+difference between admiring the guard's key ring and being able to take it
+(§2.1) or use it in a lock (§4.2). TypeScript-only today.

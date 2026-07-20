@@ -1,0 +1,124 @@
+**push** (`if.action.pushing`) — verbs `push`, `press`, `shove`, `move`,
+plus the directional form `move X <direction>` (ADR-230 D4 ruling: `move`
+is manipulation, never movement — the direction rides into the pushing
+action, not going). Needs the `pushable` trait; pushing anything else gets
+`fixed_in_place` (scenery) or `pushing_does_nothing`. The trait's
+`pushType` picks the behavior: `button` — the one genuinely stateful push
+(if the entity is also `switchable`, pushing toggles it — `button_clicks`
+when it is a button, `switch_toggled` otherwise; a non-switchable button
+just clicks, `button_pushed`); `heavy` — needs a direction to budge
+(`pushed_with_effort`), refuses without one (`wont_budge`); `moveable` —
+slides when pushed with a direction (`pushed_direction`, or
+`reveals_passage` when the trait says it hides something), gets nudged
+without one (`pushed_nudged`). Outside the button toggle, stdlib
+**narrates** movement but relocates nothing — the story reacts to
+`if.event.pushed` (it carries the direction) or an `after pushing it`
+clause to actually change the world; which wall opens is puzzle logic, not
+platform logic. One honest gap: from a `.story` file, bare `pushable`
+composes the default button configuration — selecting `heavy` or
+`moveable` is TypeScript territory today.
+
+**pull** (`if.action.pulling`) — verbs `pull`, `drag`, `yank`, `tug`.
+Needs `pullable`. A successful pull sets the trait's state to `pulled` (a
+second pull refuses `already_pulled`) and bumps its `pullCount`; a worn
+item refuses `worn`. Everything a pull *means* — the lever opens the
+sluice — is story logic reacting to `if.event.pulled` or written as an
+`on pulling it` / `after pulling it` clause.
+
+**touch** (`if.action.touching`) — verbs `touch`, `feel`, `rub`, `pat`,
+`stroke`, `poke`, `prod`. No trait needed, no state changed; the reply is
+inferred from what the thing is — a lit light source `feels_hot`, a
+running device `feels_warm` (or `device_vibrating`), wearables
+`feels_soft`, doors `feels_smooth`, containers and supporters `feels_hard`
+(a container with drink in it sloshes — `liquid_container`), drinkables
+`feels_wet`, scenery `immovable_object` — otherwise the verb itself
+answers (`poked`, `patted`, `stroked`, `touched_gently`, `touched`).
+
+The author writes:
+
+```chord
+create the Signal Box
+  a room
+
+  A cramped cabin of levers and brass above the junction.
+
+create the signal lever
+  aka lever
+  pullable
+  scenery
+  in the Signal Box
+
+  A tall iron lever, worn bright at the grip.
+
+  after pulling it
+    phrase lever-thrown
+  end after
+
+  phrase lever-thrown:
+    Somewhere down the line, the semaphore arm clanks to clear.
+
+create the brass button
+  aka button
+  pushable
+  scenery
+  in the Signal Box
+
+  A brass button labelled BELL.
+
+create the iron stove
+  aka stove
+  scenery
+  in the Signal Box
+
+  A squat iron stove, cold since spring.
+
+create the stationmaster's cap
+  aka cap
+  wearable
+  in the Signal Box
+
+  A red wool cap with a shiny peak.
+
+create the player
+  starts in the Signal Box
+```
+
+The player sees:
+
+```transcript
+> push the stove
+The iron stove is fixed in place.
+
+> move the button north
+You push the brass button.
+
+> pull the lever
+You pull the signal lever.
+
+Somewhere down the line, the semaphore arm clanks to clear.
+
+> pull the lever
+The signal lever has already been pulled.
+
+> touch the cap
+The stationmaster's cap feels soft.
+
+> touch the stove
+The iron stove is solid and immovable.
+```
+
+The platform owns everything stateful here — the scenery refusal, the
+button push under `move`'s manipulation channel, the `already_pulled`
+gate, the wool and iron inferences — and the one line that changes
+anything beyond the signal box is the story's `after pulling it` reaction.
+
+| | push (`if.action.pushing.*`) | pull (`if.action.pulling.*`) | touch (`if.action.touching.*`) |
+|---|---|---|---|
+| Refusals | `no_target` · `fixed_in_place` · `pushing_does_nothing` · `wont_budge` (heavy, no direction) · `wearing_it` · `too_heavy` | `no_target` · `cant_pull_that` · `already_pulled` · `worn` | `no_target` (touch refuses almost nothing) |
+| Success | `button_pushed` · `button_clicks` · `switch_toggled` · `pushed_with_effort` · `pushed_direction` · `reveals_passage` · `pushed_nudged` | `pulled` · `nothing_happens` | `feels_hot` · `feels_warm` · `device_vibrating` · `feels_soft` · `feels_smooth` · `feels_hard` · `liquid_container` · `feels_wet` · `feels_normal` · `immovable_object` · `touched` · `touched_gently` · `poked` · `prodded` · `patted` · `stroked` |
+| Events | `if.event.pushed` | `if.event.pulled` | `if.event.touched` / `if.event.touch_blocked` |
+
+Interceptors: `on`/`after pushing it`, `pulling it`, `touching it` on the
+target. Touching, with no state of its own, is a favorite probe to hang
+flavor on (`on touching it`) — listening plays the same role for sound
+(§6.3).

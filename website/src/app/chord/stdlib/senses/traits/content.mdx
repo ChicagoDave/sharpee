@@ -1,0 +1,32 @@
+**readable** (`readable`, optionally `with text "…"` — adjective). The
+text itself, plus `readableType` (text/book/sign/inscription — picks
+the message key), page fields for books (`pageContent`, `currentPage`,
+`pages`), the `isReadable`/`cannotReadMessage` gate, and `hasBeenRead`.
+From Chord only `text` is settable; pages and types are TypeScript. The
+letter and inscription in §6.2 are both this trait.
+
+**scenery** (`scenery` — adjective). Fixed in place: blocks taking with
+`fixed_in_place` or its own `cantTakeMessage` (§2.1), drops out of "You
+can see …" lists while remaining examinable (the telescope in §6.1),
+and reads in place rather than being picked up (§6.2). Two more fields,
+`mentioned` and `visible`, fine-tune listing and visibility —
+TypeScript-only settings.
+
+**concealment** (trait — for hiding *actors*, ADR-148). Declares an
+entity as a hiding spot: which positions it supports (behind, under,
+on, inside), how good the cover is, how many can hide there. The hiding
+action (§8.4) validates against it and marks the hider with a dynamic
+concealed-state trait whose visibility behavior makes them unseeable —
+story-overridable. Composable as the `hiding-spot` adjective — bare it
+supports every position, `with position <word>` narrows to one; hidden
+*items* use the identity `concealed` flag instead (§6.2).
+
+**acoustic** (trait, TypeScript-only, ADR-172/173). Sits on walls and
+rates how sound crosses them: thin / default / thick / soundproof, with
+a dampener variant for tapestries and peepholes.
+
+**listener** (trait, TypeScript-only, ADR-172/173). Marks an entity as
+receiving propagated sounds — the engine attaches it to the player
+automatically; each delivered sound arrives as a
+`sound.audibility.heard` event with rendered prose. No story ships on
+this system yet; it is the platform's eavesdropping substrate.

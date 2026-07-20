@@ -1,0 +1,83 @@
+**throw** (`if.action.throwing`) — `throw X at Y` and `throw X to Y`, with
+`toss` and `hurl` in both forms. (The action also implements bare and
+directional throws — `throw the rock`, `throw the rock north` — but no
+core grammar reaches them today; a story must add those patterns itself.)
+The item is implicitly taken if needed; the target must be in the same
+room; anything heavier than 10 kg refuses with `too_heavy`.
+
+What happens next is probabilistic — document-worthy behavior, not a bug,
+and per project policy the dice are never disabled. The platform infers
+fragility from the item's name and description (glass, crystal, bottle,
+vase, china, porcelain, "delicate", "fragile"). Throwing **at a person**:
+about a 70% hit — a nimble target may duck (`target_ducks`), a catcher may
+catch (`target_catches`, and then they hold it), a hit lands `hits_target`
+and annoys them (`target_angry`); a fragile item that hits usually breaks
+(`breaks_against`). Throwing **at anything else**: about a 90% hit; the
+item lands on a supporter (`lands_on`), in an open container (`lands_in`),
+bounces off a closed one (`bounces_off`), and fragile items usually break.
+A broken item is removed from play entirely, with an
+`if.event.item_destroyed` event (`cause: 'thrown'`).
+
+The author writes:
+
+```chord
+create the Taproom
+  a room
+
+  A low-beamed taproom, all smoke and sawdust.
+
+create the stone hearth
+  aka hearth
+  scenery
+  in the Taproom
+
+  A soot-blackened stone hearth.
+
+create the gilt mirror
+  aka mirror
+  scenery
+  in the Taproom
+
+  The landlord's prized gilt mirror, hung above the bar.
+
+  on throwing it
+    refuse mirror-luck
+  end on
+
+  phrase mirror-luck:
+    Seven years' bad luck, and the landlord watching? You lower your arm.
+
+create the green bottle
+  aka bottle
+
+  An empty green glass bottle.
+
+create the player
+  starts in the Taproom
+  carries the green bottle
+```
+
+The player sees (one genuine run — the second command rolls live dice):
+
+```transcript
+> throw the bottle at the mirror
+Seven years' bad luck, and the landlord watching? You lower your arm.
+
+> throw the bottle at the hearth
+The green bottle smashes against the stone hearth!
+```
+
+The mirror's target-side guard is deterministic; the hearth throw is not —
+the same command can also miss, or hit without breaking. This run's
+"bottle" name made the item fragile, and the smash removed it from play.
+
+| | throw (`if.action.throwing.*`) |
+|---|---|
+| Refusals | `no_item` · `not_holding` · `target_not_visible` · `target_not_here` · `no_exit` · `too_heavy` (over 10 kg) · `self` |
+| Outcomes | `hits_target` · `misses_target` · `target_ducks` · `target_catches` · `target_angry` · `lands_on` · `lands_in` · `bounces_off` · `breaks_against` · `breaks_on_impact` · `fragile_breaks` · `thrown_down` · `thrown_gently` · `sails_through` |
+| Events | `if.event.thrown` (`throwType`, `hit`, `willBreak`, `finalLocation` in the payload — enough for a story reaction to know exactly what happened) / `if.event.throw_blocked` · `if.event.item_destroyed` (`cause: 'thrown'`) |
+
+Interceptors: both the item and the target are consulted (`on throwing it`
+on either) — a glacier can react to being hit in the same command as an
+explosive reacts to being thrown; a capability behavior registered for
+`if.action.throwing` on the target takes over the whole throw.

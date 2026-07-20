@@ -1,0 +1,64 @@
+**wait** (`wait`, `z`) is the canonical "let a turn pass": a full,
+snapshot-taking, daemon-ticking turn in which nothing else happens —
+N waits let N rounds of scheduled behavior (§12.2) play out. One
+message, `time_passes` (the lang file's twelve wait variants are dead
+inventory — flagged). Stories react to `if.event.waited`, or gate
+things on turns passing.
+
+**sleep** (`sleep`, `nap`, `doze`, `rest`, `slumber` — all five parse
+since ADR-230 D2/D4). Flavor-only: one message (`slept`), no turns
+skipped beyond its own, no health interaction — give it story meaning
+with story logic if a story needs real sleep. `z` remains a wait.
+
+**again** (`again`, `g`) re-runs the last successful non-meta command by
+re-parsing its original text — so the repeat is honest: it can fail
+where the original succeeded if the world changed. Meta commands (undo,
+save, again itself) never enter history, so they can't be repeated;
+`nothing_to_repeat` covers an empty history.
+
+**undo** (`undo`) rolls back one full-world snapshot, taken before
+every substantive turn (looks, examines, inventory, and the metas don't
+burn a slot). Depth is an engine setting, default 10; consecutive undos
+work to that depth. There is no per-story undo veto, and no
+undo-after-death — once the defeat ending lands the game has stopped
+(§9.1's veto window is the story's chance).
+
+The player sees:
+
+```transcript
+> wait
+Time passes...
+
+> sleep
+You sleep for a while.
+
+> take the flare
+Taken.
+
+> again
+You already have the signal flare.
+
+> undo
+Previous turn undone.
+
+> undo
+Previous turn undone.
+
+> score
+You have scored 0 out of 10, earning you the rank of a Novice.
+```
+
+AGAIN's repeat is honest — the re-parsed take refuses where the
+original succeeded — and two UNDOs peel back first that failed repeat,
+then the take itself, the score award reverting with it. For Chord
+stories, everything the language tracks — states, occurrence counters,
+`once` flags, sequence progress, awards — lives in world state, so undo
+(and save/restore) cover it with no author effort (ADR-210 AC-6,
+transcript-pinned).
+
+| | Refusals | Success |
+|---|---|---|
+| **wait** (`if.action.waiting.*`) | — | `time_passes` (event `if.event.waited`) |
+| **sleep** (`if.action.sleeping.*`) | — | `slept` |
+| **again** (`if.action.again.*`) | `nothing_to_repeat` | renders whatever the repeated command renders |
+| **undo** (`if.action.undoing.*`) | `nothing_to_undo` · `undo_failed` | `undo_success` |

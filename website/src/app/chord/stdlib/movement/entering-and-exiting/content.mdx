@@ -1,0 +1,87 @@
+**enter** (`if.action.entering`) — `enter X`, `get in/into X`, `climb
+in/into X`, `go in/into X`, `board X`, `get on X`. One gate: the target
+needs the `enterable` trait — anything else refuses with
+`not_enterable` (checked in the action: parse by syntax, refuse by
+world, since ADR-231). A closed openable refuses with
+`container_closed`; already inside → `already_inside`. The trait's one
+setting, its preposition, decides whether you are *in* the bathtub or
+*on* the park bench (`entered` vs `entered_on`); `on` is a TypeScript
+setting today (§3.4). There is no occupancy limit — `too_full` is
+reserved but never fires.
+
+**exit** (`if.action.exiting`) — bare `exit`, `leave`, `get out`, `go
+out`, `climb out`, `disembark`, `alight`. A named target parses too —
+`exit the chair` — and naming something you aren't inside refuses with
+`not_in_that` (ADR-231). EXIT undoes an ENTER: out of the container,
+off the supporter. Standing in a plain room refuses with
+`already_outside` — leaving rooms is GO's job. A closed openable
+container refuses with `container_closed`: you can shut yourself in.
+
+The author writes:
+
+```chord
+create the Laundry
+  a room
+
+  Copper tubs, drying racks, and a mangle with an evil reputation.
+
+create the laundry chest
+  aka chest
+  a container, enterable, openable, starts open
+  in the Laundry
+
+  A wicker chest big enough to hide in.
+
+create the mangle
+  scenery
+  in the Laundry
+
+  Two iron rollers and a crank. Keep your fingers clear.
+
+create the player
+  starts in the Laundry
+```
+
+The player sees:
+
+```transcript
+> enter the mangle
+You can't enter the mangle.
+
+> get into the chest
+You get into the laundry chest.
+
+> close the chest
+You close the laundry chest.
+
+> exit
+The laundry chest is closed.
+
+> open the chest
+You open the laundry chest.
+
+Inside the laundry chest you see yourself.
+
+> exit
+You get out of the laundry chest.
+
+> exit the chest
+But you aren't in the laundry chest.
+
+> exit
+You're not inside anything.
+```
+
+One trait draws the line — the mangle turns you away, the chest lets
+you in — and the composed openable makes the lid real: closed, it holds
+you until you open it from the inside (revealing, honestly, yourself).
+
+| | enter (`if.action.entering.*`) | exit (`if.action.exiting.*`) |
+|---|---|---|
+| Refusals | `not_enterable` · `container_closed` · `already_inside` (`too_full` reserved, never fires) | `already_outside` · `not_in_that` · `container_closed` (shut in) · `nowhere_to_go` |
+| Success | `entered` · `entered_on` (`on`-preposition supporters) | `exited` · `exited_from` |
+| Events | `if.event.entered` | `if.event.exited` |
+
+Cross-references: `climb into X` is entering and `climb out` is exiting
+(§3.3); the `enterable` trait and the vehicle trait that rides on it
+are in §3.4.

@@ -1,0 +1,16 @@
+After each *successful* player action — never after a failed one, and
+never after a meta command — the registered turn plugins run in
+descending priority, and their events join the same turn's output: an
+NPC's move and a fuse's explosion read as part of the turn that caused
+them. Each plugin sees the world, the turn, the player, the action's
+result, and the engine's seeded randomness; plugin state rides in saves.
+
+| Plugin | Priority | A Chord story has it | A TypeScript story has it |
+|---|---|---|---|
+| NPC behavior (§12.3) | 100 | always — NPCs are core vocabulary, no opt-in (ADR-215) | when the story registers it |
+| State machines (§12.3) | 75 | with `use state-machines` in the header | when the story registers it |
+| Scene evaluation (§11.1) | 60 | always on (engine level) | always on (engine level) |
+| Scheduler (§12.2) | 50 | exactly when at least one daemon compiled | when the story registers it |
+
+Only the scene evaluator is always on at the engine level; a TypeScript
+story registers the rest itself (Dungeo registers all three).

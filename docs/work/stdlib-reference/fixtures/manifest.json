@@ -1,0 +1,17 @@
+{
+  "manipulation/throwing.story": {
+    "anyOf": {
+      "throw the bottle at the hearth": [
+        "You throw the green bottle at the stone hearth, but miss.",
+        "You throw the green bottle at the stone hearth. It hits!"
+      ]
+    }
+  },
+  "npcs/combat.story": {
+    "anyOf": {
+      "attack the deserter with the cutlass": [
+        "You swing at the deserter but miss!"
+      ]
+    }
+  }
+}

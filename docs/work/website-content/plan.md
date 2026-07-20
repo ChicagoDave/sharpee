@@ -136,6 +136,12 @@
 - **Status**: PENDING
 - **Verification**: `npm run build` green + `shoot-site.mjs` full-site screenshot pass (closing pass) + a REAL-PATH playground proof in the g2/g3 pattern (Chromium drives the editor: paste fixture → Play → assert rendered turns; AC-4's fixture verbatim).
 
+### Phase 7a: Minimal-scroll IA + sticky/accordion rail (RULED: David, 2026-07-19, session 7692ef — ADR-244 ACCEPTED)
+- **Ruling**: keep each page to minimal scroll; the rail is sticky; all top menu groups closed except the one the reader is in. Durable record: `docs/architecture/adrs/adr-244-website-minimal-scroll-ia.md`.
+- **Granularity ruled**: one page per numbered subsection (§N.M); chapter pages become short landings (intro + linked entry list). **Scope ruled**: stdlib split NOW; sticky+accordion rail site-wide NOW; Author guide / Phrasebook / Fernhill splits LATER (follow-up phase, not silently dropped).
+- **Status**: COMPLETE for the ruled scope (2026-07-19, session 7692ef) — 40 `/chord/stdlib/<chapter>/<slug>` entry pages split at `## N.M` boundaries (fences moved wholesale, byte-integrity preserved); 11 chapter landings; `nav.ts` gained a `children` item level (pager walks entries in reading order, breadcrumbs go 4-deep); `site-shell.tsx` header + rail sticky, accordion keyed to pathname (hand-toggles reset on navigation), children render only on the active branch. Build green 90 routes; screenshots verified (scrolled-sticky proof, landing, cross-section accordion).
+- **Follow-up (PENDING)**: apply the §-split to Author guide chapters, Phrasebook pages, and Fernhill chapters.
+
 ## Deferrals
 - **Deployment to David's Linux server is explicitly OUT of scope** for this plan (his infrastructure) — a named deferral, not silently dropped. Revisit when he rules on it.
 - ~~The ADR-191 in-browser-compiler playground~~ **RULED IN SCOPE (David, 2026-07-19)** — now Phase 5, gated on ADR-191's amendment + interview + acceptance. Only ADR-191's Mode B (TS tab) and later-phase items stay deferred, per the ADR's own phasing.

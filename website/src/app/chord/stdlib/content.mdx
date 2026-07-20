@@ -7,10 +7,14 @@ hatches; this one catalogs everything already built in, so you know what
 *not* to define before reaching for those hatches.
 
 <Callout kind="note">
-  Current at Sharpee 3.2 — swept against the shipped extension surface
-  (`use combat`, `use state-machines`), doors, regions, topics, and person
-  identity, with every entry's Chord availability stated per the parity
-  audit (54/54 standard actions reachable from a `.story` file).
+  Current at Sharpee 3.2 (example-first rework 2026-07-19). Every entry is
+  built around a worked example: the `.story` fences are verbatim excerpts
+  of committed fixtures, and every transcript is real engine output,
+  replayed and byte-checked by the committed harness
+  (`docs/work/stdlib-reference/verify.mjs`) on each change. Chord
+  availability per entry follows the parity audit (54/54 standard actions
+  reachable from a `.story` file); the platform notes that remain are
+  honest gaps.
 </Callout>
 
 ## 1.1 What the standard library is
@@ -42,12 +46,15 @@ The reference is organized by author task:
 
 ## 1.2 How an action entry is laid out
 
-Each action entry tells you: the **verbs that actually parse** (grounded
-in the parser's grammar, not the help lists — where a listed synonym does
-not parse, the entry says so), the **trait** that makes an entity
-eligible (or "anything"), the **checks** in the order the action makes
-them and the refusal each produces, the **message keys** you can retarget,
-and the **events** it emits for story reactions.
+Each action entry leads with the basics — the **verbs that actually
+parse** (grounded in the parser's grammar; where a listed synonym does
+not parse, the entry says so) and the **trait** that makes an entity
+eligible (or "anything"). Then a worked example: *the author writes* a
+small `.story` scene exercising the entry's override seams, and *the
+player sees* the real transcript it produces. A compact table closes the
+entry with the **message keys** you can retarget (Refusals and Success
+rows) and the **events** it emits for story reactions, followed by a
+one-line note on which `on`/`after` clauses the action consults.
 
 ## 1.3 Standard behavior vs. per-entity verbs
 

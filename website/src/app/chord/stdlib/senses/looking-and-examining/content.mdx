@@ -1,0 +1,84 @@
+**look** (`if.action.looking`) — bare `look`, `l`, `look around`.
+Rerenders the room: name and description (a first visit prefers the
+room's first-time description and marks the room visited), the "You can
+see …" list (scenery excluded), and the contents of open containers and
+supporters in view. In a dark room all of that collapses to `room_dark`.
+
+**examine** (`if.action.examining`) — `examine X`, `x X`, `inspect X`,
+`check`/`view`/`observe X` (ADR-230 D4), `look at X`, and `look
+[carefully] at X` — the adverb adds nothing; the separate
+`examining_carefully` id it used to parse to is gone (ADR-230 D3a).
+Needs only visibility, not reach. The reply is the entity's description;
+an open container or supporter adds a contents line, and a live
+**detail** sentence can ride on the end of the description — Chord's
+gated `phrase detail while <condition>:` override (chord-language.md
+§2.10) is exactly that seam. The message key is trait-aware, first
+match wins: `examined_container`, `examined_supporter`,
+`examined_switchable`, `examined_readable`, `examined_wearable`,
+`examined_door` — otherwise plain `examined`.
+
+The author writes:
+
+```chord
+create the Observatory
+  a room
+
+  A domed room of cold air and colder brass.
+
+create the brass telescope
+  aka telescope
+  scenery, switchable
+  in the Observatory
+
+  A long brass telescope aimed at the slot in the dome.
+
+  phrase detail while it is on:
+    Its clockwork drive ticks as it tracks the sky.
+
+create the star chart
+  aka chart
+  in the Observatory
+
+  A chart of the northern constellations.
+
+create the player
+  starts in the Observatory
+```
+
+The player sees:
+
+```transcript
+> look
+Observatory
+A domed room of cold air and colder brass.
+
+You can see a star chart here.
+
+> examine the telescope
+A long brass telescope aimed at the slot in the dome.
+
+> turn on the telescope
+The brass telescope hums to life.
+
+> examine the telescope
+A long brass telescope aimed at the slot in the dome. Its clockwork drive ticks as it tracks the sky.
+```
+
+The scenery telescope stays out of the "You can see …" list but
+examines fine, and the `detail while` phrase appends its sentence to
+the description only while the condition holds.
+
+| | look (`if.action.looking.*`) | examine (`if.action.examining.*`) |
+|---|---|---|
+| Refusals | (`room_dark` in the dark) | `no_target` · `not_visible` |
+| Success | `contents_list` · `container_contents` · `surface_contents` | `examined` · `examined_self` · `examined_container` · `examined_supporter` · `examined_switchable` · `examined_readable` · `examined_wearable` · `examined_door` · `nothing_special` |
+| Events | `if.event.looked` · `if.event.room.description` · `if.event.list.contents` | `if.event.examined` |
+
+Interceptors: `on examining it` / `after examining it` on the target
+(the robin in chord-language.md §2.10 rides this seam). Looking
+consults no interceptor clauses — there is no entity to hang them on;
+use the room's `after entering it` or an `on every turn` daemon
+instead.
+
+Brief mode is not implemented — verbose is hardcoded on, so
+`room_description_brief` is unreachable.

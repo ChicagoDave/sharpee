@@ -1,0 +1,113 @@
+**eat** (`if.action.eating`) — verbs `eat/consume/devour X`, plus
+`munch` and `nibble [on] X`, gated on the `edible` trait
+(`not_edible`). Liquids refuse `is_drink` ("You should drink that, not
+eat it") and solids refuse drinking with `not_drinkable` — there is no
+cross-routing. Food is implicitly taken first. Multi-serving food counts
+down (`eaten_some`, then `eaten_all`; exhausted → `already_consumed`),
+and the message honors the trait's data: `taste`
+(`delicious`/`tasty`/`bland`/`awful`), a `poison` effect (message-only —
+"It tastes strange…" — no mechanical harm today), `satisfiesHunger`
+(`filling` / `still_hungry`). Event: `if.event.eaten`.
+
+**drink** (`if.action.drinking`) — verbs `drink/sip/quaff/swallow/
+imbibe X`, plus `drink from X` and `sip from X`. Two things are
+drinkable: an edible marked liquid — in a `.story`, the `drinkable`
+adjective, which composes the edible trait with the liquid flag set,
+order-independent with `edible` (ratchet G1) — or a **container of
+liquid** (`containsLiquid`, TypeScript territory), open if openable.
+Container drinking decrements `liquidAmount` and reports
+`from_container` / `empty_now`. Verb flavor: `sipped`, `quaffed`.
+Event: `if.event.drunk`.
+
+The author writes:
+
+```chord
+create the Pantry
+  a room
+
+  Stone shelves, cool air, the smell of apples.
+
+create the bramley apple
+  aka apple
+  edible
+  in the Pantry
+
+  A knobbly green cooking apple.
+
+create the elderflower cordial
+  aka cordial
+  drinkable
+  in the Pantry
+
+  Pale gold in a stoppered bottle.
+
+create the ship's biscuit
+  aka biscuit
+  edible
+  in the Pantry
+
+  Dense enough to drive nails.
+
+  after eating it
+    remove it
+  end after
+
+create the player
+  starts in the Pantry
+```
+
+The player sees:
+
+```transcript
+> eat the cordial
+You should drink the elderflower cordial, not eat it.
+
+> drink the apple
+That's not something you can drink.
+
+> eat the apple
+(first taking the bramley apple)
+
+Taken.
+
+You eat the bramley apple.
+
+> eat the apple
+There's nothing left of the bramley apple to eat.
+
+> eat the biscuit
+(first taking the ship's biscuit)
+
+Taken.
+
+You eat the ship's biscuit.
+
+> inventory
+You are carrying:
+
+a bramley apple
+
+> drink the cordial
+You drink the elderflower cordial.
+
+> sip the cordial
+There's nothing left to drink.
+```
+
+The cross-refusals, the implicit take, and the honest caveat as a pair:
+**eating never removes the item** — the fully eaten apple stays in
+inventory at zero servings — and the biscuit's `after eating it` →
+`remove it` clause is the one-line remedy.
+
+| | eat (`if.action.eating.*`) | drink (`if.action.drinking.*`) |
+|---|---|---|
+| Refusals | `no_item` · `not_edible` · `is_drink` · `already_consumed` | `no_item` · `not_drinkable` · `already_consumed` · `container_closed` |
+| Success | `eaten` · `eaten_some` / `eaten_all` · taste flavor (`delicious`/`tasty`/`bland`/`awful`) · `filling` / `still_hungry` · `poisonous` | `drunk` · `sipped` / `quaffed` · `from_container` / `empty_now` |
+| Events | `if.event.eaten` | `if.event.drunk` |
+
+Interceptors: `on eating it` / `after eating it` and `on drinking it` /
+`after drinking it` on the item, as above.
+
+An emptied `containsLiquid` vessel stays nominally drinkable and keeps
+saying `empty_now` (caveat, flagged). Neither shipped story exercises
+eat/drink; the zoo's feeding is its own `feedable` trait.

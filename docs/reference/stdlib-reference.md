@@ -8,16 +8,15 @@ document teaches the language and its `define trait` / `define action` / hatch
 escape hatches; this one catalogs everything already built in, so you know what
 *not* to define before reaching for those hatches.
 
-> **Status: CURRENT at Sharpee 3.2** (currency-swept 2026-07-19 against
-> the post-ADR-242 surface; previously content-final 2026-07-16,
-> truth-refreshed 2026-07-17 after ADR-230). The 2026-07-19 sweep folded
-> the extension surface (ADR-215/235: `use combat`, NPC auto-wire, `use
-> state-machines`), doors (ADR-234/237/238), regions and story-global
-> daemons (ADR-236), topics (ADR-239), the R3 keyless key/tool forms,
-> and person identity (ADR-242), with every entry's Chord availability
-> stated per the parity audit (54/54 actions reachable). Examples are
-> hand-written Chord syntax, compile-checked ad hoc during drafting.
-> The platform notes that remain are still-honest gaps.
+> **Status: CURRENT at Sharpee 3.2** (example-first rework 2026-07-19,
+> same-day as the 3.2 currency sweep; previously content-final
+> 2026-07-16, truth-refreshed 2026-07-17 after ADR-230). Every entry is
+> built around a worked example: the `.story` fences are verbatim
+> excerpts of committed fixtures, and every `transcript` fence is real
+> engine output, replayed and byte-checked by
+> `docs/work/stdlib-reference/verify.mjs` on each change. Chord
+> availability per entry follows the parity audit (54/54 actions
+> reachable); the platform notes that remain are still-honest gaps.
 
 ## 1. How to read this reference
 
@@ -34,12 +33,15 @@ genuinely adding something new.
 
 ### 1.2 How an action entry is laid out
 
-Each action entry tells you: the **verbs that actually parse** (grounded
-in the parser's grammar, not the help lists — where a listed synonym does
-not parse, the entry says so), the **trait** that makes an entity
-eligible (or "anything"), the **checks** in the order the action makes
-them and the refusal each produces, the **message keys** you can retarget,
-and the **events** it emits for story reactions.
+Each action entry leads with the basics — the **verbs that actually
+parse** (grounded in the parser's grammar; where a listed synonym does
+not parse, the entry says so) and the **trait** that makes an entity
+eligible (or "anything"). Then a worked example: *the author writes* a
+small `.story` scene exercising the entry's override seams, and *the
+player sees* the real transcript it produces. A compact table closes the
+entry with the **message keys** you can retarget (Refusals and Success
+rows) and the **events** it emits for story reactions, followed by a
+one-line note on which `on`/`after` clauses the action consults.
 
 ### 1.3 Standard behavior vs. per-entity verbs
 
@@ -83,24 +85,58 @@ you what the platform already does, which trait (if any) makes an entity
 eligible, and which message keys to override when you want it said
 differently.
 
-Each entry below lists the action's **message keys** — the IDs stdlib emits
-instead of English (the `lang` layer supplies the words). They matter three
-ways. In a `.story` file, you replace a moment's text *per entity* with an
-`on`/`after` clause carrying your own phrase — a refusal key of yours
-instead of the standard refusal, or a reaction that speaks after the action
-commits (syntax: chord-language.md §3). Story-wide, a Chord `define phrase`
-under the dotted ID itself replaces the platform text for every entity
-(dotted phrase keys register whole since ADR-230 D5 — chord-language.md
-§5.2), and a TypeScript story overrides the ID through the language
-provider. And in transcripts and event payloads, the ID is how you
-recognize which moment fired.
+Each entry lists the action's **message keys** — the IDs stdlib emits
+instead of English (the `lang` layer supplies the words). Override one per
+entity with an `on`/`after` clause carrying your own phrase
+(chord-language.md §3), or story-wide with a `define phrase` under the
+dotted ID itself (dotted keys register whole since ADR-230 D5 —
+chord-language.md §5.2; a TypeScript story overrides the ID through the
+language provider). In transcripts and event payloads, the ID is how you
+recognize which moment fired. The worked example in §2.1, directly below,
+shows the per-entity guard and the story-wide override side by side — the
+same two seams recur all through this chapter.
 
-The per-entity pattern, which recurs all through this chapter:
+### 2.1 taking and dropping
 
+**take** (`if.action.taking`) — verbs `take`, `get`, `grab`, `acquire`,
+`collect`, `pick up`, `take up` (bare `pick` is deliberately absent — it
+would outmatch `pick up`); multi-object `take all`, `take all but the
+lamp`, `take the key and the bottle`. Anything is takeable by default —
+portability is the rule, not a trait. `scenery`, rooms, things already
+carried, and carrying limits refuse; a worn item is quietly taken off
+first; identity `points` awards score on the first take (treasure
+scoring).
+
+**drop** (`if.action.dropping`) — verbs `drop`, `discard`, `put down`,
+`throw away`; `drop all`. The destination is wherever the player is: the
+room, or the container or supporter the player is inside or on.
+
+The author writes:
+
+<!-- fixture: manipulation/taking-dropping.story -->
 ```story
-create the iron ring
+create the Lamp Room
+  a room
+
+  Shelves of unlit lamps line every wall.
+
+create the brass lantern
+  aka lantern
+  in the Lamp Room
+
+  A dented brass lantern with a wire handle.
+
+create the marble statue
+  aka statue
   scenery
-  in the Crypt
+  in the Lamp Room
+
+  A blank-eyed statue, far too heavy to move.
+
+create the iron ring
+  aka ring
+  scenery
+  in the Lamp Room
 
   A ring set into the floor slab.
 
@@ -110,54 +146,45 @@ create the iron ring
 
   phrase ring-fused:
     The ring is fused to the slab; your fingers just slip off it.
+
+create the player
+  starts in the Lamp Room
+
+define phrase if.action.dropping.dropped
+  You set it down with care.
+end phrase
 ```
 
-### 2.1 taking and dropping
+The player sees:
 
-**take** (`if.action.taking`) — verbs `take`, `get`, `grab`, `acquire`,
-`collect`, `pick up`, and `take up` (bare `pick` is deliberately absent —
-it would outmatch `pick up`). The parser also accepts multi-object forms
-inside the slot: `take all`, `take all but the lamp`, `take the key and
-the bottle`.
+<!-- transcript: manipulation/taking-dropping.story -->
+```transcript
+> take the statue
+The marble statue is fixed in place.
 
-Anything is takeable by default — portability is the rule, not a trait. What
-blocks taking: the `scenery` trait (the classic "that's fixed in place"),
-rooms themselves, things the player already carries, and the player's own
-carrying capacity when the actor has container limits (item count or
-weight). Taking something currently worn quietly takes it off first. An item
-whose identity carries `points` awards score the first time it is taken
-(that is how treasure scoring works).
+> take the ring
+The ring is fused to the slab; your fingers just slip off it.
 
-Checks, in order: no object named → `no_target`; taking yourself →
-`cant_take_self`; already carried → `already_have`; it is a room →
-`cant_take_room`; it is scenery → `fixed_in_place` (or the entity's own
-custom refusal); carrying limits → `container_full`, `too_heavy`, or the
-generic `cannot_take`; `take all` with nothing available → `nothing_to_take`.
+> take the lantern
+Taken.
 
-Success keys: `taken`, `taken_from` (when it came out of or off something),
-and `taken_multi` (the compact form for `take all`). All keys prefix as
-`if.action.taking.<key>`. Events: `if.event.taken` on success,
-`if.event.take_blocked` when refused.
+> drop the lantern
+You set it down with care.
+```
 
-Interceptors: taking consults `on taking it` / `after taking it` clauses on
-the item. Note that REMOVE-FROM phrasing cannot dodge a taking guard — see
-§2.3.
+Three seams in one scene: `scenery` refuses with the platform's
+`fixed_in_place`, the ring's `on taking it` guard refuses with its own
+phrase, and the story-wide `define phrase` under the dotted ID rewrites
+every plain drop.
 
-**drop** (`if.action.dropping`) — verbs `drop`, `discard`, `put down`,
-`throw away`, plus `drop all` and friends. The destination is wherever the
-player is: the
-room, or the container or supporter the player is inside or on.
+| | take (`if.action.taking.*`) | drop (`if.action.dropping.*`) |
+|---|---|---|
+| Refusals | `no_target` · `cant_take_self` · `already_have` · `cant_take_room` · `fixed_in_place` · `container_full` · `too_heavy` · `cannot_take` · `nothing_to_take` | `not_held` · `still_worn` (take it off first) · `container_full` · `cant_drop_here` · `nothing_to_drop` |
+| Success | `taken` · `taken_from` (out of or off something) · `taken_multi` (`take all`) | `dropped` · `dropped_in` · `dropped_on` · `dropped_quietly` (glass, room drop) · `dropped_carelessly` (`discard`) · `dropped_multi` |
+| Events | `if.event.taken` / `if.event.take_blocked` | `if.event.dropped` / `if.event.drop_blocked` |
 
-Checks: not holding it → `not_held`; still wearing it → `still_worn` (worn
-things must be taken off first); the enclosing container will not accept it
-→ `container_full` or `cant_drop_here`; `drop all` with empty hands →
-`nothing_to_drop`.
-
-Success keys vary with where it lands and how it was said: `dropped` (a
-room), `dropped_in` (a container), `dropped_on` (a supporter),
-`dropped_quietly` (a room drop of something glass), `dropped_carelessly`
-(the verb was `discard`), `dropped_multi`. Prefix `if.action.dropping.<key>`;
-events `if.event.dropped` / `if.event.drop_blocked`.
+Interceptors: `on taking it` / `after taking it` on the item — and
+REMOVE-FROM phrasing cannot dodge a taking guard (§2.3).
 
 ### 2.2 putting and inserting
 
@@ -165,120 +192,325 @@ Two actions share the surface English of "put". `put X on/onto Y` (and
 `hang X on Y`) is **putting** (`if.action.putting`); `put X in/into/inside Y`
 and `insert X in Y` parse as **inserting** (`if.action.inserting`), which
 delegates its work back into putting with the preposition forced to "in".
-`place` works in both phrasings, and one more form lands in putting since
-ADR-230 D4: `move X to Y`, with the destination's kind deciding in versus
-on (the D4 ruling: `move` is a manipulation verb, never movement — see
-also pushing, §2.6). An author rarely needs the distinction, with one
-exception spelled out below.
+`place` works in both phrasings, and `move X to Y` lands in putting since
+ADR-230 D4, the destination's kind deciding in versus on (the D4 ruling:
+`move` is a manipulation verb, never movement — see also pushing, §2.6).
+The destination decides eligibility: `on` needs a supporter, `in` needs a
+container, and a closed openable container refuses. The item does not need
+to be in hand — putting performs an implicit take first, and refuses with
+the taking refusal if that fails (a fused-down ring cannot be put
+anywhere). Because inserting delegates its report into putting, a
+successful INSERT renders `if.action.putting.put_in` — override `put_in` /
+`put_on` for success text in both phrasings — while inserting's *failures*
+render under `if.action.inserting.<key>`.
 
-The destination decides eligibility: `on` needs a supporter (`a supporter`),
-`in` needs a container (`a container`). The item does not need to be in
-hand — putting performs an implicit take first, and refuses with the taking
-refusal if that fails (a fused-down ring cannot be put anywhere).
+The author writes:
 
-Checks, in plain order: no item → `no_target`; no destination →
-`no_destination`; putting a thing in or on itself → `cant_put_in_itself` /
-`cant_put_on_itself`; already there → `already_there`; wrong kind of
-destination → `not_container` / `not_surface`; a closed openable container →
-`container_closed`; out of room → `no_room` (containers) / `no_space`
-(supporters).
+<!-- fixture: manipulation/putting-inserting.story -->
+```story
+create the Sorting Office
+  a room
 
-Success renders `put_in` or `put_on` — and because inserting delegates its
-report into putting, a successful INSERT also renders
-`if.action.putting.put_in`, while inserting's *failures* render under
-`if.action.inserting.<key>`. Override `if.action.putting.put_in` /
-`put_on` for success text in both phrasings. Events: `if.event.put_in`,
-`if.event.put_on`, blocked `if.event.put_blocked` / `if.event.insert_blocked`.
+  Pigeonholes and parcel shelves, floor to ceiling.
 
-The exception that makes the two-action split visible: interceptor clauses.
-An INSERT command consults `on inserting it` clauses first, then — through
-the delegation — `on putting it` clauses as well, on both the item and the
-container. Register a given entity's behavior under **one** of the two
-gerunds, not both, or it will run twice. If you only care that something
-went in, `on putting it` (or `after putting it`) covers both phrasings; the
-trophy case works this way, and in `put all in the case` its container-side
-clause runs once per deposited item.
+create the oak counter
+  aka counter
+  a supporter
+  scenery
+  in the Sorting Office
+
+  A long oak counter, polished by a century of elbows.
+
+create the outgoing pigeonhole
+  aka pigeonhole
+  a container
+  scenery
+  in the Sorting Office
+
+  A brass-framed pigeonhole marked OUTGOING.
+
+create the dead letters bin
+  aka bin
+  a container
+  scenery
+  in the Sorting Office
+
+  A wire bin for letters no one will ever claim.
+
+  on putting it
+    refuse bin-sealed
+  end on
+
+  phrase bin-sealed:
+    The bin is sealed under a wire grille; only the postmaster may add to it.
+
+create the letter
+  in the Sorting Office
+
+  A letter sealed with red wax.
+
+create the stamp
+  in the Sorting Office
+
+  A commemorative stamp, unlicked.
+
+create the player
+  starts in the Sorting Office
+
+define phrase if.action.putting.put_in
+  It slides in with a papery whisper.
+end phrase
+```
+
+The player sees:
+
+<!-- transcript: manipulation/putting-inserting.story -->
+```transcript
+> put the letter in the pigeonhole
+(first taking the letter)
+
+Taken.
+
+It slides in with a papery whisper.
+
+> insert the stamp into the pigeonhole
+(first taking the stamp)
+
+Taken.
+
+It slides in with a papery whisper.
+
+> insert the letter into the bin
+The bin is sealed under a wire grille; only the postmaster may add to it.
+
+> put the letter on the counter
+(first taking the letter)
+
+You take the letter from the outgoing pigeonhole.
+
+You put the letter on the oak counter.
+```
+
+The delegation in one scene: a single `define phrase` under putting's
+`put_in` re-voices both phrasings, and the bin's single `on putting it`
+guard catches the `insert` command too — while `put … on` renders `put_on`
+untouched.
+
+| | putting (`if.action.putting.*`) | inserting (`if.action.inserting.*`) |
+|---|---|---|
+| Refusals | `no_target` · `no_destination` · `cant_put_in_itself` / `cant_put_on_itself` · `already_there` · `not_container` / `not_surface` · `container_closed` · `no_room` (container) · `no_space` (supporter) | the same checks, rendered under `if.action.inserting.<key>` when the command was an INSERT |
+| Success | `put_in` · `put_on` (INSERT reports through `put_in`) | — (delegates to putting) |
+| Events | `if.event.put_in` / `if.event.put_on` / `if.event.put_blocked` | `if.event.insert_blocked` |
+
+Interceptors: `on putting it` / `on inserting it` on the item or the
+container — an INSERT consults `on inserting it` first, then (through the
+delegation) `on putting it` on both entities, so register a given entity
+under **one** of the two gerunds, not both, or it will run twice;
+`on putting it` covers both phrasings, and in `put all in the case` a
+container-side clause runs once per deposited item.
 
 ### 2.3 removing (taking from)
 
-**remove X from Y** (`if.action.removing`) — take an item out of a container
-or off a supporter, named source and all. Core grammar since ADR-230:
-`remove X from Y`, `extract X from Y`, and `take X from Y` — the last
-optionally `with/using Z`, a tool form whose named tool becomes a consulted
-command entity (the old orphan `taking_with` id was retired onto removing
-in the same pass). Bare `remove X` still means undressing (§5).
+**remove X from Y** (`if.action.removing`) — take an item out of a
+container or off a supporter, named source and all. Core grammar since
+ADR-230: `remove X from Y`, `extract X from Y`, and `take X from Y` — the
+last optionally `with/using Z`, a tool form whose named tool becomes a
+consulted command entity (the old orphan `taking_with` id was retired onto
+removing in the same pass). Success is semantically a take: the success
+**event** is `if.event.taken`, with the source recorded in the payload.
 
-Checks: no item → `no_target`; no source → `no_source`; already holding it →
-`already_have`; not actually in/on the source → `not_in_container` /
-`not_on_surface`; the source is a closed openable container →
-`container_closed`; carrying capacity → `cannot_take`; `remove all from X`
-with nothing eligible → `nothing_to_remove`.
+The author writes:
 
-Success keys: `removed_from` (a container) and `removed_from_surface` (a
-supporter), prefixed `if.action.removing.<key>`. The success **event** is
-`if.event.taken` — removing is semantically a take, with the source recorded
-in the payload.
+<!-- fixture: manipulation/removing.story -->
+```story
+create the Crypt Chapel
+  a room
+
+  A low chapel of niches and candle smoke.
+
+create the reliquary
+  a container
+  scenery
+  in the Crypt Chapel
+
+  A gilt reliquary, its lid long lost.
+
+create the stone bier
+  aka bier
+  a supporter
+  scenery
+  in the Crypt Chapel
+
+  A stone bier worn smooth at the edges.
+
+create the ivory comb
+  aka comb
+  in the reliquary
+
+  A carved ivory comb.
+
+create the fingerbone
+  aka bone
+  in the reliquary
+
+  A saint's fingerbone, brown with age.
+
+  on taking it
+    refuse bone-sacred
+  end on
+
+  phrase bone-sacred:
+    The relic is not for the living to carry off.
+
+create the linen shroud
+  aka shroud
+  on the stone bier
+
+  A folded linen shroud.
+
+create the player
+  starts in the Crypt Chapel
+```
+
+The player sees:
+
+<!-- transcript: manipulation/removing.story -->
+```transcript
+> remove the comb from the reliquary
+You take the ivory comb from the reliquary.
+
+> remove the shroud from the bier
+You take the linen shroud from the stone bier.
+
+> remove the fingerbone from the reliquary
+The relic is not for the living to carry off.
+```
+
+Each source kind renders its own success key — and the fingerbone's
+*taking* guard stops REMOVE-FROM cold: naming the source dodges nothing.
+
+| | remove (`if.action.removing.*`) |
+|---|---|
+| Refusals | `no_target` · `no_source` · `already_have` · `not_in_container` / `not_on_surface` · `container_closed` · `cannot_take` (carrying capacity) · `nothing_to_remove` (`remove all from X` with nothing eligible) |
+| Success | `removed_from` (a container) · `removed_from_surface` (a supporter) |
+| Events | `if.event.taken` (source in the payload) |
 
 Interceptors: the item slot consults `on removing it` and then `on taking
-it`, in that order — a taking guard (the troll's axe) cannot be bypassed by
-naming the source. The source consults `on removing it` only, and so does
-an explicitly named tool, after item and source. As with putting/inserting,
-register per entity under one gerund.
+it`, in that order; the source consults `on removing it` only, and so does
+an explicitly named tool, after item and source — as with
+putting/inserting, register per entity under one gerund. Bare `remove X`
+still means undressing (§5).
 
 ### 2.4 giving and showing
 
 **give** (`if.action.giving`) — `give X to Y`, `give Y X`, `offer X to Y`.
-The recipient must be a person (`a person` — the actor trait); the action
-enforces that in validation, so `give the sword to the door` refuses with
-`not_actor` ("You can only give things to people."). Giving does an
-implicit take if the item is not in hand.
-
-The default NPC accepts anything: the item moves into their inventory and
-the player sees `given`. Three data-driven wrinkles, all read from the
-recipient's actor data: a capacity (item count → `inventory_full`, weight →
-`too_heavy` — both phrased as the NPC declining), and a `preferences` object
-whose `refuses` list blocks matching items with `not_interested`, while
-`likes`/`dislikes` color acceptance as `gratefully_accepts` /
-`reluctantly_accepts`.
-
-Other checks: no item → `no_item`; no recipient → `no_recipient`; not a
-person → `not_actor`; giving to yourself → `self`.
-
-Keys under `if.action.giving.`: the errors above plus `not_holding`,
-`recipient_not_visible`, `recipient_not_reachable`, and success `given`,
-`accepts`, `gratefully_accepts`, `reluctantly_accepts` (`refuses` and
-`accepts` exist for story use — stdlib itself never picks them). Events:
-`if.event.given` / `if.event.give_blocked`.
-
-For richer behavior than the preference lists — a guard who takes the bribe
-and opens the gate — put an `on giving it` / `after giving it` clause on the
-item or the recipient, or (the Sharpee Way) register a capability behavior
-for `if.action.giving` on the recipient, which takes over the whole
-transaction.
+The recipient must be a person (`a person` — the actor trait), so
+`give the sword to the door` refuses with `not_actor` ("You can only give
+things to people."). Giving does an implicit take if the item is not in
+hand. The default NPC accepts anything: the item moves into their
+inventory and the player sees `given`. Three data-driven wrinkles read
+from the recipient's actor data: an item-count capacity (`inventory_full`)
+and a weight capacity (`too_heavy`), both phrased as the NPC declining,
+and a `preferences` object whose `refuses` list blocks matching items with
+`not_interested` while `likes`/`dislikes` color acceptance as
+`gratefully_accepts` / `reluctantly_accepts`.
 
 **show** (`if.action.showing`) — `show X to Y`, `show Y X`. Purely social:
 nothing moves, nothing changes hands. The viewer must be a person in the
-same room (`viewer_too_far` otherwise). The item is implicitly taken if
-needed.
+same room (`viewer_too_far` otherwise); the item is implicitly taken if
+needed. The default reaction is `shown` — or `wearing_shown` when the item
+is currently worn — and a viewer with a `reactions` object in its actor
+data reacts by item-name match (the modern replacement for `reactions` is
+an `on showing it` clause on the viewer, which can do anything).
 
-The default reaction is `shown` — or `wearing_shown` when the item is
-currently worn. A viewer with a `reactions` object in its actor data reacts
-by item-name match: `viewer_recognizes`, `viewer_impressed`,
-`viewer_unimpressed`, `viewer_examines`, falling back to `viewer_nods`.
-(The modern replacement for `reactions` is an interceptor clause on the
-viewer — `on showing it` — which can do anything.) Errors: `no_item`,
-`no_viewer`, `not_actor`, `self`, `not_carrying`, `viewer_not_visible`,
-`viewer_too_far`. Events: `if.event.shown` / `if.event.show_blocked`.
+The author writes:
+
+<!-- fixture: manipulation/giving-showing.story -->
+```story
+create the Ferry Dock
+  a room
+
+  A weathered dock; the ferry rocks at its mooring.
+
+create the ferryman
+  a person
+  in the Ferry Dock
+
+  A stooped ferryman, palm out, endlessly patient.
+
+  after giving it
+    phrase fare-paid
+      The ferryman bites the token, nods, and pockets it.
+  end after
+
+  on showing it
+    phrase ferryman-appraises
+      The ferryman leans in, squints, and names a price you pretend not to hear.
+  end on
+
+create the bone token
+  aka token
+
+  A ferry token carved from bone.
+
+create the silver locket
+  aka locket
+
+  Your mother's locket. It does not leave your neck.
+
+  on giving it
+    refuse locket-keepsake
+  end on
+
+  phrase locket-keepsake:
+    You close your fist around the locket; some things are not for trade.
+
+create the player
+  starts in the Ferry Dock
+  carries the bone token
+  carries the silver locket
+```
+
+The player sees:
+
+<!-- transcript: manipulation/giving-showing.story -->
+```transcript
+> give the locket to the ferryman
+You close your fist around the locket; some things are not for trade.
+
+> show the locket to the ferryman
+The ferryman leans in, squints, and names a price you pretend not to hear.
+
+> give the token to the ferryman
+You give the bone token to the ferryman.
+
+The ferryman bites the token, nods, and pockets it.
+```
+
+Both sides of the transaction are consulted: the locket's item-side guard
+vetoes the trade, the ferryman's `after giving it` reacts once it commits,
+and his `on showing it` replaces the flat `shown` line entirely. For a
+transaction richer still — a guard who takes the bribe and opens the
+gate — the Sharpee Way is a capability behavior registered for
+`if.action.giving` on the recipient, which takes over the whole exchange.
+
+| | give (`if.action.giving.*`) | show (`if.action.showing.*`) |
+|---|---|---|
+| Refusals | `no_item` · `no_recipient` · `not_actor` · `self` · `not_holding` · `recipient_not_visible` · `recipient_not_reachable` · `inventory_full` / `too_heavy` (capacity, phrased as declining) · `not_interested` (`preferences.refuses`) | `no_item` · `no_viewer` · `not_actor` · `self` · `not_carrying` · `viewer_not_visible` · `viewer_too_far` |
+| Success | `given` · `gratefully_accepts` / `reluctantly_accepts` (likes/dislikes) · `accepts` and `refuses` exist for story use — stdlib itself never picks them | `shown` · `wearing_shown` (worn item) · `reactions` matches: `viewer_recognizes` · `viewer_impressed` · `viewer_unimpressed` · `viewer_examines` · fallback `viewer_nods` |
+| Events | `if.event.given` / `if.event.give_blocked` | `if.event.shown` / `if.event.show_blocked` |
+
+Interceptors: `on giving it` / `after giving it` and `on showing it` /
+`after showing it`, on the item or on the recipient/viewer.
 
 ### 2.5 throwing
 
 **throw** (`if.action.throwing`) — `throw X at Y` and `throw X to Y`, with
-`toss` and `hurl` in both forms. (The
-action also implements bare and directional throws — `throw the rock`,
-`throw the rock north` — but no core grammar reaches them today; a story
-must add those patterns itself.) The item is implicitly taken if needed;
-the target must be in the same room; anything heavier than 10 kg refuses
-with `too_heavy`.
+`toss` and `hurl` in both forms. (The action also implements bare and
+directional throws — `throw the rock`, `throw the rock north` — but no
+core grammar reaches them today; a story must add those patterns itself.)
+The item is implicitly taken if needed; the target must be in the same
+room; anything heavier than 10 kg refuses with `too_heavy`.
 
 What happens next is probabilistic — document-worthy behavior, not a bug,
 and per project policy the dice are never disabled. The platform infers
@@ -287,85 +519,224 @@ vase, china, porcelain, "delicate", "fragile"). Throwing **at a person**:
 about a 70% hit — a nimble target may duck (`target_ducks`), a catcher may
 catch (`target_catches`, and then they hold it), a hit lands `hits_target`
 and annoys them (`target_angry`); a fragile item that hits usually breaks
-(`breaks_against`). Throwing **at anything else**: about a 90% hit; the item
-lands on a supporter (`lands_on`), in an open container (`lands_in`),
+(`breaks_against`). Throwing **at anything else**: about a 90% hit; the
+item lands on a supporter (`lands_on`), in an open container (`lands_in`),
 bounces off a closed one (`bounces_off`), and fragile items usually break.
 A broken item is removed from play entirely, with an
 `if.event.item_destroyed` event (`cause: 'thrown'`).
 
-Keys under `if.action.throwing.` — errors: `no_item`, `not_holding`,
-`target_not_visible`, `target_not_here`, `no_exit`, `too_heavy`, `self`;
-outcomes: `hits_target`, `misses_target`, `target_ducks`, `target_catches`,
-`target_angry`, `lands_on`, `lands_in`, `bounces_off`, `breaks_against`,
-`breaks_on_impact`, `fragile_breaks`, `thrown_down`, `thrown_gently`,
-`sails_through`. Events: `if.event.thrown` (with `throwType`, `hit`,
-`willBreak`, `finalLocation` in the payload — enough for a story reaction
-to know exactly what happened) and `if.event.throw_blocked`.
+The author writes:
+
+<!-- fixture: manipulation/throwing.story -->
+```story
+create the Taproom
+  a room
+
+  A low-beamed taproom, all smoke and sawdust.
+
+create the stone hearth
+  aka hearth
+  scenery
+  in the Taproom
+
+  A soot-blackened stone hearth.
+
+create the gilt mirror
+  aka mirror
+  scenery
+  in the Taproom
+
+  The landlord's prized gilt mirror, hung above the bar.
+
+  on throwing it
+    refuse mirror-luck
+  end on
+
+  phrase mirror-luck:
+    Seven years' bad luck, and the landlord watching? You lower your arm.
+
+create the green bottle
+  aka bottle
+
+  An empty green glass bottle.
+
+create the player
+  starts in the Taproom
+  carries the green bottle
+```
+
+The player sees (one genuine run — the second command rolls live dice):
+
+<!-- transcript: manipulation/throwing.story -->
+```transcript
+> throw the bottle at the mirror
+Seven years' bad luck, and the landlord watching? You lower your arm.
+
+> throw the bottle at the hearth
+The green bottle smashes against the stone hearth!
+```
+
+The mirror's target-side guard is deterministic; the hearth throw is not —
+the same command can also miss, or hit without breaking. This run's
+"bottle" name made the item fragile, and the smash removed it from play.
+
+| | throw (`if.action.throwing.*`) |
+|---|---|
+| Refusals | `no_item` · `not_holding` · `target_not_visible` · `target_not_here` · `no_exit` · `too_heavy` (over 10 kg) · `self` |
+| Outcomes | `hits_target` · `misses_target` · `target_ducks` · `target_catches` · `target_angry` · `lands_on` · `lands_in` · `bounces_off` · `breaks_against` · `breaks_on_impact` · `fragile_breaks` · `thrown_down` · `thrown_gently` · `sails_through` |
+| Events | `if.event.thrown` (`throwType`, `hit`, `willBreak`, `finalLocation` in the payload — enough for a story reaction to know exactly what happened) / `if.event.throw_blocked` · `if.event.item_destroyed` (`cause: 'thrown'`) |
 
 Interceptors: both the item and the target are consulted (`on throwing it`
 on either) — a glacier can react to being hit in the same command as an
-explosive reacts to being thrown. A capability behavior registered for
+explosive reacts to being thrown; a capability behavior registered for
 `if.action.throwing` on the target takes over the whole throw.
 
 ### 2.6 pushing, pulling, touching
 
-**push** (`if.action.pushing`) — `push`, `press`, `shove`, `move`, and the
-directional form `move X <direction>` (ADR-230 D4 ruling: `move` is
-manipulation, never movement — the direction rides the same channel as
-`push X north`). Needs the
-`pushable` trait; pushing anything else gets `fixed_in_place` (scenery) or
-`pushing_does_nothing`. What pushing *does* depends on the trait's
-`pushType`:
+**push** (`if.action.pushing`) — verbs `push`, `press`, `shove`, `move`,
+plus the directional form `move X <direction>` (ADR-230 D4 ruling: `move`
+is manipulation, never movement — the direction rides into the pushing
+action, not going). Needs the `pushable` trait; pushing anything else gets
+`fixed_in_place` (scenery) or `pushing_does_nothing`. The trait's
+`pushType` picks the behavior: `button` — the one genuinely stateful push
+(if the entity is also `switchable`, pushing toggles it — `button_clicks`
+when it is a button, `switch_toggled` otherwise; a non-switchable button
+just clicks, `button_pushed`); `heavy` — needs a direction to budge
+(`pushed_with_effort`), refuses without one (`wont_budge`); `moveable` —
+slides when pushed with a direction (`pushed_direction`, or
+`reveals_passage` when the trait says it hides something), gets nudged
+without one (`pushed_nudged`). Outside the button toggle, stdlib
+**narrates** movement but relocates nothing — the story reacts to
+`if.event.pushed` (it carries the direction) or an `after pushing it`
+clause to actually change the world; which wall opens is puzzle logic, not
+platform logic. One honest gap: from a `.story` file, bare `pushable`
+composes the default button configuration — selecting `heavy` or
+`moveable` is TypeScript territory today.
 
-- `button` — the one genuinely stateful push: if the entity is also
-  `switchable`, pushing toggles it (`button_clicks` when it is a button,
-  `switch_toggled` otherwise); a non-switchable button just clicks
-  (`button_pushed`).
-- `heavy` — needs a direction to budge (`pushed_with_effort`), refuses
-  without one (`wont_budge`).
-- `moveable` — slides when pushed with a direction (`pushed_direction`, or
-  `reveals_passage` when the trait says it hides something), gets nudged
-  without one (`pushed_nudged`).
-
-One honest caveat: outside the button toggle, stdlib **narrates** movement
-but does not relocate anything — "pushed north" is a message and an
-`if.event.pushed` event carrying the direction, and the story reacts to
-that event (or an `after pushing it` clause) to actually change the world.
-That is deliberate: which wall opens is puzzle logic, not platform logic.
-
-**pull** (`if.action.pulling`) — `pull`, `drag`, `yank`, `tug`. Needs
-`pullable`. A successful pull sets the trait's state to `pulled` (a second
-PULL refuses with `already_pulled`) and bumps its `pullCount`; a worn item
-refuses with `worn`. Everything a pull *means* — the lever opens the
+**pull** (`if.action.pulling`) — verbs `pull`, `drag`, `yank`, `tug`.
+Needs `pullable`. A successful pull sets the trait's state to `pulled` (a
+second pull refuses `already_pulled`) and bumps its `pullCount`; a worn
+item refuses `worn`. Everything a pull *means* — the lever opens the
 sluice — is story logic reacting to `if.event.pulled` or written as an
 `on pulling it` / `after pulling it` clause.
 
-**touch** (`if.action.touching`) — `touch`, `feel`, `rub`, `pat`, `stroke`,
-`poke`, `prod`. No trait needed, no state changed. The reply is inferred
-from what the thing is: a lit light source `feels_hot`, a running device
-`feels_warm` (or `device_vibrating`), wearables `feels_soft`, doors
-`feels_smooth`, containers and supporters `feels_hard` (a container with
-drink in it sloshes — `liquid_container`), drinkables `feels_wet`, scenery
-`immovable_object`; otherwise the verb itself answers (`poked`, `patted`,
-`stroked`, `touched_gently`, `touched`). All under `if.action.touching.`;
-event `if.event.touched`. Touching is a favorite for `on touching it`
-clauses — a probe with no side effects the story can hang flavor on.
+**touch** (`if.action.touching`) — verbs `touch`, `feel`, `rub`, `pat`,
+`stroke`, `poke`, `prod`. No trait needed, no state changed; the reply is
+inferred from what the thing is — a lit light source `feels_hot`, a
+running device `feels_warm` (or `device_vibrating`), wearables
+`feels_soft`, doors `feels_smooth`, containers and supporters `feels_hard`
+(a container with drink in it sloshes — `liquid_container`), drinkables
+`feels_wet`, scenery `immovable_object` — otherwise the verb itself
+answers (`poked`, `patted`, `stroked`, `touched_gently`, `touched`).
+
+The author writes:
+
+<!-- fixture: manipulation/pushing-pulling-touching.story -->
+```story
+create the Signal Box
+  a room
+
+  A cramped cabin of levers and brass above the junction.
+
+create the signal lever
+  aka lever
+  pullable
+  scenery
+  in the Signal Box
+
+  A tall iron lever, worn bright at the grip.
+
+  after pulling it
+    phrase lever-thrown
+  end after
+
+  phrase lever-thrown:
+    Somewhere down the line, the semaphore arm clanks to clear.
+
+create the brass button
+  aka button
+  pushable
+  scenery
+  in the Signal Box
+
+  A brass button labelled BELL.
+
+create the iron stove
+  aka stove
+  scenery
+  in the Signal Box
+
+  A squat iron stove, cold since spring.
+
+create the stationmaster's cap
+  aka cap
+  wearable
+  in the Signal Box
+
+  A red wool cap with a shiny peak.
+
+create the player
+  starts in the Signal Box
+```
+
+The player sees:
+
+<!-- transcript: manipulation/pushing-pulling-touching.story -->
+```transcript
+> push the stove
+The iron stove is fixed in place.
+
+> move the button north
+You push the brass button.
+
+> pull the lever
+You pull the signal lever.
+
+Somewhere down the line, the semaphore arm clanks to clear.
+
+> pull the lever
+The signal lever has already been pulled.
+
+> touch the cap
+The stationmaster's cap feels soft.
+
+> touch the stove
+The iron stove is solid and immovable.
+```
+
+The platform owns everything stateful here — the scenery refusal, the
+button push under `move`'s manipulation channel, the `already_pulled`
+gate, the wool and iron inferences — and the one line that changes
+anything beyond the signal box is the story's `after pulling it` reaction.
+
+| | push (`if.action.pushing.*`) | pull (`if.action.pulling.*`) | touch (`if.action.touching.*`) |
+|---|---|---|---|
+| Refusals | `no_target` · `fixed_in_place` · `pushing_does_nothing` · `wont_budge` (heavy, no direction) · `wearing_it` · `too_heavy` | `no_target` · `cant_pull_that` · `already_pulled` · `worn` | `no_target` (touch refuses almost nothing) |
+| Success | `button_pushed` · `button_clicks` · `switch_toggled` · `pushed_with_effort` · `pushed_direction` · `reveals_passage` · `pushed_nudged` | `pulled` · `nothing_happens` | `feels_hot` · `feels_warm` · `device_vibrating` · `feels_soft` · `feels_smooth` · `feels_hard` · `liquid_container` · `feels_wet` · `feels_normal` · `immovable_object` · `touched` · `touched_gently` · `poked` · `prodded` · `patted` · `stroked` |
+| Events | `if.event.pushed` | `if.event.pulled` | `if.event.touched` / `if.event.touch_blocked` |
+
+Interceptors: `on`/`after pushing it`, `pulling it`, `touching it` on the
+target. Touching, with no state of its own, is a favorite probe to hang
+flavor on (`on touching it`) — listening plays the same role for sound
+(§6.3).
 
 ### 2.7 lowering and raising (per-entity verbs)
 
 `lower :target` and `raise`/`lift :target` parse out of the box, but these
 verbs have **no standard behavior at all** — lowering the basket, the
 drawbridge, and your voice are three different mutations, so the platform
-refuses to invent one (ADR-090). Unhandled, the player sees
-`if.action.lowering.cant_lower_that` — "You can't lower that." — and
-`cant_raise_that` for raising.
+refuses to invent one (ADR-090). Unhandled, the player sees the refusal
+`if.action.lowering.cant_lower_that` (`cant_raise_that` for raising) and
+nothing else. Never expect a default here; there is none.
 
 Giving an entity real lower/raise behavior from a `.story` file is the
-dispatch-action pattern (the same one behind the zoo's `pet` and `feed`):
-a `define action` owns the verb, and a trait's `on <verb>ing it` clause
-carries each entity's behavior. The friendly-zoo source is the canonical
-worked example; adapted to lowering:
+dispatch-action pattern (the same one behind the friendly zoo's `pet` and
+`feed`): a `define action` owns the verb and its misses, and a trait's
+`on <verb>ing it` clause carries each entity's behavior.
 
+The author writes:
+
+<!-- fixture: manipulation/lowering-windlass.story -->
 ```story
 define action lowering
   grammar
@@ -395,29 +766,79 @@ define trait windlass-basket
     phrase basket-lowered
   end on
 end trait
+
+create the Well Head
+  a room
+
+  A stone rim, a windlass, and a long drop.
+
+create the wicker basket
+  aka basket
+  windlass-basket
+  scenery
+  in the Well Head
+
+  A wicker basket on a rope, riding at the rim.
+
+create the windlass crank
+  aka crank
+  scenery
+  in the Well Head
+
+  A worn oak crank, polished smooth by many hands.
+
+create the player
+  starts in the Well Head
 ```
 
-Compose `windlass-basket` onto the basket and `lower basket` does the real
-thing; `lower` on anything else falls to the action's `otherwise refuse`.
-The fall-through is well-defined (ADR-229): a clause gated out by `while`
-or a consumed `, once` simply sits out, and the command falls through to
-the action body, the next trait, and finally the `otherwise refuse` miss.
-Two boundaries to know: an `on lowering it` clause directly on an *entity*
-is a load error with a pointed message (these verbs never consult
-entity-level interceptors — the trait/action pattern above is the way),
-and from TypeScript the equivalent is a capability behavior registered for
-`if.action.lowering` (the Sharpee Way, how Dungeo's basket works). TURN
-left this family on its own terms: `turn`/`rotate`/`twist X` still parse
-(just below the switching phrasal forms, so `turn lamp on` still switches,
-§7.1) and the unhandled refusal is still `if.action.turning.cant_turn_that`,
-but turning now wears cutting's dual surface without the trait gate (§2.8)
-— an `on turning it` clause directly on the entity is consulted (turning is
-one of the 38 wired actions), or a TypeScript capability behavior for
-`if.action.turning` takes the whole turn; no eligibility trait, no
-define-action scaffolding needed. WAVE and WIND — the other classic
-per-entity verbs — still have no binding at all: no grammar, no action. A
-story wanting them defines the whole verb with `define action`, exactly as
-above.
+The player sees:
+
+<!-- transcript: manipulation/lowering-windlass.story -->
+```transcript
+> lower the crank
+That isn't something you can lower.
+
+> lower the basket
+The windlass creaks as the basket descends into the shaft.
+
+> lower the basket
+The basket is already at the bottom.
+
+> raise the basket
+You can't raise the wicker basket.
+```
+
+Every line but the last is the story's — the action's `otherwise refuse`
+miss, the trait's state guard and mutation — and the last line is the
+platform's entire contribution to this verb family: `cant_raise_that`.
+
+| | lower (`if.action.lowering.*`) | raise (`if.action.raising.*`) |
+|---|---|---|
+| Refusals | `no_target` · `cant_lower_that` (the only standard keys) | `no_target` · `cant_raise_that` |
+| Success | none — your dispatch action's and trait's phrases speak | none |
+| Events | none standard — a registered behavior emits its own | none standard |
+
+Three boundaries to know. The fall-through is well-defined (ADR-229): a
+clause gated out by `while` or a consumed `, once` simply sits out, and
+the command falls through to the action body, the next trait, and finally
+the `otherwise refuse` miss. An `on lowering it` clause directly on an
+*entity* is a load error with a pointed message — these verbs never
+consult entity-level interceptors; the trait/action pattern above is the
+way. And from TypeScript the equivalent is a capability behavior
+registered for `if.action.lowering` (the Sharpee Way — how Dungeo's basket
+works).
+
+TURN left this family on its own terms: `turn`/`rotate`/`twist X` still
+parse (just below the switching phrasal forms, so `turn lamp on` still
+switches, §7.1) and the unhandled refusal is still
+`if.action.turning.cant_turn_that`, but turning now wears cutting's dual
+surface without the trait gate (§2.8) — an `on turning it` clause directly
+on the entity is consulted (turning is one of the 38 wired actions), or a
+TypeScript capability behavior for `if.action.turning` takes the whole
+turn; no eligibility trait, no define-action scaffolding needed. WAVE and
+WIND — the other classic per-entity verbs — still have no binding at all:
+no grammar, no action; a story wanting them defines the whole verb with
+`define action`, exactly as above.
 
 ### 2.8 cutting and digging
 
@@ -426,80 +847,179 @@ eligibility and validates the tool; the *outcome* belongs to the entity.
 **cut** (`if.action.cutting`) parses bare — `cut X` (also `slice`,
 `chop`) — and tooled as `cut X with/using Y` (the tooled form outranks
 when a tool is named); **dig** (`if.action.digging`) likewise as `dig X`
-and `dig X with/using Y`. Eligibility is a trait —
-`cuttable` / `diggable` — and the tool contract mirrors the lockable key
-contract exactly: `with tool <entity>` in Chord (`toolId`/`toolIds` in
-TypeScript) declares what works, forward references legal. A trait with
+and `dig X with/using Y`. Eligibility is a trait — `cuttable` /
+`diggable` — and the tool contract mirrors the lockable key contract
+exactly: the trait names its implement (`cuttable with the billhook`;
+`toolId`/`toolIds` in TypeScript), forward references legal. A trait with
 no tool configured accepts any attempt. Checks, in order: no such trait →
 `not_cuttable` / `not_diggable`; a declared requirement with no tool
 named → `no_tool`; a named tool not in hand → `tool_not_held`; the wrong
 one → `wrong_tool`.
 
 The stdlib action then performs **no mutation of its own**. What a cut or
-dig does — rope into pieces, sand yielding a scarab — is the entity's
+dig does — bramble into a gap, earth yielding a tin — is the entity's
 registered implementation, and it is *required*: exactly one per entity,
-either an `on cutting it` / `on digging it` clause (Chord — the entity's
-own or a composed trait's) or a capability behavior for the action id
-(TypeScript, ADR-090). Zero or two is a load error, never a silent
-runtime no-op ("… is cuttable but registers no cutting implementation").
-Success renders the entity's own text over the generic `cut` / `dug`
-stub; events `if.event.cut` / `if.event.dug`, blocked forms
-`if.event.cut_blocked` / `dug_blocked`. Interceptors consult the target
-first, then an explicitly named tool — a cursed knife can veto the cut.
+either an `on cutting it` / `on digging it` clause (the entity's own or a
+composed trait's) or a capability behavior for the action id (TypeScript,
+ADR-090). Zero or two is a load error, never a silent runtime no-op
+("… is cuttable but registers no cutting implementation").
+
+The author writes:
+
+<!-- fixture: manipulation/cutting-digging.story -->
+```story
+create the Kitchen Garden
+  a room
+
+  Bean rows, bramble, and one freshly turned seedbed.
+
+create the bramble
+  aka briar
+  cuttable with the billhook
+  scenery
+  in the Kitchen Garden
+  states: overgrown, cleared
+
+  A wall of thorns swallowing the back fence.
+
+  on cutting it
+    change it to cleared
+    phrase bramble-cleared
+  end on
+
+create the billhook
+
+  A short curved blade on an ash handle.
+
+create the trowel
+
+  A hand trowel, good for nothing woody.
+
+create the seedbed
+  aka bed, soil
+  diggable
+  scenery
+  in the Kitchen Garden
+
+  A patch of dark earth, recently disturbed.
+
+  on digging it, once
+    move the seed tin to the Kitchen Garden
+    phrase tin-unearthed
+  end on
+
+create the seed tin
+  aka tin
+
+  A rusted biscuit tin, rattling faintly.
+
+create the player
+  starts in the Kitchen Garden
+  carries the trowel
+  carries the billhook
+
+define phrases en-US
+  bramble-cleared:
+    The billhook hacks a gap through the thorns; the back fence shows through.
+  tin-unearthed:
+    A few trowelfuls down you strike metal, and lever out a rusted seed tin.
+```
+
+The player sees:
+
+<!-- transcript: manipulation/cutting-digging.story -->
+```transcript
+> cut the bramble
+You need something to cut the bramble with.
+
+> cut the bramble with the trowel
+The trowel won't cut the bramble.
+
+> cut the bramble with the billhook
+The billhook hacks a gap through the thorns; the back fence shows through.
+
+> dig the seedbed
+A few trowelfuls down you strike metal, and lever out a rusted seed tin.
+
+> dig the seedbed
+You dig the seedbed.
+
+> take the tin
+Taken.
+```
+
+The platform ran every check — the declared implement missing from a bare
+cut, the wrong tool, the winning tool — and mutated nothing itself; both
+outcomes are the entities' own clauses, and the second dig, its `, once`
+spent, falls through to the generic `dug` stub.
+
+| | cut (`if.action.cutting.*`) | dig (`if.action.digging.*`) |
+|---|---|---|
+| Refusals | `no_target` · `not_cuttable` · `no_tool` · `tool_not_held` · `wrong_tool` · `cant_cut` | `no_target` · `not_diggable` · `no_tool` · `tool_not_held` · `wrong_tool` · `cant_dig` |
+| Success | `cut` (the generic stub — the entity's own text renders over it) | `dug` (same) |
+| Events | `if.event.cut` / `if.event.cut_blocked` | `if.event.dug` / `if.event.dug_blocked` |
+
+Interceptors: `on cutting it` / `on digging it` *are* the implementation
+here, consulted target first, then an explicitly named tool — a cursed
+knife can veto the cut. Composing `cuttable`/`diggable` obliges the
+entity to register exactly one implementation (§2.9).
 
 ### 2.9 Manipulation traits
 
 **container** (`a container` — a kind noun, so it takes the article).
-Holds things inside. Composes on one line with `openable`, `lockable`, and
-`scenery` (`a container, openable, scenery`). Settings: `with max items N`
-and `with max weight N` limit capacity. Data fields beyond Chord's reach
-today (TypeScript territory): `isTransparent` (contents visible while
-closed), `allowedTypes`/`excludedTypes`, and the liquid fields
-(`containsLiquid`, `liquidType`, `liquidAmount` — see drinking, §8.3).
-Capacity counts what is directly inside; a container "bears the weight" of
-nested contents rather than passing it up. Read by putting, inserting,
-removing, searching, opening/closing, dropping, throwing, and looking.
+Holds things inside; composes on one line with `openable`, `lockable`,
+and `scenery` (`a container, openable, scenery`) — the putting example
+(§2.2) shows one in play. Settings: `with max items N` and `with max
+weight N` limit capacity; capacity counts what is directly inside, and a
+container "bears the weight" of nested contents rather than passing it
+up. Read by putting, inserting, removing, searching, opening/closing,
+dropping, throwing, and looking. Data fields beyond Chord's reach today
+(TypeScript territory): `isTransparent` (contents visible while closed),
+`allowedTypes`/`excludedTypes`, and the liquid fields (`containsLiquid`,
+`liquidType`, `liquidAmount` — see drinking, §8.3).
 
-**supporter** (`a supporter`). Holds things on top. Setting: `with
-capacity N` — the number of items it holds (the Cloak of Darkness brass
-hook is `a supporter with capacity 1`). Unlike containers, a supporter's
-weight math includes nested contents recursively. Read by putting,
-removing, climbing, dropping, and looking.
+**supporter** (`a supporter`). Holds things on top — see the putting
+example (§2.2). Setting: `with capacity N` — the number of items it holds
+(the Cloak of Darkness brass hook is `a supporter with capacity 1`).
+Unlike containers, a supporter's weight math includes nested contents
+recursively. Read by putting, removing, climbing, dropping, and looking.
 
-**pushable** (`pushable`). Makes an entity eligible for pushing, and its
-`pushType` — `button` (default), `heavy`, `moveable` — selects the behavior
-described in §2.6. The trait carries more fields for story handlers to
-read (`revealsPassage`, `pushSound`, `activates`, `maxPushes`,
-`pushDirection`, `effects`); apart from `pushType`, `revealsPassage`, and
-`pushSound`, stdlib treats them as data for *your* event handlers, not
-behavior it enforces.
+**pushable** (`pushable`). Makes an entity eligible for pushing — the
+signal-box button (§2.6) is this trait, bare. Its `pushType` — `button`
+(default), `heavy`, `moveable` — selects the behavior described in §2.6;
+from Chord, bare `pushable` composes the default button configuration
+(`heavy`/`moveable` are TypeScript territory today). Beyond `pushType`,
+`revealsPassage`, and `pushSound`, the trait's fields (`activates`,
+`maxPushes`, `pushDirection`, `effects`) are data for *your* event
+handlers, not behavior stdlib enforces.
 
-**pullable** (`pullable`). Makes an entity eligible for pulling. Stdlib
-mutates two fields — `state` (→ `'pulled'`, which is what gates
-`already_pulled`) and `pullCount` — and carries the rest (`pullType`,
-`activates`, `linkedTo`, `detachesOnPull`, `maxPulls`, `effects`) as data
-for story handlers reacting to `if.event.pulled`.
+**pullable** (`pullable`). Makes an entity eligible for pulling — the
+signal lever (§2.6). Stdlib mutates two fields — `state` (→ `'pulled'`,
+which is what gates `already_pulled`) and `pullCount` — and carries the
+rest (`pullType`, `activates`, `linkedTo`, `detachesOnPull`, `maxPulls`,
+`effects`) as data for story handlers reacting to `if.event.pulled`.
 
-**cuttable** (`cuttable`, optionally `with tool <entity>` — adjective).
-Makes an entity eligible for cutting (§2.8) and carries the tool contract
-mirroring lockable's keys: `toolId` (one tool — what Chord's `with tool`
-sets), `toolIds` (several, TypeScript), with `CuttableBehavior`'s
-`requiresTool`/`canCutWith` predicates. Composing it obliges the entity to
-register exactly one cut implementation — the load check enforces it.
+**cuttable** (`cuttable`, optionally `with the <tool entity>` —
+adjective). Makes an entity eligible for cutting — the bramble (§2.8) —
+and carries the tool contract mirroring lockable's keys: `toolId` (one
+tool — what Chord's `with` sets), `toolIds` (several, TypeScript), with
+`CuttableBehavior`'s `requiresTool`/`canCutWith` predicates. Composing it
+obliges the entity to register exactly one cut implementation — the load
+check enforces it.
 
-**diggable** (`diggable`, optionally `with tool <entity>` — adjective).
-The same shape for digging: `toolId`/`toolIds`,
+**diggable** (`diggable`, optionally `with the <tool entity>`). The same
+shape for digging — the seedbed (§2.8): `toolId`/`toolIds`,
 `DiggableBehavior.requiresTool`/`canDigWith`, and the same
-one-implementation rule (§2.8).
+one-implementation rule.
 
-**moveable-scenery** and **attached** — two traits in the catalog that are
-**dormant today**: no standard action reads either, they have no behavior
-classes, and neither is composable from Chord. `moveable-scenery` sketches
-a heavy-thing vocabulary (weight class, blocked exits, reveals-when-moved);
-`attached` sketches attachment (glued/nailed/tied, detachable, detach
-force). They are listed here so you know they are *not* the way to build a
-boulder puzzle right now — use `pushable`/`pullable` plus story logic, and
-watch the ADRs for when these wake up.
+**moveable-scenery** — dormant today (no action reads it, no behavior
+class, not composable from Chord): a sketched heavy-thing vocabulary
+(weight class, blocked exits, reveals-when-moved) — not the way to build
+a boulder puzzle right now; use `pushable`/`pullable` plus story logic.
+
+**attached** — dormant on the same terms: a sketched attachment
+vocabulary (glued/nailed/tied, detachable, detach force); watch the ADRs
+for when these two wake up.
 
 ## 3. Movement
 
@@ -509,54 +1029,136 @@ get inside or on top of, and things you can climb.
 ### 3.1 going
 
 **go** (`if.action.going`) — `go north`, `walk`/`run`/`head`/`travel
-north` (the synonym forms landed with ADR-230 D4, which also fixed a
-long-broken `go <direction>` rule — `go north` itself parses reliably
-now), or just the direction. Twelve
-direction words parse, ten of them compass-and-vertical (`north`/`n`,
-`south`/`s`, `east`/`e`, `west`/`w`, `northeast`/`ne`, `northwest`/`nw`,
-`southeast`/`se`, `southwest`/`sw`, `up`/`u`, `down`/`d`) plus `in`/`inside`
-and `out`/`outside`.
+north`, or just the direction (the synonym forms and a fixed
+`go <direction>` rule landed with ADR-230 D4). Twelve direction words
+parse: `north`/`n`, `south`/`s`, `east`/`e`, `west`/`w`,
+`northeast`/`ne`, `northwest`/`nw`, `southeast`/`se`, `southwest`/`sw`,
+`up`/`u`, `down`/`d`, plus `in`/`inside` and `out`/`outside`.
 
-Exits are room data — in a `.story` file they are the direction lines of a
-room's `create` block, including blocked and conditionally blocked exits
-(chord-language.md §2.5 owns that syntax) and deadly exits (§9.2 here).
-What going checks, in order: you must actually be in a room (see the
-vehicle note below) → `not_in_room`; a blocked exit refuses with
-`movement_blocked`, speaking the story's own blocked phrase — and a
-direction can be blocked without leading anywhere, which is how "the hedge
-is too thick" works; no exit that way → `no_exit_that_way` (or `no_exits`
-in a room with none at all); a door in the way that is locked →
-`door_locked`, closed → `door_closed`; a destination that fails to resolve
-→ `destination_not_found`.
+Exits are room data — the direction lines of a room's `create` block,
+including blocked and conditionally blocked exits (chord-language.md
+§2.5 owns that syntax) and deadly exits (§9.2 here). A blocked exit
+refuses with `movement_blocked` and speaks the story's own phrase — and
+a direction can be blocked without leading anywhere, which is how "the
+hedge is too thick" works. An exit may route through a door (§4.3),
+which refuses while locked (`door_locked`) or closed (`door_closed`).
+Darkness gates seeing, not moving: walking into a dark room succeeds
+and only the arrival description is lost, replaced by `too_dark`
+(light rules: §6.1; anything worse than not-seeing — a grue — is death
+machinery, §9). Vehicles change whose feet move — one line in §3.4,
+TypeScript-only today.
 
-Darkness does not stop movement. Walking into a dark room succeeds — what
-you lose is the arrival description, replaced by `too_dark`. Whether a room
-is dark comes from its light requirement (`dark`, or the live `dark while
-<condition>` form) weighed against light sources present; looking has the
-same rule (§6.1). Anything worse than not-seeing — a grue — is death
-machinery (§9), not the going action.
+The author writes:
 
-Vehicles change whose feet move: in an enterable vehicle that blocks
-walking (the default), GO refuses with `not_in_room` ("you're in the
-basket, not the room"); in one configured to move with its passenger, GO
-moves the **vehicle**, carrying everyone aboard. See the vehicle trait in
-§3.4 — TypeScript-only today.
+<!-- fixture: movement/going.story -->
+```story
+create the Walled Garden
+  a room
+  north to the Potting Shed through the green door
+  east to the Grotto
+  south is blocked: wall-too-high
 
-Message keys under `if.action.going.`: `no_direction`, `not_in_room`,
-`no_exits`, `no_exit_that_way`, `movement_blocked`, `door_closed`,
-`door_locked`, `destination_not_found`, plus the arrival keys `moved`,
-`moved_to`, `first_visit`, `too_dark`. Success emits a small parade of
-events — `if.event.actor_exited`, `if.event.actor_moved`,
-`if.event.actor_entered`, region crossings (`if.event.region_exited` /
-`region_entered`), then the new room's description — which is what `after
-going` clauses and daemons key off. Regions can also react to those
-crossings themselves — `after entering it` / `after leaving it` on the
-region's own block (§3.4).
+  Espaliered pears line the old brick walls.
 
-Interceptors: going consults three parties in order — the room being left
-(`on going it`), the room being entered (its clauses bind as
-`entering_room` conditions — this is how a room refuses entry rather than
-refusing exit), and the door being passed through. First refusal wins.
+create the green door
+  a door
+  aka door
+
+  A green door in the north wall, painted and peeling.
+
+  on going it
+    refuse when the player holds the wheelbarrow: barrow-too-wide
+  end on
+
+  phrase barrow-too-wide:
+    The wheelbarrow jams in the doorway. You back out again.
+
+create the Potting Shed
+  a room
+
+  Clay pots on every shelf, and the smell of compost.
+
+  after entering it, once
+    phrase shed-memory
+      You spent a whole summer in here once, pricking out seedlings.
+  end after
+
+create the Grotto
+  a room, dark
+  west to the Walled Garden
+
+  Dripping stone and ferns nobody planted.
+
+create the wheelbarrow
+  aka barrow
+  in the Walled Garden
+
+  A wooden wheelbarrow, wider than it needs to be.
+
+create the player
+  starts in the Walled Garden
+
+define phrases en-US
+  wall-too-high:
+    The south wall is twelve feet of smooth brick. Not without a ladder.
+```
+
+The player sees:
+
+<!-- transcript: movement/going.story -->
+```transcript
+> south
+The south wall is twelve feet of smooth brick. Not without a ladder.
+
+> east
+It is pitch dark. You are likely to be eaten by a grue.
+
+> west
+Walled Garden
+Espaliered pears line the old brick walls.
+
+You can see a wheelbarrow here.
+
+> north
+The green door is closed.
+
+> open the green door
+You open the green door.
+
+> take the wheelbarrow
+Taken.
+
+> north
+The wheelbarrow jams in the doorway. You back out again.
+
+> drop the wheelbarrow
+Dropped.
+
+> north
+Potting Shed
+Clay pots on every shelf, and the smell of compost.
+
+You spent a whole summer in here once, pricking out seedlings.
+```
+
+One walk covers the seams: the blocked wall speaks the story's phrase,
+the dark Grotto lets you in but shows you nothing, the closed door
+refuses, the door's own `on going it` guard vetoes the wheelbarrow, and
+the shed's `after entering it, once` greets the first arrival.
+
+| | go (`if.action.going.*`) |
+|---|---|
+| Refusals | `no_direction` · `not_in_room` (in a vehicle, not a room) · `no_exits` · `no_exit_that_way` · `movement_blocked` (the story's blocked phrase) · `door_locked` · `door_closed` · `destination_not_found` |
+| Success | `moved` · `moved_to` · `first_visit` · `too_dark` (you arrived; you just can't see) |
+| Events | `if.event.actor_exited` / `if.event.actor_moved` / `if.event.actor_entered`, plus `if.event.region_exited` / `region_entered` on region crossings — what `after going` clauses and daemons key off |
+
+Interceptors: going consults three parties in order — the room being
+left (`on going it`), the room being entered (its clauses bind as
+`entering_room` conditions — this is how a room refuses entry rather
+than refusing exit), and the door being passed through (`on going it`
+on the door, as the green door shows). First refusal wins. Regions can
+react to the crossing events on their own blocks — `after entering it`
+/ `after leaving it` (§3.4).
 
 ### 3.2 entering and exiting
 
@@ -566,65 +1168,197 @@ needs the `enterable` trait — anything else refuses with
 `not_enterable` (checked in the action: parse by syntax, refuse by
 world, since ADR-231). A closed openable refuses with
 `container_closed`; already inside → `already_inside`. The trait's one
-setting, its preposition, decides whether you are *in* the bathtub or *on*
-the park bench (`entered` vs `entered_on`). There is no occupancy limit
-today (`too_full` is reserved but never fires). Events: `if.event.entered`.
+setting, its preposition, decides whether you are *in* the bathtub or
+*on* the park bench (`entered` vs `entered_on`); `on` is a TypeScript
+setting today (§3.4). There is no occupancy limit — `too_full` is
+reserved but never fires.
 
 **exit** (`if.action.exiting`) — bare `exit`, `leave`, `get out`, `go
-out`, `climb out`, `disembark`, `alight` (a named target parses too —
-`exit the chair` — and the action honors it: naming something you aren't
-inside refuses `not_in_that`, since ADR-231). It undoes an ENTER: out of the
-container, off the supporter. Standing in a plain room refuses with
-`already_outside` — leaving rooms is GO's job. A closed openable container
-refuses with `container_closed` (you can shut yourself in). Keys:
-`exited`, `exited_from`, `nowhere_to_go`, `already_outside`,
-`not_in_that`, `container_closed`; event `if.event.exited`.
+out`, `climb out`, `disembark`, `alight`. A named target parses too —
+`exit the chair` — and naming something you aren't inside refuses with
+`not_in_that` (ADR-231). EXIT undoes an ENTER: out of the container,
+off the supporter. Standing in a plain room refuses with
+`already_outside` — leaving rooms is GO's job. A closed openable
+container refuses with `container_closed`: you can shut yourself in.
+
+The author writes:
+
+<!-- fixture: movement/entering-exiting.story -->
+```story
+create the Laundry
+  a room
+
+  Copper tubs, drying racks, and a mangle with an evil reputation.
+
+create the laundry chest
+  aka chest
+  a container, enterable, openable, starts open
+  in the Laundry
+
+  A wicker chest big enough to hide in.
+
+create the mangle
+  scenery
+  in the Laundry
+
+  Two iron rollers and a crank. Keep your fingers clear.
+
+create the player
+  starts in the Laundry
+```
+
+The player sees:
+
+<!-- transcript: movement/entering-exiting.story -->
+```transcript
+> enter the mangle
+You can't enter the mangle.
+
+> get into the chest
+You get into the laundry chest.
+
+> close the chest
+You close the laundry chest.
+
+> exit
+The laundry chest is closed.
+
+> open the chest
+You open the laundry chest.
+
+Inside the laundry chest you see yourself.
+
+> exit
+You get out of the laundry chest.
+
+> exit the chest
+But you aren't in the laundry chest.
+
+> exit
+You're not inside anything.
+```
+
+One trait draws the line — the mangle turns you away, the chest lets
+you in — and the composed openable makes the lid real: closed, it holds
+you until you open it from the inside (revealing, honestly, yourself).
+
+| | enter (`if.action.entering.*`) | exit (`if.action.exiting.*`) |
+|---|---|---|
+| Refusals | `not_enterable` · `container_closed` · `already_inside` (`too_full` reserved, never fires) | `already_outside` · `not_in_that` · `container_closed` (shut in) · `nowhere_to_go` |
+| Success | `entered` · `entered_on` (`on`-preposition supporters) | `exited` · `exited_from` |
+| Events | `if.event.entered` | `if.event.exited` |
+
+Cross-references: `climb into X` is entering and `climb out` is exiting
+(§3.3); the `enterable` trait and the vehicle trait that rides on it
+are in §3.4.
 
 ### 3.3 climbing
 
-**climb** (`if.action.climbing`) — `climb X`, `climb up/down X`, `scale`,
-`ascend`, `descend X`, all gated on the `climbable` trait (`climb into the
-basket` is entering; `climb out` is exiting). Climbing something puts you
-*on* it — the same place putting yourself on an enterable supporter gets
-you; an unclimbable target refuses with `not_climbable`, being already up
-there with `already_there`.
+**climb** (`if.action.climbing`) — `climb X`, `climb up/down X`,
+`scale`, `ascend`, `descend X`, all gated on the `climbable` trait
+(`climb into the basket` is entering; `climb out` is exiting, §3.2).
+Climbing something puts you *on* it — the same place putting yourself
+on an enterable supporter gets you; an unclimbable target refuses with
+`not_climbable`, being already up there with `already_there`.
 
-The action also implements directional climbing — `climb up` meaning "take
-the up exit" — but no core grammar reaches it today (bare `up`/`down`
-parse as going, which is usually what you want); a story adding `climb up`
-as grammar gets room-exit climbing for free, refusing off-vertical
-directions with `cant_go_that_way`.
+The author writes:
 
-Two honest footnotes: the trait carries `destination` and `direction`
-fields the standard action does not consume yet (climbing an object never
-teleports you to a destination room — put an `after climbing it` clause on
-the cliff if you want that), and `blockedMessage`/`successMessage` are
-likewise data for story use. Keys: `no_target`, `not_climbable`,
-`cant_go_that_way`, `already_there`, `climbed_up`, `climbed_down`,
-`climbed_onto` (`too_high`/`too_dangerous` reserved). Events:
-`if.event.climbed`, plus `if.event.moved` (directional) or
-`if.event.entered` (object).
+<!-- fixture: movement/climbing.story -->
+```story
+create the Orchard Corner
+  a room
+
+  One great pear tree leans over the garden wall here.
+
+create the pear tree
+  aka tree
+  a supporter, climbable
+  scenery
+  in the Orchard Corner
+
+  Low branches all the way up, practically a ladder.
+
+  after climbing it
+    phrase over-the-wall
+      From up here you can see clear over the wall into the lane.
+  end after
+
+create the garden wall
+  aka wall
+  scenery
+  in the Orchard Corner
+
+  Twelve feet of smooth brick, no handholds.
+
+create the player
+  starts in the Orchard Corner
+```
+
+The player sees:
+
+<!-- transcript: movement/climbing.story -->
+```transcript
+> climb the wall
+You can't climb the garden wall.
+
+> climb the tree
+You climb onto the pear tree.
+
+From up here you can see clear over the wall into the lane.
+
+> climb the tree
+You're already on the pear tree.
+
+> climb out
+You get out of the pear tree.
+```
+
+The supporter composed alongside `climbable` is what makes the perch
+real — somewhere to actually be, so the second climb can refuse and
+`climb out` has something to leave; with bare `climbable` alone the
+climb speaks success but the player never leaves the room floor
+(nothing can hold them).
+
+| | climb (`if.action.climbing.*`) |
+|---|---|
+| Refusals | `no_target` · `not_climbable` · `already_there` · `cant_go_that_way` (directional, off-vertical) — `too_high`/`too_dangerous` reserved |
+| Success | `climbed_onto` (object) · `climbed_up` / `climbed_down` (directional) |
+| Events | `if.event.climbed`, plus `if.event.entered` (object) or `if.event.moved` (directional) |
+
+Interceptors: `after climbing it` on the target — the pear tree's
+comment above, and how a cliff would teleport (below). Two honest
+footnotes: the action also implements directional climbing — `climb up`
+meaning "take the up exit" — but no core grammar reaches it today (bare
+`up`/`down` parse as going, which is usually what you want; a story
+adding `climb up` as grammar gets room-exit climbing for free); and the
+trait's `destination`/`direction` fields are unread by the standard
+action — climbing never teleports you to a destination room, so put an
+`after climbing it` clause on the cliff if you want that
+(`blockedMessage`/`successMessage` are likewise story data).
 
 ### 3.4 Movement traits
 
 **room** (`a room` — kind noun). The place actors stand. Everything a
 room does in a `.story` file happens in its `create` block: direction
-lines and blocked exits (chord-language.md §2.5), `dark` / `dark while
-<condition>` (§2.3 there), a `first time` arrival description (§2.9
-there), `deadly:` (§9.2 here), states, scores, and `on`/`after` clauses —
-including `after entering it`, the room-arrival reaction the Cloak of
-Darkness bar uses. Room exits may also route through a door — `down to
-the Cellar through the cellar door` — which is where
-`door_closed`/`door_locked` in §3.1 come from; §4.3 has the door story.
+lines, doors (`north to the Potting Shed through the green door` —
+§4.3 has the door story), and blocked exits (chord-language.md §2.5);
+`dark` / `dark while <condition>` (§2.3 there); a `first time` arrival
+description (§2.9 there); `deadly:` (§9.2 here); states, scores, and
+`on`/`after` clauses — including `after entering it`, the room-arrival
+reaction the Potting Shed uses in §3.1's example.
 
-**enterable** (`enterable` — adjective). Marks a thing the player can get
-inside or on top of. Composes with defaults (preposition `in`); the `on`
-preposition — benches, roofs — is a TypeScript setting today. First
-documented here: no story in the repo uses it yet.
+**enterable** (`enterable` — adjective). Marks a thing the player can
+get inside or on top of — the laundry chest in §3.2 composes it with
+`a container, openable` so the lid is real. Composes with defaults
+(preposition `in`); the `on` preposition — benches, roofs — is a
+TypeScript setting today. First documented here: no story in the repo
+uses it yet.
 
 **climbable** (`climbable` — adjective). Marks a thing the CLIMB family
-accepts. Defaults only from Chord (`canClimb: true`); the trait's
-`destination`/`direction`/message fields are story-handler data (§3.3).
+accepts. Defaults only from Chord (`canClimb: true`); compose a
+supporter alongside it to give the climber somewhere to be (§3.3's
+pear tree); the trait's `destination`/`direction`/message fields are
+story-handler data (§3.3).
 
 **exit** (trait). A passage *entity* — the "xyzzy" magic word, a tunnel
 that is a thing in its own right. A room exit can route `via` such an
@@ -635,16 +1369,17 @@ no Chord surface — treat it as Sharpee-Way plumbing.
 
 **vehicle** (trait — TypeScript-only, no Chord surface). Rides on top of
 `enterable`: the trait's `blocksWalkingMovement` (default true) is what
-makes GO say "you're in something" instead of walking; set it false and GO
-moves the vehicle itself along the room's exits, passengers and all
-(`movesWithContents`). `positionRooms`/`currentPosition` track multi-stop
-vehicles (the Dungeo basket's counterweight shape); `isOperational` and
-`requiresExitBeforeLeaving` are read by vehicle helpers for story use.
+makes GO say "you're in something" instead of walking; set it false and
+GO moves the vehicle itself along the room's exits, passengers and all
+(`movesWithContents`). `positionRooms`/`currentPosition` track
+multi-stop vehicles (the Dungeo basket's counterweight shape);
+`isOperational` and `requiresExitBeforeLeaving` are read by vehicle
+helpers for story use.
 
 **region** (`a region` — kind noun, since ADR-236). A named room group,
 authored region-side: `containing the Drive, the Hall` lists members
-(additive — regions nest by containing each other), `after entering it` /
-`after leaving it` react to boundary crossings (`leaving` exists only
+(additive — regions nest by containing each other), `after entering it`
+/ `after leaving it` react to boundary crossings (`leaving` exists only
 here), and an `on every turn` clause on the region block is a region
 daemon, firing while the player is anywhere in a member room. The
 `region_entered`/`region_exited` events going emits (§3.1) are what
@@ -661,121 +1396,322 @@ actions read them uniformly.
 
 ### 4.1 opening and closing
 
-**open** (`if.action.opening`) and **close** (`if.action.closing`) — the
-verbs: `open`, `unwrap`, `uncover`, and `open up` all open; `close`,
-`shut`, and `cover` all close (the synonym forms landed with ADR-230 D4).
-Every form checks the `openable` trait in validation, so `open the
-boulder` refuses with `not_openable` ("The boulder can't be opened.").
+**open** (`if.action.opening`) — verbs `open`, `open up`, `unwrap`,
+`uncover` (synonym forms: ADR-230 D4). Only an `openable` opens — anything
+else refuses `not_openable` — and lock state gates opening (`locked`);
+unlocking is its own step (§4.2). `open X with Y` is still opening
+(ADR-230 D3b, no separate action), the named tool a consulted command
+entity; an openable can require a tool exactly as a lockable names a key —
+`openable with the crowbar` in Chord, `toolId` in TypeScript — refusing
+`no_tool` / `tool_not_held` / `wrong_tool`, while an openable with no
+requirement ignores an offered tool. A non-empty container's contents are
+announced by a separate, replaceable piece: the
+`stdlib.chain.opened-revealed` chain handler reacts to `if.event.opened`
+and emits `if.event.revealed`; a story that wants a different reveal — or
+none — replaces that chain by its key rather than touching the action.
 
-`open X with Y` maps to opening too (ADR-230 D3b — no separate action),
-with the named tool as a consulted command entity. An openable can
-declare a required tool exactly as a lockable declares a key —
-`toolId` on the trait; in Chord, `openable with the crowbar`, the same
-keyless `with` shape as a lockable's key (the several-tools list
-`toolIds` is TypeScript today) — refusing `no_tool`/`tool_not_held`/
-`wrong_tool`; an openable with no tool requirement ignores an offered
-tool exactly as a keyless lockable ignores keyless LOCK.
+**close** (`if.action.closing`) — verbs `close`, `shut`, `cover`. Refuses
+`not_closable`, `already_closed`, and `prevents_closing` — the last both
+for one-way openables (`canClose: false`) and for an obstacle named in
+`closeRequirements`. Lock state is not checked; closing never locks.
 
-Opening refuses when there is nothing openable named (`no_target`,
-`not_openable`), when it is already open (`already_open`), and when the
-thing is locked (`locked`) — lock state gates opening, and unlocking is
-its own step. Success says `opened`, or `its_empty` when a container opens
-onto nothing. A non-empty container's contents are then announced by a
-separate, replaceable piece: the `stdlib.chain.opened-revealed` chain
-handler reacts to the `if.event.opened` event and emits `if.event.revealed`
-("Inside the small mailbox you see a leaflet."). A story that wants a
-different reveal — or none — replaces that chain by its key rather than
-touching the action.
+The author writes:
 
-Closing refuses `not_closable`, `already_closed`, and `prevents_closing` —
-the last both for one-way openables (`canClose: false`) and for an
-obstacle named in the trait's `closeRequirements`. Lock state is not
-checked; closing never locks (the trait's `autoLock` field exists but is
-inert today — flagged). Success: `closed`, event `if.event.closed` with a
-rich payload (door/container flags, contents count) for story reactions.
+<!-- fixture: openables/opening-closing.story -->
+```story
+create the Galley
+  a room
 
-Both actions consult the target's `on opening it` / `on closing it`
-clauses — the humming hive box in chord-language.md §3.1 is exactly this
-seam — and opening consults an explicitly named tool after the target
-(target → tool, the same ordering discipline as lock-and-key).
+  A cramped ship's kitchen, all brass and old smoke.
+
+create the anvil
+  scenery
+  in the Galley
+
+  A blacksmith's anvil, out of place at sea.
+
+create the biscuit tin
+  aka tin
+  a container, openable
+  in the Galley
+
+  A dented tin with a warped lid.
+
+  on closing it
+    refuse tin-warped
+  end on
+
+  phrase tin-warped:
+    The lid is warped; it will not seat again.
+
+create the sea chest
+  aka chest
+  a container, openable
+  in the Galley
+
+  A low sea chest, banded in iron.
+
+create the tin whistle
+  aka whistle
+  in the sea chest
+
+  A tin whistle on a loop of cord.
+
+create the player
+  starts in the Galley
+
+define phrase if.action.closing.closed
+  You swing it shut.
+end phrase
+```
+
+The player sees:
+
+<!-- transcript: openables/opening-closing.story -->
+```transcript
+> open the anvil
+The anvil can't be opened.
+
+> open the biscuit tin
+You open the biscuit tin, which is empty.
+
+> close the biscuit tin
+The lid is warped; it will not seat again.
+
+> open the sea chest
+You open the sea chest.
+
+Inside the sea chest you see tin whistle.
+
+> close the sea chest
+You swing it shut.
+```
+
+Three seams and the chain in one scene: the anvil refuses with the
+platform's `not_openable`, the tin's `on closing it` guard speaks its own
+refusal, the story-wide `define phrase` rewrites every plain close — and
+the sea chest's contents line is `stdlib.chain.opened-revealed` at work.
+
+| | open (`if.action.opening.*`) | close (`if.action.closing.*`) |
+|---|---|---|
+| Refusals | `no_target` · `not_openable` · `already_open` · `locked` · `no_tool` · `tool_not_held` · `wrong_tool` | `not_closable` · `already_closed` · `prevents_closing` |
+| Success | `opened` · `its_empty` (a container opens onto nothing) | `closed` |
+| Events | `if.event.opened`, then `if.event.revealed` via the chain | `if.event.closed` (rich payload: door/container flags, contents count) |
+
+Interceptors: `on opening it` / `on closing it` on the target — the
+humming hive box in chord-language.md §3.1 is exactly this seam — and
+opening consults an explicitly named tool after the target (target →
+tool, the same ordering discipline as lock-and-key, §4.2).
+
+Gaps: the several-tools list `toolIds` is TypeScript today; the trait's
+`autoLock` field exists but is inert — closing never locks (flagged, §4.3).
 
 ### 4.2 locking and unlocking
 
-**lock** (`if.action.locking`) and **unlock** (`if.action.unlocking`)
-operate on the `lockable` trait. Every form parses since ADR-230 D2:
-`lock X`, `lock X with/using Y`, keyless `unlock X`, `unlock X with/using
-Y`, plus the `secure`/`unsecure` aliases (D4). The keyless forms are safe
-by construction — a keyed lock still refuses `no_key` when no key is
-named. A lock either requires a key — it names one (`with the <key>` in
-Chord — `lockable with the iron key`; `keyId`/`keyIds` in TypeScript) —
-or it is keyless and turns freely. The key rules, shared by both actions: a
-keyed lock with no key named asks `no_key` ("What do you want to unlock it
-with?"); a named key you are not holding refuses `key_not_held`; the wrong
-key refuses `wrong_key`. Locking additionally requires the thing be closed
-first (`not_closed`), and both refuse the redundant case
-(`already_locked` / `already_unlocked`). One quirk worth knowing: on a
-*keyless* lock, a named object is neither required nor checked — `lock the
-box with the herring` succeeds and even says `locked_with`.
+**lock** (`if.action.locking`) and **unlock** (`if.action.unlocking`) —
+every form is core grammar since ADR-230 D2: `lock X`, `lock X with/using
+Y`, keyless `unlock X`, `unlock X with/using Y`, plus the `secure` /
+`unsecure` aliases (D4). Both operate on the `lockable` trait. A lock
+either names its key — `lockable with the iron key` in Chord,
+`keyId`/`keyIds` in TypeScript — or is keyless and turns freely, which
+makes the keyless forms safe by construction: a keyed lock still asks
+`no_key` when no key is named. The key rules, shared by both actions: a
+named key you are not holding refuses `key_not_held`; the wrong key
+refuses `wrong_key`. Locking additionally requires the thing be closed
+first (`not_closed`), and both refuse the redundant case (`already_locked`
+/ `already_unlocked`). One quirk worth knowing: on a *keyless* lock a
+named object is neither required nor checked — `lock the box with the
+herring` succeeds and even says `locked_with`.
 
-Success keys: `locked` / `locked_with`, `unlocked` / `unlocked_with`;
-events `if.event.locked` / `if.event.unlocked` (key, sound, and
-container/door flags in the payload), blocked forms
-`if.event.lock_blocked` / `unlock_blocked`.
+The author writes:
 
-Interceptors (ADR-229): both actions consult the **target first, then the
-key** — so a cursed key can veto its own use (`on unlocking it` on the
-key), and each side's clause sees the other's identity in its context.
-Only an *explicitly named* key is consulted; a key the platform infers is
-not a command entity. In Chord, composition is one line — the zoo's
-`scenery, openable, lockable with the staff keycard` is the shipped
-example — and the key name resolves to its entity wherever in the story
-that entity is declared (forward references are legal; the
-container-kind key-drop bug the first draft flagged here is fixed).
+<!-- fixture: openables/locking-unlocking.story -->
+```story
+create the Vestry
+  a room
+
+  Vestments on pegs, and a deep stone niche.
+
+create the reliquary
+  a container, openable, lockable with the bone key, starts locked
+  in the Vestry
+
+  A silver reliquary, older than the church around it.
+
+create the knucklebone
+  in the reliquary
+
+  A saint's knucklebone, brown with age.
+
+create the bone key
+  aka key
+
+  A key carved from a bird's hollow bone.
+
+  on locking it
+    refuse key-never-seals
+  end on
+
+  phrase key-never-seals:
+    The bone key turns only one way; it opens, it never seals.
+
+create the player
+  starts in the Vestry
+  carries the bone key
+```
+
+The player sees:
+
+<!-- transcript: openables/locking-unlocking.story -->
+```transcript
+> open the reliquary
+The reliquary is locked.
+
+> unlock the reliquary
+What do you want to unlock it with?
+
+> unlock the reliquary with the bone key
+You unlock the reliquary with the bone key.
+
+> open the reliquary
+You open the reliquary.
+
+Inside the reliquary you see knucklebone.
+
+> close the reliquary
+You close the reliquary.
+
+> lock the reliquary with the bone key
+The bone key turns only one way; it opens, it never seals.
+```
+
+The keyless UNLOCK asks rather than fails, lock state gates opening until
+the key turns, and the last command is ADR-229's ordering made visible:
+each action consults the **target first, then the key** — the reliquary
+has nothing to say, so the bone key's own `on locking it` clause vetoes
+its use (and note the key contract resolved even though the bone key is
+declared *after* the reliquary — forward references are legal).
+
+| | lock (`if.action.locking.*`) | unlock (`if.action.unlocking.*`) |
+|---|---|---|
+| Refusals | `not_lockable` · `no_key` · `key_not_held` · `wrong_key` · `not_closed` · `already_locked` | `not_lockable` · `no_key` · `key_not_held` · `wrong_key` · `already_unlocked` |
+| Success | `locked` · `locked_with` | `unlocked` · `unlocked_with` |
+| Events | `if.event.locked` / `if.event.lock_blocked` | `if.event.unlocked` / `if.event.unlock_blocked` (key, sound, and container/door flags in the payload) |
+
+Interceptors (ADR-229): target first, then the key, each side's clause
+seeing the other's identity in its context — and only an *explicitly
+named* key is consulted; a key the platform infers is not a command
+entity.
+
+Gaps: the several-keys list `keyIds` is TypeScript today.
 
 ### 4.3 Openable, lockable, and door
 
 **openable** (`openable` — adjective). Two states, open and closed, owned
-by the platform (`startsOpen` defaults to closed). Beyond the state:
-`canClose: false` makes a one-way openable, `closeRequirements` names an
-obstacle, `openSound`/`closeSound` ride along in events, and
-`open/closedDescription` swap description text. From Chord the adjective
-composes closed; `starts open` on the composition line seeds it open
-(ADR-231; chord-language.md §2.11), and a required tool composes too
-(`openable with the crowbar`, §4.1). The remaining settings — `canClose`,
-`closeRequirements`, sounds, description swaps — are TypeScript territory
-today.
+by the platform; `startsOpen` defaults to closed, and from Chord the
+adjective composes closed with `starts open` on the composition line
+seeding it open (ADR-231; chord-language.md §2.11). A required tool
+composes too — `openable with the crowbar` (§4.1). The biscuit tin and
+sea chest of §4.1 are this trait at work. The remaining settings —
+`canClose: false` (one-way openable), `closeRequirements` (a named
+obstacle), `openSound`/`closeSound` (ride along in events),
+`open/closedDescription` (swap description text) — are TypeScript
+territory today.
 
 **lockable** (`lockable`, optionally `with the <key>` — adjective).
-Locked/unlocked state (starts unlocked everywhere except on a door,
+Locked/unlocked state — starts unlocked everywhere except on a door,
 where a lockable door starts locked until the author says `starts
-unlocked` — ADR-234's one kind-scoped default; Chord also seeds `starts
-locked` on any composition line, ADR-231) plus the key contract: `keyId`
-(one key), `keyIds` (several, TypeScript). A lock without keys is a latch anyone can turn. `lockSound` /
-`unlockSound` decorate the events. Two declared fields are inert today —
-`autoLock` (relock-on-close is implemented but never invoked) and
-`acceptsMasterKey` (never read) — don't build a puzzle on them; flagged.
+unlocked` (ADR-234's one kind-scoped default); Chord also seeds `starts
+locked` on any composition line (ADR-231), as the reliquary of §4.2 does.
+The key contract: `with the <key>` in Chord (`keyId` in TypeScript;
+several keys via `keyIds`, TypeScript only), and a lock without keys is a
+latch anyone can turn. `lockSound` / `unlockSound` decorate the events.
+Two declared fields are inert today — `autoLock` (relock-on-close is
+implemented but never invoked) and `acceptsMasterKey` (never read) —
+don't build a puzzle on them; flagged.
 
 **door** (`a door` — kind noun, since ADR-234). A door is an entity that
-*is* the connection — but in a `.story` file the connection is written on
-the room's exit line, not the door's block: `down to the Cellar through
-the cellar door`. The reverse exit is inferred (opposite direction, no
-far-room line needed; a mirrored line is legal but must agree exactly).
-The door block itself is pure declaration — `a door, lockable with the
-tarnished key`, a description, clauses — and `a door` composes scenery
-and openable automatically, starting closed (`starts open` overrides)
-and, when lockable, locked (`starts unlocked` overrides — the platform's
-one kind-scoped default). `through` never creates a door, and the
-compiler refuses what it can't answer: a declared door no exit line
-connects, a placement line on a door block (its location IS its room
-pair), `through` naming a non-door, conflicting room pairs — each with
-its own diagnostic. The loader wires everything through the one platform
-path (`connectRooms` with a door id, ADR-237); going then refuses
-`door_closed`/`door_locked` (§3.1) with no story code at all, and the
-door answers from both of its rooms — ADR-238's two-sided presence,
-without leaking the far room. Under the trait: `room1`, `room2`,
-`bidirectional` — one-way doors (`bidirectional: false`, traversing
-room1 → room2 only) are TypeScript-only, and the `, one-way` exit-line
-modifier is reserved but a parse error today.
+*is* the connection — but the connection is written on the room's exit
+line, not the door's block: `down to the Cellar through the cellar door`.
+The reverse exit is inferred (opposite direction, no far-room line
+needed; a mirrored line is legal but must agree exactly), and the door
+block itself is pure declaration — `a door` composes scenery and openable
+automatically, starting closed (`starts open` overrides) and, when
+lockable, locked (`starts unlocked` overrides). The loader wires
+everything through the one platform path (`connectRooms` with a door id,
+ADR-237), so going refuses `door_closed` / `door_locked` (§3.1) with no
+story code at all, and the door answers from both of its rooms —
+ADR-238's two-sided presence, without leaking the far room.
+
+The author writes:
+
+<!-- fixture: openables/cellar-door.story -->
+```story
+create the Landing
+  a room
+  down to the Cellar through the cellar door
+
+  A stone landing at the top of a worn stair.
+
+create the Cellar
+  a room
+
+  Casks and cobwebs, and a smell of wet earth.
+
+create the cellar door
+  a door, lockable with the iron key
+
+  Oak planks strapped with iron, set flush in the floor.
+
+create the iron key
+  aka key
+
+  A heavy iron key, cold in the hand.
+
+create the player
+  starts in the Landing
+  carries the iron key
+```
+
+The player sees:
+
+<!-- transcript: openables/cellar-door.story -->
+```transcript
+> down
+The cellar door is locked.
+
+> unlock the cellar door with the iron key
+You unlock the cellar door with the iron key.
+
+> down
+The cellar door is closed.
+
+> open the cellar door
+You open the cellar door.
+
+> down
+Cellar
+Casks and cobwebs, and a smell of wet earth.
+
+> close the cellar door
+You close the cellar door.
+```
+
+One exit line and one declaration buy the whole protocol: the lockable
+door starts locked by the kind-scoped default, going refuses
+`door_locked` then `door_closed` with no story code, the standard
+lock-and-key actions work on the door itself, and the final command
+closes the same door from its far side — two-sided presence.
+
+`through` never creates a door, and the compiler refuses what it can't
+answer — a declared door no exit line connects, a placement line on a
+door block (its location IS its room pair), `through` naming a non-door,
+conflicting room pairs — each with its own diagnostic.
+
+Gaps: under the trait, `room1`, `room2`, `bidirectional` — one-way doors
+(`bidirectional: false`, traversing room1 → room2 only) are
+TypeScript-only, and the `, one-way` exit-line modifier is reserved but a
+parse error today.
 
 ## 5. Wearing
 
@@ -785,74 +1721,135 @@ lists actually parses.
 
 ### 5.1 wearing and taking_off
 
-**wear** (`if.action.wearing`) — `wear X`, `don X`, `equip X`, `put on X`
-(the phrasal form outranks generic `put`). Needs the `wearable` trait
-(`not_wearable` otherwise). You don't have to be holding it — wearing
+**wear** (`if.action.wearing`) — verbs `wear X`, `don X`, `equip X`,
+`put on X` (the phrasal form outranks generic `put`). Needs the `wearable`
+trait (`not_wearable` otherwise). You don't have to be holding it — wearing
 performs an implicit take first, refusing with the take's own refusal if
-that fails. Then the conflict rules, both keyed on the trait's body part:
-something already worn in the same place refuses (in practice as
-`hands_full` — see the layer note below), and you cannot put a layer on
-*under* something already worn over it. Already wearing it →
-`already_wearing`.
+that fails. The conflict rules key on the trait's body part and layer: you
+cannot put a garment on *under* something already worn over it — but
+because every wearable defaults to the same layer, default-built garments
+never conflict and simply stack (the §5.2 quirk). Already wearing it →
+`already_wearing`. Success sets the worn state and says `worn`; event
+`if.event.worn` carries `bodyPart` and `layer` in the payload.
 
-Success sets the worn state and says `worn` ("You put on the velvet
-cloak."); event `if.event.worn` with `bodyPart` and `layer` in the payload.
-Keys under `if.action.wearing.`: `no_target`, `not_wearable`, `not_held`,
-`already_wearing`, `cant_wear_that`, `hands_full`, `worn`.
-
-**take off** (`if.action.taking_off`) — `take off X`, `take X off`,
+**take off** (`if.action.taking_off`) — verbs `take off X`, `take X off`,
 `remove X`, `doff X`, `unequip X`. (Yes — bare `remove X` means undressing,
 which is why take-from-container needed its own action, §2.3.) Refuses when
 the thing is not worn by you (`not_wearing`), when a higher layer is worn
-over it (`prevents_removal` — "You'll need to take off the tabard first."),
-and when the garment is cursed (`cant_remove`). Both cursed-ness and the
-folded conflict checks are validate-phase since ADR-229 — a refused removal
-never half-happens. Success clears the worn state, `removed`, event
-`if.event.removed`; the item stays in inventory.
+over it (`prevents_removal`), and when the garment is cursed
+(`cant_remove`) — all validate-phase since ADR-229, so a refused removal
+never half-happens. Success clears the worn state (`removed`); the item
+stays in inventory.
 
-Both actions consult the garment's own clauses (`on wearing it` /
-`on taking_off it`) — a cloak that reacts to being donned is one clause on
-the cloak. The Cloak of Darkness player starts dressed the Chord way:
+A `wears` line on an actor starts the story dressed (load error unless the
+item is `wearable`), and `worn`/`unworn` are live state predicates —
+`while the cloak is worn` is story logic.
 
+The author writes:
+
+<!-- fixture: wearing/wearing-taking-off.story -->
 ```story
-create the player
-  starts in the Foyer of the Opera House
-  wears the velvet cloak
+create the Vestry
+  a room
 
-create the velvet cloak
-  aka cloak
+  Robes and vestments hang from a row of pegs.
+
+create the woolen tunic
+  aka tunic
   wearable
+
+  A plain tunic, scratchy but warm.
+
+create the brocade vest
+  aka vest
+  wearable
+  in the Vestry
+
+  A stiff vest sewn with gold thread.
+
+create the iron torc
+  aka torc
+  wearable
+  in the Vestry
+
+  A ring of black iron, hinged like a shackle.
+
+  on taking_off it
+    refuse torc-stuck
+  end on
+
+  phrase torc-stuck:
+    The torc's hinge has seized; it will not open.
+
+create the player
+  starts in the Vestry
+  wears the woolen tunic
 ```
 
-A `wears` line requires the item be `wearable` (load error otherwise), and
-`worn`/`unworn` work as state predicates in conditions — `while the cloak
-is worn` is live story logic.
+The player sees:
+
+<!-- transcript: wearing/wearing-taking-off.story -->
+```transcript
+> wear the vest
+(first taking the brocade vest)
+
+Taken.
+
+You put on the brocade vest.
+
+> take off the tunic
+You take off the woolen tunic.
+
+> wear the torc
+(first taking the iron torc)
+
+Taken.
+
+You put on the iron torc.
+
+> take off the torc
+The torc's hinge has seized; it will not open.
+```
+
+Three seams in one scene: `wears` starts the player dressed in the tunic,
+the default layers let the vest stack straight over it and the tunic slide
+out from underneath (the §5.2 quirk, live), and the torc's `on taking_off
+it` guard is a cursed garment in one clause.
+
+| | wear (`if.action.wearing.*`) | take off (`if.action.taking_off.*`) |
+|---|---|---|
+| Refusals | `no_target` · `not_wearable` · `not_held` · `already_wearing` · `cant_wear_that` · `hands_full` (worn under a higher layer) | `no_target` · `not_wearing` · `prevents_removal` (higher layer on top) · `cant_remove` (cursed) |
+| Success | `worn` | `removed` (the item stays in inventory) |
+| Events | `if.event.worn` / `if.event.wear_blocked` | `if.event.removed` / `if.event.take_off_blocked` |
+
+Interceptors: `on wearing it` / `on taking_off it` on the garment — a cloak
+that reacts to being donned is one clause on the cloak.
 
 ### 5.2 Wearing traits
 
 **wearable** (`wearable` — adjective). The one live trait here. Fields
 stdlib actually reads: the worn state (`worn`, `wornBy`), `bodyPart`
 (default `torso`) and `layer` (default 1) for the conflict rules, plus the
-undeclared `cursed` property the removal check probes. A quirk to know
-when building layered outfits in TypeScript: because `layer` defaults to 1,
-the "same body part, no layers" conflict branch is effectively unreachable
-and conflicts report as `hands_full` — set explicit layers and the layering
-rules do what you expect. Several declared fields are dormant today
-(`slot`, `blocksSlots`, `wearableOver`, `canRemove`, `weight`, `bulk`, the
-message overrides) — the behavior has TODOs for them; don't build on them
-yet.
+undeclared `cursed` property the removal check probes. The layer-default
+quirk: because `layer` defaults to 1, the "same body part, no layers"
+conflict branch is unreachable, and garments built with the defaults never
+conflict at all — that is why the vest in §5.1 goes on over the worn tunic
+and the tunic comes off from underneath it. Set explicit layers (TypeScript
+today) and the layering rules engage: `hands_full` on wear,
+`prevents_removal` on removal. Several declared fields are dormant (`slot`,
+`blocksSlots`, `wearableOver`, `canRemove`, `weight`, `bulk`, the message
+overrides) — don't build on them yet.
 
-**clothing** (trait — dormant, and a gotcha). A separate trait type that
-duplicates the wearable fields and adds material/style/condition. **No
-action reads it**, and because it is a *different* trait type, an item
-composed with only `clothing` fails wearing's `wearable` check — it cannot
-be put on. Until it wakes up, use `wearable` and keep fabric flavor in
-descriptions.
+**clothing** (trait — dormant, and a gotcha). Duplicates the wearable
+fields and adds material/style/condition, but **no action reads it** — and
+because it is a *different* trait type, an item composed with only
+`clothing` fails wearing's `wearable` check and cannot be put on. Use
+`wearable` and keep fabric flavor in descriptions.
 
-**equipped** (trait — combat-adjacent). Equipment slots and stat modifiers
-(weapon/armor/shield/…, attack/defense). The wearing actions ignore it —
-`equip` the verb is just a synonym for wear — and its one live consumer is
-combat's weapon selection (§8.2). TypeScript-only.
+**equipped** (trait — combat-adjacent). Equipment slots and stat modifiers;
+the wearing actions ignore it — `equip` the verb is just a synonym for wear
+— and its one live consumer is combat's weapon selection (§8.2).
+TypeScript-only.
 
 **open-inventory** (trait — a scope marker, no fields). Composed onto an
 NPC, it makes what they carry *reachable*, not just visible — the
@@ -866,128 +1863,313 @@ close, what is hidden inside, and what things say when read.
 
 ### 6.1 looking and examining
 
-**look** (`if.action.looking`) — bare `look`, `l`, `look around`. Rerenders
-the room: name and description (a first visit prefers the room's
-first-time description and marks the room visited), the "You can see …"
-list (`contents_list` — scenery excluded, though an open scenery
-container's contents still show), and the contents of open containers and
+**look** (`if.action.looking`) — bare `look`, `l`, `look around`.
+Rerenders the room: name and description (a first visit prefers the
+room's first-time description and marks the room visited), the "You can
+see …" list (scenery excluded), and the contents of open containers and
 supporters in view. In a dark room all of that collapses to `room_dark`.
-Two footnotes: brief mode is not implemented (verbose is hardcoded on, so
-`room_description_brief` is unreachable), and looking is the one sensory
-action that consults no interceptor clauses — there is no entity to hang
-them on; use the room's `after entering it` or an `on every turn` daemon
-instead.
 
 **examine** (`if.action.examining`) — `examine X`, `x X`, `inspect X`,
 `check`/`view`/`observe X` (ADR-230 D4), `look at X`, and `look
 [carefully] at X` — the adverb adds nothing; the separate
 `examining_carefully` id it used to parse to is gone (ADR-230 D3a).
-Needs only visibility, not reach. The reply is the
-entity's description plus one trait-aware tail, first match wins:
-containers report open/closed (an open one lists contents), then
-supporters, switchables (on/off), readables with text, wearables (worn or
-not), doors (locked state) — otherwise plain `examined`, or
-`nothing_special` for a descriptionless thing. A live detail sentence can
-ride on the end: Chord's gated `phrase detail while <condition>:` override
-(chord-language.md §2.10) is exactly that seam, and switchable/lit things
-have built-in detail slots. Keys under `if.action.examining.`:
-`examined`, `examined_self`, `examined_container`, `examined_supporter`,
+Needs only visibility, not reach. The reply is the entity's description;
+an open container or supporter adds a contents line, and a live
+**detail** sentence can ride on the end of the description — Chord's
+gated `phrase detail while <condition>:` override (chord-language.md
+§2.10) is exactly that seam. The message key is trait-aware, first
+match wins: `examined_container`, `examined_supporter`,
 `examined_switchable`, `examined_readable`, `examined_wearable`,
-`examined_door`, `nothing_special`, `no_target`. Event:
-`if.event.examined`; the target's `on examining it` clauses are consulted
-(the robin in chord-language.md §2.10 rides the sibling watching seam the
-zoo defines).
+`examined_door` — otherwise plain `examined`.
+
+The author writes:
+
+<!-- fixture: senses/looking-examining.story -->
+```story
+create the Observatory
+  a room
+
+  A domed room of cold air and colder brass.
+
+create the brass telescope
+  aka telescope
+  scenery, switchable
+  in the Observatory
+
+  A long brass telescope aimed at the slot in the dome.
+
+  phrase detail while it is on:
+    Its clockwork drive ticks as it tracks the sky.
+
+create the star chart
+  aka chart
+  in the Observatory
+
+  A chart of the northern constellations.
+
+create the player
+  starts in the Observatory
+```
+
+The player sees:
+
+<!-- transcript: senses/looking-examining.story -->
+```transcript
+> look
+Observatory
+A domed room of cold air and colder brass.
+
+You can see a star chart here.
+
+> examine the telescope
+A long brass telescope aimed at the slot in the dome.
+
+> turn on the telescope
+The brass telescope hums to life.
+
+> examine the telescope
+A long brass telescope aimed at the slot in the dome. Its clockwork drive ticks as it tracks the sky.
+```
+
+The scenery telescope stays out of the "You can see …" list but
+examines fine, and the `detail while` phrase appends its sentence to
+the description only while the condition holds.
+
+| | look (`if.action.looking.*`) | examine (`if.action.examining.*`) |
+|---|---|---|
+| Refusals | (`room_dark` in the dark) | `no_target` · `not_visible` |
+| Success | `contents_list` · `container_contents` · `surface_contents` | `examined` · `examined_self` · `examined_container` · `examined_supporter` · `examined_switchable` · `examined_readable` · `examined_wearable` · `examined_door` · `nothing_special` |
+| Events | `if.event.looked` · `if.event.room.description` · `if.event.list.contents` | `if.event.examined` |
+
+Interceptors: `on examining it` / `after examining it` on the target
+(the robin in chord-language.md §2.10 rides this seam). Looking
+consults no interceptor clauses — there is no entity to hang them on;
+use the room's `after entering it` or an `on every turn` daemon
+instead.
+
+Brief mode is not implemented — verbose is hardcoded on, so
+`room_description_brief` is unreachable.
 
 ### 6.2 searching and reading
 
-**search** (`if.action.searching`) — `search X`, `look in/inside X`, `look
-through X`, `rummage in/through X`, or bare `search` for the room
-(`find`/`locate` were removed from the help vocabulary in ADR-230 — any
-alias would be too story-specific, and searching is the wrong semantics).
-A closed openable container
-refuses `container_closed`; otherwise searching reports contents
-(`container_contents`, `supporter_contents`, `empty_container`,
-`searched_location`, `searched_object`, `nothing_special`) — and it is
-the action that **reveals hidden items**: a thing whose identity is marked
-`concealed` (in Chord, the `concealed` adjective on the composition
-line) does not appear in look or contents lists until a search
-finds it, permanently reveals it, and announces `found_concealed` ("Hidden
-inside, you discover: …"). Note this hidden-*item* mechanism is the
-identity flag, not the `concealment` trait (§6.4), which is about hiding
-*actors*. Event `if.event.searched`; the target's `on searching it`
-clauses are consulted — a false bottom that only yields to a second,
-gated search is one `while` clause.
+**search** (`if.action.searching`) — `search X`, `look in/inside X`,
+`look through X`, `rummage in/through X`, or bare `search` for the room
+(`find`/`locate` were removed from the vocabulary in ADR-230 —
+searching is the wrong semantics for them). A closed openable container
+refuses `container_closed`; otherwise searching reports contents — and
+it is the action that **reveals hidden items**: a thing whose identity
+is marked `concealed` (in Chord, the `concealed` adjective on the
+composition line) is invisible to the parser until a search finds it,
+permanently reveals it, and announces `found_concealed`. This
+hidden-*item* flag is not the `concealment` trait (§6.4), which is
+about hiding *actors*.
 
-**read** (`if.action.reading`) — `read X`, `peruse X`, `study X`, gated on
-the `readable` trait (`not_readable`: "There's nothing written on it").
-Portable reading matter is implicitly taken first; scenery — signs,
-inscriptions — reads in place. The text comes from the trait: `text` (in
-Chord, `readable with text ...`), or a page of `pageContent` for
-multi-page books. The message key follows `readableType`: `read_text`,
-`read_book` / `read_book_page` (with page numbers), `read_sign`,
-`read_inscription`. A readable can be switched off (`isReadable: false` +
-`cannotReadMessage` → `cannot_read_now`) — glowing runes that only read
-when lit. Reading marks `hasBeenRead` (story logic can gate on it); the
-trait's literacy fields (`requiresAbility`) are declared but not enforced
-today. Event `if.event.read`; `on reading it` clauses consulted.
+**read** (`if.action.reading`) — `read X`, `peruse X`, `study X`, gated
+on the `readable` trait (`not_readable`: "There's nothing written on
+it"). Portable reading matter is implicitly taken first; scenery —
+signs, inscriptions — reads in place. The text comes from the trait:
+`text` (in Chord, `readable with text ...`), or a page of `pageContent`
+for multi-page books, and the message key follows `readableType`:
+`read_text`, `read_book` / `read_book_page` (with page numbers),
+`read_sign`, `read_inscription`. A readable can be switched off
+(`isReadable: false` + `cannotReadMessage` → `cannot_read_now`) —
+glowing runes that only read when lit. Reading marks `hasBeenRead`
+(story logic can gate on it).
+
+The author writes:
+
+<!-- fixture: senses/searching-reading.story -->
+```story
+create the Attic
+  a room
+
+  Dust, rafters, and one bar of grey light.
+
+create the loose floorboard
+  aka floorboard, board
+  scenery, a supporter
+  in the Attic
+
+  One board sits a little proud of its neighbors.
+
+create the faded letter
+  aka letter
+  concealed
+  readable with text "My dear Edmund - the deed went to the county bank."
+  on the loose floorboard
+
+  A single page in browned ink.
+
+create the beam inscription
+  aka inscription
+  scenery
+  readable with text "T.W. + E.W. 1893"
+  in the Attic
+
+  Letters cut into the lowest rafter.
+
+create the player
+  starts in the Attic
+```
+
+The player sees:
+
+<!-- transcript: senses/searching-reading.story -->
+```transcript
+> take the letter
+You can't see any such thing.
+
+> search the floorboard
+Hidden an on, you discover: a faded letter.
+
+> read the letter
+(first taking the faded letter)
+
+You take the faded letter from the loose floorboard.
+
+The faded letter reads:
+My dear Edmund - the deed went to the county bank.
+
+> read the floorboard
+There's nothing written on the loose floorboard.
+
+> read the inscription
+The beam inscription reads:
+T.W. + E.W. 1893
+```
+
+Until the search, the concealed letter is invisible even to the parser;
+once revealed, reading takes the portable letter first, while the
+scenery inscription reads in place.
+
+| | search (`if.action.searching.*`) | read (`if.action.reading.*`) |
+|---|---|---|
+| Refusals | `container_closed` | `not_readable` · `cannot_read_now` |
+| Success | `found_concealed` · `container_contents` · `supporter_contents` · `empty_container` · `searched_location` · `searched_object` · `nothing_special` | `read_text` · `read_book` · `read_book_page` · `read_sign` · `read_inscription` |
+| Events | `if.event.searched` | `if.event.read` |
+
+Interceptors: `on searching it` — a false bottom that only yields to a
+second, gated search is one `while` clause — and `on reading it`.
+
+The readable trait's literacy fields (`requiresAbility`) are declared
+but not enforced today.
 
 ### 6.3 listening and smelling
 
-Both parse since ADR-230 D2: `listen`, `listen to X`, and the `hear [X]`
-alias; `smell` and `sniff`, bare or with a target.
+Both parse since ADR-230 D2: `listen`, `listen to X`, and the `hear
+[X]` alias; `smell` and `sniff`, bare or with a target.
 
 **listen** (`if.action.listening`) — with a target: a running device
-reports `device_running`, a stopped one `device_off`, a container sloshes
-(`liquid_sounds`) or rustles (`container_sounds`) by contents, anything
-else `no_sound`. Bare `listen` scans the room: running devices →
-`active_devices`, else `silence`. No preconditions at all — a pure flavor
-seam, and like touching (§2.6) a favorite for `on listening it` clauses.
+reports `device_running`, a stopped one `device_off`, a container
+sloshes (`liquid_sounds`) or rustles (`container_sounds`) by contents,
+anything else `no_sound`. Bare `listen` scans the room: running devices
+→ `active_devices`, else `silence`. No preconditions at all — a pure
+flavor seam.
 
 **smell** (`if.action.smelling`) — with a target: food and drink report
 `food_scent`/`drink_scent`, a lit light source `burning_scent`, an open
 container with food inside `container_food_scent`, else
 `no_particular_scent`; a target in another room refuses `too_far`. Bare
-`smell`: smoke first (`smoke_detected`), then food (`food_nearby`), else
-`no_scent`.
+`smell`: smoke first (`smoke_detected`), then food (`food_nearby`),
+else `no_scent`.
+
+The author writes:
+
+<!-- fixture: senses/listening-smelling.story -->
+```story
+create the Chapel
+  a room
+
+  Candle smoke and old stone.
+
+create the pipe organ
+  aka organ
+  scenery
+  in the Chapel
+
+  A pipe organ that fills the far wall.
+
+  on listening it
+    phrase organ-breath
+  end on
+
+  phrase organ-breath:
+    Air sighs through the pipes, a chord not quite sounding.
+
+create the player
+  starts in the Chapel
+```
+
+The player sees:
+
+<!-- transcript: senses/listening-smelling.story -->
+```transcript
+> listen
+You hear nothing out of the ordinary.
+
+> listen to the organ
+Air sighs through the pipes, a chord not quite sounding.
+
+> smell the organ
+The pipe organ has no particular smell.
+
+> smell
+You don't smell anything unusual.
+```
+
+The organ's `on listening it` phrase replaces the stock miss entirely;
+where no clause answers, the platform's own misses are honest rather
+than errors.
+
+| | listen (`if.action.listening.*`) | smell (`if.action.smelling.*`) |
+|---|---|---|
+| Refusals | — | `too_far` |
+| Success | `device_running` · `device_off` · `liquid_sounds` · `container_sounds` · `no_sound` · `active_devices` · `silence` | `food_scent` · `drink_scent` · `burning_scent` · `container_food_scent` · `no_particular_scent` · `smoke_detected` · `food_nearby` · `no_scent` |
+| Events | `if.event.listened` / `if.event.listen_blocked` | `if.event.smelled` / `if.event.smell_blocked` |
+
+Interceptors: like touching (§2.6), both are favorites for `on
+listening it` / `on smelling it` clauses.
 
 Separately from this action pair, the platform has a real **sound
-propagation** system (the acoustic traits below): engine-level, per-turn,
-event-driven — sounds travel through walls by acoustic cost and reach
-listener entities. The listening *action* does not read it; the two meet
-in story logic, not in stdlib.
+propagation** system (the acoustic traits, §6.4): engine-level,
+per-turn, event-driven — sounds travel through walls by acoustic cost
+and reach listener entities. The listening *action* does not read it;
+the two meet in story logic, not in stdlib.
 
 ### 6.4 Senses traits
 
-**readable** (`readable`, optionally `with text ...` — adjective). The
-text itself, plus `readableType` (text/book/sign/inscription — picks the
-message key), page fields for books (`pageContent`, `currentPage`,
+**readable** (`readable`, optionally `with text "…"` — adjective). The
+text itself, plus `readableType` (text/book/sign/inscription — picks
+the message key), page fields for books (`pageContent`, `currentPage`,
 `pages`), the `isReadable`/`cannotReadMessage` gate, and `hasBeenRead`.
-From Chord only `text` is settable; pages and types are TypeScript.
+From Chord only `text` is settable; pages and types are TypeScript. The
+letter and inscription in §6.2 are both this trait.
 
 **scenery** (`scenery` — adjective). Fixed in place: blocks taking with
 `fixed_in_place` or its own `cantTakeMessage` (§2.1), drops out of "You
-can see …" lists while remaining examinable, and reads in place rather
-than being picked up (§6.2). Two more fields, `mentioned` and `visible`,
-fine-tune listing and visibility — TypeScript-only settings.
+can see …" lists while remaining examinable (the telescope in §6.1),
+and reads in place rather than being picked up (§6.2). Two more fields,
+`mentioned` and `visible`, fine-tune listing and visibility —
+TypeScript-only settings.
 
 **concealment** (trait — for hiding *actors*, ADR-148). Declares an
-entity as a hiding spot: which positions it supports (behind, under, on,
-inside), how good the cover is, how many can hide there. The hiding
+entity as a hiding spot: which positions it supports (behind, under,
+on, inside), how good the cover is, how many can hide there. The hiding
 action (§8.4) validates against it and marks the hider with a dynamic
 concealed-state trait whose visibility behavior makes them unseeable —
 story-overridable. Composable as the `hiding-spot` adjective — bare it
 supports every position, `with position <word>` narrows to one; hidden
 *items* use the identity `concealed` flag instead (§6.2).
 
-**acoustic** and **listener** (traits — the sound-propagation pair,
-ADR-172/173, TypeScript-only). `acoustic` sits on walls and rates how
-sound crosses them (thin / default / thick / soundproof, with a dampener
-variant for tapestries and peepholes); `listener` marks an entity as
+**acoustic** (trait, TypeScript-only, ADR-172/173). Sits on walls and
+rates how sound crosses them: thin / default / thick / soundproof, with
+a dampener variant for tapestries and peepholes.
+
+**listener** (trait, TypeScript-only, ADR-172/173). Marks an entity as
 receiving propagated sounds — the engine attaches it to the player
-automatically, and each delivered sound arrives as a
+automatically; each delivered sound arrives as a
 `sound.audibility.heard` event with rendered prose. No story ships on
-this system yet; it is the platform's eavesdropping substrate (character
-knowledge propagation builds on it).
+this system yet; it is the platform's eavesdropping substrate.
 
 ## 7. Devices
 
@@ -996,75 +2178,154 @@ story pushes back the dark rooms of §3.1.
 
 ### 7.1 switching_on and switching_off
 
-**switch on / switch off** (`if.action.switching_on` /
-`if.action.switching_off`) — `turn on X`, `switch on X`, `flip on X`, and
-the reversed `turn X on` / `turn X off` (only `turn` gets the reversed
-form — `switch X on` does not parse). The bare transitive synonyms landed
-with ADR-230 D4: `activate`/`start`/`power on X` switch on,
-`deactivate`/`stop`/`power off X` switch off. All forms check the
-`switchable` trait in validation. (Bare `turn X` with no on/off is the
-separate per-entity turning verb, §2.7.)
+**switch on** (`if.action.switching_on`) — verbs `turn on X`, `switch on
+X`, `flip on X`, the bare transitives `activate X`, `start X`, `power on
+X` (ADR-230 D4), and the reversed `turn X on` — only `turn` gets the
+reversed form; `switch X on` does not parse. All forms check the
+`switchable` trait in validation (bare `turn X` with no on/off is the
+separate per-entity turning verb, §2.7). Turning on a device that is
+also a `light-source` lights it — and if that banishes darkness in the
+player's room, the action follows with an automatic LOOK, so the newly
+visible room describes itself before the switch-on message lands.
 
-Switching on refuses `not_switchable`, `already_on`, and `no_power` (for
-devices that declare a power requirement); off refuses `already_off`.
-Turning on a device that is also a `light-source` lights it — and if that
-banishes darkness in the player's room, the action follows with an
-automatic LOOK, so the newly visible room describes itself
-(`illuminates_darkness`, then the room text). Turning the sole light off
-says `light_off` ("… plunging the area into darkness") and leaves the
-player in §3.1's dark-room world.
+**switch off** (`if.action.switching_off`) — verbs `turn off X`, `switch
+off X`, `flip off X`, `deactivate X`, `stop X`, `power off X`, and the
+reversed `turn X off`. Turning the sole light off says `light_off` ("…
+plunging the area into darkness") and leaves the player in §3.1's
+dark-room world.
 
-The success message is chosen by what the device is: light keys
-(`illuminates_darkness`, `light_on`, `light_off`, `light_off_still_lit` —
-picked by whether other lit lights share the room), sound keys
-(`with_sound` using the trait's on/off sound, `silence_falls` when a
-running hum stops), device flavor (`device_humming`, `device_stops`), and
-plain `switched_on` / `switched_off`. Events: `if.event.switched_on` /
-`switched_off`, payloads carrying light, sound, power, and timer facts
-for story reactions; blocked forms `switch_on_blocked` /
-`switch_off_blocked`. Both actions consult the device's `on switching_on
-it` / `on switching_off it` clauses.
+The author writes:
+
+<!-- fixture: devices/switching-on-off.story -->
+```story
+create the Darkroom
+  a room
+  dark
+
+  Developing trays line the counter, and finished prints hang from a
+  wire overhead.
+
+create the safelight
+  aka lamp
+  switchable, light-source
+  in the Darkroom
+
+  A red-globed safelight with a spring clamp.
+
+  phrase detail while it is lit:
+    Its red glow pools over the developing trays.
+
+create the enlarger
+  switchable
+  scenery
+  in the Darkroom
+
+  A photographic enlarger on a steel column.
+
+  on switching_on it
+    refuse enlarger-unplugged
+  end on
+
+  phrase enlarger-unplugged:
+    The enlarger's plug dangles loose behind the counter.
+
+create the ventilation fan
+  aka fan
+  switchable, starts on
+  scenery
+  in the Darkroom
+
+  A boxy ventilation fan set into the wall.
+
+create the player
+  starts in the Darkroom
+  carries the safelight
+```
+
+The player sees:
+
+<!-- transcript: devices/switching-on-off.story -->
+```transcript
+> look
+It's pitch dark, and you can't see a thing.
+
+> turn the safelight on
+Darkroom
+Developing trays line the counter, and finished prints hang from a wire overhead.
+
+The safelight switches on, banishing the darkness.
+
+> examine the safelight
+A red-globed safelight with a spring clamp. Its red glow pools over the developing trays.
+
+> switch on the enlarger
+The enlarger's plug dangles loose behind the counter.
+
+> stop the fan
+The ventilation fan powers down with a soft whir.
+
+> turn off the safelight
+You switch off the safelight, plunging the area into darkness.
+```
+
+Four seams in one scene: illumination triggers the automatic LOOK (room
+text first, then `illuminates_darkness`), the lit safelight's examine
+picks up its `detail while it is lit` sentence, the enlarger's `on
+switching_on it` guard refuses with its own phrase, and the `starts on`
+fan goes down to the bare `stop` synonym.
+
+| | switch on (`if.action.switching_on.*`) | switch off (`if.action.switching_off.*`) |
+|---|---|---|
+| Refusals | `not_switchable` · `already_on` · `no_power` (declared power requirement) | `not_switchable` · `already_off` |
+| Success | `switched_on` · `light_on` · `illuminates_darkness` (dark room, after the automatic LOOK) · `with_sound` (trait's on sound) · `device_humming` | `switched_off` · `light_off` (sole light out) · `light_off_still_lit` (other lit lights share the room) · `silence_falls` (a running hum stops) · `device_stops` |
+| Events | `if.event.switched_on` / `switch_on_blocked` | `if.event.switched_off` / `switch_off_blocked` |
+
+The success key is chosen by what the device is — light, sound, flavor,
+or plain — and event payloads carry light, sound, power, and timer facts
+for story reactions. Interceptors: `on switching_on it` / `on
+switching_off it` on the device — the enlarger above.
 
 In Chord, `on`/`off` and `lit` work as state predicates (`while the
 flashlight is on`, `while the lantern is lit`) — and declaring your own
 on/off state pair on a switchable gets a fix-it telling you to compose
-the trait instead. One subtlety: `is lit` reads the stored flag strictly,
-so a light that has never been switched counts as not-lit in Chord
-conditions even where the platform's own default would call it lit —
-switch it once and the two agree.
+the trait instead. One subtlety: `is lit` reads the stored flag
+strictly, so a light that has never been switched counts as not-lit in
+Chord conditions even where the platform's own default would call it lit
+— switch it once and the two agree.
 
 ### 7.2 Device traits
 
-**switchable** (`switchable` — adjective). The on/off state plus:
-`startsOn`, a power model (`requiresPower`, `hasPower`,
-`powerConsumption` — the no_power refusal), on/off/running sounds (fed
-into the sound message keys and event payloads), swap-in
-`on/offDescription` text, and `detailWhenOn` — the appended examine
-sentence, which is exactly what Chord's `phrase detail while it is on:`
-lowers to (the zoo's radio and flashlight both use it). Dormant today:
-the auto-off timer (`autoOffTime` is honored at switch-on but nothing
-ticks the countdown) and the per-trait message overrides
-(`onMessage`/`alreadyOnMessage`/…) — flagged. Chord composes the
-adjective off by default; `starts on` seeds it running (ADR-231;
-chord-language.md §2.11).
+**switchable** (`switchable` — adjective). The on/off state — Chord
+composes it off by default; `starts on` seeds it running (ADR-231;
+chord-language.md §2.11), the §7.1 fan — plus a power model
+(`requiresPower`, `hasPower`, `powerConsumption` — the `no_power`
+refusal), on/off/running sounds (fed into the sound message keys and
+event payloads), swap-in `onDescription`/`offDescription` text, and
+`detailWhenOn` — the appended examine sentence, exactly what Chord's
+`phrase detail while it is on:` lowers to (the zoo's radio and
+flashlight both use it). Dormant today: the auto-off timer
+(`autoOffTime` is honored at switch-on but nothing ticks the countdown)
+and the per-trait message overrides (`onMessage`/`alreadyOnMessage`/…) —
+flagged.
 
 **light-source** (`light-source` — adjective). Makes a switchable shed
 light: `isLit` (managed by the switching actions), `brightness`,
-`litDescription`/`unlitDescription`, `detailWhenLit` (Chord: `phrase
-detail while it is lit:`), and a fuel model (`fuelRemaining` — empty
-refuses to light; `maxFuel`, consumption rate) whose *consumption* is
-dormant: nothing burns fuel per turn today, so a lantern only runs out if
-story logic decrements it. The zoo flashlight — `light-source,
-switchable` — is the shipped example.
+`litDescription`/`unlitDescription`, and `detailWhenLit` — Chord's
+`phrase detail while it is lit:`, the safelight's examine line in §7.1.
+The fuel model (`fuelRemaining` — empty refuses to light; `maxFuel`,
+consumption rate) is dormant on the consumption side: nothing burns fuel
+per turn today, so a lantern only runs out if story logic decrements it.
+The zoo flashlight — `light-source, switchable` — is the shipped
+example.
 
 **button** (trait — TypeScript-only, and mostly decorative). Descriptive
-fields (color, size, shape, label, `latching`); its one live effect is in
-*pushing* (§2.6): a pushable button that is also switchable toggles, and
-the BUTTON trait upgrades the message to `button_clicks`. Worth knowing:
-pushing's toggle flips the switch state but — unlike the switching
-actions — does not light or extinguish an attached light source, so wire
-light-buttons through `after pushing it` story logic (flagged as an
-inconsistency).
+fields (color, size, shape, label, `latching`); its one live effect is
+in *pushing* (§2.6): a pushable button that is also switchable toggles,
+and the BUTTON trait upgrades the message to `button_clicks`. Worth
+knowing: pushing's toggle flips the switch state but — unlike the
+switching actions — does not light or extinguish an attached light
+source, so wire light-buttons through `after pushing it` story logic
+(flagged as an inconsistency).
 
 ## 8. NPCs & conversation
 
@@ -1073,146 +2334,445 @@ the world: talk, fight, eat, hide.
 
 ### 8.1 talking, asking, telling
 
-**talk** (`if.action.talking`) — `talk to/with X`, `speak to/with X`,
-`chat with X`, `converse with X` (core grammar since ADR-229; story
-grammar still outranks it). Not gated on being a person: talking to the
-mailbox reaches the action and refuses with
-`not_actor` — hook-visibly, so a story can intercept even that. Other
-refusals: `too_far` (same room required), `self`, and `not_available`
-(a conversation marked unavailable).
-
-A bare person answers `no_response` ("The zookeeper doesn't respond.") —
-which is honest: stdlib's built-in conversation is shallow. A
-`conversation` object in the actor's custom properties unlocks greeting
-flavor (first meeting vs. `greets_again`, `formal_`/`casual_greeting`,
-`remembers_you`, `has_topics` / `nothing_to_say`), but real dialogue on
-*talk* is story territory: an `on talking it` clause, or an interceptor
-— per-topic dialogue lives on ask/tell's declared table instead (below);
-talk itself stays shallow by design. The
-canonical example is Dungeo's troll — `preValidate` vetoes with its own
-message when the troll is out cold, and `postReport` **overrides** the
-core reply with GROWLS when he isn't. That override seam (swap the
-standard message, keep the event) is available to any talk target. The
-zoo's characters skip talking entirely and speak through every-turn
-daemons — also a legitimate pattern. Event: `if.event.talked`.
+**talk** (`if.action.talking`) — verbs `talk to/with X`, `speak to/with
+X`, `chat with X`, `converse with X` (core grammar since ADR-229; story
+grammar still outranks it). Not gated on being a person — talking to the
+mailbox reaches the action and refuses `not_actor`, hook-visibly, so a
+story can intercept even that. A bare person answers `no_response`,
+which is honest: talk is shallow by design. A `conversation` object in
+the actor's custom properties unlocks greeting flavor (first meeting vs.
+`greets_again`, `formal_`/`casual_greeting`, `remembers_you`,
+`has_topics` / `nothing_to_say`), but per-topic dialogue lives on
+ask/tell's declared table instead.
 
 **ask** (`if.action.asking`) and **tell** (`if.action.telling`) — `ask X
 about Y` (also `question X about Y`, `inquire of X about Y`) and `tell X
 about Y` (also `inform X about Y`); a non-person recipient refuses
 `not_actor`. The topic is a first-class free-text slot (ADR-231),
 resolved entity-first: a topic naming something in scope carries that
-entity along for story handlers, and any other wording flows through as
-plain text — a topic is never scope-rejected. In stdlib the actions stay
-deliberately minimal: each validates the social preconditions
-(`no_target`, `not_visible`, `too_far`, `not_actor`), mutates nothing,
-and reports a default — asking's `unknown_topic` ("I don't know anything
-about that.") and telling's `not_interested` ("… doesn't seem
-interested."). Since ADR-239, though, real per-topic dialogue is a
-declared Chord table: `define topics for <person> … end topics`, one
-block per person. Entity rows (`about the locket: <response>`) ride the
-platform's quiet topic-entity resolution and are checked first; quoted
-rows (`about "the fire", "the blaze": <response>`) match free text, with
-comma-separated aliases; a response is a one-line statement or an
-indented body (`it` binds the person). Matching is normalized
-whole-topic lookup — case-insensitive, article-stripped, never fuzzy.
-One table serves ask AND tell. On a hit the row fully owns the reply;
+entity along, any other wording flows through as plain text, and a topic
+is never scope-rejected. Bare, both actions validate the social
+preconditions, mutate nothing, and report a default — asking's
+`unknown_topic`, telling's `not_interested`. Real per-topic dialogue is
+a declared Chord table (ADR-239): `define topics for <person> … end
+topics`, one block per person, one table serving ask AND tell. Entity
+rows (`about the great lamp:`) ride the platform's quiet topic-entity
+resolution and are checked first; quoted rows (`about "the storm", "the
+weather":`) match free text, with comma-separated aliases; a response is
+a one-line statement or an indented body (`it` binds the person).
+Matching is normalized whole-topic lookup — case-insensitive,
+article-stripped, never fuzzy. On a hit the row fully owns the reply;
 the person's `on asking it` / `on telling it` clause is the catch-all,
-firing only on a miss; with neither, the stdlib defaults above speak.
-The topic also reaches interceptor data (`topic`, `topicEntityId`)
-via the lifecycle seed, for `while` conditions and TypeScript hooks.
+firing only on a miss; with neither, the stdlib defaults speak.
 
-The rest of the old conversation grammar went the other way in the same
-pass: `say X [to Y]`, `shout`, and `whisper X to Y` patterns were
-**removed** (their action ids had no implementations — they parsed and
-then runtime-failed in every story), as was the `write X [on Y]` family.
-Both return with real conversation/writing systems; story-grammar verbs
-(Dungeo's SAY) are unaffected.
+The author writes:
+
+<!-- fixture: npcs/topics.story -->
+```story
+create the Lantern Gallery
+  a room
+
+  The top of the lighthouse, all glass and brass.
+
+create the great lamp
+  aka lamp
+  scenery
+  in the Lantern Gallery
+
+  A first-order lens taller than a man.
+
+create the keeper
+  a person
+  in the Lantern Gallery
+
+  The keeper polishes the lens without looking up.
+
+  on asking it
+    phrase keeper-shrug
+  end on
+
+define topics for the keeper
+  about the great lamp: phrase keeper-lamp
+  about "the storm", "the weather":
+    phrase keeper-storm
+end topics
+
+create the player
+  starts in the Lantern Gallery
+
+define phrases en-US
+  keeper-lamp:
+    "Eighty years that lens has burned," the keeper says. "It will
+    outlast us both."
+  keeper-storm:
+    "Glass is falling," she says. "You'll want to be off the rock by
+    dark."
+  keeper-shrug:
+    The keeper shrugs. "Lamp and weather. That's all I know."
+```
+
+The player sees:
+
+<!-- transcript: npcs/topics.story -->
+```transcript
+> talk to the lamp
+You can only talk to people.
+
+> talk to the keeper
+The keeper doesn't respond.
+
+> ask the keeper about the lamp
+"Eighty years that lens has burned," the keeper says. "It will outlast us both."
+
+> ask the keeper about the weather
+"Glass is falling," she says. "You'll want to be off the rock by dark."
+
+> tell the keeper about the storm
+"Glass is falling," she says. "You'll want to be off the rock by dark."
+
+> ask the keeper about the tide
+The keeper shrugs. "Lamp and weather. That's all I know."
+```
+
+The whole dispatch order in one scene: `not_actor` for a non-person, the
+honest `no_response` on bare talk, the entity row riding scope
+resolution, the quoted row answering either alias for ask and tell
+alike, and the `on asking it` catch-all speaking only on a miss.
+
+| | talk (`if.action.talking.*`) | ask / tell (`if.action.asking.*` / `if.action.telling.*`) |
+|---|---|---|
+| Refusals | `no_target` · `not_actor` · `too_far` (same room required) · `self` · `not_available` | `no_target` · `not_visible` · `too_far` · `not_actor` |
+| Success | `no_response` · greeting flavor with `conversation` data (`first_meeting`, `greets_again`, `formal_`/`casual_greeting`, `remembers_you`, `has_topics` / `nothing_to_say`) | `unknown_topic` (ask) · `not_interested` (tell) — a topics row replaces both |
+| Events | `if.event.talked` | `if.event.asked` / `if.event.ask_blocked` · `if.event.told` / `if.event.tell_blocked` |
+
+Interceptors: `on talking it` on the person is talk's override seam —
+the canonical TypeScript rendition is Dungeo's troll, whose `preValidate`
+vetoes with its own message when he is out cold and whose `postReport`
+**overrides** the core reply with GROWLS when he isn't (swap the standard
+message, keep the event); the zoo's characters skip talking entirely and
+speak through every-turn daemons (§12), also a legitimate pattern. The
+topic reaches interceptor data (`topic`, `topicEntityId`) via the
+lifecycle seed, for `while` conditions and TypeScript hooks.
+
+Gone the other way in the ADR-239 pass: the `say X [to Y]`, `shout`, and
+`whisper X to Y` patterns were **removed**, as was the `write X [on Y]`
+family — their action ids had no implementations (they parsed, then
+runtime-failed in every story); both return with real
+conversation/writing systems, and story-grammar verbs (Dungeo's SAY) are
+unaffected.
 
 ### 8.2 attacking and combat
 
-**attack** (`if.action.attacking`) — `attack/hit/strike/kill/fight/slay/
-murder/break/smash/destroy X` (the last three landed with ADR-230 D4),
-plus `attack/hit/strike/kill X with/using Y` (the weapon form
-skips fight/slay/murder). An explicitly named weapon is implicitly taken if
-needed, and is a consulted command entity — a cursed sword's `on
-attacking it` clause fires; a weapon *inferred* from inventory is not.
+**attack** (`if.action.attacking`) — verbs `attack/hit/strike/kill/
+fight/slay/murder/break/smash/destroy X` (the last three landed with
+ADR-230 D4), plus `attack/hit/strike/kill X with/using Y` (the weapon
+form skips fight/slay/murder). An explicitly named weapon is implicitly
+taken if needed, and is a consulted command entity — a cursed sword's
+`on attacking it` clause fires; a weapon *inferred* from inventory is
+not. What happens depends on the target:
 
-What happens depends on the target:
-
-- **A combatant** (the `combatant` trait): stdlib refuses with
+- **A combatant** (the `combatant` trait) refuses
   `violence_not_the_answer` unless a combat interceptor is registered —
   real combat *is* the interceptor (normally the basic-combat extension,
   §12.4), and since ADR-215 a `.story` registers it itself: `use combat`
   in the story header wires the extension at load, no TypeScript, pure
-  IR preserved. The interceptor's post-execute hook is contractually
-  the combat resolution:
-  it rolls the dice (seeded, in the extension — outcomes vary run to run
-  and stay that way per project policy), damages through the health
-  trait, and hands stdlib the result to narrate. Kills emit death events;
-  a dead target refuses `already_dead`.
-- **A breakable** (one-hit) or **destructible** (hit-pointed) thing:
-  attacking genuinely breaks it — `target_broke`, or `target_damaged` /
+  IR preserved. The interceptor's post-execute hook is contractually the
+  combat resolution: it rolls the dice (seeded, in the extension —
+  outcomes vary run to run and stay that way per project policy),
+  damages through the `health` trait (§9.3), and hands stdlib the result
+  to narrate. Kills emit death events (§9); a dead target refuses
+  `already_dead`.
+- **A breakable** (one-hit) or **destructible** (hit-pointed) thing
+  genuinely breaks — `target_broke`, or `target_damaged` /
   `target_destroyed` across multiple blows, honoring armor,
   weapon-required, and wrong-weapon-type rules, with `transformTo`
   (shards replace the vase) and `revealExit` support.
 - **Anything else, including a plain person without `combatant`**: the
-  attack is ineffective. (Today this path leaks a raw legacy string as
-  its message rather than a proper ID — readable, but flagged.)
+  attack is ineffective — and today prints nothing at all (the path
+  carries a raw legacy string instead of a message ID, and the current
+  build renders it as blank output — flagged).
 
-Events: `if.event.attacked`, plus death/knockout and exit-revealed events
-after the blow text. The lang layer also carries the `combat.*` message
-families the extension renders.
+The author writes:
+
+<!-- fixture: npcs/combat.story -->
+```story
+story "Guard Post" by "stdlib reference"
+  id: ref-combat
+  version: 0.0.1
+  use combat
+
+create the Guard Post
+  a room
+
+  A narrow stone room smelling of oil and rust.
+
+create the rusty cutlass
+  aka cutlass
+  weapon with damage 5 and skill-bonus 2
+  in the Guard Post
+
+  Rust has not improved its edge, but it still has one.
+
+create the deserter
+  a person, combatant with health 8 and skill 30
+  in the Guard Post
+
+  A gaunt deserter with a wary eye on the door.
+
+create the water barrel
+  aka barrel
+  scenery
+  in the Guard Post
+
+  A barrel of stale drinking water.
+
+create the player
+  starts in the Guard Post
+```
+
+The player sees:
+
+<!-- transcript: npcs/combat.story -->
+```transcript
+> take the cutlass
+Taken.
+
+> attack the barrel
+
+
+> attack the deserter with the cutlass
+You land a solid blow on the deserter, dealing 6 damage!
+```
+
+One `use` line buys the whole combat layer: `combatant` and `weapon`
+compose with typed fields, and the attack resolves through real dice —
+the transcript shows one genuine run, and the same command may instead
+answer "You swing at the deserter but miss!" (outcomes vary run to run,
+by policy). The blank line after `attack the barrel` is the flagged
+ineffective path, verbatim.
+
+| | attack (`if.action.attacking.*`) |
+|---|---|
+| Refusals | `no_target` · `self` · `violence_not_the_answer` (combatant, no interceptor) · `already_dead` |
+| Success | combat narration via the `combat.*` message families (the extension's, carried by the lang layer) · `target_broke` · `target_damaged` / `target_destroyed` |
+| Events | `if.event.attacked` · death/knockout and exit-revealed events after the blow text |
+
+Interceptors: `on attacking it` on the target — a story wanting scripted
+fights replaces the reply there instead of registering combat — and on
+an explicitly named weapon; a story can also register its own combat
+interceptor on the same trait seam (§12.4).
 
 ### 8.3 eating and drinking
 
-**eat** (`if.action.eating`) — `eat/consume/devour X`, plus `munch` and
-`nibble [on] X`, gated on the
-`edible` trait in validation (`not_edible`). Liquids refuse with
-`is_drink` ("You should drink that, not eat it") and vice versa — there
-is no cross-routing. Food is implicitly taken first. Multi-serving food
-counts down (`eaten_some`, then `eaten_all`; exhausted → 
-`already_consumed`), and the message honors the trait's data: `taste`
+**eat** (`if.action.eating`) — verbs `eat/consume/devour X`, plus
+`munch` and `nibble [on] X`, gated on the `edible` trait
+(`not_edible`). Liquids refuse `is_drink` ("You should drink that, not
+eat it") and solids refuse drinking with `not_drinkable` — there is no
+cross-routing. Food is implicitly taken first. Multi-serving food counts
+down (`eaten_some`, then `eaten_all`; exhausted → `already_consumed`),
+and the message honors the trait's data: `taste`
 (`delicious`/`tasty`/`bland`/`awful`), a `poison` effect (message-only —
 "It tastes strange…" — no mechanical harm today), `satisfiesHunger`
-(`filling` / `still_hungry`). One honest caveat: **eating never removes
-the item** — a fully consumed apple stays in inventory at zero servings;
-remove it with an `after eating it` clause if you care. Event:
-`if.event.eaten`.
+(`filling` / `still_hungry`). Event: `if.event.eaten`.
 
-**drink** (`if.action.drinking`) — `drink/sip/quaff/swallow/imbibe X`,
-plus `drink from X` and `sip from X`. Two things are drinkable: an edible
-marked
-liquid, or a **container of liquid** (`containsLiquid`), open if
-openable. Container drinking decrements `liquidAmount` and reports
-`from_container` / `empty_now`; an emptied vessel stays nominally
-drinkable and keeps saying `empty_now` (caveat, flagged). Verb flavor:
-`sipped`, `quaffed`. Event: `if.event.drunk`.
+**drink** (`if.action.drinking`) — verbs `drink/sip/quaff/swallow/
+imbibe X`, plus `drink from X` and `sip from X`. Two things are
+drinkable: an edible marked liquid — in a `.story`, the `drinkable`
+adjective, which composes the edible trait with the liquid flag set,
+order-independent with `edible` (ratchet G1) — or a **container of
+liquid** (`containsLiquid`, TypeScript territory), open if openable.
+Container drinking decrements `liquidAmount` and reports
+`from_container` / `empty_now`. Verb flavor: `sipped`, `quaffed`.
+Event: `if.event.drunk`.
 
-> **Closed since the first draft:** a `.story` marks a liquid with the
-> `drinkable` adjective — it composes the edible trait with the liquid
-> flag set, order-independent with `edible` (ratchet G1). The
-> container-of-liquid path (`containsLiquid`, `liquidAmount`) remains
-> TypeScript territory. Neither shipped story exercises eat/drink; the
-> zoo's feeding is its own `feedable` trait.
+The author writes:
+
+<!-- fixture: npcs/eating-drinking.story -->
+```story
+create the Pantry
+  a room
+
+  Stone shelves, cool air, the smell of apples.
+
+create the bramley apple
+  aka apple
+  edible
+  in the Pantry
+
+  A knobbly green cooking apple.
+
+create the elderflower cordial
+  aka cordial
+  drinkable
+  in the Pantry
+
+  Pale gold in a stoppered bottle.
+
+create the ship's biscuit
+  aka biscuit
+  edible
+  in the Pantry
+
+  Dense enough to drive nails.
+
+  after eating it
+    remove it
+  end after
+
+create the player
+  starts in the Pantry
+```
+
+The player sees:
+
+<!-- transcript: npcs/eating-drinking.story -->
+```transcript
+> eat the cordial
+You should drink the elderflower cordial, not eat it.
+
+> drink the apple
+That's not something you can drink.
+
+> eat the apple
+(first taking the bramley apple)
+
+Taken.
+
+You eat the bramley apple.
+
+> eat the apple
+There's nothing left of the bramley apple to eat.
+
+> eat the biscuit
+(first taking the ship's biscuit)
+
+Taken.
+
+You eat the ship's biscuit.
+
+> inventory
+You are carrying:
+
+a bramley apple
+
+> drink the cordial
+You drink the elderflower cordial.
+
+> sip the cordial
+There's nothing left to drink.
+```
+
+The cross-refusals, the implicit take, and the honest caveat as a pair:
+**eating never removes the item** — the fully eaten apple stays in
+inventory at zero servings — and the biscuit's `after eating it` →
+`remove it` clause is the one-line remedy.
+
+| | eat (`if.action.eating.*`) | drink (`if.action.drinking.*`) |
+|---|---|---|
+| Refusals | `no_item` · `not_edible` · `is_drink` · `already_consumed` | `no_item` · `not_drinkable` · `already_consumed` · `container_closed` |
+| Success | `eaten` · `eaten_some` / `eaten_all` · taste flavor (`delicious`/`tasty`/`bland`/`awful`) · `filling` / `still_hungry` · `poisonous` | `drunk` · `sipped` / `quaffed` · `from_container` / `empty_now` |
+| Events | `if.event.eaten` | `if.event.drunk` |
+
+Interceptors: `on eating it` / `after eating it` and `on drinking it` /
+`after drinking it` on the item, as above.
+
+An emptied `containsLiquid` vessel stays nominally drinkable and keeps
+saying `empty_now` (caveat, flagged). Neither shipped story exercises
+eat/drink; the zoo's feeding is its own `feedable` trait.
 
 ### 8.4 hiding
 
 **hide** (`if.action.hiding`) — position-shaped grammar: `hide
 behind/under/on/in(side) X`, `duck behind/under/inside X`, `crouch
-behind/under X`. Bare `hide` does not parse. The target needs the
-`concealment` trait and must support the position you named
-(`cant_hide_there` otherwise); success slips the player into hiding
-(`if.action.hiding.behind` and friends) by marking them with a dynamic
-concealed state that defeats NPC sight. Getting out is its own tiny
-action — `stand up`, `come out`, `unhide`, `stop hiding`
-(`if.action.revealing`, `revealed`) — but almost anything blows your
-cover first: any action outside a quiet allowlist (look, examine, wait,
-listen, smell, inventory, and the metas) silently breaks concealment
-before it runs. Walking, taking, and talking all reveal you. Events:
-`if.event.player_concealed` / `player_revealed`. The hiding spot's `on
-hiding it` clauses are consulted; revealing has no interceptor surface
-(flagged as a minor asymmetry), and the trait's `capacity` field is
-dormant.
+behind/under X`; bare `hide` does not parse. The target needs the
+`concealment` trait (entry: §6.4) — in a `.story`, the `hiding-spot`
+adjective, bare for every position or `with position <word>` to narrow
+to one — and must support the position you named (`cant_hide_there`
+otherwise). Success slips the player into hiding (`behind` and friends)
+by marking them with a dynamic concealed state that defeats NPC sight.
+Getting out is its own tiny action — `stand up`, `come out`, `unhide`,
+`stop hiding` (**reveal**, `if.action.revealing`).
+
+The author writes:
+
+<!-- fixture: npcs/hiding.story -->
+```story
+create the Curio Shop
+  a room
+
+  Shelves of dubious antiques.
+
+create the velvet curtain
+  aka curtain
+  scenery
+  hiding-spot with position behind
+  in the Curio Shop
+
+  A moth-eaten curtain across the back doorway.
+
+create the wicker hamper
+  aka hamper
+  scenery
+  hiding-spot
+  in the Curio Shop
+
+  A hamper big enough for a person, currently full of crockery.
+
+  on hiding it
+    refuse hamper-crockery
+  end on
+
+  phrase hamper-crockery:
+    You lift the lid; the hamper is packed with crockery. No room for
+    you.
+
+create the player
+  starts in the Curio Shop
+```
+
+The player sees:
+
+<!-- transcript: npcs/hiding.story -->
+```transcript
+> hide in the hamper
+You lift the lid; the hamper is packed with crockery. No room for you.
+
+> hide behind the curtain
+You slip behind the velvet curtain.
+
+> hide behind the curtain
+You're already hidden.
+
+> come out
+You come out of hiding.
+
+> come out
+You're not hiding.
+```
+
+Two spots, two seams: the hamper's `on hiding it` guard refuses with its
+own phrase, the curtain accepts exactly the position its adjective
+declared, and the reveal action closes the loop with its own
+`not_hidden` refusal when you try it standing in the open.
+
+| | hide (`if.action.hiding.*`) | reveal (`if.action.revealing.*`) |
+|---|---|---|
+| Refusals | `nothing_to_hide` · `cant_hide_there` · `already_hidden` | `not_hidden` |
+| Success | `behind` / `under` / `on` / `inside` | `revealed` |
+| Events | `if.event.player_concealed` | `if.event.player_revealed` |
+
+Interceptors: the hiding spot's `on hiding it` clauses are consulted
+(the hamper above); revealing has no interceptor surface (flagged as a
+minor asymmetry).
+
+Three more honest flags. The design puts every action outside a quiet
+allowlist (look, examine, wait, listen, smell, inventory, and the metas)
+down as silently breaking concealment before it runs — but in the
+current build that break listener is never registered, so walking,
+taking, and talking do *not* actually reveal you; only the
+NPC-can't-see-you half is wired (flagged). `cant_hide_there`'s current
+rendering misplaces an article ("You can't hide an under …" — flagged).
+And the trait's `capacity` field is dormant.
 
 ### 8.5 NPC & combat traits
 
@@ -1220,19 +2780,21 @@ dormant.
 pronouns (they/them default), an optional carrying capacity (the giving
 refusals, §2.4), disambiguation text, and a `customProperties` bag that
 conversation (§8.1) and giving preferences (§2.4) read. In Chord,
-`a person` composes exactly this (plus identity); everything richer is
-layered on top.
+`a person` composes exactly this (plus identity) — the keeper in §8.1's
+scene is the whole recipe. Everything richer is layered on top.
 
-**npc** (trait; Chord via the core behavior adjectives — `guard`,
-`passive`, `wanderer with move-chance 50`, `follower`, `patrol with
-route [ … ]`, always available, no `use` line — or TypeScript). The
-platform's NPC bookkeeping: hostility flag, movement permissions
-(`canMove`, allowed/forbidden rooms — in Chord, `can-move`,
+**npc** (trait; Chord via the core behavior adjectives — `a person, a
+guard`, or `passive`, `wanderer with move-chance 50`, `follower`,
+`patrol with route [ … ]`, always available, no `use` line — or
+TypeScript). The platform's NPC bookkeeping: hostility flag, movement
+permissions (`canMove`, allowed/forbidden rooms — in Chord, `can-move`,
 `allowed-rooms`, `forbidden-rooms`), announced-movement messages, a
-behavior id for the NPC turn plugin (§12.3), and
-conversation-state/knowledge/goals bags. Life-state
-does *not* live here — that moved to `health` (ADR-226). Neither talking
-nor attacking reads it; it belongs to the NPC plugin layer.
+behavior id for the NPC turn plugin, and
+conversation-state/knowledge/goals bags. Life-state does *not* live
+here — that moved to `health` (ADR-226). Neither talking nor attacking
+reads it; it belongs to the NPC plugin layer, and the multi-turn
+behaviors it names (a guard attacking, wanderers wandering, patrols
+patrolling) are §12.3's territory.
 
 **character-model** (trait — TypeScript-only). The deep-NPC option:
 personality, disposition, mood, threat assessment, beliefs and goals —
@@ -1240,25 +2802,27 @@ the substrate of the character-knowledge systems. Pointer only here; it
 rides alongside `npc` and is consumed by its own subsystem, not by
 standard actions.
 
-**combatant** (trait; Chord under `use combat` — `a person, combatant
-with health 20 and skill 40 and hostile true` — or TypeScript). Combat
-*stats* — skill, base damage, armor, retaliation and inventory-drop
-flags — and, since ADR-226, nothing else: health, consciousness, and
-death live on the required `health` trait, and `health`/`max-health` on
-the composition line quietly route there (the loader attaches it for
-you). To stdlib its mere presence means "combat handles this"; the
-stats are the extension's business (§12.4).
+**combatant** (trait; Chord under `use combat` — the deserter in §8.2's
+scene, `a person, combatant with health 8 and skill 30`; `hostile true`
+and friends compose the same way — or TypeScript). Combat *stats* —
+skill, base damage, armor, retaliation and inventory-drop flags — and,
+since ADR-226, nothing else: health, consciousness, and death live on
+the required `health` trait, and `health`/`max-health` on the
+composition line quietly route there (the loader attaches it for you).
+To stdlib its mere presence means "combat handles this"; the stats are
+the extension's business (§12.4).
 
-**weapon** (trait; Chord under `use combat` — `weapon with damage 5 and
-skill-bonus 2`, plus `is-blessed`/`glows-near-danger`; durability fields
-are TypeScript-only). `damage` (drives best-weapon
-inference), type, blessed/glowing flags, durability fields. Prefer
-equipping (§5.2) to make a weapon the inferred choice; name it explicitly
-to make it a consulted command entity.
+**weapon** (trait; Chord under `use combat` — the cutlass in §8.2's
+scene, `weapon with damage 5 and skill-bonus 2`, plus
+`is-blessed`/`glows-near-danger`; durability fields are
+TypeScript-only). `damage` drives best-weapon inference, plus type and
+the blessed/glowing flags. Prefer equipping (§5.2) to make a weapon the
+inferred choice; name it explicitly to make it a consulted command
+entity.
 
 **edible** (`edible` — adjective; a liquid composes as `drinkable`,
-§8.3). `servings`, `liquid` (the eat/drink router), `taste`, `effects`,
-`satisfiesHunger`/`satisfiesThirst`. The behavior-side extras
+§8.3's cordial). `servings`, `liquid` (the eat/drink router), `taste`,
+`effects`, `satisfiesHunger`/`satisfiesThirst`. The behavior-side extras
 (`remainsType`, `consumeMessage`) are dormant in the stdlib path. One
 type wrinkle: the drink-taste vocabulary (`refreshing`, `bitter`,
 `sweet`, `strong`) isn't in the trait's declared taste union — it works
@@ -1281,85 +2845,209 @@ detail.
 
 ### 9.1 kill the player
 
-```story
-kill the player
-kill the player falls-death
-kill the player gas-explosion when the candle is lit
-```
+**kill the player** (statement, peer to `win` and `lose`) — forms `kill
+the player`, `kill the player <phrase-key>`, optional `when <condition>`
+suffix; legal anywhere statements go: `on` and `after` clauses (entity or
+trait), `on every turn [while …]` daemons, `define action` bodies, inside
+`select` and `each` blocks. The phrase key is the death text (define it
+like any phrase) and doubles as the recorded cause; a bare `kill the
+player` records the cause `killed` and shows only the platform's ending
+text.
 
-A statement, peer to `win` and `lose`, legal anywhere statements go: `on`
-and `after` clauses (entity or trait), `on every turn [while …]` daemons,
-`define action` bodies, inside `select` and `each` blocks. The phrase key
-is the death text (define it like any phrase) and doubles as the recorded
-cause; a bare `kill the player` records the cause `killed` and shows only
-the platform's ending text. The `when` suffix gates it like any statement.
-
-What happens next, in order: the death text speaks, the platform's
+The machinery, in order: the death text speaks, the platform's
 `if.event.player.died` event fires, and at end of turn the engine
 re-checks the player's actual life state — that re-check, not the event,
 is the final word. A story policy that revives the player during the turn
 (Dungeo's death-penalty machinery works this way) vetoes the ending;
 otherwise the game ends in defeat (`game.lost`, the `death` and `endgame`
-channels). There is no built-in "restart or undo?" prompt — that is
-client/story territory.
+channels). Because the decision waits for end of turn, statements after
+the `kill` in the same body still run. There is no built-in "restart or
+undo?" prompt — that is client/story territory.
+
+The author writes:
+
+<!-- fixture: death/kill-player.story -->
+```story
+create the Generator Room
+  a room
+
+  Pipes and cables hum along every wall.
+
+create the bare wire
+  aka wire
+  scenery
+  in the Generator Room
+  states: live, dead
+
+  A stripped cable sags from the ceiling conduit.
+
+  on touching it
+    kill the player shock-death when it is live
+    phrase wire-cold when it is dead
+  end on
+
+create the breaker lever
+  aka lever, breaker
+  scenery
+  pullable
+  in the Generator Room
+
+  A heavy knife-switch bolted beside the door.
+
+  on pulling it
+    change the bare wire to dead
+    phrase breaker-thrown
+  end on
+
+create the player
+  starts in the Generator Room
+
+define phrases en-US
+  shock-death:
+    The current takes you before you can let go.
+  wire-cold:
+    Cold and inert. The breaker did its job.
+  breaker-thrown:
+    The breaker slams over and the hum dies with it.
+```
+
+The player who touches the wire straight away sees the death text and
+nothing after it — the game has ended in defeat:
+
+<!-- transcript: death/kill-player.story -->
+```transcript
+> touch the wire
+The current takes you before you can let go.
+```
+
+The player who throws the breaker first (a fresh game) lives:
+
+<!-- transcript: death/kill-player.story -->
+```transcript
+> pull the lever
+The breaker slams over and the hum dies with it.
+
+> touch the wire
+Cold and inert. The breaker did its job.
+```
+
+The `when` suffix is the whole gate — live wire, the `kill` fires; dead
+wire, it is skipped. Note the second `when` on `phrase wire-cold`:
+statements after a `kill` still run, so follow-up text must gate itself
+off the fatal case.
 
 ### 9.2 Deadly exits and deadly rooms
 
-The common case is one fatal direction — the falls:
+**`<direction> is deadly: <phrase>`** marks one fatal direction,
+mirroring `is blocked:`. The fatal direction is deliberately not an exit
+at all — typing `north` (or `n`) never runs the going action: the command
+is rewritten before validation into the internal death action (§9.3), so
+the player sees the death text and nothing else, no movement prose, no
+refusal.
 
+**`deadly: <phrase>`** on a room is the rarer, harsher form: every verb
+except a safe allowlist — look and examine by default — is fatal,
+including objectless ones like WAIT and INVENTORY that no per-entity
+clause could catch. In TypeScript the underlying trait adds two more
+dials: `safeVerbs` (verb names or full action ids, matched tolerantly)
+and `chance` (0–1) for probabilistic hazards à la grue — rolled on the
+engine's seeded RNG, and a survived roll simply lets the verb run
+normally, with no message. Neither dial is expressible from Chord today.
+
+The author writes:
+
+<!-- fixture: death/deadly-places.story -->
 ```story
-create Aragain Falls
+create the Basalt Ledge
   a room
-  west to the Rocky Shore
-  south is deadly: falls-death
+  down to the Steam Vault
+  north is deadly: geyser-death
 
-  The roar of the water is everything.
+  Black rock, slick with spray. The geyser mutters somewhere north;
+  a crevice drops away underfoot.
+
+create the Steam Vault
+  a room
+  deadly: steam-death
+
+  Scalding fog, wall to wall. There is no air to spare in here.
+
+create the player
+  starts in the Basalt Ledge
+
+define phrases en-US
+  geyser-death:
+    The geyser chooses that moment. The column of boiling water makes
+    the question of footing irrelevant.
+  steam-death:
+    The steam finds your lungs.
 ```
 
-`<direction> is deadly: <phrase>` mirrors `is blocked:`. The fatal
-direction is deliberately not an exit at all — typing `south` (or `s`)
-never runs the going action: the command is rewritten before validation
-into the internal death action, so the player sees the death text and
-nothing else, no movement prose, no refusal. The conditional form
-`is deadly while <condition>:` parses but is not wired yet (a load error
-tells you so); the live equivalent is an `on going it` clause with
-`kill the player when <condition>`.
+The player who walks north sees no movement prose and no refusal — only
+the death text:
 
-The rarer, harsher form marks the whole room:
-
-```story
-create Over the Falls
-  a room
-  deadly: over-falls-death
-
-  You are over the falls. This was a mistake.
+<!-- transcript: death/deadly-places.story -->
+```transcript
+> north
+The geyser chooses that moment. The column of boiling water makes the question of footing irrelevant.
 ```
 
-`deadly: <phrase>` means every verb except a safe allowlist — look and
-examine by default — is fatal, including objectless ones like WAIT and
-INVENTORY that no per-entity clause could catch. In TypeScript the
-underlying trait adds two more dials: `safeVerbs` (verb names or full
-action ids, matched tolerantly) and `chance` (0–1) for probabilistic
-hazards à la grue — rolled on the engine's seeded RNG, and a survived
-roll simply lets the verb run normally, with no message. `chance` is not
-expressible from Chord today.
+The player who climbs down (a fresh game) arrives safely — looking is on
+the allowlist — and dies to the first verb that is not:
+
+<!-- transcript: death/deadly-places.story -->
+```transcript
+> down
+Steam Vault
+Scalding fog, wall to wall. There is no air to spare in here.
+
+> look
+Steam Vault
+Scalding fog, wall to wall. There is no air to spare in here.
+
+> inventory
+The steam finds your lungs.
+```
+
+The deadly exit killed without going ever running; the deadly room let
+LOOK repeat but made INVENTORY — an objectless verb no `on` clause could
+catch — fatal.
+
+One gap: the conditional form `is deadly while <condition>:` parses but
+is not wired yet. This compiles clean —
+
+<!-- fixture: death/deadly-while.story -->
+```story
+create the Dam Top
+  a room
+  states: holding, burst
+  east is deadly while it is burst: flood-death
+
+  The dam hums underfoot.
+```
+
+— and then the loader refuses the story with: `` `is deadly while
+<condition>` is not wired yet — the conditional deadly exit is post-scope
+(mirror: role-bound trait clauses). Use an unconditional `is deadly:` or
+an `on going` clause with `kill the player when <condition>`. `` The
+suggested `kill the player when …` clause is §9.1's pattern.
 
 ### 9.3 Death traits and internals
 
 **deadly-room** (trait; authored via `deadly:` above, or in TypeScript
 for `safeVerbs`/`chance`). Fields: `cause` (defaults to the phrase key
-from Chord, `'hazard'` in TS), `messageId`, `safeVerbs`, `chance`.
+from Chord, `'hazard'` in TS), `messageId`, `safeVerbs`, `chance`. The
+Steam Vault in §9.2 is this trait's Chord surface.
 
 **health** (trait — Chord-reachable only through combat: under `use
 combat`, `combatant with health 20 and max-health 30` seeds it,
 auto-attached; there is no standalone `health` adjective). The single
 life-state model (ADR-226): `health`/`maxHealth`, a consciousness
-threshold, an
-`asleep` flag, and the terminal `dead`/`causeOfDeath` pair; the behavior
-owns `takeDamage`/`heal`/`kill` and the derived `isAlive`/`isConscious`.
-Entities without it are simply alive — it is opt-in, and the platform
-attaches one to the player lazily the first time something kills them.
-Combat (§8.2) damages through it.
+threshold, an `asleep` flag, and the terminal `dead`/`causeOfDeath` pair;
+the behavior owns `takeDamage`/`heal`/`kill` and the derived
+`isAlive`/`isConscious`. Entities without it are simply alive — it is
+opt-in, and the platform attaches one to the player lazily the first time
+something kills them. Combat (§8.2) damages through it.
 
 **deadly-room-death** (internal action — no grammar, never typed). The
 redirect target both deadly forms rewrite commands into: it validates
@@ -1368,98 +3056,231 @@ platform death sink, and reports the died event. Interceptors never see
 it. One wire-shape nuance for event listeners: on this path the death
 text rides the died event's `messageId`; on the `kill the player` path
 the text is a separate phrase event and the died event carries only the
-cause — same visible result, different payloads.
+cause — same visible result, different payloads:
+
+| | `kill the player` (§9.1) | deadly exit / deadly room (§9.2) |
+|---|---|---|
+| Refusals | none — a statement, not an action; the `when` suffix is the only gate | none — the redirect validates unconditionally, and interceptors never see it |
+| Death text | the phrase key, spoken as a separate phrase event | the phrase key, riding `if.event.player.died`'s `messageId` |
+| Events | `if.event.player.died` (carries only the cause) | `if.event.player.died` (carries cause and `messageId`) |
+| Ending | `game.lost` on the `death` and `endgame` channels — unless a story policy revives the player inside the veto window | same |
 
 No shipped `.story` uses these constructs yet; the live production use of
 the same machinery is Dungeo's Aragain Falls (a TypeScript transformer on
 the identical seam — `falls-deadly-exit.transcript` pins the behavior),
 plus its gas, grue, and poison deaths through `killPlayer`.
 
-The author-side syntax for all three constructs is now taught in
-chord-language.md §4.7; this chapter remains the reference for the
-machinery underneath.
-
 ## 10. Meta & system actions
 
 The actions every story gets for free — no traits, no eligibility, and
-(deliberately) no interceptor surface: there is no entity to hang a
-clause on, so none of these consult `on`/`after` clauses.
+(deliberately) no interceptor surface: there is no entity to hang an
+`on`/`after` clause on, so none of these consult one. One small fixture
+serves the whole chapter — a story header, a room, and a single scored
+item:
+
+<!-- fixture: meta/long-watch.story -->
+```story
+story "The Long Watch" by "Sharpee Docs"
+  id: stdlib-ref-meta
+  version: 1.2.0
+  blurb: One night in a lighthouse, told a turn at a time.
+  score found-the-flare worth 10
+
+create the Lamp Gallery
+  a room
+
+  The top of the lighthouse, glass on every side.
+
+create the signal flare
+  aka flare
+  in the Lamp Gallery
+
+  A stubby red signal flare, sealed in wax paper.
+
+  after taking it
+    award found-the-flare
+  end after
+
+create the player
+  starts in the Lamp Gallery
+```
 
 ### 10.1 Information: about, help, inventory, scoring, version
 
-**about** (`about`, `info`, `credits`) and **version** (`version`) render
-the story's own metadata — which, for a Chord story, is simply the
-header: `story "Title" by "Author"` with `version:` and `blurb:` flow
-straight through (the platform materializes them into the story-info
-trait, §11.1). A TypeScript story can add credits, ported-by, and build
-fields. About emits a single overridable message,
+**about** (`about`, `info`, `credits`) renders the story's own
+metadata — for a Chord story, simply the header: title, author,
+`version:` and `blurb:` flow straight through (the platform materializes
+them into the story-info trait, §11.1). A TypeScript story can add
+credits, ported-by, and build fields. One overridable message:
 `if.action.about.success`.
 
-**help** (`help`, `?`, `commands`). Renders the platform's general help;
+**version** (`version`) prints a one-line story stamp (title and
+version) plus the engine's own version line.
+
+**help** (`help`, `?`, `commands`) renders the platform's general help;
 a first-time asker gets `first_time`. Topic help (`help movement`) is
 implemented in the action but unreachable — the core pattern takes no
 topic slot (flagged, with `save <name>` in the same boat).
 
-**inventory** (`inventory`, `inv`, `i`). Splits what you carry from what
-you wear (`carrying`, `wearing`, `carrying_and_wearing`, plus the
-`holding_list`/`worn_list` lines); empty hands pick a random empty-message
-variant. The abbreviations set a `brief` flag in the event for clients
-that care. Burden/weight messages exist but are dormant.
+**inventory** (`inventory`, `inv`, `i`) splits what you carry from what
+you wear; empty hands pick a random empty-message variant. The
+abbreviations set a `brief` flag in the event for clients that care.
+Burden/weight messages exist but are dormant.
 
-**score** (`score`, `points`). Reads the platform score
-ledger — which is exactly where Chord's `score <name> worth N` /
-`award <name>` system deposits (chord-language.md §2.8, §4.5): max score
-is summed from the declared worths at load, awards are idempotent, and
-SCORE works with zero extra setup. Ranks fall back to a computed ladder
-(Novice → Master); a story can override rank, moves, and achievements
-through the scoring capability (TypeScript today). `no_scoring` covers
-score-free stories.
+**score** (`score`, `points`) reads the platform score ledger — exactly
+where Chord's `score <name> worth N` / `award <name>` system deposits
+(chord-language.md §2.8, §4.5): max score is summed from the declared
+worths at load, awards are idempotent, and SCORE works with zero extra
+setup. Ranks fall back to a computed ladder (Novice → Master); a story
+can override rank, moves, and achievements through the scoring
+capability (TypeScript today). `no_scoring` covers score-free stories.
+
+The player sees:
+
+<!-- transcript: meta/long-watch.story -->
+```transcript
+> about
+The Long Watch
+Version 1.2.0
+By Sharpee Docs
+
+One night in a lighthouse, told a turn at a time.
+
+> score
+You have scored 0 out of 10, earning you the rank of a Novice.
+
+> take the flare
+Taken.
+
+> score
+You have achieved a perfect score of 10 points!
+
+> inventory
+You are carrying:
+
+a signal flare
+```
+
+The header alone powers ABOUT, its one `score … worth` line set the
+maximum, and the flare's `award` flipped SCORE from Novice to
+perfect — no scoring setup beyond those two lines.
+
+| | Refusals | Renders |
+|---|---|---|
+| **about** (`if.action.about.*`) | — | `success` (title, version, author, blurb in one message) |
+| **help** (`if.action.help.*`) | — | `general` · `first_time` (first ask) · `unknown_topic` (topic help — unreachable) |
+| **inventory** (`if.action.inventory.*`) | — | `carrying` · `wearing` · `carrying_and_wearing`, with `holding_list` / `worn_list` lines; empty hands: one of `empty` · `inventory_empty` · `nothing_at_all` · `hands_empty` · `pockets_empty`, at random |
+| **score** (`if.action.scoring.*`) | `no_scoring` | `score_with_rank` · `perfect_score` (at max) |
+
+One honest gap: the `wearing` / `carrying_and_wearing` renders are
+currently unreachable — worn items go missing from INVENTORY's listing
+(they reappear only after an `undo` rebuilds the world). A platform fix
+is pending; until then the transcript above shows carried items only.
 
 ### 10.2 Saving state: saving, restoring, restarting, quitting
 
-These four are signals, not implementations: each emits a platform event
-(`platform.save_requested`, `restore_requested`, `restart_requested`,
-`quit_requested`) that the engine processes after the turn through
-client-registered hooks — the client owns persistence and confirmation
-UI. Verbs that parse: `save`/`save game`, `restore`/`load`/`load game`/
-`restore game`, `quit`/`q`/`exit game`, `restart`. Named saves are
-dormant (no slot in the grammar). Quit asks for confirmation through a
-client query — but with no client hook registered it auto-confirms and
-stops; restart computes whether confirmation is warranted (unsaved
-progress, more than a few moves) and leaves honoring it to the hook.
-Saving can refuse (`save_not_allowed`, `save_in_progress`,
-`invalid_save_name`); restoring can refuse (`restore_not_allowed`,
-`no_saves`).
+These four are signals, not implementations: each emits a platform
+event that the engine processes after the turn through
+client-registered hooks — the client owns persistence and the
+confirmation UI. Verbs that parse: `save`/`save game`,
+`restore`/`load`/`load game`/`restore game`, `quit`/`q`/`exit game`,
+`restart`. Named saves are dormant (no slot in the grammar). Quit asks
+for confirmation through a client query — but with no client hook
+registered it auto-confirms and stops; restart computes whether
+confirmation is warranted (unsaved progress, more than a few moves) and
+leaves honoring it to the hook.
+
+The player sees (in a client that registers no hooks, like the bare
+test harness — the signal side is all there is):
+
+<!-- transcript: meta/long-watch.story -->
+```transcript
+> save
+Save failed.
+
+> restore
+No saved games found.
+```
+
+"Save failed." is the engine reporting an unhandled
+`platform.save_requested`; a real client's hook would have completed
+it. Quit and restart print nothing of their own here for the same
+reason.
+
+| | Refusals | Platform event |
+|---|---|---|
+| **save** | `save_not_allowed` · `save_in_progress` · `invalid_save_name` | `platform.save_requested` |
+| **restore** | `restore_not_allowed` · `no_saves` | `platform.restore_requested` |
+| **restart** | — | `platform.restart_requested` |
+| **quit** | — | `platform.quit_requested` |
 
 ### 10.3 Turns and undo: waiting, sleeping, again, undoing
 
 **wait** (`wait`, `z`) is the canonical "let a turn pass": a full,
 snapshot-taking, daemon-ticking turn in which nothing else happens —
-N waits let N rounds of scheduled behavior (§12.2) play out. One message,
-`time_passes` (the lang file's twelve wait variants are dead inventory —
-flagged). Stories react to `if.event.waited`, or gate things on turns
-passing.
+N waits let N rounds of scheduled behavior (§12.2) play out. One
+message, `time_passes` (the lang file's twelve wait variants are dead
+inventory — flagged). Stories react to `if.event.waited`, or gate
+things on turns passing.
 
 **sleep** (`sleep`, `nap`, `doze`, `rest`, `slumber` — all five parse
-since ADR-230 D2/D4). Flavor-only: no turns skipped beyond its own, no
-health interaction — give it story meaning with story logic if a story
-needs real sleep. `z` remains a wait.
+since ADR-230 D2/D4). Flavor-only: one message (`slept`), no turns
+skipped beyond its own, no health interaction — give it story meaning
+with story logic if a story needs real sleep. `z` remains a wait.
 
 **again** (`again`, `g`) re-runs the last successful non-meta command by
-re-parsing its original text — so the repeat is honest: it can fail where
-the original succeeded if the world changed. Meta commands (undo, save,
-again itself) never enter history, so they can't be repeated;
+re-parsing its original text — so the repeat is honest: it can fail
+where the original succeeded if the world changed. Meta commands (undo,
+save, again itself) never enter history, so they can't be repeated;
 `nothing_to_repeat` covers an empty history.
 
-**undo** (`undo`) rolls back one full-world snapshot, taken before every
-substantive turn (looks, examines, inventory, and the metas don't burn a
-slot). Depth is an engine setting, default 10; consecutive undos work to
-that depth. There is no per-story undo veto, and no undo-after-death —
-once the defeat ending lands the game has stopped (§9.1's veto window is
-the story's chance). For Chord stories, everything the language tracks —
-states, occurrence counters, `once` flags, sequence progress — lives in
-world state, so undo (and save/restore) cover it with no author effort
-(ADR-210 AC-6, transcript-pinned).
+**undo** (`undo`) rolls back one full-world snapshot, taken before
+every substantive turn (looks, examines, inventory, and the metas don't
+burn a slot). Depth is an engine setting, default 10; consecutive undos
+work to that depth. There is no per-story undo veto, and no
+undo-after-death — once the defeat ending lands the game has stopped
+(§9.1's veto window is the story's chance).
+
+The player sees:
+
+<!-- transcript: meta/long-watch.story -->
+```transcript
+> wait
+Time passes...
+
+> sleep
+You sleep for a while.
+
+> take the flare
+Taken.
+
+> again
+You already have the signal flare.
+
+> undo
+Previous turn undone.
+
+> undo
+Previous turn undone.
+
+> score
+You have scored 0 out of 10, earning you the rank of a Novice.
+```
+
+AGAIN's repeat is honest — the re-parsed take refuses where the
+original succeeded — and two UNDOs peel back first that failed repeat,
+then the take itself, the score award reverting with it. For Chord
+stories, everything the language tracks — states, occurrence counters,
+`once` flags, sequence progress, awards — lives in world state, so undo
+(and save/restore) cover it with no author effort (ADR-210 AC-6,
+transcript-pinned).
+
+| | Refusals | Success |
+|---|---|---|
+| **wait** (`if.action.waiting.*`) | — | `time_passes` (event `if.event.waited`) |
+| **sleep** (`if.action.sleeping.*`) | — | `slept` |
+| **again** (`if.action.again.*`) | `nothing_to_repeat` | renders whatever the repeated command renders |
+| **undo** (`if.action.undoing.*`) | `nothing_to_undo` · `undo_failed` | `undo_success` |
 
 ## 11. Traits catalog
 
@@ -1475,8 +3296,8 @@ is. The four structural traits no verb owns get their full entries in
 | `supporter` | `a supporter` (+ `with capacity N`) | holds things on top | §2.9 |
 | `pushable` | `pushable` | eligible for PUSH; pushType picks behavior | §2.9 |
 | `pullable` | `pullable` | eligible for PULL; state + count mutate | §2.9 |
-| `cuttable` | `cuttable` (+ `with tool <entity>`) | eligible for CUT; outcome is the entity's own implementation | §2.9 |
-| `diggable` | `diggable` (+ `with tool <entity>`) | eligible for DIG; same contract as cuttable | §2.9 |
+| `cuttable` | `cuttable` (+ `with the <entity>`) | eligible for CUT; outcome is the entity's own implementation | §2.9 |
+| `diggable` | `diggable` (+ `with the <entity>`) | eligible for DIG; same contract as cuttable | §2.9 |
 | `moveable-scenery` | — | dormant (nothing reads it) | §2.9 |
 | `attached` | — | dormant (nothing reads it) | §2.9 |
 | `room` | `a room` | a place; exits, darkness, first-visit text | §3.4 |
@@ -1484,7 +3305,7 @@ is. The four structural traits no verb owns get their full entries in
 | `enterable` | `enterable` | can be gotten into / onto | §3.4 |
 | `climbable` | `climbable` | eligible for CLIMB | §3.4 |
 | `vehicle` | — | enterable that moves with its passengers | §3.4 |
-| `openable` | `openable` (+ `with tool <entity>`) | open/closed state | §4.3 |
+| `openable` | `openable` (+ `with the <entity>`) | open/closed state | §4.3 |
 | `lockable` | `lockable` (+ `with the <key>`) | locked/unlocked + key contract | §4.3 |
 | `door` | `a door` + an exit's `through the <door>` tail | an entity that *is* the connection between two rooms | §4.3 |
 | `wearable` | `wearable` | can be worn; body part + layer rules | §5.2 |
@@ -1517,43 +3338,187 @@ is. The four structural traits no verb owns get their full entries in
 ### 11.1 Structural & authoring traits
 
 **identity** — every entity's who-am-I, composed implicitly by every
-`create` block: the name, `aka` aliases, and description all land here,
-along with the article/proper-name machinery the sentence assembler uses
-(`properName` suppresses the article — the Chord player is proper, and
-any person can be with the person-only `proper` adjective, ADR-242),
-grammatical number (Chord's `plural` adjective sets it), the narration's
-pronoun set (`pronounSet` — a person's `pronouns he/she/it/they` body
-line, or a `define pronouns` named set for anything beyond the built-in
-four; absent means the by-number fallback, "it"), disambiguation
-adjectives, and three fields other chapters lean on: `concealed` (the
-hidden-item flag searching reveals, §6.2), `points` (score on first take,
-§2.1 — deduped per entity), and optional weight/volume/size. From Chord:
-name, aliases, description, `plural`, `concealed`, and on persons
-`proper` and `pronouns`; the rest is TypeScript.
+`create` block: the name, `aka` aliases, and description land here, along
+with the article/proper-name machinery the sentence assembler uses,
+grammatical number, the narration's pronoun set, disambiguation
+adjectives, and optional weight/volume/size. From Chord: name, aliases,
+description, `plural`, `concealed`, and on persons `proper` and
+`pronouns` (ADR-242); the rest is TypeScript.
 
-**region** — groups rooms into areas: a room carries a region id, regions
-nest, and going emits `region_exited`/`region_entered` events per crossed
-boundary (§3.1) — the platform hook for area-scoped music, weather, or
-prose. The trait's ambient-sound/smell fields are declared but nothing
-reads them yet (dormant). In Chord (ADR-236): `a region` with
-`containing` member lists (additive; regions nest by containing each
-other), plus `after entering it` / `after leaving it` boundary reactions
-and region-owned `on every turn` daemons — the full story is in §3.4.
+The author writes:
 
-**scene** — narrative phases with a lifecycle: a scene waits, begins when
-its registered begin-condition fires, counts its active turns, and ends
-(or recurs) on its end-condition — evaluated every turn by an always-on
-engine plugin, emitting `if.event.scene_began` / `scene_ended` plus any
-registered reaction messages. The conditions are code (closures
-registered on the world, re-register after restore); the trait's state
-persists. TypeScript-only.
+<!-- fixture: traits/identity.story -->
+```story
+create the Gatehouse
+  a room
+
+  A stone gatehouse with an iron-barred window.
+
+create Tobias
+  aka groundskeeper
+  a person, proper
+  pronouns he
+  in the Gatehouse
+
+  A weathered man with a ring of keys.
+
+create the zookeeper
+  a person
+  in the Gatehouse
+
+  Someone in a canvas apron, name unknown.
+
+create the iron gates
+  aka gates
+  plural
+  scenery
+  in the Gatehouse
+
+  Twin gates of black iron, shut fast.
+
+create the player
+  starts in the Gatehouse
+```
+
+The player sees:
+
+<!-- transcript: traits/identity.story -->
+```transcript
+> look
+Gatehouse
+A stone gatehouse with an iron-barred window.
+
+You can see Tobias and a zookeeper here.
+
+> take the gates
+The iron gates are fixed in place.
+
+> take tobias
+You can't take Tobias.
+
+> take the zookeeper
+You can't take the zookeeper.
+```
+
+One word each way: `proper` (person-only) renders Tobias bare-named in
+the room listing and in refusals while the unmarked zookeeper keeps an
+article, and `plural` sets grammatical number so every message agrees —
+the gates "are" fixed in place where §2.1's statue "is".
+
+The rest of the trait in one-liners:
+
+- `pronouns he` (or `she`, `it`, `they`, or a `define pronouns` named
+  set — chord-language.md §5.9) names a person's narration pronoun set;
+  absent means the by-number fallback ("it"/"they") — nothing is
+  inferred from a name.
+- `concealed` marks a hidden item that searching reveals and announces
+  (§6.2).
+- `points` awards score on the first take, deduped per entity (§2.1) —
+  TypeScript-only today; Chord's `score … worth N` lines are the
+  separate named-award system.
+- The create-line article is never read for identity: `create the
+  zookeeper` and `create a zookeeper` load identically.
+
+**region** (`a region` — kind noun, since ADR-236) — groups rooms into
+areas: a room carries a region id, regions nest by containing each
+other, and going emits `if.event.region_exited` / `region_entered` per
+crossed boundary (§3.1). Everything is authored region-side: `containing`
+lists members (additive across lines), `after entering it` / `after
+leaving it` react to boundary crossings (`leaving` exists only on region
+blocks), and an `on every turn` clause on the region block is a region
+daemon, firing only while the player is in a member room (the daemon
+machinery is §12's).
+
+The author writes:
+
+<!-- fixture: traits/region.story -->
+```story
+create the Grounds
+  a region
+  containing the Orchard, the Apiary
+
+  after entering it
+    phrase under-the-boughs
+  end after
+
+  after leaving it
+    phrase back-on-the-road
+  end after
+
+  on every turn
+    phrase bees-drone
+  end on
+
+  phrase under-the-boughs:
+    You pass under the boughs; the air turns sweet with windfall.
+
+  phrase back-on-the-road:
+    The orchard smell fades behind you.
+
+  phrase bees-drone:
+    Bees drone somewhere among the trees.
+```
+
+The player sees (starting outside the region, walking east through it
+and back):
+
+<!-- transcript: traits/region.story -->
+```transcript
+> east
+Orchard
+Apple trees in ragged rows.
+
+Bees drone somewhere among the trees.
+
+You pass under the boughs; the air turns sweet with windfall.
+
+> east
+Apiary
+White hives stand in the grass.
+
+Bees drone somewhere among the trees.
+
+> west
+Orchard
+Apple trees in ragged rows.
+
+Bees drone somewhere among the trees.
+
+> west
+Gatehouse
+A stone gatehouse at the edge of the grounds.
+
+The orchard smell fades behind you.
+```
+
+Boundary reactions fire only on crossings — the Orchard-to-Apiary move
+inside the region says nothing extra — while the daemon speaks in every
+member room and falls silent the turn you leave. One honest gap: the
+trait's ambient-sound/smell fields are declared but nothing reads them
+yet (dormant).
+
+**scene** — narrative phases with a lifecycle: a scene waits, begins
+when its registered begin-condition fires, counts its active turns, and
+ends (or recurs) on its end-condition — evaluated every turn by an
+always-on engine plugin, emitting `if.event.scene_began` /
+`scene_ended` plus any registered reaction messages. The conditions are
+code (closures registered on the world, re-register after restore); the
+trait's state persists. TypeScript-only — no Chord surface.
 
 **story-info** — the story's masthead on an invisible system entity:
 title, author, version, description, plus build metadata (build date,
 engine/client versions, ported-by, credits). ABOUT and VERSION read it
-(§10.1), the info channels and save metadata consume it. A Chord story
+(§10.1); the info channels and save metadata consume it. A Chord story
 never touches it directly — the header (`story "…" by "…"`, `version:`,
 `blurb:`) flows through and the engine materializes the trait.
+
+One neighbor in the traits directory is not a trait at all:
+**obstructor-protocol** (ADR-173) is a query-helper module for walls — a
+wall side may name an `obstructedBy` entity, and capability consumers
+(today the sound system's acoustic dampening, ADR-172) ask at query time
+whether that obstructor is still in the room, so pushing the bookcase
+aside lifts the obstruction with no bookkeeping. TypeScript plumbing
+only — no Chord surface, no verb.
 
 ## 12. Plugins & daemons
 
@@ -1565,19 +3530,20 @@ actually runs on top of.
 
 After each *successful* player action — never after a failed one, and
 never after a meta command — the registered turn plugins run in
-descending priority: **NPC behavior (100), state machines (75), scene
-evaluation (60), the scheduler (50)**. Their events join the same turn's
-output, so an NPC's move and a fuse's explosion read as part of the turn
-that caused them. Each plugin sees the world, the turn, the player, the
-action's result, and the engine's seeded randomness; plugin state rides
-in saves.
+descending priority, and their events join the same turn's output: an
+NPC's move and a fuse's explosion read as part of the turn that caused
+them. Each plugin sees the world, the turn, the player, the action's
+result, and the engine's seeded randomness; plugin state rides in saves.
 
-Only the scene evaluator (§11.1) is always on at the engine level. A
-TypeScript story registers the plugins it uses (Dungeo registers all
-three). A Chord story gets the NPC plugin **unconditionally** — NPCs
-are core vocabulary, no opt-in (ADR-215) — the scheduler exactly when
-it compiled at least one daemon, and the state-machine plugin when the
-story header declares `use state-machines` (§12.3).
+| Plugin | Priority | A Chord story has it | A TypeScript story has it |
+|---|---|---|---|
+| NPC behavior (§12.3) | 100 | always — NPCs are core vocabulary, no opt-in (ADR-215) | when the story registers it |
+| State machines (§12.3) | 75 | with `use state-machines` in the header | when the story registers it |
+| Scene evaluation (§11.1) | 60 | always on (engine level) | always on (engine level) |
+| Scheduler (§12.2) | 50 | exactly when at least one daemon compiled | when the story registers it |
+
+Only the scene evaluator is always on at the engine level; a TypeScript
+story registers the rest itself (Dungeo registers all three).
 
 ### 12.2 The scheduler: daemons and fuses
 
@@ -1585,57 +3551,362 @@ The temporal substrate. A **daemon** runs every tick — optionally gated
 by a condition, optionally once. A **fuse** counts down and fires:
 turns, an optional per-turn tick condition (turns can refuse to count),
 repeat, cancellation with cleanup, entity binding (auto-cleanup when the
-entity goes away), and mid-flight adjustment.
+entity goes away), and mid-flight adjustment. Fuses are a
+TypeScript-only surface — Chord never touches fuses at all; the
+imperative timer verbs (cancel a sequence, "in 3 turns", periodic
+timers, reschedule) remain the audited Chord gaps (designed in ADR-217,
+not yet built).
 
-What Chord compiles to, precisely: a `define sequence` becomes **one
-daemon** whose step pointer lives in namespaced world state — which is
-why sequence progress survives save, restore, and undo with no author
-effort — arming its steps strictly in order (`at turn N` against the
+A `define sequence` (chord-language.md §4.8) compiles to **one daemon**
+whose step pointer lives in namespaced world state — which is why
+sequence progress survives save, restore, and undo with no author
+effort. It arms its steps strictly in order: `at turn N` against the
 wall clock, `N turns later` against the previous step's firing,
-`when <owner> becomes <state>` against the state value). An `on every
-turn [while …][, once]` clause becomes one daemon per clause. Owned by
-an entity, a trait, or a region, it is **presence-gated**: off-stage the
-clause neither fires, rolls dice, nor consumes its `once` (for a
-region, "present" means anywhere in a member room, nesting included).
-Hosted in the story header's own body it is the story's clause —
-one daemon, **no gate**: a background clock that ticks wherever the
-player is (weather, off-stage simulation; ADR-236). Chord never touches
-fuses at all — the imperative timer verbs (cancel a sequence, "in 3
-turns", periodic timers, reschedule) remain the audited Chord gaps
-(designed in ADR-217, not yet built).
+`when <owner> becomes <state>` against the state value.
+
+The author writes:
+
+<!-- fixture: plugins/sequence.story -->
+```story
+story "The Scullery" by "ref"
+  id: plugins-sequence
+  version: 0.0.1
+  states: quiet, boiling
+
+create the Scullery
+  a room
+
+  A stone-flagged scullery, a kettle already over the flame.
+
+create the kettle
+  scenery
+  in the Scullery
+
+  A copper kettle, beginning to warm.
+
+create the player
+  starts in the Scullery
+
+define sequence kettle coming to the boil
+  at turn 2
+    phrase kettle-murmur
+      The kettle begins to murmur on the range.
+  2 turns later
+    phrase kettle-boils
+      The kettle reaches a rolling boil.
+    change the story to boiling
+end sequence
+
+define sequence steam
+  when the story becomes boiling
+    phrase steam-note
+      Steam fogs the little window over the sink.
+end sequence
+```
+
+The player sees:
+
+<!-- transcript: plugins/sequence.story -->
+```transcript
+> wait
+Time passes...
+
+The kettle begins to murmur on the range.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The kettle reaches a rolling boil.
+
+Steam fogs the little window over the sink.
+
+> wait
+Time passes...
+```
+
+The opening look is turn 1, so `at turn 2` lands on the first `wait`;
+and the second sequence's `when the story becomes boiling` step fires in
+the very turn the first sequence changes the state.
+
+An `on every turn [while …][, once]` clause (chord-language.md §3)
+becomes one daemon per clause. Owned by an entity, a trait, or a
+region, it is **presence-gated**: off-stage the clause neither fires,
+rolls dice, nor consumes its `once` (for a region, "present" means
+anywhere in a member room, nesting included). Hosted in the story
+header's own body it is the story's clause — one daemon, **no gate**: a
+background clock that ticks wherever the player is (weather, off-stage
+simulation; ADR-236).
+
+The author writes:
+
+<!-- fixture: plugins/daemons.story -->
+```story
+story "The Lighthouse" by "ref"
+  id: plugins-daemons
+  version: 0.0.1
+
+  on every turn
+    phrase tide-works
+  end on
+
+create the Jetty
+  a room
+  north to the Lamp Room
+
+  A stone jetty slick with spray.
+
+create the Lamp Room
+  a room
+  south to the Jetty
+
+  Glass on every side, the great lamp turning overhead.
+
+create the Lighthouse
+  a region
+  containing the Lamp Room
+
+  on every turn
+    phrase lamp-hum
+      The lamp's clockwork hums up through the floor.
+  end on
+
+create the brass clock
+  aka clock
+  scenery
+  in the Lamp Room
+
+  A ship's clock bolted beside the door.
+
+  on every turn
+    phrase clock-ticks
+      The brass clock ticks once, heavily.
+  end on
+
+create the player
+  starts in the Jetty
+
+define phrase tide-works
+  Out past the bar, the tide keeps working at the rocks.
+end phrase
+```
+
+The player sees:
+
+<!-- transcript: plugins/daemons.story -->
+```transcript
+> wait
+Time passes...
+
+Out past the bar, the tide keeps working at the rocks.
+
+> north
+Lamp Room
+Glass on every side, the great lamp turning overhead.
+
+The lamp's clockwork hums up through the floor.
+
+The brass clock ticks once, heavily.
+
+Out past the bar, the tide keeps working at the rocks.
+
+> wait
+Time passes...
+
+The lamp's clockwork hums up through the floor.
+
+The brass clock ticks once, heavily.
+
+Out past the bar, the tide keeps working at the rocks.
+```
+
+Three daemons, one gate: on the Jetty only the story-global tide
+speaks; one move north and the region's daemon and the clock's
+presence-gated daemon join it in the same turn's output.
 
 ### 12.3 The NPC and state-machine plugins
 
 **The NPC plugin** (priority 100) walks every entity with the `npc`
 trait, dispatches to the behavior its `behaviorId` names, and executes
-what comes back — attacks, emotes, movement (with `npc.moved` events and
-witnessed variants a story can narrate). It also fires enter/leave hooks
-when the player's action moved them — the greeting-guard pattern.
-Built-ins: `guard` (stationary, attacks the visible player when
-hostile), `passive`, and factory-made wanderers, followers, and patrol
-routes; stories register richer behaviors. A Chord story gets all of
-this without opting in — NPCs are core: `a person, a guard` (or
+what comes back — attacks, emotes, movement (with `npc.moved` events
+and witnessed variants a story can narrate). It also fires enter/leave
+hooks when the player's action moved them — the greeting-guard
+pattern. Built-ins: `guard` (stationary, attacks the visible player
+when hostile), `passive`, and factory-made wanderers, followers, and
+patrol routes; stories register richer behaviors. A Chord story gets
+all of this without opting in — NPCs are core: `a person, a guard` (or
 `passive`, `wanderer with move-chance 50`, `follower`, `patrol with
 route [ … ]`) composes the built-ins directly, with `with`-fields for
 movement permissions, routes, and chances. Configuration lives on the
-trait (§8.5); the deep-NPC layers (character model, lucidity) tick here
-too.
+trait (§8.5); the deep-NPC layers (character model, lucidity) tick
+here too.
+
+The author writes:
+
+<!-- fixture: plugins/patrol.story -->
+```story
+create the Orchard
+  a room
+  east to the Cider House
+
+  Apple trees in crooked rows.
+
+create the Cider House
+  a room
+  west to the Orchard
+
+  Presses, barrels, and the sweet reek of last year's crop.
+
+create Mairead
+  aka warden
+  a person, proper, patrol with route [the Orchard, the Cider House]
+  pronouns she
+  in the Orchard
+
+  The orchard warden, mid-round.
+
+create the player
+  starts in the Orchard
+```
+
+The player sees:
+
+<!-- transcript: plugins/patrol.story -->
+```transcript
+> look
+Orchard
+Apple trees in crooked rows.
+
+You can see Mairead here.
+
+> wait
+Time passes...
+
+> look
+Orchard
+Apple trees in crooked rows.
+
+> wait
+Time passes...
+
+> look
+Orchard
+Apple trees in crooked rows.
+
+You can see Mairead here.
+```
+
+Mairead walks her two-room route on the plugin's turns — silently by
+default: the plugin emits the `npc.moved` events, and narrating them
+(or not) is the story's choice.
 
 **The state-machine plugin** (priority 75) evaluates declarative
-machines — states, guarded transitions triggered by actions, events, or
-conditions, enter/exit effects, terminal states — at most one transition
-per machine per turn. A Chord story reaches it by opting in: `use
-state-machines` in the story header, then `define machine` — the full
-depth (roles, enter/exit effects, terminal states, guarded transitions),
-with Chord conditions as guards and Chord bodies as effects; `define
-machine` without the `use` line is a compile error. And worth being
-precise about: **Chord's `states:`/`change`/`select on` still do not
-use it.** Chord
-states are plain world-state values with a forward-march ratchet
-(`reversible` opts out) — the *effect* of a simple state machine without
-the plugin's machinery (no enter/exit effects, no terminal states, no
-multi-machine registry). Dungeo's death-penalty policy (§9.1's veto) is
-a real state machine; the cloak's states are Chord world-state.
+machines — states, guarded transitions triggered by actions, events,
+or conditions, enter/exit effects, terminal states — at most one
+transition per machine per turn. A Chord story reaches it by opting
+in: `use state-machines` in the story header, then `define machine` —
+the full depth, with Chord conditions as guards and Chord bodies as
+effects; `define machine` without the `use` line is a compile error.
+
+The author writes:
+
+<!-- fixture: plugins/machine.story -->
+```story
+story "The Ferry" by "ref"
+  id: plugins-machine
+  version: 0.0.1
+  states: waiting, signaled
+  use state-machines
+
+create the Slipway
+  a room
+
+  A cobbled slipway running down into grey water.
+
+create the capstan
+  in the Slipway
+
+  A tarred capstan wound with ferry rope.
+
+  on turning it
+    phrase capstan-turns
+      You lean into the capstan and it comes round, pawls clacking.
+  end on
+
+create the signal cord
+  aka cord
+  scenery, pullable
+  in the Slipway
+
+  A cord for ringing the bell on the far bank.
+
+  on pulling it
+    change the story to signaled
+    phrase cord-rings
+      Far across the water, a bell answers the cord.
+  end on
+
+create the player
+  starts in the Slipway
+
+define machine ferry
+  role capstan is the capstan
+  starts moored
+
+  state moored
+    when turning the capstan: casting-off
+
+  state casting-off
+    on enter
+      phrase rope-pays-out
+    end on
+    when signaled: underway
+
+  state underway, terminal
+    on enter
+      phrase ferry-underway
+    end on
+end machine
+
+define phrase rope-pays-out
+  The rope pays out and the ferry noses off the far bank.
+end phrase
+
+define phrase ferry-underway
+  The ferry is underway, beating slowly toward you.
+end phrase
+```
+
+The player sees:
+
+<!-- transcript: plugins/machine.story -->
+```transcript
+> turn the capstan
+You lean into the capstan and it comes round, pawls clacking.
+
+The rope pays out and the ferry noses off the far bank.
+
+> pull the cord
+Far across the water, a bell answers the cord.
+
+The ferry is underway, beating slowly toward you.
+```
+
+Two trigger kinds in two turns: the action trigger fires the turn the
+capstan turns (the `on turning it` clause makes the turn succeed — §2.7
+— and the transition's `on enter` speaks in the same turn's output),
+and the condition trigger fires the turn the cord's clause moves the
+story to `signaled`.
+
+And worth being precise about: **Chord's `states:`/`change`/`select on`
+still do not use it.** Chord states are plain world-state values with a
+forward-march ratchet (`reversible` opts out) — the *effect* of a
+simple state machine without the plugin's machinery (no enter/exit
+effects, no terminal states, no multi-machine registry). Dungeo's
+death-penalty policy (§9.1's veto) is a real state machine; the cloak's
+states are Chord world-state.
 
 ### 12.4 Extensions: basic combat as a worked example
 
