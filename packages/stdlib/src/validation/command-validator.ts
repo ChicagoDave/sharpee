@@ -39,6 +39,15 @@ export interface ActionMetadata {
   directObjectScope?: ScopeLevel;
   indirectObjectScope?: ScopeLevel;
   validPrepositions?: string[];
+  /**
+   * Disambiguation preference (platform-issue-sweep Phase 6/10): when an
+   * ambiguity ties and EXACTLY ONE candidate sits at this scope level, it
+   * auto-resolves. Lets an action widen its resolution scope (so its own
+   * refusal speaks for out-of-scope targets — e.g. dropping resolves
+   * VISIBLE) without losing the classic preference ("drop book" with a
+   * carried black book and a guidebook on the floor means the carried one).
+   */
+  preferredScope?: ScopeLevel;
 }
 
 /**
@@ -130,6 +139,8 @@ export class CommandValidator implements CommandValidator {
   private systemEvents?: IGenericEventSource<ISystemEvent>;
   /** Current action ID being validated (for disambiguation scoring) */
   private currentActionId?: string;
+  /** The current action's preferredScope, staged for resolveAmbiguity. */
+  private currentPreferredScope?: ScopeLevel;
 
   constructor(world: WorldModel, actionRegistry: ActionRegistry, scopeResolver?: ScopeResolver) {
     this.world = world;
@@ -176,8 +187,9 @@ export class CommandValidator implements CommandValidator {
       };
     }
 
-    // Store current action ID for disambiguation scoring
+    // Store current action ID + scope preference for disambiguation scoring
     this.currentActionId = actionHandler.id;
+    this.currentPreferredScope = this.getActionMetadata(actionHandler).preferredScope;
 
     // 2. Resolve direct object if present in parsed command
     let directObject: IValidatedObjectReference | undefined;
@@ -395,6 +407,7 @@ export class CommandValidator implements CommandValidator {
     }
 
     this.currentActionId = actionHandler.id;
+    this.currentPreferredScope = this.getActionMetadata(actionHandler).preferredScope;
 
     // 2. Resolve direct object - use selection if provided
     let directObject: IValidatedObjectReference | undefined;
@@ -1277,6 +1290,28 @@ export class CommandValidator implements CommandValidator {
           chosen: perfectMatches[0].entity.id
         });
         return perfectMatches[0];
+      }
+    }
+
+    // Action scope preference (Phase 6/10): when the action declares a
+    // preferredScope and exactly ONE candidate sits at it, that candidate
+    // wins — "drop book" with the black book in hand and a guidebook on the
+    // floor means the carried one, even though dropping resolves VISIBLE so
+    // its own refusal can speak for un-held targets.
+    if (this.currentPreferredScope !== undefined) {
+      const player = this.world.getPlayer();
+      if (player) {
+        const preferred = matches.filter(m =>
+          this.scopeResolver.getScope(player, m.entity) >= this.currentPreferredScope!
+        );
+        if (preferred.length === 1) {
+          this.emitDebugEvent('ambiguity_resolution', command, {
+            resolved: true,
+            method: 'action_preferred_scope',
+            chosen: preferred[0].entity.id
+          });
+          return preferred[0];
+        }
       }
     }
 

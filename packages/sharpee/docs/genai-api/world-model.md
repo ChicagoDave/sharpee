@@ -1453,6 +1453,12 @@ import { IFEntity } from '../entities/if-entity.js';
 import { WorldModel } from '../world/WorldModel.js';
 import { EntityId, SeededRandom } from '@sharpee/core';
 /**
+ * Why an unsuccessful attack had no effect. A reason CODE for the language
+ * layer (stdlib maps each to a message ID) — world-model never emits English
+ * (platform-issue-sweep Phase 3c, David's 2026-07-20 ruling).
+ */
+export type AttackIneffectiveReason = 'requires_weapon' | 'wrong_weapon_type' | 'invulnerable' | 'no_effect';
+/**
  * Combined result of an attack
  */
 export interface IAttackResult {
@@ -1467,6 +1473,14 @@ export interface IAttackResult {
     exitRevealed?: string;
     transformedTo?: EntityId;
     weaponBroke?: boolean;
+    /** Set on failure (`success: false`): the reason code, never prose. */
+    reason?: AttackIneffectiveReason;
+    /**
+     * AUTHOR-provided prose passed through verbatim from trait fields
+     * (breakable message, destructible damage/destroy messages, combatant
+     * hit/death messages). Never platform-written English — failure paths
+     * carry `reason` instead.
+     */
     message?: string;
 }
 /**
@@ -2230,7 +2244,7 @@ export declare function registerTraitType(name: string, value: string, category?
  * Maps trait types to their implementation classes
  */
 import { TraitType } from './trait-types.js';
-import { ITraitConstructor } from './trait.js';
+import { ITrait, ITraitConstructor } from './trait.js';
 import { IdentityTrait } from './identity/identityTrait.js';
 import { ContainerTrait } from './container/containerTrait.js';
 import { SupporterTrait } from './supporter/supporterTrait.js';
@@ -2282,6 +2296,30 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
+/**
+ * Rehydrate a serialized trait to a live instance of its implementation class
+ * (platform-issue-sweep Phase 5, 2026-07-20).
+ *
+ * Serialization captures own enumerable fields only; prototype accessors
+ * (WearableTrait.isWorn) and methods (ConcealmentTrait.supportsPosition) live
+ * on the class prototype and were LOST by the old raw-JSON rehydration —
+ * after save/restore/undo, any consumer of a trait getter or method saw
+ * `undefined` / not-a-function (e.g. getContents' worn-item filter reads
+ * `wearable.isWorn`, so a restored worn item silently escaped the filter).
+ *
+ * Object.create + Object.assign restores the prototype and copies exactly
+ * the serialized state without running constructor logic (constructor shapes
+ * vary per trait; a save of the same code version carries the complete own
+ * state). Unknown types — story-defined traits — keep the raw data object,
+ * as before: their classes are not registered here.
+ *
+ * @param traitData a serialized trait ({ type, ...own fields })
+ * @returns a prototype-restored instance for known core types; the raw data
+ *          object for unknown (story-defined) types
+ */
+export declare function rehydrateTrait(traitData: {
+    type: string;
+} & Record<string, unknown>): ITrait;
 export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
@@ -7520,6 +7558,29 @@ export declare class VisibilityBehavior extends Behavior {
      */
     private static isLightActive;
     /**
+     * Whether an entity is still concealed (hidden until SEARCH or a game event
+     * reveals it). This is the SINGLE shared definition of item concealment for
+     * visibility: scope resolution, LOOK, and EXAMINE must all consult it (here
+     * or via canSee/getVisible/getVisibleContents), never re-derive it.
+     *
+     * @param entity - The entity to check (safe on entities without IdentityTrait)
+     * @returns true if the entity carries IdentityTrait with concealed === true
+     */
+    static isConcealed(entity: IFEntity): boolean;
+    /**
+     * The single per-entity listing filter shared by every visibility path
+     * (room contents, container/supporter contents): excludes still-concealed
+     * entities, scenery marked invisible, and entities whose visibility
+     * capability vetoes being seen.
+     *
+     * @param entity - The candidate entity
+     * @param world - The world model
+     * @param observerId - The observer (or container proxy) id passed to a
+     *                     visibility-capability behavior's validate
+     * @returns true if the entity may appear in a visible-entity listing
+     */
+    private static isListable;
+    /**
      * Determines if an observer can see a target entity
      */
     static canSee(observer: IFEntity, target: IFEntity, world: WorldModel): boolean;
@@ -7527,6 +7588,25 @@ export declare class VisibilityBehavior extends Behavior {
      * Gets all entities visible to an observer
      */
     static getVisible(observer: IFEntity, world: WorldModel): IFEntity[];
+    /**
+     * The direct contents of a container/supporter/actor that could appear in a
+     * visible listing: applies the same per-entity filter as getVisible
+     * (concealed, invisible scenery, visibility-capability veto) to
+     * `getContents(id, { includeWorn: true })`.
+     *
+     * Does NOT check whether the container's inside is exposed (closed opaque
+     * container) — callers listing contents have already established that, and
+     * addVisibleContents keeps that gate itself.
+     *
+     * This is the shared read for LOOK's and EXAMINE's contents listings — a
+     * still-concealed item stays out of both until SEARCH reveals it, by the
+     * same definition scope resolution uses.
+     *
+     * @param container - The container/supporter/actor whose contents to list
+     * @param world - The world model
+     * @returns the listable direct contents
+     */
+    static getVisibleContents(container: IFEntity, world: WorldModel): IFEntity[];
     /**
      * Recursively adds visible contents of a container/supporter/actor
      */

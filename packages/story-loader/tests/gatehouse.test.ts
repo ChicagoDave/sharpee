@@ -83,7 +83,7 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
       turn: 2,
       playerId: player.id,
       playerLocation: world.getLocation(player.id)!,
-      actionResult: { actionId: 'if.action.turning', targetId: story.entityId('rusty-winch')! },
+      actionResult: { actionId: 'if.action.turning', success: true, targetId: story.entityId('rusty-winch')! },
       actionEvents: [],
     } as never);
     expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('lowering');

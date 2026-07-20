@@ -43,14 +43,18 @@ describe('use state-machines through the real loader (ADR-215, ADR-119 depth)', 
   let smPlugin: StateMachinePlugin;
   let turn: number;
 
-  const tick = (actionResult?: { actionId: string; targetId?: string }): string[] => {
+  // Action triggers require GENUINE success (platform-issue-sweep Phase 7):
+  // the harness defaults to success: true; refusal tests pass success: false.
+  const tick = (actionResult?: { actionId: string; targetId?: string; success?: boolean }): string[] => {
     turn += 1;
     const events = smPlugin.onAfterAction({
       world,
       turn,
       playerId: player.id,
       playerLocation: world.getLocation(player.id)!,
-      actionResult,
+      actionResult: actionResult
+        ? { success: true, ...actionResult }
+        : undefined,
       actionEvents: [],
     } as never);
     return messageIdsOf(events) as string[];
@@ -100,6 +104,78 @@ describe('use state-machines through the real loader (ADR-215, ADR-119 depth)', 
     const doorId = story.entityId('gatehouse')!;
     expect(tick({ actionId: 'if.action.turning', targetId: doorId })).toEqual([]);
     expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('raised');
+  });
+
+  it('a REFUSED action does not transition; the same action succeeding then does (Phase 7)', () => {
+    const winchId = story.entityId('rusty-winch')!;
+
+    // Refused attempt: right action, right target, but the action was blocked
+    // (e.g. an interceptor veto) — the machine must NOT advance.
+    expect(tick({ actionId: 'if.action.turning', targetId: winchId, success: false })).toEqual([]);
+    expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('raised');
+
+    // Genuine success advances it.
+    const fired = tick({ actionId: 'if.action.turning', targetId: winchId });
+    expect(fired).toContain('chains-groan');
+    expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('lowering');
+  });
+
+  it('an absent success flag is not vouched-for success — no transition (Phase 7 strict gate)', () => {
+    const winchId = story.entityId('rusty-winch')!;
+    turn += 1;
+    const events = smPlugin.onAfterAction({
+      world,
+      turn,
+      playerId: player.id,
+      playerLocation: world.getLocation(player.id)!,
+      // Deliberately NO success field — a caller that cannot vouch for
+      // success must not advance machines.
+      actionResult: { actionId: 'if.action.turning', targetId: winchId },
+      actionEvents: [],
+    } as never);
+    expect(messageIdsOf(events)).toEqual([]);
+    expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('raised');
+  });
+
+  it('event triggers skip blocked/failed events reusing the primary type (Phase 7)', () => {
+    // Direct runtime-level check: refusals reuse the primary event type with
+    // blocked:true / failed:true — an event trigger must not false-fire.
+    const registry = smPlugin.getRegistry();
+    registry.register({
+      id: 'test.machine.bell',
+      initialState: 'silent',
+      states: {
+        silent: {
+          transitions: [
+            { target: 'rung', trigger: { type: 'event', eventId: 'if.event.pushed' } },
+          ],
+        },
+        rung: { terminal: true },
+      },
+    });
+
+    const evalWith = (data: Record<string, unknown>) => {
+      turn += 1;
+      return registry.evaluate({
+        world,
+        playerId: player.id,
+        playerLocation: world.getLocation(player.id)!,
+        turn,
+        actionEvents: [{ type: 'if.event.pushed', data }],
+      });
+    };
+
+    // Blocked refusal reusing the primary type: no transition.
+    evalWith({ blocked: true, messageId: 'x.cant_push' });
+    expect(registry.getMachineState('test.machine.bell')).toBe('silent');
+
+    // Failed variant: no transition.
+    evalWith({ failed: true });
+    expect(registry.getMachineState('test.machine.bell')).toBe('silent');
+
+    // Genuine event: transition fires.
+    evalWith({ target: 'bell' });
+    expect(registry.getMachineState('test.machine.bell')).toBe('rung');
   });
 
   it('rogue IR with machines but no `use` → LoadError at engine-ready', () => {

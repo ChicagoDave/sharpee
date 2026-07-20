@@ -13,5 +13,9 @@
         "You swing at the deserter but miss!"
       ]
     }
+  },
+  "death/deadly-while.story": {
+    "expect": "fail",
+    "codes": ["analysis.deadly-while-unsupported"]
   }
 }

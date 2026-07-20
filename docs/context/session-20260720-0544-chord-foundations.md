@@ -28,9 +28,16 @@
 - Wall keeps its `nothing_special` fallback (working, tested); the new fallback covers the silent variants.
 
 ## Next Phase
-- **Session STOPPED on David's request (~07:21 UTC) mid-Phase 6.** Phase 6 is PARTIAL — see the plan's Phase 6 status block for the precise resume state (banner ✅, again-after-drop ✅, RESTARTING vocab ✅, restart-repair PAUSED on David's ruling, cross-check test + CLAUDE.md line not started).
-- Remaining when work resumes: finish Phase 6 (pending David's restart ruling), Phases 7, 8, 9, then 10 (verification sweep last).
-- **Working tree is UNCOMMITTED** (~40 modified/new files across world-model, stdlib, lang-en-us, parser tests, repokit, docs). All targeted suites green at stop time; no full cross-package build run yet (that's Phase 10). David: say the word and I'll commit (or run /fin).
+- **RESUMED on David's "continue" (~14:50 UTC)** after the earlier stop + /devarch:finalize (commit `c372b3be` pushed).
+- **Phase 6 completed** (except the paused restart repair): 10 verbs.ts entries added (true builder-derived gap set included `lowering`/`raising` beyond the 8 from the mapsTo-grep), exception-free `grammar-vocabulary-sync` test (parser-en-us, 273 green), CLAUDE.md clarifying paragraph with the verified comma-chaining framing.
+- **Phase 7 COMPLETE**: genuine-success gating — engine computes `success && !blocked/failed-events` into TurnPluginActionResult; `EvaluationContext.actionSucceeded` strict `=== true` gate on action triggers; event triggers skip blocked/failed events. 3 new tests + harness updates; story-loader 297 + engine 513 green.
+- **Phase 8 COMPLETE**: all five compile gates (door-plain-mirror analyzer gate + loader backstop; bare-verb grammar for ALL define-actions + `cant`→`scope.out_of_scope` default, which previously THREW a LoadError; 2 collectInlineTexts sites; parse.refuse-order fix-it; analysis.deadly-while-unsupported). 9 chord tests + 2 story-loader tests; chord 398 + story-loader 299 green; author-guide line added.
+- **Phase 9 COMPLETE**: item #4 framing recorded in ADR-246 companion scope; item #12 row in chord-availability-audit.md.
+- **Phase 10 COMPLETE**: build green; banner v3.2.0 verified; friendly-zoo bare pet/feed verified; verify.mjs re-captured + green (§6.2 RESOLVED — "Hidden on the loose floorboard…"; attack-barrel line speaks; deadly-while in expect-fail manifest); cookbook 17/17 + chord-language 50/50 green; **dungeo chain 902/902**; all 8 package suites green + type-clean.
+- **Phase 10 surfaced + fixed one regression from Phase 6's dropping-scope widening**: "drop book" disambiguation (black book in hand vs guidebook on floor) — fixed with new declarative `ActionMetadata.preferredScope` (dropping=CARRIED) + `resolveAmbiguity` heuristic + 3 validator tests. **Platform surface addition — needs David's ratification.**
+- **New platform issue held for David**: dungeo BATCH transcript runs (`--test *.transcript`, many engines in one process) are nondeterministic — proven PRE-EXISTING via pristine 395eb3e9 worktree (68/71 failures across two identical baseline runs, combat-death "Engine is not running" cascades; baseline chain green). Likely per-engine time seeding. Solo runs + chain are the reliable gates today.
+- Also pre-existing, held: chord-language verify-traceability has 2 drifts (doors.story, use-extensions.story), identical on committed baseline.
+- Still awaiting David: restart repair ruling (Q4), ADR-0247 interview (Q1), EXAMINE ME wording (Q2), preferredScope ratification (Q6), batch-RNG issue (Q7).
 
 ## Held Questions for David (updated at stop)
 4. **Restart on the Chord path** (Phase 6): diagnosis overturned — it parses fine; the engine's restart story-reload crashes (`assignRoom: room 'r01' not found` on fernhill) and renders as "I don't understand that." Fixing means touching the engine's Chord-path restart/reload flow — materially different from the planned verbs-entry fix. How do you want to proceed?
@@ -45,7 +52,7 @@
 ---
 
 ## Session Metadata
-- **Status**: STOPPED BY DAVID mid-Phase 6 (Phases 1-4 COMPLETE, 5 PARTIAL-as-planned, 6 PARTIAL; 7-10 not started). Work saved, uncommitted.
-- **Blocker** (if any): Phase 6 restart repair awaits David's ruling (diagnosis overturned — engine Chord-path reload bug, not vocabulary); ADR-0247 interview offer open.
-- **Test state at stop**: world-model 1405 ✓, stdlib 1555 ✓ (+dropping 25 ✓ after scope change), lang-en-us 429 ✓; type-clean: world-model, stdlib, lang-en-us; repokit rebuilt ✓; madge circulars at baseline 9.
-- **Rollback safety**: all changes uncommitted on `chord-foundations`; `git stash`/`git checkout -- .` reverts cleanly (new files listed under Untracked).
+- **Status**: SWEEP COMPLETE (resumed after David's "continue"). Phases 1-4, 6 (minus paused restart repair), 7, 8, 9, 10 COMPLETE; Phase 5 partial-as-planned (steps 3-4 gated on ADR-0247). Post-resume work uncommitted (pre-stop work is commit `c372b3be`).
+- **Blockers/held**: 7 items await David — restart repair ruling; ADR-0247 interview; EXAMINE ME wording; preferredScope ratification; batch-RNG platform issue (pre-existing, newly proven); verify-traceability drift (pre-existing); Phase 1/3 PhraseList scope ratifications (seen in-conversation, no objection).
+- **Test state at completion**: core 158, world-model 1405, stdlib 1558, lang-en-us 429, parser-en-us 273, engine 513, chord 398, story-loader 299 — all green + type-clean; verify.mjs/cookbook/chord-language harnesses green; dungeo chain 902/902; madge circulars at baseline 9.
+- **Rollback safety**: post-resume changes uncommitted on `chord-foundations` atop `c372b3be`.

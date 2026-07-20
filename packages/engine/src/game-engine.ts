@@ -1133,6 +1133,16 @@ export class GameEngine {
 
         // Plugin tick loop (ADR-120)
         // Plugins run in priority order (NPC at 100, state machines at 75, scheduler at 50)
+        //
+        // actionResult.success must reflect GENUINE action success (Phase 7):
+        // result.success only checks for action.error events, but modern
+        // blocked() paths reuse the primary event type with blocked:true /
+        // failed:true — a refused action would otherwise report success and
+        // (e.g.) advance state-machine transitions it never earned.
+        const actionRefused = semanticEvents.some(e => {
+          const data = e.data as { blocked?: unknown; failed?: unknown } | undefined;
+          return data?.blocked === true || data?.failed === true;
+        });
         const pluginContext: TurnPluginContext = {
           world: this.world,
           turn,
@@ -1141,7 +1151,7 @@ export class GameEngine {
           random: this.random,
           actionResult: {
             actionId: result.actionId || '',
-            success: result.success,
+            success: result.success && !actionRefused,
             targetId: result.validatedCommand?.directObject?.entity?.id,
           },
           actionEvents: semanticEvents,

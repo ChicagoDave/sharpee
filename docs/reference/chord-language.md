@@ -1327,7 +1327,9 @@ A sequence name may be several words (`gathering storm`, `take
 shelter`), and the block always closes with an explicit `end sequence`.
 Within a step, prose indented under a `phrase` line is declare-and-emit
 text (§3.7), which is why these steps need no separate `define phrases`
-block.
+block. Declare-and-emit prose is legal in *every* body context — `on`
+clause bodies (including the story header's `on every turn` clauses),
+action bodies, sequence steps, and `define machine` state bodies alike.
 
 ## 5. Defining vocabulary and text
 

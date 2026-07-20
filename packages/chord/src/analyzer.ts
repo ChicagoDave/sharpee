@@ -711,6 +711,32 @@ class Analyzer {
       }
     }
 
+    // Plain mirror of a door exit (platform-issue-sweep Phase 8 #6): a
+    // plain `<dir> to <room>` line whose reverse side is door-wired would
+    // re-stamp BOTH directions without the door at load, silently unwiring
+    // it (the loader's connectRooms stamps the reverse too). The author
+    // must name the door — or drop the line entirely, since one door-wired
+    // side already connects both rooms.
+    for (const owner of entities) {
+      for (const exit of owner.exits) {
+        if (exit.via !== null) continue;
+        const target = byId.get(exit.to);
+        if (!target) continue;
+        const reverse = target.exits.find(
+          (e) => e.via !== null && e.via !== '' && e.to === owner.id
+            && e.direction === OPPOSITE_DIRECTION[exit.direction],
+        );
+        if (reverse) {
+          const doorName = byId.get(reverse.via!)?.name ?? reverse.via;
+          this.diagnostics.error(
+            'analysis.door-plain-mirror',
+            `\`${owner.name}\`'s plain \`${exit.direction}\` line mirrors a door exit — \`${target.name}\` wires \`${reverse.direction}\` through \`${doorName}\` (line ${reverse.span.line}), and a plain mirror would silently unwire the door at load. Name the door (\`${exit.direction} to the ${target.name} through the ${doorName}\`) or drop this line (the door side already connects both rooms).`,
+            exit.span,
+          );
+        }
+      }
+    }
+
     // Unconnected door: declared-but-unanswerable, uniformly hard (D3 —
     // same class as region-memberless; its room pair could never resolve).
     for (const door of entities.filter(isDoorEntity)) {
@@ -1133,6 +1159,11 @@ class Analyzer {
       this.checkStateSet(this.ast.header.states, 'the story');
       this.storyStates = this.ast.header.states.map((s) => s.name);
       for (const s of this.ast.header.scores) this.collectScore(s.name, s.worth, s.span, null);
+      // Header `on every turn` clause bodies host inline phrase prose like
+      // every other body context (platform-issue-sweep Phase 8 #14): story-
+      // owned, so ownerless/bare-key scope — the same registration the five
+      // pre-existing contexts use.
+      for (const clause of this.ast.header.onClauses) this.collectInlineTexts(clause.body);
     }
 
     for (const decl of this.ast.declarations) {
@@ -1224,6 +1255,15 @@ class Analyzer {
       }
       else if (decl.kind === 'define-sequence') {
         for (const step of decl.steps) this.collectInlineTexts(step.body);
+      }
+      else if (decl.kind === 'define-machine') {
+        // Machine state bodies (`on enter` / `on exit`) host inline phrase
+        // prose like every other body context (platform-issue-sweep Phase 8
+        // #14) — ownerless/bare-key scope, matching the header clauses.
+        for (const state of decl.states) {
+          this.collectInlineTexts(state.onEnter);
+          this.collectInlineTexts(state.onExit);
+        }
       }
     }
 
@@ -1848,6 +1888,18 @@ class Analyzer {
       }),
       deadlyExits: decl.deadlyExits.map((d) => {
         this.requirePhrase(d.phraseKey, d.span);
+        // Compile gate (platform-issue-sweep Phase 8 #15d): the conditional
+        // form is post-scope (mirror: role-bound trait clauses). It used to
+        // fail only at LOAD (loader.ts throw — kept there as the defensive
+        // backstop), which the harness's expect-fail-manifest convention
+        // cannot pin; failing here makes it a compile diagnostic.
+        if (d.condition !== null) {
+          this.diagnostics.error(
+            'analysis.deadly-while-unsupported',
+            '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope. Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
+            d.span,
+          );
+        }
         return {
           direction: d.direction,
           phraseKey: d.phraseKey,

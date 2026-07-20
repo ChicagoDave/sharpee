@@ -2020,7 +2020,7 @@ The player sees:
 You can't see any such thing.
 
 > search the floorboard
-Hidden an on, you discover: a faded letter.
+Hidden on the loose floorboard, you discover: a faded letter.
 
 > read the letter
 (first taking the faded letter)
@@ -2045,7 +2045,7 @@ scenery inscription reads in place.
 | | search (`if.action.searching.*`) | read (`if.action.reading.*`) |
 |---|---|---|
 | Refusals | `container_closed` | `not_readable` · `cannot_read_now` |
-| Success | `found_concealed` · `container_contents` · `supporter_contents` · `empty_container` · `searched_location` · `searched_object` · `nothing_special` | `read_text` · `read_book` · `read_book_page` · `read_sign` · `read_inscription` |
+| Success | `found_concealed_in_container` / `found_concealed_on_supporter` / `found_concealed_here` · `container_contents` · `supporter_contents` · `empty_container` · `searched_location` · `searched_object` · `nothing_special` | `read_text` · `read_book` · `read_book_page` · `read_sign` · `read_inscription` |
 | Events | `if.event.searched` | `if.event.read` |
 
 Interceptors: `on searching it` — a false bottom that only yields to a
@@ -2488,9 +2488,10 @@ not. What happens depends on the target:
   weapon-required, and wrong-weapon-type rules, with `transformTo`
   (shards replace the vase) and `revealExit` support.
 - **Anything else, including a plain person without `combatant`**: the
-  attack is ineffective — and today prints nothing at all (the path
-  carries a raw legacy string instead of a message ID, and the current
-  build renders it as blank output — flagged).
+  attack is ineffective and says so — the world model reports a reason
+  code (`no_effect`, `requires_weapon`, `wrong_weapon_type`,
+  `invulnerable`) and the lang layer renders the matching refusal
+  (`attack_ineffective` and friends).
 
 The author writes:
 
@@ -2538,7 +2539,7 @@ The player sees:
 Taken.
 
 > attack the barrel
-
+Your attack has no effect on the water barrel.
 
 > attack the deserter with the cutlass
 You land a solid blow on the deserter, dealing 6 damage!
@@ -2548,8 +2549,8 @@ One `use` line buys the whole combat layer: `combatant` and `weapon`
 compose with typed fields, and the attack resolves through real dice —
 the transcript shows one genuine run, and the same command may instead
 answer "You swing at the deserter but miss!" (outcomes vary run to run,
-by policy). The blank line after `attack the barrel` is the flagged
-ineffective path, verbatim.
+by policy). The barrel line is the ineffective path speaking its
+`attack_ineffective` refusal.
 
 | | attack (`if.action.attacking.*`) |
 |---|---|
@@ -2757,7 +2758,7 @@ declared, and the reveal action closes the loop with its own
 
 | | hide (`if.action.hiding.*`) | reveal (`if.action.revealing.*`) |
 |---|---|---|
-| Refusals | `nothing_to_hide` · `cant_hide_there` · `already_hidden` | `not_hidden` |
+| Refusals | `nothing_to_hide` · `cant_hide_there_behind` / `_under` / `_on` / `_inside` (per-position) · `already_hidden` | `not_hidden` |
 | Success | `behind` / `under` / `on` / `inside` | `revealed` |
 | Events | `if.event.player_concealed` | `if.event.player_revealed` |
 
@@ -2765,14 +2766,14 @@ Interceptors: the hiding spot's `on hiding it` clauses are consulted
 (the hamper above); revealing has no interceptor surface (flagged as a
 minor asymmetry).
 
-Three more honest flags. The design puts every action outside a quiet
+Two more honest flags. The design puts every action outside a quiet
 allowlist (look, examine, wait, listen, smell, inventory, and the metas)
 down as silently breaking concealment before it runs — but in the
 current build that break listener is never registered, so walking,
 taking, and talking do *not* actually reveal you; only the
-NPC-can't-see-you half is wired (flagged). `cant_hide_there`'s current
-rendering misplaces an article ("You can't hide an under …" — flagged).
-And the trait's `capacity` field is dormant.
+NPC-can't-see-you half is wired (flagged; deliberately parked — the real
+design is per-sense, recorded in ADR-246's companion scope). And the
+trait's `capacity` field is dormant.
 
 ### 8.5 NPC & combat traits
 
@@ -3014,7 +3015,7 @@ LOOK repeat but made INVENTORY — an objectless verb no `on` clause could
 catch — fatal.
 
 One gap: the conditional form `is deadly while <condition>:` parses but
-is not wired yet. This compiles clean —
+is not wired yet, and the compiler says so —
 
 <!-- fixture: death/deadly-while.story -->
 ```story
@@ -3026,11 +3027,12 @@ create the Dam Top
   The dam hums underfoot.
 ```
 
-— and then the loader refuses the story with: `` `is deadly while
-<condition>` is not wired yet — the conditional deadly exit is post-scope
-(mirror: role-bound trait clauses). Use an unconditional `is deadly:` or
-an `on going` clause with `kill the player when <condition>`. `` The
-suggested `kill the player when …` clause is §9.1's pattern.
+— fails to compile with `analysis.deadly-while-unsupported`: the
+conditional deadly exit is post-scope. Use an unconditional `is deadly:`
+or an `on going` clause with `kill the player when <condition>` — the
+suggested clause is §9.1's pattern. (This gate moved from a load-time
+refusal to a compile diagnostic in the 2026-07-20 platform sweep, so the
+fixture harness pins it by code.)
 
 ### 9.3 Death traits and internals
 

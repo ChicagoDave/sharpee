@@ -291,8 +291,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     requiresDirectObject: true,
     requiresIndirectObject: false,
     // See defaultScope note: resolution is VISIBLE so the action's own
-    // not_held refusal renders instead of a parse-level rejection.
-    directObjectScope: ScopeLevel.VISIBLE
+    // not_held refusal renders instead of a parse-level rejection;
+    // preferredScope keeps disambiguation choosing the carried candidate
+    // ("drop book" = the book in hand, not the one on the floor).
+    directObjectScope: ScopeLevel.VISIBLE,
+    preferredScope: ScopeLevel.CARRIED
   },
 
   validate(context: ActionContext): ValidationResult {

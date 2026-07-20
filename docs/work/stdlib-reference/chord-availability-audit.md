@@ -306,6 +306,14 @@ superseded as follows:
   (reachable via raw emit only), third-party extensions (deferred ADR).
   The topic surface left this list 2026-07-18 (ADR-239 shipped, session
   80ff54).
+- Still open (added 2026-07-20, platform-issue-sweep item #12): heavy/
+  moveable `pushTypes` are unreachable from Chord — the loader's pushable
+  composition (`loader.ts` pushable case) composes only the button config,
+  so a `PushableTrait` with `pushType: 'heavy'`/`'moveable'` (stdlib's
+  pushing action supports both) has no Chord authoring surface. Honest
+  gap, no bridge: closing it is a design question for the pushable
+  composition surface (which adjectives/config lines map to which
+  pushTypes), not a bug fix.
 
 ## Parity scoreboard (all four parts, 2026-07-17; superseded in part by the 2026-07-18 closure above)
 

@@ -278,15 +278,26 @@ export declare const IFActions: {
     readonly TAKING_OFF: "if.action.taking_off";
     readonly EATING: "if.action.eating";
     readonly DRINKING: "if.action.drinking";
+    readonly LOWERING: "if.action.lowering";
+    readonly RAISING: "if.action.raising";
+    readonly CUTTING: "if.action.cutting";
+    readonly DIGGING: "if.action.digging";
+    readonly REMOVING: "if.action.removing";
+    readonly HIDING: "if.action.hiding";
+    readonly REVEALING: "if.action.revealing";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
     readonly SAVING: "if.action.saving";
     readonly RESTORING: "if.action.restoring";
+    readonly RESTARTING: "if.action.restarting";
     readonly QUITTING: "if.action.quitting";
     readonly HELP: "if.action.help";
     readonly ABOUT: "if.action.about";
     readonly SCORING: "if.action.scoring";
+    readonly AGAIN: "if.action.again";
+    readonly UNDOING: "if.action.undoing";
+    readonly VERSION: "if.action.version";
     readonly TRACE: "author.trace";
 };
 export interface VerbDefinition {
@@ -660,6 +671,7 @@ export declare const standardActionLanguage: ({
         examined_door: string;
         examined_wall: string;
         nothing_special: string;
+        default_description: string;
         description: string;
         brief_description: string;
         no_description: string;
@@ -957,6 +969,7 @@ export declare const standardActionLanguage: ({
     messages: {
         no_target: string;
         not_climbable: string;
+        climb_nowhere: string;
         cant_go_that_way: string;
         climbed_up: string;
         climbed_down: string;
@@ -987,7 +1000,9 @@ export declare const standardActionLanguage: ({
         supporter_contents: string;
         searched_location: string;
         searched_object: string;
-        found_concealed: string;
+        found_concealed_in_container: string;
+        found_concealed_on_supporter: string;
+        found_concealed_here: string;
     };
     help: {
         description: string;
@@ -1505,6 +1520,9 @@ export declare const standardActionLanguage: ({
         need_weapon_to_damage: string;
         wrong_weapon_type: string;
         attack_ineffective: string;
+        attack_requires_weapon: string;
+        attack_wrong_weapon_type: string;
+        attack_invulnerable: string;
         already_dead: string;
         violence_not_the_answer: string;
         'combat.cannot_attack': string;
@@ -1841,7 +1859,10 @@ export declare const standardActionLanguage: ({
         on: string;
         inside: string;
         nothing_to_hide: string;
-        cant_hide_there: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
         already_hidden: string;
     };
     help: {

@@ -96,6 +96,19 @@ design-level companion (evaluator delegation shape, parser work for
 `cannot`/`hidden`, the goggles surface, test matrix) plus David's
 explicit go-ahead.
 
+**Companion-scope addition (2026-07-20 triage, platform-issue-sweep item
+#4 — recorded here so the companion doesn't rediscover it):** concealment
+auto-reveal (which actions break an item's/actor's concealment as a side
+effect) is NOT a flat `SILENT_ACTIONS` allowlist — David ruled that shape
+wrong. The real design is a per-sense question: actions carry sensory
+signatures (visual motion, noise) and observers carry per-sense
+capabilities, so an invisibility cloak beats vision but not hearing,
+night-vision goggles see through darkness (already this ADR's Q-2
+acceptance scenario), and a noisy pickup breaks concealment aurally even
+when unseen. The naive listener (reveal-on-any-action) must NOT be wired
+in the meantime — the platform-issue-sweep plan's Phase 9 parked it here
+deliberately.
+
 ## Consequences
 
 - The documented meaning of a shipped predicate changes: chord-language.md's

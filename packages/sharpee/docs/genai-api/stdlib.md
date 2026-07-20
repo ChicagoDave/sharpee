@@ -2049,6 +2049,15 @@ export interface ActionMetadata {
     directObjectScope?: ScopeLevel;
     indirectObjectScope?: ScopeLevel;
     validPrepositions?: string[];
+    /**
+     * Disambiguation preference (platform-issue-sweep Phase 6/10): when an
+     * ambiguity ties and EXACTLY ONE candidate sits at this scope level, it
+     * auto-resolves. Lets an action widen its resolution scope (so its own
+     * refusal speaks for out-of-scope targets — e.g. dropping resolves
+     * VISIBLE) without losing the classic preference ("drop book" with a
+     * carried black book and a guidebook on the floor means the carried one).
+     */
+    preferredScope?: ScopeLevel;
 }
 /**
  * Slot types that can have entity selections
@@ -2094,6 +2103,8 @@ export declare class CommandValidator implements CommandValidator {
     private systemEvents?;
     /** Current action ID being validated (for disambiguation scoring) */
     private currentActionId?;
+    /** The current action's preferredScope, staged for resolveAmbiguity. */
+    private currentPreferredScope?;
     constructor(world: WorldModel, actionRegistry: ActionRegistry, scopeResolver?: ScopeResolver);
     /**
      * Set system event source for debug events

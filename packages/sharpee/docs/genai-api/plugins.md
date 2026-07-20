@@ -47,7 +47,15 @@ import { WorldModel } from '@sharpee/world-model';
 export interface TurnPluginActionResult {
     /** The action's id (the verb that ran). */
     actionId: string;
-    /** Whether the action succeeded. Plugins only run after successful actions. */
+    /**
+     * Whether the action GENUINELY succeeded (platform-issue-sweep Phase 7):
+     * false when the action was refused/blocked — including modern blocked()
+     * paths that reuse the primary event type with `blocked: true` /
+     * `failed: true` instead of emitting `action.error`. Plugins still run
+     * after refused actions (NPC/scheduler ticks are turn-level); consumers
+     * that must not react to refusals (state-machine action triggers) gate on
+     * this flag.
+     */
     success: boolean;
     /** The action's direct-object entity, when it had one. */
     targetId?: EntityId;
@@ -657,6 +665,13 @@ export interface EvaluationContext {
     turn: number;
     /** The id of the action that ran this turn, if any. */
     actionId?: string;
+    /**
+     * Whether that action GENUINELY succeeded (platform-issue-sweep Phase 7).
+     * Action triggers require `true` — a refused/blocked action must never
+     * advance a machine. Populated by the plugin from the engine's
+     * TurnPluginActionResult.success; absent only when no action ran.
+     */
+    actionSucceeded?: boolean;
     /** The direct-object entity id of that action, if any. */
     actionTargetId?: EntityId;
     /** The semantic events the action emitted this turn. */

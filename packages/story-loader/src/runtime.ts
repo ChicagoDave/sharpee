@@ -1030,6 +1030,14 @@ export class ChordRuntime {
       },
       blocked(context: DispatchContext, result: { error?: string }): ISemanticEvent[] {
         const key = result.error ?? def.otherwise ?? 'cant';
+        // Platform default (Phase 8 #13): `'cant'` is the built-in fallback
+        // key for an action with no authored `otherwise`/refusal — no story
+        // phrase exists for it, and phraseEvent would throw a LoadError at
+        // emit time. Render the platform's generic refusal instead
+        // (lang-en-us `scope.out_of_scope`: "You can't do that.").
+        if (key === 'cant') {
+          return [context.event('action.blocked', { messageId: 'scope.out_of_scope', reason: 'cant' })];
+        }
         const event = runtime.phraseEvent(key, { world: context.world });
         return [context.event(event.type, (event.data ?? {}) as Record<string, unknown>)];
       },

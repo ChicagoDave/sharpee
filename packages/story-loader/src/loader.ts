@@ -71,6 +71,7 @@ import {
   Direction,
   DoorTrait,
   DirectionType,
+  getOppositeDirection,
   EdibleTrait,
   EnterableTrait,
   findTraitWithCapability,
@@ -381,6 +382,19 @@ export class ChordStory implements Story {
         const toId = this.requireWorldId(exit.to, irEntity);
         const direction = toDirection(exit.direction, irEntity);
         if (exit.via === null) {
+          // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
+          // door-plain-mirror gate): connectRooms stamps BOTH directions, so
+          // a plain exit whose reverse side is already door-wired would
+          // silently unwire that door. The compiler refuses this; reaching
+          // here means rogue IR.
+          const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
+          const reverseExit = targetRoomTrait?.exits?.[getOppositeDirection(direction)];
+          if (reverseExit?.via && reverseExit.destination === entity.id) {
+            throw new LoadError(
+              `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
+              exit.span,
+            );
+          }
           world.connectRooms(entity.id, toId, direction);
           continue;
         }
@@ -857,12 +871,32 @@ export class ChordStory implements Story {
       };
     }).getStoryGrammar();
     for (const action of this.ir.actions) {
+      // Bare-verb forms (platform-issue-sweep Phase 8 #13, David's ruling:
+      // ALL dispatch actions): dispatch validate fully handles the no-target
+      // case (authored `refuse without` arm, else the platform default), but
+      // compiler-emitted grammar always carried the slot, so a bare `lower`
+      // (or friendly-zoo's `pet`/`feed`) never parsed far enough to reach it.
+      // Register each pattern's literal prefix as its own rule, below the
+      // slotted forms so they win whenever a target is named.
+      const bareForms = new Set<string>();
       for (const pattern of action.patterns) {
         if (pattern.cardinality) continue; // `→ each …` expansion is engine-owned (Phase C)
         const text = pattern.parts
           .map((part) => (part.kind === 'slot' ? `:${part.word}` : part.word))
           .join(' ');
         grammar.define(text).mapsTo(`chord.action.${action.name}`).withPriority(150).build();
+
+        const slotIndex = pattern.parts.findIndex((part) => part.kind === 'slot');
+        if (slotIndex > 0) {
+          const bare = pattern.parts
+            .slice(0, slotIndex)
+            .map((part) => part.word)
+            .join(' ');
+          if (bare) bareForms.add(bare);
+        }
+      }
+      for (const bare of bareForms) {
+        grammar.define(bare).mapsTo(`chord.action.${action.name}`).withPriority(140).build();
       }
     }
   }

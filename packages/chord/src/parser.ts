@@ -2863,6 +2863,18 @@ class Parser {
             this.reportRefusalInAfter(line);
             return null;
           }
+          // Misordered prohibition (platform-issue-sweep Phase 8 #15c):
+          // `refuse <key> when <condition>` used to leave the `when …`
+          // tokens unconsumed and silently compile as an UNCONDITIONAL
+          // refuse. Error with a fix-it instead.
+          if (c.isWord('when')) {
+            this.diagnostics.error(
+              'parse.refuse-order',
+              `The condition comes first — write \`refuse when <condition>: ${key}\`.`,
+              c.restSpan(),
+            );
+            return null;
+          }
           return { kind: 'refuse', phraseKey: key, params, span: lineSpan(line) } as RefuseStmt;
         }
         const stmtWhen = this.parseStatementWhen(c, line);

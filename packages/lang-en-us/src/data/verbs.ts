@@ -59,6 +59,17 @@ export const IFActions = {
   EATING: 'if.action.eating',
   DRINKING: 'if.action.drinking',
   
+  // Manipulation (capability dispatch, ADR-090)
+  LOWERING: 'if.action.lowering',
+  RAISING: 'if.action.raising',
+  CUTTING: 'if.action.cutting',
+  DIGGING: 'if.action.digging',
+  REMOVING: 'if.action.removing',
+
+  // Concealment (ADR-148)
+  HIDING: 'if.action.hiding',
+  REVEALING: 'if.action.revealing',
+
   // Meta actions
   INVENTORY: 'if.action.inventory',
   WAITING: 'if.action.waiting',
@@ -70,6 +81,9 @@ export const IFActions = {
   HELP: 'if.action.help',
   ABOUT: 'if.action.about',
   SCORING: 'if.action.scoring',
+  AGAIN: 'if.action.again',
+  UNDOING: 'if.action.undoing',
+  VERSION: 'if.action.version',
   
   // Author/Debug actions
   TRACE: 'author.trace'
@@ -316,11 +330,72 @@ export const englishVerbs: VerbDefinition[] = [
     requiresObject: false
   },
   {
-    // Was the one missing meta entry (platform-issue-sweep Phase 6):
-    // core grammar defines `restart` → if.action.restarting, but without
-    // vocabulary here the verb never parsed on the Chord path.
+    // Added platform-issue-sweep Phase 6. NOTE: vocabulary is not what makes
+    // grammar literals parse (`restart` parsed without it) — entries here
+    // feed verb CLASSIFICATION: comma-chained command splitting and word
+    // lookup. The grammar-vocabulary-sync test (parser-en-us) keeps every
+    // grammar action id represented here.
     action: IFActions.RESTARTING,
-    verbs: ['restart', 'restart game'],
+    // 'restart' only — the reverse gate (stdlib lifecycle-registry test)
+    // requires every verb phrase here to lead a core grammar pattern, and
+    // the grammar defines the bare form only (unlike save/restore, whose
+    // `<verb> game` forms have their own patterns).
+    verbs: ['restart'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.AGAIN,
+    verbs: ['again', 'g'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.UNDOING,
+    verbs: ['undo'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.VERSION,
+    verbs: ['version'],
+    requiresObject: false
+  },
+  // Manipulation verbs (capability dispatch / tools) — mirror the core
+  // grammar's verb sets (grammar-vocabulary-sync test enforces presence)
+  {
+    action: IFActions.LOWERING,
+    verbs: ['lower'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.RAISING,
+    verbs: ['raise', 'lift'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.CUTTING,
+    verbs: ['cut', 'slice', 'chop'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.DIGGING,
+    verbs: ['dig'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.REMOVING,
+    verbs: ['remove', 'extract'],
+    requiresObject: true,
+    allowsIndirectObject: true
+  },
+  // Concealment (ADR-148) — hide/duck/crouch are phrasal in the grammar
+  // (hide behind :target); the bare verbs here serve classification
+  {
+    action: IFActions.HIDING,
+    verbs: ['hide', 'duck', 'crouch'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.REVEALING,
+    verbs: ['unhide', 'stand up', 'come out', 'stop hiding'],
     requiresObject: false
   },
   {
