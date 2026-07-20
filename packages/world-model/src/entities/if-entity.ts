@@ -3,6 +3,7 @@
 import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
 import { ITrait, ITraitConstructor, isTrait } from '../traits/trait.js';
 import { TraitType } from '../traits/trait-types.js';
+import { rehydrateTraitData } from './trait-rehydrator.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { LockableTrait } from '../traits/lockable/lockableTrait.js';
 import { ActorTrait } from '../traits/actor/actorTrait.js';
@@ -493,7 +494,10 @@ export class IFEntity implements IEntity {
     
     if (json.traits && Array.isArray(json.traits)) {
       for (const traitData of json.traits) {
-        entity.traits.set(traitData.type, traitData);
+        // Rehydrate to a live class instance so prototype accessors/methods
+        // (isWorn, supportsPosition, …) survive save/restore/undo — raw JSON
+        // data silently lost them (platform-issue-sweep Phase 5).
+        entity.traits.set(traitData.type, rehydrateTraitData(traitData));
       }
     }
 

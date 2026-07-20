@@ -73,6 +73,7 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     'examined_door',
     'examined_wall',
     'nothing_special',
+    'default_description',
     'description',
     'brief_description'
   ],

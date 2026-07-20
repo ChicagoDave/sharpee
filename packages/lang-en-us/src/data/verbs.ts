@@ -65,6 +65,7 @@ export const IFActions = {
   SLEEPING: 'if.action.sleeping',
   SAVING: 'if.action.saving',
   RESTORING: 'if.action.restoring',
+  RESTARTING: 'if.action.restarting',
   QUITTING: 'if.action.quitting',
   HELP: 'if.action.help',
   ABOUT: 'if.action.about',
@@ -312,6 +313,14 @@ export const englishVerbs: VerbDefinition[] = [
   {
     action: IFActions.RESTORING,
     verbs: ['restore', 'load', 'load game', 'restore game'],
+    requiresObject: false
+  },
+  {
+    // Was the one missing meta entry (platform-issue-sweep Phase 6):
+    // core grammar defines `restart` → if.action.restarting, but without
+    // vocabulary here the verb never parsed on the Chord path.
+    action: IFActions.RESTARTING,
+    verbs: ['restart', 'restart game'],
     requiresObject: false
   },
   {

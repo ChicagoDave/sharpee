@@ -11,6 +11,7 @@ import {
   IdentityBehavior,
   IFEntity
 } from '@sharpee/world-model';
+import { Phrase } from '@sharpee/if-domain';
 import { ActionContext } from '../enhanced-types.js';
 import { nounPhraseFor } from '../../utils/index.js';
 
@@ -80,46 +81,75 @@ export function revealConcealedItems(items: IFEntity[]): void {
 }
 
 /**
+ * Bridge a list of entities to a `PhraseList` message param (ADR-192): the
+ * assembler owns articles/joining, so params never carry pre-joined strings.
+ */
+function phraseListFor(items: IFEntity[]): Phrase {
+  return {
+    kind: 'list',
+    conj: 'and',
+    items: items.map(item => nounPhraseFor(item)),
+  };
+}
+
+/**
+ * The concealment-reveal message ID for a search-target shape. The position
+ * lives in the per-shape template in lang-en-us — stdlib never synthesizes
+ * an English preposition (language-layer separation).
+ */
+function foundConcealedMessageId(targetType: SearchContext['targetType']): string {
+  switch (targetType) {
+    case 'container':
+      return 'found_concealed_in_container';
+    case 'supporter':
+      return 'found_concealed_on_supporter';
+    case 'location':
+    case 'object':
+    default:
+      return 'found_concealed_here';
+  }
+}
+
+/**
  * Determine the appropriate search message based on what was found
  */
 export function determineSearchMessage(
   searchContext: SearchContext
 ): { messageId: string; params: Record<string, any> } {
   const { target, contents, concealedItems, targetType } = searchContext;
-  
-  // params carry EntityInfo for the formatter chain (ADR-158)
+
+  // params carry phrases for the assembler (ADR-192) — never bare strings
   const params: Record<string, any> = {
     target: nounPhraseFor(target)
   };
-  
+
   // Found concealed items - most important result
   if (concealedItems.length > 0) {
-    params.items = concealedItems.map(item => item.name).join(', ');
-    params.where = getLocationPreposition(targetType);
-    return { messageId: 'found_concealed', params };
+    params.items = phraseListFor(concealedItems);
+    return { messageId: foundConcealedMessageId(targetType), params };
   }
-  
+
   // Target-specific messages when nothing concealed
   switch (targetType) {
     case 'container':
       if (contents.length === 0) {
         return { messageId: 'empty_container', params };
       } else {
-        params.items = contents.map(item => item.name).join(', ');
+        params.items = phraseListFor(contents);
         return { messageId: 'container_contents', params };
       }
-      
+
     case 'supporter':
       if (contents.length > 0) {
-        params.items = contents.map(item => item.name).join(', ');
+        params.items = phraseListFor(contents);
         return { messageId: 'supporter_contents', params };
       } else {
         return { messageId: 'nothing_special', params };
       }
-      
+
     case 'location':
       return { messageId: 'searched_location', params };
-      
+
     case 'object':
     default:
       if (contents.length > 0) {
@@ -127,22 +157,6 @@ export function determineSearchMessage(
       } else {
         return { messageId: 'nothing_special', params };
       }
-  }
-}
-
-/**
- * Get the appropriate preposition for where items were found
- */
-function getLocationPreposition(targetType: SearchContext['targetType']): string {
-  switch (targetType) {
-    case 'container':
-      return 'inside';
-    case 'supporter':
-      return 'on';
-    case 'location':
-    case 'object':
-    default:
-      return 'here';
   }
 }
 

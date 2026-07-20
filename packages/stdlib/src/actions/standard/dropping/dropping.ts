@@ -261,9 +261,15 @@ function reportSingleBlocked(
 export const droppingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.DROPPING,
 
-  // Default scope requirements for this action's slots
+  // Default scope requirements for this action's slots. Resolution is
+  // deliberately WIDER than the action's semantics (platform-issue-sweep
+  // Phase 6): resolving visible items lets `drop`'s own not_held refusal
+  // speak — with CARRIED resolution, `again` after a successful drop hit a
+  // parse-level "You can't see any such thing" because the just-dropped item
+  // was no longer in resolution scope. validateSingleEntity still enforces
+  // actually-holding via ActorBehavior.isHolding.
   defaultScope: {
-    item: ScopeLevel.CARRIED
+    item: ScopeLevel.VISIBLE
   },
 
   requiredMessages: [
@@ -284,7 +290,9 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
-    directObjectScope: ScopeLevel.CARRIED
+    // See defaultScope note: resolution is VISIBLE so the action's own
+    // not_held refusal renders instead of a parse-level rejection.
+    directObjectScope: ScopeLevel.VISIBLE
   },
 
   validate(context: ActionContext): ValidationResult {

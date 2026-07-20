@@ -5,7 +5,8 @@
  */
 
 import { TraitType } from './trait-types.js';
-import { ITraitConstructor } from './trait.js';
+import { ITrait, ITraitConstructor } from './trait.js';
+import { setTraitRehydrator } from '../entities/trait-rehydrator.js';
 
 // Import all trait implementations from their new locations
 import { IdentityTrait } from './identity/identityTrait.js';
@@ -179,6 +180,43 @@ export function createTrait(type: TraitType, data?: any): InstanceType<ITraitCon
   }
   return new TraitClass(data);
 }
+
+/**
+ * Rehydrate a serialized trait to a live instance of its implementation class
+ * (platform-issue-sweep Phase 5, 2026-07-20).
+ *
+ * Serialization captures own enumerable fields only; prototype accessors
+ * (WearableTrait.isWorn) and methods (ConcealmentTrait.supportsPosition) live
+ * on the class prototype and were LOST by the old raw-JSON rehydration —
+ * after save/restore/undo, any consumer of a trait getter or method saw
+ * `undefined` / not-a-function (e.g. getContents' worn-item filter reads
+ * `wearable.isWorn`, so a restored worn item silently escaped the filter).
+ *
+ * Object.create + Object.assign restores the prototype and copies exactly
+ * the serialized state without running constructor logic (constructor shapes
+ * vary per trait; a save of the same code version carries the complete own
+ * state). Unknown types — story-defined traits — keep the raw data object,
+ * as before: their classes are not registered here.
+ *
+ * @param traitData a serialized trait ({ type, ...own fields })
+ * @returns a prototype-restored instance for known core types; the raw data
+ *          object for unknown (story-defined) types
+ */
+export function rehydrateTrait(traitData: { type: string } & Record<string, unknown>): ITrait {
+  const TraitClass = TRAIT_IMPLEMENTATIONS[traitData.type as TraitType];
+  if (!TraitClass) {
+    return traitData as unknown as ITrait;
+  }
+  const instance = Object.create(TraitClass.prototype);
+  return Object.assign(instance, traitData) as ITrait;
+}
+
+// Install the rehydrator into IFEntity.fromJSON's seam at module load. Wired
+// through the entities/trait-rehydrator LEAF module — a static import from
+// if-entity into this file would create module cycles (this file pulls in
+// every trait class, including ConcealedStateTrait → VisibilityBehavior →
+// capabilities → world). See trait-rehydrator.ts.
+setTraitRehydrator(rehydrateTrait);
 
 // Re-export individual implementations
 export {

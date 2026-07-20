@@ -220,7 +220,8 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
       if (!OpenableBehavior.isOpen(container)) continue;
     }
 
-    const contents = context.world.getContents(container.id);
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(container, context.world);
     if (contents.length > 0) {
       openContainerContents.push({
         containerId: container.id,
@@ -234,7 +235,8 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
 
   // Check each supporter for visible contents
   for (const supporter of supporters) {
-    const contents = context.world.getContents(supporter.id);
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(supporter, context.world);
     if (contents.length > 0) {
       openContainerContents.push({
         containerId: supporter.id,

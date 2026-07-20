@@ -340,59 +340,48 @@ class InternalActionContext implements ActionContext {
 
   /**
    * Internal event creation logic
-   * This wraps the core createEvent to match our event pattern
+   *
+   * Pass-through is the ONLY payload shape: `eventData` becomes the event's
+   * `data` unchanged (action status events additionally get a timestamp
+   * default), matching the engine's closure factory
+   * (`engine/src/action-context-factory.ts`). The two implementations must
+   * not diverge — the old type-sniffing legacy wrap here nested a story
+   * event's `messageId` under `data.data`, where the prose pipeline (which
+   * reads `messageId`/`params` at the event-data TOP level — see
+   * `engine/src/prose-pipeline/handlers/generic.ts`) could not find it, so
+   * `insert X in Y` swallowed `after putting it` phrases that direct
+   * `put X in Y` (engine context) rendered fine.
+   *
+   * Emit audit (platform-issue-sweep Phase 3b, 2026-07-20): no production
+   * consumer expects the legacy `{actionId, timestamp, data: {...}}` wrap —
+   * `event.data.data` is dereferenced nowhere in packages/ source (engine
+   * prose pipeline, event-processor, if-services, channel-service, chord,
+   * story-loader all read top-level fields); capability-dispatch effect
+   * payloads (`capability-dispatch.ts` effectsToEvents) and lifecycle
+   * interceptor emissions are flat `{messageId, ...}` shapes that the wrap
+   * actively broke under this context. The tolerant readers
+   * (`tests/test-utils` expectEvent, searching-interceptor's
+   * `data?.data ?? data`) accept both shapes. The wrap is therefore removed,
+   * not conditionally kept.
    */
   private createEventInternal(
-    type: string, 
+    type: string,
     eventData: any
   ): ISemanticEvent {
-    // Special handling for action status events
-    // These should NOT be double-wrapped
+    const entities = this.getEventEntities();
+
+    // Action status events keep their timestamp default (never double-wrapped)
     if (type === 'action.error' || type === 'action.success' || type === 'action.blocked') {
-      // For action status events, the data IS the payload
       const payload = {
         ...eventData,
         timestamp: eventData.timestamp || Date.now()
       };
-      
-      const entities = this.getEventEntities();
       return coreCreateEvent(type, payload, entities);
     }
-    
-    // For domain events (like if.action.inventory, if.event.examined), 
-    // pass the data directly without wrapping
-    if (type.startsWith('if.')) {
-      const entities = this.getEventEntities();
-      return coreCreateEvent(type, eventData, entities);
-    }
-    
-    // If the data already has our structure, extract it
-    if (eventData && typeof eventData === 'object' && 'data' in eventData) {
-      const { actionId, reason, data, timestamp } = eventData;
-      
-      // Build payload following our standard structure
-      const payload = {
-        actionId: actionId || this.action.id,
-        timestamp: timestamp || Date.now(),
-        ...(reason && { reason }),
-        data: data || {}
-      };
-      
-      // Get entities
-      const entities = this.getEventEntities();
-      
-      return coreCreateEvent(type, payload, entities);
-    }
-    
-    // Legacy format - wrap in our structure
-    const payload = {
-      actionId: this.action.id,
-      timestamp: Date.now(),
-      data: eventData
-    };
-    
-    const entities = this.getEventEntities();
-    return coreCreateEvent(type, payload, entities);
+
+    // Everything else — if.* domain events AND story/custom event types —
+    // passes through unchanged.
+    return coreCreateEvent(type, eventData, entities);
   }
   
   /**

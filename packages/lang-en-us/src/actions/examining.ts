@@ -36,6 +36,11 @@ export const examiningLanguage = {
     'examined_door': "{verbatim:description}{slot:detail}",
     'examined_wall': "{verbatim:description}{slot:detail}",
     'nothing_special': "{You} {see} nothing special about {the item}.",
+    // Generalized descriptionless fallback (David's wording, 2026-07-20
+    // triage ruling): examining an entity with no authored description
+    // prints this, never a silent blank. The {slot:detail} append keeps
+    // trait-driven state sentences following the fallback line.
+    'default_description': "{capitalize the item} {verb:is item} just {a item}.{slot:detail}",
     'description': "{verbatim:description}{slot:detail}",
     'brief_description': "{verbatim:description}",
     'no_description': "{You} {see} nothing special about {the item}.",

@@ -290,4 +290,71 @@ describe('AttackBehavior', () => {
       expect(result.type).toBe('damaged'); // Destructible used
     });
   });
+
+  describe('ineffective-attack reason codes (platform-issue-sweep Phase 3c)', () => {
+    // Failure results carry a reason CODE and NO message — world-model never
+    // emits English; the language layer owns the prose.
+
+    it('unarmed attack on weapon-requiring destructible → requires_weapon', () => {
+      const wall = new IFEntity('wall', 'barrier');
+      wall.add({
+        type: TraitType.DESTRUCTIBLE,
+        hitPoints: 10,
+        maxHitPoints: 10,
+        armor: 0,
+        requiresWeapon: true
+      } as DestructibleTrait);
+
+      const result = AttackBehavior.attack(wall, undefined, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('requires_weapon');
+      expect(result.message).toBeUndefined();
+    });
+
+    it('wrong weapon type → wrong_weapon_type', () => {
+      const wall = new IFEntity('wall', 'barrier');
+      wall.add({
+        type: TraitType.DESTRUCTIBLE,
+        hitPoints: 10,
+        maxHitPoints: 10,
+        armor: 0,
+        requiresWeapon: true,
+        requiresType: 'blunt'
+      } as DestructibleTrait);
+
+      const result = AttackBehavior.attack(wall, weapon, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('wrong_weapon_type');
+      expect(result.message).toBeUndefined();
+    });
+
+    it('invulnerable destructible → invulnerable', () => {
+      const monolith = new IFEntity('monolith', 'barrier');
+      monolith.add({
+        type: TraitType.DESTRUCTIBLE,
+        hitPoints: 10,
+        maxHitPoints: 10,
+        armor: 0,
+        invulnerable: true
+      } as DestructibleTrait);
+
+      const result = AttackBehavior.attack(monolith, weapon, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('invulnerable');
+      expect(result.message).toBeUndefined();
+    });
+
+    it('no combat-related traits → no_effect', () => {
+      const rock = new IFEntity('rock', 'object');
+
+      const result = AttackBehavior.attack(rock, undefined, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('no_effect');
+      expect(result.message).toBeUndefined();
+    });
+  });
 });

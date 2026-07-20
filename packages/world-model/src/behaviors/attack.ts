@@ -16,6 +16,17 @@ import { DestructibleBehavior, IDamageResult } from '../traits/destructible/dest
 import { CombatBehavior, ICombatResult } from '../traits/combatant/combatantBehavior.js';
 
 /**
+ * Why an unsuccessful attack had no effect. A reason CODE for the language
+ * layer (stdlib maps each to a message ID) — world-model never emits English
+ * (platform-issue-sweep Phase 3c, David's 2026-07-20 ruling).
+ */
+export type AttackIneffectiveReason =
+  | 'requires_weapon'
+  | 'wrong_weapon_type'
+  | 'invulnerable'
+  | 'no_effect';
+
+/**
  * Combined result of an attack
  */
 export interface IAttackResult {
@@ -30,6 +41,14 @@ export interface IAttackResult {
   exitRevealed?: string;
   transformedTo?: EntityId;
   weaponBroke?: boolean;
+  /** Set on failure (`success: false`): the reason code, never prose. */
+  reason?: AttackIneffectiveReason;
+  /**
+   * AUTHOR-provided prose passed through verbatim from trait fields
+   * (breakable message, destructible damage/destroy messages, combatant
+   * hit/death messages). Never platform-written English — failure paths
+   * carry `reason` instead.
+   */
   message?: string;
 }
 
@@ -98,18 +117,19 @@ export class AttackBehavior {
           message: damageResult.message
         };
       } else {
-        // Attack failed due to requirements
+        // Attack failed due to requirements — emit the reason CODE; the
+        // language layer owns the prose (Phase 3c)
         return {
           success: false,
           type: 'ineffective',
           damage: 0,
-          message: damageResult.requiresWeapon 
-            ? 'You need a weapon to damage that.'
+          reason: damageResult.requiresWeapon
+            ? 'requires_weapon'
             : damageResult.wrongWeaponType
-            ? 'That weapon won\'t work on this target.'
+            ? 'wrong_weapon_type'
             : damageResult.invulnerable
-            ? 'That cannot be damaged.'
-            : 'Your attack has no effect.'
+            ? 'invulnerable'
+            : 'no_effect'
         };
       }
     }
@@ -137,7 +157,7 @@ export class AttackBehavior {
       success: false,
       type: 'ineffective',
       damage: 0,
-      message: 'Your attack has no effect on that.'
+      reason: 'no_effect'
     };
   }
   

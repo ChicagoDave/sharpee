@@ -91,7 +91,9 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     'supporter_contents',
     'searched_location',
     'searched_object',
-    'found_concealed'
+    'found_concealed_in_container',
+    'found_concealed_on_supporter',
+    'found_concealed_here'
   ],
   metadata: {
     requiresDirectObject: true,

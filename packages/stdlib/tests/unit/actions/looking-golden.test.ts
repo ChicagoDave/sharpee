@@ -600,3 +600,104 @@ describe('lookingAction (Golden Pattern)', () => {
   });
 });
 
+
+describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
+  // LOOK consults the shared visibility layer: a still-concealed item never
+  // appears in the room list or an open container's/supporter's contents
+  // listing until SEARCH reveals it. Assertions are on the actual entity
+  // lists in the emitted data, not just rendered text.
+
+  test('bare concealed item in the room stays out of the contents list', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const ball = world.createEntity('red ball', 'object');
+    world.moveEntity(ball.id, room.id);
+
+    const coin = world.createEntity('silver coin', 'object');
+    coin.add({ type: TraitType.IDENTITY, name: 'silver coin', concealed: true });
+    world.moveEntity(coin.id, room.id);
+
+    const command = createCommand(IFActions.LOOKING);
+    const context = createRealTestContext(lookingAction, world, command);
+    const events = executeWithValidation(lookingAction, context);
+
+    const listEvent = events.find(e => e.type === 'if.event.list.contents')!;
+    expect(listEvent).toBeDefined();
+    const params = (listEvent.data as any).params;
+    expect(params.count).toBe(1);
+    expect(params.items.items.map((np: any) => np.name)).toEqual(['red ball']);
+    // The raw direct-item ids exclude the concealed coin too
+    expect((listEvent.data as any).directItems).toEqual([ball.id]);
+  });
+
+  test('concealed item inside an open container stays out of its listing', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const box = world.createEntity('wooden box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    world.moveEntity(box.id, room.id);
+
+    const coin = world.createEntity('gold coin', 'object');
+    world.moveEntity(coin.id, box.id);
+    const key = world.createEntity('secret key', 'object');
+    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: true });
+    world.moveEntity(key.id, box.id);
+
+    const command = createCommand(IFActions.LOOKING);
+    const context = createRealTestContext(lookingAction, world, command);
+    const events = executeWithValidation(lookingAction, context);
+
+    const containerEvent = events.find(
+      e => e.type === 'if.event.list.contents' && (e.data as any).containerId === box.id
+    )!;
+    expect(containerEvent).toBeDefined();
+    expect((containerEvent.data as any).itemIds).toEqual([coin.id]);
+    expect((containerEvent.data as any).itemNames).toEqual(['gold coin']);
+  });
+
+  test('container holding only a concealed item emits no contents event', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const box = world.createEntity('wooden box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    world.moveEntity(box.id, room.id);
+
+    const key = world.createEntity('secret key', 'object');
+    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: true });
+    world.moveEntity(key.id, box.id);
+
+    const command = createCommand(IFActions.LOOKING);
+    const context = createRealTestContext(lookingAction, world, command);
+    const events = executeWithValidation(lookingAction, context);
+
+    const containerEvent = events.find(
+      e => e.type === 'if.event.list.contents' && (e.data as any).containerId === box.id
+    );
+    expect(containerEvent).toBeUndefined();
+  });
+
+  test('a revealed item appears in the container listing (reveal path intact)', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const box = world.createEntity('wooden box', 'object');
+    box.add({ type: TraitType.CONTAINER });
+    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    world.moveEntity(box.id, room.id);
+
+    const key = world.createEntity('secret key', 'object');
+    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: false });
+    world.moveEntity(key.id, box.id);
+
+    const command = createCommand(IFActions.LOOKING);
+    const context = createRealTestContext(lookingAction, world, command);
+    const events = executeWithValidation(lookingAction, context);
+
+    const containerEvent = events.find(
+      e => e.type === 'if.event.list.contents' && (e.data as any).containerId === box.id
+    )!;
+    expect(containerEvent).toBeDefined();
+    expect((containerEvent.data as any).itemIds).toEqual([key.id]);
+  });
+});

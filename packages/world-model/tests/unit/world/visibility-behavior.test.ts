@@ -13,6 +13,7 @@ import { SwitchableTrait } from '../../../src/traits/switchable/switchableTrait'
 import { ActorTrait } from '../../../src/traits/actor/actorTrait';
 import { WearableTrait } from '../../../src/traits/wearable/wearableTrait';
 import { SupporterTrait } from '../../../src/traits/supporter/supporterTrait';
+import { IdentityTrait } from '../../../src/traits/identity/identityTrait';
 // Test helpers are not needed - we create entities directly
 
 describe('VisibilityBehavior', () => {
@@ -696,6 +697,82 @@ describe('VisibilityBehavior', () => {
 
       // Light should still work through transparent container
       expect(VisibilityBehavior.isDark(darkRoom, world)).toBe(false);
+    });
+  });
+
+  describe('concealment (shared visibility definition)', () => {
+    // Platform-issue-sweep Phase 2: one definition of "visible" — a
+    // still-concealed item is invisible to canSee, getVisible,
+    // getVisibleContents, and isVisible alike, until revealed.
+    function concealedItem(name: string): IFEntity {
+      const item = world.createEntity(name, 'object');
+      item.add(new IdentityTrait({ name, concealed: true }));
+      return item;
+    }
+
+    it('isConcealed reflects the IdentityTrait flag (safe without the trait)', () => {
+      const plain = world.createEntity('plain rock', 'object');
+      expect(VisibilityBehavior.isConcealed(plain)).toBe(false);
+      const hidden = concealedItem('hidden gem');
+      expect(VisibilityBehavior.isConcealed(hidden)).toBe(true);
+    });
+
+    it('canSee returns false for a concealed entity in the same room', () => {
+      const key = concealedItem('secret key');
+      world.moveEntity(key.id, room.id);
+      expect(VisibilityBehavior.canSee(observer, key, world)).toBe(false);
+    });
+
+    it('getVisible excludes a bare concealed item in the room', () => {
+      const key = concealedItem('secret key');
+      world.moveEntity(key.id, room.id);
+      const visible = VisibilityBehavior.getVisible(observer, world);
+      expect(visible.map(e => e.id)).not.toContain(key.id);
+    });
+
+    it('getVisible excludes a concealed item inside an open container', () => {
+      const box = world.createEntity('open box', 'container');
+      box.add(new ContainerTrait());
+      world.moveEntity(box.id, room.id);
+      const key = concealedItem('secret key');
+      const coin = world.createEntity('gold coin', 'object');
+      world.moveEntity(key.id, box.id);
+      world.moveEntity(coin.id, box.id);
+
+      const visible = VisibilityBehavior.getVisible(observer, world);
+      expect(visible.map(e => e.id)).toContain(coin.id);
+      expect(visible.map(e => e.id)).not.toContain(key.id);
+    });
+
+    it('getVisibleContents filters concealed items but keeps the rest', () => {
+      const box = world.createEntity('open box', 'container');
+      box.add(new ContainerTrait());
+      world.moveEntity(box.id, room.id);
+      const key = concealedItem('secret key');
+      const coin = world.createEntity('gold coin', 'object');
+      world.moveEntity(key.id, box.id);
+      world.moveEntity(coin.id, box.id);
+
+      const contents = VisibilityBehavior.getVisibleContents(box, world);
+      expect(contents.map(e => e.id)).toEqual([coin.id]);
+    });
+
+    it('a revealed item appears in getVisibleContents (SEARCH reveal path)', () => {
+      const box = world.createEntity('open box', 'container');
+      box.add(new ContainerTrait());
+      world.moveEntity(box.id, room.id);
+      const key = concealedItem('secret key');
+      world.moveEntity(key.id, box.id);
+
+      expect(VisibilityBehavior.getVisibleContents(box, world)).toHaveLength(0);
+      key.getTrait(IdentityTrait)!.concealed = false;
+      expect(VisibilityBehavior.getVisibleContents(box, world).map(e => e.id)).toEqual([key.id]);
+    });
+
+    it('isVisible returns false for a concealed entity', () => {
+      const key = concealedItem('secret key');
+      world.moveEntity(key.id, room.id);
+      expect(VisibilityBehavior.isVisible(key, world)).toBe(false);
     });
   });
 });

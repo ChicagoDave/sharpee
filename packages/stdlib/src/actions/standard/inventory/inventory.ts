@@ -56,8 +56,11 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   const player = context.player;
   const location = context.currentLocation;
   
-  // Query the world model for what the player is carrying
-  const carried = context.world.getContents(player.id);
+  // Query the world model for what the player is carrying. includeWorn is
+  // explicit (Phase 5 narrow fix): getContents filters worn items OUT by
+  // default, which made `wear vest` → `inventory` report "You aren't
+  // carrying anything." The default itself is under ADR-0247 (DRAFT).
+  const carried = context.world.getContents(player.id, { includeWorn: true });
   
   // Separate worn items from held items
   const worn = carried.filter(item => {

@@ -30,6 +30,13 @@ export const attackingLanguage = {
     'need_weapon_to_damage': "{capitalize the target} requires a weapon to damage.",
     'wrong_weapon_type': "{capitalize the target} can't be damaged with that type of weapon.",
     'attack_ineffective': "{Your} attack has no effect on {the target}.",
+    // Per-reason ineffective-attack refusals (platform-issue-sweep Phase 3c):
+    // world-model emits reason CODES (requires_weapon | wrong_weapon_type |
+    // invulnerable | no_effect), never English; stdlib maps each to one of
+    // these templates.
+    'attack_requires_weapon': "{You} {need} a weapon to damage {the target}.",
+    'attack_wrong_weapon_type': "That weapon won't work on {the target}.",
+    'attack_invulnerable': "{capitalize the target} cannot be damaged.",
 
     // Combat validation errors
     'already_dead': "{capitalize the target} {verb:is target} already dead.",

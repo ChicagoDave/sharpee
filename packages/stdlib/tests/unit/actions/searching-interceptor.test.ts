@@ -120,6 +120,6 @@ describe('Searching interceptor hooks (ADR-118)', () => {
     expect(validation.valid).toBe(true);
     expect(IdentityBehavior.isConcealed(coin)).toBe(false);
     const searched = events.find(e => e.type === 'if.event.searched')!;
-    expect((searched.data as any).messageId).toBe('if.action.searching.found_concealed');
+    expect((searched.data as any).messageId).toBe('if.action.searching.found_concealed_in_container');
   });
 });

@@ -24,9 +24,14 @@ export const hidingLanguage = {
     'on': "{You} {crouch} on {the target}, out of sight.",
     'inside': "{You} {climb} into {the target}, concealing {yourself}.",
 
-    // Failure messages
+    // Failure messages. The refusal family is per-position: the preposition
+    // lives in the template text, never as a bare-string param the assembler
+    // would article-decorate ("can't hide an under…").
     'nothing_to_hide': "{You} {can't} hide there.",
-    'cant_hide_there': "{You} {can't} hide {position} {the target}.",
+    'cant_hide_there_behind': "{You} {can't} hide behind {the target}.",
+    'cant_hide_there_under': "{You} {can't} hide under {the target}.",
+    'cant_hide_there_on': "{You} {can't} hide on {the target}.",
+    'cant_hide_there_inside': "{You} {can't} hide inside {the target}.",
     'already_hidden': "{You're} already hidden.",
   },
 

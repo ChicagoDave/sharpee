@@ -93,11 +93,69 @@ export class VisibilityBehavior extends Behavior {
   }
 
   /**
+   * Whether an entity is still concealed (hidden until SEARCH or a game event
+   * reveals it). This is the SINGLE shared definition of item concealment for
+   * visibility: scope resolution, LOOK, and EXAMINE must all consult it (here
+   * or via canSee/getVisible/getVisibleContents), never re-derive it.
+   *
+   * @param entity - The entity to check (safe on entities without IdentityTrait)
+   * @returns true if the entity carries IdentityTrait with concealed === true
+   */
+  static isConcealed(entity: IFEntity): boolean {
+    return entity.getTrait(IdentityTrait)?.concealed === true;
+  }
+
+  /**
+   * The single per-entity listing filter shared by every visibility path
+   * (room contents, container/supporter contents): excludes still-concealed
+   * entities, scenery marked invisible, and entities whose visibility
+   * capability vetoes being seen.
+   *
+   * @param entity - The candidate entity
+   * @param world - The world model
+   * @param observerId - The observer (or container proxy) id passed to a
+   *                     visibility-capability behavior's validate
+   * @returns true if the entity may appear in a visible-entity listing
+   */
+  private static isListable(entity: IFEntity, world: WorldModel, observerId: string): boolean {
+    // Concealed entities are hidden everywhere until revealed
+    if (this.isConcealed(entity)) {
+      return false;
+    }
+
+    // Check if entity is invisible via SceneryTrait
+    const scenery = entity.getTrait(SceneryTrait);
+    if (scenery && scenery.visible === false) {
+      return false;
+    }
+
+    // Check if entity has visibility capability that blocks being seen
+    const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
+    if (visibilityTrait) {
+      const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+      if (behavior) {
+        const result = behavior.validate(entity, world, observerId, {});
+        if (!result.valid) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * Determines if an observer can see a target entity
    */
   static canSee(observer: IFEntity, target: IFEntity, world: WorldModel): boolean {
     // Can always see self
     if (observer.id === target.id) return true;
+
+    // Concealed entities are hidden from sight until revealed (same rule as
+    // getVisible/getVisibleContents — one definition of "visible")
+    if (this.isConcealed(target)) {
+      return false;
+    }
 
     // Check if target is invisible via SceneryTrait
     const targetScenery = target.getTrait(SceneryTrait);
@@ -221,31 +279,12 @@ export class VisibilityBehavior extends Behavior {
     // Get contents of the room
     const roomContents = world.getContents(observerRoom.id);
     
-    // Add visible entities in the room
+    // Add visible entities in the room (shared per-entity filter: concealed,
+    // invisible scenery, capability veto)
     for (const entity of roomContents) {
       if (entity.id !== observer.id && !seen.has(entity.id)) {
-        // Check if entity is concealed (hidden until revealed via SEARCH or game event)
-        const identity = entity.getTrait(IdentityTrait);
-        if (identity && identity.concealed === true) {
+        if (!this.isListable(entity, world, observer.id)) {
           continue;
-        }
-
-        // Check if entity is visible via SceneryTrait
-        const scenery = entity.getTrait(SceneryTrait);
-        if (scenery && scenery.visible === false) {
-          continue;
-        }
-
-        // Check if entity has visibility capability that blocks being seen
-        const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
-        if (visibilityTrait) {
-          const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
-          if (behavior) {
-            const result = behavior.validate(entity, world, observer.id, {});
-            if (!result.valid) {
-              continue; // Entity blocks visibility via capability
-            }
-          }
         }
 
         visible.push(entity);
@@ -290,12 +329,38 @@ export class VisibilityBehavior extends Behavior {
   }
 
   /**
+   * The direct contents of a container/supporter/actor that could appear in a
+   * visible listing: applies the same per-entity filter as getVisible
+   * (concealed, invisible scenery, visibility-capability veto) to
+   * `getContents(id, { includeWorn: true })`.
+   *
+   * Does NOT check whether the container's inside is exposed (closed opaque
+   * container) — callers listing contents have already established that, and
+   * addVisibleContents keeps that gate itself.
+   *
+   * This is the shared read for LOOK's and EXAMINE's contents listings — a
+   * still-concealed item stays out of both until SEARCH reveals it, by the
+   * same definition scope resolution uses.
+   *
+   * @param container - The container/supporter/actor whose contents to list
+   * @param world - The world model
+   * @returns the listable direct contents
+   */
+  static getVisibleContents(container: IFEntity, world: WorldModel): IFEntity[] {
+    // Note: no direct observer here — the container's id is the proxy passed
+    // to visibility-capability behaviors, matching addVisibleContents.
+    return world
+      .getContents(container.id, { includeWorn: true })
+      .filter(entity => this.isListable(entity, world, container.id));
+  }
+
+  /**
    * Recursively adds visible contents of a container/supporter/actor
    */
   private static addVisibleContents(
-    container: IFEntity, 
-    visible: IFEntity[], 
-    seen: Set<string>, 
+    container: IFEntity,
+    visible: IFEntity[],
+    seen: Set<string>,
     world: WorldModel
   ): void {
     // Check if we can see inside this container
@@ -311,37 +376,17 @@ export class VisibilityBehavior extends Behavior {
         }
       }
     }
-    
-    // Get contents (including worn items for actors)
-    const contents = world.getContents(container.id, { includeWorn: true });
-    
-    for (const entity of contents) {
+
+    // Contents that pass the shared per-entity filter (concealed, invisible
+    // scenery, capability veto — one definition with getVisible)
+    for (const entity of this.getVisibleContents(container, world)) {
       if (!seen.has(entity.id)) {
-        // Check if entity is visible via SceneryTrait
-        const scenery = entity.getTrait(SceneryTrait);
-        if (scenery && scenery.visible === false) {
-          continue;
-        }
-
-        // Check if entity has visibility capability that blocks being seen
-        const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
-        if (visibilityTrait) {
-          const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
-          if (behavior) {
-            // Note: We don't have a direct observer here, use container's id as proxy
-            const result = behavior.validate(entity, world, container.id, {});
-            if (!result.valid) {
-              continue; // Entity blocks visibility via capability
-            }
-          }
-        }
-
         visible.push(entity);
         seen.add(entity.id);
-        
+
         // Recurse into nested containers
-        if (entity.hasTrait(TraitType.CONTAINER) || 
-            entity.hasTrait(TraitType.SUPPORTER) || 
+        if (entity.hasTrait(TraitType.CONTAINER) ||
+            entity.hasTrait(TraitType.SUPPORTER) ||
             entity.hasTrait(TraitType.ACTOR)) {
           this.addVisibleContents(entity, visible, seen, world);
         }
@@ -455,6 +500,11 @@ export class VisibilityBehavior extends Behavior {
    * (used for filtering queries)
    */
   static isVisible(entity: IFEntity, world: WorldModel): boolean {
+    // Concealed entities are hidden until revealed (shared definition)
+    if (this.isConcealed(entity)) {
+      return false;
+    }
+
     // Check if explicitly invisible via SceneryTrait
     const scenery = entity.getTrait(SceneryTrait);
     if (scenery && scenery.visible === false) {

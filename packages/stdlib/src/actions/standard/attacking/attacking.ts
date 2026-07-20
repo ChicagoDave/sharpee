@@ -126,7 +126,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     'flees',
     'peaceful_solution',
     'no_fighting',
-    'unnecessary_violence'
+    'unnecessary_violence',
+    'attack_ineffective',
+    'attack_requires_weapon',
+    'attack_wrong_weapon_type',
+    'attack_invulnerable'
   ],
 
   /**
@@ -303,7 +307,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         itemsDropped: result.itemsDropped,
         debrisCreated: result.debrisCreated,
         exitRevealed: result.exitRevealed,
-        transformedTo: result.transformedTo
+        transformedTo: result.transformedTo,
+        reason: result.reason
       };
 
       // Store result for report phase
@@ -367,9 +372,21 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Check if attack failed (for non-combat attacks)
+    // Check if attack failed (for non-combat attacks). World-model emits a
+    // reason CODE on failure (never prose — Phase 3c); each maps to its
+    // lang-en-us template. An interceptor-supplied customMessage is honored
+    // only when it is a plausible message id/key (no whitespace — a real
+    // message ID never contains it).
     if (!result.success && !usedCombatService) {
-      const failMessageId = customMessage || 'attack_ineffective';
+      const reasonMessageIds: Record<string, string> = {
+        requires_weapon: 'attack_requires_weapon',
+        wrong_weapon_type: 'attack_wrong_weapon_type',
+        invulnerable: 'attack_invulnerable',
+        no_effect: 'attack_ineffective'
+      };
+      const failMessageId = (customMessage && !/\s/.test(customMessage))
+        ? customMessage
+        : reasonMessageIds[result.reason ?? 'no_effect'] ?? 'attack_ineffective';
       const fullFailMessageId = failMessageId.includes('.')
         ? failMessageId
         : `${context.action.id}.${failMessageId}`;
@@ -472,20 +489,26 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Update the main attacked event with messageId for text rendering
-    // The first event in the array is the attacked event - update it
-    // customMessage from story interceptors may be fully-qualified (e.g., dungeo.melee.hero_attack)
-    // and should not be prefixed. Standard messageId from the switch block above is always
-    // action-scoped and must be prefixed.
-    const resolvedMessageId = customMessage || messageId;
-    const fullMessageId = customMessage && customMessage.includes('.')
+    // Update the main attacked event with messageId for text rendering.
+    // customMessage semantics under the tightened heuristic (Phase 3c):
+    //  - whitespace-free with a dot → fully-qualified message ID from a story
+    //    interceptor (e.g. dungeo.melee.hero_attack), pass through unprefixed
+    //  - whitespace-free, no dot → action-scoped key, prefix as usual
+    //  - contains whitespace → AUTHOR trait prose (breakable/destructible/
+    //    combatant message fields, passed through by AttackBehavior): not an
+    //    ID at all. Emit it as inline `message` WITHOUT a messageId so the
+    //    pipeline's generic handler renders the prose verbatim — the old
+    //    includes('.') heuristic let the sentence's own period satisfy the
+    //    "fully-qualified" check and emitted raw English as a message ID the
+    //    text service could not resolve (rendered blank).
+    const proseMessage = customMessage && /\s/.test(customMessage) ? customMessage : undefined;
+    const resolvedMessageId = (customMessage && !proseMessage) ? customMessage : messageId;
+    const fullMessageId = customMessage && !proseMessage && customMessage.includes('.')
       ? customMessage
       : `${context.action.id}.${resolvedMessageId}`;
-    events[0] = context.event('if.event.attacked', {
-      messageId: fullMessageId,
-      params,
-      ...eventData
-    });
+    events[0] = context.event('if.event.attacked', proseMessage
+      ? { message: proseMessage, params, ...eventData }
+      : { messageId: fullMessageId, params, ...eventData });
 
     // Additional events based on result
     if (result.itemsDropped?.length) {

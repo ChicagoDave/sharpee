@@ -71,6 +71,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
   requiredMessages: [
     'no_target',
     'not_climbable',
+    'climb_nowhere',
     'cant_go_that_way',
     'climbed_up',
     'climbed_down',
@@ -152,8 +153,26 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       sharedData.targetId = target.id;
       sharedData.targetName = target.name;
 
-      // Move player onto the target
-      context.world.moveEntity(context.player.id, target.id);
+      // A configured climb destination (top of tree, far side of fence) wins;
+      // otherwise the player moves onto the target itself.
+      const climbable = target.has(TraitType.CLIMBABLE)
+        ? (target.get(TraitType.CLIMBABLE) as { destination?: string })
+        : undefined;
+      const moveTarget = climbable?.destination ?? target.id;
+      if (climbable?.destination) {
+        sharedData.destinationId = climbable.destination;
+      }
+
+      const moved = context.world.moveEntity(context.player.id, moveTarget);
+      if (!moved) {
+        // Invariant (belt-and-suspenders, same pattern as the loader's door
+        // guard): validate already established the target/destination can
+        // receive the player — a refusal here is a platform bug and must
+        // never become a silent no-op with success narration.
+        throw new Error(
+          `climbing: moveEntity refused after validation passed (player ${context.player.id} -> ${moveTarget})`
+        );
+      }
     }
 
     const state = getLifecycleState(context);
@@ -226,12 +245,22 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
         method: 'onto'
       } as ClimbedEventData & { messageId: string; params: Record<string, any>; targetName?: string }));
 
-      // Entered event for climbing onto
-      events.push(context.event('if.event.entered', {
-        targetId: sharedData.targetId,
-        method: 'climbing',
-        preposition: 'onto'
-      }));
+      if (sharedData.destinationId) {
+        // Destination climb (configured on the ClimbableTrait): the player
+        // ended up somewhere else — emit moved, matching the directional path
+        events.push(context.event('if.event.moved', {
+          fromRoom: sharedData.fromLocationId,
+          toRoom: sharedData.destinationId,
+          method: 'climbing'
+        }));
+      } else {
+        // Entered event for climbing onto
+        events.push(context.event('if.event.entered', {
+          targetId: sharedData.targetId,
+          method: 'climbing',
+          preposition: 'onto'
+        }));
+      }
     }
 
     const state = getLifecycleState(context);
@@ -303,6 +332,22 @@ function validateObjectClimbing(
   const currentLocation = context.world.getLocation(context.player.id);
   if (currentLocation === target.id) {
     return { valid: false, error: 'already_there', params: { place: nounPhraseFor(target) } };
+  }
+
+  // David's ruling (2026-07-20): a bare `climbable` does NOT imply a place to
+  // be — no auto-composed destination. The target must actually be able to
+  // receive the player: a configured climb destination that exists, or a
+  // shape the world-model's own move authority accepts (supporter, enterable,
+  // container, …). Consulting canMoveEntity keeps validate and execute on ONE
+  // definition of "receivable" — the same predicate execute's mutation uses.
+  if (target.has(TraitType.CLIMBABLE)) {
+    const climbable = target.get(TraitType.CLIMBABLE) as { destination?: string };
+    const destinationExists = climbable.destination
+      ? !!context.world.getEntity(climbable.destination)
+      : false;
+    if (!destinationExists && !context.world.canMoveEntity(context.player.id, target.id)) {
+      return { valid: false, error: 'climb_nowhere', params: { object: nounPhraseFor(target) } };
+    }
   }
 
   return { valid: true };

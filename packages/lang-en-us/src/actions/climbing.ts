@@ -28,6 +28,9 @@ export const climbingLanguage = {
   messages: {
     'no_target': "What do {you} want to climb?",
     'not_climbable': "{You} {can't} climb {the object}.",
+    // Honest refusal for a climbable with no place to be (David's ruling,
+    // 2026-07-20: bare `climbable` does not imply a destination)
+    'climb_nowhere': "Climbing {the object} would get {you} nowhere.",
     'cant_go_that_way': "{You} {can't} climb {verbatim:direction} from here.",
     'climbed_up': "{You} {climb} up.",
     'climbed_down': "{You} {climb} down.",

@@ -8,7 +8,7 @@
  * 1. validate: Target must have ConcealmentTrait with matching position
  * 2. execute: Add ConcealedStateTrait to player
  * 3. report: Emit if.event.player_concealed
- * 4. blocked: Emit error message (nothing_to_hide, cant_hide_there, already_hidden)
+ * 4. blocked: Emit error message (nothing_to_hide, cant_hide_there_<position>, already_hidden)
  *
  * Interceptor consultation (ADR-118) runs through the shared lifecycle
  * engine (ADR-228) via `hidingLifecycle` — no hand-rolled hook plumbing.
@@ -79,7 +79,10 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
     'on',
     'inside',
     'nothing_to_hide',
-    'cant_hide_there',
+    'cant_hide_there_behind',
+    'cant_hide_there_under',
+    'cant_hide_there_on',
+    'cant_hide_there_inside',
     'already_hidden',
   ],
 
@@ -114,7 +117,7 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       return {
         valid: false,
         error: 'nothing_to_hide',
-        params: { target: target.name },
+        params: { target: nounPhraseFor(target) },
       };
     }
 
@@ -124,12 +127,14 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'nothing_to_hide' };
     }
 
-    // Check position is supported
+    // Check position is supported. The refusal is per-position (the preposition
+    // lives in the lang-en-us template, never as a bare-string param); the
+    // target binds as a NounPhrase so the assembler owns its article.
     if (!concealmentTrait.supportsPosition(position)) {
       return {
         valid: false,
-        error: 'cant_hide_there',
-        params: { target: target.name, position },
+        error: `cant_hide_there_${position}`,
+        params: { target: nounPhraseFor(target), position },
       };
     }
 

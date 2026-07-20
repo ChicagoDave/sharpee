@@ -3,6 +3,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
+import { AttackIneffectiveReason } from '@sharpee/world-model';
 
 /**
  * Result from attack behaviors
@@ -19,6 +20,8 @@ export interface AttackResult {
   debrisCreated?: EntityId[];
   exitRevealed?: string;
   transformedTo?: EntityId;
+  /** Why an unsuccessful attack had no effect — a reason code, never prose (Phase 3c). */
+  reason?: AttackIneffectiveReason;
 }
 
 /**

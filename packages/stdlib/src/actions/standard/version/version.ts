@@ -19,9 +19,12 @@ import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { VersionDisplayedEventData } from './version-events.js';
+// Stamped by ./repokit build (never hand-edited): the lockstep platform
+// version — the banner fallback when a story carries no engineVersion
+// (every Chord .story file). Re-exported for existing consumers.
+import { ENGINE_VERSION } from './engine-version.js';
 
-/** Engine version - update this when engine version changes */
-export const ENGINE_VERSION = '0.9.43-beta.1';
+export { ENGINE_VERSION };
 
 export const versionAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.VERSION,

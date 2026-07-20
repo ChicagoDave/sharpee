@@ -19,7 +19,7 @@ export { WeaponBehavior } from '../traits/weapon/weaponBehavior.js';
 export { BreakableBehavior } from '../traits/breakable/breakableBehavior.js';
 export { DestructibleBehavior } from '../traits/destructible/destructibleBehavior.js';
 export { CombatBehavior } from '../traits/combatant/combatantBehavior.js';
-export { AttackBehavior, IAttackResult } from './attack.js';
+export { AttackBehavior, IAttackResult, AttackIneffectiveReason } from './attack.js';
 
 // Health / life-state (ADR-226, ADR-223 child A)
 export { HealthBehavior } from '../traits/health/healthBehavior.js';
