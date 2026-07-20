@@ -1,0 +1,50 @@
+Prose is any bare paragraph: no keyword, just sentences. In a `create`
+block the first bare paragraph after the blank line is the entity's
+description, and consecutive bare paragraphs append to it as separate
+paragraphs.
+
+```chord
+create the Reading Nook
+  a room
+
+  A stone bench curves around a sundial{weather}. Ivy softens
+  every wall.
+
+  Someone has left a folded blanket at one end of the bench.
+```
+
+Within a paragraph, line breaks are yours to place: lines join with
+single spaces when the text is rendered, so you can wrap prose at any
+width. A blank line is a real paragraph break.
+
+A marker like `{weather}` splices generated text into prose at that
+spot. Every bare lowercase marker must name something the story
+declares: a phrase ([§5.2](/chord/guide/vocabulary)) or a text hatch
+([§5.5](/chord/guide/vocabulary)). Here `weather` is a
+cycling phrase, so the sundial reads differently on different visits:
+
+```chord
+define phrase weather, cycling
+  whose shadow lies crisp in the afternoon sun
+or
+  whose face dims as a cloud slides past
+end phrase
+```
+
+One marker is built in: `{br}` forces a hard line break with no
+paragraph gap, for text whose line structure is the point. The name
+`br` is reserved; you cannot declare a phrase or hatch with it.
+
+```chord
+create the sundial plaque
+  aka plaque
+  scenery
+  in the Reading Nook
+
+  The engraving is worn but legible:{br}
+  I COUNT ONLY SUNNY HOURS{br}
+  EST. 1898
+```
+
+A lone `"` is ordinary prose punctuation, so dialogue can open in one
+paragraph and close in another without upsetting the lexer.

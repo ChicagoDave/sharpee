@@ -1,0 +1,39 @@
+When a trait or the platform speaks for an entity, the entity can talk
+back in its own voice. A `phrase <key>:` line in a `create` block
+overrides the text registered under that key, for this entity only. The
+override can carry a strategy and `or` variants, exactly like a
+`define phrase` ([§5.2](/chord/guide/vocabulary)):
+
+```chord
+create the garden robin
+  aka robin
+  scenery
+  in the Aviary Corner
+  states, reversible: perched, hopping
+
+  A round little robin with one white tail feather.
+
+  on watching it
+    change it to hopping when it is perched
+    phrase robin-watched
+  end on
+
+  phrase robin-watched, cycling:
+    The robin cocks its head at you, entirely unimpressed.
+  or
+    The robin hops once, then pretends you are not there.
+
+  phrase detail while it is hopping:
+    It hops from perch to perch as you watch.
+```
+
+The story-wide `robin-watched` text (defined in `define phrases`) is
+the default; the robin's own cycling variants win whenever the robin is
+the one being watched. Under the hood the override registers a derived
+key scoped to the entity (`garden-robin.robin-watched`), which is also
+how descriptions get their keys (`garden-robin.description`).
+
+The `detail` key is special: it appends a live detail sentence to the
+entity's description and requires a `while` condition. On ordinary
+overrides, `while` is not allowed (`analysis.override-gate`); use a
+strategy or variants instead.

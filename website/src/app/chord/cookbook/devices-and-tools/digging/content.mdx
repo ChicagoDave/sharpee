@@ -1,0 +1,65 @@
+The same design as cutting, and the classic use: something buried. The
+clause is the mutation — here `move` brings an off-stage entity into
+play, and `, once` spends the discovery.
+
+The author writes:
+
+```chord
+create the Strand
+  a room
+
+  Wet sand, low tide, and gulls arguing over the wrack line.
+
+create the sandy patch
+  aka sand, patch
+  diggable with the spade
+  scenery
+  in the Strand
+
+  A patch of sand a shade darker than the rest.
+
+  on digging it, once
+    move the scarab to the Strand
+    phrase sand-yields
+  end on
+
+create the spade
+  in the Strand
+
+  A short garden spade.
+
+create the scarab
+  aka beetle
+
+  A faience scarab, blue as a kingfisher.
+
+create the seashell
+  aka shell
+
+  A scallop shell, pretty and useless.
+
+create the player
+  starts in the Strand
+  carries the seashell
+
+define phrases en-US
+  sand-yields:
+    Two spadefuls down, the blade rings against something small and hard.
+    You lift out a faience scarab.
+```
+
+The player sees:
+
+```text
+> dig the sand with the seashell
+The seashell won't dig the sandy patch.
+
+> take the spade
+Taken.
+
+> dig the sand with the spade
+Two spadefuls down, the blade rings against something small and hard. You lift out a faience scarab.
+
+> take the scarab
+Taken.
+```

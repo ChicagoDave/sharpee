@@ -1,0 +1,26 @@
+A `score <name> worth N` line declares a scoring identity on the owner
+it appears under: the story header, a `create` block, a trait, or an
+action. `award <name>` grants it from any behavior body.
+
+```chord
+create the prize marrow
+  aka marrow
+  in the Orangery
+  states: entire, sliced
+  score sliced-the-marrow worth 10
+
+  A rosette-winning marrow of absurd size.
+
+  on cutting it
+    change it to sliced
+    award sliced-the-marrow
+    phrase marrow-sliced
+  end on
+```
+
+Score identities are owner-scoped: two entities can each declare `score
+fed worth 10` and they are different scores. Awards dedupe by identity,
+so awarding the same score twice grants it once; there is no need to
+guard `award` behind a first-time check. The full scoring model,
+including trait- and action-owned scores, is in
+[§4.5](/chord/guide/flow).

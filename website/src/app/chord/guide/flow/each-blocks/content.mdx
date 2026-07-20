@@ -1,0 +1,49 @@
+`each <condition>` runs its body once for every entity that satisfies a
+named *open* condition ([§3.4](/chord/guide/behavior)) — a condition
+whose `it` is left free, so
+it describes a set rather than testing one thing. Inside the body, `the
+match` is the current entity; `it` keeps meaning the clause's owner.
+
+```chord
+define condition frame-seedling: it is a seedling and it is in the cold frame
+define condition labeled-pot: it is a pot and it is in the potting shed
+```
+
+```chord
+  on planting it
+    each frame-seedling
+      move the match to the Nursery Bed
+      phrase planted-out with plant = the match
+    end each
+    phrase planting-done
+  end on
+```
+
+Each matching seedling is moved and announced; then, after the loop,
+`planting-done` speaks once. The body is ordinary statements, so `move`,
+`change`, `phrase`, and the rest all work, and `the match` is a value
+you can pass as a parameter (`with plant = the match`) or use as a
+`move`/`change` target. The iteration order is the order entities were
+created, and an empty match set simply runs the body zero times.
+
+`each` blocks nest. The binder `the match` always refers to the
+*innermost* loop:
+
+```chord
+  on auditing it
+    each frame-seedling
+      each labeled-pot
+        phrase audit-pair with pot = the match
+      end each
+    end each
+  end on
+```
+
+`each` is legal wherever statements are — `on` bodies, action bodies,
+trait clauses, sequence steps — and never at the top level
+(`parse.each-top-level`). Its condition must be a declared open
+condition; a closed condition or a story state is
+`analysis.closed-condition-selection`, and `the match` outside any
+`each` body is `analysis.match-outside-each`. `match` is a reserved
+name: you cannot call an entity, alias, trait field, or grammar slot
+`match`.

@@ -1,0 +1,21 @@
+`refuse` stops the action and speaks a phrase. The conditional form
+`refuse when <condition>: <key>` refuses only when its condition holds,
+as the mittens line above shows. The bare form refuses always, for
+things that are simply never allowed:
+
+```chord
+  on taking it
+    refuse all-thorns
+  end on
+```
+
+The named key resolves entity-scoped first (ADR-231): a
+`phrase all-thorns:` override in the refusing entity's own `create`
+block ([§2.10](/chord/guide/world)) wins over a story-wide
+`all-thorns`, and a bare key
+renders on standard actions just as it does on story-defined ones. A
+dotted key is legal here too ([§5.2](/chord/guide/vocabulary)).
+
+Refusing on a negated condition (`refuse when not …`) is flagged
+(`analysis.negated-requirement`): that is a requirement in disguise, and
+`must` says it better.

@@ -1,0 +1,23 @@
+A region groups rooms and owns behavior for all of them: `containing`
+lists members (additive across lines; regions nest), an `on every turn`
+clause is a region daemon firing only while the player is in a member
+room, and `after entering it` / `after leaving it` bind to boundary
+crossings in either direction. `leaving` exists only on region blocks.
+
+```chord
+create the Grounds
+  a region
+  containing the Drive, the Hall
+
+  on every turn while one chance in 6
+    phrase night-wind
+  end on
+
+  after entering it
+    phrase cold-returns
+  end after
+
+  after leaving it
+    phrase out-of-the-wind
+  end after
+```

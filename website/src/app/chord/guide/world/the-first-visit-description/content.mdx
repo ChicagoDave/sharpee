@@ -1,0 +1,20 @@
+A room can carry a `first time` block: prose shown in place of the
+standing description the first time the player sees the room, after
+which the ordinary description takes over.
+
+```chord
+create the Maze Heart
+  a room
+
+  first time
+    You did not expect the hedge maze to open out like this: a perfect
+    circle of turf, silent, with a single stone chair at its center.
+
+  A circle of turf enclosed by high hedge walls. A stone chair faces
+  the way in.
+```
+
+This form is rooms-only and first-time-only: `second time` and the
+other ordinals are load errors here. (Inside behavior bodies, the full
+ordinal family is available; that different construct is
+[§4.3](/chord/guide/flow).)

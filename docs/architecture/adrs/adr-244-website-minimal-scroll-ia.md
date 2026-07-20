@@ -67,6 +67,31 @@ Two follow-up decisions were put to David at execution:
 - Route count grows with content (50 → 90 at adoption); the static
   build absorbs this (~180 ms page generation at 90 routes).
 
+## Amendment (2026-07-19, session 7692ef — the deferred splits executed)
+
+David ruled the follow-up scope the same session:
+
+- **Threshold interpretation**: minimal scroll is the goal, not maximal
+  splitting — only pages beyond roughly two screens split; pages already
+  at one to two screens stay whole. This refines Decision 1 for
+  non-reference sections.
+- **Executed**: Author guide chapters world/behavior/flow/vocabulary/
+  tooling → 44 §N.M entry pages under landings (`reading` already
+  compliant, left whole); Cookbook pages manipulation/containers-and-
+  locks/senses/devices-and-tools/social → 14 entry pages (movement/
+  wearing/meta already compliant). Build 148 routes, screenshots
+  verified.
+- **Fernhill judgment**: left intact — its chapters are 84–163 lines
+  with many tiny subsections; splitting would produce sub-screen
+  fragments, failing minimal scroll in the other direction. Recorded,
+  not silently skipped.
+- **Cookbook rename folded in** (ADR-245's required sweep, executed
+  early to avoid double route churn): the docs cookbook is now
+  "Cookbook" — `docs/reference/stdlib-cookbook.md`,
+  `docs/work/stdlib-cookbook/` (harness green post-rename),
+  `/chord/cookbook/*` routes, nav label. "Phrasebook" now names only
+  the ADR-245 runtime construct.
+
 ## Session
 
 session 7692ef, 2026-07-19 (`docs/context/session-20260719-2147-chord-foundations.md`) —

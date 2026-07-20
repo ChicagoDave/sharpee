@@ -1,0 +1,15 @@
+`define verb <word> {or <word>} means <pattern>` teaches the parser a
+new surface verb by mapping it onto an existing action's pattern. A
+`(something)` in the pattern is a slot the parser fills from the
+player's input:
+
+```chord
+define verb hang or hook means put (something) on (something)
+define verb sniff means smell (something)
+```
+
+`hang the jacket on the hook` and `hook the jacket on the hook` now both
+route through the standard `put … on …` action; `sniff the jacket`
+routes through `smell`. This is verb *vocabulary* only — aliases onto
+patterns the platform already understands. To define a genuinely new
+action with its own grammar and behavior, use `define action` (§5.8).

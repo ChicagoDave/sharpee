@@ -1,0 +1,16 @@
+Things that switch on and off, and the three verbs whose *outcome*
+belongs to the entity: cutting, digging, turning. Full entries:
+[the standard library reference §7](/chord/stdlib/devices), [§2.7–2.8](/chord/stdlib/manipulation).
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **switch on** | `turn`/`switch`/`flip on X` · `turn X on` · `activate`/`start X` · `power on X` | `switchable` | `already_on`, `no_power`, `not_switchable` |
+| **switch off** | `turn`/`switch`/`flip off X` · `turn X off` · `deactivate`/`stop X` · `power off X` | `switchable` | `already_off`, `not_switchable` |
+| **turn** | `turn`/`rotate`/`twist X` | per-entity behavior (dispatch) | `cant_turn_that` |
+| **cut** | `cut X with`/`using Y` (no bare `cut X` in core grammar) | `cuttable` + exactly one cut implementation | `not_cuttable`, `no_tool`, `tool_not_held`, `wrong_tool` |
+| **dig** | `dig X with`/`using Y` (no bare `dig X` in core grammar) | `diggable` + exactly one dig implementation | `not_diggable`, `no_tool`, `tool_not_held`, `wrong_tool` |
+
+- [switching on and off](/chord/cookbook/devices-and-tools/switching-on-and-off)
+- [cutting](/chord/cookbook/devices-and-tools/cutting)
+- [digging](/chord/cookbook/devices-and-tools/digging)
+- [turning](/chord/cookbook/devices-and-tools/turning)

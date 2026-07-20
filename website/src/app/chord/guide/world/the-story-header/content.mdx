@@ -1,0 +1,18 @@
+The header names the story and carries its identity fields. `story` and
+the quoted title are required if a header is present at all; `by` is
+optional; the indented lines below are free `key: value` fields, of
+which `id`, `version`, and `blurb` are the conventional set. The header
+may also own story-wide states and scores, using the same two line forms
+every other owner uses (§2.7, §2.8):
+
+```chord
+story "The Walled Garden" by "Sharpee Docs"
+  id: walled-garden
+  version: 1.0.0
+  blurb: A pocket world for the Chord language reference.
+  states: daylight, dusk
+  score explorer worth 5
+```
+
+The story starts in the first declared state (`daylight` here), and any
+behavior body can move it forward with `change the story to dusk`.

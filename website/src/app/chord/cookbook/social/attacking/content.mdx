@@ -1,0 +1,43 @@
+Real combat is the `combatant` trait plus a combat interceptor,
+registered from a `.story` by one header line: `use combat`
+([the reference's §8.2](/chord/stdlib/npcs)). A story that wants
+scripted fights instead has the reaction seam: an `on attacking it`
+clause whose phrase replaces the standard reply.
+
+The author writes:
+
+```chord
+create the Training Yard
+  a room
+
+  Packed dirt and a straw dummy on a post.
+
+create the training dummy
+  aka dummy
+  scenery
+  in the Training Yard
+
+  A straw man on a post, much abused.
+
+  on attacking it
+    phrase dummy-thud
+  end on
+
+create the player
+  starts in the Training Yard
+
+define phrases en-US
+  dummy-thud:
+    You catch the dummy square in the chest. It rocks back on its post,
+    then swings around to face you again, unimproved.
+```
+
+The player sees:
+
+```text
+> attack me
+Violence against yourself isn't the answer.
+
+> hit the training dummy
+You catch the dummy square in the chest. It rocks back on its post, then swings around to face you again, unimproved.
+```

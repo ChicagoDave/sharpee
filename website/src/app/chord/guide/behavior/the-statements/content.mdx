@@ -1,0 +1,67 @@
+Ten statements do the story's work. The pumpkin below uses most of
+them:
+
+```chord
+  on measuring it
+    set its tally to 3
+    phrase tape-reading with girth = its tally
+    emit pumpkin-measured
+  end on
+
+  on picking it
+    change it to picked
+    award picked-the-champion, once
+    move it to the Compost Corner when it is picked
+    phrase picked-note
+    win harvest-glory when its tally is 3
+  end on
+```
+
+- **`phrase <key>`** speaks the named text
+  ([§5.2](/chord/guide/vocabulary), [§5.3](/chord/guide/vocabulary)).
+  Dotted keys
+  (`zoo.pa.closing-3`) are legal. `with <name> = <value>` passes a
+  value the phrase can format.
+
+  A phrase used in only one place does not need a separate definition:
+  indent prose directly under the `phrase` line and the text is declared
+  and spoken in one gesture. (A deeper line is read as a statement, not
+  prose, only when it opens with a lowercase statement keyword; prose
+  sentences start capitalized, so the two do not collide.)
+
+  ```chord
+  after entering it
+    phrase apiary-hum
+      The hum reaches you before the gate has even closed.
+  end after
+  ```
+- **`emit <word>`** raises a story event other clauses and the platform
+  can observe.
+- **`set <thing> to <value>`** writes a trait data field
+  ([§5.7](/chord/guide/vocabulary)), like
+  the pumpkin's `tally`.
+- **`change <name> to <state>`** moves an owner along its declared
+  states ([§2.7](/chord/guide/world)); `change the story to <state>`
+  moves the story.
+- **`move <name> to <name>`** relocates an entity.
+- **`remove <name>`** takes an entity out of play, permanently: there
+  is no `to`, nothing to get back, and removing the player is a load
+  error (`analysis.remove-player`).
+- **`award <name>`** grants an owner-scoped score
+  ([§2.8](/chord/guide/world), [§4.5](/chord/guide/flow)); the
+  explicit `, once` is available but dedupe already makes awards
+  idempotent.
+- **`win [<phrase>]`** and **`lose [<phrase>]`** end the story
+  ([§4.6](/chord/guide/flow)),
+  optionally speaking a named phrase on the way out.
+- **`kill the player [<phrase-key>]`** runs the platform's death
+  machinery — not the same thing as `lose`;
+  [§4.7](/chord/guide/flow) owns the difference.
+
+```chord
+  on emptying it
+    remove the champion slug
+    phrase trap-emptied
+    lose when the champion pumpkin is picked
+  end on
+```

@@ -1,0 +1,42 @@
+The one dice-rolling action in this document — where a thrown thing
+lands is probabilistic by design (and per project policy the dice stay
+live). Thrown at an open container, a hit lands inside; the miss line is
+the other genuine outcome you may see.
+
+The author writes:
+
+```chord
+create the Courtyard
+  a room
+
+  A cobbled courtyard with a rain barrel under the downspout.
+
+create the rain barrel
+  aka barrel
+  a container
+  scenery
+  in the Courtyard
+
+  An open rain barrel, half full.
+
+create the horseshoe
+  in the Courtyard
+
+  A lucky horseshoe. Allegedly.
+
+create the player
+  starts in the Courtyard
+```
+
+The player sees:
+
+```text
+> take the horseshoe
+Taken.
+
+> throw the horseshoe at me
+You can't throw things at yourself.
+
+> throw the horseshoe at the rain barrel
+The horseshoe lands in the rain barrel.
+```

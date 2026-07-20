@@ -1,0 +1,15 @@
+How the player perceives the world. Full entries: [the standard
+library reference §6](/chord/stdlib/senses) (touching: [§2.6](/chord/stdlib/manipulation)).
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **look** | `look` · `l` · `look around` | — | (`room_dark` in the dark) |
+| **examine** | `examine`/`x`/`inspect`/`check`/`view`/`observe X` · `look [carefully] at X` | visibility only | `no_target`, `not_visible` |
+| **search** | `search [X]` · `look in`/`inside X` · `look through X` · `rummage in`/`through X` | — | `container_closed` |
+| **read** | `read`/`peruse`/`study X` | `readable` | `not_readable`, `cannot_read_now` |
+| **listen** | `listen [to X]` · `hear [X]` | — | (`no_sound`, `silence` as the miss) |
+| **smell** | `smell`/`sniff [X]` | — | `too_far` (`no_scent`, `no_particular_scent` as the miss) |
+| **touch** | `touch`/`feel`/`rub`/`pat`/`stroke`/`poke`/`prod X` | reach | `not_reachable`, `not_visible` |
+
+- [examining and searching](/chord/cookbook/senses/examining-and-searching)
+- [listening and smelling](/chord/cookbook/senses/listening-and-smelling)

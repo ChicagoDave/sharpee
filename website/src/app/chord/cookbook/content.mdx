@@ -1,0 +1,62 @@
+A table-first companion to the [standard library
+reference](/chord/stdlib): every standard action's phrasings, the trait that
+makes an entity eligible, and the refusal keys it speaks — then, for the
+actions you will reach for most, a worked example in story context: the
+Chord `.story` scene an author writes, and the transcript a player sees.
+
+Every story block on these pages is a verbatim excerpt of a loadable fixture, and every transcript line is genuine engine output — replayed and diffed against the running engine, never hand-typed.
+
+## How to read this
+
+Each category opens with a table: the action, the phrasings that actually
+parse (grounded in the parser's grammar, not the help lists), what an
+entity **needs** to be eligible, and the message keys the action **refuses
+with**. Refusal keys prefix as `if.action.<action>.<key>` — they are IDs,
+not fixed text; [the reference's §1.4](/chord/stdlib) explains how a story retargets
+them. Success keys, events, and the full check order live in the
+corresponding [reference entry](/chord/stdlib); this document is the quick
+lookup and the gallery.
+
+Below each table, the worked examples come in pairs — *the author writes*
+a small scene, *the player sees* a few commands against it, always
+including at least one refusal and one success. `<direction>` in a
+phrasing means any of the twelve direction words (`north`/`n` … `up`/`u`,
+`in`, `out`).
+
+Two authoring notes that recur in the examples:
+
+- Give every multiword entity an `aka` alias. It is a kindness to
+  players, not a requirement: the full name parses in every form,
+  article or no — `x the iron key` and `x iron key` both hit
+  (ADR-231).
+- Where an example carries a custom refusal on a *standard* action, its
+  phrase is declared under the fully-qualified dotted key (`define phrase
+  if.action.taking.ring-fused`) and named in full by `refuse`. That is
+  a style choice, not a workaround: the short form (`refuse ring-fused`
+  with the phrase declared under the bare key) renders the same text,
+  and both forms work on every standard action — giving, showing,
+  throwing, and wearing included (ADR-231). Refusals inside a
+  `define action` (see turning, [§6](/chord/cookbook/devices-and-tools)) take short keys as they always have.
+
+## What this document leans on
+
+- **[The standard library reference](/chord/stdlib)** — the full catalog this cookbook indexes:
+  check order, success keys, events, traits, and the honest platform
+  notes.
+- **[the Author Guide](/chord/guide/reading)** — the `.story` language the "author writes"
+  halves are written in.
+- **`docs/work/stdlib-cookbook/`** — the fixtures and the
+  `verify.mjs` harness that replays every transcript on these pages against the
+  real engine. If the engine's words change, verification fails and this
+  document gets refreshed — that is the drift protection.
+
+## Sections
+
+- [Manipulation](/chord/cookbook/manipulation)
+- [Movement](/chord/cookbook/movement)
+- [Containers & locks](/chord/cookbook/containers-and-locks)
+- [Wearing](/chord/cookbook/wearing)
+- [Senses](/chord/cookbook/senses)
+- [Devices & tools](/chord/cookbook/devices-and-tools)
+- [Social](/chord/cookbook/social)
+- [Meta](/chord/cookbook/meta)

@@ -1,0 +1,20 @@
+Moving things by hand — and by mouth. [The standard library reference
+§2](/chord/stdlib/manipulation) (and [§8.3](/chord/stdlib/npcs)
+for eating/drinking) carries the full entries.
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **take** | `take`/`get`/`grab`/`acquire`/`collect X` · `take up X` · `pick up X` · `take all` / `take X and Y` / `take all but X` | anything portable (scenery blocks) | `fixed_in_place`, `already_have`, `cant_take_self`, `cant_take_room`, `container_full`, `too_heavy`, `nothing_to_take` |
+| **drop** | `drop`/`discard`/`release X` · `put down X` · `throw away X` · `let go of X` · `drop all` | a held item | `not_held`, `still_worn`, `container_full`, `cant_drop_here`, `nothing_to_drop` |
+| **put (on)** | `put`/`place X on`/`onto Y` · `hang X on Y` · `move X to Y` | destination: `a supporter` | `no_destination`, `not_surface`, `cant_put_on_itself`, `already_there`, `no_space` |
+| **insert** | `put`/`place X in`/`into`/`inside Y` · `insert X in`/`into Y` | destination: `a container` | `not_container`, `container_closed`, `cant_put_in_itself`, `already_there`, `no_room` |
+| **remove (from)** | `remove`/`extract X from Y` · `take X from Y [with`/`using Z]` | a container or supporter source | `no_source`, `not_in_container`, `not_on_surface`, `container_closed`, `already_have`, `nothing_to_remove` |
+| **push** | `push`/`press`/`shove`/`move X` · `move X <direction>` | `pushable` | `fixed_in_place`, `pushing_does_nothing`, `wont_budge`, `too_heavy` |
+| **pull** | `pull`/`drag`/`yank`/`tug X` | `pullable` | `cant_pull_that`, `already_pulled`, `worn` |
+| **lower** | `lower X` | a capability behavior (ADR-090) | `cant_lower_that` |
+| **raise** | `raise`/`lift X` | a capability behavior (ADR-090) | `cant_raise_that` |
+| **eat** | `eat`/`consume`/`devour`/`munch`/`nibble X` · `munch`/`nibble on X` | `edible` | `not_edible`, `is_drink`, `already_consumed` |
+| **drink** | `drink`/`sip`/`quaff`/`swallow`/`imbibe X` · `drink`/`sip from X` | `drinkable` (an `edible` liquid), or a liquid container (TypeScript today) | `not_drinkable`, `already_consumed`, `container_closed` |
+
+- [taking and dropping](/chord/cookbook/manipulation/taking-and-dropping)
+- [putting and inserting](/chord/cookbook/manipulation/putting-and-inserting)

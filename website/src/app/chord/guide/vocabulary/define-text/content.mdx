@@ -1,0 +1,33 @@
+Some text cannot be authored as static variants — it depends on
+computation the language deliberately does not do
+([§2.5](/chord/guide/world)'s "no
+counting"). A **text hatch** bridges to a small piece of TypeScript that
+produces the text. `define text <name> from "<module>"` binds a marker
+name to a named export of an author-supplied module:
+
+```chord
+define text weather from "./extras.ts"
+```
+
+`{weather}` in prose now renders whatever the module's `weather` export
+produces. The TypeScript side implements the platform's `PhraseProducer`
+contract and touches the world only through the narrow, typed context
+the loader hands it:
+
+```typescript
+import type { PhraseProducer } from '@sharpee/if-domain';
+
+export const weather: PhraseProducer = () => ({
+  kind: 'literal',
+  text: 'something ominous with the clouds',
+});
+```
+
+The name `br` is reserved and cannot be a hatch name. One limitation to
+state plainly: this reference's compile-check harness runs the Chord
+compiler, which validates the `define text` line and the marker binding
+but does *not* load the TypeScript module — hatch *binding* happens at
+story-load time, under the author's own build. So the `.story` side of
+every hatch example here is verified; the TypeScript stub is
+illustrative, checked by the author's toolchain, not by this document's
+harness.

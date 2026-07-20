@@ -1,0 +1,39 @@
+A `must` line states what has to be true for the action to proceed, and
+names the phrase spoken when it is not. The subject opens the line in
+lowercase (`the`, `it`, or `its`), which is how a requirement stays
+distinct from prose. One fixture exercises every form:
+
+```chord
+  on stocking it
+    it must be a tool: not-a-tool
+    it must be any loose-tool: already-racked
+    the player must be in the Potting Bench: too-far-away
+    the player must hold the secateurs: hands-empty
+    the player must see the tool rack: too-dark
+    the player must reach the tool rack: out-of-reach
+    phrase racked
+  end on
+```
+
+`must be a/an` tests kind, `must be in` tests place, `must be any`
+tests membership in an open condition (§3.4), plain `must be` compares
+a state or value, `must have`/`hold`/`wear` test possession, and `must
+see`/`reach` test scope. Requirements are legal in `on` bodies and as
+`define action` lines ([§5.8](/chord/guide/vocabulary)), never in
+`after` bodies.
+
+There is deliberately no `must not`. Requirements are positive;
+prohibitions are refusals, and the two forms sit naturally side by
+side:
+
+```chord
+  on sharpening it
+    it must be dull: already-sharp
+    refuse when the player wears the gardening mittens: mittens-on
+    change it to sharp
+    phrase sharpened
+  end on
+```
+
+Writing `must not …` (or `must be no …`) is a parse error
+(`parse.must-negative`) whose fix-it points at `refuse when`.

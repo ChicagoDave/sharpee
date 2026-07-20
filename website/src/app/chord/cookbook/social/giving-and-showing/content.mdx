@@ -1,0 +1,48 @@
+Giving moves the item; showing is purely social. The recipient must be a
+person — hand something to the furniture and the action tells you so.
+The default NPC accepts anything; richer reactions are `on giving it` /
+`on showing it` clauses on the item or the recipient.
+
+The author writes:
+
+```chord
+create the Gatehouse
+  a room
+
+  A stone arch, a brazier, and one unimpressed sentry.
+
+create the sentry
+  aka guard
+  a person
+  in the Gatehouse
+
+  A sentry in a rain-dark cloak, eyes on the road.
+
+create the brazier
+  scenery
+  in the Gatehouse
+
+  An iron brazier, down to embers.
+
+create the silver medallion
+  aka medallion
+
+  A silver medallion stamped with the garrison's crest.
+
+create the player
+  starts in the Gatehouse
+  carries the silver medallion
+```
+
+The player sees:
+
+```text
+> give the medallion to the brazier
+You can only give things to people.
+
+> show the medallion to the sentry
+You show the silver medallion to the sentry.
+
+> give the medallion to the sentry
+You give the silver medallion to the sentry.
+```

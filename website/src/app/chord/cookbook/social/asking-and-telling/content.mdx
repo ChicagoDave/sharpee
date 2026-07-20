@@ -1,0 +1,54 @@
+Deliberately minimal (ADR-230): the platform validates the social
+preconditions and reports an interceptable default — asking's
+`unknown_topic`, telling's `not_interested`. An `on asking it` clause on
+the person is where real dialogue hooks in; the topic slot is free text,
+resolved entity-first (ADR-231): a topic naming something in scope
+carries that entity along, and anything else — `ask the hermit about
+the weather` — flows through as plain text. A topic is never
+scope-rejected.
+
+The author writes:
+
+```chord
+create the Hermitage
+  a room
+
+  A driftwood hut above the tide line.
+
+create the hermit
+  a person
+  in the Hermitage
+
+  A weathered hermit mending a net.
+
+  on asking it
+    phrase hermit-answers
+  end on
+
+create the gull
+  aka seagull
+  a person
+  in the Hermitage
+
+  A herring gull with an air of officialdom.
+
+create the player
+  starts in the Hermitage
+
+define phrases en-US
+  hermit-answers:
+    The hermit squints seaward. "Weather's turning. It always is."
+```
+
+The player sees:
+
+```text
+> ask the gull about the hermit
+The gull says, "I don't know anything about that."
+
+> ask the hermit about the gull
+The hermit squints seaward. "Weather's turning. It always is."
+
+> tell the gull about the hermit
+The gull doesn't seem interested.
+```
