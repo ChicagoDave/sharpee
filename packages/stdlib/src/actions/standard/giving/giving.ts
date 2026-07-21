@@ -201,7 +201,8 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       const limit = recipientActor.capacity ?? (recipientActor as unknown as Record<string, unknown>)['inventoryLimit'] as typeof recipientActor.capacity;
 
       if (limit) {
-        const recipientInventory = context.world.getContents(recipient.id);
+        // ADR-247: capacity counts carried items, not worn.
+        const recipientInventory = context.world.getCarriedAndWorn(recipient.id).carried;
 
         // Check item count
         if (limit.maxItems !== undefined && recipientInventory.length >= limit.maxItems) {

@@ -662,6 +662,11 @@ export interface IRemoveItemResult {
 export interface IWorldQuery {
     getContents(containerId: string): IFEntity[];
     getLocation(entityId: string): string | undefined;
+    /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
 }
 /**
  * Behavior for entities that can contain other entities.
@@ -2153,7 +2158,6 @@ export declare const TraitType: {
     readonly SUPPORTER: "supporter";
     readonly ROOM: "room";
     readonly WEARABLE: "wearable";
-    readonly CLOTHING: "clothing";
     readonly EDIBLE: "edible";
     readonly SCENERY: "scenery";
     readonly OPENABLE: "openable";
@@ -2250,7 +2254,6 @@ import { ContainerTrait } from './container/containerTrait.js';
 import { SupporterTrait } from './supporter/supporterTrait.js';
 import { RoomTrait } from './room/roomTrait.js';
 import { WearableTrait } from './wearable/wearableTrait.js';
-import { ClothingTrait } from './clothing/clothingTrait.js';
 import { EdibleTrait } from './edible/edibleTrait.js';
 import { SceneryTrait } from './scenery/sceneryTrait.js';
 import { OpenableTrait } from './openable/openableTrait.js';
@@ -2320,7 +2323,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -4310,68 +4313,6 @@ export declare class ButtonTrait implements ITrait, IButtonData {
     label?: string;
     pressed: boolean;
     constructor(data?: IButtonData);
-}
-```
-
-### traits/clothing/clothingTrait
-
-```typescript
-import { ITrait } from '../trait.js';
-import { IWearableData } from '../wearable/wearableTrait.js';
-export interface IClothingData extends IWearableData {
-    /** Material the clothing is made from */
-    material?: string;
-    /** Style or type of clothing */
-    style?: string;
-    /** Whether this clothing can get wet, dirty, torn, etc. */
-    damageable?: boolean;
-    /** Current condition of the clothing */
-    condition?: 'pristine' | 'good' | 'worn' | 'torn' | 'ruined';
-}
-/**
- * ClothingTrait is a specialized wearable trait for clothing items.
- * Clothing items (coats, pants, dresses) can have pockets and other special properties.
- *
- * This trait includes all WearableData properties but is a separate trait type
- * to allow for clothing-specific behaviors and queries.
- *
- * Pockets should be created as separate container entities with SceneryTrait
- * and placed inside the clothing item.
- *
- * @example
- * ```typescript
- * const coat = world.createEntity('Winter Coat', 'item');
- * coat.add(new ClothingTrait({ slot: 'torso', material: 'wool' }));
- * coat.add(new ContainerTrait()); // So it can contain pockets
- *
- * const pocket = world.createEntity('inside pocket', 'container');
- * pocket.add(new ContainerTrait({ capacity: 3 }));
- * pocket.add(new SceneryTrait({ cantTakeMessage: "The pocket is sewn into the coat." }));
- * world.moveEntity(pocket.id, coat.id);
- * ```
- */
-export declare class ClothingTrait implements ITrait, IClothingData {
-    static readonly type: "clothing";
-    readonly type: "clothing";
-    worn: boolean;
-    wornBy?: string;
-    slot: string;
-    layer: number;
-    wearMessage?: string;
-    removeMessage?: string;
-    wearableOver: boolean;
-    blocksSlots: string[];
-    weight: number;
-    bulk: number;
-    canRemove: boolean;
-    bodyPart: string;
-    material: string;
-    style: string;
-    damageable: boolean;
-    condition: 'pristine' | 'good' | 'worn' | 'torn' | 'ruined';
-    get isWorn(): boolean;
-    set isWorn(value: boolean);
-    constructor(data?: IClothingData);
 }
 ```
 
@@ -7096,6 +7037,11 @@ export interface IWorldModel {
     canMoveEntity(entityId: string, targetId: string | null): boolean;
     getContainingRoom(entityId: string): IFEntity | undefined;
     getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
+    /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
     getState(): WorldState;
     setState(state: WorldState): void;
     getStateValue(key: string): any;
@@ -7247,6 +7193,10 @@ export declare class WorldModel implements IWorldModel {
     updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
     getLocation(entityId: string): string | undefined;
     getContents(containerId: string, options?: ContentsOptions): IFEntity[];
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
     moveEntity(entityId: string, targetId: string | null): boolean;
     canMoveEntity(entityId: string, targetId: string | null): boolean;
     getContainingRoom(entityId: string): IFEntity | undefined;
@@ -7592,7 +7542,7 @@ export declare class VisibilityBehavior extends Behavior {
      * The direct contents of a container/supporter/actor that could appear in a
      * visible listing: applies the same per-entity filter as getVisible
      * (concealed, invisible scenery, visibility-capability veto) to
-     * `getContents(id, { includeWorn: true })`.
+     * `getContents(id)` (worn items included by default, ADR-247).
      *
      * Does NOT check whether the container's inside is exposed (closed opaque
      * container) — callers listing contents have already established that, and
@@ -7763,6 +7713,10 @@ export declare class AuthorModel implements IWorldModel {
     updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
     getLocation(entityId: string): string | undefined;
     getContents(containerId: string, options?: ContentsOptions): IFEntity[];
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
     canMoveEntity(entityId: string, targetId: string | null): boolean;
     getContainingRoom(entityId: string): IFEntity | undefined;
     getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];

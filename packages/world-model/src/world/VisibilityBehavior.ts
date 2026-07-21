@@ -332,7 +332,7 @@ export class VisibilityBehavior extends Behavior {
    * The direct contents of a container/supporter/actor that could appear in a
    * visible listing: applies the same per-entity filter as getVisible
    * (concealed, invisible scenery, visibility-capability veto) to
-   * `getContents(id, { includeWorn: true })`.
+   * `getContents(id)` (worn items included by default, ADR-247).
    *
    * Does NOT check whether the container's inside is exposed (closed opaque
    * container) — callers listing contents have already established that, and
@@ -350,7 +350,7 @@ export class VisibilityBehavior extends Behavior {
     // Note: no direct observer here — the container's id is the proxy passed
     // to visibility-capability behaviors, matching addVisibleContents.
     return world
-      .getContents(container.id, { includeWorn: true })
+      .getContents(container.id)  // ADR-247: worn items included by default
       .filter(entity => this.isListable(entity, world, container.id));
   }
 
@@ -401,8 +401,8 @@ export class VisibilityBehavior extends Behavior {
    * Handles nested containers, worn items, and various light source types.
    */
   private static hasLightSource(room: IFEntity, world: WorldModel): boolean {
-    // Check all entities in the room, including worn items
-    const contents = world.getAllContents(room.id, { recursive: true, includeWorn: true });
+    // Check all entities in the room, including worn items (ADR-247: default)
+    const contents = world.getAllContents(room.id, { recursive: true });
 
     for (const entity of contents) {
       if (!entity.hasTrait(TraitType.LIGHT_SOURCE)) continue;

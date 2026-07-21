@@ -283,8 +283,8 @@ function tryInventoryContains(
 
   const itemName = match[1];
 
-  // Get player inventory
-  const inventory = world.getContents(playerId, { includeWorn: true });
+  // Get player inventory. ADR-247: getContents now includes worn by default.
+  const inventory = world.getContents(playerId);
   const itemNameLower = itemName.toLowerCase();
 
   const found = inventory.some((item: any) => {

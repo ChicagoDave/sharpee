@@ -22,7 +22,6 @@ export * from './scenery/index.js';
 export * from './supporter/index.js';
 export * from './switchable/index.js';
 export * from './wearable/index.js';
-export * from './clothing/index.js';
 export * from './edible/index.js';
 export * from './door/index.js';
 export * from './region/index.js';

@@ -84,9 +84,10 @@ export class ActorBehavior extends Behavior {
     if (actorTrait.capacity) {
       const limit = actorTrait.capacity;
       
-      // Check item count
+      // Check item count. ADR-247: carrying capacity counts held items,
+      // not worn ones — use the carried partition.
       if (limit.maxItems !== undefined) {
-        const currentCount = world.getContents(actor.id).length;
+        const currentCount = world.getCarriedAndWorn(actor.id).carried.length;
         if (currentCount >= limit.maxItems) {
           return false;
         }
@@ -118,17 +119,19 @@ export class ActorBehavior extends Behavior {
    * Get total weight of carried items
    */
   static getCarriedWeight(actor: IFEntity, world: IWorldQuery): number {
-    const items = world.getContents(actor.id);
+    // ADR-247: worn items do not count toward carried weight.
+    const items = world.getCarriedAndWorn(actor.id).carried;
     return items.reduce((total, item) => {
       return total + IdentityBehavior.getWeight(item);
     }, 0);
   }
-  
+
   /**
    * Get total volume of carried items
    */
   static getCarriedVolume(actor: IFEntity, world: IWorldQuery): number {
-    const items = world.getContents(actor.id);
+    // ADR-247: worn items do not count toward carried volume.
+    const items = world.getCarriedAndWorn(actor.id).carried;
     return items.reduce((total, item) => {
       return total + IdentityBehavior.getVolume(item);
     }, 0);
@@ -149,7 +152,8 @@ export class ActorBehavior extends Behavior {
       const limit = actorTrait.capacity;
       
       if (limit.maxItems !== undefined) {
-        const current = world.getContents(actor.id).length;
+        // ADR-247: capacity is about carried items, not worn.
+        const current = world.getCarriedAndWorn(actor.id).carried.length;
         result.items = limit.maxItems - current;
       }
       
@@ -246,9 +250,9 @@ export class ActorBehavior extends Behavior {
     
     // Check item count if defined on ACTOR trait (and not already checked via CONTAINER)
     if (!actor.has(TraitType.CONTAINER) && actorTrait?.capacity?.maxItems !== undefined) {
-      const currentCount = world.getContents(actor.id)
-        .filter(item => !WearableBehavior.isWorn(item)).length;
-      
+      // ADR-247: was an inline worn filter; now the partition (same result).
+      const currentCount = world.getCarriedAndWorn(actor.id).carried.length;
+
       if (currentCount >= actorTrait.capacity.maxItems) {
         return false;
       }

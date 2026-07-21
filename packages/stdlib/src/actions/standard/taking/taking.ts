@@ -129,16 +129,10 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     if (actor.has(TraitType.CONTAINER)) {
       const containerTrait = actor.get(TraitType.CONTAINER);
       if (hasCapacityLimit(containerTrait)) {
-        // Check item count limit
+        // Check item count limit. ADR-247: capacity counts carried items,
+        // not worn — the partition replaces the old inline worn filter.
         if (containerTrait.capacity.maxItems !== undefined) {
-          const contents = context.world.getContents(actor.id);
-          const currentCount = contents.filter((item: any) => {
-            if (!item.has || !item.has(TraitType.WEARABLE)) {
-              return true;
-            }
-            const wearableTrait = item.get(TraitType.WEARABLE);
-            return !isWearableTrait(wearableTrait) || !(wearableTrait.isWorn ?? wearableTrait.worn);
-          }).length;
+          const currentCount = context.world.getCarriedAndWorn(actor.id).carried.length;
           if (currentCount >= containerTrait.capacity.maxItems) {
             return { valid: false, error: TakingMessages.CONTAINER_FULL };
           }

@@ -49,7 +49,7 @@ interface WorldModel {
   findEntityByName?(name: string): any;
   getAllEntities?(): any[];
   getLocation?(entityId: string): string | undefined;
-  getContents?(containerId: string, options?: { includeWorn?: boolean }): any[];
+  getContents?(containerId: string): any[];
   findWhere?(predicate: (entity: any) => boolean): any[];
   findByTrait?(traitType: string): any[];
   findPath?(fromRoomId: string, toRoomId: string): string[] | null;
@@ -63,7 +63,7 @@ interface WorldModel {
  */
 export interface WorldModelLike {
   getLocation(entityId: string): string | null | undefined;
-  getContents(containerId: string, options?: { includeWorn?: boolean }): any[];
+  getContents(containerId: string): any[];
   getEntity(entityId: string): any | null | undefined;
   findWhere(predicate: (entity: any) => boolean): any[];
   getAllEntities(): any[];

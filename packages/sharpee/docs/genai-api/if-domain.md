@@ -177,7 +177,6 @@ export interface FindOptions {
  */
 export interface ContentsOptions {
     recursive?: boolean;
-    includeWorn?: boolean;
     visibleOnly?: boolean;
 }
 /**

@@ -53,7 +53,6 @@ export * from './traits/door/index.js';
 export * from './traits/actor/index.js';
 export * from './traits/attached/index.js';
 export * from './traits/button/index.js';
-export * from './traits/clothing/index.js';
 export * from './traits/moveable-scenery/index.js';
 export * from './traits/pullable/index.js';
 export * from './traits/pushable/index.js';

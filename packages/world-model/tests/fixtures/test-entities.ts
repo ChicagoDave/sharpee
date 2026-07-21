@@ -12,7 +12,6 @@ import { LockableTrait } from '../../src/traits/lockable/lockableTrait';
 import { ActorTrait } from '../../src/traits/actor/actorTrait';
 import { SceneryTrait } from '../../src/traits/scenery/sceneryTrait';
 import { WearableTrait } from '../../src/traits/wearable/wearableTrait';
-import { ClothingTrait } from '../../src/traits/clothing/clothingTrait';
 
 // Container factory
 export function createTestContainer(
@@ -157,6 +156,10 @@ export function createTestKey(
 }
 
 // Clothing factory
+// ADR-247: ClothingTrait was folded into WearableTrait. Clothing is now a
+// WearableTrait item that also carries a ContainerTrait (so it can hold
+// pockets). Clothing "extras" (material/style/condition/damageable) are
+// dropped — they return later as WearableTrait data if ever needed.
 export function createTestClothing(
   world: WorldModel,
   displayName: string,
@@ -168,7 +171,20 @@ export function createTestClothing(
   identity.name = displayName;
   clothing.add(identity);
   
-  clothing.add(new ClothingTrait(props));
+  clothing.add(new WearableTrait({
+    slot: props.slot ?? 'torso',
+    isWorn: props.worn ?? props.isWorn ?? false,
+    wornBy: props.wornBy,
+    layer: props.layer,
+    canRemove: props.canRemove,
+    blocksSlots: props.blocksSlots,
+    wearMessage: props.wearMessage,
+    removeMessage: props.removeMessage,
+    wearableOver: props.wearableOver,
+    bodyPart: props.bodyPart,
+    weight: props.weight,
+    bulk: props.bulk,
+  }));
   
   // Add ContainerTrait so clothing can hold pockets
   clothing.add(new ContainerTrait());

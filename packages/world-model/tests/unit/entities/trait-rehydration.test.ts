@@ -59,10 +59,11 @@ describe('trait rehydration (Phase 5)', () => {
     expect(trait.curseLevel).toBe(3);
   });
 
-  it('worn items stay filtered by getContents after a world save/restore roundtrip', () => {
-    // The live symptom: pre-fix, `undo` (a serialize/deserialize roundtrip)
-    // made a worn vest REAPPEAR in un-worn contents because the restored
-    // trait lost its isWorn getter and escaped the worn filter.
+  it('getCarriedAndWorn partitions a worn item correctly across a save/restore roundtrip (ADR-247)', () => {
+    // ADR-247: getContents now INCLUDES worn items; getCarriedAndWorn is the
+    // partition. The rehydration invariant this guards: after a roundtrip the
+    // restored trait still answers isWorn, so `.worn` stays correct (pre-fix,
+    // the lost getter would misclassify the vest as carried).
     const world = new WorldModel();
     const room = world.createEntity('Test Room', 'room');
     room.add({ type: TraitType.ROOM });
@@ -76,19 +77,22 @@ describe('trait rehydration (Phase 5)', () => {
     vest.add(new WearableTrait({ isWorn: true, wornBy: player.id }));
     world.moveEntity(vest.id, player.id);
 
-    // Pre-roundtrip: default getContents filters the worn vest out;
-    // includeWorn surfaces it.
-    expect(world.getContents(player.id).map(e => e.id)).not.toContain(vest.id);
-    expect(world.getContents(player.id, { includeWorn: true }).map(e => e.id)).toContain(vest.id);
+    // Pre-roundtrip: getContents includes the worn vest; the partition puts
+    // it in `.worn`, not `.carried`.
+    expect(world.getContents(player.id).map(e => e.id)).toContain(vest.id);
+    let split = world.getCarriedAndWorn(player.id);
+    expect(split.worn.map(e => e.id)).toContain(vest.id);
+    expect(split.carried.map(e => e.id)).not.toContain(vest.id);
 
     const json = world.toJSON();
     const restoredWorld = new WorldModel();
     restoredWorld.loadJSON(json);
 
-    // Post-roundtrip: IDENTICAL behavior — the restored trait still answers
-    // isWorn, so the filter still applies.
+    // Post-roundtrip: IDENTICAL — the restored trait still answers isWorn.
     const restoredPlayer = restoredWorld.getPlayer()!;
-    expect(restoredWorld.getContents(restoredPlayer.id).map(e => e.id)).not.toContain(vest.id);
-    expect(restoredWorld.getContents(restoredPlayer.id, { includeWorn: true }).map(e => e.id)).toContain(vest.id);
+    expect(restoredWorld.getContents(restoredPlayer.id).map(e => e.id)).toContain(vest.id);
+    split = restoredWorld.getCarriedAndWorn(restoredPlayer.id);
+    expect(split.worn.map(e => e.id)).toContain(vest.id);
+    expect(split.carried.map(e => e.id)).not.toContain(vest.id);
   });
 });

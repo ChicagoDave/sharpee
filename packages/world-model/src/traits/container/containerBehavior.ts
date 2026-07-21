@@ -38,6 +38,8 @@ export interface IRemoveItemResult {
 export interface IWorldQuery {
   getContents(containerId: string): IFEntity[];
   getLocation(entityId: string): string | undefined;
+  /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] };
 }
 
 /**

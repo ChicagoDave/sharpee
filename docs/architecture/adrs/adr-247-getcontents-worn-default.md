@@ -1,6 +1,6 @@
 # ADR-247: `getContents()` includes worn items by default (opt-out, not opt-in)
 
-## Status: ACCEPTED (2026-07-20 — all three Open Questions resolved via interview, session 17e36e)
+## Status: ACCEPTED + IMPLEMENTED (2026-07-20 accepted, session 17e36e — all three Open Questions resolved via interview. Amended 2026-07-21, session 99aee6: Q2's full-census audit clause SUPERSEDED by David's ruling — targeted actor-scoped audit instead; see Decision. IMPLEMENTED 2026-07-21, session 99aee6, on David's go-ahead: filter deleted, getCarriedAndWorn added, includeWorn + ClothingTrait removed, 60-site audit at docs/work/adr-247-getcontents-worn-default/audit.md; all package suites + dungeo chain + fernhill green, --browser build clean.)
 
 ## Date: 2026-07-20
 
@@ -68,12 +68,21 @@ The audit also covers `getAllContents()` (WorldModel.ts:1087), whose
 `includeWorn` plumbing and always-include-when-recursing special case are
 deleted with the option.
 
-The flip is **not a mechanical rename**: every one of the 64 call sites gets
-individually audited (does it want everything, held-only → migrate to
-`getCarriedAndWorn().carried`, or doesn't-matter), with the audit table
-recorded alongside this ADR before the change lands (Q2 confirmed
-2026-07-20: full 64-site audit stays mandatory; no call site retains a
-filtered view — the option is deleted, not defaulted).
+**Audit scope (amended 2026-07-21, superseding Q2's full-census clause):**
+the original ruling mandated a per-site audit of the full census — then
+counted at 64 sites; re-grounding at implementation time found the real
+count is **176 non-test sites across 102 files**, and the census-table
+approach was re-examined. David's amendment ruling: the exhaustive table
+is risk-aversion the test surface has outgrown. Worn state exists only on
+actors, so the flip is a no-op by construction for every room/container/
+supporter holder — the sites that can change behavior are the
+**actor/player-scoped `getContents` calls**, and only THOSE get the
+committed per-site audit (does it want everything, held-only →
+`getCarriedAndWorn().carried`, or doesn't-matter). The remaining sites
+are covered by the regression surface (per-package suites, the dungeo
+walkthrough chain, the transcript batches) rather than a table. No call
+site retains a filtered view either way — the option is deleted, not
+defaulted (that half of Q2 stands).
 
 ## Consequences
 
@@ -82,7 +91,8 @@ filtered view — the option is deleted, not defaulted).
   inventory migrates to `getCarriedAndWorn()`, which also replaces its
   hand-rolled worn/held split of the flat result.
 - Any call site relying on the old filtered default without saying so would
-  silently change behavior — hence the per-site audit requirement above.
+  silently change behavior — hence the actor-scoped audit above (only
+  actor holders can carry worn state, so only those sites can change).
 - `ContentsOptions.includeWorn` is deleted outright — no opt-out surface
   replaces it. Held-only semantics are expressed via
   `getCarriedAndWorn().carried`, worn-only via `.worn`.
@@ -100,9 +110,11 @@ filtered view — the option is deleted, not defaulted).
 
 ## Acceptance Criteria
 
-- The 64-site audit table is committed alongside this ADR before the flip
-  lands, classifying every site (everything / held-only → `.carried` /
-  doesn't-matter).
+- The **actor-scoped** audit table (amended scope, 2026-07-21) is committed
+  alongside this ADR before the flip lands, classifying every actor/player
+  `getContents` site (everything / held-only → `.carried` /
+  doesn't-matter); non-actor sites are covered by the full regression
+  surface, not tabulated.
 - `ContentsOptions.includeWorn` and `ClothingTrait` no longer exist anywhere
   in the codebase (source, barrels, rehydration table, GDT `do.ts` case).
 - New tests: a worn item appears in LOOK/EXAMINE contents where visibility

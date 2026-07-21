@@ -14,7 +14,6 @@ import { LockableTrait } from '../../src/traits/lockable/lockableTrait';
 import { SupporterTrait } from '../../src/traits/supporter/supporterTrait';
 import { SceneryTrait } from '../../src/traits/scenery/sceneryTrait';
 import { WearableTrait } from '../../src/traits/wearable/wearableTrait';
-import { ClothingTrait } from '../../src/traits/clothing/clothingTrait';
 import { ContainerTrait } from '../../src/traits/container/containerTrait';
 import { LightSourceTrait } from '../../src/traits/light-source/lightSourceTrait';
 import { SwitchableTrait } from '../../src/traits/switchable/switchableTrait';
@@ -198,7 +197,6 @@ describe('Trait Combinations Integration Tests', () => {
       // Use the new helper functions
       coat = createTestClothing(world, 'Winter Coat', {
         slot: 'torso',
-        material: 'wool',
         canRemove: true
       });
       
@@ -215,34 +213,36 @@ describe('Trait Combinations Integration Tests', () => {
     it('should handle wearing items with containers', () => {
       // Pick up coat
       world.moveEntity(coat.id, player.id);
-      
-      // Wear coat
-      const clothing = coat.getTrait(TraitType.CLOTHING) as ClothingTrait;
-      clothing.isWorn = true;
-      clothing.wornBy = player.id;
 
-      // Should still access pocket contents
-      const playerContents = world.getAllContents(player.id, { 
-        recursive: true,
-        includeWorn: true 
+      // Wear coat
+      const wearable = coat.getTrait(TraitType.WEARABLE) as WearableTrait;
+      wearable.isWorn = true;
+      wearable.wornBy = player.id;
+
+      // Should still access pocket contents (worn items included — ADR-247)
+      const playerContents = world.getAllContents(player.id, {
+        recursive: true
       });
       expect(playerContents).toContain(coat);
       expect(playerContents).toContain(pocket);
       expect(playerContents).toContain(wallet);
     });
 
-    it('should exclude worn items when specified', () => {
+    it('should split worn items out of the carried set', () => {
       // Wear the coat
       world.moveEntity(coat.id, player.id);
-      const clothing = coat.getTrait(TraitType.CLOTHING) as ClothingTrait;
-      clothing.isWorn = true;
-      clothing.wornBy = player.id;
+      const wearable = coat.getTrait(TraitType.WEARABLE) as WearableTrait;
+      wearable.isWorn = true;
+      wearable.wornBy = player.id;
 
-      const carriedOnly = world.getContents(player.id, { includeWorn: false });
-      expect(carriedOnly).not.toContain(coat);
-
-      const everything = world.getContents(player.id, { includeWorn: true });
+      // getContents includes worn items (ADR-247)
+      const everything = world.getContents(player.id);
       expect(everything).toContain(coat);
+
+      // The carried subset (held-not-worn) excludes the worn coat
+      const { carried, worn } = world.getCarriedAndWorn(player.id);
+      expect(carried).not.toContain(coat);
+      expect(worn).toContain(coat);
     });
 
     it('should track complex worn item hierarchies', () => {
@@ -265,18 +265,17 @@ describe('Trait Combinations Integration Tests', () => {
 
       // Wear both items
       world.moveEntity(coat.id, player.id);
-      const coatClothing = coat.getTrait(TraitType.CLOTHING) as ClothingTrait;
-      coatClothing.isWorn = true;
-      coatClothing.wornBy = player.id;
-      
-      const beltClothing = belt.getTrait(TraitType.CLOTHING) as ClothingTrait;
-      beltClothing.isWorn = true;
-      beltClothing.wornBy = player.id;
+      const coatWearable = coat.getTrait(TraitType.WEARABLE) as WearableTrait;
+      coatWearable.isWorn = true;
+      coatWearable.wornBy = player.id;
 
-      // Get all items including worn
-      const allItems = world.getAllContents(player.id, { 
-        recursive: true,
-        includeWorn: true 
+      const beltWearable = belt.getTrait(TraitType.WEARABLE) as WearableTrait;
+      beltWearable.isWorn = true;
+      beltWearable.wornBy = player.id;
+
+      // Get all items (worn included — ADR-247)
+      const allItems = world.getAllContents(player.id, {
+        recursive: true
       });
 
       expect(allItems).toContain(coat);

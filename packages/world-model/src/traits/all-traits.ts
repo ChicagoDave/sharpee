@@ -11,7 +11,6 @@
 import { ActorTrait } from './actor/actorTrait.js';
 import { AttachedTrait } from './attached/attachedTrait.js';
 import { ButtonTrait } from './button/buttonTrait.js';
-import { ClothingTrait } from './clothing/clothingTrait.js';
 import { ContainerTrait } from './container/containerTrait.js';
 import { DoorTrait } from './door/doorTrait.js';
 import { ClimbableTrait } from './climbable/climbableTrait.js';
@@ -44,7 +43,6 @@ export const Traits = {
   AttachedTrait,
   ButtonTrait,
   ClimbableTrait,
-  ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
@@ -77,7 +75,6 @@ export type {
   AttachedTrait,
   ButtonTrait,
   ClimbableTrait,
-  ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
@@ -110,7 +107,6 @@ export type AnyTrait =
   | AttachedTrait
   | ButtonTrait
   | ClimbableTrait
-  | ClothingTrait
   | ContainerTrait
   | DoorTrait
   | EdibleTrait
@@ -195,10 +191,6 @@ export function isSwitchableTrait(trait: any): trait is SwitchableTrait {
 
 export function isWearableTrait(trait: any): trait is WearableTrait {
   return trait?.type === 'wearable';
-}
-
-export function isClothingTrait(trait: any): trait is ClothingTrait {
-  return trait?.type === 'clothing';
 }
 
 export function isAttachedTrait(trait: any): trait is AttachedTrait {

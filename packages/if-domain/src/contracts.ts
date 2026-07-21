@@ -46,7 +46,8 @@ export interface FindOptions {
  */
 export interface ContentsOptions {
   recursive?: boolean;
-  includeWorn?: boolean;
+  // ADR-247: `includeWorn` deleted — worn items are always included; use
+  // WorldModel.getCarriedAndWorn() for the carried/worn split.
   visibleOnly?: boolean;
 }
 

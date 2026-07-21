@@ -189,6 +189,10 @@ export class AuthorModel implements IWorldModel {
     return this.worldModel.getContents(containerId, options);
   }
 
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] } {
+    return this.worldModel.getCarriedAndWorn(holderId);
+  }
+
   canMoveEntity(entityId: string, targetId: string | null): boolean {
     return true; // AuthorModel always allows moves
   }

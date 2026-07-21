@@ -17,7 +17,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, WearableTrait, IFEntity } from '@sharpee/world-model';
+import { TraitType, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { InventoryEventMap } from './inventory-events.js';
@@ -56,28 +56,11 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   const player = context.player;
   const location = context.currentLocation;
   
-  // Query the world model for what the player is carrying. includeWorn is
-  // explicit (Phase 5 narrow fix): getContents filters worn items OUT by
-  // default, which made `wear vest` → `inventory` report "You aren't
-  // carrying anything." The default itself is under ADR-0247 (DRAFT).
-  const carried = context.world.getContents(player.id, { includeWorn: true });
-  
-  // Separate worn items from held items
-  const worn = carried.filter(item => {
-    if (item.has(TraitType.WEARABLE)) {
-      const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
-      return wearable.worn;
-    }
-    return false;
-  });
-  
-  const holding = carried.filter(item => {
-    if (item.has(TraitType.WEARABLE)) {
-      const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
-      return !wearable.worn;
-    }
-    return true;
-  });
+  // ADR-247: getCarriedAndWorn is the partition — held items and worn items
+  // in one call. (Replaces the old getContents({includeWorn:true}) + a
+  // hand-rolled worn/held split.)
+  const { carried: holding, worn } = context.world.getCarriedAndWorn(player.id);
+  const totalItems = holding.length + worn.length;
   
   // Calculate weight if player has inventory limits
   let totalWeight = 0;
@@ -93,10 +76,10 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   const eventData: InventoryEventMap['if.action.inventory'] = {
     actorId: player.id,
     locationId: location.id,
-    totalItems: carried.length,
+    totalItems: totalItems,
     heldItems: holding.length,
     wornItems: worn.length,
-    isEmpty: carried.length === 0,
+    isEmpty: totalItems === 0,
     carried: holding.map(e => ({ id: e.id, name: e.name })),
     worn: worn.map(e => ({ id: e.id, name: e.name })),
     items: [
@@ -113,7 +96,7 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
     eventData.weightPercentage = Math.round((totalWeight / weightLimit) * 100);
     
     // Determine burden status
-    if (carried.length > 0) {
+    if (totalItems > 0) {
       const percentage = (totalWeight / weightLimit) * 100;
       if (percentage >= 90) {
         eventData.burden = 'overloaded';
@@ -137,7 +120,7 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   // Determine appropriate message based on inventory state
   let messageId = 'carrying';
   
-  if (carried.length === 0) {
+  if (totalItems === 0) {
     messageId = 'inventory_empty';
     // Vary the empty message (drawn from the action RNG stream — ADR-231 D6)
     const emptyMessages = ['inventory_empty', 'nothing_at_all', 'hands_empty', 'pockets_empty'];
@@ -156,12 +139,12 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   // Prepare lists for display
   const holdingList = holding.length > 0 ? holding.map(e => e.name).join(', ') : undefined;
   const wornList = worn.length > 0 ? worn.map(e => e.name).join(', ') : undefined;
-  const burdenMessage = eventData.burden && carried.length > 0 ? `burden_${eventData.burden}` : undefined;
-  
+  const burdenMessage = eventData.burden && totalItems > 0 ? `burden_${eventData.burden}` : undefined;
+
   return {
     holding,
     worn,
-    carried,
+    carried: [...holding, ...worn],  // combined list (InventoryAnalysis contract)
     eventData,
     messageId,
     params,

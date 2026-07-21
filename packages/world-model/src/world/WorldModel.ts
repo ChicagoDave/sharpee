@@ -15,8 +15,7 @@ import { DEFAULT_TRAITS } from './default-trait-registry.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { LockableTrait } from '../traits/lockable/lockableTrait.js';
-import { WearableTrait } from '../traits/wearable/wearableTrait.js';
-import { ClothingTrait } from '../traits/clothing/clothingTrait.js';
+import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
 import { ExitTrait } from '../traits/exit/exitTrait.js';
 import { DirectionType, getOppositeDirection } from '../constants/directions.js';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
@@ -378,6 +377,8 @@ export interface IWorldModel {
   canMoveEntity(entityId: string, targetId: string | null): boolean;
   getContainingRoom(entityId: string): IFEntity | undefined;
   getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
+  /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] };
 
   // World State Management
   getState(): WorldState;
@@ -976,18 +977,21 @@ export class WorldModel implements IWorldModel {
       });
     }
 
-    if (!options.includeWorn) {
-      // Filter out worn items (check both WEARABLE and CLOTHING traits)
-      entities = entities.filter(e => {
-        const wearable = e.getTrait(WearableTrait);
-        const clothing = e.getTrait(ClothingTrait);
-        const wornFromWearable = wearable && wearable.isWorn;
-        const wornFromClothing = clothing && clothing.isWorn;
-        return !(wornFromWearable || wornFromClothing);
-      });
-    }
-
+    // ADR-247: worn items are contents — returned unconditionally. Callers
+    // needing the carried/worn split use getCarriedAndWorn(), not a filter.
     return entities;
+  }
+
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] } {
+    // ADR-247: the one partition method. `carried` is held-not-worn (the
+    // old filtered-default semantics); `worn` is the worn subset. For a
+    // holder with no wearables, `worn` is empty.
+    const carried: IFEntity[] = [];
+    const worn: IFEntity[] = [];
+    for (const e of this.getContents(holderId)) {
+      (WearableBehavior.isWorn(e) ? worn : carried).push(e);
+    }
+    return { carried, worn };
   }
 
   moveEntity(entityId: string, targetId: string | null): boolean {
@@ -1080,17 +1084,9 @@ export class WorldModel implements IWorldModel {
       if (visited.has(id) || depth > this.config.maxDepth!) return;
       visited.add(id);
 
-      // For the root entity, use the provided options
-      // For recursive calls, always include worn items to get complete contents
-      const contentsOptions = isRoot ? {
-        visibleOnly: options.visibleOnly,
-        includeWorn: options.includeWorn
-      } : {
-        visibleOnly: options.visibleOnly,
-        includeWorn: true  // Always include worn items when recursing
-      };
-
-      const contents = this.getContents(id, contentsOptions);
+      // ADR-247: worn items are always included now, so root and recursive
+      // calls share one options shape (visibleOnly still varies by caller).
+      const contents = this.getContents(id, { visibleOnly: options.visibleOnly });
       result.push(...contents);
 
       if (options.recursive) {
