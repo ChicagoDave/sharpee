@@ -79,7 +79,7 @@ import {
   StateName,
   StartsStateDecl,
   TraitField,
-  ImportPhrasebookDecl,
+  ImportDecl,
   StoryFile,
   StoryHeader,
   TopicRow,
@@ -268,10 +268,9 @@ class Parser {
           break;
         }
         case 'import': {
-          // ADR-250 D2: `import phrasebook "<file>"` — position IS the
-          // book's arbitration position. Bare `import "<file>"` is
-          // reserved for the parked generalized-import ADR.
-          const d = this.parseImportPhrasebook();
+          // ADR-251: `import "<file>"` — the single generalized form.
+          // Position IS the spliced content's arbitration position (D4).
+          const d = this.parseImport();
           if (d) declarations.push(d);
           break;
         }
@@ -1558,30 +1557,23 @@ class Parser {
     return { kind: 'define-phrasebook', name, condition, entries, span };
   }
 
-  /** `import phrasebook "<file>"` (ADR-250 D2) — resolved by the compile host. */
-  private parseImportPhrasebook(): ImportPhrasebookDecl | null {
+  /**
+   * `import "<file>"` (ADR-251 D1) — the single generalized import form.
+   * The path is extension-free (the compiler appends `.chord` at resolve
+   * time — D2); any string is accepted at parse time. A bare word after
+   * `import` (the removed `phrasebook` sub-word, or anything else) or a
+   * missing string is `parse.import-form`.
+   */
+  private parseImport(): ImportDecl | null {
     const line = this.lines[this.pos++];
     const c = new Cursor(line.tokens, line);
     c.matchWord('import');
-    if (!c.isWord('phrasebook')) {
-      this.diagnostics.error(
-        'parse.import-form',
-        'Expected `import phrasebook "<file>"` — bare `import "<file>"` is reserved for a future generalized import.',
-        c.restSpan(),
-      );
-      return null;
-    }
-    c.next();
     const pathTok = c.next();
     if (!pathTok || pathTok.kind !== 'string' || !c.atEnd()) {
-      this.diagnostics.error('parse.import-form', 'Expected a quoted file path: `import phrasebook "<file>"`.', c.restSpan());
+      this.diagnostics.error('parse.import-form', 'Expected a quoted file name: `import "<file>"` (no extension — `.chord` is assumed).', c.restSpan());
       return null;
     }
-    if (!pathTok.text.endsWith('.story')) {
-      this.diagnostics.error('parse.import-form', `Imported phrasebook files use the \`.story\` extension — got \`${pathTok.text}\`.`, pathTok.span);
-      return null;
-    }
-    return { kind: 'import-phrasebook', path: pathTok.text, span: lineSpan(line) };
+    return { kind: 'import', path: pathTok.text, span: lineSpan(line) };
   }
 
   private parseDefinePhrases(): DefinePhrases {

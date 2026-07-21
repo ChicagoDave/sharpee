@@ -11,7 +11,7 @@ import { execSync } from 'child_process';
 import { zipSync, strToU8 } from 'fflate';
 import { runBuildBrowserCommand } from './build-browser.js';
 import { stampVersion } from './version-stamp.js';
-import { findStoryFile, loadAuthorGame } from './author-game.js';
+import { findStoryFile, loadAuthorGame, makeFsImportResolver } from './author-game.js';
 import { lintHatchSources } from '../hatch-lint.js';
 
 interface SharpeeConfig {
@@ -250,7 +250,10 @@ async function runChordBuild(
   // Lazy require (compose.ts pattern): pull the compiler only when building.
   const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
   const rel = path.relative(projectDir, storyFile) || storyFile;
-  const result = chord.compile(fs.readFileSync(storyFile, 'utf-8'));
+  const storyDir = path.dirname(path.resolve(storyFile));
+  const result = chord.compile(fs.readFileSync(storyFile, 'utf-8'), {
+    importResolver: makeFsImportResolver(storyDir),
+  });
   for (const d of result.diagnostics) {
     console.error(`  ${rel}:${d.span.line}:${d.span.column} ${d.severity} [${d.code}] ${d.message}`);
   }
@@ -262,7 +265,7 @@ async function runChordBuild(
 
   // Hatch source lint (design.md §5.6) — same gate `sharpee compose` runs.
   const hatchFindings = lintHatchSources(
-    path.dirname(path.resolve(storyFile)),
+    storyDir,
     result.ir.hatches.map((h) => h.modulePath),
   );
   for (const f of hatchFindings) {

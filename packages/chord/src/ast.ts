@@ -106,7 +106,8 @@ export type Declaration =
   | DefinePronouns
   // ADR-245/250 phrasebooks (David 2026-07-21):
   | DefinePhrasebook
-  | ImportPhrasebookDecl;
+  // ADR-251 generalized import (David 2026-07-21):
+  | ImportDecl;
 
 /**
  * `define phrasebook <name> [while <condition>] … end phrasebook`
@@ -127,14 +128,18 @@ export interface DefinePhrasebook {
 }
 
 /**
- * `import phrasebook "<file>"` (ADR-250 D2) — the author's
- * file-organization axis. Resolved by the compile host (`importResolver`)
- * into the fragment's `define phrasebook` blocks, spliced at this
- * position (import site = arbitration position). Unresolved at analysis
- * time = `analysis.import-unresolved`.
+ * `import "<file>"` (ADR-251) — the author's multi-file organization axis.
+ * `path` is the name as written, WITHOUT extension: the compiler appends
+ * `.chord` before handing it to the host `importResolver`, which resolves
+ * it to the fragment's source text. The fragment's complete declarations
+ * (any kind except a `story` header or a nested `import`) are spliced at
+ * this position (import site = arbitration position — D4). Unresolved at
+ * analysis time = `analysis.import-unresolved`. Supersedes ADR-250 D2's
+ * typed `import phrasebook`/`.story` form.
  */
-export interface ImportPhrasebookDecl {
-  kind: 'import-phrasebook';
+export interface ImportDecl {
+  kind: 'import';
+  /** Import target as written, extension-free (compiler appends `.chord`). */
   path: string;
   span: Span;
 }

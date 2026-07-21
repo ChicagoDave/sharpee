@@ -20,6 +20,17 @@ import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
 const THEME_STORAGE_KEY = '{{STORY_ID}}-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 
+/**
+ * The story's imported fragments (ADR-251), shipped as one bundle keyed by
+ * `<name>.chord`. Absent when the story imports nothing — then the map is
+ * empty and the compiler never consults the resolver.
+ */
+async function fetchImports(): Promise<Record<string, string>> {
+  const response = await fetch('./imports.json');
+  if (!response.ok) return {};
+  return (await response.json()) as Record<string, string>;
+}
+
 /** Compile the shipped .story source; surface diagnostics on the page. */
 async function loadStory(): Promise<Story> {
   const response = await fetch('./story.story');
@@ -27,7 +38,9 @@ async function loadStory(): Promise<Story> {
     throw new Error(`could not fetch story.story (${response.status})`);
   }
   const source = await response.text();
-  const result = compile(source);
+  // ADR-251: resolve `import "<file>"` fragments from the shipped bundle.
+  const imports = await fetchImports();
+  const result = compile(source, { importResolver: (name) => imports[name] ?? null });
   if (!result.ok) {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     const lines = errors.map((d) => `story.story:${d.span.line}:${d.span.column} [${d.code}] ${d.message}`);

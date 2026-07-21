@@ -14,9 +14,10 @@
 import * as path from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { lintHatchSources } from '../hatch-lint.js';
-// Shared hatch-module resolution policy (one implementation — also used by
-// the author-game loader behind `sharpee test`/`play`).
-import { requireHatchModule } from '../standalone/author-game.js';
+// Shared hatch-module resolution + fs import-resolver policy (one
+// implementation — also used by the author-game loader behind
+// `sharpee test`/`play`).
+import { requireHatchModule, makeFsImportResolver } from '../standalone/author-game.js';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [-o <ir.json>]';
 
@@ -54,7 +55,10 @@ export async function runCompose(rest: string[]): Promise<number> {
 
   // Lazy require (introspect.ts pattern): pull the compiler only when composing.
   const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
-  const result = chord.compile(readFileSync(file, 'utf-8'));
+  const storyDir = path.dirname(path.resolve(file));
+  const result = chord.compile(readFileSync(file, 'utf-8'), {
+    importResolver: makeFsImportResolver(storyDir),
+  });
 
   for (const d of result.diagnostics) {
     console.error(`${file}:${d.span.line}:${d.span.column} ${d.severity} [${d.code}] ${d.message}`);
@@ -68,7 +72,6 @@ export async function runCompose(rest: string[]): Promise<number> {
   // Hatch source lint (design.md §5.6, authoritative layer): the chord.*
   // state namespace is loader-private; a quoted literal in hatch source is
   // a build error in --check and full mode alike. Comments don't trip it.
-  const storyDir = path.dirname(path.resolve(file));
   const hatchFindings = lintHatchSources(
     storyDir,
     result.ir.hatches.map((h) => h.modulePath)

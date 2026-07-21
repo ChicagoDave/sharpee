@@ -562,7 +562,7 @@ class Analyzer {
         case 'define-phrases':
           break; // collected in pass 1
         case 'define-phrasebook':
-        case 'import-phrasebook':
+        case 'import':
           break; // collected/diagnosed in pass 1; conditions resolve below
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
@@ -1228,13 +1228,13 @@ class Analyzer {
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
       else if (decl.kind === 'define-phrasebook') this.collectPhrasebook(decl);
-      else if (decl.kind === 'import-phrasebook') {
+      else if (decl.kind === 'import') {
         // The compile host resolves imports before analysis (splicing the
-        // fragment's blocks at this position); one surviving here means no
-        // resolver ran — direct parse/analyze callers included.
+        // fragment's declarations at this position); one surviving here means
+        // no resolver ran — direct parse/analyze callers included.
         this.diagnostics.error(
           'analysis.import-unresolved',
-          `\`import phrasebook "${decl.path}"\` was not resolved — compile with an \`importResolver\` host hook.`,
+          `\`import "${decl.path}"\` was not resolved — compile with an \`importResolver\` host hook.`,
           decl.span,
         );
       }

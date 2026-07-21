@@ -15,7 +15,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { stampVersion } from './version-stamp.js';
-import { findStoryFile } from './author-game.js';
+import { findStoryFile, makeFsImportResolver } from './author-game.js';
 
 // In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
 const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))
@@ -271,7 +271,21 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
   if (chordStoryFile) {
     const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
     const rel = path.relative(projectDir, chordStoryFile) || chordStoryFile;
-    const result = chord.compile(fs.readFileSync(chordStoryFile, 'utf-8'));
+    // Build-time fail-fast gate resolves imports off disk (ADR-251). The
+    // recording wrapper captures every fragment the compiler pulls, so the
+    // SAME content can ship as dist/web/imports.json for compile-at-boot
+    // (D2/Phase 3) — the splice removes the ImportDecl nodes, so capturing
+    // at resolve time is the reliable seam.
+    const storyDir = path.dirname(path.resolve(chordStoryFile));
+    const importBundle: Record<string, string> = {};
+    const fsResolver = makeFsImportResolver(storyDir);
+    const result = chord.compile(fs.readFileSync(chordStoryFile, 'utf-8'), {
+      importResolver: (name) => {
+        const text = fsResolver(name);
+        if (text !== null) importBundle[name] = text;
+        return text;
+      },
+    });
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     for (const d of errors) {
       console.error(`  ${rel}:${d.span.line}:${d.span.column} error [${d.code}] ${d.message}`);
@@ -292,6 +306,16 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
     }
     fs.copyFileSync(chordStoryFile, path.join(outDir, 'story.story'));
     console.log(`  ✓ Validated ${rel} (gate-clean) and shipped it as story.story`);
+
+    // ADR-251 Phase 3: ship the resolved import fragments as one inline
+    // bundle for compile-at-boot (`<name>.chord` → source text). Omitted
+    // entirely when the story has no imports — the single-file path ships
+    // nothing extra, and the entry's fetch tolerates its absence.
+    const importNames = Object.keys(importBundle);
+    if (importNames.length > 0) {
+      fs.writeFileSync(path.join(outDir, 'imports.json'), JSON.stringify(importBundle));
+      console.log(`  ✓ Bundled ${importNames.length} import fragment(s) → imports.json`);
+    }
 
     // Story IR artifact for the IDE/tooling surface (David, 2026-07-18:
     // "the IDE will want the IR"). dist/, not dist/web/ — a tooling file,

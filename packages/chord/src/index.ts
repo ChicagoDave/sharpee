@@ -59,14 +59,16 @@ export interface CompileResult {
   ok: boolean;
 }
 
-/** Host hooks for compile() (ADR-250 D2). */
+/** Host hooks for compile() (ADR-251, generalizing ADR-250 D2). */
 export interface CompileOptions {
   /**
-   * Resolves an `import phrasebook "<file>"` path (relative to the story
-   * file — the HOST owns the base directory) to the fragment's source
-   * text, or null when unresolvable. The chord package stays
-   * filesystem-free: devkit/repokit supply an fs-backed resolver, the
-   * browser client a bundle-map resolver.
+   * Resolves an `import "<file>"` target to the fragment's source text, or
+   * null when unresolvable. The compiler appends `.chord` before calling
+   * this, so `path` always arrives as `"<name>.chord"` (e.g.
+   * `"regions/harbor.chord"`) — the resolver just maps that name to text.
+   * The HOST owns the base directory (relative to the importing story
+   * file). The chord package stays filesystem-free: devkit/repokit supply
+   * an fs-backed resolver, the browser client a bundle-map resolver.
    */
   importResolver?: (path: string) => string | null;
 }
@@ -74,42 +76,49 @@ export interface CompileOptions {
 /**
  * Compile `.story` source text: parse + resolve imports + analyze + build IR.
  * @param source full text of a `.story` file
- * @param options host hooks (importResolver for `import phrasebook`)
+ * @param options host hooks (importResolver for `import "<file>"`)
  * @returns AST, IR, and all diagnostics; `ok` gates use of the IR
  */
 export function compile(source: string, options?: CompileOptions): CompileResult {
   const bag = new DiagnosticBag();
   const ast = parseStory(source, bag);
-  resolvePhrasebookImports(ast, options, bag);
+  resolveImports(ast, options, bag);
   const ir = analyze(ast, bag);
   return { ast, ir, diagnostics: bag.all(), ok: !bag.hasErrors() };
 }
 
 /**
- * Splice each `import phrasebook "<file>"` declaration with the imported
- * fragment's `define phrasebook` blocks, in place (import site =
- * arbitration position — ADR-250 D2). Processed imports are removed from
- * the AST either way, so the analyzer never double-reports; a fragment may
- * contain only `define phrasebook` blocks (plus blank lines / `##`
- * comments, which the lexer/parser already discharge). Fragment
- * diagnostics are re-reported with the fragment path prefixed, since
- * spans are file-relative.
+ * Splice each `import "<file>"` declaration with the imported fragment's
+ * complete declarations, in place (import site = arbitration position —
+ * ADR-251 D4: "an import is a paste"). The compiler appends `.chord` to
+ * the target before resolving (D2), so the host `importResolver` always
+ * receives `"<name>.chord"`. A fragment may contain any complete
+ * declaration EXCEPT a `story` header (D3 → `analysis.import-fragment-story`)
+ * or a nested `import` (D5: imports are flat → `analysis.import-fragment-nested`);
+ * a fragment that fails to parse cleanly (partial/non-declaration content)
+ * additionally raises `analysis.import-fragment-content` at the import site,
+ * beside the granular fragment parse errors. Processed imports are removed
+ * from the AST either way, so the analyzer never double-reports. Fragment
+ * diagnostics are re-reported with the fragment name prefixed, since spans
+ * are file-relative.
  */
-function resolvePhrasebookImports(ast: StoryFile, options: CompileOptions | undefined, bag: DiagnosticBag): void {
-  if (!ast.declarations.some((d) => d.kind === 'import-phrasebook')) return;
+function resolveImports(ast: StoryFile, options: CompileOptions | undefined, bag: DiagnosticBag): void {
+  if (!ast.declarations.some((d) => d.kind === 'import')) return;
   const resolved: Declaration[] = [];
   for (const decl of ast.declarations) {
-    if (decl.kind !== 'import-phrasebook') {
+    if (decl.kind !== 'import') {
       resolved.push(decl);
       continue;
     }
-    const text = options?.importResolver ? options.importResolver(decl.path) : null;
+    // D2: the extension is a language fact, appended here — the resolver stays dumb.
+    const fragmentName = `${decl.path}.chord`;
+    const text = options?.importResolver ? options.importResolver(fragmentName) : null;
     if (text === null || text === undefined) {
       bag.error(
         'analysis.import-unresolved',
         options?.importResolver
-          ? `Cannot resolve \`import phrasebook "${decl.path}"\` — the file was not found.`
-          : `\`import phrasebook "${decl.path}"\` needs an import resolver — this compile host provides none.`,
+          ? `Cannot resolve \`import "${decl.path}"\` — \`${fragmentName}\` was not found.`
+          : `\`import "${decl.path}"\` needs an import resolver — this compile host provides none.`,
         decl.span,
       );
       continue;
@@ -117,21 +126,27 @@ function resolvePhrasebookImports(ast: StoryFile, options: CompileOptions | unde
     const fragBag = new DiagnosticBag();
     const fragAst = parseStory(text, fragBag);
     for (const d of fragBag.all()) {
-      // Fragment spans are relative to the fragment file — prefix the path.
-      bag[d.severity === 'error' ? 'error' : 'warning'](d.code, `[${decl.path}] ${d.message}`, d.span);
+      // Fragment spans are relative to the fragment file — prefix the name.
+      bag[d.severity === 'error' ? 'error' : 'warning'](d.code, `[${fragmentName}] ${d.message}`, d.span);
+    }
+    // D6 span contract: fragment diagnostics carry the fragment's OWN span
+    // (with the `[<name>.chord]` prefix identifying the file); only the
+    // unresolved-import diagnostic above points at the main-file import line.
+    if (fragBag.hasErrors()) {
+      // Partial / non-declaration content — the granular parse errors above
+      // carry the detail; anchor the category diagnostic at the first of them.
+      const firstError = fragBag.all().find((d) => d.severity === 'error');
+      bag.error('analysis.import-fragment-content', `[${fragmentName}] This import's fragment did not parse into complete declarations.`, firstError ? firstError.span : decl.span);
     }
     if (fragAst.header) {
-      bag.error('analysis.import-fragment-content', `[${decl.path}] An imported phrasebook file carries no story header — only \`define phrasebook\` blocks.`, decl.span);
+      bag.error('analysis.import-fragment-story', `[${fragmentName}] An imported fragment carries no story header — the \`story\` block lives only in the main \`.story\` file.`, fragAst.header.span);
     }
     for (const d of fragAst.declarations) {
-      if (d.kind === 'define-phrasebook') {
-        resolved.push(d);
+      if (d.kind === 'import') {
+        // D5: imports do not nest — only the main `.story` file may import.
+        bag.error('analysis.import-fragment-nested', `[${fragmentName}] Imports do not nest — remove the \`import "${d.path}"\` line from \`${fragmentName}\`.`, d.span);
       } else {
-        bag.error(
-          'analysis.import-fragment-content',
-          `[${decl.path}] An imported phrasebook file may contain only \`define phrasebook\` blocks — found \`${d.kind}\`.`,
-          decl.span,
-        );
+        resolved.push(d);
       }
     }
   }

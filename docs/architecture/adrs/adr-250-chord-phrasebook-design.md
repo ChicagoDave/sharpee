@@ -100,6 +100,16 @@ end phrasebook
 
 ### D2 — Header grammar: `use phrasebook` and `import phrasebook`
 
+> **Superseded in part by ADR-251 (2026-07-21).** The `import phrasebook
+> "<file>"` grammar and the `.story` fragment extension below are
+> replaced: import is now a single bare `import "<file>"` (a phrasebook
+> block is one more complete declaration the importer splices), and
+> fragment files use the `.chord` extension, assumed and omitted from the
+> import string. The splice-at-site mechanism, the `importResolver` seam,
+> and relative-path resolution described here **stand** — ADR-251
+> generalizes them. The `use phrasebook` grammar in this section is
+> unaffected.
+
 ```story
 story "The Folly at Fernhill" by "The Sharpee Project"
   use state-machines

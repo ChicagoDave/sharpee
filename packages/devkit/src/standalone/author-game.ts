@@ -46,6 +46,30 @@ export function requireHatchModule(storyDir: string, modulePath: string): Record
 }
 
 /**
+ * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).
+ * The compiler appends `.chord` and hands us the full fragment name (e.g.
+ * `"regions/harbor.chord"`); we read it relative to the `.story` file's
+ * directory. A missing file resolves to `null` (the compiler's
+ * unresolved-import contract → `analysis.import-unresolved`); any other fs
+ * error propagates. Keeps @sharpee/chord filesystem-free — the host owns
+ * the base directory, exactly as `requireHatchModule` does for hatches.
+ *
+ * @param storyDir directory of the importing `.story` file
+ * @returns a resolver mapping `<name>.chord` → source text or null
+ */
+export function makeFsImportResolver(storyDir: string): (fragmentName: string) => string | null {
+  return (fragmentName: string): string | null => {
+    const full = path.resolve(storyDir, fragmentName);
+    try {
+      return readFileSync(full, 'utf-8');
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+      throw err;
+    }
+  };
+}
+
+/**
  * Find the project's Chord source: exactly one root-level `.story` file.
  *
  * @param dir project directory
@@ -77,7 +101,10 @@ export function findStoryFile(dir: string): string | null {
 export function loadChordStory(storyFile: string): unknown {
   // Lazy requires (compose.ts pattern): pull the compiler/loader only when needed.
   const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
-  const result = chord.compile(readFileSync(storyFile, 'utf-8'));
+  const storyDir = path.dirname(path.resolve(storyFile));
+  const result = chord.compile(readFileSync(storyFile, 'utf-8'), {
+    importResolver: makeFsImportResolver(storyDir),
+  });
   if (!result.ok) {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     const lines = errors.map(
@@ -86,7 +113,6 @@ export function loadChordStory(storyFile: string): unknown {
     throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
   }
 
-  const storyDir = path.dirname(path.resolve(storyFile));
   const hatchModules: Record<string, Record<string, unknown>> = {};
   for (const hatch of result.ir.hatches) {
     if (!(hatch.modulePath in hatchModules)) {

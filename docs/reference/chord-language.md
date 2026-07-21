@@ -1803,7 +1803,7 @@ create the sentry
   in the Guardhouse
 ```
 
-### 5.11 define phrasebook, use phrasebook, import phrasebook (2026-07-21, ADR-245/250)
+### 5.11 define phrasebook, use phrasebook, import (2026-07-21, ADR-245/250/251)
 
 A phrasebook groups phrase definitions into one named, predicated
 collection — a voice. Whichever declared book's `while` predicate holds
@@ -1866,17 +1866,21 @@ story "The Folly at Fernhill" by "The Sharpee Project"
   use phrasebook candlewick-gothic while the player holds the locket
   use phrasebook plain-country
 
-import phrasebook "voices/winter.story"
+import "voices/winter"
 ```
 
 `use phrasebook <name> [while <condition>]` (story header) activates a
 packaged voice by name, binding the predicate at the use site — legal
 any number of times; an unknown name is `analysis.unknown-phrasebook`.
-`import phrasebook "<file>"` (top level) splices a file of your own
-`define phrasebook` blocks at the import position — the author's
-file-organization axis; the fragment holds only phrasebook blocks and
-`##` comments. Header `use` lines and body blocks arbitrate together,
-in file order.
+`import "<file>"` (top level, ADR-251) splices another story-source
+fragment at the import position — the author's file-organization axis.
+A fragment is a `.chord` file, and the extension is assumed: you write
+`import "voices/winter"`, the file on disk is `voices/winter.chord`. A
+fragment may hold **any complete declaration** — rooms, people,
+sequences, phrasebooks — except a `story` header or a nested `import`
+(imports are flat); a file of `define phrasebook` blocks is just one use
+of it. Header `use` lines and spliced body blocks arbitrate together, in
+file order.
 
 ## 6. Tooling
 

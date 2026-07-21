@@ -1,9 +1,10 @@
 /**
  * phrasebooks.test.ts — ADR-250 Phase 4 (compile side): `define phrasebook`
- * block grammar, `use phrasebook <name> [while <cond>]` header lines,
- * `import phrasebook "<file>"` host-resolved splicing, IR lowering in
- * arbitration order, and every ADR-250 D7 compile diagnostic. Covers
- * AC-1/AC-2 plus the AC-5 compile half (manifest seam).
+ * block grammar, `use phrasebook <name> [while <cond>]` header lines, IR
+ * lowering in arbitration order, and every ADR-250 D7 compile diagnostic.
+ * Covers AC-1/AC-2 plus the AC-5 compile half (manifest seam). The
+ * `import` describe block is now ADR-251 generalized `import "<file>"`
+ * (bare form, `.chord`-append, any-declaration splice, D6 diagnostics).
  */
 import { afterEach, describe, expect, it } from 'vitest';
 import { compile, PHRASEBOOK_REGISTRY } from '../src';
@@ -217,40 +218,57 @@ describe('use phrasebook (ADR-250 D2/D3)', () => {
   });
 });
 
-describe('import phrasebook (ADR-250 D2)', () => {
-  const FRAGMENT = '## the winter voice, in its own file\n\ndefine phrasebook winter\n  cold-returns:\n    The cold finds you.\nend phrasebook\n';
+describe('import "<file>" (ADR-251)', () => {
+  const WINTER_FRAGMENT = '## the winter voice, in its own file\n\ndefine phrasebook winter\n  cold-returns:\n    The cold finds you.\nend phrasebook\n';
 
-  it('splices the fragment at the import position', () => {
-    const src = story('import phrasebook "voices/winter.story"\n\ndefine phrasebook base\n  hearth-call:\n    Warmth.\nend phrasebook\n\n');
-    const result = compile(src, { importResolver: (path) => (path === 'voices/winter.story' ? FRAGMENT : null) });
+  it('appends .chord and splices the fragment at the import position', () => {
+    // Author writes `import "voices/winter"` (no extension) — the resolver
+    // is keyed on `voices/winter.chord`, proving the compiler appends it.
+    const src = story('import "voices/winter"\n\ndefine phrasebook base\n  hearth-call:\n    Warmth.\nend phrasebook\n\n');
+    const result = compile(src, { importResolver: (path) => (path === 'voices/winter.chord' ? WINTER_FRAGMENT : null) });
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ir.phrasebooks.map((b: IRPhrasebook) => b.name)).toEqual(['winter', 'base']);
     expect(result.ir.phrasebooks[0].source).toBe('define');
   });
 
+  it('splices a fragment mixing declaration kinds — D3 is not phrasebook-only', () => {
+    // A `create` in a fragment was `analysis.import-fragment-content` under
+    // ADR-250; D3 widens the splice to any complete declaration.
+    const MIXED = 'create the Shed\n  a room\n\n  A shed.\n\ndefine phrasebook winter\n  cold-returns:\n    The cold finds you.\nend phrasebook\n';
+    const result = compile(story('import "extras"\n\n'), { importResolver: (path) => (path === 'extras.chord' ? MIXED : null) });
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    expect(result.ir.entities.map((e) => e.id)).toContain('shed');
+    expect(result.ir.phrasebooks.map((b: IRPhrasebook) => b.name)).toContain('winter');
+  });
+
   it('no resolver raises analysis.import-unresolved', () => {
-    expect(errorCodes(story('import phrasebook "voices/winter.story"\n\n'))).toContain('analysis.import-unresolved');
+    expect(errorCodes(story('import "voices/winter"\n\n'))).toContain('analysis.import-unresolved');
   });
 
   it('a resolver miss raises analysis.import-unresolved', () => {
-    expect(errorCodes(story('import phrasebook "gone.story"\n\n'), { importResolver: () => null })).toContain('analysis.import-unresolved');
+    expect(errorCodes(story('import "gone"\n\n'), { importResolver: () => null })).toContain('analysis.import-unresolved');
   });
 
-  it('non-phrasebook fragment content raises analysis.import-fragment-content', () => {
-    const bad = 'create the Shed\n  a room\n\n  A shed.\n';
-    expect(errorCodes(story('import phrasebook "bad.story"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-content');
-  });
-
-  it('a fragment with a story header raises analysis.import-fragment-content', () => {
+  it('a fragment with a story header raises analysis.import-fragment-story', () => {
     const bad = 'story "Nope" by "X"\n  id: nope\n';
-    expect(errorCodes(story('import phrasebook "bad.story"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-content');
+    expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-story');
   });
 
-  it('a non-.story path raises parse.import-form', () => {
-    expect(errorCodes(story('import phrasebook "winter.txt"\n\n'))).toContain('parse.import-form');
+  it('a fragment with a nested import raises analysis.import-fragment-nested', () => {
+    const bad = 'import "deeper"\n';
+    expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-nested');
   });
 
-  it('bare import "<file>" is reserved and raises parse.import-form', () => {
-    expect(errorCodes(story('import "winter.story"\n\n'))).toContain('parse.import-form');
+  it('a fragment that does not parse into declarations raises analysis.import-fragment-content', () => {
+    const bad = 'xyzzy not a declaration\n';
+    expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-content');
+  });
+
+  it('import followed by a bare word (the removed `phrasebook` sub-word) raises parse.import-form', () => {
+    expect(errorCodes(story('import phrasebook "winter"\n\n'))).toContain('parse.import-form');
+  });
+
+  it('import with no file string raises parse.import-form', () => {
+    expect(errorCodes(story('import\n\n'))).toContain('parse.import-form');
   });
 });
