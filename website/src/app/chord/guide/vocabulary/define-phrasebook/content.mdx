@@ -60,14 +60,16 @@ story "The Folly at Fernhill" by "The Sharpee Project"
   use phrasebook candlewick-gothic while the player holds the locket
   use phrasebook plain-country
 
-import phrasebook "voices/winter.story"
+import "voices/winter"
 ```
 
 `use phrasebook <name> [while <condition>]` (story header) activates a
 packaged voice by name, binding the predicate at the use site — legal
 any number of times; an unknown name is `analysis.unknown-phrasebook`.
-`import phrasebook "<file>"` (top level) splices a file of your own
-`define phrasebook` blocks at the import position — the author's
-file-organization axis; the fragment holds only phrasebook blocks and
-`##` comments. Header `use` lines and body blocks arbitrate together,
-in file order.
+`import "voices/winter"` (top level) splices in a file of your own
+`define phrasebook` blocks — the file on disk is `voices/winter.chord`,
+and its books take their arbitration position at the import line. A
+phrasebook file is just one kind of fragment: `import` pulls in any
+[multi-file story source](/chord/guide/project/multi-file-stories), not
+only phrasebook blocks. Header `use` lines and spliced body blocks
+arbitrate together, in file order.

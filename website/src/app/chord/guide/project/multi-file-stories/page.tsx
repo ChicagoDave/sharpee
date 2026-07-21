@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="Topics">
+    <DocPage title="Multi-file stories">
       <Content />
     </DocPage>
   );
