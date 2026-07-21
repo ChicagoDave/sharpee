@@ -1,0 +1,26 @@
+# /etc/systemd/system/sharpee-website.service
+#
+# Sharpee documentation website — Next.js app served via `next start`,
+# reverse-proxied by Apache (see sharpee.net.conf). Mirrors the devarch.ai
+# deployment pattern. Install with website/deploy.sh (or manually):
+#
+#   sudo cp website/deploy/sharpee-website.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now sharpee-website
+#
+[Unit]
+Description=Sharpee Documentation Website (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=dave
+WorkingDirectory=/home/dave/repos/sharpee_v2/website
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3017
+
+[Install]
+WantedBy=multi-user.target
