@@ -135,6 +135,17 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     renderMessage(messageId: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
     /**
+     * Realize a template string directly — {@link renderMessage} minus the
+     * registry lookup (ADR-250 D4). The engine's phrasebook read point calls
+     * this with a book-resolved template; the `messages` map is not consulted.
+     *
+     * @param template The template text
+     * @param params Parameter/producer bindings keyed by placeholder name
+     * @param ctx The per-message render context (world, settings, seams)
+     * @returns The realized text blocks
+     */
+    renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
+    /**
      * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
      * @param on true → "a, b, and c"; false → "a, b and c"
      */

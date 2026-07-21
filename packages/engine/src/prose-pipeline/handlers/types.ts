@@ -14,7 +14,7 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { RenderContextFactory } from '../render-context.js';
+import type { RenderContextFactory, WorldModelLike } from '../render-context.js';
 
 /**
  * Context passed to event handlers.
@@ -22,6 +22,13 @@ import type { RenderContextFactory } from '../render-context.js';
 export interface HandlerContext {
   /** Language provider for template resolution. */
   languageProvider?: LanguageProvider;
+
+  /**
+   * The world, when the pipeline was constructed with one — the phrasebook
+   * read point consults `world.evaluate` for book-resolved templates
+   * (ADR-250 D4) before the registry lookup.
+   */
+  world?: WorldModelLike;
 
   /**
    * Per-turn render-context factory for the phrase pipeline (ADR-192, W2).

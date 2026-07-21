@@ -18,9 +18,11 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IREmitField, IREmitValue, IREntity, IROnClause, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IRCondition, IREmitField, IREmitValue, IREntity, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
-import { normalizeTopic } from '@sharpee/chord';
+import { normalizeTopic, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
+import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
+import { PHRASEBOOK_DATA } from './phrasebook-data.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import {
@@ -263,6 +265,110 @@ export class ChordRuntime {
     // nothing recomputes: mutations are instant, every reader sees current
     // truth (the former eleven-event recompute trigger list is gone).
     this.registerDerivedEvaluators(world);
+
+    // Phrasebooks (ADR-250 D4): one evaluator per book-covered key the
+    // story does not define — same ADR-240 seam, resolved at render time.
+    this.registerPhrasebookEvaluators(world);
+  }
+
+  /** Resolved books cache (built once per runtime — see resolvedBooks). */
+  private books: Array<{ name: string; condition: IRCondition | null; entries: Record<string, IRPhrase> }> | null = null;
+
+  /**
+   * The story's phrasebooks in arbitration order, entries resolved:
+   * `define`d books carry their entries in the IR; `use`d books resolve
+   * from the packaged-data registry with manifest-key conformance (ADR-250
+   * D3 — LoadError on a missing book or a key mismatch), plus the D1 key
+   * rules the story compiler never saw the packaged data pass through.
+   */
+  private resolvedBooks(): Array<{ name: string; condition: IRCondition | null; entries: Record<string, IRPhrase> }> {
+    if (this.books) return this.books;
+    this.books = this.ir.phrasebooks.map((book) => {
+      if (book.source === 'define') {
+        return { name: book.name, condition: book.condition ?? null, entries: book.entries ?? {} };
+      }
+      const data = PHRASEBOOK_DATA.get(book.name);
+      if (!data) {
+        throw new LoadError(`Phrasebook \`${book.name}\` is not in the load-time data registry — the compile-time manifest knows the name, the runtime has no entries for it.`);
+      }
+      const manifestKeys = [...(PHRASEBOOK_REGISTRY.get(book.name)?.keys ?? [])].sort();
+      const dataKeys = Object.keys(data.entries).sort();
+      if (manifestKeys.join(' ') !== dataKeys.join(' ')) {
+        throw new LoadError(`Phrasebook \`${book.name}\`: manifest keys [${manifestKeys.join(', ')}] and data keys [${dataKeys.join(', ')}] disagree.`);
+      }
+      for (const key of dataKeys) {
+        if (key.includes('.')) {
+          throw new LoadError(`Phrasebook \`${book.name}\`: \`${key}\` is a dotted platform ID — books voice story keys only (ADR-250 D1).`);
+        }
+      }
+      return { name: book.name, condition: book.condition ?? null, entries: data.entries };
+    });
+    return this.books;
+  }
+
+  /** Book entries covering a key, in arbitration order (emit-time staging). */
+  private bookEntriesFor(key: string): IRPhrase[] {
+    return this.resolvedBooks().flatMap((b) => (b.entries[key] ? [b.entries[key]] : []));
+  }
+
+  /**
+   * ADR-250 D4.2: register ONE evaluator per key that some book covers and
+   * the story does NOT define — story-beats-book is decided here,
+   * statically, so a story-defined key never pays predicate evaluation.
+   * The key convention (`phrasebook.template.<key>`) is built by the
+   * engine's read point (`phrasebookTemplateKey`) and here — nowhere else.
+   */
+  private registerPhrasebookEvaluators(world: WorldModel): void {
+    const books = this.resolvedBooks();
+    if (books.length === 0) return;
+    const storyTable = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    const covered = new Set<string>();
+    for (const book of books) {
+      for (const key of Object.keys(book.entries)) {
+        if (!storyTable[key]) covered.add(key);
+      }
+    }
+    for (const key of covered) {
+      world.registerEvaluator(phrasebookTemplateKey(key), (w) => this.resolvePhrasebook(key, w as WorldModel));
+    }
+  }
+
+  /**
+   * The evaluator body: first book in declaration order whose predicate
+   * holds AND that covers the key supplies it (ADR-245 D3 arbitration).
+   * Derivation mirrors registered phrases — verbatim/single/multi-variant
+   * templates and a Choice atom keyed `phrasebook.<book>` / key so
+   * cycling/first-time/sticky counters stay per (book, key) (ADR-250 D5)
+   * — keeping every Chord IR shape loader-side (ADR-210 direction rule).
+   */
+  private resolvePhrasebook(key: string, world: WorldModel): PhrasebookResolution | undefined {
+    for (const book of this.resolvedBooks()) {
+      const entry = book.entries[key];
+      if (!entry) continue;
+      if (book.condition && !this.evaluator.evalCondition(book.condition, { world })) continue;
+      const params: Record<string, unknown> = {};
+      let template: string;
+      if (entry.verbatim) {
+        template = '{verbatim:text}';
+        params.text = entry.variants[0]?.text ?? '';
+      } else if (entry.strategy === null && entry.variants.length === 1) {
+        template = withLineBreaks(entry.variants[0].text);
+      } else {
+        template = '{variants}';
+        if (entry.strategy) {
+          const choice: Choice = {
+            kind: 'choice',
+            alternatives: entry.variants.map((v): Literal => ({ kind: 'literal', text: withLineBreaks(v.text) })),
+            selector: STRATEGY_SELECTOR[entry.strategy],
+            entityId: `phrasebook.${book.name}`,
+            messageKey: key,
+          };
+          params.variants = choice;
+        }
+      }
+      return { book: book.name, key, template, ...(Object.keys(params).length > 0 ? { params } : {}) };
+    }
+    return undefined;
   }
 
   /**
@@ -1804,7 +1910,14 @@ export class ChordRuntime {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     const overrideKey = ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
     const phrase = table[overrideKey];
-    if (!phrase) throw new LoadError(`Phrase \`${key}\` is missing from the IR at emit time.`);
+    // ADR-250: a key covered only by phrasebooks has no table entry — emit
+    // the bare key (the render-path book layer supplies the winning
+    // template and its Choice) but still stage stmt params and any hatch
+    // producers the book entries reference, since staging is emit-time work.
+    const bookVariants: IRPhraseVariant[] | null = phrase ? null : this.bookEntriesFor(key).flatMap((e) => e.variants);
+    if (!phrase && bookVariants!.length === 0) {
+      throw new LoadError(`Phrase \`${key}\` is missing from the IR at emit time.`);
+    }
 
     const params: Record<string, unknown> = {};
     // Authored `with <param> = <value>` bindings (zoo-chain follow-up,
@@ -1815,7 +1928,7 @@ export class ChordRuntime {
       const asEntity = typeof value === 'string' ? ctx.world.getEntity(value) : undefined;
       params[p.param] = asEntity ? asEntity.name : (value as string | number | boolean);
     }
-    for (const variant of phrase.variants) {
+    for (const variant of phrase ? phrase.variants : bookVariants!) {
       for (const marker of variant.markers) {
         const producer = this.host.producers.get(marker);
         if (producer) {
@@ -1846,12 +1959,12 @@ export class ChordRuntime {
         if (slotEntity) params[name] = slotEntity.name;
       }
     }
-    if (phrase.verbatim) {
+    if (phrase?.verbatim) {
       // `{verbatim:text}` template (loader registration) — the atom is
       // exempt from whitespace collapse, so line structure and interior
       // spacing survive as authored (grammar log 2026-07-10).
       params.text = phrase.variants[0]?.text ?? '';
-    } else if (phrase.strategy) {
+    } else if (phrase?.strategy) {
       const choice: Choice = {
         kind: 'choice',
         alternatives: phrase.variants.map((v): Literal => ({ kind: 'literal', text: withLineBreaks(v.text) })),

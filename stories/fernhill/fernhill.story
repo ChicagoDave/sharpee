@@ -1,3 +1,7 @@
+## The Folly at Fernhill — one winter night to find the deed.
+## File-header comment (ADR-249): `##` lines are legal between
+## top-level constructs and contribute nothing to the compile.
+
 story "The Folly at Fernhill" by "The Sharpee Project"
   id: fernhill
   version: 0.1.0
@@ -8,6 +12,8 @@ story "The Folly at Fernhill" by "The Sharpee Project"
   on every turn while one chance in 12
     phrase distant-bell
   end on
+
+## The estate exterior — the night begins here.
 
 create the Grounds
   a region

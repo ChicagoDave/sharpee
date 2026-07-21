@@ -38,6 +38,13 @@ export interface StoryIR {
   entities: IREntity[];
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
+  /**
+   * Phrasebooks in arbitration order — file-appearance order of
+   * `use phrasebook` (header) and `define phrasebook`/import-spliced
+   * blocks (body). First predicate-match in this order, per key, wins;
+   * a `condition: null` book is the default (always) book (ADR-250 D3).
+   */
+  phrasebooks: IRPhrasebook[];
   verbs: IRVerbDef[];
   hatches: IRHatch[];
   // Phase B (plan phase 3):
@@ -316,6 +323,24 @@ export interface IRPhraseVariant {
    * built-in hard line break; prose paragraphs arrive as `\n\n` in `text`.
    */
   markers: string[];
+}
+
+/**
+ * One phrasebook (ADR-245/ADR-250 D3): a named, predicated collection of
+ * story-key phrase entries. `define`d (and import-spliced) books carry
+ * their entries; `use`d books carry none — the loader resolves them from
+ * the packaged-book data registry at load (manifest keys ≡ data keys,
+ * conformance-checked).
+ */
+export interface IRPhrasebook {
+  /** Single kebab-case book name. */
+  name: string;
+  source: 'define' | 'use';
+  /** Activity predicate, evaluated at render time; null = always (the default book). */
+  condition: IRCondition | null;
+  /** Present for 'define'; absent for 'use'. Keys are story keys (never dotted platform IDs). */
+  entries?: Record<string, IRPhrase>;
+  span: Span;
 }
 
 // --------------------------------------------------------------------------

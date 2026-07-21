@@ -283,7 +283,20 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       // Unregistered ID echoes as a literal, matching getMessage's fallback.
       return this.assembler.realize({ kind: 'literal', text: messageId }, ctx);
     }
+    return this.renderTemplate(template, params, ctx);
+  }
 
+  /**
+   * Realize a template string directly — {@link renderMessage} minus the
+   * registry lookup (ADR-250 D4). The engine's phrasebook read point calls
+   * this with a book-resolved template; the `messages` map is not consulted.
+   *
+   * @param template The template text
+   * @param params Parameter/producer bindings keyed by placeholder name
+   * @param ctx The per-message render context (world, settings, seams)
+   * @returns The realized text blocks
+   */
+  renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[] {
     // Step 1: Resolve perspective placeholders (ADR-089) — a string pre-pass
     // that runs BEFORE parsing. Passing params lets the resolver leave bound
     // params for the phrase parser and conjugate every other bare {word} as a

@@ -39,9 +39,22 @@ MARKER  = "{" content "}" ;                                (* inside prose text 
 LOCALE  = WORD ;                                           (* e.g. en-US *)
 
 
+(* ---- Comments (ADR-249) ------------------------------------------------ *)
+
+comment-line = "##" rest-of-line NL ;          (* column 1 — indent 0 only *)
+comment-run  = comment-line { comment-line } ; (* blank-delimited on both sides;
+                                                  file start/end count as blank.
+                                                  Legal only between top-level
+                                                  constructs; contributes nothing.
+                                                  No end-of-line comment form
+                                                  exists. Inside a construct:
+                                                  parse.comment-inside-block;
+                                                  undelimited:
+                                                  lex.comment-blank-lines. *)
+
 (* ---- Top level --------------------------------------------------------- *)
 
-story-file   = [ story-header ] { declaration } ;
+story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
 story-header = "story" STRING [ "by" STRING ] NL
                >>> { states-line | score-line | story-on-clause | use-line
                    | WORD ":" rest-of-line NL } ;

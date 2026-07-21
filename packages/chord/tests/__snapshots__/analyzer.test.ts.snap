@@ -686,6 +686,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     },
     "title": "Cloak of Darkness",
   },
+  "phrasebooks": [],
   "phrases": {
     "defaultLocale": "en-US",
     "locales": {

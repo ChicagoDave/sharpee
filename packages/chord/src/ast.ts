@@ -50,12 +50,26 @@ export interface StoryHeader {
    * runtime registration at load.
    */
   uses: UseDecl[];
+  /**
+   * `use phrasebook <name> [while <condition>]` lines (ADR-250 D2) —
+   * packaged voices, predicate bound at the use site (absent = the
+   * default/always book). Stackable; header position = arbitration
+   * position ahead of every body-declared book.
+   */
+  usePhrasebooks: UsePhrasebookDecl[];
   span: Span;
 }
 
 /** One `use <extension>` line (ADR-215). */
 export interface UseDecl {
   name: string;
+  span: Span;
+}
+
+/** One `use phrasebook <name> [while <condition>]` line (ADR-250 D2). */
+export interface UsePhrasebookDecl {
+  name: string;
+  condition: ConditionNode | null;
   span: Span;
 }
 
@@ -89,7 +103,41 @@ export type Declaration =
   // ADR-239 topic conversation (D3 as amended, David 2026-07-18):
   | DefineTopics
   // ADR-242 person identity (ruled Q-1, David 2026-07-19):
-  | DefinePronouns;
+  | DefinePronouns
+  // ADR-245/250 phrasebooks (David 2026-07-21):
+  | DefinePhrasebook
+  | ImportPhrasebookDecl;
+
+/**
+ * `define phrasebook <name> [while <condition>] … end phrasebook`
+ * (ADR-245/ADR-250 D1): a named, predicated collection of phrase entries.
+ * Entries reuse the phrase-override grammar (`<key>[, strategy]:` +
+ * `or` variants); an entry-level `while` parses but is an analyzer gate
+ * (`analysis.phrasebook-entry-gate`) — the book's header predicate is the
+ * only gate. A predicate-less book is the default phrasebook (always).
+ */
+export interface DefinePhrasebook {
+  kind: 'define-phrasebook';
+  /** Single kebab-case book name (extension-name form). */
+  name: string;
+  /** The book's activity predicate; null = always (the default book). */
+  condition: ConditionNode | null;
+  entries: PhraseOverride[];
+  span: Span;
+}
+
+/**
+ * `import phrasebook "<file>"` (ADR-250 D2) — the author's
+ * file-organization axis. Resolved by the compile host (`importResolver`)
+ * into the fragment's `define phrasebook` blocks, spliced at this
+ * position (import site = arbitration position). Unresolved at analysis
+ * time = `analysis.import-unresolved`.
+ */
+export interface ImportPhrasebookDecl {
+  kind: 'import-phrasebook';
+  path: string;
+  span: Span;
+}
 
 /**
  * `define topics for <entity> … end topics` (ADR-239 D3 as amended) — the

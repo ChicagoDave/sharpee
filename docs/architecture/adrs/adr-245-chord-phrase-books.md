@@ -40,6 +40,16 @@ two capabilities follow naturally:
 - **Distributable**: `use <book>` in the ADR-215/235 extension-surface
   pattern — community-shareable voices.
 
+*Intent clarification (David, 2026-07-21, at the design companion):
+the motivation is (a) easier phrase blocks — grouping and file
+organization — and (b) phrase blocks with predicates that change text
+for authorial reasons. `use phrasebook <name> [while <predicate>]`
+remains an important part of the feature (consuming a packaged voice,
+predicate bound at the use site) — but books were never intended as a
+platform-message re-voicing surface; that reading was inferred and is
+struck (see the Q-2 supersession in D1: story keys only, "we're not
+surfacing Sharpee constructs in Chord").*
+
 Most of the machinery already exists: a book is largely sugar over sets
 of `define phrase` overrides. The genuinely new platform piece is
 **arbitration** — several books may define the same key, so the same
@@ -52,13 +62,16 @@ Chord gains a first-class named phrase collection — the **phrasebook**
 (ruled Q-6, David 2026-07-19: the runtime construct owns the name; the
 docs cookbook section renames) — that:
 
-1. groups phrase definitions into one named artifact — **any key: platform
-   dotted IDs and story-defined keys alike, partial coverage always legal**
-   (ruled Q-2, David 2026-07-19); uncovered keys fall through per Q-1.
-   Distribution books will naturally stick to platform IDs; a
-   story-shipped book may re-voice the story's own keys (the
-   unreliable-narrator case). No completeness claim exists — a book
-   promises nothing about coverage;
+1. groups phrase definitions into one named artifact — **story keys
+   only, partial coverage always legal** (Q-2 as originally ruled
+   2026-07-19 said "any key" including platform dotted IDs; SUPERSEDED
+   by David's re-confirmation 2026-07-21 at the design companion:
+   dotted platform message IDs are NOT legal inside a book — "we're
+   not surfacing Sharpee constructs in Chord"; story-level ADR-230 D5
+   `define phrase <dotted-id>` remains the platform-override path).
+   Uncovered keys fall through per Q-1. A book re-voices the story's
+   own keys (the unreliable-narrator case). No completeness claim
+   exists — a book promises nothing about coverage;
 2. can be activated for a story, with the fallback chain **per-entity
    phrase → story `define phrase` → active book → platform default**
    (ruled Q-1, David 2026-07-19): the story's explicit text always wins
@@ -103,8 +116,11 @@ phrasebook's entries are ordinary story phrase definitions, written
 exactly the way phrases are defined today** — the book adds only the
 grouping and the gate predicate. It is not a platform-message override
 pack; dotted message IDs are not the motivating shape (whether they
-remain *legal* inside a book — Q-2 recorded "any key" — is for the
-design companion to re-confirm with David). This section is binding for
+remain *legal* inside a book — Q-2 recorded "any key" — was
+re-confirmed with David 2026-07-21: **NOT legal** — "we're not
+surfacing Sharpee constructs in Chord"; books voice story keys only,
+and story-level ADR-230 D5 dotted overrides remain the platform path.
+See ADR-250 D1/Consequences). This section is binding for
 *feel*, not for grammar — the companion owns final grammar, IR shapes,
 and diagnostics.
 
@@ -237,7 +253,11 @@ phrasebook` so the keyword generalizes rather than becoming a one-off.
 - Rendering evaluates book predicates at render time (Q-3): voice can
   shift mid-turn if a predicate's inputs change between two rendered
   messages in the same turn — an observable property implementations
-  and docs must state, not hide.
+  and docs must state, not hide. *(Refined by ADR-250 D4.5 against the
+  shipped post-turn renderer: all of a turn's messages render against
+  the turn's final state, so voice is whole-turn-coherent and shifts
+  between turns; the mid-turn case cannot arise from §3.4 predicate
+  inputs.)*
 - The stdlib reference's per-entry message-key tables become the
   authoring index for book coverage — the example-first rework (Phase
   13) makes each key's stock rendering visible, which is what a book

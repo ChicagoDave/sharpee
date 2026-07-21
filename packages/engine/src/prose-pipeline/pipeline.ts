@@ -201,6 +201,7 @@ export class ProsePipeline implements IProsePipeline {
 
     const context: HandlerContext = {
       languageProvider: this.languageProvider,
+      world: this.world,
       makeRenderContext,
     };
 

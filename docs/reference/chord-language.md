@@ -74,6 +74,58 @@ letters, digits, apostrophes, hyphens, or underscores (`cant-leave` and
 parts (`3`, `1.0.0`). Strings are double-quoted with no escape sequences.
 Markers are `{name}` forms that appear only inside prose (see §2.6).
 
+### 1.3 Comments (ADR-249)
+
+A comment is a whole line starting with `##` at column 1, between
+top-level constructs, with a blank line before and after it:
+
+```story
+## The Folly at Fernhill — one winter night to find the deed.
+## A multi-line comment is just stacked ## lines.
+
+story "The Folly at Fernhill" by "The Sharpee Project"
+  id: fernhill
+  version: 0.1.0
+
+## The estate exterior — the night begins here.
+
+create the Grounds
+  a room
+
+  Frost on the lawn, and the house dark behind you.
+```
+
+The file may open with a `##` line (the file-header comment needs no
+blank above it), and may end with one (end of file counts as the
+closing blank). Comments contribute nothing: the compiled story is
+identical with or without them.
+
+That is the whole feature — there are no other comment forms:
+
+- **No end-of-line comments.** `create the lamp  # note` is not a
+  comment; a `#` inside prose is prose and renders exactly as typed
+  (`He wore jersey #12.` keeps its `#12`).
+- **No comments inside blocks.** A construct spans its header through
+  its last body line (or its `end` line); a `##` line inside that span
+  is the error `parse.comment-inside-block` ("Comments are only legal
+  outside blocks, at the top level of the story file"):
+
+  ```story
+  create the lamp
+
+  ## still deciding on the chain material
+
+    a thing, portable
+  ```
+
+  This fails: the comment sits between the `create` header and its
+  indented body, which is inside the block.
+
+- **Blank lines are required on both sides.** A `##` line touching a
+  neighboring construct line is the error `lex.comment-blank-lines`.
+- An indented `##` line inside prose is prose — it renders to the
+  player. Keep notes at the top level.
+
 ## 2. Building your world
 
 ### 2.1 The story header

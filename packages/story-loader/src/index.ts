@@ -21,6 +21,8 @@ export { HATCH_CONTEXT_VERSION, stagingRenderContext, findChordLiteral } from '.
 export { ChordDataTrait, ChordDetailTrait, ChordStory, createStory, StoryLoaderOptions } from './loader.js';
 export { Evaluator, EvalContext, EntityIdResolver } from './evaluator.js';
 export { ChordRuntime, ChordBehaviorTrait } from './runtime.js';
+export { PHRASEBOOK_DATA } from './phrasebook-data.js';
+export type { PhrasebookData } from './phrasebook-data.js';
 export {
   CHORD_OCCURRENCE_PREFIX,
   CHORD_RNG_KEY,

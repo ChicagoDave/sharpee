@@ -528,6 +528,18 @@ export interface LanguageProvider {
      */
     renderMessage?(messageId: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
     /**
+     * Render a template STRING through the phrase pipeline — the body of
+     * {@link renderMessage} minus the registry lookup (ADR-250 D4). Used by
+     * the engine's phrasebook read point, where the winning template comes
+     * from a book resolved against world state, not from the messages map.
+     *
+     * @param template The template text (placeholder syntax as registered)
+     * @param params Parameter/producer bindings keyed by placeholder name
+     * @param ctx The per-message render context (world, settings, seams)
+     * @returns The realized text blocks
+     */
+    renderTemplate?(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
+    /**
      * Check if a message exists
      * @param messageId The message identifier
      * @returns True if the message exists

@@ -12,6 +12,8 @@
  *
  * Invariants:
  * - Every non-blank source line yields exactly one Line, in source order.
+ *   Comment lines (ADR-249) are flagged, never dropped — the parser is
+ *   the enforcement point for where a comment may legally appear.
  * - `Line.raw` is the untrimmed source text — prose reconstruction never
  *   loses characters the tokenizer didn't understand.
  * - Indentation is spaces only; a tab in leading whitespace is an error
@@ -53,6 +55,12 @@ export interface Line {
   tokens: Token[];
   /** True when a blank line (or start of file) immediately precedes this line. */
   afterBlank: boolean;
+  /**
+   * True for an indent-0 `##` comment line (ADR-249). Comment lines are
+   * flagged, never dropped: the parser skips them at top-level dispatch
+   * only and diagnoses them everywhere else.
+   */
+  comment: boolean;
 }
 
 const WORD_RE = /^[A-Za-zÀ-ɏ][A-Za-z0-9À-ɏ'_-]*/;
@@ -97,11 +105,43 @@ export function lex(source: string, diagnostics: DiagnosticBag): Line[] {
       raw,
       tokens: tokenizeLine(raw, lineNo, col, diagnostics),
       afterBlank,
+      comment: indent === 0 && raw.startsWith('##'),
     });
     afterBlank = false;
   }
 
+  checkCommentDelimitation(lines, diagnostics);
   return lines;
+}
+
+/**
+ * ADR-249 hard rule: a comment run (maximal consecutive indent-0 `##`
+ * lines) must be preceded AND followed by blank lines. Start and end of
+ * file count as blank — `##` as the very first line is the file-header
+ * comment. One diagnostic per violating run.
+ */
+function checkCommentDelimitation(lines: Line[], diagnostics: DiagnosticBag): void {
+  let i = 0;
+  while (i < lines.length) {
+    if (!lines[i].comment) {
+      i++;
+      continue;
+    }
+    const start = i;
+    while (i + 1 < lines.length && lines[i + 1].comment && !lines[i + 1].afterBlank) i++;
+    const blankBefore = lines[start].afterBlank; // start of file counts as blank
+    const next = lines[i + 1];
+    const blankAfter = !next || next.afterBlank; // end of file counts as blank
+    if (!blankBefore || !blankAfter) {
+      const at = blankBefore ? lines[i] : lines[start];
+      diagnostics.error(
+        'lex.comment-blank-lines',
+        'A `##` comment must have a blank line before and after it.',
+        spanOf(at.lineNo, 1, at.raw.length),
+      );
+    }
+    i++;
+  }
 }
 
 function tokenizeLine(raw: string, lineNo: number, start: number, diagnostics: DiagnosticBag): Token[] {

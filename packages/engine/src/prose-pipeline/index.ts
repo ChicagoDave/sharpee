@@ -57,6 +57,10 @@ export type {
   ChainableEventData,
   GenericEventData,
 } from './handlers/types.js';
+// ADR-250 D4: the phrasebook read point's key builder + evaluator contract —
+// imported by the story-loader registrar (the only other key-builder site).
+export { phrasebookTemplateKey } from './phrase-render.js';
+export type { PhrasebookResolution } from './phrase-render.js';
 export {
   handleRoomDescription,
   handleRevealed,

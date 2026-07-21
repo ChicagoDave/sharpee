@@ -74,10 +74,31 @@ STRING  = '"' any-except-'"' '"'                           (* no escapes *)
 MARKER  = "{" content "}"                                  (* inside text only *)
 ```
 
+## Comments (ADR-249, 2026-07-20)
+
+```
+comment-line = "##" rest-of-line NL ;          (* column 1 — indent 0 only *)
+comment-run  = comment-line { comment-line } ; (* stacked = multi-line comment *)
+```
+
+A comment-run is legal only **between top-level constructs** (before the
+story header, between declarations, after the last) and must be
+**blank-delimited on both sides** — file start and end count as blank,
+so `##` as the very first line (the file-header comment) and a trailing
+comment are legal. Lexer: comment lines are *flagged, never dropped*
+(`Line.comment`); an undelimited run is `lex.comment-blank-lines`.
+Parser: flagged lines are skipped at top-level dispatch only;
+`parse.comment-inside-block` anywhere inside a construct — including at
+indent 0 between a header and its indented body (one-line lookahead),
+and for any indented `##` line in a code position. An indented `##`
+line in prose is prose and renders verbatim (§5.2 opacity). There are
+NO end-of-line comments: `#`/`##` mid-line is prose punctuation or a
+parse error, exactly as before. One concept, one form (Given 7).
+
 ## Top level
 
 ```
-story-file   = [ story-header ] { declaration } ;
+story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
 story-header = "story" STRING [ "by" STRING ] NL
                >>> { states-line | score-line | story-on-clause
                    | WORD ":" rest-of-line NL } ;

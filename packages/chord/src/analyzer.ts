@@ -26,6 +26,7 @@ import {
   DefineCondition,
   DefineMachine,
   DefinePhrase,
+  DefinePhrasebook,
   DefinePhrases,
   DefinePronouns,
   DefineTrait,
@@ -40,10 +41,12 @@ import {
   StoryFile,
   TextValue,
   TraitField,
+  UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
+import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
 import {
   IR_FORMAT,
@@ -382,6 +385,32 @@ class Analyzer {
   /** Extensions admitted by validated `use` lines (ADR-215). */
   private usedExtensions = new Set<string>();
 
+  /**
+   * Phrasebooks in arbitration order (ADR-250 D3): header `use phrasebook`
+   * lines first (file position), then body `define phrasebook` blocks in
+   * declaration order. Conditions resolve in run() (pass 2), after every
+   * entity symbol exists.
+   */
+  private phrasebookDecls: Array<{
+    name: string;
+    source: 'define' | 'use';
+    condition: ConditionNode | null;
+    entries?: Record<string, IRPhrase>;
+    span: Span;
+  }> = [];
+
+  /** Book name → declaring span (`analysis.duplicate-phrasebook` gate). */
+  private phrasebookNames = new Map<string, Span>();
+
+  /**
+   * Story key → true when a predicate-less (default/always) book covers
+   * it. Book coverage counts as declaration for the missing-phrase gate
+   * (ADR-250 D4.6); predicated-only coverage earns the partial-coverage
+   * warning at first reference.
+   */
+  private bookKeys = new Map<string, boolean>();
+  private partialCoverageWarned = new Set<string>();
+
   run(): StoryIR {
     this.collect();
 
@@ -437,6 +466,7 @@ class Analyzer {
       entities: [],
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
+      phrasebooks: [],
       verbs: [],
       hatches: [],
       traits: [],
@@ -531,10 +561,23 @@ class Analyzer {
           break;
         case 'define-phrases':
           break; // collected in pass 1
+        case 'define-phrasebook':
+        case 'import-phrasebook':
+          break; // collected/diagnosed in pass 1; conditions resolve below
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
       }
     }
+
+    // ADR-250 D3: books in arbitration order; predicates resolve here in
+    // pass 2 (an entity declared after the book may appear in its `while`).
+    ir.phrasebooks = this.phrasebookDecls.map((b) => ({
+      name: b.name,
+      source: b.source,
+      condition: b.condition ? this.resolveCondition(b.condition, TOP_SCOPE) : null,
+      ...(b.entries ? { entries: b.entries } : {}),
+      span: b.span,
+    }));
 
     // ADR-241 D3/D4: the implied `main` ambient bed — used by an ambient
     // statement without a declaration — joins the channel manifest so the
@@ -1164,6 +1207,9 @@ class Analyzer {
       // owned, so ownerless/bare-key scope — the same registration the five
       // pre-existing contexts use.
       for (const clause of this.ast.header.onClauses) this.collectInlineTexts(clause.body);
+      // `use phrasebook` lines (ADR-250 D2/D3) — header position puts every
+      // used book ahead of body-declared books in the arbitration order.
+      for (const use of this.ast.header.usePhrasebooks) this.collectUsePhrasebook(use);
     }
 
     for (const decl of this.ast.declarations) {
@@ -1181,6 +1227,17 @@ class Analyzer {
       }
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
+      else if (decl.kind === 'define-phrasebook') this.collectPhrasebook(decl);
+      else if (decl.kind === 'import-phrasebook') {
+        // The compile host resolves imports before analysis (splicing the
+        // fragment's blocks at this position); one surviving here means no
+        // resolver ran — direct parse/analyze callers included.
+        this.diagnostics.error(
+          'analysis.import-unresolved',
+          `\`import phrasebook "${decl.path}"\` was not resolved — compile with an \`importResolver\` host hook.`,
+          decl.span,
+        );
+      }
       else if (decl.kind === 'define-asset') {
         // ADR-216: declared media assets — DATA references, one namespace.
         if (this.assets.has(decl.name)) {
@@ -1594,6 +1651,89 @@ class Analyzer {
 
   private variantOf(value: TextValue): { text: string; markers: string[] } {
     return { text: value.text, markers: value.markers.map((m) => m.content) };
+  }
+
+  /** Duplicate-name gate shared by `define phrasebook` and `use phrasebook`. */
+  private registerPhrasebookName(name: string, span: Span): boolean {
+    const first = this.phrasebookNames.get(name);
+    if (first) {
+      this.diagnostics.error(
+        'analysis.duplicate-phrasebook',
+        `A phrasebook named \`${name}\` is already declared at line ${first.line}.`,
+        span,
+      );
+      return false;
+    }
+    this.phrasebookNames.set(name, span);
+    return true;
+  }
+
+  /** Book coverage bookkeeping: key → covered by a default (always) book? */
+  private recordBookKey(key: string, isAlways: boolean): void {
+    this.bookKeys.set(key, (this.bookKeys.get(key) ?? false) || isAlways);
+  }
+
+  /** `use phrasebook <name> [while <cond>]` (ADR-250 D2/D3) — pass 1. */
+  private collectUsePhrasebook(use: UsePhrasebookDecl): void {
+    const manifest = PHRASEBOOK_REGISTRY.get(use.name);
+    if (!manifest) {
+      this.diagnostics.error(
+        'analysis.unknown-phrasebook',
+        `\`use phrasebook ${use.name}\` names no registered phrasebook${this.suggestText(use.name, [...PHRASEBOOK_REGISTRY.keys()])}.`,
+        use.span,
+      );
+      return;
+    }
+    if (!this.registerPhrasebookName(use.name, use.span)) return;
+    this.phrasebookDecls.push({ name: use.name, source: 'use', condition: use.condition, span: use.span });
+    for (const key of manifest.keys) this.recordBookKey(key, use.condition === null);
+  }
+
+  /** `define phrasebook` (ADR-250 D1/D3) — pass 1: entry gates + coverage. */
+  private collectPhrasebook(decl: DefinePhrasebook): void {
+    if (!decl.name) return; // header parse error already reported
+    if (!this.registerPhrasebookName(decl.name, decl.span)) return;
+    const entries: Record<string, IRPhrase> = {};
+    for (const entry of decl.entries) {
+      if (entry.condition) {
+        this.diagnostics.error(
+          'analysis.phrasebook-entry-gate',
+          `Entries carry no \`while\` — the book's own predicate is the gate. Move the condition to \`define phrasebook ${decl.name} while …\`, or split the entry into a second book.`,
+          entry.span,
+        );
+      }
+      if (entry.key.includes('.')) {
+        this.diagnostics.error(
+          'analysis.phrasebook-dotted-key',
+          `\`${entry.key}\` is a platform message ID — phrasebooks voice the story's own keys. To override a platform message, use a story-level \`define phrase ${entry.key}\`.`,
+          entry.span,
+        );
+        continue;
+      }
+      if (entry.key === 'br' || RESERVED_CHANNEL_KEYS.has(entry.key)) {
+        this.diagnostics.error(
+          'analysis.phrasebook-reserved-key',
+          `\`${entry.key}\` is reserved — pick another entry key.`,
+          entry.span,
+        );
+        continue;
+      }
+      if (entries[entry.key]) {
+        this.diagnostics.error(
+          'analysis.phrasebook-duplicate-key',
+          `\`${entry.key}\` is declared twice in phrasebook \`${decl.name}\` — competing texts live in different books.`,
+          entry.span,
+        );
+        continue;
+      }
+      entries[entry.key] = {
+        strategy: (entry.strategy as IRPhrase['strategy']) ?? null,
+        variants: entry.variants.map((v) => this.variantOf(v)),
+        span: entry.span,
+      };
+      this.recordBookKey(entry.key, decl.condition === null);
+    }
+    this.phrasebookDecls.push({ name: decl.name, source: 'define', condition: decl.condition, entries, span: decl.span });
   }
 
   private registerPhrase(locale: string, key: string, phrase: IRPhrase): void {
@@ -2890,6 +3030,19 @@ class Analyzer {
     const table = this.phrases.get(DEFAULT_LOCALE);
     if (table?.has(key)) return;
     if (owner && table?.has(`${owner.id}.${key}`)) return;
+    // ADR-250 D4.6: book coverage counts as declaration. Covered only by
+    // predicated books → warn once (off-book it renders nothing).
+    if (this.bookKeys.has(key)) {
+      if (!this.bookKeys.get(key) && !this.partialCoverageWarned.has(key)) {
+        this.partialCoverageWarned.add(key);
+        this.diagnostics.warning(
+          'analysis.phrasebook-partial-coverage',
+          `\`${key}\` is only defined in conditional phrasebooks — when no book is active it renders nothing.`,
+          span,
+        );
+      }
+      return;
+    }
     const known = table ? [...table.keys()] : [];
     this.diagnostics.error(
       'analysis.missing-phrase',
@@ -2906,27 +3059,40 @@ class Analyzer {
   private checkMarkers(): void {
     for (const [, table] of this.phrases) {
       for (const [key, phrase] of table) {
-        for (const variant of phrase.variants) {
-          // A variant carrying formatter-chain forms ({You}, {the item},
-          // {verb:…}) is a TEMPLATE — its bare lowercase markers are chain
-          // verbs ({open}), not producer references (Phase B: §3.2 trait
-          // phrases). Full chain validation lands with the AC-9 contract.
-          const isTemplate = variant.markers.some(
-            (m) => /[A-Z]/.test(m[0] ?? '') || m.includes(' ') || m.includes(':'),
-          );
-          if (isTemplate) continue;
-          for (const marker of variant.markers) {
-            if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
-            if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
-            if (this.hatchNames.has(marker)) continue;
-            if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) continue;
-            this.diagnostics.error(
-              'analysis.unbound-marker',
-              `\`{${marker}}\` in phrase \`${key}\` is not a declared text producer or phrase${this.suggestText(marker, [...this.hatchNames])}.`,
-              phrase.span,
-            );
-          }
-        }
+        this.checkPhraseMarkers(key, phrase);
+      }
+    }
+    // Phrasebook entries carry the same marker contract (ADR-250 D1 —
+    // entries are ordinary phrase definitions).
+    for (const book of this.phrasebookDecls) {
+      if (!book.entries) continue;
+      for (const [key, phrase] of Object.entries(book.entries)) {
+        this.checkPhraseMarkers(`${book.name}.${key}`, phrase);
+      }
+    }
+  }
+
+  private checkPhraseMarkers(label: string, phrase: IRPhrase): void {
+    for (const variant of phrase.variants) {
+      // A variant carrying formatter-chain forms ({You}, {the item},
+      // {verb:…}) is a TEMPLATE — its bare lowercase markers are chain
+      // verbs ({open}), not producer references (Phase B: §3.2 trait
+      // phrases). Full chain validation lands with the AC-9 contract.
+      const isTemplate = variant.markers.some(
+        (m) => /[A-Z]/.test(m[0] ?? '') || m.includes(' ') || m.includes(':'),
+      );
+      if (isTemplate) continue;
+      for (const marker of variant.markers) {
+        if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
+        if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
+        if (this.hatchNames.has(marker)) continue;
+        if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) continue;
+        if (this.bookKeys.has(marker)) continue; // book coverage counts (ADR-250 D4.6)
+        this.diagnostics.error(
+          'analysis.unbound-marker',
+          `\`{${marker}}\` in phrase \`${label}\` is not a declared text producer or phrase${this.suggestText(marker, [...this.hatchNames])}.`,
+          phrase.span,
+        );
       }
     }
   }

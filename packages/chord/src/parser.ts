@@ -34,6 +34,7 @@ import {
   DefineCondition,
   DefineHatch,
   DefinePhrase,
+  DefinePhrasebook,
   DefinePhrases,
   DefineAsset,
   DefineFamilyChannel,
@@ -78,10 +79,12 @@ import {
   StateName,
   StartsStateDecl,
   TraitField,
+  ImportPhrasebookDecl,
   StoryFile,
   StoryHeader,
   TopicRow,
   UseDecl,
+  UsePhrasebookDecl,
   TextMarker,
   TextValue,
   ValueExpr,
@@ -109,7 +112,7 @@ const ORDINALS: Record<string, number> = {
 const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
-const TOP_KEYWORDS = new Set(['story', 'create', 'define', 'when', 'once', 'every']);
+const TOP_KEYWORDS = new Set(['story', 'create', 'define', 'when', 'once', 'every', 'import']);
 
 /**
  * Parse `.story` source into an AST.
@@ -168,6 +171,16 @@ function isEndLine(line: Line): boolean {
   return firstWord(line) === 'end';
 }
 
+/**
+ * True for any `##`-prefixed line at any indent (ADR-249). In code
+ * positions this is always an error — comments are only legal flagged
+ * (indent 0) and between top-level constructs. Prose positions never
+ * call this: an indented `##` in prose renders verbatim (§5.2 opacity).
+ */
+function looksLikeComment(line: Line): boolean {
+  return line.raw.trimStart().startsWith('##');
+}
+
 /** Words that open a statement or block boundary inside behavior bodies. */
 const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose', 'kill',
@@ -217,6 +230,20 @@ class Parser {
 
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
+      if (line.comment) {
+        // ADR-249: comments are legal exactly between top-level
+        // constructs. A following indented line means this comment sits
+        // between a construct's header and its body — inside the block.
+        const next = this.lines[this.pos + 1];
+        if (next && next.indent > 0) {
+          this.reportCommentInsideBlock(line);
+          this.pos++;
+          this.recoverToTopLevel();
+        } else {
+          this.pos++;
+        }
+        continue;
+      }
       if (line.indent !== 0) {
         this.diagnostics.error('parse.unexpected-indent', 'Unexpected indentation — expected a top-level declaration.', lineSpan(line));
         this.recoverToTopLevel();
@@ -237,6 +264,14 @@ class Parser {
           break;
         case 'define': {
           const d = this.parseDefine();
+          if (d) declarations.push(d);
+          break;
+        }
+        case 'import': {
+          // ADR-250 D2: `import phrasebook "<file>"` — position IS the
+          // book's arbitration position. Bare `import "<file>"` is
+          // reserved for the parked generalized-import ADR.
+          const d = this.parseImportPhrasebook();
           if (d) declarations.push(d);
           break;
         }
@@ -304,6 +339,21 @@ class Parser {
     };
   }
 
+  /** ADR-249: the one inside-block comment diagnostic, with its fix-it. */
+  private reportCommentInsideBlock(line: Line): void {
+    this.diagnostics.error(
+      'parse.comment-inside-block',
+      'Comments are only legal outside blocks, at the top level of the story file.',
+      lineSpan(line),
+    );
+  }
+
+  /** Report an inside-block comment and consume the line (block parsing continues). */
+  private skipCommentInsideBlock(line: Line): void {
+    this.reportCommentInsideBlock(line);
+    this.pos++;
+  }
+
   /** Skip lines until the next top-level keyword at indent 0. */
   private recoverToTopLevel(consumeCurrent = false): void {
     if (consumeCurrent) this.pos++;
@@ -345,6 +395,7 @@ class Parser {
     const scores: ScoreDecl[] = [];
     const onClauses: OnClause[] = [];
     const uses: UseDecl[] = [];
+    const usePhrasebooks: UsePhrasebookDecl[] = [];
     let span = lineSpan(line);
     while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
       const peeked = this.lines[this.pos];
@@ -357,6 +408,29 @@ class Parser {
         span = mergeSpans(span, lineSpan(useLine));
         const uc = new Cursor(useLine.tokens, useLine);
         uc.matchWord('use');
+        // ADR-250 D2: exactly the word `phrasebook` selects the two-word
+        // form — `use phrasebook <name> [while <condition>]`, stackable.
+        // Plain `use <extension>` keeps its strict one-word grammar.
+        if (uc.isWord('phrasebook')) {
+          uc.next();
+          const bookTok = uc.next();
+          if (!bookTok || bookTok.kind !== 'word') {
+            this.diagnostics.error('parse.use-phrasebook', 'Expected `use phrasebook <name> [while <condition>]` — a single kebab-case book name.', uc.restSpan());
+            continue;
+          }
+          let bookCondition: ConditionNode | null = null;
+          if (uc.isWord('while')) {
+            uc.next();
+            const condTokens: Token[] = [];
+            while (!uc.atEnd()) condTokens.push(uc.next()!);
+            bookCondition = this.parseCondition(new Cursor(condTokens, useLine), useLine);
+          } else if (!uc.atEnd()) {
+            this.diagnostics.error('parse.use-phrasebook', 'Unexpected text after the book name — only `while <condition>` may follow.', uc.restSpan());
+            continue;
+          }
+          usePhrasebooks.push({ name: bookTok.text, condition: bookCondition, span: lineSpan(useLine) });
+          continue;
+        }
         const nameTok = uc.next();
         if (!nameTok || nameTok.kind !== 'word' || !uc.atEnd()) {
           this.diagnostics.error('parse.use', 'Expected `use <extension>` — one extension name per line.', lineSpan(useLine));
@@ -413,7 +487,7 @@ class Parser {
       fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
     }
 
-    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, span };
+    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, span };
   }
 
   /**
@@ -1225,6 +1299,10 @@ class Parser {
         return this.parseDefineCondition();
       case 'phrase':
         return this.parseDefinePhrase();
+      case 'phrasebook':
+        // ADR-245/250 D1 (David 2026-07-21) — named, predicated phrase
+        // collections; entries reuse the phrase-override grammar.
+        return this.parseDefinePhrasebook();
       case 'phrases':
         return this.parseDefinePhrases();
       case 'verb':
@@ -1368,6 +1446,12 @@ class Parser {
         this.diagnostics.error('parse.unterminated-block', 'Missing `end phrase`.', span);
         break;
       }
+      if (line.comment) {
+        // ADR-249 — indented `##` stays prose here; only a flagged
+        // (indent-0) comment line is an inside-block error.
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
       if (isEndLine(line)) {
         span = mergeSpans(span, lineSpan(line));
         this.consumeEnd('phrase', headLine);
@@ -1407,6 +1491,97 @@ class Parser {
     }
 
     return { kind: 'define-phrase', key, strategy, verbatim, condition, variants, span };
+  }
+
+  /**
+   * `define phrasebook <name> [while <condition>] … end phrasebook`
+   * (ADR-250 D1). Entries are phrase-override-shaped lines
+   * (`<key>[, strategy]:` + `or` variants) at one indent level; the
+   * body carries the ADR-249 comment guard like every end-terminated
+   * block. Entry-level `while` parses here (override grammar) and is
+   * gated in the analyzer (`analysis.phrasebook-entry-gate`).
+   */
+  private parseDefinePhrasebook(): DefinePhrasebook {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('define');
+    c.matchWord('phrasebook');
+    let name = '';
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.phrasebook-header', 'Expected `define phrasebook <name> [while <condition>]` — a single kebab-case book name.', c.restSpan());
+    } else {
+      name = nameTok.text;
+    }
+    let condition: ConditionNode | null = null;
+    if (c.isWord('while')) {
+      c.next();
+      const condTokens: Token[] = [];
+      while (!c.atEnd()) condTokens.push(c.next()!);
+      condition = this.parseCondition(new Cursor(condTokens, headLine), headLine);
+    } else if (!c.atEnd()) {
+      this.diagnostics.error('parse.phrasebook-header', 'Unexpected text after the book name — only `while <condition>` may follow.', c.restSpan());
+    }
+
+    const entries: PhraseOverride[] = [];
+    let span = lineSpan(headLine);
+    for (;;) {
+      const line = this.lines[this.pos];
+      if (!line) {
+        this.diagnostics.error('parse.phrasebook-end', 'Missing `end phrasebook`.', span);
+        break;
+      }
+      if (line.comment) {
+        // ADR-249: `##` inside a block is never a comment.
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (isEndLine(line)) {
+        span = mergeSpans(span, this.consumeEnd('phrasebook', headLine));
+        break;
+      }
+      if (line.indent === 0) {
+        this.diagnostics.error('parse.phrasebook-end', 'Missing `end phrasebook`.', span);
+        break;
+      }
+      if (line.tokens[0]?.kind !== 'word' || !line.tokens.some((t) => t.kind === 'colon')) {
+        this.diagnostics.error('parse.phrasebook-entry', 'Expected `<key>[, strategy]:` to open a phrasebook entry.', lineSpan(line));
+        this.pos++;
+        continue;
+      }
+      this.pos++;
+      const entry = this.parsePhraseOverride(line);
+      entries.push(entry);
+      span = mergeSpans(span, entry.span);
+    }
+
+    return { kind: 'define-phrasebook', name, condition, entries, span };
+  }
+
+  /** `import phrasebook "<file>"` (ADR-250 D2) — resolved by the compile host. */
+  private parseImportPhrasebook(): ImportPhrasebookDecl | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('import');
+    if (!c.isWord('phrasebook')) {
+      this.diagnostics.error(
+        'parse.import-form',
+        'Expected `import phrasebook "<file>"` — bare `import "<file>"` is reserved for a future generalized import.',
+        c.restSpan(),
+      );
+      return null;
+    }
+    c.next();
+    const pathTok = c.next();
+    if (!pathTok || pathTok.kind !== 'string' || !c.atEnd()) {
+      this.diagnostics.error('parse.import-form', 'Expected a quoted file path: `import phrasebook "<file>"`.', c.restSpan());
+      return null;
+    }
+    if (!pathTok.text.endsWith('.story')) {
+      this.diagnostics.error('parse.import-form', `Imported phrasebook files use the \`.story\` extension — got \`${pathTok.text}\`.`, pathTok.span);
+      return null;
+    }
+    return { kind: 'import-phrasebook', path: pathTok.text, span: lineSpan(line) };
   }
 
   private parseDefinePhrases(): DefinePhrases {
@@ -1557,6 +1732,10 @@ class Parser {
 
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
       if (line.indent === 0) {
         if (isEndLine(line)) break;
         this.diagnostics.error('parse.unterminated-block', 'Missing `end trait`.', lineSpan(headLine));
@@ -1601,6 +1780,10 @@ class Parser {
     const fields: TraitField[] = [];
     while (this.pos < this.lines.length && this.lines[this.pos].indent > dataLine.indent) {
       const line = this.lines[this.pos++];
+      if (looksLikeComment(line)) {
+        this.reportCommentInsideBlock(line);
+        continue;
+      }
       const c = new Cursor(line.tokens, line);
       const name: string[] = [];
       while (!c.atEnd() && c.peek()!.kind === 'word') name.push(c.next()!.text);
@@ -1698,6 +1881,10 @@ class Parser {
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
       if (line.indent === 0) break; // dedent-terminated (no `end action`, design.md §2.3/§3.4)
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
       const word = firstWord(line);
       if (word === 'grammar' && line.tokens.length === 1) {
         this.pos++;
@@ -1974,6 +2161,10 @@ class Parser {
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
       if (line.indent === 0) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
       const sc = new Cursor(line.tokens, line);
       let timing: SequenceStep['timing'] | null = null;
       let turns = 0;
@@ -2053,6 +2244,10 @@ class Parser {
           this.diagnostics.error('parse.topics-empty', 'This `define topics` block declares no rows — add `about …: <response>` rows, or remove the block.', decl.span);
         }
         return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
       }
       if (line.indent === 0) break; // dedent without `end topics` — reported below
       decl.span = mergeSpans(decl.span, lineSpan(line));
@@ -2359,6 +2554,10 @@ class Parser {
         decl.span = mergeSpans(decl.span, lineSpan(line));
         return decl;
       }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
       if (line.indent === 0) break;
       decl.span = mergeSpans(decl.span, lineSpan(line));
       this.pos++;
@@ -2446,6 +2645,10 @@ class Parser {
         this.pos++;
         decl.span = mergeSpans(decl.span, lineSpan(line));
         return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
       }
       if (line.indent === 0) break;
       decl.span = mergeSpans(decl.span, lineSpan(line));
@@ -2644,6 +2847,10 @@ class Parser {
         decl.span = mergeSpans(decl.span, lineSpan(line));
         return decl;
       }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
       if (line.indent === 0) break; // dedent without `end machine` — reported below
       decl.span = mergeSpans(decl.span, lineSpan(line));
       if (word === 'role') {
@@ -2814,6 +3021,10 @@ class Parser {
       const line = this.lines[this.pos];
       if (line.indent <= openIndent) break;
       if (isEndLine(line) || ((firstWord(line) === 'else' || firstWord(line) === 'or') && line.tokens.length === 1)) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
       const stmt = this.parseStatement(line, blockKeyword);
       if (stmt) body.push(stmt);
     }

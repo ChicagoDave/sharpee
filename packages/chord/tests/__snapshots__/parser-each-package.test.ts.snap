@@ -1446,6 +1446,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
     "states": [],
     "statesReversible": false,
     "title": "Each Package Parse Fixture",
+    "usePhrasebooks": [],
     "uses": [],
   },
   "kind": "story-file",
