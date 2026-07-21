@@ -5,7 +5,7 @@
  * NPC behavior chain: Conversation (ADR-142), Information Propagation
  * (ADR-144), Goal Pursuit (ADR-145), and Influence (ADR-146).
  *
- * Public interface: story (default export)
+ * Public interface: createStory() (ADR-248 factory), AldermanStory
  * Owner: thealderman story
  */
 
@@ -24,10 +24,10 @@ import { Action } from '@sharpee/stdlib';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 
-import { createRooms, RoomIds } from './rooms';
+import { createRooms } from './rooms';
 import { createObjects } from './objects';
 import { createNpcs } from './npcs';
-import { customActions, ACCUSE_ACTION_ID } from './actions';
+import { createAccuseAction, ACCUSE_ACTION_ID } from './actions';
 import { randomizeSolution } from './randomization';
 import { MSG } from './messages';
 import { STORY_VERSION } from './version';
@@ -40,8 +40,14 @@ const config: StoryConfig = {
   description: 'A murder mystery in a grand 1870s Chicago hotel.',
 };
 
-class AldermanStory implements Story {
+export class AldermanStory implements Story {
   config = config;
+
+  /**
+   * Per-instance ACCUSE action + solution setter (ADR-248: no
+   * module-level state — a fresh story instance gets fresh state).
+   */
+  private accuse = createAccuseAction();
 
   createPlayer(world: WorldModel): IFEntity {
     const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -58,12 +64,16 @@ class AldermanStory implements Story {
   }
 
   initializeWorld(world: WorldModel): void {
-    createRooms(world);
-    createObjects(world);
-    createNpcs(world);
+    const rooms = createRooms(world);
+    const { weapons } = createObjects(world, rooms);
+    const npcs = createNpcs(world, rooms);
 
-    // Randomize the solution
-    const solution = randomizeSolution(world);
+    // Randomize the solution and wire it into this instance's ACCUSE action
+    const solution = randomizeSolution(
+      world,
+      { rooms, npcs, weapons },
+      this.accuse.setSolution,
+    );
 
     // Store solution for debugging
     world.setStateValue('alderman.solution.killer', solution.killerName);
@@ -73,11 +83,11 @@ class AldermanStory implements Story {
 
     // Place player in their room (morning after arrival)
     const player = world.getPlayer()!;
-    world.moveEntity(player.id, RoomIds.room310);
+    world.moveEntity(player.id, rooms.room310);
   }
 
   getCustomActions(): Action[] {
-    return customActions;
+    return [this.accuse.action];
   }
 
   extendParser(parser: Parser): void {
@@ -265,5 +275,10 @@ class AldermanStory implements Story {
   }
 }
 
-export const story = new AldermanStory();
-export default story;
+/**
+ * Story factory (ADR-248): the module's sole story export. Each call
+ * returns a fully fresh story instance — clients call this per boot.
+ */
+export function createStory(): AldermanStory {
+  return new AldermanStory();
+}

@@ -814,8 +814,8 @@ export class GameEngine {
    * The post-mortem revival seam: after `stop('defeat')`, a harness (or a
    * story resurrection policy) that has restored the world to a live-player
    * snapshot — e.g. the transcript-tester's RETRY block via
-   * `world.loadJSON()` — needs turn execution back without the full
-   * `restartGame()` teardown (which clears the world it just restored).
+   * `world.loadJSON()` — needs turn execution back without any world
+   * teardown (a full reboot would clear the world it just restored).
    * Flips `running` back on; emits nothing, rebuilds nothing.
    *
    * No-op when already running. Throws if the engine was never started
@@ -836,7 +836,7 @@ export class GameEngine {
   /**
    * Stop the game engine
    */
-  stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort', details?: any): void {
+  stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort' | 'restart', details?: any): void {
     if (!this.running) {
       return;
     }
@@ -883,48 +883,22 @@ export class GameEngine {
   }
 
   /**
-   * Restart the game from scratch.
+   * Build the restart acknowledgment event (ADR-248).
    *
-   * Clears the world, resets engine state, and re-initializes the story.
-   * Called from both processMetaPlatformOperation and processPlatformOperations.
+   * On confirmed restart the engine does NOT rebuild in place — it renders
+   * this acknowledgment ("The story restarts.") in the final packet, then
+   * stops with reason 'restart'; the client owns the reboot via its own
+   * boot path. No pre-emptive restart_completed(true) is emitted: the new
+   * boot's opening banner is the success signal.
    */
-  private async restartGame(): Promise<void> {
-    if (!this.story) return;
-
-    // Stop engine if running
-    if (this.running) {
-      this.stop();
-    }
-
-    // Reset pronoun context
-    if (this.parser && hasPronounContext(this.parser)) {
-      this.parser.resetPronounContext();
-    }
-
-    // Clear world state (entities, spatial index, relationships, etc.)
-    this.world.clear();
-
-    // Reset engine context
-    this.context.currentTurn = 1;
-    this.context.history = [];
-    this.context.metadata.started = new Date();
-    this.context.metadata.lastPlayed = new Date();
-
-    // Clear engine bookkeeping
-    this.turnEvents.clear();
-    this.pendingPlatformOps = [];
-    this.soundBuffer.length = 0;
-    this.saveRestoreService.clearUndoSnapshots();
-    this.hasEmittedInitialized = false;
-
-    // Clear plugin registry so story can re-register plugins
-    this.pluginRegistry.clear();
-
-    // Re-initialize the story (creates entities, player, custom actions, etc.)
-    this.setStory(this.story);
-
-    // Start the engine (emits game.initialized + game.started)
-    this.start();
+  private createRestartAckEvent(): ISemanticEvent {
+    return {
+      id: `restart_ack_${Date.now()}`,
+      type: 'game.message',
+      timestamp: Date.now(),
+      data: { messageId: 'if.action.restarting.game_restarting' },
+      entities: {}
+    };
   }
 
   /**
@@ -1567,18 +1541,18 @@ export class GameEngine {
 
       case PlatformEventType.RESTART_REQUESTED: {
         const context = platformOp.payload.context as IRestartContext;
-        if (this.saveRestoreHooks?.onRestartRequested) {
-          const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
-          if (shouldRestart) {
-            await this.restartGame();
-            completionEvents.push(createRestartCompletedEvent(true));
-          } else {
-            completionEvents.push(createRestartCompletedEvent(false));
-          }
+        const shouldRestart = this.saveRestoreHooks?.onRestartRequested
+          ? await this.saveRestoreHooks.onRestartRequested(context)
+          : true; // No restart hook — auto-confirm
+        if (shouldRestart) {
+          // ADR-248: ack in the final packet, then stop('restart'). The
+          // client's hook is the reboot trigger; the stop reason is
+          // bookkeeping. No restart_completed(true) — the reboot's opening
+          // banner is the success signal.
+          completionEvents.push(this.createRestartAckEvent());
+          this.stop('restart');
         } else {
-          // No restart hook — auto-confirm
-          await this.restartGame();
-          completionEvents.push(createRestartCompletedEvent(true));
+          completionEvents.push(createRestartCompletedEvent(false));
         }
         break;
       }
@@ -2441,10 +2415,14 @@ export class GameEngine {
             }
 
             if (shouldRestart) {
-              const completionEvent = createRestartCompletedEvent(true);
-              this.eventSource.emit(completionEvent);
-              this.emit('event', completionEvent);
-              await this.restartGame();
+              // ADR-248: ack in the final packet, then stop('restart').
+              // No restart_completed(true) — the client reboots and its
+              // opening banner is the success signal.
+              const ackEvent = this.createRestartAckEvent();
+              this.eventSource.emit(ackEvent);
+              this.turnEvents.get(currentTurn)?.push(ackEvent);
+              this.emit('event', ackEvent);
+              this.stop('restart');
             } else {
               const cancelEvent = createRestartCompletedEvent(false);
               this.eventSource.emit(cancelEvent);

@@ -307,34 +307,85 @@ describe('GameEngine Platform Operations', () => {
       );
     });
 
-    it('should reinitialize story and emit completion when restart confirmed', async () => {
+    it('should ack, stop with reason restart, and leave the world untouched when confirmed (ADR-248)', async () => {
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
-      
+
+      const world = engine.getWorld();
+      const entityCountBefore = world.getAllEntities().length;
+      expect(entityCountBefore).toBeGreaterThan(0);
+
       const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
-      
+
       engine['pendingPlatformOps'].push(restartEvent);
       await engine['processPlatformOperations']();
-      
-      const completedEvents = events.filter(e => e.type === 'platform.restart_completed');
-      expect(completedEvents).toHaveLength(1);
-      expect(completedEvents[0].payload.success).toBe(true);
+
+      // No pre-emptive success claim — the client's reboot banner is the
+      // success signal (ADR-248 decision 1)
+      expect(events.filter(e => e.type === 'platform.restart_completed')).toHaveLength(0);
+
+      // The ack renders in the final packet via game.message
+      const acks = events.filter(
+        e => e.type === 'game.message' &&
+             e.data?.messageId === 'if.action.restarting.game_restarting'
+      );
+      expect(acks).toHaveLength(1);
+
+      // Engine stopped with reason 'restart'; game.ended carries it
+      expect(engine['running']).toBe(false);
+      const ended = events.filter(e => e.type === 'game.ended');
+      expect(ended).toHaveLength(1);
+      expect(ended[0].data?.ending?.type).toBe('restart');
+
+      // The world is NOT cleared — the client reboot owns fresh state
+      expect(world.getAllEntities().length).toBe(entityCountBefore);
     });
 
-    it('should emit cancelled event when restart declined', async () => {
+    it('should emit cancelled event and keep running when restart declined', async () => {
       mockHooks.onRestartRequested = vi.fn().mockResolvedValue(false);
-      
+
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
-      
+
+      const world = engine.getWorld();
+      const entityCountBefore = world.getAllEntities().length;
+
       const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
-      
+
       engine['pendingPlatformOps'].push(restartEvent);
       await engine['processPlatformOperations']();
-      
+
       const cancelledEvents = events.filter(e => e.type === 'platform.restart_cancelled');
       expect(cancelledEvents).toHaveLength(1);
       expect(cancelledEvents[0].payload.success).toBe(false);
+
+      // Declined restart tears nothing down (ADR-248): world intact, engine running
+      expect(engine['running']).toBe(true);
+      expect(world.getAllEntities().length).toBe(entityCountBefore);
+    });
+
+    it('meta path: confirmed restart returns ack, no completion, and stops the engine (ADR-248)', async () => {
+      const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
+
+      const completionEvents = await engine['processMetaPlatformOperation'](restartEvent);
+
+      expect(completionEvents.filter((e: any) => e.type === 'platform.restart_completed')).toHaveLength(0);
+      expect(completionEvents.filter((e: any) =>
+        e.type === 'game.message' &&
+        e.data?.messageId === 'if.action.restarting.game_restarting'
+      )).toHaveLength(1);
+      expect(engine['running']).toBe(false);
+    });
+
+    it('meta path: declined restart returns restart_cancelled and keeps the engine running', async () => {
+      mockHooks.onRestartRequested = vi.fn().mockResolvedValue(false);
+
+      const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
+
+      const completionEvents = await engine['processMetaPlatformOperation'](restartEvent);
+
+      expect(completionEvents.filter((e: any) => e.type === 'platform.restart_cancelled')).toHaveLength(1);
+      expect(engine['running']).toBe(true);
     });
   });
 

@@ -67,7 +67,8 @@ async function runStory() {
     const { Parser } = require('@sharpee/parser-en-us');
     const { EnglishLanguageProvider } = require('@sharpee/lang-en-us');
     const { TextService } = require('@sharpee/text-services');
-    const { story } = require('./dist/index.js');
+    const { createStory } = require('./dist/index.js');
+    const story = createStory();
 
     // Create world and player
     const world = new WorldModel();

@@ -65,11 +65,11 @@ exports.createEditorSession = function createEditorSession(storyId, projectPath)
   delete require.cache[require.resolve(distPath)];
 
   const storyModule = require(distPath);
-  const story = storyModule.story || storyModule.default;
-
-  if (!story) {
-    throw new Error(`Story module '${storyId}' does not export 'story' or 'default'`);
+  // ADR-248 factory-only contract
+  if (typeof storyModule.createStory !== 'function') {
+    throw new Error(`Story module '${storyId}' does not export createStory() (ADR-248 factory contract)`);
   }
+  const story = storyModule.createStory();
 
   // Create world and initialize
   const { WorldModel, EntityType } = exports;
@@ -272,15 +272,17 @@ Examples:
   // (`entry` applies only to module stories and is ignored for `.story` files).
   function loadStoryAndCreateGame(storyPath, entry) {
     if (storyPath.endsWith('.story')) {
-      return bootstrap.assembleGame(loadChordStory(storyPath));
+      // ADR-248: freshStory recompiles from source, so an in-transcript
+      // RESTART reboots onto a fully fresh ChordStory.
+      return bootstrap.assembleGame(loadChordStory(storyPath), {
+        freshStory: () => loadChordStory(storyPath),
+      });
     }
     const modulePath = bootstrap.resolveStoryModulePath(storyPath, entry);
-    const storyModule = require(modulePath);
-    const story = storyModule.story || storyModule.default;
-    if (!story) {
-      throw new Error(`Story module at ${storyPath} does not export 'story' or 'default'`);
-    }
-    return bootstrap.assembleGame(story);
+    // ADR-248: bootstrap's one purge+re-require+createStory() implementation
+    // serves both the initial load and every in-process restart reboot.
+    const freshStory = bootstrap.moduleFreshStory(storyPath, modulePath);
+    return bootstrap.assembleGame(freshStory(), { freshStory });
   }
 
   async function runInteractiveMode(game) {

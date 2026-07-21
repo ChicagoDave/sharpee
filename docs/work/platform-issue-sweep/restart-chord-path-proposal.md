@@ -1,6 +1,10 @@
 # Proposal: RESTART on the Chord path (investigation + fix plan)
 
-**Status**: PROPOSED — investigation complete, no implementation (David's ruling
+**Status**: SUPERSEDED by ADR-248 (2026-07-20, session 171837) — restart now
+delegates through platform events (client reboot, not in-place rebuild), so
+fix A (re-entrant `initializeWorld`) is dropped; fix B (honest error
+surfacing) carries forward into ADR-248's decision 4. Original status:
+PROPOSED — investigation complete, no implementation (David's ruling
 2026-07-20, session 17e36e: "investigate + plan fix, bring proposal before
 implementing"). Supersedes the paused Phase 6 verbs-entry fix, whose diagnosis
 was overturned last session (restart parses fine).

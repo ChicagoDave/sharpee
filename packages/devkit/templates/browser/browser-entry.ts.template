@@ -11,23 +11,28 @@ import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { BrowserClient, ThemeManager } from '@sharpee/platform-browser';
-import { story } from './index.js';
+import { createStory } from './index.js';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
 
 const THEME_STORAGE_KEY = '{{STORY_ID}}-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 
-const author = story.config.author;
+// Config-only instance (cheap); the playable story instance is created
+// fresh inside start() per boot (ADR-248 factory contract).
+const config = createStory().config;
+const author = config.author;
 const client = new BrowserClient({
   storagePrefix: '{{STORY_ID}}-',
+  // ADR-248: RESTART reboots by re-running this entry's boot path.
+  reboot: () => start(),
   defaultTheme: 'modern-dark',
   themes: [
     { id: 'modern-dark', name: 'Modern Dark' },
     { id: 'paper', name: 'Paper' },
   ],
   storyInfo: {
-    title: story.config.title,
-    description: story.config.description || '',
+    title: config.title,
+    description: config.description || '',
     authors: Array.isArray(author) ? author.join(', ') : author,
     version: STORY_VERSION,
     engineVersion: ENGINE_VERSION,
@@ -52,6 +57,10 @@ async function start(): Promise<void> {
     startupSaveInfo: document.getElementById('startup-save-info'),
     menuBar: document.getElementById('menu-bar'),
   });
+
+  // Fresh story instance per boot (ADR-248): a restart reboot re-runs
+  // start() and must get fully fresh story state.
+  const story = createStory();
 
   const world = new WorldModel();
   const player = world.createEntity('player', EntityType.ACTOR);

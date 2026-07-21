@@ -29,16 +29,10 @@ export const BalloonHandlerMessages = {
 const BURN_FUSE_ID = 'dungeo.balloon.burn';
 const BURN_CHECK_INTERVAL = 1; // Check every turn
 
-// Cached entity IDs
-let balloonEntityId: string | null = null;
-let receptacleEntityId: string | null = null;
-
 /**
  * Get the balloon state trait from the balloon entity
  */
-function getBalloonState(world: IWorldModel): BalloonStateTrait | null {
-  if (!balloonEntityId) return null;
-
+function getBalloonState(world: IWorldModel, balloonEntityId: string): BalloonStateTrait | null {
   const balloon = world.getEntity(balloonEntityId);
   if (!balloon) return null;
 
@@ -46,11 +40,21 @@ function getBalloonState(world: IWorldModel): BalloonStateTrait | null {
 }
 
 /**
+ * If the entity at `locationId` is the balloon (carries BalloonStateTrait),
+ * return it. World-derived — no cached ids, so it stays correct across
+ * reboots (ADR-248: no module-level mutable state).
+ */
+function balloonAt(world: WorldModel | IWorldModel, locationId: string | undefined): { id: string; entity: any } | null {
+  if (!locationId) return null;
+  const entity = world.getEntity(locationId);
+  if (!entity || !entity.get(BalloonStateTrait)) return null;
+  return { id: entity.id, entity };
+}
+
+/**
  * Check if the cloth bag should be inflated
  */
-function updateClothBagState(world: IWorldModel, isInflated: boolean): void {
-  if (!balloonEntityId) return;
-
+function updateClothBagState(world: IWorldModel, balloonEntityId: string, isInflated: boolean): void {
   // Find cloth bag in balloon
   const contents = world.getContents(balloonEntityId);
   const clothBag = contents.find(e => {
@@ -81,8 +85,11 @@ function updateClothBagState(world: IWorldModel, isInflated: boolean): void {
  *
  * This daemon decrements burn time on objects every turn.
  * When an object burns out, it handles balloon deflation.
+ * Balloon/receptacle ids live in the closure (ADR-248); they are optional —
+ * without them the daemon still burns objects down, it just skips the
+ * balloon-deflation branch.
  */
-function createBurnDaemon(): Daemon {
+function createBurnDaemon(balloonEntityId?: string, receptacleEntityId?: string): Daemon {
   return {
     id: BURN_FUSE_ID,
     name: 'Balloon Burn Timer',
@@ -119,14 +126,14 @@ function createBurnDaemon(): Daemon {
 
           // Check if this was in the receptacle
           const location = world.getLocation(entity.id);
-          if (location === receptacleEntityId) {
+          if (receptacleEntityId && balloonEntityId && location === receptacleEntityId) {
             // Update balloon state
-            const balloonState = getBalloonState(world);
+            const balloonState = getBalloonState(world, balloonEntityId);
             if (balloonState && balloonState.burningObject === entity.id) {
               balloonState.burningObject = null;
               world.setStateValue(BALLOON_BURNING_OBJECT_KEY, null);
               world.setStateValue(BALLOON_INFLATED_KEY, false);
-              updateClothBagState(world, false);
+              updateClothBagState(world, balloonEntityId, false);
 
               // Emit deflation message
               events.push({
@@ -165,19 +172,15 @@ function createBurnDaemon(): Daemon {
 }
 
 /**
- * Set the balloon and receptacle entity IDs for the exit transformer and burn daemon.
- * Must be called during story initialization before the exit transformer runs.
+ * Register the burn daemon. Balloon/receptacle ids are optional; without
+ * them only the generic burn-down behavior runs.
  */
-export function setBalloonHandlerIds(balloonId: string, receptacleId: string): void {
-  balloonEntityId = balloonId;
-  receptacleEntityId = receptacleId;
-}
-
-/**
- * Register the burn daemon
- */
-export function registerBurnDaemon(scheduler: ISchedulerService): void {
-  scheduler.registerDaemon(createBurnDaemon());
+export function registerBurnDaemon(
+  scheduler: ISchedulerService,
+  balloonId?: string,
+  receptacleId?: string
+): void {
+  scheduler.registerDaemon(createBurnDaemon(balloonId, receptacleId));
 }
 
 /**
@@ -220,20 +223,16 @@ export function createBalloonExitTransformer() {
       return parsed;
     }
 
-    if (!balloonEntityId) return parsed;
-
-    // Check if player is in the balloon
+    // Check if player is in the balloon (world-derived: the location
+    // entity carries BalloonStateTrait)
     const player = world.getPlayer();
     if (!player) return parsed;
 
     const playerLocation = world.getLocation(player.id);
-    if (playerLocation !== balloonEntityId) return parsed;
+    const balloonLoc = balloonAt(world, playerLocation);
+    if (!balloonLoc) return parsed;
 
-    // Player is in balloon - check position
-    const balloon = world.getEntity(balloonEntityId);
-    if (!balloon) return parsed;
-
-    const vehicleTrait = balloon.get(VehicleTrait);
+    const vehicleTrait = balloonLoc.entity.get(VehicleTrait);
     if (!vehicleTrait) return parsed;
 
     const position = vehicleTrait.currentPosition as BalloonPosition;
@@ -269,16 +268,12 @@ export const balloonExitAction: Action = {
     const player = context.player;
     const playerLocation = context.world.getLocation(player.id);
 
-    if (!balloonEntityId || playerLocation !== balloonEntityId) {
+    const balloonLoc = balloonAt(context.world, playerLocation);
+    if (!balloonLoc) {
       return { valid: false, error: 'not_in_balloon' };
     }
 
-    const balloon = context.world.getEntity(balloonEntityId);
-    if (!balloon) {
-      return { valid: false, error: 'balloon_not_found' };
-    }
-
-    const vehicleTrait = balloon.get(VehicleTrait);
+    const vehicleTrait = balloonLoc.entity.get(VehicleTrait);
     if (!vehicleTrait) {
       return { valid: false, error: 'balloon_state_not_found' };
     }
@@ -295,16 +290,16 @@ export const balloonExitAction: Action = {
       };
     }
 
-    // Store position for execute phase
+    // Store position and balloon id for execute phase
     context.sharedData.balloonPosition = position;
-    context.sharedData.balloonId = balloonEntityId;
+    context.sharedData.balloonId = balloonLoc.id;
 
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
     const position = context.sharedData.balloonPosition as string;
-    const balloon = context.world.getEntity(balloonEntityId!);
+    const balloon = context.world.getEntity(context.sharedData.balloonId as string);
 
     if (!balloon) return;
 

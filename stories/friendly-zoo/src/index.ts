@@ -256,7 +256,7 @@ const photographAction: Action = {
 // THE STORY CLASS
 // ============================================================================
 
-class FriendlyZooStory implements Story {
+export class FriendlyZooStory implements Story {
   config = config;
   private roomIds!: RoomIds;
   private itemIds!: ItemIds;
@@ -463,5 +463,10 @@ class FriendlyZooStory implements Story {
   }
 }
 
-export const story: Story = new FriendlyZooStory();
-export default story;
+/**
+ * Story factory (ADR-248): the module's sole story export. Each call
+ * returns a fully fresh story instance — clients call this per boot.
+ */
+export function createStory(): FriendlyZooStory {
+  return new FriendlyZooStory();
+}

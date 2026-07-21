@@ -545,7 +545,14 @@ export interface CustomVocabulary {
     }>;
 }
 /**
- * Story interface - what a story module exports
+ * Story interface — what a story module's `createStory()` factory returns.
+ *
+ * ADR-248 factory-only contract: a story module exports exactly
+ * `export function createStory(): Story` (no `story`/`config`/default
+ * singleton exports). Every boot — including an in-process restart reboot —
+ * calls the factory for a fresh instance, so all mutable story state must
+ * live on the instance (or in closures created during initializeWorld),
+ * never at module level. `initializeWorld` runs at most once per instance.
  */
 export interface Story {
     /**
@@ -1307,8 +1314,8 @@ export declare class GameEngine {
      * The post-mortem revival seam: after `stop('defeat')`, a harness (or a
      * story resurrection policy) that has restored the world to a live-player
      * snapshot — e.g. the transcript-tester's RETRY block via
-     * `world.loadJSON()` — needs turn execution back without the full
-     * `restartGame()` teardown (which clears the world it just restored).
+     * `world.loadJSON()` — needs turn execution back without any world
+     * teardown (a full reboot would clear the world it just restored).
      * Flips `running` back on; emits nothing, rebuilds nothing.
      *
      * No-op when already running. Throws if the engine was never started
@@ -1318,14 +1325,17 @@ export declare class GameEngine {
     /**
      * Stop the game engine
      */
-    stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort', details?: any): void;
+    stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort' | 'restart', details?: any): void;
     /**
-     * Restart the game from scratch.
+     * Build the restart acknowledgment event (ADR-248).
      *
-     * Clears the world, resets engine state, and re-initializes the story.
-     * Called from both processMetaPlatformOperation and processPlatformOperations.
+     * On confirmed restart the engine does NOT rebuild in place — it renders
+     * this acknowledgment ("The story restarts.") in the final packet, then
+     * stops with reason 'restart'; the client owns the reboot via its own
+     * boot path. No pre-emptive restart_completed(true) is emitted: the new
+     * boot's opening banner is the success signal.
      */
-    private restartGame;
+    private createRestartAckEvent;
     /**
      * Execute a turn
      */

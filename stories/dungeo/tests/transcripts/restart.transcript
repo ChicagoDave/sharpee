@@ -1,0 +1,36 @@
+title: RESTART reboots the story (ADR-248 acceptance)
+story: dungeo
+author: Sharpee Team
+description: In-game RESTART delegates through platform events; the harness
+  reboots in place with a fresh story instance (fresh module state, fresh
+  daemons). The ack renders as the final packet of the old engine, and the
+  rebuilt world starts over — including state that was mutated before the
+  restart.
+---
+
+# Mutate world state away from the initial configuration
+> look
+[OK: contains "West of House"]
+
+> open mailbox
+[OK: contains "leaflet"]
+
+> take leaflet
+[OK: contains "Taken"]
+
+> north
+[OK: contains "North of House"]
+
+# Restart: the old engine acks, then the harness reboots
+> restart
+[OK: contains "The story restarts."]
+[OK: not contains "I don't understand"]
+[OK: not contains "Restart failed"]
+
+# Fresh boot: opening location again
+> look
+[OK: contains "West of House"]
+
+# State reset proof: the mailbox is closed again with the leaflet back inside
+> open mailbox
+[OK: contains "leaflet"]

@@ -62,6 +62,15 @@ export class SaveManager {
   }
 
   /**
+   * Re-point this manager at a new world (ADR-248 restart reboot).
+   * The client reuses its managers across reboots; only the world
+   * reference changes.
+   */
+  setWorld(world: WorldModel): void {
+    this.world = world;
+  }
+
+  /**
    * Walk localStorage for entries under this manager's `savePrefix` and
    * delete any whose envelope is not the current `ENVELOPE_VERSION`.
    * Prunes corresponding index entries.

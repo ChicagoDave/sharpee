@@ -1,6 +1,6 @@
 # ADR-245: Chord phrasebooks — named, predicated phrase collections
 
-## Status: ACCEPTED (2026-07-19 — all six open questions ruled by David via interview, session 7692ef: fallback below story overrides; any-key partial coverage; predicate-driven activation, first-match in declaration order, derived not stored; in-story block + `use` distribution; person-orthogonal via `{You}` realization; named "phrasebook" with the docs cookbook renaming. adr-review 9/15 same-session: coherent as a decision record; all FAILs are the deliberate stop-at-intent — implementation gated on a design-level companion, see Decision closing.)
+## Status: ACCEPTED (2026-07-19 — all six open questions ruled by David via interview, session 7692ef: fallback below story overrides; any-key partial coverage; predicate-driven activation, first-match in declaration order, derived not stored; in-story block + `use` distribution; person-orthogonal via `{You}` realization; named "phrasebook" with the docs cookbook renaming. adr-review 9/15 same-session: coherent as a decision record; all FAILs are the deliberate stop-at-intent — implementation gated on a design-level companion, see Decision closing. Amended 2026-07-20, session 171837: proposed language example added at David's ask — entries are ordinary story phrase definitions in a `define phrasebook … end phrasebook` block; `import phrasebook <file>` for author file organization; `use phrasebook <name> [while …]` distribution spelling; single kebab book names; variant state per (book, key); generalized `import` parked for its own ADR. Illustrative for grammar detail — the design companion owns final grammar/IR.)
 
 ## Date: 2026-07-19
 
@@ -94,6 +94,134 @@ shapes, the affected-module list, `use <unknown book>` rejection
 behavior, acceptance criteria, and tests (a concrete unreliable-narrator
 E2E scenario is the obvious spine), plus David's explicit go-ahead per
 the platform-change gate. Nothing may be built from this ADR alone.
+
+## Proposed language example (amendment 2026-07-20 — illustrative)
+
+David's ask before implementation (session 171837): show the proposed
+Chord surface in the ADR. Shape corrected by David same session: **a
+phrasebook's entries are ordinary story phrase definitions, written
+exactly the way phrases are defined today** — the book adds only the
+grouping and the gate predicate. It is not a platform-message override
+pack; dotted message IDs are not the motivating shape (whether they
+remain *legal* inside a book — Q-2 recorded "any key" — is for the
+design companion to re-confirm with David). This section is binding for
+*feel*, not for grammar — the companion owns final grammar, IR shapes,
+and diagnostics.
+
+```story
+define phrasebook winter while the season is winter
+  cold-returns, first-time:
+    The cold finds you the moment you step out, and means it.
+  or
+    The cold again, familiar now.
+
+  hearth-call, cycling:
+    Somewhere behind you, the fire is still lit.
+  or
+    The house holds its warmth like a grudge.
+end phrasebook
+
+define phrasebook springtime
+  cold-returns:
+    A last thread of chill, already giving up.
+end phrasebook
+```
+
+A consuming clause is unchanged — `phrase cold-returns` in an `on`
+block, or a `{cold-returns}` marker in prose. Which text renders is
+decided at render time by the books' predicates.
+
+What each ruled decision looks like here:
+
+- **The block (D1)** — `define phrasebook <name> [while <condition>] …
+  end phrasebook`, the `define … end` family. Entries are today's
+  phrase definitions verbatim: `<key>[, strategy]:` with `or` variants,
+  all five strategies available (`first-time` above is the "novelty
+  then routine" selector, §4.2).
+- **Predicates, not swaps (D3)** — `winter` is the voice exactly while
+  `the season is winter` holds (an ordinary §3.4 condition; derived at
+  render time, nothing stored). `springtime` is predicate-less:
+  `always` — the base voice, naturally declared last. Arbitration is
+  first match in declaration order, **per key**: in winter,
+  `cold-returns` comes from `winter`; otherwise from `springtime`.
+  `hearth-call` is covered only by `winter`, so off-season it falls
+  through per Q-1 — per key, never per book.
+- **The fallback chain (D2)** — a story-wide `define phrase
+  cold-returns` (outside any book) would beat both books, always; a
+  per-entity `phrase …:` override beats even that. Swapping voices
+  never touches text the author wrote at those levels.
+- **`use phrasebook` distribution (D5; spelling ruled 2026-07-20)** — a
+  packaged voice arrives in the story header as
+
+  ```story
+  use phrasebook candlewick-gothic while the player holds the locket
+  ```
+
+  binding the predicate at the `use` site; without `while` it means
+  `always`. The `phrasebook` sub-word disambiguates the registry from
+  plain `use <extension>` (whose strict one-word grammar is untouched)
+  and mirrors `import phrasebook`. **A story may stack any number of
+  `use phrasebook` lines with varying predicates** (verified with
+  David, 2026-07-20):
+
+  ```story
+  use phrasebook candlewick-gothic while the player holds the locket
+  use phrasebook fever-dream while the player is poisoned
+  use phrasebook plain-country
+  ```
+
+  Ordering rule: all books — `use`d and `define`d alike — arbitrate in
+  order of appearance in the story file, first match per key; a
+  predicate-less book is the base voice.
+- **`import phrasebook` (David, 2026-07-20, session 171837)** — the
+  author's file-organization axis, distinct from `use` distribution:
+
+  ```story
+  import phrasebook "winter-voice.story"
+  ```
+
+  pulls a file of the author's own `define phrasebook` blocks into the
+  story source, as if declared at the import site — which is also what
+  gives an imported book its position in the arbitration order. The
+  file is part of the story project, so its predicates may reference
+  story entities and states freely (unlike a `use`-distributed book,
+  which binds its predicate at the `use` site). Filename/extension
+  conventions and resolution rules are the companion's to pin.
+- **Person-orthogonal (D4)** — book text uses realization slots
+  (`{You}` family) where it speaks of the player, rendering under
+  whatever person the story declares (ADR-243).
+
+Two further syntax rulings (David, 2026-07-20, from the workability
+review against `packages/chord/src/parser.ts`):
+
+- **Book names are single kebab-case words** (`winter`,
+  `candlewick-gothic`) — the same form as extension names. This
+  sidesteps any multi-word-name-vs-`while` boundary question in the
+  block header, since `while` is already a structural word.
+- **Variant state is per (book, key)**: `cycling`/`first-time`/`sticky`
+  firing counters belong to the *entry*, not the bare key. When
+  `winter` and `springtime` both define `cold-returns`, each carries
+  its own save-persistent counter — a springtime render never consumes
+  winter's "first time." The competing-definitions registry and the
+  save shape must key variant state accordingly.
+
+Details the companion must pin: entry-level `while` disallowed inside a
+book (the book's predicate is the gate — same rule as §2.10's
+`analysis.override-gate`); `use phrasebook <unknown>` rejection
+behavior; `import` filename/resolution rules; and the Q-2 dotted-key
+question above.
+
+**Parked (David, 2026-07-20): generalized `import`.** Once `import
+phrasebook <file>` exists, `import <file>` for *any* story source —
+rooms, people, sequences split across files — is the obvious
+generalization ("import might be used for any file name — might need to
+think that through"). That is a multi-file story-source decision with
+its own questions (what a fragment file may contain, ordering across
+files, diagnostics spanning files, how `sharpee compose` and the
+browser's compile-at-boot handle multiple sources) and is deliberately
+NOT decided here — it wants its own ADR when taken up. Nothing in the
+phrasebook design may foreclose it: the companion should shape `import
+phrasebook` so the keyword generalizes rather than becoming a one-off.
 
 ## Consequences
 

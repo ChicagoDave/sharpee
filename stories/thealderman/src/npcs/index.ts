@@ -13,8 +13,11 @@
  * | Jack Margolin    | Active intimidation influence, brash refusals         |
  * | Chelsea Sumner   | Omission responses, goal pursuit (seek information)   |
  *
- * Public interface: createNpcs(), NpcIds
+ * Public interface: createNpcs(), NpcIds (type)
  * Owner: thealderman story
+ *
+ * ADR-248: createNpcs returns a fresh NpcIds map per call — no module-level
+ * mutable registry — so each story instance owns its ids.
  */
 
 import {
@@ -28,28 +31,32 @@ import { ConversationBuilder } from '@sharpee/character';
 import { RoomIds } from '../rooms';
 import { MSG } from '../messages';
 
-/** NPC entity IDs, set during creation. */
-export const NpcIds = {
-  ross: '',
-  viola: '',
-  john: '',
-  catherine: '',
-  jack: '',
-  chelsea: '',
-};
+/** NPC entity IDs, returned by createNpcs(). */
+export interface NpcIds {
+  ross: string;
+  viola: string;
+  john: string;
+  catherine: string;
+  jack: string;
+  chelsea: string;
+}
 
 /**
  * Creates all six suspect NPCs with full character model definitions.
  *
  * @param world - The world model to populate
+ * @param rooms - The room id map for this world (from createRooms)
+ * @returns A fresh map of NPC entity IDs for this world
  */
-export function createNpcs(world: WorldModel): void {
-  createRoss(world);
-  createViola(world);
-  createJohn(world);
-  createCatherine(world);
-  createJack(world);
-  createChelsea(world);
+export function createNpcs(world: WorldModel, rooms: RoomIds): NpcIds {
+  return {
+    ross: createRoss(world, rooms),
+    viola: createViola(world, rooms),
+    john: createJohn(world, rooms),
+    catherine: createCatherine(world, rooms),
+    jack: createJack(world, rooms),
+    chelsea: createChelsea(world, rooms),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -57,7 +64,7 @@ export function createNpcs(world: WorldModel): void {
 // ADR features: Conversation constraints, mood triggers, influence
 // ---------------------------------------------------------------------------
 
-function createRoss(world: WorldModel): void {
+function createRoss(world: WorldModel, rooms: RoomIds): string {
   const entity = world.createEntity('Ross Bielack', EntityType.ACTOR);
   entity.add(new IdentityTrait({
     name: 'Ross Bielack',
@@ -68,8 +75,7 @@ function createRoss(world: WorldModel): void {
   }));
   entity.add(new ActorTrait({ isPlayer: false }));
   entity.add(new NpcTrait({ behaviorId: 'alderman.npc.ross' }));
-  NpcIds.ross = entity.id;
-  world.moveEntity(entity.id, RoomIds.bar);
+  world.moveEntity(entity.id, rooms.bar);
 
   // Character definition using ConversationBuilder
   new ConversationBuilder('ross')
@@ -169,10 +175,10 @@ function createRoss(world: WorldModel): void {
       .priority('low')
       .mode('sequential')
       .pursues([
-        { type: 'moveTo', target: RoomIds.bar, witnessed: MSG.ROSS_MOVES_TO_BAR },
+        { type: 'moveTo', target: rooms.bar, witnessed: MSG.ROSS_MOVES_TO_BAR },
         { type: 'waitFor', conditions: ['3 turns elapsed'], witnessed: MSG.ROSS_DRINKS },
-        { type: 'moveTo', target: RoomIds.foyer, witnessed: MSG.ROSS_PACES_FOYER },
-        { type: 'moveTo', target: RoomIds.staircase },
+        { type: 'moveTo', target: rooms.foyer, witnessed: MSG.ROSS_PACES_FOYER },
+        { type: 'moveTo', target: rooms.staircase },
       ])
       .done()
 
@@ -186,6 +192,8 @@ function createRoss(world: WorldModel): void {
     })
 
     .compile();
+
+  return entity.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,7 +201,7 @@ function createRoss(world: WorldModel): void {
 // ADR features: Skilled lies, propagation (selective/dramatic), lifecycle
 // ---------------------------------------------------------------------------
 
-function createViola(world: WorldModel): void {
+function createViola(world: WorldModel, rooms: RoomIds): string {
   const entity = world.createEntity('Viola Wainright', EntityType.ACTOR);
   entity.add(new IdentityTrait({
     name: 'Viola Wainright',
@@ -204,8 +212,7 @@ function createViola(world: WorldModel): void {
   }));
   entity.add(new ActorTrait({ isPlayer: false }));
   entity.add(new NpcTrait({ behaviorId: 'alderman.npc.viola' }));
-  NpcIds.viola = entity.id;
-  world.moveEntity(entity.id, RoomIds.ballroom);
+  world.moveEntity(entity.id, rooms.ballroom);
 
   new ConversationBuilder('viola')
     .personality('very deceptive', 'charming', 'bitter')
@@ -296,11 +303,11 @@ function createViola(world: WorldModel): void {
       .priority('medium')
       .mode('sequential')
       .pursues([
-        { type: 'moveTo', target: RoomIds.ballroom, witnessed: MSG.VIOLA_REHEARSING },
+        { type: 'moveTo', target: rooms.ballroom, witnessed: MSG.VIOLA_REHEARSING },
         { type: 'waitFor', conditions: ['3 turns elapsed'] },
-        { type: 'moveTo', target: RoomIds.restaurant, witnessed: MSG.VIOLA_DINING },
+        { type: 'moveTo', target: rooms.restaurant, witnessed: MSG.VIOLA_DINING },
         { type: 'waitFor', conditions: ['2 turns elapsed'] },
-        { type: 'moveTo', target: RoomIds.foyer },
+        { type: 'moveTo', target: rooms.foyer },
       ])
       .done()
 
@@ -308,6 +315,8 @@ function createViola(world: WorldModel): void {
     .initiates(['player enters ballroom'], MSG.VIOLA_GREETS_PLAYER)
 
     .compile();
+
+  return entity.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -315,7 +324,7 @@ function createViola(world: WorldModel): void {
 // ADR features: Passive influence aura, goal pursuit, terse conversation
 // ---------------------------------------------------------------------------
 
-function createJohn(world: WorldModel): void {
+function createJohn(world: WorldModel, rooms: RoomIds): string {
   const entity = world.createEntity('John Barber', EntityType.ACTOR);
   entity.add(new IdentityTrait({
     name: 'John Barber',
@@ -326,8 +335,7 @@ function createJohn(world: WorldModel): void {
   }));
   entity.add(new ActorTrait({ isPlayer: false }));
   entity.add(new NpcTrait({ behaviorId: 'alderman.npc.john' }));
-  NpcIds.john = entity.id;
-  world.moveEntity(entity.id, RoomIds.bar);
+  world.moveEntity(entity.id, rooms.bar);
 
   new ConversationBuilder('john')
     .personality('very guarded', 'cold', 'intelligent')
@@ -396,7 +404,7 @@ function createJohn(world: WorldModel): void {
       .priority('high')
       .mode('opportunistic')
       .pursues([
-        { type: 'moveTo', target: RoomIds.room302 },
+        { type: 'moveTo', target: rooms.room302 },
         { type: 'act', messageId: MSG.JOHN_SEARCHES_ROOM },
       ])
       .interruptedBy('player present')
@@ -409,9 +417,9 @@ function createJohn(world: WorldModel): void {
       .priority('low')
       .mode('sequential')
       .pursues([
-        { type: 'moveTo', target: RoomIds.bar },
+        { type: 'moveTo', target: rooms.bar },
         { type: 'waitFor', conditions: ['2 turns elapsed'] },
-        { type: 'moveTo', target: RoomIds.foyer },
+        { type: 'moveTo', target: rooms.foyer },
         { type: 'waitFor', conditions: ['2 turns elapsed'] },
       ])
       .done()
@@ -422,6 +430,8 @@ function createJohn(world: WorldModel): void {
     })
 
     .compile();
+
+  return entity.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -429,7 +439,7 @@ function createJohn(world: WorldModel): void {
 // ADR features: Propagation hub (chatty), rich conversation tree
 // ---------------------------------------------------------------------------
 
-function createCatherine(world: WorldModel): void {
+function createCatherine(world: WorldModel, rooms: RoomIds): string {
   const entity = world.createEntity('Catherine Shelby', EntityType.ACTOR);
   entity.add(new IdentityTrait({
     name: 'Catherine Shelby',
@@ -440,8 +450,7 @@ function createCatherine(world: WorldModel): void {
   }));
   entity.add(new ActorTrait({ isPlayer: false }));
   entity.add(new NpcTrait({ behaviorId: 'alderman.npc.catherine' }));
-  NpcIds.catherine = entity.id;
-  world.moveEntity(entity.id, RoomIds.restaurant);
+  world.moveEntity(entity.id, rooms.restaurant);
 
   new ConversationBuilder('catherine')
     .personality('very observant', 'honest', 'protective', 'warm')
@@ -568,9 +577,9 @@ function createCatherine(world: WorldModel): void {
       .priority('medium')
       .mode('sequential')
       .pursues([
-        { type: 'moveTo', target: RoomIds.restaurant },
+        { type: 'moveTo', target: rooms.restaurant },
         { type: 'waitFor', conditions: ['3 turns elapsed'] },
-        { type: 'moveTo', target: RoomIds.kitchen, witnessed: MSG.CATHERINE_CHECKS_KITCHEN },
+        { type: 'moveTo', target: rooms.kitchen, witnessed: MSG.CATHERINE_CHECKS_KITCHEN },
         { type: 'waitFor', conditions: ['2 turns elapsed'] },
       ])
       .done()
@@ -590,6 +599,8 @@ function createCatherine(world: WorldModel): void {
     })
 
     .compile();
+
+  return entity.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -597,7 +608,7 @@ function createCatherine(world: WorldModel): void {
 // ADR features: Active intimidation, brash refusals, NPC-to-NPC influence
 // ---------------------------------------------------------------------------
 
-function createJack(world: WorldModel): void {
+function createJack(world: WorldModel, rooms: RoomIds): string {
   const entity = world.createEntity('Jack Margolin', EntityType.ACTOR);
   entity.add(new IdentityTrait({
     name: 'Jack Margolin',
@@ -608,8 +619,7 @@ function createJack(world: WorldModel): void {
   }));
   entity.add(new ActorTrait({ isPlayer: false }));
   entity.add(new NpcTrait({ behaviorId: 'alderman.npc.jack' }));
-  NpcIds.jack = entity.id;
-  world.moveEntity(entity.id, RoomIds.room308);
+  world.moveEntity(entity.id, rooms.room308);
 
   new ConversationBuilder('jack')
     .personality('very aggressive', 'dishonest', 'cowardly')
@@ -697,10 +707,10 @@ function createJack(world: WorldModel): void {
       .priority('medium')
       .mode('sequential')
       .pursues([
-        { type: 'moveTo', target: RoomIds.bar, witnessed: MSG.JACK_ENTERS_BAR },
+        { type: 'moveTo', target: rooms.bar, witnessed: MSG.JACK_ENTERS_BAR },
         { type: 'waitFor', conditions: ['2 turns elapsed'] },
-        { type: 'moveTo', target: RoomIds.foyer, witnessed: MSG.JACK_LOBBY_DEALS },
-        { type: 'moveTo', target: RoomIds.staircase },
+        { type: 'moveTo', target: rooms.foyer, witnessed: MSG.JACK_LOBBY_DEALS },
+        { type: 'moveTo', target: rooms.staircase },
       ])
       .done()
 
@@ -714,6 +724,8 @@ function createJack(world: WorldModel): void {
     })
 
     .compile();
+
+  return entity.id;
 }
 
 // ---------------------------------------------------------------------------
@@ -721,7 +733,7 @@ function createJack(world: WorldModel): void {
 // ADR features: Omission responses, goal pursuit (seek information)
 // ---------------------------------------------------------------------------
 
-function createChelsea(world: WorldModel): void {
+function createChelsea(world: WorldModel, rooms: RoomIds): string {
   const entity = world.createEntity('Chelsea Sumner', EntityType.ACTOR);
   entity.add(new IdentityTrait({
     name: 'Chelsea Sumner',
@@ -732,8 +744,7 @@ function createChelsea(world: WorldModel): void {
   }));
   entity.add(new ActorTrait({ isPlayer: false }));
   entity.add(new NpcTrait({ behaviorId: 'alderman.npc.chelsea' }));
-  NpcIds.chelsea = entity.id;
-  world.moveEntity(entity.id, RoomIds.foyer);
+  world.moveEntity(entity.id, rooms.foyer);
 
   new ConversationBuilder('chelsea')
     .personality('honest', 'very nervous', 'curious')
@@ -825,11 +836,11 @@ function createChelsea(world: WorldModel): void {
       .priority('low')
       .mode('sequential')
       .pursues([
-        { type: 'moveTo', target: RoomIds.foyer },
+        { type: 'moveTo', target: rooms.foyer },
         { type: 'waitFor', conditions: ['2 turns elapsed'] },
-        { type: 'moveTo', target: RoomIds.bar, witnessed: MSG.CHELSEA_ROUNDS_BAR },
+        { type: 'moveTo', target: rooms.bar, witnessed: MSG.CHELSEA_ROUNDS_BAR },
         { type: 'waitFor', conditions: ['2 turns elapsed'] },
-        { type: 'moveTo', target: RoomIds.restaurant },
+        { type: 'moveTo', target: rooms.restaurant },
       ])
       .done()
 
@@ -846,4 +857,6 @@ function createChelsea(world: WorldModel): void {
     .resistsInfluence('bullying', { except: ['alone with jack'] })
 
     .compile();
+
+  return entity.id;
 }

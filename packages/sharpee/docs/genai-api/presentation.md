@@ -53,6 +53,14 @@ export declare class BrowserClient implements BrowserClientInterface {
      * dialog returned.
      */
     private pendingEngineSave;
+    /**
+     * Set when a restart is confirmed (ADR-248). The reboot itself is
+     * deferred until the in-flight turn's final packet has flushed —
+     * executeCommand() checks this after executeTurn() resolves. Also
+     * gates the per-turn autosave so the restart turn cannot recreate
+     * the envelope the confirmation just deleted.
+     */
+    private pendingReboot;
     private elements;
     /**
      * ADR-165 channel renderer host. Constructed in `connectEngine()`
@@ -70,6 +78,11 @@ export declare class BrowserClient implements BrowserClientInterface {
     /**
      * Connect to game engine and set up event handlers.
      * Call after creating the engine.
+     *
+     * Safe to call again on a restart reboot (ADR-248): the second call
+     * re-points world-bound state and re-subscribes the channel renderer
+     * to the new engine, but does NOT recreate the DOM-bound managers —
+     * their listeners are already wired to the page and would double-bind.
      */
     connectEngine(engine: GameEngine, world: WorldModel): void;
     /**
@@ -141,6 +154,17 @@ export declare class BrowserClient implements BrowserClientInterface {
      * Execute a command
      */
     executeCommand(command: string): Promise<void>;
+    /**
+     * Dispose the current engine and re-run the story's boot path (ADR-248).
+     *
+     * Stops the engine if it is still running (menu-path restarts have no
+     * turn in flight, so the engine never stopped itself), then invokes the
+     * configured `reboot` callback — the story's own `start()` — which
+     * builds a fresh story/world/engine and reconnects this client. A
+     * failed reboot displays the real error (never a parse fallback);
+     * without a `reboot` callback, falls back to a full page reload.
+     */
+    private disposeAndReboot;
     /**
      * Get ISaveRestoreHooks for engine registration
      */
@@ -310,6 +334,16 @@ export interface BrowserClientConfig {
      * Any of the three (config flag, query, localStorage) turns it on.
      */
     debugChannels?: boolean;
+    /**
+     * Reboot callback for RESTART (ADR-248): re-runs the story's own boot
+     * path — fresh story via `createStory()`, fresh world/engine,
+     * `connectEngine`, `client.start()`. Each story's browser entry passes
+     * its own top-level `start` function here. Invoked by the client after
+     * a confirmed restart's final packet has flushed (never inside the
+     * hook itself). When omitted, the client falls back to
+     * `window.location.reload()`.
+     */
+    reboot?: () => Promise<void>;
 }
 /**
  * DOM element references passed to managers
@@ -522,6 +556,12 @@ export declare class SaveManager {
     private world;
     private onStateChange?;
     constructor(config: SaveManagerConfig);
+    /**
+     * Re-point this manager at a new world (ADR-248 restart reboot).
+     * The client reuses its managers across reboots; only the world
+     * reference changes.
+     */
+    setWorld(world: WorldModel): void;
     /**
      * Walk localStorage for entries under this manager's `savePrefix` and
      * delete any whose envelope is not the current `ENVELOPE_VERSION`.

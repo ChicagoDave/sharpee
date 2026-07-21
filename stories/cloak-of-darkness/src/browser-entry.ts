@@ -14,7 +14,7 @@ import {
   BrowserClient,
   ThemeManager,
 } from '@sharpee/platform-browser';
-import { story, config } from './index';
+import { createStory } from './index';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
 
 // Storage key for theme
@@ -22,11 +22,6 @@ const THEME_STORAGE_KEY = 'cloak-theme';
 
 // Apply saved theme immediately to prevent flash of default theme
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
-
-// Game metadata from story config
-const GAME_TITLE = config.title;
-const GAME_DESCRIPTION = config.description || '';
-const GAME_AUTHORS = Array.isArray(config.author) ? config.author.join(', ') : config.author;
 
 /**
  * Get the HELP text
@@ -49,48 +44,62 @@ Commands:
 }
 
 /**
- * Get the ABOUT text
+ * The one BrowserClient for this page. Constructed on first boot and
+ * reused across restart reboots (ADR-248): the client owns the DOM
+ * wiring, which must not be re-bound per boot.
  */
-function getAboutText(): string {
-  return [
-    GAME_TITLE,
-    GAME_DESCRIPTION,
-    `By ${GAME_AUTHORS}`,
-    '',
-    `Sharpee v${ENGINE_VERSION} | Game v${STORY_VERSION}`,
-    `Built: ${BUILD_DATE}`,
-  ].filter(Boolean).join('\n');
-}
-
-// Create browser client with story configuration
-const client = new BrowserClient({
-  storagePrefix: 'cloak-',
-  defaultTheme: 'classic-light',
-  themes: [
-    { id: 'classic-light', name: 'Classic Light' },
-    { id: 'modern-dark', name: 'Modern Dark' },
-    { id: 'retro-terminal', name: 'Retro Terminal' },
-    { id: 'paper', name: 'Paper' },
-  ],
-  storyInfo: {
-    title: GAME_TITLE,
-    description: GAME_DESCRIPTION,
-    authors: GAME_AUTHORS,
-    version: STORY_VERSION,
-    engineVersion: ENGINE_VERSION,
-    buildDate: BUILD_DATE,
-  },
-  callbacks: {
-    getHelpText,
-    getAboutText,
-  },
-});
+let client: BrowserClient | null = null;
 
 /**
  * Start the game
  */
 async function start(): Promise<void> {
   console.log('=== CLOAK OF DARKNESS BROWSER START ===');
+
+  // Fresh story instance per boot (ADR-248 Decision 3)
+  const story = createStory();
+
+  // Game metadata from the story instance's config
+  const config = story.config;
+  const gameTitle = config.title;
+  const gameDescription = config.description || '';
+  const gameAuthors = Array.isArray(config.author) ? config.author.join(', ') : config.author;
+
+  const getAboutText = (): string => [
+    gameTitle,
+    gameDescription,
+    `By ${gameAuthors}`,
+    '',
+    `Sharpee v${ENGINE_VERSION} | Game v${STORY_VERSION}`,
+    `Built: ${BUILD_DATE}`,
+  ].filter(Boolean).join('\n');
+
+  // Create browser client with story configuration (first boot only)
+  if (!client) {
+  client = new BrowserClient({
+    storagePrefix: 'cloak-',
+    // ADR-248: RESTART reboots by re-running this entry's boot path.
+    reboot: () => start(),
+    defaultTheme: 'classic-light',
+    themes: [
+      { id: 'classic-light', name: 'Classic Light' },
+      { id: 'modern-dark', name: 'Modern Dark' },
+      { id: 'retro-terminal', name: 'Retro Terminal' },
+      { id: 'paper', name: 'Paper' },
+    ],
+    storyInfo: {
+      title: gameTitle,
+      description: gameDescription,
+      authors: gameAuthors,
+      version: STORY_VERSION,
+      engineVersion: ENGINE_VERSION,
+      buildDate: BUILD_DATE,
+    },
+    callbacks: {
+      getHelpText,
+      getAboutText,
+    },
+  });
 
   // Initialize client with DOM elements
   client.initialize({
@@ -110,6 +119,7 @@ async function start(): Promise<void> {
     startupSaveInfo: document.getElementById('startup-save-info'),
     menuBar: document.getElementById('menu-bar'),
   });
+  }
 
   // Create world and player
   const world = new WorldModel();

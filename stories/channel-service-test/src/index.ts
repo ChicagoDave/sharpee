@@ -5,8 +5,8 @@
  * (`packages/channel-service/tests/ac-15-story-renderer-parity.test.ts`).
  *
  * Public interface:
- *  - `story` — the playable `Story` instance the CLI bundle loads.
- *  - `config` — story metadata.
+ *  - `createStory()` — ADR-248 factory; the sole story export. Story
+ *    metadata is read off the instance's `config` field.
  *  - `debugStatsChannel`, `DEBUG_STATS_CHANNEL_ID`, `registerStoryChannels`,
  *    `DebugStatsPayload` — the `debug-stats` channel definition.
  *  - `formatDebugStats`, `createDebugStatsRenderer`,
@@ -18,7 +18,7 @@
  * incarnation is a real playable story — see `./playable-story.ts`.
  */
 
-export { story, config, ChannelServiceTestStory } from './playable-story';
+export { createStory, ChannelServiceTestStory } from './playable-story';
 export {
   debugStatsChannel,
   registerStoryChannels,

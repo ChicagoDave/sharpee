@@ -153,8 +153,10 @@ async function runSmartTranscript(
   const results: CommandResult[] = [];
   const items = transcript.items!;
 
-  // Get player ID for condition evaluation
-  const playerId = getPlayerId(engine);
+  // Get player ID for condition evaluation. Re-resolved after every command
+  // because an in-transcript RESTART reboots the world (ADR-248) and the
+  // fresh player must not be found by a stale id.
+  let playerId = getPlayerId(engine);
 
   // Block state stack for control flow
   const blockStack: BlockState[] = [];
@@ -194,6 +196,8 @@ async function runSmartTranscript(
       const result = await runCommand(command, engine, options);
       results.push(result);
       lastOutput = result.actualOutput;
+      // A RESTART command reboots the world (ADR-248) — re-resolve the player.
+      playerId = getPlayerId(engine);
 
       // Capture output for DO-UNTIL blocks
       if (doBlock?.iterationOutputs) {

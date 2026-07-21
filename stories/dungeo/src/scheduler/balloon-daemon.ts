@@ -38,17 +38,10 @@ const BALLOON_DAEMON_ID = 'dungeo.balloon.movement';
 // Configuration
 const DAEMON_INTERVAL = 3;  // Fire every 3 turns
 
-// Internal state
-let lastFireTurn = 0;
-let balloonEntityId: string | null = null;
-let receptacleEntityId: string | null = null;
-
 /**
  * Check if the receptacle has a burning object inside
  */
-function hasHeatSource(world: WorldModel): boolean {
-  if (!receptacleEntityId) return false;
-
+function hasHeatSource(world: WorldModel, receptacleEntityId: string): boolean {
   const receptacle = world.getEntity(receptacleEntityId);
   if (!receptacle) return false;
 
@@ -64,9 +57,7 @@ function hasHeatSource(world: WorldModel): boolean {
 /**
  * Get the balloon entity and its state trait
  */
-function getBalloonState(world: WorldModel): { entity: any; state: BalloonStateTrait } | null {
-  if (!balloonEntityId) return null;
-
+function getBalloonState(world: WorldModel, balloonEntityId: string): { entity: any; state: BalloonStateTrait } | null {
   const balloon = world.getEntity(balloonEntityId);
   if (!balloon) return null;
 
@@ -79,9 +70,7 @@ function getBalloonState(world: WorldModel): { entity: any; state: BalloonStateT
 /**
  * Get the balloon's current position from VehicleTrait (authoritative)
  */
-function getCurrentPosition(world: WorldModel): BalloonPosition | null {
-  if (!balloonEntityId) return null;
-
+function getCurrentPosition(world: WorldModel, balloonEntityId: string): BalloonPosition | null {
   const balloon = world.getEntity(balloonEntityId);
   if (!balloon) return null;
 
@@ -92,9 +81,7 @@ function getCurrentPosition(world: WorldModel): BalloonPosition | null {
 /**
  * Check if player is in the balloon
  */
-function isPlayerInBalloon(world: WorldModel): boolean {
-  if (!balloonEntityId) return false;
-
+function isPlayerInBalloon(world: WorldModel, balloonEntityId: string): boolean {
   const player = world.getPlayer();
   if (!player) return false;
 
@@ -129,10 +116,10 @@ function getPositionMessage(position: BalloonPosition, isRising: boolean): strin
  * Per MDL/FORTRAN: balloon hits ceiling, bag tears, plunges to ground.
  * Player dies if inside. Balloon is destroyed (moved to limbo).
  */
-function handleCrash(world: WorldModel, ctx: SchedulerContext): ISemanticEvent[] {
+function handleCrash(world: WorldModel, ctx: SchedulerContext, balloonEntityId: string): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
 
-  const playerInBalloon = isPlayerInBalloon(world);
+  const playerInBalloon = isPlayerInBalloon(world, balloonEntityId);
 
   // Crash narration — shown whether or not the player is aboard (the balloon is
   // always destroyed). Only a death when the player is inside, so this is a plain
@@ -164,13 +151,11 @@ function handleCrash(world: WorldModel, ctx: SchedulerContext): ISemanticEvent[]
   }
 
   // Disable the balloon daemon — balloon is destroyed
-  if (balloonEntityId) {
-    const balloon = world.getEntity(balloonEntityId);
-    if (balloon) {
-      const state = balloon.get(BalloonStateTrait);
-      if (state) {
-        state.daemonEnabled = false;
-      }
+  const balloon = world.getEntity(balloonEntityId);
+  if (balloon) {
+    const state = balloon.get(BalloonStateTrait);
+    if (state) {
+      state.daemonEnabled = false;
     }
   }
 
@@ -178,9 +163,14 @@ function handleCrash(world: WorldModel, ctx: SchedulerContext): ISemanticEvent[]
 }
 
 /**
- * Create the balloon movement daemon
+ * Create the balloon movement daemon.
+ *
+ * All per-boot state lives in this closure (ADR-248: no module-level mutable
+ * state — a reboot re-registers the daemon, creating fresh state).
  */
-function createBalloonDaemon(): Daemon {
+function createBalloonDaemon(balloonEntityId: string, receptacleEntityId: string): Daemon {
+  let lastFireTurn = 0;
+
   return {
     id: BALLOON_DAEMON_ID,
     name: 'Balloon Movement',
@@ -188,7 +178,7 @@ function createBalloonDaemon(): Daemon {
 
     // Only run when balloon exists and daemon is enabled
     condition: (ctx: SchedulerContext): boolean => {
-      const balloon = getBalloonState(ctx.world);
+      const balloon = getBalloonState(ctx.world, balloonEntityId);
       if (!balloon) return false;
 
       // Check if daemon is enabled
@@ -203,15 +193,15 @@ function createBalloonDaemon(): Daemon {
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
       const events: ISemanticEvent[] = [];
 
-      const balloon = getBalloonState(ctx.world);
+      const balloon = getBalloonState(ctx.world, balloonEntityId);
       if (!balloon) return events;
 
       const { state } = balloon;
-      const currentPos = getCurrentPosition(ctx.world);
+      const currentPos = getCurrentPosition(ctx.world, balloonEntityId);
       if (!currentPos) return events;
 
-      const hasHeat = hasHeatSource(ctx.world);
-      const playerInBalloon = isPlayerInBalloon(ctx.world);
+      const hasHeat = hasHeatSource(ctx.world, receptacleEntityId);
+      const playerInBalloon = isPlayerInBalloon(ctx.world, balloonEntityId);
 
       // Determine movement direction
       let newPosition: BalloonPosition | null = null;
@@ -225,7 +215,7 @@ function createBalloonDaemon(): Daemon {
       // Check for crash: rising past VAIR4 (above volcano rim)
       if (newPosition === null && hasHeat && currentPos === 'vair4') {
         lastFireTurn = ctx.turn;
-        return handleCrash(ctx.world, ctx);
+        return handleCrash(ctx.world, ctx, balloonEntityId);
       }
 
       // If no movement possible (at bottom with no heat, or at top), skip
@@ -241,7 +231,7 @@ function createBalloonDaemon(): Daemon {
       const vehicle = balloon.entity.get(VehicleTrait);
       const destRoomId = vehicle?.positionRooms?.[newPosition];
       if (destRoomId) {
-        moveVehicle(ctx.world, balloonEntityId!, destRoomId);
+        moveVehicle(ctx.world, balloonEntityId, destRoomId);
       }
 
       // Emit movement message if player is in balloon
@@ -300,29 +290,5 @@ export function registerBalloonDaemon(
   balloonId: string,
   receptacleId: string
 ): void {
-  balloonEntityId = balloonId;
-  receptacleEntityId = receptacleId;
-
-  scheduler.registerDaemon(createBalloonDaemon());
-}
-
-/**
- * Check if the balloon daemon is active
- */
-export function isBalloonDaemonActive(scheduler: ISchedulerService): boolean {
-  return scheduler.hasDaemon(BALLOON_DAEMON_ID);
-}
-
-/**
- * Get balloon position (from VehicleTrait — authoritative)
- */
-export function getBalloonPosition(world: WorldModel): BalloonPosition | null {
-  return getCurrentPosition(world);
-}
-
-/**
- * Reset daemon timer (called after tying/untying)
- */
-export function resetBalloonDaemonTimer(): void {
-  lastFireTurn = 0;
+  scheduler.registerDaemon(createBalloonDaemon(balloonId, receptacleId));
 }

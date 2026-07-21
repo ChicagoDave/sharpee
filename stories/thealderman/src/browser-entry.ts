@@ -12,31 +12,35 @@ import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { BrowserClient, ThemeManager } from '@sharpee/platform-browser';
-import { story } from './index';
+import { createStory } from './index';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
 
 const THEME_STORAGE_KEY = 'thealderman-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 
-const author = story.config.author;
-const client = new BrowserClient({
-  storagePrefix: 'thealderman-',
-  defaultTheme: 'modern-dark',
-  themes: [
-    { id: 'modern-dark', name: 'Modern Dark' },
-    { id: 'paper', name: 'Paper' },
-  ],
-  storyInfo: {
-    title: story.config.title,
-    description: story.config.description || '',
-    authors: Array.isArray(author) ? author.join(', ') : author,
-    version: STORY_VERSION,
-    engineVersion: ENGINE_VERSION,
-    buildDate: BUILD_DATE,
-  },
-});
-
 async function start(): Promise<void> {
+  // Fresh story instance per boot (ADR-248); config is read off the instance.
+  const story = createStory();
+  const config = story.config;
+  const author = config.author;
+
+  const client = new BrowserClient({
+    storagePrefix: 'thealderman-',
+    defaultTheme: 'modern-dark',
+    themes: [
+      { id: 'modern-dark', name: 'Modern Dark' },
+      { id: 'paper', name: 'Paper' },
+    ],
+    storyInfo: {
+      title: config.title,
+      description: config.description || '',
+      authors: Array.isArray(author) ? author.join(', ') : author,
+      version: STORY_VERSION,
+      engineVersion: ENGINE_VERSION,
+      buildDate: BUILD_DATE,
+    },
+  });
+
   client.initialize({
     statusLocation: document.getElementById('location-name'),
     statusScore: document.getElementById('score-turns'),

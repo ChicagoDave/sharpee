@@ -3,7 +3,7 @@
  *
  * After stop('defeat') (player death), a harness that restored a live-player
  * world snapshot (transcript-tester RETRY via world.loadJSON) needs turn
- * execution back without restartGame()'s world teardown. resume() flips
+ * execution back without any world teardown. resume() flips
  * `running` back on and nothing else.
  */
 

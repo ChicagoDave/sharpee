@@ -47,7 +47,7 @@ import { CombatantTrait } from './traits';
 /**
  * The Armoured story implementation.
  */
-class ArmouredStory implements Story {
+export class ArmouredStory implements Story {
   /**
    * Story configuration.
    */
@@ -128,10 +128,12 @@ class ArmouredStory implements Story {
 }
 
 /**
- * Export the story instance.
+ * Story factory (ADR-248): the module's sole story export. Each call
+ * returns a fully fresh story instance — clients call this per boot.
  */
-export const story = new ArmouredStory();
-export default story;
+export function createStory(): ArmouredStory {
+  return new ArmouredStory();
+}
 
 // Re-export traits for external use
 export * from './traits';

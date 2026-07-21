@@ -38,7 +38,16 @@ async function loadStory(): Promise<Story> {
   return createStory(result.ir) as unknown as Story;
 }
 
+/**
+ * The one BrowserClient for this page. Constructed on first boot and
+ * reused across restart reboots (ADR-248): the client owns the DOM
+ * wiring, which must not be re-bound per boot.
+ */
+let client: BrowserClient | null = null;
+
 async function start(): Promise<void> {
+  // Fresh compile + build per boot (ADR-248): a restart reboot re-runs
+  // start() and gets a fully fresh story from the bundled source.
   let story: Story;
   try {
     story = await loadStory();
@@ -53,40 +62,44 @@ async function start(): Promise<void> {
     throw error;
   }
 
-  const author = story.config.author;
-  const client = new BrowserClient({
-    storagePrefix: '{{STORY_ID}}-',
-    defaultTheme: 'modern-dark',
-    themes: [
-      { id: 'modern-dark', name: 'Modern Dark' },
-      { id: 'paper', name: 'Paper' },
-    ],
-    storyInfo: {
-      title: story.config.title,
-      description: story.config.description || '',
-      authors: Array.isArray(author) ? author.join(', ') : author,
-      version: STORY_VERSION,
-      engineVersion: ENGINE_VERSION,
-      buildDate: BUILD_DATE,
-    },
-  });
+  if (!client) {
+    const author = story.config.author;
+    client = new BrowserClient({
+      storagePrefix: '{{STORY_ID}}-',
+      // ADR-248: RESTART reboots by re-running this entry's boot path.
+      reboot: () => start(),
+      defaultTheme: 'modern-dark',
+      themes: [
+        { id: 'modern-dark', name: 'Modern Dark' },
+        { id: 'paper', name: 'Paper' },
+      ],
+      storyInfo: {
+        title: story.config.title,
+        description: story.config.description || '',
+        authors: Array.isArray(author) ? author.join(', ') : author,
+        version: STORY_VERSION,
+        engineVersion: ENGINE_VERSION,
+        buildDate: BUILD_DATE,
+      },
+    });
 
-  client.initialize({
-    statusLocation: document.getElementById('location-name'),
-    statusScore: document.getElementById('score-turns'),
-    textContent: document.getElementById('text-content'),
-    mainWindow: document.getElementById('main-window'),
-    commandInput: document.getElementById('command-input') as HTMLInputElement,
-    saveDialog: document.getElementById('save-dialog') as HTMLDialogElement,
-    restoreDialog: document.getElementById('restore-dialog') as HTMLDialogElement,
-    startupDialog: document.getElementById('startup-dialog') as HTMLDialogElement,
-    saveNameInput: document.getElementById('save-name-input') as HTMLInputElement,
-    saveSlotsListEl: document.getElementById('save-slots-list'),
-    restoreSlotsListEl: document.getElementById('restore-slots-list'),
-    noSavesMessage: document.getElementById('no-saves-message'),
-    startupSaveInfo: document.getElementById('startup-save-info'),
-    menuBar: document.getElementById('menu-bar'),
-  });
+    client.initialize({
+      statusLocation: document.getElementById('location-name'),
+      statusScore: document.getElementById('score-turns'),
+      textContent: document.getElementById('text-content'),
+      mainWindow: document.getElementById('main-window'),
+      commandInput: document.getElementById('command-input') as HTMLInputElement,
+      saveDialog: document.getElementById('save-dialog') as HTMLDialogElement,
+      restoreDialog: document.getElementById('restore-dialog') as HTMLDialogElement,
+      startupDialog: document.getElementById('startup-dialog') as HTMLDialogElement,
+      saveNameInput: document.getElementById('save-name-input') as HTMLInputElement,
+      saveSlotsListEl: document.getElementById('save-slots-list'),
+      restoreSlotsListEl: document.getElementById('restore-slots-list'),
+      noSavesMessage: document.getElementById('no-saves-message'),
+      startupSaveInfo: document.getElementById('startup-save-info'),
+      menuBar: document.getElementById('menu-bar'),
+    });
+  }
 
   const world = new WorldModel();
   const player = world.createEntity('player', EntityType.ACTOR);

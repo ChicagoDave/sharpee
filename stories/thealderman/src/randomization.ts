@@ -5,15 +5,17 @@
  * Applies the 5% shift: removes the murder weapon from its home location
  * and marks the murder location with physical evidence.
  *
- * Public interface: randomizeSolution(), GameSolution
+ * Public interface: randomizeSolution(), GameSolution, StoryIds
  * Owner: thealderman story
+ *
+ * ADR-248: all entity ids come in as parameters (per-world maps returned by
+ * the create* builders) — no module-level id registries.
  */
 
 import { WorldModel } from '@sharpee/world-model';
 import { NpcIds } from './npcs';
 import { WeaponIds } from './objects';
 import { RoomIds } from './rooms';
-import { setSolution } from './actions';
 
 /** The randomized solution for the current playthrough. */
 export interface GameSolution {
@@ -25,52 +27,16 @@ export interface GameSolution {
   locationName: string;
 }
 
-interface SuspectDef {
-  getId: () => string;
-  name: string;
+/** The per-world id maps the randomizer draws from. */
+export interface StoryIds {
+  rooms: RoomIds;
+  npcs: NpcIds;
+  weapons: WeaponIds;
 }
 
-interface WeaponDef {
-  getId: () => string;
+interface CandidateDef {
+  id: string;
   name: string;
-}
-
-interface LocationDef {
-  getId: () => string;
-  name: string;
-}
-
-const SUSPECTS: SuspectDef[] = [
-  { getId: () => NpcIds.ross, name: 'Ross Bielack' },
-  { getId: () => NpcIds.viola, name: 'Viola Wainright' },
-  { getId: () => NpcIds.john, name: 'John Barber' },
-  { getId: () => NpcIds.catherine, name: 'Catherine Shelby' },
-  { getId: () => NpcIds.jack, name: 'Jack Margolin' },
-  { getId: () => NpcIds.chelsea, name: 'Chelsea Sumner' },
-];
-
-const WEAPONS: WeaponDef[] = [
-  { getId: () => WeaponIds.revolver, name: 'revolver' },
-  { getId: () => WeaponIds.knife, name: 'kitchen knife' },
-  { getId: () => WeaponIds.champagneBottle, name: 'champagne bottle' },
-  { getId: () => WeaponIds.fireplacePoker, name: 'fireplace poker' },
-  { getId: () => WeaponIds.sadIron, name: 'sad iron' },
-  { getId: () => WeaponIds.curtainCord, name: 'curtain cord' },
-];
-
-const LOCATIONS: LocationDef[] = [
-  { getId: () => RoomIds.room302, name: "Stephanie's room" },
-  { getId: () => RoomIds.laundry, name: 'Laundry' },
-  { getId: () => RoomIds.kitchen, name: 'Kitchen' },
-  { getId: () => RoomIds.staircase, name: 'Elevator' },
-  { getId: () => RoomIds.ballroom, name: 'Ballroom' },
-  // "Suspect's room" picks from Ross/Viola/Jack
-  { getId: () => pickSuspectRoom(), name: "a suspect's room" },
-];
-
-function pickSuspectRoom(): string {
-  const rooms = [RoomIds.room304, RoomIds.room306, RoomIds.room308];
-  return rooms[Math.floor(Math.random() * rooms.length)];
 }
 
 function pickRandom<T>(arr: T[]): T {
@@ -81,19 +47,60 @@ function pickRandom<T>(arr: T[]): T {
  * Selects the random solution and applies world modifications.
  *
  * @param world - The world model (after all entities are created)
+ * @param ids - The per-world id maps (rooms, NPCs, weapons)
+ * @param setSolution - The story instance's ACCUSE-action solution setter
+ *   (ADR-248: the action's state is per-instance, so the setter is passed
+ *   in rather than imported as a module-level singleton)
  * @returns The solution for debugging/testing
  */
-export function randomizeSolution(world: WorldModel): GameSolution {
-  const suspect = pickRandom(SUSPECTS);
-  const weapon = pickRandom(WEAPONS);
-  const location = pickRandom(LOCATIONS);
+export function randomizeSolution(
+  world: WorldModel,
+  ids: StoryIds,
+  setSolution: (killerId: string, weaponId: string, locationId: string) => void,
+): GameSolution {
+  const { rooms, npcs, weapons } = ids;
+
+  const suspects: CandidateDef[] = [
+    { id: npcs.ross, name: 'Ross Bielack' },
+    { id: npcs.viola, name: 'Viola Wainright' },
+    { id: npcs.john, name: 'John Barber' },
+    { id: npcs.catherine, name: 'Catherine Shelby' },
+    { id: npcs.jack, name: 'Jack Margolin' },
+    { id: npcs.chelsea, name: 'Chelsea Sumner' },
+  ];
+
+  const weaponChoices: CandidateDef[] = [
+    { id: weapons.revolver, name: 'revolver' },
+    { id: weapons.knife, name: 'kitchen knife' },
+    { id: weapons.champagneBottle, name: 'champagne bottle' },
+    { id: weapons.fireplacePoker, name: 'fireplace poker' },
+    { id: weapons.sadIron, name: 'sad iron' },
+    { id: weapons.curtainCord, name: 'curtain cord' },
+  ];
+
+  const locations: CandidateDef[] = [
+    { id: rooms.room302, name: "Stephanie's room" },
+    { id: rooms.laundry, name: 'Laundry' },
+    { id: rooms.kitchen, name: 'Kitchen' },
+    { id: rooms.staircase, name: 'Elevator' },
+    { id: rooms.ballroom, name: 'Ballroom' },
+    // "Suspect's room" picks from Ross/Viola/Jack
+    {
+      id: pickRandom([rooms.room304, rooms.room306, rooms.room308]),
+      name: "a suspect's room",
+    },
+  ];
+
+  const suspect = pickRandom(suspects);
+  const weapon = pickRandom(weaponChoices);
+  const location = pickRandom(locations);
 
   const sol: GameSolution = {
-    killerId: suspect.getId(),
+    killerId: suspect.id,
     killerName: suspect.name,
-    weaponId: weapon.getId(),
+    weaponId: weapon.id,
     weaponName: weapon.name,
-    locationId: location.getId(),
+    locationId: location.id,
     locationName: location.name,
   };
 

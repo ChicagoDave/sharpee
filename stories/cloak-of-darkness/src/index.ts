@@ -33,21 +33,16 @@ import {
 import type { IGameEvent, Effect, WorldQuery } from '@sharpee/event-processor';
 
 /**
- * Cloak of Darkness story configuration
- */
-export const config: StoryConfig = {
-  id: "cloak-of-darkness",
-  title: "Cloak of Darkness",
-  author: "Roger Firth (Sharpee implementation)",
-  version: "1.0.0",
-  description: "A basic IF demonstration - hang up your cloak!"
-};
-
-/**
  * Cloak of Darkness story implementation
  */
 export class CloakOfDarknessStory implements Story {
-  config = config;
+  config: StoryConfig = {
+    id: "cloak-of-darkness",
+    title: "Cloak of Darkness",
+    author: "Roger Firth (Sharpee implementation)",
+    version: "1.0.0",
+    description: "A basic IF demonstration - hang up your cloak!"
+  };
 
   private world!: WorldModel;
   private winningText = "You have won!"; // The message in the sawdust
@@ -778,8 +773,10 @@ export class CloakOfDarknessStory implements Story {
   }
 }
 
-// Create and export the story instance
-export const story = new CloakOfDarknessStory();
-
-// Default export for convenience
-export default story;
+/**
+ * Story factory — the module's sole story export (ADR-248 Decision 3).
+ * Clients call this once per boot; every call returns a fully fresh instance.
+ */
+export function createStory(): CloakOfDarknessStory {
+  return new CloakOfDarknessStory();
+}

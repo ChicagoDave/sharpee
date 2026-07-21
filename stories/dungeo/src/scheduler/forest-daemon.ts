@@ -24,9 +24,6 @@ const FOREST_AMBIENCE_DAEMON = 'dungeo.forest.ambience';
 // Configuration
 const AMBIENCE_PROBABILITY = 0.15;  // 15% chance per turn
 
-// Forest room IDs - these will be set during registration
-let forestRoomIds: Set<string> = new Set();
-
 /**
  * Forest ambience messages with relative weights
  */
@@ -57,7 +54,7 @@ function pickRandomSound(ctx: SchedulerContext): string {
 /**
  * Check if a location is a forest room
  */
-function isForestRoom(locationId: string, world: WorldModel): boolean {
+function isForestRoom(locationId: string, world: WorldModel, forestRoomIds: Set<string>): boolean {
   // First check our known forest room IDs
   if (forestRoomIds.has(locationId)) {
     return true;
@@ -83,9 +80,12 @@ function isForestRoom(locationId: string, world: WorldModel): boolean {
 }
 
 /**
- * Create the forest ambience daemon
+ * Create the forest ambience daemon.
+ *
+ * Forest room ids live in this closure (ADR-248: no module-level mutable
+ * state — a reboot re-registers the daemon with fresh ids).
  */
-function createForestAmbienceDaemon(): Daemon {
+function createForestAmbienceDaemon(forestRoomIds: Set<string>): Daemon {
   return {
     id: FOREST_AMBIENCE_DAEMON,
     name: 'Forest Ambience',
@@ -93,7 +93,7 @@ function createForestAmbienceDaemon(): Daemon {
 
     // Only run when player is in a forest location
     condition: (ctx: SchedulerContext): boolean => {
-      return isForestRoom(ctx.playerLocation, ctx.world);
+      return isForestRoom(ctx.playerLocation, ctx.world, forestRoomIds);
     },
 
     // Emit ambient sound with some probability
@@ -130,16 +130,5 @@ export function registerForestAmbienceDaemon(
   scheduler: ISchedulerService,
   roomIds: string[]
 ): void {
-  // Store the forest room IDs for quick lookup
-  forestRoomIds = new Set(roomIds);
-
-  // Register the daemon
-  scheduler.registerDaemon(createForestAmbienceDaemon());
-}
-
-/**
- * Check if the forest ambience daemon is active
- */
-export function isForestAmbienceActive(scheduler: ISchedulerService): boolean {
-  return scheduler.hasDaemon(FOREST_AMBIENCE_DAEMON);
+  scheduler.registerDaemon(createForestAmbienceDaemon(new Set(roomIds)));
 }

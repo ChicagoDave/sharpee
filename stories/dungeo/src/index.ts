@@ -152,9 +152,10 @@ import { registerAllMessages } from './messages';
 import { initializeOrchestration } from './orchestration';
 
 /**
- * Dungeo story configuration
+ * Dungeo story configuration (module-private; read it off a story
+ * instance via `createStory().config` — ADR-248 factory-only contract)
  */
-export const config: StoryConfig = {
+const config: StoryConfig = {
   id: "dungeon",
   title: "DUNGEON",
   author: "Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
@@ -838,8 +839,12 @@ export class DungeoStory implements Story {
   }
 }
 
-// Create and export the story instance
-export const story = new DungeoStory();
-
-// Default export for convenience
-export default story;
+/**
+ * Create a fresh Dungeo story instance (ADR-248 factory-only contract).
+ *
+ * The sole story export: every boot — including an in-process restart
+ * reboot — calls this for a fully fresh story with no shared state.
+ */
+export function createStory(): DungeoStory {
+  return new DungeoStory();
+}

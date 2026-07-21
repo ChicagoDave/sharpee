@@ -171,7 +171,14 @@ export interface CustomVocabulary {
 }
 
 /**
- * Story interface - what a story module exports
+ * Story interface — what a story module's `createStory()` factory returns.
+ *
+ * ADR-248 factory-only contract: a story module exports exactly
+ * `export function createStory(): Story` (no `story`/`config`/default
+ * singleton exports). Every boot — including an in-process restart reboot —
+ * calls the factory for a fresh instance, so all mutable story state must
+ * live on the instance (or in closures created during initializeWorld),
+ * never at module level. `initializeWorld` runs at most once per instance.
  */
 export interface Story {
   /**

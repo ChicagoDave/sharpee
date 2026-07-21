@@ -989,7 +989,7 @@ export interface GameEventSessionData {
 }
 /** Ending/conclusion data for game end events */
 export interface GameEventEndingData {
-    type?: 'victory' | 'defeat' | 'quit' | 'abort';
+    type?: 'victory' | 'defeat' | 'quit' | 'abort' | 'restart';
     reason?: string;
     achieved?: string[];
     score?: number;
@@ -1054,7 +1054,7 @@ export interface GameLifecycleEndedData {
         endTime: number;
     };
     ending: GameEventEndingData & {
-        type: 'victory' | 'defeat' | 'quit' | 'abort';
+        type: 'victory' | 'defeat' | 'quit' | 'abort' | 'restart';
     };
     [key: string]: unknown;
 }
@@ -1193,7 +1193,7 @@ export declare function createStoryLoadedEvent(story: GameEventStoryData): ISema
 export declare function createGameStartingEvent(story?: GameEventStoryData): ISemanticEvent;
 export declare function createGameStartedEvent(story?: GameEventStoryData, startTime?: number, engineVersion?: string, clientVersion?: string): ISemanticEvent;
 export declare function createGameEndingEvent(reason?: string, session?: GameEventSessionData): ISemanticEvent;
-export declare function createGameEndedEvent(endingType: 'victory' | 'defeat' | 'quit' | 'abort', session?: GameEventSessionData, ending?: Partial<GameEventEndingData>): ISemanticEvent;
+export declare function createGameEndedEvent(endingType: 'victory' | 'defeat' | 'quit' | 'abort' | 'restart', session?: GameEventSessionData, ending?: Partial<GameEventEndingData>): ISemanticEvent;
 export declare function createGameWonEvent(session?: GameEventSessionData, ending?: Partial<GameEventEndingData>): ISemanticEvent;
 export declare function createGameLostEvent(reason: string, session?: GameEventSessionData): ISemanticEvent;
 export declare function createGameQuitEvent(session?: GameEventSessionData): ISemanticEvent;

@@ -108,6 +108,17 @@ export interface BrowserClientConfig {
    * Any of the three (config flag, query, localStorage) turns it on.
    */
   debugChannels?: boolean;
+
+  /**
+   * Reboot callback for RESTART (ADR-248): re-runs the story's own boot
+   * path — fresh story via `createStory()`, fresh world/engine,
+   * `connectEngine`, `client.start()`. Each story's browser entry passes
+   * its own top-level `start` function here. Invoked by the client after
+   * a confirmed restart's final packet has flushed (never inside the
+   * hook itself). When omitted, the client falls back to
+   * `window.location.reload()`.
+   */
+  reboot?: () => Promise<void>;
 }
 
 /**

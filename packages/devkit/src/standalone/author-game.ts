@@ -110,11 +110,16 @@ export function loadChordStory(storyFile: string): unknown {
 export async function loadAuthorGame(target: string, opts?: { entry?: string }): Promise<LoadedGame> {
   const bootstrap = require('@sharpee/bootstrap') as typeof import('@sharpee/bootstrap');
   if (target.endsWith('.story')) {
-    return bootstrap.assembleGame(loadChordStory(target));
+    // ADR-248: freshStory recompiles so an in-process RESTART reboots fresh.
+    return bootstrap.assembleGame(loadChordStory(target), {
+      freshStory: () => loadChordStory(target),
+    });
   }
   const storyFile = findStoryFile(target);
   if (storyFile) {
-    return bootstrap.assembleGame(loadChordStory(storyFile));
+    return bootstrap.assembleGame(loadChordStory(storyFile), {
+      freshStory: () => loadChordStory(storyFile),
+    });
   }
   return bootstrap.loadStory(target, { entry: opts?.entry });
 }

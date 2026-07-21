@@ -24,14 +24,6 @@ const TROLL_RECOVERY_DAEMON = 'dungeo.troll.recovery';
 // Descriptions from MDL source (dung.355)
 const TROLLDESC = 'A nasty-looking troll stands here, wielding a bloody axe. He blocks the northern passage.';
 
-// Entity IDs - set during registration
-let trollId: string | null = null;
-let trollRoomId: string | null = null;
-
-// MDL growing-probability recovery accumulator (VILLAIN-PROBS element; melee.mud:67-76).
-// Grows +10 each unconscious turn; reset to 0 on revival.
-let recoveryAcc = 0;
-
 /**
  * Find the troll entity in the world
  */
@@ -51,9 +43,19 @@ function findTroll(world: WorldModel): string | null {
 }
 
 /**
- * Create the troll recovery daemon
+ * Create the troll recovery daemon.
+ *
+ * All per-boot state lives in this closure (ADR-248: no module-level mutable
+ * state — a reboot re-registers the daemon, creating fresh state).
  */
-function createTrollRecoveryDaemon(): Daemon {
+function createTrollRecoveryDaemon(trollRoomId: string): Daemon {
+  // Entity ID — found lazily on first run
+  let trollId: string | null = null;
+
+  // MDL growing-probability recovery accumulator (VILLAIN-PROBS element;
+  // melee.mud:67-76). Grows +10 each unconscious turn; reset to 0 on revival.
+  let recoveryAcc = 0;
+
   return {
     id: TROLL_RECOVERY_DAEMON,
     name: 'Troll Recovery',
@@ -107,11 +109,9 @@ function createTrollRecoveryDaemon(): Daemon {
         }
 
         // Re-block north exit
-        if (trollRoomId) {
-          const room = ctx.world.getEntity(trollRoomId);
-          if (room) {
-            RoomBehavior.blockExit(room, Direction.NORTH, 'The troll blocks your way.');
-          }
+        const room = ctx.world.getEntity(trollRoomId);
+        if (room) {
+          RoomBehavior.blockExit(room, Direction.NORTH, 'The troll blocks your way.');
         }
 
         // Note: Axe visibility is handled by TrollAxeVisibilityBehavior
@@ -119,7 +119,7 @@ function createTrollRecoveryDaemon(): Daemon {
         // It will automatically show the axe once the troll is conscious again
 
         // Only emit wake-up message if player is in the troll room
-        if (trollRoomId && ctx.playerLocation === trollRoomId) {
+        if (ctx.playerLocation === trollRoomId) {
           events.push({
             id: `troll-wakeup-${ctx.turn}`,
             type: 'game.message',
@@ -151,43 +151,5 @@ export function registerTrollRecoveryDaemon(
   scheduler: ISchedulerService,
   roomId: string
 ): void {
-  trollRoomId = roomId;
-  trollId = null; // Will be found on first run
-
-  scheduler.registerDaemon(createTrollRecoveryDaemon());
-}
-
-/**
- * Check if the troll recovery daemon is active
- */
-export function isTrollRecoveryActive(scheduler: ISchedulerService): boolean {
-  return scheduler.hasDaemon(TROLL_RECOVERY_DAEMON);
-}
-
-/**
- * Get current troll state for debugging
- */
-export function getTrollState(world: WorldModel): {
-  id: string | null;
-  isAlive: boolean;
-  isConscious: boolean;
-  recoveryTurns: number | undefined;
-} | null {
-  if (!trollId) {
-    trollId = findTroll(world);
-  }
-  if (!trollId) return null;
-
-  const troll = world.getEntity(trollId);
-  if (!troll) return null;
-
-  const health = troll.get(HealthTrait);
-  if (!health) return null;
-
-  return {
-    id: trollId,
-    isAlive: HealthBehavior.isAlive(health),
-    isConscious: HealthBehavior.isConscious(health),
-    recoveryTurns: recoveryAcc // now the MDL growing-probability accumulator
-  };
+  scheduler.registerDaemon(createTrollRecoveryDaemon(roomId));
 }

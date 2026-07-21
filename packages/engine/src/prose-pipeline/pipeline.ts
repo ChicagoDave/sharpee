@@ -58,9 +58,8 @@ import type { IProsePipeline, SlotContributor, SlotEntry } from './types.js';
  *
  * Stateless transformer: events in, blocks out. Constructed once per
  * `setStory()` call with the active language provider; called per
- * turn by `GameEngine.executeTurn`, `GameEngine.restartGame`, and
- * the meta-command path (same three sites the retired
- * `TextService.processTurn` had).
+ * turn by `GameEngine.executeTurn` and the meta-command path (the
+ * same sites the retired `TextService.processTurn` had).
  */
 export class ProsePipeline implements IProsePipeline {
   private readonly languageProvider: LanguageProvider;
