@@ -41,6 +41,10 @@ export const examiningLanguage = {
     // prints this, never a silent blank. The {slot:detail} append keeps
     // trait-driven state sentences following the fallback line.
     'default_description': "{capitalize the item} {verb:is item} just {a item}.{slot:detail}",
+    // Self counterpart (David's wording ruling, 2026-07-20): the player noun
+    // does not fit the "just a" phrasing, so descriptionless EXAMINE ME gets
+    // the classic line instead. No {slot:detail} — parity with examined_self.
+    'default_description_self': "As good-looking as ever.",
     'description': "{verbatim:description}{slot:detail}",
     'brief_description': "{verbatim:description}",
     'no_description': "{You} {see} nothing special about {the item}.",

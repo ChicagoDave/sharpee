@@ -1,6 +1,18 @@
 title: Debug Combat
 story: dungeo
 ---
+# GDT ND = immortality: the troll's counterblows can kill a score-0 player
+# outright; ND only suppresses the hero-death event, so the attack loop and
+# troll death below are unaffected.
+> gdt
+[OK: contains "GDT"]
+
+> nd
+[OK: contains "Immortality"]
+
+> ex
+[OK: contains "Returning"]
+
 > north
 [OK: contains "North"]
 > east

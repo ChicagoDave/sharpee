@@ -490,6 +490,8 @@ create the Hall
   a room
   down to the Cellar through the cellar door
 
+  A cold entrance hall.
+
 create the cellar door
   a door, lockable with the tarnished key
   aka grey door
@@ -1737,6 +1739,11 @@ story "Extensions" by "ref"
   id: ext-ref
   version: 0.0.1
   use combat
+
+create the Guardhouse
+  a room
+
+  A low stone guardhouse.
 
 create the sentry
   a person, combatant with health 20 and skill 40

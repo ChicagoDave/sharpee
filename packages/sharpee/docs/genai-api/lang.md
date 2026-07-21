@@ -574,6 +574,41 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        not_visible: string;
+        cant_see: string;
+        examined: string;
+        examined_self: string;
+        examined_container: string;
+        examined_supporter: string;
+        examined_readable: string;
+        examined_switchable: string;
+        examined_wearable: string;
+        examined_door: string;
+        examined_wall: string;
+        nothing_special: string;
+        default_description: string;
+        default_description_self: string;
+        description: string;
+        brief_description: string;
+        no_description: string;
+        container_open: string;
+        container_closed: string;
+        container_empty: string;
+        container_contents: string;
+        surface_contents: string;
+        worn_by_you: string;
+        worn_by_other: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         cant_take_self: string;
         already_have: string;
         cant_take_room: string;
@@ -648,40 +683,6 @@ export declare const standardActionLanguage: ({
         burden_light: string;
         burden_heavy: string;
         burden_overloaded: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_visible: string;
-        cant_see: string;
-        examined: string;
-        examined_self: string;
-        examined_container: string;
-        examined_supporter: string;
-        examined_readable: string;
-        examined_switchable: string;
-        examined_wearable: string;
-        examined_door: string;
-        examined_wall: string;
-        nothing_special: string;
-        default_description: string;
-        description: string;
-        brief_description: string;
-        no_description: string;
-        container_open: string;
-        container_closed: string;
-        container_empty: string;
-        container_contents: string;
-        surface_contents: string;
-        worn_by_you: string;
-        worn_by_other: string;
     };
     help: {
         description: string;

@@ -4,12 +4,16 @@ description: Test maze self-loops and dead end connections per 1981 MDL source
 
 ---
 
-# Setup: Get lantern
+# Setup: Get lantern; ND = immortality (troll pass-throughs and the maze
+# thief can kill a score-0 player — this tests connections, not mortality)
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
 > tk brass lantern
 [OK: contains "Taken: brass lantern"]
+
+> nd
+[OK: contains "Immortality"]
 
 > ex
 [OK: contains "Returning to game"]

@@ -23,6 +23,7 @@ import {
   IdentityTrait,
 } from '@sharpee/world-model';
 import { findWieldedWeapon, killPlayer } from '@sharpee/stdlib';
+import { getGDTFlags } from '../actions/gdt/gdt-context';
 
 import {
   fightStrength,
@@ -245,6 +246,11 @@ function emitHeroDeath(
   npc: IFEntity,
   target: IFEntity
 ): void {
+  // GDT ND (immortality): a debug-immortal player shrugs the blow off — no
+  // canonical death event. Mirrors the grue handler's isImmortal guard; the
+  // blow narration has already been emitted.
+  if (getGDTFlags(world).immortal) return;
+
   // The hero (player) is slain in melee — MDL's "provoked" death (troll/cyclops).
   // Canonical terminal death (ADR-224), cause 'combat'. The melee blow message
   // already carried the death narration, so no messageId here (behavior-preserving).

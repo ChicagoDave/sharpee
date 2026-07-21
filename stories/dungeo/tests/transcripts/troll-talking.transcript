@@ -9,12 +9,20 @@ description: TrollTalkingInterceptor owns the full talk-to-troll canon through
 
 ---
 
+# The conscious troll strikes bystanders each turn (MDL melee canon) and can
+# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
+# revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
 # Setup — lantern + teleport in one GDT session (no turns pass inside GDT)
 > GDT
 [OK: contains "GDT"]
 
 > TK brass lantern
 [OK: contains "Taken"]
+
+> ND
+[OK: contains "Immortality"]
 
 > AH Troll Room
 [OK: contains "Teleported"]
@@ -57,3 +65,5 @@ description: TrollTalkingInterceptor owns the full talk-to-troll canon through
 # Story `hello :target` slot pattern (replaces the old literal)
 > hello troll
 [OK: contains "can't hear you"]
+
+[END RETRY]

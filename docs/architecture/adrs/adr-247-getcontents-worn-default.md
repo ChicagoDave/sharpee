@@ -1,6 +1,6 @@
 # ADR-247: `getContents()` includes worn items by default (opt-out, not opt-in)
 
-## Status: DRAFT (Open Questions pending — do not implement the broad flip until ACCEPTED)
+## Status: ACCEPTED (2026-07-20 — all three Open Questions resolved via interview, session 17e36e)
 
 ## Date: 2026-07-20
 
@@ -47,24 +47,68 @@ sites** across packages/. Known-interesting groups:
 ## Decision
 
 Flip the default: `getContents()` returns ALL direct contents including worn
-items. Callers that genuinely want worn items excluded pass an explicit
-opt-out (`{ includeWorn: false }` — or a renamed positive option if the
-interview prefers, e.g. `{ heldOnly: true }`).
+items — **unconditionally, with no filter option** (Q1 resolved 2026-07-20).
+`ContentsOptions.includeWorn` is deleted. Callers that need the carried/worn
+split use a new WorldModel partition method instead of filtering:
+
+```typescript
+// One call, two lists (David's ruling: "the usual thinking is you'd have
+// one call that returns two lists: carried and worn")
+const { carried, worn } = world.getCarriedAndWorn(actorId);
+
+// inventory: prints both lists; burden: uses .carried only
+// everyone else: getContents() — no options, returns everything
+```
+
+Partition signature: `getCarriedAndWorn(holderId: string): { carried:
+IFEntity[]; worn: IFEntity[] }` — a partition of the holder's direct
+contents by worn state; for holders with no wearables, `worn` is empty.
+
+The audit also covers `getAllContents()` (WorldModel.ts:1087), whose
+`includeWorn` plumbing and always-include-when-recursing special case are
+deleted with the option.
 
 The flip is **not a mechanical rename**: every one of the 64 call sites gets
-individually audited (does it want everything, held-only, or doesn't-matter),
-with the audit table recorded alongside this ADR before the change lands.
+individually audited (does it want everything, held-only → migrate to
+`getCarriedAndWorn().carried`, or doesn't-matter), with the audit table
+recorded alongside this ADR before the change lands (Q2 confirmed
+2026-07-20: full 64-site audit stays mandatory; no call site retains a
+filtered view — the option is deleted, not defaulted).
 
 ## Consequences
 
 - `inventory.ts`'s explicit `includeWorn: true` becomes redundant and is
-  removed in the same change (kept until then — it documents the bug).
+  removed in the same change (kept until then — it documents the bug);
+  inventory migrates to `getCarriedAndWorn()`, which also replaces its
+  hand-rolled worn/held split of the flat result.
 - Any call site relying on the old filtered default without saying so would
   silently change behavior — hence the per-site audit requirement above.
-- `ContentsOptions.includeWorn` (opt-in) becomes an opt-out surface; its
-  naming is an open question below.
+- `ContentsOptions.includeWorn` is deleted outright — no opt-out surface
+  replaces it. Held-only semantics are expressed via
+  `getCarriedAndWorn().carried`, worn-only via `.worn`.
 - Future query defaults follow the same principle: return everything, filter
   by explicit request (matches "portable by default").
+- **ClothingTrait is deleted** in the same audit/flip change (Q3 resolved
+  2026-07-20 — David confirmed deletion). It duplicated `IWearableData` as a
+  separate trait type with nothing outside world-model using it (stories: one
+  string case in dungeo's GDT debug command). The worn-check in
+  `getCarriedAndWorn()` — and everywhere else — becomes WearableTrait-only.
+  Clothing extras (material/style/damageable/condition) return later as
+  WearableTrait data if ever needed. Deletion touches: world-model barrels,
+  `implementations.ts` rehydration table, `all-traits.ts`, the GDT `do.ts`
+  case, and the trait file itself.
+
+## Acceptance Criteria
+
+- The 64-site audit table is committed alongside this ADR before the flip
+  lands, classifying every site (everything / held-only → `.carried` /
+  doesn't-matter).
+- `ContentsOptions.includeWorn` and `ClothingTrait` no longer exist anywhere
+  in the codebase (source, barrels, rehydration table, GDT `do.ts` case).
+- New tests: a worn item appears in LOOK/EXAMINE contents where visibility
+  says it should; `getCarriedAndWorn()` partitions correctly; the partition
+  survives save/restore (rehydrated `isWorn`).
+- All package suites green + type-clean.
 
 ## Session
 
@@ -73,18 +117,3 @@ Phase 5 step 2. The narrow fix (step 1) and the rehydration fix (step 5) are
 already landed and tested in that session; the broad flip (step 4) is gated
 on this ADR reaching ACCEPTED.
 
-## Open Questions
-
-1. **Option naming for the opt-out.** Keep `includeWorn: false` (boolean flip
-   of the existing option, no new vocabulary) or introduce a positive-named
-   option (`heldOnly: true`) and deprecate `includeWorn` entirely? The
-   project's no-double-negative surface preference suggests the positive
-   name, but this is an internal API, not Chord syntax.
-2. **Does any call site legitimately keep the filtered view?** The audit must
-   answer per-site; if the answer is "none," should the opt-out option exist
-   at all, or should held-only callers filter explicitly at the call site
-   (`.filter(e => !isWornBy(e, holder))` via a behavior helper)?
-3. **ClothingTrait parity.** The current filter checks both `WearableTrait`
-   and `ClothingTrait`. Does ClothingTrait still exist as a separate surface
-   worth preserving in whatever replaces the filter, or is it legacy to fold
-   in during the same audit?

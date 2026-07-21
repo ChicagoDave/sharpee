@@ -1,9 +1,0 @@
-{
-  "npcs/combat.story": {
-    "anyOf": {
-      "attack the deserter with the cutlass": [
-        "You swing at the deserter but miss!"
-      ]
-    }
-  }
-}

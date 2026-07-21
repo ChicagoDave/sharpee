@@ -809,6 +809,31 @@ export class GameEngine {
   }
 
   /**
+   * Resume a stopped engine without touching world state.
+   *
+   * The post-mortem revival seam: after `stop('defeat')`, a harness (or a
+   * story resurrection policy) that has restored the world to a live-player
+   * snapshot — e.g. the transcript-tester's RETRY block via
+   * `world.loadJSON()` — needs turn execution back without the full
+   * `restartGame()` teardown (which clears the world it just restored).
+   * Flips `running` back on; emits nothing, rebuilds nothing.
+   *
+   * No-op when already running. Throws if the engine was never started
+   * (no command executor) — resuming presumes a completed `start()`.
+   */
+  resume(): void {
+    if (this.running) {
+      return;
+    }
+    // The channel service exists only once start() has completed — resuming
+    // an engine that never started would bypass the whole bootstrap order.
+    if (!this.channelService) {
+      throw new Error('Engine must have been started before it can resume');
+    }
+    this.running = true;
+  }
+
+  /**
    * Stop the game engine
    */
   stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort', details?: any): void {

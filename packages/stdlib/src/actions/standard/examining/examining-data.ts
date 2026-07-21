@@ -331,13 +331,18 @@ export function buildExaminingMessageParams(
     // no description was bound — only the wall branch (returned above) had a
     // fallback. With no description, switch to default_description ("The
     // pebble is just a pebble.") instead of a silent blank; a contents
-    // message (container/supporter) still follows. Self is excluded: the
-    // player noun does not fit the "just a" phrasing (residual recorded in
-    // the plan).
+    // message (container/supporter) still follows. Self does not fit the
+    // "just a" phrasing and gets its own fallback below.
     if (params.description === undefined) {
       messageId = 'default_description';
       params.item = nounPhraseFor(noun);
     }
+  }
+
+  // Self counterpart (David's wording ruling 2026-07-20): descriptionless
+  // EXAMINE ME renders "As good-looking as ever." instead of a silent blank.
+  else if (eventData.self && params.description === undefined) {
+    messageId = 'default_description_self';
   }
 
   return { messageId, params, contentsMessage };

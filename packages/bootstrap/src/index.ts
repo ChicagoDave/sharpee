@@ -8,10 +8,11 @@
  * output path (the canonical CLI/test output capture).
  *
  * Owner context: build/test devkit layer (ADR-180).
- * Public interface: `resolveStoryModulePath`, `loadStory`, `assembleGame`, `LoadedGame`.
+ * Public interface: `resolveStoryModulePath`, `purgeStoryModuleCache`, `loadStory`, `assembleGame`, `LoadedGame`.
  */
 
 import { resolveStoryModulePath } from './resolve.js';
+import { purgeStoryModuleCache } from './purge.js';
 import { GameEngine, TurnResult } from '@sharpee/engine';
 import { ISemanticEvent } from '@sharpee/core';
 import { flattenContent } from '@sharpee/channel-service';
@@ -61,9 +62,16 @@ export interface LoadedGame {
   };
   /** Execute one command; returns the captured `main`-channel text. */
   executeCommand(input: string): Promise<string>;
+  /**
+   * Resume the engine if a game-over stopped it (player death, victory).
+   * Called by the runner's RETRY restore path after `world.loadJSON()` so a
+   * restored live-player snapshot can keep executing turns.
+   */
+  reviveEngine(): void;
 }
 
 export { resolveStoryModulePath } from './resolve.js';
+export { purgeStoryModuleCache } from './purge.js';
 export { buildManifest } from './introspect.js';
 
 /**
@@ -75,6 +83,7 @@ export { buildManifest } from './introspect.js';
  */
 export async function loadStory(location: string, opts?: { entry?: string }): Promise<LoadedGame> {
   const modulePath = resolveStoryModulePath(location, opts?.entry);
+  purgeStoryModuleCache(location);
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const storyModule = require(modulePath);
   const story = storyModule.story || storyModule.default;
@@ -169,6 +178,10 @@ export function assembleGame(story: any): LoadedGame {
         getStates(): Record<string, unknown>;
         setStates(states: Record<string, unknown>): void;
       };
+    },
+
+    reviveEngine() {
+      engine.resume();
     },
 
     async executeCommand(input: string): Promise<string> {

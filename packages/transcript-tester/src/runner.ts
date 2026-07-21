@@ -36,6 +36,8 @@ interface GameEngine {
   world?: WorldModel;
   /** Plugin registry for save/restore of plugin state (state machines, scheduler) */
   getPluginRegistry?(): { getStates(): Record<string, unknown>; setStates(states: Record<string, unknown>): void };
+  /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
+  reviveEngine?(): void;
 }
 
 /**
@@ -212,9 +214,12 @@ async function runSmartTranscript(
             if (options.verbose) {
               console.log(`  [RETRY] Attempt ${retryBlock.retryCount}/${retryBlock.maxRetries} failed, restoring state...`);
             }
-            // Restore world state
+            // Restore world state; revive the engine if the failure was a
+            // game-over (player death stops the engine — the restored
+            // snapshot has a live player, so turn execution must resume).
             if (retryBlock.savedState && engine.world?.loadJSON) {
               engine.world.loadJSON(retryBlock.savedState);
+              engine.reviveEngine?.();
             }
             // Remove all results from this retry attempt
             results.splice(retryBlock.resultsStartIndex!);
@@ -258,6 +263,7 @@ async function runSmartTranscript(
               }
               if (retryBlock.savedState && engine.world?.loadJSON) {
                 engine.world.loadJSON(retryBlock.savedState);
+                engine.reviveEngine?.();
               }
               results.splice(retryBlock.resultsStartIndex!);
               while (blockStack.length > 0 && blockStack[blockStack.length - 1] !== retryBlock) {
@@ -1048,6 +1054,15 @@ async function runCommand(
   try {
     const result = await engine.executeCommand(command.input);
     actualOutput = typeof result === 'string' ? result : (engine.getOutput?.() || '');
+
+    // A stopped engine (player death ended the game) surfaces as this exact
+    // captured output rather than a throw (the bootstrap layer catches it).
+    // Mark it as a command error so assertion-less commands (SKIP-overridden
+    // loop bodies) fail immediately instead of spinning to the iteration cap,
+    // and so RETRY blocks trigger their restore-and-revive recovery.
+    if (actualOutput === 'Error: Engine is not running') {
+      error = 'Engine is not running';
+    }
 
     // Capture events from the engine (filter out system.* debug events)
     if (engine.lastEvents) {

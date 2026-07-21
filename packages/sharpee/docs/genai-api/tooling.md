@@ -383,6 +383,8 @@ interface GameEngine {
         getStates(): Record<string, unknown>;
         setStates(states: Record<string, unknown>): void;
     };
+    /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
+    reviveEngine?(): void;
 }
 /**
  * Minimal interface for world model state queries

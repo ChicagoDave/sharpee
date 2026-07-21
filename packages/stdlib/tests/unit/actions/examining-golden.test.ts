@@ -103,7 +103,29 @@ describe('examiningAction (Golden Pattern)', () => {
         targetId: player.id,
         targetName: 'yourself',
         self: true,
-        messageId: 'if.action.examining.examined_self'
+        // Descriptionless test player: the self fallback applies (the
+        // described-player path is covered two tests down).
+        messageId: 'if.action.examining.default_description_self'
+      });
+    });
+
+    test('should fall back to default_description_self for a descriptionless player', () => {
+      // EXAMINE ME with no authored player description no longer renders
+      // blank: the self fallback selects default_description_self ("As
+      // good-looking as ever." — David's wording ruling 2026-07-20).
+      const { world, player } = setupBasicWorld();
+
+      const command = createCommand(IFActions.EXAMINING, {
+        entity: player
+      });
+      const context = createRealTestContext(examiningAction, world, command);
+
+      const events = executeWithValidation(examiningAction, context);
+
+      expectEvent(events, 'if.event.examined', {
+        targetId: player.id,
+        self: true,
+        messageId: 'if.action.examining.default_description_self'
       });
     });
 

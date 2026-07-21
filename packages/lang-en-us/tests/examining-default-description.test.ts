@@ -84,4 +84,15 @@ describe('if.action.examining.default_description (Phase 3a)', () => {
     );
     expect(text(blocks)).toBe('The lantern is just a lantern. It hums softly.');
   });
+
+  it('renders the self counterpart for descriptionless EXAMINE ME', () => {
+    // David's wording ruling 2026-07-20: the player noun does not fit the
+    // "just a" phrasing; self gets the classic line instead.
+    const blocks = provider.renderMessage(
+      'if.action.examining.default_description_self',
+      {},
+      makeCtx({}),
+    );
+    expect(text(blocks)).toBe('As good-looking as ever.');
+  });
 });

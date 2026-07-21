@@ -11,12 +11,22 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 # seeded probability = accumulator%. The wake turn is therefore variable, so the
 # recovery section below polls with a WHILE loop rather than assuming a fixed count.
 
-# Get lantern first (Troll Room is dark)
+# The conscious troll strikes bystanders each turn (MDL melee canon) and can
+# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
+# revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
+# Get lantern first (Troll Room is dark); ND = immortality, since the
+# conscious troll's bystander blows can kill a score-0 player outright and
+# this transcript tests the recovery daemon, not player mortality.
 > GDT
 [OK: contains "GDT"]
 
 > TK brass lantern
 [OK: contains "Taken"]
+
+> ND
+[OK: contains "Immortality"]
 
 > EX
 [OK: contains "Returning"]
@@ -92,3 +102,5 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 # Exit should be blocked again
 > north
 [OK: contains "troll blocks"]
+
+[END RETRY]
