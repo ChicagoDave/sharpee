@@ -23,13 +23,24 @@ const THEME_STORAGE_KEY = 'armoured-theme';
 
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 
+/**
+ * The one BrowserClient for this page. Constructed on first boot and
+ * reused across restart reboots (ADR-248): the client owns the DOM
+ * wiring, which must not be re-bound per boot.
+ */
+let client: BrowserClient | null = null;
+
 async function start(): Promise<void> {
   // Fresh story instance per boot (ADR-248); config is read off the instance.
   const story = createStory();
   const config = story.config;
 
-  const client = new BrowserClient({
+  // Create browser client with story configuration (first boot only)
+  if (!client) {
+  client = new BrowserClient({
     storagePrefix: STORAGE_PREFIX,
+    // ADR-248: RESTART reboots by re-running this entry's boot path.
+    reboot: () => start(),
     defaultTheme: 'classic-light',
     themes: [
       { id: 'classic-light', name: 'Classic Light' },
@@ -58,10 +69,9 @@ async function start(): Promise<void> {
     textContent: document.getElementById('text-content'),
     mainWindow: document.getElementById('main-window'),
     commandInput: document.getElementById('command-input') as HTMLInputElement,
-    modalOverlay: document.getElementById('modal-overlay'),
-    saveDialog: document.getElementById('save-dialog'),
-    restoreDialog: document.getElementById('restore-dialog'),
-    startupDialog: document.getElementById('startup-dialog'),
+    saveDialog: document.getElementById('save-dialog') as HTMLDialogElement,
+    restoreDialog: document.getElementById('restore-dialog') as HTMLDialogElement,
+    startupDialog: document.getElementById('startup-dialog') as HTMLDialogElement,
     saveNameInput: document.getElementById('save-name-input') as HTMLInputElement,
     saveSlotsListEl: document.getElementById('save-slots-list'),
     restoreSlotsListEl: document.getElementById('restore-slots-list'),
@@ -69,6 +79,7 @@ async function start(): Promise<void> {
     startupSaveInfo: document.getElementById('startup-save-info'),
     menuBar: document.getElementById('menu-bar'),
   });
+  }
 
   const world = new WorldModel();
   const player = world.createEntity('player', EntityType.ACTOR);

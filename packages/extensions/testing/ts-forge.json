@@ -1,5 +1,3 @@
 {
-  "targets": {
-    "esm": { "skip": true }
-  }
+  "targets": {}
 }

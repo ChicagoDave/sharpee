@@ -18,14 +18,25 @@ import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
 const THEME_STORAGE_KEY = 'thealderman-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 
+/**
+ * The one BrowserClient for this page. Constructed on first boot and
+ * reused across restart reboots (ADR-248): the client owns the DOM
+ * wiring, which must not be re-bound per boot.
+ */
+let client: BrowserClient | null = null;
+
 async function start(): Promise<void> {
   // Fresh story instance per boot (ADR-248); config is read off the instance.
   const story = createStory();
   const config = story.config;
   const author = config.author;
 
-  const client = new BrowserClient({
+  // Create browser client with story configuration (first boot only)
+  if (!client) {
+  client = new BrowserClient({
     storagePrefix: 'thealderman-',
+    // ADR-248: RESTART reboots by re-running this entry's boot path.
+    reboot: () => start(),
     defaultTheme: 'modern-dark',
     themes: [
       { id: 'modern-dark', name: 'Modern Dark' },
@@ -57,6 +68,7 @@ async function start(): Promise<void> {
     startupSaveInfo: document.getElementById('startup-save-info'),
     menuBar: document.getElementById('menu-bar'),
   });
+  }
 
   const world = new WorldModel();
   const player = world.createEntity('player', EntityType.ACTOR);
