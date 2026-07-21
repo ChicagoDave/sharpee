@@ -1084,3 +1084,55 @@ define phrase folly-jammed
   like a jaw — and something in you doesn't care to force Verity's
   folly without knowing more of it.
 end phrase
+
+## ADR-250 phrasebooks — the night changes the voice (E2E spine, D9).
+## The weathervane is the deterministic probe: vane-mood lives only in
+## the books (per-book first-time counters), vane-story is story text no
+## book may beat, vane-quiet is covered only by the default book.
+
+create the iron weathervane
+  aka weathervane, vane
+  scenery, pushable
+  in the Iron Gates
+
+  An iron weathervane on the gatepost, older than the house behind it.
+
+  after examining it
+    phrase vane-mood
+  end after
+
+  after pushing it
+    phrase vane-story
+  end after
+
+  after touching it
+    phrase vane-quiet
+  end after
+
+define phrase vane-story
+  The weathervane creaks the same one story it always tells, whatever
+  the hour.
+end phrase
+
+define phrasebook midnight-voice while midnight
+  vane-mood, first-time:
+    The vane swings hard north, as if the night had opinions.
+  or
+    The vane holds north. Of course it does.
+
+  vane-story:
+    A book must never win this line.
+end phrasebook
+
+define phrasebook evening-voice
+  vane-mood, first-time:
+    The vane noses the evening breeze, unhurried.
+  or
+    The vane sits easy in the last of the light.
+
+  vane-story:
+    Nor this one.
+
+  vane-quiet:
+    The vane keeps its own counsel.
+end phrasebook

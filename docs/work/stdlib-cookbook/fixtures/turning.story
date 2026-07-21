@@ -1,5 +1,5 @@
-story "Phrasebook: Turning" by "Sharpee Docs"
-  id: phrasebook-turning
+story "Cookbook: Turning" by "Sharpee Docs"
+  id: cookbook-turning
   version: 0.0.1
 
 define action turning

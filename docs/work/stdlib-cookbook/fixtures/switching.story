@@ -1,5 +1,5 @@
-story "Phrasebook: Switching" by "Sharpee Docs"
-  id: phrasebook-switching
+story "Cookbook: Switching" by "Sharpee Docs"
+  id: cookbook-switching
   version: 0.0.1
 
 create the Parlor

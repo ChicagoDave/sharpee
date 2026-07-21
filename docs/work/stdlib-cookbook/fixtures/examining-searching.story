@@ -1,5 +1,5 @@
-story "Phrasebook: Examining and Searching" by "Sharpee Docs"
-  id: phrasebook-examining-searching
+story "Cookbook: Examining and Searching" by "Sharpee Docs"
+  id: cookbook-examining-searching
   version: 0.0.1
 
 create the Study

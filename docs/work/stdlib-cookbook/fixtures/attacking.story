@@ -1,5 +1,5 @@
-story "Phrasebook: Attacking" by "Sharpee Docs"
-  id: phrasebook-attacking
+story "Cookbook: Attacking" by "Sharpee Docs"
+  id: cookbook-attacking
   version: 0.0.1
 
 create the Training Yard

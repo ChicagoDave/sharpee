@@ -1,5 +1,5 @@
-story "Phrasebook: Asking and Telling" by "Sharpee Docs"
-  id: phrasebook-asking-telling
+story "Cookbook: Asking and Telling" by "Sharpee Docs"
+  id: cookbook-asking-telling
   version: 0.0.1
 
 create the Hermitage

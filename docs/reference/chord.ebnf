@@ -57,6 +57,7 @@ comment-run  = comment-line { comment-line } ; (* blank-delimited on both sides;
 story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
 story-header = "story" STRING [ "by" STRING ] NL
                >>> { states-line | score-line | story-on-clause | use-line
+                   | use-phrasebook-line
                    | WORD ":" rest-of-line NL } ;
 use-line     = "use" WORD NL ;                             (* ADR-215: one trusted
                                                               platform extension per
@@ -87,7 +88,41 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-asset | define-channel               (* ADR-216 *)
              | define-family-channel                       (* ADR-241 *)
              | define-topics                               (* ADR-239 *)
-             | define-pronouns ;                           (* ADR-242 *)
+             | define-pronouns                             (* ADR-242 *)
+             | define-phrasebook | import-phrasebook ;     (* ADR-245/250 *)
+
+(* ---- Phrasebooks (ADR-245/250, 2026-07-21) ----------------------------- *)
+
+define-phrasebook   = "define" "phrasebook" WORD [ "while" condition ] NL
+                      >>> { phrasebook-entry }
+                      "end" "phrasebook" NL ;              (* entry-level `while` is
+                                                              analysis.phrasebook-entry-gate;
+                                                              keys are STORY keys only —
+                                                              dotted platform IDs are
+                                                              analysis.phrasebook-dotted-key.
+                                                              Predicate-less = the DEFAULT
+                                                              (always) book. Arbitration:
+                                                              first predicate-match in
+                                                              file-appearance order, per
+                                                              key; story define phrase /
+                                                              per-entity phrase always win. *)
+phrasebook-entry    = WORD [ "," STRATEGY | "," "verbatim" ] ":" NL
+                      >>> prose { "or" NL >>> prose } ;    (* the phrase-override entry
+                                                              grammar, book-scoped *)
+use-phrasebook-line = "use" "phrasebook" WORD [ "while" condition ] NL ;
+                                                           (* header body; stackable; the
+                                                              `phrasebook` sub-word selects
+                                                              the two-word form — plain
+                                                              one-word `use` untouched.
+                                                              Unknown name:
+                                                              analysis.unknown-phrasebook *)
+import-phrasebook   = "import" "phrasebook" STRING NL ;    (* top level; STRING ends
+                                                              ".story"; fragment holds only
+                                                              define-phrasebook blocks +
+                                                              ## comments; splices at the
+                                                              import site (= arbitration
+                                                              position). Bare import is
+                                                              reserved (parked ADR). *)
 
 (* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
    error with a fix-it naming `define trait` + clauses or `define action

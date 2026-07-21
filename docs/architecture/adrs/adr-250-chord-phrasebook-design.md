@@ -227,10 +227,16 @@ on ADR-240's existing registry:
    (`phrase-render.ts` / `renderViaPhrase`): before the existing
    `getTemplate(messageId)` fork it asks
    `world.evaluate('phrasebook.template.' + messageId)`. The
-   evaluator's return contract is pinned:
-   `{ book: string, entry: IRPhrase } | undefined` — the first
-   declaration-order match, or `undefined` when no active book covers
-   the key.
+   evaluator's return contract is pinned (as implemented 2026-07-21,
+   superseding the drafted `{ book, entry: IRPhrase }` shape):
+   **`{ book, key, template, params? } | undefined`** — the first
+   declaration-order match with its template and param bindings
+   ALREADY DERIVED loader-side (verbatim text / single text /
+   `{variants}` + Choice), or `undefined` when no active book covers
+   the key. Handing the engine a derived shape instead of the raw
+   `IRPhrase` keeps every Chord IR type out of the platform (the
+   ADR-210 direction rule) and keeps the template derivation in one
+   place (the loader, which already owns it for registered phrases).
    - A **match** = an active book covers the key: the read point
      derives the template from the entry exactly as `templateFor`
      does today (verbatim / single text / `{variants}`) and renders it
@@ -339,7 +345,7 @@ stays deferred (ADR-245 Q-5).
 | `packages/chord` — `ir.ts` | `IRPhrasebook`, `StoryIR.phrasebooks` (additive; goldens gain `phrasebooks: []`) |
 | `packages/chord` — `index.ts` / `manifests` | `compile(source, { importResolver })`; `PHRASEBOOK_REGISTRY` (names; initially empty) |
 | `packages/story-loader` — `loader.ts` | evaluator registration per covered-not-story-defined key (`phrasebook.template.<K>` builder exported + test-pinned); load-time data registry for `use`d books; `walkBooks` |
-| `packages/story-loader` — `runtime.ts` | NO change (emit path untouched — verified: bare-key emission already falls through correctly) |
+| `packages/story-loader` — `runtime.ts` | `phraseEvent` book-only-key path (implementation correction, 2026-07-21: the drafted "NO change" claim was WRONG — `phraseEvent` throws `LoadError` for any key absent from the IR table, so a book-only key crashed at emit; it now emits the bare key for book-covered keys, staging stmt params and any hatch producers the book entries reference); plus `resolvedBooks`/`registerPhrasebookEvaluators`/`resolvePhrasebook` |
 | `packages/engine` — `prose-pipeline/phrase-render.ts` (+ handler ctx) | the read point: `world.evaluate('phrasebook.template.' + id)` before the `getTemplate` fork; Choice staging keyed `phrasebook.<book>` |
 | `packages/lang-en-us` — `language-provider.ts` | ONE additive method `renderTemplate(template, ctx)`; `messages` map and all existing behavior untouched |
 | `packages/world-model` | NO change (existing `registerEvaluator` + `TEXT_STATE`) |
@@ -350,9 +356,12 @@ stays deferred (ADR-245 Q-5).
 Fernhill already carries the perfect predicate substrate — story states
 `evening, midnight`. The acceptance story adds:
 
-- `define phrasebook midnight-voice while the story is midnight` — the
-  house turns hostile: re-voices at least `distant-bell` (an existing
-  story key) plus one shared key below;
+- `define phrasebook midnight-voice while midnight` — the house turns
+  hostile: covers the shared probe key below. (Implementation
+  correction, 2026-07-21: the drafted "re-voices `distant-bell`, an
+  existing story key" was impossible by this ADR's own D2 chain — a
+  story-defined key always beats every book; the spine's probe keys are
+  book-only by design);
 - `define phrasebook evening-voice` (predicate-less base) — covers the
   same shared key with a warmer text, plus one key `midnight-voice`
   does NOT cover (fallback-through demonstration);

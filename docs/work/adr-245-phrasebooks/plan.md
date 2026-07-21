@@ -113,7 +113,7 @@ The post-ADR-248 open-items sweep (royal-puzzle RNG flake gate, dungeo module-st
   - Render-time predicate evaluation modeled on ADR-240's `registerSnippetGate` (derived only, no cache, no invalidation list).
   - Variant-state (cycling/first-time/sticky) counters keyed per (book, key) in the save/undo shape.
 - **Exit state**: Unit tests demonstrate arbitration (first-match-per-key across two books), fallback-through (uncovered key falls to platform default), story-override-always-wins (a story `define phrase` beats every book), and save/restore round-trips variant-state counters correctly per (book, key). Full monorepo build green.
-- **Status**: CURRENT (started 2026-07-21)
+- **Status**: COMPLETE (2026-07-21 — loader seam 9/9 (phrasebooks-runtime.test.ts), engine read point 6/6 (phrase-render.test.ts); regression: story-loader 308, engine 524, lang-en-us 430, platform-browser 86, all green; build clean; ADR-250 amended for the two disclosed deviations (evaluator return shape, phraseEvent book-only-key fix); save/restore counter round-trip deferred to the Phase 6 transcript per D9)
 
 ### Phase 6: E2E acceptance — unreliable-narrator scenario
 - **Tier**: Medium
@@ -122,7 +122,7 @@ The post-ADR-248 open-items sweep (royal-puzzle RNG flake gate, dungeo module-st
 - **Entry state**: Phase 5 complete; full suite green.
 - **Deliverable**: A test story (new purpose-built story, or an addition to `stories/fernhill`) exercising the companion's concrete unreliable-narrator scenario — at least two books with overlapping keys, one predicate-gated, one `always`, demonstrating arbitration, fallback, and the documented mid-turn voice-shift property — via `.transcript` walkthrough/unit tests run through `dist/cli/sharpee.js --test`.
 - **Exit state**: New transcript(s) pass; full walkthrough chain and unit suite remain green per the c864b3c1 baseline (no regressions); the mid-turn voice-shift property is demonstrated and asserted, not just implemented.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-21 — phrasebooks.transcript 18/18 (weathervane probe: both voices, per-book first-time counters, story-override stability, per-key fallthrough across the turn-14 flip); fernhill suite green x3 + wt-01 76 PASS (one non-reproducing RNG flake, one-good-run rule); whole-turn voice coherence covered architecturally (post-turn rendering) + by the loader live-flip unit test rather than a dedicated transcript assertion; D9's impossible "re-voice distant-bell" bullet corrected in the ADR — story keys always beat books by D2)
 
 ### Phase 7: Docs — finish the cookbook rename sweep + author-facing phrasebook reference
 - **Tier**: Medium
@@ -134,7 +134,7 @@ The post-ADR-248 open-items sweep (royal-puzzle RNG flake gate, dungeo module-st
   - New author-facing reference doc for the runtime `phrasebook` construct itself (distinct from the cookbook) — example-first per the `docs-example-first` policy: worked `define phrasebook`/`use phrasebook`/`import phrasebook` examples before any prose explanation, using the ADR-245 winter/springtime example as the seed.
   - Site page + nav entry for the new construct doc (mirroring how `use <extension>` and other Chord constructs are documented).
 - **Exit state**: `grep -ri phrasebook docs/work/stdlib-cookbook/ website/src/app/chord/cookbook/` returns no stray "Phrasebook" cookbook-surface references; the new phrasebook-construct reference doc exists, builds, and is linked from nav; docs build (`website`) succeeds.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-07-21 — rename sweep: render-site.mjs title/meta + all 17 fixture titles/ids (zero external id references, verified); verification grep clean. Reference docs: chord-language.md §5.11 (example-first) + §1.2 layout row, chord-grammar.md Phrasebooks section + productions + layout row, chord.ebnf productions, grammar-changes log row. Site: /chord/guide/vocabulary/define-phrasebook page + nav + section index; website build green, 149 pages)
 
 ## Phase-2/rule-11a note
 Phase 2 explicitly includes the consent-gated interview ask required by rule 11a — do not run `/devarch:adr-interview` unasked, and do not resolve Q-2 (or any open question the review surfaces) by inference. If David declines the interview in that session, Phase 2 stays open until he resolves the questions another way (direct edit, or asking for the interview later) — Phase 3's gate cannot open with a non-empty Open Questions section.

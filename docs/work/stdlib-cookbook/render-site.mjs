@@ -156,8 +156,8 @@ const page = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Standard Library Phrasebook — Sharpee</title>
-  <meta name="description" content="The phrasebook companion to Sharpee's standard library reference: every action's phrasings, traits, and refusal keys, with fixture-verified worked examples in story context.">
+  <title>Standard Library Cookbook — Sharpee</title>
+  <meta name="description" content="The cookbook companion to Sharpee's standard library reference: every action's phrasings, traits, and refusal keys, with fixture-verified worked examples in story context.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>

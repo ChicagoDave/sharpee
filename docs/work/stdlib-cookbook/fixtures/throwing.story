@@ -1,5 +1,5 @@
-story "Phrasebook: Throwing" by "Sharpee Docs"
-  id: phrasebook-throwing
+story "Cookbook: Throwing" by "Sharpee Docs"
+  id: cookbook-throwing
   version: 0.0.1
 
 create the Courtyard

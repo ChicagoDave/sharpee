@@ -117,6 +117,7 @@ export const NAV: NavSection[] = [
               { title: '5.8 define action', href: '/chord/guide/vocabulary/define-action' },
               { title: '5.9 define pronouns', href: '/chord/guide/vocabulary/define-pronouns' },
               { title: '5.10 use', href: '/chord/guide/vocabulary/use' },
+              { title: '5.11 define phrasebook', href: '/chord/guide/vocabulary/define-phrasebook' },
             ],
           },
           {

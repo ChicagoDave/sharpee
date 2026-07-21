@@ -60,6 +60,7 @@ either at dedent or with an explicit `end` line, depending on the block:
 | `define action` | header line | dedent |
 | `define sequence` | header line | `end sequence` |
 | `define phrase` | header line | `end phrase` |
+| `define phrasebook` | header line | `end phrasebook` |
 | `on` / `after` clause | header line | `end on` / `end after` |
 | `select` | `select …` line | `end select` |
 | `each` block | `each <name>` line | `end each` |
@@ -1801,6 +1802,81 @@ create the sentry
   a person, combatant with health 20 and skill 40
   in the Guardhouse
 ```
+
+### 5.11 define phrasebook, use phrasebook, import phrasebook (2026-07-21, ADR-245/250)
+
+A phrasebook groups phrase definitions into one named, predicated
+collection — a voice. Whichever declared book's `while` predicate holds
+at render time supplies the text, first match in declaration order, per
+key. A predicate-less book is the **default phrasebook** — active
+whenever no earlier book claims the key, and the whole feature in its
+simplest form: one named book, no predicates, pure organization.
+
+```story
+define phrasebook midnight-voice while midnight
+  vane-mood, first-time:
+    The vane swings hard north, as if the night had opinions.
+  or
+    The vane holds north. Of course it does.
+end phrasebook
+
+define phrasebook evening-voice
+  vane-mood, first-time:
+    The vane noses the evening breeze, unhurried.
+  or
+    The vane sits easy in the last of the light.
+
+  vane-quiet:
+    The vane keeps its own counsel.
+end phrasebook
+```
+
+Entries are ordinary phrase definitions — `<key>[, strategy]:` with
+`or` variants, all five strategies, `verbatim` included. The consuming
+side is unchanged: `phrase vane-mood` in a clause body, or a
+`{vane-mood}` marker in prose. At midnight the first book wins
+`vane-mood`; any other time the default book speaks. `vane-quiet` is
+covered only by the default book, so it renders the same in every
+state — fallthrough is per key, never per book.
+
+The rules, each load-checked:
+
+- **Story text always wins.** A story-wide `define phrase vane-mood`
+  (outside any book) beats every book, in every state; a per-entity
+  `phrase vane-mood:` beats even that. Swapping voices never changes
+  text you wrote at those levels.
+- **Story keys only.** A book entry key is a single kebab-case word in
+  the story's own phrase namespace — a dotted platform message ID is
+  `analysis.phrasebook-dotted-key` (to override a platform message,
+  use a story-level `define phrase <dotted-id>`).
+- **The book's `while` is the only gate.** An entry-level `while` is
+  `analysis.phrasebook-entry-gate` — split the entry into a second
+  book instead.
+- **Counters are per book.** `first-time`/`cycling`/`sticky` state
+  belongs to the entry: two books' `first-time` texts for the same key
+  each fire their own "first", and both survive save/restore.
+- Voice is evaluated when the turn's text renders, against the turn's
+  final state — a turn that flips a predicate renders its whole output
+  in the new voice.
+
+Two header/file companions:
+
+```story
+story "The Folly at Fernhill" by "The Sharpee Project"
+  use phrasebook candlewick-gothic while the player holds the locket
+  use phrasebook plain-country
+
+import phrasebook "voices/winter.story"
+```
+
+`use phrasebook <name> [while <condition>]` (story header) activates a
+packaged voice by name, binding the predicate at the use site — legal
+any number of times; an unknown name is `analysis.unknown-phrasebook`.
+`import phrasebook "<file>"` (top level) splices a file of your own
+`define phrasebook` blocks at the import position — the author's
+file-organization axis; the fragment holds only phrasebook blocks and
+`##` comments. Header `use` lines and body blocks arbitrate together,
+in file order.
 
 ## 6. Tooling
 

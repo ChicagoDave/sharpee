@@ -1,5 +1,5 @@
-story "Phrasebook: Opening with a Tool" by "Sharpee Docs"
-  id: phrasebook-opening-tool
+story "Cookbook: Opening with a Tool" by "Sharpee Docs"
+  id: cookbook-opening-tool
   version: 0.0.1
 
 create the Cellar

@@ -1,5 +1,5 @@
-story "Phrasebook: Giving and Showing" by "Sharpee Docs"
-  id: phrasebook-giving-showing
+story "Cookbook: Giving and Showing" by "Sharpee Docs"
+  id: cookbook-giving-showing
   version: 0.0.1
 
 create the Gatehouse

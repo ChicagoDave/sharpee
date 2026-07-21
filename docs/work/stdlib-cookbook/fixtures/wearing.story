@@ -1,5 +1,5 @@
-story "Phrasebook: Wearing" by "Sharpee Docs"
-  id: phrasebook-wearing
+story "Cookbook: Wearing" by "Sharpee Docs"
+  id: cookbook-wearing
   version: 0.0.1
 
 create the Dressing Room

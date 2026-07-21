@@ -1,5 +1,5 @@
-story "Phrasebook: Putting and Inserting" by "Sharpee Docs"
-  id: phrasebook-putting-inserting
+story "Cookbook: Putting and Inserting" by "Sharpee Docs"
+  id: cookbook-putting-inserting
   version: 0.0.1
 
 create the Kitchen

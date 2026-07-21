@@ -1,5 +1,5 @@
-story "Phrasebook: Entering" by "Sharpee Docs"
-  id: phrasebook-entering
+story "Cookbook: Entering" by "Sharpee Docs"
+  id: cookbook-entering
   version: 0.0.1
 
 create the Carriage House

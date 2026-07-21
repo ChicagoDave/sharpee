@@ -1,5 +1,5 @@
-story "Phrasebook: Cutting" by "Sharpee Docs"
-  id: phrasebook-cutting
+story "Cookbook: Cutting" by "Sharpee Docs"
+  id: cookbook-cutting
   version: 0.0.1
 
 create the Bell Tower

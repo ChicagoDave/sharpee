@@ -1,5 +1,5 @@
-story "Phrasebook: Going" by "Sharpee Docs"
-  id: phrasebook-going
+story "Cookbook: Going" by "Sharpee Docs"
+  id: cookbook-going
   version: 0.0.1
 
 create the Meadow

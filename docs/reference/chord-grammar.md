@@ -56,6 +56,7 @@ they have no productions below). Analysis/loader: later phases.
 | ordinal block (`first time`) | ordinal line | dedent (or `end` of enclosing) |
 | prose block | first bare line | dedent (blank line = paragraph break; in `create` blocks a blank line ends the block, but later bare paragraphs append to the description) |
 | `define phrase` | header line | `end phrase` |
+| `define phrasebook` | header line | `end phrasebook` |
 | `on` / `after` clause | header line | `end on` / `end after` (must match the opener) |
 | `select` | `select …` line | `end select` (`or` at the `select`'s indent) |
 | `each` block (E3) | `each <name>` line | `end each` |
@@ -101,12 +102,14 @@ parse error, exactly as before. One concept, one form (Given 7).
 story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
 story-header = "story" STRING [ "by" STRING ] NL
                >>> { states-line | score-line | story-on-clause
+                   | use-phrasebook-line
                    | WORD ":" rest-of-line NL } ;
 story-on-clause = on-clause ;   (* `on every turn` only — ADR-236 D7, R4 *)
 declaration  = create | define-condition | define-phrase | define-phrases
              | define-verb | define-text
              | define-trait | define-action | define-hatch
-             | define-sequence ;
+             | define-sequence
+             | define-phrasebook | import-phrasebook ;
 ```
 
 The story header hosts exactly one clause form: `on every turn [while
@@ -440,6 +443,47 @@ DIRECTION    = north | south | east | west | northeast | northwest
   client capabilities (closed flag set in Chord spelling: `sound`,
   `images`, `split-pane`, …); false for every gateable flag on a
   text-only client, so stories degrade deliberately.
+
+## Phrasebooks (ADR-245/250, 2026-07-21)
+
+```
+define-phrasebook   = "define" "phrasebook" WORD [ "while" condition ] NL
+                      >>> { phrasebook-entry }
+                      "end" "phrasebook" NL ;
+phrasebook-entry    = WORD [ "," STRATEGY | "," "verbatim" ] ":" NL
+                      >>> prose { "or" NL >>> prose } ;   (* the phrase-override entry grammar *)
+use-phrasebook-line = "use" "phrasebook" WORD [ "while" condition ] NL ;  (* header body; stackable *)
+import-phrasebook   = "import" "phrasebook" STRING NL ;   (* top level; STRING ends ".story" *)
+```
+
+A named, predicated phrase collection (ADR-245 intent, ADR-250 design).
+Books arbitrate first-predicate-match in file-appearance order, per key
+(`use`d and `define`d alike); a predicate-less book is the DEFAULT
+(always) book. The fallback chain is per-entity phrase → story
+`define phrase` → active book → platform default — story text always
+beats books (enforced statically at load: story-defined keys register
+no book evaluator). Entry keys are STORY keys only — dotted platform
+IDs are `analysis.phrasebook-dotted-key` (ADR-230 D5 story-level
+overrides remain the platform path). Entry-level `while` is
+`analysis.phrasebook-entry-gate` (the book's header predicate is the
+only gate). Other gates: `parse.phrasebook-header`/`-entry`/`-end`,
+`parse.use-phrasebook`, `parse.import-form` (bare `import "<file>"`
+reserved for the parked generalized import; non-`.story` paths
+rejected), `analysis.duplicate-phrasebook`, `analysis.unknown-phrasebook`
+(nearest-match against the compile-time manifest registry),
+`analysis.phrasebook-reserved-key`, `analysis.phrasebook-duplicate-key`
+(within one book; across books is the point),
+`analysis.import-unresolved` / `analysis.import-fragment-content`
+(fragments hold only `define phrasebook` blocks + `##` comments), and
+the WARNING `analysis.phrasebook-partial-coverage` (a story-referenced
+key covered only by predicated books renders nothing off-book). Book
+coverage counts as declaration for `analysis.missing-phrase` — for
+`use`d books via the manifest key list. IR: `StoryIR.phrasebooks`
+(additive), entries inline for `define`, load-registry-resolved for
+`use` (manifest/data conformance is a LoadError). Runtime: one ADR-240
+evaluator per book-covered-not-story-defined key
+(`phrasebook.template.<key>`), read at the engine's render point;
+variant counters key `TEXT_STATE` as (`phrasebook.<book>`, key).
 
 ## define
 

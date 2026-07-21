@@ -1,5 +1,5 @@
-story "Phrasebook: Locking and Unlocking" by "Sharpee Docs"
-  id: phrasebook-locking-unlocking
+story "Cookbook: Locking and Unlocking" by "Sharpee Docs"
+  id: cookbook-locking-unlocking
   version: 0.0.1
 
 create the Strong Room

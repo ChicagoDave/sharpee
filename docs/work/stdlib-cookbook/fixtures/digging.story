@@ -1,5 +1,5 @@
-story "Phrasebook: Digging" by "Sharpee Docs"
-  id: phrasebook-digging
+story "Cookbook: Digging" by "Sharpee Docs"
+  id: cookbook-digging
   version: 0.0.1
 
 create the Strand

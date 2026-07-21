@@ -1,5 +1,5 @@
-story "Phrasebook: Listening and Smelling" by "Sharpee Docs"
-  id: phrasebook-listening-smelling
+story "Cookbook: Listening and Smelling" by "Sharpee Docs"
+  id: cookbook-listening-smelling
   version: 0.0.1
 
 create the Bakery

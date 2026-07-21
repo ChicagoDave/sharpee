@@ -1,5 +1,5 @@
-story "Phrasebook: Taking and Dropping" by "Sharpee Docs"
-  id: phrasebook-taking-dropping
+story "Cookbook: Taking and Dropping" by "Sharpee Docs"
+  id: cookbook-taking-dropping
   version: 0.0.1
 
 create the Lamp Room
