@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/scenery/sceneryTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Scenery trait marks items as fixed in place and not takeable.

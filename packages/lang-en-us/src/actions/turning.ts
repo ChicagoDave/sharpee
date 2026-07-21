@@ -7,16 +7,8 @@ export const turningLanguage = {
   
   patterns: [
     'turn [something]',
-    'turn [something] [direction]',
-    'turn [something] to [setting]',
     'rotate [something]',
-    'rotate [something] [direction]',
-    'twist [something]',
-    'twist [something] [direction]',
-    'spin [something]',
-    'dial [something]',
-    'dial [something] to [setting]',
-    'crank [something]'
+    'twist [something]'
   ],
   
   messages: {

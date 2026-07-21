@@ -16,7 +16,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { EventProcessor } from '@sharpee/event-processor';
-import { WorldModel, CombatantTrait } from '@sharpee/world-model';
+import { WorldModel, CombatantTrait, HealthTrait, HealthBehavior } from '@sharpee/world-model';
 import { MELEE_STATE, getBaseOstrength } from '../combat/melee-state';
 
 /**
@@ -45,7 +45,9 @@ export function registerCombatDisengagementHandler(
     const roomContents = world.getContents(data.fromRoom);
     for (const entity of roomContents) {
       const combatant = entity.get(CombatantTrait);
-      if (!combatant || !combatant.isAlive) continue;
+      if (!combatant) continue;
+      const health = entity.get(HealthTrait);
+      if (health && !HealthBehavior.isAlive(health)) continue;
 
       // Check if this villain was engaged in melee combat
       // (meleeOstrength is set by the interceptor on first combat)

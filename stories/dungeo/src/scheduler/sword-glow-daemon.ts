@@ -17,7 +17,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, CombatantTrait, RoomTrait, ActorTrait, IExitInfo } from '@sharpee/world-model';
+import { WorldModel, IdentityTrait, HealthTrait, HealthBehavior, RoomTrait, ActorTrait, IExitInfo } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Daemon ID
@@ -34,13 +34,6 @@ export const SwordGlowMessages = {
 const GLOW_OFF = 0;
 const GLOW_FAINT = 1;
 const GLOW_BRIGHT = 2;
-
-// Current glow level (persisted across turns)
-let currentGlowLevel = GLOW_OFF;
-
-// Cached entity IDs
-let swordId: string | null = null;
-let playerId: string | null = null;
 
 /**
  * Find the elvish sword in the world
@@ -78,10 +71,10 @@ function isVillain(entity: any, world: WorldModel): boolean {
   if (!identity) return false;
 
   const name = identity.name?.toLowerCase() || '';
-  const combatant = entity.get?.(CombatantTrait);
+  const health = entity.get?.(HealthTrait);
 
   // Must be alive to trigger glow
-  if (combatant && !combatant.isAlive) return false;
+  if (health && !HealthBehavior.isAlive(health)) return false;
 
   // Check for troll, thief, or cyclops
   return name.includes('troll') || name.includes('thief') || name.includes('cyclops');
@@ -127,7 +120,7 @@ function getAdjacentRooms(roomId: string, world: WorldModel): string[] {
 /**
  * Check if sword is carried by player
  */
-function swordIsCarried(world: WorldModel): boolean {
+function swordIsCarried(world: WorldModel, swordId: string | null, playerId: string | null): boolean {
   if (!swordId || !playerId) return false;
 
   const location = world.getLocation(swordId);
@@ -156,9 +149,19 @@ function calculateGlowLevel(world: WorldModel, playerLocation: string): number {
 }
 
 /**
- * Create the sword glow daemon
+ * Create the sword glow daemon.
+ *
+ * All per-boot state lives in this closure (ADR-248: no module-level mutable
+ * state — a reboot re-registers the daemon, creating fresh state).
  */
 function createSwordGlowDaemon(): Daemon {
+  // Current glow level (persisted across turns; save/restore via runner state)
+  let currentGlowLevel = GLOW_OFF;
+
+  // Cached entity IDs — found lazily on first run
+  let swordId: string | null = null;
+  let playerId: string | null = null;
+
   return {
     id: SWORD_GLOW_DAEMON,
     name: 'Sword Glow',
@@ -183,7 +186,7 @@ function createSwordGlowDaemon(): Daemon {
       if (!swordId || !playerId) return false;
 
       // Only active when sword is carried
-      return swordIsCarried(ctx.world);
+      return swordIsCarried(ctx.world, swordId, playerId);
     },
 
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
@@ -239,35 +242,5 @@ function createSwordGlowDaemon(): Daemon {
  * Register the sword glow daemon
  */
 export function registerSwordGlowDaemon(scheduler: ISchedulerService): void {
-  // Reset state
-  currentGlowLevel = GLOW_OFF;
-  swordId = null;
-  playerId = null;
-
   scheduler.registerDaemon(createSwordGlowDaemon());
-}
-
-/**
- * Get current sword glow state for debugging
- */
-export function getSwordGlowState(): {
-  swordId: string | null;
-  glowLevel: number;
-  glowName: string;
-} {
-  const glowNames = ['off', 'faint', 'bright'];
-  return {
-    swordId,
-    glowLevel: currentGlowLevel,
-    glowName: glowNames[currentGlowLevel] || 'unknown'
-  };
-}
-
-/**
- * Reset glow state (for testing or game restart)
- */
-export function resetSwordGlowState(): void {
-  currentGlowLevel = GLOW_OFF;
-  swordId = null;
-  playerId = null;
 }

@@ -1,25 +1,43 @@
 /**
- * Cake Handler - Tea Room / Well Area puzzle mechanics
+ * Cake Interceptors - Tea Room / Well Area puzzle mechanics (ADR-227 Phase 2).
  *
- * Handles eating effects for the four Alice-themed cakes:
- * - Eat-Me (ECAKE): In Tea Room → teleport to Posts Room
- * - Blue-icing (BLICE): In Posts Room → teleport to Tea Room; In Tea Room → crush death
- * - Red-icing (RDICE): Tastes terrible (no special effect when eaten)
- * - Orange-icing (ORICE): Explosion → player death
+ * Entity-keyed Action Interceptors (ADR-118) on `CakeTrait` for the four
+ * Alice-themed cakes — the surface Chord's `on eating it` / `on throwing it`
+ * clauses lower to (story-loader §5.4). Standard eating/throwing runs
+ * untouched (implicit take, consumption, taste line, throw mechanics); the
+ * interceptors apply the cake-specific consequence in `postExecute` and emit
+ * its narration in `postReport` (append, matching the old chainEvent output).
  *
- * Also handles throwing red cake in Pool Room → dissolves pool, reveals spices.
+ * Eating (CakeEatingInterceptor):
+ * - Eat-Me (ECAKE): In Tea Room → teleport to Posts Room (contents ride along)
+ * - Blue-icing (BLICE): In Posts Room → teleport back; In Tea Room → crush death
+ * - Red-icing (RDICE): Tastes terrible (standard eating message only)
+ * - Orange-icing (ORICE): Explosion → terminal death (ADR-224 killPlayer)
  *
- * From MDL Dungeon source (1981):
- * - ECAKE: "Eat Me" in ALITR (Tea Room) shrinks player to ALISM (Posts Room)
- * - BLICE: "Enlarge" in ALISM enlarges player back to ALITR
- * - RDICE: "Evaporate" thrown at pool dissolves it, reveals SAFFR (spices)
- * - ORICE: "Explode" causes explosion death
+ * Throwing (CakeThrowingInterceptor):
+ * - Orange-icing thrown anywhere → explosion death
+ * - Red-icing thrown in Pool Room → dissolves pool, reveals spices
  *
- * Uses chainEvent() (ADR-094) to return events that get dispatched and rendered.
+ * From MDL Dungeon source (1981): EATME-FUNCTION / CAKE-FUNCTION.
+ *
+ * Public interface: `CakeMessages`, `registerCakeInterceptors`.
+ * Owner context: stories/dungeo — Tea Room / Well Area puzzles.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IWorldModel, IdentityBehavior, IdentityTrait, TraitType } from '@sharpee/world-model';
+import {
+  WorldModel,
+  IWorldModel,
+  IFEntity,
+  IdentityBehavior,
+  IdentityTrait,
+  TraitType,
+  ActionInterceptor,
+  InterceptorSharedData,
+  CapabilityEffect,
+  createEffect
+} from '@sharpee/world-model';
+import { killPlayer, PLAYER_DIED_EVENT } from '@sharpee/stdlib';
+import { CakeTrait } from '../traits/cake-trait';
 
 // Message IDs for lang layer
 export const CakeMessages = {
@@ -38,205 +56,207 @@ export const CakeMessages = {
   POOL_DISSOLVED_DESC: 'dungeo.pool_room.dissolved',
 } as const;
 
-/**
- * Helper to create a semantic event with a messageId for text rendering.
- */
-function makeEvent(type: string, messageId: string, data: Record<string, any> = {}): ISemanticEvent {
-  return {
-    id: `cake-${type}-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-    type,
-    timestamp: Date.now(),
-    entities: {},
-    data: {
-      messageId,
-      ...data
-    }
-  };
+/** Cross-phase interceptor data: effects computed in postExecute, emitted in postReport. */
+interface CakeInterceptorData extends InterceptorSharedData {
+  cakeEffects?: CapabilityEffect[];
 }
 
 /**
- * Register cake eating chain handler.
- * Uses chainEvent (ADR-094) so return values (events) are dispatched.
+ * MDL EATME-FUNCTION / CAKE-FUNCTION move the shrunk/enlarged room's objects
+ * along with the player (ALICE's contents ride into ALISM and back).
+ * Relocate the room's loose (non-scenery) items.
  */
-export function registerCakeEatingHandler(world: WorldModel): void {
-  world.chainEvent('if.event.eaten', (event: ISemanticEvent, w: IWorldModel) => {
-    const data = event.data as Record<string, any> | undefined;
-    if (!data || data.blocked) return null;
+function moveRoomContents(w: IWorldModel, playerId: string, fromRoomId: string, toRoomId: string): void {
+  for (const entity of w.getContents(fromRoomId)) {
+    if (entity.id === playerId) continue;
+    if (entity.hasTrait(TraitType.SCENERY)) continue;
+    w.moveEntity(entity.id, toRoomId);
+  }
+}
 
-    const itemId = data.item;
-    if (!itemId) return null;
+/** Apply terminal death and return the effects carrying its narration + canonical event. */
+function lethalEffects(
+  world: WorldModel,
+  cause: string,
+  narrationMessageId: string,
+  narrationData: Record<string, unknown>
+): CapabilityEffect[] {
+  const player = world.getPlayer();
+  if (player) {
+    killPlayer(world, player, { cause, terminal: true });
+  }
+  return [
+    createEffect('dungeo.event.cake_effect', { messageId: narrationMessageId, ...narrationData, cause }),
+    createEffect(PLAYER_DIED_EVENT, { cause, terminal: true })
+  ];
+}
 
-    // Get the eaten entity and check if it's a cake
-    const item = w.getEntity(itemId);
-    if (!item) return null;
-    const cakeType = item.attributes.cakeType as string | undefined;
-    if (!cakeType) return null;
+/**
+ * Eating a cake: standard eating consumes it; this interceptor applies the
+ * icing-state consequence afterwards.
+ */
+export const CakeEatingInterceptor: ActionInterceptor = {
+  postExecute(
+    entity: IFEntity,
+    world: WorldModel,
+    actorId: string,
+    sharedData: InterceptorSharedData
+  ): void {
+    const data = sharedData as CakeInterceptorData;
+    const cakeType = (entity.get(CakeTrait) as CakeTrait | undefined)?.cakeType;
+    if (!cakeType) return;
 
-    // Get player location
-    const player = w.getPlayer();
-    if (!player) return null;
-    const playerLocation = w.getLocation(player.id);
-
-    // Get room IDs from state
-    const teaRoomId = w.getStateValue('dungeo.tea_room.id') as string;
-    const postsRoomId = w.getStateValue('dungeo.posts_room.id') as string;
-
-    // MDL EATME-FUNCTION / CAKE-FUNCTION move the shrunk/enlarged room's
-    // objects along with the player (ALICE's contents ride into ALISM and
-    // back). Mirror that: relocate the room's loose (non-scenery) items.
-    const moveRoomContents = (fromRoomId: string, toRoomId: string): void => {
-      for (const entity of w.getContents(fromRoomId)) {
-        if (entity.id === player.id) continue;
-        if (entity.hasTrait(TraitType.SCENERY)) continue;
-        w.moveEntity(entity.id, toRoomId);
-      }
-    };
+    const playerLocation = world.getLocation(actorId);
+    const teaRoomId = world.getStateValue('dungeo.tea_room.id') as string;
+    const postsRoomId = world.getStateValue('dungeo.posts_room.id') as string;
 
     switch (cakeType) {
       case 'eat-me': {
         // In Tea Room → shrink, teleport to Posts Room (cakes come along)
         if (playerLocation === teaRoomId) {
-          w.moveEntity(player.id, postsRoomId);
-          moveRoomContents(teaRoomId, postsRoomId);
-          return makeEvent('dungeo.event.cake_effect', CakeMessages.EAT_ME_SHRINK, {
-            destination: 'Posts Room',
-            cakeType: 'eat-me'
-          });
+          world.moveEntity(actorId, postsRoomId);
+          moveRoomContents(world, actorId, teaRoomId, postsRoomId);
+          data.cakeEffects = [
+            createEffect('dungeo.event.cake_effect', {
+              messageId: CakeMessages.EAT_ME_SHRINK,
+              destination: 'Posts Room',
+              cakeType: 'eat-me'
+            })
+          ];
         }
-        return null;
+        return;
       }
 
       case 'blue-icing': {
         if (playerLocation === postsRoomId) {
           // In Posts Room → enlarge, teleport back to Tea Room (items return)
-          w.moveEntity(player.id, teaRoomId);
-          moveRoomContents(postsRoomId, teaRoomId);
-          return makeEvent('dungeo.event.cake_effect', CakeMessages.BLUE_ENLARGE, {
-            destination: 'Tea Room',
-            cakeType: 'blue-icing'
-          });
-        } else if (playerLocation === teaRoomId) {
-          // In Tea Room → crush death (already full size, enlarging crushes you)
-          w.setStateValue('dungeo.player.dead', true);
-          w.setStateValue('dungeo.player.death_cause', 'cake_crush');
-          return [
-            makeEvent('dungeo.event.cake_effect', CakeMessages.BLUE_CRUSH, {
-              cakeType: 'blue-icing',
-              cause: 'cake_crush'
-            }),
-            makeEvent('if.event.player.died', CakeMessages.BLUE_CRUSH, {
-              cause: 'cake_crush'
+          world.moveEntity(actorId, teaRoomId);
+          moveRoomContents(world, actorId, postsRoomId, teaRoomId);
+          data.cakeEffects = [
+            createEffect('dungeo.event.cake_effect', {
+              messageId: CakeMessages.BLUE_ENLARGE,
+              destination: 'Tea Room',
+              cakeType: 'blue-icing'
             })
           ];
+        } else if (playerLocation === teaRoomId) {
+          // In Tea Room → crush death (already full size, enlarging crushes you)
+          data.cakeEffects = lethalEffects(world, 'cake_crush', CakeMessages.BLUE_CRUSH, {
+            cakeType: 'blue-icing'
+          });
         }
-        return null;
+        return;
       }
 
       case 'orange-icing': {
         // Explosion → death anywhere
-        w.setStateValue('dungeo.player.dead', true);
-        w.setStateValue('dungeo.player.death_cause', 'cake_explosion');
-        return [
-          makeEvent('dungeo.event.cake_effect', CakeMessages.ORANGE_EXPLODE, {
-            cakeType: 'orange-icing',
-            cause: 'cake_explosion'
-          }),
-          makeEvent('if.event.player.died', CakeMessages.ORANGE_EXPLODE, {
-            cause: 'cake_explosion'
-          })
-        ];
+        data.cakeEffects = lethalEffects(world, 'cake_explosion', CakeMessages.ORANGE_EXPLODE, {
+          cakeType: 'orange-icing'
+        });
+        return;
       }
 
-      case 'red-icing': {
-        // Tastes terrible - eating action already handles taste message
-        // No additional effect needed
-        return null;
-      }
-
-      default:
-        return null;
+      case 'red-icing':
+        // Tastes terrible — the standard eating action's taste message covers it
+        return;
     }
-  }, { key: 'dungeo.chain.cake-eating', priority: 100 });
-}
+  },
+
+  postReport(
+    _entity: IFEntity,
+    _world: WorldModel,
+    _actorId: string,
+    sharedData: InterceptorSharedData
+  ) {
+    const data = sharedData as CakeInterceptorData;
+    return data.cakeEffects ? { emit: data.cakeEffects } : {};
+  }
+};
 
 /**
- * Register red cake throwing chain handler.
- * Uses chainEvent (ADR-094) so return values (events) are dispatched.
+ * Throwing a cake: standard throw mechanics run; this interceptor applies the
+ * cake-specific consequence afterwards (orange explosion, red pool dissolve).
  */
-export function registerCakeThrowingHandler(world: WorldModel): void {
-  world.chainEvent('if.event.thrown', (event: ISemanticEvent, w: IWorldModel) => {
-    const data = event.data as Record<string, any> | undefined;
-    if (!data) return null;
-
-    const itemId = data.item;
-    if (!itemId) return null;
-
-    // Check if it's a cake being thrown
-    const item = w.getEntity(itemId);
-    if (!item) return null;
-    const cakeType = item.attributes.cakeType as string | undefined;
-
-    // Get player location
-    const player = w.getPlayer();
-    if (!player) return null;
-    const playerLocation = w.getLocation(player.id);
-    const poolRoomId = w.getStateValue('dungeo.pool_room.room_id') as string;
-
-    // Red cake thrown in Pool Room → dissolve pool, reveal spices
-    if (cakeType === 'red-icing' && playerLocation === poolRoomId) {
-      const poolDissolved = w.getStateValue('dungeo.pool.dissolved') as boolean;
-      if (!poolDissolved) {
-        // Dissolve the pool
-        w.setStateValue('dungeo.pool.dissolved', true);
-
-        // Conceal the pool scenery (dissolved)
-        const poolId = w.getStateValue('dungeo.pool_room.pool_id') as string;
-        if (poolId) {
-          const pool = w.getEntity(poolId);
-          if (pool) {
-            IdentityBehavior.conceal(pool);
-          }
-        }
-
-        // Reveal the spices
-        const spicesId = w.getStateValue('dungeo.pool_room.spices_id') as string;
-        if (spicesId) {
-          const spices = w.getEntity(spicesId);
-          if (spices) {
-            IdentityBehavior.reveal(spices);
-          }
-        }
-
-        // Update Pool Room description
-        const poolRoom = w.getEntity(poolRoomId);
-        if (poolRoom) {
-          const identity = poolRoom.get(TraitType.IDENTITY) as IdentityTrait | null;
-          if (identity) {
-            identity.description = 'This is a large room, one half of which is depressed. The floor of the depression is covered with hardened calciumite. The only exit is to the west.';
-          }
-        }
-
-        return makeEvent('dungeo.event.cake_effect', CakeMessages.RED_POOL_DISSOLVE, {
-          cakeType: 'red-icing'
-        });
-      }
-    }
+export const CakeThrowingInterceptor: ActionInterceptor = {
+  postExecute(
+    entity: IFEntity,
+    world: WorldModel,
+    actorId: string,
+    sharedData: InterceptorSharedData
+  ): void {
+    const data = sharedData as CakeInterceptorData;
+    const cakeType = (entity.get(CakeTrait) as CakeTrait | undefined)?.cakeType;
+    if (!cakeType) return;
 
     // Orange cake thrown anywhere → explosion death
     if (cakeType === 'orange-icing') {
-      w.setStateValue('dungeo.player.dead', true);
-      w.setStateValue('dungeo.player.death_cause', 'cake_explosion');
-      return [
-        makeEvent('dungeo.event.cake_effect', CakeMessages.ORANGE_EXPLODE, {
-          cakeType: 'orange-icing',
-          cause: 'cake_explosion'
-        }),
-        makeEvent('if.event.player.died', CakeMessages.ORANGE_EXPLODE, {
-          cause: 'cake_explosion'
+      data.cakeEffects = lethalEffects(world, 'cake_explosion', CakeMessages.ORANGE_EXPLODE, {
+        cakeType: 'orange-icing'
+      });
+      return;
+    }
+
+    // Red cake thrown in Pool Room → dissolve pool, reveal spices
+    if (cakeType === 'red-icing') {
+      const playerLocation = world.getLocation(actorId);
+      const poolRoomId = world.getStateValue('dungeo.pool_room.room_id') as string;
+      if (playerLocation !== poolRoomId) return;
+      if (world.getStateValue('dungeo.pool.dissolved') as boolean) return;
+
+      // Dissolve the pool
+      world.setStateValue('dungeo.pool.dissolved', true);
+
+      // Conceal the pool scenery (dissolved)
+      const poolId = world.getStateValue('dungeo.pool_room.pool_id') as string;
+      if (poolId) {
+        const pool = world.getEntity(poolId);
+        if (pool) {
+          IdentityBehavior.conceal(pool);
+        }
+      }
+
+      // Reveal the spices
+      const spicesId = world.getStateValue('dungeo.pool_room.spices_id') as string;
+      if (spicesId) {
+        const spices = world.getEntity(spicesId);
+        if (spices) {
+          IdentityBehavior.reveal(spices);
+        }
+      }
+
+      // Update Pool Room description
+      const poolRoom = world.getEntity(poolRoomId);
+      if (poolRoom) {
+        const identity = poolRoom.get(TraitType.IDENTITY) as IdentityTrait | null;
+        if (identity) {
+          identity.description = 'This is a large room, one half of which is depressed. The floor of the depression is covered with hardened calciumite. The only exit is to the west.';
+        }
+      }
+
+      data.cakeEffects = [
+        createEffect('dungeo.event.cake_effect', {
+          messageId: CakeMessages.RED_POOL_DISSOLVE,
+          cakeType: 'red-icing'
         })
       ];
     }
+  },
 
-    return null;
-  }, { key: 'dungeo.chain.cake-throwing', priority: 100 });
+  postReport(
+    _entity: IFEntity,
+    _world: WorldModel,
+    _actorId: string,
+    sharedData: InterceptorSharedData
+  ) {
+    const data = sharedData as CakeInterceptorData;
+    return data.cakeEffects ? { emit: data.cakeEffects } : {};
+  }
+};
+
+/**
+ * Register both cake interceptors on the world (ADR-118 per-world binding map).
+ */
+export function registerCakeInterceptors(world: WorldModel): void {
+  world.registerActionInterceptor(CakeTrait.type, 'if.action.eating', CakeEatingInterceptor);
+  world.registerActionInterceptor(CakeTrait.type, 'if.action.throwing', CakeThrowingInterceptor);
 }

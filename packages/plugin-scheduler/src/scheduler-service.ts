@@ -21,8 +21,8 @@ import {
   SchedulerResult,
   SchedulerState,
   SeededRandom,
-} from './types';
-import { createSeededRandom } from './seeded-random';
+} from './types.js';
+import { createSeededRandom } from './seeded-random.js';
 
 /**
  * SchedulerService interface

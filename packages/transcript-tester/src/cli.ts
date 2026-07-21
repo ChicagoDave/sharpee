@@ -12,8 +12,8 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import * as readline from 'readline';
-import { parseTranscriptFile, validateTranscript } from './parser';
-import { runTranscript } from './runner';
+import { parseTranscriptFile, validateTranscript } from './parser.js';
+import { runTranscript } from './runner.js';
 import {
   reportTranscript,
   reportTestRun,
@@ -21,9 +21,9 @@ import {
   generateTimestamp,
   writeResultsToJson,
   writeReportToFile
-} from './reporter';
-import { loadStory, findTranscripts, TestableGame } from './story-loader';
-import { TranscriptResult, TestRunResult } from './types';
+} from './reporter.js';
+import { loadStory, findTranscripts, TestableGame } from './story-loader.js';
+import { TranscriptResult, TestRunResult } from './types.js';
 
 interface CliOptions {
   storyPath: string;

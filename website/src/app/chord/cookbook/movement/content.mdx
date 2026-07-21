@@ -1,0 +1,104 @@
+Getting an actor from place to place. Full entries: [the standard
+library reference §3](/chord/stdlib/movement) (hiding: [§8.4](/chord/stdlib/npcs)).
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **go** | `<direction>` · `go`/`walk`/`run`/`head`/`travel <direction>` | a room exit that way | `no_exit_that_way`, `movement_blocked`, `door_closed`, `door_locked`, `not_in_room`, `no_exits` |
+| **enter** | `enter X` · `get in`/`into X` · `climb in`/`into X` · `go in`/`into X` · `board X` · `get on X` | `enterable` | `container_closed`, `already_inside`, `not_enterable` |
+| **exit** | `exit` · `leave` · `get out` · `go out` · `climb out` · `disembark` · `alight` | being inside or on something | `already_outside`, `container_closed`, `nowhere_to_go` |
+| **climb** | `climb [up`/`down] X` · `scale`/`ascend`/`descend X` | `climbable` | `not_climbable`, `already_there`, `cant_go_that_way` |
+| **hide** | `hide`/`duck`/`crouch behind`/`under X` · `hide [in`/`inside`/`on] X` | `concealment` — the `hiding-spot` adjective | `cant_hide_there` |
+| **reveal** | `stand up` · `come out` · `unhide` · `stop hiding` | being hidden | — |
+
+## going
+
+Exits are lines in the room's `create` block; a blocked exit speaks the
+story's own phrase. `go north` and the `walk`/`run`/`head`/`travel`
+synonyms all parse since ADR-230 — as does the bare direction, which is
+what players actually type.
+
+The author writes:
+
+```chord
+create the Meadow
+  a room
+  north to the Orchard
+  east is blocked: hedge-thick
+
+  Knee-high grass, and a dark hedge along the eastern edge.
+
+create the Orchard
+  a room
+  south to the Meadow
+
+  Apple trees in crooked rows.
+
+create the player
+  starts in the Meadow
+
+define phrases en-US
+  hedge-thick:
+    The hedge is a wall of blackthorn. Not that way.
+```
+
+The player sees:
+
+```text
+> east
+The hedge is a wall of blackthorn. Not that way.
+
+> go north
+Orchard
+Apple trees in crooked rows.
+
+> walk south
+Meadow
+Knee-high grass, and a dark hedge along the eastern edge.
+
+> west
+You can't go that way.
+```
+
+## entering and exiting
+
+One trait — `enterable` — checked in the action, which turns everything
+else away with `not_enterable`. Compose `openable` alongside it and a
+closed door refuses entry with `container_closed`. All the phrasings are
+equivalent — `get in`/`get into` land on the enterable target even when
+it is scenery (ADR-231).
+
+The author writes:
+
+```chord
+create the Carriage House
+  a room
+
+  Straw on the flagstones and one relic of better days.
+
+create the sedan chair
+  aka chair, sedan
+  enterable, openable
+  scenery
+  in the Carriage House
+
+  A gilt sedan chair with a door on the near side.
+
+create the player
+  starts in the Carriage House
+```
+
+The player sees:
+
+```text
+> enter the sedan chair
+The sedan chair is closed.
+
+> open the sedan chair
+You open the sedan chair.
+
+> enter the sedan chair
+You get into the sedan chair.
+
+> exit
+You get out of the sedan chair.
+```

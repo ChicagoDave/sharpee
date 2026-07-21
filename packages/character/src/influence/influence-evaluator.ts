@@ -17,7 +17,7 @@ import {
   InfluenceDef,
   ResistanceDef,
   InfluenceResult,
-} from './influence-types';
+} from './influence-types.js';
 
 // ---------------------------------------------------------------------------
 // Context types for evaluation

@@ -6,4 +6,4 @@
  */
 
 // Perception service interfaces
-export * from './perception-service';
+export * from './perception-service.js';

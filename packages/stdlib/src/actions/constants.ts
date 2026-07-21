@@ -59,6 +59,10 @@ export const IFActions = {
   // Lock/unlock actions
   LOCKING: 'if.action.locking',
   UNLOCKING: 'if.action.unlocking',
+
+  // Tool-gated dispatch actions (ADR-230 D3c / Phase 6)
+  CUTTING: 'if.action.cutting',
+  DIGGING: 'if.action.digging',
   
   // Wearing actions
   WEARING: 'if.action.wearing',

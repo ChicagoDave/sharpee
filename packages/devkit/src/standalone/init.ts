@@ -1,18 +1,24 @@
 /**
  * CLI: sharpee init
  *
- * Creates a new Sharpee story project with the basic structure.
+ * Creates a new Sharpee story project. The default scaffold is a Chord
+ * `.story` project (ruled by David 2026-07-18, chord-author-pipeline plan —
+ * ADR-233/210 Chord-first positioning); `--ts` keeps the TypeScript story
+ * scaffold.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
+import { runInitBrowserCommand } from './init-browser.js';
 
-// Template directory relative to this file.
-// In source: src/cli/ → ../../templates. In npm publish: cli/ → ../templates.
-const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'story'))
-  ? path.join(__dirname, '..', 'templates', 'story')
-  : path.join(__dirname, '..', '..', 'templates', 'story');
+// Template directories relative to this file.
+// In source: src/standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
+const templatesRoot = fs.existsSync(path.join(__dirname, '..', 'templates', 'story'))
+  ? path.join(__dirname, '..', 'templates')
+  : path.join(__dirname, '..', '..', 'templates');
+const TEMPLATES_DIR = path.join(templatesRoot, 'story');
+const CHORD_TEMPLATES_DIR = path.join(templatesRoot, 'story-chord');
 
 interface StoryOptions {
   storyId: string;
@@ -104,9 +110,11 @@ export async function runInitCommand(args: string[]): Promise<void> {
     return;
   }
 
-  // Check for non-interactive mode
+  // Check for non-interactive mode; `--ts` keeps the TypeScript scaffold
+  // (Chord `.story` is the default — David's ruling, 2026-07-18).
   const useDefaults = args.includes('-y') || args.includes('--yes');
-  const filteredArgs = args.filter(a => a !== '-y' && a !== '--yes');
+  const useTs = args.includes('--ts');
+  const filteredArgs = args.filter(a => a !== '-y' && a !== '--yes' && a !== '--ts');
 
   // Get target directory
   const targetDir = filteredArgs[0] || '.';
@@ -145,17 +153,24 @@ export async function runInitCommand(args: string[]): Promise<void> {
 
   // Create directory structure
   fs.mkdirSync(absoluteTarget, { recursive: true });
-  fs.mkdirSync(path.join(absoluteTarget, 'src'), { recursive: true });
 
-  // Copy and process templates
-  const templates = [
-    { src: 'index.ts.template', dest: 'src/index.ts' },
-    { src: 'package.json.template', dest: 'package.json' },
-    { src: 'tsconfig.json.template', dest: 'tsconfig.json' },
-  ];
+  // Copy and process templates. Default: a Chord `.story` project (the
+  // story is source data — no TypeScript in the story's own logic); `--ts`
+  // scaffolds the TypeScript story form instead.
+  const templates = useTs
+    ? [
+        { dir: TEMPLATES_DIR, src: 'index.ts.template', dest: 'src/index.ts' },
+        { dir: TEMPLATES_DIR, src: 'package.json.template', dest: 'package.json' },
+        { dir: TEMPLATES_DIR, src: 'tsconfig.json.template', dest: 'tsconfig.json' },
+      ]
+    : [
+        { dir: CHORD_TEMPLATES_DIR, src: 'story.story.template', dest: `${storyId}.story` },
+        { dir: CHORD_TEMPLATES_DIR, src: 'package.json.template', dest: 'package.json' },
+      ];
+  if (useTs) fs.mkdirSync(path.join(absoluteTarget, 'src'), { recursive: true });
 
   for (const template of templates) {
-    const srcPath = path.join(TEMPLATES_DIR, template.src);
+    const srcPath = path.join(template.dir, template.src);
     const destPath = path.join(absoluteTarget, template.dest);
 
     if (fs.existsSync(srcPath)) {
@@ -176,16 +191,29 @@ dist/
   fs.writeFileSync(path.join(absoluteTarget, '.gitignore'), gitignore);
   console.log('  ✓ Created .gitignore');
 
+  // A Chord project ships browser-ready (G2: install → scaffold → build →
+  // play in the browser): wire the browser client into the scaffold now.
+  if (!useTs) {
+    await runInitBrowserCommand([], absoluteTarget);
+  }
+
   console.log('\n✅ Project created!\n');
   console.log('Next steps:');
   if (targetDir !== '.') {
     console.log(`  cd ${targetDir}`);
   }
   console.log('  npm install');
-  console.log('  sharpee build');
-  console.log('');
-  console.log('To add a browser client:');
-  console.log('  sharpee init-browser');
+  if (useTs) {
+    console.log('  sharpee build');
+    console.log('');
+    console.log('To add a browser client:');
+    console.log('  sharpee init-browser');
+  } else {
+    console.log('  sharpee build --browser   # story + playable web client → dist/web/');
+    console.log('  sharpee play              # play in the terminal');
+    console.log('');
+    console.log(`Your story lives in ${storyId}.story — edit it and rebuild.`);
+  }
   console.log('');
 }
 
@@ -200,10 +228,12 @@ Arguments:
 
 Options:
   -y, --yes    Use defaults without prompting
+  --ts         Scaffold a TypeScript story project (default: Chord .story)
 
 Examples:
   sharpee init                    Create in current directory (interactive)
-  sharpee init my-adventure       Create in ./my-adventure/ (interactive)
+  sharpee init my-adventure       Create a Chord .story project (interactive)
   sharpee init my-adventure -y    Create with defaults (non-interactive)
+  sharpee init my-adventure --ts  Create a TypeScript story project
 `);
 }

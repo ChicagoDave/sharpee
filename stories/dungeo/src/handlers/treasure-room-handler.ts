@@ -11,7 +11,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { EventProcessor } from '@sharpee/event-processor';
-import { WorldModel, CombatantTrait, IdentityTrait } from '@sharpee/world-model';
+import { WorldModel, CombatantTrait, HealthTrait, HealthBehavior, IdentityTrait } from '@sharpee/world-model';
 
 /**
  * Register the Treasure Room entry handler.
@@ -41,9 +41,9 @@ export function registerTreasureRoomHandler(
     });
     if (!thief) return [];
 
-    // Check if thief is alive
-    const combatant = thief.get(CombatantTrait);
-    if (!combatant || !combatant.isAlive) return [];
+    // Check if thief is alive (life-state on HealthTrait — ADR-226)
+    const health = thief.get(HealthTrait);
+    if (health && !HealthBehavior.isAlive(health)) return [];
 
     // If thief is already in the Treasure Room, nothing to do
     const thiefLocation = world.getLocation(thief.id);
@@ -52,8 +52,9 @@ export function registerTreasureRoomHandler(
     // Summon thief to Treasure Room (canonical MDL: rushes to defense)
     world.moveEntity(thief.id, treasureRoomId);
 
-    // Make thief hostile
-    combatant.hostile = true;
+    // Make thief hostile (hostility stays on CombatantTrait — ADR-223 child C)
+    const combatant = thief.get(CombatantTrait);
+    if (combatant) combatant.hostile = true;
 
     // Emit summoning message
     return [{

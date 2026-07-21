@@ -91,6 +91,12 @@ const PlatformEventType = {
 - Clients must handle platform events appropriately
 - Text service sees both request and completion events
 
+> **RESTART exception (ADR-248, 2026-07-20)**: a *confirmed* RESTART emits no
+> `restart_completed(true)` — the engine acks and stops with reason
+> `'restart'`, and the client reboots via its own boot path (the new boot's
+> opening banner is the success signal). Only the declined path still emits a
+> completion event (`restart_completed(false)`). See ADR-248.
+
 ## Implementation Details
 
 ### Core Package (`@sharpee/core`)

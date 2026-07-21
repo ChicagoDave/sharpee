@@ -23,33 +23,68 @@
 import {
   IR_FORMAT,
   IRComposition,
+  IRConfigSetting,
   IRCondition,
   IREntity,
   IRPhrase,
   IRTraitDef,
   StoryIR,
 } from '@sharpee/chord';
-import type { Choice, Literal, Phrase, SnippetEntry } from '@sharpee/if-domain';
-import { registerSnippetGate } from '@sharpee/stdlib';
+import type { Choice, IChannelRegistry, IOChannel, Literal, Phrase, SnippetEntry } from '@sharpee/if-domain';
+import {
+  registerSnippetGate,
+  DEADLY_ROOM_DEATH_ACTION_ID,
+  DEADLY_ROOM_CAUSE_KEY,
+  DEADLY_ROOM_MESSAGE_KEY,
+  createAmbientChannel,
+  createImageChannel,
+} from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
-import { createHelpers } from '@sharpee/helpers';
+import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
+import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
+import type {
+  EntityBindings,
+  StateDefinition,
+  StateMachineDefinition,
+  TransitionDefinition,
+} from '@sharpee/plugin-state-machine';
+import {
+  createFollowerBehavior,
+  createPatrolBehavior,
+  createWandererBehavior,
+} from '@sharpee/stdlib';
 import {
   ActorTrait,
-  CapabilityBehavior,
+  ClimbableTrait,
+  CombatantTrait,
+  ConcealmentTrait,
   ContainerTrait,
+  HealthTrait,
+  AuthorModel,
+  CuttableTrait,
+  DiggableTrait,
+  DeadlyRoomTrait,
   Direction,
+  DoorTrait,
   DirectionType,
+  getOppositeDirection,
   EdibleTrait,
+  EnterableTrait,
+  findTraitWithCapability,
   IFEntity,
   IdentityTrait,
+  IParsedCommand,
   ITrait,
   LightSourceTrait,
   LockableTrait,
+  NpcTrait,
   OpenableTrait,
+  PullableTrait,
+  PushableTrait,
   ReadableTrait,
   registerClauseContributor,
   RoomBehavior,
@@ -58,15 +93,17 @@ import {
   SupporterTrait,
   SwitchableTrait,
   TraitType,
+  WeaponTrait,
   WearableTrait,
   WorldModel,
 } from '@sharpee/world-model';
-import { LoadError } from './errors';
-import { Evaluator } from './evaluator';
-import { findChordLiteral } from './hatch-context';
-import { ChordRuntime, STRATEGY_SELECTOR } from './runtime';
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys';
-import { withLineBreaks } from './text';
+import { LoadError } from './errors.js';
+import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
+import { Evaluator } from './evaluator.js';
+import { findChordLiteral } from './hatch-context.js';
+import { ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys.js';
+import { withLineBreaks } from './text.js';
 
 /**
  * Marker trait for entities carrying loader-compiled `detail` providers
@@ -134,14 +171,54 @@ export class ChordStory implements Story {
   readonly producers = new Map<string, PhraseProducer>();
   /** Bound `define action X from` hatches: four-phase Action objects by name. */
   readonly boundActions = new Map<string, unknown>();
-  /** Bound `define behavior X from` hatches: CapabilityBehaviors by name. */
-  readonly boundBehaviors = new Map<string, CapabilityBehavior>();
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
   private readonly evaluator: Evaluator;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
   private readonly worldIds = new Map<string, string>();
+
+  /**
+   * Trait-config entity references awaiting world-id resolution (ADR-230
+   * D3c / Phase 9a): `cuttable with tool the knife`, `lockable with key the
+   * brass key` may name entities built AFTER their owner, so trait fields
+   * are stamped once every entity exists — config values are NEVER left as
+   * raw display-name strings.
+   */
+  private readonly pendingEntityRefs: Array<{
+    irRefId: string;
+    ownerName: string;
+    span: unknown;
+    apply: (worldId: string) => void;
+  }> = [];
+
+  /** Resolve a trait-config entity NAME to an IR entity and queue the
+   *  world-id application (throws LoadError when nothing matches). */
+  private entityRefFor(
+    name: string,
+    configKey: string,
+    owner: IREntity,
+    span: unknown,
+    apply: (worldId: string) => void,
+  ): { irRefId: string; ownerName: string; span: unknown; apply: (worldId: string) => void } {
+    const lower = name.toLowerCase();
+    const target = this.ir.entities.find(
+      (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
+    );
+    if (!target) {
+      throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span as never);
+    }
+    return { irRefId: target.id, ownerName: owner.name, span, apply };
+  }
+
+  /**
+   * Deadly exits (ADR-227): world room id → DIRECTION → derived
+   * cause/messageId (both the phrase key). Lowered in `onEngineReady` to ONE
+   * pre-validate command transformer redirecting to the platform's generic
+   * deadly-death action — a deadly exit need not exist in the room graph, so
+   * no destination-resolved interceptor could ever fire.
+   */
+  private readonly deadlyExits = new Map<string, Map<string, { cause: string; messageId: string }>>();
   /** World entity ID → IR entity ID (state lookups in the evaluator). */
   private readonly irIds = new Map<string, string>();
   private world: WorldModel | null = null;
@@ -238,17 +315,9 @@ export class ChordStory implements Story {
           this.boundActions.set(hatch.name, bound);
           break;
         }
-        case 'behavior': {
-          const behavior = bound as { validate?: unknown; execute?: unknown; report?: unknown } | undefined;
-          if (!behavior || typeof behavior !== 'object' || typeof behavior.validate !== 'function' || typeof behavior.execute !== 'function' || typeof behavior.report !== 'function') {
-            throw new LoadError(
-              `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a CapabilityBehavior'} — expected a validate/execute/report export.`,
-              hatch.span,
-            );
-          }
-          this.boundBehaviors.set(hatch.name, bound as CapabilityBehavior);
-          break;
-        }
+        // The `behavior` hatch kind was removed (ADR-235 D2, 2026-07-18) —
+        // it carried no binding key and could never fire; the compiler now
+        // refuses the declaration outright.
       }
     }
   }
@@ -257,29 +326,129 @@ export class ChordStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     this.world = world;
+
+    // ADR-215: `use`-declared trusted extensions register FIRST — their
+    // world-side registrations (interceptors, resolvers) must exist before
+    // any entity composes their vocabulary. Unknown names are LoadErrors
+    // (the compiler's manifest gate catches them first; this backstops
+    // rogue IR).
+    for (const name of this.ir.uses ?? []) {
+      const registration = EXTENSION_REGISTRY.get(name);
+      if (!registration) {
+        throw new LoadError(
+          `\`use ${name}\` names no trusted extension — known: ${[...EXTENSION_REGISTRY.keys()].join(', ')}.`,
+        );
+      }
+      registration.registerWorld?.(world);
+    }
+
     const built: Array<{ ir: IREntity; entity: IFEntity }> = [];
 
-    // Pass 1 — create every non-player entity.
+    // Pass 0 — regions, parents before children (ADR-236 D3): a nested
+    // region's `parentRegionId` is validated by `createRegion` at creation,
+    // so the parent's world entity must already exist.
+    for (const irEntity of this.regionsInParentFirstOrder()) {
+      built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
+    }
+
+    // Pass 1 — create every remaining non-player entity.
     for (const irEntity of this.ir.entities) {
-      if (irEntity.isPlayer) continue;
+      if (irEntity.isPlayer || this.worldIds.has(irEntity.id)) continue;
       built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
 
     // Pass 2 — placement, exits, blocked exits, initial states.
+    // Placement is WORLD CONSTRUCTION, not a runtime action: it goes through
+    // AuthorModel.moveEntity, which bypasses the runtime containment rules
+    // (a closed trunk can hold its contents at load — the plain
+    // world.moveEntity refusal was a silent drop; David-approved fix,
+    // 2026-07-18, matching the TS story path's established pattern).
+    const author = new AuthorModel(world.getDataStore(), world);
     for (const { ir: irEntity, entity } of built) {
       if (irEntity.placement && irEntity.placement.relation !== 'starts-in') {
-        world.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+        author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+      }
+      // ADR-236 D2: region membership through the platform seam —
+      // `assignRoom` sets RoomTrait.regionId (never touched directly here);
+      // member regions were parented at creation (pass 0), so only room
+      // members remain to wire.
+      for (const member of irEntity.containing ?? []) {
+        const memberIr = this.ir.entities.find((e) => e.id === member.id);
+        if (memberIr && memberIr.kinds.some((k) => k.name === 'room')) {
+          world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
+        }
       }
       for (const exit of irEntity.exits) {
-        world.connectRooms(entity.id, this.requireWorldId(exit.to, irEntity), toDirection(exit.direction, irEntity));
-      }
-      for (const blocked of irEntity.blockedExits) {
-        // Unconditional blocks are static; `is blocked while <cond>` blocks
-        // are derived — the runtime recomputes them with dark-while (grammar
-        // log 2026-07-10; initial evaluation at player finalization).
-        if (blocked.condition === null) {
-          RoomBehavior.blockExit(entity, toDirection(blocked.direction, irEntity), this.phraseText(blocked.phraseKey));
+        const toId = this.requireWorldId(exit.to, irEntity);
+        const direction = toDirection(exit.direction, irEntity);
+        if (exit.via === null) {
+          // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
+          // door-plain-mirror gate): connectRooms stamps BOTH directions, so
+          // a plain exit whose reverse side is already door-wired would
+          // silently unwire that door. The compiler refuses this; reaching
+          // here means rogue IR.
+          const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
+          const reverseExit = targetRoomTrait?.exits?.[getOppositeDirection(direction)];
+          if (reverseExit?.via && reverseExit.destination === entity.id) {
+            throw new LoadError(
+              `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
+              exit.span,
+            );
+          }
+          world.connectRooms(entity.id, toId, direction);
+          continue;
         }
+        // ADR-234 D1/D2 via ADR-237 D4: the door exit wires through the
+        // one platform primitive — DoorTrait attached here (room1 = the
+        // declaring room, per the createDoor placement convention), then
+        // connectRooms stamps `via` both directions and places the door.
+        // A door wires exactly once: the analyzer's checkDoors gates
+        // guarantee any second reference is the exact mirror, whose exits
+        // the first wiring already stamped — verified, then skipped.
+        const doorId = this.requireWorldId(exit.via, irEntity);
+        const door = world.getEntity(doorId);
+        const doorTrait = door?.get(TraitType.DOOR) as DoorTrait | undefined;
+        if (doorTrait) {
+          const isMirror = doorTrait.room1 === toId && doorTrait.room2 === entity.id;
+          if (!isMirror) {
+            throw new LoadError(
+              `\`${irEntity.name}\`: door \`${exit.via}\` is already wired to a different room pair — rogue IR (the compiler's door gates refuse this).`,
+              exit.span,
+            );
+          }
+          continue;
+        }
+        door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
+        world.connectRooms(entity.id, toId, direction, doorId);
+      }
+      // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
+      // unconditional alike, are registered as live evaluators by the
+      // runtime's bind(); nothing is stamped onto RoomTrait.blockedExits
+      // here anymore (the trait map remains the hand-written TS stories'
+      // surface, consulted by going as the fall-through).
+      // ADR-227: `deadly: <phrase>` — the no-escape room marker lowers to
+      // DeadlyRoomTrait (safeVerbs default look/examine); the ENGINE
+      // auto-registers the deadly-room transformer, so no runtime code here.
+      // Cause and messageId both derive from the phrase key.
+      if (irEntity.deadly) {
+        entity.add(new DeadlyRoomTrait({
+          cause: irEntity.deadly.phraseKey,
+          messageId: irEntity.deadly.phraseKey,
+        }));
+      }
+      // ADR-227: `<direction> is deadly: <phrase>` — collected here, lowered
+      // to one command transformer in onEngineReady.
+      for (const deadly of irEntity.deadlyExits) {
+        if (deadly.condition !== null) {
+          throw new LoadError(
+            '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
+            deadly.span,
+          );
+        }
+        const direction = toDirection(deadly.direction, irEntity);
+        const byRoom = this.deadlyExits.get(entity.id) ?? new Map<string, { cause: string; messageId: string }>();
+        byRoom.set(String(direction).toUpperCase(), { cause: deadly.phraseKey, messageId: deadly.phraseKey });
+        this.deadlyExits.set(entity.id, byRoom);
       }
       if (irEntity.states.length > 0) {
         world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
@@ -289,6 +458,18 @@ export class ChordStory implements Story {
       // load-time `validateRoomSnippets` gate ever sees the texts.
       if (entity.has(TraitType.ROOM)) {
         this.compileRoomSnippets(world, irEntity, entity);
+      }
+    }
+
+    // ADR-234 D3 backstop (rogue IR — the compiler's `door-unconnected`
+    // gate refuses this): a door no `through` exit wired has no room pair
+    // and could never resolve in play.
+    for (const { ir: irEntity, entity } of built) {
+      if (irEntity.kinds.some((k) => k.name === 'door') && !entity.has(TraitType.DOOR)) {
+        throw new LoadError(
+          `Door \`${irEntity.name}\` was never wired by a \`through\` exit line — rogue IR (the compiler's door gates refuse this).`,
+          irEntity.span,
+        );
       }
     }
 
@@ -311,9 +492,18 @@ export class ChordStory implements Story {
     // matches them, a loader-owned state-clause provider for everything else.
     this.compileDetailChannels(world);
 
+    // ADR-230 D3c / Phase 9a: stamp trait-config entity references (tools,
+    // keys) now that every entity exists (forward references resolve here).
+    this.resolvePendingEntityRefs();
+
     // Bind the turn-by-turn runtime: rules, on-clause interceptors,
     // derived-property chains (all per-world, keyed — ADR-207/208).
     this.runtime.bind(world);
+
+    // ADR-230 D3c (PIN 3, dual-surface re-pin): an unimplemented cuttable
+    // is an authoring error at load, never a silent runtime no-op.
+    this.checkCuttableImplementations(world);
+
     this.worldBuilt = true;
 
     // Engine order (GameEngine.setStory): createPlayer ran before world
@@ -372,6 +562,23 @@ export class ChordStory implements Story {
       world.moveEntity(player.id, this.requireWorldId(startIr, irPlayer ?? undefined));
     }
 
+    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
+    // player composes trait adjectives + `starts` states through the SAME
+    // loader path as any entity (`a person` is analyzer-gated to a no-op;
+    // NPC behaviors are refused at compile). Runs here — the second
+    // lifecycle hook — so entity-valued configs resolve against the
+    // fully-built world regardless of createPlayer/initializeWorld order.
+    if (irPlayer) {
+      this.applyTraitAdjectives(player, irPlayer, null);
+      this.applyStartsStates(player, irPlayer);
+      this.resolvePendingEntityRefs();
+    }
+
+    // Carried items: into inventory (ADR-230 Phase 6 — `carries the X`).
+    for (const carriedIrId of irPlayer?.carries ?? []) {
+      world.moveEntity(this.requireWorldId(carriedIrId, irPlayer ?? undefined), player.id);
+    }
+
     // Worn items: into inventory, marked worn.
     for (const wornIrId of irPlayer?.wears ?? []) {
       const wornId = this.requireWorldId(wornIrId, irPlayer ?? undefined);
@@ -385,22 +592,35 @@ export class ChordStory implements Story {
       wearable.wornBy = player.id;
     }
 
-    // Initial evaluation of derived properties (`dark while`) — the player
-    // and their possessions now exist, so conditions are decidable.
-    this.runtime.recomputeDerived(world);
+    // ADR-240: no initial derived-property evaluation — derived state is
+    // registered evaluators, consulted live at every read.
   }
 
   extendLanguage(language: LanguageProvider): void {
     // `addMessage` is the concrete providers' registration surface
     // (lang-en-us et al.), not part of if-domain's read interface — probe
     // structurally so the loader stays locale-neutral.
-    const registry = language as LanguageProvider & { addMessage?: (id: string, template: string) => void };
+    const registry = language as LanguageProvider & {
+      addMessage?: (id: string, template: string) => void;
+      registerPronounSet?: (name: string, forms: Record<string, string>) => void;
+    };
     if (typeof registry.addMessage !== 'function') {
       throw new LoadError('The language provider does not support message registration (addMessage).');
     }
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     for (const [key, phrase] of Object.entries(table)) {
       registry.addMessage(key, templateFor(phrase));
+    }
+    // ADR-242 D7: declared pronoun sets ride the same seam — the same
+    // structural probe, throwing a legible error only when a story
+    // actually declares sets the provider cannot take.
+    if (this.ir.pronounSets.length > 0) {
+      if (typeof registry.registerPronounSet !== 'function') {
+        throw new LoadError('The language provider does not support pronoun-set registration (registerPronounSet).');
+      }
+      for (const set of this.ir.pronounSets) {
+        registry.registerPronounSet(set.name, set.forms);
+      }
     }
   }
 
@@ -425,7 +645,42 @@ export class ChordStory implements Story {
   onEngineReady(engine: {
     getPluginRegistry(): { register(plugin: unknown): void };
     registerSlotEntry?(entry: ChordSlotEntry): void;
+    registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
+    getClientCapabilities?(): object;
   }): void {
+    // ADR-216 `client has`: wire the LIVE capability source (the engine
+    // negotiates capabilities at start(); reads happen per evaluation).
+    // Engines without the accessor leave the text-only default in place.
+    if (engine.getClientCapabilities) {
+      this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities!() as Record<string, unknown>);
+    }
+    // ADR-215 Q4: NPCs are CORE — the plugin auto-wires unconditionally
+    // (unlike the scheduler's daemon-gated registration below), and each
+    // factory-configured behavior registers under its per-entity id.
+    const npcPlugin = new NpcPlugin();
+    engine.getPluginRegistry().register(npcPlugin);
+    const npcService = npcPlugin.getNpcService();
+    for (const pending of this.npcBehaviors) {
+      npcService.registerBehavior(this.buildNpcBehavior(pending) as never);
+    }
+
+    // ADR-215 `use state-machines`: the plugin registers engine-side and
+    // every `define machine` lowers into its registry (Chord conditions
+    // ride as custom guards, Chord bodies as custom effects). Machines in
+    // rogue IR without the `use` are a LoadError, never silently dead.
+    if ((this.ir.machines ?? []).length > 0 && !(this.ir.uses ?? []).includes('state-machines')) {
+      throw new LoadError('`define machine` needs `use state-machines` in the story header.', this.ir.machines[0].span);
+    }
+    if ((this.ir.uses ?? []).includes('state-machines')) {
+      const smPlugin = new StateMachinePlugin();
+      engine.getPluginRegistry().register(smPlugin);
+      const smRegistry = smPlugin.getRegistry();
+      for (const machine of this.ir.machines ?? []) {
+        const { definition, bindings } = this.buildMachineDefinition(machine);
+        smRegistry.register(definition, bindings);
+      }
+    }
+
     const daemons = this.runtime.buildSchedulerDaemons();
     if (daemons.length > 0) {
       const plugin = new SchedulerPlugin();
@@ -434,10 +689,112 @@ export class ChordStory implements Story {
       for (const daemon of daemons) scheduler.registerDaemon(daemon);
     }
 
+    // ADR-227: `<direction> is deadly:` — one pre-validate transformer over
+    // the collected deadly-exit map, redirecting a matching going command to
+    // the platform's generic extras-driven deadly-death action (the same
+    // seam stdlib's own deadly-room transformer uses).
+    if (this.deadlyExits.size > 0 && engine.registerParsedCommandTransformer) {
+      engine.registerParsedCommandTransformer(this.buildDeadlyExitTransformer());
+    }
+
     // Z3 (ADR-212 §5): every `phrase present:` block compiles to ONE
     // declarative slot entry — no synthesized closures; the platform's
     // built-in contributor evaluates them.
     this.registerPresentEntries(engine);
+  }
+
+  /**
+   * ADR-216 custom channels + ADR-215's third contribution part: every
+   * `define channel` lowers to a real IOChannel (JSON data projection —
+   * the turn's last event of the declared type, `take` fields projected
+   * from its data), and every `use`d extension gets its reserved
+   * `registerChannels` slot invoked (no bundled extension registers one
+   * today — the leg is live but unexercised; a novel renderer would ship
+   * there, keeping stories pure IR). The engine invokes this hook once at
+   * start (`Story.registerChannels`, engine/src/game-engine.ts).
+   *
+   * ADR-241 D4: family channels (`define ambient`/`define layer`, plus
+   * the implied `main` bed) register through stdlib's family builders —
+   * `ambient:<word>` / `image:<word>` ids, capability gates inherited
+   * from the builders (`sound` / `images`). Data channels are untouched.
+   */
+  registerChannels(registry: IChannelRegistry): void {
+    for (const channel of this.ir.channels ?? []) {
+      if (channel.family !== 'data') {
+        registry.add(
+          channel.family === 'ambient'
+            ? createAmbientChannel(channel.name)
+            : createImageChannel(channel.name),
+        );
+        continue;
+      }
+      const { fromEvent, take } = channel;
+      const definition: IOChannel = {
+        id: channel.name,
+        contentType: 'json',
+        mode: channel.mode,
+        emit: 'sparse',
+        ...(channel.gatedBy ? { gatedBy: channel.gatedBy as IOChannel['gatedBy'] } : {}),
+        produce: (ctx) => {
+          for (let i = ctx.events.length - 1; i >= 0; i--) {
+            const event = ctx.events[i];
+            if (event.type !== fromEvent) continue;
+            const data = (event.data ?? {}) as Record<string, unknown>;
+            const projected: Record<string, unknown> = {};
+            for (const field of take) projected[field] = data[field];
+            return channel.mode === 'append' ? [projected] : projected;
+          }
+          return undefined;
+        },
+      };
+      registry.add(definition);
+    }
+    for (const name of this.ir.uses ?? []) {
+      EXTENSION_REGISTRY.get(name)?.registerChannels?.(registry);
+    }
+  }
+
+  /**
+   * The deadly-exit command transformer (ADR-227). Redirects `going
+   * <deadly-direction>` from a room with declared deadly exits to
+   * `DEADLY_ROOM_DEATH_ACTION_ID`, threading the phrase-derived
+   * cause/messageId through extras. Pass-through otherwise.
+   */
+  private buildDeadlyExitTransformer(): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
+    const deadlyExits = this.deadlyExits;
+    // Single-letter direction abbreviations some parsers surface in extras.
+    const ABBREV: Record<string, string> = {
+      N: 'NORTH', S: 'SOUTH', E: 'EAST', W: 'WEST',
+      NE: 'NORTHEAST', NW: 'NORTHWEST', SE: 'SOUTHEAST', SW: 'SOUTHWEST',
+      U: 'UP', D: 'DOWN',
+    };
+    return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
+      const actionId = parsed.action?.toLowerCase() ?? '';
+      if (actionId !== 'if.action.going' && actionId !== 'going') return parsed;
+
+      const player = world.getPlayer();
+      if (!player) return parsed;
+      const roomId = world.getLocation(player.id);
+      if (!roomId) return parsed;
+      const byRoom = deadlyExits.get(roomId);
+      if (!byRoom) return parsed;
+
+      const raw = String(parsed.extras?.direction ?? '').toUpperCase();
+      const direction = ABBREV[raw] ?? raw;
+      const hit = byRoom.get(direction);
+      if (!hit) return parsed;
+
+      return {
+        ...parsed,
+        action: DEADLY_ROOM_DEATH_ACTION_ID,
+        extras: {
+          ...parsed.extras,
+          [DEADLY_ROOM_CAUSE_KEY]: hit.cause,
+          [DEADLY_ROOM_MESSAGE_KEY]: hit.messageId,
+          originalAction: parsed.action,
+        },
+      };
+    };
   }
 
   /**
@@ -514,12 +871,32 @@ export class ChordStory implements Story {
       };
     }).getStoryGrammar();
     for (const action of this.ir.actions) {
+      // Bare-verb forms (platform-issue-sweep Phase 8 #13, David's ruling:
+      // ALL dispatch actions): dispatch validate fully handles the no-target
+      // case (authored `refuse without` arm, else the platform default), but
+      // compiler-emitted grammar always carried the slot, so a bare `lower`
+      // (or friendly-zoo's `pet`/`feed`) never parsed far enough to reach it.
+      // Register each pattern's literal prefix as its own rule, below the
+      // slotted forms so they win whenever a target is named.
+      const bareForms = new Set<string>();
       for (const pattern of action.patterns) {
         if (pattern.cardinality) continue; // `→ each …` expansion is engine-owned (Phase C)
         const text = pattern.parts
           .map((part) => (part.kind === 'slot' ? `:${part.word}` : part.word))
           .join(' ');
         grammar.define(text).mapsTo(`chord.action.${action.name}`).withPriority(150).build();
+
+        const slotIndex = pattern.parts.findIndex((part) => part.kind === 'slot');
+        if (slotIndex > 0) {
+          const bare = pattern.parts
+            .slice(0, slotIndex)
+            .map((part) => part.word)
+            .join(' ');
+          if (bare) bareForms.add(bare);
+        }
+      }
+      for (const bare of bareForms) {
+        grammar.define(bare).mapsTo(`chord.action.${action.name}`).withPriority(140).build();
       }
     }
   }
@@ -547,63 +924,154 @@ export class ChordStory implements Story {
 
   // ------------------------------------------------------- entity build
 
+  /** Region IR id → parent region IR id (the parent's `containing` lists the child — ADR-236 D3). */
+  private readonly regionParents = new Map<string, string>();
+
+  /**
+   * Region entities in parent-first order, filling `regionParents` on the
+   * way (ADR-236 D3). The compiler's cycle gate guarantees the walk ends; a
+   * cycle here means rogue IR and is a LoadError, never a hang.
+   */
+  private regionsInParentFirstOrder(): IREntity[] {
+    const regions = this.ir.entities.filter(
+      (e) => !e.isPlayer && e.kinds.some((k) => k.name === 'region'),
+    );
+    const byId = new Map(regions.map((r) => [r.id, r]));
+    this.regionParents.clear();
+    for (const region of regions) {
+      for (const member of region.containing ?? []) {
+        if (byId.has(member.id)) this.regionParents.set(member.id, region.id);
+      }
+    }
+    const ordered: IREntity[] = [];
+    const state = new Map<string, 'visiting' | 'done'>();
+    const visit = (region: IREntity): void => {
+      const s = state.get(region.id);
+      if (s === 'done') return;
+      if (s === 'visiting') {
+        throw new LoadError(
+          `Region containment cycle at \`${region.name}\` — the compiler gate should have refused this story.`,
+          region.span,
+        );
+      }
+      state.set(region.id, 'visiting');
+      const parentId = this.regionParents.get(region.id);
+      const parent = parentId ? byId.get(parentId) : undefined;
+      if (parent) visit(parent);
+      state.set(region.id, 'done');
+      ordered.push(region);
+    };
+    for (const region of regions) visit(region);
+    return ordered;
+  }
+
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
     if (irEntity.kinds.length > 1) {
       throw new LoadError(`\`${irEntity.name}\` declares more than one kind noun.`, irEntity.span);
     }
     const kind = irEntity.kinds[0]?.name ?? null;
     const description = irEntity.descriptionKey ? this.phraseText(irEntity.descriptionKey) : undefined;
-    const h = createHelpers(world);
+    // ADR-237 D3: direct trait composition — the loader builds on the
+    // world-model surface itself; `@sharpee/helpers` is author-facing only.
+    const aliases = irEntity.aka.length ? irEntity.aka : undefined;
     let entity: IFEntity;
 
     switch (kind) {
       case 'room': {
-        const builder = h.room(irEntity.name);
-        if (description) builder.description(description);
         // Z1: `first time` prose → RoomTrait.initialDescription (first look
         // shows it, later looks show the standard description — stdlib's
         // looking-data reads the field; no stdlib change).
         const initialDescription = irEntity.initialDescriptionKey
           ? this.phraseText(irEntity.initialDescriptionKey)
           : undefined;
-        if (initialDescription) builder.initialDescription(initialDescription);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        if (irEntity.traits.some((t) => t.name === 'dark' && t.condition === null)) builder.dark();
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'room');
+        entity.add(new RoomTrait({
+          requiresLight: irEntity.traits.some((t) => t.name === 'dark' && t.condition === null),
+          initialDescription,
+        }));
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
         break;
       }
       case 'container': {
-        const builder = h.container(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        if (irEntity.traits.some((t) => t.name === 'openable')) builder.openable();
-        if (irEntity.traits.some((t) => t.name === 'lockable')) builder.lockable();
-        entity = builder.build();
+        // NOTE: no OpenableTrait/LockableTrait pre-adds — applyTraitAdjectives
+        // owns both compositions uniformly. For lockable, a keyless pre-add
+        // made the keyed re-add skip, dropping `with key X` config (ADR-230
+        // Phase 9a). For openable, the pre-add carried an open-by-default,
+        // splitting container-kind entities from adjective-only ones; ADR-231
+        // D5b removed it so OpenableTrait's default (closed) is authoritative
+        // everywhere — `starts open` is the author's escape hatch.
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new ContainerTrait());
         this.applyContainerConfig(entity, irEntity.kinds[0]);
         break;
       }
       case 'person': {
-        const builder = h.actor(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'actor');
+        entity.add(new ActorTrait());
+        // ADR-242 D2/D3: `proper` → the player's own proper-name shape
+        // (properName + empty article); otherwise the plain IdentityTrait
+        // defaults stand ('a', contextual articles). The old helpers-era
+        // `article: undefined` pin is gone — no loader path constructs an
+        // undefined article. `pronouns` maps to pronounSet only when
+        // declared (ruled Q-2: no injected default — by-number fallback).
+        const proper = irEntity.traits.some((t) => t.name === 'proper' && t.condition === null);
+        entity.add(
+          new IdentityTrait({
+            name: irEntity.name,
+            description,
+            aliases,
+            ...(proper ? { properName: true, article: '' } : {}),
+            ...(irEntity.pronouns !== undefined ? { pronounSet: irEntity.pronouns } : {}),
+          }),
+        );
         break;
       }
       case 'supporter': {
-        const builder = h.object(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
         entity.add(new SupporterTrait({ capacity: supporterCapacity(irEntity.kinds[0]) }));
         break;
       }
-      case 'door':
-        throw new LoadError(`\`${irEntity.name}\`: doors need \`between\` placement, which the Phase A loader does not support yet.`, irEntity.span);
+      case 'region': {
+        // ADR-236 D1: built on the shipped platform seam — createRegion +
+        // assignRoom ARE the shared mechanics (RoomTrait.regionId is never
+        // set directly). Pass 0 built parents first, so a nested child's
+        // parentRegionId resolves here.
+        const parentIr = this.regionParents.get(irEntity.id);
+        const parentRegionId = parentIr ? this.worldIds.get(parentIr) : undefined;
+        entity = world.createRegion(`rg-${irEntity.id}`, {
+          name: irEntity.name,
+          ...(parentRegionId ? { parentRegionId } : {}),
+        });
+        // A region block composes like any entity block (aka, description):
+        // both live on IdentityTrait; whether any action surfaces them is
+        // the platform's business (ADR-236 D1).
+        entity.add(
+          new IdentityTrait({
+            name: irEntity.name,
+            ...(description ? { description } : {}),
+            aliases: irEntity.aka,
+            article: irEntity.article ?? 'the',
+          }),
+        );
+        break;
+      }
+      case 'door': {
+        // ADR-234 D4: SceneryTrait + OpenableTrait starting closed compose
+        // automatically (createDoor parity; `starts open` is the author's
+        // override via applyStartsStates). DoorTrait is attached at exit
+        // wiring — its room pair comes from the `through` exit line, and
+        // the trait's constructor requires both rooms.
+        entity = world.createEntity(irEntity.name, 'door');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new SceneryTrait());
+        entity.add(new OpenableTrait({ isOpen: false }));
+        break;
+      }
       case null: {
-        const builder = h.object(irEntity.name);
-        if (description) builder.description(description);
-        if (irEntity.aka.length) builder.aliases(...irEntity.aka);
-        entity = builder.build();
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
         break;
       }
       default:
@@ -611,9 +1079,116 @@ export class ChordStory implements Story {
     }
 
     this.applyTraitAdjectives(entity, irEntity, kind);
+    this.applyStartsStates(entity, irEntity);
     this.worldIds.set(irEntity.id, entity.id);
     this.irIds.set(entity.id, irEntity.id);
     return entity;
+  }
+
+  /**
+   * ADR-231 D5a: map each accepted `starts <state>` initializer to the
+   * paired trait's initial-value field (locked→isLocked:true, closed→
+   * isOpen:false, on→isOn:true, …). Runs AFTER trait composition (the
+   * adjective-composed traits, ADR-231 D5b: there are no builder pre-adds
+   * left) — so a declared initializer always wins over any
+   * trait default. Only the trait boolean is set; the state adjective
+   * itself is never stored story state (the shadow-state ratchet).
+   * The analyzer's pairing gate guarantees the trait is present; a missing
+   * trait here is a defect, reported as a LoadError, never a silent skip.
+   */
+  private applyStartsStates(entity: IFEntity, irEntity: IREntity): void {
+    for (const state of irEntity.startsStates ?? []) {
+      const mapping = STARTS_STATE_TRAIT_FIELDS.get(state);
+      if (!mapping) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: \`starts ${state}\` has no trait-field mapping — the compiler and loader tables are out of step.`,
+          irEntity.span,
+        );
+      }
+      const trait = entity.get(mapping.traitType);
+      if (!trait) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: \`starts ${state}\` needs the \`${mapping.traitName}\` trait composed — the analyzer pairing gate should have refused this story.`,
+          irEntity.span,
+        );
+      }
+      (trait as unknown as Record<string, unknown>)[mapping.field] = mapping.value;
+    }
+  }
+
+  /**
+   * Resolve trait-config entity references (`with tool X`, `with key X`)
+   * to world entity ids (ADR-230 D3c / Phase 9a) — runs once, after every
+   * entity is built.
+   */
+  private resolvePendingEntityRefs(): void {
+    for (const pending of this.pendingEntityRefs) {
+      const worldId = this.worldIds.get(pending.irRefId);
+      if (!worldId) {
+        throw new LoadError(
+          `\`${pending.ownerName}\`: a trait-config entity reference was never built.`,
+          pending.span as never,
+        );
+      }
+      pending.apply(worldId);
+    }
+    this.pendingEntityRefs.length = 0;
+  }
+
+  /**
+   * ADR-230 D3c load-time check (PIN 3, dual-surface re-pin, 2026-07-17):
+   * every cuttable entity must register exactly ONE cut implementation —
+   * an `on cutting it` clause (entity- or trait-level, loads as an
+   * ADR-228 interceptor) or an ADR-090 capability behavior for
+   * `if.action.cutting` (TS/hatch surface). Zero implementations would
+   * silently no-op at runtime; two would double-fire (ADR-228 D6 spirit).
+   * Chord surfaces are counted from the IR (precise per entity); the
+   * capability surface from the live world.
+   */
+  private checkCuttableImplementations(world: WorldModel): void {
+    const toolGatedGerunds: Array<{ adjective: string; gerund: string; actionId: string }> = [
+      { adjective: 'cuttable', gerund: 'cutting', actionId: 'if.action.cutting' },
+      { adjective: 'diggable', gerund: 'digging', actionId: 'if.action.digging' }, // ADR-230 Phase 6
+    ];
+    for (const { adjective, gerund, actionId } of toolGatedGerunds) {
+      for (const irEntity of this.ir.entities) {
+        if (!irEntity.traits.some((t) => t.name === adjective)) continue;
+        const worldId = this.worldIds.get(irEntity.id);
+        const entity = worldId ? world.getEntity(worldId) : undefined;
+        if (!entity) continue;
+
+        let surfaces = 0;
+        // Entity-level `on <gerund> it` clause.
+        if (irEntity.onClauses.some((c) => c.clauseKind === 'on' && c.action === gerund && c.binding !== 'every-turn')) {
+          surfaces++;
+        }
+        // Composed `define trait` with an `on <gerund> it` clause.
+        for (const comp of irEntity.traits) {
+          const def = this.ir.traits.find((t) => t.name === comp.name);
+          if (def?.onClauses.some((c) => c.clauseKind === 'on' && c.action === gerund && c.binding !== 'every-turn')) {
+            surfaces++;
+          }
+        }
+        // ADR-090 capability behavior (TS/hatch surface).
+        const capabilityTrait = findTraitWithCapability(entity, actionId);
+        if (capabilityTrait && world.getBehaviorForCapability(capabilityTrait, actionId)) {
+          surfaces++;
+        }
+
+        if (surfaces === 0) {
+          throw new LoadError(
+            `\`${irEntity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
+            irEntity.span,
+          );
+        }
+        if (surfaces > 1) {
+          throw new LoadError(
+            `\`${irEntity.name}\` has ${surfaces} ${gerund} implementations — a ${adjective} entity registers exactly one (one \`on ${gerund} it\` clause or one capability behavior).`,
+            irEntity.span,
+          );
+        }
+      }
+    }
   }
 
   private applyTraitAdjectives(entity: IFEntity, irEntity: IREntity, kind: string | null): void {
@@ -636,6 +1211,12 @@ export class ChordStory implements Story {
         );
       }
       switch (trait.name) {
+        case 'proper':
+          // ADR-242 D1: identity configuration, consumed by the person
+          // branch's IdentityTrait construction (like the room branch's
+          // `dark`) — without this case it would fall through to the
+          // authored-trait default and mint a spurious ChordDataTrait.
+          break;
         case 'scenery':
           if (!entity.has(TraitType.SCENERY)) entity.add(new SceneryTrait());
           break;
@@ -645,21 +1226,152 @@ export class ChordStory implements Story {
         case 'readable':
           entity.add(new ReadableTrait({ text: configValue(trait, 'text') ?? '' }));
           break;
-        case 'openable':
-          if (!entity.has(TraitType.OPENABLE)) entity.add(new OpenableTrait());
+        case 'openable': {
+          // Defect D3 fix (2026-07-17, ratchet G4): `openable with the
+          // crowbar` (keyless per R3) gates opening on holding the tool
+          // (OpenableTrait.toolId, ADR-230 D3b). Name → world id via the
+          // shared pending mechanism — never the raw display-name string
+          // (the lockable-bug class).
+          if (entity.has(TraitType.OPENABLE)) break;
+          const openable = new OpenableTrait();
+          const openToolName = entityConfigValue(trait);
+          if (openToolName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(openToolName, 'tool', irEntity, trait.span, (worldId) => {
+                openable.toolId = worldId;
+              }),
+            );
+          }
+          entity.add(openable);
           break;
-        case 'lockable':
-          if (!entity.has(TraitType.LOCKABLE)) entity.add(new LockableTrait({ keyId: configValue(trait, 'key') }));
+        }
+        case 'lockable': {
+          // ADR-230 Phase 9a: the key entity (`lockable with the iron key`,
+          // keyless per R3) resolves name → world id through the shared
+          // pending mechanism (forward refs legal) — the raw display-name
+          // string never reaches LockableTrait.keyId.
+          if (entity.has(TraitType.LOCKABLE)) break;
+          // ADR-234 D4 kind-scoped default: a lockable DOOR starts locked
+          // (the IF convention; createDoor's `isLocked ?? true` parity) —
+          // everywhere else the trait-wide default (unlocked) stands.
+          // `starts unlocked` is the author's override: applyStartsStates
+          // runs after composition, so a declared initializer always wins.
+          const lockable = new LockableTrait(kind === 'door' ? { isLocked: true } : {});
+          const keyName = entityConfigValue(trait);
+          if (keyName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(keyName, 'key', irEntity, trait.span, (worldId) => {
+                lockable.keyId = worldId;
+              }),
+            );
+          }
+          entity.add(lockable);
           break;
+        }
+        case 'cuttable':
+        case 'diggable': {
+          // ADR-230 D3c / Phase 6. Tool names resolve name → IR entity here
+          // and IR → world id after every entity is built (forward refs are
+          // legal) — do NOT copy the lockable raw-string config bug.
+          const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : TraitType.DIGGABLE;
+          if (entity.has(traitType)) break;
+          const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : new DiggableTrait();
+          const toolName = entityConfigValue(trait);
+          if (toolName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(toolName, 'tool', irEntity, trait.span, (worldId) => {
+                toolGated.toolId = worldId;
+              }),
+            );
+          }
+          entity.add(toolGated);
+          break;
+        }
         case 'switchable':
           entity.add(new SwitchableTrait());
           break;
         case 'edible':
-          entity.add(new EdibleTrait());
+          // Guarded so `edible, drinkable` composes order-independently —
+          // a bare re-add here would drop drinkable's liquid flag.
+          if (!entity.has(TraitType.EDIBLE)) entity.add(new EdibleTrait());
+          break;
+        case 'drinkable': {
+          // Ratchet G1 (2026-07-17): the liquid marker — EDIBLE.liquid is
+          // what routes the entity to drinking instead of eating.
+          const edible = entity.get(TraitType.EDIBLE) as EdibleTrait | undefined;
+          if (edible) edible.liquid = true;
+          else entity.add(new EdibleTrait({ liquid: true }));
+          break;
+        }
+        case 'pushable':
+          // Defect D1 fix (2026-07-17): the catalog accepted these two but
+          // the loader had no case — `--check` passed stories that load
+          // rejected. Default config (button-style, repeatable).
+          if (!entity.has(TraitType.PUSHABLE)) entity.add(new PushableTrait({}));
+          break;
+        case 'pullable':
+          if (!entity.has(TraitType.PULLABLE)) entity.add(new PullableTrait({}));
+          break;
+        case 'concealed': {
+          // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
+          // view until searching reveals it (IdentityTrait.concealed).
+          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+          if (identity) identity.concealed = true;
+          break;
+        }
+        case 'hiding-spot': {
+          // Ratchet G3 (2026-07-17): bare = the actor may hide at any
+          // position; `with position <word>` narrows to exactly one.
+          const HIDING_POSITIONS = ['behind', 'under', 'on', 'inside'] as const;
+          const position = configValue(trait, 'position');
+          if (position !== undefined && !(HIDING_POSITIONS as readonly string[]).includes(position)) {
+            throw new LoadError(
+              `\`${position}\` is not a hiding position — use behind, under, on, or inside.`,
+              trait.span,
+            );
+          }
+          entity.add(
+            new ConcealmentTrait({
+              positions: position
+                ? [position as (typeof HIDING_POSITIONS)[number]]
+                : [...HIDING_POSITIONS],
+              quality: 'good',
+            }),
+          );
+          break;
+        }
+        case 'enterable': // ADR-218 §1a (ratchet F1) — default config, preposition `in`
+          if (!entity.has(TraitType.ENTERABLE)) entity.add(new EnterableTrait());
+          break;
+        case 'climbable': // ADR-218 §1a (ratchet F2) — default config
+          if (!entity.has(TraitType.CLIMBABLE)) entity.add(new ClimbableTrait());
           break;
         case 'light-source':
           entity.add(new LightSourceTrait());
           break;
+        case 'guard':
+        case 'passive':
+        case 'wanderer':
+        case 'follower':
+        case 'patrol': {
+          // ADR-215 Q4: CORE NPC behavior vocabulary — no `use` gate.
+          this.applyNpcAdjective(entity, irEntity, trait);
+          break;
+        }
+        case 'combatant':
+        case 'weapon': {
+          // ADR-215 combat vocabulary — `use combat` extension adjectives.
+          // The analyzer gated use-declaration and field names/types; this
+          // check is the rogue-IR backstop.
+          if (!(this.ir.uses ?? []).includes('combat')) {
+            throw new LoadError(
+              `\`${trait.name}\` is \`combat\` extension vocabulary — add \`use combat\` to the story header.`,
+              trait.span,
+            );
+          }
+          this.applyCombatAdjective(entity, irEntity, trait);
+          break;
+        }
         case 'plural': {
           const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
           if (identity) (identity as unknown as Record<string, unknown>).grammaticalNumber = 'plural';
@@ -687,6 +1399,247 @@ export class ChordStory implements Story {
         }
       }
     }
+  }
+
+  /**
+   * Per-entity NPC behavior configs stashed at composition time and
+   * registered with the NPC service at engine-ready (world ids exist by
+   * then, so patrol routes resolve). guard/passive use the plugin's
+   * pre-registered behaviors; the factory-built three get per-entity ids.
+   */
+  private readonly npcBehaviors: Array<{ irId: string; adjective: string; config: IRConfigSetting[]; span: unknown }> = [];
+
+  /**
+   * ADR-215 Q4 core NPC routing: compose NpcTrait from a behavior
+   * adjective — behaviorId (`guard`/`passive` built-in; factory behaviors
+   * get `chord.npc.<id>`), movement defaults (movement behaviors default
+   * `canMove: true`), boolean fields via NPC_FIELD_ROUTES, and room-list
+   * fields (`allowed-rooms`/`forbidden-rooms`) filled through the shared
+   * pending-entity-ref mechanism once every entity exists.
+   */
+  private applyNpcAdjective(entity: IFEntity, irEntity: IREntity, trait: IRComposition): void {
+    const isFactory = trait.name === 'wanderer' || trait.name === 'follower' || trait.name === 'patrol';
+    const data: Record<string, unknown> = {
+      behaviorId: isFactory ? `chord.npc.${irEntity.id}` : trait.name,
+      // Movement behaviors move by definition; `can-move false` overrides.
+      canMove: isFactory,
+    };
+    for (const setting of trait.config) {
+      const route = NPC_FIELD_ROUTES.get(setting.key);
+      if (!route) continue; // behavior-factory params — consumed at engine-ready
+      if (route.convert === 'boolean') {
+        if (setting.value !== 'true' && setting.value !== 'false') {
+          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
+        }
+        data[route.field] = setting.value === 'true';
+      }
+    }
+    const npcTrait = new NpcTrait(data);
+    entity.add(npcTrait);
+    // Room lists resolve after every entity exists (pass-1 ordering).
+    for (const setting of trait.config) {
+      const route = NPC_FIELD_ROUTES.get(setting.key);
+      if (route?.convert !== 'rooms') continue;
+      const target: string[] = [];
+      (npcTrait as unknown as Record<string, unknown>)[route.field] = target;
+      for (const memberIrId of setting.values ?? []) {
+        this.pendingEntityRefs.push({
+          irRefId: memberIrId,
+          ownerName: irEntity.name,
+          span: trait.span,
+          apply: (worldId) => target.push(worldId),
+        });
+      }
+    }
+    if (isFactory) {
+      this.npcBehaviors.push({ irId: irEntity.id, adjective: trait.name, config: trait.config, span: trait.span });
+    }
+  }
+
+  /**
+   * Build one per-entity NPC behavior instance from its stashed config
+   * (engine-ready time — world ids exist). Chord percentages convert to
+   * the platform's fractions here (`move-chance 50` → 0.5).
+   */
+  private buildNpcBehavior(pending: { irId: string; adjective: string; config: IRConfigSetting[]; span: unknown }): { id: string } {
+    const numberOf = (key: string): number | undefined => {
+      const setting = pending.config.find((s) => s.key === key);
+      return setting ? Number(setting.value) : undefined;
+    };
+    const boolOf = (key: string): boolean | undefined => {
+      const setting = pending.config.find((s) => s.key === key);
+      return setting ? setting.value === 'true' : undefined;
+    };
+    let behavior: { id: string };
+    switch (pending.adjective) {
+      case 'wanderer': {
+        const percent = numberOf('move-chance');
+        behavior = createWandererBehavior(percent === undefined ? {} : { moveChance: percent / 100 });
+        break;
+      }
+      case 'follower':
+        behavior = createFollowerBehavior(boolOf('immediate') === undefined ? {} : { immediate: boolOf('immediate') });
+        break;
+      case 'patrol': {
+        const routeSetting = pending.config.find((s) => s.key === 'route');
+        if (!routeSetting || (routeSetting.values ?? []).length === 0) {
+          throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span as never);
+        }
+        const route = (routeSetting.values ?? []).map((irId) => {
+          const worldId = this.worldIds.get(irId);
+          if (!worldId) throw new LoadError(`A patrol route entry was never built.`, pending.span as never);
+          return worldId;
+        });
+        behavior = createPatrolBehavior({
+          route,
+          ...(boolOf('loop') === undefined ? {} : { loop: boolOf('loop') }),
+          ...(numberOf('wait-turns') === undefined ? {} : { waitTurns: numberOf('wait-turns') }),
+        });
+        break;
+      }
+      default:
+        throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span as never);
+    }
+    behavior.id = `chord.npc.${pending.irId}`;
+    return behavior;
+  }
+
+  /**
+   * Lower one `define machine` onto the ADR-119 shapes: platform id
+   * `chord.machine.<slug>`, role bindings as `$<role>` entries (world
+   * ids), action triggers on `if.action.<gerund>`, Chord conditions as
+   * custom guards over the shared evaluator, Chord bodies as one custom
+   * effect each through the runtime's statement executor.
+   */
+  private buildMachineDefinition(machine: NonNullable<StoryIR['machines']>[number]): {
+    definition: StateMachineDefinition;
+    bindings: EntityBindings;
+  } {
+    const bindings: EntityBindings = {};
+    for (const role of machine.roles) {
+      const worldId = this.worldIds.get(role.entity);
+      if (!worldId) {
+        throw new LoadError(`Machine \`${machine.name}\`: role \`${role.name}\`'s entity was never built.`, machine.span);
+      }
+      bindings[`$${role.name}`] = worldId;
+    }
+
+    const chordGuard = (condition: IRCondition) => ({
+      type: 'custom' as const,
+      evaluate: (world: unknown) => this.evaluator.evalCondition(condition, { world: world as WorldModel }),
+    });
+    const chordEffect = (statements: Parameters<ChordRuntime['execMachineBody']>[0]) => ({
+      type: 'custom' as const,
+      execute: (world: unknown) => ({
+        events: this.runtime
+          .execMachineBody(statements, world as WorldModel)
+          .map((e) => ({ type: e.type, data: e.data, entities: e.entities as Record<string, string> })),
+      }),
+    });
+
+    const states: Record<string, StateDefinition> = {};
+    for (const state of machine.states) {
+      const transitions: TransitionDefinition[] = state.transitions.map((t) => {
+        let trigger: TransitionDefinition['trigger'];
+        switch (t.trigger.kind) {
+          case 'action': {
+            let targetEntity: string | undefined;
+            if (t.trigger.target) {
+              targetEntity = t.trigger.target.startsWith('$')
+                ? t.trigger.target
+                : this.worldIds.get(t.trigger.target);
+              if (targetEntity === undefined) {
+                throw new LoadError(`Machine \`${machine.name}\`: a trigger target was never built.`, t.span);
+              }
+            }
+            trigger = {
+              type: 'action',
+              actionId: `if.action.${t.trigger.action}`,
+              ...(targetEntity !== undefined ? { targetEntity } : {}),
+            };
+            break;
+          }
+          case 'event':
+            trigger = { type: 'event', eventId: t.trigger.event };
+            break;
+          case 'condition':
+            trigger = { type: 'condition', condition: chordGuard(t.trigger.condition) };
+            break;
+        }
+        return {
+          target: t.target,
+          trigger,
+          ...(t.condition ? { guard: chordGuard(t.condition) } : {}),
+        };
+      });
+      states[state.name] = {
+        ...(state.terminal ? { terminal: true } : {}),
+        ...(state.onEnter.length > 0 ? { onEnter: [chordEffect(state.onEnter)] } : {}),
+        ...(state.onExit.length > 0 ? { onExit: [chordEffect(state.onExit)] } : {}),
+        ...(transitions.length > 0 ? { transitions } : {}),
+      };
+    }
+
+    return {
+      definition: {
+        id: `chord.machine.${machine.name.replace(/\s+/g, '-')}`,
+        initialState: machine.initialState,
+        states,
+      },
+      bindings,
+    };
+  }
+
+  /**
+   * ADR-215 combat routing: compose `combatant` (CombatantTrait + the
+   * REQUIRED HealthTrait per ADR-226 — health/max-health route THERE) or
+   * `weapon` (WeaponTrait) from a composition's `with`-fields, via the
+   * exported COMBAT_FIELD_ROUTES table the manifest-conformance test pins.
+   */
+  private applyCombatAdjective(entity: IFEntity, irEntity: IREntity, trait: IRComposition): void {
+    const values: Record<'combatant' | 'health' | 'weapon', Record<string, unknown>> = {
+      combatant: {},
+      health: {},
+      weapon: {},
+    };
+    for (const setting of trait.config) {
+      const route = COMBAT_FIELD_ROUTES.get(setting.key);
+      if (!route) {
+        throw new LoadError(
+          `\`${irEntity.name}\`: \`${setting.key}\` has no combat field route — the compiler manifest and loader routes are out of step.`,
+          trait.span,
+        );
+      }
+      if (route.convert === 'number') {
+        const parsed = Number(setting.value);
+        if (Number.isNaN(parsed)) {
+          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` needs a number, got \`${setting.value}\`.`, trait.span);
+        }
+        values[route.trait][route.field] = parsed;
+      } else {
+        if (setting.value !== 'true' && setting.value !== 'false') {
+          throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
+        }
+        values[route.trait][route.field] = setting.value === 'true';
+      }
+    }
+
+    if (trait.name === 'weapon') {
+      entity.add(new WeaponTrait(values.weapon));
+      return;
+    }
+    // CombatantTrait REQUIRES a HealthTrait (ADR-226 §2) — auto-attach,
+    // seeded from the health/max-health fields (defaults when omitted).
+    if (!entity.has(TraitType.HEALTH)) {
+      entity.add(new HealthTrait(values.health));
+    } else if (Object.keys(values.health).length > 0) {
+      const health = entity.get(TraitType.HEALTH) as HealthTrait;
+      Object.assign(health, values.health);
+      if (values.health.health !== undefined && values.health.maxHealth === undefined) {
+        health.maxHealth = Math.max(health.maxHealth, health.health);
+      }
+    }
+    entity.add(new CombatantTrait(values.combatant));
   }
 
   /**
@@ -979,6 +1932,25 @@ function presenceSubject(cond: IRCondition, roomIrId: string): string | null {
   return null;
 }
 
+/**
+ * ADR-231 D5a platform mapping: `starts <state>` word → the paired trait's
+ * initial-value field and the boolean it sets. The language-side pairing
+ * table (which trait must be composed) is @sharpee/chord's
+ * STARTS_STATE_PAIRINGS; this is the loader's platform half — future
+ * stateful traits extend both tables, not the code.
+ */
+const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
+  string,
+  { traitType: TraitType; traitName: string; field: string; value: boolean }
+> = new Map([
+  ['locked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', field: 'isLocked', value: true }],
+  ['unlocked', { traitType: TraitType.LOCKABLE, traitName: 'lockable', field: 'isLocked', value: false }],
+  ['closed', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: false }],
+  ['open', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: true }],
+  ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: false }],
+  ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: true }],
+]);
+
 /** Chord direction word → world-model DirectionType. */
 function toDirection(word: string, at?: IREntity): DirectionType {
   const dir = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
@@ -994,6 +1966,15 @@ function supporterCapacity(kind: IRComposition): { maxItems?: number } {
 
 function configValue(comp: IRComposition, key: string): string | undefined {
   return comp.config.find((c) => c.key === key)?.value;
+}
+
+/**
+ * Ratchet R3 (ADR-234 D6): the adjective's single-entity `with` value —
+ * keyless (`lockable with the iron key`). The parser stores it under the
+ * empty key with valueKind 'name'.
+ */
+function entityConfigValue(comp: IRComposition): string | undefined {
+  return comp.config.find((c) => c.key === '' && c.valueKind === 'name')?.value;
 }
 
 /**

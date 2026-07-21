@@ -16,7 +16,7 @@ import {
   WorldChange,
   IEventProcessorWiring,
 } from '@sharpee/if-domain';
-import type { IWorldModel } from './WorldModel';
+import type { IWorldModel } from './WorldModel.js';
 
 // ── Handler types ─────────────────────────────────────────────────────
 

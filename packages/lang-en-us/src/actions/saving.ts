@@ -9,7 +9,6 @@ export const savingLanguage = {
     'save',
     'save game',
     'save [name]',
-    'save as [name]',
     'store',
     'store game'
   ],

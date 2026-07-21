@@ -1,0 +1,57 @@
+## 1.1 What a story file is
+
+A `.story` file is an optional story header followed by a flat list of
+declarations. There are only two kinds of top-level things: `create`
+blocks, which put entities into the world, and `define` blocks, which add
+vocabulary the rest of the story can use (conditions, phrases, verbs,
+text hatches, traits, actions, sequences). Everything else in the
+language lives inside one of those blocks, attached to the thing it
+belongs to. There is no top-level "rules" section: behavior is owned by
+entities and traits, not floated beside them.
+
+The smallest complete story is a room and a player:
+
+```chord
+story "Harness Smoke Test" by "Sharpee Docs"
+  id: chord-ref-smoke
+  version: 0.0.1
+
+create the Reference Desk
+  a room
+
+  A quiet corner of the documentation stacks.
+
+create the player
+  starts in the Reference Desk
+```
+
+## 1.2 Lines, blocks, and indentation
+
+Chord is line-oriented: every rule is one source line, and structure
+comes from indentation. Indentation is spaces only; a tab is a
+`lex.tab-indent` error. A block opens with its header line and closes
+either at dedent or with an explicit `end` line, depending on the block:
+
+| Block | Opens with | Closes with |
+|---|---|---|
+| story header fields | `story` line | dedent |
+| `create` block | `create` line | dedent |
+| `define phrases <locale>` | header line | dedent |
+| `define trait` | header line | `end trait` |
+| `define action` | header line | dedent |
+| `define sequence` | header line | `end sequence` |
+| `define phrase` | header line | `end phrase` |
+| `on` / `after` clause | header line | `end on` / `end after` |
+| `select` | `select …` line | `end select` |
+| `each` block | `each <name>` line | `end each` |
+| prose block | first bare line | dedent or blank line |
+
+The `end` line must match its opener: an `on` clause closes with
+`end on`, never `end after`.
+
+Four kinds of token make up a line. Words are letters followed by
+letters, digits, apostrophes, hyphens, or underscores (`cant-leave` and
+`you'd` are each one word). Numbers are plain digits with optional dotted
+parts (`3`, `1.0.0`). Strings are double-quoted with no escape sequences.
+Markers are `{name}` forms that appear only inside prose (see
+[§2.6](/chord/guide/world)).

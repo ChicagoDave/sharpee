@@ -1,0 +1,55 @@
+All forms are parser-gated on `switchable`. A `light-source` that
+switches on in a dark room banishes the darkness and describes the room;
+switching the sole light off plunges you back.
+
+The author writes:
+
+```chord
+create the Parlor
+  a room
+  dark
+
+  Heavy curtains keep the Parlor in permanent dusk. A ceiling fan hangs
+  overhead.
+
+create the brass lamp
+  aka lamp
+  switchable, light-source
+  in the Parlor
+
+  A brass oil lamp converted to electricity.
+
+create the ceiling fan
+  aka fan
+  switchable
+  scenery
+  in the Parlor
+
+  A four-bladed ceiling fan.
+
+create the player
+  starts in the Parlor
+  carries the brass lamp
+```
+
+The player sees:
+
+```text
+> look
+It's pitch dark, and you can't see a thing.
+
+> turn on the lamp
+Parlor
+Heavy curtains keep the Parlor in permanent dusk. A ceiling fan hangs overhead.
+
+The brass lamp switches on, banishing the darkness.
+
+> switch on the lamp
+The brass lamp is already on.
+
+> activate the ceiling fan
+The ceiling fan hums to life.
+
+> power off the lamp
+You switch off the brass lamp, plunging the area into darkness.
+```

@@ -1,0 +1,64 @@
+The lines between the `create` header and the first blank line compose
+the entity. Each comma-separated term is either a kind noun or a trait,
+distinguished by the article: `a room` and `a supporter` are kind nouns
+(bundles of traits), while bare words like `scenery`, `wearable`,
+`switchable`, and `light-source` are individual traits.
+
+```chord
+create the workbench
+  a supporter with capacity 3
+  scenery
+  in the Root Cellar
+
+  A scarred oak workbench.
+```
+
+`with` attaches settings. The last token of each setting is its value
+and the words before it are the key (`capacity 3`); several settings
+join with `and`. When a keyed value is an entity name, the article marks
+where the name starts (`feedable with food the handful of feed` — the
+keyword names an authored trait's data field). The built-in capability
+adjectives take their entity *directly* after `with`, no keyword:
+`lockable with the staff keycard` (ratchet R3, 2026-07-18 — the old
+`key`/`tool` keywords are load errors with fix-its).
+
+Two trait adjectives carry a contract along with their data: `cuttable`
+and `diggable`. Each takes an optional implement named directly after
+`with` (`cuttable with the rusty knife`) that the player must be
+holding; with no implement named, any attempt reaches the entity. What the cut or dig
+actually *does* is never platform policy: a cuttable entity must carry
+exactly one implementation — an `on cutting it` clause
+([§3](/chord/guide/behavior)), its own or
+from a composed trait — and the story fails to load with none, or with
+two. The same rule binds `diggable` to `on digging it`.
+
+```chord
+create the straw bale
+  aka bale, twine
+  cuttable with the rusty knife
+  in the Potting Shed
+  states: bound, loose
+
+  A bale of straw, bound tight with orange twine.
+
+  on cutting it
+    change it to loose
+    phrase twine-cut
+  end on
+```
+
+A trait can be conditional: `while` puts it under the control of a
+condition, live at play time.
+
+```chord
+create the Root Cellar
+  a room, dark while the oil lantern is not lit
+  aka cellar
+
+  Earthen walls swallow what little light there is.
+```
+
+The blank line matters: composition lines come before the first blank
+line in the block, and prose comes after it (§2.6). That rule is what
+keeps a description that happens to start with a trait-like word from
+being read as composition.

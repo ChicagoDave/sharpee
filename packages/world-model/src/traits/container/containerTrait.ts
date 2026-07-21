@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/container/containerTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Container trait allows entities to hold other entities inside them.

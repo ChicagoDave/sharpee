@@ -21,9 +21,9 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { SnippetMap } from '@sharpee/if-domain';
 import { resolveSnippetDescription } from '@sharpee/stdlib';
-import type { HandlerContext } from './types';
-import { createBlock, createBlocks, extractValue } from '../assemble';
-import { phraseAvailable, renderViaPhrase } from '../phrase-render';
+import type { HandlerContext } from './types.js';
+import { createBlock, createBlocks, extractValue } from '../assemble.js';
+import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
 
 /**
  * Core template id for the room description body (ADR-195). Realized through the

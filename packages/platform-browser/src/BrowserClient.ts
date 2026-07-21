@@ -18,20 +18,20 @@ import type {
   DOMElements,
   MenuHandlers,
   SaveContext,
-} from './types';
+} from './types.js';
 
-import { ThemeManager } from './managers/ThemeManager';
-import { SaveManager } from './managers/SaveManager';
-import { DialogManager } from './managers/DialogManager';
-import { MenuManager } from './managers/MenuManager';
-import { InputManager } from './managers/InputManager';
-import { TextDisplay } from './display/TextDisplay';
-import { StatusLine } from './display/StatusLine';
-import { AudioManager } from './audio/AudioManager';
+import { ThemeManager } from './managers/ThemeManager.js';
+import { SaveManager } from './managers/SaveManager.js';
+import { DialogManager } from './managers/DialogManager.js';
+import { MenuManager } from './managers/MenuManager.js';
+import { InputManager } from './managers/InputManager.js';
+import { TextDisplay } from './display/TextDisplay.js';
+import { StatusLine } from './display/StatusLine.js';
+import { AudioManager } from './audio/AudioManager.js';
 import {
   registerDefaultBrowserRenderers,
   type BrowserDefaultLayout,
-} from './channels';
+} from './channels/index.js';
 
 /**
  * Default `ClientCapabilities` profile for the browser surface — full
@@ -90,6 +90,15 @@ export class BrowserClient implements BrowserClientInterface {
    */
   private pendingEngineSave: ISaveData | null = null;
 
+  /**
+   * Set when a restart is confirmed (ADR-248). The reboot itself is
+   * deferred until the in-flight turn's final packet has flushed —
+   * executeCommand() checks this after executeTurn() resolves. Also
+   * gates the per-turn autosave so the restart turn cannot recreate
+   * the envelope the confirmation just deleted.
+   */
+  private pendingReboot = false;
+
   // DOM elements reference
   private elements!: DOMElements;
 
@@ -138,10 +147,23 @@ export class BrowserClient implements BrowserClientInterface {
   /**
    * Connect to game engine and set up event handlers.
    * Call after creating the engine.
+   *
+   * Safe to call again on a restart reboot (ADR-248): the second call
+   * re-points world-bound state and re-subscribes the channel renderer
+   * to the new engine, but does NOT recreate the DOM-bound managers —
+   * their listeners are already wired to the page and would double-bind.
    */
   connectEngine(engine: GameEngine, world: WorldModel): void {
     this.engine = engine;
     this.world = world;
+
+    if (this.saveManager) {
+      // Reboot path: managers exist; re-point and re-subscribe only.
+      this.saveManager.setWorld(world);
+      this.setupChannelRenderer();
+      this.saveManager.syncSavesToWorld();
+      return;
+    }
 
     // Now create managers that need world reference
     this.saveManager = new SaveManager({
@@ -363,8 +385,10 @@ export class BrowserClient implements BrowserClientInterface {
       // Auto-save piggy-backs on the per-turn channel packet. ADR-163
       // §1: channel:packet fires every turn after text-service runs,
       // so it's the single dependable signal regardless of whether
-      // any blocks were emitted that turn.
-      if (this.config.autoSave && turn > 0) {
+      // any blocks were emitted that turn. Skipped when a restart is
+      // pending (ADR-248): the restart turn's packet must not recreate
+      // the autosave that confirmation deleted.
+      if (this.config.autoSave && turn > 0 && !this.pendingReboot) {
         const engineSave = this.engineCreateSave();
         this.saveManager.performAutoSave(engineSave, this.getSaveContext());
       }
@@ -579,6 +603,45 @@ export class BrowserClient implements BrowserClientInterface {
       const message = error instanceof Error ? error.message : String(error);
       this.textDisplay.displayText(`[Error: ${message}]`);
     }
+
+    // ADR-248: a confirmed restart defers its reboot to here — the turn is
+    // fully complete, so the ack ("The story restarts.") has rendered.
+    if (this.pendingReboot) {
+      this.pendingReboot = false;
+      await this.disposeAndReboot();
+    }
+  }
+
+  /**
+   * Dispose the current engine and re-run the story's boot path (ADR-248).
+   *
+   * Stops the engine if it is still running (menu-path restarts have no
+   * turn in flight, so the engine never stopped itself), then invokes the
+   * configured `reboot` callback — the story's own `start()` — which
+   * builds a fresh story/world/engine and reconnects this client. A
+   * failed reboot displays the real error (never a parse fallback);
+   * without a `reboot` callback, falls back to a full page reload.
+   */
+  private async disposeAndReboot(): Promise<void> {
+    this.engine.stop('restart');
+
+    if (!this.config.reboot) {
+      window.location.reload();
+      return;
+    }
+
+    // Reset per-session display state; the new boot's turn/score channels
+    // re-seed these from the fresh engine.
+    this.currentScore = 0;
+    this.currentTurn = 0;
+    this.turnOffset = 0;
+
+    try {
+      await this.config.reboot();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.textDisplay.displayText(`[Restart failed: ${message}]`);
+    }
   }
 
   /**
@@ -614,9 +677,13 @@ export class BrowserClient implements BrowserClientInterface {
 
       onRestartRequested: async (_context: IRestartContext): Promise<boolean> => {
         if (confirm('Are you sure you want to restart? All unsaved progress will be lost.')) {
-          // Clear autosave and reload
+          // ADR-248: the autosave envelope dies the moment restart is
+          // confirmed — a page reload at any point after this boots a
+          // fresh game. The reboot itself is deferred until the turn's
+          // final packet (the ack) has flushed; executeCommand() acts on
+          // the flag after executeTurn() resolves.
           this.saveManager.clearAutosave();
-          window.location.reload();
+          this.pendingReboot = true;
           return true;
         }
         return false;
@@ -681,8 +748,15 @@ export class BrowserClient implements BrowserClientInterface {
   }
 
   private async handleRestart(): Promise<void> {
+    // Menu-path restart: no engine turn is in flight, so nothing would
+    // ever act on the deferred flag — confirm via the same hook, then
+    // reboot immediately (ADR-248).
     const hooks = this.getSaveRestoreHooks();
-    await hooks.onRestartRequested?.({});
+    const confirmed = await hooks.onRestartRequested?.({});
+    if (confirmed) {
+      this.pendingReboot = false;
+      await this.disposeAndReboot();
+    }
   }
 
   private handleQuit(): void {

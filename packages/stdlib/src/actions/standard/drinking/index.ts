@@ -2,5 +2,5 @@
  * Drinking action - consume drinkable items
  */
 
-export { drinkingAction } from './drinking';
-export * from './drinking-events';
+export { drinkingAction } from './drinking.js';
+export * from './drinking-events.js';

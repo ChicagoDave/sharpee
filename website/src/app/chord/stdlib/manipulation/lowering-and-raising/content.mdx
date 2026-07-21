@@ -1,0 +1,115 @@
+`lower :target` and `raise`/`lift :target` parse out of the box, but these
+verbs have **no standard behavior at all** — lowering the basket, the
+drawbridge, and your voice are three different mutations, so the platform
+refuses to invent one (ADR-090). Unhandled, the player sees the refusal
+`if.action.lowering.cant_lower_that` (`cant_raise_that` for raising) and
+nothing else. Never expect a default here; there is none.
+
+Giving an entity real lower/raise behavior from a `.story` file is the
+dispatch-action pattern (the same one behind the friendly zoo's `pet` and
+`feed`): a `define action` owns the verb and its misses, and a trait's
+`on <verb>ing it` clause carries each entity's behavior.
+
+The author writes:
+
+```chord
+define action lowering
+  grammar
+    lower :target
+  the target must be reachable
+  refuse without target: lower-what
+  otherwise refuse cant-lower
+
+  phrases en-US
+    lower-what:
+      Lower what?
+    cant-lower:
+      That isn't something you can lower.
+
+define trait windlass-basket
+  states, reversible: raised, lowered
+
+  phrases en-US
+    basket-lowered:
+      The windlass creaks as the basket descends into the shaft.
+    already-down:
+      The basket is already at the bottom.
+
+  on lowering it
+    it must be raised: already-down
+    change it to lowered
+    phrase basket-lowered
+  end on
+end trait
+
+create the Well Head
+  a room
+
+  A stone rim, a windlass, and a long drop.
+
+create the wicker basket
+  aka basket
+  windlass-basket
+  scenery
+  in the Well Head
+
+  A wicker basket on a rope, riding at the rim.
+
+create the windlass crank
+  aka crank
+  scenery
+  in the Well Head
+
+  A worn oak crank, polished smooth by many hands.
+
+create the player
+  starts in the Well Head
+```
+
+The player sees:
+
+```transcript
+> lower the crank
+That isn't something you can lower.
+
+> lower the basket
+The windlass creaks as the basket descends into the shaft.
+
+> lower the basket
+The basket is already at the bottom.
+
+> raise the basket
+You can't raise the wicker basket.
+```
+
+Every line but the last is the story's — the action's `otherwise refuse`
+miss, the trait's state guard and mutation — and the last line is the
+platform's entire contribution to this verb family: `cant_raise_that`.
+
+| | lower (`if.action.lowering.*`) | raise (`if.action.raising.*`) |
+|---|---|---|
+| Refusals | `no_target` · `cant_lower_that` (the only standard keys) | `no_target` · `cant_raise_that` |
+| Success | none — your dispatch action's and trait's phrases speak | none |
+| Events | none standard — a registered behavior emits its own | none standard |
+
+Three boundaries to know. The fall-through is well-defined (ADR-229): a
+clause gated out by `while` or a consumed `, once` simply sits out, and
+the command falls through to the action body, the next trait, and finally
+the `otherwise refuse` miss. An `on lowering it` clause directly on an
+*entity* is a load error with a pointed message — these verbs never
+consult entity-level interceptors; the trait/action pattern above is the
+way. And from TypeScript the equivalent is a capability behavior
+registered for `if.action.lowering` (the Sharpee Way — how Dungeo's basket
+works).
+
+TURN left this family on its own terms: `turn`/`rotate`/`twist X` still
+parse (just below the switching phrasal forms, so `turn lamp on` still
+switches, §7.1) and the unhandled refusal is still
+`if.action.turning.cant_turn_that`, but turning now wears cutting's dual
+surface without the trait gate (§2.8) — an `on turning it` clause directly
+on the entity is consulted (turning is one of the 38 wired actions), or a
+TypeScript capability behavior for `if.action.turning` takes the whole
+turn; no eligibility trait, no define-action scaffolding needed. WAVE and
+WIND — the other classic per-entity verbs — still have no binding at all:
+no grammar, no action; a story wanting them defines the whole verb with
+`define action`, exactly as above.

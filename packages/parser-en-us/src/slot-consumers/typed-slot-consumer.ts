@@ -5,7 +5,7 @@
 
 import { SlotType, SlotMatch } from '@sharpee/if-domain';
 import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
-import { SlotConsumer, SlotConsumerContext } from './slot-consumer';
+import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
 
 /**
  * Consumer for typed value slots (NUMBER, ORDINAL, TIME, DIRECTION)

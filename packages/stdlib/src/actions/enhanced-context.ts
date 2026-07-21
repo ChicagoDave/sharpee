@@ -5,7 +5,7 @@
  * formatted events while maintaining the event-driven architecture.
  */
 
-import { createEvent as coreCreateEvent, ISemanticEvent } from '@sharpee/core';
+import { createEvent as coreCreateEvent, createSeededRandom, ISemanticEvent, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
 import {
   ActionContext,
@@ -15,16 +15,17 @@ import {
   ScopeCheckResult,
   ScopeErrors,
   ImplicitTakeResult
-} from './enhanced-types';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
-import { StandardScopeResolver } from '../scope/scope-resolver';
-import { ValidatedCommand } from '../validation/types';
+} from './enhanced-types.js';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
+import { StandardScopeResolver } from '../scope/scope-resolver.js';
+import { ValidatedCommand } from '../validation/types.js';
+import { nounPhraseFor } from '../utils/index.js';
 
 // Import taking action for implicit takes
 // This is safe from circular dependencies because:
 // - taking.ts imports from enhanced-types.ts (not enhanced-context.ts)
 // - enhanced-context.ts imports from taking.ts
-import { takingAction } from './standard/taking/taking';
+import { takingAction } from './standard/taking/taking.js';
 
 /**
  * Internal implementation of unified action context
@@ -35,17 +36,28 @@ class InternalActionContext implements ActionContext {
   private sequenceCounter = 0;
   public readonly scopeResolver: ScopeResolver;
   public sharedData: Record<string, any> = {};
-  
+
+  /**
+   * Action RNG stream (ADR-231 D6). Production execution flows through
+   * the engine's `createActionContext` factory, which threads the
+   * engine-owned persisted stream; this stdlib factory (interceptor
+   * binding, unit tests) falls back to a fresh time-seeded stream when
+   * none is provided.
+   */
+  public readonly random: SeededRandom;
+
   constructor(
     public readonly world: WorldModel,
     public readonly player: IFEntity,
     public readonly currentLocation: IFEntity,
     public readonly action: Action,
     public readonly command: ValidatedCommand,
-    scopeResolver?: ScopeResolver
+    scopeResolver?: ScopeResolver,
+    random?: SeededRandom
   ) {
     // Use provided scope resolver or create a standard one
     this.scopeResolver = scopeResolver || new StandardScopeResolver(world);
+    this.random = random ?? createSeededRandom();
   }
   
   // World querying methods
@@ -149,12 +161,17 @@ class InternalActionContext implements ActionContext {
     // Case 3: Reachable but not carried - attempt implicit take
     // Check if entity can be taken (not scenery, room, etc.)
     if (!this.canTake(entity)) {
+      // This is taking's refusal whatever action invoked the helper, so
+      // the key is emitted fully-qualified (ADR-231 D1) — a consuming
+      // action's blocked() must render taking's message, never prefix
+      // the key into its own namespace.
       return {
         ok: false,
         error: {
           valid: false,
-          error: 'fixed_in_place',
-          params: { item: entity.name }
+          error: `${takingAction.id}.fixed_in_place`,
+          errorQualified: true,
+          params: { item: nounPhraseFor(entity) }
         }
       };
     }
@@ -179,25 +196,31 @@ class InternalActionContext implements ActionContext {
       }
     };
 
-    // Create a sub-context for the taking action
+    // Create a sub-context for the taking action (inherits this
+    // context's RNG stream so draws stay on the one action stream)
     const takeContext = new InternalActionContext(
       this.world,
       this.player,
       this.currentLocation,
       takingAction,
       takeCommand,
-      this.scopeResolver
+      this.scopeResolver,
+      this.random
     );
 
     // Run the taking action's validate phase
     const validation = takingAction.validate(takeContext);
     if (!validation.valid) {
-      // Take validation failed - return the error
+      // Take validation failed - return the error. Provenance rides along
+      // (ADR-231 D1): a qualified inner error (scope key, interceptor
+      // veto, authored cantTakeMessage) must not get re-prefixed by the
+      // consuming action's blocked().
       return {
         ok: false,
         error: {
           valid: false,
           error: validation.error || 'cannot_take',
+          errorQualified: validation.errorQualified,
           params: validation.params
         }
       };
@@ -259,31 +282,34 @@ class InternalActionContext implements ActionContext {
     required: ScopeLevel,
     actual: ScopeLevel,
     entity: IFEntity
-  ): { valid: false; error: string; params?: Record<string, any> } {
-    const params = { item: entity.name };
+  ): { valid: false; error: string; errorQualified: true; params?: Record<string, any> } {
+    // The `scope.*` keys are a shared namespace registered once in
+    // lang-en-us (ADR-231 D1) — fully-qualified, so no consuming
+    // action's blocked() may prefix them into its own namespace.
+    const params = { item: nounPhraseFor(entity) };
 
     // If they don't know about it at all
     if (actual === ScopeLevel.UNAWARE) {
-      return { valid: false, error: ScopeErrors.NOT_KNOWN, params };
+      return { valid: false, error: ScopeErrors.NOT_KNOWN, errorQualified: true, params };
     }
 
     // They know about it but can't see it
     if (required >= ScopeLevel.VISIBLE && actual < ScopeLevel.VISIBLE) {
-      return { valid: false, error: ScopeErrors.NOT_VISIBLE, params };
+      return { valid: false, error: ScopeErrors.NOT_VISIBLE, errorQualified: true, params };
     }
 
     // They can see it but can't reach it
     if (required >= ScopeLevel.REACHABLE && actual < ScopeLevel.REACHABLE) {
-      return { valid: false, error: ScopeErrors.NOT_REACHABLE, params };
+      return { valid: false, error: ScopeErrors.NOT_REACHABLE, errorQualified: true, params };
     }
 
     // They need to be carrying it but aren't
     if (required >= ScopeLevel.CARRIED && actual < ScopeLevel.CARRIED) {
-      return { valid: false, error: ScopeErrors.NOT_CARRIED, params };
+      return { valid: false, error: ScopeErrors.NOT_CARRIED, errorQualified: true, params };
     }
 
     // Generic fallback
-    return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, params };
+    return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, errorQualified: true, params };
   }
   
   /**
@@ -314,59 +340,48 @@ class InternalActionContext implements ActionContext {
 
   /**
    * Internal event creation logic
-   * This wraps the core createEvent to match our event pattern
+   *
+   * Pass-through is the ONLY payload shape: `eventData` becomes the event's
+   * `data` unchanged (action status events additionally get a timestamp
+   * default), matching the engine's closure factory
+   * (`engine/src/action-context-factory.ts`). The two implementations must
+   * not diverge — the old type-sniffing legacy wrap here nested a story
+   * event's `messageId` under `data.data`, where the prose pipeline (which
+   * reads `messageId`/`params` at the event-data TOP level — see
+   * `engine/src/prose-pipeline/handlers/generic.ts`) could not find it, so
+   * `insert X in Y` swallowed `after putting it` phrases that direct
+   * `put X in Y` (engine context) rendered fine.
+   *
+   * Emit audit (platform-issue-sweep Phase 3b, 2026-07-20): no production
+   * consumer expects the legacy `{actionId, timestamp, data: {...}}` wrap —
+   * `event.data.data` is dereferenced nowhere in packages/ source (engine
+   * prose pipeline, event-processor, if-services, channel-service, chord,
+   * story-loader all read top-level fields); capability-dispatch effect
+   * payloads (`capability-dispatch.ts` effectsToEvents) and lifecycle
+   * interceptor emissions are flat `{messageId, ...}` shapes that the wrap
+   * actively broke under this context. The tolerant readers
+   * (`tests/test-utils` expectEvent, searching-interceptor's
+   * `data?.data ?? data`) accept both shapes. The wrap is therefore removed,
+   * not conditionally kept.
    */
   private createEventInternal(
-    type: string, 
+    type: string,
     eventData: any
   ): ISemanticEvent {
-    // Special handling for action status events
-    // These should NOT be double-wrapped
+    const entities = this.getEventEntities();
+
+    // Action status events keep their timestamp default (never double-wrapped)
     if (type === 'action.error' || type === 'action.success' || type === 'action.blocked') {
-      // For action status events, the data IS the payload
       const payload = {
         ...eventData,
         timestamp: eventData.timestamp || Date.now()
       };
-      
-      const entities = this.getEventEntities();
       return coreCreateEvent(type, payload, entities);
     }
-    
-    // For domain events (like if.action.inventory, if.event.examined), 
-    // pass the data directly without wrapping
-    if (type.startsWith('if.')) {
-      const entities = this.getEventEntities();
-      return coreCreateEvent(type, eventData, entities);
-    }
-    
-    // If the data already has our structure, extract it
-    if (eventData && typeof eventData === 'object' && 'data' in eventData) {
-      const { actionId, reason, data, timestamp } = eventData;
-      
-      // Build payload following our standard structure
-      const payload = {
-        actionId: actionId || this.action.id,
-        timestamp: timestamp || Date.now(),
-        ...(reason && { reason }),
-        data: data || {}
-      };
-      
-      // Get entities
-      const entities = this.getEventEntities();
-      
-      return coreCreateEvent(type, payload, entities);
-    }
-    
-    // Legacy format - wrap in our structure
-    const payload = {
-      actionId: this.action.id,
-      timestamp: Date.now(),
-      data: eventData
-    };
-    
-    const entities = this.getEventEntities();
-    return coreCreateEvent(type, payload, entities);
+
+    // Everything else — if.* domain events AND story/custom event types —
+    // passes through unchanged.
+    return coreCreateEvent(type, eventData, entities);
   }
   
   /**
@@ -402,7 +417,7 @@ class InternalActionContext implements ActionContext {
    * Helper to create context for another action (used in composite actions)
    */
   createSubContext(action: Action): ActionContext {
-    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver);
+    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver, this.random);
     // Share the same data store with sub-context
     subContext.sharedData = this.sharedData;
     return subContext;
@@ -419,7 +434,8 @@ export function createActionContext(
   player: IFEntity,
   action: Action,
   command: ValidatedCommand,
-  scopeResolver?: ScopeResolver
+  scopeResolver?: ScopeResolver,
+  random?: SeededRandom
 ): ActionContext {
   // Get immediate location (container/supporter/room that player is in)
   const locationId = world.getLocation(player.id);
@@ -427,7 +443,7 @@ export function createActionContext(
   if (!currentLocation) {
     throw new Error('Player has no valid location');
   }
-  return new InternalActionContext(world, player, currentLocation, action, command, scopeResolver);
+  return new InternalActionContext(world, player, currentLocation, action, command, scopeResolver, random);
 }
 
 /**

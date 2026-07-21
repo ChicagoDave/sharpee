@@ -177,7 +177,6 @@ export interface FindOptions {
  */
 export interface ContentsOptions {
     recursive?: boolean;
-    includeWorn?: boolean;
     visibleOnly?: boolean;
 }
 /**
@@ -280,6 +279,11 @@ export interface ValidationResult {
     valid: boolean;
     /** Error code if validation failed */
     error?: string;
+    /**
+     * When true, `error` is already a fully-qualified message id and must
+     * not be prefixed with the action id (ADR-231 D1).
+     */
+    errorQualified?: boolean;
     /** Parameters for error message formatting */
     params?: Record<string, any>;
 }
@@ -433,7 +437,7 @@ export type WorldChangeType = 'move' | 'create' | 'delete' | 'modify' | 'relate'
  * - Localization and customization
  */
 import type { ITextBlock } from '@sharpee/text-blocks';
-import type { LocaleSettings, RenderContext } from './phrase';
+import type { LocaleSettings, RenderContext } from './phrase.js';
 /**
  * Structured help information for an action
  */
@@ -523,6 +527,18 @@ export interface LanguageProvider {
      */
     renderMessage?(messageId: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
     /**
+     * Render a template STRING through the phrase pipeline — the body of
+     * {@link renderMessage} minus the registry lookup (ADR-250 D4). Used by
+     * the engine's phrasebook read point, where the winning template comes
+     * from a book resolved against world state, not from the messages map.
+     *
+     * @param template The template text (placeholder syntax as registered)
+     * @param params Parameter/producer bindings keyed by placeholder name
+     * @param ctx The per-message render context (world, settings, seams)
+     * @returns The realized text blocks
+     */
+    renderTemplate?(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
+    /**
      * Check if a message exists
      * @param messageId The message identifier
      * @returns True if the message exists
@@ -590,8 +606,8 @@ export interface LanguageProviderRegistry {
  * Language implementations must provide both text/messaging capabilities
  * and parser vocabulary/grammar rules.
  */
-import { LanguageProvider } from './language-provider';
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-contracts/vocabulary-types';
+import { LanguageProvider } from './language-provider.js';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-contracts/vocabulary-types.js';
 /**
  * Language-specific grammar pattern definition
  * Different from the vocabulary-types GrammarPattern
@@ -751,7 +767,7 @@ export interface ParserLanguageProvider extends LanguageProvider {
  * The parser is world-agnostic and produces parsed commands
  * that must be resolved against the world model.
  */
-import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types';
+import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types.js';
 import type { ISystemEvent } from '@sharpee/core';
 /**
  * Base parser interface that can be extended
@@ -885,7 +901,7 @@ export interface Parser extends BaseParser {
  *
  * @internal
  */
-import { Token } from './parser-types';
+import { Token } from './parser-types.js';
 /**
  * A candidate command from the parser
  * This is world-agnostic - just the grammatical structure
@@ -1013,7 +1029,7 @@ export declare enum ParseErrorType {
  * The actual parser implementations are in separate packages
  * and must be registered before use.
  */
-import { Parser } from './parser-types';
+import { Parser } from './parser-types.js';
 /**
  * Registry of parser constructors
  * Language providers are passed as 'any' to avoid coupling
@@ -1309,7 +1325,7 @@ export type GrammarPatternName = keyof typeof GrammarPatterns;
  * - Story-specific vocabulary
  * - Dynamic entity vocabulary
  */
-import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types';
+import { VocabularyEntry, VocabularySet, VocabularyProvider, PartOfSpeech, EntityVocabulary, VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types.js';
 /**
  * Central vocabulary registry
  */
@@ -1406,8 +1422,8 @@ export declare const vocabularyRegistry: VocabularyRegistry;
  * Vocabulary adapters for converting language-specific vocabulary
  * to the standard vocabulary types used by the parser
  */
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types';
-import { ParserLanguageProvider } from '../parser-language-provider';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from './vocabulary-types.js';
+import { ParserLanguageProvider } from '../parser-language-provider.js';
 /**
  * Adapt verb vocabulary from language provider format
  */
@@ -1557,23 +1573,10 @@ export type TypedSlotValue = {
  */
 export interface PatternBuilder {
     /**
-     * Require a slot's entity to have a specific trait
-     * This is the primary method for semantic constraints in grammar.
-     * @param slot The slot name from the pattern
-     * @param traitType The trait type constant (e.g., TraitType.CONTAINER)
-     *
-     * @example
-     * ```typescript
-     * grammar.define('board :target')
-     *   .hasTrait('target', TraitType.ENTERABLE)
-     *   .mapsTo('if.action.entering')
-     *   .build();
-     * ```
-     */
-    hasTrait(slot: string, traitType: string): PatternBuilder;
-    /**
-     * Define a constraint for a slot (advanced use)
-     * Prefer .hasTrait() for trait-based constraints.
+     * Define a constraint for a slot.
+     * `.where(slot, scope => scope...)` scope constraints (including the
+     * ScopeBuilder's `.hasTrait()`) are the one parse-time gating mechanism;
+     * trait-based refusal lives in each action's validate().
      * @param slot The slot name from the pattern
      * @param constraint The constraint to apply
      */
@@ -1788,15 +1791,9 @@ export interface ActionGrammarBuilder {
      */
     directions(directionMap: Record<string, string[]>): ActionGrammarBuilder;
     /**
-     * Require a slot's entity to have a specific trait (applies to all generated patterns)
-     * This is the primary method for semantic constraints in grammar.
-     * @param slot The slot name from the pattern
-     * @param traitType The trait type constant (e.g., TraitType.CONTAINER)
-     */
-    hasTrait(slot: string, traitType: string): ActionGrammarBuilder;
-    /**
-     * Define a constraint for a slot (applies to all generated patterns)
-     * Prefer .hasTrait() for trait-based constraints.
+     * Define a constraint for a slot (applies to all generated patterns).
+     * `.where()` scope constraints are the one parse-time gating mechanism;
+     * trait-based refusal lives in each action's validate().
      * @param slot The slot name from the pattern
      * @param constraint The constraint to apply
      */
@@ -1873,8 +1870,6 @@ export interface SemanticMapping {
 export interface SlotConstraint {
     name: string;
     constraints: Constraint[];
-    /** Required trait types the entity must have (from .hasTrait()) */
-    traitFilters?: string[];
     /** How the parser should handle this slot (default: ENTITY) */
     slotType?: SlotType;
     /** For VOCABULARY slots: the category name to match against */
@@ -1928,6 +1923,14 @@ export interface PatternMatch {
     confidence: number;
     slots: Map<string, SlotMatch>;
     consumed: number;
+    /**
+     * Literal specificity (ADR-231 D2b): count of input words consumed by the
+     * pattern's literal/alternate tokens (as opposed to slots). A rule whose
+     * literals consume words outranks a rule whose unconstrained slot swallows
+     * the same words. Tiebreak order: confidence desc → rule priority desc →
+     * literalSpecificity desc → stable registration order.
+     */
+    literalSpecificity?: number;
     semantics?: SemanticProperties;
     matchedTokens?: {
         verb?: string;
@@ -1944,7 +1947,7 @@ export interface PatternMatch {
  * @file Pattern Compiler Interface
  * @description Language-agnostic interface for compiling grammar patterns
  */
-import { CompiledPattern } from './grammar-builder';
+import { CompiledPattern } from './grammar-builder.js';
 /**
  * Pattern compiler interface
  * Language-specific implementations handle their own syntax
@@ -1986,9 +1989,9 @@ export declare class PatternSyntaxError extends Error {
  * @file Grammar Engine Base
  * @description Abstract base class for grammar matching engines
  */
-import { Token } from '../parser-contracts/parser-types';
-import { GrammarRule, PatternMatch, GrammarContext, GrammarBuilder } from './grammar-builder';
-import { PatternCompiler } from './pattern-compiler';
+import { Token } from '../parser-contracts/parser-types.js';
+import { GrammarRule, PatternMatch, GrammarContext, GrammarBuilder } from './grammar-builder.js';
+import { PatternCompiler } from './pattern-compiler.js';
 /**
  * Grammar matching options
  */
@@ -2055,7 +2058,7 @@ export declare abstract class GrammarEngine {
  * @file Scope Builder Implementation
  * @description Concrete implementation of the scope builder interface
  */
-import { ScopeBuilder, ScopeConstraint, PropertyConstraint, FunctionConstraint } from './grammar-builder';
+import { ScopeBuilder, ScopeConstraint, PropertyConstraint, FunctionConstraint } from './grammar-builder.js';
 /**
  * Concrete scope builder implementation
  */
@@ -2092,7 +2095,7 @@ export declare function scope(): ScopeBuilder;
  * Vocabulary categories are registered with optional context predicates.
  * The parser only considers a pattern if its vocabulary is active in the current context.
  */
-import { GrammarContext } from './grammar-builder';
+import { GrammarContext } from './grammar-builder.js';
 /**
  * Configuration for a vocabulary category
  */
@@ -2545,7 +2548,7 @@ export interface IChannelRegistry {
  *
  * @see ADR-163 — Channel-Service Platform — §1, §3, §4, §5, §11
  */
-import type { ChannelContentType, ChannelEmitPolicy, ChannelMode, ClientCapabilities } from './types';
+import type { ChannelContentType, ChannelEmitPolicy, ChannelMode, ClientCapabilities } from './types.js';
 /**
  * Channel definition as it appears in a CMGT manifest (ADR-163 §11).
  *

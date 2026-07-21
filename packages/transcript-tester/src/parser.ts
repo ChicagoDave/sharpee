@@ -14,7 +14,7 @@ import {
   Directive,
   GoalDefinition,
   Assertion
-} from './types';
+} from './types.js';
 
 /**
  * Parse a transcript file from disk

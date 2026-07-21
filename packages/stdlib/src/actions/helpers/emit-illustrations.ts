@@ -5,7 +5,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { IFEntity } from '@sharpee/world-model';
-import { ActionContext } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
 
 /**
  * Emit illustration events for an entity's active annotations.

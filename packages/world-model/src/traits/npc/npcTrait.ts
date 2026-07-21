@@ -5,20 +5,18 @@
  * NPCs participate in the turn cycle and can have behaviors.
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import { EntityId } from '@sharpee/core';
 
 /**
  * Interface for NPC trait data
  */
 export interface INpcData {
-  /** Whether this NPC is currently alive */
-  isAlive?: boolean;
-
-  /** Whether this NPC is conscious (can act) */
-  isConscious?: boolean;
-
-  /** Whether this NPC is hostile to the player */
+  /**
+   * Whether this NPC is hostile to the player.
+   * (Life-state — alive/conscious — lives on HealthTrait, ADR-226; hostility moves
+   * to disposition in ADR-223 child C.)
+   */
   isHostile?: boolean;
 
   /** Whether this NPC can move between rooms */
@@ -78,8 +76,6 @@ export class NpcTrait implements ITrait, INpcData {
   readonly type = 'npc' as const;
 
   // State properties
-  isAlive: boolean;
-  isConscious: boolean;
   isHostile: boolean;
 
   // Movement properties
@@ -109,8 +105,6 @@ export class NpcTrait implements ITrait, INpcData {
 
   constructor(data: INpcData = {}) {
     // Set defaults and merge with provided data
-    this.isAlive = data.isAlive ?? true;
-    this.isConscious = data.isConscious ?? true;
     this.isHostile = data.isHostile ?? false;
     this.canMove = data.canMove ?? false;
     this.allowedRooms = data.allowedRooms;
@@ -122,13 +116,6 @@ export class NpcTrait implements ITrait, INpcData {
     this.knowledge = data.knowledge;
     this.goals = data.goals;
     this.customProperties = data.customProperties;
-  }
-
-  /**
-   * Check if NPC can act (alive and conscious)
-   */
-  get canAct(): boolean {
-    return this.isAlive && this.isConscious;
   }
 
   /**
@@ -162,38 +149,6 @@ export class NpcTrait implements ITrait, INpcData {
    */
   makePassive(): void {
     this.isHostile = false;
-  }
-
-  /**
-   * Knock out this NPC (unconscious but alive)
-   */
-  knockOut(): void {
-    this.isConscious = false;
-  }
-
-  /**
-   * Wake up this NPC
-   */
-  wakeUp(): void {
-    if (this.isAlive) {
-      this.isConscious = true;
-    }
-  }
-
-  /**
-   * Kill this NPC
-   */
-  kill(): void {
-    this.isAlive = false;
-    this.isConscious = false;
-  }
-
-  /**
-   * Revive this NPC
-   */
-  revive(): void {
-    this.isAlive = true;
-    this.isConscious = true;
   }
 
   /**

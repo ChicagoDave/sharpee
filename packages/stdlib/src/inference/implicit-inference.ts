@@ -10,8 +10,8 @@
  */
 
 import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
-import { Action } from '../actions/enhanced-types';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
+import { Action } from '../actions/enhanced-types.js';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
 
 /**
  * Result of attempting implicit inference

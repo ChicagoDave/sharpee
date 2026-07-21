@@ -1,0 +1,65 @@
+title: Fernhill A4 — the dark cellar and the oil lamp
+story: fernhill
+description: The cellar is dark; without light the vaults cannot be seen.
+  The oil lamp (light-source, switchable) on the stairs lights the way.
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> search the doormat
+[OK: contains "key"]
+
+> take the tarnished key
+[OK: contains "You take the tarnished key"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+> north
+[OK: contains "Cellar Stairs"]
+
+> unlock the cellar door with the tarnished key
+[OK: contains "unlock"]
+
+> open the cellar door
+[OK: contains "open"]
+
+# Into the dark: the room's description must NOT be visible
+> down
+[OK: not contains "Brick vaults"]
+
+> look
+[OK: not contains "Brick vaults"]
+
+# Fetch the lamp and light it
+> up
+[OK: contains "Cellar Stairs"]
+
+> take the oil lamp
+[OK: contains "Taken"]
+
+> turn on the oil lamp
+[OK: contains "on"]
+
+> down
+[OK: contains "Brick vaults"]
+[OK: contains "skitters away from your lamplight"]
+
+# D3: the drip keeps its own time (presence-gated, cycling)…
+> wait
+[OK: contains_any "a drop falls" "its own time"]
+
+# …and the startle was `, once` — it never repeats
+> wait
+[OK: contains_any "a drop falls" "its own time"]
+[OK: not contains "skitters"]
+
+> turn off the oil lamp
+[OK: contains "off"]
+
+> look
+[OK: not contains "Brick vaults"]

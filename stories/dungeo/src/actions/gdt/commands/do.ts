@@ -141,14 +141,13 @@ function getTraitProperties(traitName: string, trait: any): string | null {
     case 'readable':
       return `text="${(trait.text ?? '').substring(0, 30)}${(trait.text?.length ?? 0) > 30 ? '...' : ''}"`;
     case 'wearable':
-    case 'clothing':
       return `worn=${trait.worn}`;
     case 'door':
       return `connects=${trait.room1 ?? '?'}<->${trait.room2 ?? '?'}`;
     case 'scenery':
       return 'fixed';
     case 'room':
-      return `visited=${trait.visited}, dark=${trait.isDark}`;
+      return `visited=${trait.visited}, dark=${trait.requiresLight}`;
     default:
       return null;
   }

@@ -24,6 +24,7 @@ import {
   DirectionType,
   VisibilityBehavior
 } from '@sharpee/world-model';
+import { SeededRandom } from '@sharpee/core';
 import { ParsedCommandTransformer } from '@sharpee/engine';
 import { GRUE_DEATH_ACTION_ID } from '../actions/grue-death/types';
 import { getGDTFlags } from '../actions/gdt/gdt-context';
@@ -142,10 +143,11 @@ function isRoomDark(world: WorldModel, roomId: string): boolean {
 }
 
 /**
- * 25% survival roll - returns true if player survives
+ * 25% survival roll (FORTRAN PROB(25,25)) - returns true if player survives.
+ * Seeded (ADR-227 AC-2/AC-4: no Math.random() in death-related code).
  */
-function survivalRoll(): boolean {
-  return Math.random() < 0.25;
+function survivalRoll(rng: SeededRandom): boolean {
+  return rng.chance(0.25);
 }
 
 /**
@@ -166,7 +168,7 @@ function isGoingAction(parsed: IParsedCommand): boolean {
  * - 25% chance to skip grue check entirely (safe path)
  * - On grue path: invalid exit, blocked exit, or dark destination = death
  */
-export function createGrueDeathTransformer(): ParsedCommandTransformer {
+export function createGrueDeathTransformer(rng: SeededRandom): ParsedCommandTransformer {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
     // GDT immortality mode (ND command)
     if (isImmortal(world)) return parsed;
@@ -183,7 +185,7 @@ export function createGrueDeathTransformer(): ParsedCommandTransformer {
 
     // SURVIVAL ROLL: 25% chance to skip grue check entirely
     // Per FORTRAN: IF(...PROB(25,25)) GO TO 500 (safe path)
-    if (survivalRoll()) {
+    if (survivalRoll(rng)) {
       // Player got lucky - normal movement (may still fail for other reasons)
       return parsed;
     }

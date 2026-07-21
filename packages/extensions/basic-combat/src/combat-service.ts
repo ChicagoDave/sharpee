@@ -12,6 +12,8 @@ import {
   WorldModel,
   TraitType,
   CombatantTrait,
+  HealthTrait,
+  HealthBehavior,
   WeaponTrait,
 } from '@sharpee/world-model';
 import { nounPhraseFor } from '@sharpee/stdlib';
@@ -123,6 +125,7 @@ export class CombatService implements ICombatService {
     // Get combatant traits
     const attackerCombat = attacker.get(TraitType.COMBATANT) as CombatantTrait | undefined;
     const targetCombat = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+    const targetHealth = target.get(TraitType.HEALTH) as HealthTrait | undefined; // life-state (ADR-226)
     const weaponTrait = weapon?.get(TraitType.WEAPON) as WeaponTrait | undefined;
 
     // Get skill values
@@ -151,7 +154,7 @@ export class CombatService implements ICombatService {
       return {
         hit: false,
         damage: 0,
-        targetNewHealth: targetCombat?.health ?? 0,
+        targetNewHealth: targetHealth?.health ?? 0,
         targetKnockedOut: false,
         targetKilled: false,
         messageId: CombatMessages.ATTACK_MISSED,
@@ -173,13 +176,13 @@ export class CombatService implements ICombatService {
     const armor = targetCombat?.armor ?? 0;
     const effectiveDamage = Math.max(1, totalDamage - armor); // Always do at least 1 damage
 
-    // Calculate new health
-    const currentHealth = targetCombat?.health ?? 10;
+    // Calculate new health (life-state lives on HealthTrait — ADR-226)
+    const currentHealth = targetHealth?.health ?? 10;
     const newHealth = Math.max(0, currentHealth - effectiveDamage);
 
     // Determine outcome
     const killed = newHealth <= 0;
-    const maxHealth = targetCombat?.maxHealth ?? 10;
+    const maxHealth = targetHealth?.maxHealth ?? 10;
     const knockedOut = !killed && newHealth <= maxHealth * 0.2;
 
     // Add damage to message data
@@ -225,8 +228,9 @@ export class CombatService implements ICombatService {
       };
     }
 
-    // Check if target is alive
-    if (!targetCombat.isAlive) {
+    // Check if target is alive (life-state on HealthTrait — ADR-226)
+    const targetHealth = target.get(TraitType.HEALTH) as HealthTrait | undefined;
+    if (targetHealth && !HealthBehavior.isAlive(targetHealth)) {
       return {
         valid: false,
         messageId: CombatMessages.ALREADY_DEAD,
@@ -245,16 +249,20 @@ export class CombatService implements ICombatService {
     if (!combatant) {
       return 'healthy'; // Non-combatants are "healthy"
     }
+    const health = entity.get(TraitType.HEALTH) as HealthTrait | undefined;
+    if (!health) {
+      return 'healthy'; // no life-state -> treat as healthy
+    }
 
-    if (!combatant.isAlive) {
+    if (!HealthBehavior.isAlive(health)) {
       return 'dead';
     }
 
-    if (!combatant.isConscious) {
+    if (!HealthBehavior.isConscious(health)) {
       return 'unconscious';
     }
 
-    const healthPercent = combatant.health / combatant.maxHealth;
+    const healthPercent = health.health / health.maxHealth;
 
     if (healthPercent <= 0.1) {
       return 'near_death';
@@ -298,20 +306,20 @@ export function applyCombatResult(
 
   const combatant = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
   if (!combatant) return info;
+  const health = target.get(TraitType.HEALTH) as HealthTrait | undefined;
 
-  // Update health
-  combatant.health = result.targetNewHealth;
-
-  // Update consciousness
-  if (result.targetKnockedOut) {
-    combatant.knockOut();
+  // Update health on the life-state trait. Consciousness derives from health
+  // (ADR-226 §1 F1) — there is no separate knockout step; `targetKnockedOut`
+  // is carried only as a message signal by resolveAttack.
+  if (health) {
+    health.health = result.targetNewHealth;
+    if (result.targetKilled) {
+      HealthBehavior.kill(health, 'combat');
+    }
   }
 
-  // Update alive status and handle death
+  // Handle death: drop inventory if configured
   if (result.targetKilled) {
-    combatant.kill();
-
-    // Drop inventory if configured
     if (combatant.dropsInventory) {
       const location = world.getLocation(target.id);
       if (location) {

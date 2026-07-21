@@ -3,7 +3,7 @@
  */
 
 import type { ISemanticEvent } from '@sharpee/core';
-import type { CommandError, CommandResult } from '../commands';
+import type { CommandError, CommandResult } from '../commands/index.js';
 
 /**
  * Combined command processor using all three phases

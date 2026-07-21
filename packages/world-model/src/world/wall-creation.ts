@@ -18,17 +18,17 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { IFEntity } from '../entities/if-entity';
+import { IFEntity } from '../entities/if-entity.js';
 import {
   WallEntity,
   IWallSpec,
   IWallsSpec,
   IWallSideData,
-} from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { RoomTrait } from '../traits/room/roomTrait';
-import { ITrait } from '../traits/trait';
-import { validateWallSpec } from './wall-validation';
+} from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { RoomTrait } from '../traits/room/roomTrait.js';
+import { ITrait } from '../traits/trait.js';
+import { validateWallSpec } from './wall-validation.js';
 
 /**
  * The narrow world surface required for wall creation. Implemented by

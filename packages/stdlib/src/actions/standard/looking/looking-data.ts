@@ -5,11 +5,11 @@
  * This separates data structure concerns from business logic.
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait, RoomTrait } from '@sharpee/world-model';
-import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
-import { nounPhraseFor } from '../../../utils';
+import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 
 /**
  * Check if a location is dark (needs light but has none).
@@ -220,7 +220,8 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
       if (!OpenableBehavior.isOpen(container)) continue;
     }
 
-    const contents = context.world.getContents(container.id);
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(container, context.world);
     if (contents.length > 0) {
       openContainerContents.push({
         containerId: container.id,
@@ -234,7 +235,8 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
 
   // Check each supporter for visible contents
   for (const supporter of supporters) {
-    const contents = context.world.getContents(supporter.id);
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(supporter, context.world);
     if (contents.length > 0) {
       openContainerContents.push({
         containerId: supporter.id,

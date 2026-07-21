@@ -1,0 +1,174 @@
+The temporal substrate. A **daemon** runs every tick — optionally gated
+by a condition, optionally once. A **fuse** counts down and fires:
+turns, an optional per-turn tick condition (turns can refuse to count),
+repeat, cancellation with cleanup, entity binding (auto-cleanup when the
+entity goes away), and mid-flight adjustment. Fuses are a
+TypeScript-only surface — Chord never touches fuses at all; the
+imperative timer verbs (cancel a sequence, "in 3 turns", periodic
+timers, reschedule) remain the audited Chord gaps (designed in ADR-217,
+not yet built).
+
+A `define sequence` (chord-language.md §4.8) compiles to **one daemon**
+whose step pointer lives in namespaced world state — which is why
+sequence progress survives save, restore, and undo with no author
+effort. It arms its steps strictly in order: `at turn N` against the
+wall clock, `N turns later` against the previous step's firing,
+`when <owner> becomes <state>` against the state value.
+
+The author writes:
+
+```chord
+story "The Scullery" by "ref"
+  id: plugins-sequence
+  version: 0.0.1
+  states: quiet, boiling
+
+create the Scullery
+  a room
+
+  A stone-flagged scullery, a kettle already over the flame.
+
+create the kettle
+  scenery
+  in the Scullery
+
+  A copper kettle, beginning to warm.
+
+create the player
+  starts in the Scullery
+
+define sequence kettle coming to the boil
+  at turn 2
+    phrase kettle-murmur
+      The kettle begins to murmur on the range.
+  2 turns later
+    phrase kettle-boils
+      The kettle reaches a rolling boil.
+    change the story to boiling
+end sequence
+
+define sequence steam
+  when the story becomes boiling
+    phrase steam-note
+      Steam fogs the little window over the sink.
+end sequence
+```
+
+The player sees:
+
+```transcript
+> wait
+Time passes...
+
+The kettle begins to murmur on the range.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The kettle reaches a rolling boil.
+
+Steam fogs the little window over the sink.
+
+> wait
+Time passes...
+```
+
+The opening look is turn 1, so `at turn 2` lands on the first `wait`;
+and the second sequence's `when the story becomes boiling` step fires in
+the very turn the first sequence changes the state.
+
+An `on every turn [while …][, once]` clause (chord-language.md §3)
+becomes one daemon per clause. Owned by an entity, a trait, or a
+region, it is **presence-gated**: off-stage the clause neither fires,
+rolls dice, nor consumes its `once` (for a region, "present" means
+anywhere in a member room, nesting included). Hosted in the story
+header's own body it is the story's clause — one daemon, **no gate**: a
+background clock that ticks wherever the player is (weather, off-stage
+simulation; ADR-236).
+
+The author writes:
+
+```chord
+story "The Lighthouse" by "ref"
+  id: plugins-daemons
+  version: 0.0.1
+
+  on every turn
+    phrase tide-works
+  end on
+
+create the Jetty
+  a room
+  north to the Lamp Room
+
+  A stone jetty slick with spray.
+
+create the Lamp Room
+  a room
+  south to the Jetty
+
+  Glass on every side, the great lamp turning overhead.
+
+create the Lighthouse
+  a region
+  containing the Lamp Room
+
+  on every turn
+    phrase lamp-hum
+      The lamp's clockwork hums up through the floor.
+  end on
+
+create the brass clock
+  aka clock
+  scenery
+  in the Lamp Room
+
+  A ship's clock bolted beside the door.
+
+  on every turn
+    phrase clock-ticks
+      The brass clock ticks once, heavily.
+  end on
+
+create the player
+  starts in the Jetty
+
+define phrase tide-works
+  Out past the bar, the tide keeps working at the rocks.
+end phrase
+```
+
+The player sees:
+
+```transcript
+> wait
+Time passes...
+
+Out past the bar, the tide keeps working at the rocks.
+
+> north
+Lamp Room
+Glass on every side, the great lamp turning overhead.
+
+The lamp's clockwork hums up through the floor.
+
+The brass clock ticks once, heavily.
+
+Out past the bar, the tide keeps working at the rocks.
+
+> wait
+Time passes...
+
+The lamp's clockwork hums up through the floor.
+
+The brass clock ticks once, heavily.
+
+Out past the bar, the tide keeps working at the rocks.
+```
+
+Three daemons, one gate: on the Jetty only the story-global tide
+speaks; one move north and the region's daemon and the clock's
+presence-gated daemon join it in the same turn's output.

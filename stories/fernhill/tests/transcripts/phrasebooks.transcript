@@ -1,0 +1,50 @@
+title: Fernhill phrasebooks — the night changes the voice (ADR-250 E2E)
+story: fernhill
+description: The unreliable-narrator spine (ADR-250 D9). vane-mood lives
+  only in the two books — evening-voice (the default book) speaks until
+  the turn-14 midnight flip, then midnight-voice wins arbitration.
+  vane-story is story text no book may beat, in both states. vane-quiet
+  is covered only by the default book and still renders at midnight
+  (per-key fallthrough). Each book keeps its OWN first-time counter for
+  vane-mood: if counters were keyed by the bare key, midnight's first
+  examine would show a second-variant text — the assertions below
+  distinguish per-(book, key) from shared state.
+
+---
+
+# Evening: the default book speaks; its first-time counter advances.
+> examine the weathervane
+[OK: contains "noses the evening breeze"]
+
+> examine the weathervane
+[OK: contains "sits easy in the last of the light"]
+
+# Story text beats every book, in every state.
+> push the weathervane
+[OK: contains "same one story it always tells"]
+
+> touch the weathervane
+[OK: contains "keeps its own counsel"]
+
+# Cross the turn-14 midnight transition (the long night sequence).
+[DO]
+> wait
+[OK: contains_any "Time passes" "last light"]
+[UNTIL "the last light goes out of the sky"]
+
+# Midnight: midnight-voice wins arbitration — and starts at ITS OWN
+# first variant (per-(book, key) counters, ADR-250 D5).
+> examine the weathervane
+[OK: contains "swings hard north"]
+
+> examine the weathervane
+[OK: contains "holds north"]
+
+# The story override is stable across the flip.
+> push the weathervane
+[OK: contains "same one story it always tells"]
+
+# midnight-voice does not cover vane-quiet — the default book still
+# supplies it (fallthrough is per key, never per book).
+> touch the weathervane
+[OK: contains "keeps its own counsel"]

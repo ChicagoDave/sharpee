@@ -1,10 +1,10 @@
 // packages/world-model/src/traits/wearable/wearableBehavior.ts
 
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { WearableTrait } from './wearableTrait';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { WearableTrait } from './wearableTrait.js';
 import { ISemanticEvent, createEvent } from '@sharpee/core';
-import { IFEvents } from '../../constants/if-events';
+import { IFEvents } from '../../constants/if-events.js';
 
 export interface IWearResult {
   success: boolean;

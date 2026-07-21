@@ -1,4 +1,4 @@
 // packages/world-model/src/traits/openable/index.ts
 
-export * from './openableTrait';
-export * from './openableBehavior';
+export * from './openableTrait.js';
+export * from './openableBehavior.js';

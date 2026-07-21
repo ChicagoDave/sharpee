@@ -43,12 +43,12 @@ import type {
 import { PartOfSpeech } from '@sharpee/world-model';
 
 import type { ISystemEvent, Result } from '@sharpee/core';
-import { EnglishGrammarEngine } from './english-grammar-engine';
-import { defineGrammar } from './grammar';
+import { EnglishGrammarEngine } from './english-grammar-engine.js';
+import { defineGrammar } from './grammar.js';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
-import { parseDirection } from './direction-mappings';
-import { analyzeBestFailure } from './parse-failure';
-import { PronounContextManager, setPronounContextManager } from './pronoun-context';
+import { parseDirection } from './direction-mappings.js';
+import { analyzeBestFailure } from './parse-failure.js';
+import { PronounContextManager, setPronounContextManager } from './pronoun-context.js';
 
 // Type alias for clarity
 type CommandResult<T, E> = Result<T, E>;
@@ -100,11 +100,17 @@ interface RichCandidate {
   indirectObject?: INounPhrase;
   pattern: string;
   confidence: number;
+  /** Grammar rule priority (explicit .withPriority() override; ADR-231 D2b ordering) */
+  priority: number;
+  /** Words consumed by literal pattern tokens (ADR-231 D2b literal-before-slot tiebreak) */
+  literalSpecificity: number;
   action: string;
   // ADR-080 additions
   textSlots?: Map<string, string>;
   instrument?: INounPhrase;
   excluded?: INounPhrase[]; // For "all but X" patterns
+  // ADR-231 D4: first-class conversation topic (verbatim free text)
+  topic?: { text: string };
   // ADR-082 additions
   vocabularySlots?: Map<string, { word: string; category: string }>;
   manner?: string;
@@ -391,8 +397,20 @@ export class EnglishParser implements Parser {
       };
     }
     
-    // Sort by confidence and take the best
-    candidates.sort((a, b) => b.confidence - a.confidence);
+    // Full candidate ordering (ADR-231 D2b): confidence desc → rule priority
+    // desc → literal specificity desc → stable registration order (candidates
+    // arrive in engine order; Array.prototype.sort is stable). This mirrors
+    // EnglishGrammarEngine.findMatches — a confidence-only re-sort here would
+    // silently drop the priority and specificity tiebreaks.
+    candidates.sort((a, b) => {
+      if (b.confidence !== a.confidence) {
+        return b.confidence - a.confidence;
+      }
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority;
+      }
+      return b.literalSpecificity - a.literalSpecificity;
+    });
     const best = candidates[0];
     
     // Emit candidate selection debug event
@@ -432,6 +450,8 @@ export class EnglishParser implements Parser {
       textSlots: best.textSlots,
       instrument: best.instrument,
       excluded: best.excluded,
+      // ADR-231 D4 addition
+      topic: best.topic,
       // ADR-082 additions
       vocabularySlots: best.vocabularySlots,
       manner: best.manner
@@ -808,14 +828,15 @@ export class EnglishParser implements Parser {
     let instrument: INounPhrase | undefined;
     let excluded: INounPhrase[] | undefined;
 
+    // ADR-231 D4: Track the conversation topic
+    let topic: { text: string } | undefined;
+
     // ADR-082: Track vocabulary slots and manner
     let vocabularySlots: Map<string, { word: string; category: string }> | undefined;
     let manner: string | undefined;
 
     // Process slots based on the pattern structure
     for (const [slotName, slotData] of slotEntries) {
-      const slotTokens = slotData.tokens.map((idx: number) => tokens[idx]);
-
       // Check slot type from the match data (set by grammar engine)
       const slotType = slotData.slotType;
 
@@ -825,6 +846,15 @@ export class EnglishParser implements Parser {
           textSlots = new Map();
         }
         textSlots.set(slotName, slotData.text);
+        continue; // Don't also add to direct/indirect objects
+      }
+
+      // ADR-231 D4: Handle topic slots — first-class conversation topic.
+      // Verbatim free text (TextSlotConsumer, multi-word, articles kept);
+      // NOT a positional noun phrase, so it never becomes indirectObject
+      // and never enters entity resolution as a scope-rejectable slot.
+      if (slotType === SlotType.TOPIC) {
+        topic = { text: slotData.text };
         continue; // Don't also add to direct/indirect objects
       }
 
@@ -854,15 +884,21 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Build base noun phrase
+      // Build base noun phrase.
+      // ADR-231 D3: leading ARTICLE-tagged tokens are split into the
+      // `articles` field and stripped from text/head/candidates. The
+      // validator restores the full text (articles + text) first when
+      // matching, so proper names beginning with an article-like word
+      // survive.
+      const np = this.splitLeadingArticles(slotData.tokens, tokens, slotData.text);
       const phrase: INounPhrase = {
         tokens: slotData.tokens,
-        text: slotData.text,
-        head: slotTokens[slotTokens.length - 1]?.normalized || slotData.text,
+        text: np.text,
+        head: np.head,
         modifiers: [],
-        articles: [],
+        articles: np.articles,
         determiners: [],
-        candidates: [slotData.text]
+        candidates: [np.text]
       };
 
       // ADR-080 Phase 2: Add multi-object support
@@ -870,29 +906,35 @@ export class EnglishParser implements Parser {
         phrase.isAll = true;
         // Extract excluded items for "all but X" patterns
         if (slotData.excluded && slotData.excluded.length > 0) {
-          excluded = slotData.excluded.map((item) => ({
-            tokens: item.tokens,
-            text: item.text,
-            head: item.text.split(' ').pop() || item.text,
-            modifiers: [],
-            articles: [],
-            determiners: [],
-            candidates: [item.text]
-          }));
+          excluded = slotData.excluded.map((item) => {
+            const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
+            return {
+              tokens: item.tokens,
+              text: itemNp.text,
+              head: itemNp.head,
+              modifiers: [],
+              articles: itemNp.articles,
+              determiners: [],
+              candidates: [itemNp.text]
+            };
+          });
         }
       }
       if (slotData.isList && slotData.items) {
         phrase.isList = true;
-        phrase.items = slotData.items.map((item) => ({
-          tokens: item.tokens,
-          text: item.text,
-          head: item.text.split(' ').pop() || item.text,
-          modifiers: [],
-          articles: [],
-          determiners: [],
-          candidates: [item.text],
-          entityId: item.entityId // ADR-089: preserve pre-resolved entity ID
-        }));
+        phrase.items = slotData.items.map((item) => {
+          const itemNp = this.splitLeadingArticles(item.tokens, tokens, item.text);
+          return {
+            tokens: item.tokens,
+            text: itemNp.text,
+            head: itemNp.head,
+            modifiers: [],
+            articles: itemNp.articles,
+            determiners: [],
+            candidates: [itemNp.text],
+            entityId: item.entityId // ADR-089: preserve pre-resolved entity ID
+          };
+        });
       }
 
       // ADR-089: Copy pre-resolved entity ID from pronoun resolution
@@ -911,11 +953,13 @@ export class EnglishParser implements Parser {
         continue; // Don't also add to direct/indirect objects
       }
 
-      // Determine where this slot should go based on the pattern
-      if (rule.pattern.includes(' with :' + slotName)) {
-        // This slot comes after 'with', put it in extras
-        extras[slotName] = phrase;
-      } else if (rule.pattern.includes('give :recipient :item')) {
+      // Determine where this slot should go based on the pattern.
+      // (Deleted 2026-07-16, David's ruling during ADR-229 R3: the legacy
+      // "slot after literal 'with' → extras" shunt is superseded by
+      // ADR-080's `.instrument()` slot typing — handled above — and had no
+      // remaining consumer. With-slots now follow positional assignment
+      // like any other slot.)
+      if (rule.pattern.includes('give :recipient :item')) {
         // Special case for give patterns
         if (slotName === 'item') {
           directObject = phrase;
@@ -996,6 +1040,8 @@ export class EnglishParser implements Parser {
           verb: verbPhrase,
           pattern: 'DIRECTION_ONLY',
           confidence: match.confidence,
+          priority: rule.priority,
+          literalSpecificity: match.literalSpecificity ?? 0,
           action: rule.action,
           direction: directionToken.normalized
         };
@@ -1022,11 +1068,15 @@ export class EnglishParser implements Parser {
       indirectObject,
       pattern,
       confidence: match.confidence,
+      priority: rule.priority,
+      literalSpecificity: match.literalSpecificity ?? 0,
       action: rule.action,
       // ADR-080 additions
       textSlots,
       instrument,
       excluded,
+      // ADR-231 D4 addition
+      topic,
       // ADR-082 additions
       vocabularySlots,
       manner
@@ -1048,6 +1098,61 @@ export class EnglishParser implements Parser {
     }
 
     return candidate;
+  }
+
+  /**
+   * Split leading ARTICLE-tagged tokens off a consumed noun-phrase span
+   * (ADR-231 D3 defect fix — `INounPhrase.articles` was hardcoded `[]`).
+   *
+   * @param tokenIndices Indices of the consumed span into `tokens`.
+   * @param tokens The full rich-token array for the input.
+   * @param originalText The slot's consumed text (used verbatim when the
+   *   span does not textually reconstruct it, e.g. pronoun-resolved text).
+   * @returns The leading articles, the article-stripped text, and the head
+   *   (last word of the stripped text, normalized). When every token is an
+   *   article, nothing is stripped (the phrase keeps at least one word).
+   */
+  private splitLeadingArticles(
+    tokenIndices: number[],
+    tokens: IToken[],
+    originalText: string
+  ): { articles: string[]; text: string; head: string } {
+    const spanTokens = tokenIndices.map(i => tokens[i]);
+    const fallback = {
+      articles: [] as string[],
+      text: originalText,
+      head: originalText.split(' ').pop() || originalText
+    };
+
+    // Only strip when the span textually reconstructs the slot text —
+    // pronoun-resolved slots carry substituted text ("them" → "brass
+    // lantern") whose tokens don't correspond word-for-word.
+    if (spanTokens.some(t => !t) ||
+        spanTokens.map(t => t.word).join(' ') !== originalText) {
+      return fallback;
+    }
+
+    let start = 0;
+    while (
+      start < spanTokens.length - 1 &&
+      spanTokens[start].partOfSpeech.includes(PartOfSpeech.ARTICLE)
+    ) {
+      start++;
+    }
+    if (start === 0) {
+      return {
+        articles: [],
+        text: originalText,
+        head: spanTokens[spanTokens.length - 1].normalized
+      };
+    }
+
+    const rest = spanTokens.slice(start);
+    return {
+      articles: spanTokens.slice(0, start).map(t => t.normalized),
+      text: rest.map(t => t.word).join(' '),
+      head: rest[rest.length - 1].normalized
+    };
   }
 
   /**
@@ -1077,6 +1182,32 @@ export class EnglishParser implements Parser {
    */
   getStoryGrammar(): GrammarBuilder {
     return this.grammarEngine.createBuilder();
+  }
+
+  /**
+   * Action ids reachable from this parser's registered grammar rules.
+   *
+   * On a freshly constructed parser this is exactly the core-grammar surface;
+   * after story grammar registration it includes story-added ids too. Consumed
+   * by the stdlib reachability gate (ADR-230 D1), which asserts every wired
+   * action is player-reachable.
+   *
+   * @returns set of action ids some grammar pattern maps to
+   */
+  getReachableActionIds(): Set<string> {
+    return new Set(this.grammarEngine.getRules().map((rule) => rule.action));
+  }
+
+  /**
+   * Source pattern strings of this parser's registered grammar rules
+   * (e.g. `"lock :target with|using :key"`). Consumed by the stdlib
+   * verb-reachability gate (ADR-230 D4 — PIN 1 amendment, 2026-07-17)
+   * to assert every lang-declared verb phrase leads some pattern.
+   *
+   * @returns pattern strings, one per rule
+   */
+  getGrammarPatterns(): string[] {
+    return this.grammarEngine.getRules().map((rule) => rule.pattern);
   }
 
   /**

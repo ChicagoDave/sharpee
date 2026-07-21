@@ -9,25 +9,25 @@
  * containers, etc.).
  */
 
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { SpatialIndex } from './SpatialIndex';
-import { ITrait } from '../traits/trait';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LockableTrait } from '../traits/lockable/lockableTrait';
-import { ICapabilityStore } from './capabilities';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { SpatialIndex } from './SpatialIndex.js';
+import { ITrait } from '../traits/trait.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LockableTrait } from '../traits/lockable/lockableTrait.js';
+import { ICapabilityStore } from './capabilities.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
 import type {
   TraitBehaviorBinding,
   BehaviorRegistrationOptions
-} from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
+} from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type {
   TraitInterceptorBinding,
   InterceptorRegistrationOptions,
   InterceptorLookupResult
-} from '../capabilities/interceptor-binding';
+} from '../capabilities/interceptor-binding.js';
 import type {
   IWorldModel,
   EntityRemovalObserver,
@@ -40,8 +40,8 @@ import type {
   RegionCrossings,
   SceneOptions,
   SceneConditions,
-} from './WorldModel';
-import type { ScoreEntry } from './ScoreLedger';
+} from './WorldModel.js';
+import type { ScoreEntry } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type {
   WorldState,
@@ -51,13 +51,13 @@ import type {
   GamePrompt,
   IGrammarVocabularyProvider,
 } from '@sharpee/if-domain';
-import type { DirectionType } from '../constants/directions';
-import type { ScopeRegistry } from '../scope/scope-registry';
-import type { IScopeRule } from '../scope/scope-rule';
+import type { DirectionType } from '../constants/directions.js';
+import type { ScopeRegistry } from '../scope/scope-registry.js';
+import type { IScopeRule } from '../scope/scope-rule.js';
 import type {
   ICapabilityData,
   ICapabilityRegistration,
-} from './capabilities';
+} from './capabilities.js';
 
 /**
  * Data store shared between WorldModel and AuthorModel.
@@ -189,6 +189,10 @@ export class AuthorModel implements IWorldModel {
     return this.worldModel.getContents(containerId, options);
   }
 
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] } {
+    return this.worldModel.getCarriedAndWorn(holderId);
+  }
+
   canMoveEntity(entityId: string, targetId: string | null): boolean {
     return true; // AuthorModel always allows moves
   }
@@ -291,8 +295,8 @@ export class AuthorModel implements IWorldModel {
   }
 
   // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void {
-    this.worldModel.connectRooms(room1Id, room2Id, direction);
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void {
+    this.worldModel.connectRooms(room1Id, room2Id, direction, doorId);
   }
 
   createDoor(displayName: string, opts: {
@@ -389,6 +393,16 @@ export class AuthorModel implements IWorldModel {
 
   getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined {
     return this.worldModel.getBehaviorForCapability(trait, capability);
+  }
+
+  // Evaluator Registry (ADR-240) — delegates to the underlying WorldModel,
+  // which owns the per-world map.
+  registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void {
+    this.worldModel.registerEvaluator(key, fn);
+  }
+
+  evaluate(key: string): unknown {
+    return this.worldModel.evaluate(key);
   }
 
   getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {

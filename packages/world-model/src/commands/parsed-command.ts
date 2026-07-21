@@ -188,6 +188,20 @@ export interface IParsedCommand {
   /** Instrument noun phrase for "with/through/using" clauses */
   instrument?: INounPhrase;
 
+  /**
+   * Conversation topic for ".topic()" slots (ADR-231 D4)
+   * The parser fills `text` only (verbatim, articles preserved) — it never
+   * resolves entities. `entity` exists for shape parity with
+   * IValidatedCommand.topic and is populated by the validator's
+   * entity-first attempt, never here.
+   */
+  topic?: {
+    /** Verbatim topic text as typed */
+    text: string;
+    /** Never set by the parser; see IValidatedCommand.topic */
+    entity?: import('@sharpee/core').EntityId;
+  };
+
   // ADR-082 additions
 
   /** Typed slot values for non-entity slots (number, ordinal, direction, etc.) */

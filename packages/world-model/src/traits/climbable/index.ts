@@ -2,5 +2,5 @@
  * Climbable trait module
  */
 
-export * from './climbableTrait';
-export * from './climbableBehavior';
+export * from './climbableTrait.js';
+export * from './climbableBehavior.js';

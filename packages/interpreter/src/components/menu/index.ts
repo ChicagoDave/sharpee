@@ -1,1 +1,1 @@
-export { MenuBar, type MenuBarProps } from './MenuBar';
+export { MenuBar, type MenuBarProps } from './MenuBar.js';

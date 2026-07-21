@@ -1,0 +1,130 @@
+[g3-proof] step 1: devkit init (Chord scaffold), then substitute fernhill.story + assets + browser entry
+
+📖 Create a new Sharpee story
+
+
+Creating project...
+
+  ✓ Created fernhill.story
+  ✓ Created package.json
+  ✓ Created .gitignore
+
+🌐 Adding browser client to your Sharpee project
+
+  Story: An interactive fiction adventure (fernhill)
+  ✓ Created src/browser-entry.ts (Chord — compiles story.story at boot)
+  ✓ Created src/version.ts
+  ✓ Created browser/fernhill.css
+  ✓ Updated package.json (deps + build:browser)
+
+✅ Browser client added!
+
+Next steps:
+  sharpee build          # Build the story + web bundle → dist/web/
+
+Customize:
+  src/browser-entry.ts   # Engine + client wiring
+  browser/fernhill.css   # Your style overrides
+
+
+✅ Project created!
+
+Next steps:
+  cd /Users/david/repos/sharpee_v2/.tmp-g3-proof-G26yUU/fernhill
+  npm install
+  sharpee build --browser   # story + playable web client → dist/web/
+  sharpee play              # play in the terminal
+
+Your story lives in fernhill.story — edit it and rebuild.
+
+[g3-proof]   ✓ project staged with the tutorial story
+[g3-proof] step 2: devkit build --browser (compile gate, source shipped, assets copied)
+
+🔨 Building browser bundle
+
+  Story: An interactive fiction adventure (fernhill)
+  ✓ Validated fernhill.story (gate-clean) and shipped it as story.story
+  ✓ Story IR → dist/fernhill.ir.json
+  Bundling game.js...
+  ✓ Built game.js
+  ✓ Copied index.html
+  ✓ Copied platform engine CSS (base, engine, decorations)
+  ✓ Copied fernhill.css
+  ✓ Copied assets/ (2 entries)
+
+✅ Build complete! (game.js 1101.6 KB)
+
+Output: dist/web/
+
+To test locally:
+  npx serve dist/web
+
+[g3-proof]   ✓ dist/web built: source + compiler + all four G4/G5 assets shipped
+[g3-proof] step 3: serving dist/web and driving Chromium (g2 playwright pattern)
+[g3-proof]   ✓ boot: fernhill.story compiled in-browser and rendered the Iron Gates
+[g3-proof]   ✓ G4 image: <img> mounted on image:main and images/folly-photograph.png fetched
+[g3-proof]   ✓ G5 channel: estate.clock → clock channel → story renderer ("The clock: evening")
+[g3-proof]   ✓ AC-5: story renderer override — no generic-panel double-render of clock
+[g3-proof]   ✓ AC-1 ambient: re-entering the Grounds fetched audio/night-wind.wav (ambient:main bed, story source unchanged)
+[g3-proof]   ✓ G4 sound: lighting the boiler fetched audio/boiler-thump.wav (sound channel → AudioManager)
+[g3-proof] step 4: AC-4 mini-scenario — a pure-IR `define channel` with no story renderer renders in the generic panel
+
+📖 Create a new Sharpee story
+
+
+Creating project...
+
+  ✓ Created panel.story
+  ✓ Created package.json
+  ✓ Created .gitignore
+
+🌐 Adding browser client to your Sharpee project
+
+  Story: An interactive fiction adventure (panel)
+  ✓ Created src/browser-entry.ts (Chord — compiles story.story at boot)
+  ✓ Created src/version.ts
+  ✓ Created browser/panel.css
+  ✓ Updated package.json (deps + build:browser)
+
+✅ Browser client added!
+
+Next steps:
+  sharpee build          # Build the story + web bundle → dist/web/
+
+Customize:
+  src/browser-entry.ts   # Engine + client wiring
+  browser/panel.css   # Your style overrides
+
+
+✅ Project created!
+
+Next steps:
+  cd /Users/david/repos/sharpee_v2/.tmp-g3-proof-G26yUU/panel
+  npm install
+  sharpee build --browser   # story + playable web client → dist/web/
+  sharpee play              # play in the terminal
+
+Your story lives in panel.story — edit it and rebuild.
+
+
+🔨 Building browser bundle
+
+  Story: An interactive fiction adventure (panel)
+  ✓ Validated panel.story (gate-clean) and shipped it as story.story
+  ✓ Story IR → dist/panel.ir.json
+  Bundling game.js...
+  ✓ Built game.js
+  ✓ Copied index.html
+  ✓ Copied platform engine CSS (base, engine, decorations)
+  ✓ Copied panel.css
+
+✅ Build complete! (game.js 1101.3 KB)
+
+Output: dist/web/
+
+To test locally:
+  npx serve dist/web
+
+[g3-proof]   ✓ AC-4: #channel-panel-pulse visible with the emitted value — zero story TypeScript
+[g3-proof] 
+[g3-proof] PASS — browser proof: real devkit build, real Chromium; image, clock channel + AC-5 override, AC-1 ambient bed, sound cue, and the AC-4 generic panel all observed client-side.

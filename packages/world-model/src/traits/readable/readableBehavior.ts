@@ -1,8 +1,8 @@
 // packages/world-model/src/traits/readable/readableBehavior.ts
 
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { ReadableTrait } from './readableTrait';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { ReadableTrait } from './readableTrait.js';
 import { ISemanticEvent, createEvent } from '@sharpee/core';
 
 /**

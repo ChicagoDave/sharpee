@@ -13,16 +13,6 @@ import { ParsedCommandTransformer } from '@sharpee/engine';
 import { RIVER_BLOCKED_ACTION_ID } from '../actions/river-blocked/types';
 import { RiverNavigationTrait } from '../traits';
 
-// Set of water room IDs
-let waterRoomIds: Set<string> = new Set();
-
-/**
- * Register water room IDs for checking
- */
-export function registerWaterRooms(roomIds: string[]): void {
-  waterRoomIds = new Set(roomIds);
-}
-
 /**
  * Check if player is in an inflated boat
  */

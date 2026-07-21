@@ -2,7 +2,7 @@
  * Parser interface for converting text input to parsed commands
  */
 
-import type { IParsedCommand, IParseError, CommandResult } from '../commands';
+import type { IParsedCommand, IParseError, CommandResult } from '../commands/index.js';
 
 /**
  * Parser interface - pure syntax, no world knowledge

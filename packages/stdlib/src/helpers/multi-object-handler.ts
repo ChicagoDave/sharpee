@@ -6,8 +6,8 @@
  */
 
 import { IFEntity, WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
-import { ActionContext } from '../actions/enhanced-types';
-import { StandardScopeResolver } from '../scope/scope-resolver';
+import { ActionContext } from '../actions/enhanced-types.js';
+import { StandardScopeResolver } from '../scope/scope-resolver.js';
 import { INounPhrase } from '@sharpee/world-model';
 
 /**
@@ -115,7 +115,9 @@ function expandAll(
   let candidates: IFEntity[];
   switch (options.scope) {
     case 'carried':
-      candidates = world.getContents(player.id);
+      // ADR-247: `carried` scope (e.g. `drop all`) is held items, not worn —
+      // matches the IF convention that `all` never strips worn clothing.
+      candidates = world.getCarriedAndWorn(player.id).carried;
       break;
     case 'visible':
       candidates = scopeResolver.getVisible(player);
@@ -166,7 +168,8 @@ function expandList(
   let scopeCandidates: IFEntity[];
   switch (options.scope) {
     case 'carried':
-      scopeCandidates = world.getContents(player.id);
+      // ADR-247: `carried` scope is held items, not worn (IF `all` convention).
+      scopeCandidates = world.getCarriedAndWorn(player.id).carried;
       break;
     case 'visible':
       scopeCandidates = scopeResolver.getVisible(player);

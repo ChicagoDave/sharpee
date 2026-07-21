@@ -3,11 +3,11 @@
  */
 
 import React from 'react';
-import { useTranscript } from '../../hooks/useTranscript';
-import { usePreferences, FONT_FAMILIES, FONT_SIZES } from '../../hooks/usePreferences';
-import { useAssetMap } from '../../context';
-import type { TranscriptIllustration } from '../../types/game-state';
-import type { IllustrationSize } from '../../hooks/usePreferences';
+import { useTranscript } from '../../hooks/useTranscript.js';
+import { usePreferences, FONT_FAMILIES, FONT_SIZES } from '../../hooks/usePreferences.js';
+import { useAssetMap } from '../../context/index.js';
+import type { TranscriptIllustration } from '../../types/game-state.js';
+import type { IllustrationSize } from '../../hooks/usePreferences.js';
 
 interface TranscriptProps {
   className?: string;

@@ -5,7 +5,7 @@
  * that must be resolved against the world model.
  */
 
-import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types';
+import { PartOfSpeech, VerbVocabulary, VocabularyEntry } from '../vocabulary-contracts/vocabulary-types.js';
 import type { ISystemEvent } from '@sharpee/core';
 
 /**

@@ -4,6 +4,18 @@ author: Sharpee Team
 description: Test killing the troll via melee interceptor with RETRY for combat randomness
 ---
 
+# GDT ND = immortality: the troll's counterblows can kill a score-0 player
+# outright; this tests the melee interceptor's troll-death path, and ND only
+# suppresses the hero-death event.
+> gdt
+[OK: contains "GDT"]
+
+> nd
+[OK: contains "Immortality"]
+
+> ex
+[OK: contains "Returning"]
+
 # Get equipment from Living Room
 > north
 [OK: contains "North of House"]

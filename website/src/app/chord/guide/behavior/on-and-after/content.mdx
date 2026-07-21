@@ -1,0 +1,29 @@
+Behavior attaches to its owner as an `on` or `after` clause inside the
+owner's `create` block (or inside a trait,
+[§5.7](/chord/guide/vocabulary)). The two words divide
+one moment: `on` runs before the action commits and may stop it; `after`
+runs once it has happened and reacts.
+
+```chord
+create the hive box
+  aka hive, box
+  scenery, openable
+  in the Apiary
+  states: humming, quiet
+
+  A white wooden hive box, lid held down by a brick.
+
+  on opening it
+    refuse when it is humming: bees-disturbed
+    change it to quiet
+  end on
+
+  after opening it
+    phrase honey-smell
+  end after
+```
+
+The division is enforced: `refuse`, `refuse when`, and `must` are parse
+errors inside an `after` body (`parse.react-refusal`). If a reaction
+wants to stop something, it is not a reaction; move it to `on`. Every
+clause closes with an `end` line matching its opener.

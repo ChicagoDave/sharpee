@@ -21,7 +21,7 @@ describe('RoomTrait', () => {
       expect(trait.exits).toEqual({});
       expect(trait.blockedExits).toBeUndefined();
       expect(trait.outdoor).toBe(false);
-      expect(trait.isDark).toBe(false); // Default to lit
+      expect(trait.requiresLight).toBe(false); // Default to lit
       expect(trait.isOutdoors).toBe(false);
       expect(trait.isUnderground).toBe(false);
       expect(trait.initialDescription).toBeUndefined();
@@ -40,7 +40,7 @@ describe('RoomTrait', () => {
         },
         blockedExits: { south: 'The way south is blocked by rubble.' },
         outdoor: true,
-        isDark: false,
+        requiresLight: false,
         isOutdoors: true,
         initialDescription: 'As you enter the courtyard, birds scatter from the fountain.',
         ambientSound: 'Birds chirp in the nearby trees.',
@@ -54,7 +54,7 @@ describe('RoomTrait', () => {
       expect(trait.exits.east).toEqual({ destination: 'garden', via: 'glass-door' });
       expect(trait.blockedExits?.south).toBe('The way south is blocked by rubble.');
       expect(trait.outdoor).toBe(true);
-      expect(trait.isDark).toBe(false);
+      expect(trait.requiresLight).toBe(false);
       expect(trait.isOutdoors).toBe(true);
       expect(trait.initialDescription).toContain('birds scatter');
       expect(trait.ambientSound).toContain('Birds chirp');
@@ -132,39 +132,39 @@ describe('RoomTrait', () => {
     it('should handle dark rooms', () => {
       const room = createTestRoom(world, 'Cellar');
       const trait = room.get(TraitType.ROOM) as RoomTrait;
-      trait.isDark = true;
+      trait.requiresLight = true;
       trait.isUnderground = true;
       
-      expect(trait.isDark).toBe(true);
+      expect(trait.requiresLight).toBe(true);
       expect(trait.isUnderground).toBe(true);
     });
 
     it('should handle lit rooms', () => {
       const room = createTestRoom(world, 'Kitchen');
       const trait = room.get(TraitType.ROOM) as RoomTrait;
-      trait.isDark = false;
+      trait.requiresLight = false;
       
-      expect(trait.isDark).toBe(false);
+      expect(trait.requiresLight).toBe(false);
     });
 
     it('should handle outdoor lighting', () => {
       const room = createTestRoom(world, 'Garden');
       const trait = room.get(TraitType.ROOM) as RoomTrait;
       trait.isOutdoors = true;
-      trait.isDark = false; // Outdoor during day
+      trait.requiresLight = false; // Outdoor during day
       
       expect(trait.isOutdoors).toBe(true);
-      expect(trait.isDark).toBe(false);
+      expect(trait.requiresLight).toBe(false);
     });
 
     it('should handle underground rooms', () => {
       const room = createTestRoom(world, 'Cavern');
       const trait = room.get(TraitType.ROOM) as RoomTrait;
       trait.isUnderground = true;
-      trait.isDark = true;
+      trait.requiresLight = true;
       
       expect(trait.isUnderground).toBe(true);
-      expect(trait.isDark).toBe(true);
+      expect(trait.requiresLight).toBe(true);
     });
   });
 
@@ -317,7 +317,7 @@ describe('RoomTrait', () => {
         out: { destination: 'drawbridge' }
       };
       trait.isOutdoors = true;
-      trait.isDark = false;
+      trait.requiresLight = false;
       trait.tags = ['transition', 'entrance'];
       
       expect(trait.exits.in?.via).toBe('portcullis');

@@ -1,0 +1,11 @@
+Getting things open, and locked. Full entries: [the standard library reference §4](/chord/stdlib/containers).
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **open** | `open X` · `open up X` · `unwrap`/`uncover X` · `open X with`/`using Y` | `openable` | `already_open`, `locked`, `no_tool`, `tool_not_held`, `wrong_tool` |
+| **close** | `close`/`shut`/`cover X` | `openable` | `already_closed`, `not_closable`, `prevents_closing` |
+| **lock** | `lock X [with`/`using Y]` · `secure X` | `lockable` | `no_key`, `key_not_held`, `wrong_key`, `not_closed`, `already_locked`, `not_lockable` |
+| **unlock** | `unlock X [with`/`using Y]` · `unsecure X` | `lockable` | `no_key`, `key_not_held`, `wrong_key`, `already_unlocked`, `not_lockable` |
+
+- [opening, with a tool in the command](/chord/cookbook/containers-and-locks/opening-with-a-tool-in-the-command)
+- [locking and unlocking, with a key](/chord/cookbook/containers-and-locks/locking-and-unlocking-with-a-key)

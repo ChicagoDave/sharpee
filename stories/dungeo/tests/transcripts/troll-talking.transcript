@@ -1,0 +1,69 @@
+title: Troll Talking Interceptor (ADR-228 Phase 5 + ADR-229 R4)
+story: dungeo
+description: TrollTalkingInterceptor owns the full talk-to-troll canon through
+  stdlib if.action.talking — GROWLS override while the troll is conscious
+  (postReport, ADR-229 R4), the MDL "can't hear you" veto when KO'd. The
+  bespoke talk_to_troll action is deleted; all phrasings ride the core talk
+  patterns (ADR-229 R3) plus the story's `hello :target`. The conscious-troll
+  check runs FIRST and briefly (troll combat RNG — one-good-run rule).
+
+---
+
+# The conscious troll strikes bystanders each turn (MDL melee canon) and can
+# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
+# revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
+# Setup — lantern + teleport in one GDT session (no turns pass inside GDT)
+> GDT
+[OK: contains "GDT"]
+
+> TK brass lantern
+[OK: contains "Taken"]
+
+> ND
+[OK: contains "Immortality"]
+
+> AH Troll Room
+[OK: contains "Teleported"]
+
+> EX
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "on"]
+
+# ============================================================
+# Conscious troll: postReport override — GROWLS canon, not the
+# stdlib greeting (ADR-229 R4). Core R3 pattern carries it.
+# ============================================================
+
+> talk to troll
+[OK: contains "growls menacingly"]
+
+# ============================================================
+# KO the troll, then the preValidate veto renders the MDL line
+# ============================================================
+
+> GDT
+[OK: contains "GDT"]
+
+> KO troll
+[OK: contains "Knocked out"]
+
+> EX
+[OK: contains "Returning"]
+
+# Core R3 pattern (speak to)
+> speak to troll
+[OK: contains "can't hear you"]
+
+# Core R3 pattern (talk to) — previously a bespoke-action literal
+> talk to troll
+[OK: contains "can't hear you"]
+
+# Story `hello :target` slot pattern (replaces the old literal)
+> hello troll
+[OK: contains "can't hear you"]
+
+[END RETRY]

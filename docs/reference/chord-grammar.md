@@ -56,6 +56,7 @@ they have no productions below). Analysis/loader: later phases.
 | ordinal block (`first time`) | ordinal line | dedent (or `end` of enclosing) |
 | prose block | first bare line | dedent (blank line = paragraph break; in `create` blocks a blank line ends the block, but later bare paragraphs append to the description) |
 | `define phrase` | header line | `end phrase` |
+| `define phrasebook` | header line | `end phrasebook` |
 | `on` / `after` clause | header line | `end on` / `end after` (must match the opener) |
 | `select` | `select …` line | `end select` (`or` at the `select`'s indent) |
 | `each` block (E3) | `each <name>` line | `end each` |
@@ -74,17 +75,48 @@ STRING  = '"' any-except-'"' '"'                           (* no escapes *)
 MARKER  = "{" content "}"                                  (* inside text only *)
 ```
 
+## Comments (ADR-249, 2026-07-20)
+
+```
+comment-line = "##" rest-of-line NL ;          (* column 1 — indent 0 only *)
+comment-run  = comment-line { comment-line } ; (* stacked = multi-line comment *)
+```
+
+A comment-run is legal only **between top-level constructs** (before the
+story header, between declarations, after the last) and must be
+**blank-delimited on both sides** — file start and end count as blank,
+so `##` as the very first line (the file-header comment) and a trailing
+comment are legal. Lexer: comment lines are *flagged, never dropped*
+(`Line.comment`); an undelimited run is `lex.comment-blank-lines`.
+Parser: flagged lines are skipped at top-level dispatch only;
+`parse.comment-inside-block` anywhere inside a construct — including at
+indent 0 between a header and its indented body (one-line lookahead),
+and for any indented `##` line in a code position. An indented `##`
+line in prose is prose and renders verbatim (§5.2 opacity). There are
+NO end-of-line comments: `#`/`##` mid-line is prose punctuation or a
+parse error, exactly as before. One concept, one form (Given 7).
+
 ## Top level
 
 ```
-story-file   = [ story-header ] { declaration } ;
+story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
 story-header = "story" STRING [ "by" STRING ] NL
-               >>> { states-line | score-line | WORD ":" rest-of-line NL } ;
+               >>> { states-line | score-line | story-on-clause
+                   | use-phrasebook-line
+                   | WORD ":" rest-of-line NL } ;
+story-on-clause = on-clause ;   (* `on every turn` only — ADR-236 D7, R4 *)
 declaration  = create | define-condition | define-phrase | define-phrases
              | define-verb | define-text
              | define-trait | define-action | define-hatch
-             | define-sequence ;
+             | define-sequence
+             | define-phrasebook | import-phrasebook ;
 ```
+
+The story header hosts exactly one clause form: `on every turn [while
+<cond>][, once]` (ADR-236 D7, ratchet R4) — the story-owned daemon. No
+presence gate (it fires every turn wherever the player is), narration
+broadcasts, and `it` is unbound in the body (`analysis.story-clause-it`).
+Any other clause form in the header is `parse.story-clause`.
 
 Removed from the top level (ownership package, ratchet 2026-07-11):
 `when` rules, `once <condition>` rules, `every N turns` rules,
@@ -135,18 +167,43 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
 - `while` is legal on every binding; comma modifiers repeat and follow it.
 - Owner-scoped narration (D11) is semantics, not syntax: entity-owned
   every-turn clauses fire only in the owner's presence.
+- **Region blocks** (ADR-236) are a legal clause home: `on every turn`
+  fires while the player is in a member room, transitive through nesting
+  (D4); `after entering it` / `after leaving it` bind to the region's
+  crossing events, fired per boundary actually crossed (D6). `leaving`
+  (ratchet R3) exists ONLY on region blocks — a load error anywhere else.
 
 ## create
 
 ```
 create       = "create" name NL >>> { create-line } ;
 create-line  = "aka" alias { "," alias } NL
+             | "pronouns" WORD NL                          (* ADR-242 D5 (ratchet H2): person
+                                                              blocks only; a standard set
+                                                              (he|she|it|they) or a `define
+                                                              pronouns` name — unknown word is
+                                                              `analysis.unknown-pronouns` with
+                                                              a suggestion; duplicate line is
+                                                              `analysis.pronouns-duplicate`;
+                                                              absent = platform by-number
+                                                              fallback (no injected default) *)
              | states-line                                 (* ordered states, D2/D4 *)
              | score-line                                  (* owner-attached score, D12 *)
              | composition { "," composition } NL          (* pre-blank paragraph only *)
              | placement NL
              | "wears" name NL
-             | DIRECTION "to" name NL                      (* exit *)
+             | "containing" name { [ "," ] [ "and" ] name } NL
+                                                           (* region membership (ADR-236 D2,
+                                                              ratchet R2): region blocks only;
+                                                              additive across lines; members
+                                                              are rooms or nested regions
+                                                              (nesting sets parentRegionId,
+                                                              D3). Placement lines on a
+                                                              region are `analysis.region-
+                                                              placement` *)
+             | DIRECTION "to" name [ "through" name ] NL   (* exit; `through the <door>` tail
+                                                              (ADR-234 D1, ratchet R2) — see
+                                                              "Doors" below *)
              | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
                                                            (* blocked exit, phrase key *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
@@ -168,13 +225,265 @@ phrase-override = "phrase" WORD [ "," STRATEGY ] [ "while" condition ] ":" NL
 
 composition  = [ ARTICLE ] WORD                            (* article ⇒ kind noun; bare ⇒ trait *)
                [ "with" setting { "and" setting } ]
-               [ "while" condition ] ;                     (* conditional trait, e.g. dark while … *)
-setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
+               [ "while" condition ]                       (* conditional trait, e.g. dark while … *)
+             | "starts" STATE-INIT ;                       (* ADR-231 D5a: initializer of the paired
+                                                              trait's initial-value field; pairing
+                                                              (`lockable`/`openable`/`switchable`
+                                                              composed) is `analyze.starts-state-
+                                                              pairing`. One-token lookahead:
+                                                              "starts" "in" stays placement; any
+                                                              other word is `parse.starts-state` *)
+STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
+             | "off" | "on" ;
+setting      = ARTICLE name                                (* ratchet R3 (ADR-234 D6): article
+                                                              directly after `with`/`and` = the
+                                                              adjective's single-entity value —
+                                                              `lockable with the iron key`,
+                                                              `cuttable with the knife`,
+                                                              `diggable with the shovel`,
+                                                              `openable with the crowbar`. The
+                                                              removed `key`/`tool` keywords are
+                                                              `parse.removed-config-keyword`
+                                                              with fix-its *)
+             | WORD { WORD }
+               ( NUMBER | STRING | WORD | ARTICLE name ) ; (* last token(s) = the value; keyed
+                                                              ARTICLE-name values remain for
+                                                              authored-trait NAMED data fields
+                                                              (`feedable with food the handful
+                                                              of feed` — the keyword is the
+                                                              field name) and word/number/string
+                                                              configs keep their keyword
+                                                              (`hiding-spot with position
+                                                              behind`) *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement… *)
              | "starts" "in" name ;                        (* …on + bare word = on-clause *)
 DIRECTION    = north | south | east | west | northeast | northwest
              | southeast | southwest | up | down ;
 ```
+
+## Doors (ADR-234/237/238, ratchets R2/R3, 2026-07-18)
+
+- **One authoring form** — the exit-line tail: `north to the Hall through
+  the oak door`. Direction explicit on the line; the reverse exit is
+  inferred as the opposite direction (`connectRooms`'s established
+  convention) — no matching line needed in the far room. A mirrored
+  far-room line is legal only as the exact mirror (other side, opposite
+  direction, stated at most once — `analysis.door-pair-mismatch`
+  otherwise). `through` references a DECLARED door and never creates one
+  (unknown name = `analysis.unknown-entity`; a non-door target =
+  `analysis.door-through-kind`). `through` is a reserved word on exit-line
+  destination names. The `between` placement form was struck before ever
+  entering the grammar (David, 2026-07-17).
+- **The door block is pure entity declaration** — kind, traits, aka,
+  description, phrases, `on`/`after` clauses; it never names the rooms.
+  Placement lines on it are `analysis.door-placement`: a door's location
+  IS its room pair (the loader places it in the declaring room; it is
+  present at BOTH rooms for scope and visibility, and only the door is —
+  the far room never leaks — ADR-238). A door referenced by no `through`
+  line is `analysis.door-unconnected` (hard); more than one room pair is
+  `analysis.door-multi-pair`.
+- **Defaults (D4)**: `a door` composes SceneryTrait + OpenableTrait
+  starting CLOSED (`starts open` overrides). `lockable` is composed
+  explicitly, and on a door starts LOCKED — the kind-scoped IF-convention
+  default; `a door, lockable with the iron key, starts unlocked` is the
+  override. A permanently open passage needs no door entity at all.
+- **`, one-way`** is reserved, not wired: `parse.exit-one-way-reserved`
+  names the reservation legibly. Doors and exits are bidirectional until
+  its own ratchet entry lands.
+- **Wiring (ADR-237 D4)**: the loader composes the door by direct trait
+  composition and wires it exactly once through
+  `connectRooms(room1, room2, direction, doorId)` — the platform's one
+  exit-wiring implementation (via stamped both directions + room1
+  placement; the primitive owns the DoorTrait-vs-exits invariant).
+
+## Topics (ADR-239, 2026-07-18)
+
+- **The `define topics` table block** is the one topic surface — the
+  entity's declared table of ask/tell topics + responses, a closed,
+  compile-visible set (D4: the story declares what can be asked about;
+  lookup, never fuzzy):
+
+  ```
+  define topics for the porter
+    about the sword: phrase sword-reply
+    about "treasure", "the hoard": phrase treasure-reply
+    about "the folly":
+      phrase folly-reply
+      change it to nervous
+  end topics
+  ```
+
+- **Two row tiers.** `about the <entity>:` (entity tier) matches through
+  the platform's quiet `topicEntityId` resolution — checked first.
+  `about "<text>"[, "<text>" …]:` (free-text tier) declares the primary
+  spelling plus comma-separated aliases (comma ruled by David 2026-07-18,
+  superseding ADR-239's `or` example); matching is normalized whole-topic
+  equality (case-insensitive, leading article stripped) — the SAME
+  `normalizeTopic` the compile gates use.
+- **Responses scale.** A one-line row names its statement directly (the
+  common `phrase <key>` case, declare-and-emit prose sugar included); a
+  row may instead open an indented statement body for rich beats. `it`
+  inside a row body binds to the owner.
+- **One table per entity** (`analysis.duplicate-topics-block`), on
+  person-kind entities only (`analysis.topics-host` — only people answer
+  ask/tell). The same table serves `ask` AND `tell` (D1). Overlaps are
+  compile errors, never runtime tie-breaks: a duplicate entity or
+  normalized quoted entry (aliases included) is `analysis.duplicate-topic`;
+  a quoted entry colliding with the name/aka of an entity used in an
+  entity-tier row of the same table is `analysis.topic-entity-collision`.
+- **The catch-all is the existing unfiltered `on asking it` clause** — no
+  on-clause grammar changed. It fires ONLY when the asked topic matches no
+  declared entry (the NPC's own "couldn't say" voice); on a hit the
+  matched row fully owns the response — the catch-all is suppressed, never
+  appended (D5). With no catch-all declared, stdlib's `unknown_topic` /
+  `not_interested` default speaks. `on telling it` mirrors identically.
+
+## Person identity (ADR-242, ratchet H1–H3, 2026-07-19)
+
+- **`proper`** — a person-only, unconditional trait adjective
+  (`a person, proper`): the person is proper-named — bare "Tobias" in
+  every rendering context (IdentityTrait `properName: true, article: ''`,
+  the player's own shape). On any non-person kind it is
+  `analysis.proper-person-only`; with a `while` tail it is
+  `analysis.proper-conditional` (identity is not turn state). The
+  create-line article is never read for identity — `create the
+  zookeeper` and `create a zookeeper` load identically (D4, a recorded
+  divergence from Inform 7's inference rule).
+- **`pronouns <word>`** — a person body line (beside `aka`) naming the
+  person's pronoun set: one of the standard four (`he`, `she`, `it`,
+  `they`) or a `define pronouns` set name. Unknown word:
+  `analysis.unknown-pronouns` with a nearest-match suggestion; second
+  line: `analysis.pronouns-duplicate`; non-person host:
+  `analysis.pronouns-person-only`. **Absent means absent** (ruled Q-2):
+  no default is injected — the platform's by-number fallback renders
+  "it"/"they", so gender a person by declaring the line.
+- **`define pronouns <name> … end pronouns`** — a named set for
+  non-standard gender identity: exactly five named rows (`subject`,
+  `object`, `possessive`, `possessive-pronoun`, `reflexive`), order
+  free. Missing row: `analysis.pronoun-set-rows`; duplicate row:
+  `analysis.pronoun-set-duplicate-row`; a name shadowing a standard set:
+  `analysis.pronoun-set-shadows`; redefinition:
+  `analysis.duplicate-pronoun-set`. Declared forms are DATA in the IR
+  (`ir.pronounSets`); the loader registers them into the language
+  provider (`extendLanguage`), where the assembler consults them before
+  the standard rows.
+
+  ```
+  create Kit
+    a person, proper
+    pronouns ze
+    in the Gatehouse
+
+  define pronouns ze
+    subject ze
+    object zir
+    possessive zir
+    possessive-pronoun zirs
+    reflexive zirself
+  end pronouns
+  ```
+
+## Extension surface (ADR-215/216, 2026-07-18)
+
+- **`use <extension>`** — a story-header body line, one trusted platform
+  extension per line (`combat`, `state-machines`). Admits that extension's
+  static vocabulary manifest (`packages/chord/src/manifests/`) into the
+  catalog and triggers its runtime registration from the loader's trusted
+  registry — a `use`-only story stays pure IR. Unknown/duplicate names are
+  compile errors; NPC vocabulary is CORE (always on; `use npc` is
+  `analysis.extension-core`). `define behavior … from` was REMOVED
+  (ADR-235 D2).
+- **Extension trait adjectives** carry manifest-typed `with`-fields:
+  `combatant with health 20 and skill 40 and hostile true` (health routes
+  to the required HealthTrait per ADR-226), `weapon with damage 5 and
+  skill-bonus 2`; the CORE NPC library `guard`/`passive`/`wanderer`/
+  `follower`/`patrol` with params (`move-chance` is a percentage;
+  `patrol with route [the Gate, the Yard]` uses the `[ … ]` name-list
+  value — legal only where a manifest declares a list field). Unknown
+  keys and mistyped values are compile errors.
+- **`define machine … end machine`** under `use state-machines` (spelling
+  A): `role <name> is <entity>`, `starts <state>`, `state <name>[,
+  terminal]` blocks with `when <trigger>[ while <cond>]: <target>` lines
+  and `on enter`/`on exit` bodies. Machines are story-owned (`it` is a
+  compile error). Triggers: action-on-role/entity, `event <key>`,
+  conditions; a bare word resolves as condition/story state first, else an
+  action gerund. The existing `states:`/`select`/`change` surface is
+  UNTOUCHED — this is additive depth.
+- **Payloaded `emit`** — `emit <event.key> with <field> <value> [and …]
+  [when <cond>]`: literals, value expressions (entity refs → world ids,
+  `true`/`false` → booleans; plain strings are quoted), `[ … ]` arrays,
+  `{ <field> <value>, … }` nested objects (commas inside brackets/braces,
+  `and` at the flat level). Keys pass verbatim into `event.data`.
+- **Media sugar + declared assets** — `define sound|image|music <name>
+  from "<file>"` (DATA references, never hatches — `hasHatches` is
+  untouched); `play sound <asset>`, `play music <asset> [looping]`,
+  `stop music`, `show image <asset> [in <layer>]`, `hide image`,
+  `play ambient <asset> [in <channel>]` (a sound asset),
+  `stop ambient [in <channel>]`, `transition <kind>`, `clear` — all
+  lower at compile onto payloaded `media.*` emits. The ambient channel
+  word names a BED (ADR-241): omitted, both forms mean the default bed
+  `main` (mirroring `image:main`), and bare `stop ambient` stops the
+  default bed only. Ambient emits always carry the bed as a `channel`
+  payload field.
+- **`define ambient <word>` / `define layer <word>`** (ADR-241) — named
+  family channel declarations, one-liners beside the asset
+  declarations. Channel words beyond the implied set (the `main` bed;
+  the pre-registered `background`/`main`/`overlay` image layers) must
+  be declared — an undeclared word is `analysis.unknown-channel` with a
+  nearest-match suggestion, never a silent second bed. Declared and
+  implied-and-used family channels join the IR channel manifest
+  (`family: 'ambient' | 'layer'`; data projections read as `'data'`)
+  and the loader registers them platform-side — the browser renders
+  ambient beds and image layers with no story TypeScript.
+- **`define channel … end channel`** (spelling A) — a JSON data
+  projection: `mode replace|append|event`, optional `gated by
+  <capability>`, `from event <key>`, `take <field>, …` (the turn's last
+  matching event, taken fields only). Renderers ship platform-side.
+- **`client has <capability>`** — a condition reading the LIVE negotiated
+  client capabilities (closed flag set in Chord spelling: `sound`,
+  `images`, `split-pane`, …); false for every gateable flag on a
+  text-only client, so stories degrade deliberately.
+
+## Phrasebooks (ADR-245/250, 2026-07-21)
+
+```
+define-phrasebook   = "define" "phrasebook" WORD [ "while" condition ] NL
+                      >>> { phrasebook-entry }
+                      "end" "phrasebook" NL ;
+phrasebook-entry    = WORD [ "," STRATEGY | "," "verbatim" ] ":" NL
+                      >>> prose { "or" NL >>> prose } ;   (* the phrase-override entry grammar *)
+use-phrasebook-line = "use" "phrasebook" WORD [ "while" condition ] NL ;  (* header body; stackable *)
+import-phrasebook   = "import" "phrasebook" STRING NL ;   (* top level; STRING ends ".story" *)
+```
+
+A named, predicated phrase collection (ADR-245 intent, ADR-250 design).
+Books arbitrate first-predicate-match in file-appearance order, per key
+(`use`d and `define`d alike); a predicate-less book is the DEFAULT
+(always) book. The fallback chain is per-entity phrase → story
+`define phrase` → active book → platform default — story text always
+beats books (enforced statically at load: story-defined keys register
+no book evaluator). Entry keys are STORY keys only — dotted platform
+IDs are `analysis.phrasebook-dotted-key` (ADR-230 D5 story-level
+overrides remain the platform path). Entry-level `while` is
+`analysis.phrasebook-entry-gate` (the book's header predicate is the
+only gate). Other gates: `parse.phrasebook-header`/`-entry`/`-end`,
+`parse.use-phrasebook`, `parse.import-form` (bare `import "<file>"`
+reserved for the parked generalized import; non-`.story` paths
+rejected), `analysis.duplicate-phrasebook`, `analysis.unknown-phrasebook`
+(nearest-match against the compile-time manifest registry),
+`analysis.phrasebook-reserved-key`, `analysis.phrasebook-duplicate-key`
+(within one book; across books is the point),
+`analysis.import-unresolved` / `analysis.import-fragment-content`
+(fragments hold only `define phrasebook` blocks + `##` comments), and
+the WARNING `analysis.phrasebook-partial-coverage` (a story-referenced
+key covered only by predicated books renders nothing off-book). Book
+coverage counts as declaration for `analysis.missing-phrase` — for
+`use`d books via the manifest key list. IR: `StoryIR.phrasebooks`
+(additive), entries inline for `define`, load-registry-resolved for
+`use` (manifest/data conformance is a LoadError). Runtime: one ADR-240
+evaluator per book-covered-not-story-defined key
+(`phrasebook.template.<key>`), read at the engine's render point;
+variant counters key `TEXT_STATE` as (`phrasebook.<book>`, key).
 
 ## define
 
@@ -190,6 +499,11 @@ define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
 phrase-entry     = WORD ":" NL prose-paragraph ;           (* prose block only — the same-line
                                                               quoted/bare forms were removed
                                                               (grammar log 2026-07-10) *)
+define-pronouns  = "define" "pronouns" WORD NL             (* ADR-242 D7 (ratchet H3): five named
+                   >>> { PRONOUN-CASE WORD NL }               case rows, order free, all required;
+                   "end" "pronouns" NL ;                      analyzer gates rows + shadowing *)
+PRONOUN-CASE     = "subject" | "object" | "possessive"
+                 | "possessive-pronoun" | "reflexive" ;
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
 pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; name "br" reserved *)
@@ -216,6 +530,11 @@ are gone; facts are derived conditions or owner states (`parse.removed-flag`).
 - `define phrase X, verbatim` preserves line structure, interior blank
   lines, and relative indentation (the common leading indent is stripped);
   mutually exclusive with strategies and `or` variants.
+- Phrase body text must be indented under the `define phrase` header; a
+  column-1 non-keyword line is `parse.phrase-text-indent` (one diagnostic
+  for the run of flush-left lines; recovery still finds `end phrase`).
+  Guard added 2026-07-19 — before it, such a line looped the variant
+  parser to OOM.
 
 ## Traits, actions, hatches, sequences (Phase B, extended by Phase C)
 
@@ -445,10 +764,12 @@ review; if any is wrong it becomes a grammar-changes entry:
 9. **Descriptions and per-entity overrides become derived phrase keys**
    (`<entity-id>.description`, `<entity-id>.<key>`) registered in the
    story's default locale (Phase A: `en-US`), per given 3.
-10. **Event-verb set: `entering`** (`EVENT_VERBS` in `catalog.ts`, gerund
-    register since the ownership package). An `on`/`after` clause verb is
-    either a known event verb or a dispatch-action gerund; growing the set
-    is a grammar change (governance log).
+10. **Event-verb set: `entering`, `leaving`** (`EVENT_VERBS` in
+    `catalog.ts`, gerund register since the ownership package; `leaving`
+    added by ratchet R3, ADR-236 D6 — region blocks only, loader-refused
+    elsewhere). An `on`/`after` clause verb is either a known event verb or
+    a dispatch-action gerund; growing the set is a grammar change
+    (governance log).
 11. **`is <word>` objects** must be a declared state of the subject entity,
     a v1 trait adjective, a state adjective (D1), a literal, or an entity
     name — anything else is the unknown-value gate with a nearest-valid

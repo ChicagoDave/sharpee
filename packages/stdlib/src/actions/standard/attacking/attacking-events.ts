@@ -3,7 +3,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { AttackingSharedData } from './attacking-types';
+import { AttackingSharedData } from './attacking-types.js';
 
 /**
  * Event data for when something is attacked

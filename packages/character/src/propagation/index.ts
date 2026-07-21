@@ -20,19 +20,19 @@ export {
   type PropagationProfile,
   type PropagationTransfer,
   AlreadyToldRecord,
-} from './propagation-types';
+} from './propagation-types.js';
 
 export {
   type RoomOccupant,
   type PropagationContext,
   evaluatePropagation,
-} from './propagation-evaluator';
+} from './propagation-evaluator.js';
 
 export {
   type TransferResult,
   transferFact,
   applyTransfers,
-} from './fact-transfer';
+} from './fact-transfer.js';
 
 export {
   type PlayerPresence,
@@ -41,14 +41,14 @@ export {
   getVisibilityResult,
   getVisibilityResults,
   resolvePlayerPresence,
-} from './visibility';
+} from './visibility.js';
 
 export {
   type PropagationOptions,
   buildPropagationProfile,
-} from './builder';
+} from './builder.js';
 
 export {
   PropagationMessages,
   type PropagationMessageId,
-} from './propagation-messages';
+} from './propagation-messages.js';

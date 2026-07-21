@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/exit/exitTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Exit trait for entities that represent passages between locations.

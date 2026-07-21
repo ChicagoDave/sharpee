@@ -2,7 +2,7 @@
  * Breakable trait for entities that can be broken with a single hit
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 export interface IBreakableData {
   /** Whether this object is already broken */

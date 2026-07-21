@@ -5,7 +5,15 @@ import { WorldModel } from '@sharpee/world-model';
 export interface TurnPluginActionResult {
   /** The action's id (the verb that ran). */
   actionId: string;
-  /** Whether the action succeeded. Plugins only run after successful actions. */
+  /**
+   * Whether the action GENUINELY succeeded (platform-issue-sweep Phase 7):
+   * false when the action was refused/blocked — including modern blocked()
+   * paths that reuse the primary event type with `blocked: true` /
+   * `failed: true` instead of emitting `action.error`. Plugins still run
+   * after refused actions (NPC/scheduler ticks are turn-level); consumers
+   * that must not react to refusals (state-machine action triggers) gate on
+   * this flag.
+   */
   success: boolean;
   /** The action's direct-object entity, when it had one. */
   targetId?: EntityId;

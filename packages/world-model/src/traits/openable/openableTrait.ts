@@ -1,7 +1,8 @@
 // packages/world-model/src/traits/openable/openableTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { EntityId } from '@sharpee/core';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 export interface IOpenableData {
   /** Whether the entity is currently open */
@@ -39,6 +40,12 @@ export interface IOpenableData {
 
   /** Description when closed (used by computed description getter on IFEntity) */
   closedDescription?: string;
+
+  /** Single tool entity required to open this (ADR-230 D3b; mirrors ILockableData.keyId) */
+  toolId?: EntityId;
+
+  /** Multiple tool entities that can open this (mirrors ILockableData.keyIds) */
+  toolIds?: EntityId[];
 }
 
 /**
@@ -65,6 +72,8 @@ export class OpenableTrait implements ITrait, IOpenableData {
   closeSound?: string;
   openDescription?: string;
   closedDescription?: string;
+  toolId?: EntityId;
+  toolIds?: EntityId[];
 
   constructor(data: IOpenableData = {}) {
     // Set defaults and merge with provided data
@@ -80,5 +89,7 @@ export class OpenableTrait implements ITrait, IOpenableData {
     this.closeSound = data.closeSound;
     this.openDescription = data.openDescription;
     this.closedDescription = data.closedDescription;
+    this.toolId = data.toolId;
+    this.toolIds = data.toolIds;
   }
 }

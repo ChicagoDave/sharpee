@@ -1,0 +1,52 @@
+Chord's grammar is a one-way ratchet: constructs that were removed on
+the way to v1 are not merely undocumented, they are *actively refused*.
+Each removed form produces a specific `parse.*` error whose message
+names its replacement, so a story written against an older sketch fails
+loudly and points the way, rather than misbehaving quietly. Every row
+below is backed by an expected-to-fail fixture in this reference's
+harness, which asserts the exact code still fires.
+
+| Removed form | Diagnostic code | Replacement |
+|---|---|---|
+| top-level `when <actor> <verb>s …` rule | `parse.removed-when` | an `on`/`after` clause on the owner ([§3.1](/chord/guide/behavior)) |
+| top-level `once <condition>` rule | `parse.removed-once` | the `, once` clause modifier ([§3.3](/chord/guide/behavior)) |
+| top-level `every N turns` rule | `parse.removed-every` | a `define sequence` ([§4.8](/chord/guide/flow)) or `every turn` clause ([§3.2](/chord/guide/behavior)) |
+| `define flag <name>` | `parse.removed-flag` | owner `states:` ([§2.7](/chord/guide/world)) or a derived condition ([§5.1](/chord/guide/vocabulary)) |
+| `flag` trait-field type | `parse.removed-flag-field` | trait `states` ([§5.7](/chord/guide/vocabulary)) |
+| `if` / `else` / `end if` | `parse.removed-if` | `must` ([§3.5](/chord/guide/behavior)), the `when` suffix ([§3.8](/chord/guide/behavior)), or `select` ([§4.1](/chord/guide/flow)) |
+| top-level `define score … worth N` | `parse.removed-score` | an owner-attached `score` line ([§4.5](/chord/guide/flow)) |
+| `ordered` / `once` phrase strategy | `parse.phrase-strategy-retired` | `stopping` / `first-time` ([§4.2](/chord/guide/flow)) |
+
+The through-line is *stickiness* (design.md, given 9): every one of these
+removals took a floating, top-level behavior and re-homed it on the thing
+it is actually about. A `when` rule floated beside the world; an `on`
+clause lives on the room it reacts in. A global `flag` floated in no
+one's namespace; a `states:` line lives on its owner. The migration is
+almost always "find the thing this was really about, and move it there."
+
+The richest case is `if`, because a single removed construct fans out to
+three replacements. This no longer parses:
+
+```chord
+  on opening it
+    if it is locked-fast
+      phrase clunk
+    end if
+  end on
+```
+
+It reports `parse.removed-if`, and which replacement you want depends on
+what the `if` was doing. If it was *guarding* the whole action — this may
+not proceed unless a condition holds — it becomes a `must` requirement
+([§3.5](/chord/guide/behavior)). If it was making *one statement*
+conditional, it becomes that
+statement plus a `when` suffix (`phrase clunk when it is locked-fast`,
+[§3.8](/chord/guide/behavior)). If it was choosing between *several
+bodies* by a value, it becomes
+a `select` ([§4.1](/chord/guide/flow)). The removed `if` had all three
+jobs; Chord gives each
+its own, clearer form.
+
+## The formal grammar
+
+The complete grammar — productions, layout rules, and the ratchet history — lives in the [Chord grammar reference](/chord/reference/grammar), with the machine-readable EBNF downloadable there.

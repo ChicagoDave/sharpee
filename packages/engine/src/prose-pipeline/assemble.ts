@@ -14,7 +14,7 @@
  */
 
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
-import { parseDecorations } from './decorations/parser';
+import { parseDecorations } from './decorations/parser.js';
 
 /**
  * Options for `createBlock`.

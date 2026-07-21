@@ -13,7 +13,7 @@
  * @see ADR-174 §Internal interfaces
  */
 
-import type { IProsePipeline } from '../prose-pipeline/types';
+import type { IProsePipeline } from '../prose-pipeline/types.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 

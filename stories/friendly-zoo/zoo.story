@@ -9,6 +9,15 @@ create the Zoo Entrance
   aka entrance, gates, gate
   south to the Main Path
 
+  first time
+    Your family piles out of the car, buzzing with excitement — a
+    whole day at the zoo! You straighten the strap of your backpack
+    and take it all in. You stand before the wrought-iron gates of
+    the Willowbrook Family Zoo. A cheerful welcome sign arches over
+    the entrance, and a small ticket booth sits to one side. A
+    sturdy iron fence runs along either side of the gates. The main
+    path leads south into the zoo grounds.
+
   You stand before the wrought-iron gates of the Willowbrook Family Zoo.
   A cheerful welcome sign arches over the entrance, and a small ticket
   booth sits to one side. A sturdy iron fence runs along either side of
@@ -131,7 +140,7 @@ create the staff keycard
 
 create the staff gate
   aka gate, metal gate, staff door
-  scenery, openable, lockable with key the staff keycard
+  scenery, openable, lockable with the staff keycard
   in the Main Path
 
   A sturdy metal gate with a "STAFF ONLY" sign.

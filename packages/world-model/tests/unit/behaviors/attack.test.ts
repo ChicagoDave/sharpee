@@ -1,16 +1,20 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createSeededRandom } from '@sharpee/core';
 import { AttackBehavior } from '../../../src/behaviors/attack';
 import { IFEntity, TraitType } from '../../../src';
 import { WeaponTrait } from '../../../src/traits/weapon/weaponTrait';
 import { BreakableTrait } from '../../../src/traits/breakable/breakableTrait';
 import { DestructibleTrait } from '../../../src/traits/destructible/destructibleTrait';
 import { CombatantTrait } from '../../../src/traits/combatant/combatantTrait';
+import { HealthTrait } from '../../../src/traits/health/healthTrait';
 import { ContainerTrait } from '../../../src/traits/container/containerTrait';
 
 describe('AttackBehavior', () => {
   let mockWorld: any;
   let attacker: IFEntity;
   let weapon: IFEntity;
+  // Fixed-seed stream: harness determinism, not story policy (ADR-231 D6)
+  const rng = createSeededRandom(12345);
 
   beforeEach(() => {
     attacker = new IFEntity('player', 'player');
@@ -54,7 +58,7 @@ describe('AttackBehavior', () => {
         return null;
       });
 
-      const result = AttackBehavior.attack(vase, undefined, mockWorld);
+      const result = AttackBehavior.attack(vase, undefined, mockWorld, rng);
 
       expect(result.type).toBe('broke');
       // Debris creation is now story-specific via event handlers
@@ -74,7 +78,7 @@ describe('AttackBehavior', () => {
         material: 'glass'
       } as BreakableTrait);
 
-      const result = AttackBehavior.attack(vase, undefined, mockWorld);
+      const result = AttackBehavior.attack(vase, undefined, mockWorld, rng);
 
       expect(result.type).toBe('ineffective');
     });
@@ -100,7 +104,7 @@ describe('AttackBehavior', () => {
       // Mock weapon damage calculation
       vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
-      const result = AttackBehavior.attack(wall, weapon, mockWorld);
+      const result = AttackBehavior.attack(wall, weapon, mockWorld, rng);
 
       expect(result.type).toBe('damaged');
       expect(result.damage).toBeGreaterThan(0);
@@ -122,7 +126,7 @@ describe('AttackBehavior', () => {
         return null;
       });
 
-      const result = AttackBehavior.attack(wall, undefined, mockWorld);
+      const result = AttackBehavior.attack(wall, undefined, mockWorld, rng);
 
       expect(result.type).toBe('destroyed');
       expect(result.targetDestroyed).toBe(true);
@@ -139,7 +143,7 @@ describe('AttackBehavior', () => {
         requiresType: 'blunt'
       } as DestructibleTrait);
 
-      const result = AttackBehavior.attack(wall, undefined, mockWorld);
+      const result = AttackBehavior.attack(wall, undefined, mockWorld, rng);
 
       expect(result.type).toBe('ineffective');
       expect(result.success).toBe(false);
@@ -156,7 +160,7 @@ describe('AttackBehavior', () => {
         requiresType: 'blunt'
       } as DestructibleTrait);
 
-      const result = AttackBehavior.attack(wall, weapon, mockWorld);
+      const result = AttackBehavior.attack(wall, weapon, mockWorld, rng);
 
       expect(result.type).toBe('ineffective');
       expect(result.success).toBe(false);
@@ -166,14 +170,8 @@ describe('AttackBehavior', () => {
   describe('attack combatant entity', () => {
     it('should damage combatant with weapon', () => {
       const goblin = new IFEntity('goblin', 'npc');
-      goblin.add({
-        type: TraitType.COMBATANT,
-        health: 20,
-        maxHealth: 20,
-        isAlive: true,
-        armor: 2,
-        dropsInventory: true
-      } as CombatantTrait);
+      goblin.add(new CombatantTrait({ armor: 2, dropsInventory: true }));
+      goblin.add(new HealthTrait({ health: 20, maxHealth: 20 }));
 
       mockWorld.getEntity.mockImplementation((id) => {
         if (id === 'goblin') return goblin;
@@ -182,7 +180,7 @@ describe('AttackBehavior', () => {
 
       vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
-      const result = AttackBehavior.attack(goblin, weapon, mockWorld);
+      const result = AttackBehavior.attack(goblin, weapon, mockWorld, rng);
 
       expect(result.type).toBe('hit');
       expect(result.damage).toBeGreaterThan(0);
@@ -190,15 +188,9 @@ describe('AttackBehavior', () => {
 
     it('should kill combatant when health reaches 0', () => {
       const goblin = new IFEntity('goblin', 'npc');
-      goblin.add({
-        type: TraitType.COMBATANT,
-        health: 2,
-        maxHealth: 20,
-        isAlive: true,
-        armor: 0,
-        dropsInventory: true
-      } as CombatantTrait);
-      
+      goblin.add(new CombatantTrait({ armor: 0, dropsInventory: true }));
+      goblin.add(new HealthTrait({ health: 2, maxHealth: 20 }));
+
       goblin.add({
         type: TraitType.CONTAINER,
         canContain: true,
@@ -217,7 +209,7 @@ describe('AttackBehavior', () => {
 
       vi.spyOn(Math, 'random').mockReturnValue(0.9); // High damage
 
-      const result = AttackBehavior.attack(goblin, weapon, mockWorld);
+      const result = AttackBehavior.attack(goblin, weapon, mockWorld, rng);
 
       expect(result.type).toBe('killed');
       expect(result.targetKilled).toBe(true);
@@ -226,15 +218,10 @@ describe('AttackBehavior', () => {
 
     it('should do unarmed damage without weapon', () => {
       const goblin = new IFEntity('goblin', 'npc');
-      goblin.add({
-        type: TraitType.COMBATANT,
-        health: 20,
-        maxHealth: 20,
-        isAlive: true,
-        armor: 0
-      } as CombatantTrait);
+      goblin.add(new CombatantTrait({ armor: 0 }));
+      goblin.add(new HealthTrait({ health: 20, maxHealth: 20 }));
 
-      const result = AttackBehavior.attack(goblin, undefined, mockWorld);
+      const result = AttackBehavior.attack(goblin, undefined, mockWorld, rng);
 
       expect(result.type).toBe('hit');
       expect(result.damage).toBeGreaterThanOrEqual(1);
@@ -246,7 +233,7 @@ describe('AttackBehavior', () => {
     it('should return ineffective for entity with no combat traits', () => {
       const chair = new IFEntity('chair', 'furniture');
 
-      const result = AttackBehavior.attack(chair, undefined, mockWorld);
+      const result = AttackBehavior.attack(chair, undefined, mockWorld, rng);
 
       expect(result.type).toBe('ineffective');
       expect(result.success).toBe(false);
@@ -273,7 +260,7 @@ describe('AttackBehavior', () => {
         return null;
       });
 
-      const result = AttackBehavior.attack(entity, undefined, mockWorld);
+      const result = AttackBehavior.attack(entity, undefined, mockWorld, rng);
 
       expect(result.type).toBe('broke'); // Breakable wins
     });
@@ -298,9 +285,76 @@ describe('AttackBehavior', () => {
         return null;
       });
 
-      const result = AttackBehavior.attack(entity, undefined, mockWorld);
+      const result = AttackBehavior.attack(entity, undefined, mockWorld, rng);
 
       expect(result.type).toBe('damaged'); // Destructible used
+    });
+  });
+
+  describe('ineffective-attack reason codes (platform-issue-sweep Phase 3c)', () => {
+    // Failure results carry a reason CODE and NO message — world-model never
+    // emits English; the language layer owns the prose.
+
+    it('unarmed attack on weapon-requiring destructible → requires_weapon', () => {
+      const wall = new IFEntity('wall', 'barrier');
+      wall.add({
+        type: TraitType.DESTRUCTIBLE,
+        hitPoints: 10,
+        maxHitPoints: 10,
+        armor: 0,
+        requiresWeapon: true
+      } as DestructibleTrait);
+
+      const result = AttackBehavior.attack(wall, undefined, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('requires_weapon');
+      expect(result.message).toBeUndefined();
+    });
+
+    it('wrong weapon type → wrong_weapon_type', () => {
+      const wall = new IFEntity('wall', 'barrier');
+      wall.add({
+        type: TraitType.DESTRUCTIBLE,
+        hitPoints: 10,
+        maxHitPoints: 10,
+        armor: 0,
+        requiresWeapon: true,
+        requiresType: 'blunt'
+      } as DestructibleTrait);
+
+      const result = AttackBehavior.attack(wall, weapon, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('wrong_weapon_type');
+      expect(result.message).toBeUndefined();
+    });
+
+    it('invulnerable destructible → invulnerable', () => {
+      const monolith = new IFEntity('monolith', 'barrier');
+      monolith.add({
+        type: TraitType.DESTRUCTIBLE,
+        hitPoints: 10,
+        maxHitPoints: 10,
+        armor: 0,
+        invulnerable: true
+      } as DestructibleTrait);
+
+      const result = AttackBehavior.attack(monolith, weapon, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('invulnerable');
+      expect(result.message).toBeUndefined();
+    });
+
+    it('no combat-related traits → no_effect', () => {
+      const rock = new IFEntity('rock', 'object');
+
+      const result = AttackBehavior.attack(rock, undefined, mockWorld, rng);
+
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('no_effect');
+      expect(result.message).toBeUndefined();
     });
   });
 });

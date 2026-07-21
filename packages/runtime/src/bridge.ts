@@ -17,8 +17,8 @@ import type { ISaveData } from '@sharpee/core';
 import type {
   InboundMessage,
   OutboundMessage,
-} from './protocol';
-import { isInboundMessage } from './protocol';
+} from './protocol.js';
+import { isInboundMessage } from './protocol.js';
 
 /** Runtime version — updated by build */
 const RUNTIME_VERSION = '0.1.0';

@@ -7,9 +7,7 @@ export const tellingLanguage = {
   
   patterns: [
     'tell [someone] about [topic]',
-    'inform [someone] about [topic]',
-    'notify [someone] about [topic]',
-    'say [topic] to [someone]'
+    'inform [someone] about [topic]'
   ],
   
   messages: {

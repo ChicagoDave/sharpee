@@ -22,6 +22,7 @@ import {
   ReadableTrait,
   SceneryTrait,
   CombatantTrait,
+  HealthTrait,
   StoryInfoTrait,
   EntityType,
   Direction,
@@ -34,7 +35,7 @@ import {
 import { MetaCommandRegistry, registerNpcCombatResolver } from '@sharpee/stdlib';
 
 // Import custom actions
-import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltReservoirIds, blockReservoirExits, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, TALK_TO_TROLL_ACTION_ID, TalkToTrollMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './actions';
+import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltReservoirIds, blockReservoirExits, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './actions';
 
 // Import scheduler module
 import { registerScheduledEvents, DungeoSchedulerMessages, FloodingMessages, BalloonHandlerMessages, registerTrollRecoveryDaemon, SwordGlowMessages } from './scheduler';
@@ -78,8 +79,6 @@ import { registerRoyalPuzzleHandler, initializePuzzleState, createPuzzleCommandT
 import { createRainbowCommandTransformer } from './handlers/rainbow-handler';
 import { createBalloonExitTransformer } from './handlers/balloon-handler';
 import { createRiverEntryTransformer, RiverMessages } from './handlers/river-handler';
-import { createFallsDeathTransformer, registerFallsRoom, FallsDeathMessages } from './handlers/falls-death-handler';
-import { createGrueDeathTransformer } from './handlers/grue-handler';
 import { createChimneyCommandTransformer } from './handlers/chimney-handler';
 import { createTinyRoomDoorTransformer, createTinyRoomMatTransformer, TinyRoomMessages } from './handlers/tiny-room-handler';
 
@@ -153,9 +152,10 @@ import { registerAllMessages } from './messages';
 import { initializeOrchestration } from './orchestration';
 
 /**
- * Dungeo story configuration
+ * Dungeo story configuration (module-private; read it off a story
+ * instance via `createStory().config` — ADR-248 factory-only contract)
  */
-export const config: StoryConfig = {
+const config: StoryConfig = {
   id: "dungeon",
   title: "DUNGEON",
   author: "Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
@@ -697,14 +697,16 @@ export class DungeoStory implements Story {
 
       if (!existingPlayer.has('combatant')) {
         existingPlayer.add(new CombatantTrait({
-          health: 100,
-          maxHealth: 100,
           skill: 50,
           baseDamage: 1,
           armor: 0,
           hostile: false,
           canRetaliate: false
         }));
+      }
+      if (!existingPlayer.has('health')) {
+        // Death-capable game: the player carries life-state (ADR-226 AC-1 / §3).
+        existingPlayer.add(new HealthTrait({ health: 100, maxHealth: 100 }));
       }
 
       return existingPlayer;
@@ -733,14 +735,14 @@ export class DungeoStory implements Story {
     }));
 
     player.add(new CombatantTrait({
-      health: 100,
-      maxHealth: 100,
       skill: 50,
       baseDamage: 1,
       armor: 0,
       hostile: false,
       canRetaliate: false
     }));
+    // Death-capable game: the player carries life-state (ADR-226 AC-1 / §3).
+    player.add(new HealthTrait({ health: 100, maxHealth: 100 }));
 
     return player;
   }
@@ -837,8 +839,12 @@ export class DungeoStory implements Story {
   }
 }
 
-// Create and export the story instance
-export const story = new DungeoStory();
-
-// Default export for convenience
-export default story;
+/**
+ * Create a fresh Dungeo story instance (ADR-248 factory-only contract).
+ *
+ * The sole story export: every boot — including an in-process restart
+ * reboot — calls this for a fully fresh story with no shared state.
+ */
+export function createStory(): DungeoStory {
+  return new DungeoStory();
+}

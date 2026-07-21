@@ -20,8 +20,8 @@ import type { WorldModel } from '@sharpee/world-model';
 import type { ISaveRestoreHooks } from '@sharpee/core';
 import type { ClientCapabilities } from '@sharpee/if-domain';
 import { type IRenderer } from '@sharpee/channel-service';
-import type { BrowserClientConfig, BrowserClientInterface, DOMElements } from './types';
-import { AudioManager } from './audio/AudioManager';
+import type { BrowserClientConfig, BrowserClientInterface, DOMElements } from './types.js';
+import { AudioManager } from './audio/AudioManager.js';
 /**
  * Default `ClientCapabilities` profile for the browser surface — full
  * graphical capabilities so every standard + media channel appears in
@@ -53,6 +53,14 @@ export declare class BrowserClient implements BrowserClientInterface {
      * dialog returned.
      */
     private pendingEngineSave;
+    /**
+     * Set when a restart is confirmed (ADR-248). The reboot itself is
+     * deferred until the in-flight turn's final packet has flushed —
+     * executeCommand() checks this after executeTurn() resolves. Also
+     * gates the per-turn autosave so the restart turn cannot recreate
+     * the envelope the confirmation just deleted.
+     */
+    private pendingReboot;
     private elements;
     /**
      * ADR-165 channel renderer host. Constructed in `connectEngine()`
@@ -70,6 +78,11 @@ export declare class BrowserClient implements BrowserClientInterface {
     /**
      * Connect to game engine and set up event handlers.
      * Call after creating the engine.
+     *
+     * Safe to call again on a restart reboot (ADR-248): the second call
+     * re-points world-bound state and re-subscribes the channel renderer
+     * to the new engine, but does NOT recreate the DOM-bound managers —
+     * their listeners are already wired to the page and would double-bind.
      */
     connectEngine(engine: GameEngine, world: WorldModel): void;
     /**
@@ -141,6 +154,17 @@ export declare class BrowserClient implements BrowserClientInterface {
      * Execute a command
      */
     executeCommand(command: string): Promise<void>;
+    /**
+     * Dispose the current engine and re-run the story's boot path (ADR-248).
+     *
+     * Stops the engine if it is still running (menu-path restarts have no
+     * turn in flight, so the engine never stopped itself), then invokes the
+     * configured `reboot` callback — the story's own `start()` — which
+     * builds a fresh story/world/engine and reconnects this client. A
+     * failed reboot displays the real error (never a parse fallback);
+     * without a `reboot` callback, falls back to a full page reload.
+     */
+    private disposeAndReboot;
     /**
      * Get ISaveRestoreHooks for engine registration
      */
@@ -310,6 +334,16 @@ export interface BrowserClientConfig {
      * Any of the three (config flag, query, localStorage) turns it on.
      */
     debugChannels?: boolean;
+    /**
+     * Reboot callback for RESTART (ADR-248): re-runs the story's own boot
+     * path — fresh story via `createStory()`, fresh world/engine,
+     * `connectEngine`, `client.start()`. Each story's browser entry passes
+     * its own top-level `start` function here. Invoked by the client after
+     * a confirmed restart's final packet has flushed (never inside the
+     * hook itself). When omitted, the client falls back to
+     * `window.location.reload()`.
+     */
+    reboot?: () => Promise<void>;
 }
 /**
  * DOM element references passed to managers
@@ -426,7 +460,7 @@ export declare const AUTOSAVE_SLOT = "autosave";
 /**
  * ThemeManager - handles theme switching and persistence
  */
-import type { ThemeConfig } from '../types';
+import type { ThemeConfig } from '../types.js';
 export interface ThemeManagerConfig {
     /** localStorage key for theme persistence */
     storageKey: string;
@@ -506,7 +540,7 @@ export declare class ThemeManager {
  */
 import type { ISaveData } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
-import type { BrowserSaveEnvelope, SaveContext, SaveSlotMeta } from '../types';
+import type { BrowserSaveEnvelope, SaveContext, SaveSlotMeta } from '../types.js';
 export interface SaveManagerConfig {
     /** Storage key prefix (e.g., "dungeo-") */
     storagePrefix: string;
@@ -522,6 +556,12 @@ export declare class SaveManager {
     private world;
     private onStateChange?;
     constructor(config: SaveManagerConfig);
+    /**
+     * Re-point this manager at a new world (ADR-248 restart reboot).
+     * The client reuses its managers across reboots; only the world
+     * reference changes.
+     */
+    setWorld(world: WorldModel): void;
     /**
      * Walk localStorage for entries under this manager's `savePrefix` and
      * delete any whose envelope is not the current `ENVELOPE_VERSION`.
@@ -605,8 +645,8 @@ export declare class SaveManager {
  * resolves the pending promise consistently. Buttons set the dialog's
  * `returnValue` before closing to communicate intent.
  */
-import type { DialogElements, SaveSlotMeta } from '../types';
-import type { SaveManager } from './SaveManager';
+import type { DialogElements, SaveSlotMeta } from '../types.js';
+import type { SaveManager } from './SaveManager.js';
 export interface DialogManagerConfig {
     elements: DialogElements;
     saveManager: SaveManager;
@@ -654,7 +694,7 @@ export declare class DialogManager {
  * State is expressed via the `--open` modifier on .sharpee-menu-bar-item
  * and the native `aria-expanded` attribute on the trigger button.
  */
-import type { MenuHandlers } from '../types';
+import type { MenuHandlers } from '../types.js';
 export interface MenuManagerConfig {
     menuBar: HTMLElement | null;
     handlers: MenuHandlers;
@@ -742,7 +782,7 @@ export declare class InputManager {
 /**
  * TextDisplay - handles text output to the main window
  */
-import type { DisplayElements } from '../types';
+import type { DisplayElements } from '../types.js';
 export declare class TextDisplay {
     private textContent;
     private mainWindow;
@@ -786,7 +826,7 @@ export declare class TextDisplay {
 /**
  * StatusLine - handles the status bar display (location, score, turns)
  */
-import type { StatusElements } from '../types';
+import type { StatusElements } from '../types.js';
 export declare class StatusLine {
     private statusLocation;
     private statusScore;
@@ -915,20 +955,21 @@ export declare class AudioManager {
  * @see ADR-165 — Renderer Architecture — §7, §8
  */
 import type { IRenderer } from '@sharpee/channel-service';
-import { createMainChannelRenderer } from './main';
-import { createPromptChannelRenderer } from './prompt';
-import { createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer } from './status';
-import { createInfoChannelRenderer, createIfidChannelRenderer } from './info';
-import { createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer } from './notify';
-import { createImageChannelRenderer, createImagePreloadChannelRenderer } from './image';
-import { createSoundChannelRenderer, createMusicChannelRenderer, type AudioManagerLike } from './audio';
-import { createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer } from './animation';
-import { createLifecycleChannelRenderer, type LifecycleChannelRendererOptions } from './lifecycle';
-import { mountDefaultLayout, type BrowserDefaultLayout } from './layout';
+import { createMainChannelRenderer } from './main.js';
+import { createPromptChannelRenderer } from './prompt.js';
+import { createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer } from './status.js';
+import { createInfoChannelRenderer, createIfidChannelRenderer } from './info.js';
+import { createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer } from './notify.js';
+import { createImageChannelRenderer, createImagePreloadChannelRenderer } from './image.js';
+import { createSoundChannelRenderer, createMusicChannelRenderer, type AudioManagerLike } from './audio.js';
+import { createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer } from './animation.js';
+import { createLifecycleChannelRenderer, type LifecycleChannelRendererOptions } from './lifecycle.js';
+import { mountDefaultLayout, type BrowserDefaultLayout } from './layout.js';
 export { createMainChannelRenderer, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
-export { createAmbientChannelRenderer } from './audio';
-export { renderTextContent, flattenTextContent } from './text-content';
+export { createAmbientChannelRenderer } from './audio.js';
+export { createGenericPanelRenderer } from './panel.js';
+export { renderTextContent, flattenTextContent } from './text-content.js';
 /**
  * Options for {@link registerDefaultBrowserRenderers}.
  */
@@ -1455,6 +1496,16 @@ export interface Renderer {
      */
     registerRenderer(channelId: string, renderer: ChannelRenderer): void;
     /**
+     * Register a renderer FACTORY for a channel-id prefix (ADR-241 D4).
+     * When a manifest channel has no exact-id renderer, the longest
+     * matching registered prefix builds one lazily (cached per id, per
+     * manifest). The empty prefix `''` matches every channel — the
+     * consumer's generic default. Exact-id registrations always win;
+     * the JSON-tree fallback remains the last resort when no factory
+     * matches.
+     */
+    registerRendererFactory(prefix: string, factory: (channelId: string) => ChannelRenderer): void;
+    /**
      * Subscribe to `CommandPacket`s emitted by channel renderers.
      * The consumer's host loop pumps these back to the engine.
      * Multiple subscribers all receive each emission.
@@ -1503,8 +1554,8 @@ export interface Renderer {
  * @see ADR-165 — Renderer Architecture
  */
 import type { CmgtPacket, CommandPacket, TurnPacket } from '@sharpee/if-domain';
-import type { ChannelRenderer, ChannelStateStore, Renderer as RendererInterface, SlotHandle } from './types';
-import { type FallbackOutputSink, type FallbackWarningSink } from './json-tree-fallback';
+import type { ChannelRenderer, ChannelStateStore, Renderer as RendererInterface, SlotHandle } from './types.js';
+import { type FallbackOutputSink, type FallbackWarningSink } from './json-tree-fallback.js';
 /**
  * Optional construction options for the `Renderer`.
  */
@@ -1544,6 +1595,8 @@ export interface RendererOptions {
  */
 export declare class Renderer implements RendererInterface {
     private renderers;
+    private rendererFactories;
+    private factoryRenderers;
     private fallbackRenderers;
     private state;
     private slots;
@@ -1557,6 +1610,13 @@ export declare class Renderer implements RendererInterface {
      * re-registering replaces the prior renderer for that id.
      */
     registerRenderer(channelId: string, renderer: ChannelRenderer): void;
+    /**
+     * Register a renderer factory for a channel-id prefix (ADR-241 D4).
+     * Longest matching prefix wins; `''` is the match-all default.
+     * Instances are built lazily per channel id and cached until the
+     * next manifest (their `onDestroy` runs with everyone else's).
+     */
+    registerRendererFactory(prefix: string, factory: (channelId: string) => ChannelRenderer): void;
     /**
      * Register a slot (ADR-165 §7). Stories that replace the
      * platform-default layout call this for each region.
@@ -1615,10 +1675,12 @@ export declare class Renderer implements RendererInterface {
      */
     private handleClear;
     /**
-     * Resolve the renderer for a channel id. Returns the registered
-     * renderer when present; otherwise lazily creates and caches a
-     * JSON-tree fallback (so the one-time warning fires once per
-     * channel id, not once per emission).
+     * Resolve the renderer for a channel id: exact registration first
+     * (last-write-wins, so story overrides beat every default), then
+     * the longest matching registered factory prefix (ADR-241 D4 —
+     * instances lazily built and cached per id), then the JSON-tree
+     * fallback (cached so the one-time warning fires once per channel
+     * id, not once per emission).
      */
     private resolveRenderer;
 }
@@ -1648,7 +1710,7 @@ export declare function createRenderer(opts?: RendererOptions): Renderer;
  *
  * @see ADR-165 — Renderer Architecture — §3, AC-3
  */
-import type { ChannelRenderer } from './types';
+import type { ChannelRenderer } from './types.js';
 /**
  * Sink for warnings emitted by the fallback. Defaults to
  * `console.warn`. Tests inject a recording sink; concrete platform
@@ -1738,7 +1800,7 @@ export type ProceduralRecipeName = BuiltinRecipeName | (string & {});
  * engine's event pipeline unchanged — clients that support audio render
  * them; others ignore them.
  */
-import type { Volume, DurationMs, StereoPan, PlaybackRate, AudioAssetPath, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types';
+import type { Volume, DurationMs, StereoPan, PlaybackRate, AudioAssetPath, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types.js';
 /**
  * Base interface for all audio events.
  * Audio events flow through the engine's event pipeline unchanged.
@@ -1916,7 +1978,7 @@ export declare function isAudioEvent(event: {
  *
  * Owner context: @sharpee/media (ADR-138)
  */
-import type { Volume, AudioFormat } from './types';
+import type { Volume, AudioFormat } from './types.js';
 /**
  * Audio capabilities declared by the client at session start.
  * Stories can check these before emitting audio events to avoid
@@ -1971,7 +2033,7 @@ export interface AudioPreferences {
  *
  * Owner context: @sharpee/media (ADR-138)
  */
-import type { AudioAssetPath, Volume, DurationMs, StereoPan, PlaybackRate, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types';
+import type { AudioAssetPath, Volume, DurationMs, StereoPan, PlaybackRate, AmbientChannel, DuckPriority, AudioTarget, AudioEffectType, ProceduralRecipeName } from './types.js';
 /** Data for audio.sfx events */
 export interface AudioSfxData {
     readonly src: AudioAssetPath;
@@ -2058,8 +2120,8 @@ declare module '@sharpee/core' {
  * Owner context: @sharpee/media (ADR-138)
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { AudioAssetPath, AmbientChannel, Volume, DurationMs, DuckPriority, AudioEffectType, AudioTarget } from './types';
-import './registry-merge';
+import type { AudioAssetPath, AmbientChannel, Volume, DurationMs, DuckPriority, AudioEffectType, AudioTarget } from './types.js';
+import './registry-merge.js';
 /**
  * An audio cue factory — returns a fresh event each invocation.
  * Factories (not constants) because each call needs a unique event id/timestamp.

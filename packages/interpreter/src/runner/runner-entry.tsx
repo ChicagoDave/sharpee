@@ -13,12 +13,12 @@
 
 import React, { useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ZifmiaRunner } from './index';
-import { StoryLibrary, addRecentStory } from './StoryLibrary';
-import type { LoadedBundle } from '../loader';
-import { isTauri, TauriStorageProvider } from '../storage/tauri-storage-provider';
+import { ZifmiaRunner } from './index.js';
+import { StoryLibrary, addRecentStory } from './StoryLibrary.js';
+import type { LoadedBundle } from '../loader/index.js';
+import { isTauri, TauriStorageProvider } from '../storage/tauri-storage-provider.js';
 import { BrowserStorageProvider } from '../storage/index.js';
-import { CLIENT_VERSION } from '../version';
+import { CLIENT_VERSION } from '../version.js';
 
 // On version change (fresh install or upgrade), clear stale localStorage.
 // In Tauri mode saves go to filesystem, so localStorage data is leftover.

@@ -27,40 +27,39 @@ import type { LanguageProvider, RenderContext } from '@sharpee/if-domain';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 
-import { filterEvents } from './stages/filter';
-import { sortEventsForProse } from './stages/sort';
+import { filterEvents } from './stages/filter.js';
+import { sortEventsForProse } from './stages/sort.js';
 import {
   createRenderWorld,
   createRenderContextFactory,
   WorldTextStateStore,
   type WorldModelLike,
-} from './render-context';
+} from './render-context.js';
 
-import type { HandlerContext } from './handlers/types';
-import { handleRoomDescription } from './handlers/room';
-import { handleRevealed } from './handlers/revealed';
+import type { HandlerContext } from './handlers/types.js';
+import { handleRoomDescription } from './handlers/room.js';
+import { handleRevealed } from './handlers/revealed.js';
 import {
   handleGameMessage,
   handleGenericEvent,
-} from './handlers/generic';
-import { handleGameStarted } from './handlers/game';
-import { handlePlatformEvent } from './handlers/platform';
-import { handleAudibilityHeard } from './handlers/audibility';
-import { tryProcessDomainEventMessage } from './handlers/domain-message';
-import { handleImplicitTake } from './handlers/implicit-take';
-import { handleCommandFailed } from './handlers/command-failed';
-import { handleClientQuery } from './handlers/client-query';
+} from './handlers/generic.js';
+import { handleGameStarted } from './handlers/game.js';
+import { handlePlatformEvent } from './handlers/platform.js';
+import { handleAudibilityHeard } from './handlers/audibility.js';
+import { tryProcessDomainEventMessage } from './handlers/domain-message.js';
+import { handleImplicitTake } from './handlers/implicit-take.js';
+import { handleCommandFailed } from './handlers/command-failed.js';
+import { handleClientQuery } from './handlers/client-query.js';
 
-import type { IProsePipeline, SlotContributor, SlotEntry } from './types';
+import type { IProsePipeline, SlotContributor, SlotEntry } from './types.js';
 
 /**
  * Engine-internal prose pipeline.
  *
  * Stateless transformer: events in, blocks out. Constructed once per
  * `setStory()` call with the active language provider; called per
- * turn by `GameEngine.executeTurn`, `GameEngine.restartGame`, and
- * the meta-command path (same three sites the retired
- * `TextService.processTurn` had).
+ * turn by `GameEngine.executeTurn` and the meta-command path (the
+ * same sites the retired `TextService.processTurn` had).
  */
 export class ProsePipeline implements IProsePipeline {
   private readonly languageProvider: LanguageProvider;
@@ -202,6 +201,7 @@ export class ProsePipeline implements IProsePipeline {
 
     const context: HandlerContext = {
       languageProvider: this.languageProvider,
+      world: this.world,
       makeRenderContext,
     };
 

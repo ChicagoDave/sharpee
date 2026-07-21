@@ -22,10 +22,18 @@ import {
   ConditionNode,
   CreateDecl,
   DefineAction,
+  DefineChannel,
   DefineCondition,
+  DefineMachine,
   DefinePhrase,
+  DefinePhrasebook,
   DefinePhrases,
+  DefinePronouns,
   DefineTrait,
+  EmitField,
+  EmitValue,
+  MachineTransition,
+  MediaStmt,
   NameRef,
   OnClause,
   StateName,
@@ -33,27 +41,50 @@ import {
   StoryFile,
   TextValue,
   TraitField,
+  UsePhrasebookDecl,
   ValueExpr,
-} from './ast';
-import { EVENT_VERBS, PLATFORM_STATE_PAIRS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog';
-import { DiagnosticBag } from './diagnostics';
+} from './ast.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
+import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
+import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
+import { DiagnosticBag } from './diagnostics.js';
 import {
   IR_FORMAT,
   IRActionDef,
   IRCondition,
   IREntity,
+  IRExit,
+  IRDataChannelDef,
+  IRPronounSetDef,
+  IREmitField,
+  IREmitValue,
+  IRMachineDef,
+  IRMachineTransition,
   IROnClause,
   IRPhrase,
   IRScoreDef,
   IRStatement,
+  IRTopicRow,
   IRTraitDef,
   IRValue,
   StoryIR,
-} from './ir';
-import { Span } from './span';
+} from './ir.js';
+import { Span } from './span.js';
 
 /** Phase A stories register text in this locale (design.md §2.6). */
 const DEFAULT_LOCALE = 'en-US';
+
+/**
+ * Exit-direction opposites (parser DIRECTIONS vocabulary) — the same
+ * inference every plain exit line performs platform-side; here it backs
+ * the door mirror-line check (ADR-234 D2/D3, `checkDoors`).
+ */
+const OPPOSITE_DIRECTION: Record<string, string> = {
+  north: 'south', south: 'north', east: 'west', west: 'east',
+  northeast: 'southwest', southwest: 'northeast',
+  northwest: 'southeast', southeast: 'northwest',
+  up: 'down', down: 'up',
+};
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
 
 /** Reserved-name gate text (David, 2026-07-12 — each package P3). */
@@ -68,8 +99,28 @@ const RESERVED_MATCH_MESSAGE =
  */
 const RESERVED_CHANNEL_KEYS = new Set(['present', 'entered', 'exited', 'disappeared', 'detail']);
 
+/**
+ * Image layers the platform pre-registers (`image:background|main|
+ * overlay`, stdlib MEDIA_CHANNELS) — implied like the `main` ambient
+ * bed; `define layer` covers only layers beyond these (ADR-241 D3).
+ */
+const IMPLIED_IMAGE_LAYERS = new Set(['background', 'main', 'overlay']);
+
 /** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
+
+/**
+ * ADR-239 D4 topic normalization — ONE implementation for both halves of
+ * the lookup contract: the analyzer's overlap gates here, and the
+ * story-loader's runtime table lookup (which imports this). Rules:
+ * case-insensitive, leading article stripped, whitespace collapsed.
+ * Whole-topic equality only; never substring matching.
+ */
+export function normalizeTopic(text: string): string {
+  const words = text.trim().toLowerCase().split(/\s+/);
+  if (words.length > 1 && (words[0] === 'the' || words[0] === 'a' || words[0] === 'an')) words.shift();
+  return words.join(' ');
+}
 
 /**
  * Negation prefixes/suffix for ring 3 of the boolean-state gate (D9):
@@ -115,6 +166,8 @@ function conditionFingerprint(cond: ConditionNode): string {
       return `not(${conditionFingerprint(cond.operand)})`;
     case 'chance':
       return `chance:${cond.n}`;
+    case 'client-has':
+      return `client-has:${cond.capability}`;
     case 'condition-ref':
       return `cond:${cond.name}`;
     case 'any-of':
@@ -167,9 +220,18 @@ interface Scope {
   scoreOwner: string | null;
   /** Inside an `each` block body — the `the match` binder is in scope (E3). */
   inEach: boolean;
+  /**
+   * A story-owned clause body (ADR-236 D7): `it`/`its` has no entity
+   * referent — referencing it is `analysis.story-clause-it`, the
+   * unbound-referent gate this scope makes reachable.
+   */
+  storyOwned?: boolean;
 }
 
 const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null, inEach: false };
+
+/** Scope of a story-owned clause (ADR-236 D7): no owner, `it` unbound. */
+const STORY_SCOPE: Scope = { ...TOP_SCOPE, storyOwned: true };
 
 function entityScope(owner: EntitySymbol | null): Scope {
   return { owner, fields: null, slots: null, ownStates: null, scoreOwner: owner?.id ?? null, inEach: false };
@@ -217,6 +279,7 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
       return conditionReferencesIt(cond.operand);
     case 'chance':
     case 'condition-ref':
+    case 'client-has':
       return false;
     case 'any-of':
     case 'none-of':
@@ -306,14 +369,80 @@ class Analyzer {
    * feedable's `hungry` — resolution is across the composer's trait set).
    */
   private traitVisibleStates = new Map<string, string[]>();
+  /**
+   * `define pronouns` sets by name (ADR-242 D7), collected in pass 1 so a
+   * `pronouns <word>` line resolves against sets declared later in the
+   * file. Span doubles as the pass-2 emission guard (family-channel
+   * precedent: an errored duplicate never emits a second entry).
+   */
+  private pronounSetDecls = new Map<string, DefinePronouns>();
 
   constructor(
     private readonly ast: StoryFile,
     private readonly diagnostics: DiagnosticBag,
   ) {}
 
+  /** Extensions admitted by validated `use` lines (ADR-215). */
+  private usedExtensions = new Set<string>();
+
+  /**
+   * Phrasebooks in arbitration order (ADR-250 D3): header `use phrasebook`
+   * lines first (file position), then body `define phrasebook` blocks in
+   * declaration order. Conditions resolve in run() (pass 2), after every
+   * entity symbol exists.
+   */
+  private phrasebookDecls: Array<{
+    name: string;
+    source: 'define' | 'use';
+    condition: ConditionNode | null;
+    entries?: Record<string, IRPhrase>;
+    span: Span;
+  }> = [];
+
+  /** Book name → declaring span (`analysis.duplicate-phrasebook` gate). */
+  private phrasebookNames = new Map<string, Span>();
+
+  /**
+   * Story key → true when a predicate-less (default/always) book covers
+   * it. Book coverage counts as declaration for the missing-phrase gate
+   * (ADR-250 D4.6); predicated-only coverage earns the partial-coverage
+   * warning at first reference.
+   */
+  private bookKeys = new Map<string, boolean>();
+  private partialCoverageWarned = new Set<string>();
+
   run(): StoryIR {
     this.collect();
+
+    // ADR-215: validate `use` lines against the manifest registry — an
+    // unknown name is a compile error (the loader's trusted registry check
+    // backstops rogue IR), a duplicate is one-`use`-per-extension.
+    for (const use of this.ast.header?.uses ?? []) {
+      const manifest = EXTENSION_MANIFESTS.get(use.name);
+      if (!manifest) {
+        const gated = [...EXTENSION_MANIFESTS.values()].filter((m) => !m.core).map((m) => m.name);
+        this.diagnostics.error(
+          'analysis.unknown-extension',
+          `\`use ${use.name}\` names no trusted extension — known: ${gated.join(', ')}.`,
+          use.span,
+        );
+      } else if (manifest.core) {
+        // ADR-215 Q4: NPC vocabulary is CORE — always on, never `use`d.
+        this.diagnostics.error(
+          'analysis.extension-core',
+          `\`${use.name}\` vocabulary is core — it is always available; remove the \`use\` line.`,
+          use.span,
+        );
+      } else if (this.usedExtensions.has(use.name)) {
+        this.diagnostics.error(
+          'analysis.duplicate-use',
+          `\`use ${use.name}\` is already declared — one \`use\` per extension.`,
+          use.span,
+        );
+      } else {
+        this.usedExtensions.add(use.name);
+      }
+    }
 
     const ir: StoryIR = {
       format: IR_FORMAT,
@@ -322,19 +451,31 @@ class Analyzer {
         author: this.ast.header?.author ?? '',
         fields: this.ast.header?.fields ?? {},
       },
+      uses: [...this.usedExtensions],
       story: {
         states: this.storyStates,
         reversible: this.ast.header?.statesReversible ?? false,
+        // Story-owned every-turn clauses (ADR-236 D7): built in STORY_SCOPE
+        // so `it` reports the unbound-referent gate; narration broadcasts
+        // (the story is everywhere — D11 satisfied trivially).
+        onClauses: (this.ast.header?.onClauses ?? []).map((c) => ({
+          ...this.buildOnClause(c, STORY_SCOPE),
+          narration: 'broadcast' as const,
+        })),
       },
       entities: [],
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
+      phrasebooks: [],
       verbs: [],
       hatches: [],
       traits: [],
       actions: [],
       scores: this.scoreDecls,
       sequences: [],
+      machines: [],
+      channels: [],
+      pronounSets: [],
       hasHatches: false,
     };
 
@@ -370,6 +511,30 @@ class Analyzer {
         case 'define-action':
           ir.actions.push(this.buildAction(decl));
           break;
+        case 'define-machine':
+          ir.machines.push(this.buildMachine(decl));
+          break;
+        case 'define-asset':
+          break; // collected in pass 1 — data references, nothing to emit
+        case 'define-family-channel':
+          // ADR-241 D2/D4: the declaration joins the channel manifest.
+          // The pass-1 span guard keeps an errored duplicate from
+          // producing a second entry.
+          if (this.familyChannels[decl.family].get(decl.name) === decl.span) {
+            ir.channels.push({ name: decl.name, family: decl.family, span: decl.span });
+          }
+          break;
+        case 'define-channel':
+          ir.channels.push(this.buildChannel(decl));
+          break;
+        case 'define-pronouns':
+          // ADR-242 D7 — the pass-1 span guard keeps a shadowing/duplicate
+          // declaration from emitting (family-channel precedent).
+          if (this.pronounSetDecls.get(decl.name) === decl) {
+            ir.pronounSets.push(this.buildPronounSet(decl));
+          }
+          break;
+
         case 'define-sequence':
           ir.sequences.push({
             name: decl.name.join(' '),
@@ -396,7 +561,29 @@ class Analyzer {
           break;
         case 'define-phrases':
           break; // collected in pass 1
+        case 'define-phrasebook':
+        case 'import':
+          break; // collected/diagnosed in pass 1; conditions resolve below
+        case 'define-topics':
+          break; // applied onto owners after all entities are built (applyTopics)
       }
+    }
+
+    // ADR-250 D3: books in arbitration order; predicates resolve here in
+    // pass 2 (an entity declared after the book may appear in its `while`).
+    ir.phrasebooks = this.phrasebookDecls.map((b) => ({
+      name: b.name,
+      source: b.source,
+      condition: b.condition ? this.resolveCondition(b.condition, TOP_SCOPE) : null,
+      ...(b.entries ? { entries: b.entries } : {}),
+      span: b.span,
+    }));
+
+    // ADR-241 D3/D4: the implied `main` ambient bed — used by an ambient
+    // statement without a declaration — joins the channel manifest so the
+    // loader registers it (nothing platform-side pre-registers ambient).
+    if (this.impliedMainBedSpan && !this.familyChannels.ambient.has('main')) {
+      ir.channels.push({ name: 'main', family: 'ambient', span: this.impliedMainBedSpan });
     }
 
     for (const [locale, table] of this.phrases) {
@@ -404,9 +591,450 @@ class Analyzer {
     }
     ir.hasHatches = ir.hatches.length > 0;
 
+    this.applyTopics(ir.entities);
+    this.checkRegions(ir.entities);
+    this.checkDoors(ir.entities);
     this.checkMarkers();
     this.checkDescriptionMarkers();
     return ir;
+  }
+
+  /**
+   * ADR-236 D2/D3 never-guess gates over the whole region graph: member
+   * kinds (rooms or regions only), single direct membership (RoomTrait's
+   * `regionId` is single-valued — an ancestor+descendant listing is the
+   * same error), single parent per region, no memberless regions, no
+   * containment cycles. Runs after every entity is built so cross-entity
+   * lookups and spans are all available.
+   */
+  private checkRegions(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const isRegionEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'region');
+    const regions = entities.filter(isRegionEntity);
+
+    // Memberless region: declared-but-unanswerable, uniformly hard (D2 —
+    // ruled no warning tier; its daemon could otherwise silently never fire).
+    for (const region of regions) {
+      if (region.containing.length === 0) {
+        this.diagnostics.error(
+          'analysis.region-memberless',
+          `Region \`${region.name}\` has no \`containing\` line — an empty region is unanswerable (its daemons and crossings could never fire). List its member rooms.`,
+          region.span,
+        );
+      }
+    }
+
+    // Direct membership is stated exactly once, graph-wide.
+    const roomMemberOf = new Map<string, { region: IREntity; span: Span }>();
+    const parentOf = new Map<string, { parent: IREntity; span: Span }>();
+    for (const region of regions) {
+      for (const member of region.containing) {
+        const target = byId.get(member.id);
+        if (!target) continue; // unresolved — already reported by resolveEntityId
+        if (isRegionEntity(target)) {
+          const prior = parentOf.get(member.id);
+          if (prior) {
+            this.diagnostics.error(
+              'analysis.region-two-parents',
+              `Region \`${target.name}\` is already contained by region \`${prior.parent.name}\` (line ${prior.span.line}) — a region has exactly one parent.`,
+              member.span,
+            );
+          } else {
+            parentOf.set(member.id, { parent: region, span: member.span });
+          }
+        } else if (target.kinds.some((k) => k.name === 'room')) {
+          const prior = roomMemberOf.get(member.id);
+          if (prior) {
+            this.diagnostics.error(
+              'analysis.region-double-membership',
+              `\`${target.name}\` is already a member of region \`${prior.region.name}\` (line ${prior.span.line}) — direct membership is stated exactly once (nesting already makes a room part of every ancestor region).`,
+              member.span,
+            );
+          } else {
+            roomMemberOf.set(member.id, { region, span: member.span });
+          }
+        } else {
+          const kind = target.kinds[0]?.name ?? 'plain thing';
+          this.diagnostics.error(
+            'analysis.region-member-kind',
+            `\`${target.name}\` is a ${kind} — \`containing\` members must be rooms or regions.`,
+            member.span,
+          );
+        }
+      }
+    }
+
+    // Containment cycles (walking child → parent; two-parents kept the
+    // first edge, so the graph is functional and one walk per region ends).
+    const walked = new Map<string, 'visiting' | 'done'>();
+    for (const region of regions) {
+      if (walked.has(region.id)) continue;
+      const path: string[] = [];
+      let cur: string | undefined = region.id;
+      while (cur !== undefined && !walked.has(cur)) {
+        walked.set(cur, 'visiting');
+        path.push(cur);
+        const edge = parentOf.get(cur);
+        const next: string | undefined = edge?.parent.id;
+        if (next !== undefined && walked.get(next) === 'visiting') {
+          const names = [...path.slice(path.indexOf(next)), next].map((id) => byId.get(id)?.name ?? id);
+          this.diagnostics.error(
+            'analysis.region-cycle',
+            `Region containment cycle: ${names.map((n) => `\`${n}\``).join(' → ')}.`,
+            edge!.span,
+          );
+          break;
+        }
+        cur = next;
+      }
+      for (const id of path) walked.set(id, 'done');
+    }
+  }
+
+  /**
+   * ADR-234 D3 never-guess gates over the whole door graph: every
+   * `through` target is a door, a door connects exactly one room pair
+   * (the only legal second reference is the exact mirror — other side,
+   * opposite direction), and every declared door is referenced somewhere
+   * (an unconnected door is unanswerable, same hard class as a
+   * memberless region). Runs after every entity is built so cross-entity
+   * lookups and spans are all available.
+   */
+  private checkDoors(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const isDoorEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'door');
+
+    // First `through` reference per door — the canonical pair.
+    const firstRef = new Map<string, { owner: IREntity; exit: IRExit }>();
+    // Doors whose mirror side has already been stated.
+    const mirrored = new Set<string>();
+
+    for (const owner of entities) {
+      for (const exit of owner.exits) {
+        if (exit.via === null || exit.via === '') continue; // plain, or unresolved (already reported)
+        const door = byId.get(exit.via);
+        if (!door) continue;
+        if (!isDoorEntity(door)) {
+          const kind = door.kinds[0]?.name ?? 'plain thing';
+          this.diagnostics.error(
+            'analysis.door-through-kind',
+            `\`${door.name}\` is a ${kind} — \`through\` names a door (\`create the ${door.name} / a door\`).`,
+            exit.span,
+          );
+          continue;
+        }
+        const first = firstRef.get(door.id);
+        if (!first) {
+          firstRef.set(door.id, { owner, exit });
+          continue;
+        }
+        const samePair = (owner.id === first.owner.id && exit.to === first.exit.to)
+          || (owner.id === first.exit.to && exit.to === first.owner.id);
+        if (!samePair) {
+          this.diagnostics.error(
+            'analysis.door-multi-pair',
+            `\`${door.name}\` already connects \`${first.owner.name}\` and \`${byId.get(first.exit.to)?.name ?? first.exit.to}\` (line ${first.exit.span.line}) — a door connects exactly two rooms.`,
+            exit.span,
+          );
+          continue;
+        }
+        const isMirror = owner.id === first.exit.to
+          && exit.to === first.owner.id
+          && exit.direction === OPPOSITE_DIRECTION[first.exit.direction]
+          && !mirrored.has(door.id);
+        if (isMirror) {
+          mirrored.add(door.id);
+        } else {
+          this.diagnostics.error(
+            'analysis.door-pair-mismatch',
+            `\`${door.name}\` is already wired by \`${first.owner.name}\`'s \`${first.exit.direction}\` line (line ${first.exit.span.line}) — the only legal second reference is the exact mirror (\`${OPPOSITE_DIRECTION[first.exit.direction] ?? '?'} to the ${first.owner.name} through the ${door.name}\` in \`${byId.get(first.exit.to)?.name ?? first.exit.to}\`), stated at most once.`,
+            exit.span,
+          );
+        }
+      }
+    }
+
+    // Plain mirror of a door exit (platform-issue-sweep Phase 8 #6): a
+    // plain `<dir> to <room>` line whose reverse side is door-wired would
+    // re-stamp BOTH directions without the door at load, silently unwiring
+    // it (the loader's connectRooms stamps the reverse too). The author
+    // must name the door — or drop the line entirely, since one door-wired
+    // side already connects both rooms.
+    for (const owner of entities) {
+      for (const exit of owner.exits) {
+        if (exit.via !== null) continue;
+        const target = byId.get(exit.to);
+        if (!target) continue;
+        const reverse = target.exits.find(
+          (e) => e.via !== null && e.via !== '' && e.to === owner.id
+            && e.direction === OPPOSITE_DIRECTION[exit.direction],
+        );
+        if (reverse) {
+          const doorName = byId.get(reverse.via!)?.name ?? reverse.via;
+          this.diagnostics.error(
+            'analysis.door-plain-mirror',
+            `\`${owner.name}\`'s plain \`${exit.direction}\` line mirrors a door exit — \`${target.name}\` wires \`${reverse.direction}\` through \`${doorName}\` (line ${reverse.span.line}), and a plain mirror would silently unwire the door at load. Name the door (\`${exit.direction} to the ${target.name} through the ${doorName}\`) or drop this line (the door side already connects both rooms).`,
+            exit.span,
+          );
+        }
+      }
+    }
+
+    // Unconnected door: declared-but-unanswerable, uniformly hard (D3 —
+    // same class as region-memberless; its room pair could never resolve).
+    for (const door of entities.filter(isDoorEntity)) {
+      if (!firstRef.has(door.id)) {
+        this.diagnostics.error(
+          'analysis.door-unconnected',
+          `Door \`${door.name}\` is never referenced by a \`through\` exit line — an unconnected door is unanswerable (its room pair could never resolve). Add \`<direction> to the <room> through the ${door.name}\` on a room.`,
+          door.span,
+        );
+      }
+    }
+  }
+
+  /**
+   * ADR-239 D4's never-guess table gates + lowering: resolve each
+   * `define topics` block onto its owner entity's `topics` rows. Runs
+   * after every entity is built so owner kinds and cross-tier name
+   * lookups are all available. Gates (each its own diagnostic): a second
+   * block for the same owner, a non-person host, a duplicate topic
+   * (entity or normalized quoted text, aliases included), and a quoted
+   * entry colliding with the name/aka of an entity used in an
+   * entity-tier row of the same table.
+   */
+  private applyTopics(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    /** owner id → first block's span (duplicate-block gate). */
+    const blockOwners = new Map<string, Span>();
+
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-topics') continue;
+      if (decl.owner.words.length === 0) continue; // header parse error already reported
+      const ownerId = this.resolveEntityId(decl.owner);
+      if (!ownerId) continue; // unknown/ambiguous — standard errors already reported
+      const owner = byId.get(ownerId);
+      const sym = this.byId.get(ownerId) ?? null;
+      if (!owner) continue;
+
+      const first = blockOwners.get(ownerId);
+      if (first) {
+        this.diagnostics.error(
+          'analysis.duplicate-topics-block',
+          `\`${owner.name}\` already has a \`define topics\` block at line ${first.line} — the table lives in one place; merge the rows.`,
+          decl.span,
+        );
+        continue;
+      }
+      blockOwners.set(ownerId, decl.span);
+
+      if (!owner.kinds.some((k) => k.name === 'person')) {
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        this.diagnostics.error(
+          'analysis.topics-host',
+          `\`define topics\` needs a person — \`${owner.name}\` is ${kind}, and only people answer \`ask\`/\`tell\` (a table here could never be reached).`,
+          decl.span,
+        );
+        continue;
+      }
+
+      // Entity-tier refs resolve once, up front: the cross-tier collision
+      // gate must see every entity-tier row's names, even those declared
+      // AFTER a colliding quoted row.
+      const resolvedRefs = decl.rows.map((row) =>
+        row.filter.kind === 'entity' ? this.resolveEntityId(row.filter.ref) : null,
+      );
+      /** normalized name/aka of entity-tier row entities → display name. */
+      const entityTierNames = new Map<string, string>();
+      for (const id of resolvedRefs) {
+        if (!id) continue;
+        const rowSym = this.byId.get(id);
+        if (!rowSym) continue;
+        entityTierNames.set(normalizeTopic(rowSym.nameLower), rowSym.nameLower);
+        for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
+      }
+
+      const scope = entityScope(sym);
+      const rows: IRTopicRow[] = [];
+      const seenEntities = new Map<string, Span>();
+      const seenTexts = new Map<string, Span>();
+
+      for (let i = 0; i < decl.rows.length; i++) {
+        const row = decl.rows[i];
+        if (row.filter.kind === 'entity') {
+          const id = resolvedRefs[i];
+          if (!id) continue; // unresolved — already reported
+          const dup = seenEntities.get(id);
+          if (dup) {
+            this.diagnostics.error(
+              'analysis.duplicate-topic',
+              `\`${this.byId.get(id)?.nameLower ?? id}\` is already a topic of this table (line ${dup.line}) — a topic answers in one place; merge the rows.`,
+              row.span,
+            );
+            continue;
+          }
+          seenEntities.set(id, row.span);
+          rows.push({
+            filter: { kind: 'entity', id },
+            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            span: row.span,
+          });
+        } else {
+          const texts = [row.filter.primary, ...row.filter.aliases];
+          let rejected = false;
+          for (const text of texts) {
+            const norm = normalizeTopic(text);
+            const dup = seenTexts.get(norm);
+            if (dup) {
+              this.diagnostics.error(
+                'analysis.duplicate-topic',
+                `"${text}" is already declared in this table (line ${dup.line}) — aliases included, a topic answers in one place.`,
+                row.filter.span,
+              );
+              rejected = true;
+              continue;
+            }
+            seenTexts.set(norm, row.span);
+            const collidesWith = entityTierNames.get(norm);
+            if (collidesWith) {
+              this.diagnostics.error(
+                'analysis.topic-entity-collision',
+                `"${text}" collides with \`${collidesWith}\` — that entity is already an entity-tier row of this table, and the quoted spelling would shadow its quiet entity resolution. Remove one.`,
+                row.filter.span,
+              );
+              rejected = true;
+            }
+          }
+          if (rejected) continue;
+          rows.push({
+            filter: { kind: 'text', primary: row.filter.primary, aliases: row.filter.aliases },
+            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            span: row.span,
+          });
+        }
+        this.checkPhaseOrder(row.body, { mutated: false });
+      }
+
+      owner.topics = rows;
+    }
+  }
+
+  /** Machine names seen (duplicate gate). */
+  private readonly machineNames = new Set<string>();
+
+  /** Declared media assets (ADR-216): name → kind + path. */
+  private readonly assets = new Map<string, { kind: 'sound' | 'image' | 'music'; path: string; span: Span }>();
+
+  /**
+   * Build one `define machine` (ADR-215 `use state-machines` depth):
+   * gated on the `use`, states/targets/roles validated, single-word
+   * triggers resolved (declared condition or story state wins, else an
+   * action gerund), bodies in STORY_SCOPE (`it` unbound — the machine is
+   * story-owned).
+   */
+  private buildMachine(decl: DefineMachine): IRMachineDef {
+    if (!this.usedExtensions.has('state-machines')) {
+      this.diagnostics.error(
+        'analysis.extension-not-used',
+        '`define machine` is `state-machines` extension vocabulary — add `use state-machines` to the story header.',
+        decl.span,
+      );
+    }
+    const name = decl.name.join(' ');
+    if (this.machineNames.has(name)) {
+      this.diagnostics.error('analysis.duplicate-machine', `A machine named \`${name}\` already exists.`, decl.span);
+    }
+    this.machineNames.add(name);
+
+    const stateNames = new Set(decl.states.map((s) => s.name));
+    if (decl.states.length === 0) {
+      this.diagnostics.error('analysis.machine-states', `Machine \`${name}\` declares no states.`, decl.span);
+    }
+    if (decl.initialState === null) {
+      this.diagnostics.error('analysis.machine-starts', `Machine \`${name}\` needs a \`starts <state>\` line.`, decl.span);
+    } else if (!stateNames.has(decl.initialState)) {
+      this.diagnostics.error(
+        'analysis.machine-starts',
+        `\`starts ${decl.initialState}\` names no declared state of \`${name}\`${this.suggestText(decl.initialState, [...stateNames])}.`,
+        decl.span,
+      );
+    }
+
+    const roles = new Map<string, string>();
+    for (const role of decl.roles) {
+      if (roles.has(role.name)) {
+        this.diagnostics.error('analysis.machine-role', `Role \`${role.name}\` is declared twice on \`${name}\`.`, role.span);
+        continue;
+      }
+      const entity = this.resolveEntityId(role.entity);
+      if (entity !== null) roles.set(role.name, entity);
+    }
+
+    const buildTransition = (t: MachineTransition): IRMachineTransition => {
+      if (!stateNames.has(t.target)) {
+        this.diagnostics.error(
+          'analysis.machine-target',
+          `\`${t.target}\` names no declared state of \`${name}\`${this.suggestText(t.target, [...stateNames])}.`,
+          t.span,
+        );
+      }
+      let trigger: IRMachineTransition['trigger'];
+      switch (t.trigger.kind) {
+        case 'event':
+          trigger = { kind: 'event', event: t.trigger.event };
+          break;
+        case 'condition':
+          trigger = { kind: 'condition', condition: this.resolveCondition(t.trigger.condition, STORY_SCOPE) };
+          break;
+        case 'word': {
+          // Vocabulary-free parse: a declared condition or story state is a
+          // condition trigger; anything else is an action gerund.
+          if (this.conditionNames.has(t.trigger.word) || this.storyStates.includes(t.trigger.word)) {
+            trigger = {
+              kind: 'condition',
+              condition: this.resolveCondition({ kind: 'condition-ref', name: t.trigger.word, span: t.trigger.span }, STORY_SCOPE),
+            };
+          } else {
+            trigger = { kind: 'action', action: t.trigger.word, target: null };
+          }
+          break;
+        }
+        case 'action': {
+          let target: string | null = null;
+          if (t.trigger.target) {
+            const words = t.trigger.target.words.map((w) => w.toLowerCase());
+            if (words.length === 1 && roles.has(words[0])) {
+              target = `$${words[0]}`; // the platform binding convention
+            } else {
+              target = this.resolveEntityId(t.trigger.target);
+            }
+          }
+          trigger = { kind: 'action', action: t.trigger.action, target };
+          break;
+        }
+      }
+      return {
+        trigger,
+        condition: t.condition ? this.resolveCondition(t.condition, STORY_SCOPE) : null,
+        target: t.target,
+        span: t.span,
+      };
+    };
+
+    return {
+      name,
+      roles: [...roles].map(([roleName, entity]) => ({ name: roleName, entity })),
+      initialState: decl.initialState ?? decl.states[0]?.name ?? '',
+      states: decl.states.map((s) => ({
+        name: s.name,
+        terminal: s.terminal,
+        transitions: s.transitions.map(buildTransition),
+        onEnter: s.onEnter.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
+        onExit: s.onExit.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
+        span: s.span,
+      })),
+      span: decl.span,
+    };
   }
 
   /** Resolve a `when <owner> becomes <state>` step anchor (ratchet D10). */
@@ -574,6 +1202,14 @@ class Analyzer {
       this.checkStateSet(this.ast.header.states, 'the story');
       this.storyStates = this.ast.header.states.map((s) => s.name);
       for (const s of this.ast.header.scores) this.collectScore(s.name, s.worth, s.span, null);
+      // Header `on every turn` clause bodies host inline phrase prose like
+      // every other body context (platform-issue-sweep Phase 8 #14): story-
+      // owned, so ownerless/bare-key scope — the same registration the five
+      // pre-existing contexts use.
+      for (const clause of this.ast.header.onClauses) this.collectInlineTexts(clause.body);
+      // `use phrasebook` lines (ADR-250 D2/D3) — header position puts every
+      // used book ahead of body-declared books in the arbitration order.
+      for (const use of this.ast.header.usePhrasebooks) this.collectUsePhrasebook(use);
     }
 
     for (const decl of this.ast.declarations) {
@@ -591,6 +1227,53 @@ class Analyzer {
       }
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
+      else if (decl.kind === 'define-phrasebook') this.collectPhrasebook(decl);
+      else if (decl.kind === 'import') {
+        // The compile host resolves imports before analysis (splicing the
+        // fragment's declarations at this position); one surviving here means
+        // no resolver ran — direct parse/analyze callers included.
+        this.diagnostics.error(
+          'analysis.import-unresolved',
+          `\`import "${decl.path}"\` was not resolved — compile with an \`importResolver\` host hook.`,
+          decl.span,
+        );
+      }
+      else if (decl.kind === 'define-asset') {
+        // ADR-216: declared media assets — DATA references, one namespace.
+        if (this.assets.has(decl.name)) {
+          this.diagnostics.error('analysis.duplicate-asset', `An asset named \`${decl.name}\` already exists.`, decl.span);
+        } else {
+          this.assets.set(decl.name, { kind: decl.assetKind, path: decl.path, span: decl.span });
+        }
+      }
+      else if (decl.kind === 'define-family-channel') {
+        // ADR-241 D2: named family channels, per-family namespace.
+        const family = this.familyChannels[decl.family];
+        if (family.has(decl.name)) {
+          this.diagnostics.error(
+            'analysis.duplicate-channel',
+            `An ${decl.family === 'ambient' ? 'ambient bed' : 'image layer'} named \`${decl.name}\` is already declared.`,
+            decl.span,
+          );
+        } else {
+          family.set(decl.name, decl.span);
+        }
+      }
+      else if (decl.kind === 'define-pronouns') {
+        // ADR-242 D7: one namespace beside the standard four — shadowing a
+        // standard word and redefining a set are each errors, never a merge.
+        if (PRONOUN_WORDS.has(decl.name)) {
+          this.diagnostics.error(
+            'analysis.pronoun-set-shadows',
+            `\`${decl.name}\` is a standard pronoun set — \`define pronouns\` names a new set; pick another name.`,
+            decl.span,
+          );
+        } else if (this.pronounSetDecls.has(decl.name)) {
+          this.diagnostics.error('analysis.duplicate-pronoun-set', `A pronoun set named \`${decl.name}\` is already defined.`, decl.span);
+        } else {
+          this.pronounSetDecls.set(decl.name, decl);
+        }
+      }
       else if (decl.kind === 'define-trait') {
         this.traitNames.add(decl.name);
         for (const field of decl.data) {
@@ -629,6 +1312,15 @@ class Analyzer {
       }
       else if (decl.kind === 'define-sequence') {
         for (const step of decl.steps) this.collectInlineTexts(step.body);
+      }
+      else if (decl.kind === 'define-machine') {
+        // Machine state bodies (`on enter` / `on exit`) host inline phrase
+        // prose like every other body context (platform-issue-sweep Phase 8
+        // #14) — ownerless/bare-key scope, matching the header clauses.
+        for (const state of decl.states) {
+          this.collectInlineTexts(state.onEnter);
+          this.collectInlineTexts(state.onExit);
+        }
       }
     }
 
@@ -743,6 +1435,33 @@ class Analyzer {
       // declaring `phrase confession` must not collide (Phase C P3).
       for (const clause of e.decl.onClauses) this.collectInlineTexts(clause.body, e.id);
     }
+
+    // Topic-table row bodies are entity-owned (ADR-239): their inline
+    // phrases register owner-scoped like clause bodies. Owner resolution
+    // here is silent — an unresolved owner is pass 2's error (applyTopics).
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'define-topics') continue;
+      const owner = this.findEntitySilent(decl.owner);
+      if (!owner) continue;
+      for (const row of decl.rows) this.collectInlineTexts(row.body, owner.id);
+    }
+  }
+
+  /**
+   * Resolve a name to an entity symbol with resolveEntityId's exact
+   * precedence (exact name → alias → unique in-order subset) but NO
+   * diagnostics — for pass-1 uses where pass 2 will report the miss.
+   */
+  private findEntitySilent(ref: NameRef): EntitySymbol | null {
+    const lower = ref.words.join(' ').toLowerCase();
+    const exact = this.entities.filter((e) => e.nameLower === lower);
+    if (exact.length === 1) return exact[0];
+    const byAlias = this.entities.filter((e) => e.aka.includes(lower));
+    if (byAlias.length === 1) return byAlias[0];
+    const refWords = ref.words.map((w) => w.toLowerCase());
+    const subset = this.entities.filter((e) => isInOrderSubset(refWords, e.nameWords));
+    if (subset.length === 1) return subset[0];
+    return null;
   }
 
   /**
@@ -934,6 +1653,89 @@ class Analyzer {
     return { text: value.text, markers: value.markers.map((m) => m.content) };
   }
 
+  /** Duplicate-name gate shared by `define phrasebook` and `use phrasebook`. */
+  private registerPhrasebookName(name: string, span: Span): boolean {
+    const first = this.phrasebookNames.get(name);
+    if (first) {
+      this.diagnostics.error(
+        'analysis.duplicate-phrasebook',
+        `A phrasebook named \`${name}\` is already declared at line ${first.line}.`,
+        span,
+      );
+      return false;
+    }
+    this.phrasebookNames.set(name, span);
+    return true;
+  }
+
+  /** Book coverage bookkeeping: key → covered by a default (always) book? */
+  private recordBookKey(key: string, isAlways: boolean): void {
+    this.bookKeys.set(key, (this.bookKeys.get(key) ?? false) || isAlways);
+  }
+
+  /** `use phrasebook <name> [while <cond>]` (ADR-250 D2/D3) — pass 1. */
+  private collectUsePhrasebook(use: UsePhrasebookDecl): void {
+    const manifest = PHRASEBOOK_REGISTRY.get(use.name);
+    if (!manifest) {
+      this.diagnostics.error(
+        'analysis.unknown-phrasebook',
+        `\`use phrasebook ${use.name}\` names no registered phrasebook${this.suggestText(use.name, [...PHRASEBOOK_REGISTRY.keys()])}.`,
+        use.span,
+      );
+      return;
+    }
+    if (!this.registerPhrasebookName(use.name, use.span)) return;
+    this.phrasebookDecls.push({ name: use.name, source: 'use', condition: use.condition, span: use.span });
+    for (const key of manifest.keys) this.recordBookKey(key, use.condition === null);
+  }
+
+  /** `define phrasebook` (ADR-250 D1/D3) — pass 1: entry gates + coverage. */
+  private collectPhrasebook(decl: DefinePhrasebook): void {
+    if (!decl.name) return; // header parse error already reported
+    if (!this.registerPhrasebookName(decl.name, decl.span)) return;
+    const entries: Record<string, IRPhrase> = {};
+    for (const entry of decl.entries) {
+      if (entry.condition) {
+        this.diagnostics.error(
+          'analysis.phrasebook-entry-gate',
+          `Entries carry no \`while\` — the book's own predicate is the gate. Move the condition to \`define phrasebook ${decl.name} while …\`, or split the entry into a second book.`,
+          entry.span,
+        );
+      }
+      if (entry.key.includes('.')) {
+        this.diagnostics.error(
+          'analysis.phrasebook-dotted-key',
+          `\`${entry.key}\` is a platform message ID — phrasebooks voice the story's own keys. To override a platform message, use a story-level \`define phrase ${entry.key}\`.`,
+          entry.span,
+        );
+        continue;
+      }
+      if (entry.key === 'br' || RESERVED_CHANNEL_KEYS.has(entry.key)) {
+        this.diagnostics.error(
+          'analysis.phrasebook-reserved-key',
+          `\`${entry.key}\` is reserved — pick another entry key.`,
+          entry.span,
+        );
+        continue;
+      }
+      if (entries[entry.key]) {
+        this.diagnostics.error(
+          'analysis.phrasebook-duplicate-key',
+          `\`${entry.key}\` is declared twice in phrasebook \`${decl.name}\` — competing texts live in different books.`,
+          entry.span,
+        );
+        continue;
+      }
+      entries[entry.key] = {
+        strategy: (entry.strategy as IRPhrase['strategy']) ?? null,
+        variants: entry.variants.map((v) => this.variantOf(v)),
+        span: entry.span,
+      };
+      this.recordBookKey(entry.key, decl.condition === null);
+    }
+    this.phrasebookDecls.push({ name: decl.name, source: 'define', condition: decl.condition, entries, span: decl.span });
+  }
+
   private registerPhrase(locale: string, key: string, phrase: IRPhrase): void {
     if (key === 'br') {
       // `{br}` is the built-in hard-line-break marker (grammar log 2026-07-10).
@@ -975,12 +1777,200 @@ class Analyzer {
     for (const comp of decl.compositions) {
       const built = {
         name: comp.words.join(' ').toLowerCase(),
-        config: comp.config.map((c) => ({ key: c.key.join(' '), value: c.value, valueKind: c.valueKind })),
+        config: comp.config.map((c) => ({
+          key: c.key.join(' '),
+          value: c.value,
+          valueKind: c.valueKind,
+          // `[ … ]` list entries resolve to entity IDs here (ADR-215) —
+          // unresolved names report through the standard unknown-entity gate.
+          ...(c.valueKind === 'list'
+            ? { values: (c.listValues ?? []).map((ref) => this.resolveEntityId(ref) ?? '').filter((id) => id !== '') }
+            : {}),
+        })),
         condition: comp.condition ? this.resolveCondition(comp.condition, entityScope(sym ?? null)) : null,
         span: comp.span,
       };
       if (comp.article) kinds.push(built);
       else traits.push(built);
+
+      // ADR-215: extension vocabulary is admitted only when its `use` is
+      // declared (core manifests — npc — are always admitted), and its
+      // `with`-fields are the manifest's closed, typed set — unknown keys
+      // and mistyped values are compile errors, never a silent drop at the
+      // loader. `[ … ]` list values exist only as manifest list fields.
+      if (!comp.article) {
+        const contributed = manifestForAdjective(built.name);
+        if (!contributed) {
+          for (const cfg of comp.config) {
+            if (cfg.valueKind === 'list') {
+              this.diagnostics.error(
+                'analysis.config-list-host',
+                `\`[ … ]\` list values belong to extension fields that declare them (e.g. \`patrol route [ … ]\`) — \`${built.name}\` has none.`,
+                cfg.span,
+              );
+            }
+          }
+        }
+        if (contributed) {
+          if (!contributed.manifest.core && !this.usedExtensions.has(contributed.manifest.name)) {
+            this.diagnostics.error(
+              'analysis.extension-not-used',
+              `\`${built.name}\` is \`${contributed.manifest.name}\` extension vocabulary — add \`use ${contributed.manifest.name}\` to the story header.`,
+              comp.span,
+            );
+          } else {
+            for (const cfg of comp.config) {
+              const key = cfg.key.join(' ');
+              const field = contributed.adjective.fields.find((f) => f.key === key);
+              if (!field) {
+                const known = contributed.adjective.fields.map((f) => f.key).join(', ');
+                this.diagnostics.error(
+                  'analysis.extension-config-key',
+                  `\`${key}\` is not a \`${built.name}\` field — known fields: ${known}.`,
+                  cfg.span,
+                );
+              } else if (field.valueKind !== cfg.valueKind) {
+                this.diagnostics.error(
+                  'analysis.extension-config-value',
+                  `\`${key}\` takes a ${field.valueKind} value, not ${cfg.valueKind === 'name' ? 'an entity name' : `a ${cfg.valueKind}`}.`,
+                  cfg.span,
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // ADR-231 D5a pairing gate: each `starts <state>` initializer requires
+    // its paired trait composed on the same entity (`starts locked` needs
+    // `lockable`, `starts closed`/`open` need `openable`, `starts off`/`on`
+    // need `switchable`). Table-driven — STARTS_STATE_PAIRINGS is the one
+    // place future stateful traits extend. Mismatch = load-time error, never
+    // a silent no-op.
+    const startsStates: string[] = [];
+    for (const s of decl.startsStates) {
+      const requiredTrait = STARTS_STATE_PAIRINGS.get(s.state);
+      if (!requiredTrait) continue; // parser already rejected the word
+      if (!traits.some((t) => t.name === requiredTrait)) {
+        this.diagnostics.error(
+          'analysis.starts-state-pairing',
+          `\`starts ${s.state}\` requires \`${requiredTrait}\` composed on this entity.`,
+          s.span,
+        );
+        continue;
+      }
+      startsStates.push(s.state);
+    }
+
+    // ADR-242 D1: `proper` is the first kind-scoped trait adjective —
+    // person-only and unconditional (identity is not turn state). Both
+    // gates are analyzer diagnostics so the author reads the specific
+    // reason, not the loader's generic conditional-composition error.
+    const isPerson = kinds.some((k) => k.name === 'person');
+    for (const comp of decl.compositions) {
+      if (comp.article || comp.words.join(' ').toLowerCase() !== 'proper') continue;
+      if (!isPerson) {
+        this.diagnostics.error(
+          'analysis.proper-person-only',
+          `\`proper\` composes only on a person (\`a person, proper\`) — \`${decl.name.words.join(' ')}\` is not a person.`,
+          comp.span,
+        );
+      }
+      if (comp.condition) {
+        this.diagnostics.error(
+          'analysis.proper-conditional',
+          'Identity is not conditional — `proper while …` is not supported; a name is proper or it is not.',
+          comp.span,
+        );
+      }
+    }
+
+    // ADR-242 D5: `pronouns <word>` — person-only, at most one line, and
+    // the word resolves against the standard four or a `define pronouns`
+    // set (never guessed; nearest-match suggestion on a miss, ruled Q-2:
+    // no default is injected when the line is absent).
+    let pronouns: string | undefined;
+    if (decl.pronouns.length > 0) {
+      if (!isPerson) {
+        this.diagnostics.error(
+          'analysis.pronouns-person-only',
+          `\`pronouns\` is a person line — \`${decl.name.words.join(' ')}\` is not a person.`,
+          decl.pronouns[0].span,
+        );
+      }
+      for (const extra of decl.pronouns.slice(1)) {
+        this.diagnostics.error('analysis.pronouns-duplicate', 'This `create` block already has a `pronouns` line.', extra.span);
+      }
+      const word = decl.pronouns[0].word;
+      if (PRONOUN_WORDS.has(word) || this.pronounSetDecls.has(word)) {
+        if (isPerson) pronouns = word;
+      } else {
+        const known = [...PRONOUN_WORDS, ...this.pronounSetDecls.keys()];
+        this.diagnostics.error(
+          'analysis.unknown-pronouns',
+          `\`${word}\` is not a pronoun set — the standard sets are ${[...PRONOUN_WORDS].map((w) => `\`${w}\``).join(', ')}, plus any \`define pronouns\` set${this.suggestText(word, known)}.`,
+          decl.pronouns[0].span,
+        );
+      }
+    }
+
+    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
+    // player composes like any entity — but only `a person` is a legal
+    // kind (a no-op; the player is already an actor), and NPC behavior
+    // adjectives would hand the player to the NPC service. Both gate.
+    if (isPlayer) {
+      for (const kind of kinds) {
+        if (kind.name !== 'person') {
+          this.diagnostics.error(
+            'analysis.player-kind',
+            `The player cannot be \`a ${kind.name}\` — only \`a person\` composes on the player block (as a no-op).`,
+            kind.span,
+          );
+        }
+      }
+      for (const trait of traits) {
+        const contributed = manifestForAdjective(trait.name);
+        if (contributed?.manifest.name === 'npc') {
+          this.diagnostics.error(
+            'analysis.player-behavior',
+            `\`${trait.name}\` is an NPC behavior — the player is not driven by the NPC service.`,
+            trait.span,
+          );
+        }
+      }
+    }
+
+    // ADR-234 D3: a door's location IS its room pair — the loader places
+    // it in room1 per the platform convention; a placement line is a load
+    // error (the region-placement gate is the direct precedent).
+    if (kinds.some((k) => k.name === 'door') && decl.placement) {
+      this.diagnostics.error(
+        'analysis.door-placement',
+        `A door has no placement — its location IS its room pair (the loader places it in the first room of its \`through\` exit line). Remove this line.`,
+        decl.placement.span,
+      );
+    }
+
+    // ADR-236 D1: a region's "location" IS its member list — placement
+    // lines on a region block are a load error (mirror of ADR-234 D3's
+    // door-placement gate).
+    const isRegion = kinds.some((k) => k.name === 'region');
+    if (isRegion && decl.placement) {
+      this.diagnostics.error(
+        'analysis.region-placement',
+        `A region has no location — its place IS its member list. Remove this line; membership is \`containing <rooms>\`.`,
+        decl.placement.span,
+      );
+    }
+    // ADR-236 D2: `containing` is region membership — on any other block it
+    // would be a silent no-op, so it is a load error, never a guess.
+    if (!isRegion && decl.containing.length > 0) {
+      this.diagnostics.error(
+        'analysis.region-containing-host',
+        `\`containing\` declares region membership — \`${decl.name.words.join(' ')}\` is not a region. (Contents are placed with \`in\`/\`on\` lines on the contained entity.)`,
+        decl.containing[0].span,
+      );
     }
 
     // Z1: `first time` prose compiles to RoomTrait.initialDescription —
@@ -999,9 +1989,13 @@ class Analyzer {
       name: decl.name.words.join(' '),
       article: decl.name.article,
       aka: decl.aka,
+      // Present only when declared and resolved (ruled Q-2: absent means
+      // the platform's by-number fallback — and zero golden churn).
+      ...(pronouns !== undefined ? { pronouns } : {}),
       isPlayer,
       kinds,
       traits,
+      startsStates,
       placement: decl.placement
         ? {
             relation: decl.placement.relation,
@@ -1010,7 +2004,19 @@ class Analyzer {
           }
         : null,
       wears: decl.wears.map((w) => this.resolveEntityId(w) ?? '').filter((w) => w !== ''),
-      exits: decl.exits.map((e) => ({ direction: e.direction, to: this.resolveEntityId(e.to) ?? '', span: e.span })),
+      carries: decl.carries.map((c) => this.resolveEntityId(c) ?? '').filter((c) => c !== ''),
+      containing: decl.containing
+        .map((m) => ({ id: this.resolveEntityId(m) ?? '', span: m.span }))
+        .filter((m) => m.id !== ''),
+      exits: decl.exits.map((e) => ({
+        direction: e.direction,
+        to: this.resolveEntityId(e.to) ?? '',
+        // `through the <door>` (ADR-234 D1): resolved like any entity
+        // reference — an unknown name is the standard unresolved-entity
+        // error; '' marks it so checkDoors skips what is already reported.
+        via: e.via ? (this.resolveEntityId(e.via) ?? '') : null,
+        span: e.span,
+      })),
       blockedExits: decl.blockedExits.map((b) => {
         this.requirePhrase(b.phraseKey, b.span);
         return {
@@ -1020,6 +2026,31 @@ class Analyzer {
           span: b.span,
         };
       }),
+      deadlyExits: decl.deadlyExits.map((d) => {
+        this.requirePhrase(d.phraseKey, d.span);
+        // Compile gate (platform-issue-sweep Phase 8 #15d): the conditional
+        // form is post-scope (mirror: role-bound trait clauses). It used to
+        // fail only at LOAD (loader.ts throw — kept there as the defensive
+        // backstop), which the harness's expect-fail-manifest convention
+        // cannot pin; failing here makes it a compile diagnostic.
+        if (d.condition !== null) {
+          this.diagnostics.error(
+            'analysis.deadly-while-unsupported',
+            '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope. Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
+            d.span,
+          );
+        }
+        return {
+          direction: d.direction,
+          phraseKey: d.phraseKey,
+          condition: d.condition ? this.resolveCondition(d.condition, entityScope(sym ?? null)) : null,
+          span: d.span,
+        };
+      }),
+      deadly: decl.deadly
+        ? (this.requirePhrase(decl.deadly.phraseKey, decl.deadly.span),
+          { phraseKey: decl.deadly.phraseKey, span: decl.deadly.span })
+        : null,
       // Merged set: own `states:` plus every composed trait's declared
       // states (ratchet D8) — the loader initializes from states[0].
       states: sym ? sym.states : decl.states.map((s) => s.name),
@@ -1029,6 +2060,8 @@ class Analyzer {
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
         this.buildOnClause(c, entityScope(sym ?? null)),
       ),
+      // Filled by applyTopics after every entity is built (ADR-239).
+      topics: [],
       span: decl.span,
     };
   }
@@ -1164,8 +2197,16 @@ class Analyzer {
           span: stmt.span,
         };
       }
-      case 'emit':
-        return { kind: 'emit', event: stmt.event.join(' '), stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      case 'emit': {
+        const payload = stmt.payload.map((f) => this.resolveEmitField(f, scope));
+        return {
+          kind: 'emit',
+          event: stmt.event.join(' '),
+          ...(payload.length > 0 ? { payload } : {}),
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
+      }
       case 'set':
         return {
           kind: 'set',
@@ -1257,6 +2298,7 @@ class Analyzer {
       }
       case 'win':
       case 'lose':
+      case 'kill':
         if (stmt.phraseKey) this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
         return { kind: stmt.kind, phraseKey: stmt.phraseKey, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       case 'must': {
@@ -1281,6 +2323,8 @@ class Analyzer {
           span: stmt.span,
         };
       }
+      case 'media':
+        return this.lowerMediaStatement(stmt, scope);
       case 'select-on': {
         const subject = this.resolveValue(stmt.subject, scope);
         const stateOwner = this.stateOwnerOf(subject, scope);
@@ -1407,6 +2451,236 @@ class Analyzer {
   }
 
   /**
+   * Lower one media sugar statement (ADR-216) onto a payloaded `media.*`
+   * emit — pure compile-time sugar, no runtime surface of its own. Asset
+   * references are typo-checked with a nearest-match suggestion; kind
+   * mismatches gate (`play ambient` plays SOUND assets — an ambient loop
+   * is a sound file).
+   */
+  private lowerMediaStatement(stmt: MediaStmt, scope: Scope): IRStatement {
+    const stmtWhen = this.resolveStmtWhen(stmt.stmtWhen, scope);
+    const fields: IREmitField[] = [];
+    let event = '';
+    const requireAsset = (expected: 'sound' | 'image' | 'music'): void => {
+      if (!stmt.asset) return; // the parser already reported
+      const found = this.assets.get(stmt.asset);
+      if (!found) {
+        this.diagnostics.error(
+          'analysis.unknown-asset',
+          `\`${stmt.asset}\` names no declared asset${this.suggestText(stmt.asset, [...this.assets.keys()])}. Declare it: \`define ${expected} ${stmt.asset} from "<file>"\`.`,
+          stmt.span,
+        );
+        return;
+      }
+      if (found.kind !== expected) {
+        this.diagnostics.error(
+          'analysis.asset-kind',
+          `\`${stmt.asset}\` is a ${found.kind} asset — this statement needs a ${expected} asset.`,
+          stmt.span,
+        );
+        return;
+      }
+      fields.push({ key: 'src', value: { kind: 'literal', value: found.path, valueType: 'string' } });
+    };
+    switch (stmt.form) {
+      case 'play-sound':
+        event = 'media.sound.play';
+        requireAsset('sound');
+        break;
+      case 'play-music':
+        event = 'media.music.play';
+        requireAsset('music');
+        if (stmt.looping) fields.push({ key: 'loop', value: { kind: 'value', value: { kind: 'symbol', name: 'true' } } });
+        break;
+      case 'stop-music':
+        event = 'media.music.stop';
+        break;
+      case 'play-ambient':
+        event = 'media.ambient.play';
+        requireAsset('sound');
+        this.stampAmbientChannel(stmt, fields);
+        break;
+      case 'stop-ambient':
+        event = 'media.ambient.stop';
+        this.stampAmbientChannel(stmt, fields);
+        break;
+      case 'show-image':
+        event = 'media.image.show';
+        requireAsset('image');
+        if (stmt.layer) {
+          // ADR-241 D3: layers beyond the platform's pre-registered three
+          // must be declared (`define layer <word>`) — never-guess.
+          if (!IMPLIED_IMAGE_LAYERS.has(stmt.layer) && !this.familyChannels.layer.has(stmt.layer)) {
+            this.diagnostics.error(
+              'analysis.unknown-channel',
+              `\`${stmt.layer}\` names no declared image layer${this.suggestText(stmt.layer, [...IMPLIED_IMAGE_LAYERS, ...this.familyChannels.layer.keys()])}. Declare it: \`define layer ${stmt.layer}\`.`,
+              stmt.span,
+            );
+          }
+          fields.push({ key: 'layer', value: { kind: 'literal', value: stmt.layer, valueType: 'string' } });
+        }
+        break;
+      case 'hide-image':
+        event = 'media.image.hide';
+        break;
+      case 'transition':
+        event = 'media.transition';
+        fields.push({ key: 'kind', value: { kind: 'literal', value: stmt.transitionKind ?? '', valueType: 'string' } });
+        break;
+      case 'clear':
+        event = 'media.clear';
+        break;
+    }
+    return { kind: 'emit', event, ...(fields.length > 0 ? { payload: fields } : {}), stmtWhen, span: stmt.span };
+  }
+
+  /**
+   * ADR-241 D3: resolve an ambient statement's channel word (the default
+   * bed is `main` — Q-1), gate undeclared words (never-guess — Q-3), and
+   * stamp `channel` onto the payload — the field stdlib's ambient
+   * channels filter on. A bare use of the implied `main` bed records its
+   * first use-site so the bed joins the channel manifest (D4).
+   */
+  private stampAmbientChannel(stmt: MediaStmt, fields: IREmitField[]): void {
+    const word = stmt.channel ?? 'main';
+    if (word === 'main') {
+      if (!this.familyChannels.ambient.has('main')) this.impliedMainBedSpan ??= stmt.span;
+    } else if (!this.familyChannels.ambient.has(word)) {
+      this.diagnostics.error(
+        'analysis.unknown-channel',
+        `\`${word}\` names no declared ambient bed${this.suggestText(word, ['main', ...this.familyChannels.ambient.keys()])}. Declare it: \`define ambient ${word}\`.`,
+        stmt.span,
+      );
+    }
+    fields.push({ key: 'channel', value: { kind: 'literal', value: word, valueType: 'string' } });
+  }
+
+  /** Channel names seen (duplicate gate). */
+  private readonly channelNames = new Set<string>();
+
+  /** Declared family channels (ADR-241 D2) by family: word → first declaration span. */
+  private readonly familyChannels = {
+    ambient: new Map<string, Span>(),
+    layer: new Map<string, Span>(),
+  };
+
+  /** First use-site of the implied `main` ambient bed (ADR-241 D3), if any. */
+  private impliedMainBedSpan: Span | null = null;
+
+  /**
+   * Build one `define channel` (ADR-216; spelling A): mode/from/take are
+   * required, `gated by` must name a client capability flag (Chord
+   * spelling, lowered to the platform's camelCase key). Re-declaring a
+   * STANDARD channel id is legal platform behavior (story override);
+   * duplicating a story channel is not.
+   */
+  private buildChannel(decl: DefineChannel): IRDataChannelDef {
+    if (this.channelNames.has(decl.name)) {
+      this.diagnostics.error('analysis.duplicate-channel', `A channel named \`${decl.name}\` already exists.`, decl.span);
+    }
+    this.channelNames.add(decl.name);
+    if (decl.mode === null || !['replace', 'append', 'event'].includes(decl.mode)) {
+      this.diagnostics.error(
+        'analysis.channel-mode',
+        `Channel \`${decl.name}\` needs \`mode replace\`, \`mode append\`, or \`mode event\`${decl.mode ? ` — got \`${decl.mode}\`` : ''}.`,
+        decl.span,
+      );
+    }
+    if (decl.fromEvent === null) {
+      this.diagnostics.error('analysis.channel-from', `Channel \`${decl.name}\` needs a \`from event <event.key>\` line.`, decl.span);
+    }
+    if (decl.take.length === 0) {
+      this.diagnostics.error('analysis.channel-take', `Channel \`${decl.name}\` needs a \`take <field>[, …]\` line — it projects data, it cannot project nothing.`, decl.span);
+    }
+    let gatedBy: string | null = null;
+    if (decl.gatedBy !== null) {
+      if (!CLIENT_CAPABILITY_FLAGS.has(decl.gatedBy)) {
+        this.diagnostics.error(
+          'analysis.unknown-capability',
+          `\`${decl.gatedBy}\` is not a client capability flag${this.suggestText(decl.gatedBy, [...CLIENT_CAPABILITY_FLAGS])}.`,
+          decl.span,
+        );
+      } else {
+        gatedBy = capabilityKeyOf(decl.gatedBy);
+      }
+    }
+    return {
+      name: decl.name,
+      family: 'data',
+      mode: (decl.mode ?? 'event') as IRDataChannelDef['mode'],
+      gatedBy,
+      fromEvent: decl.fromEvent ?? '',
+      take: decl.take,
+      span: decl.span,
+    };
+  }
+
+  /**
+   * `define pronouns` (ADR-242 D7): exactly the five case rows the
+   * assembler's pronoun table keys — a missing or duplicate row is an
+   * error (order is free; named rows, ruled Q-1). Forms pass through as
+   * data; the language provider owns rendering them.
+   */
+  private buildPronounSet(decl: DefinePronouns): IRPronounSetDef {
+    const byCase = new Map<string, string>();
+    for (const row of decl.rows) {
+      if (byCase.has(row.case)) {
+        this.diagnostics.error('analysis.pronoun-set-duplicate-row', `\`define pronouns ${decl.name}\` already has a \`${row.case}\` row.`, row.span);
+        continue;
+      }
+      byCase.set(row.case, row.form);
+    }
+    for (const c of PRONOUN_CASES) {
+      if (!byCase.has(c)) {
+        this.diagnostics.error('analysis.pronoun-set-rows', `\`define pronouns ${decl.name}\` is missing its \`${c}\` row — all five case rows are required.`, decl.span);
+      }
+    }
+    return {
+      name: decl.name,
+      forms: {
+        subject: byCase.get('subject') ?? '',
+        object: byCase.get('object') ?? '',
+        possessive: byCase.get('possessive') ?? '',
+        possessivePronoun: byCase.get('possessive-pronoun') ?? '',
+        reflexive: byCase.get('reflexive') ?? '',
+      },
+      span: decl.span,
+    };
+  }
+
+  /** Resolve one emit-payload field (ADR-216) — key words join with a space, passed verbatim. */
+  private resolveEmitField(field: EmitField, scope: Scope): IREmitField {
+    return { key: field.key.join(' '), value: this.resolveEmitValue(field.value, scope) };
+  }
+
+  /** Resolve one emit-payload value (ADR-216) — recursive over arrays/objects. */
+  private resolveEmitValue(value: EmitValue, scope: Scope): IREmitValue {
+    switch (value.kind) {
+      case 'literal':
+        return { kind: 'literal', value: value.value, valueType: value.literalKind };
+      case 'expr':
+        return { kind: 'value', value: this.resolveValue(value.expr, scope) };
+      case 'array':
+        return { kind: 'array', items: value.items.map((i) => this.resolveEmitValue(i, scope)) };
+      case 'object':
+        return { kind: 'object', fields: value.fields.map((f) => this.resolveEmitField(f, scope)) };
+    }
+  }
+
+  /**
+   * `it` in a story-owned clause (ADR-236 D7): the story is the owner and
+   * has no entity referent — the unbound-referent case no other clause
+   * home can produce. A load error, never a silent undefined.
+   */
+  private reportStoryClauseIt(span: Span): void {
+    this.diagnostics.error(
+      'analysis.story-clause-it',
+      '`it` is not bound in a story-owned clause — the story has no entity referent. Name the entity, or use `the player`.',
+      span,
+    );
+  }
+
+  /**
    * `the match` — the `each`-block binder (ratchet E3). Legal only inside
    * an `each` body, at any nesting depth (the runtime binds innermost).
    * Outside one there is no match to reference — a load error, never a
@@ -1447,7 +2721,10 @@ class Analyzer {
 
   private resolveRefValue(ref: NameRef, scope: Scope): IRValue {
     const words = ref.words.map((w) => w.toLowerCase());
-    if (words.length === 1 && words[0] === 'it') return { kind: 'it' };
+    if (words.length === 1 && words[0] === 'it') {
+      if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
+      return { kind: 'it' };
+    }
     // `the match` in NameRef positions (`change`/`move` targets, predicate
     // things) resolves to the binder exactly as `it` does — before entity
     // lookup; the name itself is reserved at declaration (E3/P3).
@@ -1459,6 +2736,7 @@ class Analyzer {
     }
     // `its <field>` in name position (`the actor has its food`).
     if (words.length > 1 && words[0] === 'its') {
+      if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
       return { kind: 'field', base: { kind: 'it' }, field: words.slice(1).join(' ') };
     }
     const scoped = this.resolveScopedWords(ref.words, scope);
@@ -1538,6 +2816,18 @@ class Analyzer {
         return { kind: 'not', operand: this.resolveCondition(cond.operand, scope) };
       case 'chance':
         return { kind: 'chance', n: cond.n };
+      case 'client-has': {
+        // ADR-216: capability words are the closed platform flag set —
+        // validated here, lowered to the camelCase platform key.
+        if (!CLIENT_CAPABILITY_FLAGS.has(cond.capability)) {
+          this.diagnostics.error(
+            'analysis.unknown-capability',
+            `\`${cond.capability}\` is not a client capability flag${this.suggestText(cond.capability, [...CLIENT_CAPABILITY_FLAGS])}.`,
+            cond.span,
+          );
+        }
+        return { kind: 'client-has', capability: capabilityKeyOf(cond.capability) };
+      }
       case 'condition-ref': {
         if (this.conditionNames.has(cond.name)) {
           // Never-guess gate (grammar log 2026-07-11): an OPEN condition is a
@@ -1740,6 +3030,19 @@ class Analyzer {
     const table = this.phrases.get(DEFAULT_LOCALE);
     if (table?.has(key)) return;
     if (owner && table?.has(`${owner.id}.${key}`)) return;
+    // ADR-250 D4.6: book coverage counts as declaration. Covered only by
+    // predicated books → warn once (off-book it renders nothing).
+    if (this.bookKeys.has(key)) {
+      if (!this.bookKeys.get(key) && !this.partialCoverageWarned.has(key)) {
+        this.partialCoverageWarned.add(key);
+        this.diagnostics.warning(
+          'analysis.phrasebook-partial-coverage',
+          `\`${key}\` is only defined in conditional phrasebooks — when no book is active it renders nothing.`,
+          span,
+        );
+      }
+      return;
+    }
     const known = table ? [...table.keys()] : [];
     this.diagnostics.error(
       'analysis.missing-phrase',
@@ -1756,27 +3059,40 @@ class Analyzer {
   private checkMarkers(): void {
     for (const [, table] of this.phrases) {
       for (const [key, phrase] of table) {
-        for (const variant of phrase.variants) {
-          // A variant carrying formatter-chain forms ({You}, {the item},
-          // {verb:…}) is a TEMPLATE — its bare lowercase markers are chain
-          // verbs ({open}), not producer references (Phase B: §3.2 trait
-          // phrases). Full chain validation lands with the AC-9 contract.
-          const isTemplate = variant.markers.some(
-            (m) => /[A-Z]/.test(m[0] ?? '') || m.includes(' ') || m.includes(':'),
-          );
-          if (isTemplate) continue;
-          for (const marker of variant.markers) {
-            if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
-            if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
-            if (this.hatchNames.has(marker)) continue;
-            if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) continue;
-            this.diagnostics.error(
-              'analysis.unbound-marker',
-              `\`{${marker}}\` in phrase \`${key}\` is not a declared text producer or phrase${this.suggestText(marker, [...this.hatchNames])}.`,
-              phrase.span,
-            );
-          }
-        }
+        this.checkPhraseMarkers(key, phrase);
+      }
+    }
+    // Phrasebook entries carry the same marker contract (ADR-250 D1 —
+    // entries are ordinary phrase definitions).
+    for (const book of this.phrasebookDecls) {
+      if (!book.entries) continue;
+      for (const [key, phrase] of Object.entries(book.entries)) {
+        this.checkPhraseMarkers(`${book.name}.${key}`, phrase);
+      }
+    }
+  }
+
+  private checkPhraseMarkers(label: string, phrase: IRPhrase): void {
+    for (const variant of phrase.variants) {
+      // A variant carrying formatter-chain forms ({You}, {the item},
+      // {verb:…}) is a TEMPLATE — its bare lowercase markers are chain
+      // verbs ({open}), not producer references (Phase B: §3.2 trait
+      // phrases). Full chain validation lands with the AC-9 contract.
+      const isTemplate = variant.markers.some(
+        (m) => /[A-Z]/.test(m[0] ?? '') || m.includes(' ') || m.includes(':'),
+      );
+      if (isTemplate) continue;
+      for (const marker of variant.markers) {
+        if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
+        if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
+        if (this.hatchNames.has(marker)) continue;
+        if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) continue;
+        if (this.bookKeys.has(marker)) continue; // book coverage counts (ADR-250 D4.6)
+        this.diagnostics.error(
+          'analysis.unbound-marker',
+          `\`{${marker}}\` in phrase \`${label}\` is not a declared text producer or phrase${this.suggestText(marker, [...this.hatchNames])}.`,
+          phrase.span,
+        );
       }
     }
   }

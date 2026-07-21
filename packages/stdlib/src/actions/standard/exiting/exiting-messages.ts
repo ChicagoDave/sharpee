@@ -8,6 +8,8 @@ export const ExitingMessages = {
   ALREADY_OUTSIDE: 'already_outside',
   CONTAINER_CLOSED: 'container_closed',
   CANT_EXIT: 'cant_exit',
+  NOT_IN_THAT: 'not_in_that',
+  NOT_ON_THAT: 'not_on_that',
   // Success messages
   EXITED: 'exited',
   EXITED_FROM: 'exited_from',

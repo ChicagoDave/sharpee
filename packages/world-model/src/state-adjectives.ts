@@ -15,10 +15,10 @@
  * (the English realization is the Assembler's); no article/grammar logic here.
  */
 
-import type { IFEntity } from './entities/if-entity';
-import { TraitType } from './traits/trait-types';
-import type { OpenableTrait } from './traits/openable/openableTrait';
-import type { LockableTrait } from './traits/lockable/lockableTrait';
+import type { IFEntity } from './entities/if-entity.js';
+import { TraitType } from './traits/trait-types.js';
+import type { OpenableTrait } from './traits/openable/openableTrait.js';
+import type { LockableTrait } from './traits/lockable/lockableTrait.js';
 
 /** Derive adjective tokens from an entity's live state. */
 export type AdjectiveContributor = (entity: IFEntity) => string[];

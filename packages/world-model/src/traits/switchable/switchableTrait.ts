@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/switchable/switchableTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 export interface ISwitchableData {
   /** Whether the entity is currently on */

@@ -1,29 +1,32 @@
 // packages/world-model/src/behaviors/index.ts
 
-export { Behavior, IWorldAwareBehavior, isWorldAwareBehavior } from './behavior';
+export { Behavior, IWorldAwareBehavior, isWorldAwareBehavior } from './behavior.js';
 
 // Re-export all behavior classes as they are added
 // These will come from the trait folders
-export { ContainerBehavior } from '../traits/container/containerBehavior';
-export { SceneryBehavior } from '../traits/scenery/sceneryBehavior';
-export { WearableBehavior } from '../traits/wearable/wearableBehavior';
-export { ReadableBehavior } from '../traits/readable/readableBehavior';
-export { LightSourceBehavior } from '../traits/light-source/lightSourceBehavior';
-export { ExitBehavior } from '../traits/exit/exitBehavior';
-export { ClimbableBehavior } from '../traits/climbable/climbableBehavior';
-export { OpenableBehavior } from '../traits/openable/openableBehavior';
-export { LockableBehavior } from '../traits/lockable/lockableBehavior';
+export { ContainerBehavior } from '../traits/container/containerBehavior.js';
+export { SceneryBehavior } from '../traits/scenery/sceneryBehavior.js';
+export { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
+export { ReadableBehavior } from '../traits/readable/readableBehavior.js';
+export { LightSourceBehavior } from '../traits/light-source/lightSourceBehavior.js';
+export { ExitBehavior } from '../traits/exit/exitBehavior.js';
+export { ClimbableBehavior } from '../traits/climbable/climbableBehavior.js';
+export { OpenableBehavior } from '../traits/openable/openableBehavior.js';
+export { LockableBehavior } from '../traits/lockable/lockableBehavior.js';
 
 // Combat behaviors
-export { WeaponBehavior } from '../traits/weapon/weaponBehavior';
-export { BreakableBehavior } from '../traits/breakable/breakableBehavior';
-export { DestructibleBehavior } from '../traits/destructible/destructibleBehavior';
-export { CombatBehavior } from '../traits/combatant/combatantBehavior';
-export { AttackBehavior, IAttackResult } from './attack';
+export { WeaponBehavior } from '../traits/weapon/weaponBehavior.js';
+export { BreakableBehavior } from '../traits/breakable/breakableBehavior.js';
+export { DestructibleBehavior } from '../traits/destructible/destructibleBehavior.js';
+export { CombatBehavior } from '../traits/combatant/combatantBehavior.js';
+export { AttackBehavior, IAttackResult, AttackIneffectiveReason } from './attack.js';
+
+// Health / life-state (ADR-226, ADR-223 child A)
+export { HealthBehavior } from '../traits/health/healthBehavior.js';
 
 // Export result types from behaviors
-export type { IOpenResult, ICloseResult } from '../traits/openable/openableBehavior';
-export type { IWeaponDamageResult } from '../traits/weapon/weaponBehavior';
-export type { IBreakResult } from '../traits/breakable/breakableBehavior';
-export type { IDamageResult } from '../traits/destructible/destructibleBehavior';
-export type { ICombatResult } from '../traits/combatant/combatantBehavior';
+export type { IOpenResult, ICloseResult } from '../traits/openable/openableBehavior.js';
+export type { IWeaponDamageResult } from '../traits/weapon/weaponBehavior.js';
+export type { IBreakResult } from '../traits/breakable/breakableBehavior.js';
+export type { IDamageResult } from '../traits/destructible/destructibleBehavior.js';
+export type { ICombatResult } from '../traits/combatant/combatantBehavior.js';

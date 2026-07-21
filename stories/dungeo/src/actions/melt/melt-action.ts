@@ -10,7 +10,7 @@
  * GLACIER-MELT-FLAG is set (for custom room description on revisit).
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, LightSourceTrait, IFEntity } from '@sharpee/world-model';
 import { GlacierTrait } from '../../traits/glacier-trait';
@@ -101,9 +101,13 @@ export const meltAction: Action = {
       }
     }
 
-    // Kill the player
-    context.world.setStateValue('dungeo.player.dead', true);
-    context.world.setStateValue('dungeo.player.death_cause', 'glacier_melt');
+    // Canonical terminal death (ADR-224). Stash the event for report().
+    (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent =
+      killPlayer(context.world, context.player, {
+        cause: 'glacier_melt',
+        messageId: MeltMessages.DEATH,
+        terminal: true,
+      });
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -121,10 +125,8 @@ export const meltAction: Action = {
     }
 
     if (context.sharedData.death) {
-      return [context.event('if.event.player.died', {
-        messageId: MeltMessages.DEATH,
-        cause: 'glacier_melt'
-      })];
+      const event = (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent;
+      return event ? [event] : [];
     }
 
     return [];

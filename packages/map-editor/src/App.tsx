@@ -1,8 +1,8 @@
-import { useEditorStore } from './store/editor-store';
-import { Header } from './components/Layout/Header';
-import { Sidebar } from './components/Sidebar/Sidebar';
-import { Canvas } from './components/Canvas/Canvas';
-import { WelcomeScreen } from './components/WelcomeScreen';
+import { useEditorStore } from './store/editor-store.js';
+import { Header } from './components/Layout/Header.js';
+import { Sidebar } from './components/Sidebar/Sidebar.js';
+import { Canvas } from './components/Canvas/Canvas.js';
+import { WelcomeScreen } from './components/WelcomeScreen.js';
 import './styles/app.css';
 
 function App() {

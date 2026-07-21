@@ -24,7 +24,7 @@ import {
   gameReducer,
   CurrentRoom,
   GameEvent,
-} from '../types/game-state';
+} from '../types/game-state.js';
 import { renderToString } from '@sharpee/text-service';
 import type { ITextBlock } from '@sharpee/text-blocks';
 

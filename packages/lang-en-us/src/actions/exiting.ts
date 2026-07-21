@@ -28,6 +28,8 @@ export const exitingLanguage = {
     'exited': "{You} {get} out of {the place}.",
     'exited_from': "{You} {get} {preposition} {the place}.",
     'nowhere_to_go': "There's nowhere to go from here.",
+    'not_in_that': "But {you} {aren't} in {the container}.",
+    'not_on_that': "But {you} {aren't} on {the container}.",
     'exit_blocked': "The way out is blocked.",
     'must_stand_first': "{You}'ll need to stand up first."
   },

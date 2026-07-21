@@ -1,0 +1,58 @@
+title: Fernhill D2 — the fuse: fail to cut it and die
+story: fernhill
+description: The failure branch, not skipped — enter the folly without the
+  shears' mercy, let the anchored countdown run, and the cache goes up
+  (kill the player through the ADR-227 death sink).
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> east
+[OK: contains "old coal dust"]
+
+> turn the stopcock
+[OK: contains "water gurgles"]
+
+> push the primer
+[OK: contains "thumps home"]
+
+> turn on the boiler
+[OK: contains "warmth crawls"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "enters"]
+[UNTIL "enters from the"]
+
+> ask tobias about the fire
+[OK: contains "warped, not cursed"]
+
+> west
+[OK: contains "Fountain Court"]
+
+> west
+[OK: contains "Glass"]
+
+> north
+[OK: contains "Folly Hill"]
+
+> open the folly door
+[OK: contains "You open the folly door"]
+
+> north
+[OK: contains "wakes a thread of sparks"]
+
+# The hiss marks the stakes each turn…
+> wait
+[OK: contains_any "hisses on" "closer now"]
+
+> wait
+[OK: contains_any "hisses on" "closer now"]
+
+# …and the third turn is the last
+> wait
+[OK: contains "white roar"]

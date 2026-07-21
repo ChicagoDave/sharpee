@@ -2,10 +2,10 @@
  * Data builder for putting action
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel } from '@sharpee/world-model';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
+import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
 
 export const buildPutData: ActionDataBuilder<Record<string, unknown>> = (
   context: ActionContext

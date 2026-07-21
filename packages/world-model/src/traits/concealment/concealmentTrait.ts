@@ -9,7 +9,7 @@
  * Owner context: @sharpee/world-model / traits
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 /** How an actor can hide relative to the entity */
 export type ConcealmentPosition = 'behind' | 'under' | 'on' | 'inside';

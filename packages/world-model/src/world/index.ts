@@ -28,7 +28,7 @@ export {
   SceneCallback,
   // Pre-removal observer seam (ADR-213)
   EntityRemovalObserver
-} from './WorldModel';
+} from './WorldModel.js';
 
 // Re-export grammar vocabulary types from if-domain for convenience
 export {
@@ -39,15 +39,15 @@ export {
 } from '@sharpee/if-domain';
 
 // Export other classes
-export { SpatialIndex } from './SpatialIndex';
-export { VisibilityBehavior } from './VisibilityBehavior';
-export { AuthorModel, IDataStore, IItemSpec } from './AuthorModel';
+export { SpatialIndex } from './SpatialIndex.js';
+export { VisibilityBehavior, darkKey } from './VisibilityBehavior.js';
+export { AuthorModel, IDataStore, IItemSpec } from './AuthorModel.js';
 
 // Wall Adjacency (ADR-173)
-export { createWall, createWalls } from './wall-creation';
-export type { IWallCreationWorld } from './wall-creation';
-export { validateWallSpec } from './wall-validation';
-export type { IWallValidationWorld } from './wall-validation';
+export { createWall, createWalls } from './wall-creation.js';
+export type { IWallCreationWorld } from './wall-creation.js';
+export { validateWallSpec } from './wall-validation.js';
+export type { IWallValidationWorld } from './wall-validation.js';
 
 // Export capability types
 export {
@@ -57,4 +57,4 @@ export {
   ICapabilityRegistration,
   StandardCapabilities,
   StandardCapabilityName
-} from './capabilities';
+} from './capabilities.js';

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useEditorStore } from '../../store/editor-store';
-import { RegionList } from './RegionList';
-import { RoomList } from './RoomList';
+import { useEditorStore } from '../../store/editor-store.js';
+import { RegionList } from './RegionList.js';
+import { RoomList } from './RoomList.js';
 import './Sidebar.css';
 
 export function Sidebar() {

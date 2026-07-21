@@ -1,0 +1,9 @@
+{
+  "throwing.story": {
+    "anyOf": {
+      "throw the horseshoe at the rain barrel": [
+        "You throw the horseshoe at the rain barrel, but miss."
+      ]
+    }
+  }
+}

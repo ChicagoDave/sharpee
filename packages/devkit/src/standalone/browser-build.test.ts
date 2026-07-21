@@ -16,9 +16,9 @@
 import { describe, it, expect, afterEach, beforeAll, vi } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { runInitCommand } from './init';
-import { runInitBrowserCommand } from './init-browser';
-import { runBuildBrowserCommand } from './build-browser';
+import { runInitCommand } from './init.js';
+import { runInitBrowserCommand } from './init-browser.js';
+import { runBuildBrowserCommand } from './build-browser.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
 
@@ -49,7 +49,10 @@ describe('browser scaffold (real path)', () => {
     tmp = mkdtempSync(join(REPO_ROOT, '.tmp-browser-verify-'));
     projectDir = join(tmp, 'my-story'); // basename → storyId 'my-story'
 
-    await runInitCommand([projectDir, '-y']);
+    // `--ts`: this test pins the preserved TypeScript scaffold/build path
+    // (Chord is the default scaffold since David's 2026-07-18 ruling; the
+    // Chord browser build is covered by chord-build.test.ts).
+    await runInitCommand([projectDir, '-y', '--ts']);
     await runInitBrowserCommand([], projectDir);
 
     // init-browser: entry wired + override seeded + runtime deps added.

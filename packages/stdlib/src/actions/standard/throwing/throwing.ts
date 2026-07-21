@@ -13,8 +13,8 @@
  * 4. report: standard events → postReport hook (additional effects)
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -25,18 +25,63 @@ import {
   OpenableBehavior,
   Direction,
   DirectionType,
-  ActionInterceptor,
-  InterceptorSharedData,
   findTraitWithCapability,
   CapabilityBehavior,
   CapabilityEffect,
-  ITrait,
-  applyInterceptorReportResult
+  ITrait
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope/types';
-import { ThrowingEventMap } from './throwing-events';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { ThrowingEventMap } from './throwing-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): BOTH the thrown item and the target are
+ * consulted, in the published D3-B order (direct object first). This
+ * retires the audit's single-winner rule (target-else-item) — a glacier
+ * can react to being hit AND an explosive can react to being thrown in
+ * the same command. Both consultations are seeded with the full
+ * item/target context (the receiving entity's hooks read `itemId` to
+ * know what hit them).
+ */
+export const throwingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.THROWING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.THROWING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: entity.id,
+        itemName: entity.name,
+        targetId: ctx.command.indirectObject?.entity?.id,
+        targetName: ctx.command.indirectObject?.entity?.name
+      })
+    },
+    {
+      id: 'target',
+      actionIds: [IFActions.THROWING],
+      resolve: (ctx) => ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: ctx.command.directObject?.entity?.id,
+        itemName: ctx.command.directObject?.entity?.name,
+        targetId: entity.id,
+        targetName: entity.name
+      })
+    }
+  ]
+};
 
 /**
  * Helper to convert a string direction to Direction constant
@@ -97,10 +142,6 @@ interface ThrowingSharedData {
   // Message info
   messageId: string;
   params: Record<string, any>;
-  /** Interceptor found during validate, if any */
-  interceptor?: ActionInterceptor;
-  /** Shared data for interceptor phases */
-  interceptorData?: InterceptorSharedData;
   /** ADR-090: capability behavior that handled this throw (if any) */
   capabilityBehavior?: CapabilityBehavior;
   capabilityTrait?: ITrait;
@@ -162,38 +203,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
-    const sharedData = getThrowingSharedData(context);
 
     if (!item) {
       return { valid: false, error: 'no_item' };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    // Interceptors are on the thing being thrown AT, not the item being thrown
-    const interceptorResult = target ? context.world.getInterceptorForAction(target, IFActions.THROWING) : undefined;
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {
-      // Pass item info to interceptor so it knows what's being thrown
-      itemId: item.id,
-      itemName: item.name
-    };
-
-    // Store for later phases
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    // Called before standard validation - can block early
-    if (interceptor?.preValidate && target) {
-      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, throwingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Item must be carried (or implicitly takeable)
     // This enables "throw apple at bob" when apple is on the ground
@@ -250,18 +267,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // === POST-VALIDATE HOOK ===
-    // Called after standard validation passes - can add entity-specific conditions
-    if (interceptor?.postValidate && target) {
-      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -321,6 +329,10 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           sharedData.capabilityBehavior = behavior;
           sharedData.capabilityTrait = capTrait;
           behavior.execute(target, context.world, context.player.id, context.sharedData);
+          // ADR-228 D7.2: capability behavior first, then interceptor
+          // hooks — this path previously returned before postExecute.
+          const capState = getLifecycleState(context);
+          if (capState) runPostExecute(context, capState);
           return;
         }
       }
@@ -328,7 +340,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       // Calculate hit/miss
       let hitTarget = false;
       if (target.has(TraitType.ACTOR)) {
-        hitTarget = Math.random() > 0.3; // 70% chance to hit
+        hitTarget = context.random.chance(0.7); // 70% chance to hit
 
         const agility = ActorBehavior.getCustomProperty(target, 'agility');
         const canCatch = ActorBehavior.getCustomProperty(target, 'canCatch');
@@ -336,14 +348,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         if (!hitTarget && agility > 5) {
           sharedData.targetDucked = true;
           sharedData.messageId = 'target_ducks';
-        } else if (canCatch && Math.random() > 0.7) {
+        } else if (canCatch && context.random.chance(0.3)) {
           sharedData.targetCaught = true;
           hitTarget = false;
           finalLocation = target.id;
           sharedData.messageId = 'target_catches';
         }
       } else {
-        hitTarget = Math.random() > 0.1; // 90% chance to hit stationary objects
+        hitTarget = context.random.chance(0.9); // 90% chance to hit stationary objects
       }
 
       sharedData.hit = hitTarget;
@@ -353,7 +365,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         sharedData.targetAngry = target.has(TraitType.ACTOR);
 
         if (sharedData.isFragile) {
-          sharedData.willBreak = Math.random() > 0.2;
+          sharedData.willBreak = context.random.chance(0.8);
           if (sharedData.willBreak) {
             sharedData.messageId = 'breaks_against';
           }
@@ -392,7 +404,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           sharedData.messageId = 'sails_through';
 
           if (sharedData.isFragile) {
-            sharedData.willBreak = Math.random() > 0.5;
+            sharedData.willBreak = context.random.chance(0.5);
             if (sharedData.willBreak) {
               sharedData.messageId = 'breaks_on_impact';
             }
@@ -404,7 +416,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     } else {
       // General throw
       if (sharedData.isFragile) {
-        sharedData.willBreak = Math.random() > 0.7;
+        sharedData.willBreak = context.random.chance(0.3);
         if (sharedData.willBreak) {
           sharedData.messageId = 'fragile_breaks';
         } else {
@@ -428,36 +440,18 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       context.world.moveEntity(item.id, ''); // Empty string = nowhere
     }
 
-    // === POST-EXECUTE HOOK ===
-    // Called after standard execution - can perform additional mutations
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postExecute && target) {
-      interceptor.postExecute(target, context.world, actor.id, interceptorData);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
-    const sharedData = getThrowingSharedData(context);
-
-    // === ON-BLOCKED HOOK ===
-    // Called when action is blocked - can provide custom blocked handling
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && target && result.error) {
-      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        // Interceptor provided custom blocked effects
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
 
     // Standard blocked handling — params carry EntityInfo (ADR-158)
-    return [context.event('if.event.throw_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.throw_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: {
         ...result.params,
         item: item ? nounPhraseFor(item) : undefined,
@@ -469,6 +463,13 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.throw_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -489,6 +490,10 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         );
         events.push(...effectsToEvents(effects, context));
       }
+      // ADR-228 D7.2: capability behavior first, then interceptor hooks —
+      // this path previously returned before postReport.
+      const capState = getLifecycleState(context);
+      if (capState) runPostReport(context, capState, events, 'if.event.thrown');
       return events;
     }
 
@@ -540,18 +545,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    // === POST-REPORT HOOK ===
-    // Apply interceptor's override (replaces if.event.thrown.messageId)
-    // and/or emit (additional events). See ISSUE-074.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const target = context.command.indirectObject?.entity;
-      if (target) {
-        const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-        applyInterceptorReportResult(events, 'if.event.thrown', result, context);
-      }
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.thrown');
 
     return events;
   },

@@ -13,17 +13,16 @@
  * evaluation during parsing).
  */
 
-import { IFEntity, WorldModel, TraitType, IdentityTrait, OpenableTrait, DoorTrait } from '@sharpee/world-model';
-import { ScopeLevel, ScopeResolver } from './types';
+import { IFEntity, WorldModel, TraitType, OpenableTrait, DoorTrait, VisibilityBehavior } from '@sharpee/world-model';
+import { ScopeLevel, ScopeResolver } from './types.js';
 
 /**
  * Check if an entity is concealed (hidden until SEARCH reveals it).
- * Safe to call on any entity — returns false if no IdentityTrait.
+ * Delegates to the shared visibility-layer definition so scope resolution,
+ * LOOK, and EXAMINE all agree on what "concealed" means.
  */
 function isConcealed(entity: IFEntity): boolean {
-  if (!entity.has(TraitType.IDENTITY)) return false;
-  const identity = entity.getTrait(TraitType.IDENTITY) as IdentityTrait | null;
-  return identity?.concealed === true;
+  return VisibilityBehavior.isConcealed(entity);
 }
 
 /**

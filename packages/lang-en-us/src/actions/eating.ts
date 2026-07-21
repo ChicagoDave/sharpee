@@ -13,7 +13,6 @@ export const eatingLanguage = {
     'munch on [something]',
     'nibble [something]',
     'nibble on [something]',
-    'taste [something]'
   ],
   
   messages: {

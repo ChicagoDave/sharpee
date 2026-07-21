@@ -13,8 +13,8 @@
  */
 
 // Import everything we want to expose on the global
-import * as SharpeeAPI from './index';
-import { SharpeeRuntimeBridge } from './bridge';
+import * as SharpeeAPI from './index.js';
+import { SharpeeRuntimeBridge } from './bridge.js';
 
 // ─── Expose API on window.Sharpee ──────────────────────────────
 

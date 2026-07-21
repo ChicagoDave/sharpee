@@ -5,7 +5,7 @@
  */
 
 import type { IValidatedCommand as CoreValidatedCommand } from '@sharpee/world-model';
-import type { ScopeLevel, SenseType } from '../scope/types';
+import type { ScopeLevel, SenseType } from '../scope/types.js';
 
 /**
  * Scope information for validated objects

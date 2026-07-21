@@ -1,0 +1,16 @@
+title: Fernhill D1 — the long night keeps its schedule
+story: fernhill
+description: The fixed timeline (`at turn 14`) fires on the clock — dusk
+  deepens and the story crosses evening → midnight, wherever the player is.
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+[DO]
+> wait
+[OK: contains_any "Time passes" "last light"]
+[UNTIL "the last light goes out of the sky"]
+
+> look
+[OK: contains "Gravel Drive"]

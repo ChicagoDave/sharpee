@@ -29,38 +29,25 @@ const jugglingAction = {
   blocked: () => [],
 };
 
-const crowdControlBehavior = {
-  validate: () => ({ valid: true }),
-  execute: () => {},
-  report: () => [],
-  blocked: () => [],
-};
+const STUNTS = { './stunts.ts': { juggling: jugglingAction } };
 
-const STUNTS = { './stunts.ts': { juggling: jugglingAction, 'crowd-control': crowdControlBehavior } };
-
-describe('define action/behavior hatch binding (traits-basic.story)', () => {
+describe('define action hatch binding (traits-basic.story; `define behavior` removed by ADR-235 D2)', () => {
   const ir = compileFixture('traits-basic.story');
 
-  it('binds action and behavior exports and surfaces the action for registration', () => {
+  it('binds the action export and surfaces it for registration', () => {
     const story = createStory(ir, { hatchModules: STUNTS });
     expect(story.boundActions.get('juggling')).toBe(jugglingAction);
-    expect(story.boundBehaviors.get('crowd-control')).toBe(crowdControlBehavior);
     expect(story.getCustomActions()).toContain(jugglingAction);
   });
 
   it('rejects a missing export at load', () => {
-    expect(() => createStory(ir, { hatchModules: { './stunts.ts': { juggling: jugglingAction } } }))
-      .toThrow(/`crowd-control`.*missing/);
+    expect(() => createStory(ir, { hatchModules: { './stunts.ts': {} } }))
+      .toThrow(/`juggling`.*missing/);
   });
 
   it('rejects a mis-typed action export at load', () => {
-    const bad = { './stunts.ts': { juggling: 42, 'crowd-control': crowdControlBehavior } };
+    const bad = { './stunts.ts': { juggling: 42 } };
     expect(() => createStory(ir, { hatchModules: bad })).toThrow(/not an Action/);
-  });
-
-  it('rejects a mis-typed behavior export at load', () => {
-    const bad = { './stunts.ts': { juggling: jugglingAction, 'crowd-control': () => {} } };
-    expect(() => createStory(ir, { hatchModules: bad })).toThrow(/not a CapabilityBehavior/);
   });
 });
 
@@ -78,7 +65,7 @@ describe('AC-4: pure-IR profile', () => {
     expect(() => createStory(ir, { profile: 'pure-ir', hatchModules: { './stunts.ts': tripwire } }))
       .toThrow(LoadError);
     expect(() => createStory(ir, { profile: 'pure-ir', hatchModules: { './stunts.ts': tripwire } }))
-      .toThrow(/pure-IR.*2 TS hatch/);
+      .toThrow(/pure-IR.*1 TS hatch/);
     expect(touched, 'no hatch export was read or executed').toBe(false);
   });
 

@@ -11,7 +11,7 @@
  * @see ADR-174 §Internal interfaces
  */
 
-import { PLATFORM_VOCABULARY } from './platform-vocabulary';
+import { PLATFORM_VOCABULARY } from './platform-vocabulary.js';
 
 /**
  * Resolve a bracketed name to its final CSS class name.

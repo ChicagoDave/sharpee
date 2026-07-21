@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { computeClosure, scanStaging, readSharpeeSeed, generateConsumer } from './consumer-gen';
+import { computeClosure, scanStaging, readSharpeeSeed, generateConsumer } from './consumer-gen.js';
 
 describe('computeClosure', () => {
   it('returns the full transitive set including the seed', () => {

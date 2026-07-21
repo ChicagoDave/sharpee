@@ -16,7 +16,7 @@
  */
 
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
-import type { HandlerContext } from './handlers/types';
+import type { HandlerContext } from './handlers/types.js';
 
 /**
  * Whether the phrase path is wired for this turn: a render-context factory (the
@@ -32,6 +32,37 @@ export function phraseAvailable(context: HandlerContext): boolean {
     typeof lp?.renderMessage === 'function' &&
     typeof lp?.getTemplate === 'function'
   );
+}
+
+/**
+ * The phrasebook template key convention (ADR-250 D4, ADR-240 D6): built
+ * here — the read point — and in the story-loader's evaluator registrar,
+ * nowhere else. Pinned by tests on both sides.
+ *
+ * @param messageId the message id a book may cover
+ * @returns the `world.evaluate` key for that id's book resolution
+ */
+export function phrasebookTemplateKey(messageId: string): string {
+  return `phrasebook.template.${messageId}`;
+}
+
+/**
+ * The shape the story-loader's phrasebook evaluator returns (ADR-250 D4.3,
+ * platform-adapted): the winning book's DERIVED template plus any params
+ * the template needs bound — `variants` (a ready `Choice` atom keyed
+ * `phrasebook.<book>` / key, so counters stay per (book, key) — D5) or
+ * `text` (verbatim entries). Keeping the derivation loader-side preserves
+ * the ADR-210 direction rule: the engine never learns Chord's IR shapes.
+ */
+export interface PhrasebookResolution {
+  /** The winning book's name. */
+  book: string;
+  /** The covered story key (= the messageId asked about). */
+  key: string;
+  /** The derived template (same derivation as registered phrases). */
+  template: string;
+  /** Extra param bindings the template needs (variants Choice, verbatim text). */
+  params?: Record<string, unknown>;
 }
 
 /**
@@ -58,9 +89,21 @@ export function renderViaPhrase(
   blockKey: string,
 ): ITextBlock[] | null {
   const lp = context.languageProvider!;
+  // ADR-250 D4: the phrasebook read point. Ask the world for a book-resolved
+  // template BEFORE the registry fork — an evaluator exists only for keys
+  // some book covers and the story does not define (story-beats-book is
+  // decided at load), so a hit here can never shadow story text.
+  let bookHit: PhrasebookResolution | null = null;
+  if (typeof context.world?.evaluate === 'function' && typeof lp.renderTemplate === 'function') {
+    const resolved = context.world.evaluate(phrasebookTemplateKey(messageId)) as PhrasebookResolution | undefined;
+    if (resolved && typeof resolved.template === 'string') {
+      bookHit = resolved;
+      if (resolved.params) params = { ...params, ...resolved.params };
+    }
+  }
   // Unregistered id: events carry a messageId for semantic association even when
   // no template exists; let the caller fall back to inline data.message/text.
-  if (lp.getTemplate!(messageId) === undefined) {
+  if (!bookHit && lp.getTemplate!(messageId) === undefined) {
     return null;
   }
   const ctx = context.makeRenderContext!(params);
@@ -79,7 +122,9 @@ export function renderViaPhrase(
   }
   let blocks;
   try {
-    blocks = lp.renderMessage!(messageId, params, ctx);
+    blocks = bookHit
+      ? lp.renderTemplate!(bookHit.template, params, ctx)
+      : lp.renderMessage!(messageId, params, ctx);
   } catch (e) {
     // A template that fails to parse at render time (unbound param, bad syntax)
     // is an authoring error — warn and degrade to the caller's inline fallback

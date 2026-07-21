@@ -1,0 +1,57 @@
+**actor** (`a person` — kind noun). What makes something a *someone*:
+pronouns (they/them default), an optional carrying capacity (the giving
+refusals, §2.4), disambiguation text, and a `customProperties` bag that
+conversation (§8.1) and giving preferences (§2.4) read. In Chord,
+`a person` composes exactly this (plus identity) — the keeper in §8.1's
+scene is the whole recipe. Everything richer is layered on top.
+
+**npc** (trait; Chord via the core behavior adjectives — `a person, a
+guard`, or `passive`, `wanderer with move-chance 50`, `follower`,
+`patrol with route [ … ]`, always available, no `use` line — or
+TypeScript). The platform's NPC bookkeeping: hostility flag, movement
+permissions (`canMove`, allowed/forbidden rooms — in Chord, `can-move`,
+`allowed-rooms`, `forbidden-rooms`), announced-movement messages, a
+behavior id for the NPC turn plugin, and
+conversation-state/knowledge/goals bags. Life-state does *not* live
+here — that moved to `health` (ADR-226). Neither talking nor attacking
+reads it; it belongs to the NPC plugin layer, and the multi-turn
+behaviors it names (a guard attacking, wanderers wandering, patrols
+patrolling) are §12.3's territory.
+
+**character-model** (trait — TypeScript-only). The deep-NPC option:
+personality, disposition, mood, threat assessment, beliefs and goals —
+the substrate of the character-knowledge systems. Pointer only here; it
+rides alongside `npc` and is consumed by its own subsystem, not by
+standard actions.
+
+**combatant** (trait; Chord under `use combat` — the deserter in §8.2's
+scene, `a person, combatant with health 8 and skill 30`; `hostile true`
+and friends compose the same way — or TypeScript). Combat *stats* —
+skill, base damage, armor, retaliation and inventory-drop flags — and,
+since ADR-226, nothing else: health, consciousness, and death live on
+the required `health` trait, and `health`/`max-health` on the
+composition line quietly route there (the loader attaches it for you).
+To stdlib its mere presence means "combat handles this"; the stats are
+the extension's business (§12.4).
+
+**weapon** (trait; Chord under `use combat` — the cutlass in §8.2's
+scene, `weapon with damage 5 and skill-bonus 2`, plus
+`is-blessed`/`glows-near-danger`; durability fields are
+TypeScript-only). `damage` drives best-weapon inference, plus type and
+the blessed/glowing flags. Prefer equipping (§5.2) to make a weapon the
+inferred choice; name it explicitly to make it a consulted command
+entity.
+
+**edible** (`edible` — adjective; a liquid composes as `drinkable`,
+§8.3's cordial). `servings`, `liquid` (the eat/drink router), `taste`,
+`effects`, `satisfiesHunger`/`satisfiesThirst`. The behavior-side extras
+(`remainsType`, `consumeMessage`) are dormant in the stdlib path. One
+type wrinkle: the drink-taste vocabulary (`refreshing`, `bitter`,
+`sweet`, `strong`) isn't in the trait's declared taste union — it works
+via raw data (flagged).
+
+**breakable** and **destructible** (traits — TypeScript-only). Read by
+*attacking* only (§8.2 — throwing's fragility is name-keyword inference,
+not these). `breakable` is one field, `broken`; `destructible` is the
+hit-point model (armor, weapon requirements, `transformTo`,
+`revealExit`).

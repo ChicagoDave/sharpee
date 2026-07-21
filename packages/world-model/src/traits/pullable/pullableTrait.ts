@@ -2,8 +2,8 @@
  * Pullable trait implementation
  */
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 export interface IPullableData {
   /**

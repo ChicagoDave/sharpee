@@ -10,7 +10,7 @@
  * Public interface: every exported node type; StoryFile is the root.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
-import type { Span } from './span';
+import type { Span } from './span.js';
 
 /** Root of a parsed `.story` file. */
 export interface StoryFile {
@@ -36,6 +36,40 @@ export interface StoryHeader {
   statesReversible: boolean;
   /** `score <name> worth N` lines — story-owned score identities (D12). */
   scores: ScoreDecl[];
+  /**
+   * `on every turn [while <cond>][, once]` clauses in the header's indented
+   * body (ADR-236 D7, ratchet R4) — story-owned daemons: no presence gate,
+   * `it` unbound (a compile error if referenced). The only clause form the
+   * header hosts.
+   */
+  onClauses: OnClause[];
+  /**
+   * `use <extension>` lines in the header's indented body (ADR-215):
+   * static, one trusted platform-extension name per line. Each admits that
+   * extension's manifest vocabulary at compile time and triggers its
+   * runtime registration at load.
+   */
+  uses: UseDecl[];
+  /**
+   * `use phrasebook <name> [while <condition>]` lines (ADR-250 D2) —
+   * packaged voices, predicate bound at the use site (absent = the
+   * default/always book). Stackable; header position = arbitration
+   * position ahead of every body-declared book.
+   */
+  usePhrasebooks: UsePhrasebookDecl[];
+  span: Span;
+}
+
+/** One `use <extension>` line (ADR-215). */
+export interface UseDecl {
+  name: string;
+  span: Span;
+}
+
+/** One `use phrasebook <name> [while <condition>]` line (ADR-250 D2). */
+export interface UsePhrasebookDecl {
+  name: string;
+  condition: ConditionNode | null;
   span: Span;
 }
 
@@ -58,7 +92,136 @@ export type Declaration =
   | DefineTrait
   | DefineAction
   | DefineHatch
-  | DefineSequence;
+  | DefineSequence
+  // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
+  | DefineMachine
+  // ADR-216 declared media assets (DATA references, never hatches):
+  | DefineAsset
+  | DefineFamilyChannel
+  // ADR-216 custom channels (spelling A, David 2026-07-18):
+  | DefineChannel
+  // ADR-239 topic conversation (D3 as amended, David 2026-07-18):
+  | DefineTopics
+  // ADR-242 person identity (ruled Q-1, David 2026-07-19):
+  | DefinePronouns
+  // ADR-245/250 phrasebooks (David 2026-07-21):
+  | DefinePhrasebook
+  // ADR-251 generalized import (David 2026-07-21):
+  | ImportDecl;
+
+/**
+ * `define phrasebook <name> [while <condition>] … end phrasebook`
+ * (ADR-245/ADR-250 D1): a named, predicated collection of phrase entries.
+ * Entries reuse the phrase-override grammar (`<key>[, strategy]:` +
+ * `or` variants); an entry-level `while` parses but is an analyzer gate
+ * (`analysis.phrasebook-entry-gate`) — the book's header predicate is the
+ * only gate. A predicate-less book is the default phrasebook (always).
+ */
+export interface DefinePhrasebook {
+  kind: 'define-phrasebook';
+  /** Single kebab-case book name (extension-name form). */
+  name: string;
+  /** The book's activity predicate; null = always (the default book). */
+  condition: ConditionNode | null;
+  entries: PhraseOverride[];
+  span: Span;
+}
+
+/**
+ * `import "<file>"` (ADR-251) — the author's multi-file organization axis.
+ * `path` is the name as written, WITHOUT extension: the compiler appends
+ * `.chord` before handing it to the host `importResolver`, which resolves
+ * it to the fragment's source text. The fragment's complete declarations
+ * (any kind except a `story` header or a nested `import`) are spliced at
+ * this position (import site = arbitration position — D4). Unresolved at
+ * analysis time = `analysis.import-unresolved`. Supersedes ADR-250 D2's
+ * typed `import phrasebook`/`.story` form.
+ */
+export interface ImportDecl {
+  kind: 'import';
+  /** Import target as written, extension-free (compiler appends `.chord`). */
+  path: string;
+  span: Span;
+}
+
+/**
+ * `define topics for <entity> … end topics` (ADR-239 D3 as amended) — the
+ * entity's declared table of ask/tell topics + responses: a closed,
+ * compile-visible set (D4 — lookup, never fuzzy). One block per entity
+ * (duplicate = analyzer error); any number of `about` rows.
+ */
+export interface DefineTopics {
+  kind: 'define-topics';
+  /** The owning entity (`for the porter`) — must be a person kind (analyzer gate). */
+  owner: NameRef;
+  rows: TopicRow[];
+  span: Span;
+}
+
+/**
+ * One `about …: <response>` table row. Entity tier: `about the <entity>`
+ * (the platform's quiet `topicEntityId` resolution). Free-text tier:
+ * `about "<text>"[, "<text>" …]` — comma-separated declared aliases
+ * (spelling ruled by David 2026-07-18). The response is a one-line
+ * statement or an indented statement body; `it` inside binds to the owner.
+ */
+export interface TopicRow {
+  kind: 'topic-row';
+  filter:
+    | { kind: 'entity'; ref: NameRef }
+    | { kind: 'text'; primary: string; aliases: string[]; span: Span };
+  body: Statement[];
+  span: Span;
+}
+
+/**
+ * `define channel <name> … end channel` (ADR-216; spelling A ratified by
+ * David 2026-07-18) — a declarative data projection: JSON content, a
+ * mode, an optional capability gate, and a produce rule taking fields
+ * from the turn's last event of the named type. Pure IR — a novel
+ * RENDERER for it ships via an ADR-215 trusted extension, never here.
+ */
+export interface DefineChannel {
+  kind: 'define-channel';
+  name: string;
+  /** `mode replace|append|event` (null = parse error reported). */
+  mode: string | null;
+  /** `gated by <capability>` — a client capability flag, or null (ungated). */
+  gatedBy: string | null;
+  /** `from event <dotted.key>` — the source event type (null = error reported). */
+  fromEvent: string | null;
+  /** `take <field>, …` — data fields projected from the event. */
+  take: string[];
+  span: Span;
+}
+/** One `pronouns <word>` person body line (ADR-242 D5). */
+export interface PronounsDecl {
+  word: string;
+  span: Span;
+}
+
+/**
+ * `define pronouns <name> … end pronouns` (ADR-242 D7, ruled Q-1) — a
+ * named pronoun set as a block with five named rows (`subject`, `object`,
+ * `possessive`, `possessive-pronoun`, `reflexive`), each `<case> <form>`.
+ * Row completeness, duplicates, and standard-word shadowing are the
+ * analyzer's gates; the declared forms are locale text carried as data
+ * (registered into the language provider at load, never rendered here).
+ */
+export interface DefinePronouns {
+  kind: 'define-pronouns';
+  name: string;
+  rows: PronounRow[];
+  span: Span;
+}
+
+/** One `<case> <form>` row of a `define pronouns` block. */
+export interface PronounRow {
+  case: string;
+  form: string;
+  span: Span;
+}
+
 // Removed by the ownership package (ratchet 2026-07-11): DefineFlag,
 // DefineScore, WhenRule, OnceRule, EveryRule — the parser emits removal
 // diagnostics with fix-its pointing at the owner-attached replacements.
@@ -106,14 +269,40 @@ export interface CreateDecl {
   name: NameRef;
   /** `aka` aliases, in declaration order. */
   aka: string[];
+  /**
+   * `pronouns <word>` lines (ADR-242 D5) — collected in order so the
+   * analyzer can reject duplicates with the second line's span. Legal
+   * only on person blocks; word resolution (standard four or a
+   * `define pronouns` set) is the analyzer's gate.
+   */
+  pronouns: PronounsDecl[];
   /** Kind-noun and trait-adjective composition items. */
   compositions: CompositionItem[];
+  /**
+   * `starts <state>` initial-state clauses (ADR-231 D5a) riding the
+   * composition lines, in declaration order (`starts locked`). Pairing with
+   * the required trait (`lockable`, …) is the analyzer's gate.
+   */
+  startsStates: StartsStateDecl[];
   /** `in <place>` / `on <place>` / `starts in <place>`. */
   placement: Placement | null;
   /** `wears <thing>` lines (the player wears the cloak). */
   wears: NameRef[];
+
+  /** `carries <thing>` lines — start inventory, not worn (ADR-230 Phase 6). */
+  carries: NameRef[];
+  /**
+   * `containing <name list>` region-membership lines (ADR-236 D2, ratchet
+   * R2) — additive across lines; members are rooms or nested regions. Legal
+   * only on region blocks (the analyzer's gate).
+   */
+  containing: NameRef[];
   exits: ExitDecl[];
   blockedExits: BlockedExitDecl[];
+  /** `<direction> is deadly: <phrase>` lines (ADR-227). */
+  deadlyExits: DeadlyExitDecl[];
+  /** `deadly: <phrase>` no-escape room marker (ADR-227); null = not deadly. */
+  deadly: DeadlyRoomDecl | null;
   /** `states: a, b, c` — ordered. */
   states: StateName[];
   /** `states, reversible:` — declared back-transitions allowed (D4). */
@@ -133,6 +322,19 @@ export interface CreateDecl {
   span: Span;
 }
 
+/**
+ * One `starts <state>` initializer clause on a composition line (ADR-231
+ * D5a): `starts locked`, `starts open`, … — the state word is one of the
+ * catalog's STARTS_STATE_PAIRINGS keys (parse-gated; unknown words after
+ * `starts` are parse errors, `starts in` stays placement).
+ */
+export interface StartsStateDecl {
+  kind: 'starts-state';
+  /** The accepted state word (`locked`, `unlocked`, `closed`, `open`, `off`, `on`). */
+  state: string;
+  span: Span;
+}
+
 /** One composition term: `a room`, `scenery`, `a supporter with capacity 1`, `dark while <cond>`. */
 export interface CompositionItem {
   kind: 'composition';
@@ -149,12 +351,16 @@ export interface CompositionItem {
 /**
  * One `with` setting. Values are a trailing number/string/word, or — when an
  * article introduces the tail (`with food the handful of feed`, Phase B) — a
- * multi-word entity name (`valueKind: 'name'`, article stripped).
+ * multi-word entity name (`valueKind: 'name'`, article stripped), or — when
+ * a bracket opens the tail (`with route [Hall, Study, Hall]`, ADR-215) — a
+ * list of name references (`valueKind: 'list'`, entries in `listValues`).
  */
 export interface ConfigSetting {
   key: string[];
   value: string;
-  valueKind: 'number' | 'string' | 'word' | 'name';
+  valueKind: 'number' | 'string' | 'word' | 'name' | 'list';
+  /** List entries when valueKind is 'list' (resolution is the analyzer's). */
+  listValues?: NameRef[];
   span: Span;
 }
 
@@ -170,6 +376,12 @@ export interface ExitDecl {
   kind: 'exit';
   direction: string;
   to: NameRef;
+  /**
+   * `through the <door>` tail (ADR-234 D1, ratchet R2) — the one door
+   * relationship form. Null on plain exits. References a declared door;
+   * never creates one.
+   */
+  via: NameRef | null;
   span: Span;
 }
 
@@ -183,6 +395,34 @@ export interface BlockedExitDecl {
    * condition holds (grammar log 2026-07-10, Phase B). Null = always.
    */
   condition: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `<direction> is deadly: <phrase>` (ADR-227 Decision 4) — a deadly *exit*:
+ * going that way takes the player to their death. Mirrors the blocked-exit
+ * shape; lowers to a pre-validate command redirect (the deadly exit need
+ * not exist in the room graph), never a destination-resolved interceptor.
+ */
+export interface DeadlyExitDecl {
+  kind: 'deadly-exit';
+  direction: string;
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
+  /** `is deadly while <cond>: <key>` — parsed but not yet wired (post-scope). */
+  condition: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `deadly: <phrase>` (ADR-227 Decision 4) — the rare no-escape room marker:
+ * any verb but the DeadlyRoomTrait safe allowlist (look/examine default)
+ * is fatal. Lowers to `DeadlyRoomTrait`.
+ */
+export interface DeadlyRoomDecl {
+  kind: 'deadly-room';
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
   span: Span;
 }
 
@@ -293,6 +533,67 @@ export interface DefineVerb {
 export type PatternPart =
   | { kind: 'word'; word: string; span: Span }
   | { kind: 'slot'; word: string; span: Span };
+
+/**
+ * `define sound|image|music <name> from "<file>"` (ADR-216) — a declared
+ * media asset: a DATA reference (static file path), never a code hatch —
+ * it does NOT set `hasHatches` and keeps the pure-IR profile. Referenced
+ * by name from the media sugar statements (typo-checked at compile).
+ */
+export interface DefineAsset {
+  kind: 'define-asset';
+  assetKind: 'sound' | 'image' | 'music';
+  name: string;
+  path: string;
+  span: Span;
+}
+
+/**
+ * `define ambient <word>` / `define layer <word>` (ADR-241 D2): a named
+ * family channel — an ambient bed or an image layer. One-liners beside
+ * the asset declarations; the registered ids (`ambient:<word>`,
+ * `image:<word>`) are an implementation detail, never author-facing.
+ */
+export interface DefineFamilyChannel {
+  kind: 'define-family-channel';
+  family: 'ambient' | 'layer';
+  name: string;
+  span: Span;
+}
+
+/**
+ * ADR-216 typed media sugar — each form lowers AT ANALYSIS onto a
+ * payloaded `media.*` emit (no runtime surface of its own): `play sound
+ * <asset>`, `play music <asset> [looping]`, `stop music`, `show image
+ * <asset> [in <layer>]`, `hide image`, `play ambient <asset>
+ * [in <channel>]`, `stop ambient [in <channel>]` (ADR-241 D3),
+ * `transition <kind>`, `clear`.
+ */
+export interface MediaStmt {
+  kind: 'media';
+  form:
+    | 'play-sound'
+    | 'play-music'
+    | 'stop-music'
+    | 'show-image'
+    | 'hide-image'
+    | 'play-ambient'
+    | 'stop-ambient'
+    | 'transition'
+    | 'clear';
+  /** Declared asset name for the play/show forms; null otherwise. */
+  asset: string | null;
+  /** `in <layer>` on show-image; null otherwise. */
+  layer: string | null;
+  /** `in <channel>` on play-ambient/stop-ambient (ADR-241 D3); null = the implied `main` bed. */
+  channel: string | null;
+  /** `looping` modifier on play-music. */
+  looping: boolean;
+  /** The transition kind word (`transition fade`); null otherwise. */
+  transitionKind: string | null;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
 
 /** `define text <name> from "<module>"` — TS escape hatch declaration. */
 export interface DefineText {
@@ -408,10 +709,14 @@ export interface ActionRefusal {
   span: Span;
 }
 
-/** `define action X from "./mod.ts"` / `define behavior X from "./mod.ts"` — TS hatches. */
+/**
+ * `define action X from "./mod.ts"` — TS action hatch. (`define behavior …
+ * from` was removed by ADR-235 D2, 2026-07-18 — it had no binding key and
+ * could never fire; the parser emits a fix-it error.)
+ */
 export interface DefineHatch {
   kind: 'define-hatch';
-  hatchKind: 'action' | 'behavior';
+  hatchKind: 'action';
   name: string;
   modulePath: string;
   span: Span;
@@ -421,6 +726,66 @@ export interface DefineHatch {
 // rules were removed (ownership package, ratchet 2026-07-11) — scores
 // attach to owners (ScoreDecl); once/every become owner clause modifiers
 // and story-owned schedules.
+
+/**
+ * `define machine <name> … end machine` — the ADR-119 depth under
+ * `use state-machines` (ADR-215; spelling A ratified by David 2026-07-18).
+ * Role lines bind names to entities; `starts <state>`; one `state` block
+ * per state carrying transition lines and `on enter`/`on exit` bodies.
+ */
+export interface DefineMachine {
+  kind: 'define-machine';
+  /** Machine name words (`drawbridge works`). */
+  name: string[];
+  /** `role <name> is <entity>` bindings, in declaration order. */
+  roles: MachineRole[];
+  /** `starts <state>` — the initial state name (null = parse error reported). */
+  initialState: string | null;
+  states: MachineState[];
+  span: Span;
+}
+
+/** One `role <name> is <entity>` binding line. */
+export interface MachineRole {
+  name: string;
+  entity: NameRef;
+  span: Span;
+}
+
+/** One `state <name>[, terminal]` block. */
+export interface MachineState {
+  name: string;
+  terminal: boolean;
+  transitions: MachineTransition[];
+  onEnter: Statement[];
+  onExit: Statement[];
+  span: Span;
+}
+
+/**
+ * One `when <trigger>[ while <condition>]: <target>` transition line.
+ * Triggers: an action (`turning the winch` — gerund + role/entity), an
+ * event (`event if.event.opened`), or a bare condition (`the bridge is
+ * down`).
+ */
+export interface MachineTransition {
+  trigger:
+    | { kind: 'action'; action: string; target: NameRef | null }
+    | { kind: 'event'; event: string }
+    | { kind: 'condition'; condition: ConditionNode }
+    /**
+     * A single bare word — grammatically either an action gerund
+     * (`waiting`) or a condition ref/story state (`stormy`). The parser is
+     * vocabulary-free; the ANALYZER resolves it (declared condition/story
+     * state wins, else action gerund).
+     */
+    | { kind: 'word'; word: string; span: Span };
+  /** Optional `while <condition>` guard riding any trigger form. */
+  condition: ConditionNode | null;
+  /** Target state name. */
+  target: string;
+  span: Span;
+}
 
 /** `define sequence <name> … end sequence` — timeline of chained steps. */
 export interface DefineSequence {
@@ -457,6 +822,7 @@ export type Statement =
   | RefuseWhenStmt
   | PhraseStmt
   | EmitStmt
+  | MediaStmt
   | SetStmt
   | ChangeStmt
   | MoveStmt
@@ -464,6 +830,7 @@ export type Statement =
   | AwardStmt
   | WinStmt
   | LoseStmt
+  | KillStmt
   | MustRequirement
   | SelectOnStmt
   | SelectStrategyStmt
@@ -530,13 +897,38 @@ export interface ParamBinding {
   span: Span;
 }
 
-/** `emit <event-words> [when <cond>]` */
+/**
+ * `emit <event> [with <field> <value> [and …]] [when <cond>]` (ADR-216) —
+ * the payloaded emit. Event segments are dotted keys (`media.sound.play`).
+ * Flat payload fields separate with `and` (the create-data grammar);
+ * bracketed/braced structures separate with commas.
+ */
 export interface EmitStmt {
   kind: 'emit';
   event: string[];
+  /** `with` payload fields, empty when none (ADR-216). */
+  payload: EmitField[];
   stmtWhen: ConditionNode | null;
   span: Span;
 }
+
+/** One `<field> <value>` payload entry (top level or inside `{ … }`). */
+export interface EmitField {
+  /** Field key words (`skill bonus` → one payload key). */
+  key: string[];
+  value: EmitValue;
+  span: Span;
+}
+
+/**
+ * One payload value: a literal, a value expression (world-state read), an
+ * `[ … ]` array of values, or a `{ <field> <value>, … }` nested object.
+ */
+export type EmitValue =
+  | { kind: 'literal'; value: string; literalKind: 'number' | 'string'; span: Span }
+  | { kind: 'expr'; expr: ValueExpr; span: Span }
+  | { kind: 'array'; items: EmitValue[]; span: Span }
+  | { kind: 'object'; fields: EmitField[]; span: Span };
 
 /** `set <field-path> to <value>` */
 export interface SetStmt {
@@ -602,6 +994,18 @@ export interface LoseStmt {
   span: Span;
 }
 
+/**
+ * `kill the player [<phrase-key>] [when <cond>]` (ADR-227 Decision 4) —
+ * terminal death via the platform's killPlayer sink; peer to win/lose.
+ * The phrase carries the death text; the cause is derived, never authored.
+ */
+export interface KillStmt {
+  kind: 'kill';
+  phraseKey: string | null;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
 /** `select on <value> / when <state> … end select` */
 export interface SelectOnStmt {
   kind: 'select-on';
@@ -648,7 +1052,21 @@ export type ConditionNode =
   | ChanceNode
   | NamedConditionRef
   | AnyOfNode
-  | NoneOfNode;
+  | NoneOfNode
+  | ClientHasNode;
+
+/**
+ * `client has <capability>` (ADR-216) — reads the live negotiated client
+ * capability at evaluation time so a story can degrade deliberately.
+ * Capability words are the platform's boolean flags in Chord spelling
+ * (`sound`, `split-pane`, …); `client` is reserved in condition-subject
+ * position.
+ */
+export interface ClientHasNode {
+  kind: 'client-has';
+  capability: string;
+  span: Span;
+}
 
 /**
  * `any <condition-name>` — existential over a named open condition

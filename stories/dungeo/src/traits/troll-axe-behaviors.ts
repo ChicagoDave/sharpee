@@ -23,7 +23,8 @@ import {
   CapabilitySharedData,
   IFEntity,
   WorldModel,
-  CombatantTrait,
+  HealthTrait,
+  HealthBehavior,
   TraitType
 } from '@sharpee/world-model';
 
@@ -61,8 +62,8 @@ export const TrollAxeTakingInterceptor: ActionInterceptor = {
     // Check if guardian (troll) is alive
     const guardian = world.getEntity(trait.guardianId);
     if (guardian) {
-      const combatant = guardian.get<CombatantTrait>(TraitType.COMBATANT);
-      if (combatant && combatant.isAlive) {
+      const health = guardian.get<HealthTrait>(TraitType.HEALTH);
+      if (health && HealthBehavior.isAlive(health)) {
         // Troll is alive - axe appears white-hot
         return {
           valid: false,
@@ -103,10 +104,10 @@ export const TrollAxeVisibilityBehavior: CapabilityBehavior = {
     // Check guardian (troll) state
     const guardian = world.getEntity(trait.guardianId);
     if (guardian) {
-      const combatant = guardian.get<CombatantTrait>(TraitType.COMBATANT);
-      if (combatant) {
+      const health = guardian.get<HealthTrait>(TraitType.HEALTH);
+      if (health) {
         // Hidden when troll is unconscious (alive but not conscious)
-        if (combatant.isAlive && !combatant.isConscious) {
+        if (HealthBehavior.isAlive(health) && !HealthBehavior.isConscious(health)) {
           return { valid: false }; // Not visible
         }
       }

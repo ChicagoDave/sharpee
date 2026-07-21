@@ -1,0 +1,17 @@
+`proper` (person-only, unconditional) renders a person as a bare name —
+"You can see Tobias here." The create-line article is never read for
+identity: `create the zookeeper` and `create a zookeeper` load
+identically; if a person is proper-named, say so. A `pronouns` line
+names the narration's pronoun set — one of `he`, `she`, `it`, `they`,
+or a `define pronouns` set name ([§5.9](/chord/guide/vocabulary)).
+Absent means absent: without
+the line, a person renders by number ("it"/"they") — nothing is
+inferred from a name.
+
+```chord
+create Tobias
+  aka groundskeeper
+  a person, proper
+  pronouns he
+  in the Gatehouse
+```

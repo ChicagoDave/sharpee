@@ -47,13 +47,9 @@ description: Test grue death mechanics from FORTRAN verbs.f - 25% survival in da
 > look
 [OK: contains "Cellar"]
 
-# Test 1: Moving in LIT room - no grue check
-# Going east to Troll Room (also lit now because we have lantern)
-> east
-[OK: contains "Troll Room"]
-[FAIL: contains "grue"]
-
-# Use GDT to kill troll so we can move around freely
+# Use GDT to kill the troll BEFORE entering its room — grue mechanics are
+# what's under test, and a live troll strikes bystanders (MDL melee canon)
+# with a real chance of killing a score-0 player mid-transcript.
 > gdt
 [OK: contains "GDT"]
 
@@ -62,6 +58,12 @@ description: Test grue death mechanics from FORTRAN verbs.f - 25% survival in da
 
 > ex
 [OK: contains "Returning"]
+
+# Test 1: Moving in LIT room - no grue check
+# Going east to Troll Room (also lit now because we have lantern)
+> east
+[OK: contains "Troll Room"]
+[FAIL: contains "grue"]
 
 # Go back to cellar (still lit)
 > west

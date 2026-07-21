@@ -1,0 +1,64 @@
+`put X on Y` needs a supporter; `put X in Y` (which parses as inserting)
+needs a container — and an openable container must be open. Neither
+requires the item in hand: putting performs the take for you.
+
+The author writes:
+
+```chord
+create the Kitchen
+  a room
+
+  A stone-flagged kitchen, warm from the oven.
+
+create the breadbox
+  a container, openable, starts open
+  in the Kitchen
+
+  A rolltop breadbox of waxed pine.
+
+create the kitchen table
+  aka table
+  a supporter
+  scenery
+  in the Kitchen
+
+  A long oak table, scrubbed pale.
+
+create the loaf
+  in the Kitchen
+
+  A round loaf, still warm.
+
+create the carving knife
+  aka knife
+  in the Kitchen
+
+  A carving knife with a worn horn handle.
+
+create the player
+  starts in the Kitchen
+```
+
+The player sees:
+
+```text
+> put the loaf in the breadbox
+(first taking the loaf)
+
+Taken.
+
+You put the loaf in the breadbox.
+
+> close the breadbox
+You close the breadbox.
+
+> insert the knife in the breadbox
+The breadbox is closed.
+
+> put the knife on the table
+You put the carving knife on the kitchen table.
+```
+
+(Openable things start **closed** (ADR-231); the breadbox declares
+`starts open`, which is why the first `put` succeeds and the transcript
+closes the breadbox itself before showing the refusal.)

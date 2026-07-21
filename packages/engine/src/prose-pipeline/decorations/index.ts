@@ -12,11 +12,11 @@
  * @see ADR-174 §Engine-internal prose pipeline
  */
 
-export { parseDecorations } from './parser';
-export { resolveClassName } from './resolver';
+export { parseDecorations } from './parser.js';
+export { resolveClassName } from './resolver.js';
 export {
   PLATFORM_VOCABULARY,
   PLATFORM_VOCABULARY_NAMES,
   type PlatformVocabularyName,
-} from './platform-vocabulary';
-export type { IDecoration, TextContent } from './types';
+} from './platform-vocabulary.js';
+export type { IDecoration, TextContent } from './types.js';

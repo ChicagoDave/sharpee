@@ -10,7 +10,7 @@
  */
 
 import { WorldModel } from '@sharpee/world-model';
-import { createHelpers, EntityHelpers } from './create-helpers';
+import { createHelpers, EntityHelpers } from './create-helpers.js';
 
 // Declaration merging: extend the WorldModel class only.
 // We don't augment IWorldModel because AuthorModel implements it

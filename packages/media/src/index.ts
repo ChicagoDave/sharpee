@@ -10,4 +10,4 @@
  * Importing this module activates TypeScript declaration merging for
  * audio event keys in @sharpee/core's EventDataRegistry.
  */
-export * from './audio';
+export * from './audio/index.js';

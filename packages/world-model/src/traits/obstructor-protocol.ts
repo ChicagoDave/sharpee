@@ -29,9 +29,9 @@
  */
 
 import type { EntityId } from '@sharpee/core';
-import type { IFEntity } from '../entities/if-entity';
-import type { WallEntity } from '../entities/wall-entity';
-import type { ITrait } from './trait';
+import type { IFEntity } from '../entities/if-entity.js';
+import type { WallEntity } from '../entities/wall-entity.js';
+import type { ITrait } from './trait.js';
 
 /**
  * Narrow world-model surface required to evaluate obstructors. Implemented

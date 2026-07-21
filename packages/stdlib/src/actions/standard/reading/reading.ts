@@ -13,31 +13,49 @@
  * @module
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import {
-  TraitType,
-  ReadableTrait,
-  ActionInterceptor,
-  InterceptorSharedData,
-  applyInterceptorReportResult
-} from '@sharpee/world-model';
-import { nounPhraseFor } from '../../../utils';
+import { TraitType, ReadableTrait } from '@sharpee/world-model';
+import { nounPhraseFor } from '../../../utils/index.js';
+import { IFActions } from '../../constants.js';
 import {
   ReadingEventData,
   createReadingEvent
-} from './reading-events';
+} from './reading-events.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): the read target is the only consultable
+ * entity of a READ command.
+ */
+export const readingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.READING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.READING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases.
- * Carries the resolved interceptor across phases (ADR-118).
  */
 interface ReadingSharedData {
   readEvent?: ISemanticEvent;
   messageId?: string;
   params?: Record<string, any>;
-  interceptor?: ActionInterceptor;
-  interceptorData?: InterceptorSharedData;
 }
 
 function getReadingSharedData(context: ActionContext): ReadingSharedData {
@@ -54,10 +72,10 @@ function getReadingSharedData(context: ActionContext): ReadingSharedData {
  * - Tracking what has been read
  * - Implicit take for portable items
  */
-import { ScopeLevel } from '../../../scope/types';
+import { ScopeLevel } from '../../../scope/types.js';
 
 export const reading: Action = {
-  id: 'if.action.reading',
+  id: IFActions.READING,
 
   // Default scope requirements for this action's slots
   defaultScope: {
@@ -87,27 +105,9 @@ export const reading: Action = {
 
     const target = directObject.entity;
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(target, 'if.action.reading');
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-
-    // Store for later phases (blocked needs access to onBlocked)
-    const sharedData = getReadingSharedData(context);
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(target, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return {
-          valid: false,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, readingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check scope - must be able to see the target
     const scopeCheck = context.requireScope(target, ScopeLevel.VISIBLE);
@@ -153,17 +153,9 @@ export const reading: Action = {
       // For now, we'll assume they do if requiredAbility is set
     }
 
-    // === POST-VALIDATE HOOK ===
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(target, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return {
-          valid: false,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -222,18 +214,15 @@ export const reading: Action = {
     sharedData.messageId = messageId;
     sharedData.params = params;
 
-    // === POST-EXECUTE HOOK ===
-    if (sharedData.interceptor?.postExecute) {
-      sharedData.interceptor.postExecute(target, context.world, context.player.id, sharedData.interceptorData!);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    const sharedData = getReadingSharedData(context);
     const events: ISemanticEvent[] = [context.event('if.event.read', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: { item: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
@@ -241,16 +230,9 @@ export const reading: Action = {
       targetName: target?.name
     })];
 
-    // === ON-BLOCKED HOOK ===
-    if (sharedData.interceptor?.onBlocked && target && result.error) {
-      const customEffects = sharedData.interceptor.onBlocked(
-        target, context.world, context.player.id, result.error, sharedData.interceptorData!
-      );
-      if (customEffects) {
-        for (const effect of customEffects) {
-          events.push(context.event(effect.type, effect.payload));
-        }
-      }
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.read', result.error);
     }
 
     return events;
@@ -275,15 +257,8 @@ export const reading: Action = {
       text: sharedData.params?.text
     }));
 
-    // === POST-REPORT HOOK ===
-    if (sharedData.interceptor?.postReport && target) {
-      const result = sharedData.interceptor.postReport(
-        target, context.world, context.player.id, sharedData.interceptorData!
-      );
-      if (result) {
-        applyInterceptorReportResult(events, 'if.event.read', result, context);
-      }
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.read');
 
     return events;
   }

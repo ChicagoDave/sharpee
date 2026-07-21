@@ -5,7 +5,7 @@
  * All logic belongs in behaviors.
  */
 
-import { TraitType } from './trait-types';
+import { TraitType } from './trait-types.js';
 
 /**
  * Base trait interface - just type identification

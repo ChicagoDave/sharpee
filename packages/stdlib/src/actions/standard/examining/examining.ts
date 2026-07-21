@@ -11,38 +11,46 @@
  * 4. blocked: Generate error events when validation fails
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { emitIllustrations } from '../../helpers/emit-illustrations';
-import { buildEventData } from '../../data-builder-types';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
+import { emitIllustrations } from '../../helpers/emit-illustrations.js';
+import { buildEventData } from '../../data-builder-types.js';
+import { getStateClauses } from '@sharpee/world-model';
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  applyInterceptorReportResult,
-  getStateClauses,
-} from '@sharpee/world-model';
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
 
 /**
- * Shared data passed between phases — carries the resolved interceptor
- * across phases (ADR-118; the reading.ts pattern).
+ * Interceptor surface (ADR-228): the examined target is the only
+ * consultable entity of an EXAMINE command.
  */
-interface ExaminingSharedData {
-  interceptor?: ActionInterceptor;
-  interceptorData?: InterceptorSharedData;
-}
-
-function getExaminingSharedData(context: ActionContext): ExaminingSharedData {
-  return context.sharedData as ExaminingSharedData;
-}
+export const examiningLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.EXAMINING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.EXAMINING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 // Import our data builder
-import { examiningDataConfig, buildExaminingMessageParams } from './examining-data';
-import { ExaminingMessages } from './examining-messages';
-import { nounPhraseFor } from '../../../utils';
+import { examiningDataConfig, buildExaminingMessageParams } from './examining-data.js';
+import { ExaminingMessages } from './examining-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 
 export const examiningAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.EXAMINING,
@@ -65,6 +73,8 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
     'examined_door',
     'examined_wall',
     'nothing_special',
+    'default_description',
+    'default_description_self',
     'description',
     'brief_description'
   ],
@@ -81,21 +91,9 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(noun, 'if.action.examining');
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-    const sharedData = getExaminingSharedData(context);
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return { valid: false, error: result.error, params: result.params };
-      }
-    }
+    const state = resolveLifecycle(context, examiningLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check scope - must be able to see the target (unless examining yourself)
     if (noun.id !== actor.id) {
@@ -105,13 +103,9 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // === POST-VALIDATE HOOK ===
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return { valid: false, error: result.error, params: result.params };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     // Valid - all event data will be built in report()
     return { valid: true };
@@ -119,12 +113,9 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
 
   execute(context: ActionContext): void {
     // No standard mutations - examining is a read-only action.
-    // === POST-EXECUTE HOOK === (interceptor clauses may mutate)
-    const sharedData = getExaminingSharedData(context);
-    const noun = context.command.directObject?.entity;
-    if (sharedData.interceptor?.postExecute && noun) {
-      sharedData.interceptor.postExecute(noun, context.world, context.player.id, sharedData.interceptorData!);
-    }
+    // Interceptor postExecute hooks may still mutate (ADR-228).
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
   
   report(context: ActionContext): ISemanticEvent[] {
@@ -168,16 +159,8 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    // === POST-REPORT HOOK ===
-    const sharedData = getExaminingSharedData(context);
-    if (sharedData.interceptor?.postReport) {
-      const result = sharedData.interceptor.postReport(
-        noun, context.world, context.player.id, sharedData.interceptorData!
-      );
-      if (result) {
-        applyInterceptorReportResult(events, 'if.event.examined', result, context);
-      }
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.examined');
 
     return events;
   },
@@ -188,7 +171,7 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
 
     const events: ISemanticEvent[] = [context.event('if.event.examined', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158);
       // top-level fields stay strings for handlers.
       params: { target: noun ? nounPhraseFor(noun) : undefined, ...result.params },
@@ -197,17 +180,9 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name
     })];
 
-    // === ON-BLOCKED HOOK ===
-    const sharedData = getExaminingSharedData(context);
-    if (sharedData.interceptor?.onBlocked && noun && result.error) {
-      const customEffects = sharedData.interceptor.onBlocked(
-        noun, context.world, context.player.id, result.error, sharedData.interceptorData!
-      );
-      if (customEffects) {
-        for (const effect of customEffects) {
-          events.push(context.event(effect.type, effect.payload));
-        }
-      }
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.examined', result.error);
     }
 
     return events;

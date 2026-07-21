@@ -30,11 +30,12 @@ import {
   ISerializedTurn,
   ISerializedParserState,
   ISemanticEventSource,
+  SeededRandom,
   createSemanticEventSource
 } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { TurnResult, GameContext } from './types';
-import { Story } from './story';
+import { TurnResult, GameContext } from './types.js';
+import { Story } from './story.js';
 
 /**
  * Save format version. Bumped from `1.0.0` → `2.0.0` when the partial
@@ -102,6 +103,12 @@ export interface ISaveRestoreStateProvider {
   getEventSource(): ISemanticEventSource;
   getPluginRegistry(): PluginRegistry;
   getParser(): unknown | undefined;
+  /**
+   * The engine's dedicated action RNG stream (ADR-231 D6,
+   * `ActionContext.random`). Its current seed is captured into
+   * `IEngineState.actionRngSeed` on save and re-applied on restore.
+   */
+  getActionRandom(): SeededRandom;
 }
 
 /**
@@ -209,7 +216,10 @@ export class SaveRestoreService {
       worldSnapshot: compressWorldSnapshot(world.toJSON()),
       turnHistory: this.serializeTurnHistory(context.history),
       parserState: this.serializeParserState(parser),
-      pluginStates: pluginRegistry.getStates()
+      pluginStates: pluginRegistry.getStates(),
+      // ADR-231 D6: the seed IS the LCG stream state — capturing it here
+      // makes post-restore action rolls continue exactly where they left off
+      actionRngSeed: provider.getActionRandom().getSeed()
     };
 
     return {
@@ -270,6 +280,17 @@ export class SaveRestoreService {
     // Restore plugin states if present (ADR-120).
     if (saveData.engineState.pluginStates) {
       provider.getPluginRegistry().setStates(saveData.engineState.pluginStates);
+    }
+
+    // Restore the dedicated action RNG stream (ADR-231 D6). Saves that
+    // predate the field restore fine — reseed time-based instead of
+    // crashing (matches unseeded-construction behavior).
+    const actionRandom = provider.getActionRandom();
+    const savedActionSeed = saveData.engineState.actionRngSeed;
+    if (typeof savedActionSeed === 'number') {
+      actionRandom.setSeed(savedActionSeed);
+    } else {
+      actionRandom.setSeed(Date.now());
     }
 
     // Clear undo snapshots after restore — they were taken against the

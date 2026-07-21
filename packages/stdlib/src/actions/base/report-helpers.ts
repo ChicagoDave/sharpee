@@ -5,9 +5,9 @@
  * ensuring consistent error handling across all stdlib actions.
  */
 
-import { ActionContext, ValidationResult } from '../enhanced-types';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { captureEntitySnapshot } from './snapshot-utils';
+import { captureEntitySnapshot } from './snapshot-utils.js';
 
 /**
  * Options for error event generation

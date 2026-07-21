@@ -1,2 +1,2 @@
-export { TranscriptOverlay } from './TranscriptOverlay';
-export { ChatOverlay } from './ChatOverlay';
+export { TranscriptOverlay } from './TranscriptOverlay.js';
+export { ChatOverlay } from './ChatOverlay.js';

@@ -11,6 +11,7 @@
 
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
+import { killPlayer } from '@sharpee/stdlib';
 import { ISchedulerService, SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Flooding state key
@@ -196,16 +197,14 @@ export function startFlooding(
               messageId: FloodingMessages.DROWNED
             }
           });
-          events.push({
-            id: `flooding-death-${ctx.turn}`,
-            type: 'player.died',
-            timestamp: Date.now(),
-            entities: { actor: playerId },
-            data: {
-              cause: 'drowning',
-              daemonId: FLOODING_DAEMON_ID
-            }
+          // Canonical terminal death (ADR-224). Narration is the game.message
+          // above, so the death event needs no messageId. (`player` is the
+          // non-null player resolved at the top of this daemon run.)
+          const deathEvent = killPlayer(ctx.world, player, {
+            cause: 'drowning',
+            terminal: true,
           });
+          if (deathEvent) events.push(deathEvent);
         }
       }
 

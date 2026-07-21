@@ -16,12 +16,13 @@
  * - Registered and enabled: Show score/rank
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { StandardCapabilities } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { ScoreDisplayedEventData } from './scoring-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScoreDisplayedEventData } from './scoring-events.js';
 
 /**
  * Shared data passed between execute and report phases
@@ -141,7 +142,7 @@ export const scoringAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('if.event.score_displayed', {
-      messageId: `if.action.scoring.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

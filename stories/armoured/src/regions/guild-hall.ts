@@ -32,7 +32,7 @@ function createEntranceHall(world: WorldModel): IFEntity {
   room.add(
     new RoomTrait({
       exits: {},
-      isDark: false,
+      requiresLight: false,
       isOutdoors: false,
     })
   );
@@ -61,7 +61,7 @@ function createArmory(world: WorldModel): IFEntity {
   room.add(
     new RoomTrait({
       exits: {},
-      isDark: false,
+      requiresLight: false,
       isOutdoors: false,
     })
   );
@@ -90,7 +90,7 @@ function createTrainingYard(world: WorldModel): IFEntity {
   room.add(
     new RoomTrait({
       exits: {},
-      isDark: false,
+      requiresLight: false,
       isOutdoors: true,
     })
   );

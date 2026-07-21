@@ -65,6 +65,8 @@ export interface WorldModelLike {
   hasCapability?(name: string): boolean;
   /** Register a capability if absent (defensive — the engine normally registers `textState` at setup). */
   registerCapability?(name: string, registration?: { initialData?: Record<string, unknown> }): void;
+  /** Read a registered derived-state evaluator (ADR-240 seam; ADR-250 phrasebook read point). */
+  evaluate?(key: string): unknown;
 }
 
 /**

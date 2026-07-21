@@ -18,4 +18,4 @@
  * @see ADR-172 — Spatial Sound Propagation
  */
 
-export * from './types';
+export * from './types.js';

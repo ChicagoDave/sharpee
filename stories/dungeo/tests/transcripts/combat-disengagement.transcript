@@ -4,6 +4,18 @@ description: Test flee-and-recover cycle - villain heals when player leaves room
 
 ---
 
+# GDT ND = immortality: wounds still land and persist (what's under test);
+# only the fatal-blow kill is suppressed, so a score-0 player survives the
+# engagement cycles deterministically.
+> gdt
+[OK: contains "GDT"]
+
+> nd
+[OK: contains "Immortality"]
+
+> ex
+[OK: contains "Returning"]
+
 # Get equipment
 > north
 [OK: contains "North of House"]

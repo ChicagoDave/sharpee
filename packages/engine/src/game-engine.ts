@@ -16,6 +16,8 @@ import {
   TraitType,
   EntityType,
   StoryInfoTrait,
+  HealthTrait,
+  HealthBehavior,
   registerConcealedVisibilityBehavior
 } from '@sharpee/world-model';
 import { EventProcessor, Effect } from '@sharpee/event-processor';
@@ -35,15 +37,17 @@ import {
   registerStandardChains,
   createScopeResolver,
   channelRegistry,
+  PLAYER_DIED_EVENT,
+  createDeadlyRoomTransformer,
 } from '@sharpee/stdlib';
 import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
-import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
+import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
 import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
-import { SceneEvaluationPlugin } from './scene-evaluation-plugin';
+import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
 
 
 import {
@@ -59,21 +63,22 @@ import {
   TraitSummary,
   BehaviorBindingSummary,
   MessageSummary
-} from './types';
-import { Story } from './story';
-import { NarrativeSettings, buildNarrativeSettings } from './narrative';
-import { validateRoomSnippets } from './snippet-validation';
+} from './types.js';
+import { Story } from './story.js';
+import { NarrativeSettings, buildNarrativeSettings } from './narrative/index.js';
+import { validateRoomSnippets } from './snippet-validation.js';
+import { validateCombatantHealth } from './combatant-health-validation.js';
 
-import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
-import { createActionContext } from './action-context-factory';
-import { SoundDispatcher } from './sound';
-import { processEvent } from './turn-event-processor';
-import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface';
-import { hasNarrativeSettings } from './language-provider-interface';
-import { VocabularyManager, createVocabularyManager } from './vocabulary-manager';
-import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
-import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor';
-import { PlatformOperationHandler, createPlatformOperationHandler, EngineCallbacks } from './platform-operations';
+import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
+import { createActionContext } from './action-context-factory.js';
+import { SoundDispatcher } from './sound/index.js';
+import { processEvent } from './turn-event-processor.js';
+import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface.js';
+import { hasNarrativeSettings } from './language-provider-interface.js';
+import { VocabularyManager, createVocabularyManager } from './vocabulary-manager.js';
+import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
+import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor.js';
+import { PlatformOperationHandler, createPlatformOperationHandler, EngineCallbacks } from './platform-operations.js';
 
 /**
  * Game engine events
@@ -178,6 +183,14 @@ export class GameEngine {
    */
   private soundDispatcher: SoundDispatcher = new SoundDispatcher();
   private random: SeededRandom;
+  /**
+   * Dedicated action RNG stream (ADR-231 D6), exposed to actions as
+   * `ActionContext.random`. A separate instance from `random` (the
+   * turn-plugin stream) so plugin draws can never shift action rolls;
+   * its seed rides the save blob (`IEngineState.actionRngSeed`) so
+   * post-restore action outcomes replay deterministically.
+   */
+  private actionRandom: SeededRandom;
   private narrativeSettings: NarrativeSettings;
 
   // Alternate input mode handlers (ADR-137)
@@ -291,6 +304,9 @@ export class GameEngine {
     this.pluginRegistry = new PluginRegistry();
     this.pluginRegistry.register(new SceneEvaluationPlugin());
     this.random = createSeededRandom();
+    // ADR-231 D6: dedicated action stream — unseeded construction gives a
+    // time-based initial seed (same pattern as `random` above)
+    this.actionRandom = createSeededRandom();
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
     // Initialize extracted services (Phase 4 remediation)
@@ -321,9 +337,18 @@ export class GameEngine {
       this.actionRegistry,
       this.eventProcessor,
       this.parser,
-      this.systemEventSource
+      this.systemEventSource,
+      this.actionRandom
     );
-    
+
+    // ADR-224: auto-register the deadly-room death transformer so every story
+    // (TS or Chord) gets the deadly-room verb-allowlist / probabilistic hazard for
+    // free — no story wiring needed. It early-returns when the player's room has no
+    // DeadlyRoomTrait, and uses the engine's seeded RNG for the `chance` variant.
+    this.commandExecutor.registerParsedCommandTransformer(
+      createDeadlyRoomTransformer(this.random),
+    );
+
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries
 
@@ -372,6 +397,8 @@ export class GameEngine {
     // ADR-209 AC-5: fail load synchronously (naming room and marker) if any
     // snippet-bearing room's description carries an unbound {snippet:name}.
     validateRoomSnippets(this.world);
+    // ADR-226 AC-7: every combatant must carry the HealthTrait combat operates on.
+    validateCombatantHealth(this.world);
 
     // Configure language provider with narrative settings (ADR-089)
     this.configureLanguageProviderNarrative(newPlayer);
@@ -782,9 +809,34 @@ export class GameEngine {
   }
 
   /**
+   * Resume a stopped engine without touching world state.
+   *
+   * The post-mortem revival seam: after `stop('defeat')`, a harness (or a
+   * story resurrection policy) that has restored the world to a live-player
+   * snapshot — e.g. the transcript-tester's RETRY block via
+   * `world.loadJSON()` — needs turn execution back without any world
+   * teardown (a full reboot would clear the world it just restored).
+   * Flips `running` back on; emits nothing, rebuilds nothing.
+   *
+   * No-op when already running. Throws if the engine was never started
+   * (no command executor) — resuming presumes a completed `start()`.
+   */
+  resume(): void {
+    if (this.running) {
+      return;
+    }
+    // The channel service exists only once start() has completed — resuming
+    // an engine that never started would bypass the whole bootstrap order.
+    if (!this.channelService) {
+      throw new Error('Engine must have been started before it can resume');
+    }
+    this.running = true;
+  }
+
+  /**
    * Stop the game engine
    */
-  stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort', details?: any): void {
+  stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort' | 'restart', details?: any): void {
     if (!this.running) {
       return;
     }
@@ -831,48 +883,22 @@ export class GameEngine {
   }
 
   /**
-   * Restart the game from scratch.
+   * Build the restart acknowledgment event (ADR-248).
    *
-   * Clears the world, resets engine state, and re-initializes the story.
-   * Called from both processMetaPlatformOperation and processPlatformOperations.
+   * On confirmed restart the engine does NOT rebuild in place — it renders
+   * this acknowledgment ("The story restarts.") in the final packet, then
+   * stops with reason 'restart'; the client owns the reboot via its own
+   * boot path. No pre-emptive restart_completed(true) is emitted: the new
+   * boot's opening banner is the success signal.
    */
-  private async restartGame(): Promise<void> {
-    if (!this.story) return;
-
-    // Stop engine if running
-    if (this.running) {
-      this.stop();
-    }
-
-    // Reset pronoun context
-    if (this.parser && hasPronounContext(this.parser)) {
-      this.parser.resetPronounContext();
-    }
-
-    // Clear world state (entities, spatial index, relationships, etc.)
-    this.world.clear();
-
-    // Reset engine context
-    this.context.currentTurn = 1;
-    this.context.history = [];
-    this.context.metadata.started = new Date();
-    this.context.metadata.lastPlayed = new Date();
-
-    // Clear engine bookkeeping
-    this.turnEvents.clear();
-    this.pendingPlatformOps = [];
-    this.soundBuffer.length = 0;
-    this.saveRestoreService.clearUndoSnapshots();
-    this.hasEmittedInitialized = false;
-
-    // Clear plugin registry so story can re-register plugins
-    this.pluginRegistry.clear();
-
-    // Re-initialize the story (creates entities, player, custom actions, etc.)
-    this.setStory(this.story);
-
-    // Start the engine (emits game.initialized + game.started)
-    this.start();
+  private createRestartAckEvent(): ISemanticEvent {
+    return {
+      id: `restart_ack_${Date.now()}`,
+      type: 'game.message',
+      timestamp: Date.now(),
+      data: { messageId: 'if.action.restarting.game_restarting' },
+      entities: {}
+    };
   }
 
   /**
@@ -1106,6 +1132,16 @@ export class GameEngine {
 
         // Plugin tick loop (ADR-120)
         // Plugins run in priority order (NPC at 100, state machines at 75, scheduler at 50)
+        //
+        // actionResult.success must reflect GENUINE action success (Phase 7):
+        // result.success only checks for action.error events, but modern
+        // blocked() paths reuse the primary event type with blocked:true /
+        // failed:true — a refused action would otherwise report success and
+        // (e.g.) advance state-machine transitions it never earned.
+        const actionRefused = semanticEvents.some(e => {
+          const data = e.data as { blocked?: unknown; failed?: unknown } | undefined;
+          return data?.blocked === true || data?.failed === true;
+        });
         const pluginContext: TurnPluginContext = {
           world: this.world,
           turn,
@@ -1114,7 +1150,7 @@ export class GameEngine {
           random: this.random,
           actionResult: {
             actionId: result.actionId || '',
-            success: result.success,
+            success: result.success && !actionRefused,
             targetId: result.validatedCommand?.directObject?.entity?.id,
           },
           actionEvents: semanticEvents,
@@ -1196,6 +1232,14 @@ export class GameEngine {
         this.emitChannelPacket(turnEvents, blocks, turn);
       }
 
+      // Detect a canonical player-death event (ADR-224) *before* the turn's
+      // events are cleared below. The death may have been emitted this turn by
+      // the action, an interceptor, or a scheduler daemon — all have landed in
+      // this turn's event stream by now, and story policy (event handlers in the
+      // executor + state-machine plugins in the tick loop above) has already had
+      // its "first crack" to veto by resetting the player's HealthTrait.
+      const deathCause = this.playerDeathCauseThisTurn(turn);
+
       // Clear turn events after processing to prevent accumulation on same turn (meta commands)
       this.turnEvents.set(turn, []);
 
@@ -1205,6 +1249,15 @@ export class GameEngine {
       // Check for victory from events
       if (victoryDetected) {
         this.stop('victory', victoryDetails);
+        return result;
+      }
+
+      // Route a still-dead player to game.lost. Only if the player's *derived*
+      // life-state is still dead do we end the game — the re-check of live state,
+      // not the event's `terminal` flag, is the engine's final word (ADR-224
+      // Q-2, AC-3). A story reincarnation policy that cleared `dead` above wins.
+      if (deathCause !== undefined && this.isPlayerDead()) {
+        this.stop('defeat', { reason: 'You have died.', cause: deathCause });
         return result;
       }
 
@@ -1312,7 +1365,7 @@ export class GameEngine {
 
       // Create action context for meta-command execution
       const scopeResolver = createScopeResolver(this.world);
-      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver);
+      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver, undefined, this.actionRandom);
 
       // Run action's four-phase pattern
       const actionValidation = action.validate(actionContext);
@@ -1488,18 +1541,18 @@ export class GameEngine {
 
       case PlatformEventType.RESTART_REQUESTED: {
         const context = platformOp.payload.context as IRestartContext;
-        if (this.saveRestoreHooks?.onRestartRequested) {
-          const shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
-          if (shouldRestart) {
-            await this.restartGame();
-            completionEvents.push(createRestartCompletedEvent(true));
-          } else {
-            completionEvents.push(createRestartCompletedEvent(false));
-          }
+        const shouldRestart = this.saveRestoreHooks?.onRestartRequested
+          ? await this.saveRestoreHooks.onRestartRequested(context)
+          : true; // No restart hook — auto-confirm
+        if (shouldRestart) {
+          // ADR-248: ack in the final packet, then stop('restart'). The
+          // client's hook is the reboot trigger; the stop reason is
+          // bookkeeping. No restart_completed(true) — the reboot's opening
+          // banner is the success signal.
+          completionEvents.push(this.createRestartAckEvent());
+          this.stop('restart');
         } else {
-          // No restart hook — auto-confirm
-          await this.restartGame();
-          completionEvents.push(createRestartCompletedEvent(true));
+          completionEvents.push(createRestartCompletedEvent(false));
         }
         break;
       }
@@ -1704,6 +1757,25 @@ export class GameEngine {
    */
   getPluginRegistry(): PluginRegistry {
     return this.pluginRegistry;
+  }
+
+  /**
+   * The negotiated client capabilities for this session (ADR-216): the
+   * `client has <capability>` predicate reads these live, and channel
+   * gating uses the same flags at manifest time. Text-only before
+   * `start({ capabilities })` runs or when none were negotiated.
+   */
+  getClientCapabilities(): ClientCapabilities {
+    return this.clientCapabilities ?? DEFAULT_TEXT_CAPABILITIES;
+  }
+
+  /**
+   * Get the dedicated action RNG stream (ADR-231 D6). Part of the
+   * ISaveRestoreStateProvider contract — the save service persists this
+   * stream's seed and the restore path re-seeds it.
+   */
+  getActionRandom(): SeededRandom {
+    return this.actionRandom;
   }
 
   /**
@@ -2343,10 +2415,14 @@ export class GameEngine {
             }
 
             if (shouldRestart) {
-              const completionEvent = createRestartCompletedEvent(true);
-              this.eventSource.emit(completionEvent);
-              this.emit('event', completionEvent);
-              await this.restartGame();
+              // ADR-248: ack in the final packet, then stop('restart').
+              // No restart_completed(true) — the client reboots and its
+              // opening banner is the success signal.
+              const ackEvent = this.createRestartAckEvent();
+              this.eventSource.emit(ackEvent);
+              this.turnEvents.get(currentTurn)?.push(ackEvent);
+              this.emit('event', ackEvent);
+              this.stop('restart');
             } else {
               const cancelEvent = createRestartCompletedEvent(false);
               this.eventSource.emit(cancelEvent);
@@ -2484,9 +2560,41 @@ export class GameEngine {
     if (this.story && this.story.isComplete) {
       return this.story.isComplete();
     }
-    
+
     // Default: game never ends
     return false;
+  }
+
+  /**
+   * The `cause` of a canonical player-death event (ADR-224) emitted during the
+   * given turn, or `undefined` if the player did not die this turn. Scans the
+   * turn's accumulated events, so it sees deaths from the action, interceptors,
+   * and scheduler daemons alike. When several fire in one turn (rare), the first
+   * is authoritative — `killPlayer` is idempotent, so later calls emit nothing.
+   * @param turn the turn number whose events to scan
+   */
+  private playerDeathCauseThisTurn(turn: number): string | undefined {
+    const events = this.turnEvents.get(turn) || [];
+    for (const event of events) {
+      if (event.type === PLAYER_DIED_EVENT) {
+        const cause = (event.data as { cause?: unknown } | undefined)?.cause;
+        return typeof cause === 'string' ? cause : 'unknown';
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Whether the player is currently dead by their derived `HealthTrait` state
+   * (ADR-226/ADR-224). A player with no `HealthTrait` is alive by default (the
+   * opt-in rule) — `killPlayer` lazily attaches one, so a real death always has a
+   * trait to read. This is the engine's "final word" after story policy has run.
+   */
+  private isPlayerDead(): boolean {
+    const player = this.context.player;
+    if (!player) return false;
+    const health = player.get(TraitType.HEALTH) as HealthTrait | undefined;
+    return health ? !HealthBehavior.isAlive(health) : false;
   }
 
   /**

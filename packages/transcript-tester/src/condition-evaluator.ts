@@ -14,8 +14,8 @@
  * - output contains "text"           - Last command output contains text
  */
 
-import { ConditionResult } from './types';
-import type { WorldModelLike } from './runner';
+import { ConditionResult } from './types.js';
+import type { WorldModelLike } from './runner.js';
 
 /**
  * Find an entity by name (searches identity.name and aliases)
@@ -109,25 +109,16 @@ function getRoomName(world: WorldModelLike, roomId: string): string {
  * Check if an entity is "alive" (for NPCs/Combatants)
  */
 function isEntityAlive(entity: any): boolean {
-  // Check for CombatantTrait (used by troll, thief, etc.)
-  const combatantTrait = entity.get?.('combatant') || entity.traits?.get?.('combatant');
-  if (combatantTrait) {
-    // CombatantTrait uses isAlive (not isDead)
-    if (combatantTrait.isAlive === false) return false;
-    // Check health
-    if (combatantTrait.health !== undefined && combatantTrait.health <= 0) return false;
+  // Life-state lives on HealthTrait (ADR-226) — combat/NPC no longer carry it.
+  const healthTrait = entity.get?.('health') || entity.traits?.get?.('health');
+  if (healthTrait) {
+    if (healthTrait.dead === true) return false;
+    if (typeof healthTrait.health === 'number' && healthTrait.health <= 0) return false;
   }
 
-  // Check for NPC trait with health/alive status
-  const npcTrait = entity.get?.('npc') || entity.traits?.get?.('npc');
-  if (npcTrait) {
-    if (npcTrait.isDead === true) return false;
-    if (npcTrait.isAlive === false) return false;
-    // Check health
-    if (npcTrait.health !== undefined && npcTrait.health <= 0) return false;
-  }
-
-  // Default to alive if no NPC/combatant trait or death indicators
+  // Life-state is on HealthTrait only (ADR-226) — combat/NPC no longer carry
+  // alive/health fields, so the HealthTrait check above is authoritative.
+  // Default to alive if there is no HealthTrait or death indicator.
   return true;
 }
 
@@ -292,8 +283,8 @@ function tryInventoryContains(
 
   const itemName = match[1];
 
-  // Get player inventory
-  const inventory = world.getContents(playerId, { includeWorn: true });
+  // Get player inventory. ADR-247: getContents now includes worn by default.
+  const inventory = world.getContents(playerId);
   const itemNameLower = itemName.toLowerCase();
 
   const found = inventory.some((item: any) => {

@@ -7,7 +7,7 @@
  * Owner context: @sharpee/media (ADR-138)
  */
 
-import type { Volume, AudioFormat } from './types';
+import type { Volume, AudioFormat } from './types.js';
 
 /**
  * Audio capabilities declared by the client at session start.

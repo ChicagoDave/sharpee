@@ -10,18 +10,20 @@
  *
  * Public interface: process argv -> subcommand dispatch -> process exit code.
  */
-import { runCompose } from './commands/compose';
-import { runIntrospect } from './commands/introspect';
-import { resolveStory, findMonorepoRoot } from './repo';
+import { runCompose } from './commands/compose.js';
+import { runIntrospect } from './commands/introspect.js';
+import { resolveStory, findMonorepoRoot } from './repo.js';
 // Author-project commands (devkit is the author tool; the in-repo platform build
 // is repokit — ADR-187). repo.ts is retained only for the workspace-story redirect.
-import { runBuildCommand } from './standalone/build';
-import { runBuildBrowserCommand } from './standalone/build-browser';
-import { runInitCommand } from './standalone/init';
-import { runInitBrowserCommand } from './standalone/init-browser';
-import { runIfidCommand } from './standalone/ifid';
-import { runRegister, runList } from './commands/register';
-import { lookupStory } from './registry';
+import { runBuildCommand } from './standalone/build.js';
+import { runBuildBrowserCommand } from './standalone/build-browser.js';
+import { runInitCommand } from './standalone/init.js';
+import { runInitBrowserCommand } from './standalone/init-browser.js';
+import { runIfidCommand } from './standalone/ifid.js';
+import { runRegister, runList } from './commands/register.js';
+import { runTestCommand } from './commands/test.js';
+import { runPlayCommand } from './commands/play.js';
+import { lookupStory } from './registry.js';
 
 const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
 
@@ -35,6 +37,9 @@ Usage:
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
+  sharpee test [name|path] [transcripts…] [--chain] [--stop-on-failure] [--verbose]
+                                         Run the project's transcript tests
+  sharpee play [name|path]               Play the project interactively (REPL)
 
 build (author project): compiles src/ + emits the .sharpee bundle; --browser also
   builds the self-contained browser client (dist/web/, with the project's assets/).
@@ -48,9 +53,7 @@ compose options:
 
 Note: platform/in-repo builds — the packages, the CLI bundle, verify, test:npm — are
 repokit's job. In the monorepo use ./repokit; devkit is the author tool. A workspace
-story passed to \`sharpee build\` is redirected to repokit.
-
-Reserved (later): test, play`;
+story passed to \`sharpee build\` is redirected to repokit.`;
 
 async function main(argv: string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -120,9 +123,9 @@ async function main(argv: string[]): Promise<number> {
       runList();
       return 0;
     case 'test':
+      return runTestCommand(rest);
     case 'play':
-      console.error(`sharpee ${command}: not yet implemented`);
-      return 2;
+      return runPlayCommand(rest);
     default:
       console.error(`unknown command: ${command}\n`);
       console.log(USAGE);

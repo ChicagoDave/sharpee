@@ -1,0 +1,79 @@
+**climb** (`if.action.climbing`) — `climb X`, `climb up/down X`,
+`scale`, `ascend`, `descend X`, all gated on the `climbable` trait
+(`climb into the basket` is entering; `climb out` is exiting, §3.2).
+Climbing something puts you *on* it — the same place putting yourself
+on an enterable supporter gets you; an unclimbable target refuses with
+`not_climbable`, being already up there with `already_there`.
+
+The author writes:
+
+```chord
+create the Orchard Corner
+  a room
+
+  One great pear tree leans over the garden wall here.
+
+create the pear tree
+  aka tree
+  a supporter, climbable
+  scenery
+  in the Orchard Corner
+
+  Low branches all the way up, practically a ladder.
+
+  after climbing it
+    phrase over-the-wall
+      From up here you can see clear over the wall into the lane.
+  end after
+
+create the garden wall
+  aka wall
+  scenery
+  in the Orchard Corner
+
+  Twelve feet of smooth brick, no handholds.
+
+create the player
+  starts in the Orchard Corner
+```
+
+The player sees:
+
+```transcript
+> climb the wall
+You can't climb the garden wall.
+
+> climb the tree
+You climb onto the pear tree.
+
+From up here you can see clear over the wall into the lane.
+
+> climb the tree
+You're already on the pear tree.
+
+> climb out
+You get out of the pear tree.
+```
+
+The supporter composed alongside `climbable` is what makes the perch
+real — somewhere to actually be, so the second climb can refuse and
+`climb out` has something to leave; with bare `climbable` alone the
+climb speaks success but the player never leaves the room floor
+(nothing can hold them).
+
+| | climb (`if.action.climbing.*`) |
+|---|---|
+| Refusals | `no_target` · `not_climbable` · `already_there` · `cant_go_that_way` (directional, off-vertical) — `too_high`/`too_dangerous` reserved |
+| Success | `climbed_onto` (object) · `climbed_up` / `climbed_down` (directional) |
+| Events | `if.event.climbed`, plus `if.event.entered` (object) or `if.event.moved` (directional) |
+
+Interceptors: `after climbing it` on the target — the pear tree's
+comment above, and how a cliff would teleport (below). Two honest
+footnotes: the action also implements directional climbing — `climb up`
+meaning "take the up exit" — but no core grammar reaches it today (bare
+`up`/`down` parse as going, which is usually what you want; a story
+adding `climb up` as grammar gets room-exit climbing for free); and the
+trait's `destination`/`direction` fields are unread by the standard
+action — climbing never teleports you to a destination room, so put an
+`after climbing it` clause on the cliff if you want that
+(`blockedMessage`/`successMessage` are likewise story data).

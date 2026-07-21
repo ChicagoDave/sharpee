@@ -18,14 +18,14 @@ NPC/character authoring — builders, applyCharacter, character model.
  * Owner context: @sharpee/character
  */
 import { PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, LucidityConfig, PerceptionFilterConfig, PerceivedEvent, CharacterPredicate, ICharacterModelData } from '@sharpee/world-model';
-import { CognitivePresetName } from './cognitive-presets';
-import { VocabularyExtension } from './vocabulary-extension';
-import { PropagationProfile } from './propagation/propagation-types';
-import { PropagationOptions } from './propagation/builder';
-import { GoalDef, MovementProfile } from './goals/goal-types';
-import { GoalBuilder } from './goals/builder';
-import { InfluenceDef, ResistanceDef } from './influence/influence-types';
-import { InfluenceBuilder } from './influence/builder';
+import { CognitivePresetName } from './cognitive-presets.js';
+import { VocabularyExtension } from './vocabulary-extension.js';
+import { PropagationProfile } from './propagation/propagation-types.js';
+import { PropagationOptions } from './propagation/builder.js';
+import { GoalDef, MovementProfile } from './goals/goal-types.js';
+import { GoalBuilder } from './goals/builder.js';
+import { InfluenceDef, ResistanceDef } from './influence/influence-types.js';
+import { InfluenceBuilder } from './influence/builder.js';
 /** A compiled state mutation triggered by an event or condition. */
 export interface CompiledTrigger {
     triggerName: string;
@@ -484,10 +484,10 @@ export declare class VocabularyExtension {
  * Owner context: @sharpee/character
  */
 import { IFEntity, CharacterModelTrait } from '@sharpee/world-model';
-import { CompiledCharacter } from './character-builder';
-import { PropagationProfile } from './propagation/propagation-types';
-import { GoalDef, MovementProfile } from './goals/goal-types';
-import { InfluenceDef, ResistanceDef } from './influence/influence-types';
+import { CompiledCharacter } from './character-builder.js';
+import { PropagationProfile } from './propagation/propagation-types.js';
+import { GoalDef, MovementProfile } from './goals/goal-types.js';
+import { InfluenceDef, ResistanceDef } from './influence/influence-types.js';
 /**
  * Result of applying a compiled character to an entity.
  * Contains the trait plus any behavior configuration for the NPC service.
@@ -773,7 +773,7 @@ export declare class TopicRegistry {
  * Owner context: @sharpee/character / conversation
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { ResponseCandidate, ResponseAction, ConversationRecord, ConversationEntry, EvidenceEntry } from './response-types';
+import { ResponseCandidate, ResponseAction, ConversationRecord, ConversationEntry, EvidenceEntry } from './response-types.js';
 /** A detected contradiction in conversation history. */
 export interface Contradiction {
     /** The topic where the contradiction was detected. */
@@ -1139,7 +1139,7 @@ export interface ConversationLifecycleState {
  * Owner context: @sharpee/character / conversation
  */
 import { CharacterModelTrait, Mood, CognitiveProfile } from '@sharpee/world-model';
-import { ResponseCandidate, ResponseIntent } from './response-types';
+import { ResponseCandidate, ResponseIntent } from './response-types.js';
 /**
  * Build a ResponseIntent from a selected candidate and the NPC's
  * current character state. This is the primary ACL function — it
@@ -1202,7 +1202,7 @@ export declare function applyCognitiveColoring(intent: ResponseIntent, profile: 
  * Public interface: DialogueExtension, DialogueResult.
  * Owner context: @sharpee/character / conversation
  */
-import { ResponseIntent } from './response-types';
+import { ResponseIntent } from './response-types.js';
 /**
  * The result of a dialogue extension handling a conversation action.
  * Contains everything the action needs to produce output.
@@ -1279,10 +1279,10 @@ export interface DialogueExtension {
  * Owner context: @sharpee/character / conversation
  */
 import { Mood, DispositionWord } from '@sharpee/world-model';
-import { CharacterBuilder } from '../character-builder';
-import { TopicDef } from './topic-registry';
-import { ResponseCandidate } from './response-types';
-import { ConversationIntent, ConversationStrength, InitiativeTrigger } from './lifecycle';
+import { CharacterBuilder } from '../character-builder.js';
+import { TopicDef } from './topic-registry.js';
+import { ResponseCandidate } from './response-types.js';
+import { ConversationIntent, ConversationStrength, InitiativeTrigger } from './lifecycle.js';
 /** State mutations triggered by a response. */
 export interface ResponseStateMutation {
     threat?: number;
@@ -1531,10 +1531,10 @@ export declare class ConversationBuilder extends CharacterBuilder {
  * Owner context: @sharpee/character / conversation
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { DialogueExtension, DialogueResult } from './dialogue-types';
-import { ConstraintEvaluator } from './constraint-evaluator';
-import { ConversationLifecycle } from './lifecycle';
-import { ConversationData } from './builder';
+import { DialogueExtension, DialogueResult } from './dialogue-types.js';
+import { ConstraintEvaluator } from './constraint-evaluator.js';
+import { ConversationLifecycle } from './lifecycle.js';
+import { ConversationData } from './builder.js';
 /**
  * DialogueExtension implementation backed by the character model.
  *
@@ -1786,7 +1786,7 @@ export declare class AlreadyToldRecord {
  * Owner context: @sharpee/character / propagation
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { PropagationProfile, PropagationTransfer, AlreadyToldRecord } from './propagation-types';
+import { PropagationProfile, PropagationTransfer, AlreadyToldRecord } from './propagation-types.js';
 /** Information about an NPC in the room for propagation evaluation. */
 export interface RoomOccupant {
     /** Entity ID. */
@@ -1842,7 +1842,7 @@ export declare function evaluatePropagation(ctx: PropagationContext): Propagatio
  * Owner context: @sharpee/character / propagation
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { PropagationTransfer, AlreadyToldRecord, ReceivesAs } from './propagation-types';
+import { PropagationTransfer, AlreadyToldRecord, ReceivesAs } from './propagation-types.js';
 /** The result of applying a fact transfer. */
 export interface TransferResult {
     /** The transfer that was applied. */
@@ -1892,7 +1892,7 @@ export declare function applyTransfers(transfers: PropagationTransfer[], getList
  * Public interface: PropagationVisibility, getVisibilityMessage.
  * Owner context: @sharpee/character / propagation
  */
-import { PropagationTransfer, PropagationColoring } from './propagation-types';
+import { PropagationTransfer, PropagationColoring } from './propagation-types.js';
 import type { WorldModel } from '@sharpee/world-model';
 /** The player's presence state relative to the propagation event. */
 export type PlayerPresence = 'absent' | 'present' | 'concealed';
@@ -1960,7 +1960,7 @@ export declare function resolvePlayerPresence(world: WorldModel, playerId: strin
  * Public interface: propagation() method added to CharacterBuilder.
  * Owner context: @sharpee/character / propagation
  */
-import { PropagationTendency, PropagationAudience, PropagationPace, PropagationColoring, ReceivesAs, FactOverride, PropagationSchedule, PropagationProfile } from './propagation-types';
+import { PropagationTendency, PropagationAudience, PropagationPace, PropagationColoring, ReceivesAs, FactOverride, PropagationSchedule, PropagationProfile } from './propagation-types.js';
 /**
  * Options for the .propagation() builder method.
  * All fields map directly to PropagationProfile.
@@ -2188,7 +2188,7 @@ export {};
  * Owner context: @sharpee/character / goals
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { GoalDef, ActiveGoal } from './goal-types';
+import { GoalDef, ActiveGoal } from './goal-types.js';
 /**
  * Manages goal activation, deactivation, interruption, and the
  * active goal queue for a single NPC.
@@ -2290,8 +2290,8 @@ export interface ActiveGoalState {
  * Owner context: @sharpee/character / goals
  */
 import { CharacterModelTrait } from '@sharpee/world-model';
-import { ActiveGoal, StepResult, MovementProfile } from './goal-types';
-import { RoomGraph } from './pathfinding';
+import { ActiveGoal, StepResult, MovementProfile } from './goal-types.js';
+import { RoomGraph } from './pathfinding.js';
 /** Context needed to evaluate a goal step. */
 export interface GoalStepContext {
     /** The NPC's entity ID. */
@@ -2346,7 +2346,7 @@ export declare function evaluateGoalStep(goal: ActiveGoal, ctx: GoalStepContext)
  * Public interface: findNextRoom, RoomGraph, RoomConnection.
  * Owner context: @sharpee/character / goals
  */
-import { MovementProfile } from './goal-types';
+import { MovementProfile } from './goal-types.js';
 /** A connection between two rooms. */
 export interface RoomConnection {
     /** Source room ID. */
@@ -2418,7 +2418,7 @@ export declare function findNextRoom(currentRoom: string, targetRoom: string, gr
  * Public interface: GoalBuilder.
  * Owner context: @sharpee/character / goals
  */
-import { GoalPriority, PursuitMode, GoalStep, GoalDef } from './goal-types';
+import { GoalPriority, PursuitMode, GoalStep, GoalDef } from './goal-types.js';
 /**
  * Fluent builder for a single goal definition.
  *
@@ -2689,7 +2689,7 @@ export type InfluenceResult = {
  *   checkResistance.
  * Owner context: @sharpee/character / influence
  */
-import { InfluenceDef, ResistanceDef, InfluenceResult } from './influence-types';
+import { InfluenceDef, ResistanceDef, InfluenceResult } from './influence-types.js';
 /** An entity in a room with its influence and resistance data. */
 export interface InfluenceRoomEntity {
     /** Entity ID. */
@@ -2745,7 +2745,7 @@ export declare function evaluateActiveInfluence(influencer: InfluenceRoomEntity,
  * Public interface: InfluenceTracker.
  * Owner context: @sharpee/character / influence
  */
-import { ActiveInfluenceEffect, InfluenceEffect, InfluenceDuration } from './influence-types';
+import { ActiveInfluenceEffect, InfluenceEffect, InfluenceDuration } from './influence-types.js';
 /**
  * Tracks and manages active influence effects across turns.
  *
@@ -2830,8 +2830,8 @@ export declare class InfluenceTracker {
  * Public interface: evaluatePcInfluence, PcInfluenceResult.
  * Owner context: @sharpee/character / influence
  */
-import { InfluenceTracker } from './influence-duration';
-import { ActiveInfluenceEffect, InfluenceDef } from './influence-types';
+import { InfluenceTracker } from './influence-duration.js';
+import { ActiveInfluenceEffect, InfluenceDef } from './influence-types.js';
 /** Result of checking PC influence before a player action. */
 export type PcInfluenceResult = {
     status: 'clear';
@@ -2872,7 +2872,7 @@ export declare function evaluatePcInfluence(playerId: string, tracker: Influence
  * Public interface: InfluenceBuilder.
  * Owner context: @sharpee/character / influence
  */
-import { InfluenceMode, InfluenceRange, InfluenceDuration, InfluenceEffect, InfluenceSchedule, InfluenceDef } from './influence-types';
+import { InfluenceMode, InfluenceRange, InfluenceDuration, InfluenceEffect, InfluenceSchedule, InfluenceDef } from './influence-types.js';
 /**
  * Fluent builder for a single influence definition.
  *
@@ -3051,9 +3051,9 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  */
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { PropagationProfile, AlreadyToldRecord } from './propagation';
-import { GoalDef, MovementProfile, GoalManager } from './goals';
-import { InfluenceDef, ResistanceDef, InfluenceTracker } from './influence';
+import { PropagationProfile, AlreadyToldRecord } from './propagation/index.js';
+import { GoalDef, MovementProfile, GoalManager } from './goals/index.js';
+import { InfluenceDef, ResistanceDef, InfluenceTracker } from './influence/index.js';
 /** Tick context — mirrors NpcTickContext from stdlib. */
 interface TickContext {
     world: WorldModel;

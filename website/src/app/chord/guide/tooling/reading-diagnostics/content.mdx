@@ -1,0 +1,70 @@
+Every gate speaks the same line format:
+
+```text
+<file>:<line>:<column> <severity> [<code>] <message>
+```
+
+For example:
+
+```text
+zoo.story:42:3 error [analysis.irreversible-state] `intact` is
+declared before `trampled`; a `change` back is a load error unless the
+set is `states, reversible: …`.
+```
+
+The `<code>` is the stable identifier — the same code this reference
+cites throughout (`analysis.irreversible-state`, `parse.react-refusal`,
+and so on) — and the `<message>` usually carries the fix. `error`
+severity means the story will not load; `warning` means it loads but
+something reads oddly (the fragment-terminator warnings on description
+markers are the common one).
+
+The governing idea is that loading is **atomic**: a story either passes
+every gate and produces usable IR, or it fails and produces none. There
+is no partial load. This is why the reference can promise that a
+compiling example really works — "compiles" is not a syntax check, it is
+the full parse-and-analyze pass that the runtime itself depends on.
+
+The parser is built to give you one diagnostic per mistake rather than a
+cascade. After it reports a parse error, it resynchronizes at the next
+`end` line or top-level keyword and carries on, so a single missing
+`end on` produces a single message pointing at the clause, not a wall of
+confused errors from everything after it. When you do see several
+diagnostics at once, they are genuinely several problems — fix the first
+and recompile.
+
+The gates come in two families, distinguished by their code prefix.
+`parse.*` gates are structural: a tab in the indentation, a missing
+`end`, a removed construct (§6.3). `analysis.*` gates are semantic —
+they fire after a clean parse, when the shapes are right but the meaning
+is not. The analyzer gates you are most likely to meet, each named where
+it is first explained:
+
+- `analysis.irreversible-state` — a `change` backward through a
+  non-`reversible` state set ([§2.7](/chord/guide/world)).
+- `analysis.state-collision` — two composed traits declaring the same
+  state name ([§5.7](/chord/guide/vocabulary)).
+- `analysis.closed-condition-selection` — `any`/`no`/`each` over a
+  closed condition ([§3.4](/chord/guide/behavior),
+  [§5.1](/chord/guide/vocabulary)).
+- `analysis.open-condition-truth` — a bare open condition used as a
+  truth test ([§5.1](/chord/guide/vocabulary)).
+- `analysis.negated-requirement` — `refuse when not …`, which is a
+  requirement in disguise; use `must` ([§3.6](/chord/guide/behavior)).
+- `analysis.unbound-marker` — a `{marker}` naming no declared phrase or
+  hatch ([§2.6](/chord/guide/world)).
+- `analysis.remove-player` — `remove the player`, which has no defined
+  meaning ([§3.7](/chord/guide/behavior)).
+- `analysis.match-outside-each` — `the match` used outside an `each`
+  body ([§4.4](/chord/guide/flow)).
+
+The three-ring boolean-state gate deserves its own mention, because it
+catches the single most common instinct carried over from other
+systems: reaching for a boolean. If you declare a state set that looks
+like a flag — `true`/`false`, a platform pair like `open`/`closed`, or a
+negation pair like `fed`/`unfed` — the analyzer refuses it
+(`analysis.boolean-state`, `analysis.shadow-state`,
+`analysis.negated-state`) and tells you to name what the thing *is* in
+each state, or to compose the trait that already owns that state. A
+state names a condition of the thing, never the absence of another
+state.

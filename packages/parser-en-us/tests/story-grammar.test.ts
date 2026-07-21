@@ -196,8 +196,10 @@ describe('Story Grammar API', () => {
       if (result.success) {
         expect(result.value.action).toBe('story.action.attacking');
         expect(result.value.structure.directObject?.text).toBe('dragon');
-        // 'with' patterns store the tool in extras
-        expect(result.value.extras?.weapon?.text).toBe('sword');
+        // With-slots follow positional assignment (David's ruling 2026-07-16,
+        // ADR-229 R3: the legacy with→extras shunt is deleted; a tool slot
+        // that wants `command.instrument` declares `.instrument()` per ADR-080).
+        expect(result.value.structure.indirectObject?.text).toBe('sword');
       }
     });
   });

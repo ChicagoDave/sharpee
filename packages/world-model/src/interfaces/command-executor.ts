@@ -3,7 +3,7 @@
  */
 
 import type { ISemanticEvent } from '@sharpee/core';
-import type { IValidatedCommand, IExecutionError, CommandResult } from '../commands';
+import type { IValidatedCommand, IExecutionError, CommandResult } from '../commands/index.js';
 
 /**
  * Executor interface - applies business logic

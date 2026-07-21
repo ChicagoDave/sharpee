@@ -1,9 +1,10 @@
 // packages/world-model/src/traits/openable/openableBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { OpenableTrait } from './openableTrait';
+import { EntityId } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { OpenableTrait } from './openableTrait.js';
 
 /**
  * Result of an open operation
@@ -51,6 +52,32 @@ export class OpenableBehavior extends Behavior {
   static canClose(entity: IFEntity): boolean {
     const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
     return openable.isOpen && openable.canClose;
+  }
+
+  /**
+   * Check if this entity requires a tool to open (ADR-230 D3b;
+   * mirrors LockableBehavior.requiresKey)
+   */
+  static requiresTool(entity: IFEntity): boolean {
+    const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
+    return !!(openable.toolId || openable.toolIds?.length);
+  }
+
+  /**
+   * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
+   */
+  static canOpenWith(entity: IFEntity, toolId: EntityId): boolean {
+    const openable = OpenableBehavior.require<OpenableTrait>(entity, TraitType.OPENABLE);
+
+    if (openable.toolId === toolId) {
+      return true;
+    }
+
+    if (openable.toolIds && openable.toolIds.includes(toolId)) {
+      return true;
+    }
+
+    return false;
   }
   
   /**

@@ -191,6 +191,12 @@ This ADR defines the **authoring tool for authors willing to write TypeScript**.
 - ADR-070 — NPC System Architecture (embodied by `plugin-npc` — the canonical Plugin example)
 - ADR-071 — Daemons and Fuses (embodied by `plugin-scheduler` — the second canonical Plugin example)
 - ADR-153 — Multiuser Sharpee Server (unrelated product, no dependency)
+- ADR-115 — Map Export CLI (**CLOSED 2026-04→2026-07-14**): map export/visualization
+  is folded into this IDE rather than shipped as a standalone CLI. Its export-format
+  ideas (Trizbort/DOT/JSON/YAML) and runtime-introspection approach are input to a
+  future IDE mapping surface (a natural extension of the Story outline view, §5); its
+  exit-condition data reads ADR-220's `when`/computed-destination model, not a
+  separate schema. No scope commitment here beyond recording the destination.
 - `packages/plugins/src/turn-plugin.ts` — the `TurnPlugin` interface that all Plugin projects implement
 - Inform 7 IDE — the historical precedent for a purpose-built IF authoring environment (cited as conceptual influence, not a direct model — Sharpee's IDE edits TypeScript, not a natural-language DSL)
 

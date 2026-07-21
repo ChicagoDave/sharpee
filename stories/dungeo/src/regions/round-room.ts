@@ -21,7 +21,7 @@ export interface RoundRoomIds {
 
 export function createRoundRoomRegion(world: WorldModel): RoundRoomIds {
   const room = world.createEntity('Round Room', EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   room.add(new IdentityTrait({
     name: 'Round Room',
     aliases: ['round room', 'circular room'],

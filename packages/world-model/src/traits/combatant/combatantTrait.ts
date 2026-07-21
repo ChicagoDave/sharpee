@@ -1,27 +1,25 @@
 /**
- * Combatant trait for entities that can engage in combat
+ * Combatant trait for entities that can engage in combat.
+ *
+ * Combat STATS only (ADR-226 / ADR-223 child A): a combatant's health, alive/
+ * conscious state, and recovery live on the entity's {@link HealthTrait} — the single
+ * life-state source — not here. `CombatantTrait` *requires* a `HealthTrait`
+ * (enforced at load; ADR-226 §2 / AC-7). Hostility stays here for now (moves to
+ * disposition in ADR-223 child C).
+ *
+ * Data only — all combat logic is in `CombatBehavior`, which reads/writes health
+ * through `HealthBehavior`.
+ * Owner context: `@sharpee/world-model` — combat stats (requires the HEALTH layer).
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 export interface ICombatantData {
-  /** Current health points */
-  health?: number;
-
-  /** Maximum health points */
-  maxHealth?: number;
-
   /** Combat skill (0-100, affects hit/dodge chance) - ADR-072 */
   skill?: number;
 
   /** Natural damage (if no weapon) - ADR-072 */
   baseDamage?: number;
-
-  /** Whether this combatant is conscious (false = knocked out) - ADR-072 */
-  isConscious?: boolean;
-
-  /** Turns until consciousness recovery - ADR-072 */
-  recoveryTurns?: number;
 
   /** Armor value that reduces damage */
   armor?: number;
@@ -32,9 +30,6 @@ export interface ICombatantData {
   /** Defense modifier */
   defense?: number;
 
-  /** Whether this combatant is alive */
-  isAlive?: boolean;
-
   /** Custom message when hit */
   hitMessage?: string;
 
@@ -44,7 +39,7 @@ export interface ICombatantData {
   /** Custom message when attacking */
   attackMessage?: string;
 
-  /** Whether this combatant is hostile by default */
+  /** Whether this combatant is hostile by default (moves to disposition, ADR-223 child C) */
   hostile?: boolean;
 
   /** Whether this combatant can retaliate */
@@ -62,25 +57,19 @@ export interface ICombatantData {
 
 /**
  * Combatant trait indicates an entity can engage in combat.
- * 
- * This trait contains only data - all combat logic
- * is in CombatBehavior.
+ *
+ * This trait contains only combat *stats* — health and life-state are on the
+ * required {@link HealthTrait}. All combat logic is in `CombatBehavior`.
  */
 export class CombatantTrait implements ITrait, ICombatantData {
   static readonly type = 'combatant' as const;
   readonly type = 'combatant' as const;
 
-  // CombatantData properties
-  health: number;
-  maxHealth: number;
   skill: number;
   baseDamage: number;
-  isConscious: boolean;
-  recoveryTurns?: number;
   armor: number;
   attackPower: number;
   defense: number;
-  isAlive: boolean;
   hitMessage?: string;
   deathMessage?: string;
   attackMessage?: string;
@@ -92,16 +81,11 @@ export class CombatantTrait implements ITrait, ICombatantData {
 
   constructor(data: ICombatantData = {}) {
     // Set defaults and merge with provided data
-    this.health = data.health ?? data.maxHealth ?? 10;
-    this.maxHealth = data.maxHealth ?? 10;
     this.skill = data.skill ?? 30; // Default skill level (ADR-072)
     this.baseDamage = data.baseDamage ?? data.attackPower ?? 1; // ADR-072
-    this.isConscious = data.isConscious ?? true; // ADR-072
-    this.recoveryTurns = data.recoveryTurns; // ADR-072
     this.armor = data.armor ?? 0;
     this.attackPower = data.attackPower ?? 1;
     this.defense = data.defense ?? 0;
-    this.isAlive = data.isAlive ?? true;
     this.hitMessage = data.hitMessage;
     this.deathMessage = data.deathMessage;
     this.attackMessage = data.attackMessage;
@@ -110,81 +94,5 @@ export class CombatantTrait implements ITrait, ICombatantData {
     this.dropsInventory = data.dropsInventory ?? true;
     this.experienceValue = data.experienceValue ?? 0;
     this.isUndead = data.isUndead ?? false;
-  }
-
-  /**
-   * Computed property to check if combatant is alive based on health
-   */
-  get alive(): boolean {
-    return this.health > 0;
-  }
-
-  /**
-   * Check if combatant can act (alive and conscious)
-   */
-  get canAct(): boolean {
-    return this.isAlive && this.isConscious;
-  }
-
-  /**
-   * Knock out this combatant (unconscious but alive)
-   */
-  knockOut(recoveryTurns?: number): void {
-    this.isConscious = false;
-    if (recoveryTurns !== undefined) {
-      this.recoveryTurns = recoveryTurns;
-    }
-  }
-
-  /**
-   * Wake up this combatant
-   */
-  wakeUp(): void {
-    if (this.isAlive) {
-      this.isConscious = true;
-      this.recoveryTurns = undefined;
-    }
-  }
-
-  /**
-   * Kill this combatant
-   */
-  kill(): void {
-    this.health = 0;
-    this.isAlive = false;
-    this.isConscious = false;
-  }
-
-  /**
-   * Take damage
-   * @returns true if combatant was killed
-   */
-  takeDamage(amount: number): boolean {
-    const effectiveDamage = Math.max(0, amount - this.armor);
-    this.health = Math.max(0, this.health - effectiveDamage);
-
-    if (this.health <= 0) {
-      this.kill();
-      return true;
-    }
-
-    // Check for knockout (20% health threshold per ADR-072)
-    if (this.health <= this.maxHealth * 0.2) {
-      this.knockOut();
-    }
-
-    return false;
-  }
-
-  /**
-   * Heal this combatant
-   */
-  heal(amount: number): void {
-    if (this.isAlive) {
-      this.health = Math.min(this.maxHealth, this.health + amount);
-      if (this.health > this.maxHealth * 0.2) {
-        this.wakeUp();
-      }
-    }
   }
 }

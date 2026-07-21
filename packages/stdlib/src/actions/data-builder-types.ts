@@ -6,7 +6,7 @@
  * data structure logic outside of action business logic.
  */
 
-import { ActionContext } from './enhanced-types';
+import { ActionContext } from './enhanced-types.js';
 import { WorldModel } from '@sharpee/world-model';
 
 /**

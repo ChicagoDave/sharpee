@@ -8,8 +8,8 @@ import {
   IExtensionLoader, 
   ITraitExtension,
   IExtensionRegistry
-} from './types';
-import { extensionRegistry } from './registry';
+} from './types.js';
+import { extensionRegistry } from './registry.js';
 
 /**
  * Extension loading error

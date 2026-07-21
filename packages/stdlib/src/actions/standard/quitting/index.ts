@@ -2,5 +2,5 @@
  * Quitting action module exports
  */
 
-export { quittingAction } from './quitting';
-export * from './quitting-events';
+export { quittingAction } from './quitting.js';
+export * from './quitting-events.js';

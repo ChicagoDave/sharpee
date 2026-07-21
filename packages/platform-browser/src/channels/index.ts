@@ -18,40 +18,42 @@
  */
 
 import type { IRenderer } from '@sharpee/channel-service';
-import { createMainChannelRenderer } from './main';
-import { createPromptChannelRenderer } from './prompt';
+import { createMainChannelRenderer } from './main.js';
+import { createPromptChannelRenderer } from './prompt.js';
 import {
   createLocationChannelRenderer,
   createScoreChannelRenderer,
   createTurnChannelRenderer,
-} from './status';
-import { createInfoChannelRenderer, createIfidChannelRenderer } from './info';
+} from './status.js';
+import { createInfoChannelRenderer, createIfidChannelRenderer } from './info.js';
 import {
   createDeathChannelRenderer,
   createEndgameChannelRenderer,
   createScoreNotifyChannelRenderer,
-} from './notify';
+} from './notify.js';
 import {
   createImageChannelRenderer,
   createImagePreloadChannelRenderer,
-} from './image';
+} from './image.js';
 import {
   createSoundChannelRenderer,
   createMusicChannelRenderer,
+  createAmbientChannelRenderer,
   type AudioManagerLike,
-} from './audio';
+} from './audio.js';
+import { createGenericPanelRenderer } from './panel.js';
 import {
   createAnimationChannelRenderer,
   createAnimateChannelRenderer,
   createTransitionChannelRenderer,
   createLayoutChannelRenderer,
   createClearChannelRenderer,
-} from './animation';
+} from './animation.js';
 import {
   createLifecycleChannelRenderer,
   type LifecycleChannelRendererOptions,
-} from './lifecycle';
-import { mountDefaultLayout, type BrowserDefaultLayout } from './layout';
+} from './lifecycle.js';
+import { mountDefaultLayout, type BrowserDefaultLayout } from './layout.js';
 
 export {
   createMainChannelRenderer,
@@ -77,8 +79,9 @@ export {
   mountDefaultLayout,
 };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
-export { createAmbientChannelRenderer } from './audio';
-export { renderTextContent, flattenTextContent } from './text-content';
+export { createAmbientChannelRenderer } from './audio.js';
+export { createGenericPanelRenderer } from './panel.js';
+export { renderTextContent, flattenTextContent } from './text-content.js';
 
 /**
  * Options for {@link registerDefaultBrowserRenderers}.
@@ -184,6 +187,24 @@ export function registerDefaultBrowserRenderers(
   // ── Audio channels ───────────────────────────────────────────────
   renderer.registerRenderer('sound', createSoundChannelRenderer(opts.audio));
   renderer.registerRenderer('music', createMusicChannelRenderer(opts.audio));
+
+  // ── Dynamic channels (ADR-241 D4): family binding + generic panel ─
+  // Any manifest channel with no exact-id renderer binds by family —
+  // `ambient:<id>` → the AudioManager ambient renderer, `image:<layer>`
+  // → the image-layer renderer — and everything else lands in the
+  // generic panel (one labelled box per channel id, in the sidebar).
+  // Exact-id story registrations run AFTER this helper and win
+  // (last-write-wins, ADR-165 §3); the console JSON tree stays as the
+  // debug view for consumers that register no factories.
+  renderer.registerRendererFactory('ambient:', (id) =>
+    createAmbientChannelRenderer(opts.audio, id.slice('ambient:'.length)),
+  );
+  renderer.registerRendererFactory('image:', (id) =>
+    createImageChannelRenderer(layout.media, id.slice('image:'.length), {
+      onHotspotCommand: opts.onHotspotCommand,
+    }),
+  );
+  renderer.registerRendererFactory('', (id) => createGenericPanelRenderer(layout.sidebar, id));
 
   // ── Animation / transition / layout / clear ──────────────────────
   renderer.registerRenderer('animation', createAnimationChannelRenderer(layout.media));

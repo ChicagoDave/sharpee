@@ -72,6 +72,14 @@ describe('wearingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.wear_blocked', {
         messageId: 'if.action.wearing.not_wearable'
       });
+
+      // params.item is the NounPhrase shape (object for the formatter
+      // chain, ADR-158) — not a bare string (ADR-231 D2 pin).
+      const blocked = events.find(e => e.type === 'if.event.wear_blocked')!;
+      const itemParam = (blocked.data as any).params.item;
+      expect(typeof itemParam).toBe('object');
+      expect(itemParam.kind).toBe('noun');
+      expect(itemParam.name).toBe('red ball');
     });
 
     test('should fail when already wearing item', () => {
@@ -95,6 +103,14 @@ describe('wearingAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.wear_blocked', {
         messageId: 'if.action.wearing.already_wearing'
       });
+
+      // params.item is the NounPhrase shape (object for the formatter
+      // chain, ADR-158) — not a bare string (ADR-231 D2 pin).
+      const blocked = events.find(e => e.type === 'if.event.wear_blocked')!;
+      const itemParam = (blocked.data as any).params.item;
+      expect(typeof itemParam).toBe('object');
+      expect(itemParam.kind).toBe('noun');
+      expect(itemParam.name).toBe('wool hat');
     });
 
     test.skip('should fail when item not held and not in room', () => {

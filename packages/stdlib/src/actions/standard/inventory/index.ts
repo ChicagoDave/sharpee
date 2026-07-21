@@ -3,5 +3,5 @@
  * @module
  */
 
-export { inventoryAction } from './inventory';
-export * from './inventory-events';
+export { inventoryAction } from './inventory.js';
+export * from './inventory-events.js';

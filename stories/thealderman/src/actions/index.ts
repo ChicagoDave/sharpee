@@ -1,16 +1,9 @@
 /**
  * Custom actions for The Alderman.
  *
- * Public interface: customActions, ACCUSE_ACTION_ID, setSolution
+ * Public interface: createAccuseAction, AccuseActionHandle, ACCUSE_ACTION_ID
  * Owner: thealderman story
  */
 
-export { accuseAction, ACCUSE_ACTION_ID, setSolution } from './accuse-action';
-
-import { accuseAction } from './accuse-action';
-import type { Action } from '@sharpee/stdlib';
-
-/** All story-specific actions. */
-export const customActions: Action[] = [
-  accuseAction,
-];
+export { createAccuseAction, ACCUSE_ACTION_ID } from './accuse-action';
+export type { AccuseActionHandle } from './accuse-action';

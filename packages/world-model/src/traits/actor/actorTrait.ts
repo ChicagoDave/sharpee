@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/actor/actorTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 import { EntityId } from '@sharpee/core';
 
 /**

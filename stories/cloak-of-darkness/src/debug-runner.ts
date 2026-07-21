@@ -9,12 +9,15 @@ import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 // @ts-ignore - text-services types not available yet
 import { TextService } from '@sharpee/text-services';
-import { story } from './index.js';
+import { createStory } from './index.js';
 
 async function debugRun() {
   console.log('=== Debug Cloak of Darkness ===\n');
-  
+
   try {
+    // Fresh story instance per run (ADR-248 Decision 3)
+    const story = createStory();
+
     // Create world and player using static architecture
     const world = new WorldModel();
     const createdPlayer = world.createEntity('player', EntityType.ACTOR);

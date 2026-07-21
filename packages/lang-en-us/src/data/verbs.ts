@@ -59,16 +59,31 @@ export const IFActions = {
   EATING: 'if.action.eating',
   DRINKING: 'if.action.drinking',
   
+  // Manipulation (capability dispatch, ADR-090)
+  LOWERING: 'if.action.lowering',
+  RAISING: 'if.action.raising',
+  CUTTING: 'if.action.cutting',
+  DIGGING: 'if.action.digging',
+  REMOVING: 'if.action.removing',
+
+  // Concealment (ADR-148)
+  HIDING: 'if.action.hiding',
+  REVEALING: 'if.action.revealing',
+
   // Meta actions
   INVENTORY: 'if.action.inventory',
   WAITING: 'if.action.waiting',
   SLEEPING: 'if.action.sleeping',
   SAVING: 'if.action.saving',
   RESTORING: 'if.action.restoring',
+  RESTARTING: 'if.action.restarting',
   QUITTING: 'if.action.quitting',
   HELP: 'if.action.help',
   ABOUT: 'if.action.about',
   SCORING: 'if.action.scoring',
+  AGAIN: 'if.action.again',
+  UNDOING: 'if.action.undoing',
+  VERSION: 'if.action.version',
   
   // Author/Debug actions
   TRACE: 'author.trace'
@@ -88,7 +103,9 @@ export const englishVerbs: VerbDefinition[] = [
   // Movement
   {
     action: IFActions.GOING,
-    verbs: ['go', 'move', 'walk', 'run', 'head', 'travel'],
+    // `move` removed (ADR-230 Phase 1 ruling): move is manipulation-only —
+    // `move :target :direction` → pushing, `move :item to :dest` → putting.
+    verbs: ['go', 'walk', 'run', 'head', 'travel'],
     requiresObject: true
   },
   {
@@ -125,7 +142,10 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.SEARCHING,
-    verbs: ['search', 'find', 'locate'],
+    // find/locate removed (ADR-230 Phase 1 ruling): searching is the wrong
+    // semantics for them; a "recall/remind me of" meta action is parked in
+    // docs/work/grammar-reachability/pins.md as a future design.
+    verbs: ['search'],
     requiresObject: true
   },
   {
@@ -212,12 +232,9 @@ export const englishVerbs: VerbDefinition[] = [
     verbs: ['turn', 'rotate', 'twist'],
     requiresObject: true
   },
-  {
-    action: IFActions.USING,
-    verbs: ['use', 'utilize', 'employ'],
-    requiresObject: true,
-    allowsIndirectObject: true
-  },
+  // USING entry removed (ADR-230 Phase 6 sketch ruling 2): a generic USE
+  // has no semantics — better absent than advertised. Constant retained
+  // for reference only.
   {
     action: IFActions.GIVING,
     verbs: ['give', 'hand', 'offer'],
@@ -276,15 +293,15 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.TELLING,
-    verbs: ['tell', 'inform', 'say'],
+    // `say` removed (ADR-230 Phase 6): saying's grammar left with the
+    // conversation-family ruling, and say was never a telling synonym —
+    // stories provide SAY as a story verb (e.g. dungeo).
+    verbs: ['tell', 'inform'],
     requiresObject: true,
     allowsIndirectObject: true
   },
-  {
-    action: IFActions.ANSWERING,
-    verbs: ['answer', 'respond', 'reply'],
-    requiresObject: true
-  },
+  // ANSWERING entry removed (ADR-230 Phase 6 sketch ruling 3): no question
+  // system to answer into; revisit with the conversation system.
   
   // Meta commands
   {
@@ -310,6 +327,75 @@ export const englishVerbs: VerbDefinition[] = [
   {
     action: IFActions.RESTORING,
     verbs: ['restore', 'load', 'load game', 'restore game'],
+    requiresObject: false
+  },
+  {
+    // Added platform-issue-sweep Phase 6. NOTE: vocabulary is not what makes
+    // grammar literals parse (`restart` parsed without it) — entries here
+    // feed verb CLASSIFICATION: comma-chained command splitting and word
+    // lookup. The grammar-vocabulary-sync test (parser-en-us) keeps every
+    // grammar action id represented here.
+    action: IFActions.RESTARTING,
+    // 'restart' only — the reverse gate (stdlib lifecycle-registry test)
+    // requires every verb phrase here to lead a core grammar pattern, and
+    // the grammar defines the bare form only (unlike save/restore, whose
+    // `<verb> game` forms have their own patterns).
+    verbs: ['restart'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.AGAIN,
+    verbs: ['again', 'g'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.UNDOING,
+    verbs: ['undo'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.VERSION,
+    verbs: ['version'],
+    requiresObject: false
+  },
+  // Manipulation verbs (capability dispatch / tools) — mirror the core
+  // grammar's verb sets (grammar-vocabulary-sync test enforces presence)
+  {
+    action: IFActions.LOWERING,
+    verbs: ['lower'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.RAISING,
+    verbs: ['raise', 'lift'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.CUTTING,
+    verbs: ['cut', 'slice', 'chop'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.DIGGING,
+    verbs: ['dig'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.REMOVING,
+    verbs: ['remove', 'extract'],
+    requiresObject: true,
+    allowsIndirectObject: true
+  },
+  // Concealment (ADR-148) — hide/duck/crouch are phrasal in the grammar
+  // (hide behind :target); the bare verbs here serve classification
+  {
+    action: IFActions.HIDING,
+    verbs: ['hide', 'duck', 'crouch'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.REVEALING,
+    verbs: ['unhide', 'stand up', 'come out', 'stop hiding'],
     requiresObject: false
   },
   {

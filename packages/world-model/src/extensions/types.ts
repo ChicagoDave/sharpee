@@ -5,9 +5,9 @@
  * that can add new functionality to the world model.
  */
 
-import { ITraitConstructor } from '../traits/trait';
-import { Behavior } from '../behaviors/behavior';
-import { IFEntity } from '../entities/if-entity';
+import { ITraitConstructor } from '../traits/trait.js';
+import { Behavior } from '../behaviors/behavior.js';
+import { IFEntity } from '../entities/if-entity.js';
 
 /**
  * Extension metadata

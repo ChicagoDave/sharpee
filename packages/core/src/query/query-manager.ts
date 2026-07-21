@@ -16,8 +16,8 @@ import {
   IValidationResult,
   IQueryEvents,
   StandardValidators
-} from './types';
-import { ISemanticEvent, ISemanticEventSource, createSemanticEventSource } from '../events';
+} from './types.js';
+import { ISemanticEvent, ISemanticEventSource, createSemanticEventSource } from '../events/index.js';
 
 /**
  * Query Manager implementation

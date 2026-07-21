@@ -22,9 +22,9 @@ import {
   RunnerOptions,
   TestEventInfo,
   EntityTraitSnapshot
-} from './types';
-import { evaluateCondition } from './condition-evaluator';
-import { executeNavigate } from './navigator';
+} from './types.js';
+import { evaluateCondition } from './condition-evaluator.js';
+import { executeNavigate } from './navigator.js';
 
 /**
  * Interface for the game engine
@@ -36,6 +36,8 @@ interface GameEngine {
   world?: WorldModel;
   /** Plugin registry for save/restore of plugin state (state machines, scheduler) */
   getPluginRegistry?(): { getStates(): Record<string, unknown>; setStates(states: Record<string, unknown>): void };
+  /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
+  reviveEngine?(): void;
 }
 
 /**
@@ -47,7 +49,7 @@ interface WorldModel {
   findEntityByName?(name: string): any;
   getAllEntities?(): any[];
   getLocation?(entityId: string): string | undefined;
-  getContents?(containerId: string, options?: { includeWorn?: boolean }): any[];
+  getContents?(containerId: string): any[];
   findWhere?(predicate: (entity: any) => boolean): any[];
   findByTrait?(traitType: string): any[];
   findPath?(fromRoomId: string, toRoomId: string): string[] | null;
@@ -61,7 +63,7 @@ interface WorldModel {
  */
 export interface WorldModelLike {
   getLocation(entityId: string): string | null | undefined;
-  getContents(containerId: string, options?: { includeWorn?: boolean }): any[];
+  getContents(containerId: string): any[];
   getEntity(entityId: string): any | null | undefined;
   findWhere(predicate: (entity: any) => boolean): any[];
   getAllEntities(): any[];
@@ -151,8 +153,10 @@ async function runSmartTranscript(
   const results: CommandResult[] = [];
   const items = transcript.items!;
 
-  // Get player ID for condition evaluation
-  const playerId = getPlayerId(engine);
+  // Get player ID for condition evaluation. Re-resolved after every command
+  // because an in-transcript RESTART reboots the world (ADR-248) and the
+  // fresh player must not be found by a stale id.
+  let playerId = getPlayerId(engine);
 
   // Block state stack for control flow
   const blockStack: BlockState[] = [];
@@ -192,6 +196,8 @@ async function runSmartTranscript(
       const result = await runCommand(command, engine, options);
       results.push(result);
       lastOutput = result.actualOutput;
+      // A RESTART command reboots the world (ADR-248) — re-resolve the player.
+      playerId = getPlayerId(engine);
 
       // Capture output for DO-UNTIL blocks
       if (doBlock?.iterationOutputs) {
@@ -212,9 +218,12 @@ async function runSmartTranscript(
             if (options.verbose) {
               console.log(`  [RETRY] Attempt ${retryBlock.retryCount}/${retryBlock.maxRetries} failed, restoring state...`);
             }
-            // Restore world state
+            // Restore world state; revive the engine if the failure was a
+            // game-over (player death stops the engine — the restored
+            // snapshot has a live player, so turn execution must resume).
             if (retryBlock.savedState && engine.world?.loadJSON) {
               engine.world.loadJSON(retryBlock.savedState);
+              engine.reviveEngine?.();
             }
             // Remove all results from this retry attempt
             results.splice(retryBlock.resultsStartIndex!);
@@ -258,6 +267,7 @@ async function runSmartTranscript(
               }
               if (retryBlock.savedState && engine.world?.loadJSON) {
                 engine.world.loadJSON(retryBlock.savedState);
+                engine.reviveEngine?.();
               }
               results.splice(retryBlock.resultsStartIndex!);
               while (blockStack.length > 0 && blockStack[blockStack.length - 1] !== retryBlock) {
@@ -1048,6 +1058,15 @@ async function runCommand(
   try {
     const result = await engine.executeCommand(command.input);
     actualOutput = typeof result === 'string' ? result : (engine.getOutput?.() || '');
+
+    // A stopped engine (player death ended the game) surfaces as this exact
+    // captured output rather than a throw (the bootstrap layer catches it).
+    // Mark it as a command error so assertion-less commands (SKIP-overridden
+    // loop bodies) fail immediately instead of spinning to the iteration cap,
+    // and so RETRY blocks trigger their restore-and-revive recovery.
+    if (actualOutput === 'Error: Engine is not running') {
+      error = 'Engine is not running';
+    }
 
     // Capture events from the engine (filter out system.* debug events)
     if (engine.lastEvents) {

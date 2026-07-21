@@ -14,8 +14,8 @@ import {
   ActiveGoal,
   StepResult,
   MovementProfile,
-} from './goal-types';
-import { findNextRoom, RoomGraph } from './pathfinding';
+} from './goal-types.js';
+import { findNextRoom, RoomGraph } from './pathfinding.js';
 
 // ---------------------------------------------------------------------------
 // Step evaluation context

@@ -11,11 +11,12 @@
  * 4. report: Emits if.event.waited signal for engine/daemons
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { WaitedEventData } from './waiting-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { WaitedEventData } from './waiting-events.js';
 
 /**
  * Shared data passed between execute and report phases
@@ -61,7 +62,7 @@ export const waitingAction: Action & { metadata: ActionMetadata } = {
     // Waiting always succeeds, but include blocked for consistency
     return [context.event('if.event.wait_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params,
       reason: result.error
     })];

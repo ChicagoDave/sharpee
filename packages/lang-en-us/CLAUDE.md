@@ -17,3 +17,5 @@ Pass `entityInfoFrom(entity)`, not `entity.name`. Bare strings strip the `nounTy
 ## Parser vs Language Layer
 
 Patterns in `lang-en-us` action files are for **documentation/help**, not parsing. Grammar lives in `parser-en-us`. See `packages/parser-en-us/CLAUDE.md` for grammar conventions.
+
+`data/verbs.ts` is different from the per-action `patterns` lists: it feeds the parser's **verb classification** — comma-chained command splitting ("take sword, drop sword") and word lookup for candidates/failures. It is NOT what makes grammar literals parse (verified 2026-07-20: `restart` parsed with no entry), but a grammar action missing here silently breaks chaining for its verbs. The `grammar-vocabulary-sync` test in parser-en-us enforces that every core-grammar action id has an entry.

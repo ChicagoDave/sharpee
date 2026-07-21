@@ -11,9 +11,9 @@
  * @see ADR-174 acceptance criteria AC-1..AC-5, AC-10..AC-12
  */
 
-import { resolveClassName } from './resolver';
-import { VOID_MACROS } from './platform-vocabulary';
-import type { IDecoration, TextContent } from './types';
+import { resolveClassName } from './resolver.js';
+import { VOID_MACROS } from './platform-vocabulary.js';
+import type { IDecoration, TextContent } from './types.js';
 
 /**
  * Parse a template string into a `TextContent[]` tree.

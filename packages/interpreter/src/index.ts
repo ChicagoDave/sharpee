@@ -12,13 +12,13 @@ export {
   useGameContext,
   useGameState,
   useGameDispatch,
-} from './context';
+} from './context/index.js';
 
 // Hooks
 export {
   useCommandHistory,
   useTranscript,
-} from './hooks';
+} from './hooks/index.js';
 
 // Components
 export {
@@ -26,25 +26,25 @@ export {
   Transcript,
   CommandInput,
   StatusLine,
-} from './components';
+} from './components/index.js';
 
 // Loader
 export {
   loadBundle,
   releaseBundle,
-} from './loader';
+} from './loader/index.js';
 
 export type {
   LoadedBundle,
-} from './loader';
+} from './loader/index.js';
 
 // Runner
-export { ZifmiaRunner } from './runner';
-export type { ZifmiaRunnerProps } from './runner';
+export { ZifmiaRunner } from './runner/index.js';
+export type { ZifmiaRunnerProps } from './runner/index.js';
 
 // Storage
-export type { StorageProvider, SaveSlotInfo } from './storage';
-export { BrowserStorageProvider } from './storage';
+export type { StorageProvider, SaveSlotInfo } from './storage/index.js';
+export { BrowserStorageProvider } from './storage/index.js';
 
 // Types
 export type {
@@ -55,4 +55,4 @@ export type {
   CurrentRoom,
   RoomExit,
   StoryMetadata,
-} from './types';
+} from './types/index.js';

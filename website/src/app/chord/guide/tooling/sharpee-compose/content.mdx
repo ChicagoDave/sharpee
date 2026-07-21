@@ -1,0 +1,29 @@
+`sharpee compose` is the command that turns a `.story` file into Story
+IR and, in the process, runs every load-time gate. It is the author's
+version of the compile check this whole reference is built on.
+
+```text
+sharpee compose <file.story> [--check] [-o <ir.json>]
+```
+
+There are two modes. Plain `sharpee compose file.story` runs the gates
+and then goes further: it binds any hatches, builds the world, and
+creates the player, so that "it composed" means "it actually loads."
+On success it writes the IR as JSON to standard output (or to a file
+with `-o`). `sharpee compose --check file.story` stops after the gates —
+no IR is emitted and no load is attempted. `--check` is the CI form: the
+fast yes/no you run to know a story is well-formed.
+
+The output streams are split on purpose. Standard output carries *only*
+the IR JSON, so `-o` and a shell redirect produce clean machine-readable
+output; every human-facing line — diagnostics, the pass/fail summary,
+the load report — goes to standard error. That split is what lets
+`sharpee compose file.story > story.ir.json` do the right thing.
+
+The exit code is the contract for scripts:
+
+| Code | Meaning |
+|---|---|
+| `0` | gate-clean (and, in full mode, the IR loaded) |
+| `1` | the story failed the load-time gates, or a hatch source broke a rule |
+| `2` | a usage error — no file, missing argument, unknown flag |

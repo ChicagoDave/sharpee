@@ -5,8 +5,8 @@
  * Rooms are special entities that represent locations in the game world.
  */
 
-export { RoomTrait, IExitInfo } from './roomTrait';
-export { RoomBehavior } from './roomBehavior';
+export { RoomTrait, IExitInfo } from './roomTrait.js';
+export { RoomBehavior } from './roomBehavior.js';
 
 // ADR-209: snippet wire types re-exported so trait consumers (helpers builder,
 // direct-trait stories) reach them from @sharpee/world-model.

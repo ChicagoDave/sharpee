@@ -67,6 +67,15 @@ const ALLOW_LIST_PREFIXES = [
   // stories stay in the consumer role; for now the emission is
   // story-side and explicitly allow-listed.
   'stories/dungeo/src/audio/',
+  // ADR-216/241: the Chord COMPILER is a sanctioned producer — media
+  // sugar (`play sound …`, `play ambient … in <bed>`) lowers at
+  // analysis onto payloaded ADR-101 emits, which then project through
+  // stdlib's media channels exactly as the gate intends. Its sources
+  // cite/emit the event-type strings, and the chord + story-loader
+  // tests assert that lowering and its channel round-trip.
+  'packages/chord/src/',
+  'packages/chord/tests/',
+  'packages/story-loader/tests/',
 ];
 
 /**

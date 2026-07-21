@@ -13,8 +13,8 @@
  * Owner: world-model (action-interceptor storage, ADR-118/ADR-208).
  */
 
-import { ITrait } from '../traits/trait';
-import type { ActionInterceptor } from './action-interceptor';
+import { ITrait } from '../traits/trait.js';
+import type { ActionInterceptor } from './action-interceptor.js';
 
 /**
  * Options for registering an action interceptor on a `WorldModel`.

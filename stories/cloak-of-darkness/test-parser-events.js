@@ -6,8 +6,9 @@ const runStory = async () => {
   try {
     console.log('=== Testing Parser Events Debug Command ===\n');
     
-    // Load the story
-    const { story } = require('./dist/index.js');
+    // Load the story (fresh instance per run, ADR-248 Decision 3)
+    const { createStory } = require('./dist/index.js');
+    const story = createStory();
     
     // Initialize the game engine 
     const { GameEngine } = require('@sharpee/engine');

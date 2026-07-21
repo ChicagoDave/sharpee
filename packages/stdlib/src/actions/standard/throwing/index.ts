@@ -3,4 +3,4 @@
  * @module
  */
 
-export { throwingAction } from './throwing';
+export { throwingAction } from './throwing.js';

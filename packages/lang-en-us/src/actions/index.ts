@@ -5,135 +5,139 @@
  */
 
 // Core actions
-export * from './taking';
-export * from './dropping';
-export * from './looking';
-export * from './inventory';
-export * from './examining';
-export * from './going';
+export * from './taking.js';
+export * from './dropping.js';
+export * from './looking.js';
+export * from './inventory.js';
+export * from './examining.js';
+export * from './going.js';
 
 // Container actions
-export * from './opening';
-export * from './closing';
-export * from './putting';
-export * from './inserting';
-export * from './removing';
+export * from './opening.js';
+export * from './closing.js';
+export * from './putting.js';
+export * from './inserting.js';
+export * from './removing.js';
 
 // Wearable actions
-export * from './wearing';
-export * from './taking-off';
+export * from './wearing.js';
+export * from './taking-off.js';
 
 // Lock actions
-export * from './locking';
-export * from './unlocking';
+export * from './locking.js';
+export * from './unlocking.js';
 
 // Movement actions
-export * from './entering';
-export * from './exiting';
-export * from './climbing';
+export * from './entering.js';
+export * from './exiting.js';
+export * from './climbing.js';
 
 // Sensory actions
-export * from './searching';
-export * from './listening';
-export * from './smelling';
-export * from './touching';
-export * from './reading';
+export * from './searching.js';
+export * from './listening.js';
+export * from './smelling.js';
+export * from './touching.js';
+export * from './reading.js';
 
 // Device actions
-export * from './switching-on';
-export * from './switching-off';
-export * from './pushing';
-export * from './pulling';
-export * from './turning';
+export * from './switching-on.js';
+export * from './switching-off.js';
+export * from './pushing.js';
+export * from './pulling.js';
+export * from './turning.js';
 
 // Capability-dispatch actions (ADR-090)
-export * from './lowering';
-export * from './raising';
+export * from './lowering.js';
+export * from './raising.js';
 
 // Social actions
-export * from './giving';
-export * from './showing';
-export * from './talking';
-export * from './asking';
-export * from './telling';
-export * from './answering';
+export * from './giving.js';
+export * from './showing.js';
+export * from './talking.js';
+export * from './asking.js';
+export * from './telling.js';
+export * from './answering.js';
 
 // Interaction actions
-export * from './throwing';
-export * from './eating';
-export * from './drinking';
-export * from './attacking';
+export * from './throwing.js';
+export * from './eating.js';
+export * from './drinking.js';
+export * from './attacking.js';
 
 // Concealment actions (ADR-148)
-export * from './hiding';
+export * from './hiding.js';
 
 // Meta actions
-export * from './waiting';
-export * from './sleeping';
-export * from './scoring';
-export * from './help';
-export * from './about';
-export * from './version';
-export * from './saving';
-export * from './restoring';
-export * from './quitting';
-export * from './undoing';
-export * from './again';
+export * from './waiting.js';
+export * from './sleeping.js';
+export * from './scoring.js';
+export * from './help.js';
+export * from './about.js';
+export * from './version.js';
+export * from './saving.js';
+export * from './restoring.js';
+export * from './quitting.js';
+export * from './restarting.js';
+export * from './undoing.js';
+export * from './again.js';
 
 // Import all action language definitions
-import { takingLanguage } from './taking';
-import { droppingLanguage } from './dropping';
-import { lookingLanguage } from './looking';
-import { inventoryLanguage } from './inventory';
-import { examiningLanguage } from './examining';
-import { goingLanguage } from './going';
-import { openingLanguage } from './opening';
-import { closingLanguage } from './closing';
-import { puttingLanguage } from './putting';
-import { insertingLanguage } from './inserting';
-import { removingLanguage } from './removing';
-import { wearingLanguage } from './wearing';
-import { takingOffLanguage } from './taking-off';
-import { lockingLanguage } from './locking';
-import { unlockingLanguage } from './unlocking';
-import { enteringLanguage } from './entering';
-import { exitingLanguage } from './exiting';
-import { climbingLanguage } from './climbing';
-import { searchingLanguage } from './searching';
-import { listeningLanguage } from './listening';
-import { smellingLanguage } from './smelling';
-import { touchingLanguage } from './touching';
-import { readingLanguage } from './reading';
-import { switchingOnLanguage } from './switching-on';
-import { switchingOffLanguage } from './switching-off';
-import { pushingLanguage } from './pushing';
-import { pullingLanguage } from './pulling';
-import { turningLanguage } from './turning';
+import { takingLanguage } from './taking.js';
+import { droppingLanguage } from './dropping.js';
+import { lookingLanguage } from './looking.js';
+import { inventoryLanguage } from './inventory.js';
+import { examiningLanguage } from './examining.js';
+import { goingLanguage } from './going.js';
+import { openingLanguage } from './opening.js';
+import { closingLanguage } from './closing.js';
+import { puttingLanguage } from './putting.js';
+import { insertingLanguage } from './inserting.js';
+import { removingLanguage } from './removing.js';
+import { wearingLanguage } from './wearing.js';
+import { takingOffLanguage } from './taking-off.js';
+import { lockingLanguage } from './locking.js';
+import { unlockingLanguage } from './unlocking.js';
+import { cuttingLanguage } from './cutting.js';
+import { diggingLanguage } from './digging.js';
+import { enteringLanguage } from './entering.js';
+import { exitingLanguage } from './exiting.js';
+import { climbingLanguage } from './climbing.js';
+import { searchingLanguage } from './searching.js';
+import { listeningLanguage } from './listening.js';
+import { smellingLanguage } from './smelling.js';
+import { touchingLanguage } from './touching.js';
+import { readingLanguage } from './reading.js';
+import { switchingOnLanguage } from './switching-on.js';
+import { switchingOffLanguage } from './switching-off.js';
+import { pushingLanguage } from './pushing.js';
+import { pullingLanguage } from './pulling.js';
+import { turningLanguage } from './turning.js';
 // Capability-dispatch actions (ADR-090)
-import { loweringLanguage } from './lowering';
-import { raisingLanguage } from './raising';
-import { givingLanguage } from './giving';
-import { showingLanguage } from './showing';
-import { talkingLanguage } from './talking';
-import { askingLanguage } from './asking';
-import { tellingLanguage } from './telling';
-import { answeringLanguage } from './answering';
-import { throwingLanguage } from './throwing';
-import { eatingLanguage } from './eating';
-import { drinkingLanguage } from './drinking';
-import { attackingLanguage } from './attacking';
-import { hidingLanguage, revealingLanguage } from './hiding';
-import { waitingLanguage } from './waiting';
-import { sleepingLanguage } from './sleeping';
-import { scoringLanguage } from './scoring';
-import { helpLanguage } from './help';
-import { aboutLanguage } from './about';
-import { versionLanguage } from './version';
-import { savingLanguage } from './saving';
-import { restoringLanguage } from './restoring';
-import { quittingLanguage } from './quitting';
-import { undoingLanguage } from './undoing';
-import { againLanguage } from './again';
+import { loweringLanguage } from './lowering.js';
+import { raisingLanguage } from './raising.js';
+import { givingLanguage } from './giving.js';
+import { showingLanguage } from './showing.js';
+import { talkingLanguage } from './talking.js';
+import { askingLanguage } from './asking.js';
+import { tellingLanguage } from './telling.js';
+import { answeringLanguage } from './answering.js';
+import { throwingLanguage } from './throwing.js';
+import { eatingLanguage } from './eating.js';
+import { drinkingLanguage } from './drinking.js';
+import { attackingLanguage } from './attacking.js';
+import { hidingLanguage, revealingLanguage } from './hiding.js';
+import { waitingLanguage } from './waiting.js';
+import { sleepingLanguage } from './sleeping.js';
+import { scoringLanguage } from './scoring.js';
+import { helpLanguage } from './help.js';
+import { aboutLanguage } from './about.js';
+import { versionLanguage } from './version.js';
+import { savingLanguage } from './saving.js';
+import { restoringLanguage } from './restoring.js';
+import { quittingLanguage } from './quitting.js';
+import { restartingLanguage } from './restarting.js';
+import { undoingLanguage } from './undoing.js';
+import { againLanguage } from './again.js';
 
 /**
  * All standard action language definitions
@@ -161,6 +165,8 @@ export const standardActionLanguage = [
   // Lock actions
   lockingLanguage,
   unlockingLanguage,
+  cuttingLanguage,
+  diggingLanguage,
   
   // Movement actions
   enteringLanguage,
@@ -209,6 +215,7 @@ export const standardActionLanguage = [
   savingLanguage,
   restoringLanguage,
   quittingLanguage,
+  restartingLanguage,
   undoingLanguage,
   againLanguage,
   // Concealment actions (ADR-148)

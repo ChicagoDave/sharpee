@@ -9,8 +9,8 @@
  * Based on Infocom's vehicle concept from Zork.
  */
 
-import { TraitType } from '../trait-types';
-import { ITrait } from '../trait';
+import { TraitType } from '../trait-types.js';
+import { ITrait } from '../trait.js';
 
 /**
  * Vehicle type determines movement behavior

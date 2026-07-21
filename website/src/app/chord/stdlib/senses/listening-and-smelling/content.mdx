@@ -1,0 +1,77 @@
+Both parse since ADR-230 D2: `listen`, `listen to X`, and the `hear
+[X]` alias; `smell` and `sniff`, bare or with a target.
+
+**listen** (`if.action.listening`) — with a target: a running device
+reports `device_running`, a stopped one `device_off`, a container
+sloshes (`liquid_sounds`) or rustles (`container_sounds`) by contents,
+anything else `no_sound`. Bare `listen` scans the room: running devices
+→ `active_devices`, else `silence`. No preconditions at all — a pure
+flavor seam.
+
+**smell** (`if.action.smelling`) — with a target: food and drink report
+`food_scent`/`drink_scent`, a lit light source `burning_scent`, an open
+container with food inside `container_food_scent`, else
+`no_particular_scent`; a target in another room refuses `too_far`. Bare
+`smell`: smoke first (`smoke_detected`), then food (`food_nearby`),
+else `no_scent`.
+
+The author writes:
+
+```chord
+create the Chapel
+  a room
+
+  Candle smoke and old stone.
+
+create the pipe organ
+  aka organ
+  scenery
+  in the Chapel
+
+  A pipe organ that fills the far wall.
+
+  on listening it
+    phrase organ-breath
+  end on
+
+  phrase organ-breath:
+    Air sighs through the pipes, a chord not quite sounding.
+
+create the player
+  starts in the Chapel
+```
+
+The player sees:
+
+```transcript
+> listen
+You hear nothing out of the ordinary.
+
+> listen to the organ
+Air sighs through the pipes, a chord not quite sounding.
+
+> smell the organ
+The pipe organ has no particular smell.
+
+> smell
+You don't smell anything unusual.
+```
+
+The organ's `on listening it` phrase replaces the stock miss entirely;
+where no clause answers, the platform's own misses are honest rather
+than errors.
+
+| | listen (`if.action.listening.*`) | smell (`if.action.smelling.*`) |
+|---|---|---|
+| Refusals | — | `too_far` |
+| Success | `device_running` · `device_off` · `liquid_sounds` · `container_sounds` · `no_sound` · `active_devices` · `silence` | `food_scent` · `drink_scent` · `burning_scent` · `container_food_scent` · `no_particular_scent` · `smoke_detected` · `food_nearby` · `no_scent` |
+| Events | `if.event.listened` / `if.event.listen_blocked` | `if.event.smelled` / `if.event.smell_blocked` |
+
+Interceptors: like touching (§2.6), both are favorites for `on
+listening it` / `on smelling it` clauses.
+
+Separately from this action pair, the platform has a real **sound
+propagation** system (the acoustic traits, §6.4): engine-level,
+per-turn, event-driven — sounds travel through walls by acoustic cost
+and reach listener entities. The listening *action* does not read it;
+the two meet in story logic, not in stdlib.

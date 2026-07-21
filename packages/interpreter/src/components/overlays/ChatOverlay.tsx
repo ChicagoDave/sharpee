@@ -10,12 +10,12 @@
  */
 
 import React, { useRef, useEffect, useCallback } from 'react';
-import { useGameState, useAssetMap } from '../../context/GameContext';
-import { useCurrentPc } from '../../hooks/useCurrentPc';
-import { CommandInput } from '../transcript/CommandInput';
+import { useGameState, useAssetMap } from '../../context/GameContext.js';
+import { useCurrentPc } from '../../hooks/useCurrentPc.js';
+import { CommandInput } from '../transcript/CommandInput.js';
 import { renderToString } from '@sharpee/text-service';
 import type { ITextBlock } from '@sharpee/text-blocks';
-import type { TranscriptEntry } from '../../types/game-state';
+import type { TranscriptEntry } from '../../types/game-state.js';
 
 // -- Types --
 

@@ -18,8 +18,8 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { HandlerContext, ChainableEventData } from './types';
-import { createBlocks } from '../assemble';
+import type { HandlerContext, ChainableEventData } from './types.js';
+import { createBlocks } from '../assemble.js';
 
 interface RevealedEventData extends ChainableEventData {
   containerId?: string;

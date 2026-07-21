@@ -17,8 +17,8 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { HandlerContext } from './types';
-import { createBlock } from '../assemble';
+import type { HandlerContext } from './types.js';
+import { createBlock } from '../assemble.js';
 
 interface ImplicitTakeData {
   itemName?: string;

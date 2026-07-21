@@ -1,24 +1,32 @@
 /**
- * Falls Death Handler
+ * Falls Death Handler — the Aragain Falls deadly exit (ADR-227).
  *
- * Implements instant death at Aragain Falls per Mainframe Zork Fortran source.
- * ANY action besides LOOK while at the falls kills the player.
+ * Going SOUTH at Aragain Falls takes the player over the falls to their death.
+ * Per MDL FALLS-ROOM (act2.mud:203): only going over the falls is fatal — the
+ * player retreats north normally, and wait/take/inventory/look are all safe.
+ * (The old inverted verb-allowlist that killed on any non-LOOK action was
+ * over-implementation, dropped per ADR-227 Consequences.)
  *
- * Per FORTRAN source (rooms.for line 577):
- *   IF(PRSA.NE.LOOKW) CALL JIGSUP(85) !OVER YOU GO.
+ * Mechanism: a ParsedCommandTransformer (the movement-context hazard surface,
+ * ADR-227 Decision 2 amendment) redirecting to the platform's generic
+ * extras-driven deadly-death action (ADR-224). The deadly exit is NOT in the
+ * room graph (`exits: {}`), so only this pre-validate seam can catch it.
  *
- * This uses a command transformer to intercept non-LOOK commands at falls
- * and redirect them to a death action.
+ * Public interface: `createFallsDeathTransformer`, `registerFallsRoom`,
+ * `FallsDeathMessages`.
+ * Owner context: stories/dungeo — death triggers (ADR-227 Phase 1).
  */
 
-import { WorldModel, IParsedCommand, TraitType, VehicleTrait } from '@sharpee/world-model';
+import { WorldModel, IParsedCommand, TraitType } from '@sharpee/world-model';
 import { ParsedCommandTransformer } from '@sharpee/engine';
+import {
+  DEADLY_ROOM_DEATH_ACTION_ID,
+  DEADLY_ROOM_CAUSE_KEY,
+  DEADLY_ROOM_MESSAGE_KEY,
+} from '@sharpee/stdlib';
 
 // Falls room ID - set during registration
 let fallsRoomId: string | null = null;
-
-// Death action ID
-export const FALLS_DEATH_ACTION_ID = 'dungeo.action.falls_death';
 
 // Message IDs
 export const FallsDeathMessages = {
@@ -46,50 +54,23 @@ function getPlayerRoom(world: WorldModel): string | null {
 }
 
 /**
- * Check if the action is safe at falls
- *
- * Per FORTRAN: only LOOK is safe, everything else kills you.
- * Exception: WAVE (rainbow puzzle) and non-south GO directions.
+ * The deadly exit: only going SOUTH (over the falls) is fatal.
  */
-function isSafeAction(parsed: IParsedCommand): boolean {
+function isDeadlyExit(parsed: IParsedCommand): boolean {
   const actionId = parsed.action?.toLowerCase() || '';
+  if (actionId !== 'if.action.going' && actionId !== 'going') return false;
 
-  // LOOK and EXAMINE are safe (per FORTRAN)
-  const safeActions = [
-    'look', 'looking', 'if.action.looking',
-    'examine', 'examining', 'if.action.examining',
-    'l' // Common abbreviation
-  ];
-  if (safeActions.includes(actionId)) return true;
-
-  // WAVE is safe (rainbow puzzle)
-  if (actionId.includes('wave') || actionId === 'dungeo.action.wave') return true;
-
-  // GDT commands are always safe (debugging tool)
-  if (actionId.startsWith('dungeo.action.gdt')) return true;
-
-  // Rainbow blocked action is safe (shows blocked message, not death)
-  if (actionId === 'dungeo.rainbow.blocked') return true;
-
-  // Going action - check direction
-  if (actionId === 'if.action.going' || actionId === 'going') {
-    // Direction is stored in extras (uppercase like 'SOUTH' or 'WEST')
-    const direction = (parsed.extras?.direction as string)?.toUpperCase() || '';
-    // Only SOUTH is deadly (going over the falls)
-    if (direction === 'SOUTH' || direction === 'S') {
-      return false; // Death!
-    }
-    return true; // Other directions are safe (blocked exits handle them)
-  }
-
-  // Everything else is deadly (WAIT, INVENTORY, TAKE, etc.)
-  return false;
+  // Direction is stored in extras (uppercase like 'SOUTH')
+  const direction = (parsed.extras?.direction as string)?.toUpperCase() || '';
+  return direction === 'SOUTH' || direction === 'S';
 }
 
 /**
- * Create command transformer for falls death
+ * Create command transformer for the falls deadly exit.
  *
- * Intercepts any non-LOOK command at Aragain Falls and redirects to death.
+ * Redirects `go south` at Aragain Falls to the platform's generic deadly-death
+ * action, threading cause/messageId through extras — the same seam Chord's
+ * `<direction> is deadly:` lowering uses (AC-1 parity precedent).
  */
 export function createFallsDeathTransformer(): ParsedCommandTransformer {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
@@ -100,18 +81,18 @@ export function createFallsDeathTransformer(): ParsedCommandTransformer {
     const playerRoom = getPlayerRoom(world);
     if (playerRoom !== fallsRoomId) return parsed;
 
-    // LOOK is safe - allow it
-    if (isSafeAction(parsed)) return parsed;
+    // Only going south (over the falls) is deadly
+    if (!isDeadlyExit(parsed)) return parsed;
 
-    // Any other action = death
     return {
       ...parsed,
-      action: FALLS_DEATH_ACTION_ID,
+      action: DEADLY_ROOM_DEATH_ACTION_ID,
       extras: {
         ...parsed.extras,
+        [DEADLY_ROOM_CAUSE_KEY]: 'aragain_falls',
+        [DEADLY_ROOM_MESSAGE_KEY]: FallsDeathMessages.DEATH,
         originalAction: parsed.action,
-        isFallsDeath: true
-      }
+      },
     };
   };
 }

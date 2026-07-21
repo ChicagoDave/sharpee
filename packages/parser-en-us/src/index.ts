@@ -5,8 +5,8 @@
  * for converting natural language commands into structured commands.
  */
 
-export { EnglishParser } from './english-parser';
-export { EnglishParser as Parser } from './english-parser'; // For convenience
+export { EnglishParser } from './english-parser.js';
+export { EnglishParser as Parser } from './english-parser.js'; // For convenience
 
 // Re-export the parser interface for type checking
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
@@ -16,18 +16,18 @@ export type {
   PartialMatchFailure,
   SlotFailure,
   MatchFailureReason
-} from './parse-failure';
-export { analyzeBestFailure } from './parse-failure';
+} from './parse-failure.js';
+export { analyzeBestFailure } from './parse-failure.js';
 
 // Export pronoun context types (ADR-089)
-export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context';
+export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
 export {
   PronounContextManager,
   isRecognizedPronoun,
   RECOGNIZED_PRONOUNS,
   INANIMATE_IT,
   INANIMATE_THEM
-} from './pronoun-context';
+} from './pronoun-context.js';
 
 /**
  * Package metadata

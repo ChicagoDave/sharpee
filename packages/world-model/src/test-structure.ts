@@ -1,8 +1,8 @@
 // Test file to verify world-model package structure
 
-import { IFEntity } from './entities/if-entity';
-import { TraitType } from './traits/trait-types';
-import { ContainerTrait } from './traits/container/containerTrait';
+import { IFEntity } from './entities/if-entity.js';
+import { TraitType } from './traits/trait-types.js';
+import { ContainerTrait } from './traits/container/containerTrait.js';
 
 // Test creating an entity
 const box = new IFEntity('box-1', 'container');

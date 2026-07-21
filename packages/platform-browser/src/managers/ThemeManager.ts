@@ -2,7 +2,7 @@
  * ThemeManager - handles theme switching and persistence
  */
 
-import type { ThemeConfig } from '../types';
+import type { ThemeConfig } from '../types.js';
 
 export interface ThemeManagerConfig {
   /** localStorage key for theme persistence */

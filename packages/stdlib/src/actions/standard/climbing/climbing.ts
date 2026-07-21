@@ -9,16 +9,46 @@
  * 2. execute: Perform world mutation (move player to destination/onto object)
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `climbingLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ClimbableBehavior } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ClimbedEventData } from './climbing-events';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ClimbedEventData } from './climbing-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): the climbed object is the only consultable
+ * entity of a CLIMB command. Directional climbing ("climb up") has no direct
+ * object, so the slot resolves to undefined — zero consultations.
+ */
+export const climbingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.CLIMBING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.CLIMBING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -41,6 +71,7 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
   requiredMessages: [
     'no_target',
     'not_climbable',
+    'climb_nowhere',
     'cant_go_that_way',
     'climbed_up',
     'climbed_down',
@@ -61,18 +92,26 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
 
-    // Handle directional climbing (climb up, climb down)
-    if (direction && !target) {
-      return validateDirectionalClimbing(direction, context);
+    // No target or direction specified — defensive early return, no hooks
+    if (!direction && !target) {
+      return { valid: false, error: 'no_target' };
     }
 
-    // Handle object climbing
-    if (target) {
-      return validateObjectClimbing(target, context);
-    }
+    const state = resolveLifecycle(context, climbingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
-    // No target or direction specified
-    return { valid: false, error: 'no_target' };
+    // Handle directional climbing (climb up, climb down) or object climbing
+    const result = (direction && !target)
+      ? validateDirectionalClimbing(direction, context)
+      : validateObjectClimbing(target, context);
+    if (!result.valid) return result;
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
+    return result;
   },
 
   /**
@@ -114,9 +153,30 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       sharedData.targetId = target.id;
       sharedData.targetName = target.name;
 
-      // Move player onto the target
-      context.world.moveEntity(context.player.id, target.id);
+      // A configured climb destination (top of tree, far side of fence) wins;
+      // otherwise the player moves onto the target itself.
+      const climbable = target.has(TraitType.CLIMBABLE)
+        ? (target.get(TraitType.CLIMBABLE) as { destination?: string })
+        : undefined;
+      const moveTarget = climbable?.destination ?? target.id;
+      if (climbable?.destination) {
+        sharedData.destinationId = climbable.destination;
+      }
+
+      const moved = context.world.moveEntity(context.player.id, moveTarget);
+      if (!moved) {
+        // Invariant (belt-and-suspenders, same pattern as the loader's door
+        // guard): validate already established the target/destination can
+        // receive the player — a refusal here is a platform bug and must
+        // never become a silent no-op with success narration.
+        throw new Error(
+          `climbing: moveEntity refused after validation passed (player ${context.player.id} -> ${moveTarget})`
+        );
+      }
     }
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -125,9 +185,9 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
-    return [context.event('if.event.climbed', {
+    const events: ISemanticEvent[] = [context.event('if.event.climbed', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
@@ -135,6 +195,13 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name,
       direction
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.climbed', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -178,13 +245,26 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
         method: 'onto'
       } as ClimbedEventData & { messageId: string; params: Record<string, any>; targetName?: string }));
 
-      // Entered event for climbing onto
-      events.push(context.event('if.event.entered', {
-        targetId: sharedData.targetId,
-        method: 'climbing',
-        preposition: 'onto'
-      }));
+      if (sharedData.destinationId) {
+        // Destination climb (configured on the ClimbableTrait): the player
+        // ended up somewhere else — emit moved, matching the directional path
+        events.push(context.event('if.event.moved', {
+          fromRoom: sharedData.fromLocationId,
+          toRoom: sharedData.destinationId,
+          method: 'climbing'
+        }));
+      } else {
+        // Entered event for climbing onto
+        events.push(context.event('if.event.entered', {
+          targetId: sharedData.targetId,
+          method: 'climbing',
+          preposition: 'onto'
+        }));
+      }
     }
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.climbed');
 
     return events;
   }
@@ -252,6 +332,22 @@ function validateObjectClimbing(
   const currentLocation = context.world.getLocation(context.player.id);
   if (currentLocation === target.id) {
     return { valid: false, error: 'already_there', params: { place: nounPhraseFor(target) } };
+  }
+
+  // David's ruling (2026-07-20): a bare `climbable` does NOT imply a place to
+  // be — no auto-composed destination. The target must actually be able to
+  // receive the player: a configured climb destination that exists, or a
+  // shape the world-model's own move authority accepts (supporter, enterable,
+  // container, …). Consulting canMoveEntity keeps validate and execute on ONE
+  // definition of "receivable" — the same predicate execute's mutation uses.
+  if (target.has(TraitType.CLIMBABLE)) {
+    const climbable = target.get(TraitType.CLIMBABLE) as { destination?: string };
+    const destinationExists = climbable.destination
+      ? !!context.world.getEntity(climbable.destination)
+      : false;
+    if (!destinationExists && !context.world.canMoveEntity(context.player.id, target.id)) {
+      return { valid: false, error: 'climb_nowhere', params: { object: nounPhraseFor(target) } };
+    }
   }
 
   return { valid: true };

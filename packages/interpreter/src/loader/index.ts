@@ -1,2 +1,2 @@
-export { loadBundle, releaseBundle } from './bundle-loader';
-export type { LoadedBundle } from './bundle-loader';
+export { loadBundle, releaseBundle } from './bundle-loader.js';
+export type { LoadedBundle } from './bundle-loader.js';

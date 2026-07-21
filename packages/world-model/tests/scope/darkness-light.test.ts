@@ -40,7 +40,7 @@ describe('Darkness and Light Source Scope Rules', () => {
     darkCave.add(new ContainerTrait());
     const caveRoom = darkCave.get<RoomTrait>('room');
     if (caveRoom) {
-      caveRoom.isDark = true;
+      caveRoom.requiresLight = true;
     }
 
     // Create a lit room
@@ -100,7 +100,7 @@ describe('Darkness and Light Source Scope Rules', () => {
         results.push(...carried.map(e => e.id));
         
         // Check if room is dark
-        if (roomTrait?.isDark) {
+        if (roomTrait?.requiresLight) {
           // Check for light sources
           let hasLight = false;
           

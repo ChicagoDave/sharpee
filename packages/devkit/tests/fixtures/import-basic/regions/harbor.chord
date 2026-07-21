@@ -1,0 +1,8 @@
+## Harbor extras, split into their own file (ADR-251).
+## The lantern is placed in the Lighthouse — a room declared in the
+## main story file — proving a fragment shares one namespace (D4).
+
+create the brass lantern
+  in the Lighthouse
+
+  A polished brass lantern rests on the floor.

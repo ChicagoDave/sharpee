@@ -9,15 +9,9 @@
  * - Death 523: "a lurking grue slithered into the room"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './types';
-
-// Event ID counter
-let eventCounter = 0;
-function generateEventId(): string {
-  return `grue-death-${Date.now()}-${++eventCounter}`;
-}
 
 export const grueDeathAction: Action = {
   id: GRUE_DEATH_ACTION_ID,
@@ -29,9 +23,20 @@ export const grueDeathAction: Action = {
   },
 
   execute(context: ActionContext): void {
-    // Mark player as dead
-    context.world.setStateValue('dungeo.player.dead', true);
-    context.world.setStateValue('dungeo.player.death_cause', 'grue');
+    // The 75%/25% survival roll happens upstream (grue-handler); by the time this
+    // action runs, death is decided. Apply canonical terminal death (ADR-224).
+    // Death text depends on how the grue struck; resolve the messageId here.
+    const deathType = context.command.parsed.extras?.grueDeathType || 'walked_into';
+    const messageId = deathType === 'slithered'
+      ? GrueDeathMessages.SLITHERED_INTO_ROOM
+      : GrueDeathMessages.WALKED_INTO_GRUE;
+
+    (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent =
+      killPlayer(context.world, context.player, {
+        cause: 'grue',
+        messageId,
+        terminal: true,
+      });
   },
 
   blocked(_context: ActionContext, _result: ValidationResult): ISemanticEvent[] {
@@ -39,19 +44,7 @@ export const grueDeathAction: Action = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    // Get the death type from extras (set by transformer)
-    const deathType = context.command.parsed.extras?.grueDeathType || 'walked_into';
-    const messageId = deathType === 'slithered'
-      ? GrueDeathMessages.SLITHERED_INTO_ROOM
-      : GrueDeathMessages.WALKED_INTO_GRUE;
-
-    // Domain event with messageId - no action.success needed
-    return [
-      context.event('if.event.player.died', {
-        messageId: messageId,
-        cause: 'grue',
-        deathType: deathType
-      })
-    ];
+    const event = (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent;
+    return event ? [event] : [];
   }
 };

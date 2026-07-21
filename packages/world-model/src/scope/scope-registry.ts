@@ -9,7 +9,7 @@ import {
   IScopeEvaluationOptions, 
   IScopeEvaluationResult,
   IScopeRuleResult 
-} from './scope-rule';
+} from './scope-rule.js';
 
 /**
  * Registry for managing scope rules

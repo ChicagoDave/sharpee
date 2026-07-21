@@ -7,8 +7,8 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-import { StateMachineRegistry } from './state-machine-runtime';
-import { EvaluationContext, StateMachineRegistryState } from './types';
+import { StateMachineRegistry } from './state-machine-runtime.js';
+import { EvaluationContext, StateMachineRegistryState } from './types.js';
 
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
@@ -37,6 +37,9 @@ export class StateMachinePlugin implements TurnPlugin {
       playerLocation: ctx.playerLocation,
       turn: ctx.turn,
       actionId: ctx.actionResult?.actionId,
+      // Genuine success only (Phase 7): action triggers require this, so a
+      // refused/blocked action never advances a machine.
+      actionSucceeded: ctx.actionResult?.success,
       actionTargetId: ctx.actionResult?.targetId,
       actionEvents: ctx.actionEvents?.map(e => ({
         type: e.type,

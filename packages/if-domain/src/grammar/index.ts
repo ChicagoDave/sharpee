@@ -3,8 +3,8 @@
  * @description Exports for the grammar rules engine
  */
 
-export * from './grammar-builder';
-export * from './pattern-compiler';
-export * from './grammar-engine';
-export * from './scope-builder';
-export * from './vocabulary-provider';
+export * from './grammar-builder.js';
+export * from './pattern-compiler.js';
+export * from './grammar-engine.js';
+export * from './scope-builder.js';
+export * from './vocabulary-provider.js';

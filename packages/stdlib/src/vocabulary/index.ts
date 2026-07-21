@@ -2,4 +2,4 @@
  * Vocabulary module exports
  */
 
-export * from './standard-english';
+export * from './standard-english.js';

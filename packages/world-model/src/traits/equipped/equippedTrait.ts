@@ -2,7 +2,7 @@
  * Equipped trait for items that are currently equipped by an actor
  */
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 export interface IEquippedData {
   /** Which slot this item is equipped in */

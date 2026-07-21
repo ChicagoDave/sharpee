@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/platform-browser",
-  "version": "3.0.0",
+  "version": "3.2.0",
   "description": "Browser client infrastructure for Sharpee interactive fiction",
   "type": "module",
   "main": "./dist/index.js",
@@ -45,7 +45,7 @@
     "styles"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
     "clean": "rm -rf dist dist-esm tsconfig.tsbuildinfo",
     "test": "vitest",

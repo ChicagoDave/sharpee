@@ -1,0 +1,124 @@
+**talk** (`if.action.talking`) — verbs `talk to/with X`, `speak to/with
+X`, `chat with X`, `converse with X` (core grammar since ADR-229; story
+grammar still outranks it). Not gated on being a person — talking to the
+mailbox reaches the action and refuses `not_actor`, hook-visibly, so a
+story can intercept even that. A bare person answers `no_response`,
+which is honest: talk is shallow by design. A `conversation` object in
+the actor's custom properties unlocks greeting flavor (first meeting vs.
+`greets_again`, `formal_`/`casual_greeting`, `remembers_you`,
+`has_topics` / `nothing_to_say`), but per-topic dialogue lives on
+ask/tell's declared table instead.
+
+**ask** (`if.action.asking`) and **tell** (`if.action.telling`) — `ask X
+about Y` (also `question X about Y`, `inquire of X about Y`) and `tell X
+about Y` (also `inform X about Y`); a non-person recipient refuses
+`not_actor`. The topic is a first-class free-text slot (ADR-231),
+resolved entity-first: a topic naming something in scope carries that
+entity along, any other wording flows through as plain text, and a topic
+is never scope-rejected. Bare, both actions validate the social
+preconditions, mutate nothing, and report a default — asking's
+`unknown_topic`, telling's `not_interested`. Real per-topic dialogue is
+a declared Chord table (ADR-239): `define topics for <person> … end
+topics`, one block per person, one table serving ask AND tell. Entity
+rows (`about the great lamp:`) ride the platform's quiet topic-entity
+resolution and are checked first; quoted rows (`about "the storm", "the
+weather":`) match free text, with comma-separated aliases; a response is
+a one-line statement or an indented body (`it` binds the person).
+Matching is normalized whole-topic lookup — case-insensitive,
+article-stripped, never fuzzy. On a hit the row fully owns the reply;
+the person's `on asking it` / `on telling it` clause is the catch-all,
+firing only on a miss; with neither, the stdlib defaults speak.
+
+The author writes:
+
+```chord
+create the Lantern Gallery
+  a room
+
+  The top of the lighthouse, all glass and brass.
+
+create the great lamp
+  aka lamp
+  scenery
+  in the Lantern Gallery
+
+  A first-order lens taller than a man.
+
+create the keeper
+  a person
+  in the Lantern Gallery
+
+  The keeper polishes the lens without looking up.
+
+  on asking it
+    phrase keeper-shrug
+  end on
+
+define topics for the keeper
+  about the great lamp: phrase keeper-lamp
+  about "the storm", "the weather":
+    phrase keeper-storm
+end topics
+
+create the player
+  starts in the Lantern Gallery
+
+define phrases en-US
+  keeper-lamp:
+    "Eighty years that lens has burned," the keeper says. "It will
+    outlast us both."
+  keeper-storm:
+    "Glass is falling," she says. "You'll want to be off the rock by
+    dark."
+  keeper-shrug:
+    The keeper shrugs. "Lamp and weather. That's all I know."
+```
+
+The player sees:
+
+```transcript
+> talk to the lamp
+You can only talk to people.
+
+> talk to the keeper
+The keeper doesn't respond.
+
+> ask the keeper about the lamp
+"Eighty years that lens has burned," the keeper says. "It will outlast us both."
+
+> ask the keeper about the weather
+"Glass is falling," she says. "You'll want to be off the rock by dark."
+
+> tell the keeper about the storm
+"Glass is falling," she says. "You'll want to be off the rock by dark."
+
+> ask the keeper about the tide
+The keeper shrugs. "Lamp and weather. That's all I know."
+```
+
+The whole dispatch order in one scene: `not_actor` for a non-person, the
+honest `no_response` on bare talk, the entity row riding scope
+resolution, the quoted row answering either alias for ask and tell
+alike, and the `on asking it` catch-all speaking only on a miss.
+
+| | talk (`if.action.talking.*`) | ask / tell (`if.action.asking.*` / `if.action.telling.*`) |
+|---|---|---|
+| Refusals | `no_target` · `not_actor` · `too_far` (same room required) · `self` · `not_available` | `no_target` · `not_visible` · `too_far` · `not_actor` |
+| Success | `no_response` · greeting flavor with `conversation` data (`first_meeting`, `greets_again`, `formal_`/`casual_greeting`, `remembers_you`, `has_topics` / `nothing_to_say`) | `unknown_topic` (ask) · `not_interested` (tell) — a topics row replaces both |
+| Events | `if.event.talked` | `if.event.asked` / `if.event.ask_blocked` · `if.event.told` / `if.event.tell_blocked` |
+
+Interceptors: `on talking it` on the person is talk's override seam —
+the canonical TypeScript rendition is Dungeo's troll, whose `preValidate`
+vetoes with its own message when he is out cold and whose `postReport`
+**overrides** the core reply with GROWLS when he isn't (swap the standard
+message, keep the event); the zoo's characters skip talking entirely and
+speak through every-turn daemons ([§12](/chord/stdlib/plugins)), also a legitimate pattern. The
+topic reaches interceptor data (`topic`, `topicEntityId`) via the
+lifecycle seed, for `while` conditions and TypeScript hooks.
+
+Gone the other way in the ADR-239 pass: the `say X [to Y]`, `shout`, and
+`whisper X to Y` patterns were **removed**, as was the `write X [on Y]`
+family — their action ids had no implementations (they parsed, then
+runtime-failed in every story); both return with real
+conversation/writing systems, and story-grammar verbs (Dungeo's SAY) are
+unaffected.

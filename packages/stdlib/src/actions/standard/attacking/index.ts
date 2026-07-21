@@ -2,5 +2,5 @@
  * Attacking action module exports
  */
 
-export { attackingAction } from './attacking';
-export * from './attacking-events';
+export { attackingAction, attackingLifecycle } from './attacking.js';
+export * from './attacking-events.js';

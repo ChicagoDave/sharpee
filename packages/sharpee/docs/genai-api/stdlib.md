@@ -14,11 +14,11 @@ All 43 standard actions, validation, scope builders, NPC support, combat, action
  * maintaining the event-driven architecture. Actions return events,
  * but the enhanced context makes it easy to create those events.
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
-import { ValidatedCommand } from '../validation/types';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
+import { ValidatedCommand } from '../validation/types.js';
 /**
  * Result of a scope requirement check.
  *
@@ -35,6 +35,8 @@ export interface ScopeCheckResult {
     error?: {
         valid: false;
         error: string;
+        /** Scope keys are a shared registered namespace — never prefixed (ADR-231 D1). */
+        errorQualified?: boolean;
         params?: Record<string, any>;
     };
     /** The actual scope level of the entity (for debugging/logging) */
@@ -73,6 +75,8 @@ export interface ImplicitTakeResult {
     error?: {
         valid: false;
         error: string;
+        /** True when `error` is a fully-qualified id (scope.* / cross-action keys — ADR-231 D1). */
+        errorQualified?: boolean;
         params?: Record<string, any>;
     };
     /**
@@ -111,6 +115,20 @@ export interface ActionContext {
      * The scope resolver for determining what's perceivable
      */
     readonly scopeResolver: ScopeResolver;
+    /**
+     * Dedicated action RNG stream (ADR-231 D6).
+     *
+     * The engine owns a seeded stream reserved for actions — separate from
+     * the turn-plugin, scheduler, and basic-combat streams, so no other
+     * subsystem's draws can shift an action's rolls. Its seed is persisted
+     * across save/restore, making post-restore action outcomes
+     * deterministic with an unbroken run.
+     *
+     * Contract: actions draw ALL randomness from this stream — never
+     * `Math.random()`. World-model behaviors that need randomness take an
+     * rng parameter and callers pass this stream.
+     */
+    readonly random: SeededRandom;
     /**
      * Check if an entity is visible to the player
      */
@@ -367,6 +385,14 @@ export interface ValidationResult {
      * Used to look up appropriate error messages
      */
     error?: string;
+    /**
+     * When true, `error` is already a fully-qualified message id and must
+     * not be prefixed with the action id (ADR-231 D1 provenance
+     * pass-through). Set by the lifecycle engine for interceptor vetoes
+     * and by helpers that emit another action's key; never set by an
+     * action's own validation.
+     */
+    errorQualified?: boolean;
     /**
      * Additional context for error messages
      */
@@ -744,16 +770,17 @@ export declare const EventTypes: {
  * Provides helper methods that make it easy to create properly
  * formatted events while maintaining the event-driven architecture.
  */
+import { SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ActionContext, Action } from './enhanced-types';
-import { ScopeResolver } from '../scope/types';
-import { ValidatedCommand } from '../validation/types';
+import { ActionContext, Action } from './enhanced-types.js';
+import { ScopeResolver } from '../scope/types.js';
+import { ValidatedCommand } from '../validation/types.js';
 /**
  * Factory function to create unified action context
  *
  * Phase 2: Factory pattern implementation
  */
-export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, scopeResolver?: ScopeResolver): ActionContext;
+export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, scopeResolver?: ScopeResolver, random?: SeededRandom): ActionContext;
 /**
  * Helper to create a mock action context for testing
  */
@@ -776,7 +803,7 @@ export declare function createMockActionContext(world: WorldModel, player: IFEnt
  * Examples include debug commands, system commands (SAVE/RESTORE), and information
  * commands (SCORE/VERSION).
  */
-import { Action, ActionContext, ValidationResult } from './enhanced-types';
+import { Action, ActionContext, ValidationResult } from './enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Abstract base class for meta-commands
@@ -999,9 +1026,9 @@ export declare class MetaCommandRegistry {
  * Manages registration and lookup of actions.
  * Actions are pure logic - patterns come from the language provider.
  */
-import { Action, ActionRegistry as IActionRegistry } from './enhanced-types';
+import { Action, ActionRegistry as IActionRegistry } from './enhanced-types.js';
 import { LanguageProvider } from '@sharpee/if-domain';
-export { ActionRegistry } from './enhanced-types';
+export { ActionRegistry } from './enhanced-types.js';
 export declare class StandardActionRegistry implements IActionRegistry {
     private actions;
     private actionsByPattern;
@@ -1105,6 +1132,8 @@ export declare const IFActions: {
     readonly EMPTYING: "if.action.emptying";
     readonly LOCKING: "if.action.locking";
     readonly UNLOCKING: "if.action.unlocking";
+    readonly CUTTING: "if.action.cutting";
+    readonly DIGGING: "if.action.digging";
     readonly WEARING: "if.action.wearing";
     readonly TAKING_OFF: "if.action.taking_off";
     readonly SWITCHING_ON: "if.action.switching_on";
@@ -1150,6 +1179,475 @@ export declare const IFActions: {
 export type IFActionType = typeof IFActions[keyof typeof IFActions];
 ```
 
+### actions/lifecycle/descriptor
+
+```typescript
+/**
+ * Interceptor lifecycle descriptors (ADR-228).
+ *
+ * A descriptor is an action's declarative statement of its interceptor
+ * surface: which command entities carry interceptors under which action
+ * ids, in what order they are consulted, and which rare special contracts
+ * apply. The shared lifecycle engine (`lifecycle-engine.ts`) executes the
+ * ADR-228 rulings (D1 veto-only, D2 structured onBlocked, D3 all-entities
+ * fixed order, D4 per-item multi-object) against this declaration — the
+ * action never hand-rolls hook plumbing.
+ *
+ * An action is "wired" for interceptors iff it has a descriptor; the
+ * stdlib wired-action registry (ADR-228 D5) is derived mechanically from
+ * the descriptor table, never hand-maintained.
+ *
+ * Public interface: `ActionLifecycleDescriptor`, `EntitySlotSpec`,
+ * `LifecycleContracts`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ */
+import { IFEntity } from '@sharpee/world-model';
+import { ActionContext } from '../enhanced-types.js';
+/**
+ * One consultable entity slot of a command.
+ *
+ * Slots are declared in the published consultation order (ADR-228 D3-B):
+ * direct object → indirect object / instrument → action-specific implicit
+ * entities (e.g. going's door, source room, destination room; exiting's
+ * current container). Validate-phase vetoes stop the chain at the first
+ * vetoing slot; postExecute/postReport run for every slot that survived.
+ *
+ * Both-ids rule (ADR-228 D6): a slot may consult more than one action id
+ * (specific id first — e.g. removing consults `if.action.removing` then
+ * `if.action.taking` on the item). One physical operation can therefore
+ * fire hooks under two ids; a trait should register its interceptor under
+ * exactly one of them to avoid double-mutation.
+ */
+export interface EntitySlotSpec {
+    /**
+     * Slot identity — stable, human-readable, unique within the descriptor
+     * (e.g. 'directObject', 'container', 'item', 'weapon', 'door', 'source',
+     * 'destination'). Used in docs, diagnostics, and tests.
+     */
+    id: string;
+    /**
+     * Action ids to consult on this slot's entity, in consultation order
+     * (specific id before delegated id per D6).
+     */
+    actionIds: string[];
+    /**
+     * Resolve this slot's entity from the command. Return `undefined` when
+     * the slot is not present in this particular command (e.g. no indirect
+     * object) — the slot is then skipped, never an error.
+     *
+     * Implicit-entity slots resolve here too (going's source/destination
+     * rooms, exiting's current container) — resolution is not limited to
+     * parsed command objects.
+     */
+    resolve(context: ActionContext): IFEntity | undefined;
+    /**
+     * Optional seed for the slot's per-consultation sharedData, applied at
+     * resolve time. Used for symmetric cross-entity context (ADR-228 D3
+     * sub-ruling: the item-side hook in putting/inserting receives the
+     * container id, mirroring how the container's hook receives the item id).
+     *
+     * @param context - The action context.
+     * @param entity - This slot's resolved entity.
+     * @param multiObjectItem - In a multi-object per-item resolution (D4),
+     *   the item currently being processed — so a shared slot (e.g. the
+     *   container in "put all in case") can seed per-item context like the
+     *   item id. Undefined for single-object commands and for the item slot
+     *   itself (where `entity` IS the item).
+     */
+    seedData?(context: ActionContext, entity: IFEntity, multiObjectItem?: IFEntity): Record<string, unknown>;
+}
+/**
+ * Rare, explicit special contracts (ADR-228 D7.3). A contract changes the
+ * engine's standard hook semantics for the action and MUST be declared
+ * here — never encoded as a comment or an ad-hoc branch in the action.
+ */
+export interface LifecycleContracts {
+    /**
+     * attacking only: when a combatant target's interceptor implements
+     * postExecute, that hook REPLACES the action's standard combat
+     * resolution instead of running after it. The action reads this flag to
+     * decide whether to run its core execute logic; the engine still runs
+     * the hook itself normally.
+     */
+    postExecuteReplacesCore?: boolean;
+}
+/**
+ * An action's declarative interceptor surface (ADR-228 D0-B).
+ *
+ * Supplied by the action to the lifecycle engine at each phase boundary.
+ * Descriptors are static per action (module-level constants) — anything
+ * command-dependent lives in slot `resolve`/`seedData` functions.
+ */
+export interface ActionLifecycleDescriptor {
+    /**
+     * The action's primary id (e.g. `IFActions.TAKING`). Used for
+     * diagnostics and the D5 registry derivation.
+     */
+    actionId: string;
+    /**
+     * Entity slots in the published consultation order (D3-B): direct
+     * object → indirect/instrument → implicit entities.
+     */
+    slots: EntitySlotSpec[];
+    /** Rare special contracts (D7.3). Omit unless the ADR names one. */
+    contracts?: LifecycleContracts;
+}
+```
+
+### actions/lifecycle/lifecycle-engine
+
+```typescript
+/**
+ * Interceptor lifecycle engine (ADR-228).
+ *
+ * The single implementation of the ADR-118 interceptor lifecycle. Actions
+ * declare their interceptor surface as an `ActionLifecycleDescriptor` and
+ * call the engine at their four phase boundaries; the engine owns the
+ * rulings exactly once:
+ *
+ * - D1 — veto-only guards: a validate hook acts only when it returns
+ *   `{valid: false}`; any other result (including `{valid: true}`) falls
+ *   through. No hook can skip standard validation or later consultations.
+ *   (The explicit force-allow marker is a reserved, unimplemented
+ *   extension — see ADR-228 D1.)
+ * - D2 — structured onBlocked: `{ override?, emit? }` applied against the
+ *   standard blocked event, which always survives.
+ * - D3 — all command entities consulted in the descriptor's published
+ *   slot order, each consultation with its own sharedData; first veto
+ *   stops the validate chain; postExecute/postReport run for every
+ *   consultation once the action proceeds.
+ * - Override arbitration: at most one consultation may return an
+ *   `override` per report/blocked application — a second is a hard error,
+ *   mirroring ADR-106's "multiple game.message reactions" rule.
+ *
+ * Multi-object commands (D4) run one lifecycle per item via
+ * `multi-object-lifecycle.ts`, built on the same primitives.
+ *
+ * Public interface: `resolveLifecycle`, `getLifecycleState`,
+ * `runPreValidate`, `runPostValidate`, `runPostExecute`, `runPostReport`,
+ * `runOnBlocked`, `LifecycleState`, `ResolvedConsultation`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ */
+import { ISemanticEvent } from '@sharpee/core';
+import { IFEntity, InterceptorSharedData } from '@sharpee/world-model';
+import type { ActionInterceptor } from '@sharpee/world-model';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
+import { ActionLifecycleDescriptor } from './descriptor.js';
+/**
+ * One resolved (entity, actionId) interceptor consultation.
+ *
+ * A slot that consults two action ids (D6 both-ids) yields up to two
+ * consultations; each has its own `data` (D3 sharedData isolation).
+ */
+export interface ResolvedConsultation {
+    /** The descriptor slot this consultation came from. */
+    slotId: string;
+    /** The action id the interceptor was resolved under. */
+    actionId: string;
+    /** The entity whose trait declared the interceptor. */
+    entity: IFEntity;
+    /** The resolved interceptor. */
+    interceptor: ActionInterceptor;
+    /** Per-consultation shared data, isolated from other consultations. */
+    data: InterceptorSharedData;
+}
+/**
+ * The command's resolved lifecycle: the descriptor plus every
+ * consultation found for the command's entities, in consultation order.
+ */
+export interface LifecycleState {
+    descriptor: ActionLifecycleDescriptor;
+    consultations: ResolvedConsultation[];
+}
+/**
+ * Options for `resolveLifecycle`.
+ */
+export interface ResolveLifecycleOptions {
+    /**
+     * Substitute a specific entity for one slot instead of calling its
+     * `resolve` — used by the multi-object helper (D4) to bind each
+     * expanded item to the item slot. The resulting state is NOT stored in
+     * sharedData (per-item states live in the multi-object results).
+     */
+    slotOverride?: {
+        slotId: string;
+        entity: IFEntity;
+    };
+}
+/**
+ * Resolve an action's interceptor consultations for the current command.
+ *
+ * Iterates the descriptor's slots in published order (D3-B); for each
+ * slot that resolves to an entity, consults the world's interceptor
+ * registry under each of the slot's action ids (D6 order). Every match
+ * becomes a `ResolvedConsultation` with fresh sharedData (seeded via the
+ * slot's `seedData`, if any).
+ *
+ * Stores the state in `context.sharedData` (unless `slotOverride` is
+ * used) so later phases can fetch it with `getLifecycleState`.
+ *
+ * @param context - The action context.
+ * @param descriptor - The action's declared interceptor surface.
+ * @param options - See `ResolveLifecycleOptions`.
+ * @returns The resolved lifecycle state (possibly with zero consultations).
+ */
+export declare function resolveLifecycle(context: ActionContext, descriptor: ActionLifecycleDescriptor, options?: ResolveLifecycleOptions): LifecycleState;
+/**
+ * Fetch the lifecycle state stored by `resolveLifecycle` for this command.
+ *
+ * @param context - The action context.
+ * @returns The state, or `undefined` if `resolveLifecycle` has not run.
+ */
+export declare function getLifecycleState(context: ActionContext): LifecycleState | undefined;
+/**
+ * Resolve the message id for a blocked action (ADR-231 D1) — the ONE
+ * place the qualification convention lives.
+ *
+ * Interceptor-originated errors (and helper-produced cross-action keys)
+ * carry `errorQualified: true` and pass through untouched; an action's
+ * own validation errors are qualified as `<action.id>.<error>` exactly
+ * as before. `blocked()` implementations call this instead of building
+ * ids by hand; key shape (dots, hyphens) is NOT the discriminator —
+ * provenance is.
+ *
+ * @param context - The action context (supplies the action id).
+ * @param result - The failed validation result carrying the error key.
+ * @returns The message id to emit from `blocked()`.
+ */
+export declare function blockedMessageId(context: ActionContext, result: ValidationResult): string;
+/**
+ * Run every consultation's `preValidate` hook in order (D3-B).
+ *
+ * First veto wins: returns that veto as a `ValidationResult` and stops
+ * consulting. Returns `null` when no hook vetoes (the action continues
+ * with standard validation — D1: hooks cannot approve, only object).
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ */
+export declare function runPreValidate(context: ActionContext, state: LifecycleState): ValidationResult | null;
+/**
+ * Run every consultation's `postValidate` hook in order (D3-B).
+ *
+ * Canonical placement (ADR-228): after ALL standard validation has
+ * passed. First veto wins; returns `null` when no hook vetoes.
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ */
+export declare function runPostValidate(context: ActionContext, state: LifecycleState): ValidationResult | null;
+/**
+ * Run every consultation's `postExecute` hook in order (D3-B: all
+ * consultations survived validation once the action executed).
+ *
+ * Note the `postExecuteReplacesCore` contract (D7.3) governs whether the
+ * ACTION runs its own core logic — the engine always runs the hooks
+ * themselves normally.
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ */
+export declare function runPostExecute(context: ActionContext, state: LifecycleState): void;
+/**
+ * Run every consultation's `postReport` hook and apply the results to the
+ * action's events.
+ *
+ * At most ONE consultation may return an `override` — a second is a hard
+ * error (throws), mirroring the `InterceptorReportResult` contract's
+ * ADR-106 rule. `emit` effects append in consultation order.
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ * @param events - The action's events array; mutated in place.
+ * @param primaryEventType - The event type an `override` targets.
+ * @param searchFrom - Index in `events` where this report began — override
+ *   targeting searches from here so per-item applications (D4) land on
+ *   the item's own event, not an earlier item's.
+ */
+export declare function runPostReport(context: ActionContext, state: LifecycleState, events: ISemanticEvent[], primaryEventType: string, searchFrom?: number): void;
+/**
+ * Run every consultation's `onBlocked` hook and apply the results to the
+ * action's blocked events (D2: the standard blocked event always
+ * survives; `override` swaps its message, `emit` appends).
+ *
+ * All resolved consultations are notified — including ones the validate
+ * chain never reached — matching the D3 author model ("a clause on any
+ * entity involved in the command fires"). At most one `override` (hard
+ * error otherwise).
+ *
+ * @param context - The action context.
+ * @param state - The resolved lifecycle state.
+ * @param events - The blocked events array (standard blocked event
+ *   already pushed); mutated in place.
+ * @param blockedEventType - The standard blocked event's type.
+ * @param error - The validation error code the action was blocked with.
+ * @param searchFrom - Index in `events` where this item's blocked report
+ *   began (D4 per-item targeting).
+ */
+export declare function runOnBlocked(context: ActionContext, state: LifecycleState, events: ISemanticEvent[], blockedEventType: string, error: string, searchFrom?: number): void;
+```
+
+### actions/lifecycle/multi-object-lifecycle
+
+```typescript
+/**
+ * Multi-object interceptor lifecycle (ADR-228 D4).
+ *
+ * Runs the FULL interceptor lifecycle per expanded item of a multi-object
+ * command ("take all", "put all in case"): resolve → preValidate →
+ * standard per-item validation → postValidate per item; postExecute /
+ * postReport per successful item; onBlocked per failed item. Actions
+ * supply only their standard per-item logic as callbacks — the hook
+ * plumbing lives here exactly once, so the bypass class the ADR-118 audit
+ * found (putting/dropping multi paths skipping all five hooks; taking
+ * skipping onBlocked) cannot silently recur.
+ *
+ * Aggregated output is preserved: the action's report callbacks push
+ * their own events; the engine applies each item's hook results against
+ * that item's own events via `searchFrom` targeting.
+ *
+ * Public interface: `runMultiObjectValidate`, `runMultiObjectExecute`,
+ * `runMultiObjectReport`, `getMultiObjectLifecycle`,
+ * `MultiObjectItemState`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ */
+import { ISemanticEvent } from '@sharpee/core';
+import { IFEntity } from '@sharpee/world-model';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
+import { ActionLifecycleDescriptor } from './descriptor.js';
+import { LifecycleState } from './lifecycle-engine.js';
+/**
+ * One item's lifecycle through a multi-object command.
+ *
+ * `itemData` is the action's per-item scratch space (previous location,
+ * implicit-removal flags, ...) — the analogue of single-object
+ * sharedData, isolated per item.
+ */
+export interface MultiObjectItemState {
+    entity: IFEntity;
+    /** True when the item passed hooks + standard validation. */
+    success: boolean;
+    /** Validation error code when `success` is false. */
+    error?: string;
+    /**
+     * True when `error` is already a fully-qualified message id
+     * (interceptor-originated — ADR-231 D1); `blockedMessageId` must not
+     * prefix it.
+     */
+    errorQualified?: boolean;
+    /** Error params when `success` is false. */
+    errorParams?: Record<string, unknown>;
+    /** The item's resolved interceptor consultations (own sharedData each). */
+    state: LifecycleState;
+    /** Action-owned per-item scratch data. */
+    itemData: Record<string, unknown>;
+}
+/**
+ * Validate every expanded item through its full lifecycle (D4).
+ *
+ * Per item, in order: resolve consultations (the descriptor's
+ * `multiObjectSlotId`-designated slot binds to the item) → preValidate
+ * hooks (veto fails the item) → `validateItem` (standard validation) →
+ * postValidate hooks (veto fails the item). A failed item never blocks
+ * the others — per-item success/failure is recorded for the execute and
+ * report phases.
+ *
+ * Stores the resulting array in `context.sharedData` and returns it.
+ *
+ * @param context - The action context.
+ * @param descriptor - The action's declared interceptor surface. Its slot
+ *   with id `multiObjectSlotId` is bound to each item in turn.
+ * @param multiObjectSlotId - Id of the slot that carries each expanded
+ *   item (usually the direct-object slot).
+ * @param items - The expanded entities of the multi-object command.
+ * @param validateItem - The action's standard single-item validation.
+ * @returns Per-item lifecycle states, in `items` order.
+ */
+export declare function runMultiObjectValidate(context: ActionContext, descriptor: ActionLifecycleDescriptor, multiObjectSlotId: string, items: IFEntity[], validateItem: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>) => ValidationResult): MultiObjectItemState[];
+/**
+ * Fetch the per-item states stored by `runMultiObjectValidate`.
+ *
+ * @param context - The action context.
+ * @returns The item states, or `undefined` if the command was not
+ *   validated as a multi-object command.
+ */
+export declare function getMultiObjectLifecycle(context: ActionContext): MultiObjectItemState[] | undefined;
+/**
+ * Execute every successful item: the action's `executeItem`, then that
+ * item's postExecute hooks (D4 — hooks fire per item, so e.g. a trophy
+ * case's postExecute awards score for EVERY deposited treasure).
+ *
+ * @param context - The action context.
+ * @param itemStates - The states from `runMultiObjectValidate`.
+ * @param executeItem - The action's standard single-item mutation.
+ */
+export declare function runMultiObjectExecute(context: ActionContext, itemStates: MultiObjectItemState[], executeItem: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>) => void): void;
+/**
+ * Report every item: successes via `reportSuccess` + postReport hooks,
+ * failures via `reportBlocked` + onBlocked hooks (D4 closes the audit's
+ * take-all-loses-onBlocked gap).
+ *
+ * Each item's hook results are applied with `searchFrom` set to the index
+ * where that item's events began, so overrides land on the item's own
+ * event even though all items share one events array (aggregated output).
+ *
+ * @param context - The action context.
+ * @param itemStates - The states from `runMultiObjectValidate`.
+ * @param events - The action's events array; mutated in place.
+ * @param primaryEventType - Event type a success `override` targets.
+ * @param blockedEventType - Event type a blocked `override` targets.
+ * @param reportSuccess - Pushes the item's standard success event(s).
+ * @param reportBlocked - Pushes the item's standard blocked event. Receives
+ *   the item's failure as a `ValidationResult` (error + errorQualified +
+ *   params) so it can resolve the message id via `blockedMessageId`.
+ */
+export declare function runMultiObjectReport(context: ActionContext, itemStates: MultiObjectItemState[], events: ISemanticEvent[], primaryEventType: string, blockedEventType: string, reportSuccess: (context: ActionContext, item: IFEntity, itemData: Record<string, unknown>, events: ISemanticEvent[]) => void, reportBlocked: (context: ActionContext, item: IFEntity, result: ValidationResult, events: ISemanticEvent[]) => void): void;
+```
+
+### actions/lifecycle/registry
+
+```typescript
+/**
+ * Wired-action registry (ADR-228 D5).
+ *
+ * The descriptor table: every standard action's `ActionLifecycleDescriptor`,
+ * collected in one place, plus the set of interceptor-consulting action ids
+ * derived mechanically from it. The table IS the source of truth — an action
+ * is "wired" iff its descriptor appears here, and the id set is never
+ * hand-maintained. Consumers (the Chord story-loader's load-time fail-fast,
+ * tooling, tests) read the derived set to decide whether an interceptor
+ * registered under a given action id will ever be consulted.
+ *
+ * Public interface: `actionLifecycleDescriptors`,
+ * `interceptorConsultingActionIds`.
+ * Owner: stdlib standard-action infrastructure (ADR-228).
+ *
+ * NOTE: this module is deliberately NOT exported from `./index.ts` (the
+ * lifecycle barrel) — actions import that barrel, and this module imports
+ * the actions, so routing it through the barrel would create an import
+ * cycle. It is exported from the actions barrel (`../index.ts`) instead.
+ */
+import { ActionLifecycleDescriptor } from './descriptor.js';
+/**
+ * The descriptor table: all 38 entity-keyed standard actions (33 per
+ * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
+ * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17).
+ * Structural exemptions
+ * (no entity to key on: about, waiting, looking, … and the full-delegation
+ * capability actions lowering/raising) are absent by design — see ADR-228
+ * Context.
+ */
+export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[];
+/**
+ * Every action id under which some wired action consults interceptors —
+ * the union of all descriptors' slot actionIds (mechanically derived; the
+ * both-ids delegation seams of ADR-228 D6 and implicit-entity ids like
+ * `if.action.entering_room` fall out of the slots, not a hand-kept list).
+ * An interceptor registered under an id NOT in this set will never fire.
+ */
+export declare const interceptorConsultingActionIds: ReadonlySet<string>;
+```
+
 ### actions/standard
 
 ```typescript
@@ -1159,62 +1657,67 @@ export type IFActionType = typeof IFActions[keyof typeof IFActions];
  * These are the core actions that most IF games will use.
  * Each action is a pure function that validates conditions and returns events.
  */
-export { takingAction } from './taking';
-export type { TakenEventData, TakingErrorData } from './taking/taking-events';
-export * from './dropping';
-export * from './examining';
-export * from './opening';
-export * from './closing/closing';
-export * from './going';
-export * from './looking';
-export * from './inventory';
-export * from './waiting';
-export * from './sleeping';
-export * from './scoring';
-export * from './help';
-export * from './about';
-export * from './version';
-export * from './locking';
-export * from './unlocking';
-export * from './switching_on';
-export * from './switching_off';
-export * from './entering';
-export * from './exiting';
-export * from './climbing';
-export * from './searching';
-export * from './listening';
-export * from './smelling';
-export * from './touching';
-export * from './putting';
-export * from './inserting';
-export * from './reading';
-export { removingAction } from './removing';
-export type { RemovingEventMap } from './removing/removing-events';
-export * from './giving';
-export * from './showing';
-export { throwingAction } from './throwing';
-export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events';
-export * from './pushing';
-export * from './pulling';
-export * from './lowering';
-export * from './raising';
-export { wearingAction } from './wearing';
-export { takingOffAction } from './taking_off';
-export type { WornEventData, ImplicitTakenEventData } from './wearing/wearing-events';
-export type { RemovedEventData as TakenOffEventData } from './taking_off/taking-off-events';
-export * from './eating';
-export * from './drinking';
-export * from './talking';
-export * from './attacking';
-export * from './saving';
-export * from './restoring';
-export * from './quitting';
-export * from './restarting';
-export * from './undoing';
-export * from './again';
-export * from './hiding';
-import { TraceAction } from '../author';
-export declare const standardActions: (import("..").Action | TraceAction)[];
+export { takingAction } from './taking/index.js';
+export type { TakenEventData, TakingErrorData } from './taking/taking-events.js';
+export * from './dropping/index.js';
+export * from './examining/index.js';
+export * from './opening/index.js';
+export * from './closing/closing.js';
+export * from './going/index.js';
+export * from './looking/index.js';
+export * from './inventory/index.js';
+export * from './waiting/index.js';
+export * from './sleeping/index.js';
+export * from './scoring/index.js';
+export * from './help/index.js';
+export * from './about/index.js';
+export * from './version/index.js';
+export * from './locking/index.js';
+export * from './cutting/index.js';
+export * from './turning/index.js';
+export * from './asking/index.js';
+export * from './telling/index.js';
+export * from './digging/index.js';
+export * from './unlocking/index.js';
+export * from './switching_on/index.js';
+export * from './switching_off/index.js';
+export * from './entering/index.js';
+export * from './exiting/index.js';
+export * from './climbing/index.js';
+export * from './searching/index.js';
+export * from './listening/index.js';
+export * from './smelling/index.js';
+export * from './touching/index.js';
+export * from './putting/index.js';
+export * from './inserting/index.js';
+export * from './reading/index.js';
+export { removingAction } from './removing/index.js';
+export type { RemovingEventMap } from './removing/removing-events.js';
+export * from './giving/index.js';
+export * from './showing/index.js';
+export { throwingAction } from './throwing/index.js';
+export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events.js';
+export * from './pushing/index.js';
+export * from './pulling/index.js';
+export * from './lowering/index.js';
+export * from './raising/index.js';
+export { wearingAction } from './wearing/index.js';
+export { takingOffAction } from './taking_off/index.js';
+export type { WornEventData, ImplicitTakenEventData } from './wearing/wearing-events.js';
+export type { RemovedEventData as TakenOffEventData } from './taking_off/taking-off-events.js';
+export * from './eating/index.js';
+export * from './drinking/index.js';
+export * from './talking/index.js';
+export * from './attacking/index.js';
+export * from './saving/index.js';
+export * from './restoring/index.js';
+export * from './quitting/index.js';
+export * from './restarting/index.js';
+export * from './undoing/index.js';
+export * from './again/index.js';
+export * from './hiding/index.js';
+import { TraceAction } from '../author/index.js';
+export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```
 
 ### actions/author/trace
@@ -1234,9 +1737,9 @@ export declare const standardActions: (import("..").Action | TraceAction)[];
  *   trace system on/off - Control system event tracing
  *   trace all on/off - Control all tracing
  */
-import { ActionContext } from '../enhanced-types';
-import { MetaAction } from '../meta-action';
-import { ValidationResult } from '../enhanced-types';
+import { ActionContext } from '../enhanced-types.js';
+import { MetaAction } from '../meta-action.js';
+import { ValidationResult } from '../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 export declare class TraceAction extends MetaAction {
     id: string;
@@ -1420,40 +1923,40 @@ export declare function createMovementData(from: IFEntity, to: IFEntity): {
  * @see ADR-082 for the design rationale
  */
 import type { EntityId } from '@sharpee/core';
-export type { TakenEventData, TakingErrorData } from '../actions/standard/taking/taking-events';
-export type { DroppedEventData, DroppingErrorData } from '../actions/standard/dropping/dropping-events';
-export type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events';
-export type { ExaminedEventData, ExaminingErrorData } from '../actions/standard/examining/examining-events';
-export type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData, GoingErrorData } from '../actions/standard/going/going-events';
-export type { OpenedEventData, RevealedEventData, ExitRevealedEventData, OpeningErrorData } from '../actions/standard/opening/opening-events';
-export type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events';
-export type { LockedEventData, LockingErrorData } from '../actions/standard/locking/locking-events';
-export type { UnlockedEventData, UnlockingErrorData } from '../actions/standard/unlocking/unlocking-events';
-export type { WornEventData, WearingErrorData } from '../actions/standard/wearing/wearing-events';
-export type { RemovedEventData as TakingOffRemovedEventData, TakingOffErrorData } from '../actions/standard/taking_off/taking-off-events';
-export type { EnteredEventData, EnteringErrorData } from '../actions/standard/entering/entering-events';
-export type { ExitedEventData, ExitingErrorData } from '../actions/standard/exiting/exiting-events';
-export type { SwitchedOnEventData, SwitchingOnErrorData } from '../actions/standard/switching_on/switching_on-events';
-export type { SwitchedOffEventData, SwitchingOffErrorData } from '../actions/standard/switching_off/switching_off-events';
-export type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events';
-export type { InventoryEventData, InventoryItem } from '../actions/standard/inventory/inventory-events';
-import type { TakenEventData } from '../actions/standard/taking/taking-events';
-import type { DroppedEventData } from '../actions/standard/dropping/dropping-events';
-import type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events';
-import type { ExaminedEventData } from '../actions/standard/examining/examining-events';
-import type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData } from '../actions/standard/going/going-events';
-import type { OpenedEventData, RevealedEventData, ExitRevealedEventData } from '../actions/standard/opening/opening-events';
-import type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events';
-import type { LockedEventData } from '../actions/standard/locking/locking-events';
-import type { UnlockedEventData } from '../actions/standard/unlocking/unlocking-events';
-import type { WornEventData } from '../actions/standard/wearing/wearing-events';
-import type { RemovedEventData as TakingOffRemovedData } from '../actions/standard/taking_off/taking-off-events';
-import type { EnteredEventData } from '../actions/standard/entering/entering-events';
-import type { ExitedEventData } from '../actions/standard/exiting/exiting-events';
-import type { SwitchedOnEventData } from '../actions/standard/switching_on/switching_on-events';
-import type { SwitchedOffEventData } from '../actions/standard/switching_off/switching_off-events';
-import type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events';
-import type { InventoryEventData } from '../actions/standard/inventory/inventory-events';
+export type { TakenEventData, TakingErrorData } from '../actions/standard/taking/taking-events.js';
+export type { DroppedEventData, DroppingErrorData } from '../actions/standard/dropping/dropping-events.js';
+export type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events.js';
+export type { ExaminedEventData, ExaminingErrorData } from '../actions/standard/examining/examining-events.js';
+export type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData, GoingErrorData } from '../actions/standard/going/going-events.js';
+export type { OpenedEventData, RevealedEventData, ExitRevealedEventData, OpeningErrorData } from '../actions/standard/opening/opening-events.js';
+export type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events.js';
+export type { LockedEventData, LockingErrorData } from '../actions/standard/locking/locking-events.js';
+export type { UnlockedEventData, UnlockingErrorData } from '../actions/standard/unlocking/unlocking-events.js';
+export type { WornEventData, WearingErrorData } from '../actions/standard/wearing/wearing-events.js';
+export type { RemovedEventData as TakingOffRemovedEventData, TakingOffErrorData } from '../actions/standard/taking_off/taking-off-events.js';
+export type { EnteredEventData, EnteringErrorData } from '../actions/standard/entering/entering-events.js';
+export type { ExitedEventData, ExitingErrorData } from '../actions/standard/exiting/exiting-events.js';
+export type { SwitchedOnEventData, SwitchingOnErrorData } from '../actions/standard/switching_on/switching_on-events.js';
+export type { SwitchedOffEventData, SwitchingOffErrorData } from '../actions/standard/switching_off/switching_off-events.js';
+export type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events.js';
+export type { InventoryEventData, InventoryItem } from '../actions/standard/inventory/inventory-events.js';
+import type { TakenEventData } from '../actions/standard/taking/taking-events.js';
+import type { DroppedEventData } from '../actions/standard/dropping/dropping-events.js';
+import type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events.js';
+import type { ExaminedEventData } from '../actions/standard/examining/examining-events.js';
+import type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData } from '../actions/standard/going/going-events.js';
+import type { OpenedEventData, RevealedEventData, ExitRevealedEventData } from '../actions/standard/opening/opening-events.js';
+import type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events.js';
+import type { LockedEventData } from '../actions/standard/locking/locking-events.js';
+import type { UnlockedEventData } from '../actions/standard/unlocking/unlocking-events.js';
+import type { WornEventData } from '../actions/standard/wearing/wearing-events.js';
+import type { RemovedEventData as TakingOffRemovedData } from '../actions/standard/taking_off/taking-off-events.js';
+import type { EnteredEventData } from '../actions/standard/entering/entering-events.js';
+import type { ExitedEventData } from '../actions/standard/exiting/exiting-events.js';
+import type { SwitchedOnEventData } from '../actions/standard/switching_on/switching_on-events.js';
+import type { SwitchedOffEventData } from '../actions/standard/switching_off/switching_off-events.js';
+import type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events.js';
+import type { InventoryEventData } from '../actions/standard/inventory/inventory-events.js';
 /**
  * Standard success event data for actions
  */
@@ -1534,9 +2037,9 @@ export {};
  */
 import type { ISystemEvent, IGenericEventSource, Result } from '@sharpee/core';
 import type { IParsedCommand, INounPhrase, IValidatedObjectReference, IValidationError, WorldModel } from '@sharpee/world-model';
-import type { ValidatedCommand } from './types';
-import { ActionRegistry } from '../actions/registry';
-import { ScopeResolver, ScopeLevel } from '../scope/types';
+import type { ValidatedCommand } from './types.js';
+import { ActionRegistry } from '../actions/registry.js';
+import { ScopeResolver, ScopeLevel } from '../scope/types.js';
 /**
  * Action metadata interface for declaring requirements
  */
@@ -1546,6 +2049,15 @@ export interface ActionMetadata {
     directObjectScope?: ScopeLevel;
     indirectObjectScope?: ScopeLevel;
     validPrepositions?: string[];
+    /**
+     * Disambiguation preference (platform-issue-sweep Phase 6/10): when an
+     * ambiguity ties and EXACTLY ONE candidate sits at this scope level, it
+     * auto-resolves. Lets an action widen its resolution scope (so its own
+     * refusal speaks for out-of-scope targets — e.g. dropping resolves
+     * VISIBLE) without losing the classic preference ("drop book" with a
+     * carried black book and a guidebook on the floor means the carried one).
+     */
+    preferredScope?: ScopeLevel;
 }
 /**
  * Slot types that can have entity selections
@@ -1591,6 +2103,8 @@ export declare class CommandValidator implements CommandValidator {
     private systemEvents?;
     /** Current action ID being validated (for disambiguation scoring) */
     private currentActionId?;
+    /** The current action's preferredScope, staged for resolveAmbiguity. */
+    private currentPreferredScope?;
     constructor(world: WorldModel, actionRegistry: ActionRegistry, scopeResolver?: ScopeResolver);
     /**
      * Set system event source for debug events
@@ -1601,33 +2115,74 @@ export declare class CommandValidator implements CommandValidator {
      */
     private resolveEntity;
     /**
-     * Find candidate entities by name, type, or synonym for a given search term.
-     * Returns deduplicated results.
+     * Resolve a topic's text against VISIBLE scope, quietly (ADR-231 D4).
+     *
+     * Entity-first with text fallback: reuses the D3 tiered matcher, but a
+     * topic is NEVER an entity slot — no ENTITY_NOT_FOUND, no scope
+     * rejection, no disambiguation prompt. Exactly one dominant in-scope
+     * match carries its EntityId (interceptors and future conversation
+     * systems key on it); a miss or a tie falls back to the verbatim text.
+     *
+     * @param text Verbatim topic text as typed (articles preserved)
+     * @returns The validated topic — `entity` set only on a unique match
      */
-    private findCandidatesByTerm;
+    private resolveTopic;
     /**
-     * Get entities by exact name match
+     * Find candidate entities the noun phrase matches at any tier
+     * (ADR-231 D3). Rooms are skipped; the player IS resolvable here: a
+     * player with an IdentityTrait ("yourself", aliases me/self/myself)
+     * must match "examine me", "x yourself", etc. (ISSUE #154).
      */
-    private getEntitiesByName;
+    private findCandidates;
     /**
-     * Get entities by type
+     * Match a noun phrase against one entity's naming surface (ADR-231 D3,
+     * PIN 2's tiered model).
+     *
+     * Tier EXACT: the query text — tried with its leading articles restored
+     * first (so proper names beginning with an article-like word survive),
+     * then as parsed, then article-stripped — equals the full name, a full
+     * alias, or the entity type, case-insensitively.
+     *
+     * Tier WORDS: EVERY query content word (stopwords dropped by
+     * `deriveNameVocabulary`) matches a word of the entity's vocabulary
+     * (name content words + alias content words + authored adjectives).
+     * Any query word matching nothing DISQUALIFIES the candidate:
+     * "x brass sword" never resolves to the brass key.
+     *
+     * @returns The tier and matched-word count, or null when neither
+     *   tier matches.
      */
-    private getEntitiesByType;
+    private matchEntityName;
     /**
-     * Get entities by synonym
+     * The entity's word-level matching vocabulary (PIN 2): name content
+     * words + alias content words + authored adjectives (per-side for walls
+     * via getEntityAdjectives). Always derived on demand from the CURRENT
+     * name — never stored — so renames can't leave stale vocabulary and
+     * Chord-loaded and TS-authored entities are uniform by construction.
      */
-    private getEntitiesBySynonym;
+    private getEntityVocabulary;
     /**
-     * Get entities by adjective (fallback for "press yellow" style commands)
-     * When no name/alias match exists, find entities where the search term is an adjective
+     * Strip leading articles ("the", "a", "an") from query text, always
+     * keeping at least one word.
      */
-    private getEntitiesByAdjective;
+    private stripLeadingArticles;
+    /**
+     * Keep only the dominant (tier, wordsMatched) group of an already-sorted
+     * scored list (PIN 2: higher tier wins; within a tier, more matched
+     * words win; only true ties reach disambiguation).
+     */
+    private dominantMatches;
     /**
      * Filter entities by scope level
      */
     private filterByScope;
     /**
-     * Score entities against a reference
+     * Score entities against a reference (ADR-231 D3 tiered model).
+     *
+     * The tier and matched-word count come from `matchEntityName` and carry
+     * PIN 2's ranking; the numeric `score` is the within-tie heuristic
+     * (modifier/visibility/inventory/author scope priority bonuses) that the
+     * normal disambiguation flow uses to break residual ties.
      */
     private scoreEntities;
     /**
@@ -1713,7 +2268,7 @@ export declare class CommandValidator implements CommandValidator {
  * Extends the core validation types with scope information
  */
 import type { IValidatedCommand as CoreValidatedCommand } from '@sharpee/world-model';
-import type { ScopeLevel, SenseType } from '../scope/types';
+import type { ScopeLevel, SenseType } from '../scope/types.js';
 /**
  * Scope information for validated objects
  */
@@ -1751,7 +2306,7 @@ export type ValidationErrorCode = 'ENTITY_NOT_FOUND' | 'ENTITY_NOT_VISIBLE' | 'E
  *
  * This provides the base vocabulary for standard IF commands
  */
-import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from '../parser';
+import { VerbVocabulary, DirectionVocabulary, SpecialVocabulary } from '../parser/index.js';
 /**
  * Standard verb vocabulary
  */
@@ -1783,12 +2338,12 @@ export declare function registerStandardVocabulary(): void;
  * These capabilities provide common game state management patterns
  * that don't naturally fit in the entity-relationship model.
  */
-import { ScoringCapabilitySchema, ScoringData } from './scoring';
-import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore';
-import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation';
-import { GameMetaCapabilitySchema, GameMetaData } from './game-meta';
-import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history';
-import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug';
+import { ScoringCapabilitySchema, ScoringData } from './scoring.js';
+import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore.js';
+import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation.js';
+import { GameMetaCapabilitySchema, GameMetaData } from './game-meta.js';
+import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history.js';
+import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug.js';
 export { ScoringCapabilitySchema, ScoringData, SaveRestoreCapabilitySchema, SaveRestoreData, SaveData, ConversationCapabilitySchema, ConversationData, ConversationStateData, GameMetaCapabilitySchema, GameMetaData, CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry, DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData };
 /**
  * Map of standard capability names to their schemas
@@ -2167,7 +2722,7 @@ export type WitnessEvent = WitnessActionEvent | WitnessMovementEvent | WitnessSo
  * evaluation during parsing).
  */
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ScopeLevel, ScopeResolver } from './types';
+import { ScopeLevel, ScopeResolver } from './types.js';
 /**
  * Standard implementation of scope resolution for IF games
  */
@@ -2265,7 +2820,7 @@ export declare function createScopeResolver(world: WorldModel): ScopeResolver;
  * and updates their knowledge accordingly.
  */
 import { WorldModel } from '@sharpee/world-model';
-import { WitnessSystem, StateChange, WitnessRecord, EntityKnowledge, ScopeResolver } from './types';
+import { WitnessSystem, StateChange, WitnessRecord, EntityKnowledge, ScopeResolver } from './types.js';
 /**
  * Standard implementation of the witness system
  */
@@ -2687,7 +3242,7 @@ export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof Charact
  */
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { NpcBehavior } from './types';
+import { NpcBehavior } from './types.js';
 /**
  * A tick phase handler that runs during NPC turn processing.
  * Registered by higher-level packages (e.g., @sharpee/character).
@@ -2784,6 +3339,14 @@ export declare class NpcService implements INpcService {
      * Handle player attacking an NPC
      */
     onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    /**
+     * Whether an NPC can take a turn: it is an NPC and — if it carries life-state —
+     * is alive and conscious. An NPC with no `HealthTrait` is active by default
+     * (opt-in life-state, ADR-226 §3). Reads health data via `HealthBehavior`, never a
+     * trait getter, so it survives `loadJSON()`. This is the single turn-eligibility
+     * source that makes the combat-kill sync bug (ADR-226 AC-2) impossible.
+     */
+    private canNpcAct;
     private getActiveNpcs;
     private getBehaviorForNpc;
     private createNpcContext;
@@ -2952,7 +3515,7 @@ export declare function enterLucidityWindow(trait: CharacterModelTrait, targetSt
  * These are generic behaviors that can be used in any IF game.
  * Game-specific behaviors (thief, cyclops, etc.) should be defined in the story.
  */
-import { NpcBehavior } from './types';
+import { NpcBehavior } from './types.js';
 /**
  * Guard behavior - stationary NPC that blocks passage and fights back
  *
@@ -3026,6 +3589,171 @@ import { IFEntity, WorldModel } from '@sharpee/world-model';
 export declare function findWieldedWeapon(entity: IFEntity, world: WorldModel): IFEntity | undefined;
 ```
 
+### death/kill-player
+
+```typescript
+/**
+ * `killPlayer` — the single Sharpee-Way player-death primitive (ADR-224 Decision 2).
+ *
+ * Every death mechanism (combat, a deadly-room verb-allowlist, a probabilistic
+ * grue, a gas interceptor, a scheduler daemon) calls this instead of hand-mutating
+ * a dead flag or hand-emitting an ad-hoc event. It applies the lethal transition to
+ * the player's `HealthTrait` (the single mortality substrate, ADR-226) and returns
+ * the canonical {@link PLAYER_DIED_EVENT}; the caller routes that event into its
+ * event stream (an action's report list, an interceptor's effects, a daemon's
+ * returned events). The engine observes the event and owns game-over routing.
+ *
+ * Public interface: `killPlayer`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+import type { IFEntity, WorldModel } from '@sharpee/world-model';
+/**
+ * Options for {@link killPlayer}.
+ */
+export interface IKillPlayerOptions {
+    /** Cause of death, recorded on the event and on `HealthTrait.causeOfDeath`. */
+    cause: string;
+    /** Optional death-text message id (language layer renders it — never English here). */
+    messageId?: string;
+    /**
+     * Terminal-death intent (ADR-224 Q-2). Defaults to `true`. A story reincarnation
+     * policy reads this off the event but the engine's decision is the player's derived
+     * life-state after dispatch, so `terminal:false` alone does not keep the game running.
+     */
+    terminal?: boolean;
+}
+/**
+ * Kill the player: apply a terminal lethal transition to the player's `HealthTrait`
+ * and produce the canonical death event.
+ *
+ * Lazily attaches a `HealthTrait` if the player has none — a death-capable game must
+ * always give `killPlayer`'s lethal transition a target (ADR-223 AC-1 caveat), so the
+ * `HealthTrait` opt-in rule does not apply to the player in such a game.
+ *
+ * Idempotent: if the player is already `dead`, this is a no-op that returns `null`, so
+ * a second call in the same turn does not re-emit the event or double-route game-over.
+ *
+ * @param world the world model (unused today; kept for signature stability and future scope resolution)
+ * @param player the player entity to kill
+ * @param opts cause, optional message id, terminal intent (default `true`)
+ * @returns the canonical `if.event.player.died` event, or `null` if the player was already dead
+ */
+export declare function killPlayer(world: WorldModel, player: IFEntity, opts: IKillPlayerOptions): ISemanticEvent | null;
+```
+
+### death/player-death-events
+
+```typescript
+/**
+ * Canonical player-death event — the single wire shape for ADR-224.
+ *
+ * One typed event, `if.event.player.died`, that both the emitter (`killPlayer`,
+ * this module) and the consumers (the stdlib `death` channel and the engine's
+ * game-over routing) import from here. Defining the type string and payload once,
+ * imported by both sides, is the co-located wire-type discipline (DEVARCH rule 8b):
+ * a change to the payload compiles — or fails to compile — every side in the same
+ * commit, so the four-way event-name drift ADR-224 catalogued cannot recur.
+ *
+ * The engine (`@sharpee/engine`) depends on stdlib, not the reverse, so this is the
+ * correct home: the lower layer owns the vocabulary, the runtime consumes it.
+ *
+ * Public interface: `PLAYER_DIED_EVENT`, `IPlayerDiedPayload`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+/**
+ * The canonical death event type (ADR-224 Q-3). Lives in the platform
+ * `if.event.*` namespace because death is not combat-specific — combat is one
+ * `cause` among falls, grue, and gas. Retires the pre-ADR-224 split across
+ * `combat.player_died`, `if.event.death` (player case), and the bare `player.died`.
+ */
+export declare const PLAYER_DIED_EVENT: "if.event.player.died";
+/**
+ * Payload of a {@link PLAYER_DIED_EVENT}. Carried on the event's `data` field.
+ */
+export interface IPlayerDiedPayload {
+    /** What killed the player: `'combat'`, `'gas'`, `'grue'`, `'fall'`, etc. Also recorded on the player's `HealthTrait.causeOfDeath`. */
+    cause: string;
+    /**
+     * Terminal-death intent (ADR-224 Q-2). `true` means the engine routes to
+     * `game.lost` unless a story policy vetoes first. The engine's final word is
+     * the player's derived life-state after dispatch, not this flag (see the
+     * routing contract); the flag is the story policy's signal.
+     */
+    terminal: boolean;
+    /** Optional message id for the death text (rendered by the language layer, never an English string here — ADR-158). */
+    messageId?: string;
+}
+```
+
+### death/probabilistic-death
+
+```typescript
+/**
+ * Seeded probabilistic-death helper (ADR-224 Decision 3).
+ *
+ * A thin, intention-revealing wrapper over the scheduler's seeded RNG so a
+ * probabilistic hazard (the grue: a move in the dark is lethal only some of the
+ * time) is replay-deterministic under a fixed seed. Centralising the roll here is
+ * also the enforcement point for the project RNG policy: probabilistic death uses
+ * the seeded RNG exclusively — `Math.random()` is never acceptable (a seeded roll
+ * is what makes AC-4 reproducible and what save/restore relies on).
+ *
+ * Public interface: `rollLethal`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+import type { SeededRandom } from '@sharpee/core';
+/**
+ * Whether a probabilistic hazard is lethal this time.
+ *
+ * @param probability chance of death in `[0, 1]` (e.g. `0.75` = the grue's 75% kill)
+ * @param rng the engine's seeded RNG — the sole randomness source (never `Math.random()`)
+ * @returns `true` with probability `probability`, deterministically for a given seed/sequence
+ */
+export declare function rollLethal(probability: number, rng: SeededRandom): boolean;
+```
+
+### death/deadly-room-transformer
+
+```typescript
+/**
+ * Deadly-room command transformer (ADR-224 Decision 3).
+ *
+ * Runs after parse / before validate: while the player stands in a room carrying
+ * `DeadlyRoomTrait`, a verb outside the room's safe allowlist is redirected to the
+ * generic {@link DEADLY_ROOM_DEATH_ACTION_ID} action (whose `report()` calls
+ * `killPlayer`). This is the seam MDL's Aragain Falls needs — "every verb but LOOK
+ * is fatal here" catches objectless verbs (WAIT, INVENTORY) an ADR-208 action
+ * interceptor could never see, because interceptors resolve on a direct object.
+ *
+ * The engine auto-registers this transformer (like a standard plugin), injecting
+ * its seeded RNG for the probabilistic (`chance`) variant. The transformer is a
+ * plain `(parsed, world) => parsed` function so stdlib need not import the engine's
+ * `ParsedCommandTransformer` type — that would invert the dependency direction.
+ *
+ * Public interface: `createDeadlyRoomTransformer`, `DEADLY_ROOM_DEATH_ACTION_ID`,
+ * `DEADLY_ROOM_CAUSE_KEY`, `DEADLY_ROOM_MESSAGE_KEY`.
+ * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
+ */
+import type { SeededRandom } from '@sharpee/core';
+import type { IParsedCommand, WorldModel } from '@sharpee/world-model';
+/** The generic platform action a lethal deadly-room verb is redirected to. */
+export declare const DEADLY_ROOM_DEATH_ACTION_ID = "if.action.deadly_room_death";
+/** `extras` key carrying the death cause from the transformer to the death action. */
+export declare const DEADLY_ROOM_CAUSE_KEY = "deadlyRoomCause";
+/** `extras` key carrying the optional death message id. */
+export declare const DEADLY_ROOM_MESSAGE_KEY = "deadlyRoomMessageId";
+/**
+ * Build the deadly-room transformer. Returns the parsed command unchanged unless
+ * the player's room has a `DeadlyRoomTrait` and the command's verb is lethal there,
+ * in which case it redirects to the generic death action, threading the cause and
+ * message id through `extras`.
+ *
+ * @param rng the engine's seeded RNG, used only for the probabilistic (`chance`) variant
+ */
+export declare function createDeadlyRoomTransformer(rng?: SeededRandom): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand;
+```
+
 ### chains
 
 ```typescript
@@ -3069,8 +3797,8 @@ import { WorldModel } from '@sharpee/world-model';
  * @param world - The WorldModel to register chains with
  */
 export declare function registerStandardChains(world: WorldModel): void;
-export { OPENED_REVEALED_CHAIN_KEY } from './opened-revealed';
-export { createOpenedRevealedChain } from './opened-revealed';
+export { OPENED_REVEALED_CHAIN_KEY } from './opened-revealed.js';
+export { createOpenedRevealedChain } from './opened-revealed.js';
 ```
 
 ### inference/implicit-inference
@@ -3087,7 +3815,7 @@ export { createOpenedRevealedChain } from './opened-revealed';
  * Explicit nouns ("read mailbox") should fail with the normal error.
  */
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { Action } from '../actions/enhanced-types';
+import { Action } from '../actions/enhanced-types.js';
 /**
  * Result of attempting implicit inference
  */
@@ -3297,10 +4025,13 @@ import type { IOChannel, MainEntry } from '@sharpee/if-domain';
  *
  * - `game.won` / `game.lost` — engine emits these from `engine.stop()`
  *   via `createGameWonEvent` / `createGameLostEvent` (core/events).
- * - `combat.player_died` — emitted by the `@sharpee/ext-basic-combat`
- *   extension. Stories not using basic-combat that want a death
- *   channel emission must either fire `combat.player_died` themselves
- *   or override `deathChannel` with their own closure.
+ * - `if.event.player.died` — the canonical player-death event (ADR-224),
+ *   emitted by `killPlayer` from any death mechanism (combat, hazard,
+ *   grue, gas). Re-pointed here from the pre-ADR-224 `combat.player_died`
+ *   (a hard cutover — no alias; that name and its `@sharpee/ext-basic-combat`
+ *   producer are retired). The `PLAYER_DIED` constant is the canonical
+ *   `PLAYER_DIED_EVENT` imported from the `death` module so emitter and
+ *   channel never drift (one wire shape).
  * - `game.score_changed` — no production emitter today. The channel
  *   listens for it, but it stays silent until a story or extension
  *   adopts the convention. Listed for forward-compatibility.
@@ -3308,7 +4039,7 @@ import type { IOChannel, MainEntry } from '@sharpee/if-domain';
  * Each event carries its message in `event.data.message` (string).
  */
 export declare const STANDARD_CHANNEL_EVENTS: {
-    readonly PLAYER_DIED: "combat.player_died";
+    readonly PLAYER_DIED: "if.event.player.died";
     readonly GAME_WON: "game.won";
     readonly GAME_LOST: "game.lost";
     readonly SCORE_CHANGED: "game.score_changed";
@@ -3394,11 +4125,11 @@ export declare const infoChannel: IOChannel<StoryInfoPayload>;
  */
 export declare const ifidChannel: IOChannel<string>;
 /**
- * `death` — event-mode death notification. Closure looks for an
- * `if.event.player_died` event in this turn's events and projects its
- * `data.message` field. Stories that want different death handling
- * register a replacement `IOChannel` with id `'death'` (last-write-wins
- * per ADR-163 §6).
+ * `death` — event-mode death notification. Closure looks for the
+ * canonical `if.event.player.died` event (ADR-224) in this turn's events
+ * and projects its `data.message` field. Stories that want different death
+ * handling register a replacement `IOChannel` with id `'death'`
+ * (last-write-wins per ADR-163 §6).
  */
 export declare const deathChannel: IOChannel<string>;
 /**
@@ -3735,19 +4466,20 @@ export declare const MAIN_KEYS: ReadonlySet<string>;
  *
  * All state changes go through events - no direct mutations
  */
-export * from './actions';
-export * from './events';
-export * from './parser';
-export * from './validation';
-export * from './vocabulary';
-export * from './capabilities';
-export * from './query-handlers';
-export * from './scope';
-export * from './services';
-export * from './npc';
-export * from './combat';
-export * from './chains';
-export * from './inference';
-export * from './utils';
-export * from './channels';
+export * from './actions/index.js';
+export * from './events/index.js';
+export * from './parser/index.js';
+export * from './validation/index.js';
+export * from './vocabulary/index.js';
+export * from './capabilities/index.js';
+export * from './query-handlers/index.js';
+export * from './scope/index.js';
+export * from './services/index.js';
+export * from './npc/index.js';
+export * from './combat/index.js';
+export * from './death/index.js';
+export * from './chains/index.js';
+export * from './inference/index.js';
+export * from './utils/index.js';
+export * from './channels/index.js';
 ```

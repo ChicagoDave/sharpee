@@ -28,8 +28,8 @@ import type {
   BrowserSaveEnvelope,
   SaveContext,
   SaveSlotMeta,
-} from '../types';
-import { AUTOSAVE_SLOT } from '../types';
+} from '../types.js';
+import { AUTOSAVE_SLOT } from '../types.js';
 
 export interface SaveManagerConfig {
   /** Storage key prefix (e.g., "dungeo-") */
@@ -59,6 +59,15 @@ export class SaveManager {
     // One-shot cleanup of pre-v4 saves. Runs every page load — idempotent
     // once the storage is clean. See {@link cleanupObsoleteSaves}.
     this.cleanupObsoleteSaves();
+  }
+
+  /**
+   * Re-point this manager at a new world (ADR-248 restart reboot).
+   * The client reuses its managers across reboots; only the world
+   * reference changes.
+   */
+  setWorld(world: WorldModel): void {
+    this.world = world;
   }
 
   /**

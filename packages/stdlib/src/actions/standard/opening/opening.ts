@@ -11,32 +11,68 @@
  * 4. blocked: Generate error events when validation fails
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult, ActionInterceptor, InterceptorSharedData, applyInterceptorReportResult } from '@sharpee/world-model';
-import { buildEventData } from '../../data-builder-types';
-import { IFActions } from '../../constants';
-import { OpenedEventData, ExitRevealedEventData } from './opening-events';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { OpeningSharedData } from './opening-types';
-import { OpeningMessages } from './opening-messages';
-import { nounPhraseFor } from '../../../utils';
+import { TraitType, OpenableBehavior, LockableBehavior, IOpenResult } from '@sharpee/world-model';
+import { buildEventData } from '../../data-builder-types.js';
+import { IFActions } from '../../constants.js';
+import { OpenedEventData, ExitRevealedEventData } from './opening-events.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { OpeningMessages } from './opening-messages.js';
+import { validateToolRequirements } from '../tool-shared.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
 
 /**
- * Extended shared data for opening action with interceptor support.
+ * Interceptor surface (ADR-228, ADR-230 D3b): the opened target and any
+ * explicit tool are the consultable entities of an OPEN command, published
+ * order target → tool (D3-B). Explicit tools only — mirrors locking's key
+ * slot (ADR-229 R2).
  */
-interface OpeningInternalSharedData extends OpeningSharedData {
-  interceptor?: ActionInterceptor;
-  interceptorData?: InterceptorSharedData;
-}
-
-function getOpeningSharedData(context: ActionContext): OpeningInternalSharedData {
-  return context.sharedData as OpeningInternalSharedData;
-}
+export const openingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.OPENING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.OPENING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => {
+        const tool = ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity;
+        return {
+          targetId: entity.id,
+          targetName: entity.name,
+          toolId: tool?.id,
+          toolName: tool?.name
+        };
+      }
+    },
+    {
+      id: 'tool',
+      actionIds: [IFActions.OPENING],
+      resolve: (ctx) => ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        toolId: entity.id,
+        toolName: entity.name,
+        targetId: ctx.command.directObject?.entity?.id,
+        targetName: ctx.command.directObject?.entity?.name
+      })
+    }
+  ]
+};
 
 // Import our data builder
-import { openedDataConfig } from './opening-data';
+import { openedDataConfig } from './opening-data.js';
 
 export const openingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.OPENING,
@@ -64,7 +100,10 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     'opened',
     'revealing',
     'its_empty',
-    'cant_reach'
+    'cant_reach',
+    'no_tool',
+    'tool_not_held',
+    'wrong_tool'
   ],
   metadata: {
     requiresDirectObject: true,
@@ -81,27 +120,9 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: OpeningMessages.NO_TARGET };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.OPENING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-
-    // Store for later phases (blocked needs access to onBlocked)
-    const sharedData = getOpeningSharedData(context);
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return {
-          valid: false,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, openingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
@@ -127,6 +148,21 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // Author-configured tool requirement (ADR-230 D3b): a no-requirement
+    // openable ignores an offered tool; a requirement refuses on
+    // no_tool/tool_not_held/wrong_tool. Explicit tools only.
+    const tool = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
+    const toolValidation = validateToolRequirements(
+      context,
+      noun,
+      tool,
+      OpenableBehavior.requiresTool(noun),
+      (toolId) => OpenableBehavior.canOpenWith(noun, toolId)
+    );
+    if (toolValidation) {
+      return toolValidation;
+    }
+
     // Check lock status using behavior
     if (noun.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(noun)) {
       return {
@@ -136,13 +172,9 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // === POST-VALIDATE HOOK ===
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return { valid: false, error: result.error, params: result.params };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -159,17 +191,11 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Delegate to behavior for opening
     const result: IOpenResult = OpenableBehavior.open(noun);
 
-    // Store result for report phase using typed shared data
-    const sharedData: OpeningSharedData = {
-      openResult: result
-    };
+    // Store result for report phase
     context.sharedData.openResult = result;
 
-    // === POST-EXECUTE HOOK ===
-    const opening = getOpeningSharedData(context);
-    if (opening.interceptor?.postExecute) {
-      opening.interceptor.postExecute(noun, context.world, context.player.id, opening.interceptorData!);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -218,16 +244,8 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Note: if.event.revealed is emitted by the opened event handler in stdlib
     // This ensures revealed events fire regardless of what action opened the container
 
-    // === POST-REPORT HOOK ===
-    const opening = getOpeningSharedData(context);
-    if (opening.interceptor?.postReport) {
-      const hookResult = opening.interceptor.postReport(
-        noun, context.world, context.player.id, opening.interceptorData!
-      );
-      if (hookResult) {
-        applyInterceptorReportResult(events, 'if.event.opened', hookResult, context);
-      }
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.opened');
 
     return events;
   },
@@ -240,22 +258,9 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
 
-    // === ON-BLOCKED HOOK ===
-    const sharedData = getOpeningSharedData(context);
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && noun && result.error) {
-      const customEffects = interceptor.onBlocked(noun, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
+    const messageId = blockedMessageId(context, result);
 
-    const error = result.error || '';
-    // If error already contains dots (e.g., story interceptor ID), use as-is; otherwise prefix with action ID
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
-
-    return [context.event('if.event.open_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.open_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId,
       params: {
@@ -267,5 +272,12 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.open_blocked', result.error);
+    }
+
+    return events;
   }
 };

@@ -1,1 +1,1 @@
-export * from './moveableSceneryTrait';
+export * from './moveableSceneryTrait.js';

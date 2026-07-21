@@ -8,24 +8,53 @@
  * 1. validate: Target must have ConcealmentTrait with matching position
  * 2. execute: Add ConcealedStateTrait to player
  * 3. report: Emit if.event.player_concealed
- * 4. blocked: Emit error message (nothing_to_hide, cant_hide_there, already_hidden)
+ * 4. blocked: Emit error message (nothing_to_hide, cant_hide_there_<position>, already_hidden)
  *
- * Public interface: hidingAction.
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `hidingLifecycle` — no hand-rolled hook plumbing.
+ *
+ * Public interface: hidingAction, hidingLifecycle.
  * Owner context: @sharpee/stdlib / actions / hiding
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ConcealmentTrait,
   ConcealmentPosition,
   ConcealedStateTrait,
   isConcealed,
 } from '@sharpee/world-model';
-import { PlayerConcealedEventData } from './hiding-events';
+import { PlayerConcealedEventData } from './hiding-events.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): the hiding spot is the only consultable
+ * entity of a HIDE command.
+ */
+export const hidingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.HIDING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.HIDING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between phases.
@@ -50,7 +79,10 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
     'on',
     'inside',
     'nothing_to_hide',
-    'cant_hide_there',
+    'cant_hide_there_behind',
+    'cant_hide_there_under',
+    'cant_hide_there_on',
+    'cant_hide_there_inside',
     'already_hidden',
   ],
 
@@ -75,13 +107,17 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'nothing_to_hide' };
     }
 
+    const state = resolveLifecycle(context, hidingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Target must have ConcealmentTrait
     const concealmentTrait = target.get(ConcealmentTrait.type) as ConcealmentTrait | undefined;
     if (!concealmentTrait) {
       return {
         valid: false,
         error: 'nothing_to_hide',
-        params: { target: target.name },
+        params: { target: nounPhraseFor(target) },
       };
     }
 
@@ -91,14 +127,20 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'nothing_to_hide' };
     }
 
-    // Check position is supported
+    // Check position is supported. The refusal is per-position (the preposition
+    // lives in the lang-en-us template, never as a bare-string param); the
+    // target binds as a NounPhrase so the assembler owns its article.
     if (!concealmentTrait.supportsPosition(position)) {
       return {
         valid: false,
-        error: 'cant_hide_there',
-        params: { target: target.name, position },
+        error: `cant_hide_there_${position}`,
+        params: { target: nounPhraseFor(target), position },
       };
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     // Store data for execute/report phases
     const sharedData = getHidingSharedData(context);
@@ -120,15 +162,25 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       position: sharedData.position!,
       quality: sharedData.quality!,
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('if.event.hide_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.hide_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       reason: result.error,
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.hide_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -137,7 +189,7 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
     // The success templates bind {the target} (ADR-158) — pass the noun
     // phrase nested under params (ADR-206); domain fields stay top-level.
     const targetEntity = context.world.getEntity(sharedData.targetId!);
-    return [context.event('if.event.player_concealed', {
+    const events: ISemanticEvent[] = [context.event('if.event.player_concealed', {
       messageId: `${context.action.id}.${sharedData.position}`,
       params: {
         target: targetEntity ? nounPhraseFor(targetEntity) : { name: sharedData.targetName },
@@ -148,5 +200,10 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       position: sharedData.position,
       quality: sharedData.quality,
     } as PlayerConcealedEventData & { messageId: string; targetName: string; params: Record<string, unknown> })];
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.player_concealed');
+
+    return events;
   },
 };

@@ -1,0 +1,50 @@
+title: Red Cake Pool Dissolve
+story: dungeo
+description: ADR-227 Phase 2 - throwing the red-icing cake (RDICE "Evaporate") in the Pool Room dissolves the pool and reveals the spices via the CakeThrowingInterceptor
+
+---
+
+# Setup - light + teleport to Tea Room
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+> gdt
+[OK: contains "GDT ready"]
+
+> ah Tea Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Take the red cake, shrink via eat-me cake, go to Pool Room
+> take red cake
+[OK: contains "Taken"]
+
+> eat eat-me cake
+[OK: contains "smaller"]
+
+> east
+[OK: contains "Pool Room"]
+
+# Spices hidden under the pool before the throw
+> take tin
+[OK: contains "see"]
+
+# Throw the red cake at the pool -- dissolves it, reveals spices
+> throw red cake at pool
+[OK: contains "dissolve"]
+[EVENT: false, type="if.event.player.died"]
+
+# Spices now takeable
+> take tin
+[OK: contains "Taken"]

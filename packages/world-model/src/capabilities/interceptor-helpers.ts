@@ -5,8 +5,8 @@
  * Mirrors capability-helpers.ts pattern but for interceptors.
  */
 
-import { ITrait, ITraitConstructor } from '../traits/trait';
-import { IFEntity } from '../entities';
+import { ITrait, ITraitConstructor } from '../traits/trait.js';
+import { IFEntity } from '../entities/index.js';
 
 /**
  * Find a trait on the entity that has an interceptor registered for the given action.

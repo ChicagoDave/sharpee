@@ -13,7 +13,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { platformRanges } from './init';
+import { platformRanges } from './init.js';
 
 /**
  * Write `<projectDir>/src/version.ts` with the project's version, the platform line,

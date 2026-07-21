@@ -310,8 +310,10 @@ describe('Parser Grammar Engine Integration', () => {
       
       expect(result.success).toBe(true);
       if (result.success) {
-        // The structure only contains text strings, not rich objects
-        expect(result.value.structure.directObject?.text).toBe('the golden sword');
+        // ADR-231 D3: the leading article is split into `articles` and
+        // stripped from the noun-phrase text
+        expect(result.value.structure.directObject?.text).toBe('golden sword');
+        expect(result.value.structure.directObject?.articles).toEqual(['the']);
       }
     });
     
@@ -343,7 +345,8 @@ describe('Parser Grammar Engine Integration', () => {
       
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.action).toBe('if.action.examining_carefully');
+        // ADR-230 D3a: the adverb form maps to plain examining
+        expect(result.value.action).toBe('if.action.examining');
         expect(result.value.structure.directObject?.text).toBe('painting');
       }
     });
@@ -387,86 +390,57 @@ describe('Parser Grammar Engine Integration', () => {
     });
   });
   
-  describe('Quoted String Patterns', () => {
-    it('should parse "say hello"', () => {
+  describe('Quoted String Patterns (story grammar)', () => {
+    // ADR-230 Phase 6: the core saying/writing/shouting/whispering rules
+    // were deleted (no actions behind them). Quoted-string parsing remains
+    // a story-grammar mechanism (e.g. dungeo's SAY) — pin it there.
+    const SAY_ACTION = 'story.action.say';
+    const WHISPER_ACTION = 'story.action.whisper';
+
+    beforeEach(() => {
+      const story = parser.getStoryGrammar();
+      story.define('say :message').mapsTo(SAY_ACTION).withPriority(150).build();
+      story.define('say :message to :recipient').mapsTo(SAY_ACTION).withPriority(155).build();
+      story.define('whisper :message to :recipient').mapsTo(WHISPER_ACTION).withPriority(150).build();
+    });
+
+    it('should parse a quoted string into the message slot', () => {
       const result = parser.parse('say "hello"');
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.action).toBe('if.action.saying');
+        expect(result.value.action).toBe(SAY_ACTION);
         expect(result.value.structure.directObject?.text).toBe('"hello"');
       }
     });
-    
-    it('should parse "say hello world to guard"', () => {
-      const result = parser.parse('say "hello world" to guard');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.saying_to');
-        expect(result.value.structure.directObject?.text).toBe('"hello world"');
-        expect(result.value.structure.indirectObject?.text).toBe('guard');
-      }
-    });
-    
-    it('should parse "write message"', () => {
-      const result = parser.parse('write "Important message"');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.writing');
-        expect(result.value.structure.directObject?.text).toBe('"Important message"');
-      }
-    });
-    
-    it('should parse "write message on paper"', () => {
-      const result = parser.parse('write "Secret note" on paper');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.writing_on');
-        expect(result.value.structure.directObject?.text).toBe('"Secret note"');
-        expect(result.value.structure.indirectObject?.text).toBe('paper');
-      }
-    });
-    
-    it('should parse "shout message"', () => {
-      const result = parser.parse('shout "Help!"');
-      
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.action).toBe('if.action.shouting');
-        expect(result.value.structure.directObject?.text).toBe('"Help!"');
-      }
-    });
-    
-    it('should parse "whisper message to recipient"', () => {
+
+    it('should parse a quoted string with a recipient', () => {
       const result = parser.parse('whisper "psst" to thief');
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.action).toBe('if.action.whispering');
+        expect(result.value.action).toBe(WHISPER_ACTION);
         expect(result.value.structure.directObject?.text).toBe('"psst"');
         expect(result.value.structure.indirectObject?.text).toBe('thief');
       }
     });
-    
+
     it('should handle empty quoted strings', () => {
       const result = parser.parse('say ""');
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.action).toBe('if.action.saying');
+        expect(result.value.action).toBe(SAY_ACTION);
         expect(result.value.structure.directObject?.text).toBe('""');
       }
     });
-    
+
     it('should handle quoted strings with special characters', () => {
       const result = parser.parse('say "Hello, world! How are you?"');
-      
+
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.value.action).toBe('if.action.saying');
+        expect(result.value.action).toBe(SAY_ACTION);
         expect(result.value.structure.directObject?.text).toBe('"Hello, world! How are you?"');
       }
     });
@@ -476,4 +450,28 @@ describe('Parser Grammar Engine Integration', () => {
   // actions like if.action.taking_with, if.action.cutting, if.action.digging
   // and extras.tool/extras.weapon don't exist yet. Revisit when instrument
   // parsing is implemented.
+});
+describe('Talking core patterns (ADR-229 R3)', () => {
+  let parser: EnglishParser;
+
+  beforeEach(() => {
+    vocabularyRegistry.clear();
+    parser = new EnglishParser(new EnglishLanguageProvider());
+  });
+
+  it.each([
+    'talk to guard',
+    'talk with guard',
+    'speak to guard',
+    'speak with guard',
+    'chat with guard',
+    'converse with guard'
+  ])('parses "%s" to if.action.talking', (input) => {
+    const result = parser.parse(input);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.value.action).toBe('if.action.talking');
+      expect(result.value.structure.directObject?.text).toBe('guard');
+    }
+  });
 });

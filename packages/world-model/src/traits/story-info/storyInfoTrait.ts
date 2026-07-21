@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/story-info/storyInfoTrait.ts
 
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 
 /**
  * StoryInfoTrait stores metadata about the game on a system entity.

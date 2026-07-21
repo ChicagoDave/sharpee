@@ -199,11 +199,10 @@ describe('traits-basic.story (design.md §2.2/§3.2 + ownership package)', () =>
     expect(snoozing.scores).toMatchObject([{ name: 'napped', worth: 1 }]);
   });
 
-  it('parses action and behavior hatches', () => {
+  it('parses the action hatch (`define behavior` removed by ADR-235 D2)', () => {
     const hatches = decls.filter((d): d is DefineHatch => d.kind === 'define-hatch');
     expect(hatches).toMatchObject([
       { hatchKind: 'action', name: 'juggling', modulePath: './stunts.ts' },
-      { hatchKind: 'behavior', name: 'crowd-control', modulePath: './stunts.ts' },
     ]);
   });
 

@@ -1,0 +1,122 @@
+## Containers and supporters, with limits
+
+```chord
+create the travelling trunk
+  aka trunk
+  a container with max items 3
+  openable
+  in the Study
+
+create the mantel
+  aka mantelpiece, shelf
+  scenery, a supporter with capacity 2
+  in the Entrance Hall
+```
+
+`in` and `on` placement lines put things inside/atop other things at
+load; capacities are config on the kind. Note the article in placement and
+naming lines — `the grey overcoat`, not a possessive like `Verity's
+overcoat` (a leading possessive parses as a trait adjective).
+
+## The declarative capability family — headline pattern
+
+This is the family to internalize. Wherever an action needs a specific
+instrument, you declare the capability *with the instrument named on it* —
+no key tables, no handlers:
+
+```chord
+create the cellar door
+  a door, lockable with the tarnished key
+
+create the nailed crate
+  a container
+  openable with the crowbar
+
+create the kipper tin
+  a container
+  openable with the tin opener
+
+create the fuse
+  cuttable with the garden shears
+
+create the deed box
+  a container
+  openable with the silver locket
+```
+
+`open the crate with the crowbar`, `cut the fuse with the shears`,
+`unlock the door with the key` — all of it works from these single lines,
+and each refuses legibly without its instrument. If you find yourself
+wishing for `unlockable by the key`: you already have it, spelled
+`lockable with the tarnished key`.
+
+Fernhill chains the family into its opening puzzle: the crowbar (cellar)
+opens the crate, the crate holds the tin opener, the opener opens the
+kipper tin, and the kipper matters in the next chapter.
+
+## Concealment and searching
+
+```chord
+create the tarnished key
+  aka key
+  concealed
+  on the doormat
+```
+
+A `concealed` item is invisible until the player SEARCHes its holder —
+the doormat gives up the cellar key, the grey overcoat's pocket gives up
+the winding key. The study curtains show the companion pattern, a place to
+hide yourself: `hiding-spot with position behind`.
+
+## Readables, two ways
+
+```chord
+create the half-burned letter
+  readable with text "…arrangements with the county bank, where the deed may rest secure until…"
+
+create the diary page
+  readable
+  states: folded, read
+
+  on reading it
+    change it to read
+    phrase diary-text
+      "K. says the greenhouse will take the worst of the frost…"
+  end on
+```
+
+Short texts fit on the config form; anything that should *do* something
+when read gets an `on reading it` clause — the diary flips its own state
+(the gated-detail chapter builds on `read`) and speaks its text. The
+half-burned letter, incidentally, is a red herring: it points to the bank,
+and it is wrong.
+
+## Wearables
+
+```chord
+create the grey overcoat
+  aka overcoat, coat, verity's overcoat
+  wearable, a container
+```
+
+`wear the overcoat` works; the pocket (it's also a container) carries the
+concealed winding key.
+
+## Scenery discipline
+
+Every noun the prose mentions exists — lime trees, the dry fountain, the
+copper pans, the wall niche, the scorched dome. Each is two lines and a
+description:
+
+```chord
+create the fountain
+  aka basin
+  scenery
+  in the Fountain Court
+
+  A dry stone basin drifted with last summer's leaves.
+```
+
+`scenery` means fixed in place and quietly present. This is craft, not a
+feature: a player who examines what you wrote about should never hear
+"You can't see any such thing."

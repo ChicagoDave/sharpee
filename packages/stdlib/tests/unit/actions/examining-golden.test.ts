@@ -80,7 +80,9 @@ describe('examiningAction (Golden Pattern)', () => {
 
       expectEvent(events, 'if.event.examined', {
         blocked: true,
-        messageId: 'if.action.examining.scope.not_known',
+        // ADR-231 D1: scope.* keys are a shared registered namespace,
+        // fully-qualified at the producer — never action-prefixed.
+        messageId: 'scope.not_known',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'red ball' })
         })
@@ -101,7 +103,29 @@ describe('examiningAction (Golden Pattern)', () => {
         targetId: player.id,
         targetName: 'yourself',
         self: true,
-        messageId: 'if.action.examining.examined_self'
+        // Descriptionless test player: the self fallback applies (the
+        // described-player path is covered two tests down).
+        messageId: 'if.action.examining.default_description_self'
+      });
+    });
+
+    test('should fall back to default_description_self for a descriptionless player', () => {
+      // EXAMINE ME with no authored player description no longer renders
+      // blank: the self fallback selects default_description_self ("As
+      // good-looking as ever." — David's wording ruling 2026-07-20).
+      const { world, player } = setupBasicWorld();
+
+      const command = createCommand(IFActions.EXAMINING, {
+        entity: player
+      });
+      const context = createRealTestContext(examiningAction, world, command);
+
+      const events = executeWithValidation(examiningAction, context);
+
+      expectEvent(events, 'if.event.examined', {
+        targetId: player.id,
+        self: true,
+        messageId: 'if.action.examining.default_description_self'
       });
     });
 
@@ -133,7 +157,10 @@ describe('examiningAction (Golden Pattern)', () => {
   });
 
   describe('Basic Examining', () => {
-    test('should examine simple object', () => {
+    test('should fall back to default_description for a descriptionless object (Phase 3a)', () => {
+      // A simple object with no authored description no longer renders blank:
+      // the generalized fallback selects default_description ("The red ball
+      // is just a red ball.") with the item bound as a NounPhrase.
       const { world, player, object } = TestData.withObject('red ball');
 
       const command = createCommand(IFActions.EXAMINING, {
@@ -146,8 +173,10 @@ describe('examiningAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.examined', {
         targetId: object.id,
         targetName: 'red ball',
-        messageId: expect.stringContaining('examined'),
-        params: { target: expect.objectContaining({ name: 'red ball' }) }
+        messageId: expect.stringContaining('default_description'),
+        params: expect.objectContaining({
+          item: expect.objectContaining({ name: 'red ball', kind: 'noun' })
+        })
       });
     });
 
@@ -189,6 +218,7 @@ describe('examiningAction (Golden Pattern)', () => {
         type: TraitType.OPENABLE,
         isOpen: true
       });
+      box.add({ type: TraitType.IDENTITY, name: 'wooden box', description: 'A sturdy wooden box.' });
       world.moveEntity(box.id, room.id);
 
       const coin = world.createEntity('gold coin', 'object');
@@ -222,6 +252,10 @@ describe('examiningAction (Golden Pattern)', () => {
 
     test('should examine closed container', () => {
       const { world, player, object } = TestData.withObject('treasure chest', {
+        [TraitType.IDENTITY]: {
+          type: TraitType.IDENTITY,
+          description: 'An iron-bound treasure chest.'
+        },
         [TraitType.CONTAINER]: { type: TraitType.CONTAINER },
         [TraitType.OPENABLE]: {
           type: TraitType.OPENABLE,
@@ -254,6 +288,10 @@ describe('examiningAction (Golden Pattern)', () => {
 
     test('should handle container without openable trait as always open', () => {
       const { world, player, object } = TestData.withObject('wicker basket', {
+        [TraitType.IDENTITY]: {
+          type: TraitType.IDENTITY,
+          description: 'A loosely woven wicker basket.'
+        },
         [TraitType.CONTAINER]: { type: TraitType.CONTAINER }
       });
 
@@ -286,6 +324,7 @@ describe('examiningAction (Golden Pattern)', () => {
 
       const table = world.createEntity('oak table', 'supporter');
       table.add({ type: TraitType.SUPPORTER });
+      table.add({ type: TraitType.IDENTITY, name: 'oak table', description: 'A heavy oak table.' });
       world.moveEntity(table.id, room.id);
 
       const book = world.createEntity('old book', 'object');
@@ -312,6 +351,10 @@ describe('examiningAction (Golden Pattern)', () => {
   describe('Special Object Types', () => {
     test('should examine switchable device', () => {
       const { world, player, object } = TestData.withObject('desk lamp', {
+        [TraitType.IDENTITY]: {
+          type: TraitType.IDENTITY,
+          description: 'An adjustable desk lamp.'
+        },
         [TraitType.SWITCHABLE]: {
           type: TraitType.SWITCHABLE,
           isOn: true
@@ -337,6 +380,10 @@ describe('examiningAction (Golden Pattern)', () => {
 
     test('should examine readable object', () => {
       const { world, player, object } = TestData.withObject('crumpled note', {
+        [TraitType.IDENTITY]: {
+          type: TraitType.IDENTITY,
+          description: 'A crumpled note with hurried handwriting.'
+        },
         [TraitType.READABLE]: {
           type: TraitType.READABLE,
           text: 'Meet me at midnight by the old oak tree.'
@@ -362,6 +409,10 @@ describe('examiningAction (Golden Pattern)', () => {
 
     test('should examine wearable object', () => {
       const { world, player, object } = TestData.withObject('red hat', {
+        [TraitType.IDENTITY]: {
+          type: TraitType.IDENTITY,
+          description: 'A jaunty red hat.'
+        },
         [TraitType.WEARABLE]: {
           type: TraitType.WEARABLE,
           worn: false,
@@ -388,6 +439,10 @@ describe('examiningAction (Golden Pattern)', () => {
 
     test('should examine locked door', () => {
       const { world, player, object } = TestData.withObject('oak door', {
+        [TraitType.IDENTITY]: {
+          type: TraitType.IDENTITY,
+          description: 'A solid oak door.'
+        },
         [TraitType.DOOR]: {
           type: TraitType.DOOR,
           connectsTo: 'room2'
@@ -432,6 +487,7 @@ describe('examiningAction (Golden Pattern)', () => {
       const displayCase = world.createEntity('display case', 'container');
       displayCase.add({ type: TraitType.CONTAINER });
       displayCase.add({ type: TraitType.SUPPORTER });
+      displayCase.add({ type: TraitType.IDENTITY, name: 'display case', description: 'A lit glass display case.' });
       displayCase.add({
         type: TraitType.OPENABLE,
         isOpen: true
@@ -558,6 +614,10 @@ describe('examiningAction (Golden Pattern)', () => {
 describe('Examining Action Edge Cases', () => {
   test('should handle readable object without text', () => {
     const { world, player, object } = TestData.withObject('blank book', {
+      [TraitType.IDENTITY]: {
+        type: TraitType.IDENTITY,
+        description: 'A book with nothing written in it.'
+      },
       [TraitType.READABLE]: {
         type: TraitType.READABLE
         // No text property
@@ -584,6 +644,10 @@ describe('Examining Action Edge Cases', () => {
 
   test('should handle container and supporter priority', () => {
     const { world, player, object } = TestData.withObject('writing desk', {
+      [TraitType.IDENTITY]: {
+        type: TraitType.IDENTITY,
+        description: 'A writing desk with cubbyholes.'
+      },
       [TraitType.CONTAINER]: { type: TraitType.CONTAINER },
       [TraitType.SUPPORTER]: { type: TraitType.SUPPORTER }
     });
@@ -603,6 +667,84 @@ describe('Examining Action Edge Cases', () => {
       params: expect.objectContaining({
         isOpen: true
       })
+    });
+  });
+});
+
+describe('Concealment filtering (platform-issue-sweep Phase 2)', () => {
+  // EXAMINE consults the shared visibility layer: a still-concealed item never
+  // appears in a container's/supporter's examined contents until revealed.
+  // Assertions are on the actual entity lists in the event data.
+
+  test('concealed item stays out of an open container\'s examined contents', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const box = world.createEntity('wooden box', 'container');
+    box.add({ type: TraitType.CONTAINER });
+    box.add({ type: TraitType.OPENABLE, isOpen: true });
+    world.moveEntity(box.id, room.id);
+
+    const coin = world.createEntity('gold coin', 'object');
+    world.moveEntity(coin.id, box.id);
+    const key = world.createEntity('secret key', 'object');
+    key.add({ type: TraitType.IDENTITY, name: 'secret key', concealed: true });
+    world.moveEntity(key.id, box.id);
+
+    const command = createCommand(IFActions.EXAMINING, { entity: box });
+    const context = createRealTestContext(examiningAction, world, command);
+    const events = executeWithValidation(examiningAction, context);
+
+    expectEvent(events, 'if.event.examined', {
+      isContainer: true,
+      hasContents: true,
+      contentCount: 1,
+      contents: [{ id: coin.id, name: 'gold coin' }]
+    });
+  });
+
+  test('supporter holding only a concealed item examines as empty', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const shelf = world.createEntity('dusty shelf', 'supporter');
+    shelf.add({ type: TraitType.SUPPORTER });
+    world.moveEntity(shelf.id, room.id);
+
+    const lever = world.createEntity('hidden lever', 'object');
+    lever.add({ type: TraitType.IDENTITY, name: 'hidden lever', concealed: true });
+    world.moveEntity(lever.id, shelf.id);
+
+    const command = createCommand(IFActions.EXAMINING, { entity: shelf });
+    const context = createRealTestContext(examiningAction, world, command);
+    const events = executeWithValidation(examiningAction, context);
+
+    expectEvent(events, 'if.event.examined', {
+      isSupporter: true,
+      hasContents: false,
+      contentCount: 0,
+      contents: []
+    });
+  });
+
+  test('a revealed item appears in examined contents (reveal path intact)', () => {
+    const { world, player, room } = setupBasicWorld();
+
+    const shelf = world.createEntity('dusty shelf', 'supporter');
+    shelf.add({ type: TraitType.SUPPORTER });
+    world.moveEntity(shelf.id, room.id);
+
+    const lever = world.createEntity('hidden lever', 'object');
+    lever.add({ type: TraitType.IDENTITY, name: 'hidden lever', concealed: false });
+    world.moveEntity(lever.id, shelf.id);
+
+    const command = createCommand(IFActions.EXAMINING, { entity: shelf });
+    const context = createRealTestContext(examiningAction, world, command);
+    const events = executeWithValidation(examiningAction, context);
+
+    expectEvent(events, 'if.event.examined', {
+      isSupporter: true,
+      hasContents: true,
+      contentCount: 1,
+      contents: [{ id: lever.id, name: 'hidden lever' }]
     });
   });
 });

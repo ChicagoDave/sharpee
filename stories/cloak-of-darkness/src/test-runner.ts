@@ -13,14 +13,17 @@ import { renderToString } from '@sharpee/text-service';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 // @ts-ignore - text-services types not available yet
 import { TextService } from '@sharpee/text-services';
-import { story } from './index.js';
+import { createStory } from './index.js';
 
 async function runStory() {
   console.log('=== Cloak of Darkness ===');
   console.log('A Sharpee IF demonstration');
   console.log('');
-  
+
   try {
+    // Fresh story instance per run (ADR-248 Decision 3)
+    const story = createStory();
+
     // Create world and player
     const world = new WorldModel();
     const player = world.createEntity('player', EntityType.ACTOR);

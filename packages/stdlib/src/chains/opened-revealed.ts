@@ -14,7 +14,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { IWorldModel, TraitType } from '@sharpee/world-model';
-import { RevealedEventData } from '../actions/standard/opening/opening-events';
+import { RevealedEventData } from '../actions/standard/opening/opening-events.js';
 
 /**
  * Key for this chain - allows stories to replace the stdlib behavior

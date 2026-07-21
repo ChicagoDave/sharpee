@@ -1,0 +1,36 @@
+`define condition <name>: <condition>` names a condition so you can
+reuse it by name. The name is a single hyphenated token (not a
+multi-word prose name), and the body is the ordinary condition grammar
+([§3.4](/chord/guide/behavior)).
+
+```chord
+define condition trug-in-hand: the player holds the trug
+define condition ripe-tomato: it is a tomato and it is not in the trug
+```
+
+The distinction that matters is *open* versus *closed*, and it is
+decided entirely by whether the body mentions `it`:
+
+- A **closed** condition never mentions `it`. It is a plain truth test
+  about the world — `trug-in-hand` asks whether the player holds the
+  trug, yes or no. Closed conditions go in truth positions: `while`,
+  `when`, `refuse when`, `must be` comparisons.
+- An **open** condition mentions `it`, leaving the subject free. It
+  describes a *set*: `ripe-tomato` is the criterion "any tomato not yet
+  in the trug." Open conditions go where a set is expected —
+  `any`/`no`/`each` ([§3.4](/chord/guide/behavior),
+  [§4.4](/chord/guide/flow)) and `must be any`
+  ([§3.5](/chord/guide/behavior)).
+
+```chord
+  on examining it
+    phrase go-ahead when trug-in-hand
+    phrase still-out when any ripe-tomato
+  end on
+```
+
+Using one where the other belongs is a load error, never a silent
+guess: `any` over a closed condition is
+`analysis.closed-condition-selection`, and a bare open condition in a
+truth position is `analysis.open-condition-truth`. The rule of thumb is
+"mention `it` when you mean a set, leave it out when you mean a fact."

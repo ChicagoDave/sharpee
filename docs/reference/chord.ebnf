@@ -9,7 +9,8 @@
 
    Coverage: Phase A subset + Phase B declarations + Phase C ownership
    package + the each package (E1–E3) + ADR-211/zoo-surfaces (Z1/Z4/Z5,
-   CP1'/CP3/Z3b/Z6), as of 2026-07-14.
+   CP1'/CP3/Z3b/Z6) + ADR-231 D5a (`starts <state>` initializers), as of
+   2026-07-17.
 
    Notation:
      UPPER      = token class          "quoted" = literal word
@@ -38,15 +39,94 @@ MARKER  = "{" content "}" ;                                (* inside prose text 
 LOCALE  = WORD ;                                           (* e.g. en-US *)
 
 
+(* ---- Comments (ADR-249) ------------------------------------------------ *)
+
+comment-line = "##" rest-of-line NL ;          (* column 1 — indent 0 only *)
+comment-run  = comment-line { comment-line } ; (* blank-delimited on both sides;
+                                                  file start/end count as blank.
+                                                  Legal only between top-level
+                                                  constructs; contributes nothing.
+                                                  No end-of-line comment form
+                                                  exists. Inside a construct:
+                                                  parse.comment-inside-block;
+                                                  undelimited:
+                                                  lex.comment-blank-lines. *)
+
 (* ---- Top level --------------------------------------------------------- *)
 
-story-file   = [ story-header ] { declaration } ;
+story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
 story-header = "story" STRING [ "by" STRING ] NL
-               >>> { states-line | score-line | WORD ":" rest-of-line NL } ;
+               >>> { states-line | score-line | story-on-clause | use-line
+                   | use-phrasebook-line
+                   | WORD ":" rest-of-line NL } ;
+use-line     = "use" WORD NL ;                             (* ADR-215: one trusted
+                                                              platform extension per
+                                                              line (combat,
+                                                              state-machines); admits
+                                                              the extension's manifest
+                                                              vocabulary and triggers
+                                                              its runtime registration.
+                                                              Unknown/duplicate names
+                                                              and `use` of CORE
+                                                              vocabulary (npc) are
+                                                              compile errors; top-level
+                                                              placement gets a header
+                                                              fix-it *)
+story-on-clause = on-clause ;                              (* ADR-236 D7 (ratchet R4):
+                                                              `on every turn` ONLY —
+                                                              any other clause form is
+                                                              parse.story-clause. Story-
+                                                              owned daemon: no presence
+                                                              gate, narration broadcasts,
+                                                              `it` unbound (compile error
+                                                              analysis.story-clause-it) *)
 declaration  = create | define-condition | define-phrase | define-phrases
              | define-verb | define-text
              | define-trait | define-action | define-hatch
-             | define-sequence ;
+             | define-sequence
+             | define-machine                              (* ADR-215, use-gated *)
+             | define-asset | define-channel               (* ADR-216 *)
+             | define-family-channel                       (* ADR-241 *)
+             | define-topics                               (* ADR-239 *)
+             | define-pronouns                             (* ADR-242 *)
+             | define-phrasebook | import-phrasebook ;     (* ADR-245/250 *)
+
+(* ---- Phrasebooks (ADR-245/250, 2026-07-21) ----------------------------- *)
+
+define-phrasebook   = "define" "phrasebook" WORD [ "while" condition ] NL
+                      >>> { phrasebook-entry }
+                      "end" "phrasebook" NL ;              (* entry-level `while` is
+                                                              analysis.phrasebook-entry-gate;
+                                                              keys are STORY keys only —
+                                                              dotted platform IDs are
+                                                              analysis.phrasebook-dotted-key.
+                                                              Predicate-less = the DEFAULT
+                                                              (always) book. Arbitration:
+                                                              first predicate-match in
+                                                              file-appearance order, per
+                                                              key; story define phrase /
+                                                              per-entity phrase always win. *)
+phrasebook-entry    = WORD [ "," STRATEGY | "," "verbatim" ] ":" NL
+                      >>> prose { "or" NL >>> prose } ;    (* the phrase-override entry
+                                                              grammar, book-scoped *)
+use-phrasebook-line = "use" "phrasebook" WORD [ "while" condition ] NL ;
+                                                           (* header body; stackable; the
+                                                              `phrasebook` sub-word selects
+                                                              the two-word form — plain
+                                                              one-word `use` untouched.
+                                                              Unknown name:
+                                                              analysis.unknown-phrasebook *)
+import-phrasebook   = "import" "phrasebook" STRING NL ;    (* top level; STRING ends
+                                                              ".story"; fragment holds only
+                                                              define-phrasebook blocks +
+                                                              ## comments; splices at the
+                                                              import site (= arbitration
+                                                              position). Bare import is
+                                                              reserved (parked ADR). *)
+
+(* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
+   error with a fix-it naming `define trait` + clauses or `define action
+   … from`. *)
 
 (* Removed from the top level (ownership ratchet 2026-07-11) — parse errors
    with owner-attached fix-its, so they have no productions: `when` rules,
@@ -78,19 +158,60 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
 (* `refuse`/`refuse when`/`must` inside an `after` body are parse errors;
    `after every turn` is a parse error. *)
 
+(* Event verbs (catalog EVENT_VERBS, gerund register): `entering` on rooms/
+   enterables binds to the movement event; on REGION blocks (ADR-236 D6)
+   `after entering it` / `after leaving it` bind to the region's crossing
+   events (region_entered/region_exited), fired per boundary actually
+   crossed. `leaving` (ratchet R3) exists ONLY on region blocks — a load
+   error anywhere else. Region blocks also host `on every turn` (D4):
+   presence = the player is in a member room, transitive through nesting. *)
+
 
 (* ---- create ------------------------------------------------------------ *)
 
 create       = "create" name NL >>> { create-line } ;
 create-line  = "aka" alias { "," alias } NL
+             | "pronouns" WORD NL                          (* ADR-242 D5 (ratchet H2):
+                                                              person blocks only (analyzer
+                                                              gate); a standard set
+                                                              (he|she|it|they) or a
+                                                              `define pronouns` name;
+                                                              absent = by-number fallback,
+                                                              never an injected default *)
              | states-line
              | score-line
              | composition { "," composition } NL          (* pre-blank paragraph only *)
              | placement NL
              | "wears" name NL
-             | DIRECTION "to" name NL                      (* exit *)
-             | DIRECTION "is" "blocked" [ "while" condition ] ":" WORD NL
-                                                           (* blocked exit, phrase key *)
+             | "containing" name { [ "," ] [ "and" ] name } NL
+                                                           (* region membership (ADR-236
+                                                              D2, ratchet R2): region
+                                                              blocks only (analyzer gate);
+                                                              additive across lines;
+                                                              members are rooms or nested
+                                                              regions. Placement lines on
+                                                              a region block are a load
+                                                              error *)
+             | DIRECTION "to" name [ "through" name ] NL   (* exit; `through the <door>`
+                                                              tail (ADR-234 D1, ratchet
+                                                              R2) is the ONE door
+                                                              relationship form — the
+                                                              door must be declared, the
+                                                              reverse exit is inferred
+                                                              (opposite direction), a
+                                                              mirrored far-room line is
+                                                              legal only as the exact
+                                                              mirror. `, one-way` is
+                                                              reserved, not wired (parse
+                                                              error names it). Placement
+                                                              lines on a door block are
+                                                              a load error — a door's
+                                                              location IS its room pair
+                                                              (loader places it in the
+                                                              declaring room; present at
+                                                              BOTH rooms, ADR-238) *)
+             | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
+                                                           (* blocked exit *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
              | "first" "time" NL >>> prose-paragraph       (* Z1: first-visit description;
                                                               rooms only *)
@@ -99,7 +220,7 @@ create-line  = "aka" alias { "," alias } NL
                                                               consecutive bare paragraphs
                                                               append *)
 
-phrase-override = "phrase" WORD
+phrase-override = "phrase" phrase-key
                   [ "," STRATEGY ] [ "while" condition ] ":" NL
                   variant { "or" NL variant } ;
                   (* `or` stands alone at the header's indent; repeating
@@ -113,8 +234,46 @@ phrase-override = "phrase" WORD
 composition  = [ ARTICLE ] WORD                            (* article => kind noun;
                                                               bare => trait *)
                [ "with" setting { "and" setting } ]
-               [ "while" condition ] ;                     (* conditional trait *)
-setting      = WORD { WORD } ( NUMBER | STRING | WORD ) ;  (* last token is the value *)
+               [ "while" condition ]
+             | "starts" STATE-INIT ;                       (* ADR-231 D5a initializer:
+                                                              sets the paired trait's
+                                                              initial value; pairing
+                                                              analyzer-gated. One-token
+                                                              lookahead: "starts" "in"
+                                                              stays placement; any other
+                                                              word after "starts" is a
+                                                              parse error *)
+STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
+             | "off" | "on" ;
+setting      = ARTICLE name                                (* ratchet R3 (ADR-234 D6):
+                                                              article directly after
+                                                              `with`/`and` = the
+                                                              adjective's single-entity
+                                                              value (`lockable with the
+                                                              iron key`, `cuttable with
+                                                              the knife`). The old
+                                                              `key`/`tool` keywords are
+                                                              parse errors with fix-its *)
+             | WORD { WORD }
+               ( NUMBER | STRING | WORD | name-list-value
+               | ARTICLE name ) ;
+                                                           (* last token(s) = the value.
+                                                              Keyed ARTICLE-name values
+                                                              remain for authored-trait
+                                                              NAMED data fields (`with
+                                                              food the handful of feed`)
+                                                              — the keyword is the field
+                                                              name. Extension adjectives
+                                                              (ADR-215: combatant,
+                                                              weapon, the NPC library)
+                                                              take manifest-typed
+                                                              fields — unknown keys and
+                                                              mistyped values are
+                                                              compile errors *)
+name-list-value = "[" name { "," name } "]" ;              (* ADR-215: only where a
+                                                              manifest declares a list
+                                                              field (patrol route,
+                                                              allowed-rooms, …) *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement; *)
              | "starts" "in" name ;                        (* on + bare word = on-clause *)
 DIRECTION    = "north" | "south" | "east" | "west"
@@ -125,14 +284,14 @@ DIRECTION    = "north" | "south" | "east" | "west"
 (* ---- define ------------------------------------------------------------ *)
 
 define-condition = "define" "condition" WORD ":" condition NL ;
-define-phrase    = "define" "phrase" WORD [ "," ( STRATEGY | "verbatim" ) ]
+define-phrase    = "define" "phrase" phrase-key [ "," ( STRATEGY | "verbatim" ) ]
                    [ "while" condition ] NL                (* CP1' trailing gate *)
                    variant { "or" NL variant } "end" "phrase" NL ;
                    (* verbatim: single variant, line structure + relative
                       indentation preserved; no strategies, no "or" variants *)
 variant          = prose-paragraph ;
 define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
-phrase-entry     = WORD ":" NL prose-paragraph ;           (* prose block only *)
+phrase-entry     = phrase-key ":" NL prose-paragraph ;     (* prose block only *)
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
 pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; "br" reserved *)
@@ -165,17 +324,119 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
                | must-line                                 (* D6 requirement (has colon) *)
                | score-line
-               | "refuse" "without" WORD ":" WORD NL
-               | "refuse" "when" condition ":" WORD NL
-               | "otherwise" "refuse" WORD NL              (* dispatch miss *)
+               | "refuse" "without" WORD ":" phrase-key NL
+               | "refuse" "when" condition ":" phrase-key NL
+               | "otherwise" "refuse" phrase-key NL        (* dispatch miss *)
                | "phrases" LOCALE NL >>> { phrase-entry }
                | statement ;
 pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ; (* → = cardinality *)
 
-define-hatch   = "define" ( "action" | "behavior" ) WORD "from" STRING NL ;
+define-hatch   = "define" "action" WORD "from" STRING NL ; (* `define behavior` REMOVED
+                                                              (ADR-235 D2) — parse error
+                                                              with fix-it *)
 
 define-sequence= "define" "sequence" WORD { WORD } NL
                  { sequence-step } "end" "sequence" NL ;
+
+(* ---- ADR-215 state-machine depth (`use state-machines`; spelling A) ---- *)
+
+define-machine = "define" "machine" WORD { WORD } NL
+                 >>> { "role" WORD "is" name NL
+                     | "starts" WORD NL
+                     | machine-state }
+                 "end" "machine" NL ;
+machine-state  = "state" WORD [ "," "terminal" ] NL
+                 >>> { machine-when | machine-on } ;
+machine-when   = "when" machine-trigger [ "while" condition ] ":" WORD NL ;
+machine-trigger= "event" phrase-key                        (* event trigger *)
+               | WORD name                                 (* action on a role/entity:
+                                                              `turning the winch` — a
+                                                              declared role name lowers
+                                                              to the $role binding *)
+               | WORD                                      (* bare word: a declared
+                                                              condition/story state wins,
+                                                              else an action gerund *)
+               | condition ;
+machine-on     = ( "on" "enter" | "on" "exit" ) NL
+                 >>> { statement } "end" "on" NL ;
+                                                           (* machines are story-owned:
+                                                              `it` in a body/trigger is a
+                                                              compile error *)
+
+(* ---- ADR-216 declared assets + custom channels ------------------------- *)
+
+define-asset   = "define" ( "sound" | "image" | "music" )
+                 WORD "from" STRING NL ;                   (* a DATA reference — never a
+                                                              hatch; does not set
+                                                              hasHatches *)
+
+define-family-channel                                      (* ADR-241: a named ambient
+                                                              bed / image layer; words
+                                                              beyond the implied set
+                                                              (`main` bed; background/
+                                                              main/overlay layers) must
+                                                              be declared — never-guess *)
+             = "define" ( "ambient" | "layer" ) WORD NL ;
+
+define-channel = "define" "channel" WORD NL                (* spelling A, 2026-07-18 *)
+                 >>> { "mode" ( "replace" | "append" | "event" ) NL
+                     | "gated" "by" WORD NL                (* a client capability flag *)
+                     | "from" "event" phrase-key NL
+                     | "take" WORD { "," WORD } NL }
+                 "end" "channel" NL ;
+                                                           (* a JSON data projection:
+                                                              the turn's last matching
+                                                              event, `take` fields only;
+                                                              renderers ship platform-
+                                                              side (ADR-215 registry) *)
+define-topics  = "define" "topics" "for" name NL           (* ADR-239 D3 as amended:
+                                                              the ask/tell topic table.
+                                                              One block per entity
+                                                              (analysis.duplicate-topics-
+                                                              block); person-kind owners
+                                                              only (analysis.topics-host);
+                                                              at least one row
+                                                              (parse.topics-empty) *)
+                 >>> { topic-row }
+                 "end" "topics" NL ;
+topic-row      = "about" topic-key ":" ( statement         (* one-line response *)
+                                       | NL >>> { statement } ) ;
+                                                           (* indented statement body;
+                                                              `it` = the owner; the
+                                                              phrase declare-and-emit
+                                                              prose sugar applies *)
+topic-key      = name                                      (* entity tier — matched via
+                                                              the platform's quiet
+                                                              topicEntityId resolution *)
+               | STRING { "," STRING } ;                   (* free-text tier: primary +
+                                                              declared aliases (comma
+                                                              list, David 2026-07-18).
+                                                              Lookup is normalized whole-
+                                                              topic equality — never
+                                                              fuzzy (D4). Duplicates and
+                                                              quoted-vs-entity-tier
+                                                              collisions are compile
+                                                              errors (analysis.duplicate-
+                                                              topic / analysis.topic-
+                                                              entity-collision) *)
+
+define-pronouns = "define" "pronouns" WORD NL              (* ADR-242 D7 (ratchet H3):
+                                                              a named pronoun set — five
+                                                              named case rows, order
+                                                              free, all required
+                                                              (analysis.pronoun-set-rows /
+                                                              -duplicate-row); a name
+                                                              shadowing he|she|it|they is
+                                                              analysis.pronoun-set-
+                                                              shadows. Forms are DATA
+                                                              (ir.pronounSets) — the
+                                                              loader registers them into
+                                                              the language provider *)
+                  >>> { PRONOUN-CASE WORD NL }
+                  "end" "pronouns" NL ;
+PRONOUN-CASE    = "subject" | "object" | "possessive"
+                | "possessive-pronoun" | "reflexive" ;
+
 sequence-step  = step-anchor NL >>> { statement } ;
 step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)
                | NUMBER "turns" "later"                    (* relative to previous step *)
@@ -188,7 +449,7 @@ step-anchor    = "at" "turn" NUMBER                        (* absolute from stor
    stays prose. `must not …` and `must be no <name>` are parse errors —
    prohibitions use `refuse when <condition>: <key>`. *)
 
-must-line    = must-subject "must" infinitive ":" WORD NL ;
+must-line    = must-subject "must" infinitive ":" phrase-key NL ;
 must-subject = value-expr ;
 infinitive   = "be" ( ( "a" | "an" ) WORD { WORD }         (* is-a *)
                     | "in" name                            (* is-in *)
@@ -202,10 +463,17 @@ infinitive   = "be" ( ( "a" | "an" ) WORD { WORD }         (* is-a *)
 (* ---- Statements --------------------------------------------------------- *)
 
 statement    = "refuse" phrase-key { param } NL            (* not in `after` bodies *)
-             | "refuse" "when" condition ":" WORD NL       (* prohibition; not in `after` *)
+             | "refuse" "when" condition ":" phrase-key NL (* prohibition; not in `after` *)
              | must-line                                   (* not in `after` *)
              | "phrase" phrase-key { param } [ stmt-when ] NL [ inline-prose ]
-             | "emit" WORD { WORD } [ stmt-when ] NL
+             | "emit" phrase-key { phrase-key }
+               [ "with" emit-field { "and" emit-field } ]
+               [ stmt-when ] NL                            (* ADR-216 payloaded emit:
+                                                              event segments are dotted
+                                                              keys (media.sound.play);
+                                                              keys pass verbatim into
+                                                              event.data *)
+             | media-statement                             (* ADR-216 sugar, below *)
              | "set" value-expr "to" value-expr NL
              | "change" name "to" WORD [ stmt-when ] NL    (* name may be `the story`
                                                               or any entity *)
@@ -222,6 +490,42 @@ stmt-when    = "when" condition ;                          (* statement-final su
                                                               not on set or bare refuse *)
 phrase-key   = WORD { "." WORD } ;                         (* dotted keys: zoo.pa.closing-3 *)
 param        = "with" WORD { WORD } "=" value-expr ;
+
+(* ---- ADR-216 emit payload + media sugar -------------------------------- *)
+
+emit-field   = WORD { WORD } emit-value ;                  (* key words, then the value *)
+emit-value   = NUMBER | STRING                             (* literals *)
+             | "[" [ emit-value { "," emit-value } ] "]"   (* arrays *)
+             | "{" [ emit-field { "," emit-field } ] "}"   (* nested objects *)
+             | value-expr ;                                (* world-state reads; entity
+                                                              refs → world ids;
+                                                              true/false → booleans;
+                                                              unquoted words resolve as
+                                                              words always do — plain
+                                                              strings are QUOTED *)
+
+media-statement                                            (* each lowers at compile
+                                                              onto a payloaded media.*
+                                                              emit; stmt-when composes *)
+             = "play" "sound" WORD [ stmt-when ] NL
+             | "play" "music" WORD [ "looping" ] [ stmt-when ] NL
+             | "play" "ambient" WORD [ "in" WORD ]
+               [ stmt-when ] NL                            (* plays a SOUND asset; the
+                                                              channel word names a bed —
+                                                              default `main` (ADR-241) *)
+             | "stop" "music" [ stmt-when ] NL
+             | "stop" "ambient" [ "in" WORD ]
+               [ stmt-when ] NL                            (* bare form stops the
+                                                              default bed only *)
+             | "show" "image" WORD [ "in" WORD ] [ stmt-when ] NL
+             | "hide" "image" [ stmt-when ] NL
+             | "transition" WORD [ stmt-when ] NL          (* → media.transition kind *)
+             | "clear" [ stmt-when ] NL ;
+                                                           (* asset WORDs must name a
+                                                              `define sound|image|music`
+                                                              declaration — typo-checked
+                                                              with suggestions; kind
+                                                              mismatches gate *)
 select-on    = "select" "on" value-expr NL
                >>> { "when" WORD NL >>> { statement } } "end" "select" NL ;
 select-strategy = "select" STRATEGY NL
@@ -244,6 +548,11 @@ and-expr     = unary { "and" unary } ;
 unary        = "not" unary
              | "(" condition ")"
              | "one" "chance" "in" NUMBER
+             | "client" "has" WORD                         (* ADR-216: live client
+                                                              capability flag (sound,
+                                                              split-pane, …); `client`
+                                                              reserved in subject
+                                                              position; closed flag set *)
              | ( "any" | "no" ) WORD                       (* E1/E2 quantifiers: only when
                                                               the WORD stands alone *)
              | WORD                                        (* bare => named-condition or

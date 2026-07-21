@@ -1,0 +1,28 @@
+A `use <extension>` line in the story header admits one trusted platform
+extension's vocabulary — `combat`, `state-machines` — and triggers its
+runtime registration; a `use`-only story stays pure IR. (NPC vocabulary
+is core and always on.) Each extension brings manifest-typed trait
+adjectives (`combatant with health 20 and skill 40`, the NPC library's
+`guard`/`patrol`/…), and `use state-machines` adds the `define machine …
+end machine` block. Alongside these, the media surface — `define
+sound/image/music … from "<file>"`, `play sound`, `play ambient`, `show
+image`, `define channel` data projections, and the `client has
+<capability>` condition — lets a story drive the browser client with no
+story TypeScript; text-only clients degrade cleanly. The full catalog of
+forms lives in [the grammar reference](/chord/reference/grammar).
+
+```chord
+story "Extensions" by "ref"
+  id: ext-ref
+  version: 0.0.1
+  use combat
+
+create the Guardhouse
+  a room
+
+  A low stone guardhouse.
+
+create the sentry
+  a person, combatant with health 20 and skill 40
+  in the Guardhouse
+```

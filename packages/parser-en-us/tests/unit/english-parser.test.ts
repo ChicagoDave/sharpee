@@ -277,16 +277,17 @@ describe('EnglishParser', () => {
   });
 
   describe('parse - with articles', () => {
-    test('should preserve articles in text', () => {
+    test('should split articles into the articles field (ADR-231 D3)', () => {
       const result = parser.parse('take the ball');
 
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.taking');
-        expect(result.value.structure.directObject?.text).toBe('the ball');
-        // Articles are consumed as part of the text but not separately tracked in current implementation
+        // Leading articles are tracked separately and stripped from text
+        expect(result.value.structure.directObject?.articles).toEqual(['the']);
+        expect(result.value.structure.directObject?.text).toBe('ball');
         expect(result.value.structure.directObject?.head).toBe('ball');
-        expect(result.value.structure.directObject?.candidates).toContain('the ball');
+        expect(result.value.structure.directObject?.candidates).toContain('ball');
       }
     });
 
@@ -296,8 +297,10 @@ describe('EnglishParser', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.inserting');
-        expect(result.value.structure.directObject?.text).toBe('the ball');
-        expect(result.value.structure.indirectObject?.text).toBe('the box');
+        expect(result.value.structure.directObject?.text).toBe('ball');
+        expect(result.value.structure.directObject?.articles).toEqual(['the']);
+        expect(result.value.structure.indirectObject?.text).toBe('box');
+        expect(result.value.structure.indirectObject?.articles).toEqual(['the']);
       }
     });
   });
@@ -482,7 +485,9 @@ describe('EnglishParser', () => {
         expect(result.value.action).toBe('if.action.examining');
         // 'look at' is parsed as a single verb pattern, not compound
         expect(result.value.structure.verb.text).toBe('look');
-        expect(result.value.structure.directObject?.text).toBe('the mirror');
+        // ADR-231 D3: the leading article is split off the noun phrase
+        expect(result.value.structure.directObject?.text).toBe('mirror');
+        expect(result.value.structure.directObject?.articles).toEqual(['the']);
       }
     });
 

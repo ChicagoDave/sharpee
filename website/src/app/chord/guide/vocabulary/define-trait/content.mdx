@@ -1,0 +1,60 @@
+A trait is a reusable bundle of data, states, scores, phrases, and
+behavior that entities compose with ([§2.3](/chord/guide/world)).
+`define trait <name> …
+end trait` declares one. The block below carries one of everything:
+
+```chord
+define trait feedable
+  data
+    food: entity
+    ration: optional number
+    diet: one of hay, seed, fish
+  states, reversible: hungry, content
+  score fed worth 10
+
+  phrases en-US
+    no-food:
+      You have nothing {the item} would want.
+    already-fed:
+      {capitalize the item} has had quite enough already.
+    fed:
+      The feed vanishes in seconds.
+
+  on feeding it
+    the player must have its food: no-food
+    it must be hungry: already-fed
+    change it to content
+    award fed
+    phrase fed
+  end on
+end trait
+```
+
+The parts, top to bottom:
+
+- **`data`** declares fields. Each is `<name>: <type>`, where the type
+  is `entity`, `number`, `name`, or `one of <word>, <word>, …` for a
+  fixed set. `optional` before the type makes the field omittable; `,
+  starts <value>` (not shown here) gives a default. Fields are read and
+  written with `its <field>` / `set its <field> to …`.
+- **`states`** and **`score`** are the same owner lines as everywhere
+  else ([§2.7](/chord/guide/world), [§2.8](/chord/guide/world)), here
+  owned by the trait: every entity composed with
+  `feedable` gets the `hungry`/`content` states and can award `fed`.
+- **`phrases`** is a locale block (§5.3) scoped to the trait.
+- **`on`/`after` clauses** are the trait's behavior
+  ([§3](/chord/guide/behavior)), with `it`
+  meaning the composed entity.
+
+An entity picks the trait up on a composition line, passing its data
+with `with`:
+
+```chord
+create the pygmy goats
+  aka goats
+  feedable with food the handful of feed and diet hay
+  in the Petting Zoo
+```
+
+A state name declared by two different composed traits on one entity is
+a collision (`analysis.state-collision`), caught at load time.

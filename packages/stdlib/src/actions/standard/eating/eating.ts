@@ -10,18 +10,47 @@
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
  *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `eatingLifecycle` — no hand-rolled hook plumbing.
+ *
  * Supports implicit take - "eat apple" when apple is on ground will
  * automatically take it first.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, EdibleBehavior } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { EatenEventData } from './eating-events';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { EatenEventData } from './eating-events.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): the eaten item is the only consultable
+ * entity of an EAT command.
+ */
+export const eatingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.EATING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.EATING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -89,6 +118,10 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    const state = resolveLifecycle(context, eatingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Check scope - must be able to reach the item
     const scopeCheck = context.requireScope(item, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -127,6 +160,10 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     if (!carryCheck.ok) {
       return carryCheck.error!;
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -223,6 +260,9 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     sharedData.itemName = item.name;
     sharedData.messageId = messageId;
     sharedData.eventData = eventData;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -230,15 +270,23 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
-    return [context.event('if.event.eaten', {
+
+    const events: ISemanticEvent[] = [context.event('if.event.eaten', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: { item: item ? nounPhraseFor(item) : undefined, ...result.params },
       reason: result.error,
       itemId: item?.id,
       itemName: item?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.eaten', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -261,6 +309,9 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       params: { item: item ? nounPhraseFor(item) : { name: sharedData.eventData?.itemName ?? '' } },
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.eaten');
 
     return events;
   },

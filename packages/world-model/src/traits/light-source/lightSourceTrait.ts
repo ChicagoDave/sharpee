@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/light-source/lightSourceTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * LightSource trait allows entities to provide illumination.

@@ -30,12 +30,12 @@ describe('PerceptionService', () => {
 
     // Create a lit room
     litRoom = world.createEntity('Lit Room', EntityType.ROOM);
-    litRoom.add(new RoomTrait({ isDark: false }));
+    litRoom.add(new RoomTrait({ requiresLight: false }));
     litRoom.add(new IdentityTrait({ name: 'Lit Room', description: 'A well-lit room.' }));
 
     // Create a dark room
     darkRoom = world.createEntity('Dark Room', EntityType.ROOM);
-    darkRoom.add(new RoomTrait({ isDark: true }));
+    darkRoom.add(new RoomTrait({ requiresLight: true }));
     darkRoom.add(new IdentityTrait({ name: 'Dark Room', description: 'A pitch-dark room.' }));
 
     // Place player in lit room by default

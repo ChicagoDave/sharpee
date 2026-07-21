@@ -5,16 +5,16 @@
  */
 
 import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, IExitInfo, DirectionType, CharacterModelTrait, getOppositeDirection } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, IExitInfo, DirectionType, CharacterModelTrait, getOppositeDirection } from '@sharpee/world-model';
 import type { PerSenseRenderings } from '@sharpee/if-services';
 import {
   NpcBehavior,
   NpcContext,
   NpcAction,
-} from './types';
-import { NpcMessages } from './npc-messages';
-import { processLucidityDecay } from './lucidity-decay';
-import { nounPhraseFor } from '../utils';
+} from './types.js';
+import { NpcMessages } from './npc-messages.js';
+import { processLucidityDecay } from './lucidity-decay.js';
+import { nounPhraseFor } from '../utils/index.js';
 /**
  * A tick phase handler that runs during NPC turn processing.
  * Registered by higher-level packages (e.g., @sharpee/character).
@@ -198,9 +198,7 @@ export class NpcService implements INpcService {
 
     // Process each NPC
     for (const npc of npcs) {
-      const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-      // Direct property access — canAct getter doesn't survive loadJSON()
-      if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) continue;
+      if (!this.canNpcAct(npc)) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior) continue;
@@ -253,8 +251,7 @@ export class NpcService implements INpcService {
     const npcs = entities.filter((e) => e.has(TraitType.NPC));
 
     for (const npc of npcs) {
-      const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-      if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) continue;
+      if (!this.canNpcAct(npc)) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior?.onPlayerEnters) continue;
@@ -295,8 +292,7 @@ export class NpcService implements INpcService {
     const npcs = entities.filter((e) => e.has(TraitType.NPC));
 
     for (const npc of npcs) {
-      const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-      if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) continue;
+      if (!this.canNpcAct(npc)) continue;
 
       const behavior = this.getBehaviorForNpc(npc);
       if (!behavior?.onPlayerLeaves) continue;
@@ -331,8 +327,7 @@ export class NpcService implements INpcService {
     const npc = world.getEntity(npcId);
     if (!npc) return [];
 
-    const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-    if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) return [];
+    if (!this.canNpcAct(npc)) return [];
 
     const behavior = this.getBehaviorForNpc(npc);
     if (!behavior?.onSpokenTo) {
@@ -380,8 +375,7 @@ export class NpcService implements INpcService {
     const npc = world.getEntity(npcId);
     if (!npc) return [];
 
-    const npcTrait = npc.get(TraitType.NPC) as NpcTrait;
-    if (!npcTrait || !npcTrait.isAlive || !npcTrait.isConscious) return [];
+    if (!this.canNpcAct(npc)) return [];
 
     const behavior = this.getBehaviorForNpc(npc);
     if (!behavior?.onAttacked) return [];
@@ -407,14 +401,22 @@ export class NpcService implements INpcService {
 
   // ==================== Private Helpers ====================
 
+  /**
+   * Whether an NPC can take a turn: it is an NPC and — if it carries life-state —
+   * is alive and conscious. An NPC with no `HealthTrait` is active by default
+   * (opt-in life-state, ADR-226 §3). Reads health data via `HealthBehavior`, never a
+   * trait getter, so it survives `loadJSON()`. This is the single turn-eligibility
+   * source that makes the combat-kill sync bug (ADR-226 AC-2) impossible.
+   */
+  private canNpcAct(npc: IFEntity): boolean {
+    if (!npc.has(TraitType.NPC)) return false;
+    const health = npc.get(TraitType.HEALTH) as HealthTrait | undefined;
+    return !health || HealthBehavior.canAct(health);
+  }
+
   private getActiveNpcs(world: WorldModel): IFEntity[] {
     const allEntities = world.getAllEntities();
-    return allEntities.filter((e) => {
-      if (!e.has(TraitType.NPC)) return false;
-      const npcTrait = e.get(TraitType.NPC) as NpcTrait;
-      // Use direct property access — canAct getter doesn't survive loadJSON() deserialization
-      return npcTrait.isAlive && npcTrait.isConscious;
-    });
+    return allEntities.filter((e) => this.canNpcAct(e));
   }
 
   private getBehaviorForNpc(npc: IFEntity): NpcBehavior | undefined {

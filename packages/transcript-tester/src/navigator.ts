@@ -6,8 +6,8 @@
  * carousel) by recalculating path when actual location differs from expected.
  */
 
-import { NavigateResult } from './types';
-import type { WorldModelLike } from './runner';
+import { NavigateResult } from './types.js';
+import type { WorldModelLike } from './runner.js';
 
 // GameEngine interface for command execution
 interface GameEngineLike {

@@ -1,8 +1,29 @@
 # ADR-115: Map Export CLI
 
-## Status: Proposed
+## Status: CLOSED (2026-07-14) — map tooling moves into SharpeeIDE (ADR-154); exit-condition metadata subsumed by ADR-220
 
 ## Supersedes: ADR-113 (Map Position Hints)
+
+> **Closed (2026-07-14, David).** This design is not pursued as a standalone CLI.
+> Two reasons:
+> 1. **Map export/visualization moves into SharpeeIDE (ADR-154).** A dedicated
+>    author IDE is the right home for mapping; a separate `map-export` CLI +
+>    export-format work here would duplicate what the IDE will own. The
+>    export-format ideas (JSON/Trizbort/DOT/YAML), region filtering, and the
+>    runtime-introspection approach below remain useful *input* to that IDE work,
+>    not a separate deliverable.
+> 2. **The exit-condition metadata is superseded by ADR-220** (Doors & Portals,
+>    ACCEPTED). ADR-220 established the platform's single conditional-exit model —
+>    two optional `IExitInfo` fields (`when` guard + computed `destination`),
+>    "direct exits simple, everything else logic-gated." Its general `when`
+>    subsumes this ADR's proposed `ConnectionMetadata` schema (`blockedBy`/
+>    `condition`/`requires`/`oneWay`/`appearsWhen`) and `GuardianTrait.blocks`
+>    (`condition: 'closed'` → `when <door> is open`; `appearsWhen: {flag}` →
+>    `when <flag>`; `requires: {light}` → `when <lit>`; `condition: 'alive'` →
+>    `when not <npc> alive`). Those parallel sections are **not built** — any
+>    future mapping reads exit conditions from ADR-220's model.
+>
+> The content below is retained for reference only.
 
 ADR-113 proposed building a visual map editor for Sharpee. This ADR takes a different approach: instead of competing with established tools like Trizbort, Sharpee provides a CLI tool that exports rich map data for consumption by external mapping tools.
 

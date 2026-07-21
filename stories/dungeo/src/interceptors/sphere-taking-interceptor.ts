@@ -17,6 +17,7 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
+  InterceptorBlockedResult,
   CapabilityEffect,
   createEffect,
   IFEntity,
@@ -26,6 +27,7 @@ import {
   Direction,
   NpcTrait
 } from '@sharpee/world-model';
+import { killPlayer, PLAYER_DIED_EVENT } from '@sharpee/stdlib';
 import { SphereTrait } from '../traits/sphere-trait';
 
 // State keys
@@ -137,10 +139,7 @@ export const SphereTakingInterceptor: ActionInterceptor = {
         error: CageMessages.CAGE_FALLS
       };
     } else {
-      // Robot NOT in room - immediate poison death
-      world.setStateValue('dungeo.player.dead', true);
-      world.setStateValue('dungeo.player.death_cause', 'cage_poison');
-
+      // Robot NOT in room - immediate poison death (applied in onBlocked via killPlayer)
       sharedData.cagePoisonDeath = true;
 
       return {
@@ -150,13 +149,16 @@ export const SphereTakingInterceptor: ActionInterceptor = {
     }
   },
 
+  // ADR-228 D2: effects ride the `emit` channel — appended after the standard
+  // take_blocked event, which survives as the machine-readable refusal record
+  // (identical rendered output to the old append semantics of taking).
   onBlocked(
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
     _error: string,
     sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null {
+  ): InterceptorBlockedResult | null {
     const effects: CapabilityEffect[] = [];
 
     if (sharedData.cageTrapped) {
@@ -167,7 +169,9 @@ export const SphereTakingInterceptor: ActionInterceptor = {
         })
       );
     } else if (sharedData.cagePoisonDeath) {
-      // Poison death message + death event
+      // Poison death narration + canonical terminal death (ADR-224). The
+      // narration is carried by the game.message effects, so the death event
+      // needs no messageId (avoids a duplicate render).
       effects.push(
         createEffect('game.message', {
           messageId: CageMessages.POISON_GAS_ROOM
@@ -178,17 +182,18 @@ export const SphereTakingInterceptor: ActionInterceptor = {
           messageId: CageMessages.POISON_DEATH
         })
       );
+      const player = world.getPlayer();
+      if (player) {
+        killPlayer(world, player, { cause: 'cage_poison', terminal: true });
+      }
       effects.push(
-        createEffect('emit', {
-          type: 'game.player_death',
-          data: {
-            cause: 'cage_poison',
-            messageId: CageMessages.POISON_DEATH
-          }
+        createEffect(PLAYER_DIED_EVENT, {
+          cause: 'cage_poison',
+          terminal: true
         })
       );
     }
 
-    return effects.length > 0 ? effects : null;
+    return effects.length > 0 ? { emit: effects } : null;
   }
 };

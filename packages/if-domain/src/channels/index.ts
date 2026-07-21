@@ -29,7 +29,7 @@ export type {
   IOChannel,
   IChannelRegistry,
   MainEntry,
-} from './types';
+} from './types.js';
 
 export type {
   ChannelDefinition,
@@ -38,4 +38,4 @@ export type {
   TurnPacket,
   CommandPacket,
   WirePacket,
-} from './wire';
+} from './wire.js';

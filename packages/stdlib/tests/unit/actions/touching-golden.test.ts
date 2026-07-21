@@ -36,11 +36,13 @@ describe('touchingAction (Golden Pattern)', () => {
       expect(touchingAction.requiredMessages).toContain('feels_normal');
       expect(touchingAction.requiredMessages).toContain('feels_warm');
       expect(touchingAction.requiredMessages).toContain('feels_hot');
-      expect(touchingAction.requiredMessages).toContain('feels_cold');
+      // feels_cold / feels_rough removed (ADR-230 Phase 9d): no code path
+      // ever selected them.
+      expect(touchingAction.requiredMessages).not.toContain('feels_cold');
+      expect(touchingAction.requiredMessages).not.toContain('feels_rough');
       expect(touchingAction.requiredMessages).toContain('feels_soft');
       expect(touchingAction.requiredMessages).toContain('feels_hard');
       expect(touchingAction.requiredMessages).toContain('feels_smooth');
-      expect(touchingAction.requiredMessages).toContain('feels_rough');
       expect(touchingAction.requiredMessages).toContain('feels_wet');
       expect(touchingAction.requiredMessages).toContain('device_vibrating');
       expect(touchingAction.requiredMessages).toContain('touched');

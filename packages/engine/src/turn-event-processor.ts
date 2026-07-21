@@ -13,7 +13,7 @@ import {
 } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { IPerceptionService } from '@sharpee/stdlib';
-import { EngineConfig } from './types';
+import { EngineConfig } from './types.js';
 
 /**
  * Context for event processing pipeline

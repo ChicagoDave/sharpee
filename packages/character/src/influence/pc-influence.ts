@@ -9,8 +9,8 @@
  * Owner context: @sharpee/character / influence
  */
 
-import { InfluenceTracker } from './influence-duration';
-import { ActiveInfluenceEffect, InfluenceDef } from './influence-types';
+import { InfluenceTracker } from './influence-duration.js';
+import { ActiveInfluenceEffect, InfluenceDef } from './influence-types.js';
 
 // ---------------------------------------------------------------------------
 // PC influence result

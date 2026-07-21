@@ -343,7 +343,7 @@ export type StoryLoader = (storyPath: string) => Promise<{
  *
  * Parses .transcript files into a structured format for testing.
  */
-import { Transcript } from './types';
+import { Transcript } from './types.js';
 /**
  * Parse a transcript file from disk
  */
@@ -366,7 +366,7 @@ export declare function validateTranscript(transcript: Transcript): string[];
  *
  * Executes transcript commands against a loaded story and checks results.
  */
-import { Transcript, TranscriptResult, RunnerOptions } from './types';
+import { Transcript, TranscriptResult, RunnerOptions } from './types.js';
 /**
  * Interface for the game engine
  */
@@ -383,6 +383,8 @@ interface GameEngine {
         getStates(): Record<string, unknown>;
         setStates(states: Record<string, unknown>): void;
     };
+    /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
+    reviveEngine?(): void;
 }
 /**
  * Minimal interface for world model state queries
@@ -393,9 +395,7 @@ interface WorldModel {
     findEntityByName?(name: string): any;
     getAllEntities?(): any[];
     getLocation?(entityId: string): string | undefined;
-    getContents?(containerId: string, options?: {
-        includeWorn?: boolean;
-    }): any[];
+    getContents?(containerId: string): any[];
     findWhere?(predicate: (entity: any) => boolean): any[];
     findByTrait?(traitType: string): any[];
     findPath?(fromRoomId: string, toRoomId: string): string[] | null;
@@ -408,9 +408,7 @@ interface WorldModel {
  */
 export interface WorldModelLike {
     getLocation(entityId: string): string | null | undefined;
-    getContents(containerId: string, options?: {
-        includeWorn?: boolean;
-    }): any[];
+    getContents(containerId: string): any[];
     getEntity(entityId: string): any | null | undefined;
     findWhere(predicate: (entity: any) => boolean): any[];
     getAllEntities(): any[];
@@ -435,7 +433,7 @@ export {};
  *
  * Formats and displays test results with colors and diffs.
  */
-import { TranscriptResult, TestRunResult } from './types';
+import { TranscriptResult, TestRunResult } from './types.js';
 /**
  * Report options
  */
@@ -485,7 +483,7 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  * Public interface: formatEntityTraits(), formatTraitProse()
  * Owner context: transcript-tester display layer
  */
-import { EntityTraitSnapshot } from './types';
+import { EntityTraitSnapshot } from './types.js';
 /**
  * Format all entity trait snapshots as prose lines for CLI display.
  * Returns an array of formatted lines (no leading whitespace — caller indents).

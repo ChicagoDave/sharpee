@@ -1,0 +1,17 @@
+The people a story writes, and the rougher interactions. Full entries:
+[the standard library reference §8](/chord/stdlib/npcs) (throwing: [§2.5](/chord/stdlib/manipulation)).
+
+| Action | Phrasings | Needs | Refuses with |
+|---|---|---|---|
+| **talk** | `talk to`/`with X` · `speak to`/`with X` · `chat with X` · `converse with X` | a person (checked in validate, not the parser) | `not_actor`, `too_far`, `self`, `not_available` |
+| **ask** | `ask X about Y` · `question X about Y` · `inquire of X about Y` | a person; the topic is free text (never scope-checked) | `not_actor`, `too_far`, `not_visible` (`unknown_topic` as the default reply) |
+| **tell** | `tell X about Y` · `inform X about Y` | a person; topic as above | `not_actor`, `too_far`, `not_visible` (`not_interested` as the default reply) |
+| **give** | `give`/`hand X to Y` · `give`/`hand Y X` · `offer X to Y` | recipient: `a person` | `not_actor`, `self`, `not_interested`, `inventory_full`, `too_heavy` |
+| **show** | `show X to Y` · `show Y X` · `display`/`present X to Y` | recipient: `a person`, same room | `not_actor`, `self`, `viewer_too_far`, `not_carrying` |
+| **attack** | `attack`/`kill`/`fight`/`slay`/`murder`/`hit`/`strike`/`break`/`smash`/`destroy X` · `attack`/`kill`/`hit`/`strike X with`/`using Y` | anything (combat needs `combatant` + an interceptor) | `self`, `not_reachable`, `not_holding_weapon` |
+| **throw** | `throw`/`toss`/`hurl X at Y` · `throw`/`toss`/`hurl X to Y` | a visible target in the room | `self`, `too_heavy`, `target_not_here`, `not_holding` |
+
+- [giving and showing](/chord/cookbook/social/giving-and-showing)
+- [asking and telling](/chord/cookbook/social/asking-and-telling)
+- [attacking](/chord/cookbook/social/attacking)
+- [throwing](/chord/cookbook/social/throwing)

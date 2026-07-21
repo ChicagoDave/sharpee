@@ -13,9 +13,9 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { HandlerContext, GenericEventData } from './types';
-import { createBlocks } from '../assemble';
-import { phraseAvailable, renderViaPhrase } from '../phrase-render';
+import type { HandlerContext, GenericEventData } from './types.js';
+import { createBlocks } from '../assemble.js';
+import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
 
 interface GameMessageData {
   text?: string;

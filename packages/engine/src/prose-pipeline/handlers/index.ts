@@ -15,18 +15,18 @@ export type {
   HandlerContext,
   ChainableEventData,
   GenericEventData,
-} from './types';
+} from './types.js';
 
 // Type-keyed handlers (former text-service handlers/*.ts).
-export { handleRoomDescription } from './room';
-export { handleRevealed } from './revealed';
-export { handleGameMessage, handleGenericEvent } from './generic';
-export { handleGameStarted } from './game';
-export { handleAudibilityHeard } from './audibility';
-export { handlePlatformEvent } from './platform';
+export { handleRoomDescription } from './room.js';
+export { handleRevealed } from './revealed.js';
+export { handleGameMessage, handleGenericEvent } from './generic.js';
+export { handleGameStarted } from './game.js';
+export { handleAudibilityHeard } from './audibility.js';
+export { handlePlatformEvent } from './platform.js';
 
 // Inline handlers extracted from text-service.ts in this sub-phase.
-export { tryProcessDomainEventMessage } from './domain-message';
-export { handleImplicitTake } from './implicit-take';
-export { handleCommandFailed } from './command-failed';
-export { handleClientQuery } from './client-query';
+export { tryProcessDomainEventMessage } from './domain-message.js';
+export { handleImplicitTake } from './implicit-take.js';
+export { handleCommandFailed } from './command-failed.js';
+export { handleClientQuery } from './client-query.js';

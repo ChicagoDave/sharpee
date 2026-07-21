@@ -7,7 +7,7 @@ import { WorldModel } from '@sharpee/world-model';
 import {
   GuardCondition,
   EntityBindings,
-} from './types';
+} from './types.js';
 
 /**
  * Evaluate a {@link GuardCondition} against current world state.

@@ -14,7 +14,7 @@ import {
   PropagationTransfer,
   AlreadyToldRecord,
   ReceivesAs,
-} from './propagation-types';
+} from './propagation-types.js';
 
 // ---------------------------------------------------------------------------
 // Transfer result

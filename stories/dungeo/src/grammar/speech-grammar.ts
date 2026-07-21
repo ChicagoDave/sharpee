@@ -8,7 +8,6 @@ import { GrammarBuilder } from '@sharpee/if-domain';
 import {
   SAY_ACTION_ID,
   COMMANDING_ACTION_ID,
-  TALK_TO_TROLL_ACTION_ID,
   ANSWER_ACTION_ID,
   KNOCK_ACTION_ID
 } from '../actions';
@@ -84,24 +83,16 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
   // Note: Pattern ":npc, :command..." removed - patterns can't start with slots
   // Use "tell robot to X" or "order robot to X" instead
 
-  // Talk to troll (minor MDL edge case - "Unfortunately, the troll can't hear you")
-  // High priority (200) to beat any stdlib "talk to :npc" patterns
+  // Talking (ADR-229 R4): the bespoke talk_to_troll action and its
+  // literals are gone — talk/speak/chat/converse ride the core patterns
+  // (ADR-229 R3) into if.action.talking, where TrollTalkingInterceptor
+  // owns the canon (CANT_HEAR_YOU veto when KO'd, GROWLS override when
+  // conscious). Only the greeting phrasing needs story grammar: a slot
+  // pattern, NOT a literal — talking's validate requires a direct object.
   grammar
-    .define('talk to troll')
-    .mapsTo(TALK_TO_TROLL_ACTION_ID)
-    .withPriority(200)
-    .build();
-
-  grammar
-    .define('talk to the troll')
-    .mapsTo(TALK_TO_TROLL_ACTION_ID)
-    .withPriority(200)
-    .build();
-
-  grammar
-    .define('hello troll')
-    .mapsTo(TALK_TO_TROLL_ACTION_ID)
-    .withPriority(200)
+    .define('hello :target')
+    .mapsTo('if.action.talking')
+    .withPriority(150)
     .build();
 
   // KNOCK action (Dungeon Master trivia trigger)

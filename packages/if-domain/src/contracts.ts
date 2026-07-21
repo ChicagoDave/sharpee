@@ -46,7 +46,8 @@ export interface FindOptions {
  */
 export interface ContentsOptions {
   recursive?: boolean;
-  includeWorn?: boolean;
+  // ADR-247: `includeWorn` deleted — worn items are always included; use
+  // WorldModel.getCarriedAndWorn() for the carried/worn split.
   visibleOnly?: boolean;
 }
 
@@ -179,7 +180,13 @@ export interface ValidationResult {
   
   /** Error code if validation failed */
   error?: string;
-  
+
+  /**
+   * When true, `error` is already a fully-qualified message id and must
+   * not be prefixed with the action id (ADR-231 D1).
+   */
+  errorQualified?: boolean;
+
   /** Parameters for error message formatting */
   params?: Record<string, any>;
 }

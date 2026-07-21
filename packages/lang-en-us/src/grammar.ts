@@ -279,4 +279,4 @@ export const EnglishGrammarUtils = {
 /**
  * Export all grammar types and constants
  */
-export * from './index';
+export * from './index.js';

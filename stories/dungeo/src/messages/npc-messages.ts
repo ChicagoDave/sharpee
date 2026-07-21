@@ -20,13 +20,13 @@ import { DungeonMasterMessages } from '../npcs/dungeon-master';
 import { TrollMessages } from '../npcs/troll';
 
 // Import capability dispatch messages
-import { TrollAxeMessages, EggMessages, CageMessages } from '../traits';
+import { TrollAxeMessages, TrollCapabilityMessages, EggMessages, CageMessages } from '../traits';
 
 // Import melee combat messages
 import { MeleeMessages } from '../combat/melee-messages';
 
 // Import action messages for NPC interactions
-import { CommandingMessages, TalkToTrollMessages } from '../actions';
+import { CommandingMessages } from '../actions';
 
 /**
  * Register all NPC-related messages with the language provider
@@ -58,8 +58,8 @@ export function registerNpcMessages(language: LanguageProvider): void {
   language.addMessage(TrollAxeMessages.WHITE_HOT, "The troll's axe seems white-hot. You can't hold on to it.");
 
 
-  // Talk to troll action (conscious troll response)
-  language.addMessage(TalkToTrollMessages.GROWLS, 'The troll growls menacingly at you.');
+  // Conscious-troll TALK response (ADR-229 R4: interceptor postReport override)
+  language.addMessage(TrollCapabilityMessages.GROWLS, 'The troll growls menacingly at you.');
 
   // ==========================================================================
   // Thief NPC Messages

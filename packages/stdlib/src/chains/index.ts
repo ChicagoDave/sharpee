@@ -33,7 +33,7 @@ import { WorldModel } from '@sharpee/world-model';
 import {
   createOpenedRevealedChain,
   OPENED_REVEALED_CHAIN_KEY
-} from './opened-revealed';
+} from './opened-revealed.js';
 
 /**
  * Register all standard library event chains with a WorldModel.
@@ -63,7 +63,7 @@ export function registerStandardChains(world: WorldModel): void {
 }
 
 // Re-export chain keys for story use
-export { OPENED_REVEALED_CHAIN_KEY } from './opened-revealed';
+export { OPENED_REVEALED_CHAIN_KEY } from './opened-revealed.js';
 
 // Re-export chain creators for testing or custom registration
-export { createOpenedRevealedChain } from './opened-revealed';
+export { createOpenedRevealedChain } from './opened-revealed.js';

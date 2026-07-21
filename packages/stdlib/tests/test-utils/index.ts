@@ -5,8 +5,9 @@
  * set up basic worlds, and validate events in action tests.
  */
 
-import { 
-  SemanticEvent
+import {
+  SemanticEvent,
+  createSeededRandom
 } from '@sharpee/core';
 import {
   WorldModel,
@@ -126,8 +127,11 @@ export function createRealTestContext(
       }
     })
   } as ActionContext & { getSharedData?: () => Record<string, unknown> };
-  
-  return createActionContext(world, player, action, command);
+
+  // Fixed-seed action RNG: deterministic tests are harness policy, not
+  // story policy (ADR-231 D6 — the never-seed-story-RNG rule is about
+  // story randomness, which this does not touch).
+  return createActionContext(world, player, action, command, undefined, createSeededRandom(12345));
 }
 
 /**
@@ -239,6 +243,30 @@ export function createCommand(
       parsed: structure.indirectObject
     } : undefined
   };
+}
+
+/**
+ * Force a context's action RNG stream (ADR-231 D6) to yield a fixed
+ * sequence of `next()` values — the harness-side replacement for the old
+ * `Math.random = vi.fn(...)` global mock. The last value repeats once the
+ * sequence is exhausted. Harness determinism only, never story policy.
+ *
+ * @param context the context whose `random` stream is replaced
+ * @param values raw [0,1) draw values returned by `next()` in order
+ */
+export function forceRandom(context: ActionContext, values: number[]): void {
+  let i = 0;
+  const next = () => values[Math.min(i++, values.length - 1)];
+  const fake = {
+    next,
+    int: (min: number, max: number) => Math.floor(next() * (max - min + 1)) + min,
+    chance: (probability: number) => next() < probability,
+    pick: <T,>(array: T[]): T => array[Math.floor(next() * array.length)],
+    shuffle: <T,>(array: T[]): T[] => [...array],
+    getSeed: () => 0,
+    setSeed: (_seed: number) => {}
+  };
+  Object.defineProperty(context, 'random', { value: fake, configurable: true });
 }
 
 /**
@@ -557,4 +585,24 @@ export function executeWithValidation(
 
   action.execute(context);
   return action.report(context);
+}
+
+/**
+ * Inert marker trait types for interceptor/behavior registration in tests.
+ *
+ * The ADR-208 registry is keyed (traitType, actionId) and resolves over an
+ * entity's trait-type strings, so a test needs SOME trait on the entity to
+ * hang a registration on. Use these dedicated markers — never borrow a real
+ * trait (e.g. READABLE with empty text) as a registration key: no action
+ * consults these types, so they cannot perturb the action under test.
+ *
+ * `TEST_MARKER_TRAIT` is the default; `SECOND_TEST_MARKER_TRAIT` gives a
+ * distinct key when a test registers on two slots (target vs weapon/key).
+ */
+export const TEST_MARKER_TRAIT = 'test.trait.marker';
+export const SECOND_TEST_MARKER_TRAIT = 'test.trait.marker_second';
+
+/** Attach an inert marker trait to an entity (registration key only). */
+export function addTestMarker(entity: { add(trait: unknown): void }, type: string = TEST_MARKER_TRAIT): void {
+  entity.add({ type });
 }

@@ -5,13 +5,13 @@
  * Bridges the gap between event-generating actions and state mutations.
  */
 
-export * from './types';
-export * from './processor';
-export * from './handlers';
+export * from './types.js';
+export * from './processor.js';
+export * from './handlers/index.js';
 
 // Effects system (ADR-075)
-export * from './effects';
-export * from './handler-types';
+export * from './effects/index.js';
+export * from './handler-types.js';
 
 // Re-export commonly used types
 export { ISemanticEvent } from '@sharpee/core';

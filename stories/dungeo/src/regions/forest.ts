@@ -35,7 +35,7 @@ export interface ForestRoomIds {
 
 function createRoom(world: WorldModel, name: string, description: string): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   room.add(new IdentityTrait({ name, description, properName: true, article: '' }));
   return room;
 }
@@ -54,7 +54,7 @@ export function createForestRegion(world: WorldModel): ForestRoomIds {
 
   // Forest Path 1 - destination for Altar prayer teleportation
   const forestPath1 = world.createEntity('Forest-Path-1', EntityType.ROOM);
-  forestPath1.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  forestPath1.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   forestPath1.add(new IdentityTrait({
     name: 'Forest Path',
     aliases: ['forest path', 'path', 'forest path 1'],  // 'forest path 1' needed for pray teleport
@@ -64,7 +64,7 @@ export function createForestRegion(world: WorldModel): ForestRoomIds {
   }));
 
   const forestPath2 = world.createEntity('Forest-2', EntityType.ROOM);
-  forestPath2.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  forestPath2.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   forestPath2.add(new IdentityTrait({
     name: 'Forest',
     aliases: ['forest', 'woods', 'trees'],
@@ -74,7 +74,7 @@ export function createForestRegion(world: WorldModel): ForestRoomIds {
   }));
 
   const forestPath3 = world.createEntity('Forest Path-3', EntityType.ROOM);
-  forestPath3.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  forestPath3.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   forestPath3.add(new IdentityTrait({
     name: 'Forest Path',
     aliases: ['forest path', 'path'],
@@ -84,7 +84,7 @@ export function createForestRegion(world: WorldModel): ForestRoomIds {
   }));
 
   const forestPath4 = world.createEntity('Twisting Path', EntityType.ROOM);
-  forestPath4.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  forestPath4.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   forestPath4.add(new IdentityTrait({
     name: 'Twisting Path',
     aliases: ['twisting path', 'path', 'forest path'],
@@ -94,7 +94,7 @@ export function createForestRegion(world: WorldModel): ForestRoomIds {
   }));
 
   const clearing = world.createEntity('Clearing', EntityType.ROOM);
-  clearing.add(new RoomTrait({ exits: {}, isDark: false, isOutdoors: true }));
+  clearing.add(new RoomTrait({ exits: {}, requiresLight: false, isOutdoors: true }));
   clearing.add(new IdentityTrait({
     name: 'Clearing',
     aliases: ['clearing', 'forest clearing'],

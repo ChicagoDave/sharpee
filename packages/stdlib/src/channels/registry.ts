@@ -28,9 +28,9 @@
  */
 
 import type { IChannelRegistry, IOChannel } from '@sharpee/if-domain';
-import { STANDARD_CHANNELS } from './standard';
-import { MEDIA_CHANNELS } from './media';
-import { SOUND_CHANNELS } from './sound-events';
+import { STANDARD_CHANNELS } from './standard.js';
+import { MEDIA_CHANNELS } from './media.js';
+import { SOUND_CHANNELS } from './sound-events.js';
 
 /**
  * In-memory `IChannelRegistry` implementation. Last-write-wins on

@@ -13,7 +13,7 @@
  *   { "method": "quit" }
  */
 
-import { NativeEngineBridge } from './bridge';
+import { NativeEngineBridge } from './bridge.js';
 
 function main(): void {
   const bridge = new NativeEngineBridge(process.stdin, process.stdout);

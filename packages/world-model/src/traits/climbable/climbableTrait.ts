@@ -2,8 +2,8 @@
  * Trait for objects that can be climbed (ladders, trees, mountains, etc.)
  */
 
-import { TraitType } from '../trait-types';
-import { ITrait } from '../trait';
+import { TraitType } from '../trait-types.js';
+import { ITrait } from '../trait.js';
 
 /**
  * Trait for climbable objects

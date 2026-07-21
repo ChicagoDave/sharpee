@@ -22,7 +22,7 @@ import {
   EvidenceEntry,
   createConversationRecord,
   createEvidenceRecord,
-} from './response-types';
+} from './response-types.js';
 
 // ---------------------------------------------------------------------------
 // Contradiction

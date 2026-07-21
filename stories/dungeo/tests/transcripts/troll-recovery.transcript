@@ -1,20 +1,32 @@
 title: Troll Recovery Daemon
 story: dungeo
 author: Sharpee Team
-description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and recovery after 4 turns.
+description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and MDL growing-probability recovery (ADR-226).
 
 ---
 
-# From MDL source (act1.254): OUT!/IN! transitions
-# Recovery time: 4 daemon ticks (MDL original was ~5; accounts for GDT turns consuming ticks)
-# Note: GDT commands (KO, EX) each count as a game turn, consuming 2 of the 4 ticks
+# From MDL source (act1.254): OUT!/IN! transitions.
+# Recovery is MDL canon growing-probability revival (melee.mud:67-76, restored via
+# ADR-226): each unconscious turn a per-troll accumulator grows +10; revival rolls a
+# seeded probability = accumulator%. The wake turn is therefore variable, so the
+# recovery section below polls with a WHILE loop rather than assuming a fixed count.
 
-# Get lantern first (Troll Room is dark)
+# The conscious troll strikes bystanders each turn (MDL melee canon) and can
+# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
+# revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
+# Get lantern first (Troll Room is dark); ND = immortality, since the
+# conscious troll's bystander blows can kill a score-0 player outright and
+# this transcript tests the recovery daemon, not player mortality.
 > GDT
 [OK: contains "GDT"]
 
 > TK brass lantern
 [OK: contains "Taken"]
+
+> ND
+[OK: contains "Immortality"]
 
 > EX
 [OK: contains "Returning"]
@@ -69,18 +81,20 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 > north
 [OK: contains "East-West Passage"]
 
-# Go back to troll room - daemon ticks consumed all 4 ticks by now
-# Troll wakes up during the "north" turn (tick 4), player has already moved
-# (MDL PASS1: WEST -> MTROL is the way back; there is no south exit)
+# Go back to troll room (MDL PASS1: WEST -> MTROL; there is no south exit)
 > west
 [OK: contains "Troll Room"]
 
-# Troll wakes up on this turn (recovery daemon fires: "The troll stirs")
+# Wait for the troll to recover. Recovery is MDL canon growing-probability revival
+# (melee.mud:67-76): the wake turn is variable (seeded), not a fixed count, so poll by
+# examining until the daemon fires the "stirs" wake message.
+[WHILE: not output contains "stirs"]
 > examine troll
-[OK: contains "stirs"]
-[OK: contains "fighting stance"]
+[SKIP]
+[END WHILE]
 
-# Now conscious again - description back to TROLLDESC
+# The stirring examine confirms the wake ("The troll stirs, quickly resuming a
+# fighting stance"). The troll is now conscious again — description back to TROLLDESC.
 > examine troll
 [OK: contains "blocks"]
 [OK: contains "northern passage"]
@@ -88,3 +102,5 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 # Exit should be blocked again
 > north
 [OK: contains "troll blocks"]
+
+[END RETRY]

@@ -1,9 +1,9 @@
 // packages/world-model/src/traits/identity/identityBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { IdentityTrait } from './identityTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { IdentityTrait } from './identityTrait.js';
 
 /**
  * Behavior for entities with identity.

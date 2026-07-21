@@ -24,12 +24,12 @@ import type {
   ChannelStateStore,
   Renderer as RendererInterface,
   SlotHandle,
-} from './types';
+} from './types.js';
 import {
   createJsonTreeFallbackFactory,
   type FallbackOutputSink,
   type FallbackWarningSink,
-} from './json-tree-fallback';
+} from './json-tree-fallback.js';
 
 /**
  * Optional construction options for the `Renderer`.
@@ -71,6 +71,8 @@ export interface RendererOptions {
  */
 export class Renderer implements RendererInterface {
   private renderers = new Map<string, ChannelRenderer>();
+  private rendererFactories = new Map<string, (channelId: string) => ChannelRenderer>();
+  private factoryRenderers = new Map<string, ChannelRenderer>();
   private fallbackRenderers = new Map<string, ChannelRenderer>();
   private state: ChannelStateStore = {};
   private slots = new Map<string, SlotHandle>();
@@ -100,6 +102,16 @@ export class Renderer implements RendererInterface {
    */
   registerRenderer(channelId: string, renderer: ChannelRenderer): void {
     this.renderers.set(channelId, renderer);
+  }
+
+  /**
+   * Register a renderer factory for a channel-id prefix (ADR-241 D4).
+   * Longest matching prefix wins; `''` is the match-all default.
+   * Instances are built lazily per channel id and cached until the
+   * next manifest (their `onDestroy` runs with everyone else's).
+   */
+  registerRendererFactory(prefix: string, factory: (channelId: string) => ChannelRenderer): void {
+    this.rendererFactories.set(prefix, factory);
   }
 
   /**
@@ -156,15 +168,20 @@ export class Renderer implements RendererInterface {
   applyCmgt(packet: CmgtPacket): void {
     if (this.currentManifest) {
       for (const channel of this.currentManifest.channels) {
-        const r = this.renderers.get(channel.id) ?? this.fallbackRenderers.get(channel.id);
+        const r =
+          this.renderers.get(channel.id) ??
+          this.factoryRenderers.get(channel.id) ??
+          this.fallbackRenderers.get(channel.id);
         r?.onDestroy?.();
       }
     }
 
     this.state = {};
     this.currentManifest = packet;
-    // Reset fallback cache so a re-mounted session re-issues the
-    // one-time warning if a channel still lacks a renderer.
+    // Reset the factory + fallback caches so a re-mounted session
+    // rebuilds instances (and re-issues the one-time fallback warning
+    // if a channel still lacks a renderer).
+    this.factoryRenderers.clear();
     this.fallbackRenderers.clear();
 
     for (const channel of packet.channels) {
@@ -273,20 +290,36 @@ export class Renderer implements RendererInterface {
       // reset BEFORE onClear runs).
       delete this.state[channel.id];
 
-      const renderer = this.renderers.get(channel.id);
+      const renderer = this.renderers.get(channel.id) ?? this.factoryRenderers.get(channel.id);
       renderer?.onClear?.(target ?? channel.id);
     }
   }
 
   /**
-   * Resolve the renderer for a channel id. Returns the registered
-   * renderer when present; otherwise lazily creates and caches a
-   * JSON-tree fallback (so the one-time warning fires once per
-   * channel id, not once per emission).
+   * Resolve the renderer for a channel id: exact registration first
+   * (last-write-wins, so story overrides beat every default), then
+   * the longest matching registered factory prefix (ADR-241 D4 —
+   * instances lazily built and cached per id), then the JSON-tree
+   * fallback (cached so the one-time warning fires once per channel
+   * id, not once per emission).
    */
   private resolveRenderer(channelId: string): ChannelRenderer {
     const registered = this.renderers.get(channelId);
     if (registered) return registered;
+
+    const cached = this.factoryRenderers.get(channelId);
+    if (cached) return cached;
+    let bestPrefix: string | null = null;
+    for (const prefix of this.rendererFactories.keys()) {
+      if (!channelId.startsWith(prefix)) continue;
+      if (bestPrefix === null || prefix.length > bestPrefix.length) bestPrefix = prefix;
+    }
+    if (bestPrefix !== null) {
+      const built = this.rendererFactories.get(bestPrefix)!(channelId);
+      this.factoryRenderers.set(channelId, built);
+      return built;
+    }
+
     let fallback = this.fallbackRenderers.get(channelId);
     if (!fallback) {
       fallback = this.buildFallback(channelId);

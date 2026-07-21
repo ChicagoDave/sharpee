@@ -2,4 +2,4 @@
  * NPC trait exports (ADR-070)
  */
 
-export { NpcTrait, type INpcData } from './npcTrait';
+export { NpcTrait, type INpcData } from './npcTrait.js';

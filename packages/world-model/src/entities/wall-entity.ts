@@ -18,8 +18,8 @@
  */
 
 import { EntityId, IEntityCreationParams } from '@sharpee/core';
-import { IFEntity } from './if-entity';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from './if-entity.js';
+import { ITrait } from '../traits/trait.js';
 
 /**
  * Per-side data for a wall (ADR-173).

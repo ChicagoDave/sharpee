@@ -1,12 +1,24 @@
 /**
- * Behavior for combatant entities
+ * Behavior for combatant entities.
+ *
+ * Combat orchestration — armor reduction, inventory-drop on death, combat messages —
+ * over the entity's combat *stats* (`CombatantTrait`). Health itself lives on the
+ * required {@link HealthTrait}; all health reads/writes route through
+ * {@link HealthBehavior} (ADR-226 / ADR-223 child A). A combatant is guaranteed a
+ * `HealthTrait` by the load-time AC-7 check.
+ *
+ * Public interface: `canAttack` / `attack` / `heal` / `resurrect` / `isAlive` /
+ * `getHealth` / `getHealthPercentage` / `isHostile` / `setHostile`.
+ * Owner context: `@sharpee/world-model` — combat (requires the HEALTH layer).
  */
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
-import { TraitType } from '../trait-types';
-import { CombatantTrait } from './combatantTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
+import { TraitType } from '../trait-types.js';
+import { CombatantTrait } from './combatantTrait.js';
+import { HealthTrait } from '../health/healthTrait.js';
+import { HealthBehavior } from '../health/healthBehavior.js';
 import { EntityId } from '@sharpee/core';
 
 /**
@@ -23,30 +35,24 @@ export interface ICombatResult {
   deathMessage?: string;
 }
 
-/**
- * Behavior for combatant entities.
- * 
- * Handles combat with health, armor, and death.
- * This is a world-aware behavior because it handles inventory dropping on death.
- */
 export class CombatBehavior extends Behavior {
-  static requiredTraits = [TraitType.COMBATANT];
-  
+  static requiredTraits = [TraitType.COMBATANT, TraitType.HEALTH];
+
   /**
-   * Check if a combatant can be attacked
+   * Check if a combatant can be attacked (present, and alive per its health).
    */
   static canAttack(entity: IFEntity): boolean {
     if (!entity.has(TraitType.COMBATANT)) {
       return false;
     }
-    const combatant = entity.get<CombatantTrait>(TraitType.COMBATANT)!;
-    return combatant.isAlive && combatant.health > 0;
+    const health = CombatBehavior.optional<HealthTrait>(entity, TraitType.HEALTH);
+    return health ? HealthBehavior.isAlive(health) : true;
   }
-  
+
   /**
-   * Attack a combatant
+   * Attack a combatant.
    * @param entity The combatant to attack
-   * @param damage Base damage amount
+   * @param damage Base damage amount (pre-armor)
    * @param world The world model (needed for dropping inventory)
    * @returns Result describing what happened
    */
@@ -61,8 +67,9 @@ export class CombatBehavior extends Behavior {
       };
     }
     const combatant = entity.get<CombatantTrait>(TraitType.COMBATANT)!;
-    
-    if (!combatant.isAlive || combatant.health <= 0) {
+    const health = CombatBehavior.require<HealthTrait>(entity, TraitType.HEALTH);
+
+    if (!HealthBehavior.isAlive(health)) {
       return {
         success: false,
         damage: 0,
@@ -70,119 +77,112 @@ export class CombatBehavior extends Behavior {
         remainingHealth: 0
       };
     }
-    
-    // Apply armor reduction
+
+    // Apply armor reduction (always at least 1 damage), then route through health.
     const actualDamage = Math.max(1, damage - combatant.armor);
-    
-    // Apply damage
-    combatant.health = Math.max(0, combatant.health - actualDamage);
-    
+    const killed = HealthBehavior.takeDamage(health, actualDamage, 'combat');
+
     const result: ICombatResult = {
       success: true,
       damage: actualDamage,
-      killed: combatant.health <= 0,
-      remainingHealth: combatant.health,
+      killed,
+      remainingHealth: health.health,
       message: combatant.hitMessage,
-      retaliated: combatant.canRetaliate && combatant.health > 0
+      retaliated: combatant.canRetaliate && !killed
     };
-    
+
     // Handle death
-    if (combatant.health <= 0) {
-      combatant.isAlive = false;
+    if (killed) {
       result.deathMessage = combatant.deathMessage;
-      
+
       // Drop inventory if specified
       if (combatant.dropsInventory) {
         const location = world.getLocation(entity.id);
         const inventory = world.getContents(entity.id);
         const droppedItems: EntityId[] = [];
-        
+
         if (location) {
           for (const item of inventory) {
             world.moveEntity(item.id, location);
             droppedItems.push(item.id);
           }
         }
-        
+
         if (droppedItems.length > 0) {
           result.droppedItems = droppedItems;
         }
       }
     }
-    
+
     return result;
   }
-  
+
   /**
-   * Heal a combatant
+   * Heal a combatant. Returns the amount actually healed.
    */
   static heal(entity: IFEntity, amount: number): number {
     if (!entity.has(TraitType.COMBATANT)) {
       return 0;
     }
-    const combatant = entity.get<CombatantTrait>(TraitType.COMBATANT)!;
-    
-    if (!combatant.isAlive) return 0;
-    
-    const oldHealth = combatant.health;
-    combatant.health = Math.min(combatant.maxHealth, combatant.health + amount);
-    
-    return combatant.health - oldHealth;
+    const health = CombatBehavior.require<HealthTrait>(entity, TraitType.HEALTH);
+    return HealthBehavior.heal(health, amount);
   }
-  
+
   /**
-   * Resurrect a dead combatant
+   * Resurrect a dead combatant — clears the terminal state and restores full health.
+   * @returns true if a dead combatant was resurrected, false if it was already alive
    */
   static resurrect(entity: IFEntity): boolean {
     if (!entity.has(TraitType.COMBATANT)) {
       return false;
     }
-    const combatant = entity.get<CombatantTrait>(TraitType.COMBATANT)!;
-    
-    if (combatant.isAlive) return false;
-    
-    combatant.isAlive = true;
-    combatant.health = combatant.maxHealth;
+    const health = CombatBehavior.require<HealthTrait>(entity, TraitType.HEALTH);
+
+    if (HealthBehavior.isAlive(health)) return false;
+
+    health.dead = false;
+    health.causeOfDeath = undefined;
+    health.health = health.maxHealth;
     return true;
   }
-  
+
   /**
-   * Check if combatant is alive
+   * Check if combatant is alive (via its health). Non-combatants are alive by default.
    */
   static isAlive(entity: IFEntity): boolean {
     if (!entity.has(TraitType.COMBATANT)) {
       return true; // Non-combatants are considered 'alive' by default
     }
-    const combatant = entity.get<CombatantTrait>(TraitType.COMBATANT)!;
-    return combatant.isAlive && combatant.health > 0;
+    const health = CombatBehavior.optional<HealthTrait>(entity, TraitType.HEALTH);
+    return health ? HealthBehavior.isAlive(health) : true;
   }
-  
+
   /**
-   * Get current health
+   * Get current health.
    */
   static getHealth(entity: IFEntity): number {
-    const combatant = CombatBehavior.require<CombatantTrait>(entity, TraitType.COMBATANT);
-    return combatant.health;
+    const health = CombatBehavior.require<HealthTrait>(entity, TraitType.HEALTH);
+    return health.health;
   }
-  
+
   /**
-   * Get health percentage
+   * Get health percentage.
    */
   static getHealthPercentage(entity: IFEntity): number {
-    const combatant = CombatBehavior.require<CombatantTrait>(entity, TraitType.COMBATANT);
-    return (combatant.health / combatant.maxHealth) * 100;
+    const health = CombatBehavior.require<HealthTrait>(entity, TraitType.HEALTH);
+    return (health.health / health.maxHealth) * 100;
   }
-  
+
   /**
-   * Check if combatant is hostile
+   * Check if combatant is hostile.
    */
   static isHostile(entity: IFEntity): boolean {
     const combatant = CombatBehavior.require<CombatantTrait>(entity, TraitType.COMBATANT);
     return combatant.hostile;
   }
-  
+
   /**
-   * Set hostility
+   * Set hostility.
    */
   static setHostile(entity: IFEntity, hostile: boolean): void {
     const combatant = CombatBehavior.require<CombatantTrait>(entity, TraitType.COMBATANT);

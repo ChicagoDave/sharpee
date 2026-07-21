@@ -18,11 +18,11 @@ Fluent entity-builder DSL (helpers) and the EntityQuery API (queries).
  * Owner context: @sharpee/helpers (ADR-140)
  */
 import type { IWorldModel } from '@sharpee/world-model';
-import { RoomBuilder } from './builders/room';
-import { ObjectBuilder } from './builders/object';
-import { ContainerBuilder } from './builders/container';
-import { ActorBuilder } from './builders/actor';
-import { DoorBuilder } from './builders/door';
+import { RoomBuilder } from './builders/room.js';
+import { ObjectBuilder } from './builders/object.js';
+import { ContainerBuilder } from './builders/container.js';
+import { ActorBuilder } from './builders/actor.js';
+import { DoorBuilder } from './builders/door.js';
 /**
  * The set of builder factories returned by world.helpers().
  */
@@ -311,7 +311,11 @@ export declare class ContainerBuilder {
     /**
      * Make the container openable.
      *
-     * @param opts - Openable options
+     * Openable containers start CLOSED unless `isOpen: true` is passed —
+     * the world-model trait's own default (`OpenableTrait`, ADR-231 D5b)
+     * is authoritative; this builder adds no default of its own.
+     *
+     * @param opts - Openable options (`isOpen` to override the closed default)
      * @returns this (for chaining)
      */
     openable(opts?: {

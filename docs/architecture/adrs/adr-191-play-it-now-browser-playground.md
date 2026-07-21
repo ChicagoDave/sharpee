@@ -1,8 +1,42 @@
 # ADR-191: "Play It Now" — an in-browser Sharpee playground on the website
 
-## Status: PROPOSED
+## Status: ACCEPTED (2026-07-19, David, session b381db — all four open questions ruled via interview: Q-1 browser-clean compile path closed on shipped G2 evidence; Q-2 lazy-load on intent; Q-3 CodeMirror 6 first, Monaco at Mode B; Q-4 repokit `--playground` emit → `website/public/playground/v<X.Y.Z>/`. Site-reality amendment recorded same session: playground lands on the Next.js site as website-content plan Phase 5.)
 
-## Date: 2026-06-25
+## Date: 2026-06-25 (amended 2026-07-17)
+
+> **Amendment (2026-07-19, session b381db): the site this ADR targets has
+> been rebuilt.** The static GitHub Pages site (`site/`, `.github/workflows/
+> pages.yml`) was torn down per ADR-232's owner plan — the old trees are
+> archived under `docs/_archive/` — and the site is now a Next.js 16 App
+> Router app (`website/`, WF-B shell, generated palette) bound for David's
+> own server. Read this ADR's `site/play.html` / "site chrome" / "Pages
+> deploy" specifics as their new-site equivalents: a playground route in
+> `website/` using the WF-B shell; hosting on David's server. The
+> static-preferred principle (compile client-side, no backend) is
+> unchanged. ADR-191 was also ruled IN SCOPE of the website-content
+> workstream (David, 2026-07-19) — Phase 5 of
+> `docs/work/website-content/plan.md` implements Phase 1 (Chord mode).
+> A further reality update: the "primary technical risk" below (a
+> browser-clean compile path) has since been validated by shipped code —
+> the ADR-233 G2 devkit `--browser` build ships `.story` source + the
+> chord compiler and compiles at boot in real Chromium (clean-machine
+> proof, 2026-07-18).
+
+> **Amendment (2026-07-17, ruled by David, session 1befbd): the playground
+> is dual-mode, Chord-default.** ADR-191 predates the Chord story language
+> (ADR-210); the original design is TypeScript-only. As amended, the page
+> carries two editor modes: **Chord** (`.story` — the default tab and the
+> Phase 1 MVP) and **TypeScript** (the original esbuild-wasm design,
+> retained unchanged as a later phase on the same page). Chord changes the
+> MVP's economics: the chord compiler (parse → analyze → IR) and the
+> story-loader are pure TypeScript with no wasm toolchain, so "Play" is
+> compile-in-page + hand the loaded world to `@sharpee/platform-browser` —
+> no esbuild-wasm download, no transpile step, fast cold start — and it
+> matches Chord's interpreter-primary positioning as the author-facing
+> surface (ADR-210) and the 100% Sharpee==Chord parity goal. Sections
+> below annotated `[Mode A — Chord]` / `[Mode B — TS]` where the modes
+> diverge; unannotated content (site chrome, sandboxed iframe, player
+> pane, versioning, error area) is shared.
 
 ## Terminology
 
@@ -43,7 +77,18 @@ Add a **"Play It Now" playground page** to the website. Layout: a code editor pa
 resulting story in the standard browser client. Compilation happens **client-side, in the
 browser** — the site stays fully static.
 
-### How it works (client-side compile pipeline)
+### How it works — Mode A: Chord (default tab, Phase 1 MVP)
+
+1. **Edit.** The user edits a single `.story` file. The page seeds a runnable Chord
+   starter (a small room + object + one `on` clause, phrasebook-fixture style).
+2. **Compile.** On "Play", the page runs the **chord compiler** (parse → analyze → IR)
+   directly — pure TypeScript already in the platform browser bundle; no wasm, no
+   transpile. Diagnostics (parse/analyze errors with spans) render in the errors area.
+3. **Load + run.** The IR is handed to the **story-loader**, the loaded world to the
+   engine, and `@sharpee/platform-browser` renders in the player pane — the identical
+   runtime path of a `--browser`-built Chord story.
+
+### How it works — Mode B: TypeScript (later phase, original design retained)
 
 1. **Edit.** The user edits a single-file story (the `src/index.ts` shape: imports from
    `@sharpee/*`, a `Story` class/object, `export const story`). The page seeds a runnable
@@ -57,22 +102,44 @@ browser** — the site stays fully static.
 4. **Load + run.** The transpiled story is loaded as a Blob-URL ES module, its `story`
    export is handed to the engine, and `@sharpee/platform-browser` is attached to the player
    pane — the identical runtime path of every published story.
-5. **Isolate.** The compiled story + client run inside a **sandboxed `<iframe>`** so user
-   code cannot touch the parent page, and each "Play" gets a clean world. Errors (transpile
-   or runtime) surface in the errors area rather than the console.
+
+### Shared isolation
+
+Both modes run the compiled story + client inside a **sandboxed `<iframe>`** so user
+code cannot touch the parent page, and each "Play" gets a clean world. Errors (compile,
+transpile, or runtime) surface in the errors area rather than the console. One caveat the
+Chord mode inherits deliberately: a `.story` using the `define … from "./file.ts"` impure
+hatch is out of playground scope (single-file, declarative-only) — the analyzer's normal
+diagnostic for an unresolvable hatch is the answer, not a special case.
 
 ### Editor
 
-MVP uses **CodeMirror 6** (small, framework-free, fits ADR-170) with TypeScript syntax
-highlighting. A later phase can upgrade to **Monaco** for full IntelliSense by loading the
-bundled `@sharpee/*` `.d.ts` files (already shipped in `packages/sharpee/docs/genai-api/`
-and the npm package) into Monaco's TS worker.
+**CodeMirror 6 first (ruled Q-3, David, 2026-07-19)** — small, fast,
+lazy-load-friendly, with a custom Chord highlighting mode built from
+`catalog.ts`'s closed sets (neither editor ships one). **Monaco is
+reconsidered when Mode B lands** — TS IntelliSense (bundled `@sharpee/*`
+`.d.ts` into Monaco's TS worker) is Mode B's payoff, not the Chord MVP's.
 
-### Versioning
+### Loading policy (ruled Q-2, David, 2026-07-19)
+
+**Lazy-load on intent.** The playground page shell renders instantly; the
+platform+compiler bundle loads when the user focuses the editor or presses
+Play, with a visible loading state. Mode B's `esbuild-wasm` weight is
+judged at Mode B's own gate when that phase is built — not a blocker here
+(the Chord MVP has no wasm at all).
+
+### Versioning + bundle production (ruled Q-4, David, 2026-07-19)
 
 The hosted platform bundle is pinned to a published platform version and lives under a
 versioned path so the playground is reproducible and a platform upgrade is a deliberate
-republish, not a silent break. The page shows which version it is running.
+republish, not a silent break. The page shows which version it is running (plain
+`X.Y.Z` — no `-beta` suffix, per the 2026-07-19 version-format ruling).
+
+**Ruled**: a new repokit emit step (e.g. `repokit build --playground`), derived from
+the `--browser` pipeline but story-agnostic (compiler + loader + engine +
+`@sharpee/platform-browser`, story text supplied at runtime), synced to
+**`website/public/playground/v<X.Y.Z>/`** and served as static assets by the Next
+site. Refreshing it is a deliberate release step, not an automatic side effect.
 
 ## Options considered
 
@@ -92,19 +159,30 @@ republish, not a silent break. The page shows which version it is running.
 
 ## Scope
 
-**MVP (Phase 1):**
+**MVP (Phase 1) — Chord mode [amended 2026-07-17]:**
 
-- One static page, `site/play.html` (linked from nav and the homepage), framework-free,
-  reusing the site chrome (`style.css`, `components.js`, `theme.js`).
-- Single-file story; seeded starter template; **Play**, **Reset**, and an errors area.
-- CodeMirror 6 editor with TS highlighting.
-- `esbuild-wasm` transpile + import-map resolution against a hosted, version-pinned
-  platform browser-ESM bundle.
+- One playground route on the Next.js site (`website/`, the `/play` area — exact route
+  per the website-content plan Phase 5), linked from the WF-B nav and the homepage,
+  inside the shared site shell. ~~`site/play.html` + old static chrome~~ (superseded by
+  the 2026-07-19 site-rebuild amendment). The *player* itself stays framework-free —
+  `@sharpee/platform-browser` in the sandboxed iframe — while the page chrome is the
+  site's.
+- Single-file `.story`; seeded Chord starter; **Play**, **Reset**, and an errors area
+  showing chord diagnostics with spans.
+- CodeMirror 6 editor with a Chord highlighting mode (a small CM6 language definition —
+  keywords/kinds/adjectives from `catalog.ts`; new asset, sized small).
+- Chord compiler + story-loader + platform, all from one hosted, version-pinned
+  browser-ESM platform bundle. No wasm.
 - Player pane = `@sharpee/platform-browser` in a sandboxed iframe.
+- Example picker seeded from the phrasebook fixtures (`docs/work/stdlib-phrasebook/
+  fixtures/*.story`) — already verified stories, zero new content needed.
 
 **Later phases:**
 
-- Monaco editor + full `@sharpee/*` IntelliSense from bundled `.d.ts`.
+- **TypeScript tab (Mode B)** — the original esbuild-wasm design, unchanged, added to
+  the same page.
+- Monaco editor + full `@sharpee/*` IntelliSense from bundled `.d.ts` (TS mode); Chord
+  mode gains diagnostics-as-you-type by running the analyzer on idle.
 - **Shareable URLs** (encode the story in the URL/hash, like the TS Playground) and/or
   gist import, for blog posts and the book.
 - A library of **starter examples** (the book's per-chapter snippets, the Family Zoo
@@ -118,52 +196,54 @@ republish, not a silent break. The page shows which version it is running.
 
 - **New published asset: a browser-ESM platform bundle (+ later a types payload).** The
   platform must be consumable as browser ESM with no Node-runtime dependencies on the run
-  path. The `--browser` build already proves the platform runs in a browser; this packages
-  that same code for runtime story injection. Confirming there are no `fs`/`path`/Node-only
-  imports on the runtime path is the **primary technical risk** to validate first.
+  path. ~~Confirming there are no `fs`/`path`/Node-only imports on the runtime path is the
+  primary technical risk to validate first.~~ **RESOLVED on shipped evidence (David,
+  2026-07-19, session b381db): the ADR-233 G2 `--browser` pipeline compiles `.story`
+  source at boot in real Chromium (committed clean-machine + Fernhill proofs) — the
+  compile-and-run path is browser-clean in production; the playground only swaps the
+  source of the story text (editor pane instead of embedded file). No new spike.**
 - **Lowers the barrier to trying Sharpee to zero** (no install) — strategically aligned with
   the book + tutorial landing page and the adoption story.
 - **New maintenance surface:** editor, transpile pipeline, and version pinning of the hosted
   platform bundle to each release (a step in the release/build process).
 - **Security:** in the MVP, user code is transpiled and executed only in the user's own
   browser, inside a sandboxed iframe; nothing runs on a server. No new server attack surface.
-- **Static-site preserved:** no backend, so GitHub Pages hosting and the existing Pages
-  deploy continue unchanged.
+- **Static-site preserved:** no backend — the playground is static assets + client-side
+  compute, so it deploys wherever the Next site deploys (David's server, per ADR-232);
+  ~~GitHub Pages continue unchanged~~ (Pages was torn down 2026-07-19; the principle —
+  no compile backend, no new server attack surface — is what carries forward).
 
 ## Acceptance criteria
 
+Phase 1 (Chord mode) [amended 2026-07-17]:
+
 - AC-1: A "Play It Now" page exists, linked from the site nav, using the shared site chrome.
-- AC-2: The page loads a runnable starter story in the editor by default.
-- AC-3: Pressing **Play** transpiles the editor's TypeScript in-browser and runs the
-  resulting story in the player pane via `@sharpee/platform-browser`, with no network call to
-  a compile backend.
-- AC-4: A story that imports `@sharpee/*` resolves against the hosted, version-pinned platform
-  ESM bundle and runs (e.g. the Family Zoo first room is playable: `look`, `examine sign`).
-- AC-5: Transpile and runtime errors are shown in an errors area, not only the console, and
-  do not break the page.
+- AC-2: The page loads a runnable Chord starter story in the editor by default.
+- AC-3: Pressing **Play** compiles the editor's `.story` in-browser (chord compiler +
+  story-loader, no wasm) and runs it in the player pane via `@sharpee/platform-browser`,
+  with no network call to a compile backend.
+- AC-4: A phrasebook fixture pasted verbatim compiles and plays (e.g. locking-unlocking:
+  `unlock strongbox with key`, `open strongbox`).
+- AC-5: Chord parse/analyze diagnostics (with line spans) and runtime errors are shown in
+  an errors area, not only the console, and do not break the page.
 - AC-6: **Reset** restores a clean world (and the starter template).
 - AC-7: User code runs sandboxed (iframe) and cannot mutate the host page.
 - AC-8: The page displays the platform version it is running.
 
-## Open questions
+Mode B phase (TypeScript tab) additionally:
 
-- Does the platform's runtime path import any Node-only modules (`fs`, `path`, `process`)
-  that would block a clean browser-ESM bundle? (Validate against the existing `--browser`
-  output first — it should already be clean.)
-- Bundle size/cold-start budget for `esbuild-wasm` (~MBs) plus the platform bundle — is the
-  first-Play latency acceptable, and should the wasm/platform load be deferred until the
-  user focuses the editor or clicks Play?
-- CodeMirror-first vs Monaco-first: is IntelliSense important enough to start with Monaco
-  despite its weight, given the framework-free constraint (ADR-170)?
-- Where does the hosted platform bundle live and how is it produced — a new `repokit`/
-  `build-book`-style step that emits `site/playground/v<version>/` from the `--browser`
-  pipeline?
+- AC-9: Pressing **Play** on the TS tab transpiles in-browser (esbuild-wasm) and runs the
+  story with no compile backend; `@sharpee/*` resolves against the hosted, version-pinned
+  platform ESM bundle (e.g. the Family Zoo first room is playable: `look`, `examine sign`).
 
 ## Relationships
 
 - **Extends / relies on** ADR-170 (framework-free browser UI) and ADR-163 (channels as the
   universal UI surface) — the playground reuses `@sharpee/platform-browser` and the channel
   renderer unchanged.
+- **Amended for** ADR-210 (Chord story language): Chord mode is the default tab and the
+  Phase 1 MVP; the playground becomes Chord's zero-install front door, consistent with
+  interpreter-primary positioning and the 100% Sharpee==Chord parity goal.
 - **Reuses** the `--browser` build output (ADR-187 repokit / ADR-180 devkit split): the
   playground is "the browser client, with the story supplied at runtime."
 - **Synergizes with** the book's code-snippet page (this session) — snippets and Family Zoo

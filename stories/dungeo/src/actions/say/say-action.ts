@@ -10,7 +10,7 @@
  * - Riddle Room: answer "well" to open the stone door
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { NpcTrait, IdentityTrait, ActorTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { SAY_ACTION_ID, SayMessages } from './types';
@@ -120,12 +120,14 @@ function handleLoudRoomEcho(context: ActionContext): ISemanticEvent[] {
 
   // Check if player has the platinum bar
   if (hasPlatinumBar(context)) {
-    // DEATH! The bar amplifies the echo reverberations
-    events.push(context.event('player.died', {
-      actionId: SAY_ACTION_ID,
-      messageId: SayMessages.LOUD_ROOM_ECHO_DEATH,
+    // DEATH! The bar amplifies the echo reverberations — canonical terminal
+    // death (ADR-224) via the platform primitive, not a hand-emitted event.
+    const deathEvent = killPlayer(context.world, context.player, {
       cause: 'echo_reverberations',
-    }));
+      messageId: SayMessages.LOUD_ROOM_ECHO_DEATH,
+      terminal: true,
+    });
+    if (deathEvent) events.push(deathEvent);
   } else {
     // Safe! Without the bar, the echo dissipates harmlessly
     room.attributes.echoSolved = true;

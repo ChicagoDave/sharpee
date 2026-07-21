@@ -5,6 +5,21 @@ description: Test troll-specific player action interceptions (TAKE TROLL, unarme
 
 ---
 
+# The conscious troll strikes bystanders each turn (MDL melee canon) and can
+# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
+# revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
+# GDT ND = immortality: this tests interception behavior, not player mortality
+> gdt
+[OK: contains "GDT"]
+
+> nd
+[OK: contains "Immortality"]
+
+> ex
+[OK: contains "Returning"]
+
 # Navigate to house and get equipment (lantern AND sword)
 > north
 [OK: contains "North of House"]
@@ -73,3 +88,5 @@ description: Test troll-specific player action interceptions (TAKE TROLL, unarme
 # We just test that it doesn't say "laughs" anymore
 > attack troll
 [FAIL: contains "laughs"]
+
+[END RETRY]

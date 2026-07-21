@@ -15,7 +15,8 @@ English language provider, message resolution, formatters.
  */
 import { ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
-import { NarrativeContext } from './perspective';
+import type { PronounSetForms } from './assembler/index.js';
+import { NarrativeContext } from './perspective/index.js';
 /**
  * English language data and rules
  */
@@ -134,6 +135,17 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     renderMessage(messageId: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
     /**
+     * Realize a template string directly — {@link renderMessage} minus the
+     * registry lookup (ADR-250 D4). The engine's phrasebook read point calls
+     * this with a book-resolved template; the `messages` map is not consulted.
+     *
+     * @param template The template text
+     * @param params Parameter/producer bindings keyed by placeholder name
+     * @param ctx The per-message render context (world, settings, seams)
+     * @returns The realized text blocks
+     */
+    renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
+    /**
      * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
      * @param on true → "a, b, and c"; false → "a, b and c"
      */
@@ -203,6 +215,15 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     addMessage(messageId: string, template: string): void;
     /**
+     * Register a named pronoun set (ADR-242 D7) — the loader's
+     * `extendLanguage` registration surface beside `addMessage` (probed
+     * structurally; the loader stays locale-neutral). Forms flow to the
+     * Assembler's pronoun authority, consulted before the standard rows.
+     * @param name The set name as declared (`define pronouns ze`)
+     * @param forms The five case forms (subject/object/possessive/possessivePronoun/reflexive)
+     */
+    registerPronounSet(name: string, forms: PronounSetForms): void;
+    /**
      * Add help information for a custom action
      * @param actionId The action identifier (e.g., 'custom.action.foo')
      * @param help The help information including usage, description, examples
@@ -268,15 +289,26 @@ export declare const IFActions: {
     readonly TAKING_OFF: "if.action.taking_off";
     readonly EATING: "if.action.eating";
     readonly DRINKING: "if.action.drinking";
+    readonly LOWERING: "if.action.lowering";
+    readonly RAISING: "if.action.raising";
+    readonly CUTTING: "if.action.cutting";
+    readonly DIGGING: "if.action.digging";
+    readonly REMOVING: "if.action.removing";
+    readonly HIDING: "if.action.hiding";
+    readonly REVEALING: "if.action.revealing";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
     readonly SAVING: "if.action.saving";
     readonly RESTORING: "if.action.restoring";
+    readonly RESTARTING: "if.action.restarting";
     readonly QUITTING: "if.action.quitting";
     readonly HELP: "if.action.help";
     readonly ABOUT: "if.action.about";
     readonly SCORING: "if.action.scoring";
+    readonly AGAIN: "if.action.again";
+    readonly UNDOING: "if.action.undoing";
+    readonly VERSION: "if.action.version";
     readonly TRACE: "author.trace";
 };
 export interface VerbDefinition {
@@ -481,7 +513,7 @@ export declare const EnglishGrammarUtils: {
 /**
  * Export all grammar types and constants
  */
-export * from './index';
+export * from './index.js';
 ```
 
 ### actions
@@ -492,58 +524,59 @@ export * from './index';
  *
  * Each action has its own file with patterns, messages, and help text
  */
-export * from './taking';
-export * from './dropping';
-export * from './looking';
-export * from './inventory';
-export * from './examining';
-export * from './going';
-export * from './opening';
-export * from './closing';
-export * from './putting';
-export * from './inserting';
-export * from './removing';
-export * from './wearing';
-export * from './taking-off';
-export * from './locking';
-export * from './unlocking';
-export * from './entering';
-export * from './exiting';
-export * from './climbing';
-export * from './searching';
-export * from './listening';
-export * from './smelling';
-export * from './touching';
-export * from './reading';
-export * from './switching-on';
-export * from './switching-off';
-export * from './pushing';
-export * from './pulling';
-export * from './turning';
-export * from './lowering';
-export * from './raising';
-export * from './giving';
-export * from './showing';
-export * from './talking';
-export * from './asking';
-export * from './telling';
-export * from './answering';
-export * from './throwing';
-export * from './eating';
-export * from './drinking';
-export * from './attacking';
-export * from './hiding';
-export * from './waiting';
-export * from './sleeping';
-export * from './scoring';
-export * from './help';
-export * from './about';
-export * from './version';
-export * from './saving';
-export * from './restoring';
-export * from './quitting';
-export * from './undoing';
-export * from './again';
+export * from './taking.js';
+export * from './dropping.js';
+export * from './looking.js';
+export * from './inventory.js';
+export * from './examining.js';
+export * from './going.js';
+export * from './opening.js';
+export * from './closing.js';
+export * from './putting.js';
+export * from './inserting.js';
+export * from './removing.js';
+export * from './wearing.js';
+export * from './taking-off.js';
+export * from './locking.js';
+export * from './unlocking.js';
+export * from './entering.js';
+export * from './exiting.js';
+export * from './climbing.js';
+export * from './searching.js';
+export * from './listening.js';
+export * from './smelling.js';
+export * from './touching.js';
+export * from './reading.js';
+export * from './switching-on.js';
+export * from './switching-off.js';
+export * from './pushing.js';
+export * from './pulling.js';
+export * from './turning.js';
+export * from './lowering.js';
+export * from './raising.js';
+export * from './giving.js';
+export * from './showing.js';
+export * from './talking.js';
+export * from './asking.js';
+export * from './telling.js';
+export * from './answering.js';
+export * from './throwing.js';
+export * from './eating.js';
+export * from './drinking.js';
+export * from './attacking.js';
+export * from './hiding.js';
+export * from './waiting.js';
+export * from './sleeping.js';
+export * from './scoring.js';
+export * from './help.js';
+export * from './about.js';
+export * from './version.js';
+export * from './saving.js';
+export * from './restoring.js';
+export * from './quitting.js';
+export * from './restarting.js';
+export * from './undoing.js';
+export * from './again.js';
 /**
  * All standard action language definitions
  */
@@ -552,13 +585,30 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        not_held: string;
-        nothing_to_drop: string;
-        dropped: string;
-        still_worn: string;
-        dropped_in: string;
-        dropped_on: string;
-        dropped_multi: string;
+        not_visible: string;
+        cant_see: string;
+        examined: string;
+        examined_self: string;
+        examined_container: string;
+        examined_supporter: string;
+        examined_readable: string;
+        examined_switchable: string;
+        examined_wearable: string;
+        examined_door: string;
+        examined_wall: string;
+        nothing_special: string;
+        default_description: string;
+        default_description_self: string;
+        description: string;
+        brief_description: string;
+        no_description: string;
+        container_open: string;
+        container_closed: string;
+        container_empty: string;
+        container_contents: string;
+        surface_contents: string;
+        worn_by_you: string;
+        worn_by_other: string;
     };
     help: {
         description: string;
@@ -581,6 +631,24 @@ export declare const standardActionLanguage: ({
         nothing_to_take: string;
         taken_from: string;
         taken_multi: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_held: string;
+        nothing_to_drop: string;
+        dropped: string;
+        still_worn: string;
+        dropped_in: string;
+        dropped_on: string;
+        dropped_multi: string;
     };
     help: {
         description: string;
@@ -636,39 +704,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_visible: string;
-        cant_see: string;
-        examined: string;
-        examined_self: string;
-        examined_container: string;
-        examined_supporter: string;
-        examined_readable: string;
-        examined_switchable: string;
-        examined_wearable: string;
-        examined_door: string;
-        examined_wall: string;
-        nothing_special: string;
-        description: string;
-        brief_description: string;
-        no_description: string;
-        container_open: string;
-        container_closed: string;
-        container_empty: string;
-        container_contents: string;
-        surface_contents: string;
-        worn_by_you: string;
-        worn_by_other: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         room_description: string;
         contents_list: string;
         no_exit: string;
@@ -707,6 +742,9 @@ export declare const standardActionLanguage: ({
         revealing: string;
         its_empty: string;
         cant_reach: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
     };
     help: {
         description: string;
@@ -867,6 +905,40 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         not_enterable: string;
         already_inside: string;
         container_closed: string;
@@ -893,6 +965,8 @@ export declare const standardActionLanguage: ({
         exited: string;
         exited_from: string;
         nowhere_to_go: string;
+        not_in_that: string;
+        not_on_that: string;
         exit_blocked: string;
         must_stand_first: string;
     };
@@ -907,6 +981,7 @@ export declare const standardActionLanguage: ({
     messages: {
         no_target: string;
         not_climbable: string;
+        climb_nowhere: string;
         cant_go_that_way: string;
         climbed_up: string;
         climbed_down: string;
@@ -937,7 +1012,9 @@ export declare const standardActionLanguage: ({
         supporter_contents: string;
         searched_location: string;
         searched_object: string;
-        found_concealed: string;
+        found_concealed_in_container: string;
+        found_concealed_on_supporter: string;
+        found_concealed_here: string;
     };
     help: {
         description: string;
@@ -1000,11 +1077,9 @@ export declare const standardActionLanguage: ({
         feels_normal: string;
         feels_warm: string;
         feels_hot: string;
-        feels_cold: string;
         feels_soft: string;
         feels_hard: string;
         feels_smooth: string;
-        feels_rough: string;
         feels_wet: string;
         device_vibrating: string;
         immovable_object: string;
@@ -1117,23 +1192,11 @@ export declare const standardActionLanguage: ({
         no_target: string;
         not_visible: string;
         not_reachable: string;
-        too_heavy: string;
-        wearing_it: string;
-        wont_budge: string;
-        lever_pulled: string;
-        lever_clicks: string;
-        lever_toggled: string;
-        cord_pulled: string;
-        bell_rings: string;
-        cord_activates: string;
-        comes_loose: string;
-        firmly_attached: string;
-        tugging_useless: string;
-        pulled_direction: string;
-        pulled_nudged: string;
-        pulled_with_effort: string;
-        pulling_does_nothing: string;
-        fixed_in_place: string;
+        cant_pull_that: string;
+        worn: string;
+        already_pulled: string;
+        pulled: string;
+        nothing_happens: string;
     };
     help: {
         description: string;
@@ -1469,6 +1532,9 @@ export declare const standardActionLanguage: ({
         need_weapon_to_damage: string;
         wrong_weapon_type: string;
         attack_ineffective: string;
+        attack_requires_weapon: string;
+        attack_wrong_weapon_type: string;
+        attack_invulnerable: string;
         already_dead: string;
         violence_not_the_answer: string;
         'combat.cannot_attack': string;
@@ -1759,6 +1825,22 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        restart_confirm: string;
+        restart_unsaved: string;
+        restart_requested: string;
+        game_restarting: string;
+        starting_over: string;
+        new_game: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
         undo_success: string;
         undo_to_turn: string;
         undo_failed: string;
@@ -1789,7 +1871,10 @@ export declare const standardActionLanguage: ({
         on: string;
         inside: string;
         nothing_to_hide: string;
-        cant_hide_there: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
         already_hidden: string;
     };
     help: {
@@ -2102,6 +2187,22 @@ import { ITextBlock } from '@sharpee/text-blocks';
  * wires per-event trees.
  */
 export declare const ASSEMBLER_DEFAULT_BLOCK_KEY: "action.result";
+/** The five case forms of a registered pronoun set (ADR-242 D7). */
+export interface PronounSetForms {
+    subject: string;
+    object: string;
+    possessive: string;
+    possessivePronoun: string;
+    reflexive: string;
+}
+/**
+ * Register a named pronoun set (ADR-242 D7). Called by the language
+ * provider's `registerPronounSet` (the loader's `extendLanguage` probe);
+ * a re-registration overwrites (last-wins, the `addMessage` convention).
+ * @param name the set name as declared (`define pronouns ze`)
+ * @param forms the five case forms
+ */
+export declare function registerPronounSet(name: string, forms: PronounSetForms): void;
 /**
  * Capitalize the first alphabetic character of a sentence. Exposed as the Case
  * authority; the explicit `{capitalize …}` template hint is wired to it by the

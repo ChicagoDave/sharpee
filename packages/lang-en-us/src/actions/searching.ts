@@ -30,7 +30,12 @@ export const searchingLanguage = {
     'supporter_contents': "On {the target} {you} {see}: {items}.",
     'searched_location': "{You} {search} around carefully.",
     'searched_object': "{You} {search} {the target} thoroughly.",
-    'found_concealed': "Hidden {where}, {you} {discover}: {items}."
+    // Per-shape concealment-reveal messages: the position lives in the template
+    // text, never as a bare-string preposition param the assembler would
+    // article-decorate ("Hidden an on…").
+    'found_concealed_in_container': "Hidden inside {the target}, {you} {discover}: {items}.",
+    'found_concealed_on_supporter': "Hidden on {the target}, {you} {discover}: {items}.",
+    'found_concealed_here': "Hidden here, {you} {discover}: {items}."
   },
   
   help: {

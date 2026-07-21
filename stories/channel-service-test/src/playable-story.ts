@@ -32,21 +32,19 @@ import {
 } from '@sharpee/world-model';
 import { registerStoryChannels } from './channels';
 
-export const config: StoryConfig = {
-  id: 'channel-service-test',
-  title: 'Channel Service Test Story',
-  author: 'Sharpee Platform',
-  version: '0.0.2',
-  description:
-    'AC-15 fixture for ADR-163 channel-I/O parity. One room, one beacon, one debug-stats channel.',
-};
-
 /**
  * Minimal playable Sharpee story implementing the `Story` interface
  * with the new ADR-163 `registerChannels` hook.
  */
 export class ChannelServiceTestStory implements Story {
-  config = config;
+  config: StoryConfig = {
+    id: 'channel-service-test',
+    title: 'Channel Service Test Story',
+    author: 'Sharpee Platform',
+    version: '0.0.2',
+    description:
+      'AC-15 fixture for ADR-163 channel-I/O parity. One room, one beacon, one debug-stats channel.',
+  };
 
   initializeWorld(world: WorldModel): void {
     // The Lab — single room with one portable item.
@@ -54,7 +52,7 @@ export class ChannelServiceTestStory implements Story {
     lab.add(
       new RoomTrait({
         exits: {},
-        isDark: false,
+        requiresLight: false,
       }),
     );
     lab.add(
@@ -146,4 +144,10 @@ function ensurePlayerTraits(entity: IFEntity): void {
   }
 }
 
-export const story = new ChannelServiceTestStory();
+/**
+ * Story factory (ADR-248): the module's sole story export. Each call
+ * returns a fully fresh story instance — clients call this per boot.
+ */
+export function createStory(): ChannelServiceTestStory {
+  return new ChannelServiceTestStory();
+}

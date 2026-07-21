@@ -10,35 +10,37 @@
  * - NPC messages (ADR-070)
  */
 
-export { EnglishLanguageProvider, default } from './language-provider';
-export { EnglishLanguageProvider as LanguageProvider } from './language-provider'; // For convenience
+export { EnglishLanguageProvider, default } from './language-provider.js';
+export { EnglishLanguageProvider as LanguageProvider } from './language-provider.js'; // For convenience
 
 // Export types that might be used by consumers
-export type { VerbDefinition } from './data/verbs';
+export type { VerbDefinition } from './data/verbs.js';
+// The declared-verb contract, consumed by the ADR-230 D4 verb-reachability gate.
+export { englishVerbs } from './data/verbs.js';
 
 // Export grammar types and constants
-export * from './grammar';
+export * from './grammar.js';
 
 // Export action language definitions
-export * from './actions';
+export * from './actions/index.js';
 
 // Export NPC language definitions (ADR-070)
-export * from './npc';
+export * from './npc/index.js';
 
 // Export perspective placeholder resolution (ADR-089)
-export * from './perspective';
+export * from './perspective/index.js';
 
 // Export formatter system (ADR-095)
 
 // Export the English Assembler — phrase-tree realization (ADR-192)
-export * from './assembler';
+export * from './assembler/index.js';
 
 // Export the phrase-template parser (ADR-192)
-export * from './parser';
+export * from './parser/index.js';
 
 // English grammar helpers (ADR-190): pluralization + count-word spelling
-export { pluralize } from './pluralize';
-export { countWord } from './number-words';
+export { pluralize } from './pluralize.js';
+export { countWord } from './number-words.js';
 
 // Export vocabulary data for parser use (ADR-082)
 export {
@@ -48,10 +50,10 @@ export {
   englishWords,
   abbreviations,
   irregularPlurals
-} from './data/words';
+} from './data/words.js';
 
 // Export parser error messages (Phase 1.2 recommendations)
-export { parserErrors, getParserErrorMessage } from './data/messages';
+export { parserErrors, getParserErrorMessage } from './data/messages.js';
 
 // Export spatial sound prose defaults (ADR-172)
 export {
@@ -60,4 +62,4 @@ export {
   soundFallbackMessageId,
   type SoundMessageId,
   type RenderableAudibilityTier,
-} from './sound-messages';
+} from './sound-messages.js';

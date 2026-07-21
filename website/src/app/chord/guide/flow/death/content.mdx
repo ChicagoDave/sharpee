@@ -1,0 +1,69 @@
+Death is not `lose`. `lose` ends the game directly; the three constructs
+here run the platform's death machinery instead — the death text speaks,
+a died event fires, and at the end of the turn the engine re-checks
+whether the player is actually dead. That re-check is a real window: a
+story policy that revives the player during the turn (a reincarnation
+rule, a guardian angel) vetoes the ending and play continues. With no
+such policy, the story ends in defeat.
+
+**`kill the player [<phrase-key>] [when <condition>]`** is a statement,
+peer to `win` and `lose` ([§3.7](/chord/guide/behavior)), legal
+anywhere statements go — `on` and
+`after` clauses, `every turn` daemons, action bodies, inside `select` and
+`each`. The phrase key is the death text (define it like any phrase) and
+doubles as the recorded cause; bare `kill the player` records the cause
+`killed` and shows only the platform's ending text. The `when` suffix
+gates it like any statement ([§3.8](/chord/guide/behavior)):
+
+```chord
+  on crossing it
+    kill the player bridge-death when it is frayed
+    phrase bridge-holds
+  end on
+```
+
+While the bridge is whole, the `kill` is skipped and `bridge-holds`
+speaks instead — the same shape as the conditional `lose` in §4.6.
+
+**`<direction> is deadly: <phrase-key>`** marks a fatal exit, mirroring
+`is blocked:` ([§2.5](/chord/guide/world)). The fatal direction is
+deliberately not an exit at
+all: typing it never runs the going action — the command is rewritten
+into the platform's internal death action, so the player sees the death
+text and nothing else, no movement prose, no refusal. The player
+retreats another way.
+
+```chord
+create Aragain Falls
+  a room
+  west to the Rocky Ledge
+  south is deadly: falls-death
+
+  The roar of the water is everything.
+```
+
+The conditional form `is deadly while <condition>:` parses but is not
+wired yet — a load error tells you so; the live equivalent is an
+`on going it` clause carrying `kill the player when <condition>`.
+
+**`deadly: <phrase-key>`** marks the whole room as a no-escape position:
+every verb except a safe allowlist — look and examine, by default — is
+fatal, including objectless ones like WAIT and INVENTORY that no
+per-entity clause could catch. Reserve it for the genuinely inescapable
+spot, not as a generic hazard flag:
+
+```chord
+create Over the Falls
+  a room
+  deadly: over-falls-death
+
+  You are over the falls. This was a mistake.
+```
+
+In TypeScript the underlying trait adds two more dials: `safeVerbs`
+widens the allowlist, and `chance` makes the room probabilistically
+deadly — a survived roll simply lets the verb run normally, with no
+message. Neither dial is expressible from Chord today. [The standard
+library reference §9](/chord/stdlib/death) documents the machinery
+underneath all three constructs: the died event's shape, the veto
+window's mechanics, the health trait, and the internal redirect action.

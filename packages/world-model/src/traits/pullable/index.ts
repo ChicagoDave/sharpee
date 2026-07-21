@@ -1,1 +1,1 @@
-export * from './pullableTrait';
+export * from './pullableTrait.js';

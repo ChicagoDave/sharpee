@@ -122,7 +122,7 @@ describe('Visibility Chains Integration Tests', () => {
   describe('Room and Light Visibility', () => {
     it('should not see in dark rooms', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      darkRoom.getTrait(RoomTrait)!.isDark = true;
+      darkRoom.getTrait(RoomTrait)!.requiresLight = true;
       
       const player = createTestActor(world, 'Player');
       const chair = world.createEntity('Chair', 'item');
@@ -135,7 +135,7 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should see with carried light source', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      darkRoom.getTrait(RoomTrait)!.isDark = true;
+      darkRoom.getTrait(RoomTrait)!.requiresLight = true;
       
       const player = createTestActor(world, 'Player');
       const torch = world.createEntity('Torch', 'item');
@@ -151,7 +151,7 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should see with light source in room', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      darkRoom.getTrait(RoomTrait)!.isDark = true;
+      darkRoom.getTrait(RoomTrait)!.requiresLight = true;
       
       const player = createTestActor(world, 'Player');
       const lamp = world.createEntity('Standing Lamp', 'item');
@@ -167,7 +167,7 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should handle light in containers', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      darkRoom.getTrait(RoomTrait)!.isDark = true;
+      darkRoom.getTrait(RoomTrait)!.requiresLight = true;
       
       const player = createTestActor(world, 'Player');
       const lanternBox = createTestContainer(world, 'Box');
@@ -413,7 +413,7 @@ describe('Visibility Chains Integration Tests', () => {
 
     it('should handle scope in dark rooms with light', () => {
       const darkRoom = createTestRoom(world, 'Dark Room');
-      darkRoom.getTrait(RoomTrait)!.isDark = true;
+      darkRoom.getTrait(RoomTrait)!.requiresLight = true;
       
       const player = createTestActor(world, 'Player');
       const candle = world.createEntity('Candle', 'item');

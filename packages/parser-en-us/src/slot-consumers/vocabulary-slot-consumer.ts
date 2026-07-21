@@ -4,7 +4,7 @@
  */
 
 import { SlotType, SlotMatch, GrammarContext } from '@sharpee/if-domain';
-import { SlotConsumer, SlotConsumerContext } from './slot-consumer';
+import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
 
 /**
  * Built-in manner adverbs that modify how actions are performed.

@@ -5,4 +5,4 @@
  * Full combat resolution is provided by extensions (e.g., @sharpee/ext-basic-combat).
  */
 
-export { findWieldedWeapon } from './weapon-utils';
+export { findWieldedWeapon } from './weapon-utils.js';

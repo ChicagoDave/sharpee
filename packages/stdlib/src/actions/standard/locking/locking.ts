@@ -10,16 +10,65 @@
  * 3. report: Generate events from sharedData
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, LockableBehavior, OpenableBehavior, ILockResult } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope';
-import { LockedEventData } from './locking-events';
-import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared';
-import { MESSAGES } from './locking-messages';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/index.js';
+import { LockedEventData } from './locking-events.js';
+import { analyzeLockContext, validateKeyRequirements, determineLockMessage } from '../lock-shared.js';
+import { MESSAGES } from './locking-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228/229 R2): the locked target and the
+ * explicit key are the consultable entities of a LOCK command,
+ * published order target → key (D3-B). Explicit keys only — an
+ * auto-inferred key is not a command entity (same documented rule as
+ * attacking's inferred weapons). Symmetric seedData mirrors putting.
+ */
+export const lockingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.LOCKING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.LOCKING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => {
+        const key = ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity;
+        return {
+          targetId: entity.id,
+          targetName: entity.name,
+          keyId: key?.id,
+          keyName: key?.name
+        };
+      }
+    },
+    {
+      id: 'key',
+      actionIds: [IFActions.LOCKING],
+      resolve: (ctx) => ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        keyId: entity.id,
+        keyName: entity.name,
+        targetId: ctx.command.directObject?.entity?.id,
+        targetName: ctx.command.directObject?.entity?.name
+      })
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -83,6 +132,10 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    const state = resolveLifecycle(context, lockingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -122,6 +175,10 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     if (keyValidation) {
       return keyValidation;
     }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -202,6 +259,9 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     if (withKey) {
       sharedData.params.key = nounPhraseFor(withKey);
     }
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -226,7 +286,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Emit domain event with messageId (simplified pattern - ADR-097)
-    return [
+    const events: ISemanticEvent[] = [
       context.event('if.event.locked', {
         // Rendering data (messageId + params for text-service)
         messageId: `${context.action.id}.${sharedData.messageId}`,
@@ -242,6 +302,11 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
         sound: sharedData.sound
       })
     ];
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.locked');
+
+    return events;
   },
 
   /**
@@ -252,15 +317,22 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
 
-    return [context.event('if.event.lock_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.lock_blocked', {
       // Rendering data
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       // Domain data
       targetId: noun?.id,
       targetName: noun?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.lock_blocked', result.error);
+    }
+
+    return events;
   },
 
   metadata: {

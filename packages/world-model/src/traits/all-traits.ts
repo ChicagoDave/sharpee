@@ -8,35 +8,34 @@
  */
 
 // Import all trait classes
-import { ActorTrait } from './actor/actorTrait';
-import { AttachedTrait } from './attached/attachedTrait';
-import { ButtonTrait } from './button/buttonTrait';
-import { ClothingTrait } from './clothing/clothingTrait';
-import { ContainerTrait } from './container/containerTrait';
-import { DoorTrait } from './door/doorTrait';
-import { ClimbableTrait } from './climbable/climbableTrait';
-import { EdibleTrait } from './edible/edibleTrait';
-import { ExitTrait } from './exit/exitTrait';
-import { IdentityTrait } from './identity/identityTrait';
-import { LightSourceTrait } from './light-source/lightSourceTrait';
-import { LockableTrait } from './lockable/lockableTrait';
-import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait';
-import { OpenableTrait } from './openable/openableTrait';
-import { PullableTrait } from './pullable/pullableTrait';
-import { PushableTrait } from './pushable/pushableTrait';
-import { ReadableTrait } from './readable/readableTrait';
-import { RoomTrait } from './room/roomTrait';
-import { SceneryTrait } from './scenery/sceneryTrait';
-import { SupporterTrait } from './supporter/supporterTrait';
-import { SwitchableTrait } from './switchable/switchableTrait';
-import { WearableTrait } from './wearable/wearableTrait';
-import { WeaponTrait } from './weapon/weaponTrait';
-import { BreakableTrait } from './breakable/breakableTrait';
-import { DestructibleTrait } from './destructible/destructibleTrait';
-import { CombatantTrait } from './combatant/combatantTrait';
-import { EquippedTrait } from './equipped/equippedTrait';
-import { EnterableTrait } from './enterable/enterableTrait';
-import { CharacterModelTrait } from './character-model/characterModelTrait';
+import { ActorTrait } from './actor/actorTrait.js';
+import { AttachedTrait } from './attached/attachedTrait.js';
+import { ButtonTrait } from './button/buttonTrait.js';
+import { ContainerTrait } from './container/containerTrait.js';
+import { DoorTrait } from './door/doorTrait.js';
+import { ClimbableTrait } from './climbable/climbableTrait.js';
+import { EdibleTrait } from './edible/edibleTrait.js';
+import { ExitTrait } from './exit/exitTrait.js';
+import { IdentityTrait } from './identity/identityTrait.js';
+import { LightSourceTrait } from './light-source/lightSourceTrait.js';
+import { LockableTrait } from './lockable/lockableTrait.js';
+import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait.js';
+import { OpenableTrait } from './openable/openableTrait.js';
+import { PullableTrait } from './pullable/pullableTrait.js';
+import { PushableTrait } from './pushable/pushableTrait.js';
+import { ReadableTrait } from './readable/readableTrait.js';
+import { RoomTrait } from './room/roomTrait.js';
+import { SceneryTrait } from './scenery/sceneryTrait.js';
+import { SupporterTrait } from './supporter/supporterTrait.js';
+import { SwitchableTrait } from './switchable/switchableTrait.js';
+import { WearableTrait } from './wearable/wearableTrait.js';
+import { WeaponTrait } from './weapon/weaponTrait.js';
+import { BreakableTrait } from './breakable/breakableTrait.js';
+import { DestructibleTrait } from './destructible/destructibleTrait.js';
+import { CombatantTrait } from './combatant/combatantTrait.js';
+import { EquippedTrait } from './equipped/equippedTrait.js';
+import { EnterableTrait } from './enterable/enterableTrait.js';
+import { CharacterModelTrait } from './character-model/characterModelTrait.js';
 
 // Export as namespace for easy access
 export const Traits = {
@@ -44,7 +43,6 @@ export const Traits = {
   AttachedTrait,
   ButtonTrait,
   ClimbableTrait,
-  ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
@@ -77,7 +75,6 @@ export type {
   AttachedTrait,
   ButtonTrait,
   ClimbableTrait,
-  ClothingTrait,
   ContainerTrait,
   DoorTrait,
   EdibleTrait,
@@ -110,7 +107,6 @@ export type AnyTrait =
   | AttachedTrait
   | ButtonTrait
   | ClimbableTrait
-  | ClothingTrait
   | ContainerTrait
   | DoorTrait
   | EdibleTrait
@@ -195,10 +191,6 @@ export function isSwitchableTrait(trait: any): trait is SwitchableTrait {
 
 export function isWearableTrait(trait: any): trait is WearableTrait {
   return trait?.type === 'wearable';
-}
-
-export function isClothingTrait(trait: any): trait is ClothingTrait {
-  return trait?.type === 'clothing';
 }
 
 export function isAttachedTrait(trait: any): trait is AttachedTrait {

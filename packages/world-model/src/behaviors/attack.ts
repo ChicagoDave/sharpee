@@ -4,16 +4,27 @@
  * Coordinates the various combat behaviors to handle attacks
  */
 
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from '../world/WorldModel';
-import { TraitType } from '../traits/trait-types';
-import { EquippedTrait } from '../traits/equipped/equippedTrait';
-import { WeaponTrait } from '../traits/weapon/weaponTrait';
-import { EntityId } from '@sharpee/core';
-import { WeaponBehavior, IWeaponDamageResult } from '../traits/weapon/weaponBehavior';
-import { BreakableBehavior, IBreakResult } from '../traits/breakable/breakableBehavior';
-import { DestructibleBehavior, IDamageResult } from '../traits/destructible/destructibleBehavior';
-import { CombatBehavior, ICombatResult } from '../traits/combatant/combatantBehavior';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from '../world/WorldModel.js';
+import { TraitType } from '../traits/trait-types.js';
+import { EquippedTrait } from '../traits/equipped/equippedTrait.js';
+import { WeaponTrait } from '../traits/weapon/weaponTrait.js';
+import { EntityId, SeededRandom } from '@sharpee/core';
+import { WeaponBehavior, IWeaponDamageResult } from '../traits/weapon/weaponBehavior.js';
+import { BreakableBehavior, IBreakResult } from '../traits/breakable/breakableBehavior.js';
+import { DestructibleBehavior, IDamageResult } from '../traits/destructible/destructibleBehavior.js';
+import { CombatBehavior, ICombatResult } from '../traits/combatant/combatantBehavior.js';
+
+/**
+ * Why an unsuccessful attack had no effect. A reason CODE for the language
+ * layer (stdlib maps each to a message ID) — world-model never emits English
+ * (platform-issue-sweep Phase 3c, David's 2026-07-20 ruling).
+ */
+export type AttackIneffectiveReason =
+  | 'requires_weapon'
+  | 'wrong_weapon_type'
+  | 'invulnerable'
+  | 'no_effect';
 
 /**
  * Combined result of an attack
@@ -30,6 +41,14 @@ export interface IAttackResult {
   exitRevealed?: string;
   transformedTo?: EntityId;
   weaponBroke?: boolean;
+  /** Set on failure (`success: false`): the reason code, never prose. */
+  reason?: AttackIneffectiveReason;
+  /**
+   * AUTHOR-provided prose passed through verbatim from trait fields
+   * (breakable message, destructible damage/destroy messages, combatant
+   * hit/death messages). Never platform-written English — failure paths
+   * carry `reason` instead.
+   */
   message?: string;
 }
 
@@ -45,16 +64,19 @@ export class AttackBehavior {
    * @param target The entity being attacked
    * @param weapon Optional weapon being used
    * @param world The world model
+   * @param rng The caller's seeded RNG stream, threaded to
+   *        WeaponBehavior.calculateDamage (ADR-231 D6 — world-model stays
+   *        engine-free; stdlib's attacking action passes `context.random`)
    * @returns Combined attack result
    */
-  static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel): IAttackResult {
+  static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel, rng: SeededRandom): IAttackResult {
     // Calculate weapon damage if using a weapon
     let weaponDamage = 1; // Default unarmed damage
     let weaponType: string | undefined;
     let weaponResult: IWeaponDamageResult | undefined;
-    
+
     if (weapon && weapon.has(TraitType.WEAPON)) {
-      weaponResult = WeaponBehavior.calculateDamage(weapon);
+      weaponResult = WeaponBehavior.calculateDamage(weapon, rng);
       weaponDamage = weaponResult.damage;
       weaponType = weaponResult.weaponType;
     }
@@ -95,18 +117,19 @@ export class AttackBehavior {
           message: damageResult.message
         };
       } else {
-        // Attack failed due to requirements
+        // Attack failed due to requirements — emit the reason CODE; the
+        // language layer owns the prose (Phase 3c)
         return {
           success: false,
           type: 'ineffective',
           damage: 0,
-          message: damageResult.requiresWeapon 
-            ? 'You need a weapon to damage that.'
+          reason: damageResult.requiresWeapon
+            ? 'requires_weapon'
             : damageResult.wrongWeaponType
-            ? 'That weapon won\'t work on this target.'
+            ? 'wrong_weapon_type'
             : damageResult.invulnerable
-            ? 'That cannot be damaged.'
-            : 'Your attack has no effect.'
+            ? 'invulnerable'
+            : 'no_effect'
         };
       }
     }
@@ -134,7 +157,7 @@ export class AttackBehavior {
       success: false,
       type: 'ineffective',
       damage: 0,
-      message: 'Your attack has no effect on that.'
+      reason: 'no_effect'
     };
   }
   

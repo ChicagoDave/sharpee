@@ -1,0 +1,15 @@
+title: F1 Enterable — player can enter an enterable thing
+story: chord-f1-enterable
+description: ADR-218 §1a (ratchet F1) — the `enterable` trait adjective composes
+  EnterableTrait, closing the `entering` action gap. The cage carries only the
+  `enterable` adjective (no container), so a successful `enter` proves the
+  adjective alone made the thing enterable.
+---
+
+# The enterable cage is present and describable.
+> examine cage
+[OK: contains "iron cage"]
+
+# `enter` succeeds because `enterable` composed EnterableTrait (preposition `in`).
+> enter cage
+[OK: contains "into the cage"]

@@ -418,5 +418,7 @@ class RegressionStory implements Story {
   }
 }
 
-export const story = new RegressionStory();
-export default story;
+// ADR-248 factory-only contract: the sole story export.
+export function createStory(): RegressionStory {
+  return new RegressionStory();
+}

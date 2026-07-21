@@ -23,8 +23,8 @@
  * @see ADR-172 — Spatial Sound Propagation
  */
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Listener trait — presence flag. Entities carrying it are enumerated

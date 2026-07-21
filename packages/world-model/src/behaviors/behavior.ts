@@ -1,8 +1,8 @@
 // packages/world-model/src/behaviors/behavior.ts
 
-import { IFEntity } from '../entities/if-entity';
-import { TraitType } from '../traits/trait-types';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from '../entities/if-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { ITrait } from '../traits/trait.js';
 
 /**
  * Base class for all behaviors in the IF system.

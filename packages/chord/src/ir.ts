@@ -13,7 +13,7 @@
  * Contract 1, owner-confirmed 2026-07-10); @sharpee/ide-protocol re-exports
  * it. Invariant: pure data — JSON.parse(JSON.stringify(ir)) is identity.
  */
-import type { Span } from './span';
+import type { Span } from './span.js';
 
 /** Format stamp of this IR schema. Consumers refuse unknown formats. */
 export const IR_FORMAT = 'story language 1';
@@ -22,11 +22,29 @@ export const IR_FORMAT = 'story language 1';
 export interface StoryIR {
   format: typeof IR_FORMAT;
   meta: IRMeta;
-  /** The story object's declared phases (ownership package D2). */
-  story: { states: string[]; reversible: boolean };
+  /**
+   * The story object's declared phases (ownership package D2) and its
+   * owned `on every turn` clauses (ADR-236 D7, ratchet R4) — daemons with
+   * NO presence gate; `it` is unbound (compile-gated), narration
+   * broadcasts.
+   */
+  story: { states: string[]; reversible: boolean; onClauses: IROnClause[] };
+  /**
+   * `use <extension>` names (ADR-215), validated against the manifest
+   * registry — the loader registers each against its trusted runtime
+   * registry at load (unknown names there are load errors).
+   */
+  uses: string[];
   entities: IREntity[];
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
+  /**
+   * Phrasebooks in arbitration order — file-appearance order of
+   * `use phrasebook` (header) and `define phrasebook`/import-spliced
+   * blocks (body). First predicate-match in this order, per key, wins;
+   * a `condition: null` book is the default (always) book (ADR-250 D3).
+   */
+  phrasebooks: IRPhrasebook[];
   verbs: IRVerbDef[];
   hatches: IRHatch[];
   // Phase B (plan phase 3):
@@ -35,6 +53,17 @@ export interface StoryIR {
   /** Owner-attached score identities (D12) — names are owner-qualified (`pygmy-goats.fed`). */
   scores: IRScoreDef[];
   sequences: IRSequenceDef[];
+  /** `define machine` blocks (ADR-215 `use state-machines` depth). */
+  machines: IRMachineDef[];
+  /** `define channel` data projections (ADR-216) — pure IR; renderers are platform/extension territory. */
+  channels: IRChannelDef[];
+  /**
+   * `define pronouns` named sets (ADR-242 D7) — declared case forms as
+   * DATA. The loader registers each into the language provider through
+   * the `extendLanguage` seam; the forms are locale text and render only
+   * in lang-{locale}, never here.
+   */
+  pronounSets: IRPronounSetDef[];
   /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
   hasHatches: boolean;
 }
@@ -58,17 +87,47 @@ export interface IREntity {
   /** Leading article as written (`the`), or null. */
   article: string | null;
   aka: string[];
+  /**
+   * `pronouns <word>` (ADR-242 D5) — a standard set (`he`/`she`/`it`/
+   * `they`) or a `define pronouns` set name. Present only when declared:
+   * no default is injected (ruled Q-2) — absent means the platform's
+   * by-number fallback.
+   */
+  pronouns?: string;
   /** True for the story's player entity (`create the player`). */
   isPlayer: boolean;
   /** Kind-noun compositions (`a room`), in declaration order. */
   kinds: IRComposition[];
   /** Trait-adjective compositions (`scenery`, `dark while …`). */
   traits: IRComposition[];
+  /**
+   * `starts <state>` initializers (ADR-231 D5a), in declaration order —
+   * accepted state words (`locked`, `open`, `on`, …) whose pairing with a
+   * composed trait the analyzer has already enforced. The loader maps each
+   * to the paired trait's initial-value field (`isLocked`, `isOpen`,
+   * `isOn`); the state adjective itself is never stored story state.
+   */
+  startsStates: string[];
   placement: IRPlacement | null;
   /** Entity IDs this entity wears at start (player wears the cloak). */
   wears: string[];
+
+  /** Entity IDs carried at start, not worn (player carries the knife — ADR-230 Phase 6). */
+  carries: string[];
+  /**
+   * Region membership (`containing <list>`, ADR-236 D2/D3) — resolved member
+   * entity IDs in declaration order, additive across lines. Members are
+   * rooms (loader: `assignRoom`) or nested regions (member's
+   * `parentRegionId` = this region). Non-empty only on region-kind entities
+   * (analyzer-gated).
+   */
+  containing: IRContainedMember[];
   exits: IRExit[];
   blockedExits: IRBlockedExit[];
+  /** `<direction> is deadly: <phrase>` lines (ADR-227). */
+  deadlyExits: IRDeadlyExit[];
+  /** `deadly: <phrase>` no-escape room marker (ADR-227); null = not deadly. */
+  deadly: IRDeadlyRoom | null;
   /**
    * Ordered state names — the entity's own `states:` line first, then every
    * composed trait's declared set in composition order (D8 merge; one
@@ -89,6 +148,27 @@ export interface IREntity {
    */
   initialDescriptionKey: string | null;
   onClauses: IROnClause[];
+  /**
+   * The entity's declared ask/tell topic table (`define topics for …`,
+   * ADR-239 D3/D4) — rows in declaration order; empty when no block is
+   * declared. Runtime matching is normalized whole-topic lookup, never
+   * fuzzy; a miss falls to the owner's `on asking it` catch-all (D5).
+   */
+  topics: IRTopicRow[];
+  span: Span;
+}
+
+/**
+ * One resolved topic-table row (ADR-239). Entity tier carries the resolved
+ * entity id (matched against the platform's `topicEntityId`); free-text
+ * tier carries the primary spelling plus declared aliases (matched against
+ * the normalized asked text). The body executes with `it` = the owner.
+ */
+export interface IRTopicRow {
+  filter:
+    | { kind: 'entity'; id: string }
+    | { kind: 'text'; primary: string; aliases: string[] };
+  body: IRStatement[];
   span: Span;
 }
 
@@ -104,8 +184,21 @@ export interface IRConfigSetting {
   /** Setting key words joined with a space (`max items`). */
   key: string;
   value: string;
-  /** 'name' = multi-word entity-name value (`with food the handful of feed`, Phase B). */
-  valueKind: 'number' | 'string' | 'word' | 'name';
+  /**
+   * 'name' = multi-word entity-name value (`with food the handful of
+   * feed`, Phase B); 'list' = bracketed name list (`with route [Hall,
+   * Study]`, ADR-215) — resolved entity IDs in `values`, `value` empty.
+   */
+  valueKind: 'number' | 'string' | 'word' | 'name' | 'list';
+  /** Resolved entity IDs when valueKind is 'list'. */
+  values?: string[];
+}
+
+/** One resolved `containing` member (ADR-236 D2) — a room or nested region. */
+export interface IRContainedMember {
+  /** Entity ID of the member. */
+  id: string;
+  span: Span;
 }
 
 export interface IRPlacement {
@@ -119,6 +212,12 @@ export interface IRExit {
   direction: string;
   /** Entity ID of the destination room. */
   to: string;
+  /**
+   * Entity ID of the door this exit passes through (`through the <door>`,
+   * ADR-234 D1) — null on plain exits. The loader stamps it as `via` on
+   * both directions and places the door in the declaring room.
+   */
+  via: string | null;
   span: Span;
 }
 
@@ -127,6 +226,23 @@ export interface IRBlockedExit {
   phraseKey: string;
   /** `is blocked while <cond>` — null = always blocked (grammar log 2026-07-10). */
   condition: IRCondition | null;
+  span: Span;
+}
+
+/** `<direction> is deadly: <phrase>` (ADR-227) — a lethal exit. */
+export interface IRDeadlyExit {
+  direction: string;
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
+  /** `is deadly while <cond>` — parsed but not yet wired (post-scope). */
+  condition: IRCondition | null;
+  span: Span;
+}
+
+/** `deadly: <phrase>` (ADR-227) — the no-escape room marker. */
+export interface IRDeadlyRoom {
+  /** Phrase key carrying the death text (also the derived cause). */
+  phraseKey: string;
   span: Span;
 }
 
@@ -209,6 +325,24 @@ export interface IRPhraseVariant {
   markers: string[];
 }
 
+/**
+ * One phrasebook (ADR-245/ADR-250 D3): a named, predicated collection of
+ * story-key phrase entries. `define`d (and import-spliced) books carry
+ * their entries; `use`d books carry none — the loader resolves them from
+ * the packaged-book data registry at load (manifest keys ≡ data keys,
+ * conformance-checked).
+ */
+export interface IRPhrasebook {
+  /** Single kebab-case book name. */
+  name: string;
+  source: 'define' | 'use';
+  /** Activity predicate, evaluated at render time; null = always (the default book). */
+  condition: IRCondition | null;
+  /** Present for 'define'; absent for 'use'. Keys are story keys (never dotted platform IDs). */
+  entries?: Record<string, IRPhrase>;
+  span: Span;
+}
+
 // --------------------------------------------------------------------------
 // declarations
 // --------------------------------------------------------------------------
@@ -236,8 +370,12 @@ export type IRPatternPart = { kind: 'word'; word: string } | { kind: 'slot'; wor
 export interface IRHatch {
   name: string;
   modulePath: string;
-  /** Target interface: dynamic-text producer, Action, or CapabilityBehavior. */
-  hatchKind: 'text' | 'action' | 'behavior';
+  /**
+   * Target interface: dynamic-text producer or Action. (`behavior` was
+   * removed by ADR-235 D2 — the hatch had no binding key and could never
+   * fire.)
+   */
+  hatchKind: 'text' | 'action';
   span: Span;
 }
 
@@ -331,6 +469,95 @@ export interface IRSequenceStep {
   span: Span;
 }
 
+/**
+ * `define machine` (ADR-215 `use state-machines` depth; spelling A,
+ * 2026-07-18). The loader lowers onto the ADR-119 plugin: platform machine
+ * id `chord.machine.<slug>`, role bindings as `$<role>` refs, Chord
+ * conditions as custom guards, Chord bodies as custom effects.
+ */
+export interface IRMachineDef {
+  /** Name words joined with a space (`drawbridge works`). */
+  name: string;
+  /** Role name → resolved entity id (the machine's bindings). */
+  roles: Array<{ name: string; entity: string }>;
+  initialState: string;
+  states: IRMachineState[];
+  span: Span;
+}
+
+export interface IRMachineState {
+  name: string;
+  terminal: boolean;
+  transitions: IRMachineTransition[];
+  onEnter: IRStatement[];
+  onExit: IRStatement[];
+  span: Span;
+}
+
+export interface IRMachineTransition {
+  /** Resolved trigger: action targets are `$<role>` refs or entity ids. */
+  trigger:
+    | { kind: 'action'; action: string; target: string | null }
+    | { kind: 'event'; event: string }
+    | { kind: 'condition'; condition: IRCondition };
+  /** Optional `while` guard riding the trigger. */
+  condition: IRCondition | null;
+  /** Target state name. */
+  target: string;
+  span: Span;
+}
+
+/**
+ * `define channel` (ADR-216; spelling A, 2026-07-18): a declarative JSON
+ * data projection — the loader lowers it to a real IOChannel whose
+ * produce takes the turn's last event of `fromEvent` and projects the
+ * `take` fields from its data. `gatedBy` carries the PLATFORM camelCase
+ * capability key. The `family` discriminator is ADR-241's additive
+ * extension: every data projection reads as `family: 'data'`.
+ */
+export interface IRDataChannelDef {
+  name: string;
+  family: 'data';
+  mode: 'replace' | 'append' | 'event';
+  gatedBy: string | null;
+  fromEvent: string;
+  take: string[];
+  span: Span;
+}
+
+/**
+ * A named family channel (ADR-241 D2): `define ambient <word>` /
+ * `define layer <word>`, or the implied `main` bed when used. `name` is
+ * the author's word (`wind`); the registered id (`ambient:wind`,
+ * `image:wind`) and the channel's mode/gate/produce are the loader's
+ * business via stdlib's family builders — never carried here.
+ */
+export interface IRFamilyChannelDef {
+  name: string;
+  family: 'ambient' | 'layer';
+  span: Span;
+}
+
+/** Any story-declared dynamic channel (ADR-163 §7 / ADR-241 D1). */
+export type IRChannelDef = IRDataChannelDef | IRFamilyChannelDef;
+
+/**
+ * One `define pronouns <name>` set (ADR-242 D7) — the five case forms the
+ * lang-{locale} assembler's pronoun table keys. Forms are carried as data;
+ * they become rendered text only inside the language provider's registry.
+ */
+export interface IRPronounSetDef {
+  name: string;
+  forms: {
+    subject: string;
+    object: string;
+    possessive: string;
+    possessivePronoun: string;
+    reflexive: string;
+  };
+  span: Span;
+}
+
 // --------------------------------------------------------------------------
 // statements
 // --------------------------------------------------------------------------
@@ -338,7 +565,8 @@ export interface IRSequenceStep {
 export type IRStatement =
   | { kind: 'refuse'; phraseKey: string; params: IRParam[]; span: Span }
   | { kind: 'phrase'; phraseKey: string; params: IRParam[]; stmtWhen?: IRCondition | null; span: Span }
-  | { kind: 'emit'; event: string; stmtWhen?: IRCondition | null; span: Span }
+  /** Payload present only when authored (`with …`, ADR-216) — additive field. */
+  | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'set'; target: IRValue; value: IRValue; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
@@ -347,6 +575,7 @@ export type IRStatement =
   | { kind: 'award'; expression: string[]; once: boolean; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
+  | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   /** `must` requirement as a body statement (ratchet D6). */
   | { kind: 'must'; condition: IRCondition; phraseKey: string; span: Span }
   /** `refuse when <cond>: <key>` as a body statement (prohibition, D6). */
@@ -373,6 +602,23 @@ export interface IRParam {
   value: IRValue;
   span: Span;
 }
+
+/** One resolved emit-payload field (ADR-216): key words joined with a space, passed VERBATIM to the event data. */
+export interface IREmitField {
+  key: string;
+  value: IREmitValue;
+}
+
+/**
+ * One resolved emit-payload value (ADR-216): a literal, a resolved value
+ * expression (evaluated live at emit time — `true`/`false` symbols become
+ * booleans), an array, or a nested object.
+ */
+export type IREmitValue =
+  | { kind: 'literal'; value: string; valueType: 'number' | 'string' }
+  | { kind: 'value'; value: IRValue }
+  | { kind: 'array'; items: IREmitValue[] }
+  | { kind: 'object'; fields: IREmitField[] };
 
 // --------------------------------------------------------------------------
 // values and conditions
@@ -417,6 +663,12 @@ export type IRCondition =
    * condition's `it` bound to the subject).
    */
   | { kind: 'satisfies'; subject: IRValue; condition: string }
+  /**
+   * `client has <capability>` (ADR-216): the live negotiated client
+   * capability flag, by its PLATFORM camelCase key. Text-only when no
+   * client negotiated.
+   */
+  | { kind: 'client-has'; capability: string }
   | {
       kind: 'predicate';
       /** 'can-see'/'can-reach' land with Phase B (design.md §2.7). */

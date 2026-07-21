@@ -11,13 +11,24 @@
  */
 import { describe, expect, it } from 'vitest';
 import { EVENT_VERBS } from '@sharpee/chord';
-import { EVENT_PAYLOAD_FIELDS, EVENT_TRIGGERS } from '../src';
+import { EVENT_PAYLOAD_FIELDS, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../src';
 
 describe('AC-9: event-selector map sync', () => {
-  it('every curated chord event verb has a trigger binding', () => {
+  it('every curated chord event verb has a trigger binding (room-side or region-side)', () => {
     for (const verb of EVENT_VERBS) {
-      expect(EVENT_TRIGGERS[verb], `trigger for \`${verb}\``).toBeDefined();
+      expect(
+        EVENT_TRIGGERS[verb] ?? REGION_EVENT_TRIGGERS[verb],
+        `trigger for \`${verb}\``,
+      ).toBeDefined();
     }
+  });
+
+  it('pins the region crossing contract (ADR-236 D6, ratchet R3)', () => {
+    expect(REGION_EVENT_TRIGGERS.entering).toBe('if.event.region_entered');
+    expect(REGION_EVENT_TRIGGERS.leaving).toBe('if.event.region_exited');
+    // `leaving` is region-only: no room-side binding may appear without its
+    // own ratchet entry.
+    expect(EVENT_TRIGGERS.leaving).toBeUndefined();
   });
 
   it('every trigger names a payload field the filter reads', () => {

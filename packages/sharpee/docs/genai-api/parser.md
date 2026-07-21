@@ -17,7 +17,7 @@ import { Parser, ParserOptions, Token as InternalToken, InternalParseResult, Par
 import type { IParsedCommand, IValidatedCommand, IParseError as CoreParseError } from '@sharpee/world-model';
 import type { ISystemEvent, Result } from '@sharpee/core';
 import { GrammarBuilder } from '@sharpee/if-domain';
-import { PronounContextManager } from './pronoun-context';
+import { PronounContextManager } from './pronoun-context.js';
 type CommandResult<T, E> = Result<T, E>;
 /**
  * English parser with rich information preservation
@@ -107,6 +107,19 @@ export declare class EnglishParser implements Parser {
      */
     private convertGrammarMatch;
     /**
+     * Split leading ARTICLE-tagged tokens off a consumed noun-phrase span
+     * (ADR-231 D3 defect fix — `INounPhrase.articles` was hardcoded `[]`).
+     *
+     * @param tokenIndices Indices of the consumed span into `tokens`.
+     * @param tokens The full rich-token array for the input.
+     * @param originalText The slot's consumed text (used verbatim when the
+     *   span does not textually reconstruct it, e.g. pronoun-resolved text).
+     * @returns The leading articles, the article-stripped text, and the head
+     *   (last word of the stripped text, normalized). When every token is an
+     *   article, nothing is stripped (the phrase keeps at least one word).
+     */
+    private splitLeadingArticles;
+    /**
      * Register story-specific grammar rules
      * @deprecated Use getStoryGrammar() for full API
      */
@@ -119,6 +132,26 @@ export declare class EnglishParser implements Parser {
      * giving stories full access to all PatternBuilder methods.
      */
     getStoryGrammar(): GrammarBuilder;
+    /**
+     * Action ids reachable from this parser's registered grammar rules.
+     *
+     * On a freshly constructed parser this is exactly the core-grammar surface;
+     * after story grammar registration it includes story-added ids too. Consumed
+     * by the stdlib reachability gate (ADR-230 D1), which asserts every wired
+     * action is player-reachable.
+     *
+     * @returns set of action ids some grammar pattern maps to
+     */
+    getReachableActionIds(): Set<string>;
+    /**
+     * Source pattern strings of this parser's registered grammar rules
+     * (e.g. `"lock :target with|using :key"`). Consumed by the stdlib
+     * verb-reachability gate (ADR-230 D4 — PIN 1 amendment, 2026-07-17)
+     * to assert every lang-declared verb phrase leads some pattern.
+     *
+     * @returns pattern strings, one per rule
+     */
+    getGrammarPatterns(): string[];
     /**
      * Get candidate interpretations for a token
      */
@@ -386,13 +419,13 @@ export declare class PronounContextManager {
  * This package provides English-specific parsing functionality
  * for converting natural language commands into structured commands.
  */
-export { EnglishParser } from './english-parser';
-export { EnglishParser as Parser } from './english-parser';
+export { EnglishParser } from './english-parser.js';
+export { EnglishParser as Parser } from './english-parser.js';
 export type { Parser as ParserInterface } from '@sharpee/if-domain';
-export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './parse-failure';
-export { analyzeBestFailure } from './parse-failure';
-export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context';
-export { PronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context';
+export type { PartialMatchFailure, SlotFailure, MatchFailureReason } from './parse-failure.js';
+export { analyzeBestFailure } from './parse-failure.js';
+export type { EntityReference, PronounContext, RecognizedPronoun } from './pronoun-context.js';
+export { PronounContextManager, isRecognizedPronoun, RECOGNIZED_PRONOUNS, INANIMATE_IT, INANIMATE_THEM } from './pronoun-context.js';
 /**
  * Package metadata
  */

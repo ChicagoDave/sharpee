@@ -13,9 +13,9 @@ import {
   TransitionTrigger,
   StateMachineInstanceState,
   StateMachineRegistryState,
-} from './types';
-import { evaluateGuard } from './guard-evaluator';
-import { executeEffects } from './effect-executor';
+} from './types.js';
+import { evaluateGuard } from './guard-evaluator.js';
+import { executeEffects } from './effect-executor.js';
 
 interface RegisteredMachine {
   definition: StateMachineDefinition;
@@ -123,6 +123,10 @@ export class StateMachineRegistry {
     switch (trigger.type) {
       case 'action': {
         if (ctx.actionId !== trigger.actionId) return false;
+        // A refused/blocked action never advances a machine (Phase 7): the
+        // trigger fires only on GENUINE success. Strict `!== true` — an
+        // absent flag means the caller could not vouch for success.
+        if (ctx.actionSucceeded !== true) return false;
         if (trigger.targetEntity) {
           const expectedId = trigger.targetEntity.startsWith('$')
             ? machine.bindings[trigger.targetEntity]
@@ -136,14 +140,17 @@ export class StateMachineRegistry {
         if (!ctx.actionEvents) return false;
         return ctx.actionEvents.some(event => {
           if (event.type !== trigger.eventId) return false;
+          // Refusals reuse the primary event type with blocked/failed flags
+          // (Phase 7): those must never satisfy an event trigger.
+          const data = event.data as Record<string, unknown> | undefined;
+          if (data?.blocked === true || data?.failed === true) return false;
           if (trigger.filter && event.data) {
-            const data = event.data as Record<string, unknown>;
             for (const [key, value] of Object.entries(trigger.filter)) {
               // Resolve binding references in filter values
               const expected = typeof value === 'string' && value.startsWith('$')
                 ? machine.bindings[value]
                 : value;
-              if (data[key] !== expected) return false;
+              if (data![key] !== expected) return false;
             }
           }
           return true;

@@ -1,0 +1,52 @@
+Every trait in the platform, in one lookup. Full entries live in the
+chapter that owns each trait's verbs — this index says what each one is,
+how a `.story` composes it (or that it can't, yet), and where the entry
+is. The four structural traits no verb owns get their full entries in
+§11.1.
+
+| Trait | In Chord | One line | Entry |
+|---|---|---|---|
+| `container` | `a container` (+ `with max items/weight N`) | holds things inside | §2.9 |
+| `supporter` | `a supporter` (+ `with capacity N`) | holds things on top | §2.9 |
+| `pushable` | `pushable` | eligible for PUSH; pushType picks behavior | §2.9 |
+| `pullable` | `pullable` | eligible for PULL; state + count mutate | §2.9 |
+| `cuttable` | `cuttable` (+ `with the <entity>`) | eligible for CUT; outcome is the entity's own implementation | §2.9 |
+| `diggable` | `diggable` (+ `with the <entity>`) | eligible for DIG; same contract as cuttable | §2.9 |
+| `moveable-scenery` | — | dormant (nothing reads it) | §2.9 |
+| `attached` | — | dormant (nothing reads it) | §2.9 |
+| `room` | `a room` | a place; exits, darkness, first-visit text | §3.4 |
+| `exit` | — | passage entity a room exit routes via | §3.4 |
+| `enterable` | `enterable` | can be gotten into / onto | §3.4 |
+| `climbable` | `climbable` | eligible for CLIMB | §3.4 |
+| `vehicle` | — | enterable that moves with its passengers | §3.4 |
+| `openable` | `openable` (+ `with the <entity>`) | open/closed state | §4.3 |
+| `lockable` | `lockable` (+ `with the <key>`) | locked/unlocked + key contract | §4.3 |
+| `door` | `a door` + an exit's `through the <door>` tail | an entity that *is* the connection between two rooms | §4.3 |
+| `wearable` | `wearable` | can be worn; body part + layer rules | §5.2 |
+| `clothing` | — | dormant — and not wearable by itself | §5.2 |
+| `equipped` | — | equipment slots/stats; read by combat | §5.2 |
+| `open-inventory` | — | NPC's carried items become reachable | §5.2 |
+| `readable` | `readable` (+ `with text …`) | text, pages, read-gate | §6.4 |
+| `scenery` | `scenery` | fixed in place, unlisted | §6.4 |
+| `concealment` | `hiding-spot` (+ `with position <word>`) | a hiding spot for actors | §6.4 |
+| `acoustic` | — | wall sound-cost tier (engine sound system) | §6.4 |
+| `listener` | — | receives propagated sounds | §6.4 |
+| `switchable` | `switchable` | on/off, power, sounds | §7.2 |
+| `light-source` | `light-source` | sheds light when lit; fuel model | §7.2 |
+| `button` | — | descriptive; upgrades a push to a click | §7.2 |
+| `actor` | `a person` | a someone: pronouns, capacity, custom bags | §8.5 |
+| `npc` | `guard`/`passive`/`wanderer`/`follower`/`patrol` (core; plugin auto-wires) | NPC bookkeeping for the NPC plugin | §8.5 |
+| `character-model` | — | deep NPC internals (personality, beliefs) | §8.5 |
+| `combatant` | `combatant` (+ stats config; needs `use combat`) | combat stats; presence routes ATTACK to combat | §8.5 |
+| `weapon` | `weapon` (+ `with damage N …`; needs `use combat`) | damage, type, durability | §8.5 |
+| `edible` | `edible` / `drinkable` (liquid) | food/drink data; servings, liquid flag | §8.5 |
+| `breakable` | — | one-hit breakage (via ATTACK) | §8.5 |
+| `destructible` | — | hit-pointed destruction (via ATTACK) | §8.5 |
+| `deadly-room` | `deadly: <phrase>` | every non-safe verb kills | §9.3 |
+| `health` | via `combatant with health N` (`use combat`) | the life-state model (attached lazily) | §9.3 |
+| `identity` | implicit in every `create` (+ `proper`, `pronouns` on persons) | name, aliases, article, pronouns, description | §11.1 |
+| `region` | `a region` (+ `containing …`) | groups rooms; crossing emits events | §11.1 |
+| `scene` | — | begin/end narrative phases, engine-evaluated each turn | §11.1 |
+| `story-info` | the story header | title/author/version for ABOUT | §11.1 |
+
+- [11.1 Structural traits](/chord/stdlib/traits/structural-traits)

@@ -4,33 +4,25 @@
  * Provides type-safe access to shared data for multi-object support
  */
 
-import { IFEntity, IRemoveItemResult, IRemoveItemFromSupporterResult, ITakeItemResult } from '@sharpee/world-model';
+import { IRemoveItemResult, IRemoveItemFromSupporterResult, ITakeItemResult } from '@sharpee/world-model';
 
 /**
- * Result of validating/executing a single entity in multi-object command
+ * Per-item mutation scratch for removing one entity. For a single-object
+ * command this lives on the action's sharedData; for a multi-object
+ * command each item gets its own copy via the lifecycle engine's per-item
+ * `itemData` (ADR-228 D4).
  */
-export interface RemovingItemResult {
-  entity: IFEntity;
-  success: boolean;
-  error?: string;  // messageId if validation failed
-  errorParams?: Record<string, unknown>;
+export interface RemovingItemScratch {
   removeResult?: IRemoveItemResult | IRemoveItemFromSupporterResult | null;
   takeResult?: ITakeItemResult;
 }
 
 /**
- * Typed shared data for removing action
+ * Typed shared data for removing action.
+ * Interceptor and multi-object state live in the lifecycle engine's
+ * reserved sharedData slots (ADR-228), not here.
  */
-export interface RemovingSharedData {
-  removeResult?: IRemoveItemResult | IRemoveItemFromSupporterResult | null;
-  takeResult?: ITakeItemResult;
-
-  /**
-   * Multi-object support: results for each entity
-   * When set, indicates this is a multi-object command
-   */
-  multiObjectResults?: RemovingItemResult[];
-}
+export interface RemovingSharedData extends RemovingItemScratch {}
 
 /**
  * Safely get typed shared data from context

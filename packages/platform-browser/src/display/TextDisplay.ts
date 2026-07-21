@@ -2,7 +2,7 @@
  * TextDisplay - handles text output to the main window
  */
 
-import type { DisplayElements } from '../types';
+import type { DisplayElements } from '../types.js';
 
 export class TextDisplay {
   private textContent: HTMLElement | null;

@@ -13,7 +13,7 @@
 
 import { ConcealedStateTrait, isConcealed } from '@sharpee/world-model';
 import type { WorldModel } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
+import { IFActions } from '../../constants.js';
 
 /**
  * Hook data shape — matches BeforeActionHookData from engine.

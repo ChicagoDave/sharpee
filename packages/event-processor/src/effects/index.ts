@@ -5,6 +5,6 @@
  * EffectProcessor validates and applies effects atomically.
  */
 
-export * from './types';
-export { WorldQuery, createWorldQuery } from './world-query';
-export { EffectProcessor, EventEmitCallback } from './effect-processor';
+export * from './types.js';
+export { WorldQuery, createWorldQuery } from './world-query.js';
+export { EffectProcessor, EventEmitCallback } from './effect-processor.js';

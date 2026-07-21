@@ -26,11 +26,14 @@ import {
   TraitType,
   NpcTrait,
   CombatantTrait,
+  HealthTrait,
+  HealthBehavior,
   RoomBehavior,
   RoomTrait,
   Direction,
   createEffect,
   CapabilityEffect,
+  InterceptorBlockedResult,
 } from '@sharpee/world-model';
 import { createSeededRandom, SeededRandom } from '@sharpee/core';
 
@@ -63,7 +66,6 @@ import { createEmptyFrame } from '../objects/thiefs-canvas-objects';
 
 // Troll knockout constants (from MDL act1.254, dung.355)
 const TROLL_UNCONSCIOUS_DESC = 'An unconscious troll is sprawled on the floor. All passages out of the room are open.';
-const TROLL_RECOVERY_TURNS = 4;
 
 /**
  * Get the villain key for message lookup.
@@ -142,11 +144,9 @@ function handleVillainKnockout(
         RoomBehavior.unblockExit(room, Direction.NORTH);
       }
 
-      // Set recovery turns for the troll recovery daemon
-      const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-      if (combatant) {
-        combatant.recoveryTurns = TROLL_RECOVERY_TURNS;
-      }
+      // Recovery is driven by the troll recovery daemon, which detects the troll's
+      // derived-unconscious state (health ≤ threshold) — there is no recoveryTurns
+      // field anymore (ADR-226).
       break;
     }
   }
@@ -430,13 +430,12 @@ export const MeleeInterceptor: ActionInterceptor = {
 
     // Handle all kill outcomes uniformly (direct kills AND wound-kills)
     if (targetKilled) {
-      const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-      if (combatant) {
-        // Direct assignment instead of combatant.kill() — after world.loadJSON()
-        // traits are plain objects without methods, so kill() would crash.
-        combatant.health = 0;
-        combatant.isAlive = false;
-        combatant.isConscious = false;
+      const health = villain.get(TraitType.HEALTH) as HealthTrait | undefined;
+      if (health) {
+        // Life-state on HealthTrait (ADR-226): terminal death by combat. HealthBehavior
+        // is a static method over plain trait data, so it survives world.loadJSON().
+        health.health = 0;
+        HealthBehavior.kill(health, 'combat');
       }
       // Villain-specific death side effects (unblock exits, score, entity removal).
       // Returns true if the handler cleaned up entities (troll disappears in smoke).
@@ -453,17 +452,15 @@ export const MeleeInterceptor: ActionInterceptor = {
 
     // Handle knockout outcomes (ISSUE-068: moved from entity `on` handler)
     if (targetKnockedOut) {
-      const combatant = villain.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-      if (combatant) {
-        // Direct assignment — same reason as kill path above
-        combatant.isConscious = false;
+      // Knockout = drop health into the unconscious band (≤ threshold). Consciousness
+      // derives from health (ADR-226), so there is no separate isConscious flag to set
+      // on the combatant or NpcTrait — the NPC service reads the derived state.
+      const health = villain.get(TraitType.HEALTH) as HealthTrait | undefined;
+      if (health) {
+        const koHealth = Math.max(1, Math.floor(health.maxHealth * health.unconsciousThreshold));
+        health.health = Math.min(health.health, koHealth);
       }
-      // Sync NpcTrait consciousness (NPC service checks NpcTrait.canAct separately)
-      const npcTrait = villain.get(NpcTrait);
-      if (npcTrait) {
-        npcTrait.isConscious = false;
-      }
-      // Villain-specific knockout side effects (description, exits, recovery)
+      // Villain-specific knockout side effects (description, exits)
       handleVillainKnockout(villainKey, villain, world);
     }
 
@@ -535,6 +532,8 @@ export const MeleeInterceptor: ActionInterceptor = {
 
   /**
    * ON-BLOCKED: Custom message when hero is staggered.
+   * ADR-228 D2: override swaps the blocked event's message; the blocked
+   * record event itself survives for handlers/tests.
    */
   onBlocked(
     _entity: IFEntity,
@@ -542,22 +541,22 @@ export const MeleeInterceptor: ActionInterceptor = {
     _actorId: string,
     error: string,
     _sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null {
+  ): InterceptorBlockedResult | null {
     if (error === MeleeMessages.STILL_RECOVERING) {
-      return [
-        createEffect('game.message', {
+      return {
+        override: {
           messageId: MeleeMessages.STILL_RECOVERING,
           text: 'You are still recovering from a staggering blow.',
-        }),
-      ];
+        },
+      };
     }
     if (error === MeleeMessages.UNARMED_ATTACK) {
-      return [
-        createEffect('game.message', {
+      return {
+        override: {
           messageId: MeleeMessages.UNARMED_ATTACK,
           text: 'Fighting unarmed is suicide.',
-        }),
-      ];
+        },
+      };
     }
     return null; // Use standard blocked handling
   },

@@ -1,9 +1,9 @@
 // packages/world-model/src/traits/door/doorBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { DoorTrait } from './doorTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { DoorTrait } from './doorTrait.js';
 
 /**
  * Behavior for door entities.

@@ -110,6 +110,27 @@ world.registerActionInterceptor(TrollAxeTrait.type, 'if.action.taking', TrollAxe
 Stdlib actions resolve interceptors via `context.world.getInterceptorForAction(entity,
 actionId)` — never a module-level registry (the old free-function registry is deleted).
 
+**Lifecycle engine (ADR-228)**: actions never hand-roll hook plumbing. Each action
+exports an `ActionLifecycleDescriptor` (`src/actions/lifecycle/`) declaring its
+consultable entity slots; the shared engine owns hook order (published, first veto
+wins), veto-only guard semantics, structured onBlocked, and per-item multi-object
+lifecycles. New actions get interceptor correctness by writing a descriptor —
+hand-rolled lifecycle code is a review-rejectable smell.
+
+**Wired-action registry (ADR-228 D5)**: `src/actions/lifecycle/registry.ts` lists
+every descriptor and derives `interceptorConsultingActionIds` (the union of all slot
+actionIds) — the authoritative "will an interceptor under this id ever fire" set,
+consumed by the Chord story-loader's load-time fail-fast. A new action's descriptor
+MUST be added to the table; the registry test's source-scan completeness gate fails
+the suite if it isn't.
+
+**Both-ids-fire rule (ADR-228 D6)**: one physical operation can consult hooks under
+two action ids — `remove X from Y` fires `if.action.removing` AND `if.action.taking`
+on the item (a taking-guard can't be bypassed by phrasing); `insert X in Y` fires
+`if.action.inserting` then delegates into putting's `if.action.putting` hooks.
+**A trait should register its interceptor under exactly ONE of the ids** to avoid
+double-mutation.
+
 When stdlib doesn't have the verb at all, the story creates a full action:
 
 ```typescript
@@ -195,6 +216,13 @@ test('should actually move item to player inventory', () => {
   expect(world.getLocation(ball.id)).toBe(player.id);
 });
 ```
+
+**Interceptor registration keys in tests** (decision 2026-07-16, David): never
+borrow a real trait (READABLE with empty text, dummy PUSHABLE) as the
+`registerActionInterceptor` key — use the inert markers `TEST_MARKER_TRAIT` /
+`SECOND_TEST_MARKER_TRAIT` from `tests/test-utils`. A real trait is only a valid
+key when the action semantically requires it on that entity (e.g. ACTOR on a
+give/show recipient).
 
 **Helper utilities** in `tests/test-utils/index.ts`:
 

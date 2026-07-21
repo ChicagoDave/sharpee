@@ -10,42 +10,42 @@
 import type { EntityId } from '@sharpee/core';
 
 // Re-export action event data types for external use
-export type { TakenEventData, TakingErrorData } from '../actions/standard/taking/taking-events';
-export type { DroppedEventData, DroppingErrorData } from '../actions/standard/dropping/dropping-events';
-export type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events';
-export type { ExaminedEventData, ExaminingErrorData } from '../actions/standard/examining/examining-events';
-export type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData, GoingErrorData } from '../actions/standard/going/going-events';
-export type { OpenedEventData, RevealedEventData, ExitRevealedEventData, OpeningErrorData } from '../actions/standard/opening/opening-events';
-export type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events';
-export type { LockedEventData, LockingErrorData } from '../actions/standard/locking/locking-events';
-export type { UnlockedEventData, UnlockingErrorData } from '../actions/standard/unlocking/unlocking-events';
-export type { WornEventData, WearingErrorData } from '../actions/standard/wearing/wearing-events';
-export type { RemovedEventData as TakingOffRemovedEventData, TakingOffErrorData } from '../actions/standard/taking_off/taking-off-events';
-export type { EnteredEventData, EnteringErrorData } from '../actions/standard/entering/entering-events';
-export type { ExitedEventData, ExitingErrorData } from '../actions/standard/exiting/exiting-events';
-export type { SwitchedOnEventData, SwitchingOnErrorData } from '../actions/standard/switching_on/switching_on-events';
-export type { SwitchedOffEventData, SwitchingOffErrorData } from '../actions/standard/switching_off/switching_off-events';
-export type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events';
-export type { InventoryEventData, InventoryItem } from '../actions/standard/inventory/inventory-events';
+export type { TakenEventData, TakingErrorData } from '../actions/standard/taking/taking-events.js';
+export type { DroppedEventData, DroppingErrorData } from '../actions/standard/dropping/dropping-events.js';
+export type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events.js';
+export type { ExaminedEventData, ExaminingErrorData } from '../actions/standard/examining/examining-events.js';
+export type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData, GoingErrorData } from '../actions/standard/going/going-events.js';
+export type { OpenedEventData, RevealedEventData, ExitRevealedEventData, OpeningErrorData } from '../actions/standard/opening/opening-events.js';
+export type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events.js';
+export type { LockedEventData, LockingErrorData } from '../actions/standard/locking/locking-events.js';
+export type { UnlockedEventData, UnlockingErrorData } from '../actions/standard/unlocking/unlocking-events.js';
+export type { WornEventData, WearingErrorData } from '../actions/standard/wearing/wearing-events.js';
+export type { RemovedEventData as TakingOffRemovedEventData, TakingOffErrorData } from '../actions/standard/taking_off/taking-off-events.js';
+export type { EnteredEventData, EnteringErrorData } from '../actions/standard/entering/entering-events.js';
+export type { ExitedEventData, ExitingErrorData } from '../actions/standard/exiting/exiting-events.js';
+export type { SwitchedOnEventData, SwitchingOnErrorData } from '../actions/standard/switching_on/switching_on-events.js';
+export type { SwitchedOffEventData, SwitchingOffErrorData } from '../actions/standard/switching_off/switching_off-events.js';
+export type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events.js';
+export type { InventoryEventData, InventoryItem } from '../actions/standard/inventory/inventory-events.js';
 
 // Import types for declaration merging
-import type { TakenEventData } from '../actions/standard/taking/taking-events';
-import type { DroppedEventData } from '../actions/standard/dropping/dropping-events';
-import type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events';
-import type { ExaminedEventData } from '../actions/standard/examining/examining-events';
-import type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData } from '../actions/standard/going/going-events';
-import type { OpenedEventData, RevealedEventData, ExitRevealedEventData } from '../actions/standard/opening/opening-events';
-import type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events';
-import type { LockedEventData } from '../actions/standard/locking/locking-events';
-import type { UnlockedEventData } from '../actions/standard/unlocking/unlocking-events';
-import type { WornEventData } from '../actions/standard/wearing/wearing-events';
-import type { RemovedEventData as TakingOffRemovedData } from '../actions/standard/taking_off/taking-off-events';
-import type { EnteredEventData } from '../actions/standard/entering/entering-events';
-import type { ExitedEventData } from '../actions/standard/exiting/exiting-events';
-import type { SwitchedOnEventData } from '../actions/standard/switching_on/switching_on-events';
-import type { SwitchedOffEventData } from '../actions/standard/switching_off/switching_off-events';
-import type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events';
-import type { InventoryEventData } from '../actions/standard/inventory/inventory-events';
+import type { TakenEventData } from '../actions/standard/taking/taking-events.js';
+import type { DroppedEventData } from '../actions/standard/dropping/dropping-events.js';
+import type { LookedEventData, RoomDescriptionEventData, ListContentsEventData } from '../actions/standard/looking/looking-events.js';
+import type { ExaminedEventData } from '../actions/standard/examining/examining-events.js';
+import type { ActorMovedEventData, ActorExitedEventData, ActorEnteredEventData } from '../actions/standard/going/going-events.js';
+import type { OpenedEventData, RevealedEventData, ExitRevealedEventData } from '../actions/standard/opening/opening-events.js';
+import type { PutInEventData, PutOnEventData } from '../actions/standard/putting/putting-events.js';
+import type { LockedEventData } from '../actions/standard/locking/locking-events.js';
+import type { UnlockedEventData } from '../actions/standard/unlocking/unlocking-events.js';
+import type { WornEventData } from '../actions/standard/wearing/wearing-events.js';
+import type { RemovedEventData as TakingOffRemovedData } from '../actions/standard/taking_off/taking-off-events.js';
+import type { EnteredEventData } from '../actions/standard/entering/entering-events.js';
+import type { ExitedEventData } from '../actions/standard/exiting/exiting-events.js';
+import type { SwitchedOnEventData } from '../actions/standard/switching_on/switching_on-events.js';
+import type { SwitchedOffEventData } from '../actions/standard/switching_off/switching_off-events.js';
+import type { ScoreDisplayedEventData } from '../actions/standard/scoring/scoring-events.js';
+import type { InventoryEventData } from '../actions/standard/inventory/inventory-events.js';
 
 // ============================================================
 // Common Action Event Data Types

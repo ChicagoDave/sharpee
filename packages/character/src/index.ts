@@ -16,21 +16,21 @@ export {
   type CompiledCharacter,
   type CompiledTrigger,
   type TriggerMutation,
-} from './character-builder';
+} from './character-builder.js';
 
 export {
   COGNITIVE_PRESETS,
   isCognitivePreset,
   type CognitivePresetName,
-} from './cognitive-presets';
+} from './cognitive-presets.js';
 
 export {
   VocabularyExtension,
   type CustomMoodDef,
   type CustomPersonalityDef,
-} from './vocabulary-extension';
+} from './vocabulary-extension.js';
 
-export { applyCharacter, type AppliedCharacter } from './apply';
+export { applyCharacter, type AppliedCharacter } from './apply.js';
 
 // Conversation system (ADR-142)
 export {
@@ -86,7 +86,7 @@ export {
   // Conversation message IDs
   ConversationMessages,
   type ConversationMessageId,
-} from './conversation';
+} from './conversation/index.js';
 
 // Information propagation (ADR-144)
 export {
@@ -118,7 +118,7 @@ export {
   // Propagation message IDs
   PropagationMessages,
   type PropagationMessageId,
-} from './propagation';
+} from './propagation/index.js';
 
 // NPC goal pursuit (ADR-145)
 export {
@@ -139,7 +139,7 @@ export {
   SimpleRoomGraph,
   findNextRoom,
   GoalBuilder,
-} from './goals';
+} from './goals/index.js';
 
 // NPC influence (ADR-146)
 export {
@@ -163,7 +163,7 @@ export {
   // Influence message IDs
   InfluenceMessages,
   type InfluenceMessageId,
-} from './influence';
+} from './influence/index.js';
 
 // NPC tick phase handlers (ADR-142/144/145/146)
 export {
@@ -172,4 +172,4 @@ export {
   createPropagationPhase,
   createGoalPhase,
   createInfluencePhase,
-} from './tick-phases';
+} from './tick-phases.js';

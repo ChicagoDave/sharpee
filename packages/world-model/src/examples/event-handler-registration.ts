@@ -1,11 +1,11 @@
 // Example of registering event handlers for world-model
 // This would typically be done in stdlib or a new event processor package
 
-import { WorldModel, EventHandler } from '../world';
-import { IFEvents } from '../constants';
-import { TraitType } from '../traits/trait-types';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LockableTrait } from '../traits/lockable/lockableTrait';
+import { WorldModel, EventHandler } from '../world/index.js';
+import { IFEvents } from '../constants/index.js';
+import { TraitType } from '../traits/trait-types.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LockableTrait } from '../traits/lockable/lockableTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
 
 /**

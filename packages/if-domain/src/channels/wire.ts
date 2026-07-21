@@ -23,7 +23,7 @@ import type {
   ChannelEmitPolicy,
   ChannelMode,
   ClientCapabilities,
-} from './types';
+} from './types.js';
 
 /**
  * Channel definition as it appears in a CMGT manifest (ADR-163 §11).

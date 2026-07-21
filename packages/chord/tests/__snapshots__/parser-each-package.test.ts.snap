@@ -711,6 +711,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           },
         },
       ],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -728,6 +729,9 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -760,6 +764,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -767,6 +772,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 48,
         "line": 44,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -774,7 +780,11 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": null,
       "exits": [],
       "initialDescription": null,
@@ -818,6 +828,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "line": 51,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -825,6 +836,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 51,
         "line": 50,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -832,7 +844,11 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": null,
       "exits": [],
       "initialDescription": null,
@@ -1086,6 +1102,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           "line": 54,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1093,6 +1110,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         "endLine": 57,
         "line": 53,
       },
+      "startsStates": [],
       "states": [
         {
           "name": "hungry",
@@ -1417,6 +1435,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "version": "0.0.1",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -1427,6 +1446,8 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
     "states": [],
     "statesReversible": false,
     "title": "Each Package Parse Fixture",
+    "usePhrasebooks": [],
+    "uses": [],
   },
   "kind": "story-file",
   "span": {

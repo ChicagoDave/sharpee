@@ -14,13 +14,14 @@ import {
   ActionInterceptor,
   InterceptorSharedData,
   InterceptorResult,
-  CapabilityEffect,
+  InterceptorBlockedResult,
   createEffect,
   IFEntity,
   WorldModel,
   TraitType,
   LightSourceBehavior
 } from '@sharpee/world-model';
+import { killPlayer, PLAYER_DIED_EVENT } from '@sharpee/stdlib';
 
 export const GasRoomEntryMessages = {
   EXPLOSION_DEATH: 'dungeo.gas.explosion_death'
@@ -67,6 +68,9 @@ export const GasRoomEntryInterceptor: ActionInterceptor = {
 
   /**
    * onBlocked: Kill the player and emit explosion death event.
+   * ADR-228 D2: the standard blocked event survives and carries the death
+   * narration via `override`; the canonical death event rides `emit` with
+   * no messageId (avoids a duplicate render — sphere-cage pattern).
    */
   onBlocked(
     entity: IFEntity,
@@ -74,18 +78,29 @@ export const GasRoomEntryInterceptor: ActionInterceptor = {
     actorId: string,
     error: string,
     _sharedData: InterceptorSharedData
-  ): CapabilityEffect[] | null {
+  ): InterceptorBlockedResult | null {
     if (error !== 'dungeo.gas_room.explosion') return null;
 
-    // Kill the player
-    world.setStateValue('dungeo.player.dead', true);
-    world.setStateValue('dungeo.player.death_cause', 'gas_explosion');
-
-    return [
-      createEffect('if.event.player.died', {
+    // Canonical terminal death (ADR-224): apply the lethal transition via the
+    // platform primitive, then emit the canonical event through the interceptor's
+    // effect channel so the engine routes game-over.
+    const player = world.getPlayer();
+    if (player) {
+      killPlayer(world, player, {
+        cause: 'gas_explosion',
         messageId: GasRoomEntryMessages.EXPLOSION_DEATH,
-        cause: 'gas_explosion'
-      })
-    ];
+        terminal: true,
+      });
+    }
+
+    return {
+      override: { messageId: GasRoomEntryMessages.EXPLOSION_DEATH },
+      emit: [
+        createEffect(PLAYER_DIED_EVENT, {
+          cause: 'gas_explosion',
+          terminal: true
+        })
+      ]
+    };
   }
 };

@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WF-B — left rail, hierarchical nav</title>
+<link rel="stylesheet" href="../sharpee-palette.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font: 15px/1.5 -apple-system, 'Segoe UI', sans-serif; background:var(--sh-canvas); color:var(--sh-ink); }
+  .ph { border:2px dashed var(--sh-border); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--sh-muted); font-size:13px; background:var(--sh-surface); }
+  header { background:var(--sh-navy-700, #294466); color:#fff; display:flex; align-items:center; padding:12px 20px; gap:16px; }
+  header .brand { font-weight:700; font-size:17px; }
+  header .search { margin-left:auto; background:var(--sh-navy-600, #385C8A); border-radius:6px; padding:6px 14px; color:var(--sh-taupe-200); font-size:13px; width:220px; }
+  header .burger { display:none; }
+  .shell { display:flex; min-height:calc(100vh - 49px); }
+  aside { width:250px; flex:none; background:var(--sh-surface); border-right:1px solid var(--sh-border); padding:20px 0; }
+  aside .sec { padding:8px 20px 4px; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--sh-muted); }
+  aside a { display:block; padding:7px 20px 7px 32px; color:var(--sh-ink); text-decoration:none; font-size:14px; }
+  aside a.active { background:var(--sh-wash); color:var(--sh-link); border-left:3px solid var(--sh-link); padding-left:29px; }
+  aside details { margin:0; } aside summary { padding:7px 20px; font-size:14px; cursor:pointer; color:var(--sh-ink); }
+  .content { flex:1; padding:32px 40px; max-width:860px; }
+  .content h1 { font-size:28px; margin-bottom:6px; }
+  .content .crumb { color:var(--sh-muted); font-size:13px; margin-bottom:20px; }
+  .content .ph { height:130px; margin-bottom:16px; }
+  .toc { width:180px; flex:none; padding:32px 20px; font-size:13px; color:var(--sh-muted); }
+  .toc div { padding:4px 0; }
+  @media (max-width:600px) {
+    header .burger { display:block; margin-left:auto; background:none; border:1px solid var(--sh-taupe-200); color:#fff; border-radius:6px; padding:4px 10px; }
+    header .search { display:none; }
+    aside { position:fixed; top:49px; bottom:0; left:-260px; transition:left .15s; z-index:2; box-shadow:2px 0 12px rgba(0,0,0,.2); }
+    body.open aside { left:0; }
+    .toc { display:none; }
+    .content { padding:24px 16px; }
+  }
+</style></head><body>
+<header><span class="brand">Sharpee</span><span class="search">Search docs…</span>
+  <button class="burger" onclick="document.body.classList.toggle('open')">☰ Docs</button></header>
+<div class="shell">
+  <aside>
+    <div class="sec">Chord</div>
+    <details open><summary>Getting started</summary>
+      <a class="active" href="#">Install</a><a href="#">Your first story</a><a href="#">Compose &amp; run</a></details>
+    <details open><summary>Language</summary>
+      <a href="#">People &amp; pronouns</a><a href="#">Doors &amp; regions</a><a href="#">Topics</a></details>
+    <div class="sec">Sharpee</div>
+    <details><summary>Platform</summary></details>
+    <details><summary>Actions &amp; traits</summary></details>
+    <div class="sec">Learn</div>
+    <a href="#">Fernhill tutorial</a><a href="#">Play</a>
+  </aside>
+  <div class="content">
+    <div class="crumb">Chord / Getting started / Install</div>
+    <h1>Page title</h1>
+    <div class="ph">prose block</div>
+    <div class="ph">code sample</div>
+    <div class="ph" style="height:90px">next/prev pager</div>
+  </div>
+  <div class="toc"><div style="font-weight:700">On this page</div><div>Section one</div><div>Section two</div><div>Section three</div></div>
+</div>
+<script>if (location.search.includes('menu=open')) document.body.classList.add('open');</script>
+</body></html>

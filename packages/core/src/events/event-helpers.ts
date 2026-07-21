@@ -7,8 +7,8 @@
  * @see ADR-082 for design rationale
  */
 
-import { EventDataRegistry, EventType } from './event-registry';
-import { ISemanticEvent } from './types';
+import { EventDataRegistry, EventType } from './event-registry.js';
+import { ISemanticEvent } from './types.js';
 
 /**
  * Check if an event is of a specific type and narrow its type.

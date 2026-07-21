@@ -226,7 +226,9 @@ describe('Colored Button Parsing', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.value.action).toBe('if.action.pushing');
-        expect(result.value.structure.directObject?.text).toBe('the blue button');
+        // ADR-231 D3: the leading article is split off the noun phrase
+        expect(result.value.structure.directObject?.text).toBe('blue button');
+        expect(result.value.structure.directObject?.articles).toEqual(['the']);
       }
     });
   });

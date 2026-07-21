@@ -5,7 +5,7 @@
  */
 
 import { EntityId } from '@sharpee/core';
-import { EntitySnapshot } from '../../base/snapshot-utils';
+import { EntitySnapshot } from '../../base/snapshot-utils.js';
 
 export interface ClosedEventData {
   // What was closed

@@ -24,8 +24,8 @@
  * @see ADR-173 — Wall Adjacency Primitive (taxonomy)
  */
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * The four discrete acoustic tiers a wall material may have. Authored

@@ -1,0 +1,19 @@
+`create` puts one entity into the world. The name after `create` is the
+entity's display name; its internal ID is derived mechanically (words
+lowercased and joined with hyphens, the leading article stripped, so
+`the Potting Shed` becomes `potting-shed`). You never write IDs; you
+always refer to things by name.
+
+```chord
+create the watering can
+  aka can, tin can, sprinkler
+  in the Potting Shed
+
+  A dented tin watering can with a long spout.
+```
+
+`aka` adds aliases. When a name is referenced anywhere else in the
+story, resolution tries the exact name first, then an exact alias, then
+a unique in-order word subset (`the can` finds `the watering can` if
+nothing else matches). Ambiguity or a miss is a load error with a
+suggestion; Chord never guesses.

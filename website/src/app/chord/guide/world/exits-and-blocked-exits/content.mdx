@@ -1,0 +1,28 @@
+Rooms connect with direction lines. Ten directions exist: the eight
+compass points plus `up` and `down`. A connection is one-way as written;
+write the return exit in the other room.
+
+```chord
+create the Rose Walk
+  a room
+  north to the Herb Garden
+  east to the Orchard
+  south is blocked: hedge-too-thick
+
+  Gravel crunches underfoot between the rose beds.
+```
+
+A blocked exit refuses travel and speaks the named phrase (the key after
+the colon names a phrase the story defines,
+[§5.3](/chord/guide/vocabulary); a dotted key is legal
+too, ADR-231). The block can be
+conditional:
+
+```chord
+create the Orchard
+  a room
+  west to the Rose Walk
+  up is blocked while the ladder is not here: no-way-up
+
+  Apple trees stand in crooked rows.
+```

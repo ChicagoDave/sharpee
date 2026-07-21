@@ -1,0 +1,19 @@
+Conversation is a declared table per person — one `define topics for
+<person> … end topics` block serving both ASK and TELL. Entity rows
+(`about the silver locket:`) resolve like any noun and are checked
+first; quoted rows declare a topic plus comma-separated aliases, matched
+by normalized whole-topic equality — a lookup, never a fuzzy guess. A
+row's body is ordinary statements (`it` binds the owner), so a
+conversation can change state anywhere in the world. A miss falls to
+the owner's plain `on asking it` catch-all if it has one; on a hit the
+row fully owns the response. Overlaps are compile errors, never runtime
+tie-breaks.
+
+```chord
+define topics for tobias
+  about the silver locket: phrase tobias-locket-reply
+  about "the folly", "the fire":
+    change it to shaken
+    phrase tobias-folly-reply
+end topics
+```

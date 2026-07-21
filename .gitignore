@@ -11,6 +11,10 @@ build/
 lib/
 out/
 
+# website/src/lib is app source (nav config), not a build artifact — carve out
+# from the blanket lib/ rule above.
+!website/src/lib/
+
 # The Sharpee Book — parked multi-page web build (scripts/build-book.sh <version> web)
 docs/book/*/web/
 
@@ -42,6 +46,8 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Committed proof-run logs are the exception (g2-proof-run.log precedent)
+!docs/work/**/proof/*.log
 
 # Editor directories and files
 .idea/
@@ -144,6 +150,7 @@ docs/context/.work-log.txt
 docs/context/.session-state.json
 docs/context/.session-state-*.json
 docs/context/.devarch-gate-*
+.devarch-events-*.jsonl
 docs/context/.active-session
 docs/context/last-session.txt
 docs/context/tsf-*.txt

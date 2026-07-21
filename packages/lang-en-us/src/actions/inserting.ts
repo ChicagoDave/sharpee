@@ -9,7 +9,6 @@ export const insertingLanguage = {
   patterns: [
     'insert [something] in [something]',
     'insert [something] into [something]',
-    'stick [something] in [something]',
     'push [something] in [something]'
   ],
   

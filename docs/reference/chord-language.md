@@ -4,12 +4,15 @@ A writer-facing reference for Chord, Sharpee's story language (`.story`
 files), covering every construct in plain language with a working,
 compile-checked example. Companion to the formal grammar
 (`chord-grammar.md`, `chord.ebnf`); where they disagree, the grammar and the
-parser win. Chord v1 (locked 2026-07-14) ships with Sharpee 3.0.
+parser win.
 
-> **Status: DRAFT** — §1–§6 are written; every example is backed by a
-> fixture verified with `verify-examples.mjs` against `@sharpee/chord`. A
-> full verification sweep and site render remain (`docs/work/chord-language-reference/`
-> plan, Phases 6–7).
+> **Status: CURRENT at Sharpee 3.2** — every example is backed by a
+> fixture verified with `verify-examples.mjs` against `@sharpee/chord`
+> (50/50, 2026-07-19). Currency sweep 2026-07-19 folded the post-lock
+> ratchets: R3 capability settings (`lockable with the <key>`), the
+> ADR-235 behavior-hatch removal, doors (§2.12), regions (§2.13), person
+> identity (§2.14, §5.9), topics (§3.9), and the `use` extension surface
+> (§5.10). This document is the site's Chord Author Guide (ADR-232).
 
 ## 1. Reading a .story file
 
@@ -57,6 +60,7 @@ either at dedent or with an explicit `end` line, depending on the block:
 | `define action` | header line | dedent |
 | `define sequence` | header line | `end sequence` |
 | `define phrase` | header line | `end phrase` |
+| `define phrasebook` | header line | `end phrasebook` |
 | `on` / `after` clause | header line | `end on` / `end after` |
 | `select` | `select …` line | `end select` |
 | `each` block | `each <name>` line | `end each` |
@@ -70,6 +74,58 @@ letters, digits, apostrophes, hyphens, or underscores (`cant-leave` and
 `you'd` are each one word). Numbers are plain digits with optional dotted
 parts (`3`, `1.0.0`). Strings are double-quoted with no escape sequences.
 Markers are `{name}` forms that appear only inside prose (see §2.6).
+
+### 1.3 Comments (ADR-249)
+
+A comment is a whole line starting with `##` at column 1, between
+top-level constructs, with a blank line before and after it:
+
+```story
+## The Folly at Fernhill — one winter night to find the deed.
+## A multi-line comment is just stacked ## lines.
+
+story "The Folly at Fernhill" by "The Sharpee Project"
+  id: fernhill
+  version: 0.1.0
+
+## The estate exterior — the night begins here.
+
+create the Grounds
+  a room
+
+  Frost on the lawn, and the house dark behind you.
+```
+
+The file may open with a `##` line (the file-header comment needs no
+blank above it), and may end with one (end of file counts as the
+closing blank). Comments contribute nothing: the compiled story is
+identical with or without them.
+
+That is the whole feature — there are no other comment forms:
+
+- **No end-of-line comments.** `create the lamp  # note` is not a
+  comment; a `#` inside prose is prose and renders exactly as typed
+  (`He wore jersey #12.` keeps its `#12`).
+- **No comments inside blocks.** A construct spans its header through
+  its last body line (or its `end` line); a `##` line inside that span
+  is the error `parse.comment-inside-block` ("Comments are only legal
+  outside blocks, at the top level of the story file"):
+
+  ```story
+  create the lamp
+
+  ## still deciding on the chain material
+
+    a thing, portable
+  ```
+
+  This fails: the comment sits between the `create` header and its
+  indented body, which is inside the block.
+
+- **Blank lines are required on both sides.** A `##` line touching a
+  neighboring construct line is the error `lex.comment-blank-lines`.
+- An indented `##` line inside prose is prose — it renders to the
+  player. Keep notes at the top level.
 
 ## 2. Building your world
 
@@ -138,8 +194,37 @@ create the workbench
 
 `with` attaches settings. The last token of each setting is its value
 and the words before it are the key (`capacity 3`); several settings
-join with `and`. When a value is an entity name, the article marks where
-the name starts (`lockable with key the staff keycard`).
+join with `and`. When a keyed value is an entity name, the article marks
+where the name starts (`feedable with food the handful of feed` — the
+keyword names an authored trait's data field). The built-in capability
+adjectives take their entity *directly* after `with`, no keyword:
+`lockable with the staff keycard` (ratchet R3, 2026-07-18 — the old
+`key`/`tool` keywords are load errors with fix-its).
+
+Two trait adjectives carry a contract along with their data: `cuttable`
+and `diggable`. Each takes an optional implement named directly after
+`with` (`cuttable with the rusty knife`) that the player must be
+holding; with no implement named, any attempt reaches the entity. What the cut or dig
+actually *does* is never platform policy: a cuttable entity must carry
+exactly one implementation — an `on cutting it` clause (§3), its own or
+from a composed trait — and the story fails to load with none, or with
+two. The same rule binds `diggable` to `on digging it`.
+
+<!-- fixture: world/cuttable.story -->
+```story
+create the straw bale
+  aka bale, twine
+  cuttable with the rusty knife
+  in the Potting Shed
+  states: bound, loose
+
+  A bale of straw, bound tight with orange twine.
+
+  on cutting it
+    change it to loose
+    phrase twine-cut
+  end on
+```
 
 A trait can be conditional: `while` puts it under the control of a
 condition, live at play time.
@@ -163,7 +248,9 @@ being read as composition.
 Three placement forms position an entity when the story starts: `in`
 puts it inside a room or container, `on` puts it on a supporter, and
 `starts in` is how actors (usually the player) name their starting
-room. `wears` puts a wearable onto an actor already dressed in it.
+room. Two more lines dress and equip an actor: `wears` puts a wearable
+onto an actor already dressed in it, and `carries` puts an item into an
+actor's hands — starting inventory, carried but not worn.
 
 <!-- fixture: world/placement.story -->
 ```story
@@ -175,6 +262,7 @@ create the seed packet
 create the player
   starts in the Greenhouse
   wears the straw hat
+  carries the trowel
 
   Mud on your boots, dirt under your nails.
 ```
@@ -201,7 +289,8 @@ create the Rose Walk
 ```
 
 A blocked exit refuses travel and speaks the named phrase (the key after
-the colon must be a phrase the story defines, §5.3). The block can be
+the colon names a phrase the story defines, §5.3; a dotted key is legal
+too, ADR-231). The block can be
 conditional:
 
 <!-- fixture: world/exits.story -->
@@ -392,6 +481,130 @@ The `detail` key is special: it appends a live detail sentence to the
 entity's description and requires a `while` condition. On ordinary
 overrides, `while` is not allowed (`analysis.override-gate`); use a
 strategy or variants instead.
+
+### 2.11 Starting state
+
+A stateful trait opens for business in its default state: a lockable
+thing starts unlocked, a switchable thing starts off, and an openable
+thing starts closed — declare `starts open` to begin open (ADR-231
+D5b: the trait default is authoritative everywhere; container kinds are
+no exception). When the story needs otherwise, a safe
+that stays locked until the player finds the key, a space heater
+already running, `starts <state>` on the composition line sets the
+trait's initial value.
+
+<!-- fixture: world/starts-state.story -->
+```story
+create the safe
+  a container, openable, lockable with the brass key, starts locked
+  in the Back Office
+
+  A squat floor safe with a brass keyhole.
+```
+
+Six state words are accepted, each paired with the trait it
+initializes: `locked` and `unlocked` set `lockable`, `closed` and
+`open` set `openable`, `off` and `on` set `switchable`. The pairing is
+enforced: `starts locked` on an entity that does not compose
+`lockable` is a load error (`analysis.starts-state-pairing`), never a
+silent no-op. Any other word after `starts` is a parse error
+(`parse.starts-state`) — except `in`, which is the placement line from
+§2.4. `starts in` names where something begins; `starts <state>` names
+how.
+
+<!-- fixture: world/starts-state.story -->
+```story
+create the space heater
+  switchable, starts on
+  in the Back Office
+  aka heater
+
+  An old space heater, ticking as it warms.
+```
+
+Note what `starts` does not do: the state word is an initializer, not
+stored story state. `locked`, `open`, and `on` remain derivable facts
+read live from the trait (the state adjectives of §3.4), and a `states:`
+line reproducing one of those pairs is still the shadow-state error
+(§6.2's boolean-state gate). `starts` merely chooses the trait's first
+value; from there the
+world moves it the usual ways — keys, hands, and switches.
+
+### 2.12 Doors (2026-07-18, ADR-234/237/238)
+
+A door is its own entity, referenced from an exit line with `through` —
+the exit declares the geometry once and the reverse direction is
+inferred. The door block itself never names its rooms: a door's location
+*is* its room pair.
+
+<!-- fixture: world/doors.story -->
+```story
+create the Hall
+  a room
+  down to the Cellar through the cellar door
+
+  A cold entrance hall.
+
+create the cellar door
+  a door, lockable with the tarnished key
+  aka grey door
+
+  A grey door, locked as long as anyone can remember.
+```
+
+Defaults follow IF convention: `a door` starts closed (`starts open`
+overrides); `lockable` on a door starts locked, with the key named right
+on the adjective; a permanently open passage needs no door entity at
+all. With that one declaration OPEN, CLOSE, LOCK, and UNLOCK work and
+the door is visible from both sides. Full rules (mirrored far-room
+lines, the diagnostics): chord-grammar.md "Doors".
+
+### 2.13 Regions (2026-07-18, ADR-236)
+
+A region groups rooms and owns behavior for all of them: `containing`
+lists members (additive across lines; regions nest), an `on every turn`
+clause is a region daemon firing only while the player is in a member
+room, and `after entering it` / `after leaving it` bind to boundary
+crossings in either direction. `leaving` exists only on region blocks.
+
+<!-- fixture: world/regions.story -->
+```story
+create the Grounds
+  a region
+  containing the Drive, the Hall
+
+  on every turn while one chance in 6
+    phrase night-wind
+  end on
+
+  after entering it
+    phrase cold-returns
+  end after
+
+  after leaving it
+    phrase out-of-the-wind
+  end after
+```
+
+### 2.14 People: proper names and pronouns (2026-07-19, ADR-242)
+
+`proper` (person-only, unconditional) renders a person as a bare name —
+"You can see Tobias here." The create-line article is never read for
+identity: `create the zookeeper` and `create a zookeeper` load
+identically; if a person is proper-named, say so. A `pronouns` line
+names the narration's pronoun set — one of `he`, `she`, `it`, `they`,
+or a `define pronouns` set name (§5.9). Absent means absent: without
+the line, a person renders by number ("it"/"they") — nothing is
+inferred from a name.
+
+<!-- fixture: world/proper-pronouns.story -->
+```story
+create Tobias
+  aka groundskeeper
+  a person, proper
+  pronouns he
+  in the Gatehouse
+```
 
 ## 3. Giving things behavior
 
@@ -617,13 +830,19 @@ things that are simply never allowed:
   end on
 ```
 
+The named key resolves entity-scoped first (ADR-231): a
+`phrase all-thorns:` override in the refusing entity's own `create`
+block (§2.10) wins over a story-wide `all-thorns`, and a bare key
+renders on standard actions just as it does on story-defined ones. A
+dotted key is legal here too (§5.2).
+
 Refusing on a negated condition (`refuse when not …`) is flagged
 (`analysis.negated-requirement`): that is a requirement in disguise, and
 `must` says it better.
 
 ### 3.7 The statements
 
-Nine statements do the story's work. The pumpkin below uses most of
+Ten statements do the story's work. The pumpkin below uses most of
 them:
 
 <!-- fixture: behavior/statements.story -->
@@ -675,6 +894,8 @@ them:
   idempotent.
 - **`win [<phrase>]`** and **`lose [<phrase>]`** end the story (§4.6),
   optionally speaking a named phrase on the way out.
+- **`kill the player [<phrase-key>]`** runs the platform's death
+  machinery — not the same thing as `lose`; §4.7 owns the difference.
 
 <!-- fixture: behavior/statements.story -->
 ```story
@@ -688,19 +909,44 @@ them:
 ### 3.8 The when suffix
 
 Any of `phrase`, `emit`, `change`, `move`, `remove`, `award`, `win`,
-and `lose` can carry a trailing `when <condition>`, making that one
+`lose`, and `kill the player` can carry a trailing `when <condition>`,
+making that one
 statement conditional without any block structure; several examples
 above use it. `set` and bare `refuse` do not take the suffix. Do not
 confuse it with the `when <value>` arm header inside `select on`
 (§4.1): same word, different position, different job.
 
+### 3.9 Topic tables (2026-07-18, ADR-239)
+
+Conversation is a declared table per person — one `define topics for
+<person> … end topics` block serving both ASK and TELL. Entity rows
+(`about the silver locket:`) resolve like any noun and are checked
+first; quoted rows declare a topic plus comma-separated aliases, matched
+by normalized whole-topic equality — a lookup, never a fuzzy guess. A
+row's body is ordinary statements (`it` binds the owner), so a
+conversation can change state anywhere in the world. A miss falls to
+the owner's plain `on asking it` catch-all if it has one; on a hit the
+row fully owns the response. Overlaps are compile errors, never runtime
+tie-breaks.
+
+<!-- fixture: behavior/topics.story -->
+```story
+define topics for tobias
+  about the silver locket: phrase tobias-locket-reply
+  about "the folly", "the fire":
+    change it to shaken
+    phrase tobias-folly-reply
+end topics
+```
+
 ## 4. Branching, iteration, and progression
 
 The statements in §3 each do one thing. This chapter is about shaping
 what happens over time: choosing between several bodies, doing something
-once per matching entity, keeping score, ending the story, and running a
-scripted timeline. All of it is still made of the statements you already
-have; these are the blocks that route between them.
+once per matching entity, keeping score, ending the story — in victory,
+defeat, or death — and running a scripted timeline. All of it is still
+made of the statements you already have; these are the blocks that route
+between them.
 
 ### 4.1 select on a value
 
@@ -1000,7 +1246,80 @@ the `lose` is skipped and `near-miss` speaks instead. The phrase name is
 optional — bare `win` and bare `lose` end the story with only the
 platform's default ending text.
 
-### 4.7 Sequences
+### 4.7 Death: kill the player and deadly places
+
+Death is not `lose`. `lose` ends the game directly; the three constructs
+here run the platform's death machinery instead — the death text speaks,
+a died event fires, and at the end of the turn the engine re-checks
+whether the player is actually dead. That re-check is a real window: a
+story policy that revives the player during the turn (a reincarnation
+rule, a guardian angel) vetoes the ending and play continues. With no
+such policy, the story ends in defeat.
+
+**`kill the player [<phrase-key>] [when <condition>]`** is a statement,
+peer to `win` and `lose` (§3.7), legal anywhere statements go — `on` and
+`after` clauses, `every turn` daemons, action bodies, inside `select` and
+`each`. The phrase key is the death text (define it like any phrase) and
+doubles as the recorded cause; bare `kill the player` records the cause
+`killed` and shows only the platform's ending text. The `when` suffix
+gates it like any statement (§3.8):
+
+<!-- fixture: flow/death.story -->
+```story
+  on crossing it
+    kill the player bridge-death when it is frayed
+    phrase bridge-holds
+  end on
+```
+
+While the bridge is whole, the `kill` is skipped and `bridge-holds`
+speaks instead — the same shape as the conditional `lose` in §4.6.
+
+**`<direction> is deadly: <phrase-key>`** marks a fatal exit, mirroring
+`is blocked:` (§2.5). The fatal direction is deliberately not an exit at
+all: typing it never runs the going action — the command is rewritten
+into the platform's internal death action, so the player sees the death
+text and nothing else, no movement prose, no refusal. The player
+retreats another way.
+
+<!-- fixture: flow/death.story -->
+```story
+create Aragain Falls
+  a room
+  west to the Rocky Ledge
+  south is deadly: falls-death
+
+  The roar of the water is everything.
+```
+
+The conditional form `is deadly while <condition>:` parses but is not
+wired yet — a load error tells you so; the live equivalent is an
+`on going it` clause carrying `kill the player when <condition>`.
+
+**`deadly: <phrase-key>`** marks the whole room as a no-escape position:
+every verb except a safe allowlist — look and examine, by default — is
+fatal, including objectless ones like WAIT and INVENTORY that no
+per-entity clause could catch. Reserve it for the genuinely inescapable
+spot, not as a generic hazard flag:
+
+<!-- fixture: flow/death.story -->
+```story
+create Over the Falls
+  a room
+  deadly: over-falls-death
+
+  You are over the falls. This was a mistake.
+```
+
+In TypeScript the underlying trait adds two more dials: `safeVerbs`
+widens the allowlist, and `chance` makes the room probabilistically
+deadly — a survived roll simply lets the verb run normally, with no
+message. Neither dial is expressible from Chord today. The standard
+library reference (stdlib-reference.md §9) documents the machinery
+underneath all three constructs: the died event's shape, the veto
+window's mechanics, the health trait, and the internal redirect action.
+
+### 4.8 Sequences
 
 A `define sequence` is a scripted timeline: a named list of steps, each
 anchored to *when* it fires and carrying a body of ordinary statements.
@@ -1063,7 +1382,9 @@ A sequence name may be several words (`gathering storm`, `take
 shelter`), and the block always closes with an explicit `end sequence`.
 Within a step, prose indented under a `phrase` line is declare-and-emit
 text (§3.7), which is why these steps need no separate `define phrases`
-block.
+block. Declare-and-emit prose is legal in *every* body context — `on`
+clause bodies (including the story header's `on every turn` clauses),
+action bodies, sequence steps, and `define machine` state bodies alike.
 
 ## 5. Defining vocabulary and text
 
@@ -1176,6 +1497,32 @@ splice at a description marker (`analysis.verbatim-marker`): its
 whole point is preserved line structure, which a mid-sentence splice
 would break.
 
+A phrase key may be dotted — `if.action.taking.fixed_in_place` is one
+key, registered whole — and dotting is how a story overrides the
+platform's own text. Every standard-action message lives under a dotted
+id (the stdlib reference catalogs them entry by entry); a `define
+phrase` under that exact key replaces the platform default story-wide,
+for every entity, every time that moment renders:
+
+<!-- fixture: define/dotted-override.story -->
+```story
+define phrase if.action.taking.fixed_in_place
+  It will not budge, and neither will anything else bolted to this place.
+end phrase
+```
+
+Now every fixed-in-place refusal in the story speaks this line instead
+of the standard one. The per-entity routes still sit on top: an `on`
+clause's own refusal (§3.6) or a per-entity override (§2.10) speaks for
+its one entity, and the story-wide dotted override sets the default
+underneath them.
+
+A dotted key is legal at every site a phrase key appears (ADR-231), not
+just here: `refuse` and `refuse when` (§3.6), `must … otherwise refuse`
+(§3.5), per-entity `phrase` headers (§2.10), `define phrases` entries
+(§5.3), and the blocked and deadly exit keys (§2.5, §4.7) all read a
+dotted key whole.
+
 ### 5.3 define phrases (locale blocks)
 
 Where `define phrase` declares one key with variants, `define phrases
@@ -1197,7 +1544,9 @@ define phrases en-US
 Each entry is `key:` on its own line followed by an indented prose
 block. The block is dedent-terminated — there is no `end phrases`. A key
 here is a plain phrase with no strategy; for variants or a strategy, use
-`define phrase` (§5.2) instead. Throughout this reference the small
+`define phrase` (§5.2) instead. A key here may be dotted (ADR-231): an
+entry under `if.action.taking.fixed_in_place:` overrides the platform
+default exactly as §5.2's form does. Throughout this reference the small
 supporting texts live in exactly this kind of block at the foot of each
 fixture.
 
@@ -1256,21 +1605,23 @@ every hatch example here is verified; the TypeScript stub is
 illustrative, checked by the author's toolchain, not by this document's
 harness.
 
-### 5.6 define action/behavior hatches
+### 5.6 define action hatches
 
-Text is one hatch kind; the other two bridge to whole actions and
-capability behaviors, for logic genuinely outside the language. The
-syntax mirrors the text hatch exactly:
+Text is one hatch kind; the other bridges to whole actions, for logic
+genuinely outside the language. The syntax mirrors the text hatch
+exactly:
 
 <!-- fixture: define/hatches.story -->
 ```story
 define action dowsing from "./extras.ts"
-define behavior tide-clock from "./extras.ts"
 ```
 
 `define action … from` binds an action implementing the platform's
-`Action` interface; `define behavior … from` binds a `CapabilityBehavior`
-(ADR-090). Both are governed by the hatch legitimacy rule (design.md
+`Action` interface. (A third hatch kind, `define behavior … from`, was
+removed — ADR-235 D2: it had no binding key and could never fire; author
+the behavior in-language with `define trait` and `on <verb> it` clauses,
+or ship a full action hatch.) Action hatches are governed by the hatch
+legitimacy rule (design.md
 §5.6): a hatch is legitimate only when it implements a public platform
 interface, or does pure non-IF computation, with data crossing the
 boundary through that interface. If the language can already express what
@@ -1401,6 +1752,136 @@ Together they are the story-author's version of stdlib's action-plus-
 behavior pattern — the goats above are pettable because `petting` exists
 as an action and something makes the goats respond to it.
 
+### 5.9 define pronouns (2026-07-19, ADR-242)
+
+For pronouns beyond the standard four sets, declare a named set —
+exactly five rows (`subject`, `object`, `possessive`,
+`possessive-pronoun`, `reflexive`), order free — and name it from a
+person's `pronouns` line (§2.14). Missing or duplicate rows, shadowing
+a standard set, and redefinition are all compile errors.
+
+<!-- fixture: world/proper-pronouns.story -->
+```story
+define pronouns ze
+  subject ze
+  object zir
+  possessive zir
+  possessive-pronoun zirs
+  reflexive zirself
+end pronouns
+```
+
+### 5.10 use: platform extensions (2026-07-18, ADR-215/216/241)
+
+A `use <extension>` line in the story header admits one trusted platform
+extension's vocabulary — `combat`, `state-machines` — and triggers its
+runtime registration; a `use`-only story stays pure IR. (NPC vocabulary
+is core and always on.) Each extension brings manifest-typed trait
+adjectives (`combatant with health 20 and skill 40`, the NPC library's
+`guard`/`patrol`/…), and `use state-machines` adds the `define machine …
+end machine` block. Alongside these, the media surface — `define
+sound/image/music … from "<file>"`, `play sound`, `play ambient`, `show
+image`, `define channel` data projections, and the `client has
+<capability>` condition — lets a story drive the browser client with no
+story TypeScript; text-only clients degrade cleanly. The full catalog of
+forms lives in chord-grammar.md "Extension surface".
+
+<!-- fixture: define/use-extensions.story -->
+```story
+story "Extensions" by "ref"
+  id: ext-ref
+  version: 0.0.1
+  use combat
+
+create the Guardhouse
+  a room
+
+  A low stone guardhouse.
+
+create the sentry
+  a person, combatant with health 20 and skill 40
+  in the Guardhouse
+```
+
+### 5.11 define phrasebook, use phrasebook, import (2026-07-21, ADR-245/250/251)
+
+A phrasebook groups phrase definitions into one named, predicated
+collection — a voice. Whichever declared book's `while` predicate holds
+at render time supplies the text, first match in declaration order, per
+key. A predicate-less book is the **default phrasebook** — active
+whenever no earlier book claims the key, and the whole feature in its
+simplest form: one named book, no predicates, pure organization.
+
+```story
+define phrasebook midnight-voice while midnight
+  vane-mood, first-time:
+    The vane swings hard north, as if the night had opinions.
+  or
+    The vane holds north. Of course it does.
+end phrasebook
+
+define phrasebook evening-voice
+  vane-mood, first-time:
+    The vane noses the evening breeze, unhurried.
+  or
+    The vane sits easy in the last of the light.
+
+  vane-quiet:
+    The vane keeps its own counsel.
+end phrasebook
+```
+
+Entries are ordinary phrase definitions — `<key>[, strategy]:` with
+`or` variants, all five strategies, `verbatim` included. The consuming
+side is unchanged: `phrase vane-mood` in a clause body, or a
+`{vane-mood}` marker in prose. At midnight the first book wins
+`vane-mood`; any other time the default book speaks. `vane-quiet` is
+covered only by the default book, so it renders the same in every
+state — fallthrough is per key, never per book.
+
+The rules, each load-checked:
+
+- **Story text always wins.** A story-wide `define phrase vane-mood`
+  (outside any book) beats every book, in every state; a per-entity
+  `phrase vane-mood:` beats even that. Swapping voices never changes
+  text you wrote at those levels.
+- **Story keys only.** A book entry key is a single kebab-case word in
+  the story's own phrase namespace — a dotted platform message ID is
+  `analysis.phrasebook-dotted-key` (to override a platform message,
+  use a story-level `define phrase <dotted-id>`).
+- **The book's `while` is the only gate.** An entry-level `while` is
+  `analysis.phrasebook-entry-gate` — split the entry into a second
+  book instead.
+- **Counters are per book.** `first-time`/`cycling`/`sticky` state
+  belongs to the entry: two books' `first-time` texts for the same key
+  each fire their own "first", and both survive save/restore.
+- Voice is evaluated when the turn's text renders, against the turn's
+  final state — a turn that flips a predicate renders its whole output
+  in the new voice.
+
+Two header/file companions:
+
+```story
+story "The Folly at Fernhill" by "The Sharpee Project"
+  use phrasebook candlewick-gothic while the player holds the locket
+  use phrasebook plain-country
+
+import "voices/winter"
+```
+
+`use phrasebook <name> [while <condition>]` (story header) activates a
+packaged voice by name, binding the predicate at the use site — legal
+any number of times; an unknown name is `analysis.unknown-phrasebook`.
+`import "<file>"` (top level, ADR-251) splices another story-source
+fragment at the import position — the author's file-organization axis.
+A fragment is a `.chord` file, and the extension is assumed: you write
+`import "voices/winter"`, the file on disk is `voices/winter.chord`. A
+fragment may hold **any complete declaration** — rooms, people,
+sequences, phrasebooks — except a `story` header or a nested `import`
+(imports are flat); a file of `define phrasebook` blocks is just one use
+of it. Header `use` lines and spliced body blocks arbitrate together, in
+file order.
+
 ## 6. Tooling
 
 ### 6.1 sharpee compose
@@ -1521,7 +2002,7 @@ harness, which asserts the exact code still fires.
 |---|---|---|
 | top-level `when <actor> <verb>s …` rule | `parse.removed-when` | an `on`/`after` clause on the owner (§3.1) |
 | top-level `once <condition>` rule | `parse.removed-once` | the `, once` clause modifier (§3.3) |
-| top-level `every N turns` rule | `parse.removed-every` | a `define sequence` (§4.7) or `every turn` clause (§3.2) |
+| top-level `every N turns` rule | `parse.removed-every` | a `define sequence` (§4.8) or `every turn` clause (§3.2) |
 | `define flag <name>` | `parse.removed-flag` | owner `states:` (§2.7) or a derived condition (§5.1) |
 | `flag` trait-field type | `parse.removed-flag-field` | trait `states` (§5.7) |
 | `if` / `else` / `end if` | `parse.removed-if` | `must` (§3.5), the `when` suffix (§3.8), or `select` (§4.1) |

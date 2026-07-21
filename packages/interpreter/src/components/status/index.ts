@@ -1,1 +1,1 @@
-export { StatusLine } from './StatusLine';
+export { StatusLine } from './StatusLine.js';

@@ -112,7 +112,7 @@ Use `./repokit build` (it orchestrates; tsf compiles) instead of manual `pnpm bu
 - `tools/zifmia/dist/` — zifmia multi-user server (`--zifmia`)
 
 **Version System**:
-- Versions use format `X.Y.Z-beta` (no timestamp)
+- Versions use plain `X.Y.Z` — no `-beta` suffix, no timestamp (the npm `beta` DIST-TAG is separate from the version string)
 - Version stamping runs FIRST, before any compilation
 
 **IMPORTANT**:
@@ -130,12 +130,19 @@ node dist/cli/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-earl
 # Run walkthrough chain (state persists between transcripts)
 node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
 
-# Interactive play mode
-node dist/cli/sharpee.js --play
+# Interactive play mode (--story required — there is NO default story)
+node dist/cli/sharpee.js --play --story stories/dungeo
 
 # WRONG — Don't use this (5x slower, loads all packages)
 # node packages/transcript-tester/dist/cli.js stories/dungeo ...
 ```
+
+**Story selection (no default)**: the old `stories/dungeo` default is removed
+(2026-07-19). For `--test`, the story is inferred from the transcript paths'
+`stories/<name>/` prefix (mixed prefixes = hard error; a lone `.story` file in
+that directory is preferred over a compiled dist). `--play`/`--exec` require an
+explicit `--story <dir | .story file>`; for Chord stories pass the `.story`
+FILE (e.g. `stories/fernhill/fernhill.story`), not the directory.
 
 **Walkthrough Testing:**
 ```bash
@@ -166,6 +173,7 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 | `--chain`            | Chain transcripts (game state persists between them)     |
 | `--stop-on-failure`  | Stop on first failure                                    |
 | `--play`             | Interactive play mode (REPL)                             |
+| `--story <path>`     | Story dir or `.story` file (inferred from transcript paths for `--test`; required for `--play`/`--exec`) |
 | `--verbose`          | Show detailed output                                     |
 | `--output-dir <dir>` | `-o` — Write timestamped results to directory            |
 

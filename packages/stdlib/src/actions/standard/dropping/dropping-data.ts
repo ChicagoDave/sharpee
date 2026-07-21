@@ -5,11 +5,11 @@
  * This separates data structure concerns from business logic.
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { nounPhraseFor } from '../../../utils';
+import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 
 /**
  * Build dropped event data

@@ -12,11 +12,12 @@
  * 4. report: Emit platform.again_requested for engine
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent, createAgainRequestedEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { CommandHistoryData } from '../../../capabilities/command-history';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { CommandHistoryData } from '../../../capabilities/command-history.js';
 
 /**
  * Shared data passed between validate and report phases
@@ -71,7 +72,7 @@ export const againAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('if.event.again_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       reason: result.error
     })];
   },

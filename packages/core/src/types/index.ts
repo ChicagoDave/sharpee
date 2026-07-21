@@ -5,8 +5,8 @@
  * These are generic types that can be used by any narrative system
  */
 
-export * from './entity';
-export * from './relationship';
-export * from './attribute';
-export * from './result';
-export * from './save-data';
+export * from './entity.js';
+export * from './relationship.js';
+export * from './attribute.js';
+export * from './result.js';
+export * from './save-data.js';

@@ -4,8 +4,8 @@
  */
 
 // Removing uses the same TAKEN event as taking action
-export { TakenEventData as RemovedEventData } from '../taking/taking-events';
+export { TakenEventData as RemovedEventData } from '../taking/taking-events.js';
 
 export interface RemovingEventMap {
-  'if.event.taken': import('../taking/taking-events').TakenEventData;
+  'if.event.taken': import('../taking/taking-events.js').TakenEventData;
 }

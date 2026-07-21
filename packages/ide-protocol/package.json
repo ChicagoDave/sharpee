@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/ide-protocol",
-  "version": "3.0.0",
+  "version": "3.2.0",
   "description": "Wire types for the Sharpee IDE project-introspection manifest (ADR-184)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

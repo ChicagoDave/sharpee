@@ -6,41 +6,41 @@
  */
 
 // Domain events
-export * from './events';
+export * from './events.js';
 
 // Domain contracts
-export * from './contracts';
+export * from './contracts.js';
 
 // World state changes
-export * from './changes';
+export * from './changes.js';
 
 // Language provider interfaces
-export * from './language-provider';
-export * from './parser-language-provider';
+export * from './language-provider.js';
+export * from './parser-language-provider.js';
 
 // Parser contracts
-export * from './parser-contracts';
+export * from './parser-contracts/index.js';
 
 // Vocabulary contracts
-export * from './vocabulary-contracts';
+export * from './vocabulary-contracts/index.js';
 
 // Grammar system
-export * from './grammar';
+export * from './grammar/index.js';
 
 // Prompt types (ADR-137)
-export * from './prompt';
+export * from './prompt.js';
 
 // Channel-I/O type contracts (ADR-163)
-export * from './channels';
+export * from './channels/index.js';
 
 // Spatial sound propagation contracts (ADR-172)
-export * from './sound';
+export * from './sound/index.js';
 
 // Phrase algebra — language-neutral phrase contracts (ADR-192)
-export * from './phrase';
+export * from './phrase.js';
 
 // Room-description snippet contracts (ADR-209)
-export * from './snippets';
+export * from './snippets.js';
 
 // Story ending contract (ADR-210 Prerequisite 3)
-export * from './endings';
+export * from './endings.js';

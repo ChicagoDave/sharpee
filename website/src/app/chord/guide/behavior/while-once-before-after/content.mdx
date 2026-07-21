@@ -1,0 +1,22 @@
+Every clause form takes an optional `while <condition>` gate, checked
+each time the clause would fire. After the gate, comma modifiers may
+follow. `, once` limits the clause to a single firing for the whole
+story, as the scarecrow's shadow moment above shows.
+
+`, before <trait>` and `, after <trait>` order clauses when several
+traits answer the same verb on one entity:
+
+```chord
+define trait creaky
+  phrases en-US
+    hinge-creak:
+      The hinges creak horribly.
+
+  on opening it, before alarmed
+    phrase hinge-creak
+  end on
+end trait
+```
+
+A cabinet composed `openable, alarmed, creaky` creaks first, then rings
+its alarm bell, regardless of the order the traits were listed in.

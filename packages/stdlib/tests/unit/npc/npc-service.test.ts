@@ -14,7 +14,7 @@ import {
   createWandererBehavior,
 } from '../../../src/npc';
 import { createSeededRandom } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, RoomTrait, Direction, EntityType } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, CombatantTrait, CombatBehavior, RoomTrait, Direction, EntityType } from '@sharpee/world-model';
 
 // Helper to create mock entity
 function createMockEntity(
@@ -119,7 +119,8 @@ describe('NpcService', () => {
       });
 
       const npc = createMockEntity('npc-1', 'Dead Guard', {
-        [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior', isAlive: false }),
+        [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
+        [TraitType.HEALTH]: new HealthTrait({ dead: true, causeOfDeath: 'combat' }), // life-state (ADR-226)
       });
 
       const world = createMockWorld([npc]);
@@ -145,7 +146,8 @@ describe('NpcService', () => {
       });
 
       const npc = createMockEntity('npc-1', 'Sleeping Guard', {
-        [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior', isConscious: false }),
+        [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
+        [TraitType.HEALTH]: new HealthTrait({ health: 1, maxHealth: 10 }), // <=20% → unconscious (ADR-226)
       });
 
       const world = createMockWorld([npc]);
@@ -564,5 +566,42 @@ describe('createNpcService', () => {
     expect(service).toBeDefined();
     expect(service.registerBehavior).toBeDefined();
     expect(service.tick).toBeDefined();
+  });
+});
+
+describe('ADR-226 AC-2: a combat kill removes the NPC from the turn loop', () => {
+  it('stops calling onTurn once the NPC is killed via combat (one health source, no sync bug)', () => {
+    const service = new NpcService();
+    const random = createSeededRandom(12345);
+    const onTurnFn = vi.fn().mockReturnValue([]);
+    service.registerBehavior({ id: 'fighter', onTurn: onTurnFn });
+
+    // NPC carries the daemon (NpcTrait), combat stats (CombatantTrait), and
+    // life-state (HealthTrait) — the three formerly-fused layers.
+    const npc = createMockEntity('npc-1', 'Troll', {
+      [TraitType.NPC]: new NpcTrait({ behaviorId: 'fighter' }),
+      [TraitType.COMBATANT]: new CombatantTrait({ armor: 0, dropsInventory: false }),
+      [TraitType.HEALTH]: new HealthTrait({ health: 10, maxHealth: 10 }),
+    });
+
+    const world = createMockWorld([npc]);
+    const tickOnce = () =>
+      service.tick({ world, turn: 1, random, playerLocation: 'room-1', playerId: 'player' });
+
+    // Alive: the daemon runs this turn.
+    tickOnce();
+    expect(onTurnFn).toHaveBeenCalledTimes(1);
+
+    // Kill through the combat path — writes HealthTrait.dead, the SAME trait turn
+    // eligibility reads. Before ADR-226 this set CombatantTrait.isAlive only, while the
+    // turn loop read NpcTrait.isAlive, so the "dead" NPC kept taking turns (the sync bug).
+    const result = CombatBehavior.attack(npc, 100, world);
+    expect(result.killed).toBe(true);
+    expect((npc.get(TraitType.HEALTH) as HealthTrait).dead).toBe(true);
+
+    // Dead: the daemon no longer runs — onTurn is not called again.
+    onTurnFn.mockClear();
+    tickOnce();
+    expect(onTurnFn).not.toHaveBeenCalled();
   });
 });

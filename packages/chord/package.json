@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/chord",
-  "version": "3.0.0",
+  "version": "3.2.0",
   "description": "Chord story language compiler for Sharpee — lexer, parser, semantic analysis, Story IR wire types, diagnostics (ADR-210)",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",

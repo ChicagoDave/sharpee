@@ -1,0 +1,48 @@
+`open X with Y` maps onto the standard opening action (ADR-230 D3b), and
+an explicitly named tool is a consulted command entity — the tool itself
+can veto the operation. (The trait-side tool *requirement* —
+`toolId`/`toolIds` on the openable — is TypeScript territory today.)
+
+The author writes:
+
+```chord
+create the Cellar
+  a room
+
+  Brick arches, cold air, one bare bulb.
+
+create the shipping crate
+  aka crate
+  openable
+  scenery
+  in the Cellar
+
+  A pine crate. The lid sits loose on top.
+
+create the letter opener
+  aka opener
+
+  Your grandfather's silver letter opener.
+
+  on opening it
+    refuse if.action.opening.opener-precious
+  end on
+
+create the player
+  starts in the Cellar
+  carries the letter opener
+
+define phrase if.action.opening.opener-precious
+  You are not prying anything with your grandfather's letter opener.
+end phrase
+```
+
+The player sees:
+
+```text
+> open the crate with the letter opener
+You are not prying anything with your grandfather's letter opener.
+
+> open the crate
+You open the shipping crate.
+```

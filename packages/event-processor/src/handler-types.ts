@@ -6,8 +6,8 @@
  */
 
 import type { ISemanticEvent } from '@sharpee/core';
-import type { WorldQuery } from './effects/world-query';
-import type { Effect } from './effects/types';
+import type { WorldQuery } from './effects/world-query.js';
+import type { Effect } from './effects/types.js';
 
 /**
  * Game event that can be handled by the story

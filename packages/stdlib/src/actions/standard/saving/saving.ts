@@ -11,11 +11,12 @@
  * 4. report: Emit platform event and notifications
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent, createSaveRequestedEvent, ISaveContext } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { SaveRequestedEventData } from './saving-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { SaveRequestedEventData } from './saving-events.js';
 
 interface SavingSharedData {
   saveName: string;
@@ -154,7 +155,7 @@ export const savingAction: Action & { metadata: ActionMetadata } = {
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('if.event.save_blocked', {
-      messageId: `if.action.saving.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

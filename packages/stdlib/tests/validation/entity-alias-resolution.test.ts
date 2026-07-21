@@ -332,8 +332,13 @@ describe('Entity alias resolution', () => {
       }
     });
 
-    it('should fall back to head noun when full text has no match', async () => {
-      // "examine old hook" — no entity named "old hook", but "hook" is an alias
+    it('should disqualify when a query word matches nothing (ADR-231 D3)', async () => {
+      // "examine old hook" — "hook" is an alias, but nothing on the entity
+      // matches "old". PIN 2: any query content word matching nothing
+      // DISQUALIFIES the candidate ("x brass sword" must never resolve to
+      // the brass key). The pre-D3 head-noun fallback silently resolved
+      // this to the brass hook; that was the wrong-resolution class the
+      // ruling removes.
       const command: ParsedCommand = {
         pattern: 'VERB_NOUN',
         confidence: 1,
@@ -352,9 +357,9 @@ describe('Entity alias resolution', () => {
       };
 
       const result = await validator.validate(command);
-      expect(result.success).toBe(true);
-      if (result.success && result.value.directObject) {
-        expect(result.value.directObject.entity.id).toBe(hook.id);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.code).toBe('ENTITY_NOT_FOUND');
       }
     });
   });

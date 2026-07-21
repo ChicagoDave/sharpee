@@ -12,12 +12,12 @@ export type {
   Renderer as IRenderer,
   ChannelStateStore,
   SlotHandle,
-} from './types';
+} from './types.js';
 
-export { Renderer, createRenderer, type RendererOptions } from './renderer';
+export { Renderer, createRenderer, type RendererOptions } from './renderer.js';
 
 export {
   createJsonTreeFallbackFactory,
   type FallbackOutputSink,
   type FallbackWarningSink,
-} from './json-tree-fallback';
+} from './json-tree-fallback.js';

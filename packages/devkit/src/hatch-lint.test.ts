@@ -8,8 +8,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { lintHatchSources } from './hatch-lint';
-import { runCompose } from './commands/compose';
+import { lintHatchSources } from './hatch-lint.js';
+import { runCompose } from './commands/compose.js';
 
 const DIR = mkdtempSync(join(tmpdir(), 'hatch-lint-test-'));
 afterAll(() => rmSync(DIR, { recursive: true, force: true }));

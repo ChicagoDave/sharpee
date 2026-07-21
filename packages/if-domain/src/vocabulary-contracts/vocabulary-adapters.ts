@@ -7,9 +7,9 @@ import {
   VerbVocabulary, 
   DirectionVocabulary, 
   SpecialVocabulary 
-} from './vocabulary-types';
+} from './vocabulary-types.js';
 
-import { ParserLanguageProvider } from '../parser-language-provider';
+import { ParserLanguageProvider } from '../parser-language-provider.js';
 
 /**
  * Adapt verb vocabulary from language provider format

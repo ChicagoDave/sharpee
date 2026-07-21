@@ -1,0 +1,60 @@
+The platform gates eligibility (`cuttable`) and validates the tool
+(`with the <tool entity>` — the same contract as lockable keys); the outcome
+is the entity's own `on cutting it` clause, and exactly one
+implementation is required at load. Note there is no bare `cut X` in the
+core grammar — the tool is part of the phrasing.
+
+The author writes:
+
+```chord
+create the Bell Tower
+  a room
+
+  Dust, bird droppings, and one taut bell rope.
+
+create the bell rope
+  aka rope
+  cuttable with the shears
+  scenery
+  in the Bell Tower
+  states: taut, severed
+
+  A rope as thick as your wrist, humming with tension.
+
+  on cutting it
+    change it to severed
+    phrase rope-severed
+  end on
+
+create the shears
+  in the Bell Tower
+
+  Heavy tin shears.
+
+create the butter knife
+  aka knife
+
+  A knife for butter, and butter only.
+
+create the player
+  starts in the Bell Tower
+  carries the butter knife
+
+define phrases en-US
+  rope-severed:
+    The shears bite through strand after strand until the rope parts with
+    a crack. Somewhere above, the bell swings free.
+```
+
+The player sees:
+
+```text
+> cut the rope with the butter knife
+The butter knife won't cut the bell rope.
+
+> take the shears
+Taken.
+
+> cut the rope with the shears
+The shears bite through strand after strand until the rope parts with a crack. Somewhere above, the bell swings free.
+```

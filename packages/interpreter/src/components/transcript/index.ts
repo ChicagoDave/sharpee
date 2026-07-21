@@ -1,2 +1,2 @@
-export { Transcript } from './Transcript';
-export { CommandInput } from './CommandInput';
+export { Transcript } from './Transcript.js';
+export { CommandInput } from './CommandInput.js';

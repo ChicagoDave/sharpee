@@ -1,5 +1,5 @@
 import { unzipSync } from 'fflate';
-import type { StoryMetadata } from '../types/story-metadata';
+import type { StoryMetadata } from '../types/story-metadata.js';
 
 export interface LoadedBundle {
   metadata: StoryMetadata;

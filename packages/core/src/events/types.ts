@@ -1,6 +1,6 @@
 // packages/core/src/events/types.ts
 
-import { EntityId } from '../types/entity';
+import { EntityId } from '../types/entity.js';
 
 /**
  * Represents a semantic event in the system
@@ -80,7 +80,7 @@ export interface ISemanticEvent {
 
 // EventSource interface moved to semantic-event-source.ts
 // Re-export for backwards compatibility
-export { ISemanticEventSource as EventSource } from './semantic-event-source';
+export { ISemanticEventSource as EventSource } from './semantic-event-source.js';
 
 /**
  * Event listener for semantic events

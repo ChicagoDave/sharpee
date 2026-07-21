@@ -19,7 +19,7 @@ import {
   MovementRecord,
   WitnessEvent,
   ScopeResolver
-} from './types';
+} from './types.js';
 
 /**
  * Standard implementation of the witness system

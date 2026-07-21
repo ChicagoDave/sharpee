@@ -28,7 +28,7 @@
 import { createEvent, type ISemanticEvent } from '@sharpee/core';
 import type { IAudibilityEvent, ISound } from '@sharpee/if-domain';
 import { TraitType, type IFEntity, type WorldModel } from '@sharpee/world-model';
-import { propagate as defaultPropagate } from './propagation';
+import { propagate as defaultPropagate } from './propagation.js';
 
 /**
  * Semantic-event type fired by the dispatcher when a listener perceives

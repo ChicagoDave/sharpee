@@ -1,1 +1,1 @@
-export * from './attachedTrait';
+export * from './attachedTrait.js';

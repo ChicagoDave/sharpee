@@ -29,14 +29,14 @@ import {
   CharacterPredicate,
   ICharacterModelData,
 } from '@sharpee/world-model';
-import { COGNITIVE_PRESETS, CognitivePresetName, isCognitivePreset } from './cognitive-presets';
-import { VocabularyExtension } from './vocabulary-extension';
-import { PropagationProfile } from './propagation/propagation-types';
-import { PropagationOptions, buildPropagationProfile } from './propagation/builder';
-import { GoalDef, MovementProfile } from './goals/goal-types';
-import { GoalBuilder } from './goals/builder';
-import { InfluenceDef, ResistanceDef } from './influence/influence-types';
-import { InfluenceBuilder } from './influence/builder';
+import { COGNITIVE_PRESETS, CognitivePresetName, isCognitivePreset } from './cognitive-presets.js';
+import { VocabularyExtension } from './vocabulary-extension.js';
+import { PropagationProfile } from './propagation/propagation-types.js';
+import { PropagationOptions, buildPropagationProfile } from './propagation/builder.js';
+import { GoalDef, MovementProfile } from './goals/goal-types.js';
+import { GoalBuilder } from './goals/builder.js';
+import { InfluenceDef, ResistanceDef } from './influence/influence-types.js';
+import { InfluenceBuilder } from './influence/builder.js';
 
 // ---------------------------------------------------------------------------
 // Trigger builder (fluent chain for .on() rules)

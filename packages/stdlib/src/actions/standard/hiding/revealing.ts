@@ -14,16 +14,17 @@
  * Owner context: @sharpee/stdlib / actions / hiding
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
+import { blockedMessageId } from '../../lifecycle/index.js';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import {
   ConcealedStateTrait,
   getConcealmentState,
   isConcealed,
 } from '@sharpee/world-model';
-import { PlayerRevealedEventData } from './hiding-events';
+import { PlayerRevealedEventData } from './hiding-events.js';
 
 /**
  * Shared data passed between phases.
@@ -76,7 +77,7 @@ export const revealingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     return [context.event('if.event.reveal_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       reason: result.error,
     })];

@@ -1,0 +1,33 @@
+Three forms follow `on` or `after`. The common one binds a verb to the
+owner: `on opening it`, where `it` means this entity for the rest of the
+clause. The verb is a single word in its -ing form, and it must be a
+verb the story's actions or the platform's standard actions understand.
+
+The second form listens to a verb aimed at anything, and names the role
+the clause cares about. Roles belong to the action: `taking` has a
+`taker` and an `item`, so a scarecrow can watch every theft in the
+garden. The third form, `every turn`, ticks with the clock rather than
+reacting to an action; it is `on` only, since a turn is not something
+you react to after the fact.
+
+```chord
+create the scarecrow
+  scenery
+  in the Kitchen Garden
+
+  A scarecrow in a donated raincoat.
+
+  on taking anything as the taker
+    phrase scarecrow-stare
+  end on
+
+  on every turn while dusk, once
+    phrase scarecrow-shadow
+  end on
+```
+
+An entity-owned `every turn` clause fires only while the player is
+present with its owner; the scarecrow performs to an audience or not at
+all. Note `while dusk`: a story-level state ([§2.1](/chord/guide/world))
+is referenced as a
+bare word in conditions.

@@ -1,0 +1,94 @@
+**lock** (`if.action.locking`) and **unlock** (`if.action.unlocking`) —
+every form is core grammar since ADR-230 D2: `lock X`, `lock X with/using
+Y`, keyless `unlock X`, `unlock X with/using Y`, plus the `secure` /
+`unsecure` aliases (D4). Both operate on the `lockable` trait. A lock
+either names its key — `lockable with the iron key` in Chord,
+`keyId`/`keyIds` in TypeScript — or is keyless and turns freely, which
+makes the keyless forms safe by construction: a keyed lock still asks
+`no_key` when no key is named. The key rules, shared by both actions: a
+named key you are not holding refuses `key_not_held`; the wrong key
+refuses `wrong_key`. Locking additionally requires the thing be closed
+first (`not_closed`), and both refuse the redundant case (`already_locked`
+/ `already_unlocked`). One quirk worth knowing: on a *keyless* lock a
+named object is neither required nor checked — `lock the box with the
+herring` succeeds and even says `locked_with`.
+
+The author writes:
+
+```chord
+create the Vestry
+  a room
+
+  Vestments on pegs, and a deep stone niche.
+
+create the reliquary
+  a container, openable, lockable with the bone key, starts locked
+  in the Vestry
+
+  A silver reliquary, older than the church around it.
+
+create the knucklebone
+  in the reliquary
+
+  A saint's knucklebone, brown with age.
+
+create the bone key
+  aka key
+
+  A key carved from a bird's hollow bone.
+
+  on locking it
+    refuse key-never-seals
+  end on
+
+  phrase key-never-seals:
+    The bone key turns only one way; it opens, it never seals.
+
+create the player
+  starts in the Vestry
+  carries the bone key
+```
+
+The player sees:
+
+```transcript
+> open the reliquary
+The reliquary is locked.
+
+> unlock the reliquary
+What do you want to unlock it with?
+
+> unlock the reliquary with the bone key
+You unlock the reliquary with the bone key.
+
+> open the reliquary
+You open the reliquary.
+
+Inside the reliquary you see knucklebone.
+
+> close the reliquary
+You close the reliquary.
+
+> lock the reliquary with the bone key
+The bone key turns only one way; it opens, it never seals.
+```
+
+The keyless UNLOCK asks rather than fails, lock state gates opening until
+the key turns, and the last command is ADR-229's ordering made visible:
+each action consults the **target first, then the key** — the reliquary
+has nothing to say, so the bone key's own `on locking it` clause vetoes
+its use (and note the key contract resolved even though the bone key is
+declared *after* the reliquary — forward references are legal).
+
+| | lock (`if.action.locking.*`) | unlock (`if.action.unlocking.*`) |
+|---|---|---|
+| Refusals | `not_lockable` · `no_key` · `key_not_held` · `wrong_key` · `not_closed` · `already_locked` | `not_lockable` · `no_key` · `key_not_held` · `wrong_key` · `already_unlocked` |
+| Success | `locked` · `locked_with` | `unlocked` · `unlocked_with` |
+| Events | `if.event.locked` / `if.event.lock_blocked` | `if.event.unlocked` / `if.event.unlock_blocked` (key, sound, and container/door flags in the payload) |
+
+Interceptors (ADR-229): target first, then the key, each side's clause
+seeing the other's identity in its context — and only an *explicitly
+named* key is consulted; a key the platform infers is not a command
+entity.
+
+Gaps: the several-keys list `keyIds` is TypeScript today.

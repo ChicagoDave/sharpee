@@ -1,0 +1,31 @@
+`select on <value>` dispatches to the arm whose `when` matches the
+value, and runs nothing if none do. The classic use is a state machine:
+one arm per declared state, each speaking for that state.
+
+```chord
+  on examining it
+    select on its state
+      when dormant
+        phrase bulb-dormant
+      when sprouting
+        phrase bulb-sprouting
+      when blooming
+        phrase bulb-blooming
+    end select
+  end on
+```
+
+The value after `on` is any value expression
+([§3.4](/chord/guide/behavior)): here `its state`,
+the amaryllis bulb's current state out of `dormant, sprouting,
+blooming`. Each `when <word>` heads an arm whose body is ordinary
+statements. The block closes with `end select`, and each `or`-free arm
+simply dedents. Coverage is not enforced — an unmatched value falls
+through silently, which is what you want for "react only to these
+states."
+
+Do not confuse this arm-header `when <word>` with the statement-final
+`when <condition>` suffix ([§3.8](/chord/guide/behavior)). Same word,
+different job: the suffix
+gates one statement on a condition, while the arm header names a value
+to match. `select on` compares values; it does not evaluate conditions.

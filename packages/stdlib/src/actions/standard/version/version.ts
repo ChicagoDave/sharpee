@@ -12,15 +12,19 @@
  * 4. report: Emit version event with version data
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { VersionDisplayedEventData } from './version-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { VersionDisplayedEventData } from './version-events.js';
+// Stamped by ./repokit build (never hand-edited): the lockstep platform
+// version — the banner fallback when a story carries no engineVersion
+// (every Chord .story file). Re-exported for existing consumers.
+import { ENGINE_VERSION } from './engine-version.js';
 
-/** Engine version - update this when engine version changes */
-export const ENGINE_VERSION = '0.9.43-beta.1';
+export { ENGINE_VERSION };
 
 export const versionAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.VERSION,
@@ -39,7 +43,7 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Version always succeeds, but include blocked for consistency
     return [context.event('if.event.version_displayed', {
-      messageId: `if.action.version.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

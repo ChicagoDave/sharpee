@@ -1,4 +1,4 @@
-import { TurnPlugin } from './turn-plugin';
+import { TurnPlugin } from './turn-plugin.js';
 
 /**
  * Holds the turn plugins for a running game and hands them to the engine in

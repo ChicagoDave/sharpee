@@ -18,9 +18,9 @@
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { HandlerContext } from './types';
-import { createBlocks } from '../assemble';
-import { phraseAvailable, renderViaPhrase } from '../phrase-render';
+import type { HandlerContext } from './types.js';
+import { createBlocks } from '../assemble.js';
+import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
 
 /**
  * Render a `platform.*` event via the message registered under its event

@@ -13,36 +13,80 @@
  * 4. report: standard events → postReport hook (additional effects)
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   AttackBehavior,
   IAttackResult,
-  CombatantTrait,
-  ActionInterceptor,
-  InterceptorSharedData,
-  createEffect,
-  applyInterceptorReportResult
+  HealthTrait,
+  HealthBehavior
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { AttackedEventData } from './attacking-events';
-import { AttackingSharedData, AttackResult } from './attacking-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { findWieldedWeapon } from '../../../combat';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { killPlayer } from '../../../death/index.js';
+import { AttackedEventData } from './attacking-events.js';
+import { AttackingSharedData, AttackResult } from './attacking-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { findWieldedWeapon } from '../../../combat/index.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  LifecycleState,
+  ResolvedConsultation,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
 
 /**
- * Extended shared data for attacking action with interceptor support.
+ * Interceptor surface (ADR-228): the attacked target AND the wielded
+ * weapon/instrument are consulted (the weapon was the audit's dead
+ * second-entity surface). Only an explicitly-commanded weapon resolves —
+ * a weapon inferred from inventory during execute is not a command entity
+ * and gets no consultation.
+ *
+ * Special contract (D7.3, declared — not a comment): for combatant
+ * targets, the TARGET consultation's postExecute REPLACES the action's
+ * standard combat resolution. The action seeds the consultation's
+ * sharedData with weapon/verb context and reads attackResult back.
  */
-interface AttackingInternalSharedData extends AttackingSharedData {
-  interceptor?: ActionInterceptor;
-  interceptorData?: InterceptorSharedData;
+export const attackingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.ATTACKING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.ATTACKING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    },
+    {
+      id: 'weapon',
+      // ADR-080: Prefer instrument field (from .instrument() patterns), fall back to indirectObject
+      actionIds: [IFActions.ATTACKING],
+      resolve: (ctx) => ctx.command.instrument?.entity ?? ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        weaponId: entity.id,
+        weaponName: entity.name,
+        targetId: ctx.command.directObject?.entity?.id,
+        targetName: ctx.command.directObject?.entity?.name
+      })
+    }
+  ],
+  contracts: { postExecuteReplacesCore: true }
+};
+
+function getAttackingSharedData(context: ActionContext): AttackingSharedData {
+  return context.sharedData as AttackingSharedData;
 }
 
-function getAttackingSharedData(context: ActionContext): AttackingInternalSharedData {
-  return context.sharedData as AttackingInternalSharedData;
+/** The target slot's consultation, which owns the combat special contract. */
+function targetConsultation(state: LifecycleState | undefined): ResolvedConsultation | undefined {
+  return state?.consultations.find(c => c.slotId === 'target');
 }
 
 export const attackingAction: Action & { metadata: ActionMetadata } = {
@@ -82,7 +126,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     'flees',
     'peaceful_solution',
     'no_fighting',
-    'unnecessary_violence'
+    'unnecessary_violence',
+    'attack_ineffective',
+    'attack_requires_weapon',
+    'attack_wrong_weapon_type',
+    'attack_invulnerable'
   ],
 
   /**
@@ -94,34 +142,15 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
     // ADR-080: Prefer instrument field (from .instrument() patterns), fall back to indirectObject
     const weapon = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
-    const sharedData = getAttackingSharedData(context);
 
     // Must have a target
     if (!target) {
       return { valid: false, error: 'no_target' };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(target, IFActions.ATTACKING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-
-    // Store for later phases
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    // Called before standard validation - can block early (e.g., hero is staggered)
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, attackingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check if target is visible
     if (!context.canSee(target)) {
@@ -148,28 +177,19 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
 
     // For combatants, check if target is already dead and if combat system is registered
     if (target.has(TraitType.COMBATANT)) {
-      const combatant = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
-      if (combatant && !combatant.isAlive) {
+      const health = target.get(TraitType.HEALTH) as HealthTrait | undefined;
+      if (health && !HealthBehavior.isAlive(health)) {
         return { valid: false, error: 'already_dead', params: { target: nounPhraseFor(target) } };
       }
-      // No combat interceptor registered — block with standard IF response
-      if (!interceptor) {
+      // No combat interceptor registered on the target — block with standard IF response
+      if (!targetConsultation(state)) {
         return { valid: false, error: 'violence_not_the_answer', params: { target: nounPhraseFor(target) } };
       }
     }
 
-    // === POST-VALIDATE HOOK ===
-    // Called after standard validation passes
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(target, context.world, actor.id, interceptorData);
-      if (result !== null) {
-        return {
-          valid: result.valid,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -207,31 +227,40 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    const state = getLifecycleState(context);
+    const targetC = targetConsultation(state);
+
+    // Seed combat context onto the target consultation's sharedData so the
+    // combat interceptor knows what's swinging (weapon may be inferred here
+    // in execute, after the descriptor's resolve-time seeding).
+    if (targetC) {
+      Object.assign(targetC.data, {
+        weaponId: weapon?.id,
+        weaponName: weapon?.name,
+        weaponInferred,
+        verb,
+        targetId: target.id,
+        targetName: target.name
+      });
+    }
+
     // Check if target is a combatant (NPC combat)
     if (target.has(TraitType.COMBATANT)) {
-      const interceptor = sharedData.interceptor;
-      const interceptorData = sharedData.interceptorData || {};
-
-      // Pass weapon info to interceptor via sharedData
-      interceptorData.weaponId = weapon?.id;
-      interceptorData.weaponName = weapon?.name;
-      interceptorData.weaponInferred = weaponInferred;
-      interceptorData.verb = verb;
-      interceptorData.targetId = target.id;
-      interceptorData.targetName = target.name;
-
-      if (interceptor?.postExecute) {
-        // === INTERCEPTOR HANDLES COMBAT ===
-        // The interceptor replaces CombatService entirely.
-        // It must populate interceptorData with:
+      if (targetC?.interceptor.postExecute) {
+        // === SPECIAL CONTRACT: postExecuteReplacesCore (ADR-228 D7.3) ===
+        // The target consultation's postExecute IS the combat resolution
+        // (declared on attackingLifecycle.contracts, not a comment). It
+        // must populate its sharedData with:
         //   - attackResult: AttackResult
         //   - combatResult: CombatResult (optional, for compatibility)
         //   - usedCombatService: false
         //   - customMessage: string (optional)
-        interceptor.postExecute(target, context.world, context.player.id, interceptorData);
+        // The engine runs ALL consultations' hooks (weapon-slot hooks fire
+        // too — the audit's dead second-entity surface).
+        if (state) runPostExecute(context, state);
 
         // Copy interceptor's result data to sharedData
-        const attackResult = interceptorData.attackResult as AttackResult;
+        const attackResult = targetC.data.attackResult as AttackResult;
         Object.assign(context.sharedData, {
           attackResult: attackResult || {
             success: true,
@@ -242,9 +271,9 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
           },
           weaponUsed: weapon?.id,
           weaponInferred,
-          customMessage: interceptorData.customMessage as string | undefined,
-          combatResult: interceptorData.combatResult as unknown,
-          usedCombatService: (interceptorData.usedCombatService as boolean | undefined) ?? false,
+          customMessage: targetC.data.customMessage as string | undefined,
+          combatResult: targetC.data.combatResult as unknown,
+          usedCombatService: (targetC.data.usedCombatService as boolean | undefined) ?? false,
         } satisfies Partial<AttackingSharedData>);
       } else {
         // Should not reach here — validate blocks if no interceptor.
@@ -261,10 +290,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
           weaponInferred,
           usedCombatService: false,
         } satisfies AttackingSharedData);
+        if (state) runPostExecute(context, state);
       }
     } else {
       // Use AttackBehavior for object destruction
-      const result: IAttackResult = AttackBehavior.attack(target, weapon, context.world);
+      const result: IAttackResult = AttackBehavior.attack(target, weapon, context.world, context.random);
 
       // Convert to our AttackResult type for consistency
       const attackResult: AttackResult = {
@@ -277,7 +307,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         itemsDropped: result.itemsDropped,
         debrisCreated: result.debrisCreated,
         exitRevealed: result.exitRevealed,
-        transformedTo: result.transformedTo
+        transformedTo: result.transformedTo,
+        reason: result.reason
       };
 
       // Store result for report phase
@@ -288,6 +319,10 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         customMessage: result.message,
         usedCombatService: false
       } satisfies AttackingSharedData);
+
+      // ADR-228 D7.3: hooks run unconditionally — the non-combatant branch
+      // previously skipped postExecute entirely.
+      if (state) runPostExecute(context, state);
     }
   },
 
@@ -296,27 +331,23 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    const sharedData = getAttackingSharedData(context);
 
-    // === ON-BLOCKED HOOK ===
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && target && result.error) {
-      const customEffects = interceptor.onBlocked(target, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
-
-    return [context.event('if.event.attacked', {
+    const events: ISemanticEvent[] = [context.event('if.event.attacked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
       reason: result.error,
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.attacked', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -332,7 +363,7 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     const customMessage = context.sharedData.customMessage as string | undefined;
     const usedCombatService = context.sharedData.usedCombatService as boolean | undefined;
     const combatResult = context.sharedData.combatResult as { messageId: string; damage?: number; messageData?: Record<string, unknown> } | undefined;
-    const sharedData = getAttackingSharedData(context);
+    const state = getLifecycleState(context);
 
     const events: ISemanticEvent[] = [];
 
@@ -341,13 +372,25 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       events.push(...context.sharedData.implicitTakeEvents);
     }
 
-    // Check if attack failed (for non-combat attacks)
+    // Check if attack failed (for non-combat attacks). World-model emits a
+    // reason CODE on failure (never prose — Phase 3c); each maps to its
+    // lang-en-us template. An interceptor-supplied customMessage is honored
+    // only when it is a plausible message id/key (no whitespace — a real
+    // message ID never contains it).
     if (!result.success && !usedCombatService) {
-      const failMessageId = customMessage || 'attack_ineffective';
+      const reasonMessageIds: Record<string, string> = {
+        requires_weapon: 'attack_requires_weapon',
+        wrong_weapon_type: 'attack_wrong_weapon_type',
+        invulnerable: 'attack_invulnerable',
+        no_effect: 'attack_ineffective'
+      };
+      const failMessageId = (customMessage && !/\s/.test(customMessage))
+        ? customMessage
+        : reasonMessageIds[result.reason ?? 'no_effect'] ?? 'attack_ineffective';
       const fullFailMessageId = failMessageId.includes('.')
         ? failMessageId
         : `${context.action.id}.${failMessageId}`;
-      return [
+      events.push(
         context.event('if.event.attacked', {
           messageId: fullFailMessageId,
           // params carry EntityInfo for the formatter chain (ADR-158)
@@ -356,7 +399,12 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
           targetName: target.name,
           failed: true
         })
-      ];
+      );
+      // ADR-228 D7.3: postReport is unconditional — failed non-combat
+      // attacks previously returned before the hooks (and dropped the
+      // implicit-take events above).
+      if (state) runPostReport(context, state, events, 'if.event.attacked');
+      return events;
     }
 
     // Build event data
@@ -441,20 +489,26 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Update the main attacked event with messageId for text rendering
-    // The first event in the array is the attacked event - update it
-    // customMessage from story interceptors may be fully-qualified (e.g., dungeo.melee.hero_attack)
-    // and should not be prefixed. Standard messageId from the switch block above is always
-    // action-scoped and must be prefixed.
-    const resolvedMessageId = customMessage || messageId;
-    const fullMessageId = customMessage && customMessage.includes('.')
+    // Update the main attacked event with messageId for text rendering.
+    // customMessage semantics under the tightened heuristic (Phase 3c):
+    //  - whitespace-free with a dot → fully-qualified message ID from a story
+    //    interceptor (e.g. dungeo.melee.hero_attack), pass through unprefixed
+    //  - whitespace-free, no dot → action-scoped key, prefix as usual
+    //  - contains whitespace → AUTHOR trait prose (breakable/destructible/
+    //    combatant message fields, passed through by AttackBehavior): not an
+    //    ID at all. Emit it as inline `message` WITHOUT a messageId so the
+    //    pipeline's generic handler renders the prose verbatim — the old
+    //    includes('.') heuristic let the sentence's own period satisfy the
+    //    "fully-qualified" check and emitted raw English as a message ID the
+    //    text service could not resolve (rendered blank).
+    const proseMessage = customMessage && /\s/.test(customMessage) ? customMessage : undefined;
+    const resolvedMessageId = (customMessage && !proseMessage) ? customMessage : messageId;
+    const fullMessageId = customMessage && !proseMessage && customMessage.includes('.')
       ? customMessage
       : `${context.action.id}.${resolvedMessageId}`;
-    events[0] = context.event('if.event.attacked', {
-      messageId: fullMessageId,
-      params,
-      ...eventData
-    });
+    events[0] = context.event('if.event.attacked', proseMessage
+      ? { message: proseMessage, params, ...eventData }
+      : { messageId: fullMessageId, params, ...eventData });
 
     // Additional events based on result
     if (result.itemsDropped?.length) {
@@ -478,25 +532,33 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    // === POST-REPORT HOOK ===
-    // Run before death/knockout events so attack blow text renders
-    // before consequence messages (e.g., troll disappearance smoke).
-    // See ISSUE-074: postReport may override the if.event.attacked
-    // messageId or emit additional narration events.
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.postReport) {
-      const result = interceptor.postReport(target, context.world, context.player.id, interceptorData);
-      applyInterceptorReportResult(events, 'if.event.attacked', result, context);
-    }
+    // Post-report hooks run before death/knockout events so attack blow
+    // text renders before consequence messages (e.g., troll disappearance
+    // smoke). postReport may override the if.event.attacked messageId or
+    // emit additional narration events (ISSUE-074 / ADR-228).
+    if (state) runPostReport(context, state, events, 'if.event.attacked');
 
-    // For killed targets, emit a death event
+    // For killed targets, emit a death event.
     if (result.targetKilled) {
-      events.push(context.event('if.event.death', {
-        target: target.id,
-        targetName: target.name,
-        killedBy: context.player.id
-      }));
+      if (target.id === context.player.id) {
+        // ADR-224: player death routes through the canonical primitive, not the
+        // generic if.event.death — combat becomes one `cause` among many. (Forward-
+        // looking: the attack grammar blocks self-attack, so this branch is not a
+        // live path today; Dungeo's real combat-death path is its own melee engine,
+        // migrated in Phase 4.)
+        const deathEvent = killPlayer(context.world, context.player, {
+          cause: 'combat',
+          messageId: 'combat.player_died',
+          terminal: true,
+        });
+        if (deathEvent) events.push(deathEvent);
+      } else {
+        events.push(context.event('if.event.death', {
+          target: target.id,
+          targetName: target.name,
+          killedBy: context.player.id
+        }));
+      }
     }
 
     // For knocked out targets, emit a knockout event

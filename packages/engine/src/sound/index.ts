@@ -24,5 +24,5 @@
  * @see ADR-172 — Spatial Sound Propagation
  */
 
-export { propagate, clarityToTier } from './propagation';
-export { SoundDispatcher, AUDIBILITY_HEARD_EVENT_TYPE } from './dispatcher';
+export { propagate, clarityToTier } from './propagation.js';
+export { SoundDispatcher, AUDIBILITY_HEARD_EVENT_TYPE } from './dispatcher.js';

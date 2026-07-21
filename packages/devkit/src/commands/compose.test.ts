@@ -7,7 +7,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { runCompose } from './compose';
+import { runCompose } from './compose.js';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', '..', 'chord', 'tests', 'fixtures');
 const OUT_DIR = mkdtempSync(join(tmpdir(), 'compose-test-'));

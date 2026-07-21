@@ -18,6 +18,7 @@ import {
   ActorTrait,
   NpcTrait,
   CombatantTrait,
+  HealthTrait,
   ContainerTrait,
   WeaponTrait,
   EntityType,
@@ -103,8 +104,6 @@ export function createThief(
   // Combat - high skill, dangerous opponent
   // Skill 70 = very difficult (Troll is 40)
   thief.add(new CombatantTrait({
-    health: 25,
-    maxHealth: 25,
     skill: 70,           // Very skilled fighter
     baseDamage: 4,       // Stiletto damage
     armor: 0,
@@ -113,6 +112,7 @@ export function createThief(
     dropsInventory: true,
     deathMessage: 'The thief falls to the ground, a look of surprise frozen on his face.'
   }));
+  thief.add(new HealthTrait({ health: 25, maxHealth: 25 })); // life-state (ADR-226)
 
   // Container - thief can hold stolen items
   thief.add(new ContainerTrait({

@@ -42,7 +42,9 @@ describe('searchingAction (Golden Pattern)', () => {
       expect(searchingAction.requiredMessages).toContain('supporter_contents');
       expect(searchingAction.requiredMessages).toContain('searched_location');
       expect(searchingAction.requiredMessages).toContain('searched_object');
-      expect(searchingAction.requiredMessages).toContain('found_concealed');
+      expect(searchingAction.requiredMessages).toContain('found_concealed_in_container');
+      expect(searchingAction.requiredMessages).toContain('found_concealed_on_supporter');
+      expect(searchingAction.requiredMessages).toContain('found_concealed_here');
     });
 
     test('should belong to sensory group', () => {
@@ -136,12 +138,19 @@ describe('searchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(searchingAction, context);
       
-      // Should emit container_contents message
+      // Should emit container_contents message — items is a PhraseList, not a
+      // pre-joined string (the assembler owns articles/joining, ADR-192)
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.container_contents',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'jewelry box' }),
-          items: 'gold ring, pearl necklace'
+          items: expect.objectContaining({
+            kind: 'list',
+            items: [
+              expect.objectContaining({ name: 'gold ring' }),
+              expect.objectContaining({ name: 'pearl necklace' })
+            ]
+          })
         })
       });
     });
@@ -181,13 +190,16 @@ describe('searchingAction (Golden Pattern)', () => {
         foundItemNames: ['secret key']
       });
       
-      // Should emit found_concealed message
+      // Should emit the container-shape concealment message (no preposition
+      // param — the position lives in the per-shape template)
       expectEvent(events, 'if.event.searched', {
-        messageId: 'if.action.searching.found_concealed',
+        messageId: 'if.action.searching.found_concealed_in_container',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'oak desk' }),
-          items: 'secret key',
-          where: 'inside'
+          items: expect.objectContaining({
+            kind: 'list',
+            items: [expect.objectContaining({ name: 'secret key' })]
+          })
         })
       });
     });
@@ -217,12 +229,18 @@ describe('searchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(searchingAction, context);
       
-      // Should emit supporter_contents message
+      // Should emit supporter_contents message — items is a PhraseList
       expectEvent(events, 'if.event.searched', {
         messageId: 'if.action.searching.supporter_contents',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'dining table' }),
-          items: 'dinner plate, lit candle'
+          items: expect.objectContaining({
+            kind: 'list',
+            items: [
+              expect.objectContaining({ name: 'dinner plate' }),
+              expect.objectContaining({ name: 'lit candle' })
+            ]
+          })
         })
       });
     });
@@ -255,13 +273,15 @@ describe('searchingAction (Golden Pattern)', () => {
       
       const events = executeWithValidation(searchingAction, context);
       
-      // Should emit found_concealed message
+      // Should emit the supporter-shape concealment message
       expectEvent(events, 'if.event.searched', {
-        messageId: 'if.action.searching.found_concealed',
+        messageId: 'if.action.searching.found_concealed_on_supporter',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'stone altar' }),
-          items: 'hidden gem',
-          where: 'on'
+          items: expect.objectContaining({
+            kind: 'list',
+            items: [expect.objectContaining({ name: 'hidden gem' })]
+          })
         })
       });
     });
@@ -380,13 +400,15 @@ describe('searchingAction (Golden Pattern)', () => {
         foundItemNames: ['silver coin']
       });
       
-      // Should emit found_concealed message
+      // Should emit the bare-"here" concealment message (location shape)
       expectEvent(events, 'if.event.searched', {
-        messageId: 'if.action.searching.found_concealed',
+        messageId: 'if.action.searching.found_concealed_here',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'Test Room' }),
-          items: 'silver coin',
-          where: 'here'
+          items: expect.objectContaining({
+            kind: 'list',
+            items: [expect.objectContaining({ name: 'silver coin' })]
+          })
         })
       });
     });
@@ -436,7 +458,10 @@ describe('searchingAction (Golden Pattern)', () => {
         messageId: 'if.action.searching.container_contents',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'wall safe' }),
-          items: 'secret document'
+          items: expect.objectContaining({
+            kind: 'list',
+            items: [expect.objectContaining({ name: 'secret document' })]
+          })
         })
       });
     });
@@ -484,13 +509,18 @@ describe('searchingAction (Golden Pattern)', () => {
         foundItemNames: ['hidden lever', 'secret compartment']
       });
       
-      // Should list all concealed items
+      // Should list all concealed items (supporter shape, PhraseList)
       expectEvent(events, 'if.event.searched', {
-        messageId: 'if.action.searching.found_concealed',
+        messageId: 'if.action.searching.found_concealed_on_supporter',
         params: expect.objectContaining({
           target: expect.objectContaining({ name: 'dusty bookshelf' }),
-          items: 'hidden lever, secret compartment',
-          where: 'on'
+          items: expect.objectContaining({
+            kind: 'list',
+            items: [
+              expect.objectContaining({ name: 'hidden lever' }),
+              expect.objectContaining({ name: 'secret compartment' })
+            ]
+          })
         })
       });
     });

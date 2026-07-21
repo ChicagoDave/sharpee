@@ -7,10 +7,8 @@ export const askingLanguage = {
   
   patterns: [
     'ask [someone] about [topic]',
-    'ask [someone] for [topic]',
     'question [someone] about [topic]',
-    'inquire [someone] about [topic]',
-    'query [someone] about [topic]'
+    'inquire of [someone] about [topic]'
   ],
   
   messages: {

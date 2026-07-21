@@ -1,0 +1,16 @@
+For pronouns beyond the standard four sets, declare a named set —
+exactly five rows (`subject`, `object`, `possessive`,
+`possessive-pronoun`, `reflexive`), order free — and name it from a
+person's `pronouns` line ([§2.14](/chord/guide/world)). Missing or
+duplicate rows, shadowing
+a standard set, and redefinition are all compile errors.
+
+```chord
+define pronouns ze
+  subject ze
+  object zir
+  possessive zir
+  possessive-pronoun zirs
+  reflexive zirself
+end pronouns
+```

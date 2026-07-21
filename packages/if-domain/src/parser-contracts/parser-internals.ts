@@ -7,7 +7,7 @@
  * @internal
  */
 
-import { Token } from './parser-types';
+import { Token } from './parser-types.js';
 
 /**
  * A candidate command from the parser

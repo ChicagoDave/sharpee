@@ -8,53 +8,58 @@
  */
 
 // Types
-export * from './types';
+export * from './types.js';
 
 // Narrative settings (ADR-089)
-export * from './narrative';
+export * from './narrative/index.js';
 
 // Story interface
-export * from './story';
+export * from './story.js';
 
 // Command execution
-export * from './command-executor';
+export * from './command-executor.js';
 
 // Universal capability dispatch (ADR-090 extension)
-export * from './capability-dispatch-helper';
+export * from './capability-dispatch-helper.js';
 
 // Load-time room-snippet validation (ADR-209 AC-5)
-export * from './snippet-validation';
+export * from './snippet-validation.js';
+export * from './combatant-health-validation.js';
 
 // Parser interface for engine integration
-export * from './parser-interface';
+export * from './parser-interface.js';
 
 // Shared data keys for typed action communication
-export * from './shared-data-keys';
+export * from './shared-data-keys.js';
 
 // Main engine
-export * from './game-engine';
+export * from './game-engine.js';
 
 // Plugin system (ADR-120)
 export { PluginRegistry, TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 
 // Scene evaluation (ADR-149)
-export { SceneEvaluationPlugin } from './scene-evaluation-plugin';
+export { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
 
 // Extracted services
-export * from './vocabulary-manager';
-export * from './save-restore-service';
-export * from './turn-event-processor';
-export * from './platform-operations';
+export * from './vocabulary-manager.js';
+export * from './save-restore-service.js';
+export * from './turn-event-processor.js';
+export * from './platform-operations.js';
 
 // Spatial sound propagation (ADR-172)
-export * from './sound';
+export * from './sound/index.js';
+
+// ADR-250 D4: phrasebook read-point seam (key builder + evaluator contract)
+export { phrasebookTemplateKey } from './prose-pipeline/index.js';
+export type { PhrasebookResolution } from './prose-pipeline/index.js';
 
 // Re-export commonly used items
 export {
   GameEngine
-} from './game-engine';
+} from './game-engine.js';
 
 export {
   CommandExecutor,
   createCommandExecutor
-} from './command-executor';
+} from './command-executor.js';

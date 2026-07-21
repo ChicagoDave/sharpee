@@ -20,7 +20,7 @@ import type {
   AudioTarget,
   AudioEffectType,
   ProceduralRecipeName,
-} from './types';
+} from './types.js';
 
 /**
  * Base interface for all audio events.

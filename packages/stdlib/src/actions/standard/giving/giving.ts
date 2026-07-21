@@ -9,11 +9,14 @@
  * 2. execute: Transfer item, store result in sharedData
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events from sharedData
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `givingLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
@@ -24,9 +27,64 @@ import {
   CapabilityEffect,
   ITrait
 } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { GivingEventMap } from './giving-events';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { GivingEventMap } from './giving-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): BOTH the given item and the recipient
+ * are consulted (D3-B published order: direct object first), each side's
+ * sharedData seeded with the other entity's identity (D3 sub-ruling —
+ * symmetric context, same shape as putting's descriptor).
+ *
+ * Item-side limitation (ADR-118 hook audit): before this wiring the item
+ * side was fully dead — no validate-phase block was possible; giving's
+ * only story seam was the recipient's execute-phase-only ADR-090
+ * capability behavior (see execute() below). The item slot is declared
+ * anyway per the Phase-5 ruling — documenting the limitation beats
+ * silently omitting the slot. Note also: when an ADR-090 capability
+ * behavior handles the give, report() is delegated to it and no
+ * `if.event.given` primary event exists for a postReport override to
+ * target (the engine's defensive warn fires instead; `emit` still works).
+ */
+export const givingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.GIVING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.GIVING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: entity.id,
+        itemName: entity.name,
+        recipientId: ctx.command.indirectObject?.entity?.id,
+        recipientName: ctx.command.indirectObject?.entity?.name
+      })
+    },
+    {
+      id: 'recipient',
+      actionIds: [IFActions.GIVING],
+      resolve: (ctx) => ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: ctx.command.directObject?.entity?.id,
+        itemName: ctx.command.directObject?.entity?.name,
+        recipientId: entity.id,
+        recipientName: entity.name
+      })
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -108,6 +166,10 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    const state = resolveLifecycle(context, givingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Item must be carried (or implicitly takeable)
     // This enables "give apple to bob" when apple is on the ground
     const carryCheck = context.requireCarriedOrImplicitTake(item);
@@ -139,7 +201,8 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       const limit = recipientActor.capacity ?? (recipientActor as unknown as Record<string, unknown>)['inventoryLimit'] as typeof recipientActor.capacity;
 
       if (limit) {
-        const recipientInventory = context.world.getContents(recipient.id);
+        // ADR-247: capacity counts carried items, not worn.
+        const recipientInventory = context.world.getCarriedAndWorn(recipient.id).carried;
 
         // Check item count
         if (limit.maxItems !== undefined && recipientInventory.length >= limit.maxItems) {
@@ -186,6 +249,10 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
 
@@ -208,6 +275,9 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
         sharedData.capabilityBehavior = behavior;
         sharedData.capabilityTrait = capTrait;
         behavior.execute(recipient, context.world, context.player.id, context.sharedData);
+        // Interceptor hooks still run after a capability-handled give (ADR-228 D3)
+        const capState = getLifecycleState(context);
+        if (capState) runPostExecute(context, capState);
         return;
       }
     }
@@ -261,14 +331,17 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       item: nounPhraseFor(item),
       recipient: nounPhraseFor(recipient)
     };
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const recipient = context.command.indirectObject?.entity;
-    return [context.event('if.event.give_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.give_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
@@ -281,6 +354,13 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       recipientId: recipient?.id,
       recipientName: recipient?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.give_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -301,6 +381,10 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
         );
         events.push(...effectsToEvents(effects, context));
       }
+      // Interceptor hooks still run (ADR-228 D3); note there is no
+      // `if.event.given` on this path for an override to target.
+      const capState = getLifecycleState(context);
+      if (capState) runPostReport(context, capState, events, 'if.event.given');
       return events;
     }
 
@@ -314,6 +398,9 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       recipientName: sharedData.recipientName,
       accepted: true
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.given');
 
     return events;
   },

@@ -4,12 +4,20 @@ description: Test maze room connections per 1981 MDL source
 
 ---
 
+# Death is possible en route (hungry cyclops on entry, the troll while passing
+# through the Troll Room, the thief roaming the maze). RETRY restores the
+# turn-0 snapshot and revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
 # Setup: Get lantern and teleport to Grating Room
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
 > tk brass lantern
 [OK: contains "Taken: brass lantern"]
+
+> nd
+[OK: contains "Immortality"]
 
 > ah grating room
 [OK: contains "Teleported to"]
@@ -175,3 +183,5 @@ description: Test maze room connections per 1981 MDL source
 > west
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
+
+[END RETRY]

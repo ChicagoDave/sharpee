@@ -1,0 +1,58 @@
+`select <strategy>` ignores the world and picks an arm by a rule about
+*how often the block has fired*. The arms are separated by `or`, exactly
+like the variants of a `define phrase`
+([§5.2](/chord/guide/vocabulary)), because it is the same
+machinery: the five strategies are the phrase-algebra Choice selectors
+under author-facing names.
+
+```chord
+  on ringing it
+    select cycling
+      phrase chime-bright
+        The chime rings a bright, clean note.
+    or
+      phrase chime-lower
+        It answers itself a third lower.
+    or
+      phrase chime-clatter
+        The tubes clatter together, all music gone.
+    end select
+  end on
+```
+
+The five strategies:
+
+| Strategy | Behavior |
+|---|---|
+| `cycling` | arms in order, wrapping back to the first forever |
+| `stopping` | arms in order, then stays on the last |
+| `randomly` | a fresh seeded random arm every firing |
+| `sticky` | one seeded random arm, then that same arm forever |
+| `first-time` | the first arm once, the second arm ever after |
+
+`randomly` and `sticky` draw from the same seeded, save-persistent
+stream as every other random effect in Chord, so a replay or a restored
+save reproduces the same choices (never `Math.random`). `first-time` is
+the "novelty then routine" shape — a drawer that is a discovery the
+first time and a shrug thereafter:
+
+```chord
+  on opening it
+    select first-time
+      phrase drawer-discovery
+        The drawer shrieks open on a jumble of twine, labels, and one
+        surprised spider.
+    or
+      phrase drawer-routine
+        The drawer shrieks open. The spider has moved out.
+    end select
+  end on
+```
+
+The retired adverbs `ordered` and `once` are gone
+([§6.3](/chord/guide/tooling)): `ordered` is
+now `stopping`, and there is no phrase-strategy `once` — its old job is
+covered by `first-time` and `stopping`. The clause modifier `, once`
+([§3.3](/chord/guide/behavior)) is a different construct at a different
+position and is
+untouched.

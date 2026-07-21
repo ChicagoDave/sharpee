@@ -2,7 +2,7 @@
  * StatusLine - handles the status bar display (location, score, turns)
  */
 
-import type { StatusElements } from '../types';
+import type { StatusElements } from '../types.js';
 
 export class StatusLine {
   private statusLocation: HTMLElement | null;

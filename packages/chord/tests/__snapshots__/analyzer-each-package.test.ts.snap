@@ -92,6 +92,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       },
     },
   ],
+  "channels": [],
   "conditions": [
     {
       "condition": {
@@ -213,6 +214,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
           },
         },
       ],
+      "carries": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "descriptionKey": "trophy-barn.description",
       "exits": [],
       "id": "trophy-barn",
@@ -240,8 +245,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 49,
         "line": 45,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -249,6 +256,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "aka": [],
       "article": "the",
       "blockedExits": [],
+      "carries": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "descriptionKey": null,
       "exits": [],
       "id": "player",
@@ -273,8 +284,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 52,
         "line": 51,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -282,6 +295,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "aka": [],
       "article": "the",
       "blockedExits": [],
+      "carries": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "descriptionKey": null,
       "exits": [],
       "id": "no-smoking-sign",
@@ -306,11 +323,13 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 56,
         "line": 54,
       },
+      "startsStates": [],
       "states": [
         "calm",
         "spooked",
       ],
       "statesReversible": false,
+      "topics": [],
       "traits": [
         {
           "condition": null,
@@ -330,6 +349,10 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "aka": [],
       "article": "the",
       "blockedExits": [],
+      "carries": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "descriptionKey": null,
       "exits": [],
       "id": "pygmy-goat",
@@ -466,11 +489,13 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
         "endLine": 62,
         "line": 58,
       },
+      "startsStates": [],
       "states": [
         "hungry",
         "content",
       ],
       "statesReversible": false,
+      "topics": [],
       "traits": [],
       "wears": [],
     },
@@ -478,6 +503,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
   "format": "story language 1",
   "hasHatches": false,
   "hatches": [],
+  "machines": [],
   "meta": {
     "author": "Sharpee Platform",
     "fields": {
@@ -487,6 +513,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
     },
     "title": "Each Package Compile Fixture",
   },
+  "phrasebooks": [],
   "phrases": {
     "defaultLocale": "en-US",
     "locales": {
@@ -629,6 +656,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       },
     },
   },
+  "pronounSets": [],
   "scores": [],
   "sequences": [
     {
@@ -708,6 +736,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
     },
   ],
   "story": {
+    "onClauses": [],
     "reversible": false,
     "states": [],
   },
@@ -822,6 +851,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "statesReversible": false,
     },
   ],
+  "uses": [],
   "verbs": [],
 }
 `;

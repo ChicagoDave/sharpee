@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WF-D — two-row header, section tabs + subnav</title>
+<link rel="stylesheet" href="../sharpee-palette.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font: 15px/1.5 -apple-system, 'Segoe UI', sans-serif; background:var(--sh-canvas); color:var(--sh-ink); }
+  .row1 { background:var(--sh-navy-800, #1B2C41); color:#fff; display:flex; align-items:center; padding:10px 32px; }
+  .row1 .brand { font-weight:700; font-size:17px; }
+  .row1 .util { margin-left:auto; color:var(--sh-taupe-200); font-size:13px; display:flex; gap:16px; }
+  .row2 { background:var(--sh-navy-700, #294466); display:flex; gap:4px; padding:0 24px; }
+  .row2 a { color:var(--sh-taupe-200); text-decoration:none; font-size:14px; padding:10px 16px; }
+  .row2 a.active { background:var(--sh-canvas); color:var(--sh-ink); border-radius:8px 8px 0 0; font-weight:600; }
+  .subnav { background:var(--sh-canvas); border-bottom:1px solid var(--sh-border); padding:10px 32px; display:flex; gap:22px; font-size:13.5px; }
+  .subnav a { color:var(--sh-muted); text-decoration:none; }
+  .subnav a.active { color:var(--sh-link); font-weight:600; }
+  .burger { display:none; }
+  main { max-width:900px; margin:0 auto; padding:32px; }
+  main h1 { font-size:28px; margin-bottom:16px; }
+  .ph { border:2px dashed var(--sh-border); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--sh-muted); font-size:13px; height:130px; margin-bottom:16px; background:var(--sh-surface); }
+  footer { border-top:1px solid var(--sh-border); padding:20px 32px; color:var(--sh-muted); font-size:13px; }
+  @media (max-width:600px) {
+    .row1 { padding:10px 16px; } .row1 .util { display:none; }
+    .burger { display:block; margin-left:auto; background:none; border:1px solid var(--sh-taupe-200); color:#fff; border-radius:6px; padding:4px 10px; }
+    .row2 { display:none; } .subnav { display:none; }
+    body.open .row2 { display:flex; flex-direction:column; padding:0; }
+    body.open .row2 a { padding:13px 20px; border-bottom:1px solid var(--sh-navy-600, #385C8A); }
+    body.open .row2 a.active { border-radius:0; background:var(--sh-navy-600, #385C8A); color:#fff; }
+    body.open .subnav { display:flex; flex-direction:column; gap:0; padding:0 0 8px; background:var(--sh-navy-700, #294466); border:0; }
+    body.open .subnav a { color:var(--sh-taupe-200); padding:10px 36px; font-size:14px; }
+    main { padding:24px 16px; }
+  }
+</style></head><body>
+<div class="row1"><span class="brand">Sharpee</span>
+  <button class="burger" onclick="document.body.classList.toggle('open')">☰ Menu</button>
+  <span class="util"><span>GitHub</span><span>npm</span><span>Search</span></span></div>
+<div class="row2">
+  <a href="#">Home</a><a class="active" href="#">Chord</a><a href="#">Sharpee</a><a href="#">Tutorial</a><a href="#">Play</a>
+</div>
+<div class="subnav">
+  <a class="active" href="#">Getting started</a><a href="#">Language guide</a><a href="#">Grammar reference</a><a href="#">Examples</a>
+</div>
+<main>
+  <h1>Chord — Getting started</h1>
+  <div class="ph">prose block</div>
+  <div class="ph">code sample</div>
+  <div class="ph" style="height:90px">next/prev pager</div>
+</main>
+<footer>© Sharpee — footer links placeholder</footer>
+<script>if (location.search.includes('menu=open')) document.body.classList.add('open');</script>
+</body></html>

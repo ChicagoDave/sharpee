@@ -1,0 +1,32 @@
+title: Orange Cake Explosion Death
+story: dungeo
+description: ADR-227 Phase 2 - eating the orange-icing cake (ORICE "Explode") is terminal death via the CakeEatingInterceptor
+
+---
+
+# Setup - light + teleport to Tea Room
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ex
+[OK: contains "Returning"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+> gdt
+[OK: contains "GDT ready"]
+
+> ah Tea Room
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning"]
+
+# Eating the orange cake explodes -- terminal death
+> eat orange cake
+[OK: contains "explode"]
+[EVENT: true, type="if.event.player.died" cause="cake_explosion"]

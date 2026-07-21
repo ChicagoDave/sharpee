@@ -2,5 +2,5 @@
  * Again action module exports
  */
 
-export { againAction } from './again';
-export type { AgainBlockedEventData, AgainEventMap } from './again-events';
+export { againAction } from './again.js';
+export type { AgainBlockedEventData, AgainEventMap } from './again-events.js';

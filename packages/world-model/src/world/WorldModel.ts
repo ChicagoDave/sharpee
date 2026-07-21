@@ -1,50 +1,49 @@
 // WorldModel.ts - Core world model interface and implementation for Sharpee IF Platform
 
-import { IFEntity } from '../entities/if-entity';
-import { EntityType, isEntityType } from '../entities/entity-types';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { createWall as createWallImpl, createWalls as createWallsImpl } from './wall-creation';
-import { TraitType } from '../traits/trait-types';
-import { RoomTrait } from '../traits/room';
-import { RoomBehavior } from '../traits/room/roomBehavior';
-import { RegionTrait, IRegionData } from '../traits/region/regionTrait';
-import { SceneTrait } from '../traits/scene/sceneTrait';
-import { DoorTrait } from '../traits/door';
-import { SceneryTrait } from '../traits/scenery';
-import { DEFAULT_TRAITS } from './default-trait-registry';
-import { IdentityTrait } from '../traits/identity/identityTrait';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LockableTrait } from '../traits/lockable/lockableTrait';
-import { WearableTrait } from '../traits/wearable/wearableTrait';
-import { ClothingTrait } from '../traits/clothing/clothingTrait';
-import { ExitTrait } from '../traits/exit/exitTrait';
-import { DirectionType, getOppositeDirection } from '../constants/directions';
+import { IFEntity } from '../entities/if-entity.js';
+import { EntityType, isEntityType } from '../entities/entity-types.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { createWall as createWallImpl, createWalls as createWallsImpl } from './wall-creation.js';
+import { TraitType } from '../traits/trait-types.js';
+import { RoomTrait } from '../traits/room/index.js';
+import { RoomBehavior } from '../traits/room/roomBehavior.js';
+import { RegionTrait, IRegionData } from '../traits/region/regionTrait.js';
+import { SceneTrait } from '../traits/scene/sceneTrait.js';
+import { DoorTrait } from '../traits/door/index.js';
+import { SceneryTrait } from '../traits/scenery/index.js';
+import { DEFAULT_TRAITS } from './default-trait-registry.js';
+import { IdentityTrait } from '../traits/identity/identityTrait.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LockableTrait } from '../traits/lockable/lockableTrait.js';
+import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
+import { ExitTrait } from '../traits/exit/exitTrait.js';
+import { DirectionType, getOppositeDirection } from '../constants/directions.js';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
-import { SpatialIndex } from './SpatialIndex';
-import { VisibilityBehavior } from './VisibilityBehavior';
-import { WorldSerializer } from './WorldSerializer';
-import { IDataStore } from './AuthorModel';
-import { canContain } from '../traits/container/container-utils';
+import { SpatialIndex } from './SpatialIndex.js';
+import { VisibilityBehavior } from './VisibilityBehavior.js';
+import { WorldSerializer } from './WorldSerializer.js';
+import { IDataStore } from './AuthorModel.js';
+import { canContain } from '../traits/container/container-utils.js';
 import {
   ICapabilityStore,
   ICapabilityData,
   ICapabilitySchema,
   ICapabilityRegistration
-} from './capabilities';
-import { ITrait, ITraitConstructor } from '../traits/trait';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
+} from './capabilities.js';
+import { ITrait, ITraitConstructor } from '../traits/trait.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
 import type {
   TraitBehaviorBinding,
   BehaviorRegistrationOptions
-} from '../capabilities/capability-binding';
-import { capabilityBindingKey } from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
+} from '../capabilities/capability-binding.js';
+import { capabilityBindingKey } from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type {
   TraitInterceptorBinding,
   InterceptorRegistrationOptions,
   InterceptorLookupResult
-} from '../capabilities/interceptor-binding';
-import { interceptorBindingKey } from '../capabilities/interceptor-binding';
+} from '../capabilities/interceptor-binding.js';
+import { interceptorBindingKey } from '../capabilities/interceptor-binding.js';
 import {
   WorldState,
   WorldConfig,
@@ -57,9 +56,9 @@ import {
   DefaultPrompt,
   PROMPT_STATE_KEY
 } from '@sharpee/if-domain';
-import { ScopeRegistry } from '../scope/scope-registry';
-import { RuleScopeEvaluator } from '../scope/scope-evaluator';
-import { IScopeRule, IScopeContext } from '../scope/scope-rule';
+import { ScopeRegistry } from '../scope/scope-registry.js';
+import { RuleScopeEvaluator } from '../scope/scope-evaluator.js';
+import { IScopeRule, IScopeContext } from '../scope/scope-rule.js';
 
 // Event system — extracted to WorldEventSystem.ts, re-exported for backward compat
 import {
@@ -69,7 +68,7 @@ import {
   EventPreviewer,
   EventChainHandler,
   ChainEventOptions,
-} from './WorldEventSystem';
+} from './WorldEventSystem.js';
 export type { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions };
 
 // Re-export domain types for backward compatibility
@@ -166,8 +165,8 @@ export interface RegionCrossings {
 }
 
 // Score Ledger (ADR-129)
-import { ScoreLedger, ScoreEntry } from './ScoreLedger';
-export { ScoreEntry } from './ScoreLedger';
+import { ScoreLedger, ScoreEntry } from './ScoreLedger.js';
+export { ScoreEntry } from './ScoreLedger.js';
 
 /**
  * Pre-removal observer (ADR-213 §1).
@@ -242,6 +241,31 @@ export interface IWorldModel {
     behavior: CapabilityBehavior,
     options?: BehaviorRegistrationOptions<T>
   ): void;
+
+  // Evaluator Registry (ADR-240 — live derived state)
+  /**
+   * Register a named world-evaluator on this world. Read points consult
+   * evaluators at the moment of use ("mutations are instant; anything
+   * checking state gets the most current results") — nothing is cached,
+   * so nothing can go stale. Key conventions are owned by each read
+   * point's module (e.g. `dark.<roomId>`, `exit.blocked.<roomId>.<dir>`).
+   *
+   * Idempotent: re-registering a key overwrites the previous evaluator
+   * (last-registration-wins). Scoped to this world instance only.
+   *
+   * @param key - Namespaced evaluator key (built by the read point's exported key builder)
+   * @param fn - Evaluated against the live world at every consult
+   */
+  registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+  /**
+   * Evaluate the named registered evaluator against the live world.
+   *
+   * @param key - The evaluator key
+   * @returns The evaluator's result, or `undefined` when nothing is
+   *   registered under the key (the caller's signal to fall through to
+   *   its static behavior)
+   */
+  evaluate(key: string): unknown;
   /**
    * Resolve the behavior bound to a trait instance's capability on this world.
    *
@@ -353,6 +377,8 @@ export interface IWorldModel {
   canMoveEntity(entityId: string, targetId: string | null): boolean;
   getContainingRoom(entityId: string): IFEntity | undefined;
   getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
+  /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] };
 
   // World State Management
   getState(): WorldState;
@@ -386,7 +412,7 @@ export interface IWorldModel {
   setPlayer(entityId: string): void;
 
   // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
   createDoor(displayName: string, opts: {
     room1Id: string;
     room2Id: string;
@@ -513,6 +539,13 @@ export class WorldModel implements IWorldModel {
   // wiring re-established by story init, not save-game state). Distinct
   // from both maps above despite the shared "wiring" flavor.
   private interceptorBindings: Map<string, TraitInterceptorBinding> = new Map();
+
+  /**
+   * ADR-240: the per-world evaluator registry — named world-evaluators
+   * consulted at point of use (live derived state; no cached derivations).
+   * Lives and dies with this WorldModel instance, like the binding maps.
+   */
+  private evaluators: Map<string, (world: IWorldModel) => unknown> = new Map();
 
   // Score Ledger (ADR-129)
   private scoreLedger = new ScoreLedger();
@@ -683,6 +716,19 @@ export class WorldModel implements IWorldModel {
       mode: options?.mode,
       validateBinding: options?.validateBinding as ((trait: ITrait) => boolean) | undefined
     });
+  }
+
+  // Evaluator Registry (ADR-240 — live derived state). Same ownership model
+  // as the binding maps above: per-world, idempotent last-wins, never
+  // serialized (registrars re-register on every load).
+
+  registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void {
+    this.evaluators.set(key, fn);
+  }
+
+  evaluate(key: string): unknown {
+    const fn = this.evaluators.get(key);
+    return fn ? fn(this) : undefined;
   }
 
   getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
@@ -931,18 +977,21 @@ export class WorldModel implements IWorldModel {
       });
     }
 
-    if (!options.includeWorn) {
-      // Filter out worn items (check both WEARABLE and CLOTHING traits)
-      entities = entities.filter(e => {
-        const wearable = e.getTrait(WearableTrait);
-        const clothing = e.getTrait(ClothingTrait);
-        const wornFromWearable = wearable && wearable.isWorn;
-        const wornFromClothing = clothing && clothing.isWorn;
-        return !(wornFromWearable || wornFromClothing);
-      });
-    }
-
+    // ADR-247: worn items are contents — returned unconditionally. Callers
+    // needing the carried/worn split use getCarriedAndWorn(), not a filter.
     return entities;
+  }
+
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] } {
+    // ADR-247: the one partition method. `carried` is held-not-worn (the
+    // old filtered-default semantics); `worn` is the worn subset. For a
+    // holder with no wearables, `worn` is empty.
+    const carried: IFEntity[] = [];
+    const worn: IFEntity[] = [];
+    for (const e of this.getContents(holderId)) {
+      (WearableBehavior.isWorn(e) ? worn : carried).push(e);
+    }
+    return { carried, worn };
   }
 
   moveEntity(entityId: string, targetId: string | null): boolean {
@@ -1035,17 +1084,9 @@ export class WorldModel implements IWorldModel {
       if (visited.has(id) || depth > this.config.maxDepth!) return;
       visited.add(id);
 
-      // For the root entity, use the provided options
-      // For recursive calls, always include worn items to get complete contents
-      const contentsOptions = isRoot ? {
-        visibleOnly: options.visibleOnly,
-        includeWorn: options.includeWorn
-      } : {
-        visibleOnly: options.visibleOnly,
-        includeWorn: true  // Always include worn items when recursing
-      };
-
-      const contents = this.getContents(id, contentsOptions);
+      // ADR-247: worn items are always included now, so root and recursive
+      // calls share one options shape (visibleOnly still varies by caller).
+      const contents = this.getContents(id, { visibleOnly: options.visibleOnly });
       result.push(...contents);
 
       if (options.recursive) {
@@ -1530,6 +1571,24 @@ export class WorldModel implements IWorldModel {
       priority: 100,
       source: 'core'
     });
+
+    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
+    // 2026-07-18): referenceable from either side. Only the door enters
+    // scope this way — the far room and its contents never do.
+    this.addScopeRule({
+      id: 'default_door_visibility',
+      fromLocations: '*',
+      includeEntities: (context) =>
+        this.findByTrait(TraitType.DOOR)
+          .filter((door) => {
+            const doorTrait = door.get(TraitType.DOOR) as DoorTrait | undefined;
+            return doorTrait !== undefined
+              && (doorTrait.room1 === context.currentLocation || doorTrait.room2 === context.currentLocation);
+          })
+          .map((door) => door.id),
+      priority: 50,
+      source: 'core'
+    });
   }
 
   /**
@@ -1603,8 +1662,15 @@ export class WorldModel implements IWorldModel {
   /**
    * Create a bidirectional connection between two rooms.
    * Sets exits in both directions (e.g. NORTH on room1, SOUTH on room2).
+   *
+   * With `doorId` (ADR-237 D4) this is the platform's one door-wiring
+   * implementation: the door id is stamped on both exits (`via`) and the
+   * door entity is placed in room1 for scope resolution. Throws if the id
+   * resolves to no entity or to an entity without DoorTrait, or if the
+   * trait's room pair disagrees with the rooms passed — the primitive owns
+   * the invariant that DoorTrait and the exits never disagree.
    */
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void {
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void {
     const room1 = this.getEntity(room1Id);
     const room2 = this.getEntity(room2Id);
     if (!room1 || !room2) {
@@ -1612,8 +1678,34 @@ export class WorldModel implements IWorldModel {
     }
 
     const opposite = getOppositeDirection(direction);
-    RoomBehavior.setExit(room1, direction, room2Id);
-    RoomBehavior.setExit(room2, opposite, room1Id);
+
+    if (doorId === undefined) {
+      RoomBehavior.setExit(room1, direction, room2Id);
+      RoomBehavior.setExit(room2, opposite, room1Id);
+      return;
+    }
+
+    const door = this.getEntity(doorId);
+    if (!door) {
+      throw new Error(`connectRooms: door must exist (${doorId})`);
+    }
+    const doorTrait = door.get(TraitType.DOOR) as DoorTrait | undefined;
+    if (!doorTrait) {
+      throw new Error(`connectRooms: \`${doorId}\` has no DoorTrait — compose the trait before wiring`);
+    }
+    // DoorTrait's constructor requires both rooms, so the pair is always
+    // pre-set: verify it names the rooms being wired (room1 = placement).
+    if (doorTrait.room1 !== room1Id || doorTrait.room2 !== room2Id) {
+      throw new Error(
+        `connectRooms: DoorTrait on \`${doorId}\` connects (${doorTrait.room1}, ${doorTrait.room2}), not (${room1Id}, ${room2Id})`
+      );
+    }
+
+    RoomBehavior.setExit(room1, direction, room2Id, doorId);
+    RoomBehavior.setExit(room2, opposite, room1Id, doorId);
+
+    // Place door in room1 for scope resolution
+    this.moveEntity(doorId, room1Id);
   }
 
   /**
@@ -1652,17 +1744,12 @@ export class WorldModel implements IWorldModel {
     if (opts.isLocked !== undefined || opts.keyId) {
       door.add(new LockableTrait({
         isLocked: opts.isLocked ?? true,
-        ...(opts.keyId ? { requiredKey: opts.keyId } : {}),
+        ...(opts.keyId ? { keyId: opts.keyId } : {}),
       }));
     }
 
-    // Wire exits through the door
-    const opposite = getOppositeDirection(opts.direction);
-    RoomBehavior.setExit(room1, opts.direction, opts.room2Id, door.id);
-    RoomBehavior.setExit(room2, opposite, opts.room1Id, door.id);
-
-    // Place door in room1 for scope resolution
-    this.moveEntity(door.id, opts.room1Id);
+    // One wiring path (ADR-237 D4)
+    this.connectRooms(opts.room1Id, opts.room2Id, opts.direction, door.id);
 
     return door;
   }

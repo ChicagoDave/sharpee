@@ -193,7 +193,7 @@ describe('hidingAction', () => {
 
       const { validation } = executeAction(hidingAction, context);
       expect(validation.valid).toBe(false);
-      expect(validation.error).toBe('cant_hide_there');
+      expect(validation.error).toBe('cant_hide_there_behind');
       expect(isConcealed(player)).toBe(false);
     });
 

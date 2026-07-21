@@ -23,8 +23,8 @@
  */
 
 import type { ITextBlock } from '@sharpee/text-blocks';
-import { createBlock, createBlocks } from '../assemble';
-import type { HandlerContext } from './types';
+import { createBlock, createBlocks } from '../assemble.js';
+import type { HandlerContext } from './types.js';
 
 const STORY_TAIL_MESSAGE_ID = 'game.banner.story-tail';
 

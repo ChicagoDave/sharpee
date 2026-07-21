@@ -70,7 +70,7 @@ export interface CoalMineRoomIds {
 
 function createRoom(world: WorldModel, name: string, description: string, isDark = true): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: isDark, isOutdoors: false }));
   room.add(new IdentityTrait({ name, description, properName: true, article: 'the' }));
   return room;
 }
@@ -99,7 +99,7 @@ export function createCoalMineRegion(world: WorldModel): CoalMineRoomIds {
     'You are in a room with a steep slide leading down into darkness. The slide appears to be one-way - once you go down, there may be no coming back up. Passages lead north and east.');
 
   const slide1 = world.createEntity('Slide-1', EntityType.ROOM);
-  slide1.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  slide1.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   slide1.add(new IdentityTrait({
     name: 'Slide',
     aliases: ['slide', 'chute'],
@@ -109,7 +109,7 @@ export function createCoalMineRegion(world: WorldModel): CoalMineRoomIds {
   }));
 
   const slide2 = world.createEntity('Slide-2', EntityType.ROOM);
-  slide2.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  slide2.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   slide2.add(new IdentityTrait({
     name: 'Slide',
     aliases: ['slide', 'chute'],
@@ -119,7 +119,7 @@ export function createCoalMineRegion(world: WorldModel): CoalMineRoomIds {
   }));
 
   const slide3 = world.createEntity('Slide-3', EntityType.ROOM);
-  slide3.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  slide3.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   slide3.add(new IdentityTrait({
     name: 'Slide',
     aliases: ['slide', 'chute'],
@@ -163,31 +163,31 @@ export function createCoalMineRegion(world: WorldModel): CoalMineRoomIds {
   const mazeDesc = 'You are in a maze of twisty little passages, all alike.';
 
   const mineMaze1 = world.createEntity('Mine Maze-1', EntityType.ROOM);
-  mineMaze1.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  mineMaze1.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   mineMaze1.add(new IdentityTrait({ name: 'Maze', aliases: ['maze', 'mine maze'], description: mazeDesc, properName: false, article: 'a' }));
 
   const mineMaze2 = world.createEntity('Mine Maze-2', EntityType.ROOM);
-  mineMaze2.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  mineMaze2.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   mineMaze2.add(new IdentityTrait({ name: 'Maze', aliases: ['maze', 'mine maze'], description: mazeDesc, properName: false, article: 'a' }));
 
   const mineMaze3 = world.createEntity('Mine Maze-3', EntityType.ROOM);
-  mineMaze3.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  mineMaze3.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   mineMaze3.add(new IdentityTrait({ name: 'Maze', aliases: ['maze', 'mine maze'], description: mazeDesc, properName: false, article: 'a' }));
 
   const mineMaze4 = world.createEntity('Mine Maze-4', EntityType.ROOM);
-  mineMaze4.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  mineMaze4.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   mineMaze4.add(new IdentityTrait({ name: 'Maze', aliases: ['maze', 'mine maze'], description: mazeDesc, properName: false, article: 'a' }));
 
   const mineMaze5 = world.createEntity('Mine Maze-5', EntityType.ROOM);
-  mineMaze5.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  mineMaze5.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   mineMaze5.add(new IdentityTrait({ name: 'Maze', aliases: ['maze', 'mine maze'], description: mazeDesc, properName: false, article: 'a' }));
 
   const mineMaze6 = world.createEntity('Mine Maze-6', EntityType.ROOM);
-  mineMaze6.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  mineMaze6.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   mineMaze6.add(new IdentityTrait({ name: 'Maze', aliases: ['maze', 'mine maze'], description: mazeDesc, properName: false, article: 'a' }));
 
   const mineMaze7 = world.createEntity('Mine Maze-7', EntityType.ROOM);
-  mineMaze7.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  mineMaze7.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   mineMaze7.add(new IdentityTrait({ name: 'Maze', aliases: ['maze', 'mine maze'], description: mazeDesc, properName: false, article: 'a' }));
 
   // === Deep mine ===
@@ -199,7 +199,7 @@ export function createCoalMineRegion(world: WorldModel): CoalMineRoomIds {
     'You are at the bottom of a rickety wooden ladder. A passage leads south into an area with a strange smell. You can climb up the ladder.');
 
   const coalMineDeadEnd = world.createEntity('Coal Mine Dead End', EntityType.ROOM);
-  coalMineDeadEnd.add(new RoomTrait({ exits: {}, isDark: true, isOutdoors: false }));
+  coalMineDeadEnd.add(new RoomTrait({ exits: {}, requiresLight: true, isOutdoors: false }));
   coalMineDeadEnd.add(new IdentityTrait({
     name: 'Dead End',
     aliases: ['dead end'],

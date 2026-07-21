@@ -1,0 +1,76 @@
+title: Fernhill B1/B5 — trunk, mantel capacity, readable clues
+story: fernhill
+description: The trunk (container, max items 3) opens on the diary page and the
+  half-burned letter; both readable forms are exercised (`on reading it` prose
+  vs `readable with text` config). The mantel (supporter, capacity 2 — the
+  photograph occupies one place) takes exactly one more thing.
+---
+
+> read the solicitor's letter
+[OK: contains "before the fall of the hammer"]
+
+> north
+[OK: contains "Gravel Drive"]
+
+# The auction notice is scenery AND readable (B9 craft rule in action)
+> south
+[OK: contains "Iron Gates"]
+
+> read the auction notice
+[OK: contains "Hobbes"]
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+> north
+[OK: contains "Entrance Hall"]
+
+# The study is guarded — the sherry bribe opens the way (C3, proven fully in
+# npcs.transcript; here it is just the toll)
+> east
+[OK: contains "Kitchen"]
+
+> take the sherry bottle
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+> give the sherry bottle to kettle
+[OK: contains "oloroso"]
+
+> west
+[OK: contains "study"]
+
+# B1: the trunk and its contents
+> open the trunk
+[OK: contains "diary page"]
+[OK: contains "half-burned letter"]
+
+> read the diary page
+[OK: contains "only the little silver thing will open it"]
+
+> take the half-burned letter
+[OK: contains "You take the half-burned letter"]
+
+# B5 config form: `readable with text`
+> read the half-burned letter
+[OK: contains "county bank"]
+
+# B1: mantel capacity — the photograph holds one of its two places
+> east
+[OK: contains "Entrance Hall"]
+
+> examine the mantel
+[OK: contains "single framed photograph"]
+
+> put the half-burned letter on the mantel
+[OK: contains "letter"]
+
+# The solicitor's letter is already carried from the start — capacity 2 is
+# now full (photograph + burned letter), so a third thing is refused
+> put the solicitor's letter on the mantel
+[OK: not contains "You put"]

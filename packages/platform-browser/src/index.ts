@@ -6,7 +6,7 @@
  */
 
 // Main client
-export { BrowserClient, BROWSER_CAPABILITIES } from './BrowserClient';
+export { BrowserClient, BROWSER_CAPABILITIES } from './BrowserClient.js';
 
 // Types
 export type {
@@ -20,23 +20,23 @@ export type {
   BrowserSaveEnvelope,
   MenuHandlers,
   SaveContext,
-} from './types';
+} from './types.js';
 
-export { AUTOSAVE_SLOT } from './types';
+export { AUTOSAVE_SLOT } from './types.js';
 
 // Individual managers (for advanced use)
-export { ThemeManager } from './managers/ThemeManager';
-export { SaveManager } from './managers/SaveManager';
-export { DialogManager } from './managers/DialogManager';
-export { MenuManager } from './managers/MenuManager';
-export { InputManager } from './managers/InputManager';
+export { ThemeManager } from './managers/ThemeManager.js';
+export { SaveManager } from './managers/SaveManager.js';
+export { DialogManager } from './managers/DialogManager.js';
+export { MenuManager } from './managers/MenuManager.js';
+export { InputManager } from './managers/InputManager.js';
 
 // Display components
-export { TextDisplay } from './display/TextDisplay';
-export { StatusLine } from './display/StatusLine';
+export { TextDisplay } from './display/TextDisplay.js';
+export { StatusLine } from './display/StatusLine.js';
 
 // Audio
-export { AudioManager } from './audio/AudioManager';
+export { AudioManager } from './audio/AudioManager.js';
 
 // ADR-165 channel renderers + default layout
-export * from './channels';
+export * from './channels/index.js';

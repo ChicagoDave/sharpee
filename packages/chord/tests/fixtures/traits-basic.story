@@ -62,7 +62,6 @@ define action snoozing
       There is no napping on duty.
 
 define action juggling from "./stunts.ts"
-define behavior crowd-control from "./stunts.ts"
 
 create the Break Room
   a room

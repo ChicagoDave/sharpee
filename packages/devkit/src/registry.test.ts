@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { registerStory, listStories, lookupStory, readRegistry } from './registry';
+import { registerStory, listStories, lookupStory, readRegistry } from './registry.js';
 
 describe('registry', () => {
   let home: string;

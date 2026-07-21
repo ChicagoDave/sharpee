@@ -25,23 +25,23 @@ export {
   type MovementProfile,
   type StepResult,
   GOAL_PRIORITY_VALUES,
-} from './goal-types';
+} from './goal-types.js';
 
 export {
   type ActiveGoalState,
   GoalManager,
-} from './goal-activation';
+} from './goal-activation.js';
 
 export {
   type GoalStepContext,
   evaluateGoalStep,
-} from './step-evaluator';
+} from './step-evaluator.js';
 
 export {
   type RoomConnection,
   type RoomGraph,
   SimpleRoomGraph,
   findNextRoom,
-} from './pathfinding';
+} from './pathfinding.js';
 
-export { GoalBuilder } from './builder';
+export { GoalBuilder } from './builder.js';

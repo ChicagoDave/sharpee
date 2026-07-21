@@ -3,7 +3,7 @@
  * These events mark important milestones in a game session
  */
 
-import { ISemanticEvent } from './types';
+import { ISemanticEvent } from './types.js';
 
 // =============================================================================
 // Typed Data Interfaces for Game Events (ADR-097 / IGameEvent Refactor)
@@ -37,7 +37,7 @@ export interface GameEventSessionData {
 
 /** Ending/conclusion data for game end events */
 export interface GameEventEndingData {
-  type?: 'victory' | 'defeat' | 'quit' | 'abort';
+  type?: 'victory' | 'defeat' | 'quit' | 'abort' | 'restart';
   reason?: string;
   achieved?: string[];
   score?: number;
@@ -108,7 +108,7 @@ export interface GameLifecycleEndingData {
 export interface GameLifecycleEndedData {
   gameState: 'ended';
   session?: GameEventSessionData & { endTime: number };
-  ending: GameEventEndingData & { type: 'victory' | 'defeat' | 'quit' | 'abort' };
+  ending: GameEventEndingData & { type: 'victory' | 'defeat' | 'quit' | 'abort' | 'restart' };
   [key: string]: unknown;
 }
 
@@ -356,7 +356,7 @@ export function createGameEndingEvent(
 }
 
 export function createGameEndedEvent(
-  endingType: 'victory' | 'defeat' | 'quit' | 'abort',
+  endingType: 'victory' | 'defeat' | 'quit' | 'abort' | 'restart',
   session?: GameEventSessionData,
   ending?: Partial<GameEventEndingData>
 ): ISemanticEvent {

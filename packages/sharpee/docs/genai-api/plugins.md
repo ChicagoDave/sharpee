@@ -10,7 +10,7 @@ Plugin system, NPC plugin, scheduler (daemons/fuses), state machine.
 
 ```typescript
 import { ISemanticEvent } from '@sharpee/core';
-import { TurnPluginContext } from './turn-plugin-context';
+import { TurnPluginContext } from './turn-plugin-context.js';
 /**
  * A turn-cycle plugin: code that runs once after each successful player action
  * to contribute additional world changes and events (ADR-120).
@@ -47,7 +47,15 @@ import { WorldModel } from '@sharpee/world-model';
 export interface TurnPluginActionResult {
     /** The action's id (the verb that ran). */
     actionId: string;
-    /** Whether the action succeeded. Plugins only run after successful actions. */
+    /**
+     * Whether the action GENUINELY succeeded (platform-issue-sweep Phase 7):
+     * false when the action was refused/blocked — including modern blocked()
+     * paths that reuse the primary event type with `blocked: true` /
+     * `failed: true` instead of emitting `action.error`. Plugins still run
+     * after refused actions (NPC/scheduler ticks are turn-level); consumers
+     * that must not react to refusals (state-machine action triggers) gate on
+     * this flag.
+     */
     success: boolean;
     /** The action's direct-object entity, when it had one. */
     targetId?: EntityId;
@@ -79,7 +87,7 @@ export interface TurnPluginContext {
 ### plugin-registry
 
 ```typescript
-import { TurnPlugin } from './turn-plugin';
+import { TurnPlugin } from './turn-plugin.js';
 /**
  * Holds the turn plugins for a running game and hands them to the engine in
  * priority order each turn (ADR-120). The engine owns the single registry;
@@ -332,7 +340,7 @@ export type SchedulerEventType = 'daemon.registered' | 'daemon.removed' | 'daemo
  */
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { Daemon, Fuse, DaemonInfo, FuseInfo, SchedulerResult, SchedulerState, SeededRandom } from './types';
+import { Daemon, Fuse, DaemonInfo, FuseInfo, SchedulerResult, SchedulerState, SeededRandom } from './types.js';
 /**
  * SchedulerService interface
  */
@@ -408,7 +416,7 @@ export declare function createSchedulerService(seed?: number): ISchedulerService
  */
 import { ISemanticEvent } from '@sharpee/core';
 import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-import { ISchedulerService } from './scheduler-service';
+import { ISchedulerService } from './scheduler-service.js';
 export declare class SchedulerPlugin implements TurnPlugin {
     id: string;
     priority: number;
@@ -657,6 +665,13 @@ export interface EvaluationContext {
     turn: number;
     /** The id of the action that ran this turn, if any. */
     actionId?: string;
+    /**
+     * Whether that action GENUINELY succeeded (platform-issue-sweep Phase 7).
+     * Action triggers require `true` — a refused/blocked action must never
+     * advance a machine. Populated by the plugin from the engine's
+     * TurnPluginActionResult.success; absent only when no action ran.
+     */
+    actionSucceeded?: boolean;
     /** The direct-object entity id of that action, if any. */
     actionTargetId?: EntityId;
     /** The semantic events the action emitted this turn. */
@@ -679,7 +694,7 @@ export interface EvaluationContext {
  */
 import { ISemanticEvent } from '@sharpee/core';
 import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-import { StateMachineRegistry } from './state-machine-runtime';
+import { StateMachineRegistry } from './state-machine-runtime.js';
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
  *
@@ -715,7 +730,7 @@ export declare class StateMachinePlugin implements TurnPlugin {
  * Manages registered state machines and evaluates transitions each turn.
  */
 import { ISemanticEvent } from '@sharpee/core';
-import { StateMachineDefinition, EntityBindings, EvaluationContext, StateMachineRegistryState } from './types';
+import { StateMachineDefinition, EntityBindings, EvaluationContext, StateMachineRegistryState } from './types.js';
 /**
  * Holds the running state machines for a story and advances them each turn
  * (ADR-119). Stories obtain the registry from
@@ -760,7 +775,7 @@ export declare class StateMachineRegistry {
  */
 import { EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { GuardCondition, EntityBindings } from './types';
+import { GuardCondition, EntityBindings } from './types.js';
 /**
  * Evaluate a {@link GuardCondition} against current world state.
  * @param guard The condition to test.
@@ -785,7 +800,7 @@ export declare function resolveRef(ref: string, bindings: EntityBindings): Entit
  */
 import { EntityId, ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { Effect, EntityBindings } from './types';
+import { Effect, EntityBindings } from './types.js';
 /**
  * Apply a list of {@link Effect}s to the world in order and collect the semantic
  * events they emit.

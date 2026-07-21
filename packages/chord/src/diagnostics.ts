@@ -8,7 +8,7 @@
  * Public interface: Diagnostic, DiagnosticSeverity, DiagnosticBag.
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  */
-import type { Span } from './span';
+import type { Span } from './span.js';
 
 export type DiagnosticSeverity = 'error' | 'warning';
 

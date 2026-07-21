@@ -1,0 +1,25 @@
+A door is its own entity, referenced from an exit line with `through` —
+the exit declares the geometry once and the reverse direction is
+inferred. The door block itself never names its rooms: a door's location
+*is* its room pair.
+
+```chord
+create the Hall
+  a room
+  down to the Cellar through the cellar door
+
+  A cold entrance hall.
+
+create the cellar door
+  a door, lockable with the tarnished key
+  aka grey door
+
+  A grey door, locked as long as anyone can remember.
+```
+
+Defaults follow IF convention: `a door` starts closed (`starts open`
+overrides); `lockable` on a door starts locked, with the key named right
+on the adjective; a permanently open passage needs no door entity at
+all. With that one declaration OPEN, CLOSE, LOCK, and UNLOCK work and
+the door is visible from both sides. Full rules (mirrored far-room
+lines, the diagnostics): [the grammar reference](/chord/reference/grammar).

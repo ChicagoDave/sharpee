@@ -1,5 +1,5 @@
 import { ISemanticEvent } from '@sharpee/core';
-import { TurnPluginContext } from './turn-plugin-context';
+import { TurnPluginContext } from './turn-plugin-context.js';
 
 /**
  * A turn-cycle plugin: code that runs once after each successful player action

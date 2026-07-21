@@ -9,7 +9,7 @@
  * Owner context: @sharpee/character / propagation
  */
 
-import { PropagationTransfer, PropagationColoring } from './propagation-types';
+import { PropagationTransfer, PropagationColoring } from './propagation-types.js';
 import type { WorldModel, IFEntity } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------

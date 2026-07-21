@@ -1,2 +1,2 @@
-export * from './game-state';
-export * from './story-metadata';
+export * from './game-state.js';
+export * from './story-metadata.js';

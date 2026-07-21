@@ -5,6 +5,6 @@
  * that can be implemented by language-specific parsers.
  */
 
-export * from './parser-types';
-export * from './parser-internals';
-export * from './parser-factory';
+export * from './parser-types.js';
+export * from './parser-internals.js';
+export * from './parser-factory.js';

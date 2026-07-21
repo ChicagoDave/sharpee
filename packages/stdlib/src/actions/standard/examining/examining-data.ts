@@ -5,13 +5,14 @@
  * This separates data structure concerns from business logic.
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { Phrase } from '@sharpee/if-domain';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait, WallEntity } from '@sharpee/world-model';
-import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior } from '@sharpee/world-model';
-import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils';
-import { ExaminedEventData } from './examining-events';
-import { nounPhraseFor } from '../../../utils';
+import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior, VisibilityBehavior } from '@sharpee/world-model';
+import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
+import { ExaminedEventData } from './examining-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 
 /**
  * Build examining action success data
@@ -92,9 +93,11 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   
   // Container trait
   if (noun.has(TraitType.CONTAINER)) {
-    const contents = context.world.getContents(noun.id);
+    // Shared visibility read (one definition with LOOK/scope): a
+    // still-concealed item stays out of EXAMINE's contents until revealed
+    const contents = VisibilityBehavior.getVisibleContents(noun, context.world);
     const contentsSnapshots = captureEntitySnapshots(contents, context.world);
-    
+
     eventData.isContainer = true;
     eventData.hasContents = contents.length > 0;
     eventData.contentCount = contents.length;
@@ -102,6 +105,9 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     eventData.contentsSnapshots = contentsSnapshots;
     // Backward compatibility: simple references
     eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
+    // PhraseList for the contents message (ADR-192): built here where the
+    // entities are in hand, so grammatical metadata survives to the assembler
+    eventData.contentsPhrases = phraseListForEntities(contents);
     
     // Check if open/closed
     if (noun.has(TraitType.OPENABLE)) {
@@ -114,9 +120,10 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   
   // Supporter trait
   if (noun.has(TraitType.SUPPORTER)) {
-    const contents = context.world.getContents(noun.id);
+    // Shared visibility read: same rule as the container branch above
+    const contents = VisibilityBehavior.getVisibleContents(noun, context.world);
     const contentsSnapshots = captureEntitySnapshots(contents, context.world);
-    
+
     eventData.isSupporter = true;
     eventData.hasContents = contents.length > 0;
     eventData.contentCount = contents.length;
@@ -124,6 +131,8 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     eventData.contentsSnapshots = contentsSnapshots;
     // Backward compatibility: simple references
     eventData.contents = contents.map(e => ({ id: e.id, name: e.name }));
+    // PhraseList for the contents message (ADR-192) — see container branch
+    eventData.contentsPhrases = phraseListForEntities(contents);
   }
   
   // Switchable trait
@@ -164,6 +173,42 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   
   return eventData;
 };
+
+/**
+ * Bridge a list of entities to a PhraseList message param (ADR-192): the
+ * assembler owns articles/joining, so params never carry pre-joined strings.
+ */
+function phraseListForEntities(entities: IFEntity[]): Phrase {
+  return {
+    kind: 'list',
+    conj: 'and',
+    items: entities.map(e => nounPhraseFor(e)),
+  };
+}
+
+/**
+ * The PhraseList for a container's/supporter's examined contents. Prefers the
+ * entity-built list from buildExaminingData; a story-extended data builder
+ * that replaced `contents` without `contentsPhrases` degrades to minimal
+ * noun phrases from the {id, name} references.
+ */
+function contentsPhraseList(eventData: Record<string, unknown>): Phrase {
+  if (eventData.contentsPhrases) {
+    return eventData.contentsPhrases as Phrase;
+  }
+  const refs = (eventData.contents as Array<{ id: string; name: string }>) ?? [];
+  return {
+    kind: 'list',
+    conj: 'and',
+    items: refs.map(r => ({
+      kind: 'noun',
+      name: r.name,
+      number: 'singular',
+      articleType: 'indefinite',
+      referableId: r.id,
+    })),
+  };
+}
 
 /**
  * Result of building message parameters for examining
@@ -220,13 +265,11 @@ export function buildExaminingMessageParams(
 
       // Add contents message if container is open and has contents
       if (eventData.isOpen && eventData.hasContents && eventData.contents) {
-        const contents = eventData.contents as Array<{ id: string; name: string }>;
-        const itemNames = contents.map(c => c.name).join(', ');
         contentsMessage = {
           messageId: 'container_contents',
           params: {
             container: nounPhraseFor(noun),
-            items: itemNames
+            items: contentsPhraseList(eventData)
           }
         };
       }
@@ -238,13 +281,11 @@ export function buildExaminingMessageParams(
 
       // Add contents message if supporter has contents
       if (eventData.hasContents && eventData.contents) {
-        const contents = eventData.contents as Array<{ id: string; name: string }>;
-        const itemNames = contents.map(c => c.name).join(', ');
         contentsMessage = {
           messageId: 'surface_contents',
           params: {
             surface: nounPhraseFor(noun),
-            items: itemNames
+            items: contentsPhraseList(eventData)
           }
         };
       }
@@ -283,6 +324,25 @@ export function buildExaminingMessageParams(
     else if (messageId === 'examined') {
       params.target = nounPhraseFor(noun);
     }
+
+    // Generalized descriptionless fallback (platform-issue-sweep Phase 3a;
+    // David's ruling 2026-07-20): every variant above renders
+    // "{verbatim:description}{slot:detail}", which realized to NOTHING when
+    // no description was bound — only the wall branch (returned above) had a
+    // fallback. With no description, switch to default_description ("The
+    // pebble is just a pebble.") instead of a silent blank; a contents
+    // message (container/supporter) still follows. Self does not fit the
+    // "just a" phrasing and gets its own fallback below.
+    if (params.description === undefined) {
+      messageId = 'default_description';
+      params.item = nounPhraseFor(noun);
+    }
+  }
+
+  // Self counterpart (David's wording ruling 2026-07-20): descriptionless
+  // EXAMINE ME renders "As good-looking as ever." instead of a silent blank.
+  else if (eventData.self && params.description === undefined) {
+    messageId = 'default_description_self';
   }
 
   return { messageId, params, contentsMessage };

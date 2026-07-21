@@ -6,13 +6,13 @@
  */
 
 // Types and interfaces
-export * from './types';
+export * from './types.js';
 
 // Registry
-export { ExtensionRegistry, extensionRegistry } from './registry';
+export { ExtensionRegistry, extensionRegistry } from './registry.js';
 
 // Loader
-export { ExtensionLoader, extensionLoader, ExtensionLoadError } from './loader';
+export { ExtensionLoader, extensionLoader, ExtensionLoadError } from './loader.js';
 
 // Re-export commonly used functions
-export { createNamespacedId, parseNamespacedId } from './types';
+export { createNamespacedId, parseNamespacedId } from './types.js';

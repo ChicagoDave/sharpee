@@ -9,16 +9,67 @@
  * 2. execute: Analyze show reaction (no world mutations)
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `showingLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait, IFEntity } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ShownEventData } from './showing-events';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ShownEventData } from './showing-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): BOTH the shown item and the viewer are
+ * consulted (D3-B published order: direct object first), each side's
+ * sharedData seeded with the other entity's identity (D3 sub-ruling —
+ * symmetric context, same shape as putting's descriptor). Per the
+ * ADR-118 hook audit, an interceptor on the viewer is the intended
+ * replacement for the legacy `customProperties.reactions`
+ * string-matching in analyzeShowAction().
+ */
+export const showingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.SHOWING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.SHOWING],
+      resolve: (ctx) => ctx.command.directObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: entity.id,
+        itemName: entity.name,
+        viewerId: ctx.command.indirectObject?.entity?.id,
+        viewerName: ctx.command.indirectObject?.entity?.name
+      })
+    },
+    {
+      id: 'viewer',
+      actionIds: [IFActions.SHOWING],
+      resolve: (ctx) => ctx.command.indirectObject?.entity,
+      seedData: (ctx, entity) => ({
+        itemId: ctx.command.directObject?.entity?.id,
+        itemName: ctx.command.directObject?.entity?.name,
+        viewerId: entity.id,
+        viewerName: entity.name
+      })
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -173,6 +224,10 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    const state = resolveLifecycle(context, showingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Item must be carried (or implicitly takeable)
     // This enables "show apple to bob" when apple is on the ground
     const carryCheck = context.requireCarriedOrImplicitTake(item);
@@ -209,6 +264,10 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
 
@@ -223,14 +282,17 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       sharedData.eventData = analysis.eventData;
       sharedData.params = analysis.params;
     }
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
     const viewer = context.command.indirectObject?.entity;
-    return [context.event('if.event.show_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.show_blocked', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158)
       params: {
         ...result.params,
@@ -243,6 +305,13 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       viewerId: viewer?.id,
       viewerName: viewer?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.show_blocked', result.error);
+    }
+
+    return events;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -260,6 +329,9 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params,
       ...sharedData.eventData
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.shown');
 
     return events;
   },

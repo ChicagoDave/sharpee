@@ -4,7 +4,7 @@
 // (list, count) can use it without depending on LanguageProvider. The provider's
 // `pluralize` method delegates here. Irregulars come from ./data/words.
 
-import { irregularPlurals } from './data/words';
+import { irregularPlurals } from './data/words.js';
 
 /**
  * Pluralize an English noun. Checks the irregular map first (preserving the

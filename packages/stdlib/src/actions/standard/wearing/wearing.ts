@@ -4,26 +4,56 @@
  * This action handles wearing items that have the WEARABLE trait.
  * It validates that the item can be worn and isn't already worn.
  *
- * Uses three-phase pattern:
+ * Uses four-phase pattern:
  * 1. validate: Check if item is wearable and can be worn
  * 2. execute: Call WearableBehavior.wear(), store result in sharedData
  * 3. report: Generate events from sharedData
+ * 4. blocked: Generate error events when validation fails
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `wearingLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WearableTrait, WearableBehavior } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope';
-import { WornEventData } from './wearing-events';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/index.js';
+import { WornEventData } from './wearing-events.js';
+import { nounPhraseFor } from '../../../utils/index.js';
 import {
   analyzeWearableContext,
   checkWearingConflicts,
   buildWearableEventParams
-} from '../wearable-shared';
-import { MESSAGES } from './wearing-messages';
+} from '../wearable-shared.js';
+import { MESSAGES } from './wearing-messages.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): the worn item is the only consultable
+ * entity of a WEAR command.
+ */
+export const wearingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.WEARING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.WEARING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -73,8 +103,12 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
+    const state = resolveLifecycle(context, wearingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     if (!item.has(TraitType.WEARABLE)) {
-      return { valid: false, error: 'not_wearable' };
+      return { valid: false, error: 'not_wearable', params: { item: nounPhraseFor(item) } };
     }
 
     // Item must be carried (or implicitly takeable)
@@ -87,10 +121,27 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     if (!WearableBehavior.canWear(item, actor)) {
       const wearable = item.get(TraitType.WEARABLE) as WearableTrait;
       if (wearable.worn) {
-        return { valid: false, error: 'already_wearing' };
+        return { valid: false, error: 'already_wearing', params: { item: nounPhraseFor(item) } };
       }
-      return { valid: false, error: 'cant_wear_that' };
+      return { valid: false, error: 'cant_wear_that', params: { item: nounPhraseFor(item) } };
     }
+
+    // Folded execute-phase refusal (ADR-229 R1): a pure read, so it runs
+    // as standard validation and its failure flows through blocked() →
+    // onBlocked like every other refusal.
+    const wearableContext = analyzeWearableContext(context, item, actor);
+    const conflictingItem = checkWearingConflicts(wearableContext);
+    if (conflictingItem) {
+      return {
+        valid: false,
+        error: wearableContext.wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing',
+        params: { item: nounPhraseFor(conflictingItem) }
+      };
+    }
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -112,15 +163,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     sharedData.bodyPart = wearableTrait.bodyPart;
     sharedData.layer = wearableTrait.layer;
 
-    // Check for wearing conflicts using shared helper
-    const conflictingItem = checkWearingConflicts(wearableContext);
-    if (conflictingItem) {
-      sharedData.failed = true;
-      sharedData.errorMessageId = wearableTrait.layer !== undefined ? 'hands_full' : 'already_wearing';
-      sharedData.errorReason = sharedData.errorMessageId;
-      sharedData.errorParams = { item: nounPhraseFor(conflictingItem) };
-      return;
-    }
+    // Wearing conflicts are a validate-phase refusal now (ADR-229 R1) —
+    // execute only keeps the behavior-result defensive branch below as
+    // the true safety net.
 
     // Delegate state change to behavior
     const result = WearableBehavior.wear(item, actor);
@@ -149,6 +194,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     sharedData.failed = false;
     sharedData.params = buildWearableEventParams(item, wearableTrait);
     sharedData.messageId = 'worn';
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -189,6 +237,9 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       layer: sharedData.layer
     }));
 
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.worn');
+
     return events;
   },
 
@@ -200,15 +251,22 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const item = context.command.directObject?.entity;
 
-    return [context.event('if.event.wear_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.wear_blocked', {
       // Rendering data
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       // Domain data
       itemId: item?.id,
       itemName: item?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.wear_blocked', result.error);
+    }
+
+    return events;
   },
 
   metadata: {

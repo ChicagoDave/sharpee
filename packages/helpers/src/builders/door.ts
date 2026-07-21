@@ -13,10 +13,8 @@ import {
   SceneryTrait,
   OpenableTrait,
   LockableTrait,
-  RoomBehavior,
 } from '@sharpee/world-model';
 import type { IWorldModel, ITrait } from '@sharpee/world-model';
-import { getOppositeDirection } from '@sharpee/world-model';
 import type { DirectionType } from '@sharpee/world-model';
 
 /**
@@ -144,7 +142,7 @@ export class DoorBuilder {
     if (this._lockable) {
       entity.add(new LockableTrait({
         isLocked: this._lockable.isLocked ?? true,
-        ...(this._lockable.keyId ? { requiredKey: this._lockable.keyId } : {}),
+        ...(this._lockable.keyId ? { keyId: this._lockable.keyId } : {}),
       }));
     }
 
@@ -152,13 +150,8 @@ export class DoorBuilder {
       entity.add(trait);
     }
 
-    // Wire exits through the door
-    const opposite = getOppositeDirection(this._direction);
-    RoomBehavior.setExit(this._room1, this._direction, this._room2.id, entity.id);
-    RoomBehavior.setExit(this._room2, opposite, this._room1.id, entity.id);
-
-    // Place door in room1 for scope resolution
-    this.world.moveEntity(entity.id, this._room1.id);
+    // One wiring path (ADR-237 D4)
+    this.world.connectRooms(this._room1.id, this._room2.id, this._direction, entity.id);
 
     return entity;
   }

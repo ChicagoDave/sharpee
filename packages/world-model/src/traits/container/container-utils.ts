@@ -1,8 +1,8 @@
 // packages/world-model/src/traits/container/container-utils.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
-import { IFEntity } from '../../entities/if-entity';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
+import { IFEntity } from '../../entities/if-entity.js';
 
 /**
  * Interface for traits that provide container functionality.

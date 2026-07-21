@@ -191,7 +191,7 @@ export declare const CORE_BLOCK_KEYS: {
  *
  * Utilities for safely working with TextContent, IDecoration, and ITextBlock.
  */
-import type { TextContent, IDecoration, ITextBlock } from './types';
+import type { TextContent, IDecoration, ITextBlock } from './types.js';
 /**
  * Check if content is a decoration (not a plain string).
  *

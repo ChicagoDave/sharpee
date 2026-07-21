@@ -8,7 +8,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runInitCommand } from './init';
+import { runInitCommand } from './init.js';
 
 describe('runInitCommand (scaffold)', () => {
   let dir = '';
@@ -18,11 +18,13 @@ describe('runInitCommand (scaffold)', () => {
     vi.restoreAllMocks();
   });
 
-  it('scaffolds with injected versions, a devkit devDep, and no npx', async () => {
+  it('scaffolds the TS form (--ts) with injected versions, a devkit devDep, and no npx', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {}); // quiet the scaffold chatter
     dir = mkdtempSync(join(tmpdir(), 'devkit-init-'));
 
-    await runInitCommand([dir, '-y']);
+    // Chord is the DEFAULT scaffold (David's ruling 2026-07-18, tested in
+    // chord-build.test.ts); this test pins the preserved TS form.
+    await runInitCommand([dir, '-y', '--ts']);
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'));
 

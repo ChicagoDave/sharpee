@@ -1,1 +1,1 @@
-export { StoryInfoTrait } from './storyInfoTrait';
+export { StoryInfoTrait } from './storyInfoTrait.js';

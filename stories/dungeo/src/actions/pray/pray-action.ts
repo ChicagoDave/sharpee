@@ -9,7 +9,7 @@
  * Pattern: "pray"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, RoomTrait } from '@sharpee/world-model';
 import { PRAY_ACTION_ID, PrayMessages } from './types';
@@ -150,13 +150,14 @@ export const prayAction: Action = {
       }));
     }
 
-    // If player died from basin trap
+    // If player died from basin trap — canonical terminal death (ADR-224).
     if (sharedData.playerDied) {
-      events.push(context.event('player.died', {
-        actionId: PRAY_ACTION_ID,
+      const deathEvent = killPlayer(context.world, context.player, {
         cause: 'basin_trap',
-        messageId: PrayMessages.PRAY_BASIN_DEATH
-      }));
+        messageId: PrayMessages.PRAY_BASIN_DEATH,
+        terminal: true,
+      });
+      if (deathEvent) events.push(deathEvent);
     }
 
     return events;

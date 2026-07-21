@@ -9,16 +9,45 @@
  * 2. execute: Update pullable state, store data in sharedData
  * 3. blocked: Generate events when validation fails
  * 4. report: Generate success events
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `pullingLifecycle` — no hand-rolled hook plumbing.
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, PullableTrait, WearableTrait } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { PulledEventData } from './pulling-events';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { nounPhraseFor } from '../../../utils';
+import { IFActions } from '../../constants.js';
+import { PulledEventData } from './pulling-events.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): the pulled target is the only consultable
+ * entity of a PULL command.
+ */
+export const pullingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.PULLING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.PULLING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
@@ -69,6 +98,10 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
+    const state = resolveLifecycle(context, pullingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -94,6 +127,10 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'already_pulled', params: { target: nounPhraseFor(target) } };
     }
 
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
     return { valid: true };
   },
 
@@ -115,6 +152,9 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     // Perform the mutation
     pullable.state = 'pulled';
     pullable.pullCount = (pullable.pullCount || 0) + 1;
+
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -122,9 +162,9 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
    */
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const target = context.command.directObject?.entity;
-    return [context.event('if.event.pulled', {
+    const events: ISemanticEvent[] = [context.event('if.event.pulled', {
       blocked: true,
-      messageId: `${context.action.id}.${result.error}`,
+      messageId: blockedMessageId(context, result),
       // params carry EntityInfo for the formatter chain (ADR-158);
       // top-level fields stay strings for handlers.
       params: { target: target ? nounPhraseFor(target) : undefined, ...result.params },
@@ -132,6 +172,13 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.pulled', result.error);
+    }
+
+    return events;
   },
 
   /**
@@ -152,6 +199,9 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       pullCount: sharedData.pullCount,
       pullType: sharedData.pullType
     }));
+
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.pulled');
 
     return events;
   }

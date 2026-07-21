@@ -4,12 +4,21 @@ description: Tests that the axe is held by troll, can't be taken (white-hot), an
 
 ---
 
-# Get lantern first
+# The conscious troll strikes bystanders each turn (MDL melee canon) and can
+# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
+# revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
+# Get lantern first; ND = immortality (the conscious troll's bystander blows
+# can kill a score-0 player — this tests axe visibility, not mortality)
 > GDT
 [OK: contains "GDT"]
 
 > tk brass lantern
 [OK: contains "Taken"]
+
+> nd
+[OK: contains "Immortality"]
 
 > ex
 [OK: contains "Returning"]
@@ -58,3 +67,5 @@ description: Tests that the axe is held by troll, can't be taken (white-hot), an
 # Can't examine axe - it's gone
 > examine axe
 [OK: contains "can't see"]
+
+[END RETRY]

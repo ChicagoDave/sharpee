@@ -17,7 +17,7 @@
  */
 
 import type { ChannelDefinition } from '@sharpee/if-domain';
-import type { ChannelRenderer } from './types';
+import type { ChannelRenderer } from './types.js';
 
 /**
  * Sink for warnings emitted by the fallback. Defaults to

@@ -1,4 +1,4 @@
-import { useEditorStore } from '../../store/editor-store';
+import { useEditorStore } from '../../store/editor-store.js';
 import './RegionList.css';
 
 export function RegionList() {

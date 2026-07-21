@@ -1,0 +1,63 @@
+title: Fernhill B3/B4 — the key under the mat, the pocketed winding key, hiding
+story: fernhill
+description: Concealed items are invisible until SEARCH reveals them (the
+  tarnished key on/under the doormat; the winding key in Verity's overcoat).
+  The study curtains are a hiding-spot (position behind). The overcoat wears.
+---
+
+> north
+[OK: contains "Gravel Drive"]
+
+> north
+[OK: contains "Fountain Court"]
+
+# Before searching: the concealed key cannot be taken
+> take the tarnished key
+[OK: not contains "Taken"]
+
+> examine the doormat
+[OK: contains "worn bald in the middle"]
+
+> search the doormat
+[OK: contains "key"]
+
+> take the tarnished key
+[OK: contains "You take the tarnished key"]
+
+# The overcoat: wearable, with a concealed pocket find
+> north
+[OK: contains "Entrance Hall"]
+
+> take the grey overcoat
+[OK: contains "Taken"]
+
+> take the winding key
+[OK: not contains "Taken"]
+
+> search the overcoat
+[OK: contains "winding key"]
+
+> take the winding key
+[OK: contains "You take the winding key"]
+
+> wear the overcoat
+[OK: contains "put on"]
+
+# The hiding-spot: behind the study curtains (pay the sherry toll first)
+> east
+[OK: contains "Kitchen"]
+
+> take the sherry bottle
+[OK: contains "Taken"]
+
+> west
+[OK: contains "Entrance Hall"]
+
+> give the sherry bottle to kettle
+[OK: contains "oloroso"]
+
+> west
+[OK: contains "study"]
+
+> hide behind the curtains
+[OK: contains "curtains"]

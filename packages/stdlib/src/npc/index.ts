@@ -5,11 +5,11 @@
  */
 
 // Types
-export * from './types';
+export * from './types.js';
 
 // Message IDs
-export * from './npc-messages';
-export * from './character-messages';
+export * from './npc-messages.js';
+export * from './character-messages.js';
 
 // Service
 export {
@@ -21,7 +21,7 @@ export {
   type NpcCombatResolver,
   type NpcTickContext,
   type NpcTickPhase,
-} from './npc-service';
+} from './npc-service.js';
 
 // Character model observation and lucidity (ADR-141)
 export {
@@ -30,12 +30,12 @@ export {
   injectHallucinations,
   DefaultStateTransitions,
   type StateTransitionRule,
-} from './character-observer';
+} from './character-observer.js';
 export {
   processLucidityDecay,
   enterLucidityWindow,
   DECAY_RATE_TURNS,
-} from './lucidity-decay';
+} from './lucidity-decay.js';
 
 // Standard behaviors
 export {
@@ -44,4 +44,4 @@ export {
   createWandererBehavior,
   createFollowerBehavior,
   createPatrolBehavior,
-} from './behaviors';
+} from './behaviors.js';

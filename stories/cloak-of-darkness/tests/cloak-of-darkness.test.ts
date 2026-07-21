@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel } from '@sharpee/world-model';
-import { CloakOfDarknessStory } from '../src/index';
+import { createStory, CloakOfDarknessStory } from '../src/index';
 
 describe('Cloak of Darkness Story', () => {
   let world: WorldModel;
@@ -13,7 +13,7 @@ describe('Cloak of Darkness Story', () => {
 
   beforeEach(() => {
     world = new WorldModel();
-    story = new CloakOfDarknessStory();
+    story = createStory();
     
     // Create and prepare player
     const player = story.createPlayer(world);

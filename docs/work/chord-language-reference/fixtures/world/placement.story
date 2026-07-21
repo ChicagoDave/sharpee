@@ -33,5 +33,6 @@ create the seed packet
 create the player
   starts in the Greenhouse
   wears the straw hat
+  carries the trowel
 
   Mud on your boots, dirt under your nails.

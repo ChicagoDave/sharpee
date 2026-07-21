@@ -118,7 +118,7 @@ export class RoomBuilder {
   build(): IFEntity {
     const entity = this.world.createEntity(this.name, 'room');
     entity.add(new RoomTrait({
-      isDark: this._isDark,
+      requiresLight: this._isDark,
       initialDescription: this._initialDescription,
       snippets: this._snippets,
     }));

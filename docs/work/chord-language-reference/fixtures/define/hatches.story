@@ -4,7 +4,6 @@ story "Hatches" by "Sharpee Docs"
 
 define text weather from "./extras.ts"
 define action dowsing from "./extras.ts"
-define behavior tide-clock from "./extras.ts"
 
 create the Weather Station
   a room

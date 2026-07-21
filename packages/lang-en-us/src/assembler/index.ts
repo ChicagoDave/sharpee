@@ -6,5 +6,6 @@
  * helper, and the not-implemented error.
  */
 
-export { EnglishAssembler, ASSEMBLER_DEFAULT_BLOCK_KEY, capitalizeSentenceStart } from './english-assembler.js';
+export { EnglishAssembler, ASSEMBLER_DEFAULT_BLOCK_KEY, capitalizeSentenceStart, registerPronounSet } from './english-assembler.js';
+export type { PronounSetForms } from './english-assembler.js';
 export { PhraseNotImplementedError } from './errors.js';

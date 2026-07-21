@@ -1,0 +1,65 @@
+Conditions appear after `while`, after `when`, in `refuse when`, and in
+blocked exits. The combinators are `and`, `or`, and `not`, in the usual
+precedence (`not` binds tightest, `or` loosest) with parentheses to
+override; `one chance in N` rolls dice.
+
+```chord
+  on petting it
+    phrase cat-tolerates when it is dozing
+    phrase cat-glare when it is alert and not one chance in 4
+    phrase cat-purr when (it is alert and one chance in 4) or it wears the ribbon
+    change it to alert when it is dozing
+  end on
+```
+
+The predicates test what an author would point at:
+
+```chord
+  on examining it
+    phrase barrow-contents when it holds the apple
+    phrase barrow-visible when the player can see it
+    phrase barrow-in-gate when it is in the Orchard Gate
+    phrase barrow-is-thing when it is a container
+  end on
+```
+
+In full: `is a`/`is an` tests kind or trait, `is in` tests location,
+`is here` tests whether an entity shares the player's location, plain
+`is` compares against a state, a state adjective, or a value, `has`,
+`holds`, and `wears` test possession, and `can see` / `can reach` test
+scope. Every predicate takes `not` after `is`, or `not` in front.
+Subjects and values are written the way you name anything: `it`, `the
+player`, an entity name, `its <field>`, or a possessive like `the
+player's location`. A multi-word name simply runs until the next
+structural word (`is`, `has`, `holds`, `wears`, `can`, `and`, `or`,
+`then`, `to`, `while`, `with`), so name your entities around those.
+
+State words resolve against their subject: `when it is dozing` works
+because the cat declares `dozing`. The closed catalog of platform state
+adjectives (`open`, `closed`, `locked`, `unlocked`, `on`, `off`,
+`worn`, `lit`) reads trait state the same way. An unknown word is a
+load error with a nearest-valid suggestion, not a silent false.
+
+A named condition ([§5.1](/chord/guide/vocabulary)) whose `it` is left
+free is an *open*
+condition: a test any entity might pass. `any` and `no` quantify over
+one:
+
+```chord
+define condition gathered-tomato: it is a tomato and it is in the harvest basket
+define condition vine-tomato: it is a tomato and it is not in the harvest basket
+```
+
+```chord
+  on examining it
+    phrase basket-empty when no gathered-tomato
+    phrase basket-laden when any gathered-tomato
+  end on
+```
+
+Quantifiers demand an open condition; `any` over a closed one (no free
+`it`, like `the story is dusk`) is `analysis.closed-condition-selection`.
+Inside an open condition, keep to predicates the analyzer can check for
+an arbitrary subject: kind, placement, and possession tests. A state
+test on `it` (`it is ripe`) is rejected as an unknown value, because no
+one subject owns the state word there.

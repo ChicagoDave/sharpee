@@ -13,6 +13,7 @@
 
 import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
+import { killPlayer } from '@sharpee/stdlib';
 import { ISchedulerService, SchedulerContext, Daemon } from '@sharpee/plugin-scheduler';
 import {
   CAGE_TRAPPED_KEY,
@@ -68,8 +69,6 @@ export function registerCagePoisonDaemon(
         // Clear trapped state
         world.setStateValue(CAGE_TRAPPED_KEY, false);
         world.setStateValue(CAGE_TURNS_KEY, 0);
-        world.setStateValue('dungeo.player.dead', true);
-        world.setStateValue('dungeo.player.death_cause', 'cage_poison');
 
         // Poison gas room message
         events.push({
@@ -93,18 +92,16 @@ export function registerCagePoisonDaemon(
           }
         });
 
-        // Player death event (triggers death penalty handler)
+        // Canonical terminal death (ADR-224). Narration is the game.message
+        // above, so the death event needs no messageId (avoids a duplicate render).
         const player = context.world.getPlayer();
-        events.push({
-          id: `cage-poison-died-${context.turn}`,
-          type: 'game.player_death',
-          timestamp: Date.now(),
-          entities: { actor: player?.id || '' },
-          data: {
+        if (player) {
+          const deathEvent = killPlayer(context.world, player, {
             cause: 'cage_poison',
-            messageId: CageMessages.POISON_DEATH
-          }
-        });
+            terminal: true,
+          });
+          if (deathEvent) events.push(deathEvent);
+        }
       }
 
       return events;

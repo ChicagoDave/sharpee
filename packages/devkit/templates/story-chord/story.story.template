@@ -1,0 +1,21 @@
+story "{{STORY_TITLE}}" by "{{AUTHOR}}"
+  id: {{STORY_ID}}
+  version: 0.1.0
+  blurb: {{DESCRIPTION}}
+
+create the Landing
+  a room
+
+  A quiet place to begin. Doorways lead everywhere a story might go —
+  for now, this landing is the whole world.
+
+create the brass lantern
+  aka lamp
+
+  An old brass lantern, dented but serviceable.
+
+create the player
+  starts in the Landing
+  carries the brass lantern
+
+  As ready as you'll ever be.

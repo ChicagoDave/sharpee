@@ -15,9 +15,9 @@ import {
   ValidationResult
 } from '@sharpee/if-domain';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ValidatedCommand } from '../validation/types';
-import { ActionContext, Action } from './enhanced-types';
-import { ScopeResolver } from '../scope/types';
+import { ValidatedCommand } from '../validation/types.js';
+import { ActionContext, Action } from './enhanced-types.js';
+import { ScopeResolver } from '../scope/types.js';
 
 /**
  * Convert a ValidatedCommand to the simpler CommandInput

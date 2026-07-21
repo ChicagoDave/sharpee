@@ -1,7 +1,7 @@
 // packages/world-model/src/traits/readable/readableTrait.ts
 
-import { ITrait } from '../trait';
-import { TraitType } from '../trait-types';
+import { ITrait } from '../trait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Readable trait for entities that have text to read.

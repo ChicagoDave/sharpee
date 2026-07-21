@@ -1,12 +1,12 @@
 // packages/world-model/src/traits/switchable/switchableBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { SwitchableTrait } from './switchableTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { SwitchableTrait } from './switchableTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEvents } from '../../constants/if-events';
-import { ActionFailureReason } from '../../constants/action-failures';
+import { IFEvents } from '../../constants/if-events.js';
+import { ActionFailureReason } from '../../constants/action-failures.js';
 
 export interface ISwitchOnResult {
   success: boolean;

@@ -22,7 +22,7 @@ import {
   NpcTrait,
   EdibleTrait
 } from '@sharpee/world-model';
-import { TreasureTrait, RiddleRoomTrait, BucketTrait, SphereTrait } from '../traits';
+import { TreasureTrait, RiddleRoomTrait, BucketTrait, SphereTrait, CakeTrait } from '../traits';
 
 export interface WellRoomIds {
   engravingsCave: string;
@@ -41,7 +41,7 @@ export interface WellRoomIds {
 
 function createRoom(world: WorldModel, name: string, description: string, isDark = true): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: isDark, isOutdoors: false }));
   room.add(new IdentityTrait({ name, description, properName: true, article: 'the' }));
   return room;
 }
@@ -395,7 +395,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   eatMeCake.add(new EdibleTrait({ servings: 1, taste: 'tasty' }));
-  eatMeCake.attributes.cakeType = 'eat-me';
+  eatMeCake.add(new CakeTrait({ cakeType: 'eat-me' }));
   world.moveEntity(eatMeCake.id, roomId);
 
   // Blue-icing cake (BLICE) - icing reads "Enlarge"
@@ -411,7 +411,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   blueCake.add(new EdibleTrait({ servings: 1, taste: 'tasty' }));
-  blueCake.attributes.cakeType = 'blue-icing';
+  blueCake.add(new CakeTrait({ cakeType: 'blue-icing' }));
   world.moveEntity(blueCake.id, roomId);
 
   // Red-icing cake (RDICE) - icing reads "Evaporate"
@@ -427,7 +427,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   redCake.add(new EdibleTrait({ servings: 1, taste: 'awful' }));
-  redCake.attributes.cakeType = 'red-icing';
+  redCake.add(new CakeTrait({ cakeType: 'red-icing' }));
   world.moveEntity(redCake.id, roomId);
 
   // Orange-icing cake (ORICE) - icing reads "Explode"
@@ -443,7 +443,7 @@ function createTeaRoomObjects(world: WorldModel, roomId: string): void {
     weight: 5
   }));
   orangeCake.add(new EdibleTrait({ servings: 1, effects: ['explode'] }));
-  orangeCake.attributes.cakeType = 'orange-icing';
+  orangeCake.add(new CakeTrait({ cakeType: 'orange-icing' }));
   world.moveEntity(orangeCake.id, roomId);
 }
 

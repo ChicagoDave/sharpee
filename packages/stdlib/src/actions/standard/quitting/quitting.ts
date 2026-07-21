@@ -11,11 +11,12 @@
  * 4. report: Emit quit events
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent, createQuitRequestedEvent, IQuitContext } from '@sharpee/core';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { QuitRequestedEventData } from './quitting-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { QuitRequestedEventData } from './quitting-events.js';
 
 /**
  * Shared data passed between execute and report phases
@@ -102,7 +103,7 @@ export const quittingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // Quitting always succeeds, but include blocked for consistency
     return [context.event('if.event.quit_blocked', {
-      messageId: `if.action.quitting.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

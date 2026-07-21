@@ -4,6 +4,21 @@ description: Test saying "odysseus" or "ulysses" to scare away the cyclops
 
 ---
 
+# Death is possible en route (the troll while passing through, the hungry
+# cyclops before the magic word lands). RETRY restores the turn-0 snapshot
+# and revives the engine on death (same pattern as debug-combat).
+[RETRY: max=5]
+
+# GDT ND = immortality: this tests the magic word, not player mortality
+> gdt
+[OK: contains "GDT"]
+
+> nd
+[OK: contains "Immortality"]
+
+> ex
+[OK: contains "Returning"]
+
 # Get lantern from Living Room for dark areas
 > north
 [OK: contains "North of House"]
@@ -82,3 +97,5 @@ description: Test saying "odysseus" or "ulysses" to scare away the cyclops
 > look
 [OK: contains "Cyclops Room"]
 [FAIL: contains "huge cyclops"]
+
+[END RETRY]

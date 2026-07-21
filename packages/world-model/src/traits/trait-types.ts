@@ -14,13 +14,14 @@ export const TraitType = {
   SUPPORTER: 'supporter',
   ROOM: 'room',
   WEARABLE: 'wearable',
-  CLOTHING: 'clothing',
   EDIBLE: 'edible',
   SCENERY: 'scenery',
 
   // Interactive traits
   OPENABLE: 'openable',
   LOCKABLE: 'lockable',
+  CUTTABLE: 'cuttable',
+  DIGGABLE: 'diggable',
   SWITCHABLE: 'switchable',
   READABLE: 'readable',
   LIGHT_SOURCE: 'lightSource',
@@ -52,6 +53,12 @@ export const TraitType = {
   DESTRUCTIBLE: 'destructible',
   COMBATANT: 'combatant',
   EQUIPPED: 'equipped',
+
+  // Health / life-state (ADR-226, ADR-223 child A)
+  HEALTH: 'health',
+
+  // Deadly-room trigger shape (ADR-224)
+  DEADLY_ROOM: 'deadlyRoom',
 
   // NPC traits (ADR-070)
   NPC: 'npc',
@@ -106,13 +113,14 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.SUPPORTER]: TraitCategory.STANDARD,
   [TraitType.ROOM]: TraitCategory.STANDARD,
   [TraitType.WEARABLE]: TraitCategory.STANDARD,
-  [TraitType.CLOTHING]: TraitCategory.STANDARD,
   [TraitType.EDIBLE]: TraitCategory.STANDARD,
   [TraitType.SCENERY]: TraitCategory.STANDARD,
 
   // Interactive
   [TraitType.OPENABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LOCKABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.CUTTABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.DIGGABLE]: TraitCategory.INTERACTIVE,
   [TraitType.SWITCHABLE]: TraitCategory.INTERACTIVE,
   [TraitType.READABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LIGHT_SOURCE]: TraitCategory.INTERACTIVE,
@@ -142,6 +150,12 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.DESTRUCTIBLE]: TraitCategory.INTERACTIVE,
   [TraitType.COMBATANT]: TraitCategory.INTERACTIVE,
   [TraitType.EQUIPPED]: TraitCategory.INTERACTIVE,
+
+  // Health / life-state (ADR-226)
+  [TraitType.HEALTH]: TraitCategory.STANDARD,
+
+  // Deadly-room trigger shape (ADR-224)
+  [TraitType.DEADLY_ROOM]: TraitCategory.STANDARD,
 
   // NPC traits
   [TraitType.NPC]: TraitCategory.STANDARD,

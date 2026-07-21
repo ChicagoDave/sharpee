@@ -12,12 +12,13 @@
  * 4. report: Emit about event
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { blockedMessageId } from '../../lifecycle/index.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ActionMetadata } from '../../../validation';
-import { AboutDisplayedEventData } from './about-events';
+import { IFActions } from '../../constants.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { AboutDisplayedEventData } from './about-events.js';
 
 export const aboutAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ABOUT,
@@ -37,7 +38,7 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     // About always succeeds, but include blocked for consistency
     return [context.event('if.event.about_displayed', {
-      messageId: `if.action.about.${result.error}`,
+      messageId: blockedMessageId(context, result),
       params: result.params || {},
       blocked: true,
       reason: result.error

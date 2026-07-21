@@ -18,20 +18,20 @@ export {
   type EvidenceEntry,
   createConversationRecord,
   createEvidenceRecord,
-} from './response-types';
+} from './response-types.js';
 
 export {
   type TopicDef,
   type TopicResolution,
   TopicRegistry,
-} from './topic-registry';
+} from './topic-registry.js';
 
 export {
   type Contradiction,
   type ConstraintEvaluatorState,
   evaluateConstraints,
   ConstraintEvaluator,
-} from './constraint-evaluator';
+} from './constraint-evaluator.js';
 
 export {
   type ConversationIntent,
@@ -44,18 +44,18 @@ export {
   DEFAULT_DECAY_THRESHOLDS,
   BETWEEN_TURN_DEFAULTS,
   ConversationLifecycle,
-} from './lifecycle';
+} from './lifecycle.js';
 
 export {
   buildResponseIntent,
   selectMoodVariant,
   applyCognitiveColoring,
-} from './acl';
+} from './acl.js';
 
 export {
   type DialogueExtension,
   type DialogueResult,
-} from './dialogue-types';
+} from './dialogue-types.js';
 
 export {
   type ConversationData,
@@ -69,13 +69,13 @@ export {
   createConversationData,
   ConversationBuilder,
   ResponseChainBuilder,
-} from './builder';
+} from './builder.js';
 
 export {
   CharacterModelDialogue,
-} from './dialogue-extension';
+} from './dialogue-extension.js';
 
 export {
   ConversationMessages,
   type ConversationMessageId,
-} from './conversation-messages';
+} from './conversation-messages.js';

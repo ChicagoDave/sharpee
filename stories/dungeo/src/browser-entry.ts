@@ -15,7 +15,7 @@ import {
   ThemeManager,
   createAmbientChannelRenderer,
 } from '@sharpee/platform-browser';
-import { story, config } from './index';
+import { createStory } from './index';
 import { DUNGEO_AMBIENT_CHANNEL_IDS } from './audio/audio-setup';
 import {
   DUNGEO_RNAME_CHANNEL_ID,
@@ -29,7 +29,9 @@ const THEME_STORAGE_KEY = 'dungeo-theme';
 // Apply saved theme immediately to prevent flash of default theme
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 
-// Game metadata from story config
+// Game metadata from story config (config-only instance — cheap; the
+// playable story instance is created fresh inside start() per ADR-248)
+const config = createStory().config;
 const GAME_TITLE = config.title;
 const GAME_DESCRIPTION = config.description || '';
 const GAME_AUTHORS = Array.isArray(config.author) ? config.author.join(', ') : config.author;
@@ -38,6 +40,8 @@ const PORTED_BY = config.custom?.portedBy || '';
 // Create browser client with story configuration
 const client = new BrowserClient({
   storagePrefix: 'dungeo-',
+  // ADR-248: RESTART reboots by re-running this entry's own boot path.
+  reboot: () => start(),
   // The default is the engine's `:root` "classic" baseline (no package) — ADR-188 R7.
   // The clickable theme menu is generated at build time from `sharpee.themes`
   // (this array only feeds ThemeManager's metadata; keep it in sync for clarity).
@@ -83,6 +87,10 @@ async function start(): Promise<void> {
     startupSaveInfo: document.getElementById('startup-save-info'),
     menuBar: document.getElementById('menu-bar'),
   });
+
+  // Fresh story instance per boot (ADR-248 factory contract) — a restart
+  // reboot re-runs start() and must get fully fresh story state.
+  const story = createStory();
 
   // Create world and player
   const world = new WorldModel();

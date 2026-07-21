@@ -2,9 +2,9 @@
  * Behavior functions for climbable objects
  */
 
-import { IFEntity } from '../../entities/if-entity';
-import { ClimbableTrait } from './climbableTrait';
-import { TraitType } from '../trait-types';
+import { IFEntity } from '../../entities/if-entity.js';
+import { ClimbableTrait } from './climbableTrait.js';
+import { TraitType } from '../trait-types.js';
 
 /**
  * Result of attempting to climb

@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runIntrospect } from './introspect';
+import { runIntrospect } from './introspect.js';
 
 describe('runIntrospect', () => {
   it('rejects when the project has no dist/index.js (story not built)', async () => {

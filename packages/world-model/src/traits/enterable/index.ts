@@ -2,4 +2,4 @@
  * Enterable trait module
  */
 
-export * from './enterableTrait';
+export * from './enterableTrait.js';

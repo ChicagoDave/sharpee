@@ -4,6 +4,6 @@
  * Re-exports all constant definitions
  */
 
-export * from './action-failures';
-export * from './if-events';
-export * from './directions';
+export * from './action-failures.js';
+export * from './if-events.js';
+export * from './directions.js';

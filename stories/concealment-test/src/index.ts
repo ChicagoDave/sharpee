@@ -31,16 +31,14 @@ import {
   Direction,
 } from '@sharpee/world-model';
 
-export const config: StoryConfig = {
-  id: 'concealment-test',
-  title: 'Concealment Test',
-  author: 'ADR-148 Test Suite',
-  version: '1.0.0',
-  description: 'Minimal story for testing concealment actions',
-};
-
 export class ConcealmentTestStory implements Story {
-  config = config;
+  config: StoryConfig = {
+    id: 'concealment-test',
+    title: 'Concealment Test',
+    author: 'ADR-148 Test Suite',
+    version: '1.0.0',
+    description: 'Minimal story for testing concealment actions',
+  };
 
   createPlayer(world: WorldModel) {
     const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -207,4 +205,10 @@ export class ConcealmentTestStory implements Story {
   extendLanguage?(language: LanguageProvider): void {}
 }
 
-export const story = new ConcealmentTestStory();
+/**
+ * Story factory (ADR-248): the module's sole story export. Each call
+ * returns a fully fresh story instance — clients call this per boot.
+ */
+export function createStory(): ConcealmentTestStory {
+  return new ConcealmentTestStory();
+}

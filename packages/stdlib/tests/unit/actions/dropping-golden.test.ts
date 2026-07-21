@@ -19,7 +19,8 @@ import {
   executeWithValidation,
   expectLocation,
   TestData,
-  createCommand
+  createCommand,
+  TEST_MARKER_TRAIT
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 
@@ -620,5 +621,131 @@ describe('Dropping Action Edge Cases', () => {
         location: 'red car'
       }
     });
+  });
+});
+
+describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)', () => {
+  const setup = () => {
+    const { world, player, room } = setupBasicWorld();
+    const token = world.createEntity('brass token', 'object');
+    // Inert marker trait — the interceptor registration key.
+    token.add({ type: TEST_MARKER_TRAIT } as any);
+    world.moveEntity(token.id, player.id);
+    return { world, player, room, token };
+  };
+
+  const drive = (world: any, item: any) => {
+    const context = createRealTestContext(
+      droppingAction,
+      world,
+      createCommand(IFActions.DROPPING, { entity: item, text: 'brass token' })
+    );
+    const validation = droppingAction.validate(context);
+    if (!validation.valid) {
+      return { context, validation, events: droppingAction.blocked!(context, validation) };
+    }
+    droppingAction.execute(context);
+    return { context, validation, events: droppingAction.report(context) };
+  };
+
+  test('preValidate veto blocks the drop — the item stays held, onBlocked decorates the blocked event', () => {
+    const { world, player, token } = setup();
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DROPPING, {
+      preValidate() {
+        return { valid: false, error: 'test.token_stuck' };
+      },
+      onBlocked(_e, _w, _a, error) {
+        expect(error).toBe('test.token_stuck');
+        return { emit: [{ type: 'token.vibrated', payload: {} }] };
+      },
+    });
+
+    const { validation, events } = drive(world, token);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('test.token_stuck');
+    // THE state assertion: the item was NOT dropped.
+    expect(world.getLocation(token.id)).toBe(player.id);
+    // D2: the standard blocked event survives; the emit appends after it.
+    expect(events.some(e => e.type === 'if.event.drop_blocked')).toBe(true);
+    expect(events.some(e => e.type === 'token.vibrated')).toBe(true);
+  });
+
+  test('postExecute runs after the standard move and its mutation persists; postReport override lands', () => {
+    const { world, room, token } = setup();
+    const calls: string[] = [];
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DROPPING, {
+      postExecute(target, w) {
+        calls.push('postExecute');
+        // Standard move already happened (hook runs post).
+        expect(w.getLocation(target.id)).toBe(room.id);
+        w.setStateValue('token.dropped', true);
+      },
+      postReport() {
+        calls.push('postReport');
+        return { override: { messageId: 'token.custom_dropped' } };
+      },
+    });
+
+    const { events } = drive(world, token);
+
+    // THE critical assertions: actual state, not just events.
+    expect(world.getLocation(token.id)).toBe(room.id);
+    expect(world.getStateValue('token.dropped')).toBe(true);
+    expect(calls).toEqual(['postExecute', 'postReport']);
+    const dropped = events.find(e => e.type === 'if.event.dropped')!;
+    expect((dropped.data as any).messageId).toBe('token.custom_dropped');
+  });
+});
+
+describe('Multi-object dropping drives per-item interceptor hooks (ADR-228 D4)', () => {
+  test('drop all: postExecute/postReport fire once per item with per-item phase data', () => {
+    const { world, player, room } = setupBasicWorld();
+    const coin = world.createEntity('copper coin', 'object');
+    const gem = world.createEntity('green gem', 'object');
+    world.moveEntity(coin.id, player.id);
+    world.moveEntity(gem.id, player.id);
+    // Inert marker trait — the interceptor registration key.
+    coin.add({ type: TEST_MARKER_TRAIT } as any);
+    gem.add({ type: TEST_MARKER_TRAIT } as any);
+
+    const executed: string[] = [];
+    const reported: string[] = [];
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.DROPPING, {
+      postValidate(target, _w, _a, data) {
+        // Per-item phase data isolation (D3/D4).
+        (data as any).mark = target.name;
+        return null;
+      },
+      postExecute(target, w, _a, data) {
+        expect((data as any).mark).toBe(target.name);
+        executed.push(String(target.name));
+        w.setStateValue(`dropped.${target.name}`, true);
+      },
+      postReport(target, _w, _a, data) {
+        expect((data as any).mark).toBe(target.name);
+        reported.push(String(target.name));
+        return {};
+      },
+    });
+
+    const command = createCommand(IFActions.DROPPING, { entity: coin, text: 'all' });
+    (command.parsed.structure.directObject as any).isAll = true;
+    const context = createRealTestContext(droppingAction, world, command);
+
+    const validation = droppingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    droppingAction.execute(context);
+
+    // State: both items moved to the room, both interceptor mutations landed
+    // (this is the drop-all path that previously bypassed ALL five hooks).
+    expect(world.getLocation(coin.id)).toBe(room.id);
+    expect(world.getLocation(gem.id)).toBe(room.id);
+    expect(world.getStateValue('dropped.copper coin')).toBe(true);
+    expect(world.getStateValue('dropped.green gem')).toBe(true);
+
+    droppingAction.report(context);
+    expect(executed.sort()).toEqual(['copper coin', 'green gem']);
+    expect(reported.sort()).toEqual(['copper coin', 'green gem']);
   });
 });

@@ -1,14 +1,14 @@
 // packages/world-model/src/traits/container/containerBehavior.ts
 
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TraitType } from '../trait-types';
-import { ContainerTrait } from './containerTrait';
-import { IdentityTrait } from '../identity/identityTrait';
-import { IdentityBehavior } from '../identity/identityBehavior';
-import { OpenableTrait } from '../openable/openableTrait';
-import { OpenableBehavior } from '../openable/openableBehavior';
-import { WearableBehavior } from '../wearable/wearableBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TraitType } from '../trait-types.js';
+import { ContainerTrait } from './containerTrait.js';
+import { IdentityTrait } from '../identity/identityTrait.js';
+import { IdentityBehavior } from '../identity/identityBehavior.js';
+import { OpenableTrait } from '../openable/openableTrait.js';
+import { OpenableBehavior } from '../openable/openableBehavior.js';
+import { WearableBehavior } from '../wearable/wearableBehavior.js';
 
 /**
  * Result of an add item operation
@@ -38,6 +38,8 @@ export interface IRemoveItemResult {
 export interface IWorldQuery {
   getContents(containerId: string): IFEntity[];
   getLocation(entityId: string): string | undefined;
+  /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] };
 }
 
 /**

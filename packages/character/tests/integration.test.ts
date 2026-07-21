@@ -66,7 +66,7 @@ function createNpc(
   npc.add(new IdentityTrait({ name }));
   npc.add(new ActorTrait({ isPlayer: false }));
   npc.add(new ContainerTrait());
-  npc.add(new NpcTrait({ isAlive: true, isConscious: true, behaviorId }));
+  npc.add(new NpcTrait({ behaviorId })); // life-state moved to HealthTrait (ADR-226)
   return npc;
 }
 
@@ -158,10 +158,9 @@ describe('ADR-141 end-to-end integration', () => {
     expect(trait.evaluate('not threatened')).toBe(true);
     expect(trait.evaluate('in-danger')).toBe(false);
 
-    // NpcTrait still works independently
+    // NpcTrait still works independently (life-state moved to HealthTrait, ADR-226)
     const npcTrait = margaret.get(TraitType.NPC) as NpcTrait;
-    expect(npcTrait.isAlive).toBe(true);
-    expect(npcTrait.isConscious).toBe(true);
+    expect(npcTrait).toBeDefined();
 
     // ----- Layer 2: Observe a violence event -----
     const attackEvent = createAttackEvent(player.id, margaret.id);
@@ -305,8 +304,7 @@ describe('ADR-141 end-to-end integration', () => {
     charTrait.setMood('angry');
     expect(charTrait.getMood()).toBe('angry');
 
-    // NpcTrait unaffected by CharacterModelTrait changes
-    expect(npcTrait.isAlive).toBe(true);
-    expect(npcTrait.isConscious).toBe(true);
+    // NpcTrait unaffected by CharacterModelTrait changes (hostility set above intact)
+    expect(npcTrait.isHostile).toBe(true);
   });
 });

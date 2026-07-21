@@ -5,11 +5,11 @@
  * This separates data structure concerns from business logic.
  */
 
-import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types';
-import { ActionContext } from '../../enhanced-types';
+import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
+import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel } from '@sharpee/world-model';
-import { captureEntitySnapshot } from '../../base/snapshot-utils';
-import { getTakingSharedData } from './taking-types';
+import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
+import { getTakingSharedData } from './taking-types.js';
 
 /**
  * Build taken event data

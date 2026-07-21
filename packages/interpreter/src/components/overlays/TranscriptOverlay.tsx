@@ -6,8 +6,8 @@
  */
 
 import React from 'react';
-import { Transcript } from '../transcript/Transcript';
-import { CommandInput } from '../transcript/CommandInput';
+import { Transcript } from '../transcript/Transcript.js';
+import { CommandInput } from '../transcript/CommandInput.js';
 
 export function TranscriptOverlay() {
   return (

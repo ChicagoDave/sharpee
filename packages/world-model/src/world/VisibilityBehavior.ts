@@ -1,18 +1,19 @@
 // VisibilityBehavior.ts - Visibility system for IF
 
-import { Behavior } from '../behaviors/behavior';
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from './WorldModel';
-import { TraitType } from '../traits/trait-types';
-import { SwitchableBehavior } from '../traits/switchable/switchableBehavior';
-import { VehicleTrait } from '../traits/vehicle/vehicleTrait';
-import { RoomTrait } from '../traits/room/roomTrait';
-import { ContainerTrait } from '../traits/container/containerTrait';
-import { OpenableTrait } from '../traits/openable/openableTrait';
-import { LightSourceTrait } from '../traits/light-source/lightSourceTrait';
-import { SceneryTrait } from '../traits/scenery/sceneryTrait';
-import { IdentityTrait } from '../traits/identity/identityTrait';
-import { findTraitWithCapability } from '../capabilities';
+import { Behavior } from '../behaviors/behavior.js';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from './WorldModel.js';
+import { TraitType } from '../traits/trait-types.js';
+import { SwitchableBehavior } from '../traits/switchable/switchableBehavior.js';
+import { VehicleTrait } from '../traits/vehicle/vehicleTrait.js';
+import { RoomTrait } from '../traits/room/roomTrait.js';
+import { ContainerTrait } from '../traits/container/containerTrait.js';
+import { OpenableTrait } from '../traits/openable/openableTrait.js';
+import { LightSourceTrait } from '../traits/light-source/lightSourceTrait.js';
+import { SceneryTrait } from '../traits/scenery/sceneryTrait.js';
+import { IdentityTrait } from '../traits/identity/identityTrait.js';
+import { DoorTrait } from '../traits/door/doorTrait.js';
+import { findTraitWithCapability } from '../capabilities/index.js';
 
 /**
  * Standard capability ID for visibility control.
@@ -20,15 +21,38 @@ import { findTraitWithCapability } from '../capabilities';
  */
 export const VISIBILITY_CAPABILITY = 'if.scope.visible';
 
+/**
+ * ADR-240 evaluator key for a room's derived darkness (`dark.<roomId>`).
+ * Owned by this read point; registrars (e.g. the story-loader's
+ * `dark while` conditions) build the key with this function, never by
+ * hand — the string is constructed in exactly two places, both pinned.
+ */
+export function darkKey(roomId: string): string {
+  return `dark.${roomId}`;
+}
+
 export class VisibilityBehavior extends Behavior {
   static requiredTraits = [];
+
+  /**
+   * The live answer to "does this room require light?" (ADR-240): a
+   * registered `dark.<roomId>` evaluator is authoritative (point-of-use
+   * truth, never stale); with nothing registered, the stamped trait
+   * fact applies unchanged (static `dark`, hand-written TS stories).
+   */
+  private static roomRequiresLight(room: IFEntity, world: WorldModel): boolean {
+    const derived = world.evaluate(darkKey(room.id));
+    if (typeof derived === 'boolean') return derived;
+    const roomTrait = room.getTrait(RoomTrait);
+    return Boolean(roomTrait && roomTrait.requiresLight);
+  }
 
   /**
    * Determines if a room is effectively dark (no usable light sources).
    * This is the single source of truth for darkness checking.
    *
    * A room is dark if:
-   * 1. It has RoomTrait with isDark = true
+   * 1. It has RoomTrait with requiresLight = true
    * 2. There are no accessible, active light sources
    *
    * @param room - The room entity to check
@@ -36,9 +60,8 @@ export class VisibilityBehavior extends Behavior {
    * @returns true if the room is dark and has no accessible light sources
    */
   static isDark(room: IFEntity, world: WorldModel): boolean {
-    const roomTrait = room.getTrait(RoomTrait);
-    if (!roomTrait || !roomTrait.isDark) {
-      return false; // Room isn't marked as dark
+    if (!this.roomRequiresLight(room, world)) {
+      return false; // Room isn't dark (live evaluator or static trait fact)
     }
     return !this.hasLightSource(room, world);
   }
@@ -70,11 +93,69 @@ export class VisibilityBehavior extends Behavior {
   }
 
   /**
+   * Whether an entity is still concealed (hidden until SEARCH or a game event
+   * reveals it). This is the SINGLE shared definition of item concealment for
+   * visibility: scope resolution, LOOK, and EXAMINE must all consult it (here
+   * or via canSee/getVisible/getVisibleContents), never re-derive it.
+   *
+   * @param entity - The entity to check (safe on entities without IdentityTrait)
+   * @returns true if the entity carries IdentityTrait with concealed === true
+   */
+  static isConcealed(entity: IFEntity): boolean {
+    return entity.getTrait(IdentityTrait)?.concealed === true;
+  }
+
+  /**
+   * The single per-entity listing filter shared by every visibility path
+   * (room contents, container/supporter contents): excludes still-concealed
+   * entities, scenery marked invisible, and entities whose visibility
+   * capability vetoes being seen.
+   *
+   * @param entity - The candidate entity
+   * @param world - The world model
+   * @param observerId - The observer (or container proxy) id passed to a
+   *                     visibility-capability behavior's validate
+   * @returns true if the entity may appear in a visible-entity listing
+   */
+  private static isListable(entity: IFEntity, world: WorldModel, observerId: string): boolean {
+    // Concealed entities are hidden everywhere until revealed
+    if (this.isConcealed(entity)) {
+      return false;
+    }
+
+    // Check if entity is invisible via SceneryTrait
+    const scenery = entity.getTrait(SceneryTrait);
+    if (scenery && scenery.visible === false) {
+      return false;
+    }
+
+    // Check if entity has visibility capability that blocks being seen
+    const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
+    if (visibilityTrait) {
+      const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
+      if (behavior) {
+        const result = behavior.validate(entity, world, observerId, {});
+        if (!result.valid) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * Determines if an observer can see a target entity
    */
   static canSee(observer: IFEntity, target: IFEntity, world: WorldModel): boolean {
     // Can always see self
     if (observer.id === target.id) return true;
+
+    // Concealed entities are hidden from sight until revealed (same rule as
+    // getVisible/getVisibleContents — one definition of "visible")
+    if (this.isConcealed(target)) {
+      return false;
+    }
 
     // Check if target is invisible via SceneryTrait
     const targetScenery = target.getTrait(SceneryTrait);
@@ -108,13 +189,19 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    if (!observerRoom || observerRoom.id !== targetRoom?.id) {
+    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
+    // 2026-07-18): visible from either side. Only the door itself is
+    // two-sided — the far room and its contents stay unseen.
+    const targetDoor = target.getTrait(DoorTrait);
+    const doorPresent = !!targetDoor && !!observerRoom &&
+      (targetDoor.room1 === observerRoom.id || targetDoor.room2 === observerRoom.id);
+
+    if (!observerRoom || (!doorPresent && observerRoom.id !== targetRoom?.id)) {
       return false;
     }
 
-    // Check if room is dark
-    const roomTrait = observerRoom.getTrait(RoomTrait);
-    if (roomTrait && roomTrait.isDark) {
+    // Check if room is dark (live evaluator first — ADR-240)
+    if (this.roomRequiresLight(observerRoom, world)) {
       // In a dark room, need light to see
       if (!this.hasLightSource(observerRoom, world)) {
         // Special cases in darkness:
@@ -131,6 +218,12 @@ export class VisibilityBehavior extends Behavior {
         // Otherwise can't see in darkness
         return false;
       }
+    }
+
+    // A far-side door sits at the room boundary — container occlusion
+    // cannot apply across it.
+    if (doorPresent && observerRoom.id !== targetRoom?.id) {
+      return true;
     }
 
     // Check line of sight through containers
@@ -154,9 +247,8 @@ export class VisibilityBehavior extends Behavior {
       seen.add(observerRoom.id);
     }
 
-    // Check if room is dark
-    const roomTrait = observerRoom.getTrait(RoomTrait);
-    const isDark = roomTrait && roomTrait.isDark;
+    // Check if room is dark (live evaluator first — ADR-240)
+    const isDark = this.roomRequiresLight(observerRoom, world);
     const hasLight = this.hasLightSource(observerRoom, world);
     
     // If it's dark and no light, only see specific things
@@ -187,31 +279,12 @@ export class VisibilityBehavior extends Behavior {
     // Get contents of the room
     const roomContents = world.getContents(observerRoom.id);
     
-    // Add visible entities in the room
+    // Add visible entities in the room (shared per-entity filter: concealed,
+    // invisible scenery, capability veto)
     for (const entity of roomContents) {
       if (entity.id !== observer.id && !seen.has(entity.id)) {
-        // Check if entity is concealed (hidden until revealed via SEARCH or game event)
-        const identity = entity.getTrait(IdentityTrait);
-        if (identity && identity.concealed === true) {
+        if (!this.isListable(entity, world, observer.id)) {
           continue;
-        }
-
-        // Check if entity is visible via SceneryTrait
-        const scenery = entity.getTrait(SceneryTrait);
-        if (scenery && scenery.visible === false) {
-          continue;
-        }
-
-        // Check if entity has visibility capability that blocks being seen
-        const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
-        if (visibilityTrait) {
-          const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
-          if (behavior) {
-            const result = behavior.validate(entity, world, observer.id, {});
-            if (!result.valid) {
-              continue; // Entity blocks visibility via capability
-            }
-          }
         }
 
         visible.push(entity);
@@ -226,13 +299,25 @@ export class VisibilityBehavior extends Behavior {
       }
     }
     
+    // Doors of this room whose spatial home is the far side (ADR-234 AC-3;
+    // David's ruling 2026-07-18): a door is present at both of its rooms.
+    for (const door of world.findByTrait(TraitType.DOOR)) {
+      if (seen.has(door.id)) continue;
+      const doorTrait = door.getTrait(DoorTrait);
+      if (!doorTrait || (doorTrait.room1 !== observerRoom.id && doorTrait.room2 !== observerRoom.id)) continue;
+      if (this.canSee(observer, door, world)) {
+        visible.push(door);
+        seen.add(door.id);
+      }
+    }
+
     // Add carried items
     const carried = world.getContents(observer.id);
     for (const entity of carried) {
       if (!seen.has(entity.id)) {
         visible.push(entity);
         seen.add(entity.id);
-        
+
         // Check contents of carried containers
         if (entity.hasTrait(TraitType.CONTAINER) || entity.hasTrait(TraitType.SUPPORTER)) {
           this.addVisibleContents(entity, visible, seen, world);
@@ -244,12 +329,38 @@ export class VisibilityBehavior extends Behavior {
   }
 
   /**
+   * The direct contents of a container/supporter/actor that could appear in a
+   * visible listing: applies the same per-entity filter as getVisible
+   * (concealed, invisible scenery, visibility-capability veto) to
+   * `getContents(id)` (worn items included by default, ADR-247).
+   *
+   * Does NOT check whether the container's inside is exposed (closed opaque
+   * container) — callers listing contents have already established that, and
+   * addVisibleContents keeps that gate itself.
+   *
+   * This is the shared read for LOOK's and EXAMINE's contents listings — a
+   * still-concealed item stays out of both until SEARCH reveals it, by the
+   * same definition scope resolution uses.
+   *
+   * @param container - The container/supporter/actor whose contents to list
+   * @param world - The world model
+   * @returns the listable direct contents
+   */
+  static getVisibleContents(container: IFEntity, world: WorldModel): IFEntity[] {
+    // Note: no direct observer here — the container's id is the proxy passed
+    // to visibility-capability behaviors, matching addVisibleContents.
+    return world
+      .getContents(container.id)  // ADR-247: worn items included by default
+      .filter(entity => this.isListable(entity, world, container.id));
+  }
+
+  /**
    * Recursively adds visible contents of a container/supporter/actor
    */
   private static addVisibleContents(
-    container: IFEntity, 
-    visible: IFEntity[], 
-    seen: Set<string>, 
+    container: IFEntity,
+    visible: IFEntity[],
+    seen: Set<string>,
     world: WorldModel
   ): void {
     // Check if we can see inside this container
@@ -265,37 +376,17 @@ export class VisibilityBehavior extends Behavior {
         }
       }
     }
-    
-    // Get contents (including worn items for actors)
-    const contents = world.getContents(container.id, { includeWorn: true });
-    
-    for (const entity of contents) {
+
+    // Contents that pass the shared per-entity filter (concealed, invisible
+    // scenery, capability veto — one definition with getVisible)
+    for (const entity of this.getVisibleContents(container, world)) {
       if (!seen.has(entity.id)) {
-        // Check if entity is visible via SceneryTrait
-        const scenery = entity.getTrait(SceneryTrait);
-        if (scenery && scenery.visible === false) {
-          continue;
-        }
-
-        // Check if entity has visibility capability that blocks being seen
-        const visibilityTrait = findTraitWithCapability(entity, VISIBILITY_CAPABILITY);
-        if (visibilityTrait) {
-          const behavior = world.getBehaviorForCapability(visibilityTrait, VISIBILITY_CAPABILITY);
-          if (behavior) {
-            // Note: We don't have a direct observer here, use container's id as proxy
-            const result = behavior.validate(entity, world, container.id, {});
-            if (!result.valid) {
-              continue; // Entity blocks visibility via capability
-            }
-          }
-        }
-
         visible.push(entity);
         seen.add(entity.id);
-        
+
         // Recurse into nested containers
-        if (entity.hasTrait(TraitType.CONTAINER) || 
-            entity.hasTrait(TraitType.SUPPORTER) || 
+        if (entity.hasTrait(TraitType.CONTAINER) ||
+            entity.hasTrait(TraitType.SUPPORTER) ||
             entity.hasTrait(TraitType.ACTOR)) {
           this.addVisibleContents(entity, visible, seen, world);
         }
@@ -310,8 +401,8 @@ export class VisibilityBehavior extends Behavior {
    * Handles nested containers, worn items, and various light source types.
    */
   private static hasLightSource(room: IFEntity, world: WorldModel): boolean {
-    // Check all entities in the room, including worn items
-    const contents = world.getAllContents(room.id, { recursive: true, includeWorn: true });
+    // Check all entities in the room, including worn items (ADR-247: default)
+    const contents = world.getAllContents(room.id, { recursive: true });
 
     for (const entity of contents) {
       if (!entity.hasTrait(TraitType.LIGHT_SOURCE)) continue;
@@ -409,6 +500,11 @@ export class VisibilityBehavior extends Behavior {
    * (used for filtering queries)
    */
   static isVisible(entity: IFEntity, world: WorldModel): boolean {
+    // Concealed entities are hidden until revealed (shared definition)
+    if (this.isConcealed(entity)) {
+      return false;
+    }
+
     // Check if explicitly invisible via SceneryTrait
     const scenery = entity.getTrait(SceneryTrait);
     if (scenery && scenery.visible === false) {

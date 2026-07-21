@@ -1,0 +1,75 @@
+# Session Summary: 2026-07-16 22:51 — chord-foundations (session 907f28)
+
+## Goals
+- Decide how to action the fix-after backlog from session 4685f3 (recurring grammar-reachability gaps + adjacent defects).
+
+## Key decisions
+- ADR-first split (David): one successor ADR for the decision-bearing items; plain defects (loader `with key` drop, pulling/restarting lang drift, dead message IDs, chord-language.md death section) go straight to the plan, no ADR.
+- **ADR-230 drafted** (DRAFT, 5 open questions): `docs/architecture/adrs/adr-230-grammar-reachability-completion.md` — reachability pinning gate (D1), mechanical grammar for locking/removing/listening/smelling/sleeping + keyless unlock (D2), orphan-id dispositions (D3), verbs.ts synonym policy (D4), dotted-phrase-key ruling (D5).
+
+## Work log
+- Recap presented; pre-session audit clean (stdlib-reference work already committed at 21f938be; tsc clean; audit flagged grammar-reachability as recurring-unactioned across 2 sessions).
+- Spot-verified gap inventory against grammar.ts before pinning it in the ADR (no patterns for the 5 actions; orphan ids at grammar.ts:46/535/543; unlock keyed-only at :524).
+
+## Interview + review (same session)
+- All 5 open questions ruled by David via /devarch:adr-interview: Q1 pattern table as proposed (+bare sniff); Q2 carefully→examining remap, opening gains author-configurable tool slot (R2 precedent), cutting = real action + CuttableTrait (lockable-key-mirroring tool config); Q3 promote ALL verbs.ts synonyms to grammar (plan must deliver verb→id mapping table); Q4 fix phrase parser to EBNF (dotted keys register whole; resolution-path wiring in scope); Q5 gate = stdlib unit test.
+- ADR-230 flipped DRAFT → ACCEPTED; adr-review ran: 11/13, READY FOR IMPLEMENTATION. Review's real catch (cutting success semantics unspecified) ruled by David post-review: cutting action performs no mutation; each cuttable DO registers its own cut implementation (ADR-090 dispatch); unregistered cuttable = authoring error, load-time where possible.
+- Plan must pin before code: trait tool-field shapes, parser-en-us pattern→id export signature, Chord cuttable clause syntax.
+
+## Plan + Phase 1 (2026-07-17, same session continued)
+- session-planner wrote docs/work/grammar-reachability/plan.md (10 phases; .current-plan updated); plan-review clean, 2 advisory tensions folded into Phase 5 (fully-qualified capability-effect ids, root-barrel discipline).
+- Planner research findings: D5 resolution path already wired (Phase 8 = truncation fix only); loader `with key` = 3 bugs incl. requiredKey/keyId typo in 3 TS builder sites; too_heavy is live (off cleanup list); turning/using/answering = orphan verb constants.
+- Phase 1 COMPLETE: pins.md written + signed off. Rulings: PIN 1 getReachableActionIds() export; PIN 2 toolId/toolIds only (no master/auto clones), shared Openable+Cuttable; PIN 3 cuttable-with-tool syntax + loader post-load unimplemented-cuttable check; PIN 4 full verb table; turning/using/answering DEFERRED (Phase 6 design sketches); find/locate removed ("recall" idea parked); move → pushing/putting patterns, leaves going; PIN 4b patterns arrays get one-time manual reconciliation in Phase 6; PIN 5 gate lands early with staged exceptions.
+
+## Phase 2 (2026-07-17) — COMPLETE
+- `EnglishParser.getReachableActionIds()` (parser-en-us) + reachability gate in `lifecycle-registry.test.ts`: registry⊆grammar direction (2 permanent + 5 temporary exceptions), orphan inverse (13 documented), two staleness self-cleaning tests, keyless-unlock pin. 10/10 green first run; parser-en-us tsc clean. Uncommitted.
+- **DISCOVERY (pins.md A1, needs David)**: 10 orphan grammar ids beyond the ADR's 3 — asking/telling (actions parked in `removed/`, ext-conversation is a stub), saying/saying_to/shouting/whispering, writing/writing_on, digging, taking_with. All parse today and fail at runtime.
+
+## Phase 3 (2026-07-17) — COMPLETE
+- A1 ruled: folded into Phase 6 sketches (conversation/writing/tool-verb families).
+- 6 D2 grammar additions (lock bare+keyed, keyless unlock, remove-from @110, listen/listen-to, smell/sniff bare+target, sleep) + D3a remap (`look [carefully] at` → examining). Gate temporary list now empty; gate 10/10; walkthrough chain 951/951 clean; all 8 forms live-verified against the bundle; 1 obsolete parser test updated; parser-en-us 252 + stdlib 1474 green. Uncommitted (with Phase 2).
+
+## Phase 4 (2026-07-17) — COMPLETE (committed d5335d27)
+- D3b landed: OpenableTrait toolId/toolIds, shared tool-shared.ts helper, opening target→tool slot, open-with remap, lang templates, 8 state-asserting tests (+1 mutation-verification fix). Chain 909/909 clean.
+- Pre-existing intermittent chain-runner failure signature observed (bimodal ~190ms/identical-counts vs ~1.4s clean) — predates ADR-230 phases, unchased, needs its own investigation.
+
+## Phase 5 (2026-07-17) — in progress
+- Dual-surface re-pin (David): cut implementation = ADR-090 capability behavior (TS) OR `on cutting it` interceptor (Chord); loader check accepts either, errors on 0 or 2+.
+- Landed: CuttableTrait/Behavior (+barrels, implementations map), cutting action (descriptor target→tool, registry 33→34, no-mutation execute, dual-surface dispatch), lang cutting.ts, chord catalog `cuttable`, loader case + resolveCuttableTools (name→WORLD id, forward refs) + checkCuttableImplementations post-bind. 11 stdlib tests + 5 loader tests (incl. REAL-PATH: chord story → loader → stdlib cuttingAction → world.getLocation asserted). All 6 package suites green.
+- **DISCOVERY (fix-after candidate): `carries the knife` in a player block compiles SILENTLY and does nothing** — Chord IR has only `wears`; no carries-at-start surface. Silent-accept parse bug candidate + missing feature; needs David ruling (Phase 6 sketch pile or defect list).
+
+## Phase 5 — COMPLETE (committed e8c3e32b)
+- Chain 873/873 clean; mutation-verification clean (1 test fix); Integration Reality Statement produced.
+
+## Phase 6 — implementation COMPLETE (sketch rulings pending)
+- D4 promotion: ~50 aliases incl. verb×direction literal expansion; putting accepts `to`; verbs.ts trims; patterns reconciliation (10 promotions, unclose deleted); verb-reachability gate live (12/12, 11 deferred verbs self-cleaning); PIN 1 amended (getGrammarPatterns, englishVerbs export).
+- BONUS FIX: `go :direction` define was always broken (PropertyConstraint error) — deleted; `go north` works for the first time via literals.
+- Regression caught by parser suite: bare `pick` would beat `pick up` — omitted deliberately.
+- sketches.md (8 areas) AWAITING DAVID: turning/using/answering, conversation family, writing family, digging/taking_with, carries-at-start, 9 unmappable patterns entries.
+- Noted: stdlib vitest resolves parser/lang to dist despite src aliases (rebuild before gate runs); chain RNG-death flake rate ~50% this session — pre-existing, worth its own investigation.
+
+## Phase 6 dispositions (2026-07-17) — COMPLETE
+- All sketch recommendations accepted (digging corrected: dungeo is a live consumer → implemented via cutting template). Executed: turning capability action; using/answering verbs dropped; conversation grammar deleted + asking/telling revived minimal (registry 37); writing grammar deleted; taking_with→removing+tool slot; DiggableTrait + digging action + chord `diggable` + generalized loader check; `carries the X` start inventory (parser→IR→loader, silent-accept killed); 9 patterns trims; `say` trimmed from telling (verb gate caught it live).
+- Gate exception lists ALL EMPTY (Phase 7's strip deliverable satisfied incrementally). Obsolete tests updated: quoted-string parser tests → story grammar; chord goldens re-snapshotted (carries field).
+
+## Phases 7-9 (2026-07-17) — COMPLETE (committed d271f3e1)
+- Phase 7: gate closed formally (only 2 permanent exceptions); repokit verify's publish dry-run fails ENVIRONMENTALLY (chord 3.0.0 published 2026-07-14 pre-session; unblocks at next version bump) — build+pack passes.
+- Phase 8 (D5): chord parser consumes dotted phrase-key segments; story-wide platform-message overrides live; regression test.
+- Phase 9: lockable-with-key 3-bug fix (container pre-add removed, generalized pending-entity-ref name→world-id resolution shared with tools, requiredKey→keyId at 3 TS sites) + REAL-PATH keyed-container unlock test; pulling lang rewritten to actual ids (dead lever_/cord_ vocabulary deleted, no story used it); restarting lang file created; feels_cold/feels_rough removed (golden updated). Two clean chain runs.
+
+## Phase 10 + release + phrasebook (2026-07-17)
+- Phase 10 COMPLETE (4540c770): chord-language.md §4.7 Death + dotted keys + cuttable/diggable/carries; stdlib-reference truth pass (8 stale callouts removed, new actions added); both site pages re-rendered. ALL 10 PLAN PHASES COMPLETE; pushed.
+- David released **3.1.0** (all 30 tsf-managed packages, lockstep; publish boundary = ts-forge.config.json projects list). Site badge bumped 3.0→3.1.
+- NEW: **stdlib-phrasebook** (docs/reference/stdlib-phrasebook.md → site/stdlib-phrasebook.html, sidebar-linked): 8 category tables (49 actions), 17 fixture-backed worked examples (story scene + transcript pairs), verify harness replays 68/68 commands byte-identically (docs/work/stdlib-phrasebook/verify.mjs; one anyOf gate for throwing RNG).
+
+## PLATFORM GAPS surfaced by phrasebook verification (for David, next session)
+1. **Chord custom refusals on standard actions render BLANK** (bare key prefixed into unregistered id by stdlib blocked(); affects shipped stdlib-reference §2 iron-ring example + chord hive-box fixture; dotted-key workaround covers only ~8 actions; giving/showing/throwing/attacking/wearing always prefix; conditional refusals reject dotted keys at parse). ADR-worthy — touches ADR-229 R1 spirit.
+2. wearing not_wearable/already_wearing + giving self render blank (unbound template param).
+3. Parser: article+multiword name (`x the brass key`) misses without alias.
+4. `get in/into X` loses to taking's `get :item`; `get out` misparses.
+5. Ask/tell topics must be in-scope entities (free text → "can't see any such thing").
+6. No `starts locked` in Chord; container-kind vs adjective `openable` default open/closed inconsistency.
+7. Throwing uses raw Math.random outside the seeded stream.
+
+## Open items
+- Parked/flagged for future: dungeo dig→platform consolidation (R4-style, own item); chain RNG-death flake-rate investigation; vitest src-alias-vs-dist resolution oddity in stdlib tests; version bump to un-block repokit verify.

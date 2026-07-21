@@ -6,7 +6,7 @@
  * Per MDL source (act3.199) - immediate death.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
 import { GAS_EXPLOSION_ACTION_ID, GasExplosionMessages } from './types';
 
@@ -20,9 +20,19 @@ export const gasExplosionAction: Action = {
   },
 
   execute(context: ActionContext): void {
-    // Mark player as dead
-    context.world.setStateValue('dungeo.player.dead', true);
-    context.world.setStateValue('dungeo.player.death_cause', 'gas_explosion');
+    // Canonical terminal death (ADR-224). Death text depends on how the explosion
+    // was triggered (entering vs. lighting a flame); resolve the messageId here.
+    const explosionType = context.command.parsed.extras?.explosionType || 'enter';
+    const messageId = explosionType === 'light'
+      ? GasExplosionMessages.LIGHT_DEATH
+      : GasExplosionMessages.DEATH;
+
+    (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent =
+      killPlayer(context.world, context.player, {
+        cause: 'gas_explosion',
+        messageId,
+        terminal: true,
+      });
   },
 
   blocked(_context: ActionContext, _result: ValidationResult): ISemanticEvent[] {
@@ -30,16 +40,7 @@ export const gasExplosionAction: Action = {
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const explosionType = context.command.parsed.extras?.explosionType || 'enter';
-    const messageId = explosionType === 'light'
-      ? GasExplosionMessages.LIGHT_DEATH
-      : GasExplosionMessages.DEATH;
-
-    return [
-      context.event('if.event.player.died', {
-        messageId,
-        cause: 'gas_explosion'
-      })
-    ];
+    const event = (context.sharedData as { deathEvent?: ISemanticEvent | null }).deathEvent;
+    return event ? [event] : [];
   }
 };

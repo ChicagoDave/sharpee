@@ -59,7 +59,7 @@ export interface VolcanoRoomIds {
 
 function createRoom(world: WorldModel, name: string, description: string, isDark = true): IFEntity {
   const room = world.createEntity(name, EntityType.ROOM);
-  room.add(new RoomTrait({ exits: {}, isDark, isOutdoors: false }));
+  room.add(new RoomTrait({ exits: {}, requiresLight: isDark, isOutdoors: false }));
   room.add(new IdentityTrait({ name, description, properName: true, article: 'the' }));
   return room;
 }

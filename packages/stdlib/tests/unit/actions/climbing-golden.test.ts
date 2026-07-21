@@ -290,9 +290,12 @@ describe('climbingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should climb object with CLIMBABLE trait', () => {
+    test('should refuse a bare CLIMBABLE with no place to be (Phase 4)', () => {
+      // David's ruling (2026-07-20): bare `climbable` does NOT imply a place
+      // to be. Previously this validated, moveEntity silently refused, and
+      // the success narration spoke anyway — a silent no-op.
       const { world, player, room } = setupBasicWorld();
-      
+
       const ladder = world.createEntity('wooden ladder', EntityType.OBJECT);
       ladder.add({
         type: TraitType.CLIMBABLE,
@@ -300,23 +303,80 @@ describe('climbingAction (Golden Pattern)', () => {
         direction: 'up'
       });
       world.moveEntity(ladder.id, room.id);
-      
+
       const command = createCommand(IFActions.CLIMBING, {
         entity: ladder
       });
       const context = createRealTestContext(climbingAction, world, command);
-      
+
+      const validation = climbingAction.validate(context);
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('climb_nowhere');
+      // THE state assertion: the player did not move
+      expect(world.getLocation(player.id)).toBe(room.id);
+    });
+
+    test('should climb a CLIMBABLE supporter and actually move the player (Phase 4)', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const boulder = world.createEntity('mossy boulder', EntityType.OBJECT);
+      boulder.add({
+        type: TraitType.CLIMBABLE,
+        canClimb: true
+      });
+      boulder.add({ type: TraitType.SUPPORTER, enterable: true });
+      world.moveEntity(boulder.id, room.id);
+
+      const command = createCommand(IFActions.CLIMBING, {
+        entity: boulder
+      });
+      const context = createRealTestContext(climbingAction, world, command);
+
+      // PRECONDITION
+      expect(world.getLocation(player.id)).toBe(room.id);
+
       const events = executeWithValidation(climbingAction, context);
-      
+
+      // POSTCONDITION — the player actually moved onto the boulder
+      expect(world.getLocation(player.id)).toBe(boulder.id);
+
       expectEvent(events, 'if.event.climbed', {
-        targetId: ladder.id,
+        targetId: boulder.id,
         method: 'onto'
       });
-      
-      expectEvent(events, 'if.event.entered', {
-        targetId: ladder.id,
-        method: 'climbing',
-        preposition: 'onto'
+    });
+
+    test('should climb a CLIMBABLE with a configured destination to that destination (Phase 4)', () => {
+      const { world, player, room } = setupBasicWorld();
+
+      const treetop = world.createEntity('Treetop', EntityType.ROOM);
+      treetop.add({ type: TraitType.ROOM });
+
+      const tree = world.createEntity('tall tree', EntityType.OBJECT);
+      tree.add({
+        type: TraitType.CLIMBABLE,
+        canClimb: true,
+        destination: treetop.id
+      });
+      world.moveEntity(tree.id, room.id);
+
+      const command = createCommand(IFActions.CLIMBING, {
+        entity: tree
+      });
+      const context = createRealTestContext(climbingAction, world, command);
+
+      // PRECONDITION
+      expect(world.getLocation(player.id)).toBe(room.id);
+
+      const events = executeWithValidation(climbingAction, context);
+
+      // POSTCONDITION — the player is at the configured destination
+      expect(world.getLocation(player.id)).toBe(treetop.id);
+
+      expectEvent(events, 'if.event.moved', {
+        fromRoom: room.id,
+        toRoom: treetop.id,
+        method: 'climbing'
       });
     });
 

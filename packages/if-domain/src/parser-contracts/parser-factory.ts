@@ -6,7 +6,7 @@
  * and must be registered before use.
  */
 
-import { Parser } from './parser-types';
+import { Parser } from './parser-types.js';
 
 /**
  * Registry of parser constructors

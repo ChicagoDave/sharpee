@@ -41,6 +41,7 @@ import {
   MoveableSceneryTrait,
   WeaponTrait,
   CombatantTrait,
+  HealthTrait,
   BreakableTrait,
 } from '@sharpee/world-model';
 import { registerBasicCombat } from '@sharpee/ext-basic-combat';
@@ -547,7 +548,8 @@ export function setupWorld(world: WorldModel): void {
     }),
   );
   dummy.add(new SceneryTrait());
-  dummy.add(new CombatantTrait({ health: 5, maxHealth: 5, hostile: false, canRetaliate: false }));
+  dummy.add(new CombatantTrait({ hostile: false, canRetaliate: false }));
+  dummy.add(new HealthTrait({ health: 5, maxHealth: 5 })); // life-state (ADR-226 AC-7)
   world.moveEntity(dummy.id, serverRoom.id);
 
   // ---- BREAKABLE (glass panel on Rooftop) ----

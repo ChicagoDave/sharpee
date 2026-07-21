@@ -1,0 +1,24 @@
+Three placement forms position an entity when the story starts: `in`
+puts it inside a room or container, `on` puts it on a supporter, and
+`starts in` is how actors (usually the player) name their starting
+room. Two more lines dress and equip an actor: `wears` puts a wearable
+onto an actor already dressed in it, and `carries` puts an item into an
+actor's hands — starting inventory, carried but not worn.
+
+```chord
+create the seed packet
+  on the potting table
+
+  A paper packet of runner-bean seeds.
+
+create the player
+  starts in the Greenhouse
+  wears the straw hat
+  carries the trowel
+
+  Mud on your boots, dirt under your nails.
+```
+
+Note the disambiguation: `on` followed by an article is placement
+(`on the potting table`); `on` followed by a bare word opens a behavior
+clause (`on watching it`, [§3](/chord/guide/behavior)).

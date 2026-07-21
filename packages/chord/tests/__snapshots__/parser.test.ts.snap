@@ -6,6 +6,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -23,6 +24,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -59,6 +63,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
               "Room",
             ],
           },
+          "via": null,
         },
       ],
       "initialDescription": null,
@@ -112,6 +117,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       ],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -119,6 +125,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "endLine": 12,
         "line": 6,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -126,6 +133,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -143,6 +151,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -179,6 +190,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
               "Room",
             ],
           },
+          "via": null,
         },
       ],
       "initialDescription": null,
@@ -272,6 +284,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       ],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -279,6 +292,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "endLine": 26,
         "line": 16,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -286,7 +300,11 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -341,6 +359,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "line": 31,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -348,6 +367,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "endLine": 33,
         "line": 30,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -445,6 +465,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "version": "1.0.0",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -455,6 +476,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     "states": [],
     "statesReversible": false,
     "title": "Determinism Fixture",
+    "usePhrasebooks": [],
+    "uses": [],
   },
   "kind": "story-file",
   "span": {
@@ -574,6 +597,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           },
         },
       ],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -591,6 +615,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -626,6 +653,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "Cloakroom",
             ],
           },
+          "via": null,
         },
         {
           "direction": "south",
@@ -650,6 +678,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "Bar",
             ],
           },
+          "via": null,
         },
       ],
       "initialDescription": null,
@@ -674,6 +703,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -681,6 +711,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "endLine": 15,
         "line": 8,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -690,6 +721,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "cloakroom",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -707,6 +739,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -738,6 +773,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -745,6 +781,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "endLine": 23,
         "line": 19,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -754,6 +791,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "bar",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": "a",
@@ -839,6 +877,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -986,6 +1027,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       ],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -993,6 +1035,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "endLine": 34,
         "line": 26,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -1000,7 +1043,11 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
     {
       "aka": [],
       "blockedExits": [],
+      "carries": [],
       "compositions": [],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1058,6 +1105,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "line": 43,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1065,6 +1113,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "endLine": 46,
         "line": 42,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [
@@ -1089,6 +1138,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "cloak",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,
@@ -1106,6 +1156,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1138,6 +1191,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [],
       "phraseOverrides": [],
       "placement": null,
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1145,6 +1199,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "endLine": 52,
         "line": 48,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -1155,6 +1210,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "peg",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,
@@ -1201,6 +1257,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": {
         "form": "prose",
         "kind": "text",
@@ -1255,6 +1314,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "line": 59,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1262,6 +1322,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "endLine": 61,
         "line": 56,
       },
+      "startsStates": [],
       "states": [],
       "statesReversible": false,
       "wears": [],
@@ -1274,6 +1335,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "writing",
       ],
       "blockedExits": [],
+      "carries": [],
       "compositions": [
         {
           "article": null,
@@ -1291,6 +1353,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
         },
       ],
+      "containing": [],
+      "deadly": null,
+      "deadlyExits": [],
       "description": null,
       "exits": [],
       "initialDescription": null,
@@ -1495,6 +1560,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "line": 66,
         },
       },
+      "pronouns": [],
       "scores": [],
       "span": {
         "column": 1,
@@ -1502,6 +1568,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "endLine": 69,
         "line": 63,
       },
+      "startsStates": [],
       "states": [
         {
           "name": "intact",
@@ -1736,6 +1803,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "version": "1.0.0",
     },
     "kind": "story-header",
+    "onClauses": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -1746,6 +1814,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
     "states": [],
     "statesReversible": false,
     "title": "Cloak of Darkness",
+    "usePhrasebooks": [],
+    "uses": [],
   },
   "kind": "story-file",
   "span": {

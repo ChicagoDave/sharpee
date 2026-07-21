@@ -11,27 +11,51 @@
  * 4. report: Generate success events with closed data
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult, ActionInterceptor, InterceptorSharedData, applyInterceptorReportResult } from '@sharpee/world-model';
-import { buildEventData } from '../../data-builder-types';
-import { IFActions } from '../../constants';
-import { closedDataConfig } from './closing-data';
-import { ClosingMessages } from './closing-messages';
+import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
+import { buildEventData } from '../../data-builder-types.js';
+import { IFActions } from '../../constants.js';
+import { closedDataConfig } from './closing-data.js';
+import { ClosingMessages } from './closing-messages.js';
 
 // Import our payload types
-import { ClosedEventData } from './closing-event-data';
-import { ActionMetadata } from '../../../validation';
-import { ScopeLevel } from '../../../scope/types';
-import { nounPhraseFor } from '../../../utils';
+import { ClosedEventData } from './closing-event-data.js';
+import { ActionMetadata } from '../../../validation/index.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
+
+/**
+ * Interceptor surface (ADR-228): the closed target is the only
+ * consultable entity of a CLOSE command.
+ */
+export const closingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.CLOSING,
+  slots: [
+    {
+      id: 'target',
+      actionIds: [IFActions.CLOSING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 /**
  * Shared data passed between execute and report phases
  */
 interface ClosingSharedData {
   closeResult?: ICloseResult;
-  interceptor?: ActionInterceptor;
-  interceptorData?: InterceptorSharedData;
 }
 
 function getClosingSharedData(context: ActionContext): ClosingSharedData {
@@ -86,27 +110,9 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check for interceptor on the target entity (ADR-118)
-    const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.CLOSING);
-    const interceptor = interceptorResult?.interceptor;
-    const interceptorData: InterceptorSharedData = {};
-
-    // Store for later phases (blocked needs access to onBlocked)
-    const sharedData = getClosingSharedData(context);
-    sharedData.interceptor = interceptor;
-    sharedData.interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    if (interceptor?.preValidate) {
-      const result = interceptor.preValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return {
-          valid: false,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
+    const state = resolveLifecycle(context, closingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
 
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
@@ -158,13 +164,9 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // === POST-VALIDATE HOOK ===
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(noun, context.world, context.player.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return { valid: false, error: result.error, params: result.params };
-      }
-    }
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -184,10 +186,8 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getClosingSharedData(context);
     sharedData.closeResult = result;
 
-    // === POST-EXECUTE HOOK ===
-    if (sharedData.interceptor?.postExecute) {
-      sharedData.interceptor.postExecute(noun, context.world, context.player.id, sharedData.interceptorData!);
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -251,16 +251,8 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       item: noun.name
     }));
 
-    // === POST-REPORT HOOK (ADR-118) === — closing was the one standard
-    // action missing this half (interceptor-wiring audit, 2026-07-12):
-    // report-phase overrides/emits from `on closing it` clauses were
-    // silently dropped.
-    if (sharedData.interceptor?.postReport) {
-      const reportResult = sharedData.interceptor.postReport(noun, context.world, context.player.id, sharedData.interceptorData ?? {});
-      if (reportResult) {
-        applyInterceptorReportResult(events, 'if.event.closed', reportResult, context);
-      }
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.closed');
 
     return events;
   },
@@ -273,22 +265,9 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
     const noun = context.command.directObject?.entity;
 
-    // === ON-BLOCKED HOOK ===
-    const sharedData = getClosingSharedData(context);
-    const interceptor = sharedData.interceptor;
-    const interceptorData = sharedData.interceptorData || {};
-    if (interceptor?.onBlocked && noun && result.error) {
-      const customEffects = interceptor.onBlocked(noun, context.world, context.player.id, result.error, interceptorData);
-      if (customEffects !== null) {
-        return customEffects.map(effect => context.event(effect.type, effect.payload));
-      }
-    }
+    const messageId = blockedMessageId(context, result);
 
-    const error = result.error || '';
-    // If error already contains dots (e.g., story interceptor ID), use as-is; otherwise prefix with action ID
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
-
-    return [context.event('if.event.close_blocked', {
+    const events: ISemanticEvent[] = [context.event('if.event.close_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
       messageId,
       params: {
@@ -300,5 +279,12 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
+
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) runOnBlocked(context, state, events, 'if.event.close_blocked', result.error);
+    }
+
+    return events;
   }
 };

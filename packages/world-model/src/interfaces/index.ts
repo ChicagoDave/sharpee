@@ -2,7 +2,7 @@
  * Core interfaces for the IF command processing system
  */
 
-export * from './parser';
-export * from './command-validator';
-export * from './command-executor';
-export * from './command-processor';
+export * from './parser.js';
+export * from './command-validator.js';
+export * from './command-executor.js';
+export * from './command-processor.js';

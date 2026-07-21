@@ -125,24 +125,10 @@ export type TypedSlotValue =
  */
 export interface PatternBuilder {
   /**
-   * Require a slot's entity to have a specific trait
-   * This is the primary method for semantic constraints in grammar.
-   * @param slot The slot name from the pattern
-   * @param traitType The trait type constant (e.g., TraitType.CONTAINER)
-   *
-   * @example
-   * ```typescript
-   * grammar.define('board :target')
-   *   .hasTrait('target', TraitType.ENTERABLE)
-   *   .mapsTo('if.action.entering')
-   *   .build();
-   * ```
-   */
-  hasTrait(slot: string, traitType: string): PatternBuilder;
-
-  /**
-   * Define a constraint for a slot (advanced use)
-   * Prefer .hasTrait() for trait-based constraints.
+   * Define a constraint for a slot.
+   * `.where(slot, scope => scope...)` scope constraints (including the
+   * ScopeBuilder's `.hasTrait()`) are the one parse-time gating mechanism;
+   * trait-based refusal lives in each action's validate().
    * @param slot The slot name from the pattern
    * @param constraint The constraint to apply
    */
@@ -395,16 +381,9 @@ export interface ActionGrammarBuilder {
   directions(directionMap: Record<string, string[]>): ActionGrammarBuilder;
 
   /**
-   * Require a slot's entity to have a specific trait (applies to all generated patterns)
-   * This is the primary method for semantic constraints in grammar.
-   * @param slot The slot name from the pattern
-   * @param traitType The trait type constant (e.g., TraitType.CONTAINER)
-   */
-  hasTrait(slot: string, traitType: string): ActionGrammarBuilder;
-
-  /**
-   * Define a constraint for a slot (applies to all generated patterns)
-   * Prefer .hasTrait() for trait-based constraints.
+   * Define a constraint for a slot (applies to all generated patterns).
+   * `.where()` scope constraints are the one parse-time gating mechanism;
+   * trait-based refusal lives in each action's validate().
    * @param slot The slot name from the pattern
    * @param constraint The constraint to apply
    */
@@ -499,8 +478,6 @@ export interface SemanticMapping {
 export interface SlotConstraint {
   name: string;
   constraints: Constraint[];
-  /** Required trait types the entity must have (from .hasTrait()) */
-  traitFilters?: string[];
   /** How the parser should handle this slot (default: ENTITY) */
   slotType?: SlotType;
   /** For VOCABULARY slots: the category name to match against */
@@ -562,6 +539,14 @@ export interface PatternMatch {
   confidence: number;
   slots: Map<string, SlotMatch>;
   consumed: number; // Number of tokens consumed
+  /**
+   * Literal specificity (ADR-231 D2b): count of input words consumed by the
+   * pattern's literal/alternate tokens (as opposed to slots). A rule whose
+   * literals consume words outranks a rule whose unconstrained slot swallows
+   * the same words. Tiebreak order: confidence desc → rule priority desc →
+   * literalSpecificity desc → stable registration order.
+   */
+  literalSpecificity?: number;
   semantics?: SemanticProperties; // Derived semantic properties
   matchedTokens?: { // Track which tokens matched which parts
     verb?: string;

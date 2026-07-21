@@ -5,10 +5,10 @@
  * Actions are pure logic - patterns come from the language provider.
  */
 
-import { Action, ActionRegistry as IActionRegistry } from './enhanced-types';
+import { Action, ActionRegistry as IActionRegistry } from './enhanced-types.js';
 import { LanguageProvider } from '@sharpee/if-domain';
 
-export { ActionRegistry } from './enhanced-types';
+export { ActionRegistry } from './enhanced-types.js';
 
 export class StandardActionRegistry implements IActionRegistry {
   private actions = new Map<string, Action>();

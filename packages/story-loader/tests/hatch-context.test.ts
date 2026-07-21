@@ -71,7 +71,7 @@ function trampleAndRead(cw: CloakWorld) {
   const wearable = cw.world.getEntity(cloakId)!.get(TraitType.WEARABLE) as { worn: boolean; wornBy?: string };
   wearable.worn = false;
   wearable.wornBy = undefined;
-  cw.story.runtime.recomputeDerived(cw.world);
+  // ADR-240: no recompute — the darkness evaluator answers live.
 
   const message = cw.world.getEntity(cw.story.entityId('message-in-the-sawdust')!)!;
   const lookup = cw.world.getInterceptorForAction(message, 'if.action.reading')!;
@@ -151,10 +151,9 @@ describe("bind-time 'chord.' lint (the backstop)", () => {
       report: () => [],
       blocked: () => [],
     };
-    const crowdControl = { validate: () => ({ valid: true }), execute: () => {}, report: () => [], blocked: () => [] };
     expect(() =>
       createStory(compileFixture('traits-basic.story'), {
-        hatchModules: { './stunts.ts': { juggling, 'crowd-control': crowdControl } },
+        hatchModules: { './stunts.ts': { juggling } },
       })
     ).toThrow(/`juggling`.*loader-private/);
   });

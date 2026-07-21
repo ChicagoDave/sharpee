@@ -237,3 +237,7 @@ export { RugTrait, RugTraitConfig, RugTraitConstructor } from './rug-trait';
 
 // Rug Push Interceptor (ADR-118)
 export { RugPushInterceptor, RugPushMessages } from '../interceptors/rug-push-interceptor';
+
+// Cake (Tea Room / Well Area — eating/throwing interceptors, ADR-227 Phase 2)
+export { CakeTrait, CakeType, CakeTraitConfig, CakeTraitConstructor } from './cake-trait';
+export { CakeEatingInterceptor, CakeThrowingInterceptor, registerCakeInterceptors } from '../handlers/cake-handler';

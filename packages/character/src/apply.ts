@@ -14,10 +14,10 @@ import {
   IFEntity,
   CharacterModelTrait,
 } from '@sharpee/world-model';
-import { CompiledCharacter } from './character-builder';
-import { PropagationProfile } from './propagation/propagation-types';
-import { GoalDef, MovementProfile } from './goals/goal-types';
-import { InfluenceDef, ResistanceDef } from './influence/influence-types';
+import { CompiledCharacter } from './character-builder.js';
+import { PropagationProfile } from './propagation/propagation-types.js';
+import { GoalDef, MovementProfile } from './goals/goal-types.js';
+import { InfluenceDef, ResistanceDef } from './influence/influence-types.js';
 
 /**
  * Result of applying a compiled character to an entity.

@@ -116,6 +116,11 @@ export function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext, opts?: Nou
   if (properName) {
     np.properName = true;
   }
+  // pronounSet (ADR-242 D6): the ADR-197 seam, fed from the entity at last —
+  // copied verbatim; absent stays absent (the Assembler's by-number fallback).
+  if (identity.pronounSet !== undefined) {
+    np.pronounSet = identity.pronounSet;
+  }
 
   return np;
 }

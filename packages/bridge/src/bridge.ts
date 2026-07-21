@@ -27,12 +27,12 @@ import type {
   InboundMessage,
   OutboundMessage,
   DomainEvent,
-} from './protocol';
+} from './protocol.js';
 import {
   BRIDGE_PROTOCOL_VERSION,
   isInboundMessage,
   shouldForwardEvent,
-} from './protocol';
+} from './protocol.js';
 
 /**
  * NativeEngineBridge
@@ -359,10 +359,13 @@ export class NativeEngineBridge {
 
     try {
       const storyModule = await import(tmpFile);
-      const story: Story = storyModule.story ?? storyModule.default?.story ?? storyModule.default;
+      // ADR-248 factory-only contract
+      const story: Story | undefined = typeof storyModule.createStory === 'function'
+        ? storyModule.createStory()
+        : undefined;
 
       if (!story || !story.config) {
-        throw new Error('Bundle story.js does not export a valid story object');
+        throw new Error('Bundle story.js does not export createStory() (ADR-248 factory contract)');
       }
 
       return story;
@@ -421,10 +424,13 @@ export class NativeEngineBridge {
 
     try {
       const storyModule = require(tmpFile);
-      const story: Story = storyModule.story ?? storyModule.default?.story ?? storyModule.default;
+      // ADR-248 factory-only contract
+      const story: Story | undefined = typeof storyModule.createStory === 'function'
+        ? storyModule.createStory()
+        : undefined;
 
       if (!story || !story.config) {
-        throw new Error('Story file does not export a valid story object');
+        throw new Error('Story file does not export createStory() (ADR-248 factory contract)');
       }
 
       return story;

@@ -1,0 +1,60 @@
+{/* Style-guide content — exercises every prose primitive through the real
+    MDX pipeline. Not in nav.ts (deliberately unlisted); the living
+    reference for how content pages are authored. */}
+
+import { CodeBlock, Callout } from "@/components/prose";
+
+This page exercises every shared content primitive through the real MDX
+pipeline. It is the pattern every content page follows: a `.tsx` route file
+wraps an imported `.mdx` content file in `DocPage`.
+
+## Headings and text
+
+Body text is plain markdown with **bold**, _italic_, and `inline code`.
+Links come in two kinds: internal like [the home page](/) (rendered with
+`next/link`) and external like [MDX](https://mdxjs.com) (new tab).
+
+### A third-level heading
+
+Lists work as usual:
+
+- Chord is the front door
+- The platform section sits behind it
+  1. ordered items
+  2. nest fine
+
+## Code
+
+Fenced blocks must carry a language tag (`text` at minimum):
+
+```chord
+"Fernhill" by Anonymous.
+
+The Orchard is a room. "Rows of apple trees march up the hill."
+Tobias is a person in the Orchard, proper.
+```
+
+For a labeled sample, use `CodeBlock` directly with a `title`:
+
+<CodeBlock title="shell">sharpee init my-story{"\n"}sharpee build --browser</CodeBlock>
+
+## Callouts
+
+<Callout title="Note">
+  The default kind is `note` — guidance, context, cross-references.
+</Callout>
+
+<Callout kind="warn" title="Gotcha">
+  Use `warn` for sharp edges — things that fail silently or differ from
+  what an author would expect.
+</Callout>
+
+## Tables
+
+| Construct | Introduced by | ADR |
+| --------- | ------------- | --- |
+| `proper`  | trait adjective | 242 |
+| `define pronouns` | block | 242 |
+
+> Blockquotes render muted with a left rule — for quoted transcript output
+> and cited prose.

@@ -9,7 +9,7 @@
  * Owner context: @sharpee/character / goals
  */
 
-import { MovementProfile } from './goal-types';
+import { MovementProfile } from './goal-types.js';
 
 // ---------------------------------------------------------------------------
 // Room graph types

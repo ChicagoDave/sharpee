@@ -402,8 +402,8 @@ import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/w
 import { LanguageProvider, IChannelRegistry } from '@sharpee/if-domain';
 import { Parser } from '@sharpee/stdlib';
 import { ISemanticEvent } from '@sharpee/core';
-import type { GameEngine } from './game-engine';
-import { NarrativeConfig } from './narrative';
+import type { GameEngine } from './game-engine.js';
+import { NarrativeConfig } from './narrative/index.js';
 /**
  * Story configuration
  */
@@ -545,7 +545,14 @@ export interface CustomVocabulary {
     }>;
 }
 /**
- * Story interface - what a story module exports
+ * Story interface — what a story module's `createStory()` factory returns.
+ *
+ * ADR-248 factory-only contract: a story module exports exactly
+ * `export function createStory(): Story` (no `story`/`config`/default
+ * singleton exports). Every boot — including an in-process restart reboot —
+ * calls the factory for a fresh instance, so all mutable story state must
+ * live on the instance (or in closures created during initializeWorld),
+ * never at module level. `initializeWorld` runs at most once per instance.
  */
 export interface Story {
     /**
@@ -653,13 +660,13 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  *
  * All event creation is owned by the action components themselves.
  */
-import { ISystemEvent, IGenericEventSource, Result } from '@sharpee/core';
+import { ISystemEvent, IGenericEventSource, Result, SeededRandom } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { ActionRegistry } from '@sharpee/stdlib';
-import { GameContext, TurnResult, EngineConfig } from './types';
+import { GameContext, TurnResult, EngineConfig } from './types.js';
 /**
  * Data passed to pre-action hook listeners (ADR-148).
  *
@@ -699,7 +706,13 @@ export declare class CommandExecutor {
     private scopeResolver?;
     private parsedCommandTransformers;
     private beforeActionListeners;
-    constructor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>);
+    /**
+     * Engine-owned dedicated action RNG stream (ADR-231 D6), threaded into
+     * every ActionContext this executor creates. Optional so bare test
+     * harnesses still work; the engine always provides it.
+     */
+    private actionRandom?;
+    constructor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, actionRandom?: SeededRandom);
     /**
      * Validate a parsed command against the world model.
      *
@@ -736,7 +749,7 @@ export declare class CommandExecutor {
     private emitBeforeAction;
     execute(input: string, world: WorldModel, context: GameContext, config?: EngineConfig, soundBuffer?: ISound[]): Promise<TurnResult>;
 }
-export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>): CommandExecutor;
+export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, actionRandom?: SeededRandom): CommandExecutor;
 ```
 
 ### capability-dispatch-helper
@@ -923,6 +936,48 @@ export declare function lintUnusedSnippetEntries(world: WorldModel): Array<{
 }>;
 ```
 
+### combatant-health-validation
+
+```typescript
+/**
+ * Load-time combatant/health validation (ADR-226 / ADR-223 child A, AC-7).
+ *
+ * After a story's `initializeWorld` returns, every entity carrying a
+ * `CombatantTrait` is checked for the `HealthTrait` it requires — health/life-state
+ * is the single source combat operates on (ADR-226 §2), so a combatant with no
+ * health has no target for damage. A missing health trait fails story load
+ * synchronously, naming every offending entity — the same fail-fast posture as
+ * `validateRoomSnippets`. This is a story-authoring mistake, not a
+ * runtime-recoverable state.
+ *
+ * Public interface: `validateCombatantHealth`, `CombatantHealthValidationError`.
+ *
+ * Owner context: `@sharpee/engine` — story-load orchestration (`GameEngine.setStory`).
+ */
+import type { WorldModel } from '@sharpee/world-model';
+/**
+ * Story-load failure: entities with `CombatantTrait` but no required `HealthTrait`.
+ */
+export declare class CombatantHealthValidationError extends Error {
+    /** `(id, name)` of every combatant missing a `HealthTrait`, in discovery order. */
+    readonly missing: ReadonlyArray<{
+        id: string;
+        name: string;
+    }>;
+    constructor(missing: Array<{
+        id: string;
+        name: string;
+    }>);
+}
+/**
+ * Validate that every combatant carries the health trait combat requires.
+ *
+ * @param world the initialized world model (after `initializeWorld`)
+ * @throws CombatantHealthValidationError naming every combatant with no `HealthTrait`
+ */
+export declare function validateCombatantHealth(world: WorldModel): void;
+```
+
 ### parser-interface
 
 ```typescript
@@ -1073,14 +1128,14 @@ import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
-import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline';
+import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock } from '@sharpee/text-blocks';
-import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
+import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource, SeededRandom } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types';
-import { Story } from './story';
-import { NarrativeSettings } from './narrative';
-import { ParsedCommandTransformer, BeforeActionHookListener } from './command-executor';
+import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types.js';
+import { Story } from './story.js';
+import { NarrativeSettings } from './narrative/index.js';
+import { ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
 /**
  * Game engine events
  */
@@ -1162,6 +1217,14 @@ export declare class GameEngine {
      */
     private soundDispatcher;
     private random;
+    /**
+     * Dedicated action RNG stream (ADR-231 D6), exposed to actions as
+     * `ActionContext.random`. A separate instance from `random` (the
+     * turn-plugin stream) so plugin draws can never shift action rolls;
+     * its seed rides the save blob (`IEngineState.actionRngSeed`) so
+     * post-restore action outcomes replay deterministically.
+     */
+    private actionRandom;
     private narrativeSettings;
     private inputModeHandlers;
     private vocabularyManager;
@@ -1246,16 +1309,33 @@ export declare class GameEngine {
      */
     private emitChannelPacket;
     /**
+     * Resume a stopped engine without touching world state.
+     *
+     * The post-mortem revival seam: after `stop('defeat')`, a harness (or a
+     * story resurrection policy) that has restored the world to a live-player
+     * snapshot — e.g. the transcript-tester's RETRY block via
+     * `world.loadJSON()` — needs turn execution back without any world
+     * teardown (a full reboot would clear the world it just restored).
+     * Flips `running` back on; emits nothing, rebuilds nothing.
+     *
+     * No-op when already running. Throws if the engine was never started
+     * (no command executor) — resuming presumes a completed `start()`.
+     */
+    resume(): void;
+    /**
      * Stop the game engine
      */
-    stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort', details?: any): void;
+    stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort' | 'restart', details?: any): void;
     /**
-     * Restart the game from scratch.
+     * Build the restart acknowledgment event (ADR-248).
      *
-     * Clears the world, resets engine state, and re-initializes the story.
-     * Called from both processMetaPlatformOperation and processPlatformOperations.
+     * On confirmed restart the engine does NOT rebuild in place — it renders
+     * this acknowledgment ("The story restarts.") in the final packet, then
+     * stops with reason 'restart'; the client owns the reboot via its own
+     * boot path. No pre-emptive restart_completed(true) is emitted: the new
+     * boot's opening banner is the success signal.
      */
-    private restartGame;
+    private createRestartAckEvent;
     /**
      * Execute a turn
      */
@@ -1351,6 +1431,19 @@ export declare class GameEngine {
      * Get plugin registry for registering turn-cycle plugins (ADR-120)
      */
     getPluginRegistry(): PluginRegistry;
+    /**
+     * The negotiated client capabilities for this session (ADR-216): the
+     * `client has <capability>` predicate reads these live, and channel
+     * gating uses the same flags at manifest time. Text-only before
+     * `start({ capabilities })` runs or when none were negotiated.
+     */
+    getClientCapabilities(): ClientCapabilities;
+    /**
+     * Get the dedicated action RNG stream (ADR-231 D6). Part of the
+     * ISaveRestoreStateProvider contract — the save service persists this
+     * stream's seed and the restore path re-seeds it.
+     */
+    getActionRandom(): SeededRandom;
     /**
      * Get event processor for handler registration (ADR-075)
      */
@@ -1529,6 +1622,22 @@ export declare class GameEngine {
      */
     private isGameOver;
     /**
+     * The `cause` of a canonical player-death event (ADR-224) emitted during the
+     * given turn, or `undefined` if the player did not die this turn. Scans the
+     * turn's accumulated events, so it sees deaths from the action, interceptors,
+     * and scheduler daemons alike. When several fire in one turn (rare), the first
+     * is authoritative — `killPlayer` is idempotent, so later calls emit nothing.
+     * @param turn the turn number whose events to scan
+     */
+    private playerDeathCauseThisTurn;
+    /**
+     * Whether the player is currently dead by their derived `HealthTrait` state
+     * (ADR-226/ADR-224). A player with no `HealthTrait` is alive by default (the
+     * opt-in rule) — `killPlayer` lazily attaches one, so a real death always has a
+     * trait to read. This is the engine's "final word" after story policy has run.
+     */
+    private isPlayerDead;
+    /**
      * Add event listener
      */
     on<K extends GameEngineEventName>(event: K, listener: GameEngineEventListener<K>): this;
@@ -1648,10 +1757,10 @@ export declare function createVocabularyManager(): VocabularyManager;
  *     ID counters, and sub-container containment.
  */
 import { WorldModel } from '@sharpee/world-model';
-import { ISaveData, ISerializedTurn, ISemanticEventSource } from '@sharpee/core';
+import { ISaveData, ISerializedTurn, ISemanticEventSource, SeededRandom } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { TurnResult, GameContext } from './types';
-import { Story } from './story';
+import { TurnResult, GameContext } from './types.js';
+import { Story } from './story.js';
 /**
  * Interface for accessing engine state needed for save/restore
  */
@@ -1662,6 +1771,12 @@ export interface ISaveRestoreStateProvider {
     getEventSource(): ISemanticEventSource;
     getPluginRegistry(): PluginRegistry;
     getParser(): unknown | undefined;
+    /**
+     * The engine's dedicated action RNG stream (ADR-231 D6,
+     * `ActionContext.random`). Its current seed is captured into
+     * `IEngineState.actionRngSeed` on save and re-applied on restore.
+     */
+    getActionRandom(): SeededRandom;
 }
 /**
  * Configuration for the undo system
@@ -1759,7 +1874,7 @@ export declare function createSaveRestoreService(config?: UndoConfig): SaveResto
 import { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { IPerceptionService } from '@sharpee/stdlib';
-import { EngineConfig } from './types';
+import { EngineConfig } from './types.js';
 /**
  * Context for event processing pipeline
  */
@@ -1863,8 +1978,8 @@ export declare function createTurnEventProcessor(perceptionService?: IPerception
  */
 import { IPlatformEvent, ISemanticEvent, ISemanticEventSource, ISaveRestoreHooks } from '@sharpee/core';
 import type { IParser } from '@sharpee/world-model';
-import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service';
-import { VocabularyManager } from './vocabulary-manager';
+import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
+import { VocabularyManager } from './vocabulary-manager.js';
 /**
  * Context for platform operation handling
  */
@@ -2089,4 +2204,1104 @@ export declare class SoundDispatcher {
      */
     dispatch(buffer: readonly ISound[], world: WorldModel, timestamp: number): ISemanticEvent[];
 }
+```
+
+### prose-pipeline/pipeline
+
+```typescript
+/**
+ * Prose pipeline — orchestrates the per-turn event → block translation.
+ *
+ * Pipeline stages (from `processTurn`):
+ *  1. Filter — drop `system.*` and `platform.*` events.
+ *  2. Sort   — apply ADR-094 chain-metadata ordering.
+ *  3. Route  — try the messageId path first (ADR-097), then dispatch
+ *              by event type to a handler family.
+ *  4. Assemble — handlers themselves call `createBlock`, so by the
+ *                time blocks return here they already carry parsed
+ *                bracket decorations and final `className`s.
+ *
+ * Public interface: `class ProsePipeline implements IProsePipeline`.
+ * Engine constructs one instance during `setStory()` and calls
+ * `processTurn` per turn (same three call sites as the retiring
+ * `TextService`).
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Internal interfaces
+ * @see ADR-094 Event Chaining (sort stage)
+ * @see ADR-097 Domain Events with messageId (domain-message handler)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { LanguageProvider } from '@sharpee/if-domain';
+import type { ISemanticEvent } from '@sharpee/core';
+import { type WorldModelLike } from './render-context.js';
+import type { IProsePipeline, SlotContributor, SlotEntry } from './types.js';
+/**
+ * Engine-internal prose pipeline.
+ *
+ * Stateless transformer: events in, blocks out. Constructed once per
+ * `setStory()` call with the active language provider; called per
+ * turn by `GameEngine.executeTurn` and the meta-command path (the
+ * same sites the retired `TextService.processTurn` had).
+ */
+export declare class ProsePipeline implements IProsePipeline {
+    private readonly languageProvider;
+    private readonly world?;
+    /** Realize-time slot contributors, run in registration order each turn (ADR-195 §3). */
+    private readonly slotContributors;
+    /**
+     * Declarative slot entries (ADR-212 §1), keyed `(slotKey, owner)` — the
+     * `\0`-joined memo-key shape. Last-wins on re-registration (AC-7); never
+     * serialized, dropped with the pipeline on reload.
+     */
+    private readonly slotEntries;
+    /**
+     * @param languageProvider the active language provider (template → text)
+     * @param world the read-only world model; when supplied, each turn builds a
+     *   phrase-pipeline render-context factory (ADR-192, W2). Optional so legacy
+     *   and test construction (string path only) keeps working without a world.
+     */
+    constructor(languageProvider: LanguageProvider, world?: WorldModelLike);
+    /**
+     * Register a realize-time slot contributor (ADR-195 §3). Contributors run once
+     * per turn at the top of `processTurn`, in registration order; that order feeds
+     * the `(order, insertion)` tie-break of the slot store.
+     *
+     * @param contributor the slot contributor to run each turn.
+     */
+    registerSlotContributor(contributor: SlotContributor): void;
+    /**
+     * Register a declarative slot entry (ADR-212 §1). Keyed `(slotKey, owner)`,
+     * last-wins: `Map.set` replaces any prior entry under the same key, so a
+     * loader re-registering on story load never double-contributes (AC-7).
+     *
+     * `Choice` content carries its own counter keys; the caller contract
+     * (ADR-212 §4) is `entityId === owner` and `messageKey === counterKey ??
+     * slotKey`. A mismatch is a silent double-counter bug, so it is warned on
+     * here — never rewritten, never thrown (render-graceful posture).
+     *
+     * @param entry the slot entry to register (or replace).
+     */
+    registerSlotEntry(entry: SlotEntry): void;
+    /**
+     * Evaluate every registered slot entry against this turn's staging context
+     * (ADR-212 §3) and contribute the content of each whose gate holds. Runs
+     * BEFORE story-registered contributors — platform entries first, then
+     * closures in registration order (deterministic `(order, insertion)` seq).
+     *
+     * Gate semantics: `owner-present` holds iff the owner shares the player's
+     * containing room at staging time; an owner missing from the world resolves
+     * to no room and simply never holds (AC-3 — a removed owner is inert, not an
+     * error). A `predicate` gate is story/runtime code: a throw is warned and
+     * treated as not-holding (render-graceful), never allowed to abort the turn.
+     *
+     * @param staging this turn's shared staging render context.
+     */
+    private stageSlotEntries;
+    processTurn(events: ISemanticEvent[]): ITextBlock[];
+    /**
+     * Route an event to its handler family.
+     *
+     * Order: try the ADR-097 messageId path first (catches every stdlib
+     * domain event); then fall through to type-keyed handlers; finally
+     * the catch-all generic handler.
+     */
+    private routeToHandler;
+}
+/**
+ * Construct a `ProsePipeline` for the given language provider.
+ *
+ * Mirrors the `createTextService` factory the retired text-service
+ * package exposed; callers can swap one for the other without
+ * changing call shapes.
+ */
+export declare function createProsePipeline(languageProvider: LanguageProvider, world?: WorldModelLike): IProsePipeline;
+```
+
+### prose-pipeline/types
+
+```typescript
+/**
+ * Prose pipeline service interface — engine-internal home for the
+ * `IProsePipeline` contract.
+ *
+ * Per ADR-174, the responsibility for translating events into blocks
+ * moved into `@sharpee/engine`. The interface was introduced under the
+ * transitional `ITextService` name during that migration; ADR-195
+ * completes the anticipated cleanup and renames it to `IProsePipeline`
+ * now that the legacy alias is engine-private (no external importer).
+ * The `getTextService` / `setTextService` accessors on `GameEngine`
+ * keep their names — only the interface type is renamed.
+ *
+ * Public interface: `IProsePipeline`. Implemented by `ProsePipeline`
+ * (and by `MockProsePipeline` in tests).
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Internal interfaces
+ * @see ADR-195 (interface rename + slot-contributor seam)
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { Phrase, RenderContext } from '@sharpee/if-domain';
+import type { WorldModel } from '@sharpee/world-model';
+/**
+ * A realize-time slot contributor (ADR-195 §3).
+ *
+ * Holds a turn `RenderContext` and stages slot contributions into the turn's
+ * slot store via `ctx.contribute(key, phrase)` — typically reading the live
+ * world (the player's room → occupants for `'here'`; in-scope describable
+ * objects → state clauses for `'detail'`). It runs at render time, before the
+ * host messages realize, so it needs no turn-time (ADR-163) channel.
+ */
+export type SlotContributor = (ctx: RenderContext) => void;
+/**
+ * Gate on a declarative slot entry (ADR-212 §2).
+ *
+ * - `owner-present` (the default): the entry contributes iff the owner shares
+ *   the player's containing room at staging time — the same transitive check
+ *   the `mentions` gate uses.
+ * - `predicate`: the registered-seam escape hatch (the ADR-211 Q4 posture) —
+ *   a TS function supplied by whatever runtime owns the condition, called
+ *   against the live world each staging pass. Never serialized; like every
+ *   entry, re-registered on story load.
+ */
+export type SlotEntryGate = {
+    kind: 'owner-present';
+} | {
+    kind: 'predicate';
+    holds: (world: WorldModel) => boolean;
+};
+/**
+ * A declarative slot entry (ADR-212 §1): data in, prose out.
+ *
+ * One platform-owned staging step evaluates every registered entry each turn,
+ * before story-registered `SlotContributor` closures run; an entry whose gate
+ * holds contributes `content` to `slotKey` with `order`. Registration is keyed
+ * `(slotKey, owner)`, idempotent-last-wins (AC-7); entries are never
+ * unregistered mid-session and nothing here is serialized — callers
+ * re-register every story load.
+ */
+export interface SlotEntry {
+    /** The slot the entry feeds (`'here'` for the present channel). Any key is accepted (ADR-212 Q4). */
+    slotKey: string;
+    /** Owner entity id — the default gate's subject and the `Choice` counter keyspace. */
+    owner: string;
+    /** Bare contributed content (`Literal` | `Choice`) — the slot owns all joining. */
+    content: Phrase;
+    /** `SlotContributionOptions.order` for the slot's `(order asc, insertion asc)` sort; default 0. */
+    order?: number;
+    /** Contribution gate; default `{ kind: 'owner-present' }`. */
+    gate?: SlotEntryGate;
+    /**
+     * `Choice` counter key; defaults to `slotKey`. Caller contract (ADR-212 §4):
+     * `Choice` content must carry `entityId === owner` and
+     * `messageKey === counterKey ?? slotKey` — the platform warns on mismatch
+     * but never rewrites.
+     */
+    counterKey?: string;
+}
+/**
+ * Per-turn prose translator.
+ *
+ * Stateless transformer: takes the events emitted during a turn,
+ * returns the structured `ITextBlock[]` the channel layer hands off
+ * to renderers. Engine constructs an implementation once during
+ * `setStory()` and calls `processTurn` per turn (and per
+ * meta-command / restart).
+ */
+export interface IProsePipeline {
+    /**
+     * Process turn events and produce TextBlocks.
+     *
+     * Called by Engine after each turn completes — and again on the
+     * meta-command path (restart, restore) where the same per-turn
+     * shape applies.
+     *
+     * @param events All events from this turn, including chained ones.
+     * @returns Blocks in render order.
+     */
+    processTurn(events: ISemanticEvent[]): ITextBlock[];
+    /**
+     * Register a realize-time slot contributor (ADR-195 §3).
+     *
+     * The contributor runs once per turn — in registration order — at the top of
+     * `processTurn`, before the event→render loop, against a turn `RenderContext`
+     * whose `contribute` writes the shared per-turn slot store. Stories register
+     * via the engine's `onEngineReady` hook. A no-op on world-less pipelines (no
+     * per-turn render-context factory is built, so there is nothing to stage into).
+     *
+     * @param contributor the slot contributor to run each turn.
+     */
+    registerSlotContributor(contributor: SlotContributor): void;
+    /**
+     * Register a declarative slot entry (ADR-212 §1).
+     *
+     * Keyed `(slotKey, owner)`, idempotent-last-wins: re-registering the same key
+     * replaces the prior entry — one contribution, never two (AC-7). Entries are
+     * evaluated once per turn in the staging pass, BEFORE story-registered slot
+     * contributors, and contribute only while their gate holds. Nothing is
+     * serialized; callers re-register every story load.
+     *
+     * @param entry the slot entry to register (or replace).
+     */
+    registerSlotEntry(entry: SlotEntry): void;
+}
+```
+
+### prose-pipeline/render-context
+
+```typescript
+/**
+ * Per-turn RenderContext runtime for the phrase pipeline (ADR-192 §6, W2).
+ *
+ * The Assembler realizes a phrase tree against a `RenderContext`: a read-only
+ * world, the bound params, locale settings, and the declared seams
+ * (`reference` / `textState` / `contribute` + `slotContributions`). This module
+ * supplies the engine's runtime for that contract — a thin adapter over the world
+ * model, the live turn-scoped slot store (ADR-195), and the live persistent
+ * `textState` store (ADR-196). The engine owns this per turn. The ONE sanctioned
+ * mutation is the `textState` capability write (ADR-196 §4 — the declared exception
+ * ADR-192 §7 reserved for deterministic `Choice` variation); entity and spatial
+ * state are never touched here.
+ *
+ * Public interface: `createRenderWorld`, `createRenderContextFactory`,
+ * `WorldTextStateStore`, `WorldModelLike`. The factory binds the per-turn
+ * invariants (world, settings, seams) once and yields a per-message
+ * `RenderContext` by adding that message's params.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-192 §6 (report pipeline / render context)
+ * @see ADR-195 (contribute seam) / ADR-196 (textState seam) / ADR-197 (reference seam)
+ */
+import type { EntityId, IEntity } from '@sharpee/core';
+import type { LocaleSettings, NarrativeAgreement, RenderContext, RenderWorld, TextStateStore } from '@sharpee/if-domain';
+/**
+ * The minimal world surface the render world adapter needs. The engine's
+ * `WorldModel` satisfies this structurally; declaring only the methods the
+ * pipeline reads keeps it honest. The pipeline never mutates entity/spatial
+ * state — the one sanctioned write is the `textState` capability (ADR-196 §4),
+ * exposed through the OPTIONAL capability accessors below. They are optional
+ * (the ADR-195 optional-seam precedent) so test mocks that wire only the read
+ * methods keep compiling; a world without them degrades to an empty text-state
+ * store (no persistence, `Choice` starts at counter 0 — AC-9).
+ */
+export interface WorldModelLike {
+    getEntity(id: EntityId): IEntity | undefined;
+    getContents(containerId: EntityId): IEntity[];
+    getContainingRoom(entityId: EntityId): IEntity | undefined;
+    /** The player entity, for narrative verb-person agreement (ADR-199 §4 B). */
+    getPlayer(): IEntity | undefined;
+    /** Read a capability's data map (ADR-196 text-state read). */
+    getCapability?(name: string): Record<string, unknown> | undefined;
+    /** Merge into a capability's data map (ADR-196 text-state write — the one sanctioned mutation). */
+    updateCapability?(name: string, updates: Record<string, unknown>): void;
+    /** Whether a capability is registered (guards the defensive self-register). */
+    hasCapability?(name: string): boolean;
+    /** Register a capability if absent (defensive — the engine normally registers `textState` at setup). */
+    registerCapability?(name: string, registration?: {
+        initialData?: Record<string, unknown>;
+    }): void;
+    /** Read a registered derived-state evaluator (ADR-240 seam; ADR-250 phrasebook read point). */
+    evaluate?(key: string): unknown;
+}
+/**
+ * Wrap a world model as the read-only `RenderWorld` the Assembler consumes.
+ *
+ * Supplies the entity→`NounPhrase` bridge (`nounPhraseFor`, ADR-194) by delegating
+ * to stdlib's producer — the engine may depend on stdlib, lang-en-us may not, so the
+ * bridge crosses here rather than in the Assembler.
+ *
+ * @param world the live world model (read-only access only)
+ * @returns a `RenderWorld` delegating to the model's lookup methods
+ */
+export declare function createRenderWorld(world: WorldModelLike): RenderWorld;
+/**
+ * The persistent per-`(entityId, messageKey)` text-state store (ADR-196 §4).
+ *
+ * Backed by the `textState` world capability, which serializes with the world —
+ * so a `Choice`'s cycle index / trigger count / sticky pick survives turns and
+ * save/restore (S13–S14). The engine registers the capability at setup
+ * (`game-engine.ts`); this store also self-registers defensively so it works in
+ * tests and standalone render contexts.
+ *
+ * A world that does not expose the optional capability accessors degrades to the
+ * empty-store behavior (no persistence) — AC-9.
+ */
+export declare class WorldTextStateStore implements TextStateStore {
+    private readonly world;
+    constructor(world: WorldModelLike);
+    get(entityId: EntityId, messageKey: string): number | undefined;
+    set(entityId: EntityId, messageKey: string, value: number): void;
+}
+/**
+ * A per-message render-context builder bound to a turn's invariants.
+ *
+ * @param params the message's parameter/producer bindings
+ * @returns a `RenderContext` carrying those params plus the bound world,
+ *   settings, and per-turn seams
+ */
+export type RenderContextFactory = (params: Record<string, unknown>) => RenderContext;
+/**
+ * Build the per-turn render-context factory.
+ *
+ * World, locale settings, and the seams are the turn's invariants and are
+ * captured once; only `params` vary per message, so the returned factory is
+ * called once per rendered message. The `contribute` / `slotContributions` pair
+ * shares one turn-scoped {@link TurnSlotStore} across every message context, so a
+ * slot contribution staged while building one message is visible when another
+ * message's `{slot:key}` realizes (ADR-195 §2).
+ *
+ * @param world the read-only render world (see {@link createRenderWorld})
+ * @param settings the locale realization settings for this turn
+ * @param narrative the player id + narrative person for verb agreement (ADR-199 §4 B)
+ * @param textState the persistent text-state store backing `Choice` (ADR-196 §4);
+ *   defaults to the empty store for world-less / string-path callers
+ * @returns a factory that yields a `RenderContext` for a message's params
+ */
+export declare function createRenderContextFactory(world: RenderWorld, settings: LocaleSettings, narrative: NarrativeAgreement, textState?: TextStateStore): RenderContextFactory;
+```
+
+### prose-pipeline/decorations/parser
+
+```typescript
+/**
+ * Bracket parser — markup string → structured `TextContent[]` tree.
+ *
+ * Public interface: `parseDecorations(template) → TextContent[]`.
+ * Pure function; same input always yields same output.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Markup syntax
+ * @see ADR-174 §Internal interfaces
+ * @see ADR-174 acceptance criteria AC-1..AC-5, AC-10..AC-12
+ */
+import type { TextContent } from './types.js';
+/**
+ * Parse a template string into a `TextContent[]` tree.
+ *
+ * Bracket markup `[name:content]` becomes an `IDecoration` whose
+ * `className` is the result of `resolveClassName(name)`. Plain runs
+ * stay as strings. Nesting recurses. Escape sequences `\[`, `\]`,
+ * `\\` produce literal characters.
+ *
+ * Forgiving rules (ADR-174 AC-10..AC-12):
+ *  - An unclosed `[` is treated as a literal character; the tail of
+ *    the string remains unparsed text.
+ *  - A bracket without `:` (e.g., `[em world]`) is emitted as literal
+ *    `[em world]` — no decoration created.
+ *  - A bracket with empty class name (e.g., `[:world]`) yields the
+ *    parsed inner content directly, with no decoration wrapper.
+ *
+ * @param template Raw template string, post message-id resolution.
+ * @returns Flat array of strings and decorations.
+ */
+export declare function parseDecorations(template: string): TextContent[];
+```
+
+### prose-pipeline/decorations/resolver
+
+```typescript
+/**
+ * Class-name resolver — bare bracket name → final CSS class name.
+ *
+ * Public interface: `resolveClassName`. Used by the parser to settle
+ * the platform-vs-author distinction at parse time so the wire shape
+ * carries renderer-ready strings.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Platform vs author classes
+ * @see ADR-174 §Internal interfaces
+ */
+/**
+ * Resolve a bracketed name to its final CSS class name.
+ *
+ * Platform names (those listed in `PLATFORM_VOCABULARY`) receive the
+ * `sharpee-` prefix. Author names — anything else — pass through
+ * verbatim. Empty input returns the empty string; the caller is
+ * responsible for the AC-12 no-op-wrapper behavior, since the
+ * resolver is a pure mapping.
+ *
+ * @param rawName Bare name as written between `[` and `:` in the
+ *                template, e.g., `em`, `thief-taunt`.
+ * @returns Final class name to place on the wire as
+ *          `IDecoration.className`.
+ */
+export declare function resolveClassName(rawName: string): string;
+```
+
+### prose-pipeline/decorations/platform-vocabulary
+
+```typescript
+/**
+ * Platform decoration vocabulary — closed enumeration of names the
+ * platform recognises and prefixes with `sharpee-` when emitting class
+ * names on the wire.
+ *
+ * Public interface: `PLATFORM_VOCABULARY` (frozen Set), consumed by
+ * the resolver in this directory. No external package imports this.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Closed platform vocabulary
+ */
+declare const VOCABULARY_NAMES: readonly ["em", "strong", "u", "st", "code", "super", "sub", "item", "npc", "room", "direction", "command", "quote", "color-red", "color-blue", "color-green", "color-yellow", "color-magenta", "color-cyan", "color-white", "color-grey", "color-black", "bgcolor-red", "bgcolor-blue", "bgcolor-green", "bgcolor-yellow", "bgcolor-magenta", "bgcolor-cyan", "bgcolor-white", "bgcolor-grey", "bgcolor-black", "size-small", "size-large", "font-mono", "br", "p", "indent", "center", "right"];
+/**
+ * Names that take **no content** — written `[br]` / `[p]` (no colon). The
+ * parser treats a colon-less `[name]` as a void decoration iff `name` is
+ * listed here; any other colon-less bracket stays literal (ADR-174 AC-11).
+ *
+ * @see ADR-183 §1 — Vocabulary, §2 — Syntax
+ */
+export declare const VOID_MACROS: ReadonlySet<string>;
+/**
+ * Frozen set of every name the platform reserves under the `sharpee-`
+ * namespace. Adding a new entry requires both updating this list and
+ * shipping a corresponding `.sharpee-{name}` rule in the platform CSS.
+ */
+export declare const PLATFORM_VOCABULARY: ReadonlySet<string>;
+/**
+ * Type-level export of every recognised name; useful for tests that
+ * iterate the closed enumeration.
+ */
+export type PlatformVocabularyName = (typeof VOCABULARY_NAMES)[number];
+export declare const PLATFORM_VOCABULARY_NAMES: ReadonlyArray<PlatformVocabularyName>;
+export {};
+```
+
+### prose-pipeline/stages/filter
+
+```typescript
+/**
+ * Event filtering stage — drops events that should not produce
+ * text output (system.* and platform request-phase events).
+ *
+ * Public interface: `filterEvents`. Used internally by the prose
+ * pipeline as the first per-turn stage.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Engine-internal prose pipeline
+ * @see ADR-096 (preserved): the filter responsibility ports unchanged
+ *   from `@sharpee/text-service`.
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+/**
+ * Filter events that should produce text output.
+ *
+ * Drops:
+ *  - `system.*` — internal turn-cycle bookkeeping the player never sees.
+ *  - `platform.*_requested` — request-phase platform events are control
+ *    flow, never narration.
+ *
+ * Platform OUTCOME events (`platform.save_completed`,
+ * `platform.undo_failed`, ...) pass through to the handlers stage, where
+ * `handlePlatformEvent` renders the lang message registered under the
+ * event type (silent when none is registered — quit/restart outcomes stay
+ * quiet by default).
+ *
+ * Pass-through for everything else (domain events, action results,
+ * lifecycle events, sound, etc.) — they reach the handlers stage.
+ */
+export declare function filterEvents(events: ISemanticEvent[]): ISemanticEvent[];
+```
+
+### prose-pipeline/stages/sort
+
+```typescript
+/**
+ * Event sorting stage — orders events within a turn for correct prose
+ * sequence: lifecycle first, then per-transaction implicit-take →
+ * room-description → action.* → others, finally by chain depth.
+ *
+ * Public interface: `sortEventsForProse`, `getChainMetadata`. Used
+ * internally by the prose pipeline as the second per-turn stage,
+ * after filtering.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-094 Event Chaining (preserved; the sort responsibility
+ *   ports from `@sharpee/text-service`)
+ * @see ADR-174 §Engine-internal prose pipeline
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+/**
+ * Event data with chain metadata (ADR-094).
+ */
+interface ChainMetadata {
+    _transactionId?: string;
+    _chainDepth?: number;
+    _chainedFrom?: string;
+    _chainSourceId?: string;
+}
+/**
+ * Sort events for correct prose order within transactions.
+ *
+ * Stable sort — preserves cross-transaction order while applying
+ * within-transaction rules.
+ */
+export declare function sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[];
+/**
+ * Extract chain metadata from event data.
+ */
+export declare function getChainMetadata(event: ISemanticEvent): ChainMetadata;
+export {};
+```
+
+### prose-pipeline/assemble
+
+```typescript
+/**
+ * Block assembly stage — wraps a resolved template string into an
+ * `ITextBlock`, parsing decorations along the way.
+ *
+ * Public interface: `createBlock`, `extractValue`. Used internally
+ * by handler families and the pipeline orchestration.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline. Lives
+ * at `prose-pipeline/assemble.ts` (not under `stages/`) per ADR-174
+ * §Engine-internal prose pipeline layout.
+ *
+ * @see ADR-174 §Markup syntax (decoration parsing)
+ * @see ADR-133 (preserved): blocks have keys and structured content.
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+/**
+ * Options for `createBlock`.
+ */
+export interface CreateBlockOptions {
+    /**
+     * Mark the block as a visual continuation of its predecessor — the
+     * renderer collapses the paragraph margin so the two lines stack
+     * flush. Used by handlers that split former multi-line content into
+     * multiple single-line blocks. See `ITextBlock.tight` for the
+     * invariant that a tight block must not appear first in a packet.
+     */
+    tight?: boolean;
+    /**
+     * Optional semantic CSS class the browser renderer applies to the
+     * rendered element in addition to `main-entry`. See
+     * `ITextBlock.className`.
+     */
+    className?: string;
+}
+/**
+ * Create an `ITextBlock` from a key and a resolved template string.
+ *
+ * The template is fed through the bracket-decoration parser; templates
+ * with no markers produce a single-string `content` array, matching
+ * the existing no-op-decoration shape.
+ *
+ * Pass `{ tight: true }` to mark this block as a continuation of the
+ * preceding block (renderer collapses inter-block margin).
+ *
+ * Callers that may receive text containing `\n` should use
+ * `createBlocks` instead, which lifts newlines to block boundaries.
+ */
+export declare function createBlock(key: string, text: string, opts?: CreateBlockOptions): ITextBlock;
+/**
+ * Create one or more `ITextBlock`s from a key and a (possibly
+ * multi-line) resolved template string.
+ *
+ * Newlines in the text are *lifted* to block boundaries — no block's
+ * `content` ever carries `\n` (the precondition for removing
+ * `white-space: pre-line` from the prose pane). Splitting policy:
+ *
+ *  - `\n\n+` (one or more blank lines) → next block is a fresh
+ *    paragraph (no `tight` flag); the renderer applies the prose
+ *    pane's paragraph margin.
+ *  - `\n` (single newline) → next block carries `tight: true`; the
+ *    renderer collapses the inter-block margin so the lines stack
+ *    flush, matching the legacy `pre-line` line-break behavior.
+ *
+ * Edge cases: leading/trailing whitespace is trimmed; empty
+ * paragraphs (between `\n\n\n` etc.) are dropped; empty input
+ * returns a single empty block.
+ */
+export declare function createBlocks(key: string, text: string): ITextBlock[];
+/**
+ * Extract a string value from a direct primitive or a function wrapper.
+ *
+ * Returns null for falsy values, function returns, or thrown errors.
+ * Used by handlers that pull data out of event payloads with mixed
+ * shapes (string, number, () => string, etc.).
+ */
+export declare function extractValue(value: unknown): string | null;
+```
+
+### prose-pipeline/handlers/types
+
+```typescript
+/**
+ * Handler types for the engine prose pipeline.
+ *
+ * Public interface: `HandlerContext`, `EventHandler`,
+ * `ChainableEventData`, `GenericEventData`. Used by handler families
+ * and the pipeline class.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Engine-internal prose pipeline
+ * @see ADR-094 (chain metadata semantics, preserved)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { LanguageProvider } from '@sharpee/if-domain';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { RenderContextFactory, WorldModelLike } from '../render-context.js';
+/**
+ * Context passed to event handlers.
+ */
+export interface HandlerContext {
+    /** Language provider for template resolution. */
+    languageProvider?: LanguageProvider;
+    /**
+     * The world, when the pipeline was constructed with one — the phrasebook
+     * read point consults `world.evaluate` for book-resolved templates
+     * (ADR-250 D4) before the registry lookup.
+     */
+    world?: WorldModelLike;
+    /**
+     * Per-turn render-context factory for the phrase pipeline (ADR-192, W2).
+     *
+     * Present when the pipeline was constructed with a world model; a handler on
+     * the phrase path builds its per-message `RenderContext` by calling this with
+     * the message's params, then passes it to `languageProvider.renderMessage`.
+     * Absent in legacy/world-less construction (the old string path needs no
+     * render context).
+     */
+    makeRenderContext?: RenderContextFactory;
+}
+/**
+ * Event handler function signature.
+ *
+ * Handlers receive an event and context, return zero or more TextBlocks.
+ */
+export type EventHandler = (event: ISemanticEvent, context: HandlerContext) => ITextBlock[];
+/**
+ * Common event data with chain metadata (ADR-094).
+ */
+export interface ChainableEventData {
+    _transactionId?: string;
+    _chainDepth?: number;
+    _chainedFrom?: string;
+    _chainSourceId?: string;
+}
+/**
+ * Generic event data with message fields.
+ */
+export interface GenericEventData extends ChainableEventData {
+    message?: string;
+    messageId?: string;
+    text?: string;
+    [key: string]: unknown;
+}
+```
+
+### prose-pipeline/phrase-render
+
+```typescript
+/**
+ * Phrase-path rendering helper for the prose pipeline (ADR-192 §6, the cutover).
+ *
+ * Bridges a handler's `(messageId, params, blockKey)` to the language provider's
+ * `renderMessage` phrase pipeline, building the per-message `RenderContext` from
+ * the per-turn factory and re-keying the realized blocks to the handler's
+ * channel. The legacy `getMessage` string path remains in the handlers only as a
+ * fallback for world-less construction (some unit tests); it is removed in W7
+ * once nothing constructs the pipeline without a world.
+ *
+ * Public interface: `phraseAvailable`, `renderViaPhrase`.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-192 §6
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { HandlerContext } from './handlers/types.js';
+/**
+ * Whether the phrase path is wired for this turn: a render-context factory (the
+ * pipeline had a world) and a provider that implements the phrase API.
+ *
+ * @param context the handler context
+ * @returns true when `renderViaPhrase` can be used
+ */
+export declare function phraseAvailable(context: HandlerContext): boolean;
+/**
+ * The phrasebook template key convention (ADR-250 D4, ADR-240 D6): built
+ * here — the read point — and in the story-loader's evaluator registrar,
+ * nowhere else. Pinned by tests on both sides.
+ *
+ * @param messageId the message id a book may cover
+ * @returns the `world.evaluate` key for that id's book resolution
+ */
+export declare function phrasebookTemplateKey(messageId: string): string;
+/**
+ * The shape the story-loader's phrasebook evaluator returns (ADR-250 D4.3,
+ * platform-adapted): the winning book's DERIVED template plus any params
+ * the template needs bound — `variants` (a ready `Choice` atom keyed
+ * `phrasebook.<book>` / key, so counters stay per (book, key) — D5) or
+ * `text` (verbatim entries). Keeping the derivation loader-side preserves
+ * the ADR-210 direction rule: the engine never learns Chord's IR shapes.
+ */
+export interface PhrasebookResolution {
+    /** The winning book's name. */
+    book: string;
+    /** The covered story key (= the messageId asked about). */
+    key: string;
+    /** The derived template (same derivation as registered phrases). */
+    template: string;
+    /** Extra param bindings the template needs (variants Choice, verbatim text). */
+    params?: Record<string, unknown>;
+}
+/**
+ * Render a message through the phrase pipeline and re-key its blocks.
+ *
+ * Precondition: {@link phraseAvailable} is true.
+ *
+ * @param context the handler context (carries the render-context factory)
+ * @param messageId the message id to render
+ * @param params the message params (entity NounPhrases, scalars, …). The reserved
+ *   key `__slots__` (a `{ [slotKey]: Phrase[] }` map) is not a placeholder binding:
+ *   its phrases are staged into this message's turn slot store before realization,
+ *   so an action that knows its target (e.g. examine staging detail clauses) can
+ *   fill a `{slot:key}` in its own template without holding a render context at
+ *   report time (ADR-195 S2). Plain phrase data — save/replay-safe.
+ * @param blockKey the channel key to stamp on the realized blocks
+ * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
+ *   id is not registered (the caller applies its inline-text fallback)
+ */
+export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string): ITextBlock[] | null;
+/**
+ * Flatten realized blocks to a single plain string (newlines between blocks).
+ * Used when a rendered message must be embedded into another message as a
+ * `{verbatim:…}` scalar param.
+ *
+ * @param blocks realized text blocks
+ * @returns the concatenated plain text
+ */
+export declare function flattenBlocks(blocks: ITextBlock[]): string;
+```
+
+### prose-pipeline/handlers/room
+
+```typescript
+/**
+ * Room description event handler.
+ *
+ * Handles `if.event.room.description` (canonical form) and
+ * `if.event.room_description` (legacy alternate). Resolves the
+ * room name and description through the language provider when a
+ * message id is present (ADR-107 dual-mode), falling back to literal
+ * text otherwise.
+ *
+ * Public interface: `handleRoomDescription`. Used by the pipeline's
+ * event-type dispatch.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-107 — Dual-mode literal/messageId handling
+ * @see ADR-174 §Engine-internal prose pipeline (port from text-service)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Handle room description events.
+ */
+export declare function handleRoomDescription(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/revealed
+
+```typescript
+/**
+ * Revealed event handler.
+ *
+ * Handles `if.event.revealed` — fired when items become visible inside
+ * a container. Pulls a direct message/text payload first, then tries
+ * the language provider keyed on event type, then falls back to a
+ * built-in "Inside the {container} you see {items}." formatter.
+ *
+ * Public interface: `handleRevealed`. Used by the pipeline's
+ * event-type dispatch.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-094 Event Chaining
+ * @see ADR-174 §Engine-internal prose pipeline (port from text-service)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Handle `if.event.revealed` events.
+ */
+export declare function handleRevealed(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/generic
+
+```typescript
+/**
+ * Generic event handlers — game.message and the catch-all generic
+ * fallback for unknown event types.
+ *
+ * Public interface: `handleGameMessage`, `handleGenericEvent`. Used
+ * by the pipeline's event-type dispatch.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Engine-internal prose pipeline (port from text-service)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Handle `game.message` events.
+ */
+export declare function handleGameMessage(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+/**
+ * Handle generic / unknown events using `event.type` as the template key.
+ *
+ * Story-defined events follow the simple pattern:
+ *   - event.type is the template key
+ *   - event.data is the template params
+ */
+export declare function handleGenericEvent(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/game
+
+```typescript
+/**
+ * Game lifecycle event handler — `game.started`.
+ *
+ * Emits the opening banner via the shared `buildBannerBlocks` helper:
+ * one semantically-classed block per piece (`game-title`,
+ * `story-version`, `platform-version`, `sub-title`, `author-list[]`,
+ * `banner-spacer`), then any story-defined `game.banner.story-tail`
+ * template appended through `createBlocks`.
+ *
+ * Public interface: `handleGameStarted`. Used by the pipeline's
+ * event-type dispatch.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-097 IGameEvent Deprecation
+ * @see ADR-174 §Engine-internal prose pipeline (port from text-service)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Handle the `game.started` event to produce the opening banner.
+ *
+ * Stories customize by:
+ *  - Setting `StoryConfig.credits` for distinct author-list lines.
+ *  - Setting `StoryConfig.description` for the sub-title.
+ *  - Registering a `game.banner.story-tail` language template for any
+ *    trailing content (instructions, taglines, etc.).
+ */
+export declare function handleGameStarted(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/audibility
+
+```typescript
+/**
+ * Audibility event handler — ADR-172 Phase 7a, ported to engine prose
+ * pipeline per ADR-174.
+ *
+ * Handles `sound.audibility.heard`. Converts each `IAudibilityEvent`
+ * (per-listener perception of a propagated sound, produced by the
+ * engine's sound dispatcher in Phase 6) into a single text block via
+ * the `sound.heard.<kind>.<tier>` template family registered in the
+ * active language pack (lang-en-us ships defaults; stories override
+ * per kind).
+ *
+ * Naming discipline:
+ *   - `audio`      — Web Audio playback (ADR-169 `AudioManager`).
+ *   - `sound`      — the media-cue channel id (`media.sound.play`,
+ *                    ADR-163).
+ *   - `audibility` — ADR-172 perception of propagated sound, this
+ *                    handler.
+ *
+ * Public interface: `handleAudibilityHeard`.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * Listener filtering: in single-user scope today the player is the
+ * only entity carrying `ListenerTrait` automatically, so every
+ * audibility event delivered here is for the player. The dispatcher
+ * already writes the listener id into `event.entities.target`; when
+ * L2's NPC-listener work lands, this handler will need to filter
+ * `event.entities.target === playerId` before rendering.
+ *
+ * @see ADR-172 — Spatial Sound Propagation §Channel routing
+ * @see ADR-174 §Engine-internal prose pipeline (port from text-service)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Handle a `sound.audibility.heard` event.
+ *
+ * Resolves `sound.heard.<kind>.<tier>` from the language provider,
+ * falling back to `sound.heard.default.<tier>` when the kind-specific
+ * template is not registered. Returns one `ITextBlock` per event, or
+ * `[]` when the event is malformed, the tier is `silent`, or no
+ * template resolves.
+ */
+export declare function handleAudibilityHeard(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/platform
+
+```typescript
+/**
+ * Platform-event handler — renders `platform.*` lifecycle events.
+ *
+ * Platform events (core `createPlatformEvent`) carry their information in
+ * `payload`, not `data`, so the ADR-097 domain-message path never sees them.
+ * This handler renders them in the same prose-pipeline manner: the event
+ * type itself is the messageId (`platform.save_completed`,
+ * `platform.undo_failed`, ...) and params bind from the payload. lang-en-us
+ * registers the standard texts; stories override by registering the same id.
+ *
+ * Events with no registered message render nothing — request-phase events
+ * (`platform.save_requested`, ...) are intentionally silent by default.
+ *
+ * Public interface: `handlePlatformEvent`.
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Render a `platform.*` event via the message registered under its event
+ * type. Returns [] when no message is registered (silent by design).
+ */
+export declare function handlePlatformEvent(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/domain-message
+
+```typescript
+/**
+ * Domain message handler — `event.data.messageId` resolution path.
+ *
+ * Handles any event whose data carries a `messageId`, regardless of
+ * event type (per ADR-097). All stdlib actions use this pattern;
+ * story actions emitting `action.success` / `action.blocked` events
+ * also flow through here.
+ *
+ * Params bind nested-preferred with flat fallback (`data.params ?? data`,
+ * ADR-206 unified rule) — emitters may nest template params under
+ * `params` or carry them flat on the event data; nested wins when both
+ * exist.
+ *
+ * Public interface: `tryProcessDomainEventMessage`. The pipeline
+ * consults this first; on null, it falls through to the type-keyed
+ * handlers (room, revealed, generic, etc.).
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-097 Domain Events with messageId
+ * @see ADR-174 §Engine-internal prose pipeline (extracted from
+ *   text-service.ts inline)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Process domain events that carry messageId directly (ADR-097).
+ *
+ * @returns Text blocks if event has messageId. Returns null when the
+ *   event has no messageId (caller falls through to type-keyed
+ *   handlers). Falls back to inline `data.message` / `data.text`
+ *   when the messageId fails to resolve.
+ */
+export declare function tryProcessDomainEventMessage(event: ISemanticEvent, context: HandlerContext): ITextBlock[] | null;
+```
+
+### prose-pipeline/handlers/implicit-take
+
+```typescript
+/**
+ * Implicit-take handler — `if.event.implicit_take`.
+ *
+ * Produces the "(first taking the X)" line that prefaces an action
+ * the parser auto-promoted (e.g. "READ BOOK" when the player isn't
+ * holding the book yet).
+ *
+ * Public interface: `handleImplicitTake`. Used by the pipeline's
+ * event-type dispatch.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Engine-internal prose pipeline (extracted from
+ *   text-service.ts inline)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+export declare function handleImplicitTake(event: ISemanticEvent, _context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/command-failed
+
+```typescript
+/**
+ * Command-failed handler — `command.failed`.
+ *
+ * Maps parser / entity-resolution failure reasons to user-facing
+ * error prose. Recognized reason fragments:
+ *   - `ENTITY_NOT_FOUND` / `modifiers_not_matched` →
+ *     `core.entity_not_found` (default: "I don't see that here.")
+ *   - `NO_MATCH` / `parse` →
+ *     `core.command_not_understood` (default: "I don't understand that.")
+ * Anything else → `core.command_failed` (same default).
+ *
+ * Public interface: `handleCommandFailed`. Used by the pipeline's
+ * event-type dispatch.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Engine-internal prose pipeline (extracted from
+ *   text-service.ts inline)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+export declare function handleCommandFailed(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
+```
+
+### prose-pipeline/handlers/client-query
+
+```typescript
+/**
+ * Client-query handler — `client.query`.
+ *
+ * Today only the `disambiguation` source is rendered. The handler
+ * formats a candidate list as natural English ("the X or the Y" /
+ * "the X, the Y, or the Z") and resolves the
+ * `core.disambiguation_prompt` template with the resulting `options`
+ * string.
+ *
+ * Public interface: `handleClientQuery`. Used by the pipeline's
+ * event-type dispatch.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ *
+ * @see ADR-174 §Engine-internal prose pipeline (extracted from
+ *   text-service.ts inline)
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+export declare function handleClientQuery(event: ISemanticEvent, context: HandlerContext): ITextBlock[];
 ```

@@ -8,9 +8,9 @@ Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, an
 
 ```typescript
 import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
-import { ITrait, ITraitConstructor } from '../traits/trait';
-import { TraitType } from '../traits/trait-types';
-import { Annotation, AnnotationCondition } from '../annotations/types';
+import { ITrait, ITraitConstructor } from '../traits/trait.js';
+import { TraitType } from '../traits/trait-types.js';
+import { Annotation, AnnotationCondition } from '../annotations/types.js';
 /**
  * Interactive Fiction Entity with trait-based composition.
  * Implements the core Entity interface and adds trait management capabilities.
@@ -328,7 +328,7 @@ export declare class IFEntity implements IEntity {
 ### entities/entity-store
 
 ```typescript
-import { IFEntity } from './if-entity';
+import { IFEntity } from './if-entity.js';
 /**
  * Entity store that works with IFEntity instances.
  * Provides trait-aware entity management.
@@ -465,8 +465,8 @@ export declare function getEntityTypePrefix(type: EntityType): string;
  * Owner context: `@sharpee/world-model` — entities / spatial primitives.
  */
 import { EntityId, IEntityCreationParams } from '@sharpee/core';
-import { IFEntity } from './if-entity';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from './if-entity.js';
+import { ITrait } from '../traits/trait.js';
 /**
  * Per-side data for a wall (ADR-173).
  *
@@ -564,9 +564,9 @@ export type IWallEntity = WallEntity;
 ### behaviors/behavior
 
 ```typescript
-import { IFEntity } from '../entities/if-entity';
-import { TraitType } from '../traits/trait-types';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from '../entities/if-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { ITrait } from '../traits/trait.js';
 /**
  * Base class for all behaviors in the IF system.
  *
@@ -635,8 +635,8 @@ export declare function isWorldAwareBehavior(behavior: any): behavior is IWorldA
 ### traits/container/containerBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of an add item operation
  */
@@ -662,6 +662,11 @@ export interface IRemoveItemResult {
 export interface IWorldQuery {
     getContents(containerId: string): IFEntity[];
     getLocation(entityId: string): string | undefined;
+    /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
 }
 /**
  * Behavior for entities that can contain other entities.
@@ -733,7 +738,7 @@ export declare class ContainerBehavior extends Behavior {
 ### traits/scenery/sceneryBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for scenery entities.
  * Handles logic related to fixed-in-place objects.
@@ -758,7 +763,7 @@ export declare class SceneryBehavior {
 ### traits/wearable/wearableBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 export interface IWearResult {
     success: boolean;
     alreadyWorn?: boolean;
@@ -826,7 +831,7 @@ export declare class WearableBehavior {
 ### traits/readable/readableBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for readable entities.
@@ -872,8 +877,8 @@ export declare class ReadableBehavior {
 ### traits/light-source/lightSourceBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for light source entities.
  *
@@ -933,8 +938,8 @@ export declare class LightSourceBehavior extends Behavior {
 ### traits/exit/exitBehavior
 
 ```typescript
-import { IFEntity } from '../../entities/if-entity';
-import { ExitTrait } from './exitTrait';
+import { IFEntity } from '../../entities/if-entity.js';
+import { ExitTrait } from './exitTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for exit entities.
@@ -991,7 +996,7 @@ export declare class ExitBehavior {
 /**
  * Behavior functions for climbable objects
  */
-import { IFEntity } from '../../entities/if-entity';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of attempting to climb
  */
@@ -1029,8 +1034,9 @@ export declare class ClimbableBehavior {
 ### traits/openable/openableBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { EntityId } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of an open operation
  */
@@ -1069,6 +1075,15 @@ export declare class OpenableBehavior extends Behavior {
      */
     static canClose(entity: IFEntity): boolean;
     /**
+     * Check if this entity requires a tool to open (ADR-230 D3b;
+     * mirrors LockableBehavior.requiresKey)
+     */
+    static requiresTool(entity: IFEntity): boolean;
+    /**
+     * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
+     */
+    static canOpenWith(entity: IFEntity, toolId: EntityId): boolean;
+    /**
      * Open the entity
      * @returns Result describing what happened
      */
@@ -1097,8 +1112,8 @@ export declare class OpenableBehavior extends Behavior {
 ### traits/lockable/lockableBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of a lock operation
@@ -1192,8 +1207,9 @@ export declare class LockableBehavior extends Behavior {
 /**
  * Behavior for weapon entities
  */
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { SeededRandom } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Result of a weapon damage calculation
  */
@@ -1211,9 +1227,15 @@ export interface IWeaponDamageResult {
 export declare class WeaponBehavior extends Behavior {
     static requiredTraits: "weapon"[];
     /**
-     * Calculate damage for a weapon
+     * Calculate damage for a weapon.
+     *
+     * @param weapon the entity carrying a WeaponTrait
+     * @param rng the caller's seeded RNG stream (ADR-231 D6: injected as a
+     *        parameter — world-model stays engine-free; stdlib actions pass
+     *        `context.random`). Draws: one damage roll, one crit check.
+     * @throws if the entity has no WeaponTrait
      */
-    static calculateDamage(weapon: IFEntity): IWeaponDamageResult;
+    static calculateDamage(weapon: IFEntity, rng: SeededRandom): IWeaponDamageResult;
     /**
      * Check if a weapon can damage a specific target type
      */
@@ -1243,9 +1265,9 @@ export declare class WeaponBehavior extends Behavior {
 /**
  * Behavior for breakable entities
  */
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of breaking an entity
@@ -1290,9 +1312,9 @@ export declare class BreakableBehavior extends Behavior {
 /**
  * Behavior for destructible entities
  */
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of damaging a destructible entity
@@ -1349,11 +1371,21 @@ export declare class DestructibleBehavior extends Behavior {
 
 ```typescript
 /**
- * Behavior for combatant entities
+ * Behavior for combatant entities.
+ *
+ * Combat orchestration — armor reduction, inventory-drop on death, combat messages —
+ * over the entity's combat *stats* (`CombatantTrait`). Health itself lives on the
+ * required {@link HealthTrait}; all health reads/writes route through
+ * {@link HealthBehavior} (ADR-226 / ADR-223 child A). A combatant is guaranteed a
+ * `HealthTrait` by the load-time AC-7 check.
+ *
+ * Public interface: `canAttack` / `attack` / `heal` / `resurrect` / `isAlive` /
+ * `getHealth` / `getHealthPercentage` / `isHostile` / `setHostile`.
+ * Owner context: `@sharpee/world-model` — combat (requires the HEALTH layer).
  */
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { WorldModel } from '../../world/WorldModel';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { WorldModel } from '../../world/WorldModel.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of a combat attack
@@ -1368,52 +1400,47 @@ export interface ICombatResult {
     message?: string;
     deathMessage?: string;
 }
-/**
- * Behavior for combatant entities.
- *
- * Handles combat with health, armor, and death.
- * This is a world-aware behavior because it handles inventory dropping on death.
- */
 export declare class CombatBehavior extends Behavior {
-    static requiredTraits: "combatant"[];
+    static requiredTraits: ("combatant" | "health")[];
     /**
-     * Check if a combatant can be attacked
+     * Check if a combatant can be attacked (present, and alive per its health).
      */
     static canAttack(entity: IFEntity): boolean;
     /**
-     * Attack a combatant
+     * Attack a combatant.
      * @param entity The combatant to attack
-     * @param damage Base damage amount
+     * @param damage Base damage amount (pre-armor)
      * @param world The world model (needed for dropping inventory)
      * @returns Result describing what happened
      */
     static attack(entity: IFEntity, damage: number, world: WorldModel): ICombatResult;
     /**
-     * Heal a combatant
+     * Heal a combatant. Returns the amount actually healed.
      */
     static heal(entity: IFEntity, amount: number): number;
     /**
-     * Resurrect a dead combatant
+     * Resurrect a dead combatant — clears the terminal state and restores full health.
+     * @returns true if a dead combatant was resurrected, false if it was already alive
      */
     static resurrect(entity: IFEntity): boolean;
     /**
-     * Check if combatant is alive
+     * Check if combatant is alive (via its health). Non-combatants are alive by default.
      */
     static isAlive(entity: IFEntity): boolean;
     /**
-     * Get current health
+     * Get current health.
      */
     static getHealth(entity: IFEntity): number;
     /**
-     * Get health percentage
+     * Get health percentage.
      */
     static getHealthPercentage(entity: IFEntity): number;
     /**
-     * Check if combatant is hostile
+     * Check if combatant is hostile.
      */
     static isHostile(entity: IFEntity): boolean;
     /**
-     * Set hostility
+     * Set hostility.
      */
     static setHostile(entity: IFEntity, hostile: boolean): void;
 }
@@ -1427,9 +1454,15 @@ export declare class CombatBehavior extends Behavior {
  *
  * Coordinates the various combat behaviors to handle attacks
  */
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from '../world/WorldModel';
-import { EntityId } from '@sharpee/core';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from '../world/WorldModel.js';
+import { EntityId, SeededRandom } from '@sharpee/core';
+/**
+ * Why an unsuccessful attack had no effect. A reason CODE for the language
+ * layer (stdlib maps each to a message ID) — world-model never emits English
+ * (platform-issue-sweep Phase 3c, David's 2026-07-20 ruling).
+ */
+export type AttackIneffectiveReason = 'requires_weapon' | 'wrong_weapon_type' | 'invulnerable' | 'no_effect';
 /**
  * Combined result of an attack
  */
@@ -1445,6 +1478,14 @@ export interface IAttackResult {
     exitRevealed?: string;
     transformedTo?: EntityId;
     weaponBroke?: boolean;
+    /** Set on failure (`success: false`): the reason code, never prose. */
+    reason?: AttackIneffectiveReason;
+    /**
+     * AUTHOR-provided prose passed through verbatim from trait fields
+     * (breakable message, destructible damage/destroy messages, combatant
+     * hit/death messages). Never platform-written English — failure paths
+     * carry `reason` instead.
+     */
     message?: string;
 }
 /**
@@ -1459,9 +1500,12 @@ export declare class AttackBehavior {
      * @param target The entity being attacked
      * @param weapon Optional weapon being used
      * @param world The world model
+     * @param rng The caller's seeded RNG stream, threaded to
+     *        WeaponBehavior.calculateDamage (ADR-231 D6 — world-model stays
+     *        engine-free; stdlib's attacking action passes `context.random`)
      * @returns Combined attack result
      */
-    static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel): IAttackResult;
+    static attack(target: IFEntity, weapon: IFEntity | undefined, world: WorldModel, rng: SeededRandom): IAttackResult;
     /**
      * Check if a target can be attacked
      */
@@ -1472,6 +1516,76 @@ export declare class AttackBehavior {
      * @returns The best weapon found, or undefined
      */
     static inferWeapon(inventory: IFEntity[]): IFEntity | undefined;
+}
+```
+
+### traits/health/healthBehavior
+
+```typescript
+/**
+ * Behavior for the HEALTH layer (ADR-226).
+ *
+ * All derivation and mutation over {@link HealthTrait} data. Consumers call these
+ * static methods rather than reading the trait's fields through getters, so the
+ * model survives `loadJSON()` (the `npc-service` `canAct`-getter footgun this layer
+ * removes). Consciousness is purely derived from `health` — there is no stored
+ * knocked-out flag, no `knockOut`/`wakeUp`, and no recovery timer (ADR-226 §1 F1).
+ *
+ * Public interface: `isAlive` / `isConscious` / `canAct` (pure derivation) and
+ * `takeDamage` / `heal` / `kill` (mutation). All operate on a `HealthTrait` directly;
+ * callers first confirm the entity has one (an entity with no `HealthTrait` is alive
+ * and conscious by default — ADR-226 §3 opt-in rule — a check owned by the caller).
+ * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
+ */
+import { Behavior } from '../../behaviors/behavior.js';
+import { HealthTrait } from './healthTrait.js';
+export declare class HealthBehavior extends Behavior {
+    static requiredTraits: "health"[];
+    /**
+     * Whether the entity is alive: not terminally dead and above zero health.
+     * @param t the entity's health trait
+     */
+    static isAlive(t: HealthTrait): boolean;
+    /**
+     * Whether the entity is conscious: alive, not asleep, and above the
+     * unconsciousness threshold. Consciousness is derived from `health` alone.
+     * @param t the entity's health trait
+     */
+    static isConscious(t: HealthTrait): boolean;
+    /**
+     * Whether the entity can take a turn / act. Alias of {@link isConscious} — the
+     * turn loop's eligibility predicate (replaces `NpcTrait.canAct`).
+     * @param t the entity's health trait
+     */
+    static canAct(t: HealthTrait): boolean;
+    /**
+     * Apply damage to health. Armor is the caller's concern (a `CombatantTrait` stat),
+     * so `amount` is already post-armor. On reaching zero health the entity dies with
+     * the given `cause`.
+     * @param t the entity's health trait
+     * @param amount post-armor damage; negatives are treated as zero
+     * @param cause cause recorded if this blow is lethal (default 'damage')
+     * @returns `true` iff the entity is now dead
+     */
+    static takeDamage(t: HealthTrait, amount: number, cause?: string): boolean;
+    /**
+     * Restore health, clamped to `maxHealth`. Healing back above the unconsciousness
+     * threshold *is* regaining consciousness (no separate wake step). The dead do not
+     * heal — resurrection is a deliberate separate act, not `heal`.
+     * @param t the entity's health trait
+     * @param amount healing; negatives are treated as zero
+     * @returns the actual amount healed
+     */
+    static heal(t: HealthTrait, amount: number): number;
+    /**
+     * Kill the entity: set the terminal `dead` flag and its `cause`, leaving `health`
+     * untouched. This is death's single writer — non-damage deaths (grue/fall/drown,
+     * ADR-224 `killPlayer`) call it directly; `takeDamage` calls it on a lethal blow.
+     * Death is distinct from `health === 0` (an entity can be dead at full health).
+     * @param t the entity's health trait
+     * @param cause the cause of death (e.g. 'grue', 'fall', 'combat')
+     */
+    static kill(t: HealthTrait, cause: string): void;
 }
 ```
 
@@ -1727,6 +1841,19 @@ export interface IParsedCommand {
     excluded?: INounPhrase[];
     /** Instrument noun phrase for "with/through/using" clauses */
     instrument?: INounPhrase;
+    /**
+     * Conversation topic for ".topic()" slots (ADR-231 D4)
+     * The parser fills `text` only (verbatim, articles preserved) — it never
+     * resolves entities. `entity` exists for shape parity with
+     * IValidatedCommand.topic and is populated by the validator's
+     * entity-first attempt, never here.
+     */
+    topic?: {
+        /** Verbatim topic text as typed */
+        text: string;
+        /** Never set by the parser; see IValidatedCommand.topic */
+        entity?: import('@sharpee/core').EntityId;
+    };
     /** Typed slot values for non-entity slots (number, ordinal, direction, etc.) */
     typedSlots?: Map<string, import('@sharpee/if-domain').TypedSlotValue>;
     /** Vocabulary slot matches (from .fromVocabulary() patterns) */
@@ -1787,8 +1914,9 @@ export interface IParseError {
  * These types represent fully resolved and validated commands
  * with entities and action IDs identified
  */
-import type { IParsedObjectReference, IParsedCommand } from './parsed-command';
-import type { IFEntity } from '../entities/if-entity';
+import type { EntityId } from '@sharpee/core';
+import type { IParsedObjectReference, IParsedCommand } from './parsed-command.js';
+import type { IFEntity } from '../entities/if-entity.js';
 /**
  * Resolved entity reference after validation
  */
@@ -1816,6 +1944,19 @@ export interface IValidatedCommand {
      * e.g., "attack troll with sword" where sword is the instrument
      */
     instrument?: IValidatedObjectReference;
+    /**
+     * Conversation topic if present (ADR-231 D4)
+     * Entity-first resolution with text fallback: `entity` is the EntityId of
+     * the single in-scope entity the topic text named (resolved quietly — no
+     * disambiguation prompt, never a scope rejection); free text flows
+     * through with `entity` undefined.
+     */
+    topic?: {
+        /** Verbatim topic text as typed */
+        text: string;
+        /** Resolved in-scope entity, when the text named exactly one */
+        entity?: EntityId;
+    };
     /** Validation metadata */
     metadata?: {
         /** Time taken to validate */
@@ -1841,8 +1982,8 @@ export interface IValidationError {
 /**
  * Command processing error types and result types
  */
-import type { IParseError } from './parsed-command';
-import type { IValidationError, IValidatedCommand } from './validated-command';
+import type { IParseError } from './parsed-command.js';
+import type { IValidationError, IValidatedCommand } from './validated-command.js';
 /**
  * Errors that can occur during execution
  */
@@ -1875,7 +2016,7 @@ export type CommandResult<T, E = CommandError> = {
 /**
  * Parser interface for converting text input to parsed commands
  */
-import type { IParsedCommand, IParseError, CommandResult } from '../commands';
+import type { IParsedCommand, IParseError, CommandResult } from '../commands/index.js';
 /**
  * Parser interface - pure syntax, no world knowledge
  */
@@ -1895,7 +2036,7 @@ export interface IParser {
 /**
  * Command validator interface for resolving entities and checking preconditions
  */
-import type { IParsedCommand, IValidatedCommand, IValidationError } from '../commands';
+import type { IParsedCommand, IValidatedCommand, IValidationError } from '../commands/index.js';
 import type { Result } from '@sharpee/core';
 /**
  * Validator interface - resolves entities and checks preconditions
@@ -1917,7 +2058,7 @@ export interface ICommandValidator {
  * Command executor interface for executing validated commands
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { IValidatedCommand, IExecutionError, CommandResult } from '../commands';
+import type { IValidatedCommand, IExecutionError, CommandResult } from '../commands/index.js';
 /**
  * Executor interface - applies business logic
  */
@@ -1938,7 +2079,7 @@ export interface ICommandExecutor {
  * Command processor interface for the complete command pipeline
  */
 import type { ISemanticEvent } from '@sharpee/core';
-import type { CommandError, CommandResult } from '../commands';
+import type { CommandError, CommandResult } from '../commands/index.js';
 /**
  * Combined command processor using all three phases
  */
@@ -1961,7 +2102,7 @@ export interface ICommandProcessor {
  * Traits are pure data structures with no behavior.
  * All logic belongs in behaviors.
  */
-import { TraitType } from './trait-types';
+import { TraitType } from './trait-types.js';
 /**
  * Base trait interface - just type identification
  */
@@ -2017,11 +2158,12 @@ export declare const TraitType: {
     readonly SUPPORTER: "supporter";
     readonly ROOM: "room";
     readonly WEARABLE: "wearable";
-    readonly CLOTHING: "clothing";
     readonly EDIBLE: "edible";
     readonly SCENERY: "scenery";
     readonly OPENABLE: "openable";
     readonly LOCKABLE: "lockable";
+    readonly CUTTABLE: "cuttable";
+    readonly DIGGABLE: "diggable";
     readonly SWITCHABLE: "switchable";
     readonly READABLE: "readable";
     readonly LIGHT_SOURCE: "lightSource";
@@ -2041,6 +2183,8 @@ export declare const TraitType: {
     readonly DESTRUCTIBLE: "destructible";
     readonly COMBATANT: "combatant";
     readonly EQUIPPED: "equipped";
+    readonly HEALTH: "health";
+    readonly DEADLY_ROOM: "deadlyRoom";
     readonly NPC: "npc";
     readonly OPEN_INVENTORY: "openInventory";
     readonly CHARACTER_MODEL: "characterModel";
@@ -2103,43 +2247,46 @@ export declare function registerTraitType(name: string, value: string, category?
  *
  * Maps trait types to their implementation classes
  */
-import { TraitType } from './trait-types';
-import { ITraitConstructor } from './trait';
-import { IdentityTrait } from './identity/identityTrait';
-import { ContainerTrait } from './container/containerTrait';
-import { SupporterTrait } from './supporter/supporterTrait';
-import { RoomTrait } from './room/roomTrait';
-import { WearableTrait } from './wearable/wearableTrait';
-import { ClothingTrait } from './clothing/clothingTrait';
-import { EdibleTrait } from './edible/edibleTrait';
-import { SceneryTrait } from './scenery/sceneryTrait';
-import { OpenableTrait } from './openable/openableTrait';
-import { LockableTrait } from './lockable/lockableTrait';
-import { SwitchableTrait } from './switchable/switchableTrait';
-import { ReadableTrait } from './readable/readableTrait';
-import { LightSourceTrait } from './light-source/lightSourceTrait';
-import { DoorTrait } from './door/doorTrait';
-import { ClimbableTrait } from './climbable/climbableTrait';
-import { RegionTrait } from './region/regionTrait';
-import { SceneTrait } from './scene/sceneTrait';
-import { ActorTrait } from './actor/actorTrait';
-import { ExitTrait } from './exit/exitTrait';
-import { PullableTrait } from './pullable/pullableTrait';
-import { AttachedTrait } from './attached/attachedTrait';
-import { PushableTrait } from './pushable/pushableTrait';
-import { ButtonTrait } from './button/buttonTrait';
-import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait';
-import { WeaponTrait } from './weapon/weaponTrait';
-import { BreakableTrait } from './breakable/breakableTrait';
-import { DestructibleTrait } from './destructible/destructibleTrait';
-import { CombatantTrait } from './combatant/combatantTrait';
-import { EquippedTrait } from './equipped/equippedTrait';
-import { NpcTrait } from './npc/npcTrait';
-import { OpenInventoryTrait } from './open-inventory/openInventoryTrait';
-import { CharacterModelTrait } from './character-model/characterModelTrait';
-import { VehicleTrait } from './vehicle/vehicleTrait';
-import { EnterableTrait } from './enterable/enterableTrait';
-import { StoryInfoTrait } from './story-info/storyInfoTrait';
+import { TraitType } from './trait-types.js';
+import { ITrait, ITraitConstructor } from './trait.js';
+import { IdentityTrait } from './identity/identityTrait.js';
+import { ContainerTrait } from './container/containerTrait.js';
+import { SupporterTrait } from './supporter/supporterTrait.js';
+import { RoomTrait } from './room/roomTrait.js';
+import { WearableTrait } from './wearable/wearableTrait.js';
+import { EdibleTrait } from './edible/edibleTrait.js';
+import { SceneryTrait } from './scenery/sceneryTrait.js';
+import { OpenableTrait } from './openable/openableTrait.js';
+import { LockableTrait } from './lockable/lockableTrait.js';
+import { CuttableTrait } from './cuttable/cuttableTrait.js';
+import { DiggableTrait } from './diggable/diggableTrait.js';
+import { SwitchableTrait } from './switchable/switchableTrait.js';
+import { ReadableTrait } from './readable/readableTrait.js';
+import { LightSourceTrait } from './light-source/lightSourceTrait.js';
+import { DoorTrait } from './door/doorTrait.js';
+import { ClimbableTrait } from './climbable/climbableTrait.js';
+import { RegionTrait } from './region/regionTrait.js';
+import { SceneTrait } from './scene/sceneTrait.js';
+import { ActorTrait } from './actor/actorTrait.js';
+import { ExitTrait } from './exit/exitTrait.js';
+import { PullableTrait } from './pullable/pullableTrait.js';
+import { AttachedTrait } from './attached/attachedTrait.js';
+import { PushableTrait } from './pushable/pushableTrait.js';
+import { ButtonTrait } from './button/buttonTrait.js';
+import { MoveableSceneryTrait } from './moveable-scenery/moveableSceneryTrait.js';
+import { WeaponTrait } from './weapon/weaponTrait.js';
+import { BreakableTrait } from './breakable/breakableTrait.js';
+import { DestructibleTrait } from './destructible/destructibleTrait.js';
+import { CombatantTrait } from './combatant/combatantTrait.js';
+import { EquippedTrait } from './equipped/equippedTrait.js';
+import { HealthTrait } from './health/healthTrait.js';
+import { DeadlyRoomTrait } from './deadly-room/deadlyRoomTrait.js';
+import { NpcTrait } from './npc/npcTrait.js';
+import { OpenInventoryTrait } from './open-inventory/openInventoryTrait.js';
+import { CharacterModelTrait } from './character-model/characterModelTrait.js';
+import { VehicleTrait } from './vehicle/vehicleTrait.js';
+import { EnterableTrait } from './enterable/enterableTrait.js';
+import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 /**
  * Map of trait types to their constructors
  */
@@ -2152,7 +2299,31 @@ export declare function getTraitImplementation(type: TraitType): ITraitConstruct
  * Create trait instance by type
  */
 export declare function createTrait(type: TraitType, data?: any): InstanceType<ITraitConstructor>;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, ClothingTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+/**
+ * Rehydrate a serialized trait to a live instance of its implementation class
+ * (platform-issue-sweep Phase 5, 2026-07-20).
+ *
+ * Serialization captures own enumerable fields only; prototype accessors
+ * (WearableTrait.isWorn) and methods (ConcealmentTrait.supportsPosition) live
+ * on the class prototype and were LOST by the old raw-JSON rehydration —
+ * after save/restore/undo, any consumer of a trait getter or method saw
+ * `undefined` / not-a-function (e.g. getContents' worn-item filter reads
+ * `wearable.isWorn`, so a restored worn item silently escaped the filter).
+ *
+ * Object.create + Object.assign restores the prototype and copies exactly
+ * the serialized state without running constructor logic (constructor shapes
+ * vary per trait; a save of the same code version carries the complete own
+ * state). Unknown types — story-defined traits — keep the raw data object,
+ * as before: their classes are not registered here.
+ *
+ * @param traitData a serialized trait ({ type, ...own fields })
+ * @returns a prototype-restored instance for known core types; the raw data
+ *          object for unknown (story-defined) types
+ */
+export declare function rehydrateTrait(traitData: {
+    type: string;
+} & Record<string, unknown>): ITrait;
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -2174,7 +2345,7 @@ export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait
  * hooks here. INVARIANT: contributors return locale-neutral adjective *tokens*
  * (the English realization is the Assembler's); no article/grammar logic here.
  */
-import type { IFEntity } from './entities/if-entity';
+import type { IFEntity } from './entities/if-entity.js';
 /** Derive adjective tokens from an entity's live state. */
 export type AdjectiveContributor = (entity: IFEntity) => string[];
 /**
@@ -2227,7 +2398,7 @@ export declare function getStateAdjectives(entity: IFEntity): string[];
  * clause *content* an author supplied (e.g. the trait's `onDescription`); it adds
  * no punctuation or connective — that is the slot's authority in the Assembler.
  */
-import type { IFEntity } from './entities/if-entity';
+import type { IFEntity } from './entities/if-entity.js';
 /** Derive post-noun detail-clause fragments from an entity's live state. */
 export type ClauseContributor = (entity: IFEntity) => string[];
 /**
@@ -2253,7 +2424,7 @@ export declare function getStateClauses(entity: IFEntity): string[];
 ### traits/identity/identityTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Identity trait provides basic naming and description for entities.
  * This is one of the most fundamental traits in IF.
@@ -2288,6 +2459,13 @@ export declare class IdentityTrait implements ITrait {
     properName: boolean;
     /** Article to use with the name ("a", "an", "the", "some", or empty for proper names) */
     article: string;
+    /**
+     * Pronoun set for gendered / neopronoun reference (ADR-242 D6): one of
+     * the standard sets ('he' | 'she' | 'it' | 'they') or a named set
+     * registered with the language provider. Absent = the phrase chain's
+     * by-number fallback — no default is injected anywhere.
+     */
+    pronounSet?: string;
     /**
      * Author-supplied plural form for irregular nouns (ADR-190), e.g. "geese" for
      * "goose". The `list`/`count` formatters use this when set, else fall back to the
@@ -2344,8 +2522,8 @@ export declare class IdentityTrait implements ITrait {
 ### traits/identity/identityBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for entities with identity.
  *
@@ -2409,10 +2587,45 @@ export declare class IdentityBehavior extends Behavior {
 }
 ```
 
+### traits/identity/name-vocabulary
+
+```typescript
+/**
+ * Name-vocabulary derivation (ADR-231 D3, PIN 2).
+ *
+ * Purpose: derive the matchable content words of an entity name as a PURE
+ * on-demand computation from the current name — never stored on the trait.
+ * The command validator (stdlib) and any other matcher call this helper at
+ * match time, so Chord-loaded and TS-authored entities behave identically
+ * by construction, and runtime renames can never leave stale vocabulary.
+ *
+ * Public interface: `deriveNameVocabulary(name)`, `NAME_VOCABULARY_STOPWORDS`.
+ * Owner context: world-model identity area (naming/identity utilities).
+ */
+/**
+ * Stopwords dropped from name vocabulary (PIN 2's content-word definition).
+ * "bag of holding" → {bag, holding}; "the crystal skull" → {crystal, skull}.
+ */
+export declare const NAME_VOCABULARY_STOPWORDS: ReadonlySet<string>;
+/**
+ * Derive the content-word vocabulary of an entity name.
+ *
+ * Pure function of the input string — no storage, no side effects
+ * (invariant: vocabulary is always a derivation of the CURRENT name).
+ *
+ * @param name The entity's display name (any casing/whitespace).
+ * @returns Lowercased content words in order of appearance, deduplicated:
+ *   whitespace-tokenized, stopwords ({the, a, an, of}) removed. Hyphenated
+ *   tokens stay single words ("jack-in-the-box" → ["jack-in-the-box"]).
+ *   Empty or stopword-only names yield [].
+ */
+export declare function deriveNameVocabulary(name: string): string[];
+```
+
 ### traits/container/containerTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Container trait allows entities to hold other entities inside them.
  *
@@ -2452,8 +2665,8 @@ export declare class ContainerTrait implements ITrait {
 ### traits/container/container-utils
 
 ```typescript
-import { ITrait } from '../trait';
-import { IFEntity } from '../../entities/if-entity';
+import { ITrait } from '../trait.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Interface for traits that provide container functionality.
  * This includes ContainerTrait, RoomTrait, and ActorTrait.
@@ -2495,9 +2708,9 @@ export declare function hasContainerProperties(trait: any): trait is IContainerC
 ### traits/room/roomTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import { SnippetMap } from '@sharpee/if-domain';
-import { DirectionType } from '../../constants/directions';
+import { DirectionType } from '../../constants/directions.js';
 /**
  * Map position hint for an exit (ADR-113).
  * Overrides direction-based positioning in the auto-mapper.
@@ -2527,8 +2740,13 @@ export interface IRoomData {
     blockedExits?: Partial<Record<DirectionType, string>>;
     /** Whether this is an outdoor location */
     outdoor?: boolean;
-    /** Whether this room is dark (requires light source to see) */
-    isDark?: boolean;
+    /**
+     * Whether this room is *intrinsically* dark — it needs an active light source
+     * to be seen. This is the raw input, not the answer: the effective "is it dark
+     * right now?" question (which also accounts for a carried lit lamp) is owned by
+     * `VisibilityBehavior.isDark(room, world)` — never read this field directly for that.
+     */
+    requiresLight?: boolean;
     /** Whether this room is affected by time of day (for outdoor locations) */
     isOutdoors?: boolean;
     /** Whether this room is underground (never has natural light) */
@@ -2591,7 +2809,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     exits: Partial<Record<DirectionType, IExitInfo>>;
     blockedExits?: Partial<Record<DirectionType, string>>;
     outdoor: boolean;
-    isDark: boolean;
+    requiresLight: boolean;
     isOutdoors: boolean;
     isUnderground: boolean;
     initialDescription?: string;
@@ -2618,11 +2836,11 @@ export declare class RoomTrait implements ITrait, IRoomData {
 ### traits/room/roomBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { IExitInfo } from './roomTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { IExitInfo } from './roomTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { DirectionType } from '../../constants/directions';
+import { DirectionType } from '../../constants/directions.js';
 /**
  * Behavior for room entities.
  *
@@ -2709,7 +2927,8 @@ export declare class RoomBehavior extends Behavior {
 ### traits/openable/openableTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { EntityId } from '@sharpee/core';
+import { ITrait } from '../trait.js';
 export interface IOpenableData {
     /** Whether the entity is currently open */
     isOpen?: boolean;
@@ -2735,6 +2954,10 @@ export interface IOpenableData {
     openDescription?: string;
     /** Description when closed (used by computed description getter on IFEntity) */
     closedDescription?: string;
+    /** Single tool entity required to open this (ADR-230 D3b; mirrors ILockableData.keyId) */
+    toolId?: EntityId;
+    /** Multiple tool entities that can open this (mirrors ILockableData.keyIds) */
+    toolIds?: EntityId[];
 }
 /**
  * Openable trait for entities that can be opened and closed.
@@ -2758,6 +2981,8 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
     closeSound?: string;
     openDescription?: string;
     closedDescription?: string;
+    toolId?: EntityId;
+    toolIds?: EntityId[];
     constructor(data?: IOpenableData);
 }
 ```
@@ -2766,7 +2991,7 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
 
 ```typescript
 import { EntityId } from '@sharpee/core';
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface ILockableData {
     /** Whether the entity is currently locked */
     isLocked?: boolean;
@@ -2825,10 +3050,146 @@ export declare class LockableTrait implements ITrait, ILockableData {
 }
 ```
 
+### traits/cuttable/cuttableTrait
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { ITrait } from '../trait.js';
+/**
+ * Data for the cuttable trait (ADR-230 D3c).
+ *
+ * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
+ * OpenableTrait's tool fields): a declared requirement makes the cutting
+ * action refuse wrong/missing tools; no requirement means any explicit
+ * tool (or none) passes validation.
+ */
+export interface ICuttableData {
+    /** Single tool entity required to cut this (mirrors ILockableData.keyId) */
+    toolId?: EntityId;
+    /** Multiple tool entities that can cut this (mirrors ILockableData.keyIds) */
+    toolIds?: EntityId[];
+}
+/**
+ * Cuttable trait — marks an entity the cutting action may target.
+ *
+ * The trait gates eligibility only. The cut OUTCOME is the entity's own
+ * registered implementation (ADR-090 capability behavior from TS, or a
+ * Chord `on cutting it` interceptor) — the standard cutting action never
+ * mutates state itself. An entity with this trait and no registered
+ * implementation is an authoring error (load-time in Chord; runtime
+ * safety-net refusal otherwise).
+ *
+ * This trait contains only data - eligibility/tool logic is in
+ * CuttableBehavior.
+ */
+export declare class CuttableTrait implements ITrait, ICuttableData {
+    static readonly type: "cuttable";
+    readonly type: "cuttable";
+    toolId?: EntityId;
+    toolIds?: EntityId[];
+    constructor(data?: ICuttableData);
+}
+```
+
+### traits/cuttable/cuttableBehavior
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+/**
+ * Behavior for cuttable entities (ADR-230 D3c).
+ *
+ * Pure predicates only — the cutting action's validate() consults these;
+ * the cut mutation itself belongs to the entity's registered
+ * implementation, never here.
+ */
+export declare class CuttableBehavior extends Behavior {
+    static requiredTraits: "cuttable"[];
+    /**
+     * Check if this entity requires a tool to cut (mirrors
+     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
+     */
+    static requiresTool(entity: IFEntity): boolean;
+    /**
+     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
+     */
+    static canCutWith(entity: IFEntity, toolId: EntityId): boolean;
+}
+```
+
+### traits/diggable/diggableTrait
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { ITrait } from '../trait.js';
+/**
+ * Data for the diggable trait (ADR-230 Phase 6 (sketch ruling 6)).
+ *
+ * Tool fields mirror ILockableData's key config (PIN 2 shared shape with
+ * OpenableTrait's tool fields): a declared requirement makes the digging
+ * action refuse wrong/missing tools; no requirement means any explicit
+ * tool (or none) passes validation.
+ */
+export interface IDiggableData {
+    /** Single tool entity required to dig this (mirrors ILockableData.keyId) */
+    toolId?: EntityId;
+    /** Multiple tool entities that can dig this (mirrors ILockableData.keyIds) */
+    toolIds?: EntityId[];
+}
+/**
+ * Diggable trait — marks an entity the digging action may target.
+ *
+ * The trait gates eligibility only. The dig OUTCOME is the entity's own
+ * registered implementation (ADR-090 capability behavior from TS, or a
+ * Chord `on digging it` interceptor) — the standard digging action never
+ * mutates state itself. An entity with this trait and no registered
+ * implementation is an authoring error (load-time in Chord; runtime
+ * safety-net refusal otherwise).
+ *
+ * This trait contains only data - eligibility/tool logic is in
+ * DiggableBehavior.
+ */
+export declare class DiggableTrait implements ITrait, IDiggableData {
+    static readonly type: "diggable";
+    readonly type: "diggable";
+    toolId?: EntityId;
+    toolIds?: EntityId[];
+    constructor(data?: IDiggableData);
+}
+```
+
+### traits/diggable/diggableBehavior
+
+```typescript
+import { EntityId } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+/**
+ * Behavior for diggable entities (ADR-230 Phase 6 (sketch ruling 6)).
+ *
+ * Pure predicates only — the digging action's validate() consults these;
+ * the cut mutation itself belongs to the entity's registered
+ * implementation, never here.
+ */
+export declare class DiggableBehavior extends Behavior {
+    static requiredTraits: "diggable"[];
+    /**
+     * Check if this entity requires a tool to cut (mirrors
+     * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
+     */
+    static requiresTool(entity: IFEntity): boolean;
+    /**
+     * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
+     */
+    static canDigWith(entity: IFEntity, toolId: EntityId): boolean;
+}
+```
+
 ### traits/readable/readableTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Readable trait for entities that have text to read.
  * Used for books, signs, notes, inscriptions, etc.
@@ -2869,7 +3230,7 @@ export declare class ReadableTrait implements ITrait {
 ### traits/light-source/lightSourceTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * LightSource trait allows entities to provide illumination.
  *
@@ -2912,7 +3273,7 @@ export declare class LightSourceTrait implements ITrait {
 ### traits/exit/exitTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Exit trait for entities that represent passages between locations.
  * Used for doors, passages, portals, and any custom exits like "xyzzy".
@@ -2960,7 +3321,7 @@ export declare class ExitTrait implements ITrait {
 /**
  * Trait for objects that can be climbed (ladders, trees, mountains, etc.)
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Trait for climbable objects
  */
@@ -2992,7 +3353,7 @@ export declare function createClimbableTrait(options?: Partial<Omit<ClimbableTra
 ### traits/scenery/sceneryTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Scenery trait marks items as fixed in place and not takeable.
  *
@@ -3026,7 +3387,7 @@ export declare class SceneryTrait implements ITrait {
 ### traits/supporter/supporterTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Supporter trait allows entities to have other entities placed on top of them.
  *
@@ -3056,9 +3417,9 @@ export declare class SupporterTrait implements ITrait {
 ### traits/supporter/supporterBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { IWorldQuery } from '../container/containerBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { IWorldQuery } from '../container/containerBehavior.js';
 /**
  * Result of adding an item to a supporter
  */
@@ -3143,7 +3504,7 @@ export declare class SupporterBehavior extends Behavior {
 ### traits/switchable/switchableTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface ISwitchableData {
     /** Whether the entity is currently on */
     isOn?: boolean;
@@ -3223,8 +3584,8 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
 ### traits/switchable/switchableBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 import { ISemanticEvent } from '@sharpee/core';
 export interface ISwitchOnResult {
     success: boolean;
@@ -3300,7 +3661,7 @@ export declare class SwitchableBehavior extends Behavior {
 ### traits/wearable/wearableTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IWearableData {
     /** Whether the item is currently being worn */
     isWorn?: boolean;
@@ -3358,7 +3719,7 @@ export declare class WearableTrait implements ITrait, IWearableData {
 ### traits/edible/edibleTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /** Taste quality values */
 export type TasteQuality = 'delicious' | 'tasty' | 'good' | 'plain' | 'bland' | 'awful' | 'terrible';
 export interface IEdibleData {
@@ -3418,9 +3779,9 @@ export declare class EdibleTrait implements ITrait, IEdibleData {
 ### traits/edible/edibleBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { TasteQuality } from './edibleTrait';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { TasteQuality } from './edibleTrait.js';
 import { ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for edible entities.
@@ -3480,7 +3841,7 @@ export declare class EdibleBehavior extends Behavior {
 ### traits/door/doorTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Door trait marks an entity as a connection between two rooms.
  *
@@ -3503,8 +3864,8 @@ export declare class DoorTrait implements ITrait {
 ### traits/door/doorBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Behavior for door entities.
  *
@@ -3549,7 +3910,7 @@ export declare class DoorBehavior extends Behavior {
 ### traits/actor/actorTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Full pronoun set for animate entities (ADR-089)
  */
@@ -3711,10 +4072,10 @@ export declare class ActorTrait implements ITrait, IActorTrait {
 ### traits/actor/actorBehavior
 
 ```typescript
-import { Behavior } from '../../behaviors/behavior';
-import { IFEntity } from '../../entities/if-entity';
-import { ActorTrait } from './actorTrait';
-import { IWorldQuery } from '../container/containerBehavior';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { ActorTrait } from './actorTrait.js';
+import { IWorldQuery } from '../container/containerBehavior.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Result of a take item operation
@@ -3839,7 +4200,7 @@ export declare class ActorBehavior extends Behavior {
 /**
  * Attached trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IAttachedData {
     /**
      * What this is attached to (entity ID)
@@ -3904,7 +4265,7 @@ export declare class AttachedTrait implements ITrait, IAttachedData {
 /**
  * Button trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IButtonData {
     /**
      * Whether the button stays pressed or pops back
@@ -3955,75 +4316,13 @@ export declare class ButtonTrait implements ITrait, IButtonData {
 }
 ```
 
-### traits/clothing/clothingTrait
-
-```typescript
-import { ITrait } from '../trait';
-import { IWearableData } from '../wearable/wearableTrait';
-export interface IClothingData extends IWearableData {
-    /** Material the clothing is made from */
-    material?: string;
-    /** Style or type of clothing */
-    style?: string;
-    /** Whether this clothing can get wet, dirty, torn, etc. */
-    damageable?: boolean;
-    /** Current condition of the clothing */
-    condition?: 'pristine' | 'good' | 'worn' | 'torn' | 'ruined';
-}
-/**
- * ClothingTrait is a specialized wearable trait for clothing items.
- * Clothing items (coats, pants, dresses) can have pockets and other special properties.
- *
- * This trait includes all WearableData properties but is a separate trait type
- * to allow for clothing-specific behaviors and queries.
- *
- * Pockets should be created as separate container entities with SceneryTrait
- * and placed inside the clothing item.
- *
- * @example
- * ```typescript
- * const coat = world.createEntity('Winter Coat', 'item');
- * coat.add(new ClothingTrait({ slot: 'torso', material: 'wool' }));
- * coat.add(new ContainerTrait()); // So it can contain pockets
- *
- * const pocket = world.createEntity('inside pocket', 'container');
- * pocket.add(new ContainerTrait({ capacity: 3 }));
- * pocket.add(new SceneryTrait({ cantTakeMessage: "The pocket is sewn into the coat." }));
- * world.moveEntity(pocket.id, coat.id);
- * ```
- */
-export declare class ClothingTrait implements ITrait, IClothingData {
-    static readonly type: "clothing";
-    readonly type: "clothing";
-    worn: boolean;
-    wornBy?: string;
-    slot: string;
-    layer: number;
-    wearMessage?: string;
-    removeMessage?: string;
-    wearableOver: boolean;
-    blocksSlots: string[];
-    weight: number;
-    bulk: number;
-    canRemove: boolean;
-    bodyPart: string;
-    material: string;
-    style: string;
-    damageable: boolean;
-    condition: 'pristine' | 'good' | 'worn' | 'torn' | 'ruined';
-    get isWorn(): boolean;
-    set isWorn(value: boolean);
-    constructor(data?: IClothingData);
-}
-```
-
 ### traits/moveable-scenery/moveableSceneryTrait
 
 ```typescript
 /**
  * Moveable scenery trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IMoveableSceneryData {
     /**
      * Weight class of the object
@@ -4096,7 +4395,7 @@ export declare class MoveableSceneryTrait implements ITrait, IMoveableSceneryDat
 /**
  * Pullable trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IPullableData {
     /**
      * Type of pullable object - determines behavior
@@ -4181,7 +4480,7 @@ export declare class PullableTrait implements ITrait, IPullableData {
 /**
  * Pushable trait implementation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 export interface IPushableData {
     /**
      * Type of pushable object - determines behavior
@@ -4269,17 +4568,17 @@ export declare class PushableTrait implements ITrait, IPushableData {
  * Marks an entity as a Non-Player Character that can act autonomously.
  * NPCs participate in the turn cycle and can have behaviors.
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 import { EntityId } from '@sharpee/core';
 /**
  * Interface for NPC trait data
  */
 export interface INpcData {
-    /** Whether this NPC is currently alive */
-    isAlive?: boolean;
-    /** Whether this NPC is conscious (can act) */
-    isConscious?: boolean;
-    /** Whether this NPC is hostile to the player */
+    /**
+     * Whether this NPC is hostile to the player.
+     * (Life-state — alive/conscious — lives on HealthTrait, ADR-226; hostility moves
+     * to disposition in ADR-223 child C.)
+     */
     isHostile?: boolean;
     /** Whether this NPC can move between rooms */
     canMove?: boolean;
@@ -4326,8 +4625,6 @@ export interface INpcData {
 export declare class NpcTrait implements ITrait, INpcData {
     static readonly type: "npc";
     readonly type: "npc";
-    isAlive: boolean;
-    isConscious: boolean;
     isHostile: boolean;
     canMove: boolean;
     allowedRooms?: EntityId[];
@@ -4346,10 +4643,6 @@ export declare class NpcTrait implements ITrait, INpcData {
     customProperties?: Record<string, unknown>;
     constructor(data?: INpcData);
     /**
-     * Check if NPC can act (alive and conscious)
-     */
-    get canAct(): boolean;
-    /**
      * Check if NPC can enter a specific room
      */
     canEnterRoom(roomId: EntityId): boolean;
@@ -4361,22 +4654,6 @@ export declare class NpcTrait implements ITrait, INpcData {
      * Make this NPC non-hostile
      */
     makePassive(): void;
-    /**
-     * Knock out this NPC (unconscious but alive)
-     */
-    knockOut(): void;
-    /**
-     * Wake up this NPC
-     */
-    wakeUp(): void;
-    /**
-     * Kill this NPC
-     */
-    kill(): void;
-    /**
-     * Revive this NPC
-     */
-    revive(): void;
     /**
      * Set a knowledge item
      */
@@ -4425,7 +4702,7 @@ export declare class NpcTrait implements ITrait, INpcData {
  *
  * Based on Infocom's vehicle concept from Zork.
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Vehicle type determines movement behavior
  */
@@ -4504,8 +4781,8 @@ export declare function createVehicleTrait(options?: Partial<Omit<VehicleTrait, 
  * - Checking if an actor is in a vehicle
  * - Getting the vehicle an actor is in
  */
-import { WorldModel } from '../../world/WorldModel';
-import { IFEntity } from '../../entities/if-entity';
+import { WorldModel } from '../../world/WorldModel.js';
+import { IFEntity } from '../../entities/if-entity.js';
 /**
  * Check if an entity is a vehicle
  */
@@ -4562,7 +4839,7 @@ export declare function canActorWalkInVehicle(world: WorldModel, actorId: string
 ### traits/story-info/storyInfoTrait
 
 ```typescript
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * StoryInfoTrait stores metadata about the game on a system entity.
  * Replaces scattered world['storyConfig'] / world['versionInfo'] casts.
@@ -4604,8 +4881,8 @@ export declare class StoryInfoTrait implements ITrait {
  * Public interface: ICharacterModelData, CharacterModelTrait, CharacterPredicate.
  * Owner context: world-model / character-model trait
  */
-import { ITrait } from '../trait';
-import { PersonalityTrait, PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, Fact, FactSource, Belief, ResistanceMode, Goal, LucidityConfig, PerceptionFilterConfig, PerceivedEvent } from './character-vocabulary';
+import { ITrait } from '../trait.js';
+import { PersonalityTrait, PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, Fact, FactSource, Belief, ResistanceMode, Goal, LucidityConfig, PerceptionFilterConfig, PerceivedEvent } from './character-vocabulary.js';
 /** Serializable data for constructing a CharacterModelTrait. */
 export interface ICharacterModelData {
     /** Personality traits with intensity values (0-1). */
@@ -5041,7 +5318,7 @@ export interface PerceivedEvent {
  * Public interface: ConcealmentTrait, ConcealmentPosition, isConcealmentTrait.
  * Owner context: @sharpee/world-model / traits
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /** How an actor can hide relative to the entity */
 export type ConcealmentPosition = 'behind' | 'under' | 'on' | 'inside';
 /** How well the hiding spot conceals — affects NPC detection at the story level */
@@ -5102,9 +5379,9 @@ export declare function isConcealmentTrait(trait: ITrait): trait is ConcealmentT
  * Public interface: ConcealedStateTrait, IConcealedStateTrait, isConcealed, getConcealmentState.
  * Owner context: @sharpee/world-model / traits
  */
-import { ITrait } from '../trait';
-import { IFEntity } from '../../entities';
-import { ConcealmentPosition, ConcealmentQuality } from './concealmentTrait';
+import { ITrait } from '../trait.js';
+import { IFEntity } from '../../entities/index.js';
+import { ConcealmentPosition, ConcealmentQuality } from './concealmentTrait.js';
 /**
  * Data interface for the concealed state.
  */
@@ -5162,8 +5439,8 @@ export declare function getConcealmentState(entity: IFEntity): IConcealedStateTr
  * Public interface: ConcealedVisibilityBehavior, registerConcealedVisibilityBehavior.
  * Owner context: @sharpee/world-model / traits / concealment
  */
-import { CapabilityBehavior } from '../../capabilities/capability-behavior';
-import { WorldModel } from '../../world/WorldModel';
+import { CapabilityBehavior } from '../../capabilities/capability-behavior.js';
+import { WorldModel } from '../../world/WorldModel.js';
 /**
  * Default visibility behavior for concealed actors.
  *
@@ -5211,7 +5488,7 @@ export declare function registerConcealedVisibilityBehavior(world: WorldModel): 
  * @see ADR-172 — Spatial Sound Propagation
  * @see ADR-173 — Wall Adjacency Primitive (taxonomy)
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * The four discrete acoustic tiers a wall material may have. Authored
  * qualitatively at world-load time; the propagation algorithm reads the
@@ -5286,7 +5563,7 @@ export declare class AcousticTrait implements ITrait {
  * @see ADR-172 — Spatial Sound Propagation
  * @see ADR-173 — Wall Adjacency Primitive (obstructor protocol)
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Acoustic dampener trait — attaches to obstructor entities (tapestry,
  * peephole, foam panel, heavy curtain).
@@ -5343,7 +5620,7 @@ export declare class AcousticDampenerTrait implements ITrait {
  *
  * @see ADR-172 — Spatial Sound Propagation
  */
-import { ITrait } from '../trait';
+import { ITrait } from '../trait.js';
 /**
  * Listener trait — presence flag. Entities carrying it are enumerated
  * by the propagation function and receive `AudibilityEvent`s.
@@ -5393,9 +5670,9 @@ export declare class ListenerTrait implements ITrait {
  * Owner context: `@sharpee/world-model` — wall / spatial primitives.
  */
 import type { EntityId } from '@sharpee/core';
-import type { IFEntity } from '../entities/if-entity';
-import type { WallEntity } from '../entities/wall-entity';
-import type { ITrait } from './trait';
+import type { IFEntity } from '../entities/if-entity.js';
+import type { WallEntity } from '../entities/wall-entity.js';
+import type { ITrait } from './trait.js';
 /**
  * Narrow world-model surface required to evaluate obstructors. Implemented
  * by `WorldModel`; passed in by callers so the helper has no implicit
@@ -5462,6 +5739,633 @@ export interface IObstructorTraitMatch<T extends ITrait> {
 export declare function findTraitsOnObstructors<T extends ITrait>(wall: WallEntity, traitType: string, world: IObstructorQueryWorld): IObstructorTraitMatch<T>[];
 ```
 
+### traits/enterable/enterableTrait
+
+```typescript
+/**
+ * Trait for objects that can be entered by actors (baskets, vehicles, chairs, etc.)
+ *
+ * Separates the "can be entered" concern from ContainerTrait's "can hold items" concern.
+ * Entities with EnterableTrait can have players/actors enter them.
+ */
+import { ITrait } from '../trait.js';
+/**
+ * Configuration options for EnterableTrait
+ */
+export interface EnterableTraitConfig {
+    /** Preposition for entering: 'in' for containers, 'on' for supporters */
+    preposition?: 'in' | 'on';
+}
+/**
+ * Trait for enterable objects
+ */
+export declare class EnterableTrait implements ITrait {
+    static readonly type: "enterable";
+    readonly type: "enterable";
+    /** Preposition for entering (default: 'in') */
+    preposition: 'in' | 'on';
+    constructor(config?: EnterableTraitConfig);
+}
+/**
+ * Type guard for EnterableTrait
+ */
+export declare function isEnterableTrait(trait: ITrait): trait is EnterableTrait;
+/**
+ * Factory function for creating EnterableTrait
+ */
+export declare function createEnterableTrait(config?: EnterableTraitConfig): EnterableTrait;
+```
+
+### traits/equipped/equippedTrait
+
+```typescript
+/**
+ * Equipped trait for items that are currently equipped by an actor
+ */
+import { ITrait } from '../trait.js';
+export interface IEquippedData {
+    /** Which slot this item is equipped in */
+    slot?: 'weapon' | 'armor' | 'shield' | 'helmet' | 'boots' | 'gloves' | 'ring' | 'amulet' | 'accessory';
+    /** Whether this item is currently equipped */
+    isEquipped?: boolean;
+    /** Custom message when equipping */
+    equipMessage?: string;
+    /** Custom message when unequipping */
+    unequipMessage?: string;
+    /** Whether this item can be equipped in combat */
+    quickEquip?: boolean;
+    /** Stat modifiers when equipped */
+    modifiers?: {
+        attack?: number;
+        defense?: number;
+        health?: number;
+        speed?: number;
+    };
+}
+/**
+ * Equipped trait indicates an item is currently equipped by an actor.
+ *
+ * This trait contains only data - all equipment logic
+ * is in EquipmentBehavior.
+ */
+export declare class EquippedTrait implements ITrait, IEquippedData {
+    static readonly type: "equipped";
+    readonly type: "equipped";
+    slot: 'weapon' | 'armor' | 'shield' | 'helmet' | 'boots' | 'gloves' | 'ring' | 'amulet' | 'accessory';
+    isEquipped: boolean;
+    equipMessage?: string;
+    unequipMessage?: string;
+    quickEquip: boolean;
+    modifiers?: {
+        attack?: number;
+        defense?: number;
+        health?: number;
+        speed?: number;
+    };
+    constructor(data?: IEquippedData);
+}
+```
+
+### traits/open-inventory/openInventoryTrait
+
+```typescript
+/**
+ * @file Open Inventory Trait
+ * @description Marks an NPC's inventory as reachable by other actors.
+ *
+ * By default, items held by an NPC (actor) are visible but not reachable
+ * by the player — like a closed transparent container. Adding this trait
+ * to an actor makes their inventory reachable, allowing the player to
+ * take items directly from them.
+ *
+ * @public OpenInventoryTrait
+ * @owner world-model / scope
+ */
+import { ITrait } from '../trait.js';
+/**
+ * When applied to an actor, makes their carried items reachable by others.
+ *
+ * Without this trait, NPC inventory items are VISIBLE but not REACHABLE.
+ * With this trait, NPC inventory items follow normal reachability rules.
+ *
+ * Use cases:
+ * - A horse carrying saddlebags the player can reach into
+ * - A friendly NPC holding out an item for the player to take
+ * - A dead NPC whose belongings are accessible
+ */
+export declare class OpenInventoryTrait implements ITrait {
+    static readonly type: "openInventory";
+    readonly type: "openInventory";
+    constructor(data?: Partial<OpenInventoryTrait>);
+}
+```
+
+### traits/region/regionTrait
+
+```typescript
+/**
+ * Region trait for geographic groupings of rooms (ADR-149).
+ *
+ * Entities with this trait represent named spatial regions. Rooms declare
+ * membership via RoomTrait.regionId. Regions can be nested via parentRegionId.
+ *
+ * Public interface: RegionTrait, IRegionData.
+ * Owner context: @sharpee/world-model — traits / spatial
+ */
+import { ITrait } from '../trait.js';
+/**
+ * Data interface for RegionTrait construction.
+ *
+ * @param name - Human-readable region name (required).
+ * @param parentRegionId - Optional parent region entity ID for nesting.
+ * @param ambientSound - Region-wide ambient sound propagated to rooms.
+ * @param ambientSmell - Region-wide ambient smell propagated to rooms.
+ * @param defaultDark - Whether rooms in this region default to dark.
+ */
+export interface IRegionData {
+    name: string;
+    parentRegionId?: string;
+    ambientSound?: string;
+    ambientSmell?: string;
+    defaultDark?: boolean;
+}
+/**
+ * Marks an entity as a spatial region that groups rooms.
+ *
+ * Rooms reference their region via `RoomTrait.regionId`. Regions can form
+ * a hierarchy through `parentRegionId` — a room in a child region is
+ * implicitly in all ancestor regions.
+ */
+export declare class RegionTrait implements ITrait, IRegionData {
+    static readonly type: "region";
+    readonly type: "region";
+    /** Human-readable region name. */
+    name: string;
+    /** Parent region entity ID for nesting (optional). */
+    parentRegionId?: string;
+    /** Region-wide ambient sound propagated to contained rooms. */
+    ambientSound?: string;
+    /** Region-wide ambient smell propagated to contained rooms. */
+    ambientSmell?: string;
+    /** Whether rooms in this region default to dark. */
+    defaultDark: boolean;
+    constructor(data: IRegionData);
+}
+```
+
+### traits/scene/sceneTrait
+
+```typescript
+/**
+ * Scene trait for temporal story phases (ADR-149).
+ *
+ * Entities with this trait represent named dramatic episodes with
+ * begin/end conditions evaluated each turn by the engine. Multiple
+ * scenes can be active simultaneously. Scenes can be recurring.
+ *
+ * Condition closures are NOT serializable. On save/restore, trait
+ * data (state, activeTurns, etc.) persists, but stories must
+ * re-register conditions after restore.
+ *
+ * Public interface: SceneTrait, ISceneData, SceneState.
+ * Owner context: @sharpee/world-model — traits / temporal
+ */
+import { ITrait } from '../trait.js';
+/** Possible states for a scene lifecycle. */
+export type SceneState = 'waiting' | 'active' | 'ended';
+/**
+ * Data interface for SceneTrait construction.
+ *
+ * @param name - Human-readable scene name (required).
+ * @param state - Initial state. Defaults to 'waiting'.
+ * @param recurring - Whether the scene can re-activate after ending.
+ * @param activeTurns - Turns the scene has been active. Defaults to 0.
+ * @param beganAtTurn - Turn number when the scene last began.
+ * @param endedAtTurn - Turn number when the scene last ended.
+ */
+export interface ISceneData {
+    name: string;
+    state?: SceneState;
+    recurring?: boolean;
+    activeTurns?: number;
+    beganAtTurn?: number;
+    endedAtTurn?: number;
+}
+/**
+ * Marks an entity as a temporal scene — a dramatic episode with
+ * begin/end conditions polled each turn by the engine.
+ */
+export declare class SceneTrait implements ITrait, ISceneData {
+    static readonly type: "scene";
+    readonly type: "scene";
+    /** Human-readable scene name. */
+    name: string;
+    /** Current lifecycle state. */
+    state: SceneState;
+    /** Whether the scene can activate more than once. */
+    recurring: boolean;
+    /** Number of turns the scene has been active (0 if not active). */
+    activeTurns: number;
+    /** Turn number when the scene last began. */
+    beganAtTurn?: number;
+    /** Turn number when the scene last ended. */
+    endedAtTurn?: number;
+    constructor(data: ISceneData);
+}
+```
+
+### traits/weapon/weaponTrait
+
+```typescript
+/**
+ * Weapon trait for entities that can be used to attack
+ */
+import { ITrait } from '../trait.js';
+export interface IWeaponData {
+    /** Damage bonus added to attacks - ADR-072 */
+    damage?: number;
+    /** Skill bonus when wielding this weapon - ADR-072 */
+    skillBonus?: number;
+    /** Extra damage to undead/spirits - ADR-072 */
+    isBlessed?: boolean;
+    /** Whether this weapon glows near danger (e.g., elvish sword) - ADR-072 */
+    glowsNearDanger?: boolean;
+    /** Whether this weapon is currently glowing - ADR-072 */
+    isGlowing?: boolean;
+    /** Required trait to wield effectively - ADR-072 */
+    requiredTrait?: string;
+    /** Minimum damage this weapon can inflict (legacy, use damage) */
+    minDamage?: number;
+    /** Maximum damage this weapon can inflict (legacy, use damage) */
+    maxDamage?: number;
+    /** Type of weapon (blade, blunt, piercing, magic, etc.) */
+    weaponType?: string;
+    /** Whether this weapon requires two hands */
+    twoHanded?: boolean;
+    /** Custom attack message when using this weapon */
+    attackMessage?: string;
+    /** Custom sound when weapon hits */
+    hitSound?: string;
+    /** Whether this weapon can break */
+    breakable?: boolean;
+    /** Durability remaining (if breakable) */
+    durability?: number;
+    /** Maximum durability (if breakable) */
+    maxDurability?: number;
+}
+/**
+ * Weapon trait indicates an entity can be used to attack.
+ *
+ * This trait contains only data - all combat logic
+ * is in WeaponBehavior and AttackBehavior.
+ */
+export declare class WeaponTrait implements ITrait, IWeaponData {
+    static readonly type: "weapon";
+    readonly type: "weapon";
+    damage: number;
+    skillBonus: number;
+    isBlessed: boolean;
+    glowsNearDanger: boolean;
+    isGlowing: boolean;
+    requiredTrait?: string;
+    minDamage: number;
+    maxDamage: number;
+    weaponType: string;
+    twoHanded: boolean;
+    attackMessage?: string;
+    hitSound?: string;
+    breakable: boolean;
+    durability?: number;
+    maxDurability?: number;
+    constructor(data?: IWeaponData);
+    /**
+     * Set the glow state (for elvish sword behavior)
+     */
+    setGlowing(glowing: boolean): void;
+}
+```
+
+### traits/breakable/breakableTrait
+
+```typescript
+/**
+ * Breakable trait for entities that can be broken with a single hit
+ */
+import { ITrait } from '../trait.js';
+export interface IBreakableData {
+    /** Whether this object is already broken */
+    broken?: boolean;
+}
+/**
+ * Breakable trait indicates an entity can be broken with a single hit.
+ *
+ * This trait contains only data - all breaking logic
+ * is in BreakableBehavior. Story-specific properties (messages,
+ * sounds, debris, etc.) should be handled through event handlers.
+ */
+export declare class BreakableTrait implements ITrait, IBreakableData {
+    static readonly type: "breakable";
+    readonly type: "breakable";
+    broken: boolean;
+    constructor(data?: IBreakableData);
+}
+```
+
+### traits/destructible/destructibleTrait
+
+```typescript
+/**
+ * Destructible trait for entities that require multiple hits or specific tools to destroy
+ */
+import { ITrait } from '../trait.js';
+export interface IDestructibleData {
+    /** Current hit points */
+    hitPoints?: number;
+    /** Maximum hit points */
+    maxHitPoints?: number;
+    /** Whether this requires a weapon to damage */
+    requiresWeapon?: boolean;
+    /** Specific weapon type required (e.g., 'blade', 'magic') */
+    requiresType?: string;
+    /** Entity type to transform into when destroyed */
+    transformTo?: string;
+    /** Exit direction to reveal when destroyed (for barriers) */
+    revealExit?: string;
+    /** Custom message when damaged but not destroyed - injected into events */
+    damageMessage?: string;
+    /** Custom message when destroyed - injected into events */
+    destroyMessage?: string;
+    /** Whether this is invulnerable to normal attacks */
+    invulnerable?: boolean;
+    /** Armor value that reduces damage */
+    armor?: number;
+}
+/**
+ * Destructible trait indicates an entity can be destroyed with multiple hits.
+ *
+ * This trait contains only data - all destruction logic
+ * is in DestructibleBehavior. Messages are stored here to be
+ * injected into events during the report phase.
+ */
+export declare class DestructibleTrait implements ITrait, IDestructibleData {
+    static readonly type: "destructible";
+    readonly type: "destructible";
+    hitPoints: number;
+    maxHitPoints: number;
+    requiresWeapon: boolean;
+    requiresType?: string;
+    transformTo?: string;
+    revealExit?: string;
+    damageMessage?: string;
+    destroyMessage?: string;
+    invulnerable: boolean;
+    armor: number;
+    constructor(data?: IDestructibleData);
+}
+```
+
+### traits/combatant/combatantTrait
+
+```typescript
+/**
+ * Combatant trait for entities that can engage in combat.
+ *
+ * Combat STATS only (ADR-226 / ADR-223 child A): a combatant's health, alive/
+ * conscious state, and recovery live on the entity's {@link HealthTrait} — the single
+ * life-state source — not here. `CombatantTrait` *requires* a `HealthTrait`
+ * (enforced at load; ADR-226 §2 / AC-7). Hostility stays here for now (moves to
+ * disposition in ADR-223 child C).
+ *
+ * Data only — all combat logic is in `CombatBehavior`, which reads/writes health
+ * through `HealthBehavior`.
+ * Owner context: `@sharpee/world-model` — combat stats (requires the HEALTH layer).
+ */
+import { ITrait } from '../trait.js';
+export interface ICombatantData {
+    /** Combat skill (0-100, affects hit/dodge chance) - ADR-072 */
+    skill?: number;
+    /** Natural damage (if no weapon) - ADR-072 */
+    baseDamage?: number;
+    /** Armor value that reduces damage */
+    armor?: number;
+    /** Attack power modifier (legacy, use baseDamage) */
+    attackPower?: number;
+    /** Defense modifier */
+    defense?: number;
+    /** Custom message when hit */
+    hitMessage?: string;
+    /** Custom message when killed */
+    deathMessage?: string;
+    /** Custom message when attacking */
+    attackMessage?: string;
+    /** Whether this combatant is hostile by default (moves to disposition, ADR-223 child C) */
+    hostile?: boolean;
+    /** Whether this combatant can retaliate */
+    canRetaliate?: boolean;
+    /** Whether inventory drops when killed */
+    dropsInventory?: boolean;
+    /** Experience points awarded when defeated */
+    experienceValue?: number;
+    /** Whether this combatant is undead/spirit (affects blessed weapon bonus) */
+    isUndead?: boolean;
+}
+/**
+ * Combatant trait indicates an entity can engage in combat.
+ *
+ * This trait contains only combat *stats* — health and life-state are on the
+ * required {@link HealthTrait}. All combat logic is in `CombatBehavior`.
+ */
+export declare class CombatantTrait implements ITrait, ICombatantData {
+    static readonly type: "combatant";
+    readonly type: "combatant";
+    skill: number;
+    baseDamage: number;
+    armor: number;
+    attackPower: number;
+    defense: number;
+    hitMessage?: string;
+    deathMessage?: string;
+    attackMessage?: string;
+    hostile: boolean;
+    canRetaliate: boolean;
+    dropsInventory: boolean;
+    experienceValue: number;
+    isUndead: boolean;
+    constructor(data?: ICombatantData);
+}
+```
+
+### traits/health/healthTrait
+
+```typescript
+/**
+ * Health Trait (ADR-226 — the HEALTH layer of ADR-223's four-layer NPC model).
+ *
+ * The single creature life-state model: current/max health, a derived
+ * consciousness threshold, an `asleep` flag, and a first-class terminal
+ * dead-by-cause state. This is the one source of mortality/consciousness truth —
+ * `CombatantTrait` and `NpcTrait` no longer carry their own `isAlive`/`isConscious`.
+ *
+ * Data only — no methods. All derivation (alive/conscious/can-act) and mutation
+ * (takeDamage/heal/kill) live in {@link HealthBehavior}, because a getter on the
+ * trait does not survive `loadJSON()` deserialization (the `npc-service` `canAct`
+ * footgun this layer removes).
+ *
+ * Public interface: read life-state via `HealthBehavior.{isAlive,isConscious,canAct}`
+ * and mutate via `HealthBehavior.{takeDamage,heal,kill}`.
+ * Owner context: `@sharpee/world-model` — HEALTH layer (ADR-223 child A).
+ */
+import { ITrait } from '../trait.js';
+/**
+ * Constructor/serialization data for {@link HealthTrait}. Every field is optional;
+ * see the class constructor for defaults.
+ */
+export interface IHealthData {
+    /** Current health. Defaults to `maxHealth`. */
+    health?: number;
+    /** Maximum health; `heal` clamps to this. Defaults to `health`, else 10. */
+    maxHealth?: number;
+    /** Terminal dead-by-cause flag (ADR-224). Defaults to `false`. */
+    dead?: boolean;
+    /** Cause recorded alongside `dead` (e.g. 'combat', 'grue', 'fall'). */
+    causeOfDeath?: string;
+    /** Full health but voluntarily not acting (a daemon/story concern). Defaults to `false`. */
+    asleep?: boolean;
+    /**
+     * Fraction of `maxHealth` at/below which the entity is unconscious.
+     * Defaults to `0.2` (ADR-072 20%-health parity).
+     */
+    unconsciousThreshold?: number;
+}
+/**
+ * The creature life-state trait. Data-only; see file header.
+ *
+ * Invariants (enforced by {@link HealthBehavior}, not by getters here):
+ * - `alive`   ⇔ `!dead && health > 0`
+ * - `conscious` ⇔ `alive && !asleep && health > maxHealth * unconsciousThreshold`
+ * There is no stored knocked-out flag and no recovery timer — consciousness is
+ * purely derived from `health` (ADR-226 §1 F1).
+ */
+export declare class HealthTrait implements ITrait, IHealthData {
+    static readonly type: "health";
+    readonly type: "health";
+    health: number;
+    maxHealth: number;
+    dead: boolean;
+    causeOfDeath?: string;
+    asleep: boolean;
+    unconsciousThreshold: number;
+    constructor(data?: IHealthData);
+}
+```
+
+### traits/deadly-room/deadlyRoomTrait
+
+```typescript
+/**
+ * Deadly Room Trait (ADR-224 — the reusable deadly-room trigger shape).
+ *
+ * Marks a room where verbs outside a safe allowlist kill the player: MDL's
+ * Aragain Falls ("every verb but LOOK is fatal here"). An optional `chance` turns
+ * the same shape into a probabilistic hazard (the grue: a non-safe verb dies only
+ * `chance` of the time), rolled against the engine's seeded RNG.
+ *
+ * Data only — no methods. The lethal/safe verdict lives in {@link DeadlyRoomBehavior}
+ * (a getter would not survive `loadJSON()`). The trait carries no logic and no RNG;
+ * the deadly-room command transformer supplies the seeded RNG at check time.
+ *
+ * Public interface: read the verdict via `DeadlyRoomBehavior.checkVerb`.
+ * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
+ */
+import { ITrait } from '../trait.js';
+/**
+ * Constructor/serialization data for {@link DeadlyRoomTrait}.
+ */
+export interface IDeadlyRoomData {
+    /** Cause recorded on the death (e.g. 'fall', 'grue'). Defaults to `'hazard'`. */
+    cause?: string;
+    /** Optional death-text message id (rendered by the language layer). */
+    messageId?: string;
+    /**
+     * Verbs that are safe in this room — matched against a command's resolved
+     * action id, tolerant of the bare participle (`'looking'` matches
+     * `'if.action.looking'`). Defaults to `['looking', 'examining']` (LOOK/EXAMINE),
+     * the MDL falls allowlist.
+     */
+    safeVerbs?: string[];
+    /**
+     * Probability (0–1) that a non-safe verb is lethal. When omitted, every non-safe
+     * verb is lethal (the falls). When set, the hazard is probabilistic (the grue)
+     * and rolled against the engine's seeded RNG — never `Math.random()`.
+     */
+    chance?: number;
+}
+/**
+ * The deadly-room trigger trait. Data-only; see file header.
+ */
+export declare class DeadlyRoomTrait implements ITrait, IDeadlyRoomData {
+    static readonly type: "deadlyRoom";
+    readonly type: "deadlyRoom";
+    cause: string;
+    messageId?: string;
+    safeVerbs: string[];
+    chance?: number;
+    constructor(data?: IDeadlyRoomData);
+}
+```
+
+### traits/deadly-room/deadlyRoomBehavior
+
+```typescript
+/**
+ * Behavior for the deadly-room trigger shape (ADR-224).
+ *
+ * Computes the lethal/safe verdict for a parsed verb against a {@link DeadlyRoomTrait}.
+ * Consumers (the deadly-room command transformer) call `checkVerb` rather than
+ * reading the trait directly, so the model survives `loadJSON()`.
+ *
+ * Public interface: `checkVerb`, `isSafeVerb`.
+ * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
+ */
+import { SeededRandom } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior.js';
+import { DeadlyRoomTrait } from './deadlyRoomTrait.js';
+/** Verdict returned by {@link DeadlyRoomBehavior.checkVerb}. */
+export interface DeadlyRoomVerdict {
+    /** Whether this verb kills the player in this room. */
+    lethal: boolean;
+    /** Cause to record on the death (from the trait). */
+    cause: string;
+    /** Optional death-text message id (from the trait). */
+    messageId?: string;
+}
+export declare class DeadlyRoomBehavior extends Behavior {
+    static requiredTraits: "deadlyRoom"[];
+    /**
+     * Whether `verb` is in the room's safe allowlist. Matches the resolved action id
+     * exactly (case-insensitive) or by its final dotted segment, so both an action id
+     * (`'if.action.looking'`) and the bare participle (`'looking'`) count as safe.
+     * @param t the deadly-room trait
+     * @param verb the command's resolved action id
+     */
+    static isSafeVerb(t: DeadlyRoomTrait, verb: string): boolean;
+    /**
+     * The lethal/safe verdict for a verb in this room.
+     *
+     * A safe verb is never lethal. Otherwise the verb is lethal outright when the
+     * trait has no `chance`, or lethal with probability `chance` (rolled against the
+     * seeded `rng`) when it does. If `chance` is set but no `rng` is supplied, the
+     * verb is treated as lethal (fail-deadly) — production always supplies the
+     * engine's seeded RNG; a missing RNG is a wiring error, not a survival chance.
+     *
+     * @param t the deadly-room trait
+     * @param verb the command's resolved action id
+     * @param rng the engine's seeded RNG (required only for the `chance` variant)
+     */
+    static checkVerb(t: DeadlyRoomTrait, verb: string, rng?: SeededRandom): DeadlyRoomVerdict;
+}
+```
+
 ### extensions/types
 
 ```typescript
@@ -5471,8 +6375,8 @@ export declare function findTraitsOnObstructors<T extends ITrait>(wall: WallEnti
  * This module defines the contract for creating trait extensions
  * that can add new functionality to the world model.
  */
-import { ITraitConstructor } from '../traits/trait';
-import { Behavior } from '../behaviors/behavior';
+import { ITraitConstructor } from '../traits/trait.js';
+import { Behavior } from '../behaviors/behavior.js';
 /**
  * Extension metadata
  */
@@ -5701,8 +6605,8 @@ export type VersionString = string;
  * Manages registration and lookup of extension-provided traits,
  * events, actions, and other components.
  */
-import { ITraitConstructor } from '../traits/trait';
-import { IExtensionRegistry, IExtensionTraitDefinition, IExtensionEventDefinition, IExtensionActionDefinition } from './types';
+import { ITraitConstructor } from '../traits/trait.js';
+import { IExtensionRegistry, IExtensionTraitDefinition, IExtensionEventDefinition, IExtensionActionDefinition } from './types.js';
 /**
  * Default implementation of the extension registry
  */
@@ -5804,7 +6708,7 @@ export declare function getExtensionRegistry(): ExtensionRegistry;
  *
  * Manages loading, initialization, and lifecycle of trait extensions
  */
-import { IExtensionLoader, ITraitExtension, IExtensionRegistry } from './types';
+import { IExtensionLoader, ITraitExtension, IExtensionRegistry } from './types.js';
 /**
  * Extension loading error
  */
@@ -5855,22 +6759,22 @@ export declare const extensionLoader: ExtensionLoader;
 ### world/WorldModel
 
 ```typescript
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { DirectionType } from '../constants/directions';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { DirectionType } from '../constants/directions.js';
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
-import { IDataStore } from './AuthorModel';
-import { ICapabilityData, ICapabilityRegistration } from './capabilities';
-import { ITrait } from '../traits/trait';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
-import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
-import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding';
+import { IDataStore } from './AuthorModel.js';
+import { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
+import { ITrait } from '../traits/trait.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
+import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
-import { ScopeRegistry } from '../scope/scope-registry';
-import { IScopeRule } from '../scope/scope-rule';
-import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem';
+import { ScopeRegistry } from '../scope/scope-registry.js';
+import { IScopeRule } from '../scope/scope-rule.js';
+import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem.js';
 export type { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions };
 export { WorldState, WorldConfig, ContentsOptions, WorldChange } from '@sharpee/if-domain';
 export interface RegionOptions {
@@ -5950,8 +6854,8 @@ export interface RegionCrossings {
     exited: string[];
     entered: string[];
 }
-import { ScoreEntry } from './ScoreLedger';
-export { ScoreEntry } from './ScoreLedger';
+import { ScoreEntry } from './ScoreLedger.js';
+export { ScoreEntry } from './ScoreLedger.js';
 /**
  * Pre-removal observer (ADR-213 §1).
  *
@@ -6011,6 +6915,29 @@ export interface IWorldModel {
      * @param options - Optional priority/resolution/mode overrides (ADR-090)
      */
     registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    /**
+     * Register a named world-evaluator on this world. Read points consult
+     * evaluators at the moment of use ("mutations are instant; anything
+     * checking state gets the most current results") — nothing is cached,
+     * so nothing can go stale. Key conventions are owned by each read
+     * point's module (e.g. `dark.<roomId>`, `exit.blocked.<roomId>.<dir>`).
+     *
+     * Idempotent: re-registering a key overwrites the previous evaluator
+     * (last-registration-wins). Scoped to this world instance only.
+     *
+     * @param key - Namespaced evaluator key (built by the read point's exported key builder)
+     * @param fn - Evaluated against the live world at every consult
+     */
+    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+    /**
+     * Evaluate the named registered evaluator against the live world.
+     *
+     * @param key - The evaluator key
+     * @returns The evaluator's result, or `undefined` when nothing is
+     *   registered under the key (the caller's signal to fall through to
+     *   its static behavior)
+     */
+    evaluate(key: string): unknown;
     /**
      * Resolve the behavior bound to a trait instance's capability on this world.
      *
@@ -6110,6 +7037,11 @@ export interface IWorldModel {
     canMoveEntity(entityId: string, targetId: string | null): boolean;
     getContainingRoom(entityId: string): IFEntity | undefined;
     getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
+    /** ADR-247: partition a holder's direct contents into held-not-worn and worn. */
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
     getState(): WorldState;
     setState(state: WorldState): void;
     getStateValue(key: string): any;
@@ -6131,7 +7063,7 @@ export interface IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -6206,6 +7138,12 @@ export declare class WorldModel implements IWorldModel {
     private capabilities;
     private capabilityBindings;
     private interceptorBindings;
+    /**
+     * ADR-240: the per-world evaluator registry — named world-evaluators
+     * consulted at point of use (live derived state; no cached derivations).
+     * Lives and dies with this WorldModel instance, like the binding maps.
+     */
+    private evaluators;
     private scoreLedger;
     private sceneConditions;
     private idCounters;
@@ -6222,6 +7160,8 @@ export declare class WorldModel implements IWorldModel {
     getCapability(name: string): ICapabilityData | undefined;
     hasCapability(name: string): boolean;
     registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
+    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+    evaluate(key: string): unknown;
     getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
     getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
     getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
@@ -6253,6 +7193,10 @@ export declare class WorldModel implements IWorldModel {
     updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
     getLocation(entityId: string): string | undefined;
     getContents(containerId: string, options?: ContentsOptions): IFEntity[];
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
     moveEntity(entityId: string, targetId: string | null): boolean;
     canMoveEntity(entityId: string, targetId: string | null): boolean;
     getContainingRoom(entityId: string): IFEntity | undefined;
@@ -6361,8 +7305,15 @@ export declare class WorldModel implements IWorldModel {
     /**
      * Create a bidirectional connection between two rooms.
      * Sets exits in both directions (e.g. NORTH on room1, SOUTH on room2).
+     *
+     * With `doorId` (ADR-237 D4) this is the platform's one door-wiring
+     * implementation: the door id is stamped on both exits (`via`) and the
+     * door entity is placed in room1 for scope resolution. Throws if the id
+     * resolves to no entity or to an entity without DoorTrait, or if the
+     * trait's room pair disagrees with the rooms passed — the primitive owns
+     * the invariant that DoorTrait and the exits never disagree.
      */
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
     /**
      * Create a door entity and wire it into both rooms' exit data.
      * The door is placed in room1 spatially (for scope resolution).
@@ -6509,22 +7460,36 @@ export declare class SpatialIndex {
 ### world/VisibilityBehavior
 
 ```typescript
-import { Behavior } from '../behaviors/behavior';
-import { IFEntity } from '../entities/if-entity';
-import { WorldModel } from './WorldModel';
+import { Behavior } from '../behaviors/behavior.js';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from './WorldModel.js';
 /**
  * Standard capability ID for visibility control.
  * Entities can claim this capability to control their own visibility.
  */
 export declare const VISIBILITY_CAPABILITY = "if.scope.visible";
+/**
+ * ADR-240 evaluator key for a room's derived darkness (`dark.<roomId>`).
+ * Owned by this read point; registrars (e.g. the story-loader's
+ * `dark while` conditions) build the key with this function, never by
+ * hand — the string is constructed in exactly two places, both pinned.
+ */
+export declare function darkKey(roomId: string): string;
 export declare class VisibilityBehavior extends Behavior {
     static requiredTraits: never[];
+    /**
+     * The live answer to "does this room require light?" (ADR-240): a
+     * registered `dark.<roomId>` evaluator is authoritative (point-of-use
+     * truth, never stale); with nothing registered, the stamped trait
+     * fact applies unchanged (static `dark`, hand-written TS stories).
+     */
+    private static roomRequiresLight;
     /**
      * Determines if a room is effectively dark (no usable light sources).
      * This is the single source of truth for darkness checking.
      *
      * A room is dark if:
-     * 1. It has RoomTrait with isDark = true
+     * 1. It has RoomTrait with requiresLight = true
      * 2. There are no accessible, active light sources
      *
      * @param room - The room entity to check
@@ -6543,6 +7508,29 @@ export declare class VisibilityBehavior extends Behavior {
      */
     private static isLightActive;
     /**
+     * Whether an entity is still concealed (hidden until SEARCH or a game event
+     * reveals it). This is the SINGLE shared definition of item concealment for
+     * visibility: scope resolution, LOOK, and EXAMINE must all consult it (here
+     * or via canSee/getVisible/getVisibleContents), never re-derive it.
+     *
+     * @param entity - The entity to check (safe on entities without IdentityTrait)
+     * @returns true if the entity carries IdentityTrait with concealed === true
+     */
+    static isConcealed(entity: IFEntity): boolean;
+    /**
+     * The single per-entity listing filter shared by every visibility path
+     * (room contents, container/supporter contents): excludes still-concealed
+     * entities, scenery marked invisible, and entities whose visibility
+     * capability vetoes being seen.
+     *
+     * @param entity - The candidate entity
+     * @param world - The world model
+     * @param observerId - The observer (or container proxy) id passed to a
+     *                     visibility-capability behavior's validate
+     * @returns true if the entity may appear in a visible-entity listing
+     */
+    private static isListable;
+    /**
      * Determines if an observer can see a target entity
      */
     static canSee(observer: IFEntity, target: IFEntity, world: WorldModel): boolean;
@@ -6550,6 +7538,25 @@ export declare class VisibilityBehavior extends Behavior {
      * Gets all entities visible to an observer
      */
     static getVisible(observer: IFEntity, world: WorldModel): IFEntity[];
+    /**
+     * The direct contents of a container/supporter/actor that could appear in a
+     * visible listing: applies the same per-entity filter as getVisible
+     * (concealed, invisible scenery, visibility-capability veto) to
+     * `getContents(id)` (worn items included by default, ADR-247).
+     *
+     * Does NOT check whether the container's inside is exposed (closed opaque
+     * container) — callers listing contents have already established that, and
+     * addVisibleContents keeps that gate itself.
+     *
+     * This is the shared read for LOOK's and EXAMINE's contents listings — a
+     * still-concealed item stays out of both until SEARCH reveals it, by the
+     * same definition scope resolution uses.
+     *
+     * @param container - The container/supporter/actor whose contents to list
+     * @param world - The world model
+     * @returns the listable direct contents
+     */
+    static getVisibleContents(container: IFEntity, world: WorldModel): IFEntity[];
     /**
      * Recursively adds visible contents of a container/supporter/actor
      */
@@ -6623,24 +7630,24 @@ export declare class VisibilityBehavior extends Behavior {
  * setup that requires bypassing game rules (placing items in closed
  * containers, etc.).
  */
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
-import { TraitType } from '../traits/trait-types';
-import { SpatialIndex } from './SpatialIndex';
-import { ITrait } from '../traits/trait';
-import { ICapabilityStore } from './capabilities';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior';
-import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding';
-import type { ActionInterceptor } from '../capabilities/action-interceptor';
-import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding';
-import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel';
-import type { ScoreEntry } from './ScoreLedger';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
+import { TraitType } from '../traits/trait-types.js';
+import { SpatialIndex } from './SpatialIndex.js';
+import { ITrait } from '../traits/trait.js';
+import { ICapabilityStore } from './capabilities.js';
+import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
+import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
+import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
+import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
+import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel.js';
+import type { ScoreEntry } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
-import type { DirectionType } from '../constants/directions';
-import type { ScopeRegistry } from '../scope/scope-registry';
-import type { IScopeRule } from '../scope/scope-rule';
-import type { ICapabilityData, ICapabilityRegistration } from './capabilities';
+import type { DirectionType } from '../constants/directions.js';
+import type { ScopeRegistry } from '../scope/scope-registry.js';
+import type { IScopeRule } from '../scope/scope-rule.js';
+import type { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
 /**
  * Data store shared between WorldModel and AuthorModel.
  */
@@ -6706,6 +7713,10 @@ export declare class AuthorModel implements IWorldModel {
     updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
     getLocation(entityId: string): string | undefined;
     getContents(containerId: string, options?: ContentsOptions): IFEntity[];
+    getCarriedAndWorn(holderId: string): {
+        carried: IFEntity[];
+        worn: IFEntity[];
+    };
     canMoveEntity(entityId: string, targetId: string | null): boolean;
     getContainingRoom(entityId: string): IFEntity | undefined;
     getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
@@ -6730,7 +7741,7 @@ export declare class AuthorModel implements IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -6759,6 +7770,8 @@ export declare class AuthorModel implements IWorldModel {
     hasCapability(name: string): boolean;
     registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
     getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
+    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
+    evaluate(key: string): unknown;
     getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
     getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
     registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
@@ -6813,8 +7826,8 @@ export declare class AuthorModel implements IWorldModel {
 ### world/wall-creation
 
 ```typescript
-import { IFEntity } from '../entities/if-entity';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity';
+import { IFEntity } from '../entities/if-entity.js';
+import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 /**
  * The narrow world surface required for wall creation. Implemented by
  * `WorldModel`; not part of the public IWorldModel interface.
@@ -6872,8 +7885,8 @@ export declare function createWalls(world: IWallCreationWorld, spec: IWallsSpec)
  * Owner context: `@sharpee/world-model` — world / spatial primitives.
  */
 import { EntityId } from '@sharpee/core';
-import { IFEntity } from '../entities/if-entity';
-import { IWallSpec } from '../entities/wall-entity';
+import { IFEntity } from '../entities/if-entity.js';
+import { IWallSpec } from '../entities/wall-entity.js';
 /**
  * Read-only world surface this validator depends on. Limited to the
  * methods required so the validator can be invoked from tests with a
@@ -7045,7 +8058,7 @@ export interface IScopeEvaluationResult {
  * @file Scope Registry
  * @description Manages scope rules and provides registration/lookup
  */
-import { IScopeRule, IScopeContext } from './scope-rule';
+import { IScopeRule, IScopeContext } from './scope-rule.js';
 /**
  * Registry for managing scope rules
  */
@@ -7118,8 +8131,8 @@ export declare class ScopeRegistry {
  * evaluation) or the stdlib's StandardScopeResolver (validation-phase entity
  * resolution with disambiguation).
  */
-import { IScopeRule, IScopeContext, IScopeEvaluationOptions, IScopeEvaluationResult } from './scope-rule';
-import { ScopeRegistry } from './scope-registry';
+import { IScopeRule, IScopeContext, IScopeEvaluationOptions, IScopeEvaluationResult } from './scope-rule.js';
+import { ScopeRegistry } from './scope-registry.js';
 /**
  * Evaluates scope rules to determine what entities are in scope
  */
@@ -7247,9 +8260,9 @@ export declare function createEffect(type: string, payload: Record<string, any>)
  * Standard interface for behaviors that handle capability dispatch.
  * Follows the same 4-phase pattern as stdlib actions for consistency.
  */
-import { IFEntity } from '../entities';
-import { WorldModel } from '../world';
-import { CapabilityValidationResult, CapabilityEffect } from './types';
+import { IFEntity } from '../entities/index.js';
+import { WorldModel } from '../world/index.js';
+import { CapabilityValidationResult, CapabilityEffect } from './types.js';
 /**
  * Shared data object for passing data between behavior phases.
  * Mirrors ActionContext.sharedData pattern from stdlib.
@@ -7370,9 +8383,9 @@ export interface CapabilityBehavior {
  * Public interface: `TraitBehaviorBinding`, `BehaviorRegistrationOptions`.
  * Owner: world-model (capability dispatch storage, ADR-090/ADR-207).
  */
-import { ITrait } from '../traits/trait';
-import type { CapabilityBehavior } from './capability-behavior';
-import type { CapabilityResolution, CapabilityMode } from './capability-defaults';
+import { ITrait } from '../traits/trait.js';
+import type { CapabilityBehavior } from './capability-behavior.js';
+import type { CapabilityResolution, CapabilityMode } from './capability-defaults.js';
 /**
  * Options for registering a capability behavior on a `WorldModel`.
  */
@@ -7496,8 +8509,8 @@ export declare function getAllCapabilityDefaults(): Map<string, CapabilityConfig
  * Helper functions for working with trait capabilities.
  * Used by capability-dispatch actions to find and check capabilities.
  */
-import { ITrait } from '../traits/trait';
-import { IFEntity } from '../entities';
+import { ITrait } from '../traits/trait.js';
+import { IFEntity } from '../entities/index.js';
 /**
  * Find a trait on the entity that declares the given capability.
  *
@@ -7577,8 +8590,8 @@ export declare function getCapableTraits(entity: IFEntity): ITrait[];
  * conflict detection. When two traits claim the same capability,
  * TypeScript will error (and runtime will throw as backup).
  */
-import { IFEntity } from '../entities';
-import { ITrait } from '../traits/trait';
+import { IFEntity } from '../entities/index.js';
+import { ITrait } from '../traits/trait.js';
 /**
  * Type-safe entity builder that tracks claimed capabilities.
  *
@@ -7666,9 +8679,9 @@ export declare function buildEntity(entity: IFEntity): EntityBuilder;
  * - ActionInterceptor: Hooks into phases, action owns core logic (ENTER, PUT)
  */
 import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity } from '../entities';
-import { WorldModel } from '../world';
-import { CapabilityEffect } from './types';
+import { IFEntity } from '../entities/index.js';
+import { WorldModel } from '../world/index.js';
+import { CapabilityEffect } from './types.js';
 /**
  * Shared data object for passing data between interceptor phases.
  * Mirrors CapabilitySharedData pattern from capability-behavior.ts.
@@ -7737,6 +8750,44 @@ export interface InterceptorReportResult {
     emit?: CapabilityEffect[];
 }
 /**
+ * Result returned by `ActionInterceptor.onBlocked` (ADR-228, D2).
+ *
+ * Structurally symmetric with `InterceptorReportResult` so the whole
+ * interceptor API is teachable as one pattern:
+ *
+ * 1. `override` — swap the standard blocked event's `messageId` (and
+ *    optional params/text). The blocked event's **type survives intact**
+ *    (`if.event.take_blocked` etc.), so tests and state machines keyed on
+ *    blocked events keep working while the interceptor controls the
+ *    refusal's presentation.
+ *
+ * 2. `emit` — additional effects appended after the standard blocked
+ *    event (side-channel narration, death events, etc.).
+ *
+ * Returning `null` or `{}` means standard blocked handling.
+ *
+ * The bare `CapabilityEffect[]` form (replace-the-event, with `[]`
+ * silently suppressing it) is retired: the standard blocked event is the
+ * machine-readable record of the refusal and can no longer be eaten.
+ * Note the primary custom-refusal path is unchanged and does not go
+ * through onBlocked at all: a pre/postValidate hook returning
+ * `{valid: false, error: customMessageId}` renders that message on the
+ * blocked event (the white-hot-axe pattern).
+ *
+ * @see applyInterceptorBlockedResult
+ */
+export interface InterceptorBlockedResult {
+    /** Override the standard blocked event's messageId (and optional params/text).
+     *  The event type is preserved. */
+    override?: {
+        messageId: string;
+        params?: Record<string, unknown>;
+        text?: string;
+    };
+    /** Emit additional effects after the standard blocked event. */
+    emit?: CapabilityEffect[];
+}
+/**
  * Minimal context shape required by `applyInterceptorReportResult`.
  *
  * Real action contexts (both the engine's closure-based factory and the
@@ -7770,6 +8821,11 @@ export interface InterceptorEventContext {
  * @param result - The value returned from `interceptor.postReport`.
  * @param context - The action context (any object exposing
  *                  `event(type, data)`).
+ * @param options - `searchFrom`: index in `events` from which override
+ *                  targeting searches (default 0). Per-item applications
+ *                  in multi-object commands (ADR-228 D4) pass the index
+ *                  where the item's report began so the override lands on
+ *                  that item's event, not an earlier item's.
  *
  * @example
  * ```typescript
@@ -7781,7 +8837,36 @@ export interface InterceptorEventContext {
  * }
  * ```
  */
-export declare function applyInterceptorReportResult(events: ISemanticEvent[], primaryEventType: string, result: InterceptorReportResult, context: InterceptorEventContext): void;
+export declare function applyInterceptorReportResult(events: ISemanticEvent[], primaryEventType: string, result: InterceptorReportResult, context: InterceptorEventContext, options?: {
+    searchFrom?: number;
+}): void;
+/**
+ * Apply an interceptor's `onBlocked` result to an action's blocked events.
+ *
+ * - If `result.override` is set, copies `messageId` (and optional `params`/`text`)
+ *   onto the data of the event whose type matches `blockedEventType`. The
+ *   event itself — the machine-readable record of the refusal — survives.
+ * - If `result.emit` is set, converts each effect to an `ISemanticEvent`
+ *   via `context.event(...)` and appends to `events`.
+ *
+ * The action's `blocked()` phase calls this helper with the events array
+ * it has built (containing the standard blocked event), the blocked event
+ * type (e.g. `'if.event.take_blocked'`), and the action context.
+ *
+ * @param events - The action's blocked events array; mutated in place.
+ * @param blockedEventType - The event type whose `messageId` an `override`
+ *                           should replace (e.g. `'if.event.take_blocked'`).
+ * @param result - The value returned from `interceptor.onBlocked`.
+ * @param context - The action context (any object exposing
+ *                  `event(type, data)`).
+ * @param options - `searchFrom`: index in `events` from which override
+ *                  targeting searches (default 0). See
+ *                  `applyInterceptorReportResult` for the ADR-228 D4
+ *                  per-item rationale.
+ */
+export declare function applyInterceptorBlockedResult(events: ISemanticEvent[], blockedEventType: string, result: InterceptorBlockedResult, context: InterceptorEventContext, options?: {
+    searchFrom?: number;
+}): void;
 /**
  * Action interceptor interface.
  *
@@ -7923,19 +9008,34 @@ export interface ActionInterceptor {
     /**
      * Called when action is blocked (validation failed).
      *
-     * Use this to provide custom blocked handling for this entity.
-     * Return effects to emit, or null to use standard blocked handling.
+     * Return an `InterceptorBlockedResult` (ADR-228, D2) that declares either:
+     * - `override`: swap the standard blocked event's `messageId` — the event
+     *   type survives as the machine-readable record of the refusal, or
+     * - `emit`: additional effects appended after the standard blocked event
+     *   (side-channel narration, death events), or
+     * - both, or `null`/`{}` for standard blocked handling.
+     *
+     * The action's `blocked()` phase applies the result via
+     * `applyInterceptorBlockedResult`.
      *
      * @example
-     * // Custom message when troll blocks entry
+     * // Override: richer refusal presentation, record event intact
      * onBlocked(entity, world, actorId, error, sharedData) {
      *   if (error === 'dungeo.troll.blocks_path') {
-     *     return [createEffect('game.message', { messageId: 'dungeo.troll.snarls' })];
+     *     return { override: { messageId: 'dungeo.troll.snarls' } };
      *   }
      *   return null; // Use standard blocked handling
      * }
+     *
+     * @example
+     * // Emit: refusal has side effects (poison death on blocked take)
+     * onBlocked(entity, world, actorId, error, sharedData) {
+     *   if (!sharedData.poisonDeath) return null;
+     *   killPlayer(world, world.getPlayer()!, { cause: 'poison', terminal: true });
+     *   return { emit: [createEffect(PLAYER_DIED_EVENT, { cause: 'poison', terminal: true })] };
+     * }
      */
-    onBlocked?(entity: IFEntity, world: WorldModel, actorId: string, error: string, sharedData: InterceptorSharedData): CapabilityEffect[] | null;
+    onBlocked?(entity: IFEntity, world: WorldModel, actorId: string, error: string, sharedData: InterceptorSharedData): InterceptorBlockedResult | null;
 }
 ```
 
@@ -7956,8 +9056,8 @@ export interface ActionInterceptor {
  * `InterceptorLookupResult`.
  * Owner: world-model (action-interceptor storage, ADR-118/ADR-208).
  */
-import { ITrait } from '../traits/trait';
-import type { ActionInterceptor } from './action-interceptor';
+import { ITrait } from '../traits/trait.js';
+import type { ActionInterceptor } from './action-interceptor.js';
 /**
  * Options for registering an action interceptor on a `WorldModel`.
  */
@@ -8009,8 +9109,8 @@ export declare function interceptorBindingKey(traitType: string, actionId: strin
  * Helper functions for working with trait interceptors.
  * Mirrors capability-helpers.ts pattern but for interceptors.
  */
-import { ITrait } from '../traits/trait';
-import { IFEntity } from '../entities';
+import { ITrait } from '../traits/trait.js';
+import { IFEntity } from '../entities/index.js';
 /**
  * Find a trait on the entity that has an interceptor registered for the given action.
  *

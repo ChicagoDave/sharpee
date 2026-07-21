@@ -19,7 +19,8 @@ import {
   expectEvent,
   executeWithValidation,
   TestData,
-  createCommand
+  createCommand,
+  TEST_MARKER_TRAIT
 } from '../../test-utils';
 
 describe('goingAction (Golden Pattern)', () => {
@@ -892,5 +893,42 @@ describe('World State Mutations', () => {
     // VERIFY POSTCONDITION: room2 is now marked as visited
     const room2TraitAfter = room2.getTrait(RoomTrait)!;
     expect(room2TraitAfter.visited).toBe(true);
+  });
+});
+
+describe('Going interceptor hooks on the dark path (ADR-228 D7.1)', () => {
+  test('destination postReport runs even when the destination is dark (old early return skipped it)', () => {
+    const { world, player, room } = setupBasicWorld();
+    const cave = world.createEntity('Dark Cave', 'object');
+    cave.add({ type: TraitType.ROOM, requiresLight: true });
+    // Inert marker trait — the interceptor registration key.
+    cave.add({ type: TEST_MARKER_TRAIT } as any);
+    const roomTrait = room.getTrait(RoomTrait)!;
+    roomTrait.exits = { [Direction.NORTH]: { destination: cave.id } };
+
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, 'if.action.entering_room', {
+      postReport(_entity, w) {
+        w.setStateValue('cave.post_report_ran', true);
+        return { emit: [{ type: 'cave.whisper', payload: { messageId: 'cave.voice' } }] };
+      },
+    });
+
+    const command = createCommand(IFActions.GOING);
+    command.parsed.extras = { direction: Direction.NORTH };
+    const context = createRealTestContext(goingAction, world, command);
+
+    const validation = goingAction.validate(context);
+    expect(validation.valid).toBe(true);
+    goingAction.execute(context);
+    const events = goingAction.report(context);
+
+    // Player really moved into the dark room.
+    expect(world.getLocation(player.id)).toBe(cave.id);
+    // The dark path emitted the went/too_dark event...
+    const went = events.find(e => e.type === 'if.event.went')!;
+    expect((went.data as any).messageId).toContain('too_dark');
+    // ...AND the destination postReport hook still ran (the D7.1 fix).
+    expect(world.getStateValue('cave.post_report_ran')).toBe(true);
+    expect(events.some(e => e.type === 'cave.whisper')).toBe(true);
   });
 });

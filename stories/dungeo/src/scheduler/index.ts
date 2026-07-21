@@ -26,14 +26,14 @@ export {
   FLOODING_STATE_KEY,
   type FloodingState
 } from './maintenance-room-fuse';
-export { registerForestAmbienceDaemon, isForestAmbienceActive } from './forest-daemon';
+export { registerForestAmbienceDaemon } from './forest-daemon';
 export { registerBankAlarmDaemon, isBankAlarmActive } from './bank-alarm-daemon';
 export { registerIncenseFuse, getIncenseBurnRemaining } from './incense-fuse';
-export { registerBalloonDaemon, isBalloonDaemonActive, getBalloonPosition, resetBalloonDaemonTimer } from './balloon-daemon';
+export { registerBalloonDaemon } from './balloon-daemon';
 
 export { registerBurnDaemon, isBalloonInflated, getBurningObjectId, BalloonHandlerMessages } from '../handlers/balloon-handler';
-export { registerTrollRecoveryDaemon, isTrollRecoveryActive, getTrollState } from './troll-daemon';
-export { registerSwordGlowDaemon, getSwordGlowState, resetSwordGlowState, SwordGlowMessages } from './sword-glow-daemon';
+export { registerTrollRecoveryDaemon } from './troll-daemon';
+export { registerSwordGlowDaemon, SwordGlowMessages } from './sword-glow-daemon';
 export { registerCagePoisonDaemon, CAGE_POISON_DAEMON_ID } from './cage-poison-daemon';
 export { registerCureDaemon, CURE_DAEMON_ID } from './cure-daemon';
 export { startExplosionCountdown, EXPLOSION_FUSE_ID, type ExplosionConfig } from './explosion-fuse';
@@ -48,7 +48,7 @@ import { registerForestAmbienceDaemon } from './forest-daemon';
 import { registerBankAlarmDaemon } from './bank-alarm-daemon';
 import { registerIncenseFuse } from './incense-fuse';
 import { registerBalloonDaemon } from './balloon-daemon';
-import { registerBurnDaemon, setBalloonHandlerIds } from '../handlers/balloon-handler';
+import { registerBurnDaemon } from '../handlers/balloon-handler';
 import { registerSwordGlowDaemon } from './sword-glow-daemon';
 import { ForestRoomIds } from '../regions/forest';
 import { DamRoomIds } from '../regions/dam';
@@ -102,11 +102,11 @@ export function registerScheduledEvents(
   // Register balloon movement daemon (if balloon exists)
   if (balloonIds) {
     registerBalloonDaemon(scheduler, world, balloonIds.balloonId, balloonIds.receptacleId);
-    setBalloonHandlerIds(balloonIds.balloonId, balloonIds.receptacleId);
   }
 
-  // Register burn daemon (handles burn timer for all flammable objects)
-  registerBurnDaemon(scheduler);
+  // Register burn daemon (handles burn timer for all flammable objects;
+  // balloon ids enable the deflation branch)
+  registerBurnDaemon(scheduler, balloonIds?.balloonId, balloonIds?.receptacleId);
 
   // Register sword glow daemon (elvish sword glows near villains)
   registerSwordGlowDaemon(scheduler);

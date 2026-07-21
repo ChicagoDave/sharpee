@@ -12,10 +12,10 @@
  */
 
 // ─── Protocol (the stdin/stdout contract) ────────────────────────
-export * from './protocol';
+export * from './protocol.js';
 
 // ─── Bridge ──────────────────────────────────────────────────────
-export { NativeEngineBridge } from './bridge';
+export { NativeEngineBridge } from './bridge.js';
 
 // ─── Shared engine API surface ───────────────────────────────────
 export * from '@sharpee/sharpee/runtime-surface';

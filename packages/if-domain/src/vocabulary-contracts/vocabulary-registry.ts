@@ -17,7 +17,7 @@ import {
   VerbVocabulary,
   DirectionVocabulary,
   SpecialVocabulary
-} from './vocabulary-types';
+} from './vocabulary-types.js';
 
 /**
  * Central vocabulary registry

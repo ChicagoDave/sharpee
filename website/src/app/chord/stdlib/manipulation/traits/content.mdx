@@ -1,0 +1,54 @@
+**container** (`a container` — a kind noun, so it takes the article).
+Holds things inside; composes on one line with `openable`, `lockable`,
+and `scenery` (`a container, openable, scenery`) — the putting example
+(§2.2) shows one in play. Settings: `with max items N` and `with max
+weight N` limit capacity; capacity counts what is directly inside, and a
+container "bears the weight" of nested contents rather than passing it
+up. Read by putting, inserting, removing, searching, opening/closing,
+dropping, throwing, and looking. Data fields beyond Chord's reach today
+(TypeScript territory): `isTransparent` (contents visible while closed),
+`allowedTypes`/`excludedTypes`, and the liquid fields (`containsLiquid`,
+`liquidType`, `liquidAmount` — see drinking, §8.3).
+
+**supporter** (`a supporter`). Holds things on top — see the putting
+example (§2.2). Setting: `with capacity N` — the number of items it holds
+(the Cloak of Darkness brass hook is `a supporter with capacity 1`).
+Unlike containers, a supporter's weight math includes nested contents
+recursively. Read by putting, removing, climbing, dropping, and looking.
+
+**pushable** (`pushable`). Makes an entity eligible for pushing — the
+signal-box button (§2.6) is this trait, bare. Its `pushType` — `button`
+(default), `heavy`, `moveable` — selects the behavior described in §2.6;
+from Chord, bare `pushable` composes the default button configuration
+(`heavy`/`moveable` are TypeScript territory today). Beyond `pushType`,
+`revealsPassage`, and `pushSound`, the trait's fields (`activates`,
+`maxPushes`, `pushDirection`, `effects`) are data for *your* event
+handlers, not behavior stdlib enforces.
+
+**pullable** (`pullable`). Makes an entity eligible for pulling — the
+signal lever (§2.6). Stdlib mutates two fields — `state` (→ `'pulled'`,
+which is what gates `already_pulled`) and `pullCount` — and carries the
+rest (`pullType`, `activates`, `linkedTo`, `detachesOnPull`, `maxPulls`,
+`effects`) as data for story handlers reacting to `if.event.pulled`.
+
+**cuttable** (`cuttable`, optionally `with the <tool entity>` —
+adjective). Makes an entity eligible for cutting — the bramble (§2.8) —
+and carries the tool contract mirroring lockable's keys: `toolId` (one
+tool — what Chord's `with` sets), `toolIds` (several, TypeScript), with
+`CuttableBehavior`'s `requiresTool`/`canCutWith` predicates. Composing it
+obliges the entity to register exactly one cut implementation — the load
+check enforces it.
+
+**diggable** (`diggable`, optionally `with the <tool entity>`). The same
+shape for digging — the seedbed (§2.8): `toolId`/`toolIds`,
+`DiggableBehavior.requiresTool`/`canDigWith`, and the same
+one-implementation rule.
+
+**moveable-scenery** — dormant today (no action reads it, no behavior
+class, not composable from Chord): a sketched heavy-thing vocabulary
+(weight class, blocked exits, reveals-when-moved) — not the way to build
+a boulder puzzle right now; use `pushable`/`pullable` plus story logic.
+
+**attached** — dormant on the same terms: a sketched attachment
+vocabulary (glued/nailed/tied, detachable, detach force); watch the ADRs
+for when these two wake up.

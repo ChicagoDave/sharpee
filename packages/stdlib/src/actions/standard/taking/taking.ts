@@ -7,67 +7,77 @@
  * 3. report: Generate success events with item and container snapshots
  * 4. blocked: Generate error events when validation fails
  *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228): `takingLifecycle` declares the interceptor surface and
+ * the engine owns hook order, veto semantics, and multi-object per-item
+ * lifecycles. This file contains no hand-rolled hook plumbing.
+ *
  * Supports multi-object commands:
  * - "take all" - takes all portable reachable items
  * - "take all but X" - takes all except specified items
  * - "take X and Y" - takes multiple specified items
  */
 
-import { Action, ActionContext, ValidationResult } from '../../enhanced-types';
-import { ActionMetadata } from '../../../validation';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
+import { ActionMetadata } from '../../../validation/index.js';
 import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait, ActionInterceptor, InterceptorSharedData, applyInterceptorReportResult } from '@sharpee/world-model';
-import { IFActions } from '../../constants';
-import { ScopeLevel } from '../../../scope/types';
-import { TakingMessages } from './taking-messages';
-import { nounPhraseFor } from '../../../utils';
+import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerBehavior, IdentityBehavior, IFEntity, IdentityTrait } from '@sharpee/world-model';
+import { IFActions } from '../../constants.js';
+import { ScopeLevel } from '../../../scope/types.js';
+import { TakingMessages } from './taking-messages.js';
+import { nounPhraseFor } from '../../../utils/index.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  getLifecycleState,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  runMultiObjectValidate,
+  getMultiObjectLifecycle,
+  runMultiObjectExecute,
+  runMultiObjectReport,
+  blockedMessageId
+} from '../../lifecycle/index.js';
 
 // Import type guards and typed interfaces
 import {
   isWearableTrait,
   hasCapacityLimit,
   getTakingSharedData,
-  TakingSharedData,
-  TakingItemResult
-} from './taking-types';
+  TakingItemScratch
+} from './taking-types.js';
 
 // Import multi-object helpers
-import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler';
+import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-object-handler.js';
+
+/**
+ * Interceptor surface (ADR-228): the taken item is the only consultable
+ * entity of a TAKE command.
+ */
+export const takingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.TAKING,
+  slots: [
+    {
+      id: 'item',
+      actionIds: [IFActions.TAKING],
+      resolve: (ctx) => ctx.command.directObject?.entity
+    }
+  ]
+};
 
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
 // ============================================================================
 
 /**
- * Validate taking a single entity
+ * Standard validation for taking a single entity (no interceptor logic —
+ * the lifecycle engine wraps this with pre/postValidate hooks).
  */
 function validateSingleEntity(context: ActionContext, noun: IFEntity): ValidationResult {
   const actor = context.player;
-
-  // Check for interceptor on the target entity (ADR-118)
-  // This runs first so entity-specific blocks (e.g., white-hot axe) take priority
-  const interceptorResult = context.world.getInterceptorForAction(noun, IFActions.TAKING);
-  if (interceptorResult) {
-    const { interceptor } = interceptorResult;
-    const interceptorData: InterceptorSharedData = {};
-
-    // Store interceptor in sharedData for later phases
-    const sharedData = getTakingSharedData(context);
-    sharedData._interceptor = interceptor;
-    sharedData._interceptorData = interceptorData;
-
-    // === PRE-VALIDATE HOOK ===
-    if (interceptor.preValidate) {
-      const result = interceptor.preValidate(noun, context.world, actor.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return {
-          valid: false,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
-  }
 
   // Check scope - must be able to reach the item
   const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
@@ -101,28 +111,16 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 
   // Can't take scenery (fixed in place)
   if (noun.has(TraitType.SCENERY)) {
+    // An author-configured cantTakeMessage is a story-registered message
+    // id, fully-qualified as written (ADR-231 D1) — only the stdlib
+    // fallback key takes the action prefix.
     const customMessage = SceneryBehavior.getCantTakeMessage(noun);
     return {
       valid: false,
       error: customMessage || TakingMessages.FIXED_IN_PLACE,
+      errorQualified: customMessage != null,
       params: { item: nounPhraseFor(noun) }
     };
-  }
-
-  // === POST-VALIDATE HOOK ===
-  if (interceptorResult) {
-    const interceptor = getTakingSharedData(context)._interceptor;
-    const interceptorData = getTakingSharedData(context)._interceptorData ?? {};
-    if (interceptor?.postValidate) {
-      const result = interceptor.postValidate(noun, context.world, actor.id, interceptorData);
-      if (result !== null && !result.valid) {
-        return {
-          valid: false,
-          error: result.error,
-          params: result.params
-        };
-      }
-    }
   }
 
   // Use ActorBehavior to validate capacity constraints
@@ -131,16 +129,10 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
     if (actor.has(TraitType.CONTAINER)) {
       const containerTrait = actor.get(TraitType.CONTAINER);
       if (hasCapacityLimit(containerTrait)) {
-        // Check item count limit
+        // Check item count limit. ADR-247: capacity counts carried items,
+        // not worn — the partition replaces the old inline worn filter.
         if (containerTrait.capacity.maxItems !== undefined) {
-          const contents = context.world.getContents(actor.id);
-          const currentCount = contents.filter((item: any) => {
-            if (!item.has || !item.has(TraitType.WEARABLE)) {
-              return true;
-            }
-            const wearableTrait = item.get(TraitType.WEARABLE);
-            return !isWearableTrait(wearableTrait) || !(wearableTrait.isWorn ?? wearableTrait.worn);
-          }).length;
+          const currentCount = context.world.getCarriedAndWorn(actor.id).carried.length;
           if (currentCount >= containerTrait.capacity.maxItems) {
             return { valid: false, error: TakingMessages.CONTAINER_FULL };
           }
@@ -169,74 +161,28 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
 }
 
 /**
- * Validate a multi-object command (take all, take X and Y)
- */
-function validateMultiObject(context: ActionContext): ValidationResult {
-  const playerId = context.player.id;
-  const items = expandMultiObject(context, {
-    scope: 'reachable',
-    // Filter out items already carried by the player
-    filter: (entity, world) => world.getLocation(entity.id) !== playerId
-  });
-
-  if (items.length === 0) {
-    return { valid: false, error: TakingMessages.NOTHING_TO_TAKE };
-  }
-
-  // Validate each entity, store results
-  const results: TakingItemResult[] = items.map(item => {
-    const validation = validateSingleEntity(context, item.entity);
-    // validateSingleEntity stores the item's interceptor in the shared
-    // fields (single-object contract) — move it onto THIS result so each
-    // item's execute/report hooks fire with its own phase data (ADR-118).
-    const sharedData = getTakingSharedData(context);
-    const result: TakingItemResult = {
-      entity: item.entity,
-      success: validation.valid,
-      error: validation.valid ? undefined : validation.error,
-      interceptor: sharedData._interceptor,
-      interceptorData: sharedData._interceptorData
-    };
-    delete sharedData._interceptor;
-    delete sharedData._interceptorData;
-    return result;
-  });
-
-  // Store results for execute/report phases
-  const sharedData = getTakingSharedData(context);
-  sharedData.multiObjectResults = results;
-
-  // Valid if at least one can be taken
-  const anySuccess = results.some(r => r.success);
-  if (!anySuccess) {
-    // All failed - return the first error
-    return { valid: false, error: results[0].error };
-  }
-
-  return { valid: true };
-}
-
-/**
- * Execute taking a single entity
+ * Execute taking a single entity. Mutation results (previous location,
+ * implicit worn-removal) are written into `scratch` — the single-object
+ * sharedData or the item's multi-object itemData.
  */
 function executeSingleEntity(
   context: ActionContext,
   noun: IFEntity,
-  result: TakingItemResult | TakingSharedData
+  scratch: TakingItemScratch
 ): void {
   const actor = context.player;
 
   // Capture context BEFORE any mutations
   const previousLocation = context.world.getLocation(noun.id);
-  result.previousLocation = previousLocation;
+  scratch.previousLocation = previousLocation;
 
   // Check if item is worn and needs to be removed first
   if (noun.has(TraitType.WEARABLE)) {
     const wearableTrait = noun.get(TraitType.WEARABLE);
     if (isWearableTrait(wearableTrait) && (wearableTrait.isWorn ?? wearableTrait.worn)) {
       // Mark that we implicitly removed a worn item
-      result.implicitlyRemoved = true;
-      result.wasWorn = true;
+      scratch.implicitlyRemoved = true;
+      scratch.wasWorn = true;
 
       // Get the wearer (the one who has the item currently)
       const wearer = previousLocation ? context.world.getEntity(previousLocation) : null;
@@ -270,15 +216,15 @@ function executeSingleEntity(
 function reportSingleSuccess(
   context: ActionContext,
   noun: IFEntity,
-  result: TakingItemResult | TakingSharedData,
+  scratch: TakingItemScratch,
   events: ISemanticEvent[],
   isMultiObject: boolean = false
 ): void {
   const actor = context.player;
 
   // Check if we implicitly removed a worn item
-  if (result.implicitlyRemoved) {
-    const previousLocation = result.previousLocation;
+  if (scratch.implicitlyRemoved) {
+    const previousLocation = scratch.previousLocation;
     const container = previousLocation ? context.world.getEntity(previousLocation) : null;
 
     events.push(context.event('if.event.removed', {
@@ -289,7 +235,7 @@ function reportSingleSuccess(
   }
 
   // Determine if taken from a container/supporter
-  const previousLocation = result.previousLocation;
+  const previousLocation = scratch.previousLocation;
   const isFromContainerOrSupporter = previousLocation &&
     previousLocation !== context.world.getLocation(actor.id);
 
@@ -314,7 +260,7 @@ function reportSingleSuccess(
     itemId: noun.id,
     actor: actor.name,
     actorId: actor.id,
-    previousLocation: result.previousLocation,
+    previousLocation: scratch.previousLocation,
     container: containerEntity ? nounPhraseFor(containerEntity) : ''
   };
 
@@ -328,7 +274,7 @@ function reportSingleSuccess(
     itemId: noun.id,
     actor: actor.name,
     actorId: actor.id,
-    previousLocation: result.previousLocation,
+    previousLocation: scratch.previousLocation,
     container: containerEntity?.name || ''
   }));
 }
@@ -341,17 +287,17 @@ function reportSingleSuccess(
 function reportSingleBlocked(
   context: ActionContext,
   noun: IFEntity,
-  error: string,
+  result: ValidationResult,
   events: ISemanticEvent[]
 ): void {
   events.push(context.event('if.event.take_blocked', {
     // Rendering data — EntityInfo for the formatter chain (ADR-158)
-    messageId: `${context.action.id}.${error}`,
-    params: { item: nounPhraseFor(noun) },
+    messageId: blockedMessageId(context, result),
+    params: { ...result.params, item: nounPhraseFor(noun) },
     // Domain data — strings for handlers
     item: noun.name,
     itemId: noun.id,
-    reason: error
+    reason: result.error
   }));
 }
 
@@ -387,9 +333,29 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    // Check for multi-object command
+    // Check for multi-object command — full per-item lifecycle (ADR-228 D4)
     if (isMultiObjectCommand(context)) {
-      return validateMultiObject(context);
+      const playerId = context.player.id;
+      const items = expandMultiObject(context, {
+        scope: 'reachable',
+        // Filter out items already carried by the player
+        filter: (entity, world) => world.getLocation(entity.id) !== playerId
+      }).map(i => i.entity);
+
+      if (items.length === 0) {
+        return { valid: false, error: TakingMessages.NOTHING_TO_TAKE };
+      }
+
+      const results = runMultiObjectValidate(
+        context, takingLifecycle, 'item', items,
+        (ctx, item) => validateSingleEntity(ctx, item)
+      );
+
+      // Valid if at least one can be taken; all-fail returns the first error
+      if (!results.some(r => r.success)) {
+        return { valid: false, error: results[0].error, errorQualified: results[0].errorQualified, params: results[0].errorParams };
+      }
+      return { valid: true };
     }
 
     // Single object validation
@@ -398,74 +364,64 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: TakingMessages.NO_TARGET };
     }
 
-    return validateSingleEntity(context, noun);
+    const state = resolveLifecycle(context, takingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+
+    const standard = validateSingleEntity(context, noun);
+    if (!standard.valid) return standard;
+
+    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+
+    return { valid: true };
   },
 
   execute(context: ActionContext): void {
-    const sharedData = getTakingSharedData(context);
-
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
-      // Execute for each successful validation
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          executeSingleEntity(context, result.entity, result);
-          // === POST-EXECUTE HOOK (per item, ADR-118) ===
-          if (result.interceptor?.postExecute) {
-            result.interceptor.postExecute(result.entity, context.world, context.player.id, result.interceptorData ?? {});
-          }
-        }
-      }
+    // Multi-object command: per-item execute + postExecute hooks (D4)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
+      runMultiObjectExecute(context, multi, (ctx, item, itemData) => {
+        executeSingleEntity(ctx, item, itemData as TakingItemScratch);
+      });
       return;
     }
 
     // Single object execution
     const noun = context.command.directObject!.entity!;
-    executeSingleEntity(context, noun, sharedData);
+    executeSingleEntity(context, noun, getTakingSharedData(context));
 
-    // === POST-EXECUTE HOOK (ADR-118) ===
-    if (sharedData._interceptor?.postExecute) {
-      sharedData._interceptor.postExecute(noun, context.world, context.player.id, sharedData._interceptorData ?? {});
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
-    const sharedData = getTakingSharedData(context);
     const events: ISemanticEvent[] = [];
 
-    // Check for multi-object command
-    if (sharedData.multiObjectResults) {
-      // Generate events for each item (success and failure)
+    // Multi-object command: per-item success/blocked events + hooks (D4)
+    const multi = getMultiObjectLifecycle(context);
+    if (multi) {
       // Use compact format when multiple items
-      const isMultiObject = sharedData.multiObjectResults.length > 1;
-      for (const result of sharedData.multiObjectResults) {
-        if (result.success) {
-          reportSingleSuccess(context, result.entity, result, events, isMultiObject);
-          // === POST-REPORT HOOK (per item, ADR-118) ===
-          if (result.interceptor?.postReport) {
-            const reportResult = result.interceptor.postReport(result.entity, context.world, context.player.id, result.interceptorData ?? {});
-            if (reportResult) {
-              applyInterceptorReportResult(events, 'if.event.taken', reportResult, context);
-            }
-          }
-        } else {
-          reportSingleBlocked(context, result.entity, result.error!, events);
+      const isMultiObject = multi.length > 1;
+      runMultiObjectReport(
+        context, multi, events, 'if.event.taken', 'if.event.take_blocked',
+        (ctx, item, itemData, evts) => {
+          reportSingleSuccess(ctx, item, itemData as TakingItemScratch, evts, isMultiObject);
+        },
+        (ctx, item, itemResult, evts) => {
+          reportSingleBlocked(ctx, item, itemResult, evts);
         }
-      }
+      );
       return events;
     }
 
     // Single object report
     const noun = context.command.directObject!.entity!;
-    reportSingleSuccess(context, noun, sharedData, events, false);
+    reportSingleSuccess(context, noun, getTakingSharedData(context), events, false);
 
-    // === POST-REPORT HOOK (ADR-118) ===
-    if (sharedData._interceptor?.postReport) {
-      const reportResult = sharedData._interceptor.postReport(noun, context.world, context.player.id, sharedData._interceptorData ?? {});
-      if (reportResult) {
-        applyInterceptorReportResult(events, 'if.event.taken', reportResult, context);
-      }
-    }
+    const state = getLifecycleState(context);
+    if (state) runPostReport(context, state, events, 'if.event.taken');
     return events;
   },
 
@@ -474,14 +430,9 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     // Uses simplified event pattern (ADR-097)
     const noun = context.command.directObject?.entity;
 
-    // Fully-qualified message IDs (containing dots) are used as-is;
-    // short keys (e.g., 'fixed_in_place') get the action ID prefix
-    const error = result.error || '';
-    const messageId = error.includes('.') ? error : `${context.action.id}.${error}`;
-
     const events: ISemanticEvent[] = [context.event('if.event.take_blocked', {
       // Rendering data — EntityInfo for the formatter chain (ADR-158)
-      messageId,
+      messageId: blockedMessageId(context, result),
       params: {
         ...result.params,
         item: noun ? nounPhraseFor(noun) : undefined
@@ -492,15 +443,20 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error
     })];
 
-    // === ON-BLOCKED HOOK (ADR-118, interceptor-wiring audit 2026-07-12) ===
-    const sharedData = getTakingSharedData(context);
-    if (sharedData._interceptor?.onBlocked && noun && result.error) {
-      const customEffects = sharedData._interceptor.onBlocked(
-        noun, context.world, context.player.id, result.error, sharedData._interceptorData ?? {}
-      );
-      if (customEffects) {
-        for (const effect of customEffects) {
-          events.push(context.event(effect.type, effect.payload));
+    if (result.error) {
+      const state = getLifecycleState(context);
+      if (state) {
+        // Single-object path: notify all consultations (ADR-228 D2/D3)
+        runOnBlocked(context, state, events, 'if.event.take_blocked', result.error);
+      } else {
+        // Multi-object all-fail path: the blocked event carries the FIRST
+        // failed item's error, so only that item's consultations are
+        // notified here — the other items produced no events for hooks to
+        // decorate. (Partial failures are handled per item in report().)
+        const multi = getMultiObjectLifecycle(context);
+        const first = multi?.[0];
+        if (first && !first.success) {
+          runOnBlocked(context, first.state, events, 'if.event.take_blocked', first.error ?? result.error);
         }
       }
     }

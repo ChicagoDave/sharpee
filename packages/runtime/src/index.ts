@@ -11,10 +11,10 @@
  */
 
 // ─── Protocol (the postMessage contract) ──────────────────────────
-export * from './protocol';
+export * from './protocol.js';
 
 // ─── Bridge ───────────────────────────────────────────────────────
-export { SharpeeRuntimeBridge } from './bridge';
+export { SharpeeRuntimeBridge } from './bridge.js';
 
 // ─── Shared engine API surface ────────────────────────────────────
 export * from '@sharpee/sharpee/runtime-surface';

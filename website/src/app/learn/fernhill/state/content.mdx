@@ -1,0 +1,117 @@
+## An entity state chain
+
+The vine marches forward — seedling, flowering, fruiting — and answers
+differently at each stage via `select on its state`:
+
+```chord
+create the vine
+  aka determined vine
+  scenery, prunable
+  in the Greenhouse
+  states: seedling, flowering, fruiting
+```
+
+```chord
+define trait prunable
+  on pruning it
+    the player must hold the garden shears: need-shears
+    select on its state
+      when seedling
+        phrase vine-too-young
+      when flowering
+        change it to fruiting
+        move the silver locket to the Greenhouse
+        phrase vine-fruits
+      when fruiting
+        phrase vine-done
+    end select
+  end on
+end trait
+```
+
+The `must` line is a guard with a named refusal. The flowering arm is
+the payoff of the boiler chain: prune the flowered vine and the silver
+locket — the deed box's instrument — drops into the world.
+
+## Custom verbs
+
+`prune` isn't a standard IF verb. Two declarations add it: the action
+(grammar + fallback refusal) and the trait carrying the behavior. **The
+clause that answers a custom verb must live in a trait** composed onto
+the entity — that's what routes the verb:
+
+```chord
+define action pruning
+  grammar
+    prune :target
+    trim :target
+  the target must be reachable
+  otherwise refuse cannot-prune
+
+  phrases en-US
+    cannot-prune:
+      There's nothing to prune about that.
+```
+
+The case clock works the same way (`define action winding`, trait
+`windable`, `wind the clock` with the winding key — the endings chapter
+listens for its chimes).
+
+## Authored traits with data
+
+`feedable` is a story-defined trait with a *typed data field* — which
+food this creature accepts — plus its own states and phrases:
+
+```chord
+define trait feedable
+  data
+    food: entity
+  states: peckish, fed
+
+  phrases en-US
+    no-morsel:
+      You have nothing that would interest a cat of standing.
+    cat-eats:
+      The kipper vanishes with terrifying efficiency…
+
+  on feeding it
+    the actor must have its food: no-morsel
+    it must be peckish: already-fed-cat
+    change it to fed
+    phrase cat-eats
+  end on
+end trait
+```
+
+Composed with its field filled in:
+
+```chord
+create Smoke
+  aka cat, grey cat
+  a person, follower
+  feedable with food the kipper
+  in the Pantry
+```
+
+One cat: library `follower` role (she trails you once met), authored
+`feedable` trait (the kipper from chapter 2's tool chain), and a fed-only,
+once-only hint that noses at where the locket will fall.
+
+## Interception: refusing a standard action
+
+Sometimes an entity should veto a verb that normally works. The furnace
+poker is takeable — until the boiler runs:
+
+```chord
+create the furnace poker
+  in the Boiler Shed
+
+  on taking it while the boiler is running
+    refuse poker-hot
+  end on
+```
+
+`refuse <phrase>` stops the action and speaks; the standard TAKE resumes
+being ordinary the moment the condition clears. The folly door uses the
+same shape to stay jammed until Tobias has told you its story
+(`on opening it while tobias is not shaken → refuse folly-jammed`).

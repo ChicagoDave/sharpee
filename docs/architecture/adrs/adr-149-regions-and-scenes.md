@@ -1,6 +1,6 @@
 # ADR-149: Regions and Scenes
 
-## Status: DRAFT
+## Status: ACCEPTED (corrected 2026-07-18, David — both halves shipped since 2026-04: RegionTrait/`createRegion`/`assignRoom`/`isInRegion`/crossing events, SceneTrait/`createScene` + ADR-186 reactions; made load-bearing by ADR-236 Chord regions. The DRAFT marking was stale, not a reflection of open questions.)
 
 ## Date: 2026-04-14
 

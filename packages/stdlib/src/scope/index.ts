@@ -5,6 +5,6 @@
  * physical laws and IF conventions.
  */
 
-export * from './types';
-export * from './scope-resolver';
-export * from './witness-system';
+export * from './types.js';
+export * from './scope-resolver.js';
+export * from './witness-system.js';

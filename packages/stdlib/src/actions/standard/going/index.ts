@@ -4,10 +4,10 @@
  * Exports the going action and its associated event types
  */
 
-export { goingAction } from './going';
+export { goingAction, exitBlockedKey, exitMessageKey } from './going.js';
 export type { 
   ActorMovedEventData, 
   ActorExitedEventData, 
   ActorEnteredEventData, 
   GoingErrorData 
-} from './going-events';
+} from './going-events.js';

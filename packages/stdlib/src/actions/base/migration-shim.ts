@@ -7,7 +7,7 @@
  */
 
 import { ISemanticEvent } from '@sharpee/core';
-import { Action, ActionContext, ValidationResult } from '../enhanced-types';
+import { Action, ActionContext, ValidationResult } from '../enhanced-types.js';
 
 /**
  * Base class for migrating actions to three-phase pattern

@@ -17,7 +17,7 @@ import {
   AlreadyToldRecord,
   PropagationColoring,
   SpreadsVersion,
-} from './propagation-types';
+} from './propagation-types.js';
 
 // ---------------------------------------------------------------------------
 // Propagation context (what the evaluator needs to know)

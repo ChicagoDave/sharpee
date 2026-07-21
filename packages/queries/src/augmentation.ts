@@ -13,7 +13,7 @@
 
 import { WorldModel, IWorldModel, EntityType, IFEntity, TraitType } from '@sharpee/world-model';
 import type { ContentsOptions } from '@sharpee/if-domain';
-import { EntityQuery } from './entity-query';
+import { EntityQuery } from './entity-query.js';
 
 // ---------------------------------------------------------------------------
 // ADR-149 forward declarations
@@ -169,4 +169,4 @@ proto.inScope = function (this: IWorldModel, observerId: string): EntityQuery {
 };
 
 // Re-export EntityQuery so consumers get it from the augmentation import
-export { EntityQuery } from './entity-query';
+export { EntityQuery } from './entity-query.js';

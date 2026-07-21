@@ -7,20 +7,21 @@
 
 import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
-import { EnglishAssembler } from './assembler';
-import { parsePhraseTemplate } from './parser';
-import { englishVerbs } from './data/verbs';
-import { englishWords, irregularPlurals, abbreviations } from './data/words';
-import { pluralize as pluralizeNoun } from './pluralize';
-import { standardActionLanguage } from './actions';
-import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc';
-import { platformLanguage } from './platform-messages';
-import { soundMessages } from './sound-messages';
+import { EnglishAssembler, registerPronounSet as registerAssemblerPronounSet } from './assembler/index.js';
+import type { PronounSetForms } from './assembler/index.js';
+import { parsePhraseTemplate } from './parser/index.js';
+import { englishVerbs } from './data/verbs.js';
+import { englishWords, irregularPlurals, abbreviations } from './data/words.js';
+import { pluralize as pluralizeNoun } from './pluralize.js';
+import { standardActionLanguage } from './actions/index.js';
+import { npcLanguage, conversationLanguage, propagationLanguage, influenceLanguage } from './npc/index.js';
+import { platformLanguage } from './platform-messages.js';
+import { soundMessages } from './sound-messages.js';
 import {
   NarrativeContext,
   DEFAULT_NARRATIVE_CONTEXT,
   resolvePerspectivePlaceholders,
-} from './perspective';
+} from './perspective/index.js';
 // Types are now imported from @sharpee/if-domain
 
 /**
@@ -71,6 +72,15 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
       'core.command_failed': "I don't understand that.",
+      // Shared scope-refusal messages (ADR-231 D1): produced by stdlib's
+      // requireScope/requireSlotScope as fully-qualified ids — every action
+      // shares these; an action wanting different wording returns its own
+      // action-local key instead of calling requireScope.
+      'scope.not_known': "You can't see any such thing.",
+      'scope.not_visible': "{You} {can't} see {the item}.",
+      'scope.not_reachable': "{You} {can't} reach {the item}.",
+      'scope.not_carried': "{You} aren't holding {the item}.",
+      'scope.out_of_scope': "{You} {can't} do that.",
       // Room description body (ADR-192/195): the room's prose realized through the
       // phrase pipeline, carrying the `{slot:here}` room-occupant channel so present
       // occupants append a presence clause at realize time (the room name is a
@@ -273,7 +283,20 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       // Unregistered ID echoes as a literal, matching getMessage's fallback.
       return this.assembler.realize({ kind: 'literal', text: messageId }, ctx);
     }
+    return this.renderTemplate(template, params, ctx);
+  }
 
+  /**
+   * Realize a template string directly — {@link renderMessage} minus the
+   * registry lookup (ADR-250 D4). The engine's phrasebook read point calls
+   * this with a book-resolved template; the `messages` map is not consulted.
+   *
+   * @param template The template text
+   * @param params Parameter/producer bindings keyed by placeholder name
+   * @param ctx The per-message render context (world, settings, seams)
+   * @returns The realized text blocks
+   */
+  renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[] {
     // Step 1: Resolve perspective placeholders (ADR-089) — a string pre-pass
     // that runs BEFORE parsing. Passing params lets the resolver leave bound
     // params for the phrase parser and conjugate every other bare {word} as a
@@ -629,6 +652,18 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    */
   addMessage(messageId: string, template: string): void {
     this.messages.set(messageId, template);
+  }
+
+  /**
+   * Register a named pronoun set (ADR-242 D7) — the loader's
+   * `extendLanguage` registration surface beside `addMessage` (probed
+   * structurally; the loader stays locale-neutral). Forms flow to the
+   * Assembler's pronoun authority, consulted before the standard rows.
+   * @param name The set name as declared (`define pronouns ze`)
+   * @param forms The five case forms (subject/object/possessive/possessivePronoun/reflexive)
+   */
+  registerPronounSet(name: string, forms: PronounSetForms): void {
+    registerAssemblerPronounSet(name, forms);
   }
 
   /**
