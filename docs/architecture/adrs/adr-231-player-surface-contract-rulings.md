@@ -127,6 +127,13 @@ Riders, same ruling:
   honoring the EBNF's `phrase-key = WORD { "." WORD }` everywhere and
   finishing what ADR-230 D5 started (delivery covered only the two
   statement forms). `chord.ebnf` and chord-language.md align.
+  > **SUPERSEDED by ADR-254 (2026-07-22).** This rider is reversed: `.` is
+  > now illegal in every Chord label/key (single kebab-case tokens only).
+  > The dotted platform-message-override *spelling* it enabled (`define
+  > phrase if.action.taking.fixed_in_place`) is removed, but the *capability*
+  > is retained via a curated kebab anti-corruption layer (author writes
+  > `taking-fixed-in-place`; the loader maps it to the internal `if.action.*`
+  > id), specified in **ADR-255**. See ADR-254 §Amendment.
 - **The cross-action `fixed_in_place` leak is fixed at the producing
   helper**: `requireCarriedOrImplicitTake` emits taking's key as a
   fully-qualified id (it is taking's refusal, whatever action invoked

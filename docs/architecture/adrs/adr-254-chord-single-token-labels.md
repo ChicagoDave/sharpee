@@ -2,9 +2,47 @@
 
 ## Status: ACCEPTED (2026-07-22 — all decisions ruled by David directly, session 74219a: `.` is illegal in every Chord label/key (all label kinds, one uniform rule); dotted keys "do not fit in Chord"; its own cross-cutting ADR, sequenced before ADR-253 because it feeds the renderer naming. Open-questions interview complete (same session): no platform-event carve-out — Chord never references platform events with dotted keys (verified zero `.story` usage; `if.event.*` is internal binding, not an author label); grammar change and fernhill + friendly-zoo migration land atomically. No Open Questions remain. Multi-ADR review (252/253/254) same session: 14/14 per-ADR, 0 hard contradictions; the only cross-ADR drift lived in the 253 stub (dotted example + missing pointer), fixed before this flip. Not implemented.)
 
+## Amendment (2026-07-22, session 818d28): explicitly supersedes ADR-231 D1b
+
+This ADR **supersedes ADR-231 D1b** — the rider under ADR-231 D1 that extended
+dotted phrase keys to *all* Chord key sites "honoring the EBNF's `phrase-key =
+WORD { \".\" WORD }` everywhere." That rider was a **deliberate, real, and
+tested** capability, not a dead branch: it made `define phrase
+if.action.taking.fixed_in_place` a legal Chord form for overriding a platform
+standard-action message story-wide (documented in `chord-language.md` §5.2/§5.3,
+fixture `define/dotted-override.story`, and exercised by
+`packages/chord/tests/dotted-keys-all-sites.test.ts`). ADR-254 retires the
+dotted **spelling**: dots are illegal in every label, so `define phrase
+if.action.taking.fixed_in_place` no longer parses. The original Context below
+called the dotted platform reference form "vestigial and unused" — that
+characterization is **corrected here**: it was a supported, documented
+capability, not code nobody wrote.
+
+**The override capability is retained — only its spelling changes.** Rather than
+drop platform-message override, Chord gains a curated kebab **anti-corruption
+layer (ACL)** for it, mirroring the event-selector ACL already in place
+(`catalog.ts` "Interface Contract 2": the chord language side holds curated bare
+names, `@sharpee/story-loader` holds the dotted `if.event.*` bindings, keeping
+the compiler platform-free). An author overrides a standard-action message with
+a curated kebab name (e.g. `taking-fixed-in-place`) that the loader maps to the
+internal `if.action.taking.fixed_in_place` id — the raw dotted platform id never
+appears in a `.story`. The ACL's design (spelling of the override construct,
+curated-name set vs. mechanical de-dot transform, collision rules with
+story-defined phrase keys, loader-side conformance pinning) is specified in a
+**follow-up ADR (ADR-255)**; this amendment records that the capability stays
+and the dotted author spelling does not. No *shipped* story used the dotted form
+(verified zero `.story` usage), so the ban carries no story migration beyond
+fernhill/friendly-zoo's namespaced keys.
+
+The test removal and the `dotted-keys-all-sites.test.ts` deletion landed in
+session 818d28. The `chord-language.md` §5.2/§5.3 and website guide edits — which
+must move authors from the dotted `if.action.*` form to the ACL kebab name, not
+delete the override capability — are sequenced **after ADR-255** so they teach
+the replacement rather than a hole.
+
 ## Date: 2026-07-22
 
-## Parent: ADR-210 (Chord `.story` author language). Completes the direction of ADR-231 D1 (refusal-key namespace: bare kebab keys are correct; the ad-hoc dotted-key escapes are dead branches to be removed) by tightening the *grammar* to match — ADR-231 D1b left `readDottedKey` (`WORD { "." WORD }`) permitting dotted phrase/exit keys even though bare keys were preferred. Feeds ADR-253 (declarative renderers — its channel/event naming assumes single-token labels).
+## Parent: ADR-210 (Chord `.story` author language). Completes the direction of ADR-231 D1 (refusal-key namespace: bare kebab keys are correct; the ad-hoc dotted-key escapes are dead branches to be removed) by tightening the *grammar* to match, and **supersedes ADR-231 D1b** — the rider that deliberately extended dotted phrase keys to every key site (`readDottedKey`, `WORD { "." WORD }`), including the platform-message-override form `define phrase if.action.<key>`. That was a real, documented capability, retired here (see Amendment). Feeds ADR-253 (declarative renderers — its channel/event naming assumes single-token labels).
 
 ## Context
 
@@ -33,16 +71,22 @@ dots. ADR-231 already ruled bare kebab keys correct for refusals and marked the
 dotted escapes for removal; this ADR finishes that by making the grammar reject
 dots in labels outright, so the language reads uniformly.
 
-**Chord never references platform events with dotted keys — verified.** The
-engine's semantic namespace (`if.event.*`, `if.action.*`) is dotted, but those
-ids are **internal binding targets** — TS constants the catalog's event-selector
-map produces from an author's *bare* curated selector (`catalog.ts:119`). No
-`.story` in the repo references a dotted platform event (checked 2026-07-22:
-zero `if.event.*`/`if.action.*` occurrences across all sources; the only
-`event` reference is fernhill's author-defined `estate.clock`). The raw
-`event if.event.opened` reference form documented in `ast.ts:768` is vestigial
-and unused. So the dotted platform namespace is not an author-facing label and
-needs no carve-out.
+**No shipped story references a platform event with a dotted key — verified.**
+The engine's semantic namespace (`if.event.*`, `if.action.*`) is dotted, but
+those ids are **internal binding targets** — TS constants the catalog's
+event-selector map produces from an author's *bare* curated selector
+(`catalog.ts:119`). No `.story` in the repo references a dotted platform event
+(checked 2026-07-22: zero `if.event.*`/`if.action.*` occurrences across all
+sources; the only `event` reference is fernhill's author-defined `estate.clock`).
+
+Two dotted *author-facing* forms did exist, introduced by ADR-231 D1b and
+superseded here (see Amendment above): the `event if.event.<key>` machine
+trigger (`ast.ts:768`, exercised by `state-machine.test.ts` before its
+2026-07-22 kebab migration) and the platform-message override
+`define phrase if.action.<key>` (`chord-language.md` §5.2/§5.3). Both fall under
+the ban and are removed with the dotted-key primitive; neither has a non-dotted
+alternative in this ADR. No shipped story used either, so the dotted platform
+namespace stops being an author-facing label and needs no carve-out.
 
 ## Decision
 
@@ -134,6 +178,17 @@ end channel
   primitive and its 15 call sites collapse to a single-token read.
 - **Author guidance shifts**: namespacing is expressed with hyphens, not dots
   — consistent with every other Chord identifier.
+- **The dotted platform-message-override *spelling* is removed** (ADR-231 D1b,
+  superseded); **the capability is kept.** A story could formerly replace a
+  standard-action message story-wide with `define phrase
+  if.action.taking.fixed_in_place`; that dotted form no longer parses. It is
+  replaced by a curated kebab **ACL** — an author writes a curated name (e.g.
+  `taking-fixed-in-place`) that `@sharpee/story-loader` maps to the internal
+  `if.action.*` id, mirroring the event-selector Interface Contract 2
+  (`catalog.ts`). The ACL is specified in **ADR-255**. The `chord-language.md`
+  §5.2/§5.3 override sections and the website `chord/guide` pages must be
+  updated to teach the ACL kebab name in place of the dotted id — **after
+  ADR-255 lands**, so they present the replacement, not a hole.
 
 ## Session
 

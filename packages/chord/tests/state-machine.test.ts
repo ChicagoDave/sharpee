@@ -84,7 +84,7 @@ end machine
   starts idle
 
   state idle
-    when event if.event.opened while the player is in the Gatehouse: alert
+    when event gate-opened while the player is in the Gatehouse: alert
 
   state alert
 end machine
@@ -92,7 +92,7 @@ end machine
     );
     expect(result.diagnostics).toEqual([]);
     const transition = result.ir.machines[0].states[0].transitions[0];
-    expect(transition.trigger).toMatchObject({ kind: 'event', event: 'if.event.opened' });
+    expect(transition.trigger).toMatchObject({ kind: 'event', event: 'gate-opened' });
     expect(transition.condition).not.toBeNull();
   });
 
