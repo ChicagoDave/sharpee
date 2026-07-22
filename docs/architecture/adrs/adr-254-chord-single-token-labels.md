@@ -109,6 +109,19 @@ bare curated names; `if.event.*` is internal). The unused raw
 the dotted-key primitive; authors reference platform events only through curated
 bare selectors. This is the "all labels — one rule" scope David ruled.
 
+> **Amendment (2026-07-22, session 818d28) — event-type sites deferred to ADR-256.**
+> D2's event-key claims are corrected against what implementation found. Chord
+> *does* reference platform events with dotted ids today (the `media.*` fixtures,
+> `emit media.sound.play`), and the raw `event <key>` form is *used*
+> (`state-machine.test.ts`), not vestigial. So the event-type sites (`emit`,
+> channel `from event`, machine `when event`) were **not** removed with the
+> dotted-key primitive: Phase 1 scoped them to `readLabelKey(…, { allowDotted:
+> true })`, and **ADR-256** resolves them — a `@sharpee/story-loader` translation
+> turning a dotless Chord event id into the platform's (unchanged, dotted) id. The
+> uniform ban holds at every *author-label* site now; the event-type sites become
+> dotless when ADR-256 lands. This mirrors the message-override deferral to
+> ADR-255 above.
+
 ### D3 — Quoted string literals are exempt
 
 The rule constrains **bare keys only**. Quoted `STRING` literals are untouched:

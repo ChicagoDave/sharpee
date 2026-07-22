@@ -35,15 +35,32 @@ Phase 1 is therefore **unblocked** — no open gate remains before the grammar c
 ### Phase 1: ADR-254 — single-token Chord labels (`readDottedKey` → single-`WORD` read), fernhill + friendly-zoo migration
 - **Tier**: Medium · **Budget**: 250
 - **Domain focus**: `packages/chord/src/parser.ts` (`readDottedKey`, 1 definition + 14 call sites), `packages/chord/src/diagnostics.ts` (new `parse.dotted-key` code), `stories/fernhill/fernhill.story` (`estate.clock` → `estate-clock`, 3 sites: 2 `emit` + 1 `from event`), `stories/friendly-zoo/zoo.story` (8 inline `phrase <key>` sites: `zoo.pa.closing-3/-2/-1/closed`, `zoo.feeding-time.announced` ×4).
-- **Entry state**: ADR-254 ACCEPTED, conflict RESOLVED (see above) — uniform ban, no carve-out. The dotted-key test rework is already done (session 818d28); no further gate before code.
+- **Entry state**: ADR-254 ACCEPTED, conflict RESOLVED (see above) — uniform ban on author labels. The dotted-key test rework was already done (session 818d28); no further gate before code.
+- **Second conflict, discovered during implementation (session 818d28) — resolved by applying David's framework, not re-asking**: the blanket dot-ban also broke **ADR-216's dotted event types** (`emit media.sound.play`, `from event chord.compass.updated`, machine `when event …`). Verified these are **platform-bound ids** — `stdlib/src/channels/media.ts` *consumes* `media.*`, `audibility.ts` treats `media.sound.play` as a channel id — so per the established framework (author label → kebab; platform id → curated kebab ACL) they are **not** author labels. Rather than break a platform-bound capability before its replacement exists (the same principle as ADR-254 keeping message override behind ADR-255), Phase 1 **scopes the ban to author-label sites** and leaves event-type sites working. Event types get their own ACL in **Phase 2b (ADR-256)**.
+- **Deliverable** (DONE unless noted):
+  1. ✅ `readDottedKey` → `readLabelKey(c, opts?)`. Author-label sites (phrase, exit, refusal keys — 11 sites) reject a `.` with `parse.dotted-key` (kebab fix-it at the dot). Event-type sites (`emit`, channel `from event`, machine `when event` — 3 sites) pass `{ allowDotted: true }` and keep the dotted form pending ADR-256.
+  2. ✅ `stories/fernhill/fernhill.story`: `estate.clock` → `estate-clock` (3 sites); `media-degrade.transcript` assertion updated.
+  3. ✅ `stories/friendly-zoo/zoo.story`: 8 dotted phrase keys → kebab.
+  4. ✅ New `dotted-key-rejection.test.ts` (rejection at define-phrase + blocked-exit sites; D3 quoted-string/prose exemption).
+  5. ✅ Chord's own test fixtures/tests migrated: `fixtures/zoo-timeline.story` + `zoo-phase-c.story` dotted author keys → kebab; inline assertions in `parser-phase-b`/`analyzer-phase-b`; golden snapshots re-recorded; phrasebook guardrail (`phrasebooks.test.ts`) updated — a dotted platform id now raises `parse.dotted-key` (rejection moved parser-side, ahead of `analysis.phrasebook-dotted-key`).
+  6. ✅ `packages/chord` suite green — **31 files, 450 tests**.
+  7. ✅ Bundle rebuilt; fernhill transcripts green (**495 tests / 18 files**), friendly-zoo green (**71 / 7**).
+- **Exit state**: No `.story` contains a dotted **author** label; `parse.dotted-key` fires at the 11 author-label sites; quoted strings/prose unaffected; ADR-216 event types still work (dotted, pending ADR-256). fernhill/friendly-zoo compile with kebab labels. (Doc/website updates deferred to Phase 5.)
+- **Status**: DONE (code) — chord unit 450, fernhill 495, friendly-zoo 71, all green. Uncommitted. ADR-256 (below) finishes the ban at the event-type sites.
+
+### Phase 1b: ADR-256 — story-loader Chord-id → platform-id event translation (finishes ADR-254's ban)
+- **Tier**: Medium · **Budget**: 300
+- **Domain focus**: `packages/story-loader/src/` (new Chord-event-id → platform-event-id map + application at the emit executor **[seam TBD — locate it]**, channel `from event` `loader.ts:741`, machine `when event` `loader.ts:1563`), `packages/chord/src/parser.ts` (drop `allowDotted` from the 3 event-type sites), `.story` sources + chord fixtures (dotless event ids), the chord tests asserting the dotted IR form.
+- **Entry state**: Phase 1 complete (author-label ban in place; event types still `allowDotted`). ADR-256 ACCEPTED. David go-ahead to touch `packages/story-loader` + `packages/chord`.
 - **Deliverable**:
-  1. `readDottedKey` replaced by a single-token key reader; a `.` in a bare label position raises `parse.dotted-key` pointing at the dot with a kebab-case fix-it message (ADR-254 D1/D2 — uniform ban).
-  2. `stories/fernhill/fernhill.story`: `estate.clock` → `estate-clock` at all 3 sites; `stories/fernhill/tests/transcripts/media-degrade.transcript` string check updated to match.
-  3. `stories/friendly-zoo/zoo.story`: the 8 inline phrase-key sites migrate to kebab (`zoo.pa.closing-3` → `zoo-pa-closing-3`, `zoo.feeding-time.announced` → `zoo-feeding-time-announced`); verify no `.transcript`/doc in `stories/friendly-zoo/` references the old dotted forms.
-  4. A rejection test (dotted bare key → `parse.dotted-key`) and an exemption test (a quoted string with a dot, e.g. `from "chord-extras.ts"`, still compiles) per ADR-254 Acceptance.
-  5. `packages/chord` suite green (`pnpm --filter '@sharpee/chord' test`); fernhill transcripts green; friendly-zoo suite/transcripts green.
-- **Exit state**: No `.story` in the repo contains a dotted bare label. `parse.dotted-key` fires correctly; quoted strings unaffected. fernhill and friendly-zoo compile and pass with kebab labels. (Doc/website updates deferred to Phase 5.)
-- **Status**: CURRENT
+  1. story-loader translation map (Chord id → platform id) with the `media.*` entries (ADR-256 D2 table), applied at all 3 event seams; author events pass through as their kebab string (no map entry).
+  2. Conformance test pinning the media map against the live `stdlib/channels/media.ts` registry (a media rename fails the build).
+  3. Locate + pin the emit executor seam (ADR-256 marks it TBD).
+  4. Drop `allowDotted` from the 3 parser sites; a dotted event id raises `parse.dotted-key`.
+  5. Migrate `.story` + chord fixtures to dotless event ids; update the chord tests asserting the dotted IR form (`emit-payload`, `channel-capability`, `dynamic-channels`, `state-machine`).
+  6. chord + story-loader + fernhill + friendly-zoo suites green.
+- **Exit state**: Chord is fully dotless (ADR-254 uniform — no `allowDotted`); the platform is untouched; `media.*` events translate; author events are kebab.
+- **Status**: PENDING
 
 ### Phase 2: ADR-255 — `override message` message-override ACL (Interface Contract 3)
 - **Tier**: Large · **Budget**: 400

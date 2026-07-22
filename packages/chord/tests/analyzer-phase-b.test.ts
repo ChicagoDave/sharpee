@@ -139,7 +139,7 @@ describe('zoo-timeline IR (§3.3 + ownership package)', () => {
 
   it('registers declare-and-emit inline phrases so coverage passes', () => {
     const table = ir.phrases.locales['en-US'];
-    expect(table['zoo.pa.closing-3'].variants[0].text).toContain('closing in three hours');
+    expect(table['zoo-pa-closing-3'].variants[0].text).toContain('closing in three hours');
     expect(table['goat-bleat']).toBeDefined();
   });
 

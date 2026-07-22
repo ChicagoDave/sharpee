@@ -773,8 +773,8 @@ create the case clock
 
   on every turn while it is ticking and one chance in 8
     phrase clock-chime
-    emit estate.clock with hour "evening" when evening
-    emit estate.clock with hour "past midnight" when midnight
+    emit estate-clock with hour "evening" when evening
+    emit estate-clock with hour "past midnight" when midnight
   end on
 
 create the writing desk
@@ -840,7 +840,7 @@ define image folly-photograph from "images/folly-photograph.png"
 define channel clock
   mode replace
   gated by sidebar
-  from event estate.clock
+  from event estate-clock
   take hour
 end channel
 

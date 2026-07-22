@@ -42,20 +42,20 @@ end phrase
 
 define sequence closing time
   at turn 5
-    phrase zoo.pa.closing-3
+    phrase zoo-pa-closing-3
       *DING DONG* "Attention visitors! The Willowbrook Family Zoo will be
       closing in three hours. Please make sure to visit all exhibits before
       closing time!"
   5 turns later
-    phrase zoo.pa.closing-2
+    phrase zoo-pa-closing-2
       *DING DONG* "Attention visitors! Two hours until closing. Don't forget
       to stop by the gift shop for souvenirs!"
   5 turns later
-    phrase zoo.pa.closing-1
+    phrase zoo-pa-closing-1
       *DING DONG* "Attention visitors! One hour until closing. Please begin
       making your way toward the exit."
   5 turns later
-    phrase zoo.pa.closed
+    phrase zoo-pa-closed
       *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for
       visiting! We hope to see you again soon!"
     change the story to after-hours
@@ -63,7 +63,7 @@ end sequence
 
 define sequence lockup
   when the story becomes after-hours
-    phrase zoo.lockup
+    phrase zoo-lockup
       Somewhere in the dark, a gate clangs shut.
 end sequence
 
@@ -93,7 +93,7 @@ create Sam the zookeeper
 
   on every turn while after-hours, once
     move it to the Staff Gate
-    phrase zoo.after-hours.keeper-leaves
+    phrase zoo-after-hours-keeper-leaves
       Sam the zookeeper checks her watch, waves goodnight to the animals,
       and lets herself out through the staff gate.
     phrase keeper-wave when the player is in the Aviary

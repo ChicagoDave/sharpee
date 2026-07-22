@@ -30,7 +30,7 @@ description: The browser-presentation layer (ambient wind, boiler thump,
 [OK: not contains "images/"]
 
 # --- G5 clock channel: wind the clock, then catch a chime. The emit
-# (estate.clock with hour ...) is channel-only — text clients hear the
+# (estate-clock with hour ...) is channel-only — text clients hear the
 # chime prose and never see the event key or payload ---
 > take the grey overcoat
 [OK: contains "Taken"]
@@ -50,7 +50,7 @@ description: The browser-presentation layer (ambient wind, boiler thump,
 [UNTIL "counts the quarter"]
 
 > wait
-[OK: not contains "estate.clock"]
+[OK: not contains "estate-clock"]
 [OK: not contains "hour"]
 
 # --- Re-entering the Grounds (play ambient again, gated): the cold line

@@ -3317,7 +3317,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
               },
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closing-3",
+              "phraseKey": "zoo-pa-closing-3",
               "span": {
                 "column": 5,
                 "endColumn": 21,
@@ -3356,7 +3356,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
               },
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closing-2",
+              "phraseKey": "zoo-pa-closing-2",
               "span": {
                 "column": 5,
                 "endColumn": 47,
@@ -3395,7 +3395,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
               },
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closing-1",
+              "phraseKey": "zoo-pa-closing-1",
               "span": {
                 "column": 5,
                 "endColumn": 40,
@@ -3434,7 +3434,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
               },
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closed",
+              "phraseKey": "zoo-pa-closed",
               "span": {
                 "column": 5,
                 "endColumn": 48,
@@ -3511,7 +3511,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
               },
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.lockup",
+              "phraseKey": "zoo-lockup",
               "span": {
                 "column": 5,
                 "endColumn": 49,
@@ -3868,7 +3868,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
               },
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.after-hours.keeper-leaves",
+              "phraseKey": "zoo-after-hours-keeper-leaves",
               "span": {
                 "column": 5,
                 "endColumn": 51,

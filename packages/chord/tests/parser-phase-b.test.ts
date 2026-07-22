@@ -117,7 +117,7 @@ describe('zoo-timeline.story (design.md §3.3 + ownership package)', () => {
       ['later', 5],
     ]);
     const firstPhrase = seq.steps[0].body[0] as PhraseStmt;
-    expect(firstPhrase).toMatchObject({ kind: 'phrase', phraseKey: 'zoo.pa.closing-3' });
+    expect(firstPhrase).toMatchObject({ kind: 'phrase', phraseKey: 'zoo-pa-closing-3' });
     expect(firstPhrase.inlineText?.text).toContain('closing in three hours');
     // The last step flips the story phase after its phrase (ratchet D2).
     expect(seq.steps[3].body.map((s) => s.kind)).toEqual(['phrase', 'change']);
@@ -147,7 +147,7 @@ describe('zoo-timeline.story (design.md §3.3 + ownership package)', () => {
     expect(clause.condition).toMatchObject({ kind: 'condition-ref', name: 'after-hours' });
     expect(clause.body.map((s) => s.kind)).toEqual(['move', 'phrase', 'phrase']);
     const leaves = clause.body[1] as PhraseStmt;
-    expect(leaves.phraseKey).toBe('zoo.after-hours.keeper-leaves');
+    expect(leaves.phraseKey).toBe('zoo-after-hours-keeper-leaves');
     expect(leaves.inlineText?.text).toContain('waves goodnight');
     const wave = clause.body[2] as PhraseStmt;
     expect(wave.phraseKey).toBe('keeper-wave');

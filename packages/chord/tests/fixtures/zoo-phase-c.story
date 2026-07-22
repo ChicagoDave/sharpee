@@ -661,20 +661,20 @@ create the parrots
 
 define sequence closing time
   at turn 5
-    phrase zoo.pa.closing-3
+    phrase zoo-pa-closing-3
       *DING DONG* "Attention visitors! The Willowbrook Family Zoo will be
       closing in three hours. Please make sure to visit all exhibits before
       closing time!"
   5 turns later
-    phrase zoo.pa.closing-2
+    phrase zoo-pa-closing-2
       *DING DONG* "Attention visitors! Two hours until closing. Don't forget
       to stop by the gift shop for souvenirs!"
   5 turns later
-    phrase zoo.pa.closing-1
+    phrase zoo-pa-closing-1
       *DING DONG* "Attention visitors! One hour until closing. Please begin
       making your way toward the exit."
   5 turns later
-    phrase zoo.pa.closed
+    phrase zoo-pa-closed
       *DING DONG* "The Willowbrook Family Zoo is now closed. Thank you for
       visiting! We hope to see you again soon!"
     change the story to after-hours
@@ -683,18 +683,18 @@ end sequence
 define sequence feeding time
   at turn 11
     change the pygmy goats to hungry
-    phrase zoo.feeding-time.announced
+    phrase zoo-feeding-time-announced
       *DING DONG* "It's FEEDING TIME at the Petting Zoo! Come watch our pygmy
       goats and rabbits enjoy their favorite snacks!"
   8 turns later
     change the pygmy goats to hungry
-    phrase zoo.feeding-time.announced
+    phrase zoo-feeding-time-announced
   8 turns later
     change the pygmy goats to hungry
-    phrase zoo.feeding-time.announced
+    phrase zoo-feeding-time-announced
   8 turns later
     change the pygmy goats to hungry
-    phrase zoo.feeding-time.announced
+    phrase zoo-feeding-time-announced
 end sequence
 
 define phrase parrot-chatter, randomly

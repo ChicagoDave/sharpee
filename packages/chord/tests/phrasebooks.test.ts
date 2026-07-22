@@ -90,9 +90,9 @@ end phrasebook
     expect(errorCodes(src)).toContain('analysis.phrasebook-entry-gate');
   });
 
-  it('a dotted platform ID as an entry key raises analysis.phrasebook-dotted-key', () => {
+  it('a dotted platform ID as an entry key raises parse.dotted-key (ADR-254; platform-message overrides now use `override message`, ADR-255)', () => {
     const src = story('define phrasebook noir\n  if.action.taking.taken:\n    Snatched.\nend phrasebook\n\n');
-    expect(errorCodes(src)).toContain('analysis.phrasebook-dotted-key');
+    expect(errorCodes(src)).toContain('parse.dotted-key');
   });
 
   it('a reserved channel key raises analysis.phrasebook-reserved-key', () => {

@@ -793,7 +793,7 @@ class Parser {
       this.diagnostics.error('parse.blocked-exit', 'Expected `: <phrase-key>` after `is blocked`.', lineSpan(line));
       return null;
     }
-    const key = this.readDottedKey(c); // phrase-key = WORD { "." WORD } (ADR-231 D1b, exit keys ruled in)
+    const key = this.readLabelKey(c); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
     if (!key) {
       this.diagnostics.error('parse.blocked-exit', 'Expected a phrase key after `is blocked:`.', lineSpan(line));
       return null;
@@ -819,7 +819,7 @@ class Parser {
       this.diagnostics.error('parse.deadly-exit', 'Expected `: <phrase-key>` after `is deadly`.', lineSpan(line));
       return null;
     }
-    const key = this.readDottedKey(c); // phrase-key = WORD { "." WORD } (ADR-231 D1b, exit keys ruled in)
+    const key = this.readLabelKey(c); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
     if (!key) {
       this.diagnostics.error('parse.deadly-exit', 'Expected a phrase key after `is deadly:`.', lineSpan(line));
       return null;
@@ -1054,7 +1054,7 @@ class Parser {
     const c = new Cursor(line.tokens, line);
     c.matchWord('phrase');
     // Key word validated by the caller; phrase-key = WORD { "." WORD } (ADR-231 D1b).
-    const key = this.readDottedKey(c)!;
+    const key = this.readLabelKey(c)!;
 
     // CP3: optional `, <strategy>` (the Z5 adverb set, retired fix-its
     // included) — `phrase present, cycling:`.
@@ -1401,7 +1401,7 @@ class Parser {
     // parser silently registered only the first segment (`if.action.taking`
     // became `if`), which made story-wide overrides of platform message ids
     // impossible.
-    const key = this.readDottedKey(c) ?? '';
+    const key = this.readLabelKey(c) ?? '';
     if (!key) {
       this.diagnostics.error('parse.phrase-key', 'Expected a phrase key after `define phrase`.', lineSpan(headLine));
       c.next(); // skip the offending token so header options still parse
@@ -1601,7 +1601,7 @@ class Parser {
     while (this.pos < this.lines.length && this.lines[this.pos].indent > headLine.indent) {
       const line = this.lines[this.pos];
       const ec = new Cursor(line.tokens, line);
-      const key = this.readDottedKey(ec); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+      const key = this.readLabelKey(ec); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
       const colon = ec.peek();
       if (!key || !colon || colon.kind !== 'colon') {
         this.diagnostics.error('parse.phrase-entry', 'Expected `key: <text>` in the phrases block.', lineSpan(line));
@@ -1907,7 +1907,7 @@ class Parser {
         if (!oc.matchWord('refuse')) {
           this.diagnostics.error('parse.action-otherwise', 'Expected `otherwise refuse <phrase-key>`.', lineSpan(line));
         } else {
-          const key = this.readDottedKey(oc); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+          const key = this.readLabelKey(oc); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
           if (key) otherwise = { phraseKey: key, span: lineSpan(line) };
           else this.diagnostics.error('parse.action-otherwise', 'Expected a phrase key after `otherwise refuse`.', oc.restSpan());
         }
@@ -1936,7 +1936,7 @@ class Parser {
       return null;
     }
     const keyCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
-    const phraseKey = this.readDottedKey(keyCursor); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+    const phraseKey = this.readLabelKey(keyCursor); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
     if (!phraseKey || !keyCursor.atEnd()) {
       this.diagnostics.error('parse.must', 'Expected a phrase key after the colon in the `must` requirement.', line.tokens[colonIndex + 1].span);
       return null;
@@ -2098,7 +2098,7 @@ class Parser {
         this.diagnostics.error('parse.action-refusal', 'Expected `refuse without <slot>: <phrase-key>`.', lineSpan(line));
         return null;
       }
-      const key = this.readDottedKey(c); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+      const key = this.readLabelKey(c); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
       if (!key) {
         this.diagnostics.error('parse.action-refusal', 'Expected `refuse without <slot>: <phrase-key>`.', lineSpan(line));
         return null;
@@ -2114,7 +2114,7 @@ class Parser {
     const condCursor = new Cursor(line.tokens.slice(2, colonIndex), line);
     const condition = this.parseCondition(condCursor, line);
     const keyCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
-    const key = this.readDottedKey(keyCursor); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+    const key = this.readLabelKey(keyCursor); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
     if (!key || !keyCursor.atEnd()) {
       this.diagnostics.error('parse.action-refusal', 'Expected a phrase key after the colon.', lineSpan(line));
       return null;
@@ -2577,7 +2577,7 @@ class Parser {
       if (word === 'from' && lc.isWord('event', 1)) {
         lc.next();
         lc.next();
-        const key = this.readDottedKey(lc);
+        const key = this.readLabelKey(lc, { allowDotted: true }); // ADR-216 event type (dotted until ADR-256 ACL)
         if (!key || !lc.atEnd()) {
           this.diagnostics.error('parse.channel-from', 'Expected `from event <event.key>`.', lineSpan(line));
         } else {
@@ -2973,7 +2973,7 @@ class Parser {
     let trigger: MachineTransition['trigger'];
     if (first.kind === 'word' && first.text === 'event') {
       hc.next();
-      const key = this.readDottedKey(hc);
+      const key = this.readLabelKey(hc, { allowDotted: true }); // ADR-216 event type (dotted until ADR-256 ACL)
       if (!key || !hc.atEnd()) {
         this.diagnostics.error('parse.machine-when', 'Expected `event <event.key>`.', lineSpan(line));
         return null;
@@ -3055,7 +3055,7 @@ class Parser {
           }
           return this.parseRefuseWhenStatement(line);
         }
-        const key = this.readDottedKey(c);
+        const key = this.readLabelKey(c);
         if (!key) {
           this.diagnostics.error('parse.phrase-ref', `Expected a phrase key after \`${word}\`.`, c.restSpan());
           return null;
@@ -3098,7 +3098,7 @@ class Parser {
         // the raw token texts, which mangled dots into ` . ` (ADR-216 fix).
         const event: string[] = [];
         while (!c.atEnd() && !c.isWord('when') && !c.isWord('with')) {
-          const segment = this.readDottedKey(c);
+          const segment = this.readLabelKey(c, { allowDotted: true }); // ADR-216 event type (dotted until ADR-256 ACL)
           if (!segment) break;
           event.push(segment);
         }
@@ -3267,7 +3267,7 @@ class Parser {
       return null;
     }
     const keyCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
-    const key = this.readDottedKey(keyCursor); // phrase-key = WORD { "." WORD } (ADR-231 D1b)
+    const key = this.readLabelKey(keyCursor); // label-key = single WORD (ADR-254; readLabelKey rejects dots)
     if (!key || !keyCursor.atEnd()) {
       this.diagnostics.error('parse.refuse-when', 'Expected a phrase key after the colon.', line.tokens[colonIndex + 1].span);
       return null;
@@ -3290,16 +3290,47 @@ class Parser {
    * Read a phrase key: a word, optionally continued by `.`-joined words
    * (`zoo.pa.closing-3`, design.md §3.3). Returns null when no word follows.
    */
-  private readDottedKey(c: Cursor): string | null {
+  /**
+   * Read a label/key. By default — author labels (phrase, exit, refusal keys) —
+   * a label is a single kebab-case `WORD` (ADR-254): a `.` is a parse error
+   * (`parse.dotted-key`). Event-type sites (`emit`, channel `from event`,
+   * machine `when event`) pass `allowDotted`: ADR-216's `media.*`/`chord.*`
+   * event types are platform-bound ids and keep their dotted form until the
+   * event-type ACL (ADR-256) replaces it — mirroring how ADR-254 kept the
+   * message-override capability behind ADR-255 rather than breaking it before a
+   * replacement existed. Returns `null` when no word is present.
+   */
+  private readLabelKey(c: Cursor, opts?: { allowDotted?: boolean }): string | null {
     const first = c.peek();
     if (!first || first.kind !== 'word') return null;
     c.next();
     let key = first.text;
-    while (c.peek()?.kind === 'punct' && c.peek()!.text === '.' && c.peek(1)?.kind === 'word') {
-      c.next();
-      key += '.' + c.next()!.text;
+    const dotFollows = () =>
+      c.peek()?.kind === 'punct' && c.peek()!.text === '.' && c.peek(1)?.kind === 'word';
+    if (!dotFollows()) return key;
+    if (opts?.allowDotted) {
+      // ADR-216 platform-bound event type (pending the ADR-256 ACL): read whole.
+      while (dotFollows()) {
+        c.next();
+        key += '.' + c.next()!.text;
+      }
+      return key;
     }
-    return key;
+    // ADR-254: a `.` in an author label is a parse error. Consume the dotted
+    // segments (one clean error, no cascade), flag the first dot, and hand back
+    // the kebab-cased form so downstream parsing does not spuriously break.
+    const dot = c.peek()!;
+    const segments = [key];
+    while (dotFollows()) {
+      c.next();
+      segments.push(c.next()!.text);
+    }
+    this.diagnostics.error(
+      'parse.dotted-key',
+      `Labels are single words; "." is not allowed in "${segments.join('.')}" — use kebab-case, e.g. "${segments.join('-')}".`,
+      dot.span,
+    );
+    return segments.join('-');
   }
 
   private parseParams(c: Cursor, line: Line): ParamBinding[] {

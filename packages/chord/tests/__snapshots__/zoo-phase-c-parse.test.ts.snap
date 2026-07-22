@@ -5432,6 +5432,21 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             },
           ],
         },
+        "zoo-feeding-time-announced": {
+          "span": {
+            "column": 7,
+            "endColumn": 54,
+            "endLine": 688,
+            "line": 687,
+          },
+          "strategy": null,
+          "variants": [
+            {
+              "markers": [],
+              "text": "*DING DONG* "It's FEEDING TIME at the Petting Zoo! Come watch our pygmy goats and rabbits enjoy their favorite snacks!"",
+            },
+          ],
+        },
         "zoo-map.description": {
           "span": {
             "column": 3,
@@ -5447,22 +5462,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             },
           ],
         },
-        "zoo.feeding-time.announced": {
-          "span": {
-            "column": 7,
-            "endColumn": 54,
-            "endLine": 688,
-            "line": 687,
-          },
-          "strategy": null,
-          "variants": [
-            {
-              "markers": [],
-              "text": "*DING DONG* "It's FEEDING TIME at the Petting Zoo! Come watch our pygmy goats and rabbits enjoy their favorite snacks!"",
-            },
-          ],
-        },
-        "zoo.pa.closed": {
+        "zoo-pa-closed": {
           "span": {
             "column": 7,
             "endColumn": 48,
@@ -5477,7 +5477,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             },
           ],
         },
-        "zoo.pa.closing-1": {
+        "zoo-pa-closing-1": {
           "span": {
             "column": 7,
             "endColumn": 40,
@@ -5492,7 +5492,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             },
           ],
         },
-        "zoo.pa.closing-2": {
+        "zoo-pa-closing-2": {
           "span": {
             "column": 7,
             "endColumn": 47,
@@ -5507,7 +5507,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             },
           ],
         },
-        "zoo.pa.closing-3": {
+        "zoo-pa-closing-3": {
           "span": {
             "column": 7,
             "endColumn": 21,
@@ -5740,7 +5740,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closing-3",
+              "phraseKey": "zoo-pa-closing-3",
               "span": {
                 "column": 5,
                 "endColumn": 21,
@@ -5765,7 +5765,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closing-2",
+              "phraseKey": "zoo-pa-closing-2",
               "span": {
                 "column": 5,
                 "endColumn": 47,
@@ -5790,7 +5790,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closing-1",
+              "phraseKey": "zoo-pa-closing-1",
               "span": {
                 "column": 5,
                 "endColumn": 40,
@@ -5815,7 +5815,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.pa.closed",
+              "phraseKey": "zoo-pa-closed",
               "span": {
                 "column": 5,
                 "endColumn": 48,
@@ -5881,7 +5881,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.feeding-time.announced",
+              "phraseKey": "zoo-feeding-time-announced",
               "span": {
                 "column": 5,
                 "endColumn": 54,
@@ -5921,7 +5921,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.feeding-time.announced",
+              "phraseKey": "zoo-feeding-time-announced",
               "span": {
                 "column": 5,
                 "endColumn": 38,
@@ -5961,7 +5961,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.feeding-time.announced",
+              "phraseKey": "zoo-feeding-time-announced",
               "span": {
                 "column": 5,
                 "endColumn": 38,
@@ -6001,7 +6001,7 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
             {
               "kind": "phrase",
               "params": [],
-              "phraseKey": "zoo.feeding-time.announced",
+              "phraseKey": "zoo-feeding-time-announced",
               "span": {
                 "column": 5,
                 "endColumn": 38,
