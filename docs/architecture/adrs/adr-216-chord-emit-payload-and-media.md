@@ -2,6 +2,11 @@
 
 ## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §6/OQ3; designed via interview the same session; all six open questions resolved)
 
+> **`define channel` syntax superseded in part by ADR-253 (2026-07-22).** The
+> `from event <key>` + `take <field>` lines are replaced by one `return
+> <construct> from <event>` clause (`take` removed; the return construct may be
+> a field, a text template, or a phrase). See ADR-253.
+
 > Child of ADR-214 (parity). ADR-214 §6 audited the browser channel/emit system
 > (ADR-163/165) and OQ3 resolved **(1) give `emit` a data payload and (2) add
 > typed media sugar** (`play sound`/`play music`/`show image` …). This ADR

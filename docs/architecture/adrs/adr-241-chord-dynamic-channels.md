@@ -6,6 +6,13 @@
 
 ## Parent: ADR-216 (Chord extension surface — media sugar, declared assets, `define channel`); siblings ADR-163 (channel-service platform, §6–7 channel vocabulary) and ADR-165 (renderer architecture, §3 fallback).
 
+> **Channel syntax superseded in part by ADR-253 (2026-07-22).** The
+> `define channel … from event <key> / take <field>` form is replaced by a
+> single `return <construct> from <event>` clause (`take` removed; the return
+> construct may be a field, a text template, or a phrase). ADR-253 also adds the
+> channel-id ↔ element-name render convention over the generic panel (D4) kept
+> here.
+
 ## Context
 
 **Dynamic channels are the platform's story-registered channels — ADR-163

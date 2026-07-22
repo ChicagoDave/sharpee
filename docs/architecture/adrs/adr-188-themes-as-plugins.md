@@ -2,6 +2,13 @@
 
 ## Status: ACCEPTED (delivery model revised 2026-06-23 — see Revision below)
 
+> **Extended by ADR-252 + ADR-253 (2026-07-22).** ADR-252 D3 adds Chord-native
+> `theme:`/`template:` header fields so a package.json-free `.story` declares its
+> theme and template/layout packages (this ADR's package model predates Chord).
+> ADR-253 grows a theme/layout package from CSS-only to **DOM-contributing** — it
+> may supply named elements (adopted by `mountDefaultLayout`) that channels
+> render into, not just `[data-theme]` token blocks.
+
 ## Date: 2026-06-22
 
 ## Revision (2026-06-23): built-in themes ship with the platform, not as packages
