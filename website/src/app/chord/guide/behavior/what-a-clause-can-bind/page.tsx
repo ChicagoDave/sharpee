@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="3.2 What a clause can bind">
+    <DocPage title="What a clause can bind">
       <Content />
     </DocPage>
   );

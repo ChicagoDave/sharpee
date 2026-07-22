@@ -1,12 +1,12 @@
-**hide** (`if.action.hiding`) — position-shaped grammar: `hide
+**hide** (`if.action.hiding`) uses position-shaped grammar: `hide
 behind/under/on/in(side) X`, `duck behind/under/inside X`, `crouch
 behind/under X`; bare `hide` does not parse. The target needs the
-`concealment` trait (entry: §6.4) — in a `.story`, the `hiding-spot`
+`concealment` trait (in a `.story`, the `hiding-spot`
 adjective, bare for every position or `with position <word>` to narrow
-to one — and must support the position you named (`cant_hide_there`
+to one) and must support the position you named (`cant_hide_there`
 otherwise). Success slips the player into hiding (`behind` and friends)
 by marking them with a dynamic concealed state that defeats NPC sight.
-Getting out is its own tiny action — `stand up`, `come out`, `unhide`,
+Getting out is its own tiny action: `stand up`, `come out`, `unhide`,
 `stop hiding` (**reveal**, `if.action.revealing`).
 
 The author writes:
@@ -79,11 +79,11 @@ Interceptors: the hiding spot's `on hiding it` clauses are consulted
 (the hamper above); revealing has no interceptor surface (flagged as a
 minor asymmetry).
 
-Three more honest flags. The design puts every action outside a quiet
+Three more honest flags remain. The design puts every action outside a quiet
 allowlist (look, examine, wait, listen, smell, inventory, and the metas)
-down as silently breaking concealment before it runs — but in the
+down as silently breaking concealment before it runs, but in the
 current build that break listener is never registered, so walking,
 taking, and talking do *not* actually reveal you; only the
 NPC-can't-see-you half is wired (flagged). `cant_hide_there`'s current
-rendering misplaces an article ("You can't hide an under …" — flagged).
+rendering misplaces an article ("You can't hide an under …"; flagged).
 And the trait's `capacity` field is dormant.

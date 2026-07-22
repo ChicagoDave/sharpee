@@ -1,6 +1,6 @@
-**remove X from Y** (`if.action.removing`) — take an item out of a
+**remove X from Y** (`if.action.removing`) takes an item out of a
 container or off a supporter, named source and all. Core grammar since
-ADR-230: `remove X from Y`, `extract X from Y`, and `take X from Y` — the
+ADR-230: `remove X from Y`, `extract X from Y`, and `take X from Y`, the
 last optionally `with/using Z`, a tool form whose named tool becomes a
 consulted command entity (the old orphan `taking_with` id was retired onto
 removing in the same pass). Success is semantically a take: the success
@@ -71,7 +71,7 @@ You take the linen shroud from the stone bier.
 The relic is not for the living to carry off.
 ```
 
-Each source kind renders its own success key — and the fingerbone's
+Each source kind renders its own success key, and the fingerbone's
 *taking* guard stops REMOVE-FROM cold: naming the source dodges nothing.
 
 | | remove (`if.action.removing.*`) |
@@ -82,6 +82,6 @@ Each source kind renders its own success key — and the fingerbone's
 
 Interceptors: the item slot consults `on removing it` and then `on taking
 it`, in that order; the source consults `on removing it` only, and so does
-an explicitly named tool, after item and source — as with
+an explicitly named tool, after item and source. As with
 putting/inserting, register per entity under one gerund. Bare `remove X`
-still means undressing ([§5](/chord/stdlib/wearing)).
+still means undressing.

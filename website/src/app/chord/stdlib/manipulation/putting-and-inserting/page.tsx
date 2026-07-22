@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="2.2 putting and inserting">
+    <DocPage title="putting and inserting">
       <Content />
     </DocPage>
   );

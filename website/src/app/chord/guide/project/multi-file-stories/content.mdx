@@ -1,6 +1,6 @@
 As a story grows, split it across files. A `.story` file `import`s a
 `.chord` fragment, and the compiler splices that fragment in at the
-import line — exactly as if you had pasted its contents there.
+import line, exactly as if you had pasted its contents there.
 
 ```chord
 story "Harbor" by "You"
@@ -26,7 +26,7 @@ create the pier
   A wooden pier over cold water.
 ```
 
-You write `import "regions/harbor"` with **no extension** — `.chord` is
+You write `import "regions/harbor"` with **no extension**: `.chord` is
 assumed, so the file on disk is `regions/harbor.chord`. Paths resolve
 relative to the importing `.story` file.
 
@@ -37,7 +37,7 @@ namespace with the main story. The pier's `north to the Lighthouse` exit
 reaches a room declared in the main file; a fragment freely references
 anything the story defines, and the story references anything the
 fragment adds. The import's position is the arbitration position for
-anything order-sensitive — the fragment behaves as if written on the
+anything order-sensitive: the fragment behaves as if written on the
 import line.
 
 Because it is a plain paste, there are no new rules to learn: ordering,
@@ -46,8 +46,8 @@ one file.
 
 ## What a fragment may hold
 
-A `.chord` fragment holds **any complete declaration** the story does —
-rooms, people, sequences, `define phrasebook` blocks, `##` comments —
+A `.chord` fragment holds **any complete declaration** the story does
+(rooms, people, sequences, `define phrasebook` blocks, `##` comments),
 with two exceptions:
 
 - **No `story` header.** The `story` block lives only in the main
@@ -55,7 +55,7 @@ with two exceptions:
 - **No `import` of its own.** Imports are flat: only the main file
   imports, one level deep, so a cycle can never form.
 
-A fragment must hold *whole* declarations — you cannot split a single
+A fragment must hold *whole* declarations: you cannot split a single
 room or rule across two files.
 
 ## Diagnostics
@@ -73,7 +73,7 @@ with its name); `import-unresolved` points at the `import` line in your
 main story.
 
 <Callout title="Phrasebooks import the same way">
-  A file of `define phrasebook` blocks is just one kind of fragment —
+  A file of `define phrasebook` blocks is just one kind of fragment:
   `import "voices/winter"` pulls it in like any other. See
-  [5.11 define phrasebook](/chord/guide/vocabulary/define-phrasebook).
+  [define phrasebook](/chord/guide/vocabulary/define-phrasebook).
 </Callout>

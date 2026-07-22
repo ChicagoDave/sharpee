@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="8.5 NPC & combat traits">
+    <DocPage title="NPC & combat traits">
       <Content />
     </DocPage>
   );

@@ -1,5 +1,5 @@
 Chord is a language for writing parser-based interactive fiction. You
-describe the world — rooms, things, people, and how they behave — and the
+describe the world (rooms, things, people, and how they behave), and the
 Sharpee platform runs it: in the terminal, in the browser, or under a
 transcript test runner.
 
@@ -29,18 +29,18 @@ Usage:
   sharpee play [name|path]               Play the project interactively (REPL)
 ```
 
-(The full listing has a few more commands — `register`, `list`, `ifid`,
-and the browser-client helpers — you will meet the ones you need as you
+(The full listing has a few more commands: `register`, `list`, `ifid`,
+and the browser-client helpers. You will meet the ones you need as you
 go.)
 
 <Callout title="Where the platform comes from">
   A story project declares its own dependency on the Sharpee platform
   packages; `npm install` inside the project fetches them. The global
-  `@sharpee/devkit` is just the tool — your story pins the platform
+  `@sharpee/devkit` is just the tool; your story pins the platform
   version it was built against.
 </Callout>
 
 ## Next
 
-With the CLI installed, [scaffold your first story](/chord/getting-started/first-story) —
+With the CLI installed, [scaffold your first story](/chord/getting-started/first-story):
 one command creates a small, playable project.

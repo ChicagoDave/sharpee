@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="7.2 Device traits">
+    <DocPage title="Device traits">
       <Content />
     </DocPage>
   );

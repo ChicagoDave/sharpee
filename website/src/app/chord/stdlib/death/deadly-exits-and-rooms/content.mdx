@@ -1,18 +1,18 @@
 **`<direction> is deadly: <phrase>`** marks one fatal direction,
 mirroring `is blocked:`. The fatal direction is deliberately not an exit
-at all — typing `north` (or `n`) never runs the going action: the command
-is rewritten before validation into the internal death action (§9.3), so
+at all. Typing `north` (or `n`) never runs the going action: the command
+is rewritten before validation into the internal death action, so
 the player sees the death text and nothing else, no movement prose, no
 refusal.
 
 **`deadly: <phrase>`** on a room is the rarer, harsher form: every verb
-except a safe allowlist — look and examine by default — is fatal,
+except a safe allowlist (look and examine by default) is fatal,
 including objectless ones like WAIT and INVENTORY that no per-entity
 clause could catch. In TypeScript the underlying trait adds two more
 dials: `safeVerbs` (verb names or full action ids, matched tolerantly)
-and `chance` (0–1) for probabilistic hazards à la grue — rolled on the
-engine's seeded RNG, and a survived roll simply lets the verb run
-normally, with no message. Neither dial is expressible from Chord today.
+and `chance` (0–1) for probabilistic hazards à la grue, rolled on the
+engine's seeded RNG; a survived roll simply lets the verb run normally,
+with no message. Neither dial is expressible from Chord today.
 
 The author writes:
 
@@ -42,7 +42,7 @@ define phrases en-US
     The steam finds your lungs.
 ```
 
-The player who walks north sees no movement prose and no refusal — only
+The player who walks north sees no movement prose and no refusal, only
 the death text:
 
 ```transcript
@@ -50,8 +50,8 @@ the death text:
 The geyser chooses that moment. The column of boiling water makes the question of footing irrelevant.
 ```
 
-The player who climbs down (a fresh game) arrives safely — looking is on
-the allowlist — and dies to the first verb that is not:
+The player who climbs down (a fresh game) arrives safely (looking is on
+the allowlist) and dies to the first verb that is not:
 
 ```transcript
 > down
@@ -67,11 +67,11 @@ The steam finds your lungs.
 ```
 
 The deadly exit killed without going ever running; the deadly room let
-LOOK repeat but made INVENTORY — an objectless verb no `on` clause could
-catch — fatal.
+LOOK repeat but made INVENTORY (an objectless verb no `on` clause could
+catch) fatal.
 
 One gap: the conditional form `is deadly while <condition>:` parses but
-is not wired yet. This compiles clean —
+is not wired yet. This compiles clean:
 
 ```chord
 create the Dam Top
@@ -82,7 +82,7 @@ create the Dam Top
   The dam hums underfoot.
 ```
 
-— and then the loader refuses the story with: `` `is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope
+The loader then refuses the story with: `` `is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope
 (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or
 an `on going` clause with `kill the player when <condition>`. `` The
-suggested `kill the player when …` clause is §9.1's pattern.
+suggested `kill the player when …` clause is the `kill the player` pattern.

@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="9.1 kill the player">
+    <DocPage title="kill the player">
       <Content />
     </DocPage>
   );

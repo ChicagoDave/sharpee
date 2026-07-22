@@ -1,7 +1,6 @@
 `define condition <name>: <condition>` names a condition so you can
 reuse it by name. The name is a single hyphenated token (not a
-multi-word prose name), and the body is the ordinary condition grammar
-([§3.4](/chord/guide/behavior)).
+multi-word prose name), and the body is the ordinary condition grammar.
 
 ```chord
 define condition trug-in-hand: the player holds the trug
@@ -12,15 +11,13 @@ The distinction that matters is *open* versus *closed*, and it is
 decided entirely by whether the body mentions `it`:
 
 - A **closed** condition never mentions `it`. It is a plain truth test
-  about the world — `trug-in-hand` asks whether the player holds the
+  about the world: `trug-in-hand` asks whether the player holds the
   trug, yes or no. Closed conditions go in truth positions: `while`,
   `when`, `refuse when`, `must be` comparisons.
 - An **open** condition mentions `it`, leaving the subject free. It
   describes a *set*: `ripe-tomato` is the criterion "any tomato not yet
-  in the trug." Open conditions go where a set is expected —
-  `any`/`no`/`each` ([§3.4](/chord/guide/behavior),
-  [§4.4](/chord/guide/flow)) and `must be any`
-  ([§3.5](/chord/guide/behavior)).
+  in the trug." Open conditions go where a set is expected:
+  `any`/`no`/`each` and `must be any`.
 
 ```chord
   on examining it

@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="5.10 use: platform extensions">
+    <DocPage title="use: platform extensions">
       <Content />
     </DocPage>
   );

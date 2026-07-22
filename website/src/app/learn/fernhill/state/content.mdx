@@ -1,6 +1,6 @@
 ## An entity state chain
 
-The vine marches forward — seedling, flowering, fruiting — and answers
+The vine marches forward (seedling, flowering, fruiting) and answers
 differently at each stage via `select on its state`:
 
 ```chord
@@ -30,15 +30,15 @@ end trait
 ```
 
 The `must` line is a guard with a named refusal. The flowering arm is
-the payoff of the boiler chain: prune the flowered vine and the silver
-locket — the deed box's instrument — drops into the world.
+the payoff of the boiler chain: when you prune the flowered vine, the
+silver locket (the deed box's instrument) drops into the world.
 
 ## Custom verbs
 
 `prune` isn't a standard IF verb. Two declarations add it: the action
 (grammar + fallback refusal) and the trait carrying the behavior. **The
 clause that answers a custom verb must live in a trait** composed onto
-the entity — that's what routes the verb:
+the entity, and that is what routes the verb:
 
 ```chord
 define action pruning
@@ -54,13 +54,13 @@ define action pruning
 ```
 
 The case clock works the same way (`define action winding`, trait
-`windable`, `wind the clock` with the winding key — the endings chapter
+`windable`, `wind the clock` with the winding key; the endings chapter
 listens for its chimes).
 
 ## Authored traits with data
 
-`feedable` is a story-defined trait with a *typed data field* — which
-food this creature accepts — plus its own states and phrases:
+`feedable` is a story-defined trait with a *typed data field* (which
+food this creature accepts) plus its own states and phrases:
 
 ```chord
 define trait feedable
@@ -94,13 +94,13 @@ create Smoke
 ```
 
 One cat: library `follower` role (she trails you once met), authored
-`feedable` trait (the kipper from chapter 2's tool chain), and a fed-only,
+`feedable` trait (the kipper from *Things*' tool chain), and a fed-only,
 once-only hint that noses at where the locket will fall.
 
 ## Interception: refusing a standard action
 
 Sometimes an entity should veto a verb that normally works. The furnace
-poker is takeable — until the boiler runs:
+poker is takeable, until the boiler runs:
 
 ```chord
 create the furnace poker

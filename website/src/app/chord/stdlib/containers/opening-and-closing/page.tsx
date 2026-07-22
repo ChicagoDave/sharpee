@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="4.1 opening and closing">
+    <DocPage title="opening and closing">
       <Content />
     </DocPage>
   );

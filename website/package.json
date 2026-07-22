@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "search-index": "node scripts/build-search-index.mjs",
+    "prebuild": "node scripts/build-search-index.mjs",
+    "predev": "node scripts/build-search-index.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -13,6 +16,7 @@
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.2.10",
     "@types/mdx": "^2.0.14",
+    "fuse.js": "^7.5.0",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4",

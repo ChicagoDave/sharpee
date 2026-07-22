@@ -1,25 +1,26 @@
-**wear** (`if.action.wearing`) — verbs `wear X`, `don X`, `equip X`,
+**wear** (`if.action.wearing`) has verbs `wear X`, `don X`, `equip X`,
 `put on X` (the phrasal form outranks generic `put`). Needs the `wearable`
-trait (`not_wearable` otherwise). You don't have to be holding it — wearing
+trait (`not_wearable` otherwise). You don't have to be holding it; wearing
 performs an implicit take first, refusing with the take's own refusal if
 that fails. The conflict rules key on the trait's body part and layer: you
-cannot put a garment on *under* something already worn over it — but
+cannot put a garment on *under* something already worn over it, but
 because every wearable defaults to the same layer, default-built garments
-never conflict and simply stack (the §5.2 quirk). Already wearing it →
-`already_wearing`. Success sets the worn state and says `worn`; event
+never conflict and simply stack (the layer-default quirk). Wearing something you
+already wear yields `already_wearing`. Success sets the worn state and
+says `worn`; event
 `if.event.worn` carries `bodyPart` and `layer` in the payload.
 
-**take off** (`if.action.taking_off`) — verbs `take off X`, `take X off`,
-`remove X`, `doff X`, `unequip X`. (Yes — bare `remove X` means undressing,
-which is why take-from-container needed its own action, §2.3.) Refuses when
+**take off** (`if.action.taking_off`) has verbs `take off X`, `take X off`,
+`remove X`, `doff X`, `unequip X`. (Yes, bare `remove X` means undressing,
+which is why take-from-container needed its own action.) Refuses when
 the thing is not worn by you (`not_wearing`), when a higher layer is worn
 over it (`prevents_removal`), and when the garment is cursed
-(`cant_remove`) — all validate-phase since ADR-229, so a refused removal
+(`cant_remove`), all validate-phase since ADR-229, so a refused removal
 never half-happens. Success clears the worn state (`removed`); the item
 stays in inventory.
 
 A `wears` line on an actor starts the story dressed (load error unless the
-item is `wearable`), and `worn`/`unworn` are live state predicates —
+item is `wearable`), and `worn`/`unworn` are live state predicates:
 `while the cloak is worn` is story logic.
 
 The author writes:
@@ -88,7 +89,7 @@ The torc's hinge has seized; it will not open.
 
 Three seams in one scene: `wears` starts the player dressed in the tunic,
 the default layers let the vest stack straight over it and the tunic slide
-out from underneath (the §5.2 quirk, live), and the torc's `on taking_off
+out from underneath (the layer-default quirk, live), and the torc's `on taking_off
 it` guard is a cursed garment in one clause.
 
 | | wear (`if.action.wearing.*`) | take off (`if.action.taking_off.*`) |
@@ -97,5 +98,5 @@ it` guard is a cursed garment in one clause.
 | Success | `worn` | `removed` (the item stays in inventory) |
 | Events | `if.event.worn` / `if.event.wear_blocked` | `if.event.removed` / `if.event.take_off_blocked` |
 
-Interceptors: `on wearing it` / `on taking_off it` on the garment — a cloak
+Interceptors: `on wearing it` / `on taking_off it` on the garment: a cloak
 that reacts to being donned is one clause on the cloak.

@@ -1,4 +1,4 @@
-This page is a reader's map of the Chord grammar — the shapes you will
+This page is a reader's map of the Chord grammar: the shapes you will
 actually write, organized the way stories use them. The complete
 machine-oriented grammar is downloadable below.
 
@@ -89,7 +89,7 @@ The working vocabulary inside clause and action bodies:
 | `select randomly … or … end select` | vary between alternatives |
 | `each <condition> … end each` | act on every matching entity |
 
-Most statements accept a trailing `when <condition>` — the gate that
+Most statements accept a trailing `when <condition>`, the gate that
 makes one line conditional without any `if` construct. (There is no
 `if`; guards, `when` tails, and `select` cover the ground on purpose.)
 
@@ -109,7 +109,7 @@ not (the fuse is lit) and the study door is open
 
 `and`, `or`, `not`, and parentheses combine them. State adjectives
 (`open`, `locked`, `lit`, …) resolve from trait state; declared states
-by name; `any` / `no` quantify over a named open condition.
+resolve by name; `any` / `no` quantify over a named open condition.
 
 ## The define forms
 
@@ -132,7 +132,7 @@ by name; `any` / `no` quantify over a named open condition.
 The complete EBNF, exactly as the parser implements it, is one file:
 [download chord.ebnf](/chord.ebnf).
 
-Chord's surface is a closed set by design — every construct on this
+Chord's surface is a closed set by design: every construct on this
 page is the whole of what parses, and anything else is a compile error
 with a pointed suggestion. New grammar arrives by explicit language
 revision, not by accident.

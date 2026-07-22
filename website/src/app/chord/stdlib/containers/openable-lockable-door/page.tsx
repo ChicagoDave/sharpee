@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="4.3 Openable, lockable, and door">
+    <DocPage title="Openable, lockable, and door">
       <Content />
     </DocPage>
   );

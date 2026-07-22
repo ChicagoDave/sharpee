@@ -5,7 +5,7 @@ sharpee init orchard
 ```
 
 `init` asks a few questions (title, author, blurb); pass `-y` to accept
-the defaults. The scaffold is a Chord project — if you want the
+the defaults. The scaffold is a Chord project. If you want the
 TypeScript story scaffold instead, that is `sharpee init orchard --ts`,
 and it belongs to the [Sharpee platform track](/sharpee/platform).
 
@@ -72,10 +72,10 @@ story:
 - **The story header** opens the file: title, author, and `key: value`
   facts about the story as a whole.
 - **`create` blocks declare entities.** Indented lines state facts about
-  them — `a room` composes a kind, `aka lamp` adds a player-facing
+  them: `a room` composes a kind, `aka lamp` adds a player-facing
   synonym, `starts in` and `carries` place things.
 - **Bare prose is description.** A paragraph after a blank line inside a
-  `create` block is what the player sees. No quotes, no keywords — prose
+  `create` block is what the player sees. No quotes, no keywords; prose
   is a first-class part of the language.
 
 Chord is line-oriented and indentation-scoped (spaces, not tabs). There
@@ -84,6 +84,6 @@ are no braces and no statement terminators; the layout is the structure.
 ## Edit and go
 
 Change the Landing's description, save, and the next
-[build or play](/chord/getting-started/compose-and-run) picks it up —
-the story compiles at build time, and mistakes come back as named,
+[build or play](/chord/getting-started/compose-and-run) picks it up.
+The story compiles at build time, and mistakes come back as named,
 line-anchored diagnostics rather than runtime surprises.

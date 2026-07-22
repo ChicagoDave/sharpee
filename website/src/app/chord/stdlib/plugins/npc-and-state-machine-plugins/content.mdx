@@ -1,17 +1,17 @@
 **The NPC plugin** (priority 100) walks every entity with the `npc`
 trait, dispatches to the behavior its `behaviorId` names, and executes
-what comes back — attacks, emotes, movement (with `npc.moved` events
+what comes back: attacks, emotes, and movement (with `npc.moved` events
 and witnessed variants a story can narrate). It also fires enter/leave
-hooks when the player's action moved them — the greeting-guard
+hooks when the player's action moved them, which is the greeting-guard
 pattern. Built-ins: `guard` (stationary, attacks the visible player
 when hostile), `passive`, and factory-made wanderers, followers, and
 patrol routes; stories register richer behaviors. A Chord story gets
-all of this without opting in — NPCs are core: `a person, a guard` (or
-`passive`, `wanderer with move-chance 50`, `follower`, `patrol with
-route [ … ]`) composes the built-ins directly, with `with`-fields for
-movement permissions, routes, and chances. Configuration lives on the
-trait (§8.5); the deep-NPC layers (character model, lucidity) tick
-here too.
+all of this without opting in, because NPCs are core: `a person, a
+guard` (or `passive`, `wanderer with move-chance 50`, `follower`,
+`patrol with route [ … ]`) composes the built-ins directly, with
+`with`-fields for movement permissions, routes, and chances.
+Configuration lives on the trait; the deep-NPC layers (character
+model, lucidity) tick here too.
 
 The author writes:
 
@@ -66,17 +66,18 @@ Apple trees in crooked rows.
 You can see Mairead here.
 ```
 
-Mairead walks her two-room route on the plugin's turns — silently by
+Mairead walks her two-room route on the plugin's turns, silently by
 default: the plugin emits the `npc.moved` events, and narrating them
 (or not) is the story's choice.
 
 **The state-machine plugin** (priority 75) evaluates declarative
-machines — states, guarded transitions triggered by actions, events,
-or conditions, enter/exit effects, terminal states — at most one
-transition per machine per turn. A Chord story reaches it by opting
-in: `use state-machines` in the story header, then `define machine` —
-the full depth, with Chord conditions as guards and Chord bodies as
-effects; `define machine` without the `use` line is a compile error.
+machines (states, guarded transitions triggered by actions, events,
+or conditions, enter/exit effects, terminal states), and it applies at
+most one transition per machine per turn. A Chord story reaches it by
+opting in: `use state-machines` in the story header, then `define
+machine`, which exposes the plugin's full depth, with Chord conditions
+as guards and Chord bodies as effects. Writing `define machine` without
+the `use` line is a compile error.
 
 The author writes:
 
@@ -161,15 +162,15 @@ The ferry is underway, beating slowly toward you.
 ```
 
 Two trigger kinds in two turns: the action trigger fires the turn the
-capstan turns (the `on turning it` clause makes the turn succeed — §2.7
-— and the transition's `on enter` speaks in the same turn's output),
+capstan turns (the `on turning it` clause makes the turn succeed
+and the transition's `on enter` speaks in the same turn's output),
 and the condition trigger fires the turn the cord's clause moves the
 story to `signaled`.
 
-And worth being precise about: **Chord's `states:`/`change`/`select on`
+It is worth being precise that **Chord's `states:`/`change`/`select on`
 still do not use it.** Chord states are plain world-state values with a
-forward-march ratchet (`reversible` opts out) — the *effect* of a
+forward-march ratchet (`reversible` opts out); they give the *effect* of a
 simple state machine without the plugin's machinery (no enter/exit
 effects, no terminal states, no multi-machine registry). Dungeo's
-death-penalty policy (§9.1's veto) is a real state machine; the cloak's
+death-penalty policy (the veto window) is a real state machine; the cloak's
 states are Chord world-state.

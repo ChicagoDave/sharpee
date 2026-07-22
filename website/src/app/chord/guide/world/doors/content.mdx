@@ -1,4 +1,4 @@
-A door is its own entity, referenced from an exit line with `through` —
+A door is its own entity, referenced from an exit line with `through`:
 the exit declares the geometry once and the reverse direction is
 inferred. The door block itself never names its rooms: a door's location
 *is* its room pair.
@@ -21,5 +21,6 @@ Defaults follow IF convention: `a door` starts closed (`starts open`
 overrides); `lockable` on a door starts locked, with the key named right
 on the adjective; a permanently open passage needs no door entity at
 all. With that one declaration OPEN, CLOSE, LOCK, and UNLOCK work and
-the door is visible from both sides. Full rules (mirrored far-room
-lines, the diagnostics): [the grammar reference](/chord/reference/grammar).
+the door is visible from both sides. The full rules, including mirrored
+far-room lines and the diagnostics, are documented in [the grammar
+reference](/chord/reference/grammar).

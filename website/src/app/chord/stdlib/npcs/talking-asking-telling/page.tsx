@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="8.1 talking, asking, telling">
+    <DocPage title="talking, asking, telling">
       <Content />
     </DocPage>
   );

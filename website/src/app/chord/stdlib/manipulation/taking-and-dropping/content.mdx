@@ -1,14 +1,15 @@
-**take** (`if.action.taking`) — verbs `take`, `get`, `grab`, `acquire`,
-`collect`, `pick up`, `take up` (bare `pick` is deliberately absent — it
-would outmatch `pick up`); multi-object `take all`, `take all but the
-lamp`, `take the key and the bottle`. Anything is takeable by default —
-portability is the rule, not a trait. `scenery`, rooms, things already
+**take** (`if.action.taking`) covers the verbs `take`, `get`, `grab`,
+`acquire`, `collect`, `pick up`, `take up` (bare `pick` is deliberately
+absent, since it would outmatch `pick up`); multi-object `take all`,
+`take all but the lamp`, `take the key and the bottle`. Anything is
+takeable by default: portability is the rule, not a trait. `scenery`, rooms, things already
 carried, and carrying limits refuse; a worn item is quietly taken off
 first; identity `points` awards score on the first take (treasure
 scoring).
 
-**drop** (`if.action.dropping`) — verbs `drop`, `discard`, `put down`,
-`throw away`; `drop all`. The destination is wherever the player is: the
+**drop** (`if.action.dropping`) covers the verbs `drop`, `discard`,
+`put down`, `throw away`, and the multi-object form `drop all`. The
+destination is wherever the player is: the
 room, or the container or supporter the player is inside or on.
 
 The author writes:
@@ -81,5 +82,5 @@ every plain drop.
 | Success | `taken` · `taken_from` (out of or off something) · `taken_multi` (`take all`) | `dropped` · `dropped_in` · `dropped_on` · `dropped_quietly` (glass, room drop) · `dropped_carelessly` (`discard`) · `dropped_multi` |
 | Events | `if.event.taken` / `if.event.take_blocked` | `if.event.dropped` / `if.event.drop_blocked` |
 
-Interceptors: `on taking it` / `after taking it` on the item — and
-REMOVE-FROM phrasing cannot dodge a taking guard (§2.3).
+Interceptors: `on taking it` / `after taking it` on the item, and
+REMOVE-FROM phrasing cannot dodge a taking guard.

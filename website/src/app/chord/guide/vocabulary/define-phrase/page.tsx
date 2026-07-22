@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="5.2 define phrase">
+    <DocPage title="define phrase">
       <Content />
     </DocPage>
   );

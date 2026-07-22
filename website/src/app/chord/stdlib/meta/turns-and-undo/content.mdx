@@ -1,17 +1,17 @@
 **wait** (`wait`, `z`) is the canonical "let a turn pass": a full,
-snapshot-taking, daemon-ticking turn in which nothing else happens —
-N waits let N rounds of scheduled behavior (§12.2) play out. One
+snapshot-taking, daemon-ticking turn in which nothing else happens.
+N waits let N rounds of scheduled behavior play out. One
 message, `time_passes` (the lang file's twelve wait variants are dead
-inventory — flagged). Stories react to `if.event.waited`, or gate
+inventory, flagged). Stories react to `if.event.waited`, or gate
 things on turns passing.
 
-**sleep** (`sleep`, `nap`, `doze`, `rest`, `slumber` — all five parse
+**sleep** (`sleep`, `nap`, `doze`, `rest`, `slumber`, all five parse
 since ADR-230 D2/D4). Flavor-only: one message (`slept`), no turns
-skipped beyond its own, no health interaction — give it story meaning
+skipped beyond its own, no health interaction. Give it story meaning
 with story logic if a story needs real sleep. `z` remains a wait.
 
 **again** (`again`, `g`) re-runs the last successful non-meta command by
-re-parsing its original text — so the repeat is honest: it can fail
+re-parsing its original text, so the repeat is honest: it can fail
 where the original succeeded if the world changed. Meta commands (undo,
 save, again itself) never enter history, so they can't be repeated;
 `nothing_to_repeat` covers an empty history.
@@ -20,8 +20,9 @@ save, again itself) never enter history, so they can't be repeated;
 every substantive turn (looks, examines, inventory, and the metas don't
 burn a slot). Depth is an engine setting, default 10; consecutive undos
 work to that depth. There is no per-story undo veto, and no
-undo-after-death — once the defeat ending lands the game has stopped
-(§9.1's veto window is the story's chance).
+undo-after-death: once the defeat ending lands the game has stopped
+(the veto window is the story's one chance to intervene before the
+ending locks).
 
 The player sees:
 
@@ -48,11 +49,11 @@ Previous turn undone.
 You have scored 0 out of 10, earning you the rank of a Novice.
 ```
 
-AGAIN's repeat is honest — the re-parsed take refuses where the
-original succeeded — and two UNDOs peel back first that failed repeat,
+AGAIN's repeat is honest (the re-parsed take refuses where the
+original succeeded), and two UNDOs peel back first that failed repeat,
 then the take itself, the score award reverting with it. For Chord
-stories, everything the language tracks — states, occurrence counters,
-`once` flags, sequence progress, awards — lives in world state, so undo
+stories, everything the language tracks (states, occurrence counters,
+`once` flags, sequence progress, awards) lives in world state, so undo
 (and save/restore) cover it with no author effort (ADR-210 AC-6,
 transcript-pinned).
 

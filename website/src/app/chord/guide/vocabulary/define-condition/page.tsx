@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="5.1 define condition">
+    <DocPage title="define condition">
       <Content />
     </DocPage>
   );

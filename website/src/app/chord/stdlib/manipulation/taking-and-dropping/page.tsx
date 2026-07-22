@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="2.1 taking and dropping">
+    <DocPage title="taking and dropping">
       <Content />
     </DocPage>
   );

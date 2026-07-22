@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="5.7 define trait">
+    <DocPage title="define trait">
       <Content />
     </DocPage>
   );

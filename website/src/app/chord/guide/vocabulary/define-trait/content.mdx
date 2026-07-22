@@ -1,5 +1,5 @@
 A trait is a reusable bundle of data, states, scores, phrases, and
-behavior that entities compose with ([§2.3](/chord/guide/world)).
+behavior that entities compose with.
 `define trait <name> …
 end trait` declares one. The block below carries one of everything:
 
@@ -38,12 +38,11 @@ The parts, top to bottom:
   starts <value>` (not shown here) gives a default. Fields are read and
   written with `its <field>` / `set its <field> to …`.
 - **`states`** and **`score`** are the same owner lines as everywhere
-  else ([§2.7](/chord/guide/world), [§2.8](/chord/guide/world)), here
+  else, here
   owned by the trait: every entity composed with
   `feedable` gets the `hungry`/`content` states and can award `fed`.
-- **`phrases`** is a locale block (§5.3) scoped to the trait.
-- **`on`/`after` clauses** are the trait's behavior
-  ([§3](/chord/guide/behavior)), with `it`
+- **`phrases`** is a locale block scoped to the trait.
+- **`on`/`after` clauses** are the trait's behavior, with `it`
   meaning the composed entity.
 
 An entity picks the trait up on a composition line, passing its data

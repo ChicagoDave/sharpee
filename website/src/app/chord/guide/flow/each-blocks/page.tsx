@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="4.4 each blocks">
+    <DocPage title="each blocks">
       <Content />
     </DocPage>
   );

@@ -28,25 +28,26 @@ Chord `define trait`) sit beside them as peers.
 
 ## The standard actions
 
-Three families:
+The standard actions fall into three families:
 
-- **World-mutating** — taking, dropping, opening, closing, going,
-  entering, exiting, putting, inserting, giving, wearing, removing,
-  eating, drinking, pushing, pulling, switching, locking, unlocking.
-- **Query** — examining, looking, inventory: read state, mutate
-  nothing.
-- **Meta** — about, help, save, restore, quit: signals to the platform
-  rather than the world.
+- **World-mutating** actions change the world: taking, dropping,
+  opening, closing, going, entering, exiting, putting, inserting,
+  giving, wearing, removing, eating, drinking, pushing, pulling,
+  switching, locking, unlocking.
+- **Query** actions read state and mutate nothing: examining, looking,
+  inventory.
+- **Meta** actions signal the platform rather than the world: about,
+  help, save, restore, quit.
 
 Every one follows the four-phase pattern described in the
 [platform overview](/sharpee/platform), and every one checks capability
-dispatch first — so a story can give any entity its own answer to a
+dispatch first, so a story can give any entity its own answer to a
 standard verb without overriding the action.
 
 ## The generated API reference
 
-The full API — every trait's fields, every action's contract, the
-`Story` interface, the world-model methods — is auto-generated from the
+The full API (every trait's fields, every action's contract, the
+`Story` interface, the world-model methods) is auto-generated from the
 `.d.ts` declarations and shipped in the `@sharpee/sharpee` npm package
 at `docs/genai-api/`:
 
@@ -62,7 +63,7 @@ node_modules/@sharpee/sharpee/docs/genai-api/
 
 It is written for exactly two readers: you, and the AI assistant
 sitting next to you. Point your coding agent at `index.md` before it
-explores the source tree — the declarations are complete and far
+explores the source tree. The declarations are complete and far
 cheaper to read.
 
 <Callout title="Why the reference is not reproduced here">

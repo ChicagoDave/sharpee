@@ -56,9 +56,9 @@
   --sh-surface: #FFFFFF;
   --sh-ink: #1B2C41;
   --sh-muted: #585A6A;
-  --sh-link: #833E47;
+  --sh-link: #385C8A;
   --sh-border: #D1D1D1;
-  --sh-wash: #EBE0E1;
+  --sh-wash: #DFE5EC;
   --sh-codeBg: #E4E4E7;
   --sh-button: #253D5B;
   --sh-button-text: #FFFFFF;
@@ -69,11 +69,11 @@
   --sh-surface: #1B2C41;
   --sh-ink: #F6F4F4;
   --sh-muted: #B8B8B8;
-  --sh-link: #CEA1A7;
+  --sh-link: #9CB5D3;
   --sh-border: #41424E;
   --sh-wash: #2A2A32;
   --sh-codeBg: #294466;
-  --sh-button: #BD757E;
+  --sh-button: #9CB5D3;
   --sh-button-text: #121D2C;
   }
 }

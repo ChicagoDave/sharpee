@@ -1,16 +1,16 @@
-**lock** (`if.action.locking`) and **unlock** (`if.action.unlocking`) —
-every form is core grammar since ADR-230 D2: `lock X`, `lock X with/using
+**lock** (`if.action.locking`) and **unlock** (`if.action.unlocking`).
+Every form is core grammar since ADR-230 D2: `lock X`, `lock X with/using
 Y`, keyless `unlock X`, `unlock X with/using Y`, plus the `secure` /
 `unsecure` aliases (D4). Both operate on the `lockable` trait. A lock
-either names its key — `lockable with the iron key` in Chord,
-`keyId`/`keyIds` in TypeScript — or is keyless and turns freely, which
+either names its key (`lockable with the iron key` in Chord,
+`keyId`/`keyIds` in TypeScript) or is keyless and turns freely, which
 makes the keyless forms safe by construction: a keyed lock still asks
 `no_key` when no key is named. The key rules, shared by both actions: a
 named key you are not holding refuses `key_not_held`; the wrong key
 refuses `wrong_key`. Locking additionally requires the thing be closed
 first (`not_closed`), and both refuse the redundant case (`already_locked`
 / `already_unlocked`). One quirk worth knowing: on a *keyless* lock a
-named object is neither required nor checked — `lock the box with the
+named object is neither required nor checked: `lock the box with the
 herring` succeeds and even says `locked_with`.
 
 The author writes:
@@ -75,10 +75,10 @@ The bone key turns only one way; it opens, it never seals.
 
 The keyless UNLOCK asks rather than fails, lock state gates opening until
 the key turns, and the last command is ADR-229's ordering made visible:
-each action consults the **target first, then the key** — the reliquary
+each action consults the **target first, then the key**: the reliquary
 has nothing to say, so the bone key's own `on locking it` clause vetoes
 its use (and note the key contract resolved even though the bone key is
-declared *after* the reliquary — forward references are legal).
+declared *after* the reliquary; forward references are legal).
 
 | | lock (`if.action.locking.*`) | unlock (`if.action.unlocking.*`) |
 |---|---|---|
@@ -86,9 +86,9 @@ declared *after* the reliquary — forward references are legal).
 | Success | `locked` · `locked_with` | `unlocked` · `unlocked_with` |
 | Events | `if.event.locked` / `if.event.lock_blocked` | `if.event.unlocked` / `if.event.unlock_blocked` (key, sound, and container/door flags in the payload) |
 
-Interceptors (ADR-229): target first, then the key, each side's clause
-seeing the other's identity in its context — and only an *explicitly
-named* key is consulted; a key the platform infers is not a command
-entity.
+Interceptors (ADR-229) consult the target first, then the key, and each
+side's clause sees the other's identity in its context. Only an
+*explicitly named* key is consulted, because a key the platform infers is
+not a command entity.
 
 Gaps: the several-keys list `keyIds` is TypeScript today.

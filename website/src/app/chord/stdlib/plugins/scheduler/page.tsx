@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="12.2 The scheduler: daemons and fuses">
+    <DocPage title="The scheduler: daemons and fuses">
       <Content />
     </DocPage>
   );

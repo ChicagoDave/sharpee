@@ -1,4 +1,4 @@
-A `##` line is a comment — skipped at compile, contributing nothing to
+A `##` line is a comment: skipped at compile, contributing nothing to
 the game. Comments annotate the source for whoever reads it next.
 
 ```chord
@@ -11,7 +11,7 @@ end phrasebook
 ```
 
 Stack `##` lines for a multi-line comment. There is no block-comment
-form and no end-of-line comment — one form, whole lines only.
+form and no end-of-line comment: one form, whole lines only.
 
 ## Comments sit between things, blank-line delimited
 
@@ -32,15 +32,15 @@ create the cellar door
   A grey door, locked as long as anyone can remember.
 ```
 
-The blank lines are required — a `##` run touching a declaration is
+The blank lines are required: a `##` run touching a declaration is
 `lex.comment-blank-lines`. The top of the file is the one exception: a
 `##` line may open the file with no blank line above it.
 
 ## Not inside a block
 
 A declaration spans its header through its last line, so a `##` line
-*inside* that span is a `parse.comment-inside-block` error — "create is
-a block; no comments in blocks":
+*inside* that span is a `parse.comment-inside-block` error ("create is
+a block; no comments in blocks"):
 
 ```chord
 create the Hall
@@ -51,5 +51,5 @@ create the Hall
   A cold entrance hall.
 ```
 
-An indented `##` inside a prose paragraph is not a comment at all — it
+An indented `##` inside a prose paragraph is not a comment at all: it
 renders verbatim as text, so descriptions can use `#` freely.

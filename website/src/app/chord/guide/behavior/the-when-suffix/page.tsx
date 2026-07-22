@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="3.8 The when suffix">
+    <DocPage title="The when suffix">
       <Content />
     </DocPage>
   );

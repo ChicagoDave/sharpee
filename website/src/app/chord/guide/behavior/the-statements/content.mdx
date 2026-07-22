@@ -17,8 +17,7 @@ them:
   end on
 ```
 
-- **`phrase <key>`** speaks the named text
-  ([§5.2](/chord/guide/vocabulary), [§5.3](/chord/guide/vocabulary)).
+- **`phrase <key>`** speaks the named text.
   Dotted keys
   (`zoo.pa.closing-3`) are legal. `with <name> = <value>` passes a
   value the phrase can format.
@@ -37,26 +36,22 @@ them:
   ```
 - **`emit <word>`** raises a story event other clauses and the platform
   can observe.
-- **`set <thing> to <value>`** writes a trait data field
-  ([§5.7](/chord/guide/vocabulary)), like
+- **`set <thing> to <value>`** writes a trait data field, like
   the pumpkin's `tally`.
 - **`change <name> to <state>`** moves an owner along its declared
-  states ([§2.7](/chord/guide/world)); `change the story to <state>`
+  states; `change the story to <state>`
   moves the story.
 - **`move <name> to <name>`** relocates an entity.
 - **`remove <name>`** takes an entity out of play, permanently: there
   is no `to`, nothing to get back, and removing the player is a load
   error (`analysis.remove-player`).
-- **`award <name>`** grants an owner-scoped score
-  ([§2.8](/chord/guide/world), [§4.5](/chord/guide/flow)); the
+- **`award <name>`** grants an owner-scoped score; the
   explicit `, once` is available but dedupe already makes awards
   idempotent.
-- **`win [<phrase>]`** and **`lose [<phrase>]`** end the story
-  ([§4.6](/chord/guide/flow)),
+- **`win [<phrase>]`** and **`lose [<phrase>]`** end the story,
   optionally speaking a named phrase on the way out.
 - **`kill the player [<phrase-key>]`** runs the platform's death
-  machinery — not the same thing as `lose`;
-  [§4.7](/chord/guide/flow) owns the difference.
+  machinery, not the same thing as `lose`.
 
 ```chord
   on emptying it

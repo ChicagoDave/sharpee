@@ -1,7 +1,7 @@
 **about** (`about`, `info`, `credits`) renders the story's own
-metadata — for a Chord story, simply the header: title, author,
+metadata. For a Chord story, that is simply the header: title, author,
 `version:` and `blurb:` flow straight through (the platform materializes
-them into the story-info trait, §11.1). A TypeScript story can add
+them into the story-info trait). A TypeScript story can add
 credits, ported-by, and build fields. One overridable message:
 `if.action.about.success`.
 
@@ -10,7 +10,7 @@ version) plus the engine's own version line.
 
 **help** (`help`, `?`, `commands`) renders the platform's general help;
 a first-time asker gets `first_time`. Topic help (`help movement`) is
-implemented in the action but unreachable — the core pattern takes no
+implemented in the action but unreachable: the core pattern takes no
 topic slot (flagged, with `save <name>` in the same boat).
 
 **inventory** (`inventory`, `inv`, `i`) splits what you carry from what
@@ -18,9 +18,9 @@ you wear; empty hands pick a random empty-message variant. The
 abbreviations set a `brief` flag in the event for clients that care.
 Burden/weight messages exist but are dormant.
 
-**score** (`score`, `points`) reads the platform score ledger — exactly
+**score** (`score`, `points`) reads the platform score ledger, exactly
 where Chord's `score <name> worth N` / `award <name>` system deposits
-(chord-language.md §2.8, §4.5): max score is summed from the declared
+(chord-language.md): max score is summed from the declared
 worths at load, awards are idempotent, and SCORE works with zero extra
 setup. Ranks fall back to a computed ladder (Novice → Master); a story
 can override rank, moves, and achievements through the scoring
@@ -51,9 +51,9 @@ You are carrying:
 a signal flare
 ```
 
-The header alone powers ABOUT, its one `score … worth` line set the
+The header alone powers ABOUT. Its one `score … worth` line set the
 maximum, and the flare's `award` flipped SCORE from Novice to
-perfect — no scoring setup beyond those two lines.
+perfect, with no scoring setup beyond those two lines.
 
 | | Refusals | Renders |
 |---|---|---|
@@ -63,6 +63,6 @@ perfect — no scoring setup beyond those two lines.
 | **score** (`if.action.scoring.*`) | `no_scoring` | `score_with_rank` · `perfect_score` (at max) |
 
 One honest gap: the `wearing` / `carrying_and_wearing` renders are
-currently unreachable — worn items go missing from INVENTORY's listing
+currently unreachable: worn items go missing from INVENTORY's listing
 (they reappear only after an `undo` rebuilds the world). A platform fix
 is pending; until then the transcript above shows carried items only.

@@ -1,7 +1,7 @@
 *The Folly at Fernhill* is a complete estate mystery written entirely in
-**Chord**, Sharpee's story language. One winter night, one player, thirteen
-rooms, three NPCs, a boiler with opinions — and the deed that keeps Fernhill
-in the family, if you can find it before dawn.
+**Chord**, Sharpee's story language. It unfolds over one winter night, with
+one player, thirteen rooms, three NPCs, a boiler with opinions, and the deed
+that keeps Fernhill in the family, if you can find it before dawn.
 
 This tutorial walks through the whole story, pattern by pattern. By the end
 you will have seen every major Chord surface used in a real, shipping game:
@@ -13,8 +13,8 @@ presentation layer.
 
 Before the first line: Chord is a domain **modeling** language, not a
 programming language in story-shaped clothes. You write facts about the
-world — *the cellar is dark*, *the door unlocks with the tarnished key*,
-*Smoke follows you once she's been fed* — and the engine makes them true.
+world (*the cellar is dark*, *the door unlocks with the tarnished key*,
+*Smoke follows you once she's been fed*), and the engine makes them true.
 There are no variables, no loops, and no `if` statement.
 
 That last absence is deliberate. **If you find yourself reaching for `if`,
@@ -24,10 +24,10 @@ boiler is off`), a state an entity is in (`states: coiled, lit, cut`), or a
 rule scoped to a moment (`after entering it while the player has the
 deed`). The world holds the logic; the prose stays prose.
 
-The rule of thumb when something won't express: **IF concepts belong in
-Chord; engine concepts belong in Sharpee; general computation belongs in
-TypeScript.** If Chord can't say an interactive-fiction idea, that's a gap
-to raise — the platform improves Chord rather than asking your story to
+The rule of thumb, when an idea resists plain expression, runs like this:
+**IF concepts belong in Chord; engine concepts belong in Sharpee; general
+computation belongs in TypeScript.** If Chord can't say an interactive-fiction idea, that's a gap
+to raise: the platform improves Chord rather than asking your story to
 drop into TypeScript.
 
 ## Three tiers of vocabulary
@@ -77,7 +77,7 @@ with real stakes, three endings, and a perfect score of 50.
 ## Prerequisites
 
 - Node.js 18+
-- No TypeScript required — Fernhill is pure Chord
+- No TypeScript required; Fernhill is pure Chord
 
 ## Setting up
 

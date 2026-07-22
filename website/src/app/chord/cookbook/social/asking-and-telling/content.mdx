@@ -1,10 +1,11 @@
-Deliberately minimal (ADR-230): the platform validates the social
-preconditions and reports an interceptable default — asking's
-`unknown_topic`, telling's `not_interested`. An `on asking it` clause on
-the person is where real dialogue hooks in; the topic slot is free text,
-resolved entity-first (ADR-231): a topic naming something in scope
-carries that entity along, and anything else — `ask the hermit about
-the weather` — flows through as plain text. A topic is never
+Asking and telling are deliberately minimal (ADR-230): the platform
+validates the social preconditions and reports an interceptable default,
+which is `unknown_topic` when the action is asking and `not_interested`
+when the action is telling. An `on asking it`
+clause on the person is where real dialogue hooks in; the topic slot is
+free text, resolved entity-first (ADR-231): a topic naming something in
+scope carries that entity along, and anything else (for example, `ask the
+hermit about the weather`) flows through as plain text. A topic is never
 scope-rejected.
 
 The author writes:

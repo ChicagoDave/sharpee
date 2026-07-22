@@ -1,21 +1,23 @@
-**open** (`if.action.opening`) — verbs `open`, `open up`, `unwrap`,
-`uncover` (synonym forms: ADR-230 D4). Only an `openable` opens — anything
-else refuses `not_openable` — and lock state gates opening (`locked`);
-unlocking is its own step (§4.2). `open X with Y` is still opening
-(ADR-230 D3b, no separate action), the named tool a consulted command
-entity; an openable can require a tool exactly as a lockable names a key —
-`openable with the crowbar` in Chord, `toolId` in TypeScript — refusing
-`no_tool` / `tool_not_held` / `wrong_tool`, while an openable with no
-requirement ignores an offered tool. A non-empty container's contents are
-announced by a separate, replaceable piece: the
+**open** (`if.action.opening`) parses the verbs `open`, `open up`,
+`unwrap`, and `uncover` (synonym forms: ADR-230 D4). Only an `openable`
+opens (anything else refuses `not_openable`), and lock state gates
+opening (`locked`); unlocking is its own step. `open X with Y` is
+still opening (ADR-230 D3b, no separate action), and the named tool is a
+consulted command entity. An openable can require a tool exactly as a
+lockable names a key (`openable with the crowbar` in Chord, `toolId` in
+TypeScript), refusing `no_tool` / `tool_not_held` / `wrong_tool`. An
+openable with no requirement ignores an offered tool. A non-empty
+container's contents are announced by a separate, replaceable piece: the
 `stdlib.chain.opened-revealed` chain handler reacts to `if.event.opened`
-and emits `if.event.revealed`; a story that wants a different reveal — or
-none — replaces that chain by its key rather than touching the action.
+and emits `if.event.revealed`; a story that wants a different reveal, or
+none, replaces that chain by its key rather than touching the action.
 
-**close** (`if.action.closing`) — verbs `close`, `shut`, `cover`. Refuses
-`not_closable`, `already_closed`, and `prevents_closing` — the last both
-for one-way openables (`canClose: false`) and for an obstacle named in
-`closeRequirements`. Lock state is not checked; closing never locks.
+**close** (`if.action.closing`) parses the verbs `close`, `shut`, and
+`cover`. It refuses `not_closable`, `already_closed`, and
+`prevents_closing`; the last fires both for one-way openables
+(`canClose: false`) and for an
+obstacle named in `closeRequirements`. Lock state is not checked; closing
+never locks.
 
 The author writes:
 
@@ -89,8 +91,8 @@ You swing it shut.
 
 Three seams and the chain in one scene: the anvil refuses with the
 platform's `not_openable`, the tin's `on closing it` guard speaks its own
-refusal, the story-wide `define phrase` rewrites every plain close — and
-the sea chest's contents line is `stdlib.chain.opened-revealed` at work.
+refusal, and the story-wide `define phrase` rewrites every plain close.
+The sea chest's contents line is `stdlib.chain.opened-revealed` at work.
 
 | | open (`if.action.opening.*`) | close (`if.action.closing.*`) |
 |---|---|---|
@@ -98,10 +100,11 @@ the sea chest's contents line is `stdlib.chain.opened-revealed` at work.
 | Success | `opened` · `its_empty` (a container opens onto nothing) | `closed` |
 | Events | `if.event.opened`, then `if.event.revealed` via the chain | `if.event.closed` (rich payload: door/container flags, contents count) |
 
-Interceptors: `on opening it` / `on closing it` on the target — the
-humming hive box in chord-language.md §3.1 is exactly this seam — and
-opening consults an explicitly named tool after the target (target →
-tool, the same ordering discipline as lock-and-key, §4.2).
+The interceptor seams are `on opening it` and `on closing it` on the
+target (the humming hive box in chord-language.md is exactly this
+seam), and opening consults an explicitly named tool after the target
+(target, then tool, the same ordering discipline as lock-and-key).
 
-Gaps: the several-tools list `toolIds` is TypeScript today; the trait's
-`autoLock` field exists but is inert — closing never locks (flagged, §4.3).
+Two gaps remain: the several-tools list `toolIds` is TypeScript today,
+and the trait's `autoLock` field exists but is inert (closing never
+locks).

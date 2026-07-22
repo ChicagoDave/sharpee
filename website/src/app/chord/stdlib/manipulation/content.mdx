@@ -1,28 +1,28 @@
-Moving things by hand: picking them up, putting them down, putting them in
-and on other things, handing them over, and shoving them around. Everything
-in this chapter works out of the box — the point of each entry is to tell
-you what the platform already does, which trait (if any) makes an entity
-eligible, and which message keys to override when you want it said
-differently.
+This chapter covers moving things by hand: picking them up, putting them
+down, putting them in and on other things, handing them over, and shoving
+them around. Everything in this chapter works out of the box. The point of
+each entry is to tell you what the platform already does, which trait (if
+any) makes an entity eligible, and which message keys to override when you
+want it said differently.
 
-Each entry lists the action's **message keys** — the IDs stdlib emits
+Each entry lists the action's **message keys**, the IDs stdlib emits
 instead of English (the `lang` layer supplies the words). Override one per
 entity with an `on`/`after` clause carrying your own phrase
-(chord-language.md §3), or story-wide with a `define phrase` under the
-dotted ID itself (dotted keys register whole since ADR-230 D5 —
-chord-language.md §5.2; a TypeScript story overrides the ID through the
+(chord-language.md), or story-wide with a `define phrase` under the
+dotted ID itself (dotted keys register whole since ADR-230 D5, see
+chord-language.md; a TypeScript story overrides the ID through the
 language provider). In transcripts and event payloads, the ID is how you
 recognize which moment fired. The worked example in
-[§2.1](/chord/stdlib/manipulation/taking-and-dropping)
-shows the per-entity guard and the story-wide override side by side — the
+[taking and dropping](/chord/stdlib/manipulation/taking-and-dropping)
+shows the per-entity guard and the story-wide override side by side. The
 same two seams recur all through this chapter.
 
-- [2.1 taking and dropping](/chord/stdlib/manipulation/taking-and-dropping)
-- [2.2 putting and inserting](/chord/stdlib/manipulation/putting-and-inserting)
-- [2.3 removing (taking from)](/chord/stdlib/manipulation/removing)
-- [2.4 giving and showing](/chord/stdlib/manipulation/giving-and-showing)
-- [2.5 throwing](/chord/stdlib/manipulation/throwing)
-- [2.6 pushing, pulling, touching](/chord/stdlib/manipulation/pushing-pulling-touching)
-- [2.7 lowering and raising](/chord/stdlib/manipulation/lowering-and-raising)
-- [2.8 cutting and digging](/chord/stdlib/manipulation/cutting-and-digging)
-- [2.9 Manipulation traits](/chord/stdlib/manipulation/traits)
+- [taking and dropping](/chord/stdlib/manipulation/taking-and-dropping)
+- [putting and inserting](/chord/stdlib/manipulation/putting-and-inserting)
+- [removing (taking from)](/chord/stdlib/manipulation/removing)
+- [giving and showing](/chord/stdlib/manipulation/giving-and-showing)
+- [throwing](/chord/stdlib/manipulation/throwing)
+- [pushing, pulling, touching](/chord/stdlib/manipulation/pushing-pulling-touching)
+- [lowering and raising](/chord/stdlib/manipulation/lowering-and-raising)
+- [cutting and digging](/chord/stdlib/manipulation/cutting-and-digging)
+- [Manipulation traits](/chord/stdlib/manipulation/traits)

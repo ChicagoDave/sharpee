@@ -30,21 +30,21 @@ define action petting
 Reading it line by line:
 
 - **`grammar`** lists the surface patterns. A `:word` is a slot, and the
-  slot name *is* the value name used everywhere else in the action —
-  because the pattern says `:animal`, the requirements and phrases all
+  slot name *is* the value name used everywhere else in the action.
+  Because the pattern says `:animal`, the requirements and phrases all
   refer to `the animal`. The `→` gives a pattern's cardinality: `stroke
   :animal → each nearby creature` marks that form as applying to each
   match rather than a single object.
 - **`the animal must be reachable`** is a scope constraint (no colon):
   a precondition on a slot the parser enforces during resolution.
-- **`score`** attaches an action-owned score ([§4.5](/chord/guide/flow)).
+- **`score`** attaches an action-owned score.
 - **`refuse without <slot>: <key>`** refuses when the slot was not
   filled at all (nothing to pet); **`refuse when <condition>: <key>`**
-  refuses on a condition ([§3.6](/chord/guide/behavior));
+  refuses on a condition;
   **`otherwise refuse <key>`** is the
   last-resort refusal when no trait claimed the action on this target.
 - The remaining lines are the ordinary body: statements (`award`,
-  `phrase`, [§3.7](/chord/guide/behavior)) that run when the action
+  `phrase`) that run when the action
   proceeds.
 - **`phrases`** is the action's locale block.
 
@@ -52,5 +52,5 @@ The relationship to traits: `define action` declares the verb, its
 grammar, and its default outcomes; a `define trait` with an `on <verb>`
 clause is how a *particular kind of thing* responds to that verb.
 Together they are the story-author's version of stdlib's action-plus-
-behavior pattern — the goats above are pettable because `petting` exists
-as an action and something makes the goats respond to it.
+behavior pattern: the animals above are pettable because `petting` exists
+as an action and something makes the animals respond to it.

@@ -1,37 +1,37 @@
-**push** (`if.action.pushing`) — verbs `push`, `press`, `shove`, `move`,
-plus the directional form `move X <direction>` (ADR-230 D4 ruling: `move`
-is manipulation, never movement — the direction rides into the pushing
-action, not going). Needs the `pushable` trait; pushing anything else gets
-`fixed_in_place` (scenery) or `pushing_does_nothing`. The trait's
-`pushType` picks the behavior: `button` — the one genuinely stateful push
-(if the entity is also `switchable`, pushing toggles it — `button_clicks`
-when it is a button, `switch_toggled` otherwise; a non-switchable button
-just clicks, `button_pushed`); `heavy` — needs a direction to budge
-(`pushed_with_effort`), refuses without one (`wont_budge`); `moveable` —
-slides when pushed with a direction (`pushed_direction`, or
-`reveals_passage` when the trait says it hides something), gets nudged
-without one (`pushed_nudged`). Outside the button toggle, stdlib
-**narrates** movement but relocates nothing — the story reacts to
-`if.event.pushed` (it carries the direction) or an `after pushing it`
-clause to actually change the world; which wall opens is puzzle logic, not
-platform logic. One honest gap: from a `.story` file, bare `pushable`
-composes the default button configuration — selecting `heavy` or
-`moveable` is TypeScript territory today.
+**push** (`if.action.pushing`) covers the verbs `push`, `press`, `shove`,
+`move`, plus the directional form `move X <direction>` (ADR-230 D4 ruling:
+`move` is manipulation, never movement, so the direction rides into the
+pushing action, not going). Needs the `pushable` trait; pushing anything
+else gets `fixed_in_place` (scenery) or `pushing_does_nothing`. The
+trait's `pushType` picks the behavior. A `button` is the one genuinely
+stateful push: if the entity is also `switchable`, pushing toggles it
+(`button_clicks` when it is a button, `switch_toggled` otherwise), and a
+non-switchable button just clicks (`button_pushed`). A `heavy` entity
+needs a direction to budge (`pushed_with_effort`) and refuses without one
+(`wont_budge`). A `moveable` entity slides when pushed with a direction
+(`pushed_direction`, or `reveals_passage` when the trait says it hides
+something) and gets nudged without one (`pushed_nudged`). Outside the
+button toggle, stdlib **narrates** movement but relocates nothing: the
+story reacts to `if.event.pushed` (it carries the direction) or an
+`after pushing it` clause to actually change the world; which wall opens
+is puzzle logic, not platform logic. One honest gap: from a `.story` file,
+bare `pushable` composes the default button configuration, and selecting
+`heavy` or `moveable` is TypeScript territory today.
 
-**pull** (`if.action.pulling`) — verbs `pull`, `drag`, `yank`, `tug`.
-Needs `pullable`. A successful pull sets the trait's state to `pulled` (a
-second pull refuses `already_pulled`) and bumps its `pullCount`; a worn
-item refuses `worn`. Everything a pull *means* — the lever opens the
-sluice — is story logic reacting to `if.event.pulled` or written as an
-`on pulling it` / `after pulling it` clause.
+**pull** (`if.action.pulling`) covers the verbs `pull`, `drag`, `yank`,
+`tug`. Needs `pullable`. A successful pull sets the trait's state to
+`pulled` (a second pull refuses `already_pulled`) and bumps its
+`pullCount`; a worn item refuses `worn`. Everything a pull *means* (the
+lever opens the sluice) is story logic reacting to `if.event.pulled` or
+written as an `on pulling it` / `after pulling it` clause.
 
-**touch** (`if.action.touching`) — verbs `touch`, `feel`, `rub`, `pat`,
-`stroke`, `poke`, `prod`. No trait needed, no state changed; the reply is
-inferred from what the thing is — a lit light source `feels_hot`, a
-running device `feels_warm` (or `device_vibrating`), wearables
+**touch** (`if.action.touching`) covers the verbs `touch`, `feel`, `rub`,
+`pat`, `stroke`, `poke`, `prod`. No trait needed, no state changed; the
+reply is inferred from what the thing is: a lit light source `feels_hot`,
+a running device `feels_warm` (or `device_vibrating`), wearables
 `feels_soft`, doors `feels_smooth`, containers and supporters `feels_hard`
-(a container with drink in it sloshes — `liquid_container`), drinkables
-`feels_wet`, scenery `immovable_object` — otherwise the verb itself
+(a container with drink in it sloshes, `liquid_container`), drinkables
+`feels_wet`, scenery `immovable_object`. Otherwise the verb itself
 answers (`poked`, `patted`, `stroked`, `touched_gently`, `touched`).
 
 The author writes:
@@ -107,9 +107,9 @@ The stationmaster's cap feels soft.
 The iron stove is solid and immovable.
 ```
 
-The platform owns everything stateful here — the scenery refusal, the
+The platform owns everything stateful here (the scenery refusal, the
 button push under `move`'s manipulation channel, the `already_pulled`
-gate, the wool and iron inferences — and the one line that changes
+gate, the wool and iron inferences), and the one line that changes
 anything beyond the signal box is the story's `after pulling it` reaction.
 
 | | push (`if.action.pushing.*`) | pull (`if.action.pulling.*`) | touch (`if.action.touching.*`) |
@@ -120,5 +120,4 @@ anything beyond the signal box is the story's `after pulling it` reaction.
 
 Interceptors: `on`/`after pushing it`, `pulling it`, `touching it` on the
 target. Touching, with no state of its own, is a favorite probe to hang
-flavor on (`on touching it`) — listening plays the same role for sound
-(§6.3).
+flavor on (`on touching it`). Listening plays the same role for sound.

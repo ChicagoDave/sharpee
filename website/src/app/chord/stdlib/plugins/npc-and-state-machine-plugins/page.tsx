@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="12.3 The NPC and state-machine plugins">
+    <DocPage title="The NPC and state-machine plugins">
       <Content />
     </DocPage>
   );

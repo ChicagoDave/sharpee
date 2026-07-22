@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="3.3 while, once, before, after">
+    <DocPage title="while, once, before, after">
       <Content />
     </DocPage>
   );

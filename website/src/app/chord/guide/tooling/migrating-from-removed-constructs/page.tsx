@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="6.3 Migrating from removed constructs">
+    <DocPage title="Migrating from removed constructs">
       <Content />
     </DocPage>
   );

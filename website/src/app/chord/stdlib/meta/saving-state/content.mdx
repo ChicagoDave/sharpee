@@ -1,16 +1,16 @@
 These four are signals, not implementations: each emits a platform
 event that the engine processes after the turn through
-client-registered hooks — the client owns persistence and the
+client-registered hooks. The client owns persistence and the
 confirmation UI. Verbs that parse: `save`/`save game`,
 `restore`/`load`/`load game`/`restore game`, `quit`/`q`/`exit game`,
 `restart`. Named saves are dormant (no slot in the grammar). Quit asks
-for confirmation through a client query — but with no client hook
+for confirmation through a client query, but with no client hook
 registered it auto-confirms and stops; restart computes whether
 confirmation is warranted (unsaved progress, more than a few moves) and
 leaves honoring it to the hook.
 
 The player sees (in a client that registers no hooks, like the bare
-test harness — the signal side is all there is):
+test harness, where the signal side is all there is):
 
 ```transcript
 > save

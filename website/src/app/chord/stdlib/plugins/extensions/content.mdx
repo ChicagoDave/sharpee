@@ -1,24 +1,23 @@
 The combat extension shows what "a plugin built on the standard layers"
 means: it invents nothing. One call in a TypeScript story's world setup
 registers an interceptor on the `combatant` trait for the attacking
-action — the exact seam §8.2 documents — plus an NPC-side resolver for
+action (the exact documented seam), plus an NPC-side resolver for
 retaliation. From there, everything it touches is standard: hit chance
 from `combatant.skill` vs the defender's (clamped 10–95%, weapon
 `skillBonus` on top), damage through the `health` trait's behavior,
-death and inventory-dropping through the standard death machinery
-([§9](/chord/stdlib/death)),
+death and inventory-dropping through the standard death machinery,
 narration through the `combat.*` message families the lang layer already
-carries. Its dice are seeded but its own stream — combat outcomes vary
-run to run, by policy.
+carries. Its dice are seeded but run as their own stream, so combat
+outcomes vary run to run, by policy.
 
 A story wanting different combat registers its own interceptor on the
 same seam instead (Dungeo's melee does). And the boundary the audit
 once flagged is closed (ADR-215): a Chord story reaches all of this
-with one header line — `use combat` — which runs the same registration
+with one header line, `use combat`, which runs the same registration
 call at load. With it, `combatant` and `weapon` join the composable
 catalog with their typed fields (`skill`, `base-damage`, `hostile`,
 weapon `damage` and `skill-bonus`, …), and `health`/`max-health` land
-on the health trait like everywhere else (§8.5, §9.3). The `use` line
-resolves against a fixed, trusted, runtime-bundled registry — an
+on the health trait like everywhere else. The `use` line
+resolves against a fixed, trusted, runtime-bundled registry: an
 unknown name is a load error, and a `use`-only story stays pure IR.
 Third-party extensions remain a deferred design.

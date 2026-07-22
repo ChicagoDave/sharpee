@@ -1,7 +1,6 @@
 `define phrase` gives a phrase key one or more `or`-separated variants
 and a strategy for choosing between them, closing with `end phrase`. The
-strategy is the same five-name set as `select <strategy>`
-([§4.2](/chord/guide/flow)),
+strategy is the same five-name set as `select <strategy>`,
 because it is the same machinery: `select` chooses between statement
 bodies, `define phrase` chooses between texts.
 
@@ -15,15 +14,14 @@ or
 end phrase
 ```
 
-Each variant is a prose block ([§2.6](/chord/guide/world)) — the *only*
+Each variant is a prose block, the *only*
 form phrase text
-takes; the old same-line quoted and bare forms were removed
-([§6.3](/chord/guide/tooling)).
+takes; the old same-line quoted and bare forms were removed.
 Blank lines inside a variant are paragraph breaks, and `{br}` still
 forces a hard line break.
 
 A phrase header may carry a trailing `while <condition>` gate. This is
-mainly for description-marker phrases ([§2.6](/chord/guide/world)): the
+mainly for description-marker phrases: the
 gate decides whether
 the fragment appears at all, live at render time. Here a keeper line
 only splices into the aviary description while the zookeeper is actually
@@ -37,14 +35,14 @@ or
 end phrase
 ```
 
-Fragments spliced into prose are written *bare* — no leading separator
+Fragments spliced into prose are written *bare*, with no leading separator
 and no trailing full stop. The platform owns the join: a marker mid-
 sentence joins with a comma, a marker after a sentence joins with a
 space. Writing the separator yourself earns a diagnostic.
 
 The `verbatim` modifier (mutually exclusive with the strategies) exempts
 a phrase's text from whitespace collapse, preserving its exact line
-structure and relative indentation — for signs, verse, and ASCII where
+structure and relative indentation, for signs, verse, and ASCII where
 the layout is the point:
 
 ```chord
@@ -60,8 +58,8 @@ splice at a description marker (`analysis.verbatim-marker`): its
 whole point is preserved line structure, which a mid-sentence splice
 would break.
 
-A phrase key may be dotted — `if.action.taking.fixed_in_place` is one
-key, registered whole — and dotting is how a story overrides the
+A phrase key may be dotted (`if.action.taking.fixed_in_place` is one
+key, registered whole), and dotting is how a story overrides the
 platform's own text. Every standard-action message lives under a dotted
 id (the stdlib reference catalogs them entry by entry); a `define
 phrase` under that exact key replaces the platform default story-wide,
@@ -75,16 +73,15 @@ end phrase
 
 Now every fixed-in-place refusal in the story speaks this line instead
 of the standard one. The per-entity routes still sit on top: an `on`
-clause's own refusal ([§3.6](/chord/guide/behavior)) or a per-entity
-override ([§2.10](/chord/guide/world)) speaks for
+clause's own refusal or a per-entity
+override speaks for
 its one entity, and the story-wide dotted override sets the default
 underneath them.
 
 A dotted key is legal at every site a phrase key appears (ADR-231), not
-just here: `refuse` and `refuse when` ([§3.6](/chord/guide/behavior)),
-`must … otherwise refuse` ([§3.5](/chord/guide/behavior)),
-per-entity `phrase` headers ([§2.10](/chord/guide/world)), `define
-phrases` entries
-(§5.3), and the blocked and deadly exit keys
-([§2.5](/chord/guide/world), [§4.7](/chord/guide/flow)) all read a
+just here: `refuse` and `refuse when`,
+`must … otherwise refuse`,
+per-entity `phrase` headers, `define
+phrases` entries, and the blocked and deadly exit keys
+all read a
 dotted key whole.

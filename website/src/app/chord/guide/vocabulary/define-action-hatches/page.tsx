@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="5.6 define action hatches">
+    <DocPage title="define action hatches">
       <Content />
     </DocPage>
   );

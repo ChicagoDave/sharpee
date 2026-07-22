@@ -15,7 +15,7 @@ define sequence the long night
 end sequence
 ```
 
-`at turn N` steps fire on schedule; the last one is the losing ending —
+`at turn N` steps fire on schedule; the last one is the losing ending:
 dawn comes, the auction party arrives, the game ends. Note the story-state
 flip at turn 14: header `states:` plus `change the story to …` is how the
 world knows what hour it is.
@@ -45,8 +45,8 @@ end sequence
 ```
 
 `when <entity> becomes <state>` starts the clock; `N turns later` steps
-follow; `kill the player` is the hard ending — gated `when the fuse is
-lit`, so cutting the fuse (`cuttable with the garden shears`, chapter 2)
+follow; `kill the player` is the hard ending, gated `when the fuse is
+lit`, so cutting the fuse (`cuttable with the garden shears`, *Things*)
 defuses the death. Both branches are real: the game will kill you.
 
 ## Recurring events, gated on presence
@@ -65,12 +65,13 @@ create the Cellar
 An entity's `on every turn` clause fires only while the player is there
 to hear it. The `, once` modifier makes a beat that never repeats; a
 `while` gate makes one that tracks live state. (The fuse hisses the same
-way — `on every turn while it is lit`.)
+way: `on every turn while it is lit`.)
 
 ## The boiler: a state machine
 
-The estate's centerpiece. The brass plate says FILL. PRIME. LIGHT — and
-the machine enforces it. With `use state-machines` in the header:
+The boiler is the estate's centerpiece. The brass plate says FILL. PRIME.
+LIGHT, and the machine enforces it. With `use state-machines` in the
+header:
 
 ```chord
 define machine the boiler works
@@ -107,10 +108,11 @@ end machine
 
 Transitions are *player actions on world entities* (`when turning the
 stopcock: filled`); `on enter` bodies mirror machine truth onto the
-boiler's visible states, narrate, and — note the last line — reach into
+boiler's visible states, narrate, and (note the last line) reach into
 the greenhouse: the `running` state flowers the vine. The machine is the
-causal spine of the estate: boiler → frost seal opens (chapter 1's live
-block) → vine flowers → the silver locket, next chapter.
+causal spine of the estate: the boiler runs, the frost seal opens
+(*The world*'s live block), the vine flowers, and the silver locket appears
+in the next chapter.
 
 Out-of-order attempts get their own voices, authored as refusals on the
 entities themselves (`on pushing it while the boiler is cold → refuse

@@ -99,9 +99,9 @@ const LIGHT = {
   surface: { hex: WHITE, note: 'white' },
   ink: { hex: R.navy['800'], note: 'navy·800', on: ['canvas', 'surface'] },
   muted: { hex: R.slate['600'], note: 'slate·600', on: ['canvas', 'surface'] },
-  link: { hex: R.rose['600'], note: 'rose·600', on: ['canvas', 'surface'] },
+  link: { hex: R.navy['600'], note: 'navy·600', on: ['canvas', 'surface'] },
   border: { hex: R.gray['200'], note: 'gray·200' },
-  wash: { hex: R.rose['100'], note: 'rose·100' },
+  wash: { hex: R.navy['100'], note: 'navy·100' },
   codeBg: { hex: R.slate['100'], note: 'slate·100' },
   button: { hex: SEEDS.navy, note: 'navy·seed', text: WHITE },
 };
@@ -110,11 +110,11 @@ const DARK = {
   surface: { hex: R.navy['800'], note: 'navy·800' },
   ink: { hex: R.taupe['50'], note: 'taupe·50', on: ['canvas', 'surface'] },
   muted: { hex: R.gray['300'], note: 'gray·300', on: ['canvas', 'surface'] },
-  link: { hex: R.rose['300'], note: 'rose·300', on: ['canvas', 'surface'] },
+  link: { hex: R.navy['300'], note: 'navy·300', on: ['canvas', 'surface'] },
   border: { hex: R.slate['700'], note: 'slate·700' },
   wash: { hex: R.slate['800'], note: 'slate·800' },
   codeBg: { hex: R.navy['700'], note: 'navy·700' },
-  button: { hex: R.rose['400'], note: 'rose·400', text: R.navy['900'] },
+  button: { hex: R.navy['300'], note: 'navy·300', text: R.navy['900'] },
 };
 
 function badge(ratio) {

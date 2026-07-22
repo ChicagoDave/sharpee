@@ -1,7 +1,7 @@
 A Chord project has four everyday commands: **build**, **play**,
 **test**, and **compose**. All of them run from the project directory.
 
-## Build — including a playable web page
+## Build: including a playable web page
 
 ```shell
 sharpee build --browser
@@ -23,7 +23,7 @@ sharpee build --browser
 Output: dist/web/
 ```
 
-`dist/web/` is a self-contained, static web page — your story, the
+`dist/web/` is a self-contained, static web page: your story, the
 engine, and a browser client in one folder. Serve it locally with
 `npx serve dist/web`, or host it anywhere static files go. Plain
 `sharpee build` (no flag) builds the story bundle without the web
@@ -95,7 +95,7 @@ Running: tests/lantern.transcript
 `--chain` runs several transcripts against one continuing game state,
 and `--stop-on-failure` halts at the first miss.
 
-## Compose — the compiler on its own
+## Compose: the compiler on its own
 
 `build` and `play` compile your story implicitly. `compose` is the same
 compiler as a standalone step:
@@ -108,9 +108,9 @@ sharpee compose orchard.story --check
 compose: orchard.story is gate-clean (--check: IR not emitted)
 ```
 
-`--check` runs every load-time gate and emits nothing — the fast
-CI answer to "does my story still compile?". With `-o` it writes the
-compiled story IR as JSON:
+`--check` runs every load-time gate and emits nothing, which makes it
+the fast CI answer to "does my story still compile?". With `-o` it
+writes the compiled story IR as JSON:
 
 ```text
 compose: orchard.story loaded — 3 entities, 0 trait(s), 0 action(s), 0 hatch(es)
@@ -119,12 +119,12 @@ compose: IR written to orchard.ir.json
 
 <Callout title="Gate-clean, then playable">
   Chord's compile gates catch unknown names, contradictory declarations,
-  and misspelled references before the story ever runs — each diagnostic
+  and misspelled references before the story ever runs. Each diagnostic
   is named, line-anchored, and usually carries a nearest-match
   suggestion. A story that composes gate-clean loads.
 </Callout>
 
 ## Next
 
-The world model is where stories get interesting — start with
+The world model is where stories get interesting. Start with
 [building your world](/chord/guide/world).

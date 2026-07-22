@@ -1,26 +1,26 @@
-**search** (`if.action.searching`) — `search X`, `look in/inside X`,
-`look through X`, `rummage in/through X`, or bare `search` for the room
-(`find`/`locate` were removed from the vocabulary in ADR-230 —
-searching is the wrong semantics for them). A closed openable container
-refuses `container_closed`; otherwise searching reports contents — and
-it is the action that **reveals hidden items**: a thing whose identity
-is marked `concealed` (in Chord, the `concealed` adjective on the
-composition line) is invisible to the parser until a search finds it,
-permanently reveals it, and announces `found_concealed`. This
-hidden-*item* flag is not the `concealment` trait (§6.4), which is
-about hiding *actors*.
+**search** (`if.action.searching`) parses `search X`, `look in/inside
+X`, `look through X`, `rummage in/through X`, or bare `search` for the
+room (`find`/`locate` were removed from the vocabulary in ADR-230,
+since searching is the wrong semantics for them). A closed openable
+container refuses `container_closed`; otherwise searching reports
+contents, and it is the action that **reveals hidden items**: a thing
+whose identity is marked `concealed` (in Chord, the `concealed`
+adjective on the composition line) is invisible to the parser until a
+search finds it, permanently reveals it, and announces
+`found_concealed`. This hidden-*item* flag is not the `concealment`
+trait, which is about hiding *actors*.
 
-**read** (`if.action.reading`) — `read X`, `peruse X`, `study X`, gated
-on the `readable` trait (`not_readable`: "There's nothing written on
-it"). Portable reading matter is implicitly taken first; scenery —
-signs, inscriptions — reads in place. The text comes from the trait:
-`text` (in Chord, `readable with text ...`), or a page of `pageContent`
-for multi-page books, and the message key follows `readableType`:
-`read_text`, `read_book` / `read_book_page` (with page numbers),
-`read_sign`, `read_inscription`. A readable can be switched off
-(`isReadable: false` + `cannotReadMessage` → `cannot_read_now`) —
-glowing runes that only read when lit. Reading marks `hasBeenRead`
-(story logic can gate on it).
+**read** (`if.action.reading`) parses `read X`, `peruse X`, and `study
+X`, gated on the `readable` trait (`not_readable`: "There's nothing
+written on it"). Portable reading matter is implicitly taken first,
+while scenery such as signs and inscriptions reads in place. The text
+comes from the trait: `text` (in Chord, `readable with text ...`), or a
+page of `pageContent` for multi-page books, and the message key follows
+`readableType`: `read_text`, `read_book` / `read_book_page` (with page
+numbers), `read_sign`, `read_inscription`. A readable can be switched
+off, with `isReadable: false` plus a `cannotReadMessage` producing
+`cannot_read_now`, as with glowing runes that only read when lit.
+Reading marks `hasBeenRead` (story logic can gate on it).
 
 The author writes:
 
@@ -92,8 +92,8 @@ scenery inscription reads in place.
 | Success | `found_concealed` · `container_contents` · `supporter_contents` · `empty_container` · `searched_location` · `searched_object` · `nothing_special` | `read_text` · `read_book` · `read_book_page` · `read_sign` · `read_inscription` |
 | Events | `if.event.searched` | `if.event.read` |
 
-Interceptors: `on searching it` — a false bottom that only yields to a
-second, gated search is one `while` clause — and `on reading it`.
+Interceptors: `on searching it` (a false bottom that only yields to a
+second, gated search is one `while` clause) and `on reading it`.
 
 The readable trait's literacy fields (`requiresAbility`) are declared
 but not enforced today.

@@ -1,5 +1,5 @@
 Death is not `lose`. `lose` ends the game directly; the three constructs
-here run the platform's death machinery instead — the death text speaks,
+here run the platform's death machinery instead: the death text speaks,
 a died event fires, and at the end of the turn the engine re-checks
 whether the player is actually dead. That re-check is a real window: a
 story policy that revives the player during the turn (a reincarnation
@@ -7,13 +7,13 @@ rule, a guardian angel) vetoes the ending and play continues. With no
 such policy, the story ends in defeat.
 
 **`kill the player [<phrase-key>] [when <condition>]`** is a statement,
-peer to `win` and `lose` ([§3.7](/chord/guide/behavior)), legal
-anywhere statements go — `on` and
+peer to `win` and `lose`, legal
+anywhere statements go: `on` and
 `after` clauses, `every turn` daemons, action bodies, inside `select` and
 `each`. The phrase key is the death text (define it like any phrase) and
 doubles as the recorded cause; bare `kill the player` records the cause
 `killed` and shows only the platform's ending text. The `when` suffix
-gates it like any statement ([§3.8](/chord/guide/behavior)):
+gates it like any statement:
 
 ```chord
   on crossing it
@@ -23,12 +23,12 @@ gates it like any statement ([§3.8](/chord/guide/behavior)):
 ```
 
 While the bridge is whole, the `kill` is skipped and `bridge-holds`
-speaks instead — the same shape as the conditional `lose` in §4.6.
+speaks instead, the same shape as the conditional `lose`.
 
 **`<direction> is deadly: <phrase-key>`** marks a fatal exit, mirroring
-`is blocked:` ([§2.5](/chord/guide/world)). The fatal direction is
+`is blocked:`. The fatal direction is
 deliberately not an exit at
-all: typing it never runs the going action — the command is rewritten
+all: typing it never runs the going action; the command is rewritten
 into the platform's internal death action, so the player sees the death
 text and nothing else, no movement prose, no refusal. The player
 retreats another way.
@@ -43,11 +43,11 @@ create Aragain Falls
 ```
 
 The conditional form `is deadly while <condition>:` parses but is not
-wired yet — a load error tells you so; the live equivalent is an
+wired yet: a load error tells you so, and the live equivalent is an
 `on going it` clause carrying `kill the player when <condition>`.
 
 **`deadly: <phrase-key>`** marks the whole room as a no-escape position:
-every verb except a safe allowlist — look and examine, by default — is
+every verb except a safe allowlist (look and examine, by default) is
 fatal, including objectless ones like WAIT and INVENTORY that no
 per-entity clause could catch. Reserve it for the genuinely inescapable
 spot, not as a generic hazard flag:
@@ -62,8 +62,8 @@ create Over the Falls
 
 In TypeScript the underlying trait adds two more dials: `safeVerbs`
 widens the allowlist, and `chance` makes the room probabilistically
-deadly — a survived roll simply lets the verb run normally, with no
+deadly. A survived roll simply lets the verb run normally, with no
 message. Neither dial is expressible from Chord today. [The standard
-library reference §9](/chord/stdlib/death) documents the machinery
+library reference](/chord/stdlib/death) documents the machinery
 underneath all three constructs: the died event's shape, the veto
 window's mechanics, the health trait, and the internal redirect action.

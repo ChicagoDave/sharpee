@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="5.11 define phrasebook, use phrasebook">
+    <DocPage title="define phrasebook, use phrasebook">
       <Content />
     </DocPage>
   );

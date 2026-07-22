@@ -1,21 +1,21 @@
-**eat** (`if.action.eating`) — verbs `eat/consume/devour X`, plus
+**eat** (`if.action.eating`): verbs `eat/consume/devour X`, plus
 `munch` and `nibble [on] X`, gated on the `edible` trait
 (`not_edible`). Liquids refuse `is_drink` ("You should drink that, not
-eat it") and solids refuse drinking with `not_drinkable` — there is no
+eat it") and solids refuse drinking with `not_drinkable`; there is no
 cross-routing. Food is implicitly taken first. Multi-serving food counts
-down (`eaten_some`, then `eaten_all`; exhausted → `already_consumed`),
+down (`eaten_some`, then `eaten_all`; once exhausted, `already_consumed`),
 and the message honors the trait's data: `taste`
-(`delicious`/`tasty`/`bland`/`awful`), a `poison` effect (message-only —
-"It tastes strange…" — no mechanical harm today), `satisfiesHunger`
+(`delicious`/`tasty`/`bland`/`awful`), a `poison` effect (message-only:
+"It tastes strange…", no mechanical harm today), `satisfiesHunger`
 (`filling` / `still_hungry`). Event: `if.event.eaten`.
 
-**drink** (`if.action.drinking`) — verbs `drink/sip/quaff/swallow/
+**drink** (`if.action.drinking`): verbs `drink/sip/quaff/swallow/
 imbibe X`, plus `drink from X` and `sip from X`. Two things are
-drinkable: an edible marked liquid — in a `.story`, the `drinkable`
-adjective, which composes the edible trait with the liquid flag set,
-order-independent with `edible` (ratchet G1) — or a **container of
-liquid** (`containsLiquid`, TypeScript territory), open if openable.
-Container drinking decrements `liquidAmount` and reports
+drinkable. The first is an edible marked liquid: in a `.story`, the
+`drinkable` adjective, which composes the edible trait with the liquid
+flag set, order-independent with `edible` (ratchet G1). The second is a
+**container of liquid** (`containsLiquid`, TypeScript territory), open
+if openable. Container drinking decrements `liquidAmount` and reports
 `from_container` / `empty_now`. Verb flavor: `sipped`, `quaffed`.
 Event: `if.event.drunk`.
 
@@ -94,10 +94,11 @@ You drink the elderflower cordial.
 There's nothing left to drink.
 ```
 
-The cross-refusals, the implicit take, and the honest caveat as a pair:
-**eating never removes the item** — the fully eaten apple stays in
-inventory at zero servings — and the biscuit's `after eating it` →
-`remove it` clause is the one-line remedy.
+The transcript shows the cross-refusals and the implicit take. The honest
+caveat comes as a pair of a problem and its fix: **eating never removes the
+item** (the fully eaten apple stays in inventory at zero servings), and the
+biscuit's `after eating it` clause with a `remove it` body is the one-line
+remedy.
 
 | | eat (`if.action.eating.*`) | drink (`if.action.drinking.*`) |
 |---|---|---|

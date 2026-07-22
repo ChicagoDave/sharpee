@@ -1,11 +1,11 @@
 A stateful trait opens for business in its default state: a lockable
 thing starts unlocked, a switchable thing starts off, and an openable
-thing starts closed — declare `starts open` to begin open (ADR-231
+thing starts closed. Declare `starts open` to begin open (ADR-231
 D5b: the trait default is authoritative everywhere; container kinds are
-no exception). When the story needs otherwise, a safe
-that stays locked until the player finds the key, a space heater
-already running, `starts <state>` on the composition line sets the
-trait's initial value.
+no exception). When the story needs otherwise, such as a safe
+that stays locked until the player finds the key or a space heater
+that is already running, `starts <state>` on the composition line sets
+the trait's initial value.
 
 ```chord
 create the safe
@@ -21,8 +21,8 @@ initializes: `locked` and `unlocked` set `lockable`, `closed` and
 enforced: `starts locked` on an entity that does not compose
 `lockable` is a load error (`analysis.starts-state-pairing`), never a
 silent no-op. Any other word after `starts` is a parse error
-(`parse.starts-state`) — except `in`, which is the placement line from
-§2.4. `starts in` names where something begins; `starts <state>` names
+(`parse.starts-state`), except `in`, which is the placement line.
+`starts in` names where something begins; `starts <state>` names
 how.
 
 ```chord
@@ -36,10 +36,9 @@ create the space heater
 
 Note what `starts` does not do: the state word is an initializer, not
 stored story state. `locked`, `open`, and `on` remain derivable facts
-read live from the trait (the state adjectives of
-[§3.4](/chord/guide/behavior)), and a `states:`
+read live from the trait (the state adjectives), and a `states:`
 line reproducing one of those pairs is still the shadow-state error
-([§6.2](/chord/guide/tooling)'s boolean-state gate). `starts` merely
+(the boolean-state gate). `starts` merely
 chooses the trait's first
 value; from there the
-world moves it the usual ways — keys, hands, and switches.
+world moves it the usual ways: keys, hands, and switches.

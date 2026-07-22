@@ -1,4 +1,4 @@
-Sharpee is the TypeScript platform underneath every Chord story — and a
+Sharpee is the TypeScript platform underneath every Chord story, and a
 full authoring surface in its own right. This page is the under-the-hood
 tour for a reader who knows [Chord](/chord/getting-started/install) and
 wants to see the machinery, or who wants to author directly in
@@ -9,8 +9,11 @@ TypeScript.
 A Chord `.story` file compiles to a story IR; the story loader turns
 that IR into entities, traits, phrases, and wiring on the platform. A
 TypeScript story builds the same things directly against the API. Either
-way, the same engine runs the game — Chord is not a sandboxed subset,
-and the parity goal runs in both directions.
+way, the same engine runs the game. Chord is not a sandboxed subset of
+the platform. The two surfaces aim for full parity: anything you can
+express in a Chord story you can also express in a TypeScript story, and
+anything you can express in a TypeScript story you can also express in a
+Chord story.
 
 ## The layers
 
@@ -45,13 +48,13 @@ exactly what the loader builds.
 
 ## Actions: the four-phase pattern
 
-Every action — standard or story-authored — runs the same four phases:
+Every action, standard or story-authored, runs the same four phases:
 
-- **validate** — can this happen? Return ok, or a named error.
-- **execute** — mutate the world, by delegating to behaviors. If your
+- **validate**: can this happen? Return ok, or a named error.
+- **execute**: mutate the world by delegating to behaviors. If your
   execute phase is complex, the logic belongs in a behavior.
-- **report** — emit the domain events that describe what happened.
-- **blocked** — emit the events for a validation failure.
+- **report**: emit the domain events that describe what happened.
+- **blocked**: emit the events for a validation failure.
 
 Actions never print text. They emit **domain events** carrying a
 `messageId` plus parameters; at end of turn the engine's prose pipeline
@@ -67,7 +70,7 @@ tree of typed `Phrase` values (noun phrases with number, article
 selector, pronoun set; verbs; lists; choices), and a single per-locale
 Assembler walks the finished tree to produce articles, agreement,
 punctuation, and pronoun references. Nothing collapses to a string
-early — which is why "You can see Tobias here." and "a brass lantern"
+early, which is why "You can see Tobias here." and "a brass lantern"
 both come out right with no author effort.
 
 ## Capability dispatch
@@ -81,7 +84,7 @@ seam Chord's authored traits compile onto.
 
 ## Digging further
 
-- [Actions & traits](/sharpee/actions-and-traits) — the catalog, and
-  where the full generated API reference lives.
-- The [Fernhill tutorial](/learn/fernhill) — the Chord-side view of the
-  same machinery.
+- [Actions & traits](/sharpee/actions-and-traits) is the catalog, and the
+  home of the full generated API reference.
+- The [Fernhill tutorial](/learn/fernhill) gives the Chord-side view of
+  the same machinery.

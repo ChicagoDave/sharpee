@@ -1,19 +1,20 @@
 Both parse since ADR-230 D2: `listen`, `listen to X`, and the `hear
 [X]` alias; `smell` and `sniff`, bare or with a target.
 
-**listen** (`if.action.listening`) — with a target: a running device
+**listen** (`if.action.listening`). With a target, a running device
 reports `device_running`, a stopped one `device_off`, a container
-sloshes (`liquid_sounds`) or rustles (`container_sounds`) by contents,
-anything else `no_sound`. Bare `listen` scans the room: running devices
-→ `active_devices`, else `silence`. No preconditions at all — a pure
-flavor seam.
+sloshes (`liquid_sounds`) or rustles (`container_sounds`) by its
+contents, and anything else reports `no_sound`. Bare `listen` scans the
+room: running devices report `active_devices`, and an otherwise quiet
+room reports `silence`. It has no preconditions at all, making it a
+pure flavor seam.
 
-**smell** (`if.action.smelling`) — with a target: food and drink report
+**smell** (`if.action.smelling`). With a target, food and drink report
 `food_scent`/`drink_scent`, a lit light source `burning_scent`, an open
-container with food inside `container_food_scent`, else
+container with food inside `container_food_scent`, and anything else
 `no_particular_scent`; a target in another room refuses `too_far`. Bare
-`smell`: smoke first (`smoke_detected`), then food (`food_nearby`),
-else `no_scent`.
+`smell` checks smoke first (`smoke_detected`), then food (`food_nearby`),
+and otherwise reports `no_scent`.
 
 The author writes:
 
@@ -67,11 +68,11 @@ than errors.
 | Success | `device_running` · `device_off` · `liquid_sounds` · `container_sounds` · `no_sound` · `active_devices` · `silence` | `food_scent` · `drink_scent` · `burning_scent` · `container_food_scent` · `no_particular_scent` · `smoke_detected` · `food_nearby` · `no_scent` |
 | Events | `if.event.listened` / `if.event.listen_blocked` | `if.event.smelled` / `if.event.smell_blocked` |
 
-Interceptors: like touching (§2.6), both are favorites for `on
+Interceptors: like touching, both are favorites for `on
 listening it` / `on smelling it` clauses.
 
 Separately from this action pair, the platform has a real **sound
-propagation** system (the acoustic traits, §6.4): engine-level,
-per-turn, event-driven — sounds travel through walls by acoustic cost
+propagation** system (the acoustic traits): engine-level,
+per-turn, event-driven. Sounds travel through walls by acoustic cost
 and reach listener entities. The listening *action* does not read it;
 the two meet in story logic, not in stdlib.

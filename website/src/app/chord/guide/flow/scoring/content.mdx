@@ -1,8 +1,8 @@
 A `score <name> worth N` line declares a scoring identity, and `award
-<name>` grants it (first seen in [§2.8](/chord/guide/world)). The line
+<name>` grants it. The line
 is legal under four
-owners — the story header, a `create` block, a `define trait`, and a
-`define action` — and this section shows all four in one story, because
+owners (the story header, a `create` block, a `define trait`, and a
+`define action`), and this section shows all four in one story, because
 where a score lives is a real design choice.
 
 The story header owns scores that belong to the whole game:
@@ -32,7 +32,7 @@ define trait prunable
 end trait
 ```
 
-A `create` block owns a score specific to that one entity — and here is
+A `create` block owns a score specific to that one entity, and here is
 the payoff of owner-scoping. The damask rose and the moss rose both
 declare `score deadheaded worth 5`, and those are *two different
 scores*, one per rose, because each is owned by its own entity:
@@ -56,7 +56,7 @@ The damask's `after` clause awards its own `deadheaded`, and also the
 story-wide `green-thumb`. `award <name>` resolves owner-first: it looks
 for a score of that name on the enclosing owner, then falls back to the
 story header. So the same word `deadheaded` under the damask means the
-damask's score, and under the moss rose means the moss rose's — no
+damask's score, and under the moss rose means the moss rose's: no
 collision, no prefixing.
 
 An action owns a score granted whenever the action succeeds:
@@ -77,7 +77,7 @@ Two properties fall out of this model. First, the maximum score is the
 sum of every declared `worth`, computed at load time. Second, awards
 dedupe by identity (ADR-129): awarding the same score twice grants it
 once, so `award` is idempotent and the explicit `, once` modifier
-([§3.7](/chord/guide/behavior)) is never *needed* for correctness — it
+is never *needed* for correctness; it
 only documents intent.
 This is why the pattern is "declare the score on the owner, award it in
 an `after` clause" rather than guarding awards behind first-time checks.

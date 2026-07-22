@@ -1,21 +1,22 @@
-**kill the player** (statement, peer to `win` and `lose`) — forms `kill
-the player`, `kill the player <phrase-key>`, optional `when <condition>`
-suffix; legal anywhere statements go: `on` and `after` clauses (entity or
-trait), `on every turn [while …]` daemons, `define action` bodies, inside
-`select` and `each` blocks. The phrase key is the death text (define it
+**kill the player** (statement, peer to `win` and `lose`) has the forms
+`kill the player`, `kill the player <phrase-key>`, and an optional
+`when <condition>` suffix; it is legal anywhere statements go: `on` and
+`after` clauses (entity or trait), `on every turn [while …]` daemons,
+`define action` bodies, and inside `select` and `each` blocks. The phrase
+key is the death text (define it
 like any phrase) and doubles as the recorded cause; a bare `kill the
 player` records the cause `killed` and shows only the platform's ending
 text.
 
 The machinery, in order: the death text speaks, the platform's
 `if.event.player.died` event fires, and at end of turn the engine
-re-checks the player's actual life state — that re-check, not the event,
+re-checks the player's actual life state; that re-check, not the event,
 is the final word. A story policy that revives the player during the turn
 (Dungeo's death-penalty machinery works this way) vetoes the ending;
 otherwise the game ends in defeat (`game.lost`, the `death` and `endgame`
 channels). Because the decision waits for end of turn, statements after
 the `kill` in the same body still run. There is no built-in "restart or
-undo?" prompt — that is client/story territory.
+undo?" prompt; that is client/story territory.
 
 The author writes:
 
@@ -64,7 +65,7 @@ define phrases en-US
 ```
 
 The player who touches the wire straight away sees the death text and
-nothing after it — the game has ended in defeat:
+nothing after it; the game has ended in defeat:
 
 ```transcript
 > touch the wire
@@ -81,7 +82,7 @@ The breaker slams over and the hum dies with it.
 Cold and inert. The breaker did its job.
 ```
 
-The `when` suffix is the whole gate — live wire, the `kill` fires; dead
-wire, it is skipped. Note the second `when` on `phrase wire-cold`:
+The `when` suffix is the whole gate: with a live wire, the `kill` fires;
+with a dead wire, it is skipped. Note the second `when` on `phrase wire-cold`:
 statements after a `kill` still run, so follow-up text must gate itself
 off the fatal case.

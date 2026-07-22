@@ -1,22 +1,21 @@
-**go** (`if.action.going`) — `go north`, `walk`/`run`/`head`/`travel
+**go** (`if.action.going`): `go north`, `walk`/`run`/`head`/`travel
 north`, or just the direction (the synonym forms and a fixed
 `go <direction>` rule landed with ADR-230 D4). Twelve direction words
 parse: `north`/`n`, `south`/`s`, `east`/`e`, `west`/`w`,
 `northeast`/`ne`, `northwest`/`nw`, `southeast`/`se`, `southwest`/`sw`,
 `up`/`u`, `down`/`d`, plus `in`/`inside` and `out`/`outside`.
 
-Exits are room data — the direction lines of a room's `create` block,
+Exits are room data: the direction lines of a room's `create` block,
 including blocked and conditionally blocked exits (chord-language.md
-§2.5 owns that syntax) and deadly exits (§9.2 here). A blocked exit
-refuses with `movement_blocked` and speaks the story's own phrase — and
+owns that syntax) and deadly exits. A blocked exit
+refuses with `movement_blocked` and speaks the story's own phrase, and
 a direction can be blocked without leading anywhere, which is how "the
-hedge is too thick" works. An exit may route through a door (§4.3),
+hedge is too thick" works. An exit may route through a door,
 which refuses while locked (`door_locked`) or closed (`door_closed`).
 Darkness gates seeing, not moving: walking into a dark room succeeds
 and only the arrival description is lost, replaced by `too_dark`
-(light rules: §6.1; anything worse than not-seeing — a grue — is death
-machinery, [§9](/chord/stdlib/death)). Vehicles change whose feet
-move — one line in §3.4, TypeScript-only today.
+(anything worse than not-seeing, a grue, is death machinery). Vehicles
+change whose feet move: one line, TypeScript-only today.
 
 The author writes:
 
@@ -118,12 +117,12 @@ the shed's `after entering it, once` greets the first arrival.
 |---|---|
 | Refusals | `no_direction` · `not_in_room` (in a vehicle, not a room) · `no_exits` · `no_exit_that_way` · `movement_blocked` (the story's blocked phrase) · `door_locked` · `door_closed` · `destination_not_found` |
 | Success | `moved` · `moved_to` · `first_visit` · `too_dark` (you arrived; you just can't see) |
-| Events | `if.event.actor_exited` / `if.event.actor_moved` / `if.event.actor_entered`, plus `if.event.region_exited` / `region_entered` on region crossings — what `after going` clauses and daemons key off |
+| Events | `if.event.actor_exited` / `if.event.actor_moved` / `if.event.actor_entered`, plus `if.event.region_exited` / `region_entered` on region crossings: what `after going` clauses and daemons key off |
 
-Interceptors: going consults three parties in order — the room being
+Interceptors: going consults three parties in order: the room being
 left (`on going it`), the room being entered (its clauses bind as
-`entering_room` conditions — this is how a room refuses entry rather
+`entering_room` conditions; this is how a room refuses entry rather
 than refusing exit), and the door being passed through (`on going it`
 on the door, as the green door shows). First refusal wins. Regions can
-react to the crossing events on their own blocks — `after entering it`
-/ `after leaving it` (§3.4).
+react to the crossing events on their own blocks: `after entering it`
+/ `after leaving it`.

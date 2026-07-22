@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="2.1 The story header">
+    <DocPage title="The story header">
       <Content />
     </DocPage>
   );

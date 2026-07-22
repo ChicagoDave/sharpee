@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="6.1 sharpee compose">
+    <DocPage title="sharpee compose">
       <Content />
     </DocPage>
   );

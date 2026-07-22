@@ -1,7 +1,7 @@
 `turn`/`rotate`/`twist X` parse out of the box, but the platform refuses
 to invent what turning *means* (`cant_turn_that`, ADR-090). An entity
-claims the verb through the dispatch-action pattern — a `define action`
-owns the verb, a trait's `on turning it` clause carries the behavior —
+claims the verb through the dispatch-action pattern (a `define action`
+owns the verb, a trait's `on turning it` clause carries the behavior),
 and everything else falls through to the action's own refusals, which
 render from plain short keys on this path.
 

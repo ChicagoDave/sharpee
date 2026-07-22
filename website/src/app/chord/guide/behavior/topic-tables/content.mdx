@@ -1,8 +1,9 @@
-Conversation is a declared table per person — one `define topics for
+Conversation is a declared table per person: one `define topics for
 <person> … end topics` block serving both ASK and TELL. Entity rows
 (`about the silver locket:`) resolve like any noun and are checked
-first; quoted rows declare a topic plus comma-separated aliases, matched
-by normalized whole-topic equality — a lookup, never a fuzzy guess. A
+first. Quoted rows declare a topic plus comma-separated aliases. Each
+alias is matched by normalized whole-topic equality, which is a direct
+lookup and never a fuzzy guess. A
 row's body is ordinary statements (`it` binds the owner), so a
 conversation can change state anywhere in the world. A miss falls to
 the owner's plain `on asking it` catch-all if it has one; on a hit the

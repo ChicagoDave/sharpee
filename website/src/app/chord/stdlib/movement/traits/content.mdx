@@ -1,33 +1,32 @@
-**room** (`a room` — kind noun). The place actors stand. Everything a
+**room** (`a room`, kind noun). The place actors stand. Everything a
 room does in a `.story` file happens in its `create` block: direction
-lines, doors (`north to the Potting Shed through the green door` —
-§4.3 has the door story), and blocked exits (chord-language.md §2.5);
-`dark` / `dark while <condition>` (§2.3 there); a `first time` arrival
-description (§2.9 there); `deadly:` (§9.2 here); states, scores, and
-`on`/`after` clauses — including `after entering it`, the room-arrival
-reaction the Potting Shed uses in §3.1's example.
+lines, doors (`north to the Potting Shed through the green door`), and
+blocked exits (chord-language.md); `dark` / `dark while <condition>`; a
+`first time` arrival description; `deadly:`; states, scores, and
+`on`/`after` clauses, including `after entering it`, the room-arrival
+reaction the Potting Shed uses.
 
-**enterable** (`enterable` — adjective). Marks a thing the player can
-get inside or on top of — the laundry chest in §3.2 composes it with
+**enterable** (`enterable`, adjective). Marks a thing the player can
+get inside or on top of. The laundry chest composes it with
 `a container, openable` so the lid is real. Composes with defaults
-(preposition `in`); the `on` preposition — benches, roofs — is a
+(preposition `in`); the `on` preposition (benches, roofs) is a
 TypeScript setting today. First documented here: no story in the repo
 uses it yet.
 
-**climbable** (`climbable` — adjective). Marks a thing the CLIMB family
+**climbable** (`climbable`, adjective). Marks a thing the CLIMB family
 accepts. Defaults only from Chord (`canClimb: true`); compose a
-supporter alongside it to give the climber somewhere to be (§3.3's
-pear tree); the trait's `destination`/`direction`/message fields are
-story-handler data (§3.3).
+supporter alongside it to give the climber somewhere to be (the pear
+tree); the trait's `destination`/`direction`/message fields are
+story-handler data.
 
-**exit** (trait). A passage *entity* — the "xyzzy" magic word, a tunnel
-that is a thing in its own right. A room exit can route `via` such an
+**exit** (trait). Models a passage as its own *entity*: the "xyzzy"
+magic word, or a tunnel that is a thing in its own right. A room exit can route `via` such an
 entity (or via a door), and pathfinding resolves it; going checks a via
 entity only for open/locked state. No standard action reads the trait's
 richer fields (aliases, visibility, bidirectionality) today, and it has
-no Chord surface — treat it as Sharpee-Way plumbing.
+no Chord surface; treat it as Sharpee-Way plumbing.
 
-**vehicle** (trait — TypeScript-only, no Chord surface). Rides on top of
+**vehicle** (trait, TypeScript-only, no Chord surface). Rides on top of
 `enterable`: the trait's `blocksWalkingMovement` (default true) is what
 makes GO say "you're in something" instead of walking; set it false and
 GO moves the vehicle itself along the room's exits, passengers and all
@@ -36,14 +35,14 @@ multi-stop vehicles (the Dungeo basket's counterweight shape);
 `isOperational` and `requiresExitBeforeLeaving` are read by vehicle
 helpers for story use.
 
-**region** (`a region` — kind noun, since ADR-236). A named room group,
+**region** (`a region`, kind noun, since ADR-236). A named room group,
 authored region-side: `containing the Drive, the Hall` lists members
-(additive — regions nest by containing each other), `after entering it`
+(additive: regions nest by containing each other), `after entering it`
 / `after leaving it` react to boundary crossings (`leaving` exists only
 here), and an `on every turn` clause on the region block is a region
 daemon, firing while the player is anywhere in a member room. The
-`region_entered`/`region_exited` events going emits (§3.1) are what
-these bind to. Full entry in §11.1.
+`region_entered`/`region_exited` events going emits are what
+these bind to. Full entry in the traits reference.
 
-**scene** — a structural trait with no Chord surface and no verb;
-cataloged in [§11](/chord/stdlib/traits).
+**scene**. This structural trait has no Chord surface and no verb; it is
+cataloged in [the traits reference](/chord/stdlib/traits).

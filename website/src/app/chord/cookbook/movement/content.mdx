@@ -1,5 +1,6 @@
-Getting an actor from place to place. Full entries: [the standard
-library reference §3](/chord/stdlib/movement) (hiding: [§8.4](/chord/stdlib/npcs)).
+These actions get an actor from place to place. Full entries live in [the
+standard library reference](/chord/stdlib/movement); hiding is covered in
+[the NPCs reference](/chord/stdlib/npcs).
 
 | Action | Phrasings | Needs | Refuses with |
 |---|---|---|---|
@@ -14,7 +15,7 @@ library reference §3](/chord/stdlib/movement) (hiding: [§8.4](/chord/stdlib/np
 
 Exits are lines in the room's `create` block; a blocked exit speaks the
 story's own phrase. `go north` and the `walk`/`run`/`head`/`travel`
-synonyms all parse since ADR-230 — as does the bare direction, which is
+synonyms all parse since ADR-230, as does the bare direction, which is
 what players actually type.
 
 The author writes:
@@ -61,10 +62,10 @@ You can't go that way.
 
 ## entering and exiting
 
-One trait — `enterable` — checked in the action, which turns everything
+One trait, `enterable`, is checked in the action, which turns everything
 else away with `not_enterable`. Compose `openable` alongside it and a
 closed door refuses entry with `container_closed`. All the phrasings are
-equivalent — `get in`/`get into` land on the enterable target even when
+equivalent: `get in`/`get into` land on the enterable target even when
 it is scenery (ADR-231).
 
 The author writes:

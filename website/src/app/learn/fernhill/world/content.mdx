@@ -1,6 +1,6 @@
 ## The story header
 
-Every `.story` file opens with a header — title, id, and any story-wide
+Every `.story` file opens with a header: title, id, and any story-wide
 facts. Fernhill declares two story states (the timeline flips them later)
 and turns on the state-machine extension for the boiler:
 
@@ -49,9 +49,9 @@ create the cellar door
 ```
 
 `lockable with the tarnished key` is the declarative capability family
-you'll see throughout the next chapter — the key is named right on the
+you'll see throughout the next chapter: the key is named right on the
 adjective, and LOCK/UNLOCK just work. The pantry door shows the two-sided
-variant (`lockable, starts unlocked`) — the player can bolt themselves in
+variant (`lockable, starts unlocked`): the player can bolt themselves in
 and the door refuses from the other side.
 
 ## Darkness and light
@@ -68,14 +68,14 @@ create the oil lamp
 ```
 
 A `dark` room refuses sight-dependent actions until a lit light source is
-present. Nothing else to wire — darkness is a fact about the room, light a
-fact about the lamp.
+present. There is nothing else to wire: darkness is a fact about the room,
+and light is a fact about the lamp.
 
 ## Blocked exits are live conditions
 
 The greenhouse's north door is frost-sealed until the estate's boiler
-runs. That is one line, and it reads the boiler's LIVE state — the moment
-the boiler comes on, the way opens, no events or recomputes involved:
+runs. That is one line, and it reads the boiler's LIVE state, so the moment
+the boiler comes on, the way opens, with no events or recomputes involved:
 
 ```chord
 create the Greenhouse
@@ -85,8 +85,8 @@ create the Greenhouse
 ```
 
 The word after the colon names the refusal phrase. An unconditional block
-works the same way (`south is blocked: long-road` on the Iron Gates — the
-cab is gone; you're not leaving).
+works the same way (`south is blocked: long-road` on the Iron Gates; the
+cab is gone, so you're not leaving).
 
 ## Regions and crossing reactions
 
@@ -114,10 +114,11 @@ create the Grounds
   end after
 ```
 
-Three patterns in one block: a **region daemon** (the chance-gated wind,
-which only fires while the player is somewhere in the Grounds), and the
-two **crossing reactions**. The `play ambient` lines are the browser layer
-— they cost text players nothing, and the last chapter returns to them.
+There are three patterns in one block: a **region daemon** (the
+chance-gated wind, which only fires while the player is somewhere in the
+Grounds), and the two **crossing reactions**. The `play ambient` lines are
+the browser layer: they cost text players nothing, and the last chapter
+returns to them.
 Story-level daemons live in the header the same way (Fernhill's distant
 church bell).
 

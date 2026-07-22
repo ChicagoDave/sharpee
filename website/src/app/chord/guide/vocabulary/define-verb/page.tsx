@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="5.4 define verb">
+    <DocPage title="define verb">
       <Content />
     </DocPage>
   );

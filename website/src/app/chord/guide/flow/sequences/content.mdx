@@ -28,7 +28,7 @@ statements: the last step both speaks and moves the story into its
 `raining` state.
 
 The third anchor is state-based. `when <name> becomes <state>` fires the
-step when that owner transitions into the named state — the story
+step when that owner transitions into the named state: the story
 itself, or any entity. This lets one sequence react to another's effect.
 The storm above moved the story to `raining`; a second sequence waits on
 exactly that:
@@ -55,6 +55,6 @@ end sequence
 A sequence name may be several words (`gathering storm`, `take
 shelter`), and the block always closes with an explicit `end sequence`.
 Within a step, prose indented under a `phrase` line is declare-and-emit
-text ([§3.7](/chord/guide/behavior)), which is why these steps need no
+text, which is why these steps need no
 separate `define phrases`
 block.

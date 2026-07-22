@@ -1,37 +1,36 @@
-**openable** (`openable` — adjective). Two states, open and closed, owned
-by the platform; `startsOpen` defaults to closed, and from Chord the
+**openable** (`openable`, adjective). It has two states, open and closed,
+both owned by the platform. `startsOpen` defaults to closed, and from Chord the
 adjective composes closed with `starts open` on the composition line
-seeding it open (ADR-231; chord-language.md §2.11). A required tool
-composes too — `openable with the crowbar` (§4.1). The biscuit tin and
-sea chest of §4.1 are this trait at work. The remaining settings —
-`canClose: false` (one-way openable), `closeRequirements` (a named
-obstacle), `openSound`/`closeSound` (ride along in events),
-`open/closedDescription` (swap description text) — are TypeScript
-territory today.
+seeding it open (ADR-231; chord-language.md). A required tool
+composes too: `openable with the crowbar`. The biscuit tin and
+sea chest are this trait at work. The remaining settings are
+TypeScript territory today: `canClose: false` (one-way openable),
+`closeRequirements` (a named obstacle), `openSound`/`closeSound` (ride
+along in events), and `open/closedDescription` (swap description text).
 
-**lockable** (`lockable`, optionally `with the <key>` — adjective).
-Locked/unlocked state — starts unlocked everywhere except on a door,
+**lockable** (`lockable`, optionally `with the <key>`, adjective).
+It carries a locked/unlocked state, starting unlocked everywhere except on a door,
 where a lockable door starts locked until the author says `starts
 unlocked` (ADR-234's one kind-scoped default); Chord also seeds `starts
-locked` on any composition line (ADR-231), as the reliquary of §4.2 does.
+locked` on any composition line (ADR-231), as the reliquary does.
 The key contract: `with the <key>` in Chord (`keyId` in TypeScript;
 several keys via `keyIds`, TypeScript only), and a lock without keys is a
 latch anyone can turn. `lockSound` / `unlockSound` decorate the events.
-Two declared fields are inert today — `autoLock` (relock-on-close is
-implemented but never invoked) and `acceptsMasterKey` (never read) —
-don't build a puzzle on them; flagged.
+Two declared fields are inert today: `autoLock` (relock-on-close is
+implemented but never invoked) and `acceptsMasterKey` (never read).
+Don't build a puzzle on them; they are flagged as not yet functional.
 
-**door** (`a door` — kind noun, since ADR-234). A door is an entity that
-*is* the connection — but the connection is written on the room's exit
+**door** (`a door`, kind noun, since ADR-234). A door is an entity that
+*is* the connection, but the connection is written on the room's exit
 line, not the door's block: `down to the Cellar through the cellar door`.
 The reverse exit is inferred (opposite direction, no far-room line
 needed; a mirrored line is legal but must agree exactly), and the door
-block itself is pure declaration — `a door` composes scenery and openable
+block itself is pure declaration: `a door` composes scenery and openable
 automatically, starting closed (`starts open` overrides) and, when
 lockable, locked (`starts unlocked` overrides). The loader wires
 everything through the one platform path (`connectRooms` with a door id,
-ADR-237), so going refuses `door_closed` / `door_locked` (§3.1) with no
-story code at all, and the door answers from both of its rooms —
+ADR-237), so going refuses `door_closed` / `door_locked` with no
+story code at all, and the door answers from both of its rooms,
 ADR-238's two-sided presence, without leaking the far room.
 
 The author writes:
@@ -90,14 +89,14 @@ One exit line and one declaration buy the whole protocol: the lockable
 door starts locked by the kind-scoped default, going refuses
 `door_locked` then `door_closed` with no story code, the standard
 lock-and-key actions work on the door itself, and the final command
-closes the same door from its far side — two-sided presence.
+closes the same door from its far side, demonstrating its two-sided presence.
 
 `through` never creates a door, and the compiler refuses what it can't
-answer — a declared door no exit line connects, a placement line on a
-door block (its location IS its room pair), `through` naming a non-door,
-conflicting room pairs — each with its own diagnostic.
+answer, each with its own diagnostic: a declared door that no exit line
+connects, a placement line on a door block (its location IS its room
+pair), `through` naming a non-door, and conflicting room pairs.
 
-Gaps: under the trait, `room1`, `room2`, `bidirectional` — one-way doors
+Gaps: under the trait, `room1`, `room2`, `bidirectional`: one-way doors
 (`bidirectional: false`, traversing room1 → room2 only) are
 TypeScript-only, and the `, one-way` exit-line modifier is reserved but a
 parse error today.

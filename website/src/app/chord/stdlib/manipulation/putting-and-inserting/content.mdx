@@ -3,15 +3,15 @@ Two actions share the surface English of "put". `put X on/onto Y` (and
 and `insert X in Y` parse as **inserting** (`if.action.inserting`), which
 delegates its work back into putting with the preposition forced to "in".
 `place` works in both phrasings, and `move X to Y` lands in putting since
-ADR-230 D4, the destination's kind deciding in versus on (the D4 ruling:
-`move` is a manipulation verb, never movement — see also pushing, §2.6).
+ADR-230 D4, which lets the destination's kind decide in versus on (the D4 ruling:
+`move` is a manipulation verb, never movement; see also pushing).
 The destination decides eligibility: `on` needs a supporter, `in` needs a
 container, and a closed openable container refuses. The item does not need
-to be in hand — putting performs an implicit take first, and refuses with
+to be in hand: putting performs an implicit take first, and refuses with
 the taking refusal if that fails (a fused-down ring cannot be put
 anywhere). Because inserting delegates its report into putting, a
-successful INSERT renders `if.action.putting.put_in` — override `put_in` /
-`put_on` for success text in both phrasings — while inserting's *failures*
+successful INSERT renders `if.action.putting.put_in` (override `put_in` /
+`put_on` for success text in both phrasings), while inserting's *failures*
 render under `if.action.inserting.<key>`.
 
 The author writes:
@@ -101,7 +101,7 @@ You put the letter on the oak counter.
 
 The delegation in one scene: a single `define phrase` under putting's
 `put_in` re-voices both phrasings, and the bin's single `on putting it`
-guard catches the `insert` command too — while `put … on` renders `put_on`
+guard catches the `insert` command too, while `put … on` renders `put_on`
 untouched.
 
 | | putting (`if.action.putting.*`) | inserting (`if.action.inserting.*`) |
@@ -111,7 +111,7 @@ untouched.
 | Events | `if.event.put_in` / `if.event.put_on` / `if.event.put_blocked` | `if.event.insert_blocked` |
 
 Interceptors: `on putting it` / `on inserting it` on the item or the
-container — an INSERT consults `on inserting it` first, then (through the
+container. An INSERT consults `on inserting it` first, then (through the
 delegation) `on putting it` on both entities, so register a given entity
 under **one** of the two gerunds, not both, or it will run twice;
 `on putting it` covers both phrasings, and in `put all in the case` a

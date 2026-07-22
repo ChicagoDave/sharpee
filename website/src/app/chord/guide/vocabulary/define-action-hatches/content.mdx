@@ -8,16 +8,16 @@ define action dowsing from "./extras.ts"
 
 `define action … from` binds an action implementing the platform's
 `Action` interface. (A third hatch kind, `define behavior … from`, was
-removed — ADR-235 D2: it had no binding key and could never fire; author
+removed by ADR-235 D2: it had no binding key and could never fire; author
 the behavior in-language with `define trait` and `on <verb> it` clauses,
 or ship a full action hatch.) Action hatches are governed by the hatch
-legitimacy rule (design.md
-§5.6): a hatch is legitimate only when it implements a public platform
+legitimacy rule (design.md):
+a hatch is legitimate only when it implements a public platform
 interface, or does pure non-IF computation, with data crossing the
 boundary through that interface. If the language can already express what
 the hatch does, the hatch is misuse and the fix is the Chord form; if it
 can't, that is a language gap worth filing. In particular, the `chord.*`
-state namespace is off-limits — those keys are the loader's private
+state namespace is off-limits, because those keys are the loader's private
 encoding and change without warning. As with text hatches, the binding
 is out of this harness's scope; the `.story` lines above compile, and the
 TypeScript is the author's to build and verify.

@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="2.10 Per-entity phrase overrides">
+    <DocPage title="Per-entity phrase overrides">
       <Content />
     </DocPage>
   );

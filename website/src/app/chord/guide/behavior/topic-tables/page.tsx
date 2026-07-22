@@ -3,7 +3,7 @@ import Content from "./content.mdx";
 
 export default function Page() {
   return (
-    <DocPage title="3.9 Topic tables">
+    <DocPage title="Topic tables">
       <Content />
     </DocPage>
   );

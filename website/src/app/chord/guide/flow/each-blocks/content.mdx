@@ -1,5 +1,5 @@
 `each <condition>` runs its body once for every entity that satisfies a
-named *open* condition ([§3.4](/chord/guide/behavior)) — a condition
+named *open* condition: a condition
 whose `it` is left free, so
 it describes a set rather than testing one thing. Inside the body, `the
 match` is the current entity; `it` keeps meaning the clause's owner.
@@ -39,8 +39,8 @@ created, and an empty match set simply runs the body zero times.
   end on
 ```
 
-`each` is legal wherever statements are — `on` bodies, action bodies,
-trait clauses, sequence steps — and never at the top level
+`each` is legal wherever statements are (`on` bodies, action bodies,
+trait clauses, sequence steps) and never at the top level
 (`parse.each-top-level`). Its condition must be a declared open
 condition; a closed condition or a story state is
 `analysis.closed-condition-selection`, and `the match` outside any

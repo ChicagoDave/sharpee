@@ -1,15 +1,16 @@
-The temporal substrate. A **daemon** runs every tick — optionally gated
-by a condition, optionally once. A **fuse** counts down and fires:
-turns, an optional per-turn tick condition (turns can refuse to count),
-repeat, cancellation with cleanup, entity binding (auto-cleanup when the
-entity goes away), and mid-flight adjustment. Fuses are a
-TypeScript-only surface — Chord never touches fuses at all; the
+The scheduler is the temporal substrate. A **daemon** runs every tick, optionally gated
+by a condition and optionally once. A **fuse** counts down over a set
+number of turns and then fires. It supports an optional per-turn tick
+condition (turns can refuse to count), repeat, cancellation with cleanup,
+entity binding (auto-cleanup when the entity goes away), and mid-flight
+adjustment. Fuses are a
+TypeScript-only surface: Chord never touches fuses at all; the
 imperative timer verbs (cancel a sequence, "in 3 turns", periodic
 timers, reschedule) remain the audited Chord gaps (designed in ADR-217,
 not yet built).
 
-A `define sequence` (chord-language.md §4.8) compiles to **one daemon**
-whose step pointer lives in namespaced world state — which is why
+A `define sequence` (chord-language.md) compiles to **one daemon**
+whose step pointer lives in namespaced world state, which is why
 sequence progress survives save, restore, and undo with no author
 effort. It arms its steps strictly in order: `at turn N` against the
 wall clock, `N turns later` against the previous step's firing,
@@ -80,13 +81,13 @@ The opening look is turn 1, so `at turn 2` lands on the first `wait`;
 and the second sequence's `when the story becomes boiling` step fires in
 the very turn the first sequence changes the state.
 
-An `on every turn [while …][, once]` clause (chord-language.md §3)
+An `on every turn [while …][, once]` clause (chord-language.md)
 becomes one daemon per clause. Owned by an entity, a trait, or a
 region, it is **presence-gated**: off-stage the clause neither fires,
 rolls dice, nor consumes its `once` (for a region, "present" means
 anywhere in a member room, nesting included). Hosted in the story
-header's own body it is the story's clause — one daemon, **no gate**: a
-background clock that ticks wherever the player is (weather, off-stage
+header's own body it is the story's clause, one daemon with **no gate**:
+a background clock that ticks wherever the player is (weather, off-stage
 simulation; ADR-236).
 
 The author writes:
