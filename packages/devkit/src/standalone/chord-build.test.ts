@@ -72,7 +72,8 @@ describe('browser build: ships the source + the compiler (ruling 2)', () => {
     trapExit();
     await runBuildBrowserCommand([], projectDir);
 
-    const outDir = join(projectDir, 'dist', 'web');
+    // ADR-252 D2: output keyed on the Story IR id (dist/web/<id>), not the project name.
+    const outDir = join(projectDir, 'dist', 'web', 'first-light');
     for (const f of ['game.js', 'index.html', 'story.story', 'base.css', 'engine.css', 'decorations.css']) {
       expect(existsSync(join(outDir, f)), `${f} missing`).toBe(true);
     }

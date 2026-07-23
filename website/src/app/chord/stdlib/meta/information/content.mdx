@@ -2,8 +2,8 @@
 metadata. For a Chord story, that is simply the header: title, author,
 `version:` and `blurb:` flow straight through (the platform materializes
 them into the story-info trait). A TypeScript story can add
-credits, ported-by, and build fields. One overridable message:
-`if.action.about.success`.
+credits, ported-by, and build fields. One overridable message,
+`about-success`, retargeted story-wide with `override message about-success`.
 
 **version** (`version`) prints a one-line story stamp (title and
 version) plus the engine's own version line.
@@ -57,10 +57,10 @@ perfect, with no scoring setup beyond those two lines.
 
 | | Refusals | Renders |
 |---|---|---|
-| **about** (`if.action.about.*`) | — | `success` (title, version, author, blurb in one message) |
-| **help** (`if.action.help.*`) | — | `general` · `first_time` (first ask) · `unknown_topic` (topic help — unreachable) |
-| **inventory** (`if.action.inventory.*`) | — | `carrying` · `wearing` · `carrying_and_wearing`, with `holding_list` / `worn_list` lines; empty hands: one of `empty` · `inventory_empty` · `nothing_at_all` · `hands_empty` · `pockets_empty`, at random |
-| **score** (`if.action.scoring.*`) | `no_scoring` | `score_with_rank` · `perfect_score` (at max) |
+| **about** (`about-*`) | — | `success` (title, version, author, blurb in one message) |
+| **help** (`help-*`) | — | `general` · `first_time` (first ask) · `unknown_topic` (topic help — unreachable) |
+| **inventory** (`inventory-*`) | — | `carrying` · `wearing` · `carrying_and_wearing`, with `holding_list` / `worn_list` lines; empty hands: one of `empty` · `inventory_empty` · `nothing_at_all` · `hands_empty` · `pockets_empty`, at random |
+| **score** (`scoring-*`) | `no_scoring` | `score_with_rank` · `perfect_score` (at max) |
 
 One honest gap: the `wearing` / `carrying_and_wearing` renders are
 currently unreachable: worn items go missing from INVENTORY's listing

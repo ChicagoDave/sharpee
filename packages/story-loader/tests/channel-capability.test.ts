@@ -55,15 +55,16 @@ const SOUND_CLIENT = { text: true, sound: true, images: true };
 const TEXT_ONLY = { text: true, sound: false, images: false };
 
 describe('custom channels + client has (ADR-216 AC-3/AC-4, REAL-PATH)', () => {
-  it('the declared channel registers on the real registry with its gate and projects only its take fields', () => {
+  it('the declared channel registers on the real registry with its gate and returns finished text (ADR-253)', () => {
     const { story, registry, events } = load(SOUND_CLIENT);
     const compass = registry.get('compass')!;
     expect(compass).toBeDefined();
     expect(compass.mode).toBe('replace');
     expect(compass.gatedBy).toBe('images');
     const packet = compass.produce({ events } as never);
-    expect(packet).toEqual({ heading: 'north', target: story.entityId('well')! });
-    // `windspeed` was emitted but NOT taken — the projection is real.
+    // ADR-253 D1: `return "(heading) toward (target)"` — the (slot) names project
+    // event fields into finished text; `windspeed` was emitted but unreferenced.
+    expect(packet).toBe(`north toward ${story.entityId('well')!}`);
   });
 
   it('produces nothing when no matching event occurred this turn', () => {

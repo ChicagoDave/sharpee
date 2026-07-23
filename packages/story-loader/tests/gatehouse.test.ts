@@ -93,8 +93,8 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
     const daemons = story.runtime.buildSchedulerDaemons();
     const events = daemons.flatMap((d) => d.run({ world, turn: 3 }));
     const watch = registry.get('watch')!;
-    const packet = watch.produce({ events } as never) as Record<string, unknown>;
-    expect(packet.post).toBe(world.getLocation(player.id));
-    expect(packet.alarm).toBe('quiet');
+    // ADR-253 D1: `return "(post) — (alarm)"` yields finished text from the payload.
+    const packet = watch.produce({ events } as never);
+    expect(packet).toBe(`${world.getLocation(player.id)} — quiet`);
   });
 });

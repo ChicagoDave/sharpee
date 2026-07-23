@@ -1,4 +1,4 @@
-**hide** (`if.action.hiding`) uses position-shaped grammar: `hide
+**hide** (`hiding`) uses position-shaped grammar: `hide
 behind/under/on/in(side) X`, `duck behind/under/inside X`, `crouch
 behind/under X`; bare `hide` does not parse. The target needs the
 `concealment` trait (in a `.story`, the `hiding-spot`
@@ -7,7 +7,7 @@ to one) and must support the position you named (`cant_hide_there`
 otherwise). Success slips the player into hiding (`behind` and friends)
 by marking them with a dynamic concealed state that defeats NPC sight.
 Getting out is its own tiny action: `stand up`, `come out`, `unhide`,
-`stop hiding` (**reveal**, `if.action.revealing`).
+`stop hiding` (**reveal**, `revealing`).
 
 The author writes:
 
@@ -69,11 +69,11 @@ own phrase, the curtain accepts exactly the position its adjective
 declared, and the reveal action closes the loop with its own
 `not_hidden` refusal when you try it standing in the open.
 
-| | hide (`if.action.hiding.*`) | reveal (`if.action.revealing.*`) |
+| | hide (`hiding-*`) | reveal (`revealing-*`) |
 |---|---|---|
 | Refusals | `nothing_to_hide` · `cant_hide_there` · `already_hidden` | `not_hidden` |
 | Success | `behind` / `under` / `on` / `inside` | `revealed` |
-| Events | `if.event.player_concealed` | `if.event.player_revealed` |
+| Events | `player_concealed` | `player_revealed` |
 
 Interceptors: the hiding spot's `on hiding it` clauses are consulted
 (the hamper above); revealing has no interceptor surface (flagged as a

@@ -17,3 +17,23 @@ export {
   detectMode,
 } from './repo.js';
 export type { ResolvedStory } from './repo.js';
+// The one browser-build core (ADR-252 D5) — repokit delegates here.
+export {
+  buildBrowser,
+  resolveWiredThemes,
+  copyWiredThemes,
+  injectThemes,
+  escapeHtml,
+  readBrowserMeta,
+  readClientConfig,
+  KNOWN_HEADER_KEYS,
+} from './standalone/browser-core.js';
+export type {
+  BrowserBuildEnv,
+  BrowserBuildOpts,
+  WiredTheme,
+  BuiltinThemeEntry,
+  BrowserMeta,
+  BrowserClientConfig,
+} from './standalone/browser-core.js';
+export { findStoryFile } from './standalone/author-game.js';

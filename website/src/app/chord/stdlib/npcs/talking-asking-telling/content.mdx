@@ -1,4 +1,4 @@
-**talk** (`if.action.talking`) covers the verbs `talk to/with X`,
+**talk** (`talking`) covers the verbs `talk to/with X`,
 `speak to/with X`, `chat with X`, and `converse with X` (core grammar
 since ADR-229; story grammar still outranks it). The action is not
 gated on being a person: talking to the mailbox reaches the action and
@@ -10,7 +10,7 @@ greeting flavor (first meeting vs. `greets_again`,
 `nothing_to_say`), but per-topic dialogue lives on ask/tell's declared
 table instead.
 
-**ask** (`if.action.asking`) and **tell** (`if.action.telling`) take
+**ask** (`asking`) and **tell** (`telling`) take
 `ask X about Y` (also `question X about Y`, `inquire of X about Y`) and
 `tell X about Y` (also `inform X about Y`); a non-person recipient
 refuses `not_actor`. The topic is a first-class free-text slot (ADR-231),
@@ -102,11 +102,11 @@ honest `no_response` on bare talk, the entity row riding scope
 resolution, the quoted row answering either alias for ask and tell
 alike, and the `on asking it` catch-all speaking only on a miss.
 
-| | talk (`if.action.talking.*`) | ask / tell (`if.action.asking.*` / `if.action.telling.*`) |
+| | talk (`talking-*`) | ask / tell (`asking-*` / `telling-*`) |
 |---|---|---|
 | Refusals | `no_target` · `not_actor` · `too_far` (same room required) · `self` · `not_available` | `no_target` · `not_visible` · `too_far` · `not_actor` |
 | Success | `no_response` · greeting flavor with `conversation` data (`first_meeting`, `greets_again`, `formal_`/`casual_greeting`, `remembers_you`, `has_topics` / `nothing_to_say`) | `unknown_topic` (ask) · `not_interested` (tell) — a topics row replaces both |
-| Events | `if.event.talked` | `if.event.asked` / `if.event.ask_blocked` · `if.event.told` / `if.event.tell_blocked` |
+| Events | `talked` | `asked` / `ask_blocked` · `told` / `tell_blocked` |
 
 Interceptors: `on talking it` on the person is talk's override seam.
 The canonical TypeScript rendition is Dungeo's troll, whose `preValidate`

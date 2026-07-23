@@ -22,6 +22,7 @@
  */
 import {
   IR_FORMAT,
+  IRChannelReturn,
   IRComposition,
   IRConfigSetting,
   IRCondition,
@@ -96,7 +97,9 @@ import {
   WeaponTrait,
   WearableTrait,
   WorldModel,
+  type EventChainHandler,
 } from '@sharpee/world-model';
+import { resolveChain } from './chain-map.js';
 import { LoadError } from './errors.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
@@ -172,6 +175,8 @@ export class ChordStory implements Story {
   readonly producers = new Map<string, PhraseProducer>();
   /** Bound `define action X from` hatches: four-phase Action objects by name. */
   readonly boundActions = new Map<string, unknown>();
+  /** Bound `define chain X from` hatches (ADR-094): EventChainHandlers by chain alias. */
+  readonly boundChains = new Map<string, EventChainHandler>();
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
@@ -278,7 +283,9 @@ export class ChordStory implements Story {
       if (!module) {
         throw new LoadError(`Hatch module \`${hatch.modulePath}\` was not provided to the loader.`, hatch.span);
       }
-      const bound = module[hatch.name];
+      // A chain hatch's alias (`opened-revealed`) is not a JS identifier, so its
+      // module default-exports the handler (falling back to a matching named export).
+      const bound = hatch.hatchKind === 'chain' ? (module[hatch.name] ?? module.default) : module[hatch.name];
       // Bind-time `'chord.'` lint (design.md §5.6, best-effort backstop —
       // the staging facade is the wall): the loader-private state namespace
       // is off-limits to hatches; a quoted literal fails the bind atomically,
@@ -316,6 +323,18 @@ export class ChordStory implements Story {
           this.boundActions.set(hatch.name, bound);
           break;
         }
+        case 'chain': {
+          // ADR-094: the export IS an EventChainHandler; registered in
+          // initializeWorld to REPLACE the stdlib chain (same key).
+          if (typeof bound !== 'function') {
+            throw new LoadError(
+              `Chain hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a function'} — expected an EventChainHandler (the module's default export).`,
+              hatch.span,
+            );
+          }
+          this.boundChains.set(hatch.name, bound as EventChainHandler);
+          break;
+        }
         // The `behavior` hatch kind was removed (ADR-235 D2, 2026-07-18) —
         // it carried no binding key and could never fire; the compiler now
         // refuses the declaration outright.
@@ -327,6 +346,20 @@ export class ChordStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     this.world = world;
+
+    // ADR-094 chain hatches: register each replacement handler under its stdlib
+    // chain key. `registerStandardChains` ran at engine init (before setStory →
+    // initializeWorld), so a same-key `chainEvent` REPLACES the stdlib default
+    // in place. Idempotent across restart (keyed replacement).
+    for (const [alias, handler] of this.boundChains) {
+      const reg = resolveChain(alias);
+      if (!reg) {
+        // The chord analyzer's `analysis.unknown-chain` gate catches this first;
+        // this backstops rogue IR reaching the loader.
+        throw new LoadError(`Chain hatch \`${alias}\` names no known stdlib chain.`);
+      }
+      world.chainEvent(reg.trigger, handler, { key: reg.key, priority: reg.priority });
+    }
 
     // ADR-215: `use`-declared trusted extensions register FIRST — their
     // world-side registrations (interceptors, resolvers) must exist before
@@ -729,7 +762,7 @@ export class ChordStory implements Story {
         );
         continue;
       }
-      const { take } = channel;
+      const { returns } = channel;
       // ADR-256: the IR `fromEvent` is a dotless Chord id; match against the
       // platform runtime type (media.* → dotted; author events pass through),
       // the same translation the emit seam applies, so the two always agree.
@@ -745,9 +778,8 @@ export class ChordStory implements Story {
             const event = ctx.events[i];
             if (event.type !== fromEvent) continue;
             const data = (event.data ?? {}) as Record<string, unknown>;
-            const projected: Record<string, unknown> = {};
-            for (const field of take) projected[field] = data[field];
-            return channel.mode === 'append' ? [projected] : projected;
+            const value = this.evaluateChannelReturn(returns, data);
+            return channel.mode === 'append' ? [value] : value;
           }
           return undefined;
         },
@@ -1885,6 +1917,33 @@ export class ChordStory implements Story {
       throw new LoadError(`Phrase \`${key}\` is missing from the IR — the compiler gate should have caught this.`);
     }
     return withLineBreaks(phrase.variants[0]?.text ?? '');
+  }
+
+  /**
+   * Evaluate a channel's `return` construct (ADR-253 D1) against an event's
+   * payload to produce the channel's value:
+   *  - `field`  → the raw field value (may be a non-string);
+   *  - `text`   → the template with each `(slot)` replaced by its event field;
+   *  - `phrase` → the named phrase's first-variant text, its `(slot)`s likewise
+   *    filled from the event payload (locale-aware via `phraseText`).
+   */
+  private evaluateChannelReturn(
+    returns: IRChannelReturn,
+    data: Record<string, unknown>,
+  ): unknown {
+    const fill = (template: string): string =>
+      template.replace(/\(\s*([^)]+?)\s*\)/g, (_m, name: string) => {
+        const v = data[name];
+        return v === undefined || v === null ? '' : String(v);
+      });
+    switch (returns.kind) {
+      case 'field':
+        return data[returns.field];
+      case 'text':
+        return fill(returns.text);
+      case 'phrase':
+        return fill(this.phraseText(returns.phrase));
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-**open** (`if.action.opening`) parses the verbs `open`, `open up`,
+**open** (`opening`) parses the verbs `open`, `open up`,
 `unwrap`, and `uncover` (synonym forms: ADR-230 D4). Only an `openable`
 opens (anything else refuses `not_openable`), and lock state gates
 opening (`locked`); unlocking is its own step. `open X with Y` is
@@ -8,11 +8,15 @@ lockable names a key (`openable with the crowbar` in Chord, `toolId` in
 TypeScript), refusing `no_tool` / `tool_not_held` / `wrong_tool`. An
 openable with no requirement ignores an offered tool. A non-empty
 container's contents are announced by a separate, replaceable piece: the
-`stdlib.chain.opened-revealed` chain handler reacts to `if.event.opened`
-and emits `if.event.revealed`; a story that wants a different reveal, or
-none, replaces that chain by its key rather than touching the action.
+`opened-revealed` chain (ADR-094) reacts to `opened` and emits `revealed`.
+A story that wants a different reveal, or none, replaces it with a
+`define chain opened-revealed from "./reveal.ts"` **hatch** — an
+author-supplied TypeScript handler — rather than touching the action.
+(Declaring any hatch makes the story TypeScript-bearing, so it is no
+longer browser-pure — the deliberate boundary for reaching platform
+internals like chains.)
 
-**close** (`if.action.closing`) parses the verbs `close`, `shut`, and
+**close** (`closing`) parses the verbs `close`, `shut`, and
 `cover`. It refuses `not_closable`, `already_closed`, and
 `prevents_closing`; the last fires both for one-way openables
 (`canClose: false`) and for an
@@ -63,9 +67,9 @@ create the tin whistle
 create the player
   starts in the Galley
 
-define phrase if.action.closing.closed
+override message closing-closed
   You swing it shut.
-end phrase
+end override
 ```
 
 The player sees:
@@ -91,14 +95,14 @@ You swing it shut.
 
 Three seams and the chain in one scene: the anvil refuses with the
 platform's `not_openable`, the tin's `on closing it` guard speaks its own
-refusal, and the story-wide `define phrase` rewrites every plain close.
-The sea chest's contents line is `stdlib.chain.opened-revealed` at work.
+refusal, and the story-wide `override message` rewrites every plain close.
+The sea chest's contents line is the `opened-revealed` chain at work.
 
-| | open (`if.action.opening.*`) | close (`if.action.closing.*`) |
+| | open (`opening-*`) | close (`closing-*`) |
 |---|---|---|
 | Refusals | `no_target` · `not_openable` · `already_open` · `locked` · `no_tool` · `tool_not_held` · `wrong_tool` | `not_closable` · `already_closed` · `prevents_closing` |
 | Success | `opened` · `its_empty` (a container opens onto nothing) | `closed` |
-| Events | `if.event.opened`, then `if.event.revealed` via the chain | `if.event.closed` (rich payload: door/container flags, contents count) |
+| Events | `opened`, then `revealed` via the chain | `closed` (rich payload: door/container flags, contents count) |
 
 The interceptor seams are `on opening it` and `on closing it` on the
 target (the humming hive box in chord-language.md is exactly this

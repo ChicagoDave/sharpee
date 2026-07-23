@@ -41,6 +41,7 @@ import {
   DefineAsset,
   DefineFamilyChannel,
   DefineChannel,
+  ChannelReturn,
   DefinePronouns,
   DefineMachine,
   DefineSequence,
@@ -1329,6 +1330,8 @@ class Parser {
         return this.parseDefineTrait();
       case 'action':
         return this.parseDefineAction();
+      case 'chain':
+        return this.parseDefineChainHatch();
       case 'behavior':
         // ADR-235 D2 (removal, 2026-07-18): the behavior hatch carried no
         // trait/action binding key, so it structurally could never fire —
@@ -2192,8 +2195,28 @@ class Parser {
     return { kind: 'when', slot: null, condition, phraseKey: key, span: lineSpan(line) };
   }
 
-  /** Shared `from "<module>"` tail for action hatches. */
-  private parseHatchTail(line: Line, c: Cursor, hatchKind: 'action', name: string): DefineHatch | null {
+  /** `define chain <name> from "<module>"` — a TS chain hatch (ADR-094): the
+   *  named stdlib event chain is replaced by the module's handler. */
+  private parseDefineChainHatch(): DefineHatch | null {
+    const line = this.lines[this.pos];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define chain
+    const name = this.readLabelKey(c); // curated chain alias, single kebab word (ADR-254)
+    if (!name) {
+      this.diagnostics.error(
+        'parse.chain-hatch-name',
+        'Expected a chain name after `define chain` (e.g. `define chain opened-revealed from "…"`).',
+        c.restSpan(),
+      );
+      this.pos++;
+      return null;
+    }
+    return this.parseHatchTail(line, c, 'chain', name);
+  }
+
+  /** Shared `from "<module>"` tail for action / chain hatches. */
+  private parseHatchTail(line: Line, c: Cursor, hatchKind: 'action' | 'chain', name: string): DefineHatch | null {
     this.pos++;
     if (!c.matchWord('from')) {
       this.diagnostics.error('parse.hatch-from', 'Expected `from "<module>"` in the hatch declaration.', c.restSpan());
@@ -2603,7 +2626,7 @@ class Parser {
       mode: null,
       gatedBy: null,
       fromEvent: null,
-      take: [],
+      returns: null,
       span: lineSpan(headLine),
     };
 
@@ -2644,35 +2667,90 @@ class Parser {
         }
         continue;
       }
-      if (word === 'from' && lc.isWord('event', 1)) {
-        lc.next();
-        lc.next();
-        const key = this.readLabelKey(lc); // ADR-256: dotless Chord event id; story-loader translates to the platform id
-        if (!key || !lc.atEnd()) {
-          this.diagnostics.error('parse.channel-from', 'Expected `from event <event.key>`.', lineSpan(line));
-        } else {
-          decl.fromEvent = key;
+      if (word === 'return') {
+        // ADR-253 D1: `return <field | "text" | phrase <key>> from <event>` —
+        // the event rides this clause (the standalone `from event`/`take` lines
+        // are removed below).
+        lc.next(); // return
+        const returns = this.parseChannelReturn(lc, line);
+        if (!returns) continue; // error already reported
+        if (!lc.matchWord('from')) {
+          this.diagnostics.error(
+            'parse.channel-return',
+            'Expected `from <event>` after the returned construct — `return <construct> from <event>`.',
+            lineSpan(line),
+          );
+          continue;
         }
+        const key = this.readLabelKey(lc); // ADR-256: dotless Chord event id; the loader translates to the platform id
+        if (!key || !lc.atEnd()) {
+          this.diagnostics.error('parse.channel-return', 'Expected a single event id after `from`.', lineSpan(line));
+          continue;
+        }
+        decl.returns = returns;
+        decl.fromEvent = key;
+        continue;
+      }
+      if (word === 'from' && lc.isWord('event', 1)) {
+        this.diagnostics.error(
+          'parse.channel-from-removed',
+          '`from event` was removed (ADR-253) — the event rides the `return … from <event>` clause: `return <construct> from <event>`.',
+          lineSpan(line),
+        );
         continue;
       }
       if (word === 'take') {
-        lc.next();
-        const fields = this.parseCommaWords(lc);
-        if (fields.length === 0) {
-          this.diagnostics.error('parse.channel-take', 'Expected `take <field>[, <field>…]`.', lineSpan(line));
-        } else {
-          decl.take.push(...fields);
-        }
+        this.diagnostics.error(
+          'parse.channel-take-removed',
+          '`take` was removed (ADR-253) — a channel `return`s a construct: `return <field> from <event>`, `return "text (slot)" from <event>`, or `return phrase <key> from <event>`.',
+          lineSpan(line),
+        );
         continue;
       }
       this.diagnostics.error(
         'parse.channel-body',
-        `Unrecognized line in \`define channel\`: \`${line.raw.trim()}\` — expected \`mode\`, \`gated by\`, \`from event\`, \`take\`, or \`end channel\`.`,
+        `Unrecognized line in \`define channel\`: \`${line.raw.trim()}\` — expected \`mode\`, \`gated by\`, \`return … from <event>\`, or \`end channel\`.`,
         lineSpan(line),
       );
     }
     this.diagnostics.error('parse.channel-end', 'Expected `end channel` to close the block.', decl.span);
     return decl;
+  }
+
+  /**
+   * Parse the construct after `return` (ADR-253 D1), stopping before `from`:
+   * a `"quoted"` text template, a `phrase <key>`, or a bare field word. On a
+   * malformed construct reports `parse.channel-return` and returns null.
+   */
+  private parseChannelReturn(lc: Cursor, line: Line): ChannelReturn | null {
+    const tok = lc.peek();
+    if (!tok) {
+      this.diagnostics.error('parse.channel-return', 'Expected a field, a "text" template, or `phrase <key>` after `return`.', lineSpan(line));
+      return null;
+    }
+    if (tok.kind === 'string') {
+      lc.next();
+      return { kind: 'text', text: tok.text };
+    }
+    if (tok.kind === 'word' && tok.text === 'phrase') {
+      lc.next(); // phrase
+      const key = this.readLabelKey(lc);
+      if (!key) {
+        this.diagnostics.error('parse.channel-return', 'Expected a phrase key after `return phrase`.', lineSpan(line));
+        return null;
+      }
+      return { kind: 'phrase', phrase: key };
+    }
+    if (tok.kind === 'word') {
+      const field = this.readLabelKey(lc);
+      if (!field) {
+        this.diagnostics.error('parse.channel-return', 'Expected a field name after `return`.', lineSpan(line));
+        return null;
+      }
+      return { kind: 'field', field };
+    }
+    this.diagnostics.error('parse.channel-return', 'Expected a field, a "text" template, or `phrase <key>` after `return`.', lineSpan(line));
+    return null;
   }
 
   /**

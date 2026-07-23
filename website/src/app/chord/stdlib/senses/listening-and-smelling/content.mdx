@@ -1,7 +1,7 @@
 Both parse since ADR-230 D2: `listen`, `listen to X`, and the `hear
 [X]` alias; `smell` and `sniff`, bare or with a target.
 
-**listen** (`if.action.listening`). With a target, a running device
+**listen** (`listening`). With a target, a running device
 reports `device_running`, a stopped one `device_off`, a container
 sloshes (`liquid_sounds`) or rustles (`container_sounds`) by its
 contents, and anything else reports `no_sound`. Bare `listen` scans the
@@ -9,7 +9,7 @@ room: running devices report `active_devices`, and an otherwise quiet
 room reports `silence`. It has no preconditions at all, making it a
 pure flavor seam.
 
-**smell** (`if.action.smelling`). With a target, food and drink report
+**smell** (`smelling`). With a target, food and drink report
 `food_scent`/`drink_scent`, a lit light source `burning_scent`, an open
 container with food inside `container_food_scent`, and anything else
 `no_particular_scent`; a target in another room refuses `too_far`. Bare
@@ -62,11 +62,11 @@ The organ's `on listening it` phrase replaces the stock miss entirely;
 where no clause answers, the platform's own misses are honest rather
 than errors.
 
-| | listen (`if.action.listening.*`) | smell (`if.action.smelling.*`) |
+| | listen (`listening-*`) | smell (`smelling-*`) |
 |---|---|---|
 | Refusals | — | `too_far` |
 | Success | `device_running` · `device_off` · `liquid_sounds` · `container_sounds` · `no_sound` · `active_devices` · `silence` | `food_scent` · `drink_scent` · `burning_scent` · `container_food_scent` · `no_particular_scent` · `smoke_detected` · `food_nearby` · `no_scent` |
-| Events | `if.event.listened` / `if.event.listen_blocked` | `if.event.smelled` / `if.event.smell_blocked` |
+| Events | `listened` / `listen_blocked` | `smelled` / `smell_blocked` |
 
 Interceptors: like touching, both are favorites for `on
 listening it` / `on smelling it` clauses.

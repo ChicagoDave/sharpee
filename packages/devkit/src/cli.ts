@@ -10,8 +10,11 @@
  *
  * Public interface: process argv -> subcommand dispatch -> process exit code.
  */
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { runCompose } from './commands/compose.js';
 import { runIntrospect } from './commands/introspect.js';
+import { findStoryFile } from './standalone/author-game.js';
 import { resolveStory, findMonorepoRoot } from './repo.js';
 // Author-project commands (devkit is the author tool; the in-repo platform build
 // is repokit — ADR-187). repo.ts is retained only for the workspace-story redirect.
@@ -28,7 +31,8 @@ import { lookupStory } from './registry.js';
 const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
 
 Usage:
-  sharpee build [name|path] [--browser]  Build an author story project (cwd or registered name)
+  sharpee build [<file>.story | dir]     Build a Chord story to a browser app (no flag — browser is the default client)
+  sharpee build [name|path] [--browser]  Build a TypeScript story project (cwd or registered name)
   sharpee build-browser [options]        Build the browser client for the current project
   sharpee init <name>                    Scaffold a new story project
   sharpee init-browser                   Add a browser client to the current project
@@ -41,7 +45,11 @@ Usage:
                                          Run the project's transcript tests
   sharpee play [name|path]               Play the project interactively (REPL)
 
-build (author project): compiles src/ + emits the .sharpee bundle; --browser also
+build (Chord .story): compiles the story, derives all metadata from the Story IR
+  (ADR-252 — no package.json), and emits a self-contained browser app to
+  dist/web/<id>/. Client config (theme/themes/storage-prefix) rides the .story
+  header. A non-browser client is named by the header 'client:' field.
+build (TypeScript project): compiles src/ + emits the .sharpee bundle; --browser also
   builds the self-contained browser client (dist/web/, with the project's assets/).
 
 build-browser options:
@@ -67,6 +75,15 @@ async function main(argv: string[]): Promise<number> {
       // Author-only build (ADR-187): build a project by cwd or registered name.
       const positional = rest.find((a) => !a.startsWith('-'));
       const flags = rest.filter((a) => a !== positional);
+
+      // ADR-252 D1: a bare `.story` FILE target → the Chord browser build. Browser
+      // is the default client (no --browser flag); devkit builds it directly rather
+      // than redirecting to repokit (a `.story` needs no workspace scaffold).
+      if (positional && positional.endsWith('.story')) {
+        await runBuildBrowserCommand(flags.filter((a) => a !== '--browser'), positional);
+        return 0;
+      }
+
       let dir: string | undefined;
       // Inside the sharpee monorepo, redirect WORKSPACE stories to repokit; a
       // decoupled in-repo project (e.g. the FZ tutorial) builds here, project-relative.
@@ -92,6 +109,21 @@ async function main(argv: string[]): Promise<number> {
           );
         }
       }
+      // ADR-252 D1: a project DIRECTORY holding a `.story` (and no src/index.ts) is
+      // a Chord project → browser build by default. A TS project keeps --browser opt-in.
+      const projectDir = dir ?? process.cwd();
+      let chordStory: string | null = null;
+      try {
+        chordStory = findStoryFile(projectDir);
+      } catch {
+        // Multiple .story files — the browser build re-runs findStoryFile and reports it.
+        chordStory = null;
+      }
+      if (chordStory && !existsSync(join(projectDir, 'src', 'index.ts'))) {
+        await runBuildBrowserCommand(flags.filter((a) => a !== '--browser'), projectDir);
+        return 0;
+      }
+
       if (flags.includes('--browser')) await runBuildBrowserCommand(flags.filter((a) => a !== '--browser'), dir);
       else await runBuildCommand(flags, dir);
       return 0;

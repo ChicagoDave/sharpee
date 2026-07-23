@@ -17,7 +17,7 @@ import { compile } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
 
-const THEME_STORAGE_KEY = '{{STORY_ID}}-theme';
+const THEME_STORAGE_KEY = '{{STORAGE_PREFIX}}-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 
 /**
@@ -78,14 +78,11 @@ async function start(): Promise<void> {
   if (!client) {
     const author = story.config.author;
     client = new BrowserClient({
-      storagePrefix: '{{STORY_ID}}-',
+      storagePrefix: '{{STORAGE_PREFIX}}-',
       // ADR-248: RESTART reboots by re-running this entry's boot path.
       reboot: () => start(),
-      defaultTheme: 'modern-dark',
-      themes: [
-        { id: 'modern-dark', name: 'Modern Dark' },
-        { id: 'paper', name: 'Paper' },
-      ],
+      defaultTheme: '{{DEFAULT_THEME}}',
+      themes: {{THEMES_JSON}},
       storyInfo: {
         title: story.config.title,
         description: story.config.description || '',

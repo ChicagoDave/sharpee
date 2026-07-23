@@ -390,11 +390,12 @@ export interface IRHatch {
   name: string;
   modulePath: string;
   /**
-   * Target interface: dynamic-text producer or Action. (`behavior` was
-   * removed by ADR-235 D2 — the hatch had no binding key and could never
-   * fire.)
+   * Target interface: dynamic-text producer, Action, or event `chain`
+   * (ADR-094 — a chain hatch replaces a stdlib chain like `opened-revealed`).
+   * (`behavior` was removed by ADR-235 D2 — the hatch had no binding key and
+   * could never fire.)
    */
-  hatchKind: 'text' | 'action';
+  hatchKind: 'text' | 'action' | 'chain';
   span: Span;
 }
 
@@ -527,12 +528,26 @@ export interface IRMachineTransition {
 }
 
 /**
- * `define channel` (ADR-216; spelling A, 2026-07-18): a declarative JSON
- * data projection — the loader lowers it to a real IOChannel whose
- * produce takes the turn's last event of `fromEvent` and projects the
- * `take` fields from its data. `gatedBy` carries the PLATFORM camelCase
- * capability key. The `family` discriminator is ADR-241's additive
- * extension: every data projection reads as `family: 'data'`.
+ * The construct a channel `return`s (ADR-253 D1). The loader evaluates it
+ * against the turn's last matching event to produce the channel's value:
+ *  - `field`  — the raw event field value;
+ *  - `text`   — a text template whose `(slot)` names project event fields
+ *    (the phrase slot spelling), yielding finished text;
+ *  - `phrase` — the named phrase's rendered text.
+ */
+export type IRChannelReturn =
+  | { kind: 'field'; field: string }
+  | { kind: 'text'; text: string }
+  | { kind: 'phrase'; phrase: string };
+
+/**
+ * `define channel` (ADR-216; spelling A, 2026-07-18; ADR-253 replaced
+ * `take`/`from event` with `return … from <event>`): a declarative data
+ * projection — the loader lowers it to a real IOChannel whose produce
+ * evaluates `returns` against the turn's last event of `fromEvent`.
+ * `gatedBy` carries the PLATFORM camelCase capability key. The `family`
+ * discriminator is ADR-241's additive extension: every data projection
+ * reads as `family: 'data'`.
  */
 export interface IRDataChannelDef {
   name: string;
@@ -540,7 +555,7 @@ export interface IRDataChannelDef {
   mode: 'replace' | 'append' | 'event';
   gatedBy: string | null;
   fromEvent: string;
-  take: string[];
+  returns: IRChannelReturn;
   span: Span;
 }
 

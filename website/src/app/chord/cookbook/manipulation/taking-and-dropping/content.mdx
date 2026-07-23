@@ -32,13 +32,13 @@ create the iron ring
   A ring set into the floor slab.
 
   on taking it
-    refuse if.action.taking.ring-fused
+    refuse ring-fused
   end on
 
 create the player
   starts in the Lamp Room
 
-define phrase if.action.taking.ring-fused
+define phrase ring-fused
   The ring is fused to the slab; your fingers just slip off it.
 end phrase
 ```

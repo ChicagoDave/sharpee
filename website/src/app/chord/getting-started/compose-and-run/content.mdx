@@ -4,7 +4,7 @@ A Chord project has four everyday commands: **build**, **play**,
 ## Build: including a playable web page
 
 ```shell
-sharpee build --browser
+sharpee build
 ```
 
 ```text
@@ -20,14 +20,14 @@ sharpee build --browser
 
 ✅ Build complete! (game.js 1213.1 KB)
 
-Output: dist/web/
+Output: dist/web/<id>/
 ```
 
-`dist/web/` is a self-contained, static web page: your story, the
+`dist/web/<id>/` is a self-contained, static web page: your story, the
 engine, and a browser client in one folder. Serve it locally with
-`npx serve dist/web`, or host it anywhere static files go. Plain
-`sharpee build` (no flag) builds the story bundle without the web
-client.
+`npx serve dist/web/<id>`, or host it anywhere static files go. For a
+`.story`, the browser client is the default — `sharpee build` needs no
+flag.
 
 ## Play in the terminal
 

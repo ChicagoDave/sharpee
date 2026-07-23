@@ -88,8 +88,23 @@ export function createGenericPanelRenderer(slot: HTMLElement, channelId: string)
     return box.querySelector('.sharpee-channel-panel-rows') as HTMLElement;
   };
 
+  // ADR-253 D2: an author-supplied element named for the channel (`id=<channelId>`)
+  // receives the value as text. The panel's own box is `id=channel-panel-<id>`, so
+  // it never matches here. Absent → the generic panel below is the fallback.
+  const namedElement = (): HTMLElement | null => doc.getElementById(channelId);
+
   return {
     onValue(value: unknown, channel: ChannelDefinition): void {
+      // Render-by-DOM-name (ADR-253 D2): a string/primitive value lands as
+      // textContent in the author's `#<channelId>` element when it exists.
+      const named = namedElement();
+      if (named && (value === null || typeof value !== 'object')) {
+        if (value === null) named.textContent = '';
+        else if (value !== undefined) named.textContent = String(value);
+        return;
+      }
+      // No named element (or a structured value with no single-element text form,
+      // ADR-253 D2) → the generic sidebar panel (D4 fallback).
       if (value === null) {
         removeBox();
         return;
@@ -105,9 +120,13 @@ export function createGenericPanelRenderer(slot: HTMLElement, channelId: string)
       rows.replaceChildren(...rowsFor(doc, value));
     },
     onClear(): void {
+      const named = namedElement();
+      if (named) named.textContent = '';
       removeBox();
     },
     onDestroy(): void {
+      const named = namedElement();
+      if (named) named.textContent = '';
       removeBox();
     },
   };

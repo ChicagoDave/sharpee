@@ -99,8 +99,8 @@ projects it:
 ```chord
   on every turn while it is ticking and one chance in 8
     phrase clock-chime
-    emit estate.clock with hour "evening" when evening
-    emit estate.clock with hour "past midnight" when midnight
+    emit estate-clock with hour "evening" when evening
+    emit estate-clock with hour "past midnight" when midnight
   end on
 ```
 
@@ -108,45 +108,46 @@ projects it:
 define channel clock
   mode replace
   gated by sidebar
-  from event estate.clock
-  take hour
+  return "The clock: (hour)" from estate-clock
 end channel
 ```
 
-`emit <event.key> with <field> <value>` carries data; the channel takes
-the named fields from the turn's last matching event. Text clients never
-see any of it (the `sidebar` gate reads false); the chime prose is their
-whole experience — exactly the degradation rule again.
+`emit <event> with <field> <value>` carries data; the channel `return`s
+finished text — its `(hour)` slot projects the field from the turn's last
+matching event (ADR-253). Text clients never see any of it (the `sidebar`
+gate reads false); the chime prose is their whole experience — exactly the
+degradation rule again.
 
 **In the browser, every dynamic channel is visible by default.** A channel
-you don't style renders as a labelled panel (a small box titled with the
-channel id, showing its fields) — so a pure-Chord story gets working
-client output with zero TypeScript. When you want it to look like *yours*,
-register a renderer in `src/browser-entry.ts` — the one place Fernhill
-touches TypeScript, and only as polish:
+you don't place renders as a labelled panel (a small box titled with the
+channel id) — so a pure-Chord story gets working client output with zero
+TypeScript. To place it *yourself*, give your story a custom
+`browser/index.html` (ADR-253 D3) with an element named for the channel;
+the returned text lands there:
 
-```typescript
-client.getChannelRenderer().registerRenderer('clock', {
-  onValue(value: unknown): void {
-    // …mount #estate-clock in the status bar and print `The clock: ${hour}`
-  },
-});
+```html
+<!-- in browser/index.html, in the status bar -->
+<span id="clock"></span>
 ```
 
-An exact-id renderer like this always wins over the platform default.
+The channel's returned "The clock: &lt;hour&gt;" renders into `#clock` by the
+channel-id ↔ element-name convention (if no such element exists it falls to
+the generic panel). Fernhill ships exactly this — **no `browser-entry.ts`, no
+story TypeScript at all.**
 
 ## Building and shipping
 
 ```bash
-sharpee build --browser
+sharpee build fernhill.story
 ```
 
-produces `dist/web/` — a self-contained page carrying your `.story`
-source (compiled in the browser at boot), the engine, your assets, and
-the client. Serve it from any static host:
+Browser is the default client (ADR-252) — no flag, no `package.json`. This
+produces `dist/web/<id>/` — a self-contained page carrying your `.story`
+source (compiled in the browser at boot), the engine, your assets, your
+custom `browser/index.html`, and the client. Serve it from any static host:
 
 ```bash
-npx serve dist/web
+npx serve dist/web/fernhill
 ```
 
 The build also writes `dist/<story>.ir.json`, the compiled story IR, for

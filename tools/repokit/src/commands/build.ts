@@ -19,7 +19,7 @@ import {
   tsfBin,
 } from '../repo';
 import { runBundle } from './bundle';
-import { buildBrowserClient } from './browser';
+import { buildBrowserClient, chordStoryFile } from './browser';
 import { buildZifmiaServer } from './zifmia';
 
 /**
@@ -86,6 +86,7 @@ export function stampVersions(root: string, opts: BuildOptions): string {
   const engineVersionFile = join(
     root, 'packages', 'stdlib', 'src', 'actions', 'standard', 'version', 'engine-version.ts'
   );
+  mkdirSync(dirname(engineVersionFile), { recursive: true });
   writeFileSync(
     engineVersionFile,
     `/**
@@ -98,7 +99,9 @@ export const ENGINE_VERSION = '${sharpeeVersion}';
 
   // Story version.ts — stories/<name> only (build.sh quirk: tutorials are not stamped).
   // Accepts a path or a name (resolveStory), so `./sharpee build stories/dungeo` stamps too.
-  if (opts.story) {
+  // ADR-252: a Chord `.story` story carries no package.json — its version.ts is stamped
+  // from the Story IR by the browser build core, so the pipeline skips it here.
+  if (opts.story && !chordStoryFile(root, opts.story)) {
     const resolved = resolveStory(root, opts.story);
     if (resolved && resolved.underStories) {
       const storyVer = JSON.parse(readFileSync(join(resolved.dir, 'package.json'), 'utf8')).version;
@@ -210,7 +213,10 @@ export function runBuild(opts: BuildOptions = {}): void {
   log(`version: ${version}${effective.story ? ` · story: ${effective.story}` : ''}`);
   buildPlatform(root, effective);
   if (!effective.noGenai) generateGenaiApi(root, effective);
-  if (effective.story) buildStory(root, effective.story, effective);
+  // ADR-252: a Chord `.story` story has no workspace TS package to compile — it ships
+  // its source and compiles at boot. buildStory (pnpm --filter) applies to TS stories only.
+  const isChordStory = effective.story ? chordStoryFile(root, effective.story) !== null : false;
+  if (effective.story && !isChordStory) buildStory(root, effective.story, effective);
   if (effective.bundle !== false) runBundle({ root, quiet: effective.quiet });
   if (effective.browser) buildBrowserClient(root, effective.story!, { quiet: effective.quiet });
   if (effective.zifmia) buildZifmiaServer(root, { quiet: effective.quiet });

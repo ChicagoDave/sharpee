@@ -73,8 +73,7 @@ end machine
 
 define channel watch
   mode replace
-  from event gatehouse-watch-report
-  take post, alarm
+  return "(post) — (alarm)" from gatehouse-watch-report
 end channel
 
 define sound clank from "audio/clank.ogg"

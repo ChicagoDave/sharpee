@@ -1,4 +1,4 @@
-**throw** (`if.action.throwing`) covers `throw X at Y` and `throw X to Y`,
+**throw** (`throwing`) covers `throw X at Y` and `throw X to Y`,
 with `toss` and `hurl` in both forms. (The action also implements bare and
 directional throws, `throw the rock` and `throw the rock north`, but no
 core grammar reaches them today; a story must add those patterns itself.)
@@ -17,7 +17,7 @@ usually breaks (`breaks_against`). Throwing **at anything else** hits about
 container (`lands_in`),
 bounces off a closed one (`bounces_off`), and fragile items usually break.
 A broken item is removed from play entirely, with an
-`if.event.item_destroyed` event (`cause: 'thrown'`).
+`item_destroyed` event (`cause: 'thrown'`).
 
 The author writes:
 
@@ -73,13 +73,13 @@ The mirror's target-side guard is deterministic; the hearth throw is not:
 the same command can also miss, or hit without breaking. This run's
 "bottle" name made the item fragile, and the smash removed it from play.
 
-| | throw (`if.action.throwing.*`) |
+| | throw (`throwing-*`) |
 |---|---|
 | Refusals | `no_item` · `not_holding` · `target_not_visible` · `target_not_here` · `no_exit` · `too_heavy` (over 10 kg) · `self` |
 | Outcomes | `hits_target` · `misses_target` · `target_ducks` · `target_catches` · `target_angry` · `lands_on` · `lands_in` · `bounces_off` · `breaks_against` · `breaks_on_impact` · `fragile_breaks` · `thrown_down` · `thrown_gently` · `sails_through` |
-| Events | `if.event.thrown` (`throwType`, `hit`, `willBreak`, `finalLocation` in the payload — enough for a story reaction to know exactly what happened) / `if.event.throw_blocked` · `if.event.item_destroyed` (`cause: 'thrown'`) |
+| Events | `thrown` (`throwType`, `hit`, `willBreak`, `finalLocation` in the payload — enough for a story reaction to know exactly what happened) / `throw_blocked` · `item_destroyed` (`cause: 'thrown'`) |
 
 Interceptors: both the item and the target are consulted (`on throwing it`
 on either). A glacier can react to being hit in the same command as an
 explosive reacts to being thrown; a capability behavior registered for
-`if.action.throwing` on the target takes over the whole throw.
+`throwing` on the target takes over the whole throw.

@@ -150,6 +150,15 @@ export const CLIENT_CAPABILITY_FLAGS: ReadonlySet<string> = new Set([
   'custom-fonts',
 ]);
 
+/**
+ * Curated aliases for the stdlib event chains a `define chain … from` hatch may
+ * replace (ADR-094). The kebab alias is the Chord-facing name; @sharpee/story-loader
+ * maps it to the dotted platform chain key + trigger (Interface Contract, like the
+ * message-alias ACL). Chord validates the NAME here (platform-free); an alias absent
+ * from this set is `analysis.unknown-chain`. One stdlib chain exists today.
+ */
+export const STDLIB_CHAIN_NAMES: ReadonlySet<string> = new Set(['opened-revealed']);
+
 /** Chord capability word → the platform's camelCase key (`split-pane` → `splitPane`). */
 export function capabilityKeyOf(word: string): string {
   return word.replace(/-([a-z])/g, (_, ch: string) => ch.toUpperCase());

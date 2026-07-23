@@ -16,8 +16,10 @@ define phrases en-US
 Each entry is `key:` on its own line followed by an indented prose
 block. The block is dedent-terminated; there is no `end phrases`. A key
 here is a plain phrase with no strategy; for variants or a strategy, use
-`define phrase` instead. A key here may be dotted (ADR-231): an
-entry under `if.action.taking.fixed_in_place:` overrides the platform
-default exactly as the `define phrase` form does. Throughout this reference the small
+`define phrase` instead. A key here is a single kebab-case word (dots
+are illegal, ADR-254). To override a standard-action message, use the
+parallel `override messages <locale>` block, whose keys are message
+aliases (`taking-fixed-in-place:`) rather than story phrase keys
+(ADR-255). Throughout this reference the small
 supporting texts live in exactly this kind of block at the foot of each
 fixture.

@@ -89,7 +89,22 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-family-channel                       (* ADR-241 *)
              | define-topics                               (* ADR-239 *)
              | define-pronouns                             (* ADR-242 *)
-             | define-phrasebook | import-phrasebook ;     (* ADR-245/250 *)
+             | define-phrasebook | import-phrasebook       (* ADR-245/250 *)
+             | override-message | override-messages ;     (* ADR-255 *)
+
+(* ---- Message overrides (ADR-255, 2026-07-22) --------------------------- *)
+
+override-message    = "override" "message" ALIAS
+                      [ "," ( STRATEGY | "verbatim" ) ] NL
+                      >>> prose { "or" NL >>> prose }
+                      "end" "override" NL ;                (* the full define-phrase body;
+                                                              an alias absent from the ACL
+                                                              catalog is
+                                                              analysis.unknown-message-alias *)
+override-messages   = "override" "messages" LOCALE NL
+                      >>> { ALIAS ":" NL >>> prose } ;     (* localizable flat block *)
+ALIAS               = WORD ;                               (* an ACL alias, <action>-<message>,
+                                                             single kebab word (ADR-254/255) *)
 
 (* ---- Phrasebooks (ADR-245/250, 2026-07-21) ----------------------------- *)
 
@@ -331,9 +346,12 @@ action-line    = "grammar" NL >>> { pattern-line }
                | statement ;
 pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ; (* → = cardinality *)
 
-define-hatch   = "define" "action" WORD "from" STRING NL ; (* `define behavior` REMOVED
-                                                              (ADR-235 D2) — parse error
-                                                              with fix-it *)
+define-hatch   = "define" "action" WORD "from" STRING NL   (* action hatch *)
+               | "define" "chain" WORD "from" STRING NL ;  (* chain hatch — ADR-094; WORD is
+                                                              a curated stdlib chain alias
+                                                              (opened-revealed), else
+                                                              analysis.unknown-chain. `define
+                                                              behavior` REMOVED, ADR-235 D2. *)
 
 define-sequence= "define" "sequence" WORD { WORD } NL
                  { sequence-step } "end" "sequence" NL ;
@@ -378,17 +396,17 @@ define-family-channel                                      (* ADR-241: a named a
                                                               be declared — never-guess *)
              = "define" ( "ambient" | "layer" ) WORD NL ;
 
-define-channel = "define" "channel" WORD NL                (* spelling A, 2026-07-18 *)
+define-channel = "define" "channel" WORD NL                (* spelling A; ADR-253 *)
                  >>> { "mode" ( "replace" | "append" | "event" ) NL
                      | "gated" "by" WORD NL                (* a client capability flag *)
-                     | "from" "event" phrase-key NL
-                     | "take" WORD { "," WORD } NL }
+                     | "return" channel-return "from" WORD NL }
                  "end" "channel" NL ;
-                                                           (* a JSON data projection:
-                                                              the turn's last matching
-                                                              event, `take` fields only;
-                                                              renderers ship platform-
-                                                              side (ADR-215 registry) *)
+channel-return = WORD | STRING | "phrase" WORD ;           (* field | "text (slot)" | phrase;
+                                                              ADR-253 replaced `from event`
+                                                              + `take` (a `take` line is now
+                                                              parse.channel-take-removed). The
+                                                              value renders by DOM-name, else
+                                                              the generic panel. *)
 define-topics  = "define" "topics" "for" name NL           (* ADR-239 D3 as amended:
                                                               the ask/tell topic table.
                                                               One block per entity
@@ -488,7 +506,8 @@ stmt-when    = "when" condition ;                          (* statement-final su
                                                               legal on phrase, emit, change,
                                                               move, remove, award, win, lose —
                                                               not on set or bare refuse *)
-phrase-key   = WORD { "." WORD } ;                         (* dotted keys: zoo.pa.closing-3 *)
+phrase-key   = WORD ;                                      (* single kebab word; a "." is
+                                                              parse.dotted-key (ADR-254/256) *)
 param        = "with" WORD { WORD } "=" value-expr ;
 
 (* ---- ADR-216 emit payload + media sugar -------------------------------- *)

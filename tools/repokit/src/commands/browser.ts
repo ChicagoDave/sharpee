@@ -15,7 +15,6 @@
  */
 import { execFileSync } from 'node:child_process';
 import {
-  copyFileSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -26,37 +25,18 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
+import {
+  type BrowserBuildEnv,
+  buildBrowser,
+  findStoryFile,
+  resolveWiredThemes,
+  copyWiredThemes,
+  injectThemes,
+} from '@sharpee/devkit';
 import { resolveStoryDir } from '../repo';
 
 export interface BrowserBuildOptions {
   quiet?: boolean;
-}
-
-/** Copy a template file if present (build.sh's per-file `if [ -f ]` copies). */
-function copyIfExists(src: string, dest: string): boolean {
-  if (!existsSync(src)) return false;
-  cpSync(src, dest);
-  return true;
-}
-
-/** A theme wired into the build: built-in (CSS from platform-browser) or author
- *  (CSS in the override stylesheet). Duplicated from the devkit author build per
- *  ADR-187 R1 (separate codebases). */
-interface WiredTheme {
-  id: string;
-  name: string;
-  /** Built-in theme's CSS path, or null for an author theme (CSS in override). */
-  cssPath: string | null;
-  /** Dir holding the built-in CSS + assets, or null for an author theme. */
-  srcDir: string | null;
-  assets: string[];
-}
-
-/** A built-in theme's entry in platform-browser's styles/themes/manifest.json. */
-interface BuiltinThemeEntry {
-  name: string;
-  css: string;
-  assets?: string[];
 }
 
 /** Read `sharpee.themes` entries (built-in ids and/or { id, name }) from a story. */
@@ -68,104 +48,65 @@ function readThemes(storyDir: string): unknown[] {
 }
 
 /**
- * Resolve listed themes: a string id → a BUILT-IN theme from platform-browser's
- * styles/themes/ (`themesDir`/manifest.json); an inline `{ id, name }` → an AUTHOR
- * theme whose `[data-theme]` block lives in the override stylesheet. Explicit
- * opt-in; no scanning (AC-9). Duplicated from the devkit author build per ADR-187 R1.
- * @throws on an unknown built-in id or a malformed entry.
+ * The in-repo `.story` (Chord) story path (ADR-252 D5): if the story directory
+ * holds a `.story` file, this is a Chord project — return its absolute path so the
+ * caller delegates to the shared build core. Null for a TypeScript story (dungeo).
  */
-function resolveWiredThemes(themesDir: string, entries: unknown[]): WiredTheme[] {
-  const manifestPath = join(themesDir, 'manifest.json');
-  const builtins: Record<string, BuiltinThemeEntry> = existsSync(manifestPath)
-    ? JSON.parse(readFileSync(manifestPath, 'utf8')).themes || {}
-    : {};
-  return entries.map((entry) => {
-    if (typeof entry === 'string') {
-      const b = builtins[entry];
-      if (!b) {
-        throw new Error(
-          `unknown built-in theme "${entry}" (available: ${Object.keys(builtins).join(', ') || 'none'})`,
-        );
-      }
-      return {
-        id: entry,
-        name: b.name || entry,
-        cssPath: join(themesDir, b.css),
-        srcDir: themesDir,
-        assets: Array.isArray(b.assets) ? b.assets : [],
-      };
-    }
-    if (entry && typeof entry === 'object' && typeof (entry as { id?: unknown }).id === 'string') {
-      const e = entry as { id: string; name?: string };
-      return { id: e.id, name: e.name || e.id, cssPath: null, srcDir: null, assets: [] };
-    }
-    throw new Error(`invalid "sharpee.themes" entry: ${JSON.stringify(entry)}`);
-  });
+export function chordStoryFile(root: string, story: string): string | null {
+  const storyDir = resolveStoryDir(root, story);
+  if (!storyDir) return null;
+  return findStoryFile(storyDir);
 }
 
-/**
- * Copy each BUILT-IN theme's CSS to `<out>/themes/<id>.css` and its declared sibling
- * assets into `<out>/themes/` so relative `@font-face` URLs resolve. Author themes
- * copy nothing (CSS is in the override stylesheet). The `themes/` dir is rebuilt
- * from scratch so a de-listed theme never lingers.
- */
-function copyWiredThemes(themes: WiredTheme[], outDir: string): void {
-  const themesDir = join(outDir, 'themes');
-  rmSync(themesDir, { recursive: true, force: true });
-  const builtins = themes.filter((t) => t.cssPath);
-  if (builtins.length === 0) return;
-  mkdirSync(themesDir, { recursive: true });
-  for (const t of builtins) {
-    copyFileSync(t.cssPath!, join(themesDir, `${t.id}.css`));
-    for (const asset of t.assets) {
-      cpSync(join(t.srcDir!, asset), join(themesDir, asset), { recursive: true });
-    }
+/** Read the lockstep platform (sharpee) version — stamped into the story's version.ts. */
+function sharpeeVersion(root: string): string {
+  return JSON.parse(readFileSync(join(root, 'packages', 'sharpee', 'package.json'), 'utf8')).version;
+}
+
+/** The website mirror: replicate the built app into website/public/web/<id>. */
+function mirrorToWebsite(root: string, outDir: string, storyId: string): void {
+  if (!existsSync(join(root, 'website', 'public'))) return;
+  const webDir = join(root, 'website', 'public', 'web', storyId);
+  mkdirSync(webDir, { recursive: true });
+  cpSync(join(outDir, 'game.js'), join(webDir, 'game.js'));
+  if (existsSync(join(outDir, 'index.html'))) cpSync(join(outDir, 'index.html'), join(webDir, 'index.html'));
+  for (const css of ['base.css', 'engine.css', 'decorations.css']) {
+    if (existsSync(join(outDir, css))) cpSync(join(outDir, css), join(webDir, css));
   }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  // Mirror the wired theme CSS/assets; clear first so a de-listed theme never lingers.
+  rmSync(join(webDir, 'styles.css'), { force: true });
+  rmSync(join(webDir, 'themes'), { recursive: true, force: true });
+  if (existsSync(join(outDir, 'themes'))) cpSync(join(outDir, 'themes'), join(webDir, 'themes'), { recursive: true });
 }
 
 /**
- * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme at
- * the THEME_LINKS marker (author themes need no link — CSS is in the override
- * stylesheet), and a regenerated `#theme-menu` — the `classic` default + one item
- * per listed theme (ADR-188).
- */
-function injectThemes(html: string, themes: WiredTheme[]): string {
-  const links = themes
-    .filter((t) => t.cssPath)
-    .map((t) => `  <link rel="stylesheet" href="themes/${t.id}.css">`)
-    .join('\n');
-  html = html.replace(
-    /[ \t]*<!--\s*THEME_LINKS:[\s\S]*?-->/,
-    links || '  <!-- no built-in themes wired -->',
-  );
-  const items = [
-    '              <li role="menuitemradio" class="sharpee-menu-option" data-theme="classic">Classic</li>',
-    ...themes.map(
-      (t) =>
-        `              <li role="menuitemradio" class="sharpee-menu-option" data-theme="${t.id}">${escapeHtml(t.name)}</li>`,
-    ),
-  ].join('\n');
-  return html.replace(
-    /(<ul role="menu" id="theme-menu"[^>]*>)[\s\S]*?(<\/ul>)/,
-    `$1\n${items}\n            $2`,
-  );
-}
-
-/**
- * Build the browser client for `story` into dist/web/<story>/. Assumes platform +
+ * Build the browser client for `story` into dist/web/<id>/. Assumes platform +
  * story (incl. ESM where applicable) are already built.
+ *
+ * ADR-252 D5: a Chord `.story` story delegates to the ONE shared build core (with
+ * the in-repo resolution env), so it produces output identical (modulo the build
+ * stamp) to the devkit author build. A TypeScript story (dungeo) keeps the legacy
+ * path below, unchanged.
  * @throws if the story or its browser-entry.ts is missing, or game.js is empty after esbuild.
  */
 export function buildBrowserClient(root: string, story: string, opts: BrowserBuildOptions = {}): void {
   const log = (m: string) => !opts.quiet && console.log(m);
+
+  // Chord path: delegate to the shared core (ADR-252 D5).
+  const storyFile = chordStoryFile(root, story);
+  if (storyFile) {
+    const env: BrowserBuildEnv = {
+      stylesDir: join(root, 'packages', 'platform-browser', 'styles'),
+      templatesDir: join(root, 'packages', 'devkit', 'templates', 'browser'),
+      esbuildCwd: root,
+      engineVersion: sharpeeVersion(root),
+      mirror: (outDir, storyId) => mirrorToWebsite(root, outDir, storyId),
+    };
+    buildBrowser(storyFile, env, { quiet: opts.quiet });
+    return;
+  }
+
+  // TypeScript path (dungeo): the legacy in-repo browser build, unchanged.
   const storyDir = resolveStoryDir(root, story);
   if (!storyDir) throw new Error(`story not found: ${story}`);
   const entry = join(storyDir, 'src', 'browser-entry.ts');

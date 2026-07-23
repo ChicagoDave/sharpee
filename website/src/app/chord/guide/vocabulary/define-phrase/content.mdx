@@ -58,30 +58,31 @@ splice at a description marker (`analysis.verbatim-marker`): its
 whole point is preserved line structure, which a mid-sentence splice
 would break.
 
-A phrase key may be dotted (`if.action.taking.fixed_in_place` is one
-key, registered whole), and dotting is how a story overrides the
-platform's own text. Every standard-action message lives under a dotted
-id (the stdlib reference catalogs them entry by entry); a `define
-phrase` under that exact key replaces the platform default story-wide,
-for every entity, every time that moment renders:
+A phrase key is a single kebab-case word; dots are illegal (ADR-254).
+To override the platform's own text for a standard action, a story uses
+an `override message <alias>` block (ADR-255), where the alias is the
+action name and message name in kebab-case, joined by a hyphen
+(`taking-fixed-in-place`). Every standard-action message has such an
+alias (the stdlib reference catalogs them entry by entry); an `override
+message` block replaces the platform default story-wide, for every
+entity, every time that moment renders:
 
 ```chord
-define phrase if.action.taking.fixed_in_place
+override message taking-fixed-in-place
   It will not budge, and neither will anything else bolted to this place.
-end phrase
+end override
 ```
 
 Now every fixed-in-place refusal in the story speaks this line instead
 of the standard one. The per-entity routes still sit on top: an `on`
 clause's own refusal or a per-entity
 override speaks for
-its one entity, and the story-wide dotted override sets the default
+its one entity, and the story-wide `override message` sets the default
 underneath them.
 
-A dotted key is legal at every site a phrase key appears (ADR-231), not
-just here: `refuse` and `refuse when`,
-`must … otherwise refuse`,
-per-entity `phrase` headers, `define
-phrases` entries, and the blocked and deadly exit keys
-all read a
-dotted key whole.
+Everywhere a phrase key appears — `refuse` and `refuse when`,
+`must … otherwise refuse`, per-entity `phrase` headers, `define
+phrases` entries, and the blocked and deadly exit keys — the key is a
+single kebab-case word (dots are illegal, ADR-254). Overriding a
+standard-action message is done only through `override message`
+(ADR-255), never by naming a dotted id at one of these sites.

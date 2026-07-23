@@ -135,8 +135,7 @@ describe('family channel declarations (ADR-241 D2)', () => {
         '    play ambient rain in wind\n    emit estate-weather with strength 3\n',
         `${SOUND}define ambient wind\ndefine channel wind
   mode replace
-  from event estate-weather
-  take strength
+  return strength from estate-weather
 end channel
 `,
       ),
@@ -144,7 +143,7 @@ end channel
     expect(result.diagnostics).toEqual([]);
     expect(result.ir.channels).toMatchObject([
       { name: 'wind', family: 'ambient' },
-      { name: 'wind', family: 'data', mode: 'replace', fromEvent: 'estate-weather', take: ['strength'] },
+      { name: 'wind', family: 'data', mode: 'replace', fromEvent: 'estate-weather', returns: { kind: 'field', field: 'strength' } },
     ]);
   });
 

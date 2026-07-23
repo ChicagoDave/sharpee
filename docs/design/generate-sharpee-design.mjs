@@ -95,7 +95,9 @@ const R = Object.fromEntries(Object.entries(SEEDS).map(([k, v]) => [k, ramp(v)])
 // ---------------------------------------------------------------- themes
 const WHITE = '#FFFFFF';
 const LIGHT = {
-  canvas: { hex: R.taupe['50'], note: 'taupe·50' },
+  // Crisp white background (David, 2026-07-23) — dropped the warm taupe·50 canvas
+  // that read as rose. Canvas == surface now (no page/card contrast, by choice).
+  canvas: { hex: WHITE, note: 'white' },
   surface: { hex: WHITE, note: 'white' },
   ink: { hex: R.navy['800'], note: 'navy·800', on: ['canvas', 'surface'] },
   muted: { hex: R.slate['600'], note: 'slate·600', on: ['canvas', 'surface'] },

@@ -91,8 +91,9 @@ npm install
 ```
 
 `sharpee init` scaffolds a Chord project by default: your whole story lives
-in `fernhill.story`, and `src/browser-entry.ts` is the (optional) browser
-wiring you'll meet in the last chapter. The working loop is three commands:
+in `fernhill.story`. A pure Chord story needs no TypeScript at all; the only
+optional wiring you'll meet in the last chapter is a custom `browser/index.html`
+that names where a channel's output lands. The working loop is three commands:
 
 ```shell
 sharpee build            # compile gate — every load error, before anything runs
@@ -103,7 +104,7 @@ sharpee play             # play in the terminal
 and one more when you're ready to ship:
 
 ```shell
-sharpee build --browser  # a self-contained playable page in dist/web/
+sharpee build            # a self-contained playable page in dist/web/<id>/
 ```
 
 The full grammar reference lives in the

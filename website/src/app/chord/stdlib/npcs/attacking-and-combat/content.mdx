@@ -1,4 +1,4 @@
-**attack** (`if.action.attacking`): verbs `attack/hit/strike/kill/
+**attack** (`attacking`): verbs `attack/hit/strike/kill/
 fight/slay/murder/break/smash/destroy X` (the last three landed with
 ADR-230 D4), plus `attack/hit/strike/kill X with/using Y` (the weapon
 form skips fight/slay/murder). An explicitly named weapon is implicitly
@@ -84,11 +84,11 @@ answer "You swing at the deserter but miss!" (outcomes vary run to run,
 by policy). The blank line after `attack the barrel` is the flagged
 ineffective path, verbatim.
 
-| | attack (`if.action.attacking.*`) |
+| | attack (`attacking-*`) |
 |---|---|
 | Refusals | `no_target` · `self` · `violence_not_the_answer` (combatant, no interceptor) · `already_dead` |
-| Success | combat narration via the `combat.*` message families (the extension's, carried by the lang layer) · `target_broke` · `target_damaged` / `target_destroyed` |
-| Events | `if.event.attacked` · death/knockout and exit-revealed events after the blow text |
+| Success | combat narration overridable via the `attacking-combat-*` alias family (the extension's, carried by the lang layer) · `target_broke` · `target_damaged` / `target_destroyed` |
+| Events | `attacked` · death/knockout and exit-revealed events after the blow text |
 
 Interceptors: `on attacking it` on the target (a story wanting scripted
 fights replaces the reply there instead of registering combat) and on

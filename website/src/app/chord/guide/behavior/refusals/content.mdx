@@ -13,8 +13,8 @@ The named key resolves entity-scoped first (ADR-231): a
 `phrase all-thorns:` override in the refusing entity's own `create`
 block wins over a story-wide
 `all-thorns`, and a bare key
-renders on standard actions just as it does on story-defined ones. A
-dotted key is legal here too.
+renders on standard actions just as it does on story-defined ones. The
+key is a single kebab-case word; dots are illegal (ADR-254).
 
 Refusing on a negated condition (`refuse when not …`) is flagged
 (`analysis.negated-requirement`): that is a requirement in disguise, and

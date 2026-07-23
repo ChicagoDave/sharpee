@@ -12,9 +12,10 @@ Every story block on these pages is a verbatim excerpt of a loadable fixture, an
 Each category opens with a table: the action, the phrasings that actually
 parse (grounded in the parser's grammar, not the help lists), what an
 entity **needs** to be eligible, and the message keys the action **refuses
-with**. Refusal keys prefix as `if.action.<action>.<key>`; they are IDs,
-not fixed text, and [the reference](/chord/stdlib) explains how a story retargets
-them. Success keys, events, and the full check order live in the
+with**. Refusal keys are single kebab words (`fixed-in-place`), not dotted
+ids and not fixed text; a story retargets a platform message with `override
+message <alias>` (ADR-254/255), and [the reference](/chord/stdlib) explains
+how. Success keys, events, and the full check order live in the
 corresponding [reference entry](/chord/stdlib); this document is the quick
 lookup and the gallery.
 
@@ -31,13 +32,13 @@ Two authoring notes that recur in the examples:
   article or no; `x the iron key` and `x iron key` both hit
   (ADR-231).
 - Where an example carries a custom refusal on a *standard* action, its
-  phrase is declared under the fully-qualified dotted key (`define phrase
-  if.action.taking.ring-fused`) and named in full by `refuse`. That is
-  a style choice, not a workaround: the short form (`refuse ring-fused`
-  with the phrase declared under the bare key) renders the same text,
-  and both forms work on every standard action: giving, showing,
-  throwing, and wearing included (ADR-231). Refusals inside a
-  `define action` (see [turning](/chord/cookbook/devices-and-tools)) take short keys as they always have.
+  phrase is declared under a single-token kebab label (`define phrase
+  ring-fused`) and named by `refuse ring-fused` (ADR-254): phrase keys are
+  single words, never dotted. Custom refusals work on every standard action:
+  giving, showing, throwing, and wearing included. To retarget a *platform*
+  standard-action message instead of adding your own, use `override message
+  <alias>` (ADR-255) — for example `override message taking-fixed-in-place`.
+  Refusals inside a `define action` (see [turning](/chord/cookbook/devices-and-tools)) take short keys as they always have.
 
 ## What this document leans on
 

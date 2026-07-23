@@ -72,7 +72,15 @@ function getProjectInfo(projectDir: string): ProjectInfo | null {
 function processTemplate(content: string, info: ProjectInfo): string {
   return content
     .replace(/\{\{STORY_ID\}\}/g, info.storyId)
-    .replace(/\{\{STORY_TITLE\}\}/g, info.storyTitle);
+    .replace(/\{\{STORY_TITLE\}\}/g, info.storyTitle)
+    // Browser-entry client config (ADR-252 D3): the scaffold's concrete defaults.
+    // (The build's generated entry fills these from the .story header instead.)
+    .replace(/\{\{STORAGE_PREFIX\}\}/g, info.storyId)
+    .replace(/\{\{DEFAULT_THEME\}\}/g, 'modern-dark')
+    .replace(
+      /\{\{THEMES_JSON\}\}/g,
+      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'paper', name: 'Paper' },\n      ]",
+    );
 }
 
 /**

@@ -435,10 +435,14 @@ DIRECTION    = north | south | east | west | northeast | northwest
   (`family: 'ambient' | 'layer'`; data projections read as `'data'`)
   and the loader registers them platform-side — the browser renders
   ambient beds and image layers with no story TypeScript.
-- **`define channel … end channel`** (spelling A) — a JSON data
+- **`define channel … end channel`** (spelling A; ADR-253) — a data
   projection: `mode replace|append|event`, optional `gated by
-  <capability>`, `from event <key>`, `take <field>, …` (the turn's last
-  matching event, taken fields only). Renderers ship platform-side.
+  <capability>`, and a single `return <construct> from <event>` line —
+  `<construct>` is a field (`return hour from estate-clock`), a
+  `"text (slot)"` template, or a `phrase <key>`. (ADR-253 replaced the
+  ADR-216 `from event` + `take` lines; a `take` line is a parse error.)
+  The value renders into a DOM element named for the channel, else the
+  generic panel — placement ships platform-side, no story TypeScript.
 - **`client has <capability>`** — a condition reading the LIVE negotiated
   client capabilities (closed flag set in Chord spelling: `sound`,
   `images`, `split-pane`, …); false for every gateable flag on a
@@ -462,9 +466,10 @@ Books arbitrate first-predicate-match in file-appearance order, per key
 (always) book. The fallback chain is per-entity phrase → story
 `define phrase` → active book → platform default — story text always
 beats books (enforced statically at load: story-defined keys register
-no book evaluator). Entry keys are STORY keys only — dotted platform
-IDs are `analysis.phrasebook-dotted-key` (ADR-230 D5 story-level
-overrides remain the platform path). Entry-level `while` is
+no book evaluator). Entry keys are STORY keys only (single kebab words,
+ADR-254) — a dotted platform ID is `analysis.phrasebook-dotted-key`; to
+override a standard-action message, use `override message <alias>`
+(ADR-255). Entry-level `while` is
 `analysis.phrasebook-entry-gate` (the book's header predicate is the
 only gate). Other gates: `parse.phrasebook-header`/`-entry`/`-end`,
 `parse.use-phrasebook`, `parse.import-form` (bare `import "<file>"`
@@ -569,7 +574,10 @@ action-line    = "grammar" NL >>> { pattern-line }
                | statement ;                               (* §2.3 body *)
 pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ;  (* → = cardinality *)
 
-define-hatch   = "define" ("action"|"behavior") WORD "from" STRING NL ;
+define-hatch   = "define" ("action"|"chain") WORD "from" STRING NL ;
+                 (* `chain` = ADR-094 chain hatch (WORD a curated stdlib chain
+                    alias, e.g. opened-revealed; analysis.unknown-chain otherwise).
+                    `define behavior … from` was REMOVED, ADR-235 D2. *)
 
 define-sequence= "define" "sequence" WORD { WORD } NL
                  { sequence-step } "end" "sequence" NL ;

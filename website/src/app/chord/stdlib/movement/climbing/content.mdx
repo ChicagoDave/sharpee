@@ -1,4 +1,4 @@
-**climb** (`if.action.climbing`) handles `climb X`, `climb up/down X`,
+**climb** (`climbing`) handles `climb X`, `climb up/down X`,
 `scale`, `ascend`, `descend X`, all gated on the `climbable` trait
 (`climb into the basket` is entering; `climb out` is exiting).
 Climbing something puts you *on* it, the same place putting yourself
@@ -62,11 +62,11 @@ real, somewhere to actually be, so the second climb can refuse and
 climb speaks success but the player never leaves the room floor
 (nothing can hold them).
 
-| | climb (`if.action.climbing.*`) |
+| | climb (`climbing-*`) |
 |---|---|
 | Refusals | `no_target` · `not_climbable` · `already_there` · `cant_go_that_way` (directional, off-vertical) — `too_high`/`too_dangerous` reserved |
 | Success | `climbed_onto` (object) · `climbed_up` / `climbed_down` (directional) |
-| Events | `if.event.climbed`, plus `if.event.entered` (object) or `if.event.moved` (directional) |
+| Events | `climbed`, plus `entered` (object) or `moved` (directional) |
 
 Interceptors: `after climbing it` on the target, the pear tree's
 comment above, and how a cliff would teleport (below). There are two

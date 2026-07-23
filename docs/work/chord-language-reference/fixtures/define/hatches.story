@@ -4,6 +4,7 @@ story "Hatches" by "Sharpee Docs"
 
 define text weather from "./extras.ts"
 define action dowsing from "./extras.ts"
+define chain opened-revealed from "./extras.ts"
 
 create the Weather Station
   a room

@@ -94,20 +94,17 @@ npm install
 ```
 
 `sharpee init` scaffolds a Chord project by default: your whole story lives
-in `fernhill.story`, and `src/browser-entry.ts` is the (optional) browser
-wiring you'll meet in the last chapter. The working loop is three commands:
+in `fernhill.story`, and an optional `browser/index.html` is the custom page
+you'll meet in the last chapter. The working loop is three commands:
 
 ```bash
-sharpee build            # compile gate — every load error, before anything runs
 sharpee test             # run your transcript tests
 sharpee play             # play in the terminal
+sharpee build fernhill.story   # a self-contained playable page in dist/web/<id>/
 ```
 
-and one more when you're ready to ship:
-
-```bash
-sharpee build --browser  # a self-contained playable page in dist/web/
-```
+`sharpee build` on a `.story` runs the compile gate and emits the browser
+app — browser is the default client (ADR-252), no flag, no `package.json`.
 
 The full grammar reference lives in the repository at
 `docs/reference/chord-grammar.md`; each chapter names the sections it

@@ -46,7 +46,7 @@ The compiler load-checks each of the following rules.
 - **Story keys only.** A book entry key is a single kebab-case word in
   the story's own phrase namespace. A dotted platform message ID raises
   `analysis.phrasebook-dotted-key`. To override a platform message, use
-  a story-level `define phrase <dotted-id>`.
+  a story-level `override message <alias>` block (ADR-255).
 - **The book's `while` is the only gate.** An entry-level `while` raises
   `analysis.phrasebook-entry-gate`. Split the entry into a second book
   instead.

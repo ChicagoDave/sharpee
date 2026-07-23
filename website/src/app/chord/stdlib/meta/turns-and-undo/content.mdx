@@ -2,7 +2,7 @@
 snapshot-taking, daemon-ticking turn in which nothing else happens.
 N waits let N rounds of scheduled behavior play out. One
 message, `time_passes` (the lang file's twelve wait variants are dead
-inventory, flagged). Stories react to `if.event.waited`, or gate
+inventory, flagged). Stories react to `waited`, or gate
 things on turns passing.
 
 **sleep** (`sleep`, `nap`, `doze`, `rest`, `slumber`, all five parse
@@ -59,7 +59,7 @@ transcript-pinned).
 
 | | Refusals | Success |
 |---|---|---|
-| **wait** (`if.action.waiting.*`) | — | `time_passes` (event `if.event.waited`) |
-| **sleep** (`if.action.sleeping.*`) | — | `slept` |
-| **again** (`if.action.again.*`) | `nothing_to_repeat` | renders whatever the repeated command renders |
-| **undo** (`if.action.undoing.*`) | `nothing_to_undo` · `undo_failed` | `undo_success` |
+| **wait** (`waiting-*`) | — | `time_passes` (event `waited`) |
+| **sleep** (`sleeping-*`) | — | `slept` |
+| **again** (`again-*`) | `nothing_to_repeat` | renders whatever the repeated command renders |
+| **undo** (`undoing-*`) | `nothing_to_undo` · `undo_failed` | `undo_success` |

@@ -15,7 +15,16 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { stampVersion } from './version-stamp.js';
-import { findStoryFile, makeFsImportResolver } from './author-game.js';
+import { platformRanges } from './init.js';
+import { findStoryFile } from './author-game.js';
+import {
+  type WiredTheme,
+  type BrowserBuildEnv,
+  buildBrowser,
+  resolveWiredThemes as resolveWiredThemesCore,
+  copyWiredThemes,
+  injectThemes,
+} from './browser-core.js';
 
 // In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
 const TEMPLATES_DIR = fs.existsSync(path.join(__dirname, '..', 'templates', 'browser'))
@@ -100,143 +109,82 @@ export function resolveEngineStylesDir(projectDir: string): string {
   );
 }
 
-/** A theme wired into the build (ADR-188). */
-interface WiredTheme {
-  id: string;
-  name: string;
-  /** Absolute path to a BUILT-IN theme's CSS (copied into dist/web/themes/), or
-   *  null for an AUTHOR theme whose `[data-theme]` block lives in the author
-   *  override stylesheet (browser/<package-name>.css) — nothing to copy or link. */
-  cssPath: string | null;
-  /** Dir holding the built-in CSS + its assets (platform-browser's styles/themes),
-   *  or null for an author theme. */
-  srcDir: string | null;
-  /** Sibling dirs (e.g. `system-6`) to copy alongside a built-in's CSS. */
-  assets: string[];
-}
-
-/** A built-in theme's entry in platform-browser's styles/themes/manifest.json. */
-interface BuiltinThemeEntry {
-  name: string;
-  css: string;
-  assets?: string[];
-}
-
 /**
- * Resolve the themes a story lists in `sharpee.themes`. Each entry is either:
- *  - a string id of a BUILT-IN theme (shipped by @sharpee/platform-browser under
- *    styles/themes/, looked up in that dir's manifest.json), or
- *  - an inline `{ id, name }` for the author's OWN theme — its `[data-theme]`
- *    token block lives in the author override stylesheet (browser/<package-name>.css),
- *    so the build only adds a menu entry.
- * Explicit opt-in; no scanning (AC-9). `classic` is the engine default and is
- * always present, so it need not be listed.
- * @throws on an unknown built-in id or a malformed entry.
+ * Run the browser build.
+ *
+ * Dispatch on project kind (ADR-252 D1): a `.story` present → the Chord path
+ * (the shared build core; IR-derived metadata, no package.json), a bare `.story`
+ * FILE path being a first-class target; a TypeScript project (src/index.ts, no
+ * `.story`) → the existing TS path below, unchanged. A directory holding BOTH is
+ * a build-time error, never a merged story.
+ *
+ * @param args     build flags (--no-minify / --no-sourcemap / --help)
+ * @param targetArg a `.story` file path, or a project directory (default cwd)
  */
-function resolveWiredThemes(projectDir: string, entries: unknown[]): WiredTheme[] {
-  const themesDir = path.join(resolveEngineStylesDir(projectDir), 'themes');
-  const manifestPath = path.join(themesDir, 'manifest.json');
-  const builtins: Record<string, BuiltinThemeEntry> = fs.existsSync(manifestPath)
-    ? JSON.parse(fs.readFileSync(manifestPath, 'utf-8')).themes || {}
-    : {};
-
-  return entries.map((entry) => {
-    if (typeof entry === 'string') {
-      const b = builtins[entry];
-      if (!b) {
-        throw new Error(
-          `Unknown built-in theme "${entry}". Available: ${Object.keys(builtins).join(', ') || '(none)'}. ` +
-            `For your own theme, list { "id": "…", "name": "…" } and define its [data-theme] block in browser/<package-name>.css.`,
-        );
-      }
-      return {
-        id: entry,
-        name: b.name || entry,
-        cssPath: path.join(themesDir, b.css),
-        srcDir: themesDir,
-        assets: Array.isArray(b.assets) ? b.assets : [],
-      };
-    }
-    if (entry && typeof entry === 'object' && typeof (entry as { id?: unknown }).id === 'string') {
-      const e = entry as { id: string; name?: string };
-      return { id: e.id, name: e.name || e.id, cssPath: null, srcDir: null, assets: [] };
-    }
-    throw new Error(
-      `Invalid "sharpee.themes" entry: ${JSON.stringify(entry)}. ` +
-        `Use a built-in id (string) or an author theme { "id", "name" }.`,
-    );
-  });
-}
-
-/**
- * Copy each BUILT-IN theme's CSS to `dist/web/themes/<id>.css` and its declared
- * sibling assets into `dist/web/themes/` so relative `@font-face` URLs resolve.
- * Author themes copy nothing (their CSS is in the override stylesheet). The
- * `themes/` dir is rebuilt from scratch so a de-listed theme never lingers.
- */
-function copyWiredThemes(themes: WiredTheme[], outDir: string): void {
-  const themesDir = path.join(outDir, 'themes');
-  fs.rmSync(themesDir, { recursive: true, force: true });
-  const builtins = themes.filter((t) => t.cssPath);
-  if (builtins.length === 0) return;
-  fs.mkdirSync(themesDir, { recursive: true });
-  for (const t of builtins) {
-    fs.copyFileSync(t.cssPath!, path.join(themesDir, `${t.id}.css`));
-    for (const asset of t.assets) {
-      fs.cpSync(path.join(t.srcDir!, asset), path.join(themesDir, asset), { recursive: true });
-    }
-  }
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-/**
- * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme at
- * the THEME_LINKS marker (after the engine CSS; author themes need no link, their
- * CSS is in the override stylesheet), and a regenerated `#theme-menu` — the
- * `classic` default + one item per listed theme (ADR-188).
- */
-function injectThemes(html: string, themes: WiredTheme[]): string {
-  const links = themes
-    .filter((t) => t.cssPath)
-    .map((t) => `  <link rel="stylesheet" href="themes/${t.id}.css">`)
-    .join('\n');
-  html = html.replace(
-    /[ \t]*<!--\s*THEME_LINKS:[\s\S]*?-->/,
-    links || '  <!-- no built-in themes wired -->',
-  );
-  const items = [
-    '              <li role="menuitemradio" class="sharpee-menu-option" data-theme="classic">Classic</li>',
-    ...themes.map(
-      (t) =>
-        `              <li role="menuitemradio" class="sharpee-menu-option" data-theme="${t.id}">${escapeHtml(t.name)}</li>`,
-    ),
-  ].join('\n');
-  return html.replace(
-    /(<ul role="menu" id="theme-menu"[^>]*>)[\s\S]*?(<\/ul>)/,
-    `$1\n${items}\n            $2`,
-  );
-}
-
-/** Run the build-browser command. */
-export async function runBuildBrowserCommand(args: string[], projectDirArg?: string): Promise<void> {
+export async function runBuildBrowserCommand(args: string[], targetArg?: string): Promise<void> {
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
     return;
   }
 
-  const projectDir = projectDirArg || process.cwd();
   const minify = !args.includes('--no-minify');
   const sourcemap = !args.includes('--no-sourcemap');
 
+  // Resolve the target: a bare `.story` file, or a project directory.
+  let projectDir: string;
+  let storyFile: string | null;
+  if (targetArg && targetArg.endsWith('.story')) {
+    storyFile = path.resolve(targetArg);
+    if (!fs.existsSync(storyFile)) {
+      console.error(`\nError: no such story file: ${targetArg}`);
+      process.exit(1);
+    }
+    projectDir = path.dirname(storyFile);
+  } else {
+    projectDir = targetArg ? path.resolve(targetArg) : process.cwd();
+    try {
+      storyFile = findStoryFile(projectDir); // throws on multiple .story files
+    } catch (error) {
+      console.error(`\nError: ${error instanceof Error ? error.message : error}`);
+      process.exit(1);
+      return;
+    }
+  }
+
   console.log('\n🔨 Building browser bundle\n');
 
+  // D1: a Chord `.story` and a TypeScript project are mutually exclusive kinds.
+  const hasIndexTs = fs.existsSync(path.join(projectDir, 'src', 'index.ts'));
+  if (storyFile && hasIndexTs) {
+    console.error(
+      '\nError: this directory holds both a .story file and src/index.ts — a Sharpee project is ' +
+        'either a Chord (.story) project OR a TypeScript project, never both. Remove one.',
+    );
+    process.exit(1);
+  }
+
+  // --- Chord path (ADR-252): the shared build core, IR-derived metadata. ---
+  if (storyFile) {
+    const authorEnv: BrowserBuildEnv = {
+      stylesDir: resolveEngineStylesDir(projectDir),
+      templatesDir: TEMPLATES_DIR,
+      esbuildCwd: projectDir,
+      engineVersion: platformRanges().sharpeeRange.replace(/^[\^~]/, ''),
+    };
+    try {
+      const outDir = buildBrowser(storyFile, authorEnv, { minify, sourcemap });
+      console.log('');
+      console.log('To test locally:');
+      console.log(`  npx serve ${path.relative(projectDir, outDir)}`);
+      console.log('');
+    } catch (error) {
+      console.error(`\nError: ${error instanceof Error ? error.message : error}`);
+      process.exit(1);
+    }
+    return;
+  }
+
+  // --- TypeScript path (unchanged): metadata from package.json / src/index.ts. ---
   const info = getProjectInfo(projectDir);
   if (!info) {
     console.error('Error: This does not appear to be a Sharpee project.');
@@ -254,76 +202,6 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
 
   const outDir = path.join(projectDir, 'dist', 'web');
   fs.mkdirSync(outDir, { recursive: true });
-
-  // Chord project: the shipped bundle carries the `.story` SOURCE and the
-  // compiler, compiling at boot (David's ruling, 2026-07-18). Run the
-  // compiler HERE as the fail-fast gate — diagnostics belong on the
-  // author's machine, never first as a broken page — then ship the source
-  // as dist/web/story.story (the entry fetches that fixed name).
-  let chordStoryFile: string | null;
-  try {
-    chordStoryFile = findStoryFile(projectDir);
-  } catch (error) {
-    console.error(`\nError: ${error instanceof Error ? error.message : error}`);
-    process.exit(1);
-    return;
-  }
-  if (chordStoryFile) {
-    const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
-    const rel = path.relative(projectDir, chordStoryFile) || chordStoryFile;
-    // Build-time fail-fast gate resolves imports off disk (ADR-251). The
-    // recording wrapper captures every fragment the compiler pulls, so the
-    // SAME content can ship as dist/web/imports.json for compile-at-boot
-    // (D2/Phase 3) — the splice removes the ImportDecl nodes, so capturing
-    // at resolve time is the reliable seam.
-    const storyDir = path.dirname(path.resolve(chordStoryFile));
-    const importBundle: Record<string, string> = {};
-    const fsResolver = makeFsImportResolver(storyDir);
-    const result = chord.compile(fs.readFileSync(chordStoryFile, 'utf-8'), {
-      importResolver: (name) => {
-        const text = fsResolver(name);
-        if (text !== null) importBundle[name] = text;
-        return text;
-      },
-    });
-    const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    for (const d of errors) {
-      console.error(`  ${rel}:${d.span.line}:${d.span.column} error [${d.code}] ${d.message}`);
-    }
-    if (!result.ok) {
-      console.error(`\nError: ${rel} failed the load-time gates (${errors.length} error(s)).`);
-      process.exit(1);
-    }
-    if (result.ir.hasHatches) {
-      // The browser cannot load author hatch modules (no module resolution
-      // in the page); refuse legibly rather than shipping a bundle that
-      // dies at boot. Pure-IR stories (the scaffold's shape) build fine.
-      console.error(
-        '\nError: this story declares TypeScript hatches (`define text/action … from "…"`) — ' +
-          'the browser build does not support hatch modules yet. Remove the hatches, or use the TypeScript project form.',
-      );
-      process.exit(1);
-    }
-    fs.copyFileSync(chordStoryFile, path.join(outDir, 'story.story'));
-    console.log(`  ✓ Validated ${rel} (gate-clean) and shipped it as story.story`);
-
-    // ADR-251 Phase 3: ship the resolved import fragments as one inline
-    // bundle for compile-at-boot (`<name>.chord` → source text). Omitted
-    // entirely when the story has no imports — the single-file path ships
-    // nothing extra, and the entry's fetch tolerates its absence.
-    const importNames = Object.keys(importBundle);
-    if (importNames.length > 0) {
-      fs.writeFileSync(path.join(outDir, 'imports.json'), JSON.stringify(importBundle));
-      console.log(`  ✓ Bundled ${importNames.length} import fragment(s) → imports.json`);
-    }
-
-    // Story IR artifact for the IDE/tooling surface (David, 2026-07-18:
-    // "the IDE will want the IR"). dist/, not dist/web/ — a tooling file,
-    // not a page asset; the page compiles the shipped SOURCE at boot.
-    const irOut = path.join(projectDir, 'dist', `${path.basename(chordStoryFile, '.story')}.ir.json`);
-    fs.writeFileSync(irOut, JSON.stringify(result.ir, null, 2) + '\n');
-    console.log(`  ✓ Story IR → ${path.relative(projectDir, irOut)}`);
-  }
 
   // browser-entry.ts imports ./version — stamp it fresh before bundling.
   stampVersion(projectDir, info.storyId);
@@ -360,7 +238,11 @@ export async function runBuildBrowserCommand(args: string[], projectDirArg?: str
   }
 
   // Resolve the listed themes (built-in ids + author themes; explicit opt-in, AC-9).
-  const wiredThemes = resolveWiredThemes(projectDir, info.themes);
+  // Author mode resolves platform-browser's styles/themes/ from the project's deps.
+  const wiredThemes: WiredTheme[] = resolveWiredThemesCore(
+    path.join(resolveEngineStylesDir(projectDir), 'themes'),
+    info.themes,
+  );
 
   // index.html (the page) stays a devkit template — substitute story tokens, then
   // wire the theme <link>s + menu items (ADR-188 Phase 4).

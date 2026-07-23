@@ -1,4 +1,4 @@
-**give** (`if.action.giving`) parses `give X to Y`, `give Y X`, and
+**give** (`giving`) parses `give X to Y`, `give Y X`, and
 `offer X to Y`. The recipient must be a person (`a person`, the actor
 trait), so `give the sword to the door` refuses with `not_actor` ("You
 can only give things to people."). Giving does an implicit take if the item is not in
@@ -10,7 +10,7 @@ and a `preferences` object whose `refuses` list blocks matching items with
 `not_interested` while `likes`/`dislikes` color acceptance as
 `gratefully_accepts` / `reluctantly_accepts`.
 
-**show** (`if.action.showing`) parses `show X to Y` and `show Y X`. It is
+**show** (`showing`) parses `show X to Y` and `show Y X`. It is
 purely social: nothing moves, nothing changes hands. The viewer must be a
 person in the same room (`viewer_too_far` otherwise); the item is
 implicitly taken if needed. The default reaction is `shown` (or
@@ -86,13 +86,13 @@ vetoes the trade, the ferryman's `after giving it` reacts once it commits,
 and his `on showing it` replaces the flat `shown` line entirely. For a
 transaction richer still (a guard who takes the bribe and opens the
 gate), the Sharpee Way is a capability behavior registered for
-`if.action.giving` on the recipient, which takes over the whole exchange.
+`giving` on the recipient, which takes over the whole exchange.
 
-| | give (`if.action.giving.*`) | show (`if.action.showing.*`) |
+| | give (`giving-*`) | show (`showing-*`) |
 |---|---|---|
 | Refusals | `no_item` · `no_recipient` · `not_actor` · `self` · `not_holding` · `recipient_not_visible` · `recipient_not_reachable` · `inventory_full` / `too_heavy` (capacity, phrased as declining) · `not_interested` (`preferences.refuses`) | `no_item` · `no_viewer` · `not_actor` · `self` · `not_carrying` · `viewer_not_visible` · `viewer_too_far` |
 | Success | `given` · `gratefully_accepts` / `reluctantly_accepts` (likes/dislikes) · `accepts` and `refuses` exist for story use — stdlib itself never picks them | `shown` · `wearing_shown` (worn item) · `reactions` matches: `viewer_recognizes` · `viewer_impressed` · `viewer_unimpressed` · `viewer_examines` · fallback `viewer_nods` |
-| Events | `if.event.given` / `if.event.give_blocked` | `if.event.shown` / `if.event.show_blocked` |
+| Events | `given` / `give_blocked` | `shown` / `show_blocked` |
 
 Interceptors: `on giving it` / `after giving it` and `on showing it` /
 `after showing it`, on the item or on the recipient/viewer.

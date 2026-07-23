@@ -48,9 +48,9 @@ describe('event-type sites reject dots too (ADR-256 — the ban is uniform)', ()
     expect(dotted[0].message).toContain('media-sound-play');
   });
 
-  it('a dotted channel `from event` key raises parse.dotted-key', () => {
+  it('a dotted channel `return … from <event>` key raises parse.dotted-key', () => {
     const errors = errorsOf(
-      `${HEADER}define channel c\n  mode event\n  from event estate.clock\n  take hour\nend channel\n`,
+      `${HEADER}define channel c\n  mode event\n  return hour from estate.clock\nend channel\n`,
     );
     expect(errors.some((e) => e.code === 'parse.dotted-key')).toBe(true);
   });

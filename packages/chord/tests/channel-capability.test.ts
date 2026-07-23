@@ -27,7 +27,7 @@ create the Hall
 ${extra}`;
 
 describe('define channel (ADR-216, spelling A)', () => {
-  it('compiles the compass fixture: mode, camelCase gate, source event, projection', () => {
+  it('compiles the compass fixture: mode, camelCase gate, source event, return (ADR-253)', () => {
     const result = compile(FIXTURE);
     expect(result.diagnostics).toEqual([]);
     expect(result.ir.channels).toEqual([
@@ -37,7 +37,7 @@ describe('define channel (ADR-216, spelling A)', () => {
         mode: 'replace',
         gatedBy: 'images',
         fromEvent: 'chord-compass-updated',
-        take: ['heading', 'target'],
+        returns: { kind: 'text', text: '(heading) toward (target)' }, // ADR-253 D1
         span: expect.anything(),
       },
     ]);
@@ -46,25 +46,25 @@ describe('define channel (ADR-216, spelling A)', () => {
 
   it('a bad mode → analysis.channel-mode', () => {
     expect(
-      errorCodes(story('define channel c\n  mode sideways\n  from event a-b\n  take x\nend channel\n')),
+      errorCodes(story('define channel c\n  mode sideways\n  return x from a-b\nend channel\n')),
     ).toEqual(['analysis.channel-mode']);
   });
 
-  it('a missing `from event` → analysis.channel-from', () => {
-    expect(errorCodes(story('define channel c\n  mode event\n  take x\nend channel\n'))).toEqual([
-      'analysis.channel-from',
+  it('a missing `return` line → analysis.channel-return', () => {
+    expect(errorCodes(story('define channel c\n  mode event\nend channel\n'))).toEqual([
+      'analysis.channel-return',
     ]);
   });
 
-  it('a missing `take` → analysis.channel-take', () => {
-    expect(errorCodes(story('define channel c\n  mode event\n  from event a-b\nend channel\n'))).toEqual([
-      'analysis.channel-take',
-    ]);
+  it('`take` is removed (ADR-253) → parse.channel-take-removed pointing at `return`', () => {
+    const codes = errorCodes(story('define channel c\n  mode event\n  from event a-b\n  take x\nend channel\n'));
+    expect(codes).toContain('parse.channel-take-removed');
+    expect(codes).toContain('parse.channel-from-removed');
   });
 
   it('an unknown gate capability → analysis.unknown-capability with a suggestion', () => {
     const result = compile(
-      story('define channel c\n  mode event\n  gated by sonud\n  from event a-b\n  take x\nend channel\n'),
+      story('define channel c\n  mode event\n  gated by sonud\n  return x from a-b\nend channel\n'),
     );
     const diagnostic = result.diagnostics.find((d) => d.code === 'analysis.unknown-capability')!;
     expect(diagnostic).toBeDefined();
@@ -72,7 +72,7 @@ describe('define channel (ADR-216, spelling A)', () => {
   });
 
   it('a duplicate channel name → analysis.duplicate-channel', () => {
-    const channel = 'define channel c\n  mode event\n  from event a-b\n  take x\nend channel\n';
+    const channel = 'define channel c\n  mode event\n  return x from a-b\nend channel\n';
     expect(errorCodes(story(channel + channel))).toEqual(['analysis.duplicate-channel']);
   });
 });

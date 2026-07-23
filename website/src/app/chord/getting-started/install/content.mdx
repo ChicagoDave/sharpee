@@ -21,7 +21,8 @@ This installs the `sharpee` command. Run it bare to see what it can do:
 sharpee — Interactive Fiction authoring CLI
 
 Usage:
-  sharpee build [name|path] [--browser]  Build an author story project (cwd or registered name)
+  sharpee build [<file>.story | dir]     Build a Chord story to a browser app (browser is the default client)
+  sharpee build [name|path] [--browser]  Build a TypeScript story project
   sharpee init <name>                    Scaffold a new story project
   sharpee compose <file.story> [opts]    Compile a Chord story to Story IR
   sharpee test [name|path] [transcripts…] [--chain] [--stop-on-failure] [--verbose]

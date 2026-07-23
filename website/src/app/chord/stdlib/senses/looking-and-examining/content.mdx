@@ -1,11 +1,11 @@
-**look** (`if.action.looking`) parses bare `look`, `l`, and `look
+**look** (`looking`) parses bare `look`, `l`, and `look
 around`. It rerenders the room: name and description (a first visit
 prefers the room's first-time description and marks the room visited),
 the "You can see …" list (scenery excluded), and the contents of open
 containers and supporters in view. In a dark room all of that collapses
 to `room_dark`.
 
-**examine** (`if.action.examining`) parses `examine X`, `x X`, `inspect
+**examine** (`examining`) parses `examine X`, `x X`, `inspect
 X`, `check`/`view`/`observe X` (ADR-230 D4), `look at X`, and `look
 [carefully] at X`. The adverb adds nothing; the separate
 `examining_carefully` id it used to parse to is gone (ADR-230 D3a). It
@@ -69,11 +69,11 @@ The scenery telescope stays out of the "You can see …" list but
 examines fine, and the `detail while` phrase appends its sentence to
 the description only while the condition holds.
 
-| | look (`if.action.looking.*`) | examine (`if.action.examining.*`) |
+| | look (`looking-*`) | examine (`examining-*`) |
 |---|---|---|
 | Refusals | (`room_dark` in the dark) | `no_target` · `not_visible` |
 | Success | `contents_list` · `container_contents` · `surface_contents` | `examined` · `examined_self` · `examined_container` · `examined_supporter` · `examined_switchable` · `examined_readable` · `examined_wearable` · `examined_door` · `nothing_special` |
-| Events | `if.event.looked` · `if.event.room.description` · `if.event.list.contents` | `if.event.examined` |
+| Events | `looked` · `room-description` · `list-contents` | `examined` |
 
 Interceptors: `on examining it` / `after examining it` on the target
 (the robin in chord-language.md rides this seam). Looking

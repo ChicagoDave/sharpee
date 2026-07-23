@@ -24,9 +24,10 @@ Chord `.story` scene an author writes, and the transcript a player sees.
 Each category opens with a table: the action, the phrasings that actually
 parse (grounded in the parser's grammar, not the help lists), what an
 entity **needs** to be eligible, and the message keys the action **refuses
-with**. Refusal keys prefix as `if.action.<action>.<key>` — they are IDs,
-not fixed text; `stdlib-reference.md` §1.4 explains how a story retargets
-them. Success keys, events, and the full check order live in the
+with**. Refusal keys are single kebab labels (`not-openable`; dots are
+illegal, ADR-254) — they name messages, not fixed text; to retarget a
+standard-action message a story uses `override message <alias>` (ADR-255,
+alias `<action>-<message>`), as `stdlib-reference.md` §1.4 explains. Success keys, events, and the full check order live in the
 corresponding `stdlib-reference.md` entry; this document is the quick
 lookup and the gallery.
 
@@ -43,13 +44,14 @@ Two authoring notes that recur in the examples:
   article or no — `x the iron key` and `x iron key` both hit
   (ADR-231).
 - Where an example carries a custom refusal on a *standard* action, its
-  phrase is declared under the fully-qualified dotted key (`define phrase
-  if.action.taking.ring-fused`) and named in full by `refuse`. That is
-  a style choice, not a workaround: the short form (`refuse ring-fused`
-  with the phrase declared under the bare key) renders the same text,
-  and both forms work on every standard action — giving, showing,
-  throwing, and wearing included (ADR-231). Refusals inside a
-  `define action` (see turning, §6) take short keys as they always have.
+  phrase is a single kebab-case key (`define phrase ring-fused`, named by
+  `refuse ring-fused`) — keys are single words; a `.` is illegal (ADR-254).
+  This is the author's *own* text on a standard action; it works on every
+  one — giving, showing, throwing, and wearing included. To instead retarget
+  the platform's *built-in* text for a standard action story-wide, use
+  `override message <alias>` (ADR-255), where the alias is `<action>-<message>`
+  (e.g. `taking-fixed-in-place`). Refusals inside a `define action` (see
+  turning, §6) take the same short keys.
 
 ## 1. Manipulation
 
@@ -107,13 +109,13 @@ create the iron ring
   A ring set into the floor slab.
 
   on taking it
-    refuse if.action.taking.ring-fused
+    refuse ring-fused
   end on
 
 create the player
   starts in the Lamp Room
 
-define phrase if.action.taking.ring-fused
+define phrase ring-fused
   The ring is fused to the slab; your fingers just slip off it.
 end phrase
 ```
@@ -356,14 +358,14 @@ create the letter opener
   Your grandfather's silver letter opener.
 
   on opening it
-    refuse if.action.opening.opener-precious
+    refuse opener-precious
   end on
 
 create the player
   starts in the Cellar
   carries the letter opener
 
-define phrase if.action.opening.opener-precious
+define phrase opener-precious
   You are not prying anything with your grandfather's letter opener.
 end phrase
 ```

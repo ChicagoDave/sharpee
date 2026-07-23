@@ -1,4 +1,4 @@
-**take** (`if.action.taking`) covers the verbs `take`, `get`, `grab`,
+**take** (`taking`) covers the verbs `take`, `get`, `grab`,
 `acquire`, `collect`, `pick up`, `take up` (bare `pick` is deliberately
 absent, since it would outmatch `pick up`); multi-object `take all`,
 `take all but the lamp`, `take the key and the bottle`. Anything is
@@ -7,7 +7,7 @@ carried, and carrying limits refuse; a worn item is quietly taken off
 first; identity `points` awards score on the first take (treasure
 scoring).
 
-**drop** (`if.action.dropping`) covers the verbs `drop`, `discard`,
+**drop** (`dropping`) covers the verbs `drop`, `discard`,
 `put down`, `throw away`, and the multi-object form `drop all`. The
 destination is wherever the player is: the
 room, or the container or supporter the player is inside or on.
@@ -50,9 +50,9 @@ create the iron ring
 create the player
   starts in the Lamp Room
 
-define phrase if.action.dropping.dropped
+override message dropping-dropped
   You set it down with care.
-end phrase
+end override
 ```
 
 The player sees:
@@ -73,14 +73,14 @@ You set it down with care.
 
 Three seams in one scene: `scenery` refuses with the platform's
 `fixed_in_place`, the ring's `on taking it` guard refuses with its own
-phrase, and the story-wide `define phrase` under the dotted ID rewrites
+phrase, and the story-wide `override message` rewrites
 every plain drop.
 
-| | take (`if.action.taking.*`) | drop (`if.action.dropping.*`) |
+| | take (`taking-*`) | drop (`dropping-*`) |
 |---|---|---|
 | Refusals | `no_target` · `cant_take_self` · `already_have` · `cant_take_room` · `fixed_in_place` · `container_full` · `too_heavy` · `cannot_take` · `nothing_to_take` | `not_held` · `still_worn` (take it off first) · `container_full` · `cant_drop_here` · `nothing_to_drop` |
 | Success | `taken` · `taken_from` (out of or off something) · `taken_multi` (`take all`) | `dropped` · `dropped_in` · `dropped_on` · `dropped_quietly` (glass, room drop) · `dropped_carelessly` (`discard`) · `dropped_multi` |
-| Events | `if.event.taken` / `if.event.take_blocked` | `if.event.dropped` / `if.event.drop_blocked` |
+| Events | `taken` / `take_blocked` | `dropped` / `drop_blocked` |
 
 Interceptors: `on taking it` / `after taking it` on the item, and
 REMOVE-FROM phrasing cannot dodge a taking guard.

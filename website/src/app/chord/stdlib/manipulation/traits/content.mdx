@@ -31,7 +31,7 @@ handlers, not behavior that stdlib enforces.
 signal lever. Stdlib mutates two fields: `state` (→ `'pulled'`,
 which is what gates `already_pulled`) and `pullCount`. It carries the
 rest (`pullType`, `activates`, `linkedTo`, `detachesOnPull`, `maxPulls`,
-`effects`) as data for story handlers reacting to `if.event.pulled`.
+`effects`) as data for story handlers reacting to `pulled`.
 
 **cuttable** (`cuttable`, optionally `with the <tool entity>`, an
 adjective). Makes an entity eligible for cutting (the bramble)

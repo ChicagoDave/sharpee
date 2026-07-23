@@ -46,7 +46,7 @@ import {
   UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
@@ -57,6 +57,7 @@ import {
   IREntity,
   IRExit,
   IRDataChannelDef,
+  IRChannelDef,
   IRPronounSetDef,
   IREmitField,
   IREmitValue,
@@ -354,6 +355,14 @@ class Analyzer {
   private traitNames = new Set<string>();
   /** action name → declared grammar-slot names. */
   private actionSlots = new Map<string, Set<string>>();
+  /**
+   * emit event id (dotless) → the top-level payload field names it carries
+   * (ADR-253 D1). Collected across every `emit` during resolution so
+   * `checkChannelReturns` can flag a channel returning a field the event never
+   * emits. An event with no collected entry (a platform event, or one never
+   * emitted here) is left unchecked — the field set is unknown, not empty.
+   */
+  private emitFields = new Map<string, Set<string>>();
   /** Owner-qualified score id (`pygmy-goats.fed`, story-level bare) → worth. */
   private scoreNames = new Map<string, number>();
   /** Owner-qualified score declarations, for ir.scores emission. */
@@ -508,6 +517,14 @@ class Analyzer {
           ir.hatches.push({ name: decl.name, modulePath: decl.modulePath, hatchKind: 'text', span: decl.span });
           break;
         case 'define-hatch':
+          // ADR-094 chain hatch: the name must be a replaceable stdlib chain.
+          if (decl.hatchKind === 'chain' && !STDLIB_CHAIN_NAMES.has(decl.name)) {
+            this.diagnostics.error(
+              'analysis.unknown-chain',
+              `\`${decl.name}\` is not a replaceable stdlib chain${this.suggestText(decl.name, [...STDLIB_CHAIN_NAMES])}.`,
+              decl.span,
+            );
+          }
           ir.hatches.push({ name: decl.name, modulePath: decl.modulePath, hatchKind: decl.hatchKind, span: decl.span });
           break;
         case 'define-trait':
@@ -615,6 +632,7 @@ class Analyzer {
     this.checkDoors(ir.entities);
     this.checkMarkers();
     this.checkDescriptionMarkers();
+    this.checkChannelReturns(ir.channels); // ADR-253 D1: return-field cross-check (all emits collected)
     return ir;
   }
 
@@ -2269,9 +2287,18 @@ class Analyzer {
       }
       case 'emit': {
         const payload = stmt.payload.map((f) => this.resolveEmitField(f, scope));
+        // ADR-253 D1: record the event's top-level payload field names so a
+        // channel `return`ing an unknown field is caught (checkChannelReturns).
+        const eventId = stmt.event.join(' ');
+        let fields = this.emitFields.get(eventId);
+        if (!fields) {
+          fields = new Set<string>();
+          this.emitFields.set(eventId, fields);
+        }
+        for (const f of stmt.payload) fields.add(f.key.join(' '));
         return {
           kind: 'emit',
-          event: stmt.event.join(' '),
+          event: eventId,
           ...(payload.length > 0 ? { payload } : {}),
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
@@ -2658,11 +2685,12 @@ class Analyzer {
         decl.span,
       );
     }
-    if (decl.fromEvent === null) {
-      this.diagnostics.error('analysis.channel-from', `Channel \`${decl.name}\` needs a \`from event <event.key>\` line.`, decl.span);
-    }
-    if (decl.take.length === 0) {
-      this.diagnostics.error('analysis.channel-take', `Channel \`${decl.name}\` needs a \`take <field>[, …]\` line — it projects data, it cannot project nothing.`, decl.span);
+    if (decl.returns === null || decl.fromEvent === null) {
+      this.diagnostics.error(
+        'analysis.channel-return',
+        `Channel \`${decl.name}\` needs a \`return <field | "text" | phrase <key>> from <event>\` line.`,
+        decl.span,
+      );
     }
     let gatedBy: string | null = null;
     if (decl.gatedBy !== null) {
@@ -2682,9 +2710,41 @@ class Analyzer {
       mode: (decl.mode ?? 'event') as IRDataChannelDef['mode'],
       gatedBy,
       fromEvent: decl.fromEvent ?? '',
-      take: decl.take,
+      returns: decl.returns ?? { kind: 'field', field: '' },
       span: decl.span,
     };
+  }
+
+  /**
+   * ADR-253 D1 field check: a channel returning a `field` (or a `text` template
+   * with `(slot)` names) references event payload fields; error when the named
+   * event emits a payload that lacks one. Runs as a post-pass so every `emit`
+   * is collected first, regardless of declaration order. An event with no
+   * collected payload (platform events, or one never emitted here) is skipped —
+   * its field set is unknown, not empty. `phrase` returns own their slots
+   * (the phrase system), so they are not cross-checked here.
+   */
+  private checkChannelReturns(channels: IRChannelDef[]): void {
+    for (const ch of channels) {
+      if (ch.family !== 'data') continue;
+      const emitted = this.emitFields.get(ch.fromEvent);
+      if (!emitted) continue; // unknown field set — cannot check
+      const required: string[] =
+        ch.returns.kind === 'field'
+          ? [ch.returns.field]
+          : ch.returns.kind === 'text'
+            ? [...ch.returns.text.matchAll(/\(\s*([^)]+?)\s*\)/g)].map((m) => m[1])
+            : [];
+      for (const field of required) {
+        if (!emitted.has(field)) {
+          this.diagnostics.error(
+            'analysis.channel-return-field',
+            `Channel \`${ch.name}\` returns \`${field}\`, but the \`${ch.fromEvent}\` event carries no such field (it emits: ${[...emitted].join(', ') || '(none)'}).`,
+            ch.span,
+          );
+        }
+      }
+    }
   }
 
   /**

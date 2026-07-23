@@ -1,4 +1,4 @@
-**wear** (`if.action.wearing`) has verbs `wear X`, `don X`, `equip X`,
+**wear** (`wearing`) has verbs `wear X`, `don X`, `equip X`,
 `put on X` (the phrasal form outranks generic `put`). Needs the `wearable`
 trait (`not_wearable` otherwise). You don't have to be holding it; wearing
 performs an implicit take first, refusing with the take's own refusal if
@@ -8,9 +8,9 @@ because every wearable defaults to the same layer, default-built garments
 never conflict and simply stack (the layer-default quirk). Wearing something you
 already wear yields `already_wearing`. Success sets the worn state and
 says `worn`; event
-`if.event.worn` carries `bodyPart` and `layer` in the payload.
+`worn` carries `bodyPart` and `layer` in the payload.
 
-**take off** (`if.action.taking_off`) has verbs `take off X`, `take X off`,
+**take off** (`taking_off`) has verbs `take off X`, `take X off`,
 `remove X`, `doff X`, `unequip X`. (Yes, bare `remove X` means undressing,
 which is why take-from-container needed its own action.) Refuses when
 the thing is not worn by you (`not_wearing`), when a higher layer is worn
@@ -92,11 +92,11 @@ the default layers let the vest stack straight over it and the tunic slide
 out from underneath (the layer-default quirk, live), and the torc's `on taking_off
 it` guard is a cursed garment in one clause.
 
-| | wear (`if.action.wearing.*`) | take off (`if.action.taking_off.*`) |
+| | wear (`wearing-*`) | take off (`taking_off-*`) |
 |---|---|---|
 | Refusals | `no_target` · `not_wearable` · `not_held` · `already_wearing` · `cant_wear_that` · `hands_full` (worn under a higher layer) | `no_target` · `not_wearing` · `prevents_removal` (higher layer on top) · `cant_remove` (cursed) |
 | Success | `worn` | `removed` (the item stays in inventory) |
-| Events | `if.event.worn` / `if.event.wear_blocked` | `if.event.removed` / `if.event.take_off_blocked` |
+| Events | `worn` / `wear_blocked` | `removed` / `take_off_blocked` |
 
 Interceptors: `on wearing it` / `on taking_off it` on the garment: a cloak
 that reacts to being donned is one clause on the cloak.

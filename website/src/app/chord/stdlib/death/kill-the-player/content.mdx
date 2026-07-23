@@ -9,11 +9,11 @@ player` records the cause `killed` and shows only the platform's ending
 text.
 
 The machinery, in order: the death text speaks, the platform's
-`if.event.player.died` event fires, and at end of turn the engine
+`player-died` event fires, and at end of turn the engine
 re-checks the player's actual life state; that re-check, not the event,
 is the final word. A story policy that revives the player during the turn
 (Dungeo's death-penalty machinery works this way) vetoes the ending;
-otherwise the game ends in defeat (`game.lost`, the `death` and `endgame`
+otherwise the game ends in defeat (`game-lost`, the `death` and `endgame`
 channels). Because the decision waits for end of turn, statements after
 the `kill` in the same body still run. There is no built-in "restart or
 undo?" prompt; that is client/story territory.

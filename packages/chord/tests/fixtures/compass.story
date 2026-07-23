@@ -26,8 +26,7 @@ create the player
 define channel compass
   mode replace
   gated by images
-  from event chord-compass-updated
-  take heading, target
+  return "(heading) toward (target)" from chord-compass-updated
 end channel
 
 define sound roar from "audio/roar.ogg"

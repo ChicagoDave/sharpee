@@ -1,5 +1,5 @@
-story "Dotted Override" by "Sharpee Docs"
-  id: chord-ref-dotted
+story "Message Override" by "Sharpee Docs"
+  id: chord-ref-override
   version: 0.0.1
 
 create the Crypt
@@ -17,6 +17,6 @@ create the iron ring
 create the player
   starts in the Crypt
 
-define phrase if.action.taking.fixed_in_place
+override message taking-fixed-in-place
   It will not budge, and neither will anything else bolted to this place.
-end phrase
+end override

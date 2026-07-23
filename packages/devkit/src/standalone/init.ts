@@ -97,7 +97,15 @@ function processTemplate(templatePath: string, options: StoryOptions): string {
     .replace(/\{\{AUTHOR\}\}/g, options.author)
     .replace(/\{\{DESCRIPTION\}\}/g, options.description)
     .replace(/\{\{SHARPEE_VERSION\}\}/g, options.sharpeeRange)
-    .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange);
+    .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange)
+    // Browser-entry client config (ADR-252 D3): the scaffold's concrete defaults.
+    // (The build's generated entry fills these from the .story header instead.)
+    .replace(/\{\{STORAGE_PREFIX\}\}/g, options.storyId)
+    .replace(/\{\{DEFAULT_THEME\}\}/g, 'modern-dark')
+    .replace(
+      /\{\{THEMES_JSON\}\}/g,
+      "[\n        { id: 'modern-dark', name: 'Modern Dark' },\n        { id: 'paper', name: 'Paper' },\n      ]",
+    );
 }
 
 /**
@@ -209,7 +217,7 @@ dist/
     console.log('To add a browser client:');
     console.log('  sharpee init-browser');
   } else {
-    console.log('  sharpee build --browser   # story + playable web client → dist/web/');
+    console.log('  sharpee build             # story + playable web client → dist/web/<id>/ (browser is the default)');
     console.log('  sharpee play              # play in the terminal');
     console.log('');
     console.log(`Your story lives in ${storyId}.story — edit it and rebuild.`);

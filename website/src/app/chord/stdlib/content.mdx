@@ -70,14 +70,15 @@ trait and validate a tool, but the outcome is likewise each entity's own.
 
 ## Messages are IDs, not fixed text
 
-Standard actions never speak English; they emit message IDs
-(`if.action.taking.fixed_in_place`) that the language layer renders. Per
-entity, you replace a moment's text with `on`/`after` clauses carrying
-your own phrases (the [Manipulation](/chord/stdlib/manipulation) opening
-shows the pattern); story-wide, a `define phrase` under the dotted ID
-itself (`define phrase if.action.taking.fixed_in_place`) replaces the
-platform text everywhere (ADR-230), and a TypeScript story can override
-the IDs through the language provider.
+Standard actions never speak English; they emit message IDs that the
+language layer renders, each named by a single-word alias
+(`taking-fixed-in-place`). Per entity, you replace a moment's text with
+`on`/`after` clauses carrying your own phrases (the
+[Manipulation](/chord/stdlib/manipulation) opening shows the pattern);
+story-wide, an `override message` block under that alias
+(`override message taking-fixed-in-place`) replaces the platform text
+everywhere (ADR-255), and a TypeScript story can override the IDs through
+the language provider.
 
 ## Intercepting standard actions
 

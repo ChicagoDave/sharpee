@@ -4,20 +4,23 @@
  * (chord-tutorial-story plan, G4/G5 gate; rule 13a — the browser client is
  * an owned integration).
  *
- * Builds the tutorial story's browser bundle through the REAL author
- * pipeline (devkit runInitCommand → runBuildBrowserCommand; the scratch
- * project lives INSIDE the repo so esbuild resolves @sharpee/* from the
- * monorepo node_modules — chord-build.test.ts precedent; the clean-machine
- * tarball mechanism was already proven generically by the G2 proof), serves
- * dist/web/, and drives real Chromium (g2 playwright pattern) asserting
- * observable client-side effects:
+ * Builds fernhill's browser bundle through the REAL author pipeline. Since
+ * ADR-252, a bare `.story` is a first-class build input: the proof stages
+ * fernhill.story + assets + the hand-written browser entry into a scratch dir
+ * with NO package.json and NO scaffold, then runs `sharpee build` (browser is
+ * the default client — no flag; all metadata from the Story IR). The scratch
+ * project lives INSIDE the repo so esbuild resolves @sharpee/* from the monorepo
+ * node_modules (chord-build.test.ts precedent). It serves dist/web/<id>/ and
+ * drives real Chromium (g2 playwright pattern) asserting observable client-side
+ * effects:
  *
  *   - boot: fernhill.story compiles IN the browser and renders Iron Gates
  *   - G4 image cue: `examine the photograph` mounts <img images/folly-photograph.png>
  *     and the asset actually loads (resource timing)
- *   - G5 channel/panel: the wound case clock's `estate.clock` emits reach the
- *     story-registered `clock` renderer — #estate-clock shows the hour —
- *     and the generic panel does NOT double-render the channel (ADR-241 AC-5)
+ *   - G5 channel: the wound case clock's `estate-clock` emits feed the `clock`
+ *     channel, whose returned text ("The clock: <hour>") renders into the custom
+ *     page's <span id="clock"> by the ADR-253 render-by-name convention — zero
+ *     story TypeScript — and the generic panel does NOT also render it (D2)
  *   - G4 ambient cue (ADR-241 AC-1, the seam this proof originally flagged,
  *     now closed): re-entering the Grounds plays the implied `ambient:main`
  *     bed — audio/night-wind.wav actually loads in real Chromium, with the
@@ -25,7 +28,8 @@
  *   - G4 sound cue: lighting the boiler loads audio/boiler-thump.wav
  *   - ADR-241 AC-4 (second mini-scenario): a pure-IR story's `define channel`
  *     with NO story renderer renders visibly in the platform generic panel —
- *     no story TypeScript involved (the untouched scaffold browser entry)
+ *     no story TypeScript at all (the ADR-252 D4 GENERATED browser entry; the
+ *     story is a bare panel.story with no src/browser-entry.ts)
  *
  * The win-ending `play music dawn-theme` rides the same pre-registered
  * mechanism as `play sound` (music channel) and is exercised text-side by
@@ -37,7 +41,7 @@
  */
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, statSync, copyFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, copyFileSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,33 +55,38 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-const { runInitCommand } = require_(join(REPO_ROOT, 'packages', 'devkit', 'dist', 'standalone', 'init.js'));
 const { runBuildBrowserCommand } = require_(join(REPO_ROOT, 'packages', 'devkit', 'dist', 'standalone', 'build-browser.js'));
 
 const tmp = mkdtempSync(join(REPO_ROOT, '.tmp-g3-proof-'));
 const app = join(tmp, 'fernhill');
 
 try {
-  // ---- Step 1: scaffold, then substitute the real story -------------------
-  log('step 1: devkit init (Chord scaffold), then substitute fernhill.story + assets + browser entry');
-  await runInitCommand([app, '-y']);
+  // ---- Step 1: stage a BARE .story project (ADR-252/253 — no TypeScript) ----
+  // No src/browser-entry.ts: the build GENERATES the entry (ADR-252 D4). The one
+  // custom asset is browser/index.html (ADR-253 D3 layout escape hatch) with its
+  // <span id="clock">. Zero story TypeScript.
+  log('step 1: stage fernhill.story + assets + browser/index.html (NO package.json, NO TypeScript)');
+  mkdirSync(app, { recursive: true });
   copyFileSync(join(STORY_DIR, 'fernhill.story'), join(app, 'fernhill.story'));
   cpSync(join(STORY_DIR, 'assets'), join(app, 'assets'), { recursive: true });
-  copyFileSync(join(STORY_DIR, 'src', 'browser-entry.ts'), join(app, 'src', 'browser-entry.ts'));
-  log('  ✓ project staged with the tutorial story');
+  cpSync(join(STORY_DIR, 'browser'), join(app, 'browser'), { recursive: true });
+  log('  ✓ staged: a bare .story project + custom page (no scaffold, no package.json, no TS)');
 
   // ---- Step 2: real browser build (compile gate + bundle + assets) --------
-  log('step 2: devkit build --browser (compile gate, source shipped, assets copied)');
+  // ADR-252: `sharpee build <dir>` on a Chord `.story` → browser app by default
+  // (no flag), metadata from the Story IR, output keyed on the IR id.
+  log('step 2: sharpee build (browser is the default client; compile gate, source shipped, assets copied)');
   await runBuildBrowserCommand([], app);
-  const web = join(app, 'dist', 'web');
+  const web = join(app, 'dist', 'web', 'fernhill');
   for (const f of ['index.html', 'game.js', 'story.story', join('audio', 'boiler-thump.wav'), join('audio', 'night-wind.wav'), join('audio', 'dawn-theme.wav'), join('images', 'folly-photograph.png')]) {
-    if (!existsSync(join(web, f))) fail(`dist/web/${f} missing after build`);
+    if (!existsSync(join(web, f))) fail(`dist/web/fernhill/${f} missing after build`);
   }
   if (readFileSync(join(web, 'story.story'), 'utf8') !== readFileSync(join(STORY_DIR, 'fernhill.story'), 'utf8')) {
     fail('shipped story.story is not the fernhill source byte-for-byte');
   }
+  if (existsSync(join(app, 'package.json'))) fail('a package.json appeared — ADR-252 builds from the bare .story');
   if (!existsSync(join(app, 'dist', 'fernhill.ir.json'))) fail('dist/fernhill.ir.json missing — the IDE-facing IR artifact');
-  log('  ✓ dist/web built: source + compiler + all four G4/G5 assets shipped');
+  log('  ✓ dist/web/fernhill built from a bare .story: source + compiler + all four G4/G5 assets shipped');
 
   // ---- Step 3: serve + drive real Chromium --------------------------------
   log('step 3: serving dist/web and driving Chromium (g2 playwright pattern)');
@@ -147,23 +156,25 @@ try {
     ).catch(() => fail('folly-photograph.png was mounted but never fetched/painted'));
     log('  ✓ G4 image: <img> mounted on image:main and images/folly-photograph.png fetched');
 
-    // --- G5 channel/panel: wind the clock, wait for a chime ----------------
+    // --- G5 channel: wind the clock, wait for a chime. ADR-253: the channel
+    // `return`s finished text ("The clock: (hour)") that renders into the custom
+    // page's <span id="clock"> by the render-by-name convention — zero story TS.
     for (const cmd of ['take the grey overcoat', 'search the overcoat', 'take the winding key', 'wind the clock']) await play(cmd);
-    let panel = '';
-    for (let i = 0; i < 60 && !panel; i++) {
+    let clockText = '';
+    for (let i = 0; i < 60 && !clockText; i++) {
       await play('wait');
-      panel = await page.evaluate(() => document.getElementById('estate-clock')?.textContent || '');
+      clockText = await page.evaluate(() => document.getElementById('clock')?.textContent || '');
     }
-    if (!/The clock: (evening|past midnight)/.test(panel)) {
-      fail(`estate-clock panel never rendered a chime (last: "${panel}")`);
+    if (!/The clock: (evening|past midnight)/.test(clockText)) {
+      fail(`#clock never rendered a chime (last: "${clockText}")`);
     }
-    log(`  ✓ G5 channel: estate.clock → clock channel → story renderer ("${panel}")`);
+    log(`  ✓ G5 channel: estate-clock → clock channel → #clock via render-by-name ("${clockText}") — zero story TypeScript`);
 
-    // ADR-241 AC-5: the exact-id story renderer WON — the platform generic
-    // panel must not have double-rendered the clock channel.
+    // ADR-253 D2: the single fallback renderer used the named #clock element, so
+    // the generic sidebar panel must NOT also have a box for the clock channel.
     const clockPanelBox = await page.evaluate(() => !!document.getElementById('channel-panel-clock'));
-    if (clockPanelBox) fail('generic panel double-rendered the clock channel despite the story renderer (AC-5)');
-    log('  ✓ AC-5: story renderer override — no generic-panel double-render of clock');
+    if (clockPanelBox) fail('generic panel also rendered the clock channel — the named #clock element should be used instead');
+    log('  ✓ named #clock used; no generic-panel box for the clock (single renderer, no double-render)');
 
     // --- ADR-241 AC-1: ambient bed on re-entering the Grounds ---------------
     await play('south');
@@ -188,7 +199,10 @@ try {
     // ---- Step 4 (ADR-241 AC-4): generic panel, no story TS ----------------
     log('step 4: AC-4 mini-scenario — a pure-IR `define channel` with no story renderer renders in the generic panel');
     const panelApp = join(tmp, 'panel');
-    await runInitCommand([panelApp, '-y']);
+    // A bare panel.story with NO src/browser-entry.ts: the build GENERATES the
+    // entry from the devkit template (ADR-252 D4) — zero story TypeScript. The
+    // event id is dotless (ADR-256: author events are kebab, not `proof.pulse`).
+    mkdirSync(panelApp, { recursive: true });
     writeFileSync(
       join(panelApp, 'panel.story'),
       `story "Panel Proof" by "T"
@@ -196,7 +210,7 @@ try {
   version: 0.0.1
 
   on every turn
-    emit proof.pulse with beat "steady"
+    emit proof-pulse with beat "steady"
   end on
 
 create the Hall
@@ -211,14 +225,12 @@ create the player
 
 define channel pulse
   mode replace
-  from event proof.pulse
-  take beat
+  return beat from proof-pulse
 end channel
 `,
     );
-    // The scaffold's browser entry is left UNTOUCHED — no story renderer.
     await runBuildBrowserCommand([], panelApp);
-    const panelWeb = join(panelApp, 'dist', 'web');
+    const panelWeb = join(panelApp, 'dist', 'web', 'panel');
     const panelServer = createServer((req, res) => {
       const url = (req.url || '/').split('?')[0];
       const file = join(panelWeb, url === '/' ? 'index.html' : url.slice(1));

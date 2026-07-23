@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@sharpee/bootstrap": "workspace:*",
-    "@sharpee/core": "workspace:*"
+    "@sharpee/core": "workspace:*",
+    "@sharpee/devkit": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

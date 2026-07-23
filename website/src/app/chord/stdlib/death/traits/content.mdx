@@ -27,9 +27,9 @@ cause; same visible result, different payloads:
 | | `kill the player` | deadly exit / deadly room |
 |---|---|---|
 | Refusals | none — a statement, not an action; the `when` suffix is the only gate | none — the redirect validates unconditionally, and interceptors never see it |
-| Death text | the phrase key, spoken as a separate phrase event | the phrase key, riding `if.event.player.died`'s `messageId` |
-| Events | `if.event.player.died` (carries only the cause) | `if.event.player.died` (carries cause and `messageId`) |
-| Ending | `game.lost` on the `death` and `endgame` channels — unless a story policy revives the player inside the veto window | same |
+| Death text | the phrase key, spoken as a separate phrase event | the phrase key, riding `player-died`'s `messageId` |
+| Events | `player-died` (carries only the cause) | `player-died` (carries cause and `messageId`) |
+| Ending | `game-lost` on the `death` and `endgame` channels — unless a story policy revives the player inside the veto window | same |
 
 No shipped `.story` uses these constructs yet; the live production use of
 the same machinery is Dungeo's Aragain Falls (a TypeScript transformer on

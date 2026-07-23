@@ -132,6 +132,48 @@ describe('generic panel (ADR-241 D4, AC-4)', () => {
   });
 });
 
+describe('render-by-DOM-name (ADR-253 D2)', () => {
+  /** Add a host element named for the channel (author-supplied, e.g. status bar). */
+  const namedClock = (): HTMLElement => {
+    const span = document.createElement('span');
+    span.id = 'clock';
+    layout.status.appendChild(span);
+    return span;
+  };
+
+  it('a string value lands as textContent in the author `#<channel>` element, not the panel', () => {
+    const span = namedClock();
+    renderer.applyCmgt(DYNAMIC_MANIFEST);
+    renderer.applyTurnPacket(turn({ clock: 'The clock: evening' }));
+    expect(span.textContent).toBe('The clock: evening');
+    expect(document.getElementById('channel-panel-clock')).toBeNull(); // no panel fallback
+  });
+
+  it('a null value clears the named element', () => {
+    const span = namedClock();
+    renderer.applyCmgt(DYNAMIC_MANIFEST);
+    renderer.applyTurnPacket(turn({ clock: 'The clock: evening' }));
+    renderer.applyTurnPacket(turn({ clock: null }));
+    expect(span.textContent).toBe('');
+  });
+
+  it('an object value falls to the generic panel even when a named element exists (D2 contract)', () => {
+    const span = namedClock();
+    renderer.applyCmgt(DYNAMIC_MANIFEST);
+    renderer.applyTurnPacket(turn({ clock: { hour: 'evening' } }));
+    expect(document.getElementById('channel-panel-clock')).not.toBeNull();
+    expect(span.textContent).toBe(''); // the named element is untouched for structured values
+  });
+
+  it('with no named element a string value still renders in the generic panel (fallback)', () => {
+    renderer.applyCmgt(DYNAMIC_MANIFEST);
+    renderer.applyTurnPacket(turn({ clock: 'The clock: evening' }));
+    const box = document.getElementById('channel-panel-clock')!;
+    expect(box).not.toBeNull();
+    expect(box.textContent).toContain('The clock: evening');
+  });
+});
+
 describe('override precedence (ADR-241 AC-5 precursor)', () => {
   it('an exact-id story renderer registered after the defaults wins — the panel never renders that channel', () => {
     const seen: unknown[] = [];

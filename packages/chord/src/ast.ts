@@ -178,11 +178,25 @@ export interface TopicRow {
 }
 
 /**
+ * The construct a channel `return`s (ADR-253 D1). The channel's value is
+ * whatever it returns from the turn's last matching event:
+ *  - `field`  — `return hour from …`: the raw field value;
+ *  - `text`   — `return "The clock: (hour)" from …`: a text template whose
+ *    `(slot)` names project event fields (the phrase slot spelling, ADR-250);
+ *  - `phrase` — `return phrase clock-line from …`: the phrase's rendered text.
+ */
+export type ChannelReturn =
+  | { kind: 'field'; field: string }
+  | { kind: 'text'; text: string }
+  | { kind: 'phrase'; phrase: string };
+
+/**
  * `define channel <name> … end channel` (ADR-216; spelling A ratified by
- * David 2026-07-18) — a declarative data projection: JSON content, a
- * mode, an optional capability gate, and a produce rule taking fields
- * from the turn's last event of the named type. Pure IR — a novel
- * RENDERER for it ships via an ADR-215 trusted extension, never here.
+ * David 2026-07-18; ADR-253 replaced `take`/`from event` with `return …
+ * from <event>`) — a declarative data projection: a `return` construct, a
+ * mode, and an optional capability gate, producing a value from the turn's
+ * last event of the named type. Pure IR — placement/rendering is the
+ * client's (ADR-253 D2/D3), never here.
  */
 export interface DefineChannel {
   kind: 'define-channel';
@@ -191,10 +205,11 @@ export interface DefineChannel {
   mode: string | null;
   /** `gated by <capability>` — a client capability flag, or null (ungated). */
   gatedBy: string | null;
-  /** `from event <dotted.key>` — the source event type (null = error reported). */
+  /** The source event type, from the `return … from <event>` tail (ADR-256:
+   *  a dotless Chord id; null = parse error reported). */
   fromEvent: string | null;
-  /** `take <field>, …` — data fields projected from the event. */
-  take: string[];
+  /** `return <construct> from <event>` (ADR-253 D1); null = parse error reported. */
+  returns: ChannelReturn | null;
   span: Span;
 }
 /** One `pronouns <word>` person body line (ADR-242 D5). */
@@ -745,10 +760,16 @@ export interface ActionRefusal {
  * `define action X from "./mod.ts"` — TS action hatch. (`define behavior …
  * from` was removed by ADR-235 D2, 2026-07-18 — it had no binding key and
  * could never fire; the parser emits a fix-it error.)
+ *
+ * `define chain <name> from "./mod.ts"` — TS chain hatch (ADR-094 chains):
+ * replaces a stdlib event chain (e.g. `opened-revealed`) with an
+ * author-supplied handler. `name` is the curated chain alias; the module
+ * default-exports the `EventChainHandler`. Like every hatch, it sets
+ * `hasHatches` — a chained story is not browser-pure.
  */
 export interface DefineHatch {
   kind: 'define-hatch';
-  hatchKind: 'action';
+  hatchKind: 'action' | 'chain';
   name: string;
   modulePath: string;
   span: Span;

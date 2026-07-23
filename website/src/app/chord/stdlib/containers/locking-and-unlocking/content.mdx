@@ -1,4 +1,4 @@
-**lock** (`if.action.locking`) and **unlock** (`if.action.unlocking`).
+**lock** (`locking`) and **unlock** (`unlocking`).
 Every form is core grammar since ADR-230 D2: `lock X`, `lock X with/using
 Y`, keyless `unlock X`, `unlock X with/using Y`, plus the `secure` /
 `unsecure` aliases (D4). Both operate on the `lockable` trait. A lock
@@ -80,11 +80,11 @@ has nothing to say, so the bone key's own `on locking it` clause vetoes
 its use (and note the key contract resolved even though the bone key is
 declared *after* the reliquary; forward references are legal).
 
-| | lock (`if.action.locking.*`) | unlock (`if.action.unlocking.*`) |
+| | lock (`locking-*`) | unlock (`unlocking-*`) |
 |---|---|---|
 | Refusals | `not_lockable` · `no_key` · `key_not_held` · `wrong_key` · `not_closed` · `already_locked` | `not_lockable` · `no_key` · `key_not_held` · `wrong_key` · `already_unlocked` |
 | Success | `locked` · `locked_with` | `unlocked` · `unlocked_with` |
-| Events | `if.event.locked` / `if.event.lock_blocked` | `if.event.unlocked` / `if.event.unlock_blocked` (key, sound, and container/door flags in the payload) |
+| Events | `locked` / `lock_blocked` | `unlocked` / `unlock_blocked` (key, sound, and container/door flags in the payload) |
 
 Interceptors (ADR-229) consult the target first, then the key, and each
 side's clause sees the other's identity in its context. Only an

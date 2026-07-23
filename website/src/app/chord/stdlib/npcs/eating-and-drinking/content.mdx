@@ -1,4 +1,4 @@
-**eat** (`if.action.eating`): verbs `eat/consume/devour X`, plus
+**eat** (`eating`): verbs `eat/consume/devour X`, plus
 `munch` and `nibble [on] X`, gated on the `edible` trait
 (`not_edible`). Liquids refuse `is_drink` ("You should drink that, not
 eat it") and solids refuse drinking with `not_drinkable`; there is no
@@ -7,9 +7,9 @@ down (`eaten_some`, then `eaten_all`; once exhausted, `already_consumed`),
 and the message honors the trait's data: `taste`
 (`delicious`/`tasty`/`bland`/`awful`), a `poison` effect (message-only:
 "It tastes strange…", no mechanical harm today), `satisfiesHunger`
-(`filling` / `still_hungry`). Event: `if.event.eaten`.
+(`filling` / `still_hungry`). Event: `eaten`.
 
-**drink** (`if.action.drinking`): verbs `drink/sip/quaff/swallow/
+**drink** (`drinking`): verbs `drink/sip/quaff/swallow/
 imbibe X`, plus `drink from X` and `sip from X`. Two things are
 drinkable. The first is an edible marked liquid: in a `.story`, the
 `drinkable` adjective, which composes the edible trait with the liquid
@@ -17,7 +17,7 @@ flag set, order-independent with `edible` (ratchet G1). The second is a
 **container of liquid** (`containsLiquid`, TypeScript territory), open
 if openable. Container drinking decrements `liquidAmount` and reports
 `from_container` / `empty_now`. Verb flavor: `sipped`, `quaffed`.
-Event: `if.event.drunk`.
+Event: `drunk`.
 
 The author writes:
 
@@ -100,11 +100,11 @@ item** (the fully eaten apple stays in inventory at zero servings), and the
 biscuit's `after eating it` clause with a `remove it` body is the one-line
 remedy.
 
-| | eat (`if.action.eating.*`) | drink (`if.action.drinking.*`) |
+| | eat (`eating-*`) | drink (`drinking-*`) |
 |---|---|---|
 | Refusals | `no_item` · `not_edible` · `is_drink` · `already_consumed` | `no_item` · `not_drinkable` · `already_consumed` · `container_closed` |
 | Success | `eaten` · `eaten_some` / `eaten_all` · taste flavor (`delicious`/`tasty`/`bland`/`awful`) · `filling` / `still_hungry` · `poisonous` | `drunk` · `sipped` / `quaffed` · `from_container` / `empty_now` |
-| Events | `if.event.eaten` | `if.event.drunk` |
+| Events | `eaten` | `drunk` |
 
 Interceptors: `on eating it` / `after eating it` and `on drinking it` /
 `after drinking it` on the item, as above.

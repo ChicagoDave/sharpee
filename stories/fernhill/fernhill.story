@@ -840,8 +840,7 @@ define image folly-photograph from "images/folly-photograph.png"
 define channel clock
   mode replace
   gated by sidebar
-  from event estate-clock
-  take hour
+  return "The clock: (hour)" from estate-clock
 end channel
 
 define phrase long-road

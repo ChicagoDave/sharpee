@@ -21,13 +21,13 @@ No saved games found.
 ```
 
 "Save failed." is the engine reporting an unhandled
-`platform.save_requested`; a real client's hook would have completed
+`platform-save-requested`; a real client's hook would have completed
 it. Quit and restart print nothing of their own here for the same
 reason.
 
 | | Refusals | Platform event |
 |---|---|---|
-| **save** | `save_not_allowed` · `save_in_progress` · `invalid_save_name` | `platform.save_requested` |
-| **restore** | `restore_not_allowed` · `no_saves` | `platform.restore_requested` |
-| **restart** | — | `platform.restart_requested` |
-| **quit** | — | `platform.quit_requested` |
+| **save** | `save_not_allowed` · `save_in_progress` · `invalid_save_name` | `platform-save-requested` |
+| **restore** | `restore_not_allowed` · `no_saves` | `platform-restore-requested` |
+| **restart** | — | `platform-restart-requested` |
+| **quit** | — | `platform-quit-requested` |

@@ -1,8 +1,8 @@
 Two tool verbs with one design (ADR-230 D3c): the platform action gates
 eligibility and validates the tool; the *outcome* belongs to the entity.
-**cut** (`if.action.cutting`) parses bare as `cut X` (also `slice`,
+**cut** (`cutting`) parses bare as `cut X` (also `slice`,
 `chop`) and tooled as `cut X with/using Y` (the tooled form outranks
-when a tool is named); **dig** (`if.action.digging`) likewise as `dig X`
+when a tool is named); **dig** (`digging`) likewise as `dig X`
 and `dig X with/using Y`. Eligibility is a trait (`cuttable` /
 `diggable`), and the tool contract mirrors the lockable key contract
 exactly: the trait names its implement (`cuttable with the billhook`;
@@ -107,11 +107,11 @@ cut, the wrong tool, the winning tool) and mutated nothing itself; both
 outcomes are the entities' own clauses, and the second dig, its `, once`
 spent, falls through to the generic `dug` stub.
 
-| | cut (`if.action.cutting.*`) | dig (`if.action.digging.*`) |
+| | cut (`cutting-*`) | dig (`digging-*`) |
 |---|---|---|
 | Refusals | `no_target` · `not_cuttable` · `no_tool` · `tool_not_held` · `wrong_tool` · `cant_cut` | `no_target` · `not_diggable` · `no_tool` · `tool_not_held` · `wrong_tool` · `cant_dig` |
 | Success | `cut` (the generic stub — the entity's own text renders over it) | `dug` (same) |
-| Events | `if.event.cut` / `if.event.cut_blocked` | `if.event.dug` / `if.event.dug_blocked` |
+| Events | `cut` / `cut_blocked` | `dug` / `dug_blocked` |
 
 Interceptors: `on cutting it` / `on digging it` *are* the implementation
 here; the target's interceptor is consulted first, then an explicitly

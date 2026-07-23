@@ -48,9 +48,9 @@ afterAll(() => {
 describe('ADR-251 Phase 3 — browser inline-bundle imports', () => {
   it('a story with no imports ships no imports.json (single-file path unchanged)', async () => {
     await runBuildBrowserCommand([], projectDir);
-    expect(existsSync(join(projectDir, 'dist', 'web', 'imports.json'))).toBe(false);
+    expect(existsSync(join(projectDir, 'dist', 'web', 'harbor', 'imports.json'))).toBe(false);
     // The updated entry still wires the resolver + fetch (harmless with no imports).
-    const game = readFileSync(join(projectDir, 'dist', 'web', 'game.js'), 'utf-8');
+    const game = readFileSync(join(projectDir, 'dist', 'web', 'harbor', 'game.js'), 'utf-8');
     expect(game).toContain('imports.json');
   }, 120_000);
 
@@ -61,13 +61,13 @@ describe('ADR-251 Phase 3 — browser inline-bundle imports', () => {
       writeFileSync(storyPath, good + '\nimport "extras"\n');
       await runBuildBrowserCommand([], projectDir);
 
-      const bundlePath = join(projectDir, 'dist', 'web', 'imports.json');
+      const bundlePath = join(projectDir, 'dist', 'web', 'harbor', 'imports.json');
       expect(existsSync(bundlePath)).toBe(true);
       const bundle = JSON.parse(readFileSync(bundlePath, 'utf-8')) as Record<string, string>;
       // Keyed by the compiler-appended `<name>.chord`; value is the verbatim fragment.
       expect(bundle['extras.chord']).toBe(FRAGMENT);
       // The build still produced a real bundle (the updated entry compiled).
-      expect(existsSync(join(projectDir, 'dist', 'web', 'game.js'))).toBe(true);
+      expect(existsSync(join(projectDir, 'dist', 'web', 'harbor', 'game.js'))).toBe(true);
     } finally {
       writeFileSync(storyPath, good);
     }

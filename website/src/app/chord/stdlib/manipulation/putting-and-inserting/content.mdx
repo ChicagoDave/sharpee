@@ -1,6 +1,6 @@
 Two actions share the surface English of "put". `put X on/onto Y` (and
-`hang X on Y`) is **putting** (`if.action.putting`); `put X in/into/inside Y`
-and `insert X in Y` parse as **inserting** (`if.action.inserting`), which
+`hang X on Y`) is **putting** (`putting`); `put X in/into/inside Y`
+and `insert X in Y` parse as **inserting** (`inserting`), which
 delegates its work back into putting with the preposition forced to "in".
 `place` works in both phrasings, and `move X to Y` lands in putting since
 ADR-230 D4, which lets the destination's kind decide in versus on (the D4 ruling:
@@ -10,9 +10,9 @@ container, and a closed openable container refuses. The item does not need
 to be in hand: putting performs an implicit take first, and refuses with
 the taking refusal if that fails (a fused-down ring cannot be put
 anywhere). Because inserting delegates its report into putting, a
-successful INSERT renders `if.action.putting.put_in` (override `put_in` /
+successful INSERT renders `putting-put-in` (override `put_in` /
 `put_on` for success text in both phrasings), while inserting's *failures*
-render under `if.action.inserting.<key>`.
+render under `inserting-<key>`.
 
 The author writes:
 
@@ -66,9 +66,9 @@ create the stamp
 create the player
   starts in the Sorting Office
 
-define phrase if.action.putting.put_in
+override message putting-put-in
   It slides in with a papery whisper.
-end phrase
+end override
 ```
 
 The player sees:
@@ -99,16 +99,16 @@ You take the letter from the outgoing pigeonhole.
 You put the letter on the oak counter.
 ```
 
-The delegation in one scene: a single `define phrase` under putting's
+The delegation in one scene: a single `override message` under putting's
 `put_in` re-voices both phrasings, and the bin's single `on putting it`
 guard catches the `insert` command too, while `put … on` renders `put_on`
 untouched.
 
-| | putting (`if.action.putting.*`) | inserting (`if.action.inserting.*`) |
+| | putting (`putting-*`) | inserting (`inserting-*`) |
 |---|---|---|
-| Refusals | `no_target` · `no_destination` · `cant_put_in_itself` / `cant_put_on_itself` · `already_there` · `not_container` / `not_surface` · `container_closed` · `no_room` (container) · `no_space` (supporter) | the same checks, rendered under `if.action.inserting.<key>` when the command was an INSERT |
+| Refusals | `no_target` · `no_destination` · `cant_put_in_itself` / `cant_put_on_itself` · `already_there` · `not_container` / `not_surface` · `container_closed` · `no_room` (container) · `no_space` (supporter) | the same checks, rendered under `inserting-<key>` when the command was an INSERT |
 | Success | `put_in` · `put_on` (INSERT reports through `put_in`) | — (delegates to putting) |
-| Events | `if.event.put_in` / `if.event.put_on` / `if.event.put_blocked` | `if.event.insert_blocked` |
+| Events | `put_in` / `put_on` / `put_blocked` | `insert_blocked` |
 
 Interceptors: `on putting it` / `on inserting it` on the item or the
 container. An INSERT consults `on inserting it` first, then (through the

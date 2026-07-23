@@ -1,4 +1,4 @@
-**search** (`if.action.searching`) parses `search X`, `look in/inside
+**search** (`searching`) parses `search X`, `look in/inside
 X`, `look through X`, `rummage in/through X`, or bare `search` for the
 room (`find`/`locate` were removed from the vocabulary in ADR-230,
 since searching is the wrong semantics for them). A closed openable
@@ -10,7 +10,7 @@ search finds it, permanently reveals it, and announces
 `found_concealed`. This hidden-*item* flag is not the `concealment`
 trait, which is about hiding *actors*.
 
-**read** (`if.action.reading`) parses `read X`, `peruse X`, and `study
+**read** (`reading`) parses `read X`, `peruse X`, and `study
 X`, gated on the `readable` trait (`not_readable`: "There's nothing
 written on it"). Portable reading matter is implicitly taken first,
 while scenery such as signs and inscriptions reads in place. The text
@@ -86,11 +86,11 @@ Until the search, the concealed letter is invisible even to the parser;
 once revealed, reading takes the portable letter first, while the
 scenery inscription reads in place.
 
-| | search (`if.action.searching.*`) | read (`if.action.reading.*`) |
+| | search (`searching-*`) | read (`reading-*`) |
 |---|---|---|
 | Refusals | `container_closed` | `not_readable` · `cannot_read_now` |
 | Success | `found_concealed` · `container_contents` · `supporter_contents` · `empty_container` · `searched_location` · `searched_object` · `nothing_special` | `read_text` · `read_book` · `read_book_page` · `read_sign` · `read_inscription` |
-| Events | `if.event.searched` | `if.event.read` |
+| Events | `searched` | `read` |
 
 Interceptors: `on searching it` (a false bottom that only yields to a
 second, gated search is one `while` clause) and `on reading it`.

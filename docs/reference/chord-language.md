@@ -289,8 +289,8 @@ create the Rose Walk
 ```
 
 A blocked exit refuses travel and speaks the named phrase (the key after
-the colon names a phrase the story defines, §5.3; a dotted key is legal
-too, ADR-231). The block can be
+the colon names a phrase the story defines, §5.3; it is a single kebab
+word — ADR-254). The block can be
 conditional:
 
 <!-- fixture: world/exits.story -->
@@ -833,8 +833,9 @@ things that are simply never allowed:
 The named key resolves entity-scoped first (ADR-231): a
 `phrase all-thorns:` override in the refusing entity's own `create`
 block (§2.10) wins over a story-wide `all-thorns`, and a bare key
-renders on standard actions just as it does on story-defined ones. A
-dotted key is legal here too (§5.2).
+renders on standard actions just as it does on story-defined ones. The
+key is a single kebab word (ADR-254); to override a *standard-action*
+message story-wide, use `override message <alias>` (§5.2).
 
 Refusing on a negated condition (`refuse when not …`) is flagged
 (`analysis.negated-requirement`): that is a requirement in disguise, and
@@ -1497,31 +1498,42 @@ splice at a description marker (`analysis.verbatim-marker`): its
 whole point is preserved line structure, which a mid-sentence splice
 would break.
 
-A phrase key may be dotted — `if.action.taking.fixed_in_place` is one
-key, registered whole — and dotting is how a story overrides the
-platform's own text. Every standard-action message lives under a dotted
-id (the stdlib reference catalogs them entry by entry); a `define
-phrase` under that exact key replaces the platform default story-wide,
-for every entity, every time that moment renders:
+To override a **standard-action message** — the platform's own text for a
+moment like "it will not budge" — a story uses `override message <alias>`
+(ADR-255), not a phrase. Every phrase key you write is a single kebab word
+(ADR-254): dots are never legal in a label. Each standard message instead has
+a stable **alias**, `<action>-<message>` in kebab-case (the stdlib reference
+catalogs them; e.g. the platform's `taking` "fixed in place" message is
+`taking-fixed-in-place`). The override replaces the platform default
+story-wide, for every entity, every time that moment renders:
 
-<!-- fixture: define/dotted-override.story -->
+<!-- fixture: define/message-override.story -->
 ```story
-define phrase if.action.taking.fixed_in_place
+override message taking-fixed-in-place
   It will not budge, and neither will anything else bolted to this place.
-end phrase
+end override
 ```
 
 Now every fixed-in-place refusal in the story speaks this line instead
 of the standard one. The per-entity routes still sit on top: an `on`
 clause's own refusal (§3.6) or a per-entity override (§2.10) speaks for
-its one entity, and the story-wide dotted override sets the default
+its one entity, and the story-wide `override message` sets the default
 underneath them.
 
-A dotted key is legal at every site a phrase key appears (ADR-231), not
-just here: `refuse` and `refuse when` (§3.6), `must … otherwise refuse`
-(§3.5), per-entity `phrase` headers (§2.10), `define phrases` entries
-(§5.3), and the blocked and deadly exit keys (§2.5, §4.7) all read a
-dotted key whole.
+`override message` takes the full `define phrase` body — a strategy and `or`
+variants ride along:
+
+```story
+override message taking-fixed-in-place, cycling
+  It will not budge.
+or
+  You heave; it stays bolted.
+end override
+```
+
+An alias absent from the catalog is `analysis.unknown-message-alias`. To
+override many messages at once, or to localize them, use the locale block
+`override messages <locale>` (§5.3).
 
 ### 5.3 define phrases (locale blocks)
 
@@ -1544,11 +1556,12 @@ define phrases en-US
 Each entry is `key:` on its own line followed by an indented prose
 block. The block is dedent-terminated — there is no `end phrases`. A key
 here is a plain phrase with no strategy; for variants or a strategy, use
-`define phrase` (§5.2) instead. A key here may be dotted (ADR-231): an
-entry under `if.action.taking.fixed_in_place:` overrides the platform
-default exactly as §5.2's form does. Throughout this reference the small
-supporting texts live in exactly this kind of block at the foot of each
-fixture.
+`define phrase` (§5.2) instead. Every key is a single kebab word (no dots,
+ADR-254). To override **standard-action messages** by locale, use the parallel
+`override messages <locale>` block, whose entries are ACL **aliases**
+(`taking-fixed-in-place:`) rather than story keys — the localizable form of
+§5.2's `override message`. Throughout this reference the small supporting texts
+live in exactly this kind of block at the foot of each fixture.
 
 ### 5.4 define verb
 
@@ -1631,6 +1644,24 @@ state namespace is off-limits — those keys are the loader's private
 encoding and change without warning. As with text hatches, the binding
 is out of this harness's scope; the `.story` lines above compile, and the
 TypeScript is the author's to build and verify.
+
+The third hatch kind bridges to a platform **event chain** (ADR-094) — a
+post-action rule that emits a follow-on event. The one stdlib chain,
+`opened-revealed`, turns "you open a non-empty container" into the
+"Inside you see …" line. To replace it — a different reveal, or none — a
+story declares a `define chain` hatch naming the chain by its kebab alias:
+
+<!-- fixture: define/hatches.story -->
+```story
+define chain opened-revealed from "./reveal.ts"
+```
+
+The module default-exports an `EventChainHandler` (`(event, world) => event
+| null`); the loader registers it under the stdlib chain's key, so it
+*replaces* the default in place. The alias is validated against the known
+stdlib chains (an unknown name is `analysis.unknown-chain`); today
+`opened-revealed` is the only one. Like every hatch, a `define chain`
+makes the story TypeScript-bearing — a chained story is not browser-pure.
 
 ### 5.7 define trait
 
@@ -1847,8 +1878,8 @@ The rules, each load-checked:
   text you wrote at those levels.
 - **Story keys only.** A book entry key is a single kebab-case word in
   the story's own phrase namespace — a dotted platform message ID is
-  `analysis.phrasebook-dotted-key` (to override a platform message,
-  use a story-level `define phrase <dotted-id>`).
+  `analysis.phrasebook-dotted-key` (to override a standard-action
+  message, use a story-level `override message <alias>`, §5.2).
 - **The book's `while` is the only gate.** An entry-level `while` is
   `analysis.phrasebook-entry-gate` — split the entry into a second
   book instead.
