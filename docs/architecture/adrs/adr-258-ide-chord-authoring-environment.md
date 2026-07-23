@@ -1,6 +1,6 @@
 # ADR-258: The IDE is a Chord authoring environment (TypeScript author path dropped)
 
-## Status: DRAFT — all Open Questions resolved by interview (session 341218); pending `adr-review` and acceptance.
+## Status: ACCEPTED (2026-07-23, session 341218) — the IDE becomes a Chord authoring environment and the TypeScript author path is dropped (D1). Highlighting is an in-process Swift lexer port pinned by a TS-side golden fixture (D7); the project tree is Story-IR-sourced, not world-introspected (D6); Problems is fed by structured Chord diagnostics over `compose --json` (D5). Open Questions resolved by `adr-interview`; `adr-review` 9/15 → **15/15** after three blocker fixes (atomic-load vs. the live tree, the undercounted `compose` mode, the conformance pin with no CI to fail). Depends on ADR-259 (ACCEPTED). Not implemented.
 
 ## Date: 2026-07-23
 
