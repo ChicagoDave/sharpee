@@ -41,7 +41,9 @@ export default function Home() {
         <Link href="/play" className="text-link underline underline-offset-2">
           or play a story first
         </Link>
-        <span className="rounded-full bg-wash px-3 py-1 text-[12px]">v3.2.0</span>
+        {process.env.SHARPEE_VERSION && (
+          <span className="rounded-full bg-wash px-3 py-1 text-[12px]">v{process.env.SHARPEE_VERSION}</span>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

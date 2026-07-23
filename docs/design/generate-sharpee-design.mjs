@@ -17,6 +17,10 @@ import { createRequire } from 'node:module';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, '..', '..');
+// The version badge tracks the lockstep platform version — read it, never hardcode.
+const SHARPEE_VERSION = createRequire(import.meta.url)(
+  join(REPO_ROOT, 'packages', 'sharpee', 'package.json'),
+).version;
 
 // ---------------------------------------------------------------- seeds
 const SEEDS = {
@@ -174,7 +178,7 @@ const roleCard = (title, theme) => `
         <p style="color:${theme.muted.hex}">Write worlds in Chord, run them anywhere. <a style="color:${theme.link.hex}">Read the Fernhill tutorial</a>.</p>
         <code style="background:${theme.codeBg.hex};color:${theme.ink.hex}">create Tobias · a person, proper · pronouns he</code>
         <div><button style="background:${theme.button.hex};color:${theme.button.text}">Get started</button>
-        <span class="tag" style="background:${theme.wash.hex};color:${theme.ink.hex}">v3.2.0</span></div>
+        <span class="tag" style="background:${theme.wash.hex};color:${theme.ink.hex}">v${SHARPEE_VERSION}</span></div>
       </div>
     </div>
   </div>`;

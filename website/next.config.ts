@@ -1,7 +1,28 @@
 import type { NextConfig } from "next";
 import createMDX from "@next/mdx";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+/**
+ * The lockstep platform version, read from the monorepo's `@sharpee/sharpee`
+ * package.json at build time and inlined below — never hardcoded, so a version
+ * bump never needs a website edit. Empty when built outside the monorepo (a
+ * standalone deploy); the badge then simply omits the version.
+ */
+function platformVersion(): string {
+  try {
+    return JSON.parse(
+      readFileSync(join(process.cwd(), "..", "packages", "sharpee", "package.json"), "utf8"),
+    ).version;
+  } catch {
+    return "";
+  }
+}
 
 const nextConfig: NextConfig = {
+  // Inlined into the bundle (server + client) at build; consumed by the home badge.
+  env: { SHARPEE_VERSION: platformVersion() },
+
   // Routes stay .tsx (no pageExtensions change): .mdx files are CONTENT,
   // imported by route files and wrapped in <DocPage> — never routes themselves.
 
