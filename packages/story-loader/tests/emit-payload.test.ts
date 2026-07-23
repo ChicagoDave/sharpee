@@ -64,7 +64,7 @@ describe('payloaded emit through the real loader (ADR-216 AC-1)', () => {
   });
 
   it('value expressions evaluate against LIVE world state at emit time', () => {
-    const debug = events.find((e) => e.type === 'chord.debug.whereabouts')!;
+    const debug = events.find((e) => e.type === 'chord-debug-whereabouts')!;
     expect(debug.data).toEqual({
       holder: player.id,
       room: story.entityId('courtyard')!,
@@ -74,7 +74,7 @@ describe('payloaded emit through the real loader (ADR-216 AC-1)', () => {
     world.moveEntity(player.id, elsewhere.id);
     const daemons: SchedulerDaemon[] = story.runtime.buildSchedulerDaemons();
     const later = daemons.flatMap((d) => d.run({ world, turn: 2 }));
-    const debugLater = later.find((e) => e.type === 'chord.debug.whereabouts')!;
+    const debugLater = later.find((e) => e.type === 'chord-debug-whereabouts')!;
     expect((debugLater.data as { room: string }).room).toBe(elsewhere.id);
   });
 });

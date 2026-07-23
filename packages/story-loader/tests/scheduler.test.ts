@@ -78,14 +78,14 @@ describe('zoo-timeline scheduler constructs', () => {
     expect(world.getStateValue(CHORD_STORY_STATE_KEY)).toBe('open');
 
     const byTurn = runTurns(1, 20);
-    expect(messageIdsOf(byTurn.get(5)!)).toContain('zoo.pa.closing-3');
-    expect(messageIdsOf(byTurn.get(10)!)).toContain('zoo.pa.closing-2');
-    expect(messageIdsOf(byTurn.get(15)!)).toContain('zoo.pa.closing-1');
-    expect(messageIdsOf(byTurn.get(20)!)).toContain('zoo.pa.closed');
+    expect(messageIdsOf(byTurn.get(5)!)).toContain('zoo-pa-closing-3');
+    expect(messageIdsOf(byTurn.get(10)!)).toContain('zoo-pa-closing-2');
+    expect(messageIdsOf(byTurn.get(15)!)).toContain('zoo-pa-closing-1');
+    expect(messageIdsOf(byTurn.get(20)!)).toContain('zoo-pa-closed');
     // No step fires off-schedule ('later' steps chain from the previous
     // step's ACTUAL firing turn, so ticking every turn keeps the cadence).
     for (const turn of [4, 6, 9, 11, 14, 16, 19]) {
-      expect(messageIdsOf(byTurn.get(turn)!).filter((m) => m!.startsWith('zoo.pa.'))).toEqual([]);
+      expect(messageIdsOf(byTurn.get(turn)!).filter((m) => m!.startsWith('zoo-pa-'))).toEqual([]);
     }
     // The final step's `change the story to after-hours` mutated the phase.
     expect(world.getStateValue(CHORD_STORY_STATE_KEY)).toBe('after-hours');
@@ -93,16 +93,16 @@ describe('zoo-timeline scheduler constructs', () => {
 
   it('a `when the story becomes after-hours` step arms on the transition (D10)', () => {
     const before = [...runTurns(1, 19).values()].flat();
-    expect(messageIdsOf(before)).not.toContain('zoo.lockup');
+    expect(messageIdsOf(before)).not.toContain('zoo-lockup');
 
     // Turn 20: closing-time's last step flips the phase; the lockup
     // sequence's anchored step fires on the first tick where it holds.
     const at20 = tick(20);
-    expect(messageIdsOf(at20)).toContain('zoo.lockup');
+    expect(messageIdsOf(at20)).toContain('zoo-lockup');
 
     // The one-step sequence is exhausted — it never fires again.
     const again = tick(21);
-    expect(messageIdsOf(again)).not.toContain('zoo.lockup');
+    expect(messageIdsOf(again)).not.toContain('zoo-lockup');
   });
 
   it('goat-bleats: four wall-clock steps fire at 3/6/9/12 then the sequence retires', () => {
@@ -121,14 +121,14 @@ describe('zoo-timeline scheduler constructs', () => {
 
     // Turn 20: the phase flips earlier in the tick; Sam's clause fires.
     const at20 = tick(20);
-    expect(messageIdsOf(at20)).toContain('sam-the-zookeeper.zoo.after-hours.keeper-leaves');
+    expect(messageIdsOf(at20)).toContain('sam-the-zookeeper.zoo-after-hours-keeper-leaves');
     // The statement `when` suffix (D7): the player IS in the Aviary.
     expect(messageIdsOf(at20)).toContain('keeper-wave');
     expect(world.getLocation(samId)).toBe(gateId);
 
     // `, once` (D5): firing again produces nothing and moves nothing.
     const again = tick(21);
-    expect(messageIdsOf(again)).not.toContain('sam-the-zookeeper.zoo.after-hours.keeper-leaves');
+    expect(messageIdsOf(again)).not.toContain('sam-the-zookeeper.zoo-after-hours-keeper-leaves');
     expect(world.getLocation(samId)).toBe(gateId);
   });
 
@@ -179,9 +179,9 @@ describe('zoo-timeline scheduler constructs', () => {
     // Resuming at turn 13: only steps 3 (turn 15) and 4 (turn 20) remain.
     const byTurn = runTurns(13, 20);
     const paIds = [...byTurn.values()].flat();
-    expect(messageIdsOf(paIds).filter((m) => m!.startsWith('zoo.pa.'))).toEqual([
-      'zoo.pa.closing-1',
-      'zoo.pa.closed',
+    expect(messageIdsOf(paIds).filter((m) => m!.startsWith('zoo-pa-'))).toEqual([
+      'zoo-pa-closing-1',
+      'zoo-pa-closed',
     ]);
     // And goat-bleats stays retired (all 4 steps fired before the transplant).
     expect(messageIdsOf(paIds)).not.toContain('goat-bleat');

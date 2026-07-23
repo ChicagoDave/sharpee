@@ -45,7 +45,7 @@ describe('ambient channel words (ADR-241 D3)', () => {
     const { ir, body } = emits(
       story('    play ambient rain in wind\n    stop ambient in wind\n', `${SOUND}define ambient wind\n`),
     );
-    expect(body.map((s) => s.event)).toEqual(['media.ambient.play', 'media.ambient.stop']);
+    expect(body.map((s) => s.event)).toEqual(['media-ambient-play', 'media-ambient-stop']);
     for (const stmt of body) {
       expect(payloadField(stmt, 'channel')).toEqual({ kind: 'literal', value: 'wind', valueType: 'string' });
     }
@@ -132,10 +132,10 @@ describe('family channel declarations (ADR-241 D2)', () => {
   it('a family channel name does not collide with a data channel name (separate namespaces)', () => {
     const result = compile(
       story(
-        '    play ambient rain in wind\n    emit estate.weather with strength 3\n',
+        '    play ambient rain in wind\n    emit estate-weather with strength 3\n',
         `${SOUND}define ambient wind\ndefine channel wind
   mode replace
-  from event estate.weather
+  from event estate-weather
   take strength
 end channel
 `,
@@ -144,7 +144,7 @@ end channel
     expect(result.diagnostics).toEqual([]);
     expect(result.ir.channels).toMatchObject([
       { name: 'wind', family: 'ambient' },
-      { name: 'wind', family: 'data', mode: 'replace', fromEvent: 'estate.weather', take: ['strength'] },
+      { name: 'wind', family: 'data', mode: 'replace', fromEvent: 'estate-weather', take: ['strength'] },
     ]);
   });
 

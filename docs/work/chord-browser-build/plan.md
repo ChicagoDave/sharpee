@@ -60,7 +60,11 @@ Phase 1 is therefore **unblocked** — no open gate remains before the grammar c
   5. Migrate `.story` + chord fixtures to dotless event ids; update the chord tests asserting the dotted IR form (`emit-payload`, `channel-capability`, `dynamic-channels`, `state-machine`).
   6. chord + story-loader + fernhill + friendly-zoo suites green.
 - **Exit state**: Chord is fully dotless (ADR-254 uniform — no `allowDotted`); the platform is untouched; `media.*` events translate; author events are kebab.
-- **Status**: PENDING
+- **Status**: DONE (code) — session 448562 (2026-07-22). Uncommitted.
+  - **Emit seam pinned**: the sole chokepoint is `runtime.ts:1491` (`execStatements` `emit` case → `rawEvent`); translation applied to `stmt.event` at the call site, NOT inside `rawEvent` (which also mints the internal `chord.phrase` event). Channel seam `loader.ts:741` (translate `fromEvent` once), machine seam `loader.ts:1563` (translate `t.trigger.event`).
+  - New `story-loader/src/event-id-map.ts` (`translateEventId` + `CHORD_TO_PLATFORM_EVENT_ID` media map); conformance test `event-id-map.test.ts` pins it against live `MEDIA_EVENT_TYPES` (5 tests). `allowDotted` dropped from the 3 parser sites AND removed as an option; +3 event-site rejection tests in `dotted-key-rejection.test.ts`. Media sugar (analyzer) lowers to dotless IR. Fixtures + chord IR assertions migrated to dotless.
+  - **Green**: chord 453; story-loader 314/315 (see below); fernhill 500; friendly-zoo 71 + 56 walkthroughs. `mutation-verification` surfaced one gap — the machine `when event` seam's non-identity (media) translation was untested — closed with `event-id-map-machine.test.ts` (compiled machine fires on dotted `media.sound.play`, not the dotless id).
+  - **Surfaced pre-existing Phase 1 fallout** (chord/dist is gitignored → Phase 1's local dist was stale, hiding these; Phase 1 never ran the story-loader suite): (1) `scheduler.test.ts` assertions were dotted while Phase 1 had migrated the `zoo-timeline.story` fixture to dotless — **fixed** this session (dotted→dotless, per David). (2) `dotted-phrase-keys.test.ts` tests the ADR-254-superseded dotted override capability (sibling `dotted-keys-all-sites.test.ts` deleted in Phase 1; this one missed) — **PARKED** per David (its ADR-255 kebab replacement is Phase 2). This is the 1 remaining story-loader red.
 
 ### Phase 2: ADR-255 — `override message` message-override ACL (Interface Contract 3)
 - **Tier**: Large · **Budget**: 400

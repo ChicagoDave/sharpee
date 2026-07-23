@@ -2577,7 +2577,7 @@ class Parser {
       if (word === 'from' && lc.isWord('event', 1)) {
         lc.next();
         lc.next();
-        const key = this.readLabelKey(lc, { allowDotted: true }); // ADR-216 event type (dotted until ADR-256 ACL)
+        const key = this.readLabelKey(lc); // ADR-256: dotless Chord event id; story-loader translates to the platform id
         if (!key || !lc.atEnd()) {
           this.diagnostics.error('parse.channel-from', 'Expected `from event <event.key>`.', lineSpan(line));
         } else {
@@ -2973,7 +2973,7 @@ class Parser {
     let trigger: MachineTransition['trigger'];
     if (first.kind === 'word' && first.text === 'event') {
       hc.next();
-      const key = this.readLabelKey(hc, { allowDotted: true }); // ADR-216 event type (dotted until ADR-256 ACL)
+      const key = this.readLabelKey(hc); // ADR-256: dotless Chord event id; story-loader translates to the platform id
       if (!key || !hc.atEnd()) {
         this.diagnostics.error('parse.machine-when', 'Expected `event <event.key>`.', lineSpan(line));
         return null;
@@ -3094,11 +3094,12 @@ class Parser {
       case 'emit': {
         this.pos++;
         c.next();
-        // Event segments are dotted keys (`media.sound.play`) — previously
-        // the raw token texts, which mangled dots into ` . ` (ADR-216 fix).
+        // ADR-256: an event id is a single dotless Chord token (`media-sound-play`);
+        // story-loader translates it to the platform's dotted id at the emit seam.
+        // A `.` now raises `parse.dotted-key` (ADR-254 uniform).
         const event: string[] = [];
         while (!c.atEnd() && !c.isWord('when') && !c.isWord('with')) {
-          const segment = this.readLabelKey(c, { allowDotted: true }); // ADR-216 event type (dotted until ADR-256 ACL)
+          const segment = this.readLabelKey(c);
           if (!segment) break;
           event.push(segment);
         }
@@ -3287,36 +3288,23 @@ class Parser {
   }
 
   /**
-   * Read a phrase key: a word, optionally continued by `.`-joined words
-   * (`zoo.pa.closing-3`, design.md §3.3). Returns null when no word follows.
+   * Read a label/key: a single kebab-case `WORD` (ADR-254). A `.` in any label
+   * position — author labels (phrase, exit, refusal keys) AND the event-type
+   * sites (`emit`, channel `from event`, machine `when event`) — is a parse
+   * error (`parse.dotted-key`). The ban is uniform: ADR-256 made the event-type
+   * sites dotless too (the dotless Chord event id is translated to the platform's
+   * dotted id in `@sharpee/story-loader`, so no dotted form ever appears in a
+   * `.story`). Returns `null` when no word is present.
    */
-  /**
-   * Read a label/key. By default — author labels (phrase, exit, refusal keys) —
-   * a label is a single kebab-case `WORD` (ADR-254): a `.` is a parse error
-   * (`parse.dotted-key`). Event-type sites (`emit`, channel `from event`,
-   * machine `when event`) pass `allowDotted`: ADR-216's `media.*`/`chord.*`
-   * event types are platform-bound ids and keep their dotted form until the
-   * event-type ACL (ADR-256) replaces it — mirroring how ADR-254 kept the
-   * message-override capability behind ADR-255 rather than breaking it before a
-   * replacement existed. Returns `null` when no word is present.
-   */
-  private readLabelKey(c: Cursor, opts?: { allowDotted?: boolean }): string | null {
+  private readLabelKey(c: Cursor): string | null {
     const first = c.peek();
     if (!first || first.kind !== 'word') return null;
     c.next();
-    let key = first.text;
+    const key = first.text;
     const dotFollows = () =>
       c.peek()?.kind === 'punct' && c.peek()!.text === '.' && c.peek(1)?.kind === 'word';
     if (!dotFollows()) return key;
-    if (opts?.allowDotted) {
-      // ADR-216 platform-bound event type (pending the ADR-256 ACL): read whole.
-      while (dotFollows()) {
-        c.next();
-        key += '.' + c.next()!.text;
-      }
-      return key;
-    }
-    // ADR-254: a `.` in an author label is a parse error. Consume the dotted
+    // ADR-254/256: a `.` in a label is a parse error. Consume the dotted
     // segments (one clean error, no cascade), flag the first dot, and hand back
     // the kebab-cased form so downstream parsing does not spuriously break.
     const dot = c.peek()!;

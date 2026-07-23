@@ -36,25 +36,25 @@ describe('media sugar + declared assets (ADR-216 AC-2)', () => {
     expect(result.ir.hasHatches).toBe(false); // assets are DATA, never hatches
     const body = result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
     expect(body.map((s) => [s.event, s.payload])).toEqual([
-      ['media.sound.play', [{ key: 'src', value: { kind: 'literal', value: 'audio/chime.ogg', valueType: 'string' } }]],
+      ['media-sound-play', [{ key: 'src', value: { kind: 'literal', value: 'audio/chime.ogg', valueType: 'string' } }]],
       [
-        'media.music.play',
+        'media-music-play',
         [
           { key: 'src', value: { kind: 'literal', value: 'audio/overture.ogg', valueType: 'string' } },
           { key: 'loop', value: { kind: 'value', value: { kind: 'symbol', name: 'true' } } },
         ],
       ],
       [
-        'media.image.show',
+        'media-image-show',
         [
           { key: 'src', value: { kind: 'literal', value: 'img/map.png', valueType: 'string' } },
           { key: 'layer', value: { kind: 'literal', value: 'background', valueType: 'string' } },
         ],
       ],
-      ['media.sound.play', undefined] as never, // placeholder — replaced below
-      ['media.transition', [{ key: 'kind', value: { kind: 'literal', value: 'fade', valueType: 'string' } }]],
+      ['media-sound-play', undefined] as never, // placeholder — replaced below
+      ['media-transition', [{ key: 'kind', value: { kind: 'literal', value: 'fade', valueType: 'string' } }]],
     ].map((entry, i) => (i === 3
-      ? ['media.ambient.play', [
+      ? ['media-ambient-play', [
           { key: 'src', value: { kind: 'literal', value: 'audio/rain.ogg', valueType: 'string' } },
           // ADR-241 D3: ambient emits always carry the bed word (`main` default)
           { key: 'channel', value: { kind: 'literal', value: 'main', valueType: 'string' } },
@@ -79,7 +79,7 @@ describe('media sugar + declared assets (ADR-216 AC-2)', () => {
     );
     expect(result.diagnostics).toEqual([]);
     const body = result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
-    expect(body.map((s) => s.event)).toEqual(['media.music.stop', 'media.image.hide', 'media.ambient.stop', 'media.clear']);
+    expect(body.map((s) => s.event)).toEqual(['media-music-stop', 'media-image-hide', 'media-ambient-stop', 'media-clear']);
     expect(body[3].stmtWhen).toEqual({ kind: 'story-state', state: 'stormy' });
   });
 

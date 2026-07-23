@@ -20,9 +20,9 @@ describe('payloaded emit (ADR-216)', () => {
   it('compiles the fixture clean with dotted event types intact', () => {
     expect(result.diagnostics).toEqual([]);
     expect(body().map((s) => s.event)).toEqual([
-      'media.sound.play',
-      'media.image.show',
-      'chord.debug.whereabouts',
+      'media-sound-play',
+      'media-image-show',
+      'chord-debug-whereabouts',
     ]);
   });
 
@@ -61,7 +61,7 @@ describe('payloaded emit (ADR-216)', () => {
   states: calm, stormy
 
   on every turn
-    emit sky.crack with volume 11 when stormy
+    emit sky-crack with volume 11 when stormy
     emit petted
   end on
 

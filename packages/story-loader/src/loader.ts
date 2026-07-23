@@ -98,6 +98,7 @@ import {
   WorldModel,
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
+import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
@@ -728,7 +729,11 @@ export class ChordStory implements Story {
         );
         continue;
       }
-      const { fromEvent, take } = channel;
+      const { take } = channel;
+      // ADR-256: the IR `fromEvent` is a dotless Chord id; match against the
+      // platform runtime type (media.* → dotted; author events pass through),
+      // the same translation the emit seam applies, so the two always agree.
+      const fromEvent = translateEventId(channel.fromEvent);
       const definition: IOChannel = {
         id: channel.name,
         contentType: 'json',
@@ -1560,7 +1565,10 @@ export class ChordStory implements Story {
             break;
           }
           case 'event':
-            trigger = { type: 'event', eventId: t.trigger.event };
+            // ADR-256: translate the dotless Chord id to the platform runtime
+            // type the machine fires on (media.* → dotted; author events pass
+            // through), matching the emit seam.
+            trigger = { type: 'event', eventId: translateEventId(t.trigger.event) };
             break;
           case 'condition':
             trigger = { type: 'condition', condition: chordGuard(t.trigger.condition) };

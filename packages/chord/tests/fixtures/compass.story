@@ -3,7 +3,7 @@ story "Compass" by "Test"
   version: 0.0.1
 
   on every turn
-    emit chord.compass.updated with heading "north" and target the well and windspeed 12
+    emit chord-compass-updated with heading "north" and target the well and windspeed 12
     play sound roar when client has sound
     phrase roar-text when not client has sound
   end on
@@ -26,7 +26,7 @@ create the player
 define channel compass
   mode replace
   gated by images
-  from event chord.compass.updated
+  from event chord-compass-updated
   take heading, target
 end channel
 

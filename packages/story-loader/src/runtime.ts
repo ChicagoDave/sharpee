@@ -56,6 +56,7 @@ import {
 import { withLineBreaks } from './text.js';
 import { stagingRenderContext } from './hatch-context.js';
 import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract.js';
+import { translateEventId } from './event-id-map.js';
 
 /**
  * Chord strategy adverb → phrase-algebra Choice selector (ADR-196).
@@ -1488,7 +1489,11 @@ export class ChordRuntime {
           // ADR-216: the payload evaluates live against the turn context —
           // literals as numbers/strings, value expressions through the
           // shared evaluator, arrays/objects recursively.
-          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.rawEvent(stmt.event, this.emitPayload(stmt.payload, ctx)));
+          // ADR-256: the Chord IR event id is dotless; translate it to the
+          // platform runtime type here (media.* → dotted; author events pass
+          // through). Not inside rawEvent — that also mints the internal
+          // `chord.phrase` event, which must not be translated.
+          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.rawEvent(translateEventId(stmt.event), this.emitPayload(stmt.payload, ctx)));
           break;
         case 'win':
         case 'lose':

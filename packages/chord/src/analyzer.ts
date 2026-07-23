@@ -2451,9 +2451,11 @@ class Analyzer {
   }
 
   /**
-   * Lower one media sugar statement (ADR-216) onto a payloaded `media.*`
-   * emit — pure compile-time sugar, no runtime surface of its own. Asset
-   * references are typo-checked with a nearest-match suggestion; kind
+   * Lower one media sugar statement (ADR-216) onto a payloaded `media-*`
+   * emit — pure compile-time sugar, no runtime surface of its own. The IR
+   * event id is the dotless Chord form (ADR-254/256); `@sharpee/story-loader`
+   * translates it to the platform's dotted `media.*` id at the emit seam.
+   * Asset references are typo-checked with a nearest-match suggestion; kind
    * mismatches gate (`play ambient` plays SOUND assets — an ambient loop
    * is a sound file).
    */
@@ -2484,28 +2486,28 @@ class Analyzer {
     };
     switch (stmt.form) {
       case 'play-sound':
-        event = 'media.sound.play';
+        event = 'media-sound-play';
         requireAsset('sound');
         break;
       case 'play-music':
-        event = 'media.music.play';
+        event = 'media-music-play';
         requireAsset('music');
         if (stmt.looping) fields.push({ key: 'loop', value: { kind: 'value', value: { kind: 'symbol', name: 'true' } } });
         break;
       case 'stop-music':
-        event = 'media.music.stop';
+        event = 'media-music-stop';
         break;
       case 'play-ambient':
-        event = 'media.ambient.play';
+        event = 'media-ambient-play';
         requireAsset('sound');
         this.stampAmbientChannel(stmt, fields);
         break;
       case 'stop-ambient':
-        event = 'media.ambient.stop';
+        event = 'media-ambient-stop';
         this.stampAmbientChannel(stmt, fields);
         break;
       case 'show-image':
-        event = 'media.image.show';
+        event = 'media-image-show';
         requireAsset('image');
         if (stmt.layer) {
           // ADR-241 D3: layers beyond the platform's pre-registered three
@@ -2521,14 +2523,14 @@ class Analyzer {
         }
         break;
       case 'hide-image':
-        event = 'media.image.hide';
+        event = 'media-image-hide';
         break;
       case 'transition':
-        event = 'media.transition';
+        event = 'media-transition';
         fields.push({ key: 'kind', value: { kind: 'literal', value: stmt.transitionKind ?? '', valueType: 'string' } });
         break;
       case 'clear':
-        event = 'media.clear';
+        event = 'media-clear';
         break;
     }
     return { kind: 'emit', event, ...(fields.length > 0 ? { payload: fields } : {}), stmtWhen, span: stmt.span };

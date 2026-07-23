@@ -38,6 +38,31 @@ describe('dotted labels are rejected (ADR-254)', () => {
   });
 });
 
+describe('event-type sites reject dots too (ADR-256 — the ban is uniform)', () => {
+  it('a dotted `emit` event id raises parse.dotted-key with a kebab fix-it', () => {
+    const errors = errorsOf(
+      `${HEADER}create the Hall\n  a room\n\n  on every turn\n    emit media.sound.play\n  end on\n\n  A hall.\n`,
+    );
+    const dotted = errors.filter((e) => e.code === 'parse.dotted-key');
+    expect(dotted).toHaveLength(1);
+    expect(dotted[0].message).toContain('media-sound-play');
+  });
+
+  it('a dotted channel `from event` key raises parse.dotted-key', () => {
+    const errors = errorsOf(
+      `${HEADER}define channel c\n  mode event\n  from event estate.clock\n  take hour\nend channel\n`,
+    );
+    expect(errors.some((e) => e.code === 'parse.dotted-key')).toBe(true);
+  });
+
+  it('a dotted machine `when event` trigger raises parse.dotted-key', () => {
+    const errors = errorsOf(
+      `${HEADER}define machine m\n  starts idle\n  state idle\n    when event gate.opened: idle\n  end state\nend machine\n`,
+    );
+    expect(errors.some((e) => e.code === 'parse.dotted-key')).toBe(true);
+  });
+});
+
 describe('quoted strings keep their dots (ADR-254 D3 — no false positive)', () => {
   it('a quoted file path with dots does not raise parse.dotted-key', () => {
     const errors = errorsOf(`${HEADER}define text garbled from "./extras.ts"\n`);

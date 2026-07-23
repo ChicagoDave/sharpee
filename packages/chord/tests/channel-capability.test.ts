@@ -36,7 +36,7 @@ describe('define channel (ADR-216, spelling A)', () => {
         family: 'data', // ADR-241: every data projection reads as family 'data'
         mode: 'replace',
         gatedBy: 'images',
-        fromEvent: 'chord.compass.updated',
+        fromEvent: 'chord-compass-updated',
         take: ['heading', 'target'],
         span: expect.anything(),
       },
@@ -46,7 +46,7 @@ describe('define channel (ADR-216, spelling A)', () => {
 
   it('a bad mode → analysis.channel-mode', () => {
     expect(
-      errorCodes(story('define channel c\n  mode sideways\n  from event a.b\n  take x\nend channel\n')),
+      errorCodes(story('define channel c\n  mode sideways\n  from event a-b\n  take x\nend channel\n')),
     ).toEqual(['analysis.channel-mode']);
   });
 
@@ -57,14 +57,14 @@ describe('define channel (ADR-216, spelling A)', () => {
   });
 
   it('a missing `take` → analysis.channel-take', () => {
-    expect(errorCodes(story('define channel c\n  mode event\n  from event a.b\nend channel\n'))).toEqual([
+    expect(errorCodes(story('define channel c\n  mode event\n  from event a-b\nend channel\n'))).toEqual([
       'analysis.channel-take',
     ]);
   });
 
   it('an unknown gate capability → analysis.unknown-capability with a suggestion', () => {
     const result = compile(
-      story('define channel c\n  mode event\n  gated by sonud\n  from event a.b\n  take x\nend channel\n'),
+      story('define channel c\n  mode event\n  gated by sonud\n  from event a-b\n  take x\nend channel\n'),
     );
     const diagnostic = result.diagnostics.find((d) => d.code === 'analysis.unknown-capability')!;
     expect(diagnostic).toBeDefined();
@@ -72,7 +72,7 @@ describe('define channel (ADR-216, spelling A)', () => {
   });
 
   it('a duplicate channel name → analysis.duplicate-channel', () => {
-    const channel = 'define channel c\n  mode event\n  from event a.b\n  take x\nend channel\n';
+    const channel = 'define channel c\n  mode event\n  from event a-b\n  take x\nend channel\n';
     expect(errorCodes(story(channel + channel))).toEqual(['analysis.duplicate-channel']);
   });
 });

@@ -5,7 +5,7 @@ story "The Gatehouse" by "Test"
   use state-machines
 
   on every turn
-    emit gatehouse.watch.report with post the player's location and alarm "quiet"
+    emit gatehouse-watch-report with post the player's location and alarm "quiet"
     play ambient wind when client has sound
   end on
 
@@ -63,7 +63,7 @@ define machine drawbridge
       phrase chains-groan
       play sound clank when client has sound
     end on
-    when event gatehouse.bridge.seated: lowered
+    when event gatehouse-bridge-seated: lowered
 
   state lowered, terminal
     on enter
@@ -73,7 +73,7 @@ end machine
 
 define channel watch
   mode replace
-  from event gatehouse.watch.report
+  from event gatehouse-watch-report
   take post, alarm
 end channel
 
