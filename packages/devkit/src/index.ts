@@ -20,6 +20,7 @@ export type { ResolvedStory } from './repo.js';
 // The one browser-build core (ADR-252 D5) — repokit delegates here.
 export {
   buildBrowser,
+  buildPlaygroundBundle,
   resolveWiredThemes,
   copyWiredThemes,
   injectThemes,
@@ -31,6 +32,7 @@ export {
 export type {
   BrowserBuildEnv,
   BrowserBuildOpts,
+  PlaygroundBuildEnv,
   WiredTheme,
   BuiltinThemeEntry,
   BrowserMeta,

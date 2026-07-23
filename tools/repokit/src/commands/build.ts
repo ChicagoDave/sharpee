@@ -20,6 +20,7 @@ import {
 } from '../repo';
 import { runBundle } from './bundle';
 import { buildBrowserClient, chordStoryFile } from './browser';
+import { buildPlaygroundClient } from './playground';
 import { buildZifmiaServer } from './zifmia';
 
 /**
@@ -49,6 +50,8 @@ export interface BuildOptions {
   bundle?: boolean;
   /** Also build the browser client (dist/web/<story>/). Implies --esm; requires a story. */
   browser?: boolean;
+  /** Also build the story-agnostic playground bundle (ADR-191). Implies --esm; no story. */
+  playground?: boolean;
   /** Also build the zifmia multi-user server (tools/zifmia/dist/). Implies --esm. */
   zifmia?: boolean;
   quiet?: boolean;
@@ -204,8 +207,9 @@ export function runBuild(opts: BuildOptions = {}): void {
   const root = opts.root ?? findRepoRoot();
   const log = (m: string) => !opts.quiet && console.log(m);
 
-  // Client targets (browser/zifmia) need the ESM build pass (build.sh runs it when a client is requested).
-  const effective: BuildOptions = opts.browser || opts.zifmia ? { ...opts, esm: true } : opts;
+  // Client targets (browser/playground/zifmia) need the ESM build pass (build.sh runs it when a client is requested).
+  const effective: BuildOptions =
+    opts.browser || opts.playground || opts.zifmia ? { ...opts, esm: true } : opts;
   if (effective.browser && !effective.story) throw new Error('--browser requires a story');
 
   log('=== devkit build ===');
@@ -219,6 +223,7 @@ export function runBuild(opts: BuildOptions = {}): void {
   if (effective.story && !isChordStory) buildStory(root, effective.story, effective);
   if (effective.bundle !== false) runBundle({ root, quiet: effective.quiet });
   if (effective.browser) buildBrowserClient(root, effective.story!, { quiet: effective.quiet });
+  if (effective.playground) buildPlaygroundClient(root, { quiet: effective.quiet });
   if (effective.zifmia) buildZifmiaServer(root, { quiet: effective.quiet });
   log('=== build complete ===');
 }
@@ -240,6 +245,7 @@ function parseBuildArgs(args: string[]): BuildOptions {
     else if (a === '--no-bundle') opts.bundle = false;
     else if (a === '--esm') opts.esm = true;
     else if (a === '--browser') opts.browser = true;
+    else if (a === '--playground') opts.playground = true;
     else if (a === '--zifmia') opts.zifmia = true;
     else if (a.startsWith('-')) throw new Error(`unknown option: ${a}`);
     else if (!opts.story) opts.story = a;

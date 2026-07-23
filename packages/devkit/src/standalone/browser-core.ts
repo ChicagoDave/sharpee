@@ -596,3 +596,141 @@ export function buildBrowser(
 
   return outDir;
 }
+
+// --------------------------------------------------------------------------
+// The playground bundle (ADR-191 Phase 1) — a story-AGNOSTIC sibling build.
+//
+// buildBrowser() gates the build on one `.story` compiling and derives all
+// metadata from its IR. A playground has NO story at build time: it ships the
+// compiler + loader + engine + platform-browser with a generic entry that
+// takes `.story` source at RUNTIME (from the site's editor, over postMessage).
+// So this is a sibling function, not a parameterization of buildBrowser — it
+// reuses the CSS/theme/HTML helpers but skips the compile gate and IR metadata.
+// --------------------------------------------------------------------------
+
+/** Resolution-mode injection for the playground build (cf. BrowserBuildEnv). */
+export interface PlaygroundBuildEnv {
+  /** platform-browser's styles/ dir (engine CSS). */
+  stylesDir: string;
+  /** The devkit templates/browser dir (index.html + playground entry template). */
+  templatesDir: string;
+  /** cwd for esbuild + the root under which `dist/playground` is written. */
+  esbuildCwd: string;
+  /** The platform (engine) version — the pinned playground version (AC-8). */
+  engineVersion: string;
+  /** Version-pinned sync of the built bundle (in-repo: website/public/playground/v<X.Y.Z>/). */
+  sync?: (outDir: string, version: string) => void;
+}
+
+/** Generic identity for the story-less playground bundle. */
+const PLAYGROUND_META: BrowserMeta = {
+  storyId: 'playground',
+  storyTitle: 'Sharpee Playground',
+  author: 'The Sharpee Project',
+  version: '', // filled from the platform version at build time
+  blurb: 'Paste a Chord story and play it in the browser.',
+};
+const PLAYGROUND_STORAGE_PREFIX = 'sharpee-playground';
+const PLAYGROUND_DEFAULT_THEME = 'classic';
+
+/** Instantiate the playground entry from the template (no story tokens — story-agnostic). */
+function generatePlaygroundEntry(templatesDir: string, scratchDir: string): string {
+  const tpl = fs.readFileSync(path.join(templatesDir, 'playground-entry.ts.template'), 'utf-8');
+  const entry = tpl
+    .replace(/\{\{DEFAULT_THEME\}\}/g, PLAYGROUND_DEFAULT_THEME)
+    .replace(/\{\{THEMES_JSON\}\}/g, '[]')
+    .replace(/\{\{STORAGE_PREFIX\}\}/g, PLAYGROUND_STORAGE_PREFIX);
+  fs.mkdirSync(scratchDir, { recursive: true });
+  const entryFile = path.join(scratchDir, 'playground-entry.ts');
+  fs.writeFileSync(entryFile, entry);
+  return entryFile;
+}
+
+/**
+ * Build the story-agnostic playground bundle (ADR-191 Phase 1) into
+ * `<esbuildCwd>/dist/playground/`: a generated entry that compiles `.story`
+ * source supplied at runtime (compile → IR → story-loader → engine), the
+ * default player-pane page, engine CSS, and a stamped version.ts (version =
+ * platform `X.Y.Z`). No story is baked in; no wasm. On success, calls
+ * `env.sync?.(outDir, version)` to version-pin it into the website.
+ *
+ * @param env  resolution-mode injection
+ * @param opts per-invocation knobs (minify/sourcemap/quiet/buildDate)
+ * @returns the output directory (`<cwd>/dist/playground`)
+ * @throws if game.js is missing or empty after esbuild (no silent empty build)
+ */
+export function buildPlaygroundBundle(
+  env: PlaygroundBuildEnv,
+  opts: BrowserBuildOpts = {},
+): string {
+  const log = (m: string) => !opts.quiet && console.log(m);
+  const version = env.engineVersion;
+  const meta: BrowserMeta = { ...PLAYGROUND_META, version };
+
+  const outDir = path.join(env.esbuildCwd, 'dist', 'playground');
+  fs.rmSync(outDir, { recursive: true, force: true });
+  fs.mkdirSync(outDir, { recursive: true });
+  log(`  Playground bundle v${version} (story-agnostic)`);
+
+  // --- Entry (generated) + version.ts, in a build-scratch dir. ---
+  const entryDir = path.join(env.esbuildCwd, 'dist', '.playground-entry');
+  const entryFile = generatePlaygroundEntry(env.templatesDir, entryDir);
+  const buildDate = opts.buildDate ?? new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  stampBrowserVersion(entryDir, meta, env.engineVersion, buildDate);
+
+  // --- Bundle the entry → dist/playground/game.js (single IIFE payload). ---
+  log('  Bundling game.js...');
+  const esbuildArgs = [
+    'esbuild',
+    entryFile,
+    '--bundle',
+    '--platform=browser',
+    '--target=es2020',
+    '--format=iife',
+    '--global-name=SharpeePlayground',
+    `--outfile=${path.join(outDir, 'game.js')}`,
+    '--conditions=require',
+    '--define:process.env.NODE_ENV="production"',
+    '--define:process.env.PARSER_DEBUG=undefined',
+    '--define:process.env.DEBUG_PRONOUNS=undefined',
+  ];
+  if (opts.minify !== false) esbuildArgs.push('--minify');
+  if (opts.sourcemap !== false) esbuildArgs.push('--sourcemap');
+  try {
+    execFileSync('npx', esbuildArgs, { cwd: env.esbuildCwd, stdio: opts.quiet ? 'pipe' : 'inherit' });
+  } catch (error: unknown) {
+    const stderr = (error as { stderr?: Buffer }).stderr;
+    if (stderr) console.error(stderr.toString());
+    throw new Error('esbuild bundling failed.');
+  }
+  log('  ✓ Built game.js');
+
+  // --- The page: the default player-pane template, no themes wired. ---
+  let html = processTemplate(fs.readFileSync(path.join(env.templatesDir, 'index.html'), 'utf-8'), meta);
+  html = injectThemes(html, []);
+  fs.writeFileSync(path.join(outDir, 'index.html'), html);
+  log('  ✓ Copied index.html');
+
+  // Engine CSS (base/engine/decorations) — platform-browser-owned (ADR-188).
+  for (const css of ['base.css', 'engine.css', 'decorations.css']) {
+    fs.copyFileSync(path.join(env.stylesDir, css), path.join(outDir, css));
+  }
+  // The default page links `<id>.css` (the author-override slot); ship an empty one.
+  fs.writeFileSync(path.join(outDir, `${meta.storyId}.css`), '/* Sharpee Playground — no overrides */\n');
+  log('  ✓ Copied platform engine CSS (base, engine, decorations)');
+
+  // --- Invariant: the deliverable exists (no silent success on an empty build). ---
+  const gameJs = path.join(outDir, 'game.js');
+  if (!fs.existsSync(gameJs) || fs.statSync(gameJs).size === 0) {
+    throw new Error(`playground build failed: ${gameJs} is missing or empty.`);
+  }
+
+  // Version-pinned website sync (in-repo); no-op in a bare build.
+  env.sync?.(outDir, version);
+
+  const sizeKb = (fs.statSync(gameJs).size / 1024).toFixed(1);
+  log(`\n✅ Playground bundle complete! (game.js ${sizeKb} KB)`);
+  log(`Output: ${path.relative(env.esbuildCwd, outDir)}/ (pinned v${version})`);
+
+  return outDir;
+}

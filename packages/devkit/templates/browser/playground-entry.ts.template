@@ -1,0 +1,153 @@
+/**
+ * Browser entry point for the Sharpee Playground (ADR-191 Phase 1, Chord mode).
+ *
+ * Unlike the per-story browser entry (chord-browser-entry.ts.template), this
+ * bundle has NO story baked in: it ships the Chord compiler + story-loader +
+ * engine + platform-browser and takes the `.story` SOURCE at runtime, from the
+ * parent page's editor. It runs inside a sandboxed <iframe>; the parent drives
+ * it over `postMessage`:
+ *
+ *   parent -> iframe  { type: 'play',  source: <editor text> }
+ *   parent -> iframe  { type: 'reset' }                       (parent usually just reloads the frame)
+ *   iframe -> parent  { type: 'ready' }                       (posted once, on load)
+ *   iframe -> parent  { type: 'diagnostics', errors: [{ line, column, code, message }] }
+ *   iframe -> parent  { type: 'playing' }                     (a story compiled + started)
+ *
+ * On every `play` a FRESH WorldModel/GameEngine is built (ADR-248 fresh-instance
+ * contract); the single BrowserClient is created once (it owns the DOM wiring,
+ * which must not be re-bound per boot).
+ */
+
+import { GameEngine, type Story } from '@sharpee/engine';
+import { WorldModel, EntityType } from '@sharpee/world-model';
+import { Parser } from '@sharpee/parser-en-us';
+import { LanguageProvider } from '@sharpee/lang-en-us';
+import { PerceptionService } from '@sharpee/stdlib';
+import { BrowserClient, ThemeManager } from '@sharpee/platform-browser';
+import { compile } from '@sharpee/chord';
+import { createStory } from '@sharpee/story-loader';
+import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+
+const THEME_STORAGE_KEY = '{{STORAGE_PREFIX}}-theme';
+ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
+
+/** Diagnostic shape posted to the parent's errors area (CodeMirror line/ch). */
+interface PlaygroundDiagnostic {
+  line: number;
+  column: number;
+  code: string;
+  message: string;
+}
+
+/** Post a message to the parent page (or to ourselves when not framed — e.g. tests). */
+function toParent(message: unknown): void {
+  window.parent.postMessage(message, '*');
+}
+
+/** The one BrowserClient for this page (ADR-248: created once, reused per boot). */
+let client: BrowserClient | null = null;
+/** The last source that compiled + started — replayed on a RESTART reboot. */
+let lastSource = '';
+
+/**
+ * Compile the editor's source and, on success, boot a FRESH world into the
+ * player pane. On failure, post the diagnostics to the parent (never throw to
+ * the console) so the page's errors area can render them against the editor.
+ */
+function boot(source: string): void {
+  const result = compile(source, { importResolver: () => null });
+  const errors = result.diagnostics.filter((d) => d.severity === 'error');
+  if (!result.ok || result.ir.hasHatches) {
+    const diagnostics: PlaygroundDiagnostic[] = errors.map((d) => ({
+      line: d.span.line,
+      column: d.span.column,
+      code: d.code,
+      message: d.message,
+    }));
+    if (result.ir?.hasHatches && diagnostics.length === 0) {
+      // A hatch-declaring story is out of playground scope (single-file only).
+      diagnostics.push({
+        line: 1,
+        column: 1,
+        code: 'playground.hatch',
+        message:
+          'This story uses a TypeScript hatch (`define … from "…"`), which the playground cannot run — it is single-file and declarative-only.',
+      });
+    }
+    toParent({ type: 'diagnostics', errors: diagnostics });
+    return;
+  }
+
+  lastSource = source;
+  const story = createStory(result.ir) as unknown as Story;
+
+  if (!client) {
+    const author = story.config.author;
+    client = new BrowserClient({
+      storagePrefix: '{{STORAGE_PREFIX}}-',
+      // ADR-248: RESTART reboots by re-running the boot path with the last source.
+      reboot: () => boot(lastSource),
+      defaultTheme: '{{DEFAULT_THEME}}',
+      themes: {{THEMES_JSON}},
+      storyInfo: {
+        title: story.config.title,
+        description: story.config.description || '',
+        authors: Array.isArray(author) ? author.join(', ') : author,
+        version: STORY_VERSION,
+        engineVersion: ENGINE_VERSION,
+        buildDate: BUILD_DATE,
+      },
+    });
+
+    client.initialize({
+      statusLocation: document.getElementById('location-name'),
+      statusScore: document.getElementById('score-turns'),
+      textContent: document.getElementById('text-content'),
+      mainWindow: document.getElementById('main-window'),
+      commandInput: document.getElementById('command-input') as HTMLInputElement,
+      saveDialog: document.getElementById('save-dialog') as HTMLDialogElement,
+      restoreDialog: document.getElementById('restore-dialog') as HTMLDialogElement,
+      startupDialog: document.getElementById('startup-dialog') as HTMLDialogElement,
+      saveNameInput: document.getElementById('save-name-input') as HTMLInputElement,
+      saveSlotsListEl: document.getElementById('save-slots-list'),
+      restoreSlotsListEl: document.getElementById('restore-slots-list'),
+      noSavesMessage: document.getElementById('no-saves-message'),
+      startupSaveInfo: document.getElementById('startup-save-info'),
+      menuBar: document.getElementById('menu-bar'),
+    });
+  }
+
+  const world = new WorldModel();
+  const player = world.createEntity('player', EntityType.ACTOR);
+  world.setPlayer(player.id);
+
+  const language = new LanguageProvider();
+  const parser = new Parser(language);
+  if (story.extendParser) story.extendParser(parser);
+  if (story.extendLanguage) story.extendLanguage(language);
+
+  const perceptionService = new PerceptionService();
+  const engine = new GameEngine({ world, player, parser, language, perceptionService });
+
+  client.connectEngine(engine, world);
+  engine.setStory(story);
+  engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
+
+  void client.start();
+  toParent({ type: 'playing' });
+}
+
+window.addEventListener('message', (event: MessageEvent) => {
+  const data = event.data as { type?: string; source?: string } | null;
+  if (!data || typeof data.type !== 'string') return;
+  if (data.type === 'play' && typeof data.source === 'string') {
+    boot(data.source);
+  } else if (data.type === 'reset') {
+    // A full clean world is guaranteed by a page reload; the parent normally
+    // reloads the iframe, but honor an explicit reset request too.
+    window.location.reload();
+  }
+});
+
+// Announce readiness so the parent can enable Play and send the first source.
+toParent({ type: 'ready' });

@@ -14,7 +14,7 @@
 import { describe, it, expect, afterEach, beforeAll, vi } from 'vitest';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
-import { buildBrowser, type BrowserBuildEnv } from './browser-core.js';
+import { buildBrowser, buildPlaygroundBundle, type BrowserBuildEnv, type PlaygroundBuildEnv } from './browser-core.js';
 import { runBuildBrowserCommand } from './build-browser.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
@@ -189,4 +189,58 @@ describe('runBuildBrowserCommand dispatch (ADR-252 D1)', () => {
     const err = stderr.mock.calls.map((c) => c.join(' ')).join('\n');
     expect(err).toMatch(/both a .story file and src\/index\.ts/);
   });
+});
+
+describe('buildPlaygroundBundle core (real path, ADR-191)', () => {
+  const tmps: string[] = [];
+  const mkroot = (prefix: string): string => {
+    const t = mkdtempSync(join(REPO_ROOT, `.tmp-${prefix}-`));
+    tmps.push(t);
+    return t;
+  };
+  afterEach(() => {
+    while (tmps.length) rmSync(tmps.pop()!, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it('builds a story-AGNOSTIC bundle pinned to the platform version (no story baked in)', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const root = mkroot('pg-core');
+    const env: PlaygroundBuildEnv = {
+      stylesDir: STYLES,
+      templatesDir: TEMPLATES,
+      esbuildCwd: root,
+      engineVersion: '9.9.9',
+    };
+    const outDir = buildPlaygroundBundle(env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' });
+
+    // The deliverable exists at dist/playground/ with a real bundle.
+    expect(outDir).toBe(join(root, 'dist', 'playground'));
+    expect(statSync(join(outDir, 'game.js')).size).toBeGreaterThan(100_000);
+    expect(existsSync(join(outDir, 'index.html'))).toBe(true);
+    for (const css of ['base.css', 'engine.css', 'decorations.css', 'playground.css']) {
+      expect(existsSync(join(outDir, css)), `${css} missing`).toBe(true);
+    }
+    // Story-agnostic: NO story source, NO imports, NO per-story assets.
+    expect(existsSync(join(outDir, 'story.story'))).toBe(false);
+    expect(existsSync(join(outDir, 'imports.json'))).toBe(false);
+    // The generated entry's version.ts carries the pinned platform version (AC-8).
+    expect(readFileSync(join(root, 'dist', '.playground-entry', 'version.ts'), 'utf-8'))
+      .toContain("STORY_VERSION = '9.9.9'");
+  }, 120_000);
+
+  it('invokes the sync callback with the output dir and pinned version', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const root = mkroot('pg-sync');
+    const calls: Array<{ outDir: string; version: string }> = [];
+    const env: PlaygroundBuildEnv = {
+      stylesDir: STYLES,
+      templatesDir: TEMPLATES,
+      esbuildCwd: root,
+      engineVersion: '1.2.3',
+      sync: (outDir, version) => calls.push({ outDir, version }),
+    };
+    const outDir = buildPlaygroundBundle(env, { quiet: true });
+    expect(calls).toEqual([{ outDir, version: '1.2.3' }]);
+  }, 120_000);
 });

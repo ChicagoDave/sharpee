@@ -281,6 +281,33 @@ export interface BrowserBuildOpts {
  * @throws on gate errors, declared hatches, an unknown `client:`, or an empty bundle
  */
 export declare function buildBrowser(storyFile: string, env: BrowserBuildEnv, opts?: BrowserBuildOpts): string;
+/** Resolution-mode injection for the playground build (cf. BrowserBuildEnv). */
+export interface PlaygroundBuildEnv {
+    /** platform-browser's styles/ dir (engine CSS). */
+    stylesDir: string;
+    /** The devkit templates/browser dir (index.html + playground entry template). */
+    templatesDir: string;
+    /** cwd for esbuild + the root under which `dist/playground` is written. */
+    esbuildCwd: string;
+    /** The platform (engine) version — the pinned playground version (AC-8). */
+    engineVersion: string;
+    /** Version-pinned sync of the built bundle (in-repo: website/public/playground/v<X.Y.Z>/). */
+    sync?: (outDir: string, version: string) => void;
+}
+/**
+ * Build the story-agnostic playground bundle (ADR-191 Phase 1) into
+ * `<esbuildCwd>/dist/playground/`: a generated entry that compiles `.story`
+ * source supplied at runtime (compile → IR → story-loader → engine), the
+ * default player-pane page, engine CSS, and a stamped version.ts (version =
+ * platform `X.Y.Z`). No story is baked in; no wasm. On success, calls
+ * `env.sync?.(outDir, version)` to version-pin it into the website.
+ *
+ * @param env  resolution-mode injection
+ * @param opts per-invocation knobs (minify/sourcemap/quiet/buildDate)
+ * @returns the output directory (`<cwd>/dist/playground`)
+ * @throws if game.js is missing or empty after esbuild (no silent empty build)
+ */
+export declare function buildPlaygroundBundle(env: PlaygroundBuildEnv, opts?: BrowserBuildOpts): string;
 ```
 
 ### standalone/author-game
