@@ -50,6 +50,11 @@ changes:
 
 Compiler bug fixes, IR-shape refactors, and platform releases do **not** bump it.
 
+> **Recorded exception (2026-07-23, session 7f133e).** ADR-261 places `score`, `award`, and `ranks`
+> behind a `use scoring` gate, which stops previously-valid stories from compiling — a **major** by
+> this rule — and the owner ruled it ships as **Chord 1.1** regardless. That is a one-time override,
+> not an amendment: this rule is unchanged for every other case. See ADR-261 § Consequences.
+
 ### D3 — "Breaking change" quantified: two independent axes; the loader gates only on the wire
 
 A "breaking change" in Chord is **two distinct events on independent axes**, and
