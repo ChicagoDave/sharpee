@@ -50,6 +50,16 @@ if [ "$1" != "--no-pull" ]; then
   git pull --ff-only
 fi
 
+# ── Playground bundle (ADR-191) — gitignored, so (re)build it on deploy. ──
+# Requires the platform toolchain (pnpm workspace + built packages) on this
+# host. Guarded: a failure warns but never aborts the website deploy.
+log "Rebuilding the playground bundle (./repokit build --playground) ..."
+if ( cd "$REPO_ROOT" && ./repokit build --playground ); then
+  log "Playground bundle refreshed at website/public/playground/."
+else
+  warn "playground build failed — /playground will 404 until './repokit build --playground' succeeds on this host."
+fi
+
 cd "$WEBSITE_DIR"
 log "Installing dependencies (npm ci) ..."
 npm ci

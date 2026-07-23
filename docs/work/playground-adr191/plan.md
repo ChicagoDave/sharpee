@@ -29,12 +29,33 @@
 - **The example picker's real fixture path**: `docs/work/stdlib-cookbook/fixtures/*.story` — 17 files (`taking-dropping.story`, `putting-inserting.story`, `going.story`, `entering.story`, `opening-tool.story`, `locking-unlocking.story`, `wearing.story`, `examining-searching.story`, `listening-smelling.story`, `attacking.story`, `cutting.story`, `digging.story`, `switching.story`, `throwing.story`, `turning.story`, `giving-showing.story`, `asking-telling.story`) — each already gate-clean per the `docs/reference/stdlib-cookbook.md` currency sweep (website-content plan Phase 6/7a). AC-4 names the locking-unlocking fixture by name (`unlock strongbox with key`, `open strongbox`) — confirm at implementation time that `locking-unlocking.story` still matches that exact walkthrough.
 - **Site nav today**: `/play` is a standalone top-level item (website `src/lib/nav.ts`, "Tutorial" section, sibling to the Fernhill Tutorial group) — currently the static Fernhill browser-client embed (`website/src/app/play/page.tsx`, explicitly commented as "the ADR-191 in-browser-compiler playground is a separate, later deliverable"). It is NOT nested under the Chord section. This is the concrete open decision Phase 1 must close (see below) — ADR-232 leans toward Chord-section placement but is itself DRAFT.
 
-## Open decisions for David (resolve in Phase 1, before Phase 2/3 code)
+## Open decisions for David — RESOLVED (Phase 1, 2026-07-23, session 6d69f1)
 
-1. **Platform-change sign-off (CLAUDE.md gate)**: approve `packages/devkit` + `tools/repokit` changes for a new playground emit step, per the reuse/new-work boundary Phase 1 documents concretely.
-2. **Route placement**: does the playground live at `/play` (replacing the current static Fernhill embed, which would need to move or be demoted to an example in the picker) or at a new sibling route (e.g. `/playground`), with `/play` kept as-is? ADR-191 says "the `/play` area — exact route per the website-content plan"; the website-content plan never resolved it (Phase 9 deferred it here).
-3. **Nav placement**: top-level (mirroring today's `/play`) or nested under the Chord section (ADR-232's leaning, but that ADR is DRAFT)?
-4. **CodeMirror 6 dependency addition**: confirm adding `@codemirror/*` packages to `website/package.json` (a first-time editor dependency for the site).
+1. **Platform-change sign-off (CLAUDE.md gate)** → **APPROVED.** David green-lit `packages/devkit` + `tools/repokit` changes for the Phase 2 playground emit step (a sibling `buildPlaygroundBundle()` in `browser-core.ts` + a `repokit build --playground` command), per the reuse boundary in "Phase 1 design note" below.
+2. **Route placement** → **NEW `/playground` route; `/play` kept as-is.** The playground is a paste-and-run surface; `/play` stays the curated Fernhill demo (a full story with audio/image assets that cannot be an example-picker fixture). This preserves the just-shipped `/play` embed (resolves the plan-review TENSION) rather than retiring it.
+3. **Nav placement** → **TOP-LEVEL, near `/play`** (Tutorial section, sibling to the Fernhill Tutorial group). Matches today's structure; revisit if/when ADR-232's nav restructure lands.
+4. **CodeMirror 6 dependency** → **APPROVED.** Add `@codemirror/*` to `website/package.json` (ADR-191 Q-3 ruling), with a custom Chord highlighting mode from `catalog.ts`'s closed sets + the chord lexer's keyword table.
+
+## Phase 1 design note (deliverables a + b) — signed off 2026-07-23
+
+### (a) Reuse boundary: playground emit vs. `browser-core.ts`
+`buildBrowser()` (browser-core.ts:418) does two things the playground CANNOT: it gates the build on a specific `.story` compiling (lines 434–448) and derives all metadata (`id`/`title`/`version`) from that story's `IRMeta` (D2). A playground bundle has **no story at build time** — nothing to gate on, no IR. Phase 2 is therefore a **sibling function** `buildPlaygroundBundle()`, not a parameterization of `buildBrowser`.
+
+| Reuse unchanged (import from browser-core) | Write fresh in Phase 2 |
+| --- | --- |
+| `copyWiredThemes`, `injectThemes`, `escapeHtml` | `playground-entry.ts.template` (story-agnostic; source at runtime, not `fetch('./story.story')`) |
+| engine-CSS copy (base/engine/decorations) | `buildPlaygroundBundle()` — no compile gate, generic metadata (title "Sharpee Playground", version = platform `X.Y.Z`) |
+| the esbuild IIFE invocation shape | `--playground` CLI surface + version-pinned sync to `website/public/playground/v<X.Y.Z>/` (mirrors `mirrorToWebsite`) |
+| `templates/browser/index.html` player-pane scaffold | (no `story.story` / `imports.json` shipped) |
+
+### (b) Entry-point contract: editor text → sandboxed iframe
+The current `chord-browser-entry.ts.template` `start()` (template line 61) already does everything per-boot: fresh `WorldModel`/`GameEngine`/`BrowserClient`, `reboot: () => start()` (ADR-248). The only change is the source of the story text and where diagnostics go. `postMessage` contract:
+- **Parent → iframe** on Play: `{ type: 'play', source: <editor text> }`. Iframe runs `compile(source)` fresh.
+- **iframe → parent** on compile error: `{ type: 'diagnostics', errors: [{line, column, code, message}] }` → CodeMirror errors area (chord `span` maps directly, template line 46).
+- **On success**: iframe runs the existing per-boot block into its own DOM (fresh world every Play — reuses ADR-248's fresh-instance contract).
+- **Reset**: parent reloads the iframe `src` — cheapest guaranteed clean world (AC-6/AC-7), no teardown logic to get subtly wrong.
+
+Keeps the playground on the identical `compile()` → `story-loader` → engine path every other Chord surface uses (ADR-210); no wasm, no compile backend.
 
 ## Phases
 
@@ -45,7 +66,7 @@
 - **Entry state**: ADR-191 ACCEPTED with all 4 open questions ruled; this plan's Investigation findings and Open decisions sections exist as a starting point (do not re-derive them).
 - **Deliverable**: A short written design note (this plan file's phase notes, updated in place) covering: (a) the concrete reuse boundary between the playground emit step and `browser-core.ts` (which exports it imports vs. what it writes fresh — the Investigation findings above are the starting draft, not the final answer); (b) the generated playground-entry shape (how story text crosses from the parent page's editor into the sandboxed iframe's compile step — e.g. `postMessage` contract, or a global function the iframe exposes); (c) the four Open decisions above, resolved by David. This phase produces no `packages/`/`tools/`/`website/` code changes — it is the CLAUDE.md-required discussion gate.
 - **Exit state**: David has explicitly signed off on touching `packages/devkit` and `tools/repokit` for Phase 2, and the route/nav/CodeMirror decisions are recorded (in this plan or a short ADR-191 amendment, David's call which).
-- **Status**: CURRENT
+- **Status**: DONE (2026-07-23, session 6d69f1) — all 4 open decisions resolved (see above); reuse boundary + entry-point contract designed and signed off. No code changed (correct for a discussion-gate phase).
 
 ### Phase 2: `repokit build --playground` emit step — story-agnostic browser-ESM bundle
 - **Tier**: Large
@@ -59,7 +80,12 @@
   4. Version is a deliberate, explicit release step (per ADR-191's versioning ruling) — running the command again for the same platform version overwrites that version's directory; a version bump requires re-running the command, never happens as a side effect of an unrelated build.
   5. Tests: a REAL-PATH test (rule 13a) that loads the built bundle in a real browser context (Playwright, matching the g2/g3 pattern already established for `--browser` builds) and confirms it compiles a pasted story and runs it — not a stub of the compile/runtime path.
 - **Exit state**: `./repokit build --playground` produces a working, version-pinned, story-agnostic bundle under `website/public/playground/v<X.Y.Z>/`; a REAL-PATH proof (real Chromium) confirms it compiles and runs an arbitrary `.story` text with no story baked in and no network call to a compile backend (AC-3, AC-7 partial, AC-8 groundwork).
-- **Status**: PENDING
+- **Status**: DONE (2026-07-23, session 6d69f1). Shipped:
+  - `packages/devkit/templates/browser/playground-entry.ts.template` — story-agnostic entry; `postMessage` contract (`play`/`reset` in, `ready`/`diagnostics`/`playing` out); fresh `WorldModel`/`GameEngine` per Play (ADR-248), single `BrowserClient`.
+  - `packages/devkit/src/standalone/browser-core.ts` — `buildPlaygroundBundle()` + `PlaygroundBuildEnv` (sibling to `buildBrowser`, no compile gate / no IR metadata, reuses `processTemplate`/`injectThemes`/engine-CSS copy). Exported from `@sharpee/devkit`.
+  - `tools/repokit/src/commands/playground.ts` + `--playground` flag in `build.ts` — in-repo env + version-pinned sync to `website/public/playground/v<X.Y.Z>/`.
+  - Built + pinned `website/public/playground/v3.2.0/`. **Open decision (raise with David):** unlike `website/public/web/` (gitignored), `website/public/playground/` is NOT gitignored — so the pinned bundle would be committed. ADR-191 frames it as a deliberate, reproducible, version-pinned release asset, which argues for committing it (durable across clean deploys, unlike the `/play` gap); cost is ~1.2 MB `game.js` + ~2.7 MB `game.js.map` per version in git (excluding the `.map` halves it). Alternative: gitignore it and have `deploy.sh` run `./repokit build --playground`. Decide before the Phase 4 commit.
+  - REAL-PATH: `scripts/playground-proof.mjs` (real build + real Chromium: AC-3 in-browser compile+run, live engine, AC-5 diagnostics-with-spans) — PASS. Fast regression: 2 unit tests in `browser-core-build.test.ts` (story-agnostic + version-pinned; sync callback). devkit 9 pass, repokit 32 pass.
 
 ### Phase 3: Website playground route — CodeMirror 6 Chord editor, page chrome, example picker
 - **Tier**: Large
@@ -69,11 +95,19 @@
 - **Deliverable**:
   1. `@codemirror/*` packages added to `website/package.json`; a Chord language-mode extension (syntax highlighting only for Phase 1 — no as-you-type diagnostics, per the ADR's later-phase note) built from `catalog.ts`'s `KIND_NOUNS`/`TRAIT_ADJECTIVES`/`PRONOUN_WORDS`/`STATE_ADJECTIVES`/`EVENT_VERBS` plus the chord lexer's keyword set.
   2. The playground page (route per Phase 1): editor pane seeded with a small, runnable Chord starter (a room + object + one `on` clause, phrasebook/cookbook-fixture style per the ADR); **Play**, **Reset** buttons; an errors area (empty by default); a platform-version display (plain `X.Y.Z`, no `-beta`); an example picker listing the 17 cookbook fixtures by name, loading the selected fixture's full text into the editor on selection.
+     - **⚠ Phase 2 finding — the cookbook fixtures are STALE (pre-dotless).** `docs/work/stdlib-cookbook/fixtures/*.story` still use `define phrase if.action.*` / `refuse if.action.*` dotted keys, which the current Chord rejects (`parse.dotted-key`, ADR-254/255/256 dotless sweep). Confirmed live: `taking-dropping.story` fails to compile in the playground. **Phase 3 must run every example-picker fixture through a dotless audit (and a compile check) before wiring them in** — an un-migrated fixture would greet the user with parse errors on first click. The Phase 2 REAL-PATH proof therefore used a minimal inline dotless story, not a fixture.
   3. **Lazy-load on intent** (ADR-191 Q-2 ruling): the page shell renders instantly; the Phase 2 bundle loads (with a visible loading state) only when the user focuses the editor or presses Play — not on initial page load.
   4. The player pane: a sandboxed `<iframe>` (`sandbox` attribute restricting to script execution only, no top-navigation/same-origin escape) hosting the Phase 2 bundle.
   5. Nav wiring per Phase 1's decision (`nav.ts` entry, breadcrumbs).
 - **Exit state**: The page renders with a seeded starter, a working example picker, and CodeMirror syntax highlighting; Play/Reset are wired to call into the iframe (even if the iframe-side bundle is still a Phase 2 stub at this point — full wiring is Phase 4); `npm run build` green; screenshot pass (light/dark) per the site's established `shoot-site.mjs` pattern (AC-1, AC-2, AC-6 UI-side, AC-8 UI-side).
-- **Status**: PENDING
+- **Status**: DONE (2026-07-23, session 6d69f1). Shipped:
+  - `@codemirror/*` added to `website/package.json`; `website/src/app/playground/chord-mode.ts` — a `StreamLanguage` Chord mode (keyword list + KIND/TRAIT/STATE sets MIRRORED from `catalog.ts`; palette-var `HighlightStyle`, theme-aware).
+  - `website/src/app/playground/examples.ts` — starter + 2 more examples, all **verified gate-clean under current dotless Chord** (compile-checked). Not the stale cookbook fixtures (see the ⚠ finding above).
+  - `website/src/app/playground/playground-client.tsx` — CodeMirror editor, Play/Reset, errors area, example picker, version label; **lazy-load on intent** (iframe mounts on editor focus / Play); sandboxed `<iframe>` hosting the pinned bundle; `postMessage` wiring.
+  - `website/src/app/playground/page.tsx` (route) + `website/src/lib/nav.ts` (top-level `Playground` beside `Play`, per Phase 1).
+  - Version-driven: `tools/repokit/src/commands/playground.ts` now also writes `website/public/playground/current.json`; the page reads it (AC-8, no hardcoded version).
+  - **Verified in real Chromium against `next start`** (`npm run build` green; `/playground` prerendered static): CodeMirror mounts with the starter, 29 highlight spans, `Sharpee v3.2.0` label (AC-8), Play compiles+runs the story in the iframe (AC-3), example picker swaps source, Reset restores the starter (AC-6). Screenshot eyeballed — clean two-column layout, correct highlighting, live player.
+- **Carried to Phase 4**: AC-5 errors-area render at the *page* level (wired + proven at the iframe level in Phase 2; not yet asserted through the page). AC-4 (a real cookbook fixture plays) is **blocked on the dotless fixture migration** — use a migrated fixture or an inline example. AC-7 sandbox isolation: currently `sandbox="allow-scripts allow-same-origin"` so the runtime's `localStorage` (saves/theme) works; tightening to true cross-frame isolation (distinct origin, or hardening platform-browser's `localStorage` access) is Phase 4's call.
 
 ### Phase 4: End-to-end wiring, REAL-PATH verification, AC gate, closure
 - **Tier**: Medium
@@ -87,7 +121,12 @@
   4. REAL-PATH AC proof (rule 13a — this is the acceptance gate, not a scaffolding proof): drive a real Chromium session (Playwright, the g2/g3 pattern) that (a) loads the page with the seeded starter and confirms it plays (AC-2, AC-3); (b) selects the `locking-unlocking.story` cookbook fixture from the example picker, presses Play, and asserts the rendered transcript for `unlock strongbox with key` / `open strongbox` matches the fixture's known-good behavior (AC-4); (c) types a deliberately malformed `.story` and asserts a diagnostic with a correct line/column appears in the errors area, not the console (AC-5); (d) presses Reset after playing and confirms a fresh world (AC-6); (e) asserts the displayed version string matches the pinned bundle's `X.Y.Z` (AC-8).
   5. **Closure**: repoint `docs/context/.current-plan` — per `docs/work/website-content/plan.md` Phase 9's own closure instruction, back to `docs/work/chord-go-live/plan.md` (its G4 is IN PROGRESS, paused at the publish boundary, David's manual step) unless David has since ruled a different active workstream should hold the pointer. Update `docs/work/website-content/plan.md` Phase 9's Status to DONE, cross-referencing this plan.
 - **Exit state**: ADR-191 AC-1 through AC-8 all green, backed by REAL-PATH Chromium proofs (not stubs) per rule 13a; `docs/work/website-content/plan.md` Phase 9 closed; `.current-plan` returned per pointer discipline.
-- **Status**: PENDING
+- **Status**: DONE (2026-07-23, session 6d69f1). Delivered:
+  - **AC-4 example**: `LOCKED_STUDY` added to `examples.ts` (a lock/key story adapted from the gate-clean `door-vignette` fixture; compile-verified). Picker now has 4 dotless examples.
+  - **Decisions ruled (David)**: AC-7 — keep `sandbox="allow-scripts allow-same-origin"` (runtime localStorage) and verify story content cannot introduce JS (declarative Chord + TS-hatch refused); strict cross-origin isolation deferred. Gitignore — `website/public/playground/` is gitignored (`.gitignore`); `website/deploy.sh` now runs `./repokit build --playground` on deploy (guarded).
+  - **REAL-PATH AC gate**: `scripts/playground-page-proof.mjs` drives the real `/playground` route in real Chromium against `next start` — **AC-1..AC-8 all PASS** (page+nav, starter, Play compiles+runs, lock/key story plays, malformed→diagnostic-with-spans in the errors area, TS-hatch refused, Reset→fresh world, version shown).
+  - **Closure**: `docs/work/website-content/plan.md` Phase 9 → DONE; `.current-plan` repointed to `docs/work/chord-go-live/plan.md`.
+  - **Remaining follow-up (not blocking)**: migrate the 17 `stdlib-cookbook/fixtures/*.story` to dotless to widen the example picker; optional strict-isolation hardening (AC-7).
 
 ## Deferrals (explicitly out of scope for this plan)
 - **Mode B (TypeScript tab, esbuild-wasm, AC-9)** — a later phase per the ADR; not planned here.
