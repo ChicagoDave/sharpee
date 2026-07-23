@@ -2,7 +2,7 @@
 
 > Filename note: created as `adr-256-event-type-acl.md`; there is no ACL — the design is a Chord-id → platform-id translation added to story-loader.
 
-## Status: ACCEPTED (2026-07-22, session 818d28) — adds the Chord-event-id → platform-event-id translation that lets Chord be dotless (ADR-254) while the Sharpee/TS platform keeps its dotted event ids. Greenfield: verified no such translation exists today (emit/channel/machine events pass through verbatim). Lives in `@sharpee/story-loader` to keep the Chord compiler platform-free. `adr-review` clean (254+256) after three fixes: ADR-254 §D2 event-type amendment, this ADR's Acceptance section, emit-seam marked TBD. Not implemented.
+## Status: ACCEPTED (2026-07-22, session 818d28) — adds the Chord-event-id → platform-event-id translation that lets Chord be dotless (ADR-254) while the Sharpee/TS platform keeps its dotted event ids. Greenfield: verified no such translation exists today (emit/channel/machine events pass through verbatim). Lives in `@sharpee/story-loader` to keep the Chord compiler platform-free. `adr-review` clean (254+256) after three fixes: ADR-254 §D2 event-type amendment, this ADR's Acceptance section, emit-seam marked TBD. **IMPLEMENTED** (2026-07-23, session 341218 confirmation): the translation ships as `packages/story-loader/src/event-id-map.ts`, wired into `loader.ts`.
 
 ## Date: 2026-07-22
 
