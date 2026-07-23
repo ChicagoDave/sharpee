@@ -182,10 +182,20 @@ The complete alias set — one `<action>-<message-key>` alias for **every**
 `if.action.<action>.<key>` in `@sharpee/lang-en-us` — is authored now, before
 implementation, in the companion appendix
 [**adr-255-alias-catalog.md**](adr-255-alias-catalog.md). Enumerated
-deterministically from the built `lang-en-us` action modules:
-**54 actions, 734 aliases, 0 cross-action collisions.** D5's completeness test
-pins the shipped `catalog.ts` alias set and the `story-loader` mapping against
-this appendix and the live message ids, so any drift fails the build.
+deterministically from the built `lang-en-us` action modules. The authoring pass
+counted **54 actions, 734 aliases**; Phase 2 implementation (session 448562)
+found the live set had since grown to **56 actions, 748 aliases** — the appendix
+predated `cutting`/`digging` (ADR-230, 7 messages each). Per D3 (all overridable)
+and D5 (bijection with the LIVE set) the shipped catalog covers all **748**; the
+appendix was regenerated to match. **0 cross-action collisions.** D5's
+completeness test pins the shipped `catalog.ts` alias set and the `story-loader`
+mapping against the live message ids, so any drift fails the build.
+
+> **Note (session 448562).** The Acceptance worked example below cites the alias
+> `wearing-already-worn`; the live `wearing` action's key is `already_wearing`
+> (alias `wearing-already-wearing`) — `already_worn` never existed. The catalog
+> is generated from live, so the real alias is `wearing-already-wearing`; the
+> example's intent is unchanged.
 
 ## Acceptance
 

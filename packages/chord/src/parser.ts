@@ -36,6 +36,8 @@ import {
   DefinePhrase,
   DefinePhrasebook,
   DefinePhrases,
+  OverrideMessage,
+  OverrideMessages,
   DefineAsset,
   DefineFamilyChannel,
   DefineChannel,
@@ -112,7 +114,7 @@ const ORDINALS: Record<string, number> = {
 const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
-const TOP_KEYWORDS = new Set(['story', 'create', 'define', 'when', 'once', 'every', 'import']);
+const TOP_KEYWORDS = new Set(['story', 'create', 'define', 'when', 'once', 'every', 'import', 'override']);
 
 /**
  * Parse `.story` source into an AST.
@@ -271,6 +273,12 @@ class Parser {
           // ADR-251: `import "<file>"` — the single generalized form.
           // Position IS the spliced content's arbitration position (D4).
           const d = this.parseImport();
+          if (d) declarations.push(d);
+          break;
+        }
+        case 'override': {
+          // ADR-255: `override message <alias>` / `override messages <locale>`.
+          const d = this.parseOverride();
           if (d) declarations.push(d);
           break;
         }
@@ -1406,6 +1414,23 @@ class Parser {
       this.diagnostics.error('parse.phrase-key', 'Expected a phrase key after `define phrase`.', lineSpan(headLine));
       c.next(); // skip the offending token so header options still parse
     }
+    const body = this.readPhraseBody(c, headLine, 'phrase');
+    return { kind: 'define-phrase', key, ...body };
+  }
+
+  /**
+   * Read a phrase body from a header cursor positioned after the key/alias:
+   * the optional `, <strategy>|verbatim` header modifier, an optional trailing
+   * `while <condition>` gate, then the indented variant lines up to
+   * `end <endWord>`. Shared by `define phrase` and ADR-255's `override message`
+   * so the two constructs never drift (ADR-255 D1). Returns the body fields
+   * (the caller supplies the `kind` and key/alias).
+   */
+  private readPhraseBody(
+    c: Cursor,
+    headLine: Line,
+    endWord: string,
+  ): { strategy: string | null; verbatim: boolean; condition: ConditionNode | null; variants: TextValue[]; span: Span } {
     let strategy: string | null = null;
     let verbatim = false;
     if (c.peek()?.kind === 'comma') {
@@ -1442,7 +1467,7 @@ class Parser {
     for (;;) {
       const line = this.lines[this.pos];
       if (!line) {
-        this.diagnostics.error('parse.unterminated-block', 'Missing `end phrase`.', span);
+        this.diagnostics.error('parse.unterminated-block', `Missing \`end ${endWord}\`.`, span);
         break;
       }
       if (line.comment) {
@@ -1453,7 +1478,7 @@ class Parser {
       }
       if (isEndLine(line)) {
         span = mergeSpans(span, lineSpan(line));
-        this.consumeEnd('phrase', headLine);
+        this.consumeEnd(endWord, headLine);
         break;
       }
       if (firstWord(line) === 'or' && line.tokens.length === 1) {
@@ -1464,7 +1489,7 @@ class Parser {
         continue;
       }
       if (line.indent === 0 && TOP_KEYWORDS.has(firstWord(line) ?? '')) {
-        this.diagnostics.error('parse.unterminated-block', 'Missing `end phrase`.', span);
+        this.diagnostics.error('parse.unterminated-block', `Missing \`end ${endWord}\`.`, span);
         break;
       }
       if (line.indent === 0) {
@@ -1472,12 +1497,12 @@ class Parser {
         // variant parser below (both require depth > 0) — without this
         // guard the loop appended empty variants until OOM. One diagnostic
         // for the first offending line; the rest of the flush-left run is
-        // consumed so `end phrase` still terminates the block.
+        // consumed so `end <endWord>` still terminates the block.
         if (!flaggedFlushLeft) {
           flaggedFlushLeft = true;
           this.diagnostics.error(
             'parse.phrase-text-indent',
-            'Phrase text must be indented under `define phrase`.',
+            `Text must be indented under \`${endWord === 'override' ? 'override message' : 'define phrase'}\`.`,
             lineSpan(line),
           );
         }
@@ -1489,7 +1514,7 @@ class Parser {
       span = mergeSpans(span, variant.span);
     }
 
-    return { kind: 'define-phrase', key, strategy, verbatim, condition, variants, span };
+    return { strategy, verbatim, condition, variants, span };
   }
 
   /**
@@ -1579,6 +1604,51 @@ class Parser {
   private parseDefinePhrases(): DefinePhrases {
     const headLine = this.lines[this.pos++];
     return this.parsePhrasesBlock(headLine, 2);
+  }
+
+  /**
+   * ADR-255: dispatch the two override forms off the word after `override`.
+   * `override message <alias> … end override` (full phrase body) vs.
+   * `override messages <locale>` (locale block of `alias: text` entries).
+   */
+  private parseOverride(): OverrideMessage | OverrideMessages | null {
+    const headLine = this.lines[this.pos];
+    const kindTok = headLine.tokens[1];
+    if (kindTok?.kind === 'word' && kindTok.text === 'messages') {
+      return this.parseOverrideMessages();
+    }
+    if (kindTok?.kind === 'word' && kindTok.text === 'message') {
+      return this.parseOverrideMessage();
+    }
+    this.diagnostics.error(
+      'parse.override',
+      'Expected `override message <alias>` or `override messages <locale>`.',
+      lineSpan(headLine),
+    );
+    this.pos++;
+    return null;
+  }
+
+  /** `override message <alias> [, strategy] [while <cond>] … end override` (ADR-255 D1). */
+  private parseOverrideMessage(): OverrideMessage {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next(); // override
+    c.next(); // message
+    const alias = this.readLabelKey(c) ?? '';
+    if (!alias) {
+      this.diagnostics.error('parse.override-alias', 'Expected an override alias after `override message`.', lineSpan(headLine));
+      c.next(); // skip the offending token so header options still parse
+    }
+    const body = this.readPhraseBody(c, headLine, 'override');
+    return { kind: 'override-message', alias, ...body };
+  }
+
+  /** `override messages <locale>` — a locale block of `alias: text` entries (ADR-255 D1). */
+  private parseOverrideMessages(): OverrideMessages {
+    const headLine = this.lines[this.pos++];
+    const phrases = this.parsePhrasesBlock(headLine, 2);
+    return { kind: 'override-messages', locale: phrases.locale, entries: phrases.entries, span: phrases.span };
   }
 
   /**

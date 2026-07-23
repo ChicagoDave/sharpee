@@ -28,6 +28,8 @@ import {
   DefinePhrase,
   DefinePhrasebook,
   DefinePhrases,
+  OverrideMessage,
+  OverrideMessages,
   DefinePronouns,
   DefineTrait,
   EmitField,
@@ -44,7 +46,7 @@ import {
   UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
@@ -346,6 +348,8 @@ class Analyzer {
   private hatchNames = new Set<string>();
   /** locale → key → IRPhrase */
   private phrases = new Map<string, Map<string, IRPhrase>>();
+  /** ADR-255: locale → override alias → IRPhrase (validated against MESSAGE_OVERRIDE_ALIASES). */
+  private messageOverrides = new Map<string, Map<string, IRPhrase>>();
   // Phase B namespaces:
   private traitNames = new Set<string>();
   /** action name → declared grammar-slot names. */
@@ -466,6 +470,7 @@ class Analyzer {
       entities: [],
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
+      messageOverrides: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       phrasebooks: [],
       verbs: [],
       hatches: [],
@@ -559,6 +564,17 @@ class Analyzer {
             if (entry) entry.condition = this.resolveCondition(decl.condition, TOP_SCOPE);
           }
           break;
+        case 'override-message':
+          // ADR-255: same two-pass split as define-phrase — the optional
+          // `while <cond>` gate resolves here in pass 2. Only set when the
+          // alias survived pass-1 validation (an entry exists).
+          if (decl.condition) {
+            const entry = this.messageOverrides.get(DEFAULT_LOCALE)?.get(decl.alias);
+            if (entry) entry.condition = this.resolveCondition(decl.condition, TOP_SCOPE);
+          }
+          break;
+        case 'override-messages':
+          break; // flat entries collected in pass 1; no per-entry condition
         case 'define-phrases':
           break; // collected in pass 1
         case 'define-phrasebook':
@@ -588,6 +604,9 @@ class Analyzer {
 
     for (const [locale, table] of this.phrases) {
       ir.phrases.locales[locale] = Object.fromEntries(table);
+    }
+    for (const [locale, table] of this.messageOverrides) {
+      ir.messageOverrides.locales[locale] = Object.fromEntries(table);
     }
     ir.hasHatches = ir.hatches.length > 0;
 
@@ -1228,6 +1247,8 @@ class Analyzer {
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
       else if (decl.kind === 'define-phrasebook') this.collectPhrasebook(decl);
+      else if (decl.kind === 'override-message') this.collectOverrideMessage(decl);
+      else if (decl.kind === 'override-messages') this.collectOverrideMessages(decl);
       else if (decl.kind === 'import') {
         // The compile host resolves imports before analysis (splicing the
         // fragment's declarations at this position); one surviving here means
@@ -1647,6 +1668,55 @@ class Analyzer {
       variants: decl.variants.map((v) => this.variantOf(v)),
       span: decl.span,
     });
+  }
+
+  /** ADR-255: `override message <alias>` — full phrase body under an ACL alias. */
+  private collectOverrideMessage(decl: OverrideMessage): void {
+    this.registerMessageOverride(DEFAULT_LOCALE, decl.alias, decl.span, {
+      strategy: (decl.strategy as IRPhrase['strategy']) ?? null,
+      ...(decl.verbatim ? { verbatim: true } : {}),
+      variants: decl.variants.map((v) => this.variantOf(v)),
+      span: decl.span,
+    });
+  }
+
+  /** ADR-255: `override messages <locale>` — flat `alias: text` entries. */
+  private collectOverrideMessages(decl: OverrideMessages): void {
+    for (const entry of decl.entries) {
+      this.registerMessageOverride(decl.locale, entry.key, entry.span, {
+        strategy: null,
+        variants: [this.variantOf(entry.value)],
+        span: entry.span,
+      });
+    }
+  }
+
+  /**
+   * ADR-255 D4: register a message override, gating the alias against the
+   * ACL catalog (`analysis.unknown-message-alias`, mirroring `unknown-channel`)
+   * and rejecting a duplicate. The alias — never a dotted platform id — is
+   * resolved to `if.action.*` loader-side (Interface Contract 3).
+   */
+  private registerMessageOverride(locale: string, alias: string, span: Span, phrase: IRPhrase): void {
+    if (!alias) return; // header parse error already reported
+    if (!MESSAGE_OVERRIDE_ALIASES.has(alias)) {
+      this.diagnostics.error(
+        'analysis.unknown-message-alias',
+        `\`${alias}\` is not a standard-action message alias${this.suggestText(alias, [...MESSAGE_OVERRIDE_ALIASES])}.`,
+        span,
+      );
+      return;
+    }
+    let table = this.messageOverrides.get(locale);
+    if (!table) {
+      table = new Map();
+      this.messageOverrides.set(locale, table);
+    }
+    if (table.has(alias)) {
+      this.diagnostics.error('analysis.duplicate-message-override', `Message override \`${alias}\` is declared twice in ${locale}.`, span);
+      return;
+    }
+    table.set(alias, phrase);
   }
 
   private variantOf(value: TextValue): { text: string; markers: string[] } {

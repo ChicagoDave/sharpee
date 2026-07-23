@@ -154,3 +154,13 @@ export const CLIENT_CAPABILITY_FLAGS: ReadonlySet<string> = new Set([
 export function capabilityKeyOf(word: string): string {
   return word.replace(/-([a-z])/g, (_, ch: string) => ch.toUpperCase());
 }
+
+/**
+ * ADR-255 Interface Contract 3 (names side): the closed set of curated kebab
+ * aliases valid in `override message <alias>` — one per standard-action message
+ * id in lang-en-us. Names only; the alias → `if.action.*` binding lives in
+ * `@sharpee/story-loader`. The data (and its generation rule) is in
+ * `message-alias-catalog.ts`; re-exported here so the analyzer reads the ACL
+ * vocabulary through the single catalog surface.
+ */
+export { MESSAGE_OVERRIDE_ALIASES } from './message-alias-catalog.js';

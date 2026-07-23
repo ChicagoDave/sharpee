@@ -21,7 +21,7 @@ import { parseStory } from './parser.js';
 export * from './ast.js';
 export * from './ir.js';
 export { analyze, normalizeTopic } from './analyzer.js';
-export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES } from './catalog.js';
+export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES, MESSAGE_OVERRIDE_ALIASES } from './catalog.js';
 export { EXTENSION_MANIFESTS, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests/index.js';
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests/index.js';
 export { PHRASEBOOK_REGISTRY } from './phrasebooks.js';

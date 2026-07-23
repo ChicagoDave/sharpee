@@ -677,6 +677,10 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     },
   ],
   "machines": [],
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {},
+  },
   "meta": {
     "author": "Roger Firth (Sharpee implementation)",
     "fields": {

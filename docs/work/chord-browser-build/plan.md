@@ -79,7 +79,14 @@ Phase 1 is therefore **unblocked** — no open gate remains before the grammar c
   6. Tests per ADR-255 Acceptance: worked override (cycling) renders; `override messages <locale>` localizes; unknown alias rejected; D6 precedence honored; catalog completeness green.
   7. `packages/chord` + `packages/story-loader` suites green.
 - **Exit state**: A story overrides any standard-action message via `override message <alias>` / `override messages <locale>` with no dotted id in sight; the ACL catalog is complete and pinned; precedence preserves per-entity/on-clause specificity. The capability ADR-254 removed the dotted spelling of is fully restored.
-- **Status**: PENDING
+- **Status**: DONE (code) — session 448562 (2026-07-22). Uncommitted.
+  - **Catalog is 748/56, not the authored 734/54**: live `lang-en-us` had grown by `cutting`+`digging` (ADR-230, 7 msgs each). Per D3+D5 the catalog covers all live messages; appendix regenerated, ADR-255 count note added (David's call). Generated `chord/src/message-alias-catalog.ts` (alias names) + `story-loader/src/message-alias-map.ts` (alias→`if.action.*`), pinned bijective-to-live by `message-alias-map.test.ts` (D5).
+  - **Grammar** (D1): `override message <alias>` (full `define phrase` body via the extracted shared `readPhraseBody`) + `override messages <locale>` (mirrors `parsePhrasesBlock`). New AST/IR (`OverrideMessage`/`OverrideMessages`, `IRMessageOverrides`). `override` is a new top-level keyword.
+  - **Rejection** (D4): unknown alias → `analysis.unknown-message-alias`; duplicate → `analysis.duplicate-message-override`; dotted alias → `parse.dotted-key` (ADR-254).
+  - **Resolution** (D6): overrides register on the **phrasebook resolution seam** (`world.registerEvaluator(phrasebookTemplateKey(<resolved dotted id>))`), reusing the extracted `derivePhraseTemplate` — full flat+cycling parity; wins over platform default, loses to per-entity/on-clause (which emit their own ids). Alias→id resolved loader-side (Interface Contract 3). D6 precedence falls out; no engine change.
+  - **NB — cycling parity mechanism**: the ADR didn't name it, but `override message … cycling` for a stdlib-emitted message id required the ADR-250 phrasebook evaluator seam (`renderViaPhrase` consults it before the platform default). Implementation reuses that seam; verified by a `{variants}` Choice-atom test.
+  - **Green**: chord 461 (4 golden-IR snapshots updated for the additive `messageOverrides` field), story-loader 326/327 (only the Phase-1b-parked `dotted-phrase-keys.test.ts` red — its replacement now exists but the test still asserts the dotted spelling), fernhill (all pass), friendly-zoo 71. +20 new tests (chord 8, loader 12).
+  - **Follow-up**: the parked `dotted-phrase-keys.test.ts` can now migrate to `override message` (its ADR-255 replacement exists) — not done this session; raise with David.
 
 ### Phase 3: ADR-252 — `.story` as a first-class browser build input, one shared build core
 - **Tier**: Large · **Budget**: 400

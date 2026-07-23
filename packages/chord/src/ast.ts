@@ -106,6 +106,9 @@ export type Declaration =
   | DefinePronouns
   // ADR-245/250 phrasebooks (David 2026-07-21):
   | DefinePhrasebook
+  // ADR-255 standard-action message override ACL (David 2026-07-22):
+  | OverrideMessage
+  | OverrideMessages
   // ADR-251 generalized import (David 2026-07-21):
   | ImportDecl;
 
@@ -511,6 +514,35 @@ export interface DefinePhrase {
 /** `define phrases <locale>` keyed-template block (dedent-terminated). */
 export interface DefinePhrases {
   kind: 'define-phrases';
+  locale: string;
+  entries: PhraseEntry[];
+  span: Span;
+}
+
+/**
+ * `override message <alias> [, strategy] [while <cond>] … end override` (ADR-255
+ * D1): override a standard-action message story-wide via a curated kebab alias.
+ * Body is the full `define phrase` body (strategy/variants/verbatim/condition),
+ * read by the same reader so the two never drift; the alias — never a dotted
+ * platform id — is resolved to `if.action.*` loader-side (Interface Contract 3).
+ */
+export interface OverrideMessage {
+  kind: 'override-message';
+  alias: string;
+  strategy: string | null;
+  verbatim: boolean;
+  condition: ConditionNode | null;
+  variants: TextValue[];
+  span: Span;
+}
+
+/**
+ * `override messages <locale>` keyed-template block (ADR-255 D1), the
+ * localizable form mirroring `define phrases <locale>`: `alias: text` entries,
+ * dedent-terminated, flat text per entry. Each entry `key` is an ACL alias.
+ */
+export interface OverrideMessages {
+  kind: 'override-messages';
   locale: string;
   entries: PhraseEntry[];
   span: Span;

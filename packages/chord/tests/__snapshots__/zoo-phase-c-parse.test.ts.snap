@@ -4143,6 +4143,10 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
     },
   ],
   "machines": [],
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {},
+  },
   "meta": {
     "author": "Sharpee Team",
     "fields": {

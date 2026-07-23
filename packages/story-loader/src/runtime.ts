@@ -57,6 +57,7 @@ import { withLineBreaks } from './text.js';
 import { stagingRenderContext } from './hatch-context.js';
 import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract.js';
 import { translateEventId } from './event-id-map.js';
+import { aliasToActionMessageId } from './message-alias-map.js';
 
 /**
  * Chord strategy adverb → phrase-algebra Choice selector (ADR-196).
@@ -270,6 +271,11 @@ export class ChordRuntime {
     // Phrasebooks (ADR-250 D4): one evaluator per book-covered key the
     // story does not define — same ADR-240 seam, resolved at render time.
     this.registerPhrasebookEvaluators(world);
+
+    // Message overrides (ADR-255 D6): standard-action message baselines,
+    // registered on the same seam so they beat the platform default but lose
+    // to per-entity/on-clause message ids.
+    this.registerMessageOverrideEvaluators(world);
   }
 
   /** Resolved books cache (built once per runtime — see resolvedBooks). */
@@ -347,29 +353,67 @@ export class ChordRuntime {
       const entry = book.entries[key];
       if (!entry) continue;
       if (book.condition && !this.evaluator.evalCondition(book.condition, { world })) continue;
-      const params: Record<string, unknown> = {};
-      let template: string;
-      if (entry.verbatim) {
-        template = '{verbatim:text}';
-        params.text = entry.variants[0]?.text ?? '';
-      } else if (entry.strategy === null && entry.variants.length === 1) {
-        template = withLineBreaks(entry.variants[0].text);
-      } else {
-        template = '{variants}';
-        if (entry.strategy) {
-          const choice: Choice = {
-            kind: 'choice',
-            alternatives: entry.variants.map((v): Literal => ({ kind: 'literal', text: withLineBreaks(v.text) })),
-            selector: STRATEGY_SELECTOR[entry.strategy],
-            entityId: `phrasebook.${book.name}`,
-            messageKey: key,
-          };
-          params.variants = choice;
-        }
-      }
+      const { template, params } = this.derivePhraseTemplate(entry, `phrasebook.${book.name}`, key);
       return { book: book.name, key, template, ...(Object.keys(params).length > 0 ? { params } : {}) };
     }
     return undefined;
+  }
+
+  /**
+   * Derive the render-time template + bound params for an IR phrase body,
+   * shared by phrasebook resolution and ADR-255 message overrides: a verbatim
+   * or single-variant phrase becomes its literal template; a strategy/multi
+   * phrase becomes `{variants}` plus a Choice atom keyed by (counterEntityId,
+   * messageKey) so cycling/first-time/sticky counters stay per source+key.
+   */
+  private derivePhraseTemplate(
+    entry: IRPhrase,
+    counterEntityId: string,
+    messageKey: string,
+  ): { template: string; params: Record<string, unknown> } {
+    const params: Record<string, unknown> = {};
+    let template: string;
+    if (entry.verbatim) {
+      template = '{verbatim:text}';
+      params.text = entry.variants[0]?.text ?? '';
+    } else if (entry.strategy === null && entry.variants.length === 1) {
+      template = withLineBreaks(entry.variants[0].text);
+    } else {
+      template = '{variants}';
+      if (entry.strategy) {
+        const choice: Choice = {
+          kind: 'choice',
+          alternatives: entry.variants.map((v): Literal => ({ kind: 'literal', text: withLineBreaks(v.text) })),
+          selector: STRATEGY_SELECTOR[entry.strategy],
+          entityId: counterEntityId,
+          messageKey,
+        };
+        params.variants = choice;
+      }
+    }
+    return { template, params };
+  }
+
+  /**
+   * ADR-255 D6: register one evaluator per overridden standard-action message,
+   * on the SAME phrasebook resolution seam (`phrasebook.template.<id>`) the
+   * engine consults before the platform default — so an `override message`
+   * sets the story-wide baseline (with full strategy/cycling parity) while a
+   * per-entity phrase or on-clause refusal, which emit their own message ids,
+   * still win. The alias is resolved to its dotted `if.action.*` id here, on
+   * the loader side (Interface Contract 3); the alias never reaches the engine.
+   */
+  private registerMessageOverrideEvaluators(world: WorldModel): void {
+    const table = this.ir.messageOverrides.locales[this.ir.messageOverrides.defaultLocale] ?? {};
+    for (const [alias, entry] of Object.entries(table)) {
+      const messageId = aliasToActionMessageId(alias);
+      if (!messageId) continue; // analyzer already rejected unknown aliases
+      world.registerEvaluator(phrasebookTemplateKey(messageId), () => {
+        if (entry.condition && !this.evaluator.evalCondition(entry.condition, { world })) return undefined;
+        const { template, params } = this.derivePhraseTemplate(entry, 'message-override', messageId);
+        return { book: 'message-override', key: messageId, template, ...(Object.keys(params).length > 0 ? { params } : {}) };
+      });
+    }
   }
 
   /**

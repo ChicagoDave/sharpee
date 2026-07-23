@@ -6,10 +6,18 @@
 > valid-alias set and the `@sharpee/story-loader` alias → `if.action.*` mapping
 > are both pinned against this table by ADR-255 **D5**'s completeness test.
 
-**Generated** 2026-07-22 (session 818d28), deterministically from the built
-`packages/lang-en-us/dist/actions/*` modules (each action's `actionId` + the keys
-of its `messages` object). **Coverage: 54 actions, 734 aliases, 0 cross-action
-collisions** — the `<action>-` prefix guarantees uniqueness (D2).
+**Generated** 2026-07-22 (session 818d28); **regenerated 2026-07-22 (session
+448562, Phase 2 implementation)** against the then-current `lang-en-us` — the
+original authoring predated the `cutting` and `digging` actions (ADR-230
+CuttableTrait/DiggableTrait, 7 messages each), so the count rose from the
+authored 54 actions / 734 aliases to **56 actions / 748 aliases**. D3 (every
+standard message overridable) + D5 (bijection with the LIVE message set) dictate
+covering them; the shipped `catalog.ts` / `message-alias-map.ts` are generated
+from live and pinned by `message-alias-map.test.ts`. Enumerated deterministically
+from the built `packages/lang-en-us/dist/actions/*` modules (each action's
+`actionId` + the keys of its `messages` object). **Coverage: 56 actions, 748
+aliases, 0 cross-action collisions** — the `<action>-` prefix guarantees
+uniqueness (D2).
 
 **Derivation rule.** `alias = kebab(action) + "-" + kebab(message-key)`, where
 `action` is the `if.action.<action>` segment and `kebab` replaces **both `_` and
@@ -25,6 +33,7 @@ so any drift fails the build — regenerate by re-applying the rule to the curre
 `lang-en-us` action messages, then re-curate.
 
 ---
+
 
 ### `if.action.about` (21)
 
@@ -203,6 +212,30 @@ so any drift fails the build — regenerate by re-applying the rule to the curre
 | `closing-no-target` | `if.action.closing.no_target` |
 | `closing-not-closable` | `if.action.closing.not_closable` |
 | `closing-prevents-closing` | `if.action.closing.prevents_closing` |
+
+### `if.action.cutting` (7)
+
+| alias | platform message id |
+|---|---|
+| `cutting-cant-cut` | `if.action.cutting.cant_cut` |
+| `cutting-cut` | `if.action.cutting.cut` |
+| `cutting-no-target` | `if.action.cutting.no_target` |
+| `cutting-no-tool` | `if.action.cutting.no_tool` |
+| `cutting-not-cuttable` | `if.action.cutting.not_cuttable` |
+| `cutting-tool-not-held` | `if.action.cutting.tool_not_held` |
+| `cutting-wrong-tool` | `if.action.cutting.wrong_tool` |
+
+### `if.action.digging` (7)
+
+| alias | platform message id |
+|---|---|
+| `digging-cant-dig` | `if.action.digging.cant_dig` |
+| `digging-dug` | `if.action.digging.dug` |
+| `digging-no-target` | `if.action.digging.no_target` |
+| `digging-no-tool` | `if.action.digging.no_tool` |
+| `digging-not-diggable` | `if.action.digging.not_diggable` |
+| `digging-tool-not-held` | `if.action.digging.tool_not_held` |
+| `digging-wrong-tool` | `if.action.digging.wrong_tool` |
 
 ### `if.action.drinking` (25)
 

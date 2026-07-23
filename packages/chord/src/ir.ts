@@ -39,6 +39,13 @@ export interface StoryIR {
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
   /**
+   * ADR-255 standard-action message overrides, keyed by ACL alias per locale
+   * (never a dotted platform id — the loader resolves the alias to `if.action.*`
+   * via Interface Contract 3). Each entry is a full IRPhrase body, so cycling /
+   * variants ride the same phrasebook resolution seam a platform message uses.
+   */
+  messageOverrides: IRMessageOverrides;
+  /**
    * Phrasebooks in arbitration order — file-appearance order of
    * `use phrasebook` (header) and `define phrasebook`/import-spliced
    * blocks (body). First predicate-match in this order, per key, wins;
@@ -293,6 +300,18 @@ export interface IRPhrases {
   /** The story's default locale (Phase A: en-US). */
   defaultLocale: string;
   /** locale → phrase key → phrase. */
+  locales: Record<string, Record<string, IRPhrase>>;
+}
+
+/**
+ * ADR-255 message overrides. Same shape as {@link IRPhrases} but keyed by ACL
+ * alias (`taking-fixed-in-place`), not a story phrase key; the loader resolves
+ * each alias to its `if.action.*` id and registers the phrase body on the
+ * phrasebook resolution seam so strategy/cycling works for a platform message.
+ */
+export interface IRMessageOverrides {
+  defaultLocale: string;
+  /** locale → override alias → phrase body. */
   locales: Record<string, Record<string, IRPhrase>>;
 }
 
