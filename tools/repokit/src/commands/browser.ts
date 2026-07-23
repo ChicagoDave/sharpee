@@ -63,20 +63,23 @@ function sharpeeVersion(root: string): string {
   return JSON.parse(readFileSync(join(root, 'packages', 'sharpee', 'package.json'), 'utf8')).version;
 }
 
-/** The website mirror: replicate the built app into website/public/web/<id>. */
-function mirrorToWebsite(root: string, outDir: string, storyId: string): void {
+/**
+ * The website mirror: replicate the WHOLE built app into website/public/web/<id>.
+ *
+ * The mirror must be a faithful copy of `outDir` (dist/web/<id>/), not a hand-picked
+ * subset: the browser client `fetch`es `./story.story` (+ `./imports.json`) and compiles
+ * at boot, links the story's own CSS (e.g. fernhill.css), and loads runtime assets from
+ * `audio/`/`images/`. Copying only game.js + engine CSS left `/play` fatally broken
+ * (no story source, no story CSS, no media). We clear the target first so de-listed
+ * files (a removed theme, a renamed asset) never linger, then recursively copy the
+ * entire output tree — guaranteeing parity with the devkit author build.
+ */
+export function mirrorToWebsite(root: string, outDir: string, storyId: string): void {
   if (!existsSync(join(root, 'website', 'public'))) return;
   const webDir = join(root, 'website', 'public', 'web', storyId);
+  rmSync(webDir, { recursive: true, force: true });
   mkdirSync(webDir, { recursive: true });
-  cpSync(join(outDir, 'game.js'), join(webDir, 'game.js'));
-  if (existsSync(join(outDir, 'index.html'))) cpSync(join(outDir, 'index.html'), join(webDir, 'index.html'));
-  for (const css of ['base.css', 'engine.css', 'decorations.css']) {
-    if (existsSync(join(outDir, css))) cpSync(join(outDir, css), join(webDir, css));
-  }
-  // Mirror the wired theme CSS/assets; clear first so a de-listed theme never lingers.
-  rmSync(join(webDir, 'styles.css'), { force: true });
-  rmSync(join(webDir, 'themes'), { recursive: true, force: true });
-  if (existsSync(join(outDir, 'themes'))) cpSync(join(outDir, 'themes'), join(webDir, 'themes'), { recursive: true });
+  cpSync(outDir, webDir, { recursive: true });
 }
 
 /**
