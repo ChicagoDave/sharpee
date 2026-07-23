@@ -102,7 +102,7 @@ Phase 1 is therefore **unblocked** — no open gate remains before the grammar c
   7. Rejection tests: hybrid project error; unknown `client:` error; unrecognized client-config key warns; a `.story` with diagnostics fails before emit.
   8. `sharpee build stories/fernhill/fernhill.story` produces `dist/web/fernhill/` with no `package.json`/`src/index.ts`; devkit and repokit outputs identical modulo build stamp.
 - **Exit state**: a bare `.story` builds to a browser app with zero flags and zero `package.json`; metadata all IR-traced; devkit/repokit share one build core; fernhill still plays via its (present) hand-written entry. Suites green.
-- **Status**: PENDING
+- **Status**: DESIGNED (not implemented) — session 448562. Concrete implementation design (shared-core location = `@sharpee/devkit` with an injected `BrowserBuildEnv` resolver; resolution-mode reconciliation; file-by-file changes; 6-step green-at-each-step order; REAL-PATH acceptance gate) in [`phase3-design.md`](phase3-design.md). David ruled (session 448562): high-blast-radius build refactor — design now, implement next session with fresh budget. Not started.
 
 ### Phase 4: ADR-253 — channel `return`/DOM-name rendering; retire fernhill's hand-written entry
 - **Tier**: Large · **Budget**: 400
