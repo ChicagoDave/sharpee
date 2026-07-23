@@ -109,6 +109,245 @@ export declare function resolveStory(root: string, nameOrPath: string): Resolved
 export declare function readVersion(pkgJsonPath: string): string;
 ```
 
+### standalone/browser-core
+
+```typescript
+/**
+ * browser-core.ts — the ONE browser-build core (ADR-252 D5).
+ *
+ * Both callers — devkit's author build (`sharpee build <file>.story`) and
+ * repokit's in-repo build (`./repokit build --browser <story>`) — run this
+ * core. They differ ONLY in resolution mode (where platform-browser's styles,
+ * the templates, and the esbuild alias resolve from), which is injected as a
+ * `BrowserBuildEnv`. The core owns all build *logic*; the caller owns *where
+ * things resolve*. This is the rule-8b collapse of the two copy-drifted builds
+ * (`devkit/standalone/build-browser.ts` + `tools/repokit/src/commands/browser.ts`).
+ *
+ * Owner context: @sharpee/devkit (author tool, ADR-187). repokit depends on the
+ * workspace and delegates here rather than reimplementing.
+ *
+ * Public interface: BrowserMeta, BrowserClientConfig, BrowserBuildEnv,
+ * buildBrowser(); plus the theme-wiring helpers (WiredTheme, resolveWiredThemes,
+ * copyWiredThemes, injectThemes) and escapeHtml, shared by both callers.
+ */
+import type { IRMeta } from '@sharpee/chord';
+/** Browser-app identity — sourced from `IRMeta`, never from package.json (D2). */
+export interface BrowserMeta {
+    /** `meta.fields.id` — the output slug (dist/web/<id>) + storage-prefix default. */
+    storyId: string;
+    /** `meta.title`. */
+    storyTitle: string;
+    /** `meta.author`. */
+    author: string;
+    /** `meta.fields.version`. */
+    version: string;
+    /** `meta.fields.blurb`. */
+    blurb: string;
+}
+/** Browser-client config — from `story`-header `key:` lines in `meta.fields` (D3). */
+export interface BrowserClientConfig {
+    /** `client:` — the client target (D1 defaults it to `browser`). */
+    client: string;
+    /** `theme:` — the theme PACKAGE the story uses (ADR-188), or null. */
+    theme: string | null;
+    /** `template:` — the template/layout PACKAGE (ADR-253), or null. */
+    template: string | null;
+    /** `themes:` — comma-split in-client theme-menu ids. */
+    themes: string[];
+    /** `default-theme:` — boot theme; declared `theme:` else `classic`. */
+    defaultTheme: string;
+    /** `storage-prefix:` — save-storage key prefix; defaults to the story id. */
+    storagePrefix: string;
+}
+/**
+ * Header `key:` lines the build understands (D3). Any `meta.fields` key outside
+ * this set is an author typo or a stray field — the build keeps it (the parser
+ * captures every `key:` line) but warns, so `tempate:` is visible, not dropped.
+ * `states`/`score` header lines are special-cased by the parser and never land
+ * in `meta.fields`, so they never appear here.
+ */
+export declare const KNOWN_HEADER_KEYS: ReadonlySet<string>;
+/**
+ * Derive the browser-app metadata from the compiled Story IR (D2). All identity
+ * comes from the `.story` header — never package.json / src/index.ts.
+ * @throws if the story declares no `id:` (the output slug + storage prefix key).
+ */
+export declare function readBrowserMeta(meta: IRMeta): BrowserMeta;
+/**
+ * Derive the browser-client config from `meta.fields` (D3), applying every
+ * documented default. Returns the config plus a warning per unrecognized header
+ * key (D3 rejection case) — the caller surfaces them, so a typo is not silent.
+ */
+export declare function readClientConfig(meta: IRMeta): {
+    config: BrowserClientConfig;
+    warnings: string[];
+};
+/** A theme wired into the build (ADR-188). */
+export interface WiredTheme {
+    id: string;
+    name: string;
+    /** Absolute path to a BUILT-IN theme's CSS (copied into dist/web/themes/), or
+     *  null for an AUTHOR theme whose `[data-theme]` block lives in the author
+     *  override stylesheet (browser/<package-name>.css) — nothing to copy or link. */
+    cssPath: string | null;
+    /** Dir holding the built-in CSS + its assets (platform-browser's styles/themes),
+     *  or null for an author theme. */
+    srcDir: string | null;
+    /** Sibling dirs (e.g. `system-6`) to copy alongside a built-in's CSS. */
+    assets: string[];
+}
+/** A built-in theme's entry in platform-browser's styles/themes/manifest.json. */
+export interface BuiltinThemeEntry {
+    name: string;
+    css: string;
+    assets?: string[];
+}
+/**
+ * Resolve the themes a story lists. Each entry is either:
+ *  - a string id of a BUILT-IN theme (shipped by @sharpee/platform-browser under
+ *    styles/themes/, looked up in `themesDir`'s manifest.json), or
+ *  - an inline `{ id, name }` for the author's OWN theme — its `[data-theme]`
+ *    token block lives in the author override stylesheet (browser/<package-name>.css),
+ *    so the build only adds a menu entry.
+ * Explicit opt-in; no scanning (AC-9). `classic` is the engine default and is
+ * always present, so it need not be listed.
+ *
+ * @param themesDir platform-browser's styles/themes/ directory
+ * @param entries   the story's declared theme entries (built-in ids / { id, name })
+ * @throws on an unknown built-in id or a malformed entry.
+ */
+export declare function resolveWiredThemes(themesDir: string, entries: unknown[]): WiredTheme[];
+/**
+ * Copy each BUILT-IN theme's CSS to `<outDir>/themes/<id>.css` and its declared
+ * sibling assets into `<outDir>/themes/` so relative `@font-face` URLs resolve.
+ * Author themes copy nothing (their CSS is in the override stylesheet). The
+ * `themes/` dir is rebuilt from scratch so a de-listed theme never lingers.
+ */
+export declare function copyWiredThemes(themes: WiredTheme[], outDir: string): void;
+/** Escape the four HTML-significant characters for text injected into index.html. */
+export declare function escapeHtml(s: string): string;
+/**
+ * Wire the resolved themes into index.html: a `<link>` for each BUILT-IN theme at
+ * the THEME_LINKS marker (after the engine CSS; author themes need no link, their
+ * CSS is in the override stylesheet), and a regenerated `#theme-menu` — the
+ * `classic` default + one item per listed theme (ADR-188).
+ */
+export declare function injectThemes(html: string, themes: WiredTheme[]): string;
+/**
+ * Resolution-mode injection (ADR-252 D5). The two callers differ ONLY in where
+ * platform-browser's styles, the templates, and the esbuild alias resolve from,
+ * and where the output tree lands. Everything else is core logic.
+ */
+export interface BrowserBuildEnv {
+    /** platform-browser's styles/ dir (engine CSS + built-in themes/). */
+    stylesDir: string;
+    /** The devkit templates/browser dir (index.html + entry template) — the ONE
+     *  canonical template both callers share, so their output matches (D5). */
+    templatesDir: string;
+    /** cwd for esbuild + the root under which `dist/web/<id>` is written
+     *  (author: the project dir; in-repo: the repo root). Both resolve @sharpee/*
+     *  from node_modules via `--conditions=require`, so the bundle is identical —
+     *  no in-repo alias fork (byte-identical parity, verified). */
+    esbuildCwd: string;
+    /** The platform (engine) version stamped into the story's version.ts. */
+    engineVersion: string;
+    /** Post-build mirror (in-repo: website/public/web/<id>); undefined in author mode. */
+    mirror?: (outDir: string, storyId: string) => void;
+}
+/** Per-invocation build knobs. */
+export interface BrowserBuildOpts {
+    minify?: boolean;
+    sourcemap?: boolean;
+    quiet?: boolean;
+    /** Fixed build stamp (BUILD_DATE); defaults to now. Injected by the AC test so
+     *  the two callers' output is byte-identical, not merely identical-modulo-stamp. */
+    buildDate?: string;
+}
+/**
+ * Build a Chord `.story` into a self-contained browser app (ADR-252). Compiles
+ * the story as the fail-fast gate, derives ALL metadata + client config from the
+ * IR (never package.json — D2/D3), ships the source for compile-at-boot (ADR-210),
+ * bundles the entry (hand-written escape hatch, else generated — D4), wires the
+ * page + engine CSS + themes, and asserts the deliverable. The two callers differ
+ * only in `env`.
+ *
+ * Synchronous: esbuild runs via execFileSync, so there is no async work — callers
+ * invoke it directly (no await needed).
+ *
+ * @param storyFile absolute path to the `.story` file
+ * @param env       resolution-mode injection (D5)
+ * @param opts      per-invocation knobs
+ * @returns the output directory (`<cwd>/dist/web/<id>`)
+ * @throws on gate errors, declared hatches, an unknown `client:`, or an empty bundle
+ */
+export declare function buildBrowser(storyFile: string, env: BrowserBuildEnv, opts?: BrowserBuildOpts): string;
+```
+
+### standalone/author-game
+
+```typescript
+import type { LoadedGame } from '@sharpee/bootstrap';
+/**
+ * Resolve one hatch module path (e.g. `"./extras.ts"`) to a loadable
+ * compiled module, relative to the `.story` file's directory:
+ * `dist/<base>.js` (tsc output) first, then `<base>.js` beside the source.
+ * Same policy as the platform bundle's `requireHatchModule`
+ * (scripts/bundle-entry.js) — the host owns module resolution; the loader
+ * is filesystem-free (ADR-210 §5.6).
+ *
+ * @param storyDir directory of the `.story` file
+ * @param modulePath the hatch's declared module path
+ * @returns the required module's exports
+ * @throws if no candidate exists
+ */
+export declare function requireHatchModule(storyDir: string, modulePath: string): Record<string, unknown>;
+/**
+ * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).
+ * The compiler appends `.chord` and hands us the full fragment name (e.g.
+ * `"regions/harbor.chord"`); we read it relative to the `.story` file's
+ * directory. A missing file resolves to `null` (the compiler's
+ * unresolved-import contract → `analysis.import-unresolved`); any other fs
+ * error propagates. Keeps @sharpee/chord filesystem-free — the host owns
+ * the base directory, exactly as `requireHatchModule` does for hatches.
+ *
+ * @param storyDir directory of the importing `.story` file
+ * @returns a resolver mapping `<name>.chord` → source text or null
+ */
+export declare function makeFsImportResolver(storyDir: string): (fragmentName: string) => string | null;
+/**
+ * Find the project's Chord source: exactly one root-level `.story` file.
+ *
+ * @param dir project directory
+ * @returns the `.story` file's absolute path, or null when the project has
+ *   none (a module project)
+ * @throws when more than one `.story` file exists — ambiguity is an error
+ *   with the candidates named, never a guess (house never-guess rule)
+ */
+export declare function findStoryFile(dir: string): string | null;
+/**
+ * Compile a Chord `.story` file and construct its story via
+ * @sharpee/story-loader (hatches bound). Load-time-gate diagnostics abort
+ * with `.story` line numbers (ADR-210 AC-3).
+ *
+ * @param storyFile absolute or cwd-relative path to the `.story` file
+ * @returns the constructed story instance (not yet assembled into a game)
+ * @throws on gate errors, with every diagnostic in the message
+ */
+export declare function loadChordStory(storyFile: string): unknown;
+/**
+ * Load an author project (or an explicit `.story` file) into a runnable game.
+ *
+ * @param target a project directory, or a path ending in `.story`
+ * @param opts.entry optional story sub-entry (module projects only; ignored
+ *   for `.story` sources, matching the platform bundle's contract)
+ * @returns the assembled game (engine + channel packet plumbing)
+ * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
+ */
+export declare function loadAuthorGame(target: string, opts?: {
+    entry?: string;
+}): Promise<LoadedGame>;
+```
+
 ## @sharpee/transcript-tester
 
 ### types

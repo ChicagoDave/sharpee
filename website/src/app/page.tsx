@@ -22,11 +22,12 @@ function Card({ href, title, children }: { href: string; title: string; children
 export default function Home() {
   return (
     <div className="mx-auto max-w-[860px] px-6 py-10 sm:px-10">
-      <h1 className="mb-2 text-[34px] font-bold">Parser IF, composed.</h1>
+      <h1 className="mb-2 text-[34px] font-bold">Modeling Parser-IF with Chord</h1>
       <p className="mb-6 text-[17px] text-muted">
-        Write interactive fiction in <strong className="text-ink">Chord</strong>, an IF
-        modeling language: declare rooms, things, people, and behavior as plain,
-        compile-checked facts. Underneath runs{" "}
+        <strong className="text-ink">Chord</strong> is a modeling language for parser
+        interactive fiction: declare rooms, things, people, and behavior as plain,
+        compile-checked facts, and the compiler verifies every name, state, and topic
+        before the game runs. Underneath runs{" "}
         <strong className="text-ink">Sharpee</strong>, a TypeScript platform you can also
         author against directly — one engine, two surfaces.
       </p>
