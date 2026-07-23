@@ -50,6 +50,7 @@ import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
+import { CHORD_LANGUAGE_VERSION } from './version.js';
 import {
   IR_FORMAT,
   IRActionDef,
@@ -459,6 +460,8 @@ class Analyzer {
 
     const ir: StoryIR = {
       format: IR_FORMAT,
+      languageVersion: CHORD_LANGUAGE_VERSION, // ADR-257 D3 — the language version that compiled this story
+
       meta: {
         title: this.ast.header?.title ?? '',
         author: this.ast.header?.author ?? '',

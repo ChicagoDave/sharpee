@@ -87,7 +87,8 @@ export async function runCompose(rest: string[]): Promise<number> {
   }
 
   if (check) {
-    console.error(`compose: ${file} is gate-clean (--check: IR not emitted)`);
+    // ADR-257 D4: echo the Chord LANGUAGE version that compiled the story.
+    console.error(`compose: Chord ${result.ir.languageVersion} — ${file} is gate-clean (--check: IR not emitted)`);
     return 0;
   }
 
@@ -107,7 +108,7 @@ export async function runCompose(rest: string[]): Promise<number> {
   story.initializeWorld(world);
   story.createPlayer(world);
   console.error(
-    `compose: ${file} loaded — ${result.ir.entities.length} entities, ` +
+    `compose: Chord ${result.ir.languageVersion} — ${file} loaded — ${result.ir.entities.length} entities, ` +
       `${result.ir.traits.length} trait(s), ${result.ir.actions.length} action(s), ` +
       `${result.ir.hatches.length} hatch(es)`
   );

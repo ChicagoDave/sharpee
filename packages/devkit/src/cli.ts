@@ -12,9 +12,11 @@
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { CHORD_LANGUAGE_VERSION } from '@sharpee/chord';
 import { runCompose } from './commands/compose.js';
 import { runIntrospect } from './commands/introspect.js';
 import { findStoryFile } from './standalone/author-game.js';
+import { platformVersion } from './standalone/init.js';
 import { resolveStory, findMonorepoRoot } from './repo.js';
 // Author-project commands (devkit is the author tool; the in-repo platform build
 // is repokit — ADR-187). repo.ts is retained only for the workspace-story redirect.
@@ -41,6 +43,7 @@ Usage:
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
+  sharpee --version                      Print the platform + Chord language version
   sharpee test [name|path] [transcripts…] [--chain] [--stop-on-failure] [--verbose]
                                          Run the project's transcript tests
   sharpee play [name|path]               Play the project interactively (REPL)
@@ -68,6 +71,11 @@ async function main(argv: string[]): Promise<number> {
   if (!command || command === '--help' || command === '-h' || command === 'help') {
     console.log(USAGE);
     return command && command !== 'help' ? 1 : 0;
+  }
+  // ADR-257 D4: platform (lockstep) + Chord LANGUAGE version on one line.
+  if (command === '--version' || command === '-v' || command === 'version') {
+    console.log(`Sharpee ${platformVersion()} · Chord ${CHORD_LANGUAGE_VERSION}`);
+    return 0;
   }
 
   switch (command) {

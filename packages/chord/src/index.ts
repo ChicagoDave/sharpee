@@ -20,6 +20,7 @@ import { parseStory } from './parser.js';
 
 export * from './ast.js';
 export * from './ir.js';
+export { CHORD_LANGUAGE_VERSION } from './version.js';
 export { analyze, normalizeTopic } from './analyzer.js';
 export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES, MESSAGE_OVERRIDE_ALIASES, STDLIB_CHAIN_NAMES } from './catalog.js';
 export { EXTENSION_MANIFESTS, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests/index.js';

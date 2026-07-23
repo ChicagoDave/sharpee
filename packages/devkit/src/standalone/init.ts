@@ -38,22 +38,26 @@ interface StoryOptions {
  * (its patch may lag devkit's); `@sharpee/devkit` is pinned to its own current
  * version so the scaffold gets an introspect-capable CLI.
  */
-export function platformRanges(): { sharpeeRange: string; devkitRange: string } {
-  let version = '1.0.0';
-  // devkit's package.json is one dir up in the published (flattened) package
-  // (<pkg>/standalone/) and two dirs up in the monorepo (<pkg>/dist/standalone/).
-  // Probe both and accept only devkit's own manifest (not a parent package.json).
+/**
+ * The lockstep platform version — devkit's own package.json version (probing the
+ * published flat + monorepo layouts, accepting only devkit's manifest). devkit
+ * rides the `@sharpee/*` lockstep, so this IS the platform version shown by
+ * `sharpee --version` (ADR-257 D4). Falls back to `'1.0.0'` if unreadable.
+ */
+export function platformVersion(): string {
   for (const rel of [['..', 'package.json'], ['..', '..', 'package.json']]) {
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, ...rel), 'utf-8'));
-      if (pkg.name === '@sharpee/devkit' && pkg.version) {
-        version = pkg.version;
-        break;
-      }
+      if (pkg.name === '@sharpee/devkit' && pkg.version) return pkg.version;
     } catch {
       /* try the next candidate */
     }
   }
+  return '1.0.0';
+}
+
+export function platformRanges(): { sharpeeRange: string; devkitRange: string } {
+  const version = platformVersion();
   const major = version.split('.')[0];
   return { sharpeeRange: `^${major}.0.0`, devkitRange: `^${version}` };
 }

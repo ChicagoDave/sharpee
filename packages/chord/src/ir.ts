@@ -21,6 +21,14 @@ export const IR_FORMAT = 'story language 1';
 /** Root of a compiled story. */
 export interface StoryIR {
   format: typeof IR_FORMAT;
+  /**
+   * The Chord LANGUAGE version that compiled this story (ADR-257 D3, semver
+   * from `CHORD_LANGUAGE_VERSION`) — a top-level, additive marker beside
+   * `format`. Informational only: `format` is the loader's hard wire gate;
+   * consumers may read `languageVersion` for tooling/diagnostics but the loader
+   * never warns or refuses on it.
+   */
+  languageVersion: string;
   meta: IRMeta;
   /**
    * The story object's declared phases (ownership package D2) and its
