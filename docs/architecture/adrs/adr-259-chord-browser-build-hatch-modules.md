@@ -1,6 +1,6 @@
 # ADR-259: The Chord browser build supports hatch modules (full compile route)
 
-## Status: ACCEPTED (2026-07-23, session 341218) — the Chord browser build gains a hatch route: `hasHatches` selects it rather than failing (D1), modules reach the browser through story-loader's existing injection seam by static import (D2), and a build-time bind check replaces typechecking (D5). Open Questions resolved by `adr-interview`; `adr-review` 11/14 → **14/14** after three fixes (D2's import-specifier/map-key split, D5's Node-loadable bind copies, D3's false story-agnostic premise). Not implemented.
+## Status: ACCEPTED (2026-07-23, session 341218) — the Chord browser build gains a hatch route: `hasHatches` selects it rather than failing (D1), modules reach the browser through story-loader's existing injection seam by static import (D2), and a build-time bind check replaces typechecking (D5). Open Questions resolved by `adr-interview`; `adr-review` 11/14 → **14/14** after three fixes (D2's import-specifier/map-key split, D5's Node-loadable bind copies, D3's false story-agnostic premise). **Amended 2026-07-23 (session 7f133e)**: D6 gains the CLI esbuild transpile, retiring the two-host divergence — implementation planning found D6 and D8 contradicting each other, since D8 moves away the `tsc` D6 depended on. Not implemented (re-verified against source 2026-07-23: the `hasHatches` throw at `browser-core.ts:449`, the entry template's optionless `createStory`, and the unsplit friendly-zoo directory are all still as-was).
 
 ## Parent: ADR-252 (`.story` first-class browser build) — amends its build contract. Relates to ADR-210 §5.6 (hatches; the loader's filesystem-free contract), ADR-094 (`define chain` hatch), ADR-251 (`import` fragments in the browser bundle). **ADR-258 depends on this**: the IDE builds and plays every `.story`, and cannot do so for a hatched story until this route exists.
 
@@ -223,6 +223,40 @@ to have been compiled by some means outside the Sharpee toolchain, exactly as
 friendly-zoo does today with its own `tsc`. This ADR closes that gap for the **browser**
 build only; closing it for the CLI is separate work.
 
+> **Amendment (2026-07-23, session 7f133e — owner decision during implementation planning).**
+> **The CLI gets the same esbuild transpile, and the host divergence above is retired.**
+>
+> Planning D8 surfaced that this decision and D8 contradict each other: D8 moves
+> friendly-zoo's `package.json`/`tsconfig.json` to the sibling tutorial directory, which
+> removes the very "some means outside the Sharpee toolchain" this decision relies on —
+> and all seven friendly-zoo transcripts run through the CLI. Rather than reinstate a
+> per-story `tsc`, the owner ruled that the CLI resolves hatches the way the browser build
+> does.
+>
+> **Revised host table** — both hosts now resolve `"./chord-extras.ts"` to the **`.ts`
+> source** and transpile it with esbuild. The difference is only the output form: an ESM
+> bundle for the browser, a Node-loadable CJS module for the CLI — the same second pass D5
+> already specifies for the bind check.
+>
+> `requireHatchModule`'s "compiled JS" policy is therefore **replaced, not preserved**, at
+> all three sites that implement it: `packages/devkit/src/standalone/author-game.ts:34`
+> (consumed at `:119` and by `commands/compose.ts:102`) and the platform bundle's own copy
+> at `scripts/bundle-entry.js:231` — the last being the path every transcript test takes,
+> since `dist/cli/sharpee.js` is the mandated test runner.
+>
+> **What this buys**: the authored path becomes the only path, so an author never compiles
+> a hatch by hand; D5's "the hatch that binds is the hatch that ships" extends to the CLI;
+> and the host-parity criterion in Acceptance becomes structural rather than a coincidence
+> two toolchains have to maintain.
+>
+> **What it costs, recorded honestly**: `esbuild` is currently a **root devDependency**
+> (`package.json:65`), not a devkit dependency and not a runtime one. Transpiling at CLI
+> load makes it a runtime dependency of the author tool, so `@sharpee/devkit` must declare
+> it for authors who install globally (ADR-180 Phase U2). ADR-252 D2's "no `package.json`,
+> no `node_modules`" promise is untouched — that is a promise about the *story*, not the
+> toolchain. There is also a per-run transpile cost, small for a single hatch file and
+> cacheable in a scratch dir if it ever matters.
+
 ### D7 — ADR-252 D1's `.story`/`src/index.ts` exclusion is unchanged
 
 No amendment. The exclusion (`build-browser.ts:156`) tests for `src/index.ts`
@@ -288,7 +322,11 @@ builds with `sharpee build stories/friendly-zoo/zoo.story`, and the resulting
   source as the shipped bundle, and a `chord.*` namespace violation in a hatch fails
   the build (D5).
 - CLI (`sharpee test`/`play`) and browser agree: the same hatched story produces the
-  same text through both hosts, despite resolving the hatch differently (D6).
+  same text through both hosts. Per D6's amendment both now transpile the same `.ts`
+  source, so this is a structural guarantee rather than two toolchains agreeing by
+  accident — assert it anyway, since the output forms differ (ESM bundle vs Node CJS).
+- No hatched story requires a hand-run `tsc` to play through the CLI (D6 amendment);
+  `requireHatchModule`'s compiled-JS lookup is gone from all three sites.
 - After the D8 split: friendly-zoo's 7 transcript files pass, the CLI resolves its
   hatch from beside the `.story`, the TypeScript tutorial still builds in its own
   directory, and **nothing was deleted**.
