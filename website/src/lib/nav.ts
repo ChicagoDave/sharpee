@@ -320,7 +320,10 @@ export const NAV: NavSection[] = [
         ],
       },
     ],
-    items: [{ title: 'Play', href: '/play' }],
+    items: [
+      { title: 'Play', href: '/play' },
+      { title: 'Playground', href: '/playground' },
+    ],
   },
 ];
 

@@ -12,6 +12,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.4",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.6",
+    "@lezer/highlight": "^1.2.3",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.2.10",
