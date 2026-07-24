@@ -177,3 +177,18 @@ grammar-extension path makes stdlib-in-Chord unneeded.
 branch never built (ext-scoring/ext-hunger missing from repokit's build order — fixed, `93da76aa`);
 two other "failures" were stale-branch artifacts (stale lang dist; obsolete ADR-230 test deleted);
 real-path starve transcript green; story-loader 360/360. Sweep clean.
+**Progressive update 4**: merged hatch-scoring to main (fast-forward, `83d97e63`).
+**Progressive update 5**: docs + website reference pass for scoring/hunger. Updated `chord-language.md`
+(§4.5 announce modes + new Hunger subsection), `stdlib-reference.md` (ledger-model SCORE + regenerated
+transcript), `chord-grammar.md` (extension surface: hunger, announce, D7 fix), and the website (two
+scoring guide pages gained the `use scoring` gate + a Ranks section; new `guide/flow/hunger` page).
+Commits `7d1d6519`, `4349b9a3`, `9d27a8fb`, `795922aa`. **Recurring finding: the stale ADR-261 D7
+"a rung with no `says` is silent" claim appeared in every reference doc** — the container shipped the
+ADR-262 D3 reversal in code but never updated the prose. Caught by checking each doc against shipped
+behavior, not the ADRs. All doc prose follows David's voice (no em-dashes, complete sentences,
+example-first); memory `book-voice-rules` corrected to note it governs reference/website docs, not
+just the book.
+**Progressive update 6**: platform published to npm at **3.5.0** (David, from the CLI). The version
+stamps were committed here (`chore(release)`). ADR-264 (numeric counters) and ADR-265 (un-park
+stdlib-in-Chord) are being worked in the docker container on branch
+`adrs-264-265-counters-stdlib-reference`, not part of this session.
