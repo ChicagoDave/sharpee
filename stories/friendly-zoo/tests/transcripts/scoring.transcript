@@ -7,10 +7,18 @@ description: Scoring as behavior-parity proof (AC-2 scoring category):
   max-score assertions revised 100 → 85 in Phase C P5 (gate-delta audit
   Entry 1, David sign-off 2026-07-12).
 
+  Wording revised again 2026-07-24 (ADR-260 D3/D4): the zoo declares
+  `use scoring` with no `ranks` block, so SCORE now answers `score_display`
+  — "scored N out of a possible 85" — where it used to answer
+  `score_with_rank` with a percentage-band rank stdlib invented. That free
+  rank is deleted; a story that wants one writes a ladder. This transcript
+  is therefore also the coverage for ADR-261 acceptance #4: scoring on, no
+  ladder, a score and no rank.
+
 ---
 
 > score
-[OK: contains "scored 0 out of 85"]
+[OK: contains "scored 0 out of a possible 85"]
 
 > south
 [OK: contains "Main Path"]
@@ -23,7 +31,7 @@ description: Scoring as behavior-parity proof (AC-2 scoring category):
 [OK: contains "bleats happily"]
 
 > score
-[OK: contains "scored 5 out of 85"]
+[OK: contains "scored 5 out of a possible 85"]
 
 # Feed the goats: +10
 > take feed
@@ -33,14 +41,14 @@ description: Scoring as behavior-parity proof (AC-2 scoring category):
 [OK: contains "devour the corn and pellets"]
 
 > score
-[OK: contains "scored 15 out of 85"]
+[OK: contains "scored 15 out of a possible 85"]
 
 # Feeding again refuses and does not re-award
 > feed goats
 [OK: contains "already fed them"]
 
 > score
-[OK: contains "scored 15 out of 85"]
+[OK: contains "scored 15 out of a possible 85"]
 
 # Petting the parrot awards nothing either
 > west
@@ -51,10 +59,10 @@ description: Scoring as behavior-parity proof (AC-2 scoring category):
 
 # Entering the Aviary awards the room-visit score (+5)
 > score
-[OK: contains "scored 20 out of 85"]
+[OK: contains "scored 20 out of a possible 85"]
 
 > pet parrot
 [OK: contains "parrot"]
 
 > score
-[OK: contains "scored 20 out of 85"]
+[OK: contains "scored 20 out of a possible 85"]

@@ -15,35 +15,17 @@
  * no workspace mode detection).
  */
 import * as path from 'node:path';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import type { LoadedGame } from '@sharpee/bootstrap';
 
 /**
- * Resolve one hatch module path (e.g. `"./extras.ts"`) to a loadable
- * compiled module, relative to the `.story` file's directory:
- * `dist/<base>.js` (tsc output) first, then `<base>.js` beside the source.
- * Same policy as the platform bundle's `requireHatchModule`
- * (scripts/bundle-entry.js) — the host owns module resolution; the loader
- * is filesystem-free (ADR-210 §5.6).
- *
- * @param storyDir directory of the `.story` file
- * @param modulePath the hatch's declared module path
- * @returns the required module's exports
- * @throws if no candidate exists
+ * Hatch resolution lives in `hatch-transpile.ts` (ADR-259 D6, amended): the
+ * authored `.ts` beside the `.story` IS the module, transpiled through
+ * esbuild. Re-exported here because this module is where callers have always
+ * found it.
  */
-export function requireHatchModule(storyDir: string, modulePath: string): Record<string, unknown> {
-  const base = modulePath.replace(/\.(ts|js)$/, '');
-  const candidates = [
-    path.resolve(storyDir, 'dist', `${base}.js`),
-    path.resolve(storyDir, `${base}.js`),
-  ];
-  const found = candidates.find((p) => existsSync(p));
-  if (!found) {
-    throw new Error(`hatch module "${modulePath}" not found. Tried:\n  ${candidates.join('\n  ')}`);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  return require(found) as Record<string, unknown>;
-}
+import { requireHatchModule } from './hatch-transpile.js';
+export { requireHatchModule } from './hatch-transpile.js';
 
 /**
  * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).

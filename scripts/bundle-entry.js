@@ -224,23 +224,22 @@ Examples:
     return storyPath.endsWith('.story') ? path.dirname(storyPath) : storyPath;
   }
 
-  // Hatch policy (ADR-210 §5.6): `define text X from "./extras.ts"` names
-  // authored TypeScript; the CLI loads its compiled JS — `<storyDir>/dist/…`
-  // (tsc output) first, then the path as given (pre-compiled JS beside the
-  // .story file).
+  // Hatch policy (ADR-210 §5.6, ADR-259 D6 as amended 2026-07-23): `define
+  // text X from "./extras.ts"` names authored TypeScript, and the CLI loads
+  // THAT — transpiled through esbuild, exactly as the browser build does. The
+  // old `<storyDir>/dist/<base>.js` (tsc output) lookup is retired: it forced
+  // every hatched story to carry a package.json and tsconfig.json purely to
+  // emit one file. One implementation, shared with the devkit, so the two
+  // hosts cannot drift.
+  const { requireHatchModule: resolveHatch } =
+    require('../packages/devkit/dist/standalone/hatch-transpile.js');
+
   function requireHatchModule(storyDir, modulePath) {
-    const base = modulePath.replace(/\.(ts|js)$/, '');
-    const candidates = [
-      path.resolve(storyDir, 'dist', `${base}.js`),
-      path.resolve(storyDir, `${base}.js`),
-    ];
-    const found = candidates.find((p) => fs.existsSync(p));
-    if (!found) {
-      throw new Error(
-        `Hatch module "${modulePath}" not found for ${storyDir}. Tried:\n  ${candidates.join('\n  ')}`
-      );
+    try {
+      return resolveHatch(storyDir, modulePath);
+    } catch (err) {
+      throw new Error(`Hatch module "${modulePath}" for ${storyDir}: ${err.message}`);
     }
-    return require(found);
   }
 
   // Compile a `.story` file and interpret it via @sharpee/story-loader.

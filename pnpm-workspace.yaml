@@ -7,7 +7,11 @@ packages:
   - '!packages/interpreter'
   - stories/dungeo
   - stories/channel-service-test
-  - stories/friendly-zoo
+  # ADR-259 D8: `stories/friendly-zoo` is now a pure Chord story — a
+  # `.story`, its hatch, and its transcripts, with no package.json at all
+  # (ADR-252 D2). The TypeScript tutorial that used to share the directory
+  # moved out whole and keeps the workspace membership.
+  - stories/family-zoo-tutorial
   # Chord golden gate (ADR-210 Phase A): membership makes `./repokit build
   # cloak-of-darkness` emit dist/extras.js (the cloak.story hatch module).
   - stories/cloak-of-darkness
