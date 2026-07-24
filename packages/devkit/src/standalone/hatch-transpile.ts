@@ -24,9 +24,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-/** Resolved-path → exports, so one process transpiles a given hatch once. */
-const loaded = new Map<string, Record<string, unknown>>();
-
 /**
  * Transpile one authored TypeScript file to a Node-loadable CJS module and
  * return its path.
@@ -95,9 +92,6 @@ export function requireHatchModule(storyDir: string, modulePath: string): Record
   const tsPath = path.resolve(storyDir, `${base}.ts`);
   const jsPath = path.resolve(storyDir, `${base}.js`);
 
-  const cached = loaded.get(tsPath) ?? loaded.get(jsPath);
-  if (cached) return cached;
-
   let target: string;
   if (existsSync(tsPath)) {
     target = transpileToCjs(tsPath);
@@ -109,8 +103,10 @@ export function requireHatchModule(storyDir: string, modulePath: string): Record
     );
   }
 
+  // No cache of our own, deliberately. The transpile output path is derived
+  // from a hash of the SOURCE, so Node's own require cache keys on content:
+  // an unchanged hatch is free on reload, and an edited one is never stale.
+  // A path-keyed cache here would return the old exports after an edit.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const exports = require(target) as Record<string, unknown>;
-  loaded.set(existsSync(tsPath) ? tsPath : jsPath, exports);
-  return exports;
+  return require(target) as Record<string, unknown>;
 }

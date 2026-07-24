@@ -314,20 +314,7 @@ export declare function buildPlaygroundBundle(env: PlaygroundBuildEnv, opts?: Br
 
 ```typescript
 import type { LoadedGame } from '@sharpee/bootstrap';
-/**
- * Resolve one hatch module path (e.g. `"./extras.ts"`) to a loadable
- * compiled module, relative to the `.story` file's directory:
- * `dist/<base>.js` (tsc output) first, then `<base>.js` beside the source.
- * Same policy as the platform bundle's `requireHatchModule`
- * (scripts/bundle-entry.js) — the host owns module resolution; the loader
- * is filesystem-free (ADR-210 §5.6).
- *
- * @param storyDir directory of the `.story` file
- * @param modulePath the hatch's declared module path
- * @returns the required module's exports
- * @throws if no candidate exists
- */
-export declare function requireHatchModule(storyDir: string, modulePath: string): Record<string, unknown>;
+export { requireHatchModule } from './hatch-transpile.js';
 /**
  * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).
  * The compiler appends `.chord` and hands us the full fragment name (e.g.

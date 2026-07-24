@@ -16,6 +16,9 @@ import { BrowserClient, ThemeManager } from '@sharpee/platform-browser';
 import { compile } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+// The story's TypeScript hatches (ADR-259 D1/D2), generated beside this file
+// at build time exactly as version.ts is. Empty for a pure-IR story.
+import { hatchModules } from './hatch-modules.js';
 
 const THEME_STORAGE_KEY = '{{STORAGE_PREFIX}}-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
@@ -46,9 +49,10 @@ async function loadStory(): Promise<Story> {
     const lines = errors.map((d) => `story.story:${d.span.line}:${d.span.column} [${d.code}] ${d.message}`);
     throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
   }
-  // Hatch modules are not supported in the browser scaffold (the build
-  // refuses hatched stories before shipping); pure-IR stories load here.
-  return createStory(result.ir) as unknown as Story;
+  // A pure-IR story gets an empty map and is unaffected; a hatched story
+  // gets its author-written modules, bound by the loader against the same
+  // paths the `.story` declares (ADR-259 D2).
+  return createStory(result.ir, { hatchModules }) as unknown as Story;
 }
 
 /**
