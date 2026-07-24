@@ -553,24 +553,15 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'saving-save-successful',
   'saving-saved-locally',
   'saving-saved-to-cloud',
-  // if.action.scoring
-  'scoring-early-game',
-  'scoring-game-complete',
-  'scoring-late-game',
-  'scoring-mid-game',
-  'scoring-no-achievements',
+  // if.action.scoring — five aliases, matching the five surviving messages
+  // (ADR-260 D4). An alias for a deleted message would be a live
+  // `override message` target that silently overrides nothing;
+  // `analysis.unknown-message-alias` tells the author the truth instead.
   'scoring-no-scoring',
   'scoring-perfect-score',
-  'scoring-rank-amateur',
-  'scoring-rank-expert',
-  'scoring-rank-master',
-  'scoring-rank-novice',
-  'scoring-rank-proficient',
   'scoring-score-display',
   'scoring-score-simple',
   'scoring-score-with-rank',
-  'scoring-scoring-not-enabled',
-  'scoring-with-achievements',
   // if.action.searching
   'searching-container-closed',
   'searching-container-contents',

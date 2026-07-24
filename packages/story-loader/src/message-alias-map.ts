@@ -550,24 +550,14 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'saving-save-successful': 'if.action.saving.save_successful',
   'saving-saved-locally': 'if.action.saving.saved_locally',
   'saving-saved-to-cloud': 'if.action.saving.saved_to_cloud',
-  // if.action.scoring
-  'scoring-early-game': 'if.action.scoring.early_game',
-  'scoring-game-complete': 'if.action.scoring.game_complete',
-  'scoring-late-game': 'if.action.scoring.late_game',
-  'scoring-mid-game': 'if.action.scoring.mid_game',
-  'scoring-no-achievements': 'if.action.scoring.no_achievements',
+  // if.action.scoring — pruned in parallel with the chord catalog
+  // (ADR-260 D4). Drift between the two tables is a live-alias/dead-target
+  // bug, so they move together.
   'scoring-no-scoring': 'if.action.scoring.no_scoring',
   'scoring-perfect-score': 'if.action.scoring.perfect_score',
-  'scoring-rank-amateur': 'if.action.scoring.rank_amateur',
-  'scoring-rank-expert': 'if.action.scoring.rank_expert',
-  'scoring-rank-master': 'if.action.scoring.rank_master',
-  'scoring-rank-novice': 'if.action.scoring.rank_novice',
-  'scoring-rank-proficient': 'if.action.scoring.rank_proficient',
   'scoring-score-display': 'if.action.scoring.score_display',
   'scoring-score-simple': 'if.action.scoring.score_simple',
   'scoring-score-with-rank': 'if.action.scoring.score_with_rank',
-  'scoring-scoring-not-enabled': 'if.action.scoring.scoring_not_enabled',
-  'scoring-with-achievements': 'if.action.scoring.with_achievements',
   // if.action.searching
   'searching-container-closed': 'if.action.searching.container_closed',
   'searching-container-contents': 'if.action.searching.container_contents',
