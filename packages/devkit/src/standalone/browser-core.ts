@@ -746,6 +746,22 @@ export function buildBrowser(
   log(`\n✅ Build complete! (game.js ${sizeKb} KB)`);
   log(`Output: ${path.relative(env.esbuildCwd, outDir)}/`);
 
+  // --- Trust reporting (ADR-259 D3). ---
+  // Note what the line actually is. Every per-story bundle is already
+  // story-SPECIFIC — the entry interpolates title, theme, and storage prefix —
+  // so "story-agnostic vs story-specific" is not the distinction worth
+  // reporting. TRUST is: a pure-IR bundle carries story DATA the platform
+  // interprets, while a hatched bundle carries author-written EXECUTABLE CODE
+  // that runs with the platform's own privileges.
+  if (hatchBindings.length > 0) {
+    const modules = hatchBindings.map((h) => h.mapKey).join(', ');
+    log(
+      `\nThis bundle contains author-written executable code, not merely story data:\n` +
+      `  ${hatchBindings.length} hatch module(s) — ${modules}\n` +
+      `  Ship it with the same trust you extend to the story's author.`,
+    );
+  }
+
   return outDir;
 }
 

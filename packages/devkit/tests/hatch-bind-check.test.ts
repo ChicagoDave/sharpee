@@ -130,6 +130,65 @@ describe('the hatch bind check (ADR-259 D5)', () => {
   });
 });
 
+describe('trust reporting (ADR-259 D3)', () => {
+  /** Build with logging captured, returning everything written to stdout. */
+  function buildAndCaptureLog(storyFile: string): string {
+    const lines: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => { lines.push(args.join(' ')); };
+    try {
+      buildBrowser(storyFile, env(), { minify: false, sourcemap: false });
+    } finally {
+      console.log = original;
+    }
+    return lines.join('\n');
+  }
+
+  it('a hatched bundle is reported as carrying author-written executable code', () => {
+    const output = buildAndCaptureLog(stage());
+
+    expect(output).toContain('author-written executable code, not merely story data');
+    // Names the modules, so the reader knows what they are trusting.
+    expect(output).toContain('./extras.ts');
+  });
+
+  it('a pure-IR bundle says nothing of the kind', () => {
+    const story = stage();
+    // Strip the hatch: same story, no author code.
+    const source = readFileSync(story, 'utf-8')
+      .replace('define text flavor from "./extras.ts"\n\n', '')
+      .replace(' {flavor}', '');
+    writeFileSync(story, source);
+
+    const output = buildAndCaptureLog(story);
+
+    expect(output).not.toContain('author-written executable code');
+  });
+});
+
+describe('the pure-IR profile still refuses hatches (ADR-259 D4)', () => {
+  it('refuses a hatch-bearing story BEFORE reading any author code', async () => {
+    // D4 needed no change for the hatch route to land; this proves it stayed
+    // true. The refusal must happen before binding, so a tripwire module that
+    // flips on ANY property access must stay untouched.
+    const { createStory, LoadError } = await import('@sharpee/story-loader');
+    const { compile } = await import('@sharpee/chord');
+
+    const result = compile(readFileSync(path.join(FIXTURE, 'tiny.story'), 'utf-8'));
+    expect(result.ok).toBe(true);
+    expect(result.ir.hasHatches).toBe(true);
+
+    let touched = false;
+    const tripwire = new Proxy({}, { get: () => { touched = true; return () => undefined; } });
+
+    expect(() => createStory(result.ir, {
+      profile: 'pure-ir',
+      hatchModules: { './extras.ts': tripwire as Record<string, unknown> },
+    })).toThrow(LoadError);
+    expect(touched, 'no hatch export was read or executed').toBe(false);
+  });
+});
+
 describe('no typechecker in the hatched build path (ADR-259 D5)', () => {
   it('neither the transpiler nor the browser build reaches for tsc', () => {
     // Types erase, so type errors usually still transpile; the errors that
