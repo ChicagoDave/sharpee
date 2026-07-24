@@ -16,6 +16,7 @@
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).
  */
 import { registerBasicCombat } from '@sharpee/ext-basic-combat';
+import { registerScoring, registerScoringPlugin } from '@sharpee/ext-scoring';
 import type { WorldModel } from '@sharpee/world-model';
 
 /**
@@ -106,6 +107,19 @@ export interface ExtensionRegistration {
 /** `use` name → its trusted, runtime-bundled registration. Fixed set — growing it is a grammar change. */
 export const EXTENSION_REGISTRY: ReadonlyMap<string, ExtensionRegistration> = new Map<string, ExtensionRegistration>([
   ['combat', { registerWorld: (world) => registerBasicCombat(world) }],
+  // scoring is the first entry to fill TWO of the contract's three parts
+  // (ADR-261 D1): `registerWorld` enables scoring at world-build time, and
+  // `registerPlugin` installs the promotion watcher at onEngineReady —
+  // ExtensionRegistration.registerPlugin's first live use anywhere.
+  //
+  // Neither hook carries the rank ladder, and neither can: `registerWorld` is
+  // `(world) => void` on this module-level const map, so no entry here can
+  // reach a story's IR (ADR-260 D5). The ladder travels the loader's generic
+  // lowering path instead, which names no extension.
+  ['scoring', {
+    registerWorld: (world) => registerScoring(world),
+    registerPlugin: (registry) => registerScoringPlugin(registry),
+  }],
   // state-machines registers engine-side (onEngineReady): the plugin
   // instance must be kept to lower `define machine` blocks into its
   // registry, so its wiring lives with the loader's engine hook. The

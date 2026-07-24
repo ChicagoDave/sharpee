@@ -13,12 +13,14 @@
  */
 import { COMBAT_MANIFEST } from './combat.js';
 import { NPC_MANIFEST } from './npc.js';
+import { SCORING_MANIFEST } from './scoring.js';
 import { STATE_MACHINES_MANIFEST } from './state-machines.js';
 import type { ExtensionManifest, ManifestAdjective } from './types.js';
 
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './types.js';
 export { COMBAT_MANIFEST } from './combat.js';
 export { NPC_MANIFEST } from './npc.js';
+export { SCORING_MANIFEST } from './scoring.js';
 export { STATE_MACHINES_MANIFEST } from './state-machines.js';
 
 /**
@@ -27,7 +29,7 @@ export { STATE_MACHINES_MANIFEST } from './state-machines.js';
  * admitted and refuse a `use` line.
  */
 export const EXTENSION_MANIFESTS: ReadonlyMap<string, ExtensionManifest> = new Map(
-  [COMBAT_MANIFEST, NPC_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
+  [COMBAT_MANIFEST, NPC_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
 );
 
 /**
