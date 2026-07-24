@@ -867,6 +867,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     },
   },
   "pronounSets": [],
+  "ranks": [],
   "scores": [],
   "sequences": [],
   "story": {

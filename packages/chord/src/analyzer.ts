@@ -66,6 +66,7 @@ import {
   IRMachineTransition,
   IROnClause,
   IRPhrase,
+  IRRankDef,
   IRScoreDef,
   IRStatement,
   IRTopicRow,
@@ -77,6 +78,19 @@ import { Span } from './span.js';
 
 /** Phase A stories register text in this locale (design.md §2.6). */
 const DEFAULT_LOCALE = 'en-US';
+
+/**
+ * Kebab-case a quoted author string into a story key (ADR-254).
+ *
+ * Used to derive a rank's id from its name, so a rank is addressable in
+ * diagnostics and in `if.event.rank_risen` without the author declaring one.
+ */
+function kebabId(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 /**
  * Exit-direction opposites (parser DIRECTIONS vocabulary) — the same
@@ -489,6 +503,7 @@ class Analyzer {
       traits: [],
       actions: [],
       scores: this.scoreDecls,
+      ranks: this.buildRanks(),
       sequences: [],
       machines: [],
       channels: [],
@@ -1659,6 +1674,81 @@ class Analyzer {
     this.entities.push(sym);
     this.byId.set(id, sym);
     for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, id);
+  }
+
+  /**
+   * Build the `use scoring` rank ladder (ADR-261 D2/D5).
+   *
+   * Rungs may be written in any order and are sorted ascending here, so the
+   * loader and the ledger both receive a sorted ladder. Three gates:
+   *
+   * - **duplicate threshold** — silently keeping one rung would make the
+   *   resolved rank depend on array order (ADR-260 D2);
+   * - **duplicate id** — two names that kebab-case alike collide in
+   *   `if.event.rank_risen`'s payload, which is keyed on the id;
+   * - **rung above max** — an unreachable rank. This check is sound for
+   *   Chord *specifically* because Chord has no statement that changes
+   *   maxScore at runtime, so the sum of declared `worth` is the whole
+   *   ceiling. A TypeScript story calling `setMaxScore` mid-game (as dungeo
+   *   does) has no compile step and is unaffected, by design.
+   */
+  private buildRanks(): IRRankDef[] {
+    const declared = this.ast.header?.ranks ?? [];
+    if (declared.length === 0) return [];
+
+    const maxScore = this.scoreDecls.reduce((sum, s) => sum + s.worth, 0);
+    const byThreshold = new Map<number, string>();
+    const byId = new Map<string, string>();
+    const ranks: IRRankDef[] = [];
+
+    for (const rung of declared) {
+      const id = kebabId(rung.name);
+      if (!id) {
+        this.diagnostics.error(
+          'analysis.rank-id-empty',
+          `Rank name "${rung.name}" yields no id — a rank name needs at least one letter or digit.`,
+          rung.span,
+        );
+        continue;
+      }
+      const clashingThreshold = byThreshold.get(rung.threshold);
+      if (clashingThreshold !== undefined) {
+        this.diagnostics.error(
+          'analysis.duplicate-rank-threshold',
+          `Two rungs share the threshold ${rung.threshold} ("${clashingThreshold}" and "${rung.name}") — which rank applies would depend on source order.`,
+          rung.span,
+        );
+        continue;
+      }
+      const clashingId = byId.get(id);
+      if (clashingId !== undefined) {
+        this.diagnostics.error(
+          'analysis.duplicate-rank-id',
+          `Rank names "${clashingId}" and "${rung.name}" both reduce to the id \`${id}\` — a promotion event could not tell them apart.`,
+          rung.span,
+        );
+        continue;
+      }
+      if (maxScore > 0 && rung.threshold > maxScore) {
+        this.diagnostics.error(
+          'analysis.rank-above-max',
+          `Rank "${rung.name}" sits at ${rung.threshold}, above the ${maxScore} points this story declares — no player could reach it.`,
+          rung.span,
+        );
+        continue;
+      }
+      byThreshold.set(rung.threshold, rung.name);
+      byId.set(id, rung.name);
+      ranks.push({
+        id,
+        name: rung.name,
+        threshold: rung.threshold,
+        ...(rung.phraseKey !== undefined ? { phraseKey: rung.phraseKey } : {}),
+        span: rung.span,
+      });
+    }
+
+    return ranks.sort((a, b) => a.threshold - b.threshold);
   }
 
   /** Register an owner-attached score (ratchet D12) under its qualified id. */

@@ -67,6 +67,13 @@ export interface StoryIR {
   actions: IRActionDef[];
   /** Owner-attached score identities (D12) — names are owner-qualified (`pygmy-goats.fed`). */
   scores: IRScoreDef[];
+  /**
+   * The `use scoring` rank ladder (ADR-261 D2/D5), sorted ascending by
+   * threshold. The loader lowers this through `world.setRanks(...)` beside
+   * the `setMaxScore` it already computes — generically, with no knowledge
+   * that `scoring` is the extension consuming it.
+   */
+  ranks: IRRankDef[];
   sequences: IRSequenceDef[];
   /** `define machine` blocks (ADR-215 `use state-machines` depth). */
   machines: IRMachineDef[];
@@ -470,6 +477,30 @@ export type IRActionRefusal =
 export interface IRScoreDef {
   name: string;
   worth: number;
+  span: Span;
+}
+
+/**
+ * One rung of the `use scoring` ladder (ADR-261 D2/D5/D7).
+ *
+ * `id` is the rank name kebab-cased (ADR-254), which makes a rank addressable
+ * in diagnostics and in `if.event.rank_risen`'s payload without the author
+ * declaring one. Because ranks are configuration rather than saved state
+ * (ADR-260 D2), a rank id never reaches a save file — so renaming a rank
+ * between releases cannot invalidate one.
+ *
+ * `phraseKey` lives here and deliberately **not** on the platform's
+ * `RankDefinition` (ADR-261 D7): a phrase key is a Chord concept, and a
+ * TypeScript story has nothing to put there. The loader keeps the mapping and
+ * registers a story-side reaction; the platform never learns the key exists.
+ */
+export interface IRRankDef {
+  id: string;
+  name: string;
+  /** Absolute points, never a percentage of max (ADR-260 D2's invariant). */
+  threshold: number;
+  /** `says <key>` — a key in the story's own phrase namespace, or absent. */
+  phraseKey?: string;
   span: Span;
 }
 
