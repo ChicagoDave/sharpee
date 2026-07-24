@@ -417,7 +417,7 @@ DIRECTION    = north | south | east | west | northeast | northwest
   `announce` mode sets how that reads: `all` (default) speaks every crossing,
   `collapsed` only the top rung, `combined` one line for the whole span, and
   `silent` nothing.
-- **`use hunger`** (ADR-263) — a depleting satiety meter over the same band
+- **`use hunger`** (ADR-263): a depleting satiety meter over the same band
   engine as ranks. Its body holds `grows <n> each turn` (per-turn severity
   gain, lowered to an `on every turn` daemon), `<band> at <n> [says <key>]`
   rungs (bareword names, unlike scoring's quoted `rank` strings), and
