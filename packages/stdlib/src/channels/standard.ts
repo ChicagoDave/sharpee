@@ -21,7 +21,6 @@
 import type { IOChannel, MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
-import type { ScoringData } from '../capabilities/scoring.js';
 import { PLAYER_DIED_EVENT } from '../death/index.js';
 import { MAIN_KEYS } from './keys.js';
 import { playerLocationName, readCapability } from './world-helpers.js';
@@ -195,24 +194,20 @@ export const scoreChannel: IOChannel<{ current: number; max: number | null }> = 
   mode: 'replace',
   emit: 'always',
   produce: (ctx) => {
-    // Try the ADR-129 ledger first.
+    // The ADR-129 ledger is the single home for scoring state (ADR-260 D1).
+    // The `scoring` capability this once fell back to is deleted — it was
+    // never registered by any production path, and the fallback was
+    // unreachable anyway, since every world exposes getScore().
     const world = ctx.world as
       | {
           getScore?: () => number;
           getMaxScore?: () => number;
         }
       | undefined;
-    if (world && typeof world.getScore === 'function') {
-      const current = world.getScore();
-      const maxRaw = typeof world.getMaxScore === 'function' ? world.getMaxScore() : 0;
-      const max = typeof maxRaw === 'number' && maxRaw > 0 ? maxRaw : null;
-      return { current, max };
-    }
-    // Fall back to the legacy `scoring` capability.
-    const cap = readCapability<ScoringData>(ctx, 'scoring');
-    if (!cap) return undefined;
-    const current = typeof cap.scoreValue === 'number' ? cap.scoreValue : 0;
-    const max = typeof cap.maxScore === 'number' && cap.maxScore > 0 ? cap.maxScore : null;
+    if (!world || typeof world.getScore !== 'function') return undefined;
+    const current = world.getScore();
+    const maxRaw = typeof world.getMaxScore === 'function' ? world.getMaxScore() : 0;
+    const max = typeof maxRaw === 'number' && maxRaw > 0 ? maxRaw : null;
     return { current, max };
   },
 };

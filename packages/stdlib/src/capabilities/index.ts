@@ -8,7 +8,12 @@
 import { StandardCapabilities } from '@sharpee/world-model';
 
 // Import individual capabilities
-import { ScoringCapabilitySchema, ScoringData } from './scoring.js';
+// NOTE: there is no scoring capability. ADR-260 D1 deleted it — scoring state
+// lives on the ScoreLedger (ADR-129), and the schema this table once carried
+// was registered by nothing but test infrastructure. Stories are still free to
+// register their own capability under the SCORING name for private
+// bookkeeping (dungeo keeps moves/deaths there); what died is the platform's
+// claim that such a capability is the scoring contract.
 import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore.js';
 import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation.js';
 import { GameMetaCapabilitySchema, GameMetaData } from './game-meta.js';
@@ -17,10 +22,6 @@ import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, 
 
 // Re-export all schemas and types
 export {
-  // Scoring
-  ScoringCapabilitySchema,
-  ScoringData,
-  
   // Save/Restore
   SaveRestoreCapabilitySchema,
   SaveRestoreData,
@@ -52,7 +53,6 @@ export {
  * Map of standard capability names to their schemas
  */
 export const StandardCapabilitySchemas = {
-  [StandardCapabilities.SCORING]: ScoringCapabilitySchema,
   [StandardCapabilities.SAVE_RESTORE]: SaveRestoreCapabilitySchema,
   [StandardCapabilities.CONVERSATION]: ConversationCapabilitySchema,
   [StandardCapabilities.GAME_META]: GameMetaCapabilitySchema,

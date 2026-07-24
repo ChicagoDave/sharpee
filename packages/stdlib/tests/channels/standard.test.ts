@@ -51,20 +51,26 @@ function makeEvent(type: string, data: Record<string, unknown> = {}) {
 
 // Minimal world-model stub providing just the surface the closures use.
 function makeWorldStub(opts: {
-  scoring?: { scoreValue: number; maxScore?: number };
+  /** ADR-260 D1: score comes from the LEDGER; there is no scoring capability. */
+  ledger?: { score: number; maxScore?: number };
   storyInfo?: { title?: string; author?: string; version?: string; ifid?: string };
   player?: { id: string };
   room?: { id: string; name: string };
 } = {}) {
   return {
     getCapability(name: string): Record<string, unknown> | undefined {
-      if (name === 'scoring' && opts.scoring) return opts.scoring as Record<string, unknown>;
       if (name === 'storyInfo' && opts.storyInfo) return opts.storyInfo as Record<string, unknown>;
       return undefined;
     },
     hasCapability(name: string) {
       return Boolean(this.getCapability(name));
     },
+    ...(opts.ledger
+      ? {
+          getScore: () => opts.ledger!.score,
+          getMaxScore: () => opts.ledger!.maxScore ?? 0,
+        }
+      : {}),
     getPlayer() {
       return opts.player;
     },
@@ -190,19 +196,30 @@ describe('locationChannel.produce', () => {
 // ────────────────────────────────────────────────────────────────────
 
 describe('scoreChannel.produce', () => {
-  it('returns { current, max } from the scoring capability', () => {
-    const world = makeWorldStub({ scoring: { scoreValue: 42, maxScore: 100 } });
+  it('returns { current, max } from the score ledger', () => {
+    const world = makeWorldStub({ ledger: { score: 42, maxScore: 100 } });
     expect(scoreChannel.produce(makeCtx({ world }))).toEqual({ current: 42, max: 100 });
   });
 
   it('returns max: null when maxScore is 0 (unbounded)', () => {
-    const world = makeWorldStub({ scoring: { scoreValue: 5, maxScore: 0 } });
+    const world = makeWorldStub({ ledger: { score: 5, maxScore: 0 } });
     expect(scoreChannel.produce(makeCtx({ world }))).toEqual({ current: 5, max: null });
   });
 
-  it('returns undefined when the scoring capability is absent', () => {
+  it('returns undefined when the world exposes no ledger', () => {
     const world = makeWorldStub();
     expect(scoreChannel.produce(makeCtx({ world }))).toBeUndefined();
+  });
+
+  it('ignores a story-registered `scoring` capability (ADR-260 D1)', () => {
+    // A story may keep private bookkeeping under that name. It is NOT the
+    // scoring contract, and the channel must not read it.
+    const world = {
+      ...(makeWorldStub({ ledger: { score: 7, maxScore: 20 } }) as object),
+      getCapability: (name: string) =>
+        name === 'scoring' ? { scoreValue: 999, maxScore: 999 } : undefined,
+    } as unknown;
+    expect(scoreChannel.produce(makeCtx({ world }))).toEqual({ current: 7, max: 20 });
   });
 
   it('returns undefined when world is missing', () => {

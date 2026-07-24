@@ -15,7 +15,6 @@ import { StandardCapabilities, WorldModel } from '@sharpee/world-model';
 describe('Capability Refactoring', () => {
   describe('StandardCapabilitySchemas', () => {
     test('should contain all standard capabilities', () => {
-      expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.SCORING);
       expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.SAVE_RESTORE);
       expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.CONVERSATION);
       expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.GAME_META);
@@ -23,15 +22,17 @@ describe('Capability Refactoring', () => {
       expect(StandardCapabilitySchemas).toHaveProperty(StandardCapabilities.DEBUG);
     });
 
+    test('has NO scoring schema — the ledger is the single home (ADR-260 D1)', () => {
+      // The schema this table once carried was registered by nothing but test
+      // infrastructure, which is precisely why its dead branches went
+      // unnoticed: stdlib's tests exercised a configuration no story had.
+      expect(StandardCapabilitySchemas).not.toHaveProperty(StandardCapabilities.SCORING);
+    });
+
     test('should have valid schemas for each capability', () => {
-      // Test scoring schema
-      const scoringSchema = StandardCapabilitySchemas[StandardCapabilities.SCORING];
-      expect(scoringSchema.scoreValue).toEqual({
-        type: 'number',
-        default: 0,
-        required: true
-      });
-      expect(scoringSchema.maxScore).toBeDefined();
+      // Test save/restore schema
+      const saveSchema = StandardCapabilitySchemas[StandardCapabilities.SAVE_RESTORE];
+      expect(saveSchema).toBeDefined();
 
       // Test command history schema
       const historySchema = StandardCapabilitySchemas[StandardCapabilities.COMMAND_HISTORY];
@@ -62,11 +63,12 @@ describe('Capability Refactoring', () => {
 
       registerStandardCapabilities(world);
 
-      // Should register all 6 capabilities (including DEBUG)
-      expect(Object.keys(registeredCapabilities)).toHaveLength(6);
-      expect(registeredCapabilities).toHaveProperty(StandardCapabilities.SCORING);
+      // Should register all 5 capabilities (SCORING was deleted by ADR-260 D1)
+      expect(Object.keys(registeredCapabilities)).toHaveLength(5);
+      expect(registeredCapabilities).toHaveProperty(StandardCapabilities.SAVE_RESTORE);
       expect(registeredCapabilities).toHaveProperty(StandardCapabilities.COMMAND_HISTORY);
       expect(registeredCapabilities).toHaveProperty(StandardCapabilities.DEBUG);
+      expect(registeredCapabilities).not.toHaveProperty(StandardCapabilities.SCORING);
     });
 
     test('should register only specified capabilities', () => {
@@ -81,13 +83,13 @@ describe('Capability Refactoring', () => {
       };
 
       registerStandardCapabilities(world, [
-        StandardCapabilities.SCORING,
+        StandardCapabilities.SAVE_RESTORE,
         StandardCapabilities.COMMAND_HISTORY
       ]);
 
       // Should register only 2 capabilities
       expect(Object.keys(registeredCapabilities)).toHaveLength(2);
-      expect(registeredCapabilities).toHaveProperty(StandardCapabilities.SCORING);
+      expect(registeredCapabilities).toHaveProperty(StandardCapabilities.SAVE_RESTORE);
       expect(registeredCapabilities).toHaveProperty(StandardCapabilities.COMMAND_HISTORY);
       expect(registeredCapabilities).not.toHaveProperty(StandardCapabilities.CONVERSATION);
     });
