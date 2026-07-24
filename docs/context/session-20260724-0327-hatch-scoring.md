@@ -66,6 +66,14 @@ Result: the engine is **scoring generalized to an arbitrary continuous scalar** 
 - **ADR-261 (AMENDED)** — D7's silence-by-default reversed by ADR-262 D3: silence is now the explicit
   `announce silent` mode, a phraseless rung renders an overridable platform fallback, and
   `if.event.rank_risen` → `if.event.band_crossed`.
+- **ADR-265 (PARKED)** — captured author feedback (`docs/feedback/intfiction-20260724.txt`,
+  Nathaniel Lindell: "the library in readable Chord form"). Not a decision — records the three-way
+  distinction that makes it tractable: (A) self-hosting the compiler = off the table; (B) stdlib
+  implemented in Chord = impractical (inverts the layering, every stdlib change becomes grammar churn);
+  (C) a readable Chord *rendering* of the standard actions = the practical target. Key point: the
+  grammar-extension model already gives each capability a readable Chord surface, so B is *unneeded*,
+  and parity is a surface property, not implementation. Trigger to un-park: the IDE (ADR-258) hosting
+  an index, or a second author reporting the gap.
 
 ## Key Decisions
 
@@ -98,6 +106,11 @@ Result: the engine is **scoring generalized to an arbitrary continuous scalar** 
 - `docs/architecture/adrs/adr-262-define-meter-banded-derived-state.md` — new, ACCEPTED
 - `docs/architecture/adrs/adr-263-standard-meters-hunger-sanity.md` — new, ACCEPTED
 - `docs/architecture/adrs/adr-261-chord-use-scoring-ranks.md` — D7 amended (reversal)
+- `docs/architecture/adrs/adr-265-standard-library-readable-chord-form.md` — new, PARKED
+- `docs/feedback/intfiction-20260724.txt` — new (author feedback, source for ADR-265)
+
+Committed across three pushes to `hatch-scoring`: `85caa7a0` (262/263/261 + summary), `340f57ca`
+(265 + feedback), and this summary update.
 
 ## Notes
 No code changed — all ADR/design. The session's throughline: **reach for the existing construct before
@@ -129,4 +142,7 @@ tracing back to an error I made in a prior review this session.
 - None (no code). ADRs specify new coverage incl. REAL-PATH via hunger through `dist/cli/sharpee.js`.
 
 ---
-**Progressive update**: Session completed 2026-07-24 03:27
+**Progressive update 1**: ADR design arc (262/263, 261 amendment) — 2026-07-24 03:27
+**Progressive update 2**: worked author feedback; parked ADR-265 ("stdlib in readable Chord form") —
+distinguished self-hosting (no) from a readable Chord rendering (the practical target); confirmed the
+grammar-extension path makes stdlib-in-Chord unneeded.
