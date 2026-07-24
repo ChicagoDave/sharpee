@@ -17,6 +17,7 @@
  */
 import { registerBasicCombat } from '@sharpee/ext-basic-combat';
 import { registerScoring, registerScoringPlugin } from '@sharpee/ext-scoring';
+import { registerHunger } from '@sharpee/ext-hunger';
 import type { WorldModel } from '@sharpee/world-model';
 
 /**
@@ -125,4 +126,9 @@ export const EXTENSION_REGISTRY: ReadonlyMap<string, ExtensionRegistration> = ne
   // registry, so its wiring lives with the loader's engine hook. The
   // entry exists so the `use` gate knows the name.
   ['state-machines', {}],
+  // hunger (ADR-263): `registerWorld` installs the eating handler (config-free).
+  // The decay/death daemon, the ADR-262 crossing watcher, and the narrator are
+  // config-dependent (grows/fatal/rungs/phrases), so — like scoring's ladder —
+  // they travel the loader's generic `ir.hunger` lowering path, not this map.
+  ['hunger', { registerWorld: (world) => registerHunger(world) }],
 ]);

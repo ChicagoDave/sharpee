@@ -64,12 +64,52 @@ export interface StoryHeader {
    * means "scoring on, SCORE reports a score with no rank".
    */
   ranks: RankDecl[];
+  /**
+   * The `use hunger` body (ADR-263 D1) — a depleting satiety meter: `grows N
+   * each turn`, `<band> at <n> [says <key>]` rungs, and `fatal at N`. Absent
+   * when the story has no `use hunger` line.
+   */
+  hunger?: HungerDecl;
+  span: Span;
+}
+
+/**
+ * The indented body of a `use hunger` line (ADR-263 D1).
+ *
+ * `grows` is the per-turn severity gain (lowered to an `on every turn` daemon);
+ * `fatal` is a raw-value death trigger above the top band (lowered to `kill the
+ * player`); `rungs` are the announce bands over the ADR-262 crossing engine.
+ */
+export interface HungerDecl {
+  grows?: number;
+  fatal?: number;
+  rungs: MeterRung[];
+  span: Span;
+}
+
+/**
+ * One `<band> at <n> [says <key>]` rung in a metering extension's body
+ * (ADR-263 D1). Unlike a `rank` rung, the band is a bareword (`peckish`), not a
+ * quoted author string — it doubles as the band id. `phraseKey` is the story
+ * phrase spoken on crossing; absent means the ADR-262 platform fallback.
+ */
+export interface MeterRung {
+  kind: 'meter-rung';
+  band: string;
+  threshold: number;
+  phraseKey?: string;
   span: Span;
 }
 
 /** One `use <extension>` line (ADR-215). */
 export interface UseDecl {
   name: string;
+  /**
+   * The `, announce <mode>` suffix (ADR-262 D3) — how a metering extension's
+   * band crossings narrate: `all` / `collapsed` / `combined` / `silent`. The
+   * analyzer validates the value; absent means the extension's default.
+   */
+  announce?: string;
   span: Span;
 }
 

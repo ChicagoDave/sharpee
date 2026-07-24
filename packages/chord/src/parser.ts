@@ -87,6 +87,8 @@ import {
   StoryHeader,
   TopicRow,
   RankDecl,
+  HungerDecl,
+  MeterRung,
   UseDecl,
   UsePhrasebookDecl,
   TextMarker,
@@ -416,6 +418,7 @@ class Parser {
     const uses: UseDecl[] = [];
     const usePhrasebooks: UsePhrasebookDecl[] = [];
     const ranks: RankDecl[] = [];
+    let hunger: HungerDecl | undefined;
     let span = lineSpan(line);
     while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
       const peeked = this.lines[this.pos];
@@ -452,31 +455,59 @@ class Parser {
           continue;
         }
         const nameTok = uc.next();
-        if (!nameTok || nameTok.kind !== 'word' || !uc.atEnd()) {
+        if (!nameTok || nameTok.kind !== 'word') {
           this.diagnostics.error('parse.use', 'Expected `use <extension>` — one extension name per line.', lineSpan(useLine));
           continue;
         }
-        uses.push({ name: nameTok.text, span: lineSpan(useLine) });
-        // ADR-261 D2: `use scoring` is the first `use` line to take an
-        // indented body — the rank ladder. `use combat` and
-        // `use state-machines` take none.
+        // Optional `, announce <mode>` (ADR-262 D3): how a metering extension's
+        // band crossings narrate. The analyzer validates the mode word.
+        let announce: string | undefined;
+        if (uc.peek()?.kind === 'comma') {
+          uc.next(); // consume the comma
+          if (!uc.isWord('announce')) {
+            this.diagnostics.error('parse.use-announce', 'Expected `announce <mode>` after the comma in a `use` line.', uc.restSpan());
+            continue;
+          }
+          uc.next(); // consume `announce`
+          const modeTok = uc.next();
+          if (!modeTok || modeTok.kind !== 'word') {
+            this.diagnostics.error('parse.use-announce', 'Expected an announce mode (all, collapsed, combined, silent) after `announce`.', uc.restSpan());
+            continue;
+          }
+          announce = modeTok.text;
+        }
+        if (!uc.atEnd()) {
+          this.diagnostics.error('parse.use', 'Expected `use <extension>[, announce <mode>]` — one extension name per line.', lineSpan(useLine));
+          continue;
+        }
+        uses.push(
+          announce !== undefined
+            ? { name: nameTok.text, announce, span: lineSpan(useLine) }
+            : { name: nameTok.text, span: lineSpan(useLine) },
+        );
+        // ADR-261 D2 / ADR-263 D1: `use scoring` (rank ladder) and `use hunger`
+        // (satiety meter) are the `use` lines that take an indented body.
+        // `use combat` and `use state-machines` take none.
         const body: Line[] = [];
         while (this.pos < this.lines.length && this.lines[this.pos].indent > useLine.indent) {
           body.push(this.lines[this.pos++]);
         }
         if (body.length === 0) continue;
-        if (nameTok.text !== 'scoring') {
+        if (nameTok.text === 'scoring') {
+          for (const bodyLine of body) {
+            span = mergeSpans(span, lineSpan(bodyLine));
+            const rung = this.parseRankLine(bodyLine);
+            if (rung) ranks.push(rung);
+          }
+        } else if (nameTok.text === 'hunger') {
+          span = mergeSpans(span, lineSpan(body[body.length - 1]));
+          hunger = this.parseHungerBody(body);
+        } else {
           this.diagnostics.error(
             'parse.use-body',
-            `\`use ${nameTok.text}\` takes no indented body — only \`use scoring\` declares a rank ladder.`,
+            `\`use ${nameTok.text}\` takes no indented body — only \`use scoring\` and \`use hunger\` declare one.`,
             lineSpan(body[0]),
           );
-          continue;
-        }
-        for (const bodyLine of body) {
-          span = mergeSpans(span, lineSpan(bodyLine));
-          const rung = this.parseRankLine(bodyLine);
-          if (rung) ranks.push(rung);
         }
         continue;
       }
@@ -539,7 +570,88 @@ class Parser {
       fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
     }
 
-    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, span };
+    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
+  }
+
+  /**
+   * The indented `use hunger` body (ADR-263 D1): `grows N each turn`,
+   * `<band> at <n> [says <key>]` rungs, and `fatal at N`.
+   */
+  private parseHungerBody(body: Line[]): HungerDecl {
+    let grows: number | undefined;
+    let fatal: number | undefined;
+    const rungs: MeterRung[] = [];
+    for (const line of body) {
+      const first = firstWord(line);
+      if (first === 'grows') {
+        const c = new Cursor(line.tokens, line);
+        c.matchWord('grows');
+        const nTok = c.next();
+        if (!nTok || nTok.kind !== 'number' || !c.matchWord('each') || !c.matchWord('turn') || !c.atEnd()) {
+          this.diagnostics.error('parse.hunger-grows', 'Expected `grows <number> each turn`.', lineSpan(line));
+          continue;
+        }
+        grows = Number(nTok.text);
+      } else if (first === 'fatal') {
+        const c = new Cursor(line.tokens, line);
+        c.matchWord('fatal');
+        if (!c.matchWord('at')) {
+          this.diagnostics.error('parse.hunger-fatal', 'Expected `fatal at <number>`.', lineSpan(line));
+          continue;
+        }
+        const nTok = c.next();
+        if (!nTok || nTok.kind !== 'number' || !c.atEnd()) {
+          this.diagnostics.error('parse.hunger-fatal', 'Expected `fatal at <number>`.', lineSpan(line));
+          continue;
+        }
+        fatal = Number(nTok.text);
+      } else {
+        const rung = this.parseMeterRungLine(line);
+        if (rung) rungs.push(rung);
+      }
+    }
+    return { grows, fatal, rungs, span: lineSpan(body[0]) };
+  }
+
+  /**
+   * `<band> at <n> [says <key>]` — one rung of a metering body (ADR-263 D1).
+   * The band is a bareword and doubles as the band id.
+   */
+  private parseMeterRungLine(line: Line): MeterRung | null {
+    const c = new Cursor(line.tokens, line);
+    const bandTok = c.next();
+    if (!bandTok || bandTok.kind !== 'word') {
+      this.diagnostics.error(
+        'parse.hunger-body',
+        'The `use hunger` body holds `grows N each turn`, `<band> at <n> [says <key>]` rungs, and `fatal at N`.',
+        lineSpan(line),
+      );
+      return null;
+    }
+    if (!c.matchWord('at')) {
+      this.diagnostics.error('parse.meter-threshold', 'Expected `at <number>` after the band name.', c.restSpan());
+      return null;
+    }
+    const thresholdTok = c.next();
+    if (!thresholdTok || thresholdTok.kind !== 'number') {
+      this.diagnostics.error('parse.meter-threshold', 'Expected a number after `at`.', c.restSpan());
+      return null;
+    }
+    let phraseKey: string | undefined;
+    if (c.isWord('says')) {
+      c.next();
+      const keyTok = c.next();
+      if (!keyTok || keyTok.kind !== 'word') {
+        this.diagnostics.error('parse.meter-says', 'Expected a phrase key after `says`.', c.restSpan());
+        return null;
+      }
+      phraseKey = keyTok.text;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.meter-extra', 'Unexpected text after the rung — the line is `<band> at <n> [says <key>]`.', c.restSpan());
+      return null;
+    }
+    return { kind: 'meter-rung', band: bandTok.text, threshold: Number(thresholdTok.text), phraseKey, span: lineSpan(line) };
   }
 
   /**

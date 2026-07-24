@@ -1,0 +1,27 @@
+title: Hunger real-path — starving across the bands, then death
+story: hunger-demo
+description: |
+  ADR-263 / ADR-262 #7 — the forcing function. A `use hunger` meter runs on the
+  banded-scalar crossing engine through the real bundle, proving the engine is
+  scalar-agnostic (not score-shaped): severity grows on a clock (grows 3/turn),
+  crosses each band (author `says` phrases, then the platform fallback for a
+  rung with none), and reaching `fatal` kills the player.
+---
+
+# Turn 1 — severity 3 reaches `peckish` (the author's `says` phrase).
+> wait
+[OK: contains "hollow ache"]
+
+# Turn 2 — severity 6 reaches `hungry` (a second author phrase).
+> wait
+[OK: contains "stomach knots"]
+
+# Turn 3 — severity 9 reaches `starving` (no `says` → the platform fallback).
+> wait
+[OK: contains "hunger sharpens"]
+
+# Turn 4 — severity 12 reaches `fatal at 12` → the player starves to death.
+# The death line is lang-en-us prose (if.action.hunger.starved), overridable.
+> wait
+[EVENT: true, type="if.event.player.died"]
+[OK: contains "starved to death"]

@@ -9,6 +9,8 @@
  * WorldModel to isolate scoring concerns and simplify serialization.
  */
 
+import { bandOf } from './band.js';
+
 /**
  * A single score entry in the ledger.
  */
@@ -174,22 +176,15 @@ export class ScoreLedger {
    *
    * **Derived on every call, never stored** (ADR-260 D2): a stored rank can
    * drift from the stored score across a revoke, a maxScore change, or a
-   * save/restore.
+   * save/restore. The ladder is a banded scalar over the score, so the lookup
+   * is `bandOf` (ADR-262 D1) — the same primitive every continuous meter uses.
    *
    * @returns The current rank, or undefined when no ladder is installed or
    *          the score is below every rung
    */
   getRank(): RankDefinition | undefined {
-    const total = this.getTotal();
-    let current: RankDefinition | undefined;
-    for (const rank of this.ranks) {
-      if (rank.threshold <= total) {
-        current = rank;
-      } else {
-        break;
-      }
-    }
-    return current;
+    const index = bandOf(this.getTotal(), this.ranks.map(r => r.threshold));
+    return index < 0 ? undefined : this.ranks[index];
   }
 
   /**

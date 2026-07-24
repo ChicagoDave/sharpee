@@ -411,6 +411,34 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
+  packages/extensions/hunger:
+    dependencies:
+      '@sharpee/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@sharpee/if-domain':
+        specifier: workspace:*
+        version: link:../../if-domain
+      '@sharpee/plugins':
+        specifier: workspace:*
+        version: link:../../plugins
+      '@sharpee/world-model':
+        specifier: workspace:*
+        version: link:../../world-model
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.27
+      rimraf:
+        specifier: ^5.0.5
+        version: 5.0.10
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+
   packages/extensions/scoring:
     dependencies:
       '@sharpee/core':
@@ -763,6 +791,9 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/queries:
     dependencies:
@@ -971,6 +1002,9 @@ importers:
       '@sharpee/ext-basic-combat':
         specifier: workspace:*
         version: link:../extensions/basic-combat
+      '@sharpee/ext-hunger':
+        specifier: workspace:*
+        version: link:../extensions/hunger
       '@sharpee/ext-scoring':
         specifier: workspace:*
         version: link:../extensions/scoring

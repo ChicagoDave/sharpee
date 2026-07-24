@@ -71,6 +71,7 @@ export * from './hiding.js';
 export * from './waiting.js';
 export * from './sleeping.js';
 export * from './scoring.js';
+export * from './hunger.js';
 export * from './help.js';
 export * from './about.js';
 export * from './version.js';
@@ -129,6 +130,7 @@ import { hidingLanguage, revealingLanguage } from './hiding.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
 import { scoringLanguage } from './scoring.js';
+import { hungerLanguage } from './hunger.js';
 import { helpLanguage } from './help.js';
 import { aboutLanguage } from './about.js';
 import { versionLanguage } from './version.js';
@@ -209,6 +211,7 @@ export const standardActionLanguage = [
   waitingLanguage,
   sleepingLanguage,
   scoringLanguage,
+  hungerLanguage,
   helpLanguage,
   aboutLanguage,
   versionLanguage,

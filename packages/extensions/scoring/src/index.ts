@@ -29,7 +29,7 @@
  */
 
 import type { IWorldModel } from '@sharpee/world-model';
-import { RankWatcherPlugin } from './rank-watcher-plugin.js';
+import { createRankWatcher } from './rank-watcher-plugin.js';
 
 /**
  * Enable scoring on a world.
@@ -51,13 +51,13 @@ export function registerScoring(world: IWorldModel): void {
  *
  * Reached through `ExtensionRegistration.registerPlugin` — this is that slot's
  * first live use (ADR-260 D6). The call site is the loader's `onEngineReady`,
- * because a plugin registry exists only once an engine does.
+ * because a plugin registry exists only once an engine does. The watcher is an
+ * ADR-262 band data-watcher over the score (ADR-262 D7).
  *
  * @param registry - The engine's plugin registry
  */
 export function registerScoringPlugin(registry: { register(plugin: unknown): void }): void {
-  registry.register(new RankWatcherPlugin());
+  registry.register(createRankWatcher());
 }
 
-export { RankWatcherPlugin } from './rank-watcher-plugin.js';
-export type { RankWatcherState, RankRisenData } from './rank-watcher-plugin.js';
+export { createRankWatcher, RANK_WATCHER_ID } from './rank-watcher-plugin.js';

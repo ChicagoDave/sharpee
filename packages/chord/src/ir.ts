@@ -43,6 +43,14 @@ export interface StoryIR {
    * registry at load (unknown names there are load errors).
    */
   uses: string[];
+  /**
+   * `use <extension>, announce <mode>` (ADR-262 D3), keyed by extension name.
+   * How a metering extension's band crossings narrate — `all` / `collapsed` /
+   * `combined` / `silent`. Absent key = the extension's default (`all`). The
+   * loader passes the value to the ADR-262 narrator; a non-metering extension's
+   * entry is simply never read.
+   */
+  announceModes: Record<string, string>;
   entities: IREntity[];
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
@@ -74,6 +82,8 @@ export interface StoryIR {
    * that `scoring` is the extension consuming it.
    */
   ranks: IRRankDef[];
+  /** The `use hunger` satiety meter (ADR-263 D1), or absent. */
+  hunger?: IRHungerDef;
   sequences: IRSequenceDef[];
   /** `define machine` blocks (ADR-215 `use state-machines` depth). */
   machines: IRMachineDef[];
@@ -484,7 +494,7 @@ export interface IRScoreDef {
  * One rung of the `use scoring` ladder (ADR-261 D2/D5/D7).
  *
  * `id` is the rank name kebab-cased (ADR-254), which makes a rank addressable
- * in diagnostics and in `if.event.rank_risen`'s payload without the author
+ * in diagnostics and in `if.event.band_crossed`'s payload without the author
  * declaring one. Because ranks are configuration rather than saved state
  * (ADR-260 D2), a rank id never reaches a save file — so renaming a rank
  * between releases cannot invalidate one.
@@ -500,6 +510,31 @@ export interface IRRankDef {
   /** Absolute points, never a percentage of max (ADR-260 D2's invariant). */
   threshold: number;
   /** `says <key>` — a key in the story's own phrase namespace, or absent. */
+  phraseKey?: string;
+  span: Span;
+}
+
+/**
+ * The `use hunger` satiety meter (ADR-263 D1), lowered from the header body.
+ * The loader installs `rungs` on the ADR-262 crossing engine, `grows` as an
+ * `on every turn` daemon, and `fatal` as a `kill the player` trigger.
+ */
+export interface IRHungerDef {
+  /** `grows N each turn` — per-turn severity gain. Absent = no decay. */
+  grows?: number;
+  /** `fatal at N` — a raw-value death trigger above the top band. */
+  fatal?: number;
+  /** Announce bands, sorted ascending by threshold. */
+  rungs: IRMeterRung[];
+  span: Span;
+}
+
+/** One `<band> at <n> [says <key>]` rung of a metering body (ADR-263 D1). */
+export interface IRMeterRung {
+  /** The band id — the bareword band name (already kebab). */
+  id: string;
+  threshold: number;
+  /** `says <key>` — a story phrase key, or absent (platform fallback). */
   phraseKey?: string;
   span: Span;
 }

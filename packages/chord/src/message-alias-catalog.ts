@@ -553,12 +553,17 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'saving-save-successful',
   'saving-saved-locally',
   'saving-saved-to-cloud',
-  // if.action.scoring — five aliases, matching the five surviving messages
-  // (ADR-260 D4). An alias for a deleted message would be a live
-  // `override message` target that silently overrides nothing;
-  // `analysis.unknown-message-alias` tells the author the truth instead.
+  // if.action.hunger (ADR-263) — the overridable crossing fallback + death line.
+  'hunger-crossed',
+  'hunger-starved',
+  // if.action.scoring — six aliases (ADR-260 D4 left five; ADR-262 D3 added
+  // `scoring-promotion`, the overridable crossing fallback). An alias for a
+  // deleted message would be a live `override message` target that silently
+  // overrides nothing; `analysis.unknown-message-alias` tells the author the
+  // truth instead.
   'scoring-no-scoring',
   'scoring-perfect-score',
+  'scoring-promotion',
   'scoring-score-display',
   'scoring-score-simple',
   'scoring-score-with-rank',

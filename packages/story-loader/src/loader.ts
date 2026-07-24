@@ -39,12 +39,18 @@ import {
   DEADLY_ROOM_MESSAGE_KEY,
   createAmbientChannel,
   createImageChannel,
+  killPlayer,
 } from '@sharpee/stdlib';
-import { createEvent, type ISemanticEvent } from '@sharpee/core';
+import {
+  createHungerCrossingWatcher,
+  getHungerSeverity,
+  setHungerSeverity,
+} from '@sharpee/ext-hunger';
+import { type ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
-import type { TurnPlugin } from '@sharpee/plugins';
+import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
@@ -753,10 +759,46 @@ export class ChordStory implements Story {
       EXTENSION_REGISTRY.get(name)?.registerPlugin?.(engine.getPluginRegistry());
     }
 
-    // ADR-261 D7: promotions speak the author's own phrase, and nothing else
-    // speaks at all. Gated on `ir.ranks` — generic IR, not an extension name.
-    if (this.ir.ranks.some((r) => r.phraseKey !== undefined)) {
+    // ADR-261 D7 (amended by ADR-262 D3): every crossed rung speaks — its `says`
+    // phrase or the overridable platform fallback — so the narrator registers
+    // whenever a ladder exists, not only when some rung has a phrase. Gated on
+    // `ir.ranks` (generic IR, not an extension name). `announce silent` still
+    // suppresses output; the narrator simply emits nothing in that mode.
+    if (this.ir.ranks.length > 0) {
       engine.getPluginRegistry().register(this.buildPromotionNarrator());
+    }
+
+    // ADR-263: the hunger meter — ADR-262's second consumer. Its eating handler
+    // is installed via EXTENSION_REGISTRY.registerWorld; the config-dependent
+    // parts lower here from `ir.hunger`, where grows/fatal/phrases and
+    // `killPlayer` are in reach (the registry map cannot carry them).
+    if (this.ir.hunger) {
+      const h = this.ir.hunger;
+      const registry = engine.getPluginRegistry();
+      const bands: BandRung[] = h.rungs.map((r) => ({
+        id: r.id,
+        threshold: r.threshold,
+        name: r.id,
+        phraseId: r.phraseKey,
+      }));
+
+      // Decay + death daemon (priority above the watcher/narrator so severity is
+      // current when they observe it this turn).
+      registry.register(this.buildHungerDaemon(h.grows ?? 0, h.fatal));
+      // The ADR-262 data watcher — `band_crossed` over the severity scalar.
+      registry.register(createHungerCrossingWatcher(bands));
+      // The Chord narrator: author `says` phrase or the overridable fallback,
+      // under `use hunger, announce <mode>` (default `all`).
+      registry.register(createBandNarrator({
+        id: 'chord.story.hunger-narrator',
+        priority: 20,
+        concept: 'hunger',
+        value: (world) => getHungerSeverity(world),
+        bands: () => bands,
+        mode: (this.ir.announceModes?.['hunger'] ?? 'all') as BandAnnounceMode,
+        narrationEventId: 'if.event.hunger_narrated',
+        fallbackPhraseId: 'if.action.hunger.crossed',
+      }));
     }
 
     const daemons = this.runtime.buildSchedulerDaemons();
@@ -782,27 +824,28 @@ export class ChordStory implements Story {
   }
 
   /**
-   * The `says <key>` promotion narrator (ADR-261 D7).
+   * The promotion narrator — the Chord render layer over the ADR-262 crossing
+   * engine (ADR-261 D7, amended by ADR-262 D3).
    *
-   * Rank prose lives nowhere in the platform — not in stdlib, not in
-   * lang-en-us, not in `ext-scoring`. What a promotion *says* is a per-rung
-   * authored phrase, and this is the story-side reaction that speaks it: a
-   * map from rank id to the rung's `phraseKey`, keyed on the same id
-   * `if.event.rank_risen` carries. A rung with no `says` is silent, so the
-   * map simply has no entry for it.
+   * A promotion *says* the rung's authored `says` phrase; a rung with **no**
+   * `says` now speaks the overridable platform fallback
+   * (`if.action.scoring.promotion`), because ADR-262 D3 made silence explicit —
+   * only `announce silent` suppresses. This is a thin {@link createBandNarrator}
+   * over the score scalar: it renders each crossed rung (`all` mode) so a
+   * multi-band jump reports each elevation (ADR-262 D6), mapping rank ids to
+   * their `says` keys.
    *
-   * **Why this derives the crossing rather than observing the event.** The
-   * engine hands each plugin only the *action's* events
-   * (`TurnPluginContext.actionEvents` is a fixed snapshot taken before the
-   * plugin loop), so no plugin can see another's output — `rank_risen` is
-   * emitted by `ext-scoring`'s watcher in the same loop and is therefore
-   * invisible here. Both plugins read the same derived ledger, so they cannot
-   * disagree about whether a rung was crossed; what differs is only what each
-   * produces — the platform its event, the story its sentence.
+   * **Why the engine derives the crossing rather than observing an event.** It
+   * hands each plugin only the *action's* events (`TurnPluginContext.actionEvents`
+   * is a fixed snapshot taken before the plugin loop), so no plugin can see
+   * another's output — `ext-scoring`'s data watcher runs in the same loop and is
+   * invisible here. Both read the same derived ledger, so they cannot disagree
+   * about whether a rung was crossed; what differs is only what each produces —
+   * the platform its `band_crossed` event, the story its sentence.
    *
-   * Registered by the Chord loader because only the Chord loader holds the
-   * IR. `phraseKey` never crosses into a platform type: `RankDefinition`
-   * carries none (ADR-260 D2), and the map below stays in this closure.
+   * Registered by the Chord loader because only it holds the IR. `phraseKey`
+   * never crosses into a platform type: `RankDefinition` carries none (ADR-260
+   * D2), and the map below stays in this closure.
    */
   private buildPromotionNarrator(): TurnPlugin {
     const phraseByRankId = new Map<string, string>();
@@ -810,56 +853,63 @@ export class ChordStory implements Story {
       if (rung.phraseKey !== undefined) phraseByRankId.set(rung.id, rung.phraseKey);
     }
 
-    let lastNarratedRankId: string | null = null;
-
-    return {
+    return createBandNarrator({
       id: 'chord.story.promotion-narrator',
       // Below ext-scoring's watcher (25): the sentence follows the event.
       priority: 20,
+      concept: 'rank',
+      isEnabled: (world) => world.isScoringEnabled(),
+      value: (world) => world.getScore(),
+      bands: (world): BandRung[] =>
+        world.getRanks().map((r) => ({
+          id: r.id,
+          threshold: r.threshold,
+          name: r.name,
+          phraseId: phraseByRankId.get(r.id),
+        })),
+      // The bottom rung is the starting position — seed it silently.
+      seedAtOrBelow: 0,
+      // ADR-262 D3: `use scoring, announce <mode>`; default `all` reports each
+      // elevation on a multi-band jump (ADR-262 D6). The analyzer validated it.
+      mode: (this.ir.announceModes?.['scoring'] ?? 'all') as BandAnnounceMode,
+      narrationEventId: 'if.event.rank_narrated',
+      // ADR-262 D3: spoken when a rung has no `says`. Overridable via
+      // `override message scoring-promotion`.
+      fallbackPhraseId: 'if.action.scoring.promotion',
+      // Preserve scoring's authored `{rank}` / `{score}` phrase params.
+      paramsFor: (rung, span) => ({ rank: rung.name, score: span.value }),
+    });
+  }
+
+  /**
+   * The hunger decay + death daemon (ADR-263 D1). Each turn it raises the
+   * severity counter by `grows` (the `on every turn` mechanic) and, once
+   * severity reaches `fatal`, kills the player (`kill the player` — a raw-value
+   * trigger, not a band). Runs at a higher priority than the crossing watcher
+   * and narrator so they observe the updated severity the same turn.
+   */
+  private buildHungerDaemon(grows: number, fatal: number | undefined): TurnPlugin {
+    return {
+      id: 'chord.story.hunger-daemon',
+      priority: 30,
       onAfterAction(ctx): ISemanticEvent[] {
-        if (!ctx.world.isScoringEnabled()) return [];
-        const current = ctx.world.getRank();
-        if (!current) return [];
-
-        // At zero points nothing has been crossed — the bottom rung is where
-        // the player starts. Seed the baseline silently, exactly as the
-        // watcher does, so the two stay in step.
-        if (ctx.world.getScore() <= 0) {
-          lastNarratedRankId = current.id;
-          return [];
+        if (grows > 0) {
+          setHungerSeverity(ctx.world, getHungerSeverity(ctx.world) + grows);
         }
-
-        const ranks = ctx.world.getRanks();
-        const currentIndex = ranks.findIndex((r) => r.id === current.id);
-        const lastIndex = lastNarratedRankId === null
-          ? -1
-          : ranks.findIndex((r) => r.id === lastNarratedRankId);
-        if (currentIndex <= lastIndex) {
-          lastNarratedRankId = current.id;
-          return [];
+        if (fatal !== undefined && getHungerSeverity(ctx.world) >= fatal) {
+          const player = ctx.world.getPlayer();
+          if (player) {
+            // The death line is lang-en-us prose (overridable `hunger-starved`),
+            // routed through the death event's messageId — not a hardcoded string.
+            const event = killPlayer(ctx.world, player, {
+              cause: 'starvation',
+              messageId: 'if.action.hunger.starved',
+              terminal: true,
+            });
+            return event ? [event] : [];
+          }
         }
-
-        lastNarratedRankId = current.id;
-        const phraseKey = phraseByRankId.get(current.id);
-        // A rung without `says` is silent by design: with no platform
-        // sentence anywhere, there is nothing to fall back to.
-        if (!phraseKey) return [];
-
-        // ADR-097: any event carrying a messageId renders through the prose
-        // pipeline. The id IS the story's phrase key — `extendLanguage`
-        // registered every one of them.
-        return [createEvent('if.event.rank_narrated', {
-          messageId: phraseKey,
-          params: { rank: current.name, score: ctx.world.getScore() },
-          rank: current.id,
-        })];
-      },
-      getState(): unknown {
-        return { lastNarratedRankId };
-      },
-      setState(state: unknown): void {
-        lastNarratedRankId = (state as { lastNarratedRankId?: string | null } | undefined)
-          ?.lastNarratedRankId ?? null;
+        return [];
       },
     };
   }

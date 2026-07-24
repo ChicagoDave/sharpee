@@ -67,6 +67,8 @@ import {
   IROnClause,
   IRPhrase,
   IRRankDef,
+  IRHungerDef,
+  IRMeterRung,
   IRScoreDef,
   IRStatement,
   IRTopicRow,
@@ -83,7 +85,7 @@ const DEFAULT_LOCALE = 'en-US';
  * Kebab-case a quoted author string into a story key (ADR-254).
  *
  * Used to derive a rank's id from its name, so a rank is addressable in
- * diagnostics and in `if.event.rank_risen` without the author declaring one.
+ * diagnostics and in `if.event.band_crossed` without the author declaring one.
  */
 function kebabId(name: string): string {
   return name
@@ -445,7 +447,21 @@ class Analyzer {
     // ADR-215: validate `use` lines against the manifest registry — an
     // unknown name is a compile error (the loader's trusted registry check
     // backstops rogue IR), a duplicate is one-`use`-per-extension.
+    const announceModes: Record<string, string> = {};
+    const VALID_ANNOUNCE_MODES = ['all', 'collapsed', 'combined', 'silent'];
     for (const use of this.ast.header?.uses ?? []) {
+      // ADR-262 D3: validate the `, announce <mode>` suffix and record it.
+      if (use.announce !== undefined) {
+        if (!VALID_ANNOUNCE_MODES.includes(use.announce)) {
+          this.diagnostics.error(
+            'analysis.invalid-announce-mode',
+            `\`announce ${use.announce}\` is not a mode — use one of: ${VALID_ANNOUNCE_MODES.join(', ')}.`,
+            use.span,
+          );
+        } else {
+          announceModes[use.name] = use.announce;
+        }
+      }
       const manifest = EXTENSION_MANIFESTS.get(use.name);
       if (!manifest) {
         const gated = [...EXTENSION_MANIFESTS.values()].filter((m) => !m.core).map((m) => m.name);
@@ -481,6 +497,10 @@ class Analyzer {
       this.reportScoringGate('score', this.scoreDecls[0].span);
     }
 
+    // Built once (it emits diagnostics), spread in only when present so the
+    // optional `hunger` field never appears as `undefined` on a story without it.
+    const hungerDef = this.buildHunger();
+
     const ir: StoryIR = {
       format: IR_FORMAT,
       languageVersion: CHORD_LANGUAGE_VERSION, // ADR-257 D3 — the language version that compiled this story
@@ -491,6 +511,7 @@ class Analyzer {
         fields: this.ast.header?.fields ?? {},
       },
       uses: [...this.usedExtensions],
+      announceModes,
       story: {
         states: this.storyStates,
         reversible: this.ast.header?.statesReversible ?? false,
@@ -513,6 +534,7 @@ class Analyzer {
       actions: [],
       scores: this.scoreDecls,
       ranks: this.buildRanks(),
+      ...(hungerDef !== undefined ? { hunger: hungerDef } : {}),
       sequences: [],
       machines: [],
       channels: [],
@@ -1722,7 +1744,7 @@ class Analyzer {
    * - **duplicate threshold** — silently keeping one rung would make the
    *   resolved rank depend on array order (ADR-260 D2);
    * - **duplicate id** — two names that kebab-case alike collide in
-   *   `if.event.rank_risen`'s payload, which is keyed on the id;
+   *   `if.event.band_crossed`'s payload, which is keyed on the id;
    * - **rung above max** — an unreachable rank. This check is sound for
    *   Chord *specifically* because Chord has no statement that changes
    *   maxScore at runtime, so the sum of declared `worth` is the whole
@@ -1786,6 +1808,47 @@ class Analyzer {
     }
 
     return ranks.sort((a, b) => a.threshold - b.threshold);
+  }
+
+  /**
+   * Lower the `use hunger` body (ADR-263 D1): dedup band thresholds, sort
+   * ascending. `grows`/`fatal` pass through for the loader's daemon and
+   * death-trigger lowering.
+   */
+  private buildHunger(): IRHungerDef | undefined {
+    const decl = this.ast.header?.hunger;
+    if (!decl) return undefined;
+
+    const seen = new Set<number>();
+    const rungs: IRMeterRung[] = [];
+    for (const rung of decl.rungs) {
+      if (!rung.band) {
+        this.diagnostics.error('analysis.meter-band-empty', 'A hunger band needs a name.', rung.span);
+        continue;
+      }
+      if (seen.has(rung.threshold)) {
+        this.diagnostics.error(
+          'analysis.duplicate-hunger-threshold',
+          `Two hunger bands share threshold ${rung.threshold} — the resolved band would depend on order.`,
+          rung.span,
+        );
+        continue;
+      }
+      seen.add(rung.threshold);
+      rungs.push({
+        id: rung.band,
+        threshold: rung.threshold,
+        ...(rung.phraseKey !== undefined ? { phraseKey: rung.phraseKey } : {}),
+        span: rung.span,
+      });
+    }
+    rungs.sort((a, b) => a.threshold - b.threshold);
+    return {
+      ...(decl.grows !== undefined ? { grows: decl.grows } : {}),
+      ...(decl.fatal !== undefined ? { fatal: decl.fatal } : {}),
+      rungs,
+      span: decl.span,
+    };
   }
 
   /** Register an owner-attached score (ratchet D12) under its qualified id. */

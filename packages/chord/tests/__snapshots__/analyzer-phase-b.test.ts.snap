@@ -111,6 +111,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       },
     },
   ],
+  "announceModes": {},
   "channels": [],
   "conditions": [],
   "entities": [
@@ -423,7 +424,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
   "format": "story language 1",
   "hasHatches": false,
   "hatches": [],
-  "languageVersion": "1.1.0",
+  "languageVersion": "1.3.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

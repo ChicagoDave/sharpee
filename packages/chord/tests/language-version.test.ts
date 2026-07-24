@@ -19,10 +19,11 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 1.1.0 — ADR-261's `use scoring` body, `rank … at <n>`, and `says <key>`.
-  // A minor by a recorded one-time override of ADR-257 D2 (see version.ts).
-  languageVersion: '1.1.0',
-  ebnfSha256: '12f9e19490da5ba03b4a2ff1812e4b3bf9892606c98a1eb1f1a69ac56dc43732',
+  // 1.3.0 — ADR-263 D1's `use hunger` body (`grows … each turn`, `<band> at
+  // <n>` rungs, `fatal at N`). Additive grammar → a minor. (1.2.0 was ADR-262's
+  // `, announce <mode>` suffix; 1.1.0 was ADR-261's `use scoring` body.)
+  languageVersion: '1.3.0',
+  ebnfSha256: 'c2d1793b18c18803701e804833661cf3036a02824664ccb89b52fdadbae81e91',
 };
 
 const EBNF_PATH = join(__dirname, '..', '..', '..', 'docs', 'reference', 'chord.ebnf');

@@ -1,16 +1,20 @@
 /**
- * RankWatcherPlugin — promotion announcements (ADR-260 D6).
+ * The scoring rank watcher — consumer #1 of the ADR-262 crossing engine.
  *
- * Covers acceptance #6: one promotion per threshold crossing, no re-fire
- * across save/restore, ids (not display names) in the payload, and
- * `fromRank: null` on the first promotion.
+ * Emits the generic `if.event.band_crossed` data event carrying the whole
+ * crossed span (ADR-262 D2). Covers: one event per turn, the full span on a
+ * multi-band jump (ADR-262 D6 — the old collapse is gone), no re-fire across
+ * save/restore, ids (not display names) in the payload, and `from: null` on the
+ * first crossing.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel, type RankDefinition } from '@sharpee/world-model';
-import type { TurnPluginContext } from '@sharpee/plugins';
+import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 import { createSeededRandom } from '@sharpee/core';
-import { registerScoring, registerScoringPlugin, RankWatcherPlugin } from '../src';
+import { registerScoring, registerScoringPlugin, createRankWatcher, RANK_WATCHER_ID } from '../src';
+
+const BAND_CROSSED = 'if.event.band_crossed';
 
 const LADDER: RankDefinition[] = [
   { id: 'novice', name: 'Novice', threshold: 0 },
@@ -28,15 +32,15 @@ function makeContext(world: WorldModel, turn = 1): TurnPluginContext {
   };
 }
 
-describe('RankWatcherPlugin (ADR-260 D6)', () => {
+describe('rank watcher — band_crossed data event (ADR-262 D2/D6)', () => {
   let world: WorldModel;
-  let plugin: RankWatcherPlugin;
+  let plugin: TurnPlugin;
 
   beforeEach(() => {
     world = new WorldModel();
     registerScoring(world);
     world.setRanks(LADDER);
-    plugin = new RankWatcherPlugin();
+    plugin = createRankWatcher();
   });
 
   it('says nothing while scoring is disabled', () => {
@@ -44,7 +48,7 @@ describe('RankWatcherPlugin (ADR-260 D6)', () => {
     bare.setRanks(LADDER);
     bare.awardScore('haul', 100, 'Points on a scoring-less world');
 
-    expect(new RankWatcherPlugin().onAfterAction(makeContext(bare))).toEqual([]);
+    expect(createRankWatcher().onAfterAction(makeContext(bare))).toEqual([]);
   });
 
   it('says nothing when no ladder is installed', () => {
@@ -52,38 +56,40 @@ describe('RankWatcherPlugin (ADR-260 D6)', () => {
     registerScoring(noLadder);
     noLadder.awardScore('haul', 100, 'Points without a ladder');
 
-    expect(new RankWatcherPlugin().onAfterAction(makeContext(noLadder))).toEqual([]);
+    expect(createRankWatcher().onAfterAction(makeContext(noLadder))).toEqual([]);
   });
 
   it('does not announce the starting rung — nothing was crossed at zero points', () => {
     expect(plugin.onAfterAction(makeContext(world))).toEqual([]);
   });
 
-  it('announces a crossing with rank IDS and the current score', () => {
+  it('emits band_crossed with rank IDS and the current value', () => {
     plugin.onAfterAction(makeContext(world)); // baseline turn at 0 points
     world.awardScore('lamp', 60, 'Found the lamp');
 
     const events = plugin.onAfterAction(makeContext(world, 2));
 
     expect(events).toHaveLength(1);
-    expect(events[0].type).toBe('if.event.rank_risen');
+    expect(events[0].type).toBe(BAND_CROSSED);
     expect(events[0].data).toMatchObject({
-      fromRank: 'novice',
-      toRank: 'apprentice',
-      score: 60,
+      concept: 'rank',
+      from: 'novice',
+      to: 'apprentice',
+      bandsCrossed: ['apprentice'],
+      value: 60,
     });
   });
 
-  it('carries fromRank null when no rank was ever announced', () => {
+  it('carries from null when no rank was ever announced', () => {
     // First observed turn already past a threshold — nothing announced before.
     world.awardScore('windfall', 250, 'A big first haul');
 
     const events = plugin.onAfterAction(makeContext(world));
 
-    expect(events[0].data).toMatchObject({ fromRank: null, toRank: 'journeyman' });
+    expect(events[0].data).toMatchObject({ from: null, to: 'journeyman' });
   });
 
-  it('fires ONCE per crossing — two awards inside one band emit one event (acceptance #6)', () => {
+  it('fires ONCE per crossing — two awards inside one band emit one event', () => {
     plugin.onAfterAction(makeContext(world));
 
     world.awardScore('lamp', 60, 'Found the lamp');
@@ -94,14 +100,18 @@ describe('RankWatcherPlugin (ADR-260 D6)', () => {
     expect(plugin.onAfterAction(makeContext(world, 3))).toEqual([]);
   });
 
-  it('skips intermediate rungs — one event names the rank actually reached', () => {
+  it('reports EACH elevation on a multi-band jump — the full span, not the top rung (ADR-262 D6)', () => {
     plugin.onAfterAction(makeContext(world));
     world.awardScore('windfall', 250, 'Straight past apprentice');
 
     const events = plugin.onAfterAction(makeContext(world, 2));
 
     expect(events).toHaveLength(1);
-    expect(events[0].data).toMatchObject({ fromRank: 'novice', toRank: 'journeyman' });
+    expect(events[0].data).toMatchObject({
+      from: 'novice',
+      to: 'journeyman',
+      bandsCrossed: ['apprentice', 'journeyman'],
+    });
   });
 
   it('is silent on demotion, and announces again on re-crossing', () => {
@@ -116,12 +126,12 @@ describe('RankWatcherPlugin (ADR-260 D6)', () => {
     expect(plugin.onAfterAction(makeContext(world, 4))).toHaveLength(1);
   });
 
-  it('does not re-fire across save/restore (acceptance #6)', () => {
+  it('does not re-fire across save/restore', () => {
     plugin.onAfterAction(makeContext(world));
     world.awardScore('lamp', 60, 'Found the lamp');
     expect(plugin.onAfterAction(makeContext(world, 2))).toHaveLength(1);
 
-    const saved = plugin.getState();
+    const saved = plugin.getState!();
     const savedWorld = world.toJSON();
 
     // A fresh session: new plugin, new world, ladder from registration alone.
@@ -130,8 +140,8 @@ describe('RankWatcherPlugin (ADR-260 D6)', () => {
     restoredWorld.setRanks(LADDER);
     restoredWorld.loadJSON(savedWorld);
 
-    const restoredPlugin = new RankWatcherPlugin();
-    restoredPlugin.setState(saved);
+    const restoredPlugin = createRankWatcher();
+    restoredPlugin.setState!(saved);
 
     expect(restoredPlugin.onAfterAction(makeContext(restoredWorld, 3))).toEqual([]);
   });
@@ -141,16 +151,16 @@ describe('RankWatcherPlugin (ADR-260 D6)', () => {
     world.awardScore('lamp', 60, 'Found the lamp');
     plugin.onAfterAction(makeContext(world, 2));
 
-    const restored = new RankWatcherPlugin();
-    restored.setState(plugin.getState());
+    const restored = createRankWatcher();
+    restored.setState!(plugin.getState!());
 
     world.awardScore('treasure', 200, 'The big one');
     expect(restored.onAfterAction(makeContext(world, 3))).toHaveLength(1);
   });
 
   it('setState tolerates absent state — a save written before this plugin existed', () => {
-    const fresh = new RankWatcherPlugin();
-    fresh.setState(undefined);
+    const fresh = createRankWatcher();
+    fresh.setState!(undefined);
 
     world.awardScore('lamp', 60, 'Found the lamp');
     expect(fresh.onAfterAction(makeContext(world))).toHaveLength(1);
@@ -181,10 +191,10 @@ describe('registerScoring / registerScoringPlugin (ADR-260 D5)', () => {
   });
 
   it('registerScoringPlugin installs exactly one rank watcher', () => {
-    const registered: unknown[] = [];
-    registerScoringPlugin({ register: (p) => registered.push(p) });
+    const registered: TurnPlugin[] = [];
+    registerScoringPlugin({ register: (p) => registered.push(p as TurnPlugin) });
 
     expect(registered).toHaveLength(1);
-    expect(registered[0]).toBeInstanceOf(RankWatcherPlugin);
+    expect(registered[0].id).toBe(RANK_WATCHER_ID);
   });
 });

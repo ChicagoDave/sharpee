@@ -195,8 +195,10 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       itemName: item.name
     };
 
-    // Add nutritional information if available
-    if (nutrition !== undefined && nutrition !== 1) {
+    // Add nutritional information. Emitted whenever defined — including the
+    // default 1 — so a consumer like the hunger meter (ADR-263) reads the true
+    // value rather than inferring a portion from an omitted field.
+    if (nutrition !== undefined) {
       eventData.nutrition = nutrition;
     }
 

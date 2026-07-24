@@ -26,5 +26,12 @@
  * construct that stops compiling is still a major unless someone rules
  * otherwise again — the exception is cross-noted at ADR-257 D2 so it is
  * discoverable from the rule.
+ *
+ * **1.2.0** adds the `, announce <mode>` suffix on a `use` line (ADR-262 D3) —
+ * purely additive optional grammar, so a minor bump by D2's ordinary rule.
+ *
+ * **1.3.0** adds the `use hunger` body (ADR-263 D1): `grows N each turn`,
+ * `<band> at <n> [says <key>]` rungs, and `fatal at N` — additive grammar, a
+ * minor bump.
  */
-export const CHORD_LANGUAGE_VERSION = '1.1.0';
+export const CHORD_LANGUAGE_VERSION = '1.3.0';

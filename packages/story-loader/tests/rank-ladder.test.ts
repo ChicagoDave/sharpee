@@ -157,7 +157,7 @@ describe('registerPlugin reaches the registry (ADR-260 acceptance #6)', () => {
     expect(plugins.map((p) => p.id)).not.toContain('sharpee.ext.scoring.rank-watcher');
   });
 
-  it('the watcher emits if.event.rank_risen on a crossing', () => {
+  it('the watcher emits if.event.band_crossed on a crossing', () => {
     const { world, plugins } = load(source(LADDER));
     const watcher = plugins.find((p) => p.id === 'sharpee.ext.scoring.rank-watcher')!;
 
@@ -166,8 +166,8 @@ describe('registerPlugin reaches the registry (ADR-260 acceptance #6)', () => {
     const events = watcher.onAfterAction(context(world, 2));
 
     expect(events).toHaveLength(1);
-    expect(events[0].type).toBe('if.event.rank_risen');
-    expect(events[0].data).toMatchObject({ toRank: 'attentive-guest' });
+    expect(events[0].type).toBe('if.event.band_crossed');
+    expect(events[0].data).toMatchObject({ concept: 'rank', to: 'attentive-guest' });
   });
 });
 
@@ -183,13 +183,14 @@ describe('`says` promotion phrases (ADR-261 acceptance #7a)', () => {
     '    The Folly begins to feel like somewhere you belong.\n'
   );
 
-  it('registers a narrator only when some rung says something', () => {
+  it('registers a narrator whenever a ladder exists — a bare rung speaks the fallback (ADR-262 D3)', () => {
     expect(load(WITH_SAYS).plugins.map((p) => p.id))
       .toContain('chord.story.promotion-narrator');
 
-    // Every rung silent — no narrator at all.
+    // A ladder with no `says` still registers: a crossed rung now speaks the
+    // overridable platform fallback, so silence is no longer the default.
     expect(load(source(LADDER)).plugins.map((p) => p.id))
-      .not.toContain('chord.story.promotion-narrator');
+      .toContain('chord.story.promotion-narrator');
   });
 
   it('speaks the rung\'s phrase ONCE on the turn it is crossed', () => {
@@ -218,7 +219,7 @@ describe('`says` promotion phrases (ADR-261 acceptance #7a)', () => {
     expect((events[0].data as { messageId: string }).messageId).not.toMatch(/^if\./);
   });
 
-  it('a rung WITHOUT says speaks nothing, while the event still fires', () => {
+  it('each elevation narrates: the author phrase, then the fallback for a phraseless rung (ADR-262 D3/D6)', () => {
     const { world, plugins } = load(WITH_SAYS);
     const narrator = plugins.find((p) => p.id === 'chord.story.promotion-narrator')!;
     const watcher = plugins.find((p) => p.id === 'sharpee.ext.scoring.rank-watcher')!;
@@ -226,13 +227,21 @@ describe('`says` promotion phrases (ADR-261 acceptance #7a)', () => {
     narrator.onAfterAction(context(world));
     watcher.onAfterAction(context(world));
 
-    // Straight to the top rung, which names no phrase.
+    // One jump past attentive-guest (says settled-in) to master (no says).
     world.awardScore('lamp', 150, 'Everything at once');
 
-    expect(narrator.onAfterAction(context(world, 2))).toEqual([]);
-    const risen = watcher.onAfterAction(context(world, 2));
-    expect(risen).toHaveLength(1);
-    expect(risen[0].data).toMatchObject({ toRank: 'master-of-the-folly' });
+    // `all` mode speaks each crossed rung: the author phrase, then the
+    // overridable platform fallback for the phraseless top rung.
+    expect(messageIdsOf(narrator.onAfterAction(context(world, 2))))
+      .toEqual(['settled-in', 'if.action.scoring.promotion']);
+
+    // The data event carries the whole span in one fire.
+    const crossed = watcher.onAfterAction(context(world, 2));
+    expect(crossed).toHaveLength(1);
+    expect(crossed[0].data).toMatchObject({
+      to: 'master-of-the-folly',
+      bandsCrossed: ['attentive-guest', 'master-of-the-folly'],
+    });
   });
 
   it('does not re-speak across save/restore', () => {
@@ -259,5 +268,54 @@ describe('`says` promotion phrases (ADR-261 acceptance #7a)', () => {
     } as never);
 
     expect(registered.get('settled-in')).toContain('somewhere you belong');
+  });
+});
+
+describe('`use scoring, announce <mode>` threads to the narrator (ADR-262 D3)', () => {
+  const PHRASES = '\ndefine phrases en-US\n  settled-in:\n    You belong here.\n';
+  const withMode = (mode: string) => source(
+    '  score lamp worth 200\n' +
+    `  use scoring, announce ${mode}\n` +
+    '    rank "Curious Visitor" at 0\n' +
+    '    rank "Attentive Guest" at 40 says settled-in\n' +
+    '    rank "Master of the Folly" at 120\n',
+    PHRASES,
+  );
+
+  it('announce silent narrates nothing while the data event still fires', () => {
+    const { world, plugins } = load(withMode('silent'));
+    const narrator = plugins.find((p) => p.id === 'chord.story.promotion-narrator')!;
+    const watcher = plugins.find((p) => p.id === 'sharpee.ext.scoring.rank-watcher')!;
+
+    narrator.onAfterAction(context(world));
+    watcher.onAfterAction(context(world));
+    world.awardScore('lamp', 60, 'Found the lamp');
+
+    expect(narrator.onAfterAction(context(world, 2))).toEqual([]);
+    expect(watcher.onAfterAction(context(world, 2))).toHaveLength(1);
+  });
+
+  it('announce collapsed speaks only the terminal rung on a multi-band jump', () => {
+    const { world, plugins } = load(withMode('collapsed'));
+    const narrator = plugins.find((p) => p.id === 'chord.story.promotion-narrator')!;
+
+    narrator.onAfterAction(context(world));
+    world.awardScore('lamp', 150, 'Straight to the top');
+
+    // `all` would speak ['settled-in', fallback]; collapsed speaks only the
+    // terminal rung (master — no `says`, so the platform fallback).
+    expect(messageIdsOf(narrator.onAfterAction(context(world, 2))))
+      .toEqual(['if.action.scoring.promotion']);
+  });
+
+  it('default (no announce) reports each elevation — `all`', () => {
+    const { world, plugins } = load(withMode('all'));
+    const narrator = plugins.find((p) => p.id === 'chord.story.promotion-narrator')!;
+
+    narrator.onAfterAction(context(world));
+    world.awardScore('lamp', 150, 'Straight to the top');
+
+    expect(messageIdsOf(narrator.onAfterAction(context(world, 2))))
+      .toEqual(['settled-in', 'if.action.scoring.promotion']);
   });
 });

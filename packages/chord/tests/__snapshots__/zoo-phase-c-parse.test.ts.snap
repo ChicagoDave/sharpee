@@ -227,6 +227,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       },
     },
   ],
+  "announceModes": {},
   "channels": [],
   "conditions": [],
   "entities": [
@@ -4142,7 +4143,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       },
     },
   ],
-  "languageVersion": "1.1.0",
+  "languageVersion": "1.3.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

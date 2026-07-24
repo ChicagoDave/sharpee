@@ -92,6 +92,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       },
     },
   ],
+  "announceModes": {},
   "channels": [],
   "conditions": [
     {
@@ -503,7 +504,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
   "format": "story language 1",
   "hasHatches": false,
   "hatches": [],
-  "languageVersion": "1.1.0",
+  "languageVersion": "1.3.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

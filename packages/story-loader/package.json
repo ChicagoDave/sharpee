@@ -26,6 +26,7 @@
     "@sharpee/engine": "workspace:*",
     "@sharpee/ext-basic-combat": "workspace:*",
     "@sharpee/ext-scoring": "workspace:*",
+    "@sharpee/ext-hunger": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/plugins": "workspace:*",
     "@sharpee/plugin-npc": "workspace:*",

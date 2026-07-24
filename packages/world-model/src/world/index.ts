@@ -40,6 +40,9 @@ export {
   GrammarVocabularyMatch
 } from '@sharpee/if-domain';
 
+// Banded-scalar crossing engine (ADR-262)
+export { bandOf } from './band.js';
+
 // Export other classes
 export { SpatialIndex } from './SpatialIndex.js';
 export { VisibilityBehavior, darkKey } from './VisibilityBehavior.js';

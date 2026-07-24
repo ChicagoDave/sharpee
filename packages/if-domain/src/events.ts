@@ -127,9 +127,13 @@ export const IFEvents = {
   SCORE_GAINED: 'if.event.score_gained',
   SCORE_LOST: 'if.event.score_lost',
 
-  // Rank promotion (ADR-260 D6). Carries rank IDS, not display names: the id
-  // is the join key between this platform event and story-owned text.
-  RANK_RISEN: 'if.event.rank_risen',
+  // Banded-scalar crossing (ADR-262 D2). The generic data event a continuous
+  // meter emits when its value rises through one or more bands in a turn.
+  // Discriminated by `concept` ('rank', 'hunger', ...); carries the whole span
+  // (`bandsCrossed` lists every band entered this turn, in order) so every
+  // elevation is reported at the data layer regardless of how it is narrated.
+  // Carries no messageId — narration rides separate events (ADR-262 D3).
+  BAND_CROSSED: 'if.event.band_crossed',
 } as const;
 
 export type IFEventType = typeof IFEvents[keyof typeof IFEvents];

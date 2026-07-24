@@ -553,8 +553,12 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   // if.action.scoring — pruned in parallel with the chord catalog
   // (ADR-260 D4). Drift between the two tables is a live-alias/dead-target
   // bug, so they move together.
+  // if.action.hunger (ADR-263) — the overridable crossing fallback + death line.
+  'hunger-crossed': 'if.action.hunger.crossed',
+  'hunger-starved': 'if.action.hunger.starved',
   'scoring-no-scoring': 'if.action.scoring.no_scoring',
   'scoring-perfect-score': 'if.action.scoring.perfect_score',
+  'scoring-promotion': 'if.action.scoring.promotion',
   'scoring-score-display': 'if.action.scoring.score_display',
   'scoring-score-simple': 'if.action.scoring.score_simple',
   'scoring-score-with-rank': 'if.action.scoring.score_with_rank',

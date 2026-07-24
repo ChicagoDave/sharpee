@@ -59,8 +59,8 @@ story-header = "story" STRING [ "by" STRING ] NL
                >>> { states-line | score-line | story-on-clause | use-line
                    | use-phrasebook-line
                    | WORD ":" rest-of-line NL } ;
-use-line     = use-scoring-line | use-plain-line ;
-use-plain-line = "use" WORD NL ;                           (* ADR-215: one trusted
+use-line     = use-scoring-line | use-hunger-line | use-plain-line ;
+use-plain-line = "use" WORD [ announce-suffix ] NL ;       (* ADR-215: one trusted
                                                               platform extension per
                                                               line (combat,
                                                               state-machines); admits
@@ -76,13 +76,38 @@ use-plain-line = "use" WORD NL ;                           (* ADR-215: one trust
                                                               an indented block under
                                                               any name but `scoring`
                                                               is parse.use-body *)
-use-scoring-line = "use" "scoring" NL
+use-scoring-line = "use" "scoring" [ announce-suffix ] NL
                >>> { rank-line } ;                         (* ADR-261 D2: the only
                                                               `use` line with a body —
                                                               the rank ladder rides the
                                                               line that enables it, so
                                                               a ladder can never be
                                                               silently disabled *)
+announce-suffix = "," "announce"
+                  ( "all" | "collapsed" | "combined" | "silent" ) ;
+                                                           (* ADR-262 D3: how a
+                                                              metering extension's band
+                                                              crossings narrate. `all`
+                                                              (default) reports each
+                                                              elevation; `silent` is
+                                                              the only route to no
+                                                              output *)
+use-hunger-line = "use" "hunger" [ announce-suffix ] NL
+               >>> { hunger-grows-line
+                   | meter-rung-line
+                   | hunger-fatal-line } ;                (* ADR-263 D1: a depleting
+                                                              satiety meter over the
+                                                              ADR-262 engine *)
+hunger-grows-line = "grows" NUMBER "each" "turn" NL ;     (* per-turn severity gain,
+                                                              lowered to `on every turn` *)
+meter-rung-line = WORD "at" NUMBER [ "says" WORD ] NL ;   (* a band: bareword name
+                                                              (its id), absolute
+                                                              threshold, optional
+                                                              story phrase *)
+hunger-fatal-line = "fatal" "at" NUMBER NL ;              (* a raw-value death trigger
+                                                              above the top band,
+                                                              lowered to `kill the
+                                                              player` *)
 rank-line    = "rank" STRING "at" NUMBER [ "says" WORD ] NL ;
                                                            (* ADR-261 D2/D7: a rung.
                                                               STRING is author prose,
