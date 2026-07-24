@@ -1,6 +1,6 @@
 # Chord Grammar — Implementation Notation
 
-> **Chord 1.0.0** (the language version — ADR-257; `CHORD_LANGUAGE_VERSION`,
+> **Chord 1.1.0** (the language version — ADR-257; `CHORD_LANGUAGE_VERSION`,
 > independent of the `@sharpee/*` platform release). The `chord.ebnf` surface is
 > pinned to this version (`packages/chord/tests/language-version.test.ts`): a
 > grammar change forces a version bump.

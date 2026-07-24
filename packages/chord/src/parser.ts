@@ -86,6 +86,7 @@ import {
   StoryFile,
   StoryHeader,
   TopicRow,
+  RankDecl,
   UseDecl,
   UsePhrasebookDecl,
   TextMarker,
@@ -319,6 +320,16 @@ class Parser {
           );
           this.recoverToTopLevel(true);
           break;
+        case 'rank':
+          // ADR-261 D2: a rung lives in the `use scoring` body, so that the
+          // ladder cannot drift away from the line that enables it.
+          this.diagnostics.error(
+            'parse.rank-outside-scoring',
+            '`rank "<name>" at <n>` goes in the indented body of the story header\'s `use scoring` line, not at the top level.',
+            lineSpan(line),
+          );
+          this.recoverToTopLevel(true);
+          break;
         case 'each':
           // Never top-level (given 9: all behavior is owned) — ratchet E3.
           this.diagnostics.error(
@@ -404,6 +415,7 @@ class Parser {
     const onClauses: OnClause[] = [];
     const uses: UseDecl[] = [];
     const usePhrasebooks: UsePhrasebookDecl[] = [];
+    const ranks: RankDecl[] = [];
     let span = lineSpan(line);
     while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
       const peeked = this.lines[this.pos];
@@ -442,8 +454,29 @@ class Parser {
         const nameTok = uc.next();
         if (!nameTok || nameTok.kind !== 'word' || !uc.atEnd()) {
           this.diagnostics.error('parse.use', 'Expected `use <extension>` — one extension name per line.', lineSpan(useLine));
-        } else {
-          uses.push({ name: nameTok.text, span: lineSpan(useLine) });
+          continue;
+        }
+        uses.push({ name: nameTok.text, span: lineSpan(useLine) });
+        // ADR-261 D2: `use scoring` is the first `use` line to take an
+        // indented body — the rank ladder. `use combat` and
+        // `use state-machines` take none.
+        const body: Line[] = [];
+        while (this.pos < this.lines.length && this.lines[this.pos].indent > useLine.indent) {
+          body.push(this.lines[this.pos++]);
+        }
+        if (body.length === 0) continue;
+        if (nameTok.text !== 'scoring') {
+          this.diagnostics.error(
+            'parse.use-body',
+            `\`use ${nameTok.text}\` takes no indented body — only \`use scoring\` declares a rank ladder.`,
+            lineSpan(body[0]),
+          );
+          continue;
+        }
+        for (const bodyLine of body) {
+          span = mergeSpans(span, lineSpan(bodyLine));
+          const rung = this.parseRankLine(bodyLine);
+          if (rung) ranks.push(rung);
         }
         continue;
       }
@@ -486,6 +519,17 @@ class Parser {
         if (s) scores.push(s);
         continue;
       }
+      // A rung outside a `use scoring` body (ADR-261 D2). Placing the ladder
+      // under the line that enables it is what stops a ladder silently doing
+      // nothing, so a stray rung is an error rather than a floating field.
+      if (key === 'rank') {
+        this.diagnostics.error(
+          'parse.rank-outside-scoring',
+          '`rank "<name>" at <n>` belongs in the indented body of a `use scoring` line.',
+          lineSpan(fieldLine),
+        );
+        continue;
+      }
       const colon = fieldLine.tokens[1];
       if (!key || !colon || colon.kind !== 'colon') {
         this.diagnostics.error('parse.header-field', 'Expected `key: value` in the story header.', lineSpan(fieldLine));
@@ -495,7 +539,69 @@ class Parser {
       fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
     }
 
-    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, span };
+    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, span };
+  }
+
+  /**
+   * `rank "<name>" at <n> [says <key>]` — one rung of the ladder, from the
+   * indented `use scoring` body (ADR-261 D2/D7).
+   */
+  private parseRankLine(line: Line): RankDecl | null {
+    const c = new Cursor(line.tokens, line);
+    if (!c.matchWord('rank')) {
+      this.diagnostics.error(
+        'parse.use-scoring-body',
+        'The `use scoring` body holds only `rank "<name>" at <n> [says <key>]` lines.',
+        lineSpan(line),
+      );
+      return null;
+    }
+    const nameTok = c.peek();
+    if (!nameTok || nameTok.kind !== 'string') {
+      this.diagnostics.error(
+        'parse.rank-name',
+        'Expected a quoted rank name after `rank` — rank prose is author content, written the way entity names are.',
+        c.restSpan(),
+      );
+      return null;
+    }
+    c.next();
+    if (!c.matchWord('at')) {
+      this.diagnostics.error(
+        'parse.rank-threshold',
+        'Expected `at <number>` after the rank name — a threshold is absolute points, never a percentage of max.',
+        c.restSpan(),
+      );
+      return null;
+    }
+    const thresholdTok = c.next();
+    if (!thresholdTok || thresholdTok.kind !== 'number') {
+      this.diagnostics.error('parse.rank-threshold', 'Expected a number after `at`.', c.restSpan());
+      return null;
+    }
+    let phraseKey: string | undefined;
+    if (c.isWord('says')) {
+      c.next();
+      const keyTok = c.next();
+      if (!keyTok || keyTok.kind !== 'word') {
+        this.diagnostics.error(
+          'parse.rank-says',
+          'Expected a phrase key after `says` — a kebab-case key in the story\'s own phrase namespace.',
+          c.restSpan(),
+        );
+        return null;
+      }
+      phraseKey = keyTok.text;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error(
+        'parse.rank-extra',
+        'Unexpected text after the rung — the line is `rank "<name>" at <n> [says <key>]`.',
+        c.restSpan(),
+      );
+      return null;
+    }
+    return { kind: 'rank', name: nameTok.text, threshold: Number(thresholdTok.text), phraseKey, span: lineSpan(line) };
   }
 
   /**

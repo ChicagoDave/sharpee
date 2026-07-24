@@ -1125,6 +1125,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
     },
     "kind": "story-header",
     "onClauses": [],
+    "ranks": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -2785,6 +2786,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
     },
     "kind": "story-header",
     "onClauses": [],
+    "ranks": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -4194,6 +4196,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
     },
     "kind": "story-header",
     "onClauses": [],
+    "ranks": [],
     "scores": [],
     "span": {
       "column": 1,

@@ -6,7 +6,7 @@ compile-checked example. Companion to the formal grammar
 (`chord-grammar.md`, `chord.ebnf`); where they disagree, the grammar and the
 parser win.
 
-> **Describes Chord 1.0.0** (the language version — ADR-257, independent of the
+> **Describes Chord 1.1.0** (the language version — ADR-257, independent of the
 > `@sharpee/*` platform release). Every example is backed by a
 > fixture verified with `verify-examples.mjs` against `@sharpee/chord`
 > (50/50, 2026-07-19). Currency sweep 2026-07-19 folded the post-lock

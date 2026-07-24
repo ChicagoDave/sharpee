@@ -9,8 +9,8 @@
 
    Coverage: Phase A subset + Phase B declarations + Phase C ownership
    package + the each package (E1–E3) + ADR-211/zoo-surfaces (Z1/Z4/Z5,
-   CP1'/CP3/Z3b/Z6) + ADR-231 D5a (`starts <state>` initializers), as of
-   2026-07-17.
+   CP1'/CP3/Z3b/Z6) + ADR-231 D5a (`starts <state>` initializers) +
+   ADR-261 (`use scoring` with its rank ladder), as of 2026-07-24.
 
    Notation:
      UPPER      = token class          "quoted" = literal word
@@ -59,7 +59,8 @@ story-header = "story" STRING [ "by" STRING ] NL
                >>> { states-line | score-line | story-on-clause | use-line
                    | use-phrasebook-line
                    | WORD ":" rest-of-line NL } ;
-use-line     = "use" WORD NL ;                             (* ADR-215: one trusted
+use-line     = use-scoring-line | use-plain-line ;
+use-plain-line = "use" WORD NL ;                           (* ADR-215: one trusted
                                                               platform extension per
                                                               line (combat,
                                                               state-machines); admits
@@ -71,7 +72,36 @@ use-line     = "use" WORD NL ;                             (* ADR-215: one trust
                                                               vocabulary (npc) are
                                                               compile errors; top-level
                                                               placement gets a header
-                                                              fix-it *)
+                                                              fix-it. Takes NO body —
+                                                              an indented block under
+                                                              any name but `scoring`
+                                                              is parse.use-body *)
+use-scoring-line = "use" "scoring" NL
+               >>> { rank-line } ;                         (* ADR-261 D2: the only
+                                                              `use` line with a body —
+                                                              the rank ladder rides the
+                                                              line that enables it, so
+                                                              a ladder can never be
+                                                              silently disabled *)
+rank-line    = "rank" STRING "at" NUMBER [ "says" WORD ] NL ;
+                                                           (* ADR-261 D2/D7: a rung.
+                                                              STRING is author prose,
+                                                              never a phrasebook key
+                                                              (ADR-260 D4). NUMBER is
+                                                              ABSOLUTE points, never a
+                                                              percentage of max — so a
+                                                              maxScore change cannot
+                                                              move a boundary. `says`
+                                                              names a key in the story's
+                                                              own phrase namespace,
+                                                              spoken once on crossing;
+                                                              a rung without it is
+                                                              silent, there being no
+                                                              platform sentence to fall
+                                                              back to. Rungs sort at
+                                                              compile time; a rung
+                                                              outside this body is
+                                                              parse.rank-outside-scoring *)
 story-on-clause = on-clause ;                              (* ADR-236 D7 (ratchet R4):
                                                               `on every turn` ONLY —
                                                               any other clause form is

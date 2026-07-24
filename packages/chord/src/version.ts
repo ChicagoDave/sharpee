@@ -18,5 +18,13 @@
  * this version without touching the format. The `chord.ebnf` surface pin
  * (`tests/language-version.test.ts`, ADR-257 D5) fails the build if the grammar
  * changes without a bump here.
+ *
+ * **1.1.0 is a recorded one-time override of D2** (ADR-261 Consequences,
+ * 2026-07-23). ADR-261 D4's `use scoring` gate stops previously-valid stories
+ * from compiling, which D2 defines as a *major*; the owner ruled it ships as a
+ * minor anyway rather than amending the rule or softening the gate. The next
+ * construct that stops compiling is still a major unless someone rules
+ * otherwise again — the exception is cross-noted at ADR-257 D2 so it is
+ * discoverable from the rule.
  */
-export const CHORD_LANGUAGE_VERSION = '1.0.0';
+export const CHORD_LANGUAGE_VERSION = '1.1.0';

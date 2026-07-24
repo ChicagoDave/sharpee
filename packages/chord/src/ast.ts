@@ -57,12 +57,40 @@ export interface StoryHeader {
    * position ahead of every body-declared book.
    */
   usePhrasebooks: UsePhrasebookDecl[];
+  /**
+   * `rank "<name>" at <n> [says <key>]` rungs from the indented `use scoring`
+   * body (ADR-261 D2). Source order is preserved here; the analyzer sorts
+   * ascending. Empty when the story declares no ladder — which is legal and
+   * means "scoring on, SCORE reports a score with no rank".
+   */
+  ranks: RankDecl[];
   span: Span;
 }
 
 /** One `use <extension>` line (ADR-215). */
 export interface UseDecl {
   name: string;
+  span: Span;
+}
+
+/**
+ * One `rank "<name>" at <n> [says <key>]` rung, from the indented body of a
+ * `use scoring` line (ADR-261 D2/D7).
+ *
+ * `threshold` is **absolute points, never a percentage** — ADR-260 D2's
+ * invariant, which exists so a change to maxScore can never move a boundary.
+ *
+ * `name` is a quoted author string, written the way entity names are written:
+ * rank prose is author content (ADR-260 D4), not a key resolved through a
+ * phrasebook. `phraseKey` is the opposite — a kebab key in the story's own
+ * phrase namespace, spoken when the player crosses this rung. A rung with no
+ * `says` is silent, because there is no platform sentence to fall back to.
+ */
+export interface RankDecl {
+  kind: 'rank';
+  name: string;
+  threshold: number;
+  phraseKey?: string;
   span: Span;
 }
 

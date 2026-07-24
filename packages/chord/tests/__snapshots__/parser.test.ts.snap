@@ -466,6 +466,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     },
     "kind": "story-header",
     "onClauses": [],
+    "ranks": [],
     "scores": [],
     "span": {
       "column": 1,
@@ -1804,6 +1805,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
     },
     "kind": "story-header",
     "onClauses": [],
+    "ranks": [],
     "scores": [],
     "span": {
       "column": 1,
