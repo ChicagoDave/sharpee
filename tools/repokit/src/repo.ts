@@ -42,6 +42,10 @@ export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/story-runtime-baseline', 'story-runtime-baseline'],
   ['@sharpee/ext-testing', 'extensions/testing'],
   ['@sharpee/engine', 'engine'],
+  // Trusted extensions consumed by story-loader's EXTENSION_REGISTRY — must build
+  // before it so its tsc finds their declarations (ADR-260/263).
+  ['@sharpee/ext-scoring', 'extensions/scoring'],
+  ['@sharpee/ext-hunger', 'extensions/hunger'],
   ['@sharpee/story-loader', 'story-loader'],
   ['@sharpee/bootstrap', 'bootstrap'],
   ['@sharpee/platform-browser', 'platform-browser'],
@@ -68,6 +72,8 @@ export const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/channel-service', './packages/channel-service/dist/index.js'],
   ['@sharpee/if-services', './packages/if-services/dist/index.js'],
   ['@sharpee/ext-basic-combat', './packages/extensions/basic-combat/dist/index.js'],
+  ['@sharpee/ext-scoring', './packages/extensions/scoring/dist/index.js'],
+  ['@sharpee/ext-hunger', './packages/extensions/hunger/dist/index.js'],
   ['@sharpee/plugins', './packages/plugins/dist/index.js'],
   ['@sharpee/plugin-npc', './packages/plugin-npc/dist/index.js'],
   ['@sharpee/plugin-scheduler', './packages/plugin-scheduler/dist/index.js'],
