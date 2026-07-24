@@ -391,14 +391,16 @@ DIRECTION    = north | south | east | west | northeast | northwest
 ## Extension surface (ADR-215/216, 2026-07-18)
 
 - **`use <extension>`** — a story-header body line, one trusted platform
-  extension per line (`combat`, `scoring`, `state-machines`). Admits that
+  extension per line (`combat`, `scoring`, `hunger`, `state-machines`). Admits that
   extension's static vocabulary manifest (`packages/chord/src/manifests/`)
   into the catalog and triggers its runtime registration from the loader's
   trusted registry — a `use`-only story stays pure IR. Unknown/duplicate
   names are compile errors; NPC vocabulary is CORE (always on; `use npc` is
   `analysis.extension-core`). `define behavior … from` was REMOVED
-  (ADR-235 D2). Only `use scoring` takes an indented body (its rungs); a
-  body under any other name is `parse.use-body`.
+  (ADR-235 D2). `use scoring` and `use hunger` take indented bodies (their
+  rungs, and hunger's `grows`/`fatal` lines); a body under any other name is
+  `parse.use-body`. Both take a `, announce all|collapsed|combined|silent`
+  suffix (ADR-262 D3).
 - **`use scoring` + `rank … at <n>`** (ADR-261) — gates `score`, `award`,
   and the ladder together; a gated construct without the line is
   `analysis.scoring-needs-use`, so scoring is on precisely when the header
@@ -409,7 +411,20 @@ DIRECTION    = north | south | east | west | northeast | northwest
   own namespace, spoken once on crossing. Rungs sort at compile time;
   duplicate thresholds, colliding kebab ids, and rungs above the declared
   maximum are compile errors. A rung outside the body is
-  `parse.rank-outside-scoring`. A rung with no `says` is silent by design.
+  `parse.rank-outside-scoring`. A rung with no `says` speaks an overridable
+  platform line, not silence; `announce silent` is the only route to no
+  output. A single award that crosses several rungs reports each one, and the
+  `announce` mode sets how that reads: `all` (default) speaks every crossing,
+  `collapsed` only the top rung, `combined` one line for the whole span, and
+  `silent` nothing.
+- **`use hunger`** (ADR-263) — a depleting satiety meter over the same band
+  engine as ranks. Its body holds `grows <n> each turn` (per-turn severity
+  gain, lowered to an `on every turn` daemon), `<band> at <n> [says <key>]`
+  rungs (bareword names, unlike scoring's quoted `rank` strings), and
+  `fatal at <n>` (a raw-value death trigger above the top band, routed through
+  the `kill the player` path). Eating reuses stdlib's `if.event.eaten` and its
+  `nutrition` to lower severity. Severity starts below every band and is saved
+  with the world; the `announce` modes and crossing rules match scoring.
 - **Extension trait adjectives** carry manifest-typed `with`-fields:
   `combatant with health 20 and skill 40 and hostile true` (health routes
   to the required HealthTrait per ADR-226), `weapon with damage 5 and
