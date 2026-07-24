@@ -8,8 +8,35 @@
 
 ## Phase Context
 - **Plan**: `docs/work/adr-260-261-scoring-ranks/plan.md` (COMPLETE per the container). This session was
-  design/ADR work on top of the branch, outside any plan phase.
-- **Tool calls**: heavy ADR authoring + `adr-interview`/`adr-review` cycles. No code changed.
+  design/ADR work, then a verification sweep after the container implemented it.
+- **Tool calls**: ADR authoring + `adr-interview`/`adr-review` cycles, then a build/test/real-path sweep.
+
+## Verification sweep (after the container implemented 262/263/261)
+
+Pulled the container's implementation commit `91eb33c7` and swept it. Findings:
+
+- **Engine is faithful** to the ADRs (band.ts, band-crossing.ts — full-span event, four modes, global
+  fallback, rise-only, derive-not-store, two-plugins-one-detector). Multi-band "report each elevation"
+  fix real and tested. Unit suites green (band 6, band-crossing 13, scoring 14, hunger 5, chord 525).
+- **The one real defect: the branch never built.** `ext-scoring` and `ext-hunger` were missing from
+  `PLATFORM_PACKAGES` and `BUNDLE_ALIASES` (`tools/repokit/src/repo.ts`), so `./repokit build` never
+  built them — true for BOTH tracks, so the whole branch's green was vitest-only (source resolution),
+  and the ADR real-path gates were never runnable. **Fixed** (added both, mirroring `ext-basic-combat`;
+  commit `93da76aa`). Build now passes, bundle builds.
+- **Two apparent failures were NOT defects** — both stale/obsolete artifacts of the never-built branch,
+  each caught by verifying against source before editing:
+  1. alias↔message bijection (message-alias-map) — **stale `lang-en-us` dist**; the fresh build cleared
+     it. Source was correct; nearly "fixed" correct files.
+  2. `dotted-phrase-keys.test.ts` (ADR-230 D5) — **obsolete**: ADR-254 (ACCEPTED) retired dotted
+     `define phrase` keys, naming `if.action.taking.fixed_in_place` specifically. The parser is correct;
+     the ban is tested by `dotted-key-rejection.test.ts` and the replacement (`override message
+     taking-fixed-in-place`) by `message-override.test.ts`. Deleted the redundant orphan.
+- **REAL-PATH green**: the hunger `starve` transcript passes through the fresh `dist/cli/sharpee.js`
+  (ADR-262 #7 / ADR-263 #6). story-loader 360/360 after the delete.
+
+**Sweep verdict**: implementation sound, real path works. Only defect was build-order wiring; the other
+two "failures" were stale-branch artifacts, not logic bugs. Verifying each against source before
+touching it prevented "fixing" three correct things.
 
 ## Completed
 
@@ -146,3 +173,7 @@ tracing back to an error I made in a prior review this session.
 **Progressive update 2**: worked author feedback; parked ADR-265 ("stdlib in readable Chord form") —
 distinguished self-hosting (no) from a readable Chord rendering (the practical target); confirmed the
 grammar-extension path makes stdlib-in-Chord unneeded.
+**Progressive update 3**: container implemented 262/263/261 (`91eb33c7`); verification sweep found the
+branch never built (ext-scoring/ext-hunger missing from repokit's build order — fixed, `93da76aa`);
+two other "failures" were stale-branch artifacts (stale lang dist; obsolete ADR-230 test deleted);
+real-path starve transcript green; story-loader 360/360. Sweep clean.
