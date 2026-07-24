@@ -519,6 +519,18 @@ export class ChordStory implements Story {
       world.setMaxScore(this.ir.scores.reduce((sum, s) => sum + s.worth, 0));
     }
 
+    // ADR-261 D4's rogue-IR backstop — the same two-layer shape
+    // `define machine` uses. The compiler's `analysis.scoring-needs-use`
+    // catches this first; hand-built IR reaches here, and a gated construct
+    // must never be silently dead.
+    if ((this.ir.scores.length > 0 || this.ir.ranks.length > 0)
+      && !(this.ir.uses ?? []).includes('scoring')) {
+      throw new LoadError(
+        '`score`/`award`/`ranks` need `use scoring` in the story header.',
+        (this.ir.ranks[0] ?? this.ir.scores[0]).span,
+      );
+    }
+
     // The rank ladder lowers onto ADR-260 D2's seam, beside the ceiling it
     // is independent of (thresholds are absolute points, so the two never
     // interact). Generic and name-agnostic: the loader lowers `ir.ranks` the

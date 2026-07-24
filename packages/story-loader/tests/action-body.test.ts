@@ -18,6 +18,7 @@ import { ChordStory, createStory } from '../src';
 const SOURCE = `story "Action Body" by "Sharpee Platform"
   id: action-body
   version: 0.0.1
+  use scoring
 
 define condition yard-thing: it is in the Yard
 

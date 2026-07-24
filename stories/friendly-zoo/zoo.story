@@ -3,6 +3,7 @@ story "Friendly Zoo" by "Sharpee Team"
   version: 0.0.2
   blurb: A small family zoo — a testing target for the v2 platform.
   states: open, after-hours
+  use scoring
 
 create the Zoo Entrance
   a room

@@ -116,6 +116,34 @@ describe('the ladder lowers onto setRanks (ADR-261 D5)', () => {
   });
 });
 
+describe('the rogue-IR backstop (ADR-261 D4)', () => {
+  // The compiler's analysis.scoring-needs-use catches this first; hand-built
+  // IR reaches the loader, and a gated construct must never be silently dead.
+  const stripScoring = (ir: StoryIR): StoryIR =>
+    ({ ...ir, uses: ir.uses.filter((u) => u !== 'scoring') });
+
+  it('scores without `use scoring` in the IR throw a LoadError', () => {
+    const ir = stripScoring(compileSource(source(LADDER)));
+
+    expect(() => createStory(ir).initializeWorld(new WorldModel()))
+      .toThrow(/need `use scoring`/);
+  });
+
+  it('ranks without `use scoring` in the IR throw a LoadError', () => {
+    const compiled = compileSource(source(LADDER));
+    const ir = { ...stripScoring(compiled), scores: [] };
+
+    expect(() => createStory(ir).initializeWorld(new WorldModel()))
+      .toThrow(/need `use scoring`/);
+  });
+
+  it('a story with neither loads fine', () => {
+    const ir = compileSource(source('  version: 0.0.2\n'));
+
+    expect(() => createStory(ir).initializeWorld(new WorldModel())).not.toThrow();
+  });
+});
+
 describe('registerPlugin reaches the registry (ADR-260 acceptance #6)', () => {
   it('`use scoring` registers the rank watcher, with no loader-side name check', () => {
     const { plugins } = load(source(LADDER));

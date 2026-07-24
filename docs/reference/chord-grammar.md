@@ -391,13 +391,25 @@ DIRECTION    = north | south | east | west | northeast | northwest
 ## Extension surface (ADR-215/216, 2026-07-18)
 
 - **`use <extension>`** — a story-header body line, one trusted platform
-  extension per line (`combat`, `state-machines`). Admits that extension's
-  static vocabulary manifest (`packages/chord/src/manifests/`) into the
-  catalog and triggers its runtime registration from the loader's trusted
-  registry — a `use`-only story stays pure IR. Unknown/duplicate names are
-  compile errors; NPC vocabulary is CORE (always on; `use npc` is
+  extension per line (`combat`, `scoring`, `state-machines`). Admits that
+  extension's static vocabulary manifest (`packages/chord/src/manifests/`)
+  into the catalog and triggers its runtime registration from the loader's
+  trusted registry — a `use`-only story stays pure IR. Unknown/duplicate
+  names are compile errors; NPC vocabulary is CORE (always on; `use npc` is
   `analysis.extension-core`). `define behavior … from` was REMOVED
-  (ADR-235 D2).
+  (ADR-235 D2). Only `use scoring` takes an indented body (its rungs); a
+  body under any other name is `parse.use-body`.
+- **`use scoring` + `rank … at <n>`** (ADR-261) — gates `score`, `award`,
+  and the ladder together; a gated construct without the line is
+  `analysis.scoring-needs-use`, so scoring is on precisely when the header
+  says so and absence means "this game has no score". The body holds
+  `rank "<name>" at <n> [says <key>]` rungs: the name is author prose (the
+  platform ships no rank names), `at` is ABSOLUTE points so a moving
+  ceiling never re-ranks a player, and `says` names a phrase in the story's
+  own namespace, spoken once on crossing. Rungs sort at compile time;
+  duplicate thresholds, colliding kebab ids, and rungs above the declared
+  maximum are compile errors. A rung outside the body is
+  `parse.rank-outside-scoring`. A rung with no `says` is silent by design.
 - **Extension trait adjectives** carry manifest-typed `with`-fields:
   `combatant with health 20 and skill 40 and hostile true` (health routes
   to the required HealthTrait per ADR-226), `weapon with damage 5 and

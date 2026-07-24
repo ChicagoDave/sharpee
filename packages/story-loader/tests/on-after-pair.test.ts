@@ -15,6 +15,7 @@ import { createStory, LoadError } from '../src';
 const SOURCE = `story "Pairs" by "T"
   id: pairs
   version: 0.0.1
+  use scoring
 
 create the Shrine
   a room

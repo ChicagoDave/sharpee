@@ -2,6 +2,7 @@ story "Scoring" by "Sharpee Docs"
   id: chord-ref-scoring
   version: 0.0.1
   score green-thumb worth 5
+  use scoring
 
 define trait prunable
   score tidy-secateurs worth 5

@@ -2,6 +2,7 @@ story "Each Iteration Fixture" by "Sharpee Platform"
   id: each-iteration
   version: 0.0.1
   blurb: E1/E2/E3 + must-be-any end-to-end through story-loader (each package P4).
+  use scoring
 
 define condition stray-crate: it is a container and it is not in the store room
 define condition penned-crate: it is a container and it is in the pen

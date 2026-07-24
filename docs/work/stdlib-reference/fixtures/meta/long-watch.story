@@ -3,6 +3,7 @@ story "The Long Watch" by "Sharpee Docs"
   version: 1.2.0
   blurb: One night in a lighthouse, told a turn at a time.
   score found-the-flare worth 10
+  use scoring
 
 create the Lamp Gallery
   a room

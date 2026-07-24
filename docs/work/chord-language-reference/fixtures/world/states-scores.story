@@ -1,6 +1,7 @@
 story "States and Scores" by "Sharpee Docs"
   id: chord-ref-states-scores
   version: 0.0.1
+  use scoring
 
 create the Orangery
   a room

@@ -2,6 +2,7 @@ story "Friendly Zoo" by "Sharpee Team"
   id: friendly-zoo
   version: 0.0.1
   blurb: A small family zoo — a workspace testing target for the v2 platform.
+  use scoring
 
 define flag after-hours starts false
 define flag feeding-time-active starts false

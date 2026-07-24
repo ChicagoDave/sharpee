@@ -1,6 +1,7 @@
 story "Define Action" by "Sharpee Docs"
   id: chord-ref-def-action
   version: 0.0.1
+  use scoring
 
 define action petting
   grammar

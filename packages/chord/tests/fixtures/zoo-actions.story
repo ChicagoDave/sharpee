@@ -2,6 +2,7 @@ story "Zoo Actions Fixture" by "Sharpee Platform"
   id: zoo-actions
   version: 0.0.1
   blurb: design.md 3.4 + ownership package - dispatch actions, trait states, owner scores.
+  use scoring
 
 create the Petting Zoo
   a room

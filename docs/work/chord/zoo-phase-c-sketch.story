@@ -3,6 +3,7 @@ story "Friendly Zoo" by "Sharpee Team"
   version: 0.0.2-phase-c-sketch
   blurb: PHASE C SKETCH (givens 8+9 ownership package) — review artifact, does not compile under Phase B grammar.
   states: open, after-hours
+  use scoring
 
 create the Zoo Entrance
   a room

@@ -1134,6 +1134,13 @@ name: you cannot call an entity, alias, trait field, or grammar slot
 
 ### 4.5 Scoring
 
+**Scoring is opt-in, and `use scoring` is how you opt in** (ADR-261).
+A story whose header lacks that line has no score at all — SCORE answers
+*"This isn't that kind of game."* That is the honest answer, and it costs
+nothing to get: simply don't ask for scoring. Declaring a `score` or
+writing an `award` without the `use` line is a compile error
+(`analysis.scoring-needs-use`), never a silently dead construct.
+
 A `score <name> worth N` line declares a scoring identity, and `award
 <name>` grants it (first seen in §2.8). The line is legal under four
 owners — the story header, a `create` block, a `define trait`, and a
@@ -1148,6 +1155,7 @@ story "Scoring" by "Sharpee Docs"
   id: chord-ref-scoring
   version: 0.0.1
   score green-thumb worth 5
+  use scoring
 ```
 
 A trait owns a score every entity composed with it can grant, without
@@ -1219,6 +1227,33 @@ once, so `award` is idempotent and the explicit `, once` modifier
 (§3.7) is never *needed* for correctness — it only documents intent.
 This is why the pattern is "declare the score on the owner, award it in
 an `after` clause" rather than guarding awards behind first-time checks.
+
+#### Ranks
+
+`use scoring` may take an indented body declaring a **rank ladder** — the
+only `use` line that takes a body, because a ladder belongs with the line
+that enables it:
+
+```story
+  use scoring
+    rank "Curious Visitor" at 0
+    rank "Attentive Guest" at 40 says settled-in
+    rank "Master of the Folly" at 120
+```
+
+`at <n>` is **absolute points, never a percentage of the maximum**. That
+is deliberate: a story that raises its ceiling mid-game would otherwise
+demote players who had earned nothing and lost nothing. Rungs may be
+written in any order and sort at compile time; two rungs sharing a
+threshold, two names that reduce to the same id, or a rung above the sum
+of every declared `worth` are each compile errors.
+
+The rank name is your prose — the platform ships none. SCORE reports the
+rung the player has reached, and `says <key>` names a phrase from your own
+`phrases` block, spoken once on the turn the rung is crossed. **A rung
+without `says` is silent**: there is no platform sentence to fall back
+to, which is exactly why a promotion sounds like your game rather than
+like every other one.
 
 ### 4.6 Endings: win and lose
 
@@ -1806,12 +1841,18 @@ end pronouns
 ### 5.10 use: platform extensions (2026-07-18, ADR-215/216/241)
 
 A `use <extension>` line in the story header admits one trusted platform
-extension's vocabulary — `combat`, `state-machines` — and triggers its
-runtime registration; a `use`-only story stays pure IR. (NPC vocabulary
-is core and always on.) Each extension brings manifest-typed trait
-adjectives (`combatant with health 20 and skill 40`, the NPC library's
-`guard`/`patrol`/…), and `use state-machines` adds the `define machine …
-end machine` block. Alongside these, the media surface — `define
+extension's vocabulary — `combat`, `scoring`, `state-machines` — and
+triggers its runtime registration; a `use`-only story stays pure IR. (NPC
+vocabulary is core and always on.) Each extension brings manifest-typed
+trait adjectives (`combatant with health 20 and skill 40`, the NPC
+library's `guard`/`patrol`/…), and `use state-machines` adds the `define
+machine … end machine` block.
+
+Two extensions gate a *construct* rather than vocabulary, contributing no
+adjectives at all: `state-machines` gates `define machine`, and `scoring`
+gates `score`, `award`, and the rank ladder together (§4.5). `use scoring`
+is also the only `use` line that takes an indented body — its rank rungs.
+Alongside these, the media surface — `define
 sound/image/music … from "<file>"`, `play sound`, `play ambient`, `show
 image`, `define channel` data projections, and the `client has
 <capability>` condition — lets a story drive the browser client with no

@@ -1,6 +1,7 @@
 story "Define Trait" by "Sharpee Docs"
   id: chord-ref-def-trait
   version: 0.0.1
+  use scoring
 
 define trait feedable
   data

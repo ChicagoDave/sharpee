@@ -1,6 +1,7 @@
 story "The Statements" by "Sharpee Docs"
   id: chord-ref-statements
   version: 0.0.1
+  use scoring
 
 define trait counting
   data

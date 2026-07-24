@@ -8,6 +8,7 @@ story "The Folly at Fernhill" by "The Sharpee Project"
   blurb: One winter night to find the deed that keeps Fernhill in the family.
   states: evening, midnight
   use state-machines
+  use scoring
 
   on every turn while one chance in 12
     phrase distant-bell

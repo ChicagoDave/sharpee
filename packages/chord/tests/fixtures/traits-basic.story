@@ -3,6 +3,7 @@ story "Trait Declarations Fixture" by "Sharpee Platform"
   version: 0.0.1
   blurb: design.md 2.2/3.2 + ownership package - data types, trait states, ordering, role binding, hatches.
   states: open-hours, after-hours
+  use scoring
 
 define trait sealable
   states, reversible: sealed, ajar

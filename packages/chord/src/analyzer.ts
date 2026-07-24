@@ -472,6 +472,15 @@ class Analyzer {
       }
     }
 
+    // ADR-261 D4: scoring's constructs sit behind `use scoring`. Gating them
+    // together is what makes D3 ("absent `use scoring` means the game has no
+    // score") a rule with no exceptions — scoring is on precisely when the
+    // header says so, and there is one place to look. Reported once per
+    // construct kind, at the first offending site, rather than once per line.
+    if (!this.usedExtensions.has('scoring') && this.scoreDecls.length > 0) {
+      this.reportScoringGate('score', this.scoreDecls[0].span);
+    }
+
     const ir: StoryIR = {
       format: IR_FORMAT,
       languageVersion: CHORD_LANGUAGE_VERSION, // ADR-257 D3 — the language version that compiled this story
@@ -1676,6 +1685,34 @@ class Analyzer {
     for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, id);
   }
 
+  /** Construct kinds already reported by the scoring gate (one each). */
+  private scoringGateReported = new Set<string>();
+
+  /**
+   * Report the `use scoring` gate for one construct kind (ADR-261 D4).
+   *
+   * A gated construct must never be silently dead, so this is an error rather
+   * than a warning, backstopped by a `LoadError` in the story-loader for rogue
+   * IR — the two-layer shape ADR-215 uses for `define machine`.
+   *
+   * The third gated construct, a `rank` rung, cannot reach this check: the
+   * ladder is structurally inside the `use scoring` body, so a stray rung is
+   * `parse.rank-outside-scoring` at parse time — an earlier and more precise
+   * diagnostic. The loader's backstop covers the rogue-IR form.
+   */
+  private reportScoringGate(kind: 'score' | 'award', span: Span): void {
+    if (this.scoringGateReported.has(kind)) return;
+    this.scoringGateReported.add(kind);
+    const what = kind === 'score'
+      ? 'A `score … worth N` line needs'
+      : 'An `award` statement needs';
+    this.diagnostics.error(
+      'analysis.scoring-needs-use',
+      `${what} \`use scoring\` in the story header — without it the game has no score at all, and SCORE says so.`,
+      span,
+    );
+  }
+
   /**
    * Build the `use scoring` rank ladder (ADR-261 D2/D5).
    *
@@ -2468,6 +2505,10 @@ class Analyzer {
           span: stmt.span,
         };
       case 'award': {
+        // ADR-261 D4: `award` is gated with `score` and `ranks`.
+        if (!this.usedExtensions.has('scoring')) {
+          this.reportScoringGate('award', stmt.span);
+        }
         // `award <score-name>` resolves owner-first (ratchet D12): the
         // enclosing owner's qualified id, then the story-level bare name.
         let expression = stmt.expression;
