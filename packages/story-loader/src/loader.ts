@@ -40,10 +40,11 @@ import {
   createAmbientChannel,
   createImageChannel,
 } from '@sharpee/stdlib';
-import type { ISemanticEvent } from '@sharpee/core';
+import { createEvent, type ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
+import type { TurnPlugin } from '@sharpee/plugins';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
@@ -518,6 +519,21 @@ export class ChordStory implements Story {
       world.setMaxScore(this.ir.scores.reduce((sum, s) => sum + s.worth, 0));
     }
 
+    // The rank ladder lowers onto ADR-260 D2's seam, beside the ceiling it
+    // is independent of (thresholds are absolute points, so the two never
+    // interact). Generic and name-agnostic: the loader lowers `ir.ranks` the
+    // way it lowers any other IR field and never learns that `scoring` is the
+    // extension consuming it — which is what keeps ADR-260 D5's
+    // no-special-casing rule intact. `phraseKey` stays behind, in the story
+    // layer, where the promotion reaction reads it (ADR-261 D7).
+    if (this.ir.ranks.length > 0) {
+      world.setRanks(this.ir.ranks.map((r) => ({
+        id: r.id,
+        name: r.name,
+        threshold: r.threshold,
+      })));
+    }
+
     // Z3 (ADR-213): one pre-removal observer serves every authored
     // `disappeared` block — witnessed-only, enqueued for the report pass.
     this.registerRemovalObserver(world);
@@ -725,6 +741,12 @@ export class ChordStory implements Story {
       EXTENSION_REGISTRY.get(name)?.registerPlugin?.(engine.getPluginRegistry());
     }
 
+    // ADR-261 D7: promotions speak the author's own phrase, and nothing else
+    // speaks at all. Gated on `ir.ranks` — generic IR, not an extension name.
+    if (this.ir.ranks.some((r) => r.phraseKey !== undefined)) {
+      engine.getPluginRegistry().register(this.buildPromotionNarrator());
+    }
+
     const daemons = this.runtime.buildSchedulerDaemons();
     if (daemons.length > 0) {
       const plugin = new SchedulerPlugin();
@@ -745,6 +767,89 @@ export class ChordStory implements Story {
     // declarative slot entry — no synthesized closures; the platform's
     // built-in contributor evaluates them.
     this.registerPresentEntries(engine);
+  }
+
+  /**
+   * The `says <key>` promotion narrator (ADR-261 D7).
+   *
+   * Rank prose lives nowhere in the platform — not in stdlib, not in
+   * lang-en-us, not in `ext-scoring`. What a promotion *says* is a per-rung
+   * authored phrase, and this is the story-side reaction that speaks it: a
+   * map from rank id to the rung's `phraseKey`, keyed on the same id
+   * `if.event.rank_risen` carries. A rung with no `says` is silent, so the
+   * map simply has no entry for it.
+   *
+   * **Why this derives the crossing rather than observing the event.** The
+   * engine hands each plugin only the *action's* events
+   * (`TurnPluginContext.actionEvents` is a fixed snapshot taken before the
+   * plugin loop), so no plugin can see another's output — `rank_risen` is
+   * emitted by `ext-scoring`'s watcher in the same loop and is therefore
+   * invisible here. Both plugins read the same derived ledger, so they cannot
+   * disagree about whether a rung was crossed; what differs is only what each
+   * produces — the platform its event, the story its sentence.
+   *
+   * Registered by the Chord loader because only the Chord loader holds the
+   * IR. `phraseKey` never crosses into a platform type: `RankDefinition`
+   * carries none (ADR-260 D2), and the map below stays in this closure.
+   */
+  private buildPromotionNarrator(): TurnPlugin {
+    const phraseByRankId = new Map<string, string>();
+    for (const rung of this.ir.ranks) {
+      if (rung.phraseKey !== undefined) phraseByRankId.set(rung.id, rung.phraseKey);
+    }
+
+    let lastNarratedRankId: string | null = null;
+
+    return {
+      id: 'chord.story.promotion-narrator',
+      // Below ext-scoring's watcher (25): the sentence follows the event.
+      priority: 20,
+      onAfterAction(ctx): ISemanticEvent[] {
+        if (!ctx.world.isScoringEnabled()) return [];
+        const current = ctx.world.getRank();
+        if (!current) return [];
+
+        // At zero points nothing has been crossed — the bottom rung is where
+        // the player starts. Seed the baseline silently, exactly as the
+        // watcher does, so the two stay in step.
+        if (ctx.world.getScore() <= 0) {
+          lastNarratedRankId = current.id;
+          return [];
+        }
+
+        const ranks = ctx.world.getRanks();
+        const currentIndex = ranks.findIndex((r) => r.id === current.id);
+        const lastIndex = lastNarratedRankId === null
+          ? -1
+          : ranks.findIndex((r) => r.id === lastNarratedRankId);
+        if (currentIndex <= lastIndex) {
+          lastNarratedRankId = current.id;
+          return [];
+        }
+
+        lastNarratedRankId = current.id;
+        const phraseKey = phraseByRankId.get(current.id);
+        // A rung without `says` is silent by design: with no platform
+        // sentence anywhere, there is nothing to fall back to.
+        if (!phraseKey) return [];
+
+        // ADR-097: any event carrying a messageId renders through the prose
+        // pipeline. The id IS the story's phrase key — `extendLanguage`
+        // registered every one of them.
+        return [createEvent('if.event.rank_narrated', {
+          messageId: phraseKey,
+          params: { rank: current.name, score: ctx.world.getScore() },
+          rank: current.id,
+        })];
+      },
+      getState(): unknown {
+        return { lastNarratedRankId };
+      },
+      setState(state: unknown): void {
+        lastNarratedRankId = (state as { lastNarratedRankId?: string | null } | undefined)
+          ?.lastNarratedRankId ?? null;
+      },
+    };
   }
 
   /**

@@ -983,6 +983,9 @@ importers:
       '@sharpee/plugin-state-machine':
         specifier: workspace:*
         version: link:../plugin-state-machine
+      '@sharpee/plugins':
+        specifier: workspace:*
+        version: link:../plugins
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../stdlib
