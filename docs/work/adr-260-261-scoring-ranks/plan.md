@@ -1,6 +1,6 @@
 # Implementation Plan — ADR-260 + ADR-261 (Scoring extension & Chord ranks)
 
-**Status**: Phase 1 CURRENT
+**Status**: COMPLETE (2026-07-24) — all 11 phases implemented and validated on branch `hatch-scoring`
 **Source ADRs**: `docs/architecture/adrs/adr-260-scoring-extension-platform-repair.md` (ACCEPTED),
 `docs/architecture/adrs/adr-261-chord-use-scoring-ranks.md` (ACCEPTED)
 **Written**: 2026-07-23, session 7f133e

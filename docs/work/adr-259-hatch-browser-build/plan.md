@@ -1,6 +1,6 @@
 # Implementation Plan — ADR-259 (Chord browser build supports hatch modules)
 
-**Status**: Phase A CURRENT (the open decision was ruled 2026-07-23 — see Phase A)
+**Status**: COMPLETE (2026-07-24) — phases A-F implemented on branch `hatch-scoring`; Phase F's browser-DOM assertion is the one uncovered item (no headless browser in the container)
 **Source ADR**: `docs/architecture/adrs/adr-259-chord-browser-build-hatch-modules.md` (ACCEPTED,
 verified unimplemented 2026-07-23)
 **Written**: 2026-07-23, session 7f133e
