@@ -1248,12 +1248,70 @@ written in any order and sort at compile time; two rungs sharing a
 threshold, two names that reduce to the same id, or a rung above the sum
 of every declared `worth` are each compile errors.
 
-The rank name is your prose — the platform ships none. SCORE reports the
-rung the player has reached, and `says <key>` names a phrase from your own
-`phrases` block, spoken once on the turn the rung is crossed. **A rung
-without `says` is silent**: there is no platform sentence to fall back
-to, which is exactly why a promotion sounds like your game rather than
-like every other one.
+The rank name is your prose. SCORE reports the rung the player has reached.
+`says <key>` names a phrase from your own `phrases` block, and the platform
+speaks it on the turn the rung is crossed.
+
+**Silence is declared, not assumed.** A rung without `says` speaks an
+overridable platform line, "You have risen to the rank of Master." Reword it
+per story with `override message`, or use `announce silent` to say nothing at
+all. When one award crosses several rungs in a single turn, every crossing is
+reported. The player never jumps from Novice to Master with the ranks between
+them left unspoken.
+
+`use scoring` takes an `announce` mode that sets how a multi-rung jump reads:
+
+```story
+  use scoring, announce all
+    rank "Amateur" at 50 says reached-amateur
+    rank "Expert"  at 200 says reached-expert
+    rank "Master"  at 550 says reached-master
+```
+
+A single award that crosses Amateur, Expert, and Master speaks each of these:
+
+| mode | what it speaks |
+| --- | --- |
+| `all` (default) | Each rung's phrase, in order. Three lines. |
+| `collapsed` | The top rung's phrase only. One line. |
+| `combined` | One platform line naming the whole span. |
+| `silent` | Nothing. The crossing still happens, and story logic still sees it. |
+
+#### Hunger
+
+`use hunger` adds a depleting meter. It is a second metering extension, built
+from the same bands and `announce` modes as a rank ladder, over a severity
+value that climbs on its own.
+
+```story
+  use hunger, announce all
+    grows 1 each turn
+    peckish  at 30 says feeling-peckish
+    hungry   at 60 says stomach-growls
+    starving at 90 says the-gnawing
+    fatal at 100
+```
+
+`grows 1 each turn` raises hunger severity by one on every turn. Each band is a
+bareword name at an absolute threshold, and it announces on the turn severity
+reaches it, exactly as a rank does. `says <key>` names a phrase from your own
+`phrases` block. A band with no `says` speaks the overridable platform line, and
+`announce silent` turns announcements off. The four modes read the same here as
+they do for scoring.
+
+`fatal at 100` is a death threshold above the top band. Reaching it ends the run
+through the same death path that `kill the player` uses. It is not a band, so it
+announces nothing of its own.
+
+Eating lowers severity. A food item carries a `nutrition` value, and eating it
+subtracts that value from hunger. Food with no nutrition counts as zero and
+fills nothing. Recovery is a fall rather than a rise, so it is silent by design.
+If you want the player to feel the relief, announce it yourself from an `on`
+clause.
+
+Severity starts at zero, below every band, so a fresh game reports nothing until
+the player first grows hungry. The value cannot fall below zero, and it is saved
+and restored with the world, so a reload does not send the player back to full.
 
 ### 4.6 Endings: win and lose
 

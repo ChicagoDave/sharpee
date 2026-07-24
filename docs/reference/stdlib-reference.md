@@ -3132,13 +3132,14 @@ you wear; empty hands pick a random empty-message variant. The
 abbreviations set a `brief` flag in the event for clients that care.
 Burden/weight messages exist but are dormant.
 
-**score** (`score`, `points`) reads the platform score ledger — exactly
-where Chord's `score <name> worth N` / `award <name>` system deposits
-(chord-language.md §2.8, §4.5): max score is summed from the declared
-worths at load, awards are idempotent, and SCORE works with zero extra
-setup. Ranks fall back to a computed ladder (Novice → Master); a story
-can override rank, moves, and achievements through the scoring
-capability (TypeScript today). `no_scoring` covers score-free stories.
+**score** (`score`, `points`) reads the platform score ledger, where
+Chord's `score <name> worth N` and `award <name>` system deposits
+(chord-language.md §2.8, §4.5). Max score is summed from the declared
+worths at load, and awards are idempotent. When a story declares a rank
+ladder under `use scoring` (§4.5), SCORE reports the rung the player has
+reached. The platform invents no ranks of its own, so a story with no
+ladder reports a bare score. A story that installs no scoring at all
+answers with `no_scoring`, "This isn't that kind of game."
 
 The player sees:
 
@@ -3152,7 +3153,7 @@ By Sharpee Docs
 One night in a lighthouse, told a turn at a time.
 
 > score
-You have scored 0 out of 10, earning you the rank of a Novice.
+You have scored 0 out of a possible 10.
 
 > take the flare
 Taken.
@@ -3166,16 +3167,16 @@ You are carrying:
 a signal flare
 ```
 
-The header alone powers ABOUT, its one `score … worth` line set the
-maximum, and the flare's `award` flipped SCORE from Novice to
-perfect — no scoring setup beyond those two lines.
+The header alone powers ABOUT. Its one `score … worth` line set the
+maximum, and the flare's `award` moved SCORE from zero to a perfect ten.
+No scoring setup was needed beyond those two lines.
 
 | | Refusals | Renders |
 |---|---|---|
 | **about** (`about-*`) | — | `success` (title, version, author, blurb in one message) |
 | **help** (`help-*`) | — | `general` · `first_time` (first ask) · `unknown_topic` (topic help — unreachable) |
 | **inventory** (`inventory-*`) | — | `carrying` · `wearing` · `carrying_and_wearing`, with `holding_list` / `worn_list` lines; empty hands: one of `empty` · `inventory_empty` · `nothing_at_all` · `hands_empty` · `pockets_empty`, at random |
-| **score** (`scoring-*`) | `no_scoring` | `score_with_rank` · `perfect_score` (at max) |
+| **score** (`scoring-*`) | `no_scoring` | `score_simple` · `score_display` (no ladder) · `score_with_rank` (ladder) · `perfect_score` (at max) |
 
 One honest gap: the `wearing` / `carrying_and_wearing` renders are
 currently unreachable — worn items go missing from INVENTORY's listing
@@ -3269,7 +3270,7 @@ Previous turn undone.
 Previous turn undone.
 
 > score
-You have scored 0 out of 10, earning you the rank of a Novice.
+You have scored 0 out of a possible 10.
 ```
 
 AGAIN's repeat is honest — the re-parsed take refuses where the
