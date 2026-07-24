@@ -16,6 +16,8 @@ export {
   ChainEventOptions,
   // Score Ledger (ADR-129)
   ScoreEntry,
+  // Rank ladder (ADR-260)
+  RankDefinition,
   // Region Management (ADR-149)
   RegionOptions,
   RegionCrossings,

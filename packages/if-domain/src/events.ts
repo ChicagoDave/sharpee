@@ -126,6 +126,10 @@ export const IFEvents = {
   // Scoring events (ADR-085)
   SCORE_GAINED: 'if.event.score_gained',
   SCORE_LOST: 'if.event.score_lost',
+
+  // Rank promotion (ADR-260 D6). Carries rank IDS, not display names: the id
+  // is the join key between this platform event and story-owned text.
+  RANK_RISEN: 'if.event.rank_risen',
 } as const;
 
 export type IFEventType = typeof IFEvents[keyof typeof IFEvents];

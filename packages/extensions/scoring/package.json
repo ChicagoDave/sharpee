@@ -1,0 +1,44 @@
+{
+  "name": "@sharpee/ext-scoring",
+  "version": "3.3.0",
+  "description": "Scoring extension for Sharpee IF engine — enables the ledger's scoring and announces rank promotions",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.esm.json",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
+    "build:npm": "tsc --outDir dist"
+  },
+  "dependencies": {
+    "@sharpee/core": "workspace:*",
+    "@sharpee/if-domain": "workspace:*",
+    "@sharpee/world-model": "workspace:*",
+    "@sharpee/plugins": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "rimraf": "^5.0.5"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist-esm/index.js",
+      "require": "./dist/index.js",
+      "esm": "./dist-esm/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "sharpee",
+    "interactive-fiction",
+    "scoring"
+  ],
+  "license": "MIT",
+  "module": "./dist-esm/index.js"
+}

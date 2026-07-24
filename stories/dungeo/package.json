@@ -35,6 +35,7 @@
     "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
+    "@sharpee/ext-scoring": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/media": "workspace:*",

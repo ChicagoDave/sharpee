@@ -33,6 +33,7 @@ import {
   VisibilityBehavior
 } from '@sharpee/world-model';
 import { MetaCommandRegistry, registerNpcCombatResolver } from '@sharpee/stdlib';
+import { registerScoring } from '@sharpee/ext-scoring';
 
 // Import custom actions
 import { customActions, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID, GDTEventTypes, isGDTActive, WALK_THROUGH_ACTION_ID, BankPuzzleMessages, SAY_ACTION_ID, SayMessages, RING_ACTION_ID, RingMessages, PUSH_WALL_ACTION_ID, PushWallMessages, BREAK_ACTION_ID, BreakMessages, BURN_ACTION_ID, BurnMessages, PRAY_ACTION_ID, PrayMessages, INCANT_ACTION_ID, IncantMessages, LIFT_ACTION_ID, LiftMessages, LOWER_ACTION_ID, LowerMessages, PUSH_PANEL_ACTION_ID, PushPanelMessages, KNOCK_ACTION_ID, KnockMessages, ANSWER_ACTION_ID, AnswerMessages, SET_DIAL_ACTION_ID, SetDialMessages, PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages, WAVE_ACTION_ID, WaveMessages, DIG_ACTION_ID, DigMessages, WIND_ACTION_ID, WindMessages, SEND_ACTION_ID, SendMessages, POUR_ACTION_ID, PourMessages, FILL_ACTION_ID, FillMessages, LIGHT_ACTION_ID, LightMessages, TIE_ACTION_ID, TieMessages, UNTIE_ACTION_ID, UntieMessages, PRESS_BUTTON_ACTION_ID, PressButtonMessages, setPressButtonScheduler, TURN_BOLT_ACTION_ID, TurnBoltMessages, setTurnBoltReservoirIds, blockReservoirExits, TURN_SWITCH_ACTION_ID, TurnSwitchMessages, PUT_UNDER_ACTION_ID, PutUnderMessages, PUSH_KEY_ACTION_ID, PushKeyMessages, DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages, INFLATE_ACTION_ID, InflateMessages, DEFLATE_ACTION_ID, DeflateMessages, COMMANDING_ACTION_ID, CommandingMessages, LAUNCH_ACTION_ID, LaunchMessages, DIAGNOSE_ACTION_ID, DiagnoseMessages, ROOM_ACTION_ID, RNAME_ACTION_ID, OBJECTS_ACTION_ID, RoomInfoMessages, GRUE_DEATH_ACTION_ID, GrueDeathMessages, CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages } from './actions';
@@ -229,13 +230,29 @@ export class DungeoStory implements Story {
     MetaCommandRegistry.register(RNAME_ACTION_ID);
     MetaCommandRegistry.register(OBJECTS_ACTION_ID);
 
-    // Register scoring capability for moves/deaths tracking (score itself is on the ledger)
+    // Private story bookkeeping only — moves/deaths. This is NOT the scoring
+    // contract (ADR-260 D1 deleted that); the score itself is on the ledger.
     world.registerCapability(StandardCapabilities.SCORING, {
       initialData: {
         moves: 0,
         deaths: 0,
       }
     });
+
+    // ADR-260 D5/D7: enable scoring and install the ladder. Both steps are
+    // mandatory — without the registration SCORE answers `no_scoring`
+    // ("This isn't that kind of game") in a 616-point game.
+    registerScoring(world);
+    // ADR-085's dungeo.rank.* table, ported verbatim. Thresholds are ABSOLUTE
+    // points, which is what lets the thief's death raise the ceiling from 616
+    // to 650 without moving anyone's rank (ADR-260 D2).
+    world.setRanks([
+      { id: 'beginner', name: 'Beginner', threshold: 0 },
+      { id: 'amateur-adventurer', name: 'Amateur Adventurer', threshold: 50 },
+      { id: 'junior-adventurer', name: 'Junior Adventurer', threshold: 200 },
+      { id: 'adventurer', name: 'Adventurer', threshold: 400 },
+      { id: 'master-adventurer', name: 'Master Adventurer', threshold: 616 },
+    ]);
 
     // ADR-129: Scoring is now handled by world.awardScore() — no ScoringService needed.
     // Take-scoring: stdlib taking action reads IdentityTrait.points

@@ -165,8 +165,8 @@ export interface RegionCrossings {
 }
 
 // Score Ledger (ADR-129)
-import { ScoreLedger, ScoreEntry } from './ScoreLedger.js';
-export { ScoreEntry } from './ScoreLedger.js';
+import { ScoreLedger, ScoreEntry, RankDefinition } from './ScoreLedger.js';
+export { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 
 /**
  * Pre-removal observer (ADR-213 §1).
@@ -450,6 +450,13 @@ export interface IWorldModel {
   getScoreEntries(): ScoreEntry[];
   setMaxScore(max: number): void;
   getMaxScore(): number;
+
+  // Rank ladder (ADR-260)
+  setRanks(ranks: RankDefinition[]): void;
+  getRanks(): RankDefinition[];
+  getRank(): RankDefinition | undefined;
+  setScoringEnabled(enabled: boolean): void;
+  isScoringEnabled(): boolean;
 
   // Persistence
   toJSON(): string;
@@ -1347,6 +1354,27 @@ export class WorldModel implements IWorldModel {
 
   getMaxScore(): number {
     return this.scoreLedger.getMax();
+  }
+
+  // Rank ladder (ADR-260) — delegates to ScoreLedger
+  setRanks(ranks: RankDefinition[]): void {
+    this.scoreLedger.setRanks(ranks);
+  }
+
+  getRanks(): RankDefinition[] {
+    return this.scoreLedger.getRanks();
+  }
+
+  getRank(): RankDefinition | undefined {
+    return this.scoreLedger.getRank();
+  }
+
+  setScoringEnabled(enabled: boolean): void {
+    this.scoreLedger.setScoringEnabled(enabled);
+  }
+
+  isScoringEnabled(): boolean {
+    return this.scoreLedger.isScoringEnabled();
   }
 
   // Persistence — delegates to WorldSerializer

@@ -2,6 +2,7 @@ packages:
   - packages/*
   - packages/extensions/testing
   - packages/extensions/basic-combat
+  - packages/extensions/scoring
   - '!packages/map-editor'
   - '!packages/interpreter'
   - stories/dungeo

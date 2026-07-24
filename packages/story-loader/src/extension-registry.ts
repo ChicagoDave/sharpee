@@ -89,8 +89,11 @@ export interface ExtensionRegistration {
   /** World-side registration (interceptors, resolvers) run at load. */
   registerWorld?: (world: WorldModel) => void;
   /**
-   * Engine plugin registration (TurnPlugin instances) — reserved for
-   * `state-machines` (Phase 3); runs alongside the scheduler's wiring.
+   * Engine plugin registration (TurnPlugin instances). Invoked generically
+   * over `ir.uses` from the loader's `onEngineReady` — the only moment a
+   * plugin registry exists (ADR-260 D6). An extension whose plugin needs
+   * story data lowered into it after construction (`state-machines`) wires
+   * itself in that hook directly instead.
    */
   registerPlugin?: (registry: { register(plugin: unknown): void }) => void;
   /**

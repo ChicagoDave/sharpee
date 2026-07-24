@@ -5,6 +5,12 @@
 /**
  * Event data for when score is displayed
  * Uses domain event pattern with embedded messageId (ADR-097)
+ *
+ * `moves`, `achievements`, `progress`, `hasAchievements`, and `progressMessage`
+ * were removed by ADR-260 D3: nothing on the platform ever produced them, so
+ * they reached the display as `0` / `[]` / percentage-band prose stdlib had no
+ * business inventing. A story that wants them keeps them in its own capability
+ * and overrides the message.
  */
 export interface ScoreDisplayedEventData {
   /** Message ID for text-service lookup */
@@ -19,20 +25,15 @@ export interface ScoreDisplayedEventData {
   /** Maximum possible score */
   maxScore?: number;
 
-  /** Number of moves/turns taken */
-  moves?: number;
-
   /** Percentage of completion (if maxScore > 0) */
   percentage?: number;
 
-  /** Player's rank based on score */
+  /**
+   * The player's current rank ID — the stable join key, not the display name.
+   * The author's `RankDefinition.name` reaches the template through
+   * `params.rank` instead, the same way an entity name does.
+   */
   rank?: string;
-
-  /** List of achievements earned */
-  achievements?: string[];
-
-  /** Current game progress state */
-  progress?: 'early_game' | 'mid_game' | 'late_game' | 'game_complete';
 
   /** Whether scoring is enabled */
   enabled?: boolean;
@@ -42,12 +43,6 @@ export interface ScoreDisplayedEventData {
 
   /** Reason for block (if blocked) */
   reason?: string;
-
-  /** Whether achievements should be displayed */
-  hasAchievements?: boolean;
-
-  /** Progress message ID */
-  progressMessage?: string;
 }
 
 /**

@@ -41,7 +41,7 @@ import type {
   SceneOptions,
   SceneConditions,
 } from './WorldModel.js';
-import type { ScoreEntry } from './ScoreLedger.js';
+import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type {
   WorldState,
@@ -466,6 +466,27 @@ export class AuthorModel implements IWorldModel {
 
   getMaxScore(): number {
     return this.worldModel.getMaxScore();
+  }
+
+  // Rank ladder (ADR-260)
+  setRanks(ranks: RankDefinition[]): void {
+    this.worldModel.setRanks(ranks);
+  }
+
+  getRanks(): RankDefinition[] {
+    return this.worldModel.getRanks();
+  }
+
+  getRank(): RankDefinition | undefined {
+    return this.worldModel.getRank();
+  }
+
+  setScoringEnabled(enabled: boolean): void {
+    this.worldModel.setScoringEnabled(enabled);
+  }
+
+  isScoringEnabled(): boolean {
+    return this.worldModel.isScoringEnabled();
   }
 
   // Persistence

@@ -715,6 +715,16 @@ export class ChordStory implements Story {
       }
     }
 
+    // ADR-260 D6: every `use`d extension gets its `registerPlugin` slot
+    // invoked here — the only moment a plugin registry exists. Generic over
+    // `ir.uses` and naming no extension, so enabling one is a registry entry
+    // rather than a loader edit. `state-machines` declines the slot above
+    // because it must retain the plugin instance to lower `define machine`
+    // blocks into it; nothing here needs lowering after construction.
+    for (const name of this.ir.uses ?? []) {
+      EXTENSION_REGISTRY.get(name)?.registerPlugin?.(engine.getPluginRegistry());
+    }
+
     const daemons = this.runtime.buildSchedulerDaemons();
     if (daemons.length > 0) {
       const plugin = new SchedulerPlugin();
