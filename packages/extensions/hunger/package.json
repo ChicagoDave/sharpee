@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/ext-hunger",
-  "version": "3.3.0",
+  "version": "3.5.0",
   "description": "Hunger extension for Sharpee IF engine — a depleting satiety meter over the ADR-262 banded-scalar crossing engine",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
