@@ -1,9 +1,14 @@
-A `score <name> worth N` line declares a scoring identity, and `award
-<name>` grants it. The line
-is legal under four
-owners (the story header, a `create` block, a `define trait`, and a
-`define action`), and this section shows all four in one story, because
-where a score lives is a real design choice.
+Scoring is opt-in. A story turns it on with a `use scoring` line in its
+header. After that, a `score <name> worth N` line declares a scoring
+identity, and `award <name>` grants it. Without `use scoring`, a `score`
+or `award` line anywhere in the story is a compile error. This is
+deliberate. A game with no score should say so rather than answer SCORE
+with a number.
+
+`score` and `award` are legal under four owners: the story header, a
+`create` block, a `define trait`, and a `define action`. This section
+shows all four in one story, because where a score lives is a real design
+choice.
 
 The story header owns scores that belong to the whole game:
 
@@ -11,6 +16,7 @@ The story header owns scores that belong to the whole game:
 story "Scoring" by "Sharpee Docs"
   id: chord-ref-scoring
   version: 0.0.1
+  use scoring
   score green-thumb worth 5
 ```
 
@@ -81,3 +87,27 @@ is never *needed* for correctness; it
 only documents intent.
 This is why the pattern is "declare the score on the owner, award it in
 an `after` clause" rather than guarding awards behind first-time checks.
+
+## Ranks
+
+`use scoring` can take an indented body of ranks. A rank names a threshold
+in absolute points, and SCORE reports the rung the player has reached:
+
+```chord
+  use scoring, announce all
+    rank "Curious Visitor" at 0
+    rank "Attentive Guest" at 40 says settled-in
+    rank "Master of the Folly" at 120
+```
+
+The threshold is absolute points, never a percentage of the maximum. A
+story that raises its ceiling mid-game would otherwise demote players who
+had earned nothing and lost nothing. `says <key>` names a phrase from your
+own `phrases` block, spoken on the turn the rung is crossed. A rung with no
+`says` speaks an overridable platform line, and `announce silent` turns
+announcements off.
+
+The `announce` mode sets how a single award that crosses several rungs at
+once reads. `all` reports each crossing in order, `collapsed` reports only
+the top rung, `combined` speaks one line for the whole span, and `silent`
+says nothing while the crossing still happens.

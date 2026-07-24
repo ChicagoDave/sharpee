@@ -1,6 +1,8 @@
 A `score <name> worth N` line declares a scoring identity on the owner
 it appears under: the story header, a `create` block, a trait, or an
-action. `award <name>` grants it from any behavior body.
+action. `award <name>` grants it from any behavior body. Scoring is
+enabled once, with a `use scoring` line in the story header. Without it,
+`score` and `award` are compile errors.
 
 ```chord
 create the prize marrow

@@ -84,6 +84,7 @@ export const NAV: NavSection[] = [
           { title: 'Ordinal blocks', href: '/chord/guide/flow/ordinal-blocks' },
           { title: 'each blocks', href: '/chord/guide/flow/each-blocks' },
           { title: 'Scoring', href: '/chord/guide/flow/scoring' },
+          { title: 'Hunger', href: '/chord/guide/flow/hunger' },
           { title: 'Endings', href: '/chord/guide/flow/endings' },
           { title: 'Death', href: '/chord/guide/flow/death' },
           { title: 'Sequences', href: '/chord/guide/flow/sequences' },
