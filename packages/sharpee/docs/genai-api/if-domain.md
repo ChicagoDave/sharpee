@@ -95,6 +95,7 @@ export declare const IFEvents: {
     readonly ABOUT_DISPLAYED: "about_displayed";
     readonly SCORE_GAINED: "if.event.score_gained";
     readonly SCORE_LOST: "if.event.score_lost";
+    readonly RANK_RISEN: "if.event.rank_risen";
 };
 export type IFEventType = typeof IFEvents[keyof typeof IFEvents];
 /**

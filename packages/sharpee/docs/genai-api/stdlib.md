@@ -2338,18 +2338,16 @@ export declare function registerStandardVocabulary(): void;
  * These capabilities provide common game state management patterns
  * that don't naturally fit in the entity-relationship model.
  */
-import { ScoringCapabilitySchema, ScoringData } from './scoring.js';
 import { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData } from './save-restore.js';
 import { ConversationCapabilitySchema, ConversationData, ConversationStateData } from './conversation.js';
 import { GameMetaCapabilitySchema, GameMetaData } from './game-meta.js';
 import { CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry } from './command-history.js';
 import { DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData } from './debug.js';
-export { ScoringCapabilitySchema, ScoringData, SaveRestoreCapabilitySchema, SaveRestoreData, SaveData, ConversationCapabilitySchema, ConversationData, ConversationStateData, GameMetaCapabilitySchema, GameMetaData, CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry, DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData };
+export { SaveRestoreCapabilitySchema, SaveRestoreData, SaveData, ConversationCapabilitySchema, ConversationData, ConversationStateData, GameMetaCapabilitySchema, GameMetaData, CommandHistoryCapabilitySchema, CommandHistoryData, CommandHistoryEntry, DebugCapabilitySchema, DebugData, DEBUG_CAPABILITY, isAnyDebugEnabled, createDefaultDebugData };
 /**
  * Map of standard capability names to their schemas
  */
 export declare const StandardCapabilitySchemas: {
-    readonly scoring: import("@sharpee/world-model").ICapabilitySchema;
     readonly saveRestore: import("@sharpee/world-model").ICapabilitySchema;
     readonly conversation: import("@sharpee/world-model").ICapabilitySchema;
     readonly gameMeta: import("@sharpee/world-model").ICapabilitySchema;

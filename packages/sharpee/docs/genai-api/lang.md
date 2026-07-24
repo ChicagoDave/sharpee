@@ -905,40 +905,6 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        not_cuttable: string;
-        cant_cut: string;
-        no_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        cut: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_diggable: string;
-        cant_dig: string;
-        no_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        dug: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
         not_enterable: string;
         already_inside: string;
         container_closed: string;
@@ -1605,6 +1571,38 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
+        already_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        revealed: string;
+        not_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
         waited: string;
         waited_patiently: string;
         time_passes: string;
@@ -1651,22 +1649,10 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_scoring: string;
-        scoring_not_enabled: string;
-        score_display: string;
         score_simple: string;
+        score_display: string;
         score_with_rank: string;
         perfect_score: string;
-        rank_novice: string;
-        rank_amateur: string;
-        rank_proficient: string;
-        rank_expert: string;
-        rank_master: string;
-        with_achievements: string;
-        no_achievements: string;
-        early_game: string;
-        mid_game: string;
-        late_game: string;
-        game_complete: string;
     };
     help: {
         description: string;
@@ -1866,16 +1852,13 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there_behind: string;
-        cant_hide_there_under: string;
-        cant_hide_there_on: string;
-        cant_hide_there_inside: string;
-        already_hidden: string;
+        no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
     };
     help: {
         description: string;
@@ -1886,8 +1869,13 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        revealed: string;
-        not_hidden: string;
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
     };
     help: {
         description: string;

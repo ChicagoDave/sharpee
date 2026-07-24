@@ -9,6 +9,9 @@ story "The Folly at Fernhill" by "The Sharpee Project"
   states: evening, midnight
   use state-machines
   use scoring
+    rank "Trespasser" at 0
+    rank "Guest of the House" at 10 says settling-in
+    rank "Heir of Fernhill" at 40 says the-house-knows-you
 
   on every turn while one chance in 12
     phrase distant-bell
@@ -1112,6 +1115,18 @@ create the iron weathervane
 define phrase vane-story
   The weathervane creaks the same one story it always tells, whatever
   the hour.
+end phrase
+
+## Rank promotions (ADR-261 D7). The platform speaks no promotion
+## sentence at all, so these are the only words a rise is ever given.
+
+define phrase settling-in
+  The house has stopped listening for your footsteps.
+end phrase
+
+define phrase the-house-knows-you
+  Somewhere below, a door you have never opened settles on its hinges,
+  as if it had been waiting to be yours.
 end phrase
 
 define phrasebook midnight-voice while midnight

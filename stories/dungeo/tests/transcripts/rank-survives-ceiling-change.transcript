@@ -1,0 +1,50 @@
+title: ADR-260 #7 — the thief's death raises the ceiling without moving the rank
+story: dungeo
+description: |
+  Dungeo raises maxScore from 616 to 650 when the thief dies (ADR-078's hidden
+  points, melee-interceptor.ts). Rank thresholds are ABSOLUTE POINTS, so that
+  call must leave the player's rank exactly where it was. Under percentage
+  bands it would silently DEMOTE a player who earned nothing and lost nothing —
+  which is the whole reason ADR-260 D2 made thresholds absolute.
+
+  Restores from wt-13, which is the chain state immediately after the fight.
+---
+
+# ============================================================================
+# GOAL: the ceiling moved; the rank did not
+# ============================================================================
+
+[GOAL: Rank is unchanged across the 616 -> 650 ceiling change]
+
+# State from the end of wt-13 — the thief is dead, so the ceiling has
+# already risen to 650.
+$restore wt-13
+
+# The ledger is the single home for scoring (ADR-260 D1): SCORE reads it and
+# nothing else. "Adventurer" is dungeo's own rank name — ported verbatim from
+# ADR-085 — and appears in no platform source, which is what proves stdlib
+# invented nothing (ADR-260 acceptance #3).
+#
+# The rank follows from the ABSOLUTE threshold: 400 <= 493 < 616 is
+# "Adventurer", and it stays "Adventurer" whether the ceiling reads 616 or
+# 650. A percentage ladder would have to recompute here, and 493/616 = 80%
+# against 493/650 = 76% is exactly the kind of drift that silently re-ranks a
+# player who did nothing.
+> score
+[OK: contains "493 out of 650"]
+[OK: contains "rank of an Adventurer"]
+
+# The five percentage-band ranks stdlib used to hardcode are gone (ADR-260 D4).
+# If any of these appears, the deleted computeRank came back.
+[OK: not contains "Novice"]
+[OK: not contains "Proficient"]
+[OK: not contains "Expert"]
+[OK: not contains "Master"]
+
+# Twice in a row: the rank is DERIVED from the ledger on every read, never
+# stored, so two consecutive reads of an unchanged score agree exactly.
+> score
+[OK: contains "493 out of 650"]
+[OK: contains "rank of an Adventurer"]
+
+[END GOAL]

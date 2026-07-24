@@ -6854,8 +6854,8 @@ export interface RegionCrossings {
     exited: string[];
     entered: string[];
 }
-import { ScoreEntry } from './ScoreLedger.js';
-export { ScoreEntry } from './ScoreLedger.js';
+import { ScoreEntry, RankDefinition } from './ScoreLedger.js';
+export { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 /**
  * Pre-removal observer (ADR-213 §1).
  *
@@ -7093,6 +7093,11 @@ export interface IWorldModel {
     getScoreEntries(): ScoreEntry[];
     setMaxScore(max: number): void;
     getMaxScore(): number;
+    setRanks(ranks: RankDefinition[]): void;
+    getRanks(): RankDefinition[];
+    getRank(): RankDefinition | undefined;
+    setScoringEnabled(enabled: boolean): void;
+    isScoringEnabled(): boolean;
     toJSON(): string;
     loadJSON(json: string): void;
     clear(): void;
@@ -7227,6 +7232,11 @@ export declare class WorldModel implements IWorldModel {
     getScoreEntries(): ScoreEntry[];
     setMaxScore(max: number): void;
     getMaxScore(): number;
+    setRanks(ranks: RankDefinition[]): void;
+    getRanks(): RankDefinition[];
+    getRank(): RankDefinition | undefined;
+    setScoringEnabled(enabled: boolean): void;
+    isScoringEnabled(): boolean;
     toJSON(): string;
     loadJSON(json: string): void;
     private getSerializableState;
@@ -7641,7 +7651,7 @@ import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capab
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel.js';
-import type { ScoreEntry } from './ScoreLedger.js';
+import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
 import type { DirectionType } from '../constants/directions.js';
@@ -7787,6 +7797,11 @@ export declare class AuthorModel implements IWorldModel {
     getScoreEntries(): ScoreEntry[];
     setMaxScore(max: number): void;
     getMaxScore(): number;
+    setRanks(ranks: RankDefinition[]): void;
+    getRanks(): RankDefinition[];
+    getRank(): RankDefinition | undefined;
+    setScoringEnabled(enabled: boolean): void;
+    isScoringEnabled(): boolean;
     toJSON(): string;
     loadJSON(json: string): void;
     clear(): void;
