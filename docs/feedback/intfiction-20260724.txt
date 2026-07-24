@@ -1,0 +1,18 @@
+Nathaniel Lindell
+2lindell
+34m
+This is great! This might be the first parser based platform that’s free of ancient virtual machines and their limitations.
+Something to think about would be adding an index feature. That’s one of the things that makes Inform 7 so popular and accessible.
+Another point: it’s not readily apparent how to change existing logic or sequence of play that the library defines, nor do we have the library in readable Chord form.
+
+
+post by DavidC 18 mins ago
+ 
+DavidC
+IFTF Patron
+18m
+I have one set of changes to work through then back to building the IDE which is where an index will live.
+
+The website does have a standard library doc set: Sharpee — Parser IF, composed
+
+The sequence of play is based entirely on the map, player starting location, and the puzzles you integrate.
