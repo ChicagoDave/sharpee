@@ -281,7 +281,7 @@ In `/Users/david/repos/tsf`:
 
 In `sharpee_v2`:
 
-- [ ] **B1.** Create `.github/workflows/publish-npm.yml`. A dedicated file is
+- [x] **B1.** Create `.github/workflows/publish-npm.yml`. A dedicated file is
       better than reusing `beta-release.yml`, because npm binds the trusted
       publisher to a specific filename and that file should do one thing.
 
@@ -352,7 +352,7 @@ In `sharpee_v2`:
 
   Note there is **no `NODE_AUTH_TOKEN`**. That absence is the point.
 
-- [ ] **B2.** Use `./repokit build` as the build entry point, **not**
+- [x] **B2.** Use `./repokit build` as the build entry point, **not**
       `pnpm run build`. This is the fix for §1.4 and it is not optional.
 
       The root `build` script is `turbo run build`, which compiles packages but
@@ -377,8 +377,10 @@ In `sharpee_v2`:
       normally run against a warm tree, and the cold-build ordering has bitten us
       before, so this needs one verification run before the first real publish. If
       it fails cold, fix the ordering rather than falling back to `turbo run build`.
-- [ ] **B3.** Delete the dead `publish-npm` job from `beta-release.yml`, along with
+- [x] **B3.** Delete the dead `publish-npm` job from `beta-release.yml`, along with
       the now-unused `NPM_TOKEN` reference. Leave the build/test/release jobs alone.
+      *(Done 2026-07-25: `beta-release.yml` now has only build/release/notify; no
+      `NPM_TOKEN` reference remains under `.github/`.)*
 
 ### Part C — Register trusted publishers on npmjs.com
 

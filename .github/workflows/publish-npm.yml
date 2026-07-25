@@ -1,0 +1,62 @@
+name: Publish to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (pack and validate, publish nothing)'
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write        # required for OIDC — do not remove
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10.13.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+
+      # setup-node ships npm 10.x with Node 22; trusted publishing needs >= 11.5.1
+      - name: Upgrade npm
+        run: npm install -g npm@latest
+
+      - name: Verify npm version
+        run: npm --version
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # MUST be the repokit build, not `pnpm run build`:
+      # `pnpm run build` is `turbo run build` and does not stamp versions,
+      # which is how @sharpee/stdlib@3.6.0 shipped a stale ENGINE_VERSION.
+      - name: Build platform packages (stamps versions first)
+        run: ./repokit build
+
+      - name: Fail if stamping changed a tracked file
+        run: git diff --exit-code
+
+      - name: Build npm artifacts
+        run: pnpm exec tsf build --npm
+
+      - name: Validate
+        run: pnpm exec tsf validate
+
+      - name: Publish (dry run)
+        if: inputs.dry_run
+        run: pnpm exec tsf publish --changed --dry-run
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        run: pnpm exec tsf publish --changed
