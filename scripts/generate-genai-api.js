@@ -342,6 +342,21 @@ function generateGroupMarkdown(group) {
 }
 
 /**
+ * Read the platform version from the @sharpee/sharpee package manifest.
+ *
+ * @returns {string} the `X.Y.Z` version, or `unknown` if the manifest is
+ *   missing or unparseable (docs generation must never fail on this).
+ */
+function readPlatformVersion() {
+  try {
+    const pkgPath = path.join(ROOT, 'packages', 'sharpee', 'package.json');
+    return JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
  * Generate index.md with navigation and summaries.
  */
 function generateIndex(groups, stats) {
@@ -352,7 +367,9 @@ function generateIndex(groups, stats) {
     'Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.'
   );
   lines.push('');
-  lines.push(`Generated: ${new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC')}`);
+  // Stamp the platform version, not a wall-clock time: regenerating without a
+  // version bump must produce byte-identical output so builds don't dirty git.
+  lines.push(`Generated for Sharpee ${readPlatformVersion()}`);
   lines.push('');
   lines.push('## Quick Start');
   lines.push('');
