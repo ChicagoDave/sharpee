@@ -34,6 +34,7 @@ export type TokenKind =
   | 'rbracket' // `]`
   | 'lbrace' // `{` — nested emit-payload objects (ADR-216); prose markers are extracted from raw text, not tokens
   | 'rbrace' // `}`
+  | 'compare' // `>=`, `<=`, `>`, `<` — ADR-264 counter comparisons
   | 'punct'; // any other single non-space character (prose punctuation)
 
 export interface Token {
@@ -182,6 +183,14 @@ function tokenizeLine(raw: string, lineNo: number, start: number, diagnostics: D
     if (num) {
       tokens.push({ kind: 'number', text: num[0], span: spanOf(lineNo, column, num[0].length) });
       pos += num[0].length;
+      continue;
+    }
+
+    // ADR-264 comparison operators: `>=` / `<=` / `>` / `<`.
+    if (ch === '>' || ch === '<') {
+      const text = raw[pos + 1] === '=' ? ch + '=' : ch;
+      tokens.push({ kind: 'compare', text, span: spanOf(lineNo, column, text.length) });
+      pos += text.length;
       continue;
     }
 

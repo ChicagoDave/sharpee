@@ -30,7 +30,7 @@ import {
   WorldModel,
 } from '@sharpee/world-model';
 import { LoadError } from './errors.js';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys.js';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
 
 export interface EvalContext {
   world: WorldModel;
@@ -152,6 +152,19 @@ export class Evaluator {
       }
       case 'predicate':
         return this.evalPredicate(cond, ctx);
+      case 'compare': {
+        // ADR-264 D3: numeric comparison of two values (a counter vs a number).
+        const left = Number(this.evalValue(cond.left, ctx));
+        const right = Number(this.evalValue(cond.right, ctx));
+        switch (cond.op) {
+          case 'gte': return left >= right;
+          case 'gt': return left > right;
+          case 'lte': return left <= right;
+          case 'lt': return left < right;
+          case 'eq': return left === right;
+        }
+        return false;
+      }
     }
   }
 
@@ -324,6 +337,18 @@ export class Evaluator {
           throw new LoadError(`Cannot read \`${value.field}\` of a non-entity value.`);
         }
         return this.readField(base, value.field, ctx);
+      }
+      case 'counter': {
+        // ADR-264 D3: read a counter's current value from world state. The
+        // owner (per-entity) resolves to an IR entity id, matching how the
+        // loader seeds and the runtime mutates the counter.
+        let ownerId: string | null = null;
+        if (value.owner) {
+          if (value.owner.kind === 'entity') ownerId = value.owner.id;
+          else if (value.owner.kind === 'it') ownerId = ctx.it ?? null;
+        }
+        const key = counterKey(value.name, ownerId ?? undefined);
+        return Number(ctx.world.getStateValue(key) ?? 0);
       }
       case 'slot': {
         const bound = ctx.slots?.[value.name];

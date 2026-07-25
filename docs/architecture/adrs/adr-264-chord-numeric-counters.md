@@ -74,11 +74,16 @@ needs them (Consequences).
 
 ### D3 — Counters read in conditions
 
-A counter is a first-class value in the condition grammar: `when madness >= 90`, `while its suspicion
-is 0`, `when the innkeeper's suspicion >= 50`. Story-global counters read bare; per-entity counters
-read by the same possessive/`its` form the mutations use. This is what lets gates, `while` blocks, and
-endings react to a counter — and what lets a banded meter (ADR-262) or `kill the player when
-<counter> >= N` (ADR-263 `fatal`) test it.
+A counter is a first-class value in the condition grammar. Comparisons come in **two interchangeable
+spellings** (owner decision, 2026-07-24) that lower to one IR compare node: a **word form** — `when
+madness is at least 90`, `is more than`, `is at most`, `is less than`, and plain `is` for equality — and
+a **symbolic form** — `when madness >= 90`, `<=`, `>`, `<`. Story-global counters read bare (`madness`);
+per-entity counters read by the same possessive/`its` form the mutations use (`the innkeeper's
+suspicion is at least 50`, `while its suspicion is 0`). Both spellings are accepted everywhere a
+condition is — this is what lets gates, `while` blocks, and endings react to a counter, and what lets a
+banded meter (ADR-262) or `kill the player when <counter> is at least N` (ADR-263 `fatal`) test it. The
+symbolic form requires the lexer to emit compound `>=`/`<=` tokens; the word form rides the existing
+word tokenizer.
 
 ### D4 — Counters compose with the ADR-262 banded engine, but are not it
 
@@ -122,7 +127,8 @@ ADR-263).
    counter is `analysis.unknown-counter`.
 2. `raise madness by 15` accumulates additively across turns; `lower` subtracts; both clamp to declared
    bounds; `raise … by -n` is rejected.
-3. A condition reads the counter (`when madness >= 90`) and gates a block / ending.
+3. A condition reads the counter and gates a block / ending — in **both** spellings: `when madness is
+   at least 90` and `when madness >= 90` compile to the same comparison and evaluate identically.
 4. The value survives save/restore (world-state round-trip), like `hunger.severity`.
 4a. A **per-entity** counter (`counter suspicion` on two NPCs) holds an independent value per instance
    — raising the innkeeper's does not move the guard's — is read/mutated by possessive/`its`, and each

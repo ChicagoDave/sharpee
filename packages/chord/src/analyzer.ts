@@ -21,6 +21,8 @@
 import {
   ConditionNode,
   CreateDecl,
+  CounterDecl,
+  DefineCounter,
   DefineAction,
   DefineChannel,
   DefineCondition,
@@ -69,6 +71,8 @@ import {
   IRRankDef,
   IRHungerDef,
   IRMeterRung,
+  IRCounterDef,
+  IRCounterDecl,
   IRScoreDef,
   IRStatement,
   IRTopicRow,
@@ -198,6 +202,8 @@ function conditionFingerprint(cond: ConditionNode): string {
       switch (p.kind) {
         case 'is':
           return `is${p.negated ? '!' : ''}(${value(cond.subject)},${value(p.value)})`;
+        case 'compare':
+          return `cmp:${p.op}(${value(cond.subject)},${value(p.value)})`;
         case 'is-a':
           return `is-a${p.negated ? '!' : ''}(${value(cond.subject)},${p.classifier.join(' ').toLowerCase()})`;
         case 'is-in':
@@ -311,6 +317,8 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
       switch (p.kind) {
         case 'is':
           return visitValue(p.value);
+        case 'compare':
+          return visitValue(p.value);
         case 'is-in':
           return nameIsIt(p.place);
         case 'has':
@@ -382,6 +390,10 @@ class Analyzer {
   private emitFields = new Map<string, Set<string>>();
   /** Owner-qualified score id (`pygmy-goats.fed`, story-level bare) → worth. */
   private scoreNames = new Map<string, number>();
+  /** Story-global counter names (ADR-264) — for `raise`/`lower`/read resolution. */
+  private storyCounterNames = new Set<string>();
+  /** Entity id → its per-entity counter names (ADR-264). */
+  private entityCounterNames = new Map<string, Set<string>>();
   /** Owner-qualified score declarations, for ir.scores emission. */
   private scoreDecls: IRScoreDef[] = [];
   /** condition name → OPEN (references `it`/`its`; usable as a selection). */
@@ -535,6 +547,7 @@ class Analyzer {
       scores: this.scoreDecls,
       ranks: this.buildRanks(),
       ...(hungerDef !== undefined ? { hunger: hungerDef } : {}),
+      counters: [],
       sequences: [],
       machines: [],
       channels: [],
@@ -584,6 +597,10 @@ class Analyzer {
           break;
         case 'define-machine':
           ir.machines.push(this.buildMachine(decl));
+          break;
+        case 'define-counter':
+          // ADR-264 D1: a story-global numeric counter.
+          ir.counters.push(this.buildCounterDef(decl));
           break;
         case 'define-asset':
           break; // collected in pass 1 — data references, nothing to emit
@@ -1311,6 +1328,14 @@ class Analyzer {
           this.hatchNames.add(decl.name);
         }
       }
+      else if (decl.kind === 'define-counter') {
+        // ADR-264: register the story-global counter name; duplicate is an error.
+        if (this.storyCounterNames.has(decl.name)) {
+          this.diagnostics.error('analysis.duplicate-counter', `A counter named \`${decl.name}\` is already declared.`, decl.span);
+        } else {
+          this.storyCounterNames.add(decl.name);
+        }
+      }
       else if (decl.kind === 'define-phrases') this.collectPhrasesBlock(decl);
       else if (decl.kind === 'define-phrase') this.collectPhraseDecl(decl);
       else if (decl.kind === 'define-phrasebook') this.collectPhrasebook(decl);
@@ -1705,6 +1730,18 @@ class Analyzer {
     this.entities.push(sym);
     this.byId.set(id, sym);
     for (const s of decl.scores) this.collectScore(s.name, s.worth, s.span, id);
+    // ADR-264: register per-entity counter names under this entity's id.
+    if (decl.counters.length > 0) {
+      const names = this.entityCounterNames.get(id) ?? new Set<string>();
+      for (const c of decl.counters) {
+        if (names.has(c.name)) {
+          this.diagnostics.error('analysis.duplicate-counter', `Entity \`${nameWords.join(' ')}\` already has a counter named \`${c.name}\`.`, c.span);
+        } else {
+          names.add(c.name);
+        }
+      }
+      this.entityCounterNames.set(id, names);
+    }
   }
 
   /** Construct kinds already reported by the scoring gate (one each). */
@@ -1849,6 +1886,37 @@ class Analyzer {
       rungs,
       span: decl.span,
     };
+  }
+
+  /**
+   * Resolve a counter's `starts`/bounds (ADR-264 D1): default `starts` 0,
+   * validate a non-empty range (lo ≤ hi), and clamp the initial value into the
+   * declared bounds so the seeded value is always valid.
+   */
+  private resolveCounter(name: string, starts: number | null, lo: number | null, hi: number | null, span: Span): { starts: number; lo: number | null; hi: number | null } {
+    if (lo !== null && hi !== null && lo > hi) {
+      this.diagnostics.error(
+        'analysis.counter-bounds',
+        `Counter "${name}" has an empty range: lower bound ${lo} exceeds upper bound ${hi}.`,
+        span,
+      );
+    }
+    let s = starts ?? 0;
+    if (lo !== null && s < lo) s = lo;
+    if (hi !== null && s > hi) s = hi;
+    return { starts: s, lo, hi };
+  }
+
+  /** Lower a story-global `define counter` (ADR-264 D1). */
+  private buildCounterDef(decl: DefineCounter): IRCounterDef {
+    const { starts, lo, hi } = this.resolveCounter(decl.name, decl.starts, decl.lo, decl.hi, decl.span);
+    return { name: decl.name, starts, lo, hi, span: decl.span };
+  }
+
+  /** Lower a per-entity `counter` line (ADR-264 D1). */
+  private buildCounterDecl(decl: CounterDecl): IRCounterDecl {
+    const { starts, lo, hi } = this.resolveCounter(decl.name, decl.starts, decl.lo, decl.hi, decl.span);
+    return { name: decl.name, starts, lo, hi, span: decl.span };
   }
 
   /** Register an owner-attached score (ratchet D12) under its qualified id. */
@@ -2336,6 +2404,7 @@ class Analyzer {
       // states (ratchet D8) — the loader initializes from states[0].
       states: sym ? sym.states : decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
+      counters: decl.counters.map((c) => this.buildCounterDecl(c)),
       descriptionKey: decl.description ? `${id}.description` : null,
       initialDescriptionKey: decl.initialDescription ? `${id}.initial-description` : null,
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
@@ -2590,6 +2659,40 @@ class Analyzer {
         }
         return { kind: 'award', expression, once: stmt.once, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }
+      case 'raise':
+      case 'lower': {
+        // ADR-264 D2: resolve the target — a bare name (story-global) or a
+        // possessive (per-entity), validated against the counter registries.
+        const target = stmt.target;
+        let counter = '';
+        let owner: IRValue | null = null;
+        let ownerId: string | null = null;
+        if (target.kind === 'possessive') {
+          counter = target.field.join(' ');
+          owner = this.resolveValue(target.base, scope);
+          if (owner.kind === 'entity') ownerId = owner.id;
+          else if (owner.kind === 'it') ownerId = scope.owner?.id ?? null;
+        } else if (target.kind === 'ref') {
+          counter = target.ref.words.join(' ');
+        } else if (target.kind === 'bare') {
+          counter = target.words.join(' ');
+        }
+        if (owner === null) {
+          if (!this.storyCounterNames.has(counter)) {
+            this.diagnostics.error(
+              'analysis.unknown-counter',
+              `\`${counter}\` is not a declared counter${this.suggestText(counter, [...this.storyCounterNames])}.`,
+              stmt.span,
+            );
+          }
+        } else if (ownerId !== null) {
+          const set = this.entityCounterNames.get(ownerId);
+          if (!set || !set.has(counter)) {
+            this.diagnostics.error('analysis.unknown-counter', `\`${counter}\` is not a counter of \`${ownerId}\`.`, stmt.span);
+          }
+        }
+        return { kind: stmt.kind, counter, owner, amount: stmt.amount, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
       case 'win':
       case 'lose':
       case 'kill':
@@ -2727,14 +2830,26 @@ class Analyzer {
     switch (expr.kind) {
       case 'literal':
         return { kind: 'literal', value: expr.value, valueType: expr.literalKind };
-      case 'possessive':
-        return {
-          kind: 'field',
-          base: this.resolveValue(expr.base, scope),
-          field: expr.field.join(' '),
-        };
-      case 'ref':
+      case 'possessive': {
+        // ADR-264 D3: `<owner>'s <counter>` / `its <counter>` reads a per-entity
+        // counter when the field names one; otherwise it is a trait field.
+        const base = this.resolveValue(expr.base, scope);
+        const field = expr.field.join(' ');
+        let ownerId: string | null = null;
+        if (base.kind === 'entity') ownerId = base.id;
+        else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
+        if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(field)) {
+          return { kind: 'counter', name: field, owner: base };
+        }
+        return { kind: 'field', base, field };
+      }
+      case 'ref': {
+        // ADR-264 D3: a bare name that is a story-global counter reads it.
+        if (expr.ref.kind === 'name' && expr.ref.words.length === 1 && this.storyCounterNames.has(expr.ref.words[0])) {
+          return { kind: 'counter', name: expr.ref.words[0], owner: null };
+        }
         return this.resolveRefValue(expr.ref, scope);
+      }
       case 'bare': {
         const scoped = this.resolveScopedWords(expr.words, scope);
         return scoped ?? { kind: 'symbol', name: expr.words.join(' ') };
@@ -3194,6 +3309,19 @@ class Analyzer {
           case 'is': {
             const object = this.resolveIsObject(cond.predicate.value, subject, scope, cond.predicate.span);
             return { kind: 'predicate', pred: 'is', negated: cond.predicate.negated, subject, object };
+          }
+          case 'compare': {
+            // ADR-264 D3: numeric comparison — the left operand must be a
+            // counter (the only numeric value a condition reads); a bare/
+            // possessive name that isn't one is a typo, not a silent symbol.
+            if (subject.kind !== 'counter') {
+              const name =
+                cond.subject.kind === 'ref' ? cond.subject.ref.words.join(' ')
+                : cond.subject.kind === 'possessive' ? cond.subject.field.join(' ')
+                : '<value>';
+              this.diagnostics.error('analysis.unknown-counter', `\`${name}\` is not a declared counter — a comparison reads a counter.`, cond.predicate.span);
+            }
+            return { kind: 'compare', op: cond.predicate.op, left: subject, right: this.resolveValue(cond.predicate.value, scope) };
           }
           case 'is-a':
             return {

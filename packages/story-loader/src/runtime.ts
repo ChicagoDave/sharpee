@@ -52,6 +52,7 @@ import {
   CHORD_STATE_PREFIX,
   CHORD_STORY_STATE_KEY,
   CHORD_TRAIT_PREFIX,
+  counterKey,
 } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 import { stagingRenderContext } from './hatch-context.js';
@@ -1647,6 +1648,23 @@ export class ChordRuntime {
           }
           break;
         }
+        case 'raise':
+        case 'lower': {
+          // ADR-264 D2: additive counter mutation with silent two-sided clamp.
+          if (phase !== 'reports' && whenHolds(stmt)) {
+            const ownerIrId = stmt.owner === null ? null : this.irIdOfValue(stmt.owner, ctx);
+            const key = counterKey(stmt.counter, ownerIrId ?? undefined);
+            const bounds = this.counterBounds(stmt.counter, ownerIrId);
+            const current = Number(ctx.world.getStateValue(key) ?? 0);
+            let next = current + (stmt.kind === 'raise' ? stmt.amount : -stmt.amount);
+            if (bounds) {
+              if (bounds.lo !== null && next < bounds.lo) next = bounds.lo;
+              if (bounds.hi !== null && next > bounds.hi) next = bounds.hi;
+            }
+            ctx.world.setStateValue(key, next);
+          }
+          break;
+        }
         case 'refuse':
         case 'must':
         case 'refuse-when':
@@ -2058,6 +2076,21 @@ export class ChordRuntime {
         return nested;
       }
     }
+  }
+
+  /**
+   * The declared bounds of a counter (ADR-264 D2) — story-global when
+   * `entityIrId` is null, else the entity's own counter. Undefined when
+   * unbounded / undeclared (no clamp).
+   */
+  private counterBounds(counter: string, entityIrId: string | null): { lo: number | null; hi: number | null } | undefined {
+    if (entityIrId === null) {
+      const def = this.ir.counters.find((c) => c.name === counter);
+      return def ? { lo: def.lo, hi: def.hi } : undefined;
+    }
+    const entity = this.ir.entities.find((e) => e.id === entityIrId);
+    const def = entity?.counters.find((c) => c.name === counter);
+    return def ? { lo: def.lo, hi: def.hi } : undefined;
   }
 
   private rawEvent(type: string, data: Record<string, unknown>): ISemanticEvent {

@@ -25,3 +25,15 @@ export const CHORD_TRAIT_PREFIX = 'chord.trait.';
 
 /** The story object's current phase (`states:` on the story header, D2). */
 export const CHORD_STORY_STATE_KEY = 'chord.story.state';
+
+/**
+ * Numeric counters (ADR-264): story-global as `chord.counter.<name>`, per-entity
+ * as `chord.counter.<ir-entity-id>.<name>`. Ordinary world state, so save/restore
+ * covers each independently.
+ */
+export const CHORD_COUNTER_PREFIX = 'chord.counter.';
+
+/** The world-state key for a counter (story-global when `ownerId` is omitted). */
+export function counterKey(name: string, ownerId?: string): string {
+  return ownerId ? `${CHORD_COUNTER_PREFIX}${ownerId}.${name}` : `${CHORD_COUNTER_PREFIX}${name}`;
+}

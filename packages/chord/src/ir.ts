@@ -84,6 +84,8 @@ export interface StoryIR {
   ranks: IRRankDef[];
   /** The `use hunger` satiety meter (ADR-263 D1), or absent. */
   hunger?: IRHungerDef;
+  /** Story-global numeric counters (ADR-264 D1). */
+  counters: IRCounterDef[];
   sequences: IRSequenceDef[];
   /** `define machine` blocks (ADR-215 `use state-machines` depth). */
   machines: IRMachineDef[];
@@ -172,6 +174,8 @@ export interface IREntity {
    * `change` target's declaring set for the forward-march check.
    */
   statesReversible: boolean;
+  /** Per-entity numeric counters (ADR-264 D1) — one value per instance. */
+  counters: IRCounterDecl[];
   /** Phrase key of the description in the phrase table, or null. */
   descriptionKey: string | null;
   /**
@@ -539,6 +543,29 @@ export interface IRMeterRung {
   span: Span;
 }
 
+/**
+ * A story-global numeric counter (ADR-264 D1). `starts` is resolved to a
+ * concrete initial value (default 0, clamped into bounds); `lo`/`hi` are the
+ * declared bounds or null (unbounded). The loader seeds `starts` into world
+ * state under `CHORD_COUNTER_PREFIX + name`; mutations clamp to `[lo, hi]`.
+ */
+export interface IRCounterDef {
+  name: string;
+  starts: number;
+  lo: number | null;
+  hi: number | null;
+  span: Span;
+}
+
+/** A per-entity numeric counter (ADR-264 D1) — same shape, carried on IREntity. */
+export interface IRCounterDecl {
+  name: string;
+  starts: number;
+  lo: number | null;
+  hi: number | null;
+  span: Span;
+}
+
 /** `define sequence <name>` — chained-fuse timeline. */
 export interface IRSequenceDef {
   /** Name words joined with a space (`closing time`). */
@@ -681,6 +708,9 @@ export type IRStatement =
   /** `remove <entity>` (Z6, ADR-213 Q3) — out of play via `world.removeEntity`; observers fire. */
   | { kind: 'remove'; entity: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'award'; expression: string[]; once: boolean; stmtWhen?: IRCondition | null; span: Span }
+  // ADR-264 D2: `raise`/`lower` a counter by an amount. `owner` is the entity
+  // IRValue for a per-entity counter, or null for a story-global one.
+  | { kind: 'raise' | 'lower'; counter: string; owner: IRValue | null; amount: number; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -740,6 +770,9 @@ export type IRValue =
   /** The story object (`change the story to after-hours`, ratchet D2). */
   | { kind: 'story' }
   | { kind: 'field'; base: IRValue; field: string }
+  /** A numeric counter read (ADR-264 D3) — `owner` is the entity IRValue for a
+   *  per-entity counter, or null for a story-global one. */
+  | { kind: 'counter'; name: string; owner: IRValue | null }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
   /** The `each`-block binder `the match` (ratchet E3) — parallel to `it`. */
@@ -784,4 +817,11 @@ export type IRCondition =
       negated: boolean;
       subject: IRValue;
       object: IRValue;
+    }
+  /** A numeric comparison (ADR-264 D3): `left <op> right`. */
+  | {
+      kind: 'compare';
+      op: 'gte' | 'gt' | 'lte' | 'lt' | 'eq';
+      left: IRValue;
+      right: IRValue;
     };

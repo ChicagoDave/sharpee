@@ -730,6 +730,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         },
       ],
       "containing": [],
+      "counters": [],
       "deadly": null,
       "deadlyExits": [],
       "description": {
@@ -783,6 +784,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "carries": [],
       "compositions": [],
       "containing": [],
+      "counters": [],
       "deadly": null,
       "deadlyExits": [],
       "description": null,
@@ -847,6 +849,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "carries": [],
       "compositions": [],
       "containing": [],
+      "counters": [],
       "deadly": null,
       "deadlyExits": [],
       "description": null,
