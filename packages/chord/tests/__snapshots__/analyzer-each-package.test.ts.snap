@@ -195,6 +195,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       },
     },
   ],
+  "counters": [],
   "entities": [
     {
       "aka": [],
@@ -217,6 +218,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       ],
       "carries": [],
       "containing": [],
+      "counters": [],
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "trophy-barn.description",
@@ -259,6 +261,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "blockedExits": [],
       "carries": [],
       "containing": [],
+      "counters": [],
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": null,
@@ -298,6 +301,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "blockedExits": [],
       "carries": [],
       "containing": [],
+      "counters": [],
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": null,
@@ -352,6 +356,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "blockedExits": [],
       "carries": [],
       "containing": [],
+      "counters": [],
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": null,
@@ -504,7 +509,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
   "format": "story language 1",
   "hasHatches": false,
   "hatches": [],
-  "languageVersion": "1.3.0",
+  "languageVersion": "1.4.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",

@@ -139,6 +139,7 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-verb | define-text
              | define-trait | define-action | define-hatch
              | define-sequence
+             | define-counter                              (* ADR-264 *)
              | define-machine                              (* ADR-215, use-gated *)
              | define-asset | define-channel               (* ADR-216 *)
              | define-family-channel                       (* ADR-241 *)
@@ -210,6 +211,10 @@ states-line  = "states" [ "," "reversible" ] ":" WORD { "," WORD } NL ;
                (* legal in story header, create blocks, define trait blocks *)
 score-line   = "score" WORD "worth" NUMBER NL ;
                (* legal in story header, create, define trait, define action *)
+counter-line = "counter" WORD [ "starts" NUMBER ]
+                         [ "between" NUMBER "and" NUMBER ] NL ;
+               (* ADR-264 D1: a per-entity numeric counter, legal in a create
+                  block; story-global counters use `define counter` instead *)
 
 
 (* ---- on / after clauses (D3/D5) ---------------------------------------- *)
@@ -250,6 +255,7 @@ create-line  = "aka" alias { "," alias } NL
                                                               never an injected default *)
              | states-line
              | score-line
+             | counter-line                                (* ADR-264 D1 *)
              | composition { "," composition } NL          (* pre-blank paragraph only *)
              | placement NL
              | "wears" name NL
@@ -411,6 +417,12 @@ define-hatch   = "define" "action" WORD "from" STRING NL   (* action hatch *)
 define-sequence= "define" "sequence" WORD { WORD } NL
                  { sequence-step } "end" "sequence" NL ;
 
+(* ---- ADR-264 numeric counters ------------------------------------------ *)
+
+define-counter = "define" "counter" WORD [ "starts" NUMBER ]
+                          [ "between" NUMBER "and" NUMBER ] NL ;
+                 (* a story-global counter; `starts`/bounds optional *)
+
 (* ---- ADR-215 state-machine depth (`use state-machines`; spelling A) ---- *)
 
 define-machine = "define" "machine" WORD { WORD } NL
@@ -554,6 +566,9 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
              | "remove" name [ stmt-when ] NL              (* Z6: remove from play;
                                                               never the player *)
              | "award" { token } [ "," "once" ] [ stmt-when ] NL
+             | ( "raise" | "lower" ) counter-ref "by" NUMBER
+               [ stmt-when ] NL                            (* ADR-264 D2: additive
+                                                              counter mutation, clamped *)
              | "win" [ WORD ] [ stmt-when ] NL
              | "lose" [ WORD ] [ stmt-when ] NL
              | select-on | select-strategy | ordinal-block | each-block ;
@@ -639,9 +654,15 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                               | "here"                         (* Z4 deictic: subject shares
                                                                   the player's location;
                                                                   entity subjects only *)
+                              | word-compare NUMBER            (* ADR-264 D3 word form *)
                               | value-expr )                   (* is *)
              | ( "has" | "holds" | "wears" ) name
-             | "can" ( "see" | "reach" ) name ;
+             | "can" ( "see" | "reach" ) name
+             | compare-op NUMBER ;                            (* ADR-264 D3 symbolic form *)
+word-compare = "at" "least" | "more" "than" | "at" "most" | "less" "than" ;
+compare-op   = ">=" | ">" | "<=" | "<" ;                      (* ADR-264: lexed as one token *)
+counter-ref  = WORD | "its" WORD | name "'s" WORD ;           (* ADR-264: a counter, story-global
+                                                                 (bare) or per-entity (possessive) *)
 
 value-expr   = NUMBER | STRING
              | "the" "match"                               (* E3 binder, standalone only —

@@ -113,7 +113,7 @@ import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_F
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
 import { ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from './state-keys.js';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
 /**
@@ -246,6 +246,16 @@ export class ChordStory implements Story {
   ) {
     if (ir.format !== IR_FORMAT) {
       throw new LoadError(`Unsupported IR format \`${String(ir.format)}\` — this loader reads \`${IR_FORMAT}\`.`);
+    }
+    // ADR-265 D2: a reference-only artifact is a generated Chord-form rendering
+    // of the standard library for reading — not a runnable story. Refuse it here,
+    // before any world is built, so it can never be mistaken for the library.
+    if (ir.meta.fields['reference-only'] === 'true') {
+      throw new LoadError(
+        'This is a reference-only Chord artifact (ADR-265) — a generated rendering of the standard ' +
+        'library for reading, NOT a runnable story. The real implementation is TypeScript in ' +
+        'packages/stdlib/. Remove the `reference-only: true` marker to load it as a story.',
+      );
     }
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
@@ -494,6 +504,11 @@ export class ChordStory implements Story {
       if (irEntity.states.length > 0) {
         world.setStateValue(CHORD_STATE_PREFIX + irEntity.id, irEntity.states[0]);
       }
+      // ADR-264 D1/D5: seed each per-entity counter's initial value; the state
+      // bag serializes per key, so each instance round-trips independently.
+      for (const counter of irEntity.counters) {
+        world.setStateValue(counterKey(counter.name, irEntity.id), counter.starts);
+      }
       // Z2 (ADR-211): compile `{key}` description markers onto ADR-209
       // snippet storage — atomically per room, before the engine's
       // load-time `validateRoomSnippets` gate ever sees the texts.
@@ -517,6 +532,12 @@ export class ChordStory implements Story {
     // The story object starts in its first declared phase (ratchet D2).
     if (this.ir.story.states.length > 0) {
       world.setStateValue(CHORD_STORY_STATE_KEY, this.ir.story.states[0]);
+    }
+
+    // ADR-264 D1/D5: seed each story-global counter's initial value into world
+    // state (serialized, so it survives save/restore — the hunger.severity seam).
+    for (const counter of this.ir.counters) {
+      world.setStateValue(counterKey(counter.name), counter.starts);
     }
 
     // Declared scores set the ceiling (dedup-by-identity makes the sum

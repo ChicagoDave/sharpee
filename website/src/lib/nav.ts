@@ -183,6 +183,7 @@ export const NAV: NavSection[] = [
         open: false,
         items: [
           { title: 'Overview', href: '/chord/stdlib' },
+          { title: 'Chord reference', href: '/chord/stdlib/reference' },
           {
             title: 'Manipulation',
             href: '/chord/stdlib/manipulation',

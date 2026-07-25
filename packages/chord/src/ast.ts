@@ -149,6 +149,20 @@ export interface ScoreDecl {
   span: Span;
 }
 
+/**
+ * `counter <name> [starts <n>] [between <lo> and <hi>]` inside a `create` block
+ * (ADR-264 D1) — a per-entity numeric counter, one value per instance. `starts`
+ * and the bounds are optional (null = default 0 / unbounded).
+ */
+export interface CounterDecl {
+  kind: 'counter';
+  name: string;
+  starts: number | null;
+  lo: number | null;
+  hi: number | null;
+  span: Span;
+}
+
 export type Declaration =
   | CreateDecl
   | DefineCondition
@@ -161,6 +175,8 @@ export type Declaration =
   | DefineAction
   | DefineHatch
   | DefineSequence
+  // ADR-264 story-global numeric counter:
+  | DefineCounter
   // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
   | DefineMachine
   // ADR-216 declared media assets (DATA references, never hatches):
@@ -395,6 +411,8 @@ export interface CreateDecl {
   statesReversible: boolean;
   /** `score <name> worth N` lines — entity-owned scores (D12). */
   scores: ScoreDecl[];
+  /** `counter <name> …` lines — per-entity numeric counters (ADR-264 D1). */
+  counters: CounterDecl[];
   /** First bare indented paragraph. */
   description: TextValue | null;
   /**
@@ -918,6 +936,19 @@ export interface DefineSequence {
 }
 
 /**
+ * `define counter <name> [starts <n>] [between <lo> and <hi>]` (ADR-264 D1) —
+ * a story-global numeric counter. `starts`/bounds optional (null = 0 / unbounded).
+ */
+export interface DefineCounter {
+  kind: 'define-counter';
+  name: string;
+  starts: number | null;
+  lo: number | null;
+  hi: number | null;
+  span: Span;
+}
+
+/**
  * `at turn <n>` (absolute), `<n> turns later` (relative), or
  * `when <owner> becomes <state>` (state anchor, ratchet D10) step.
  */
@@ -949,6 +980,7 @@ export type Statement =
   | MoveStmt
   | RemoveStmt
   | AwardStmt
+  | CounterMutateStmt
   | WinStmt
   | LoseStmt
   | KillStmt
@@ -1095,6 +1127,20 @@ export interface AwardStmt {
   kind: 'award';
   expression: string[];
   once: boolean;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `raise`/`lower <target> by <n> [when <cond>]` (ADR-264 D2) — additive counter
+ * mutation. `target` is a ValueExpr: a bare name (story-global counter) or a
+ * possessive (`the innkeeper's suspicion` / `its suspicion`, per-entity).
+ * `amount` is the non-negative literal after `by`.
+ */
+export interface CounterMutateStmt {
+  kind: 'raise' | 'lower';
+  target: ValueExpr;
+  amount: number;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -1259,6 +1305,12 @@ export interface PredicateNode {
 
 export type Predicate =
   | { kind: 'is'; negated: boolean; value: ValueExpr; span: Span }
+  /**
+   * `<subject> <op> <n>` numeric comparison (ADR-264 D3) — word forms
+   * (`is at least`/`is more than`/`is at most`/`is less than`) and symbolic
+   * (`>=`/`>`/`<=`/`<`) both lower here; `value` is the right operand.
+   */
+  | { kind: 'compare'; op: 'gte' | 'gt' | 'lte' | 'lt' | 'eq'; value: ValueExpr; span: Span }
   | { kind: 'is-a'; negated: boolean; classifier: string[]; span: Span }
   | { kind: 'is-in'; negated: boolean; place: NameRef; span: Span }
   /** `<subject> is here` — the Z4 deictic: subject shares the player's location. */

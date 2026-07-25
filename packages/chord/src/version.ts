@@ -33,5 +33,9 @@
  * **1.3.0** adds the `use hunger` body (ADR-263 D1): `grows N each turn`,
  * `<band> at <n> [says <key>]` rungs, and `fatal at N` — additive grammar, a
  * minor bump.
+ *
+ * **1.4.0** adds numeric counters (ADR-264): `define counter` / per-entity
+ * `counter`, `raise`/`lower … by N`, and counter comparisons in conditions
+ * (word `is at least`/… and symbolic `>=`/`<=`/`>`/`<`) — additive, a minor bump.
  */
-export const CHORD_LANGUAGE_VERSION = '1.3.0';
+export const CHORD_LANGUAGE_VERSION = '1.4.0';

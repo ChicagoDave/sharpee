@@ -73,6 +73,9 @@ import {
   RefuseStmt,
   ScopeConstraint,
   ScoreDecl,
+  CounterDecl,
+  DefineCounter,
+  CounterMutateStmt,
   SelectArm,
   SelectOnStmt,
   SelectStrategyStmt,
@@ -190,6 +193,7 @@ function looksLikeComment(line: Line): boolean {
 /** Words that open a statement or block boundary inside behavior bodies. */
 const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose', 'kill',
+  'raise', 'lower',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
 ]);
 
@@ -761,6 +765,71 @@ class Parser {
     return { kind: 'score', name: name.text, worth: Number(worth.text), span: lineSpan(line) };
   }
 
+  /**
+   * `[starts <n>] [between <lo> and <hi>]` — the optional suffix shared by
+   * `define counter` and a per-entity `counter` line (ADR-264 D1). The cursor
+   * is positioned just past the counter name.
+   */
+  private parseCounterSuffix(c: Cursor, line: Line): { starts: number | null; lo: number | null; hi: number | null } {
+    let starts: number | null = null;
+    let lo: number | null = null;
+    let hi: number | null = null;
+    if (c.isWord('starts')) {
+      c.next();
+      const n = c.next();
+      if (!n || n.kind !== 'number') this.diagnostics.error('parse.counter-starts', 'Expected a number after `starts`.', c.restSpan());
+      else starts = Number(n.text);
+    }
+    if (c.isWord('between')) {
+      c.next();
+      const loTok = c.next();
+      if (!loTok || loTok.kind !== 'number') {
+        this.diagnostics.error('parse.counter-between', 'Expected `between <lo> and <hi>`.', c.restSpan());
+      } else {
+        lo = Number(loTok.text);
+        if (!c.matchWord('and')) {
+          this.diagnostics.error('parse.counter-between', 'Expected `and` in `between <lo> and <hi>`.', c.restSpan());
+        } else {
+          const hiTok = c.next();
+          if (!hiTok || hiTok.kind !== 'number') this.diagnostics.error('parse.counter-between', 'Expected a number after `and`.', c.restSpan());
+          else hi = Number(hiTok.text);
+        }
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.counter-extra', 'Unexpected text — the line is `counter <name> [starts <n>] [between <lo> and <hi>]`.', c.restSpan());
+    }
+    return { starts, lo, hi };
+  }
+
+  /** `define counter <name> [starts <n>] [between <lo> and <hi>]` (ADR-264 D1). */
+  private parseDefineCounter(): DefineCounter | null {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.next();
+    c.next(); // define counter
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.counter-name', 'Expected a counter name after `define counter`.', c.restSpan());
+      return null;
+    }
+    const { starts, lo, hi } = this.parseCounterSuffix(c, line);
+    return { kind: 'define-counter', name: nameTok.text, starts, lo, hi, span: lineSpan(line) };
+  }
+
+  /** `counter <name> [starts <n>] [between <lo> and <hi>]` in a `create` block (ADR-264 D1). */
+  private parseCounterLine(line: Line): CounterDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('counter');
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.counter-name', 'Expected a counter name after `counter`.', c.restSpan());
+      return null;
+    }
+    const { starts, lo, hi } = this.parseCounterSuffix(c, line);
+    return { kind: 'counter', name: nameTok.text, starts, lo, hi, span: lineSpan(line) };
+  }
+
   // ---------------------------------------------------------------- create
 
   private parseCreate(): CreateDecl {
@@ -790,6 +859,7 @@ class Parser {
       states: [],
       statesReversible: false,
       scores: [],
+      counters: [],
       description: null,
       initialDescription: null,
       phraseOverrides: [],
@@ -833,6 +903,11 @@ class Parser {
         this.pos++;
         const s = this.parseScoreLine(line);
         if (s) decl.scores.push(s);
+      } else if (word === 'counter') {
+        // ADR-264 D1: a per-entity numeric counter.
+        this.pos++;
+        const cc = this.parseCounterLine(line);
+        if (cc) decl.counters.push(cc);
       } else if (word === 'wears') {
         this.pos++;
         cur.matchWord('wears');
@@ -1572,6 +1647,9 @@ class Parser {
         return null;
       case 'sequence':
         return this.parseDefineSequence();
+      case 'counter':
+        // ADR-264: a story-global numeric counter.
+        return this.parseDefineCounter();
       case 'machine':
         // ADR-215 `use state-machines` depth (spelling A, 2026-07-18) —
         // the `use` requirement is the analyzer's gate.
@@ -3502,6 +3580,24 @@ class Parser {
         const value = this.parseValueExpr(c, line, new Set());
         return { kind: 'set', target, value, span: lineSpan(line) } as SetStmt;
       }
+      case 'raise':
+      case 'lower': {
+        // ADR-264 D2: `raise`/`lower <target> by <n> [when <cond>]`.
+        this.pos++;
+        c.next();
+        const target = this.parseValueExpr(c, line, new Set(['by']));
+        if (!c.matchWord('by')) {
+          this.diagnostics.error('parse.counter-by', `Expected \`by <number>\` in the \`${word}\` statement.`, c.restSpan());
+          return null;
+        }
+        const amtTok = c.next();
+        if (!amtTok || amtTok.kind !== 'number') {
+          this.diagnostics.error('parse.counter-amount', 'Expected a non-negative number after `by`.', c.restSpan());
+          return null;
+        }
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: word, target, amount: Number(amtTok.text), stmtWhen, span: lineSpan(line) } as CounterMutateStmt;
+      }
       case 'change': {
         this.pos++;
         c.next();
@@ -4089,6 +4185,18 @@ class Parser {
 
   private parsePredicate(c: Cursor, line: Line, subject: ValueExpr): ConditionNode {
     const t = c.peek();
+    // ADR-264 D3: symbolic comparison `<subject> >=|>|<=|< <n>`.
+    if (t && t.kind === 'compare') {
+      c.next();
+      const op = t.text === '>=' ? 'gte' : t.text === '>' ? 'gt' : t.text === '<=' ? 'lte' : 'lt';
+      const value = this.parseValueExpr(c, line, new Set());
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'compare', op, value, span: value.span },
+        span: mergeSpans(subject.span, value.span),
+      };
+    }
     if (!t || t.kind !== 'word') {
       this.diagnostics.error('parse.predicate', 'Expected a predicate (is, has, holds, wears) after the subject.', t?.span ?? c.restSpan());
       return { kind: 'predicate', subject, predicate: { kind: 'is', negated: false, value: { kind: 'bare', words: [], span: subject.span }, span: subject.span }, span: subject.span };
@@ -4128,6 +4236,22 @@ class Parser {
           predicate: { kind: 'is-here', negated, span: hereTok.span },
           span: mergeSpans(subject.span, hereTok.span),
         };
+      }
+      // ADR-264 D3 word comparisons: `is at least|at most|more than|less than <n>`.
+      let cmpOp: 'gte' | 'gt' | 'lte' | 'lt' | null = null;
+      if (c.isWord('at') && c.isWord('least', 1)) { c.next(); c.next(); cmpOp = 'gte'; }
+      else if (c.isWord('at') && c.isWord('most', 1)) { c.next(); c.next(); cmpOp = 'lte'; }
+      else if (c.isWord('more') && c.isWord('than', 1)) { c.next(); c.next(); cmpOp = 'gt'; }
+      else if (c.isWord('less') && c.isWord('than', 1)) { c.next(); c.next(); cmpOp = 'lt'; }
+      if (cmpOp) {
+        const cmpValue = this.parseValueExpr(c, line, new Set());
+        const node: ConditionNode = {
+          kind: 'predicate',
+          subject,
+          predicate: { kind: 'compare', op: cmpOp, value: cmpValue, span: cmpValue.span },
+          span: mergeSpans(subject.span, cmpValue.span),
+        };
+        return negated ? { kind: 'not', operand: node, span: node.span } : node;
       }
       const value = this.parseValueExpr(c, line, new Set());
       return {
