@@ -159,6 +159,25 @@ export const CLIENT_CAPABILITY_FLAGS: ReadonlySet<string> = new Set([
  */
 export const STDLIB_CHAIN_NAMES: ReadonlySet<string> = new Set(['opened-revealed']);
 
+/**
+ * ADR-271 D1: the closed set of scope-constraint requirement words —
+ * `the <slot> must be <requirement>` in a `define action` — each mapped to
+ * the NAME of the parser-side ScopeBuilder predicate it enforces. Chord
+ * validates the WORD here (platform-free); a word absent from this table is
+ * `analysis.unknown-requirement`. @sharpee/story-loader owns turning the
+ * predicate name into the actual `.where()` ScopeBuilder call (Interface
+ * Contract, like the chain-alias ACL above). One table, two consumers —
+ * the word set and the predicate mapping cannot drift.
+ */
+export const SCOPE_REQUIREMENT_PREDICATES = {
+  reachable: 'touchable',
+  visible: 'visible',
+  held: 'carried',
+} as const;
+
+/** A supported scope-constraint requirement word (ADR-271 D1). */
+export type ScopeRequirementWord = keyof typeof SCOPE_REQUIREMENT_PREDICATES;
+
 /** Chord capability word → the platform's camelCase key (`split-pane` → `splitPane`). */
 export function capabilityKeyOf(word: string): string {
   return word.replace(/-([a-z])/g, (_, ch: string) => ch.toUpperCase());

@@ -292,6 +292,7 @@ export abstract class GrammarEngine {
         // Accumulated configuration
         const verbList: string[] = [];
         const patternList: string[] = [];
+        const fullPatternList: string[] = []; // ADR-271 D3: complete lines, verb included
         const directionMap: Record<string, string[]> = {};
         const slotConstraints: Map<string, { constraint: Constraint }[]> = new Map();
         const slotTypes: Map<string, SlotType> = new Map();
@@ -311,6 +312,14 @@ export abstract class GrammarEngine {
 
           patterns(patterns: string[]) {
             patternList.push(...patterns);
+            return actionBuilder;
+          },
+
+          fullPattern(pattern: string) {
+            if (!pattern.trim()) {
+              throw new Error('fullPattern() requires a non-empty pattern line');
+            }
+            fullPatternList.push(pattern);
             return actionBuilder;
           },
 
@@ -342,6 +351,28 @@ export abstract class GrammarEngine {
           },
 
           build() {
+            // Apply a slot's declared type via the matching PatternBuilder method
+            const applySlotType = (builder: PatternBuilder, slot: string, type: SlotType): PatternBuilder => {
+              switch (type) {
+                case SlotType.TEXT:
+                  return builder.text(slot);
+                case SlotType.INSTRUMENT:
+                  return builder.instrument(slot);
+                case SlotType.NUMBER:
+                  return builder.number(slot);
+                case SlotType.ORDINAL:
+                  return builder.ordinal(slot);
+                case SlotType.TIME:
+                  return builder.time(slot);
+                case SlotType.DIRECTION:
+                  return builder.direction(slot);
+                case SlotType.MANNER:
+                  return builder.manner(slot);
+                default:
+                  return builder;
+              }
+            };
+
             // Generate verb × pattern combinations
             if (verbList.length > 0 && patternList.length > 0) {
               for (const verb of verbList) {
@@ -369,34 +400,48 @@ export abstract class GrammarEngine {
 
                   // Apply slot types
                   for (const [slot, type] of slotTypes) {
-                    switch (type) {
-                      case SlotType.TEXT:
-                        builder = builder.text(slot);
-                        break;
-                      case SlotType.INSTRUMENT:
-                        builder = builder.instrument(slot);
-                        break;
-                      case SlotType.NUMBER:
-                        builder = builder.number(slot);
-                        break;
-                      case SlotType.ORDINAL:
-                        builder = builder.ordinal(slot);
-                        break;
-                      case SlotType.TIME:
-                        builder = builder.time(slot);
-                        break;
-                      case SlotType.DIRECTION:
-                        builder = builder.direction(slot);
-                        break;
-                      case SlotType.MANNER:
-                        builder = builder.manner(slot);
-                        break;
-                    }
+                    builder = applySlotType(builder, slot, type);
                   }
 
                   builder.build();
                 }
               }
+            }
+
+            // ADR-271 D3: complete pattern lines (verb included) — one rule
+            // each, no verb cross-product. Slot-scoped configuration
+            // (.where(), slotType) attaches only where the line carries the
+            // slot (D2: a constraint gates the rules that have the slot,
+            // never an unrelated line of the same action).
+            for (const fullPattern of fullPatternList) {
+              const lineSlots = new Set(
+                fullPattern
+                  .split(/\s+/)
+                  .filter((w) => w.startsWith(':'))
+                  .map((w) => w.slice(1).replace(/\.\.\.$/, '')),
+              );
+
+              let builder = engine.createBuilder().define(fullPattern);
+              builder = builder.mapsTo(actionId);
+              builder = builder.withPriority(priority);
+
+              if (defaultSemantics) {
+                builder = builder.withDefaultSemantics(defaultSemantics);
+              }
+
+              for (const [slot, constraints] of slotConstraints) {
+                if (!lineSlots.has(slot)) continue;
+                for (const { constraint } of constraints) {
+                  builder = builder.where(slot, constraint);
+                }
+              }
+
+              for (const [slot, type] of slotTypes) {
+                if (!lineSlots.has(slot)) continue;
+                builder = applySlotType(builder, slot, type);
+              }
+
+              builder.build();
             }
 
             // Generate standalone verb patterns (verb only, no template)

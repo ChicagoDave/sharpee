@@ -5,11 +5,13 @@ player's input:
 
 ```chord
 define verb hang or hook means put (something) on (something)
-define verb sniff means smell (something)
 ```
 
 `hang the jacket on the hook` and `hook the jacket on the hook` now both
-route through the standard `put … on …` action; `sniff the jacket`
-routes through `smell`. This is verb *vocabulary* only: these are
-aliases onto patterns the platform already understands. To define a genuinely new
-action with its own grammar and behavior, use `define action`.
+route through the standard `put … on …` action.
+
+For now, `put (something) on (something)` is the only pattern
+`define verb` can map onto — mapping any other pattern is a load error
+naming this limit. To define a genuinely new verb with its own grammar
+and behavior, use `define action`. General aliasing onto any standard
+action arrives with the grammar work in a future release.

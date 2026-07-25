@@ -29,9 +29,11 @@ import {
   IREntity,
   IRPhrase,
   IRTraitDef,
+  SCOPE_REQUIREMENT_PREDICATES,
   StoryIR,
 } from '@sharpee/chord';
-import type { Choice, IChannelRegistry, IOChannel, Literal, Phrase, SnippetEntry } from '@sharpee/if-domain';
+import type { ScopeRequirementWord } from '@sharpee/chord';
+import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SnippetEntry } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
   DEADLY_ROOM_DEATH_ACTION_ID,
@@ -1095,17 +1097,21 @@ export class ChordStory implements Story {
   }
 
   /**
-   * Register `define action` grammar patterns as story grammar (ADR-087).
-   * The param is the Story contract's stdlib Parser; typed structurally at
-   * the use site to keep story-loader's dependency surface unchanged.
+   * Register `define action` grammar patterns as story grammar (ADR-087),
+   * action-centrically (ADR-271 D3): one `forAction()` block per action,
+   * grammar lines as complete `fullPattern()` calls, and the action's
+   * scope constraints attached as `.where()` slot gates (D2). The param is
+   * the Story contract's stdlib Parser; `getStoryGrammar` is accessed
+   * structurally (the Parser contract doesn't declare it) but returns the
+   * real if-domain GrammarBuilder — the ADR-266-era three-method cast is
+   * retired.
    */
   extendParser(parser: Parameters<NonNullable<Story['extendParser']>>[0]): void {
-    const grammar = (parser as unknown as {
-      getStoryGrammar(): {
-        define(pattern: string): { mapsTo(id: string): { withPriority(p: number): { build(): unknown } } };
-      };
-    }).getStoryGrammar();
+    const grammar = (parser as unknown as { getStoryGrammar(): GrammarBuilder }).getStoryGrammar();
     for (const action of this.ir.actions) {
+      const actionId = `chord.action.${action.name}`;
+      const slotted = grammar.forAction(actionId).withPriority(150);
+
       // Bare-verb forms (platform-issue-sweep Phase 8 #13, David's ruling:
       // ALL dispatch actions): dispatch validate fully handles the no-target
       // case (authored `refuse without` arm, else the platform default), but
@@ -1119,7 +1125,7 @@ export class ChordStory implements Story {
         const text = pattern.parts
           .map((part) => (part.kind === 'slot' ? `:${part.word}` : part.word))
           .join(' ');
-        grammar.define(text).mapsTo(`chord.action.${action.name}`).withPriority(150).build();
+        slotted.fullPattern(text);
 
         const slotIndex = pattern.parts.findIndex((part) => part.kind === 'slot');
         if (slotIndex > 0) {
@@ -1130,8 +1136,24 @@ export class ChordStory implements Story {
           if (bare) bareForms.add(bare);
         }
       }
-      for (const bare of bareForms) {
-        grammar.define(bare).mapsTo(`chord.action.${action.name}`).withPriority(140).build();
+
+      // ADR-271 D2: `the <slot> must be <requirement>` becomes a `.where()`
+      // parse-time gate on every slotted rule carrying the slot. The
+      // requirement word was catalog-validated by the analyzer (D1), so the
+      // table lookup cannot miss.
+      for (const constraint of action.constraints) {
+        const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
+        slotted.where(constraint.slot, (scope: ScopeBuilder) => applyScopePredicate(scope, predicate));
+      }
+
+      slotted.build();
+
+      // Bare-verb prefixes stay at 140 and carry no `.where()` gate — the
+      // `refuse without` arm owns the no-target case (D2).
+      if (bareForms.size > 0) {
+        const bare = grammar.forAction(actionId).withPriority(140);
+        for (const form of bareForms) bare.fullPattern(form);
+        bare.build();
       }
     }
   }
@@ -2255,6 +2277,31 @@ function templateFor(phrase: IRPhrase): string {
 }
 
 /**
+ * ADR-271 D2: apply the ScopeBuilder predicate a scope-constraint
+ * requirement word names. The names come from chord's
+ * `SCOPE_REQUIREMENT_PREDICATES` (one table, D1); the exhaustive switch
+ * carries a `never` check so a word added to the table without a mapping
+ * here is a TYPE error at build time, not a silently dropped constraint.
+ */
+function applyScopePredicate(
+  scope: ScopeBuilder,
+  predicate: (typeof SCOPE_REQUIREMENT_PREDICATES)[ScopeRequirementWord],
+): ScopeBuilder {
+  switch (predicate) {
+    case 'touchable':
+      return scope.touchable();
+    case 'visible':
+      return scope.visible();
+    case 'carried':
+      return scope.carried();
+    default: {
+      const exhaustive: never = predicate;
+      throw new LoadError(`Unmapped scope predicate \`${String(exhaustive)}\`.`);
+    }
+  }
+}
+
+/**
  * `define verb` → engine CustomVocabulary. Phase A supports the two-slot
  * prepositional shape (`put (something) on (something)`) that maps onto an
  * existing two-object action, matching the hand-written Cloak's PUT_ON
@@ -2269,8 +2316,10 @@ function toVocabularyVerb(verb: { verbs: string[]; pattern: Array<{ kind: string
   const KNOWN: Record<string, string> = { 'put on': 'PUT_ON' };
   const actionId = KNOWN[`${base} ${preposition ?? ''}`.trim()];
   if (!actionId || slots !== 2) {
+    // ADR-271 D4: the docs page and this error state the same limit in the
+    // same words (acceptance 5).
     throw new LoadError(
-      `\`define verb ${verb.verbs.join(' or ')}\` maps to \`${words.join(' ')}\`, which the Phase A loader cannot register.`,
+      `\`define verb ${verb.verbs.join(' or ')}\` maps to \`${words.join(' ')}\` — for now, \`put (something) on (something)\` is the only pattern \`define verb\` can map onto.`,
     );
   }
   return {

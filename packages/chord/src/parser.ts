@@ -14,9 +14,12 @@
  * Invariants:
  * - The parser is vocabulary-free: entity names, event verbs, and phrase
  *   keys are collected as raw words; the analyzer resolves them (Phase 3).
+ *   (The catalog import below is hint-text only — requirement words are
+ *   still collected raw here and validated by the analyzer, ADR-271 D1.)
  * - Prose is opaque except `{…}` markers, extracted with precise spans.
  * - Every AST node carries a Span.
  */
+import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 import {
   ActionPattern,
   ActionRefusal,
@@ -2449,7 +2452,7 @@ class Parser {
     }
     const req = c.next();
     if (!req || req.kind !== 'word') {
-      this.diagnostics.error('parse.action-constraint', 'Expected a requirement word (reachable, visible, …).', c.restSpan());
+      this.diagnostics.error('parse.action-constraint', `Expected a requirement word (${Object.keys(SCOPE_REQUIREMENT_PREDICATES).join(', ')}).`, c.restSpan());
       return null;
     }
     return { slot: slot.text, requirement: req.text, span: lineSpan(line) };

@@ -206,6 +206,76 @@ describe('GrammarBuilder', () => {
     });
   });
   
+  describe('forAction fullPattern emission (ADR-271 D3)', () => {
+    it('registers one rule per full-pattern line, sharing the action id and priority', () => {
+      engine.createBuilder()
+        .forAction('chord.action.petting')
+        .fullPattern('pet :animal')
+        .fullPattern('pat :animal')
+        .withPriority(150)
+        .build();
+
+      const rules = engine.getRulesForAction('chord.action.petting');
+      expect(rules).toHaveLength(2);
+      expect(rules.map(r => r.pattern).sort()).toEqual(['pat :animal', 'pet :animal']);
+      for (const rule of rules) {
+        expect(rule.action).toBe('chord.action.petting');
+        expect(rule.priority).toBe(150);
+      }
+    });
+
+    it('does not cross full-pattern lines with verbs()', () => {
+      engine.createBuilder()
+        .forAction('chord.action.lowering')
+        .verbs(['lower'])
+        .pattern(':target')
+        .fullPattern('winch :target down')
+        .build();
+
+      const rules = engine.getRulesForAction('chord.action.lowering');
+      expect(rules.map(r => r.pattern).sort()).toEqual(['lower :target', 'winch :target down']);
+    });
+
+    it('attaches .where() constraints to every line carrying the slot', () => {
+      engine.createBuilder()
+        .forAction('chord.action.petting')
+        .fullPattern('pet :animal')
+        .fullPattern('stroke :animal')
+        .where('animal', scope => scope.touchable())
+        .withPriority(150)
+        .build();
+
+      const rules = engine.getRulesForAction('chord.action.petting');
+      expect(rules).toHaveLength(2);
+      for (const rule of rules) {
+        const constraint = rule.slots.get('animal');
+        expect(constraint, rule.pattern).toBeDefined();
+        expect(constraint!.constraints).toHaveLength(1);
+      }
+    });
+
+    it('skips slot-scoped config on lines that do not carry the slot', () => {
+      engine.createBuilder()
+        .forAction('chord.action.waving')
+        .fullPattern('wave :thing')
+        .fullPattern('wave hands')
+        .where('thing', scope => scope.visible())
+        .build();
+
+      const rules = engine.getRulesForAction('chord.action.waving');
+      const slotted = rules.find(r => r.pattern === 'wave :thing')!;
+      const bare = rules.find(r => r.pattern === 'wave hands')!;
+      expect(slotted.slots.get('thing')?.constraints).toHaveLength(1);
+      expect(bare.slots.has('thing')).toBe(false);
+    });
+
+    it('rejects an empty pattern line', () => {
+      expect(() => {
+        engine.createBuilder().forAction('chord.action.x').fullPattern('  ');
+      }).toThrow('fullPattern() requires a non-empty pattern line');
+    });
+  });
+
   describe('Error Handling', () => {
     it('should require an action to be set', () => {
       expect(() => {

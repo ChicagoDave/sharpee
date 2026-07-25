@@ -16,6 +16,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { captureGrammarRules } from './helpers/grammar-harness';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 
@@ -31,22 +32,12 @@ function compileFixture(name: string): StoryIR {
   return compileSource(readFileSync(join(CHORD_FIXTURES, name), 'utf8'));
 }
 
-/** Captures grammar registrations the way the stdlib parser would receive them. */
+/**
+ * Captures grammar registrations against a real if-domain GrammarEngine
+ * (ADR-271 D3 — the loader now emits action-centrically via forAction()).
+ */
 function captureGrammar(story: ChordStory): Array<{ pattern: string; action: string; priority: number }> {
-  const rules: Array<{ pattern: string; action: string; priority: number }> = [];
-  const fakeParser = {
-    getStoryGrammar: () => ({
-      define: (pattern: string) => ({
-        mapsTo: (action: string) => ({
-          withPriority: (priority: number) => ({
-            build: () => rules.push({ pattern, action, priority }),
-          }),
-        }),
-      }),
-    }),
-  };
-  story.extendParser(fakeParser as never);
-  return rules;
+  return captureGrammarRules(story).map((r) => ({ pattern: r.pattern, action: r.action, priority: r.priority }));
 }
 
 describe('bare-verb grammar for every define-action (Phase 8 #13)', () => {

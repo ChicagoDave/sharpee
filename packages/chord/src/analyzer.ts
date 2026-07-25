@@ -48,7 +48,8 @@ import {
   UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
+import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
@@ -1247,6 +1248,17 @@ class Analyzer {
           constraint.span,
         );
       }
+      // ADR-271 D1: the requirement word is validated against the closed
+      // catalog set, not accepted as any word — a constraint that cannot
+      // gate is a compile error, never a silent no-op (ADR-235 D2 class).
+      if (!(constraint.requirement in SCOPE_REQUIREMENT_PREDICATES)) {
+        const supported = Object.keys(SCOPE_REQUIREMENT_PREDICATES);
+        this.diagnostics.error(
+          'analysis.unknown-requirement',
+          `\`must be ${constraint.requirement}\` is not a supported scope requirement — supported: ${supported.join(', ')}${this.suggestText(constraint.requirement, supported)}.`,
+          constraint.span,
+        );
+      }
     }
 
     const refusals = decl.refusals.map((r) => {
@@ -1287,7 +1299,9 @@ class Analyzer {
         parts: p.parts.map((part) => ({ kind: part.kind, word: part.word })),
         cardinality: p.cardinality,
       })),
-      constraints: decl.constraints.map((sc) => ({ slot: sc.slot, requirement: sc.requirement })),
+      // The cast is sound: the gate above errors on any word outside the
+      // catalog set, and the IR is meaningful only when `ok` (atomic load).
+      constraints: decl.constraints.map((sc) => ({ slot: sc.slot, requirement: sc.requirement as ScopeRequirementWord })),
       musts,
       refusals,
       otherwise: decl.otherwise?.phraseKey ?? null,

@@ -13,6 +13,7 @@
  * Contract 1, owner-confirmed 2026-07-10); @sharpee/ide-protocol re-exports
  * it. Invariant: pure data — JSON.parse(JSON.stringify(ir)) is identity.
  */
+import type { ScopeRequirementWord } from './catalog.js';
 import type { Span } from './span.js';
 
 /** Format stamp of this IR schema. Consumers refuse unknown formats. */
@@ -458,7 +459,8 @@ export interface IRTraitField {
 export interface IRActionDef {
   name: string;
   patterns: IRActionPattern[];
-  constraints: Array<{ slot: string; requirement: string }>;
+  /** Scope constraints (`the <slot> must be <requirement>`) — requirement words are catalog-validated (ADR-271 D1). */
+  constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;
   /** `must` requirement lines (ratchet D6) — checked before the body. */
   musts: IRMust[];
   refusals: IRActionRefusal[];
