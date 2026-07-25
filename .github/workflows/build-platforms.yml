@@ -40,8 +40,12 @@ jobs:
     # drifted and broke when transcript-tester gained a @sharpee/bootstrap import.
     # --no-genai: the genai API reference is IDE-shipped and repo-tracked; CI has
     # no consumer for a regenerated copy.
-    - name: Build platform packages (repokit)
-      run: ./repokit build --no-genai
+    # dungeo story included: channel-service's AC-13 real-path test drives the CLI
+    # bundle against the dungeo walkthrough, and without a compiled story dist the
+    # bundle falls back to loading stories/dungeo/src/index.ts as ESM source,
+    # which dies on its directory imports (ERR_UNSUPPORTED_DIR_IMPORT).
+    - name: Build platform packages + dungeo (repokit)
+      run: ./repokit build dungeo --no-genai
 
     - name: Typecheck
       run: pnpm --filter '@sharpee/sharpee' exec tsc --noEmit
