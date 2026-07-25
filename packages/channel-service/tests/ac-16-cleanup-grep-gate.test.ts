@@ -75,6 +75,11 @@ const ALLOW_LIST_PREFIXES = [
   // tests assert that lowering and its channel round-trip.
   'packages/chord/src/',
   'packages/chord/tests/',
+  // Same ADR-216/241 sanction one layer down: the story-loader LOWERS the
+  // compiler's media sugar onto the platform, so its kebab→canonical event-id
+  // map (event-id-map.ts) necessarily names every ADR-101 event-type string.
+  // Its emissions project through stdlib's media channels like chord's.
+  'packages/story-loader/src/',
   'packages/story-loader/tests/',
 ];
 

@@ -150,6 +150,15 @@ export function buildPlatform(root: string, opts: BuildOptions): void {
     if (!existsSync(distIndex)) {
       throw new Error(`build of ${pkg} produced no dist/index.js (silent no-op?) at ${distIndex}`);
     }
+    // Dual-package hygiene: the package root is CJS ("main": dist), so dist-esm
+    // needs its own {"type":"module"} marker or Node reparses every file in it,
+    // spraying MODULE_TYPELESS_PACKAGE_JSON warnings onto stderr (which the
+    // AC-13 CLI real-path test rightly treats as failure noise).
+    const esmDir = join(root, 'packages', dir, 'dist-esm');
+    if (existsSync(esmDir)) {
+      const esmStub = join(esmDir, 'package.json');
+      if (!existsSync(esmStub)) writeFileSync(esmStub, '{"type":"module"}\n');
+    }
   }
 
   if (opts.esm) {
