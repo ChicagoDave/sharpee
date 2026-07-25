@@ -442,8 +442,9 @@ discovery would try to publish it. Decide before the first real run — see §10
 
 ### Part D — First run
 
-- [ ] **D1.** Bump one low-risk package locally (`@sharpee/ext-hunger` is a good
+- [x] **D1.** Bump one low-risk package locally (`@sharpee/ext-hunger` is a good
       candidate — small, few dependents) and commit the bump.
+      *(Done 2026-07-25: ext-hunger 3.6.0 → 3.6.1, commit `e0ea9e7d`, pushed.)*
 - [ ] **D2.** Trigger the workflow with `dry_run: true`. Confirm it reaches the
       publish step and that tsf's `--changed` filter selects only that package.
 - [ ] **D3.** Trigger again with `dry_run: false`. Confirm:
