@@ -541,12 +541,15 @@ Nothing here is one-way until Part E.
    it's a pnpm flag, not an npm one. npm should warn and ignore it. Harmless, but
    worth cleaning up in the tsf 1.0.1 release while you're in there.
 
-4. **Republishing 3.6.0** — the live `@sharpee/stdlib@3.6.0` carries the stale
-   `ENGINE_VERSION = '3.5.0'` described in §1.4. npm does not allow overwriting a
-   published version, so the options are to leave it and let 3.7.0 correct it, or
-   to publish a 3.6.1 for stdlib alone, which breaks the lockstep versioning
-   everything else relies on. Leaving it is probably right given the narrow impact,
-   but it is your call and it should be a conscious one.
+4. ~~**Republishing 3.6.0**~~ — **decided 2026-07-25: leave it.** The live
+   `@sharpee/stdlib@3.6.0` keeps the stale `ENGINE_VERSION = '3.5.0'` described in
+   §1.4, and 3.7.0 corrects it in the normal course. The alternative, a stdlib-only
+   3.6.1, would break the lockstep versioning everything else relies on, which is
+   not worth it for a misreported version banner in Chord stories. No action.
+
+   The repo itself is already correct: `engine-version.ts` was stamped to `3.6.0`
+   and committed in `7dc2275b`, so 3.7.0 will publish the right value as long as
+   the CI flow in Part B is in place by then.
 
 5. **`docs/genai-api/` is not reaching npm** — `packages/sharpee/package.json`
    declares `"files": ["dist", "docs"]`, yet the published 3.6.0 tarball has no
