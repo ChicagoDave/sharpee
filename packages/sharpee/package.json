@@ -52,8 +52,7 @@
     "typescript": "^5.3.3"
   },
   "files": [
-    "dist",
-    "docs"
+    "dist"
   ],
   "keywords": [
     "interactive-fiction",
@@ -77,10 +76,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "genai": {
-    "entry": "./GENAI.md",
-    "docs": "./docs/genai-api/"
   },
   "publishConfig": {
     "access": "public"

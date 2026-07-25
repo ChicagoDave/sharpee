@@ -551,15 +551,27 @@ Nothing here is one-way until Part E.
    and committed in `7dc2275b`, so 3.7.0 will publish the right value as long as
    the CI flow in Part B is in place by then.
 
-5. **`docs/genai-api/` is not reaching npm** — `packages/sharpee/package.json`
-   declares `"files": ["dist", "docs"]`, yet the published 3.6.0 tarball has no
-   `docs/` directory. Since tsf publishes from a rewritten staging manifest with
-   flattened paths rather than packing the source directory, the source `files`
-   array is not governing the tarball, and the staging behavior has not been traced
-   yet. Worth settling before the CI cutover, because the entire premise of those
-   docs is that an assistant reads them from the installed package. If they are
-   meant to ship, this is a tsf staging fix; if they are repo-only, then
-   `CLAUDE.md` and the generator header both need correcting instead.
+5. ~~**`docs/genai-api/` is not reaching npm**~~ — **decided 2026-07-25: keep them
+   out.** The IDE ships this reference to authors, so npm does not need to carry
+   1.3 MB of generated markdown in every install. No tsf change required; the
+   documentation that claimed otherwise was corrected instead.
+
+   Traced for the record, since the `files` field misleads here. tsf deletes
+   `files` from the publish manifest outright (`sync/package-json.js:143`), so
+   `"files": ["dist", "docs"]` never governed the tarball. What ships is exactly
+   what lands in staging, and the orchestrator
+   (`orchestrator/index.js:220-250`) stages only four things: compiled output, the
+   generated manifest, README/LICENSE from a hardcoded list, and the globs in the
+   package's own `ts-forge.json` `assets` array. `packages/sharpee/ts-forge.json`
+   is `{"assets": []}`, and the copy loop is gated on `assets?.length`, so nothing
+   under `docs/` was ever copied. Shipping them would have been a one-line change
+   to `["docs/**"]`, which is how `packages/devkit` ships its templates.
+
+   Cleaned up in the same pass: the dead `docs` entry in `files`, the `genai`
+   manifest field (which survived into the published tarball pointing at both a
+   `./docs/genai-api/` that is not shipped and a `./GENAI.md` that does not exist
+   anywhere), and the "ships with the npm package" claims in `CLAUDE.md`,
+   `packages/sharpee/CLAUDE.md`, and the generator header.
 
 6. **Auto-publish on version-bump commits** — deliberately excluded. Could be added
    later by triggering on pushes to `main` that change

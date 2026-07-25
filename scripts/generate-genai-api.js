@@ -8,7 +8,11 @@
  *
  * Run: node scripts/generate-genai-api.js
  * Invoked by `devkit build` after the platform build (ADR-180).
- * Ships with the @sharpee/sharpee npm package.
+ *
+ * Repo-only output: these docs are NOT published to npm. tsf stages a package
+ * from compiled output plus the `assets` globs in the package's ts-forge.json,
+ * and packages/sharpee/ts-forge.json declares none, so nothing under docs/ is
+ * copied. The IDE carries this reference for authors instead.
  */
 
 const fs = require('fs');

@@ -8,4 +8,4 @@
 
 - `docs/genai-api/index.md` — navigation and quick start
 - Read `engine.md` first for the `Story` interface, then `world-model.md` for entities/traits
-- Also shipped in the npm package at `node_modules/@sharpee/sharpee/docs/genai-api/`
+- Repo-only: these are not published to npm. Authors get this reference through the IDE.
