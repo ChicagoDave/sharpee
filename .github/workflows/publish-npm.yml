@@ -47,8 +47,11 @@ jobs:
       # MUST be the repokit build, not `pnpm run build`:
       # `pnpm run build` is `turbo run build` and does not stamp versions,
       # which is how @sharpee/stdlib@3.6.0 shipped a stale ENGINE_VERSION.
+      # --no-genai: the genai API reference lives in the IDE, not the npm publish
+      # (npm-ci.md §10.5); regenerating it here would also dirty tracked files and
+      # trip the git-diff guard below.
       - name: Build platform packages (stamps versions first)
-        run: ./repokit build
+        run: ./repokit build --no-genai
 
       - name: Fail if stamping changed a tracked file
         run: git diff --exit-code

@@ -38,8 +38,10 @@ jobs:
     # Single source of truth for build order (PLATFORM_PACKAGES in
     # tools/repokit/src/repo.ts) — replaces the hand-maintained package list that
     # drifted and broke when transcript-tester gained a @sharpee/bootstrap import.
+    # --no-genai: the genai API reference is IDE-shipped and repo-tracked; CI has
+    # no consumer for a regenerated copy.
     - name: Build platform packages (repokit)
-      run: ./repokit build
+      run: ./repokit build --no-genai
 
     - name: Typecheck
       run: pnpm --filter '@sharpee/sharpee' exec tsc --noEmit
