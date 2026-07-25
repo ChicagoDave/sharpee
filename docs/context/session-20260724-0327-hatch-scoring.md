@@ -192,3 +192,12 @@ just the book.
 stamps were committed here (`chore(release)`). ADR-264 (numeric counters) and ADR-265 (un-park
 stdlib-in-Chord) are being worked in the docker container on branch
 `adrs-264-265-counters-stdlib-reference`, not part of this session.
+**Progressive update 7**: wrote PR #184 and merged the container's ADR-264/265 branch to main
+(`12a274d9`). Merged locally (not blind) given the container's track record: main had diverged, so it
+was a real merge. Only `search-index.json` conflicted (generated — regenerated from merged content).
+**Verified before landing on main**: `./repokit build` green, chord counters (12), story-loader
+counter/reference/stdlib-chord (14), counter-demo real-path through the bundle (7), full story-loader
+regression 374/374. This branch was sound (unlike the prior one) — verification confirmed rather than
+caught. ADR-265's implementation is the generator/rendering path (option C, the "readable Chord
+rendering" I recommended in the parking ADR), not stdlib self-hosting (option B) — so the un-park
+landed on the practical path, not a reversal of the parking reasoning.
