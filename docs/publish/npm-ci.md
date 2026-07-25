@@ -401,38 +401,38 @@ For each package, go to `https://www.npmjs.com/package/<name>/access`, find the
 All fields are **case-sensitive and must match exactly**. Mistakes surface at
 publish time, not at setup time.
 
-- [ ] `@sharpee/bootstrap`
-- [ ] `@sharpee/channel-service`
-- [ ] `@sharpee/character`
-- [ ] `@sharpee/chord`
-- [ ] `@sharpee/core`
-- [ ] `@sharpee/devkit`
-- [ ] `@sharpee/engine`
-- [ ] `@sharpee/event-processor`
-- [ ] `@sharpee/ext-basic-combat`
-- [ ] `@sharpee/ext-hunger`
-- [ ] `@sharpee/ext-scoring`
-- [ ] `@sharpee/ext-testing`
-- [ ] `@sharpee/helpers`
-- [ ] `@sharpee/ide-protocol`
-- [ ] `@sharpee/if-domain`
-- [ ] `@sharpee/if-services`
-- [ ] `@sharpee/lang-en-us`
-- [ ] `@sharpee/media`
-- [ ] `@sharpee/parser-en-us`
-- [ ] `@sharpee/platform-browser`
-- [ ] `@sharpee/plugin-npc`
-- [ ] `@sharpee/plugin-scheduler`
-- [ ] `@sharpee/plugin-state-machine`
-- [ ] `@sharpee/plugins`
-- [ ] `@sharpee/queries`
-- [ ] `@sharpee/sharpee`
-- [ ] `@sharpee/stdlib`
-- [ ] `@sharpee/story-loader`
-- [ ] `@sharpee/story-runtime-baseline`
-- [ ] `@sharpee/text-blocks`
-- [ ] `@sharpee/transcript-tester`
-- [ ] `@sharpee/world-model`
+- [x] `@sharpee/bootstrap`
+- [x] `@sharpee/channel-service`
+- [x] `@sharpee/character`
+- [x] `@sharpee/chord`
+- [x] `@sharpee/core`
+- [x] `@sharpee/devkit`
+- [x] `@sharpee/engine`
+- [x] `@sharpee/event-processor`
+- [x] `@sharpee/ext-basic-combat`
+- [x] `@sharpee/ext-hunger`
+- [x] `@sharpee/ext-scoring`
+- [x] `@sharpee/ext-testing`
+- [x] `@sharpee/helpers`
+- [x] `@sharpee/ide-protocol`
+- [x] `@sharpee/if-domain`
+- [x] `@sharpee/if-services`
+- [x] `@sharpee/lang-en-us`
+- [x] `@sharpee/media`
+- [x] `@sharpee/parser-en-us`
+- [x] `@sharpee/platform-browser`
+- [x] `@sharpee/plugin-npc`
+- [x] `@sharpee/plugin-scheduler`
+- [x] `@sharpee/plugin-state-machine`
+- [x] `@sharpee/plugins`
+- [x] `@sharpee/queries`
+- [x] `@sharpee/sharpee`
+- [x] `@sharpee/stdlib`
+- [x] `@sharpee/story-loader`
+- [x] `@sharpee/story-runtime-baseline`
+- [x] `@sharpee/text-blocks`
+- [x] `@sharpee/transcript-tester`
+- [x] `@sharpee/world-model`
 
 All 32 are published at 3.6.0 today, so every one has a settings page to configure.
 

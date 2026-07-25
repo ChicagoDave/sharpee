@@ -66,7 +66,9 @@ Architecture decisions:
 | `src/navigator.ts` | BFS pathfinding for `NAVIGATE TO` |
 | `src/reporter.ts` | Formats test results for terminal output |
 | `src/cli.ts` | Standalone CLI entry point |
-| `src/fast-cli.ts` | Bundle-optimized CLI (used by `dist/cli/sharpee.js`) |
+| `src/story-loader.ts` | Story loading helpers (`loadStory`, `createTestableGame`, `findTranscripts`) |
+| `src/trait-formatter.ts` | Trait output formatting (`formatEntityTraitLines`, `formatTraitProse`) |
+| `src/index.ts` | Public barrel consumed by the `dist/cli/sharpee.js` bundle (built by esbuild from `scripts/bundle-entry.js`) |
 | `src/types.ts` | TypeScript type definitions for transcripts, assertions, and directives |
 
 ## API
@@ -74,9 +76,8 @@ Architecture decisions:
 The package exports its parser and runner for programmatic use:
 
 ```typescript
-import { parseTranscript, TranscriptRunner } from '@sharpee/transcript-tester';
+import { parseTranscript, runTranscript } from '@sharpee/transcript-tester';
 
 const transcript = parseTranscript(fileContents);
-const runner = new TranscriptRunner(gameEngine);
-const results = await runner.run(transcript);
+const result = await runTranscript(transcript, gameEngine);
 ```

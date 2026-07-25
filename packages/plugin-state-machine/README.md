@@ -25,7 +25,7 @@ This package implements the `TurnPlugin` contract from `@sharpee/plugins` with d
 import { StateMachinePlugin, StateMachineDefinition } from '@sharpee/plugin-state-machine';
 
 const smPlugin = new StateMachinePlugin();
-engine.plugins.register(smPlugin);
+engine.getPluginRegistry().register(smPlugin);
 
 const lock: StateMachineDefinition = {
   id: 'vault-lock',

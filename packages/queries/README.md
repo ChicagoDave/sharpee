@@ -27,7 +27,7 @@ import { WorldModel, TraitType } from '@sharpee/world-model';
 function findLitItems(world: WorldModel) {
   // Entry points return EntityQuery; chain LINQ-style filters
   const litObjects = world.objects
-    .having(TraitType.LIGHT_SOURCE)
+    .withTrait(TraitType.LIGHT_SOURCE)
     .where(e => e.id !== 'player');
 
   // Materialize when you need an array

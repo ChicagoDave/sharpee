@@ -12,7 +12,7 @@ npm install @sharpee/ide-protocol
 
 The single source of truth for the manifest contract between the platform's introspection emitters and the Sharpee IDE:
 
-- **Types only** - No runtime dependencies and no runtime-specific types (`Buffer`, `fs`, DOM), so both the Node `--introspect` CLI emitter and the browser Play-panel bridge import it cleanly (DEVARCH 8b).
+- **Protocol contract** - Types plus small runtime guard functions and consts (the `is*` guards, `SCHEMA_VERSION`, `IR_FORMAT` via `@sharpee/chord`); no runtime-specific types (`Buffer`, `fs`, DOM), so both the Node `--introspect` CLI emitter and the browser Play-panel bridge import it cleanly (DEVARCH 8b).
 - **`ProjectManifest`** - A flat list of introspected entities plus a build-status header; the IDE buckets entities into categories client-side.
 - **`EntityNode` / `EntityCategory`** - One world entity per node, with `id`, `displayName`, `category` (`room` | `object` | `npc` | `region`), a `TraitSummary`, and an optional `SourceRef`.
 - **`SourceRef`** - Resolved `file:line` of the entity's `createEntity(...)` site (`exact` or `scope` resolution).
@@ -44,11 +44,15 @@ function handleManifest(payload: unknown): ProjectManifest {
 
 | Type | Role |
 |------|------|
-| `ProjectManifest` | Top-level payload: `schemaVersion`, `story`, `generatedFrom`, `entities` |
+| `ProjectManifest` | Top-level payload: `schemaVersion`, `story`, `generatedFrom`, `entities`, optional `hatchContextVersion` |
 | `EntityNode` | One introspected entity (id, display name, category, traits, source) |
 | `TraitSummary` | Sparse, trait-keyed projection of the IDE-relevant fields |
 | `SourceRef` | Resolved `file:line` of the entity's creation site |
 | `EntityCategory` | `'room' \| 'object' \| 'npc' \| 'region'` |
+
+### Chord Story IR
+
+The package also publishes the Chord Story IR contract (ADR-210) beside the manifest types — re-exported from `@sharpee/chord` (the source of truth), so IDE and tooling consumers get both contracts from one package. Main types: `StoryIR`, `IRMeta`, `IREntity`, `IRComposition`, `IRPlacement`, `IRExit`, `IROnClause`, `IRPhrases`, `IRVerbDef`, `IRStatement`, `IRValue`, `IRCondition`, plus the rest of the `IR*` family and the `IR_FORMAT` version const.
 
 ## Related Packages
 

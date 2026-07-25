@@ -24,7 +24,7 @@ This package implements the `TurnPlugin` contract from `@sharpee/plugins` for sc
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 
 const schedulerPlugin = new SchedulerPlugin(/* seed */ 12345);
-engine.plugins.register(schedulerPlugin);
+engine.getPluginRegistry().register(schedulerPlugin);
 
 const scheduler = schedulerPlugin.getScheduler();
 

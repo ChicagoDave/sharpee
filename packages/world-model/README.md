@@ -15,7 +15,7 @@ The world model provides the foundation for game state:
 - **Entities** - Rooms, objects, NPCs, and the player
 - **Traits** - Composable properties (Openable, Lockable, Container, etc.)
 - **Behaviors** - Reusable logic (LightSource, Wearable, Edible, etc.)
-- **State Management** - Immutable world state with entity relationships
+- **State Management** - A single mutable world instance tracks entity relationships; behaviors mutate trait data in place
 
 ## Usage
 
@@ -27,16 +27,15 @@ import {
   ContainerTrait
 } from '@sharpee/world-model';
 
-// Create entities with traits
-const chest = world.createEntity('object', {
-  id: 'treasure-chest',
-  name: 'treasure chest',
-  traits: [OpenableTrait, ContainerTrait]
-});
+// Create an entity (IDs are auto-generated), then attach trait instances
+const world = new WorldModel();
+const chest = world.createEntity('treasure chest', 'object');
+chest.add(new OpenableTrait());
+chest.add(new ContainerTrait());
 
-// Query relationships
-const contents = world.getContents(chest);
-const location = world.getLocation(player);
+// Query relationships (by entity ID)
+const contents = world.getContents(chest.id);
+const location = world.getLocation(player.id);
 ```
 
 ## Traits

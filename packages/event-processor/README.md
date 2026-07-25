@@ -15,6 +15,7 @@ Applies semantic events to the world model:
 - **Event Application** - Updates world state based on events
 - **Event Ordering** - Ensures consistent state transitions
 - **Side Effects** - Triggers handlers for event types
+- **Effects System (ADR-075)** - Also exports `WorldQuery` / `createWorldQuery`, `EffectProcessor`, and `registerStandardHandlers`
 
 ## Usage
 
@@ -23,8 +24,9 @@ import { EventProcessor } from '@sharpee/event-processor';
 
 const processor = new EventProcessor(world);
 
-// Apply events from action execution
-const updatedWorld = processor.apply(events);
+// Apply events from action execution (the world is mutated in place)
+const results = processor.processEvents(events);
+// results: { applied, failed, changes, reactions }
 ```
 
 ## Event Flow

@@ -38,9 +38,10 @@ const packet: TurnPacket = service.build({ world, events, blocks, turn });
 
 // Consumer side — decode, then render to channel surfaces
 const decoder = createDecoder();
-const decoded = decoder.decode(packet);
+decoder.ingest(manifest).ingest(packet); // read decoder.state / decoder.lastTurn
 const renderer = createRenderer({ /* channel renderers */ });
-renderer.apply(decoded);
+renderer.applyCmgt(manifest);
+renderer.applyTurnPacket(packet);
 
 // CLI / tooling — project an ITextBlock[] to a single string
 const text = renderToString(blocks);

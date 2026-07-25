@@ -48,8 +48,8 @@ if (result.success) {
 
 ### Grammar Patterns
 - `VERB_ONLY`: "look", "wait"
-- `VERB_NOUN`: "take ball", "examine mirror"
-- `VERB_PREP_NOUN`: "look at painting"
+- `VERB_NOUN`: "take ball", "look at painting" (a preposition that is part of the verb phrase binds the direct object)
+- `VERB_NOUN_NOUN`: "give guard the sword"
 - `VERB_NOUN_PREP_NOUN`: "put ball in box"
 - `DIRECTION_ONLY`: "north", "n"
 
@@ -59,15 +59,17 @@ if (result.success) {
 
 ## Parsed Command Structure
 
+The parser produces `IParsedCommand` (defined in `@sharpee/world-model`):
+
 ```typescript
-interface ParsedCommand {
+interface IParsedCommand {
   rawInput: string;
-  tokens: Token[];
+  tokens: IToken[];
   structure: {
-    verb: VerbPhrase;
-    directObject?: NounPhrase;
-    preposition?: PrepPhrase;
-    indirectObject?: NounPhrase;
+    verb: IVerbPhrase;
+    directObject?: INounPhrase;
+    preposition?: IPrepPhrase;
+    indirectObject?: INounPhrase;
   };
   pattern: string;
   confidence: number;
@@ -106,7 +108,7 @@ Input: "put the small key in the wooden box"
     }
   },
   "pattern": "VERB_NOUN_PREP_NOUN",
-  "confidence": 0.7
+  "confidence": 1.0
 }
 ```
 
@@ -116,7 +118,7 @@ Input: "put the small key in the wooden box"
 - **Articles**: "the", "a", "an" handling
 - **Determiners**: "all", "every", "some"
 - **Compound Prepositions**: Multi-word verb phrases
-- **Flexible Adjective Placement**: "red ball" or "ball that is red"
+- **Adjectives**: "red ball", "small wooden box"
 
 ## License
 

@@ -26,12 +26,12 @@ passing it to the engine alongside the matching parser.
 ## Features
 
 - Complete verb mappings for all standard IF actions
-- Full English parser with:
-  - Tokenization
-  - Part-of-speech tagging
+- English language data and helpers:
+  - Word lists (directions, prepositions, determiners, articles, etc.)
   - Lemmatization (word normalization)
-  - Grammar analysis
-  - Compound verb handling
+  - Abbreviation expansion
+  - Phrase-template parsing (ADR-192)
+  - List formatting ("a, b, and c")
 - Message templates for all actions and events
 - Proper article handling (a/an/the)
 - Pluralization support

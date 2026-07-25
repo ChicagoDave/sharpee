@@ -56,8 +56,8 @@ The `CombatService` can be used directly for custom resolution:
 import { createCombatService, applyCombatResult } from '@sharpee/ext-basic-combat';
 
 const combat = createCombatService();
-const result = combat.resolve(context);
-applyCombatResult(result, info);
+const result = combat.resolveAttack(context);
+const info = applyCombatResult(target, result, world);
 ```
 
 ## Related Packages

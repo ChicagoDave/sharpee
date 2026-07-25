@@ -12,7 +12,7 @@ npm install @sharpee/plugins
 
 This package defines the turn-plugin contract the engine uses to extend each turn (ADR-120):
 
-- **`TurnPlugin`** - The interface a plugin implements: an `id`, a `priority`, and an `onAfterAction` hook called once after each successful player action.
+- **`TurnPlugin`** - The interface a plugin implements: an `id`, a `priority`, and an `onAfterAction` hook called once per player action — including refused/blocked ones; consumers gate on `actionResult.success` to distinguish genuine successes.
 - **`TurnPluginContext`** - The read-only per-turn context (world, turn, player, seeded RNG, action result and events) passed to every plugin.
 - **`TurnPluginActionResult`** - Summary of the player action that just completed.
 - **`PluginRegistry`** - Holds a game's plugins, hands them to the engine in descending priority order, and aggregates plugin save/restore state.
@@ -21,7 +21,7 @@ The engine owns a single `PluginRegistry`. Stories add behaviour by registering 
 
 ## Usage
 
-This package is contracts-only. The engine consumes `TurnPlugin`/`PluginRegistry`; the plugin packages implement them. A minimal plugin looks like:
+This package is mostly contracts. The engine consumes `TurnPlugin`/`PluginRegistry`; the plugin packages implement them. A minimal plugin looks like:
 
 ```typescript
 import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
@@ -37,6 +37,10 @@ class HeartbeatPlugin implements TurnPlugin {
   }
 }
 ```
+
+## Band Crossing
+
+Beyond the contracts, the package ships one piece of runtime code: the banded-scalar crossing engine (ADR-262). `createBandDataWatcher` and `createBandNarrator` detect when a scalar value (score, hunger) crosses a named band boundary and narrate the crossing; the supporting types (`BandAnnounceMode`, `BandRung`, `BandCrossingSpan`, `BandCrossedData`, `BandCrossingConfig`, `BandWatcherState`, `BandNarrationParams`, `BandNarratorConfig`) are exported alongside. `@sharpee/ext-scoring` and `@sharpee/ext-hunger` consume these.
 
 ## Related Packages
 

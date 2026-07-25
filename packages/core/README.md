@@ -12,7 +12,7 @@ npm install @sharpee/core
 
 This package provides the foundational types used across all Sharpee packages:
 
-- **Event System** - `SemanticEvent`, typed event registry, event helpers
+- **Event System** - `ISemanticEvent`, typed event registry, event helpers
 - **Query System** - `QueryManager` for player input (yes/no, menus)
 - **Platform Events** - Save, restore, quit, restart handling
 - **Core Utilities** - Common interfaces and type definitions
@@ -21,19 +21,23 @@ This package provides the foundational types used across all Sharpee packages:
 
 ```typescript
 import {
-  SemanticEvent,
+  ISemanticEvent,
   createTypedEvent,
   isEventType,
   QueryManager,
   PlatformEventType
 } from '@sharpee/core';
 
-// Create typed events
-const event = createTypedEvent('game.started', { timestamp: Date.now() });
+// Create typed events (data shape is checked per event type)
+const event = createTypedEvent('game.started', {
+  storyId: 'my-story',
+  initialLocation: 'foyer'
+});
+console.log(event.timestamp); // set by the factory
 
 // Type-safe event checking
 if (isEventType(event, 'game.started')) {
-  console.log(event.data.timestamp);
+  console.log(event.data.initialLocation);
 }
 ```
 

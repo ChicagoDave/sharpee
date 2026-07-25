@@ -16,25 +16,24 @@ A fluent builder API for defining NPCs with rich internal state. Authors describ
 - **Triggers** - `.on(event)` chains (`TriggerBuilder`) compile to state mutations like mood shifts and disposition changes.
 - **Cognitive presets** - `COGNITIVE_PRESETS` and `VocabularyExtension` for custom moods and personalities.
 - **`applyCharacter()`** - Attaches the compiled character to an entity and returns the trait plus behavior config.
-- **Behavior systems** - Conversation (ADR-142), information propagation (ADR-144), goal pursuit (ADR-145), and influence (ADR-146), each with its own builder and tick-phase handler.
+- **Behavior systems** - Conversation (ADR-142), information propagation (ADR-144), goal pursuit (ADR-145), and influence (ADR-146), each with its own builder; propagation, goal pursuit, and influence also run as tick-phase handlers.
 
 ## Usage
 
 ```typescript
 import { CharacterBuilder, applyCharacter } from '@sharpee/character';
-import { ThreatLevel } from '@sharpee/world-model';
 
 const guard = new CharacterBuilder('castle-guard')
   .personality('very honest', 'cowardly')
-  .mood('wary')
-  .threat(ThreatLevel.NONE)
+  .mood('nervous')
+  .threat('safe')
   .loyalTo('king')
   .distrusts('player')
   .knows('the postern gate is unlocked', { witnessed: true })
   .on('player threatens')
     .becomes('panicked')
-    .feelsAbout('player', 'afraid of')
-    .shift('threat', ThreatLevel.HIGH)
+    .feelsAbout('player', 'wary of')
+    .shift('threat', 'threatened')
     .done()
   .compile();
 

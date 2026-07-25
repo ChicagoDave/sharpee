@@ -39,12 +39,15 @@ import {
   EnglishParser,
   EnglishLanguageProvider
 } from '@sharpee/sharpee';
+// WorldModel is re-exported type-only; constructing a world imports the sub-package
+import { WorldModel } from '@sharpee/world-model';
 
 // Set up language + parser
 const language = new EnglishLanguageProvider();
 const parser = new EnglishParser(language);
 
 // Build the engine (world and player typically come from your story setup)
+const world = new WorldModel();
 const engine = new GameEngine({ world, player, parser, language });
 
 // Register the story, then start
@@ -78,7 +81,7 @@ directly (e.g. `@sharpee/world-model`, `@sharpee/stdlib`).
 
 ## Standard Actions
 
-The engine includes 48 standard IF actions out of the box:
+The engine includes 57 standard IF actions out of the box:
 
 - **Movement**: go, enter, exit
 - **Manipulation**: take, drop, put, insert, remove
@@ -104,7 +107,7 @@ See the [stories directory](https://github.com/ChicagoDave/sharpee/tree/main/sto
 ## Requirements
 
 - Node.js 18+
-- TypeScript 5.2+ (for development)
+- TypeScript 5.3+ (for development)
 
 ## License
 

@@ -11,10 +11,10 @@ Headless Sharpee engine for embedding interactive fiction in any web page. The r
 ### 1. Build the runtime
 
 ```bash
-./build.sh --runtime
+pnpm --filter '@sharpee/runtime' build
 ```
 
-This produces `dist/runtime/sharpee-runtime.js` (~745K minified).
+This compiles the TypeScript. The bundling step that would produce a single-file `sharpee-runtime.js` browser bundle is not yet wired up — the sections below describe the intended integration once it exists.
 
 ### 2. Host the files
 
@@ -97,7 +97,7 @@ Story code runs inside the iframe where `window.Sharpee` exposes the full engine
 ### Minimal story
 
 ```javascript
-const { WorldModel, EntityType, IdentityTrait, RoomTrait, ActorTrait } = window.Sharpee;
+const { WorldModel, IdentityTrait, RoomTrait, ActorTrait } = window.Sharpee;
 
 window.SharpeeStory = {
   config: {
@@ -108,25 +108,22 @@ window.SharpeeStory = {
   },
 
   createPlayer(world) {
-    const player = world.createEntity('player', 'actor');
-    player.add(new IdentityTrait({ name: 'yourself' }));
+    const player = world.createEntity('yourself', 'actor');
     player.add(new ActorTrait());
     return player;
   },
 
   initializeWorld(world) {
-    // Create a room
-    const room = world.createEntity('start', 'room');
+    // Create a room (the first argument is the display name)
+    const room = world.createEntity('Living Room', 'room');
     room.add(new IdentityTrait({
-      name: 'Living Room',
       description: 'A cozy room with a fireplace. A door leads north.',
     }));
     room.add(new RoomTrait());
 
     // Create an object
-    const key = world.createEntity('brass-key', 'object');
+    const key = world.createEntity('brass key', 'object');
     key.add(new IdentityTrait({
-      name: 'brass key',
       description: 'A small brass key with an ornate handle.',
     }));
     world.moveEntity(key.id, room.id);
@@ -337,13 +334,13 @@ if (save) {
 
 Story code running inside the runtime has access to the full Sharpee engine API via `window.Sharpee`. Key exports:
 
-**Engine**: `GameEngine`, `Story`, `StoryConfig`, `StoryWithEvents`
+**Engine**: `GameEngine`, `StoryWithEvents` (`Story` and `StoryConfig` are type-only exports — absent at runtime)
 
 **World Model**: `WorldModel`, `IFEntity`, `EntityType`, `AuthorModel`
 
-**Traits**: `IdentityTrait`, `RoomTrait`, `ContainerTrait`, `OpenableTrait`, `LockableTrait`, `ReadableTrait`, `LightSourceTrait`, `ExitTrait`, `SceneryTrait`, `SupporterTrait`, `SwitchableTrait`, `WearableTrait`, `EdibleTrait`, `DoorTrait`, `ActorTrait`, `VehicleTrait`, `ButtonTrait`, `PullableTrait`, `PushableTrait`, `NpcTrait`, `ClimbableTrait`, `AttachedTrait`, `MoveableSceneryTrait`, `ClothingTrait`
+**Traits**: `IdentityTrait`, `RoomTrait`, `ContainerTrait`, `OpenableTrait`, `LockableTrait`, `ReadableTrait`, `LightSourceTrait`, `ExitTrait`, `SceneryTrait`, `SupporterTrait`, `SwitchableTrait`, `WearableTrait`, `EdibleTrait`, `DoorTrait`, `ActorTrait`, `VehicleTrait`, `ButtonTrait`, `PullableTrait`, `PushableTrait`, `NpcTrait`, `ClimbableTrait`, `AttachedTrait`, `MoveableSceneryTrait`
 
-**Capabilities**: `registerCapabilityBehavior`, `CapabilityBehavior`, `findTraitWithCapability`
+**Capabilities**: `findTraitWithCapability` (`CapabilityBehavior` is type-only; to register a behavior, call `world.registerCapabilityBehavior(...)` — an instance method on `WorldModel`, not a module export)
 
 **Plugins**: `NpcPlugin`, `SchedulerPlugin`, `StateMachinePlugin`, `PluginRegistry`
 
@@ -351,10 +348,10 @@ For the full API reference, see `packages/sharpee/docs/genai-api/`.
 
 ## Test Harness
 
-The build includes a test harness at `dist/runtime/test-harness.html`. Open it in a browser (via a local server) to interactively test the postMessage bridge with a built-in minimal story.
+A test harness lives at `packages/runtime/test-harness.html` (with `runtime-frame.html` beside it). Open it in a browser (via a local server) to interactively test the postMessage bridge with a built-in minimal story.
 
 ```bash
-./build.sh --runtime
-npx serve dist/runtime
+pnpm --filter '@sharpee/runtime' build
+npx serve packages/runtime
 # Open http://localhost:3000/test-harness.html
 ```

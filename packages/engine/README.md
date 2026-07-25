@@ -15,8 +15,7 @@ npm install @sharpee/engine
 The engine package brings together all the Sharpee components into a running game:
 
 - **GameEngine**: Main runtime that manages game state and turn execution
-- **CommandExecutor**: Thin orchestrator (177 lines) that coordinates the action pipeline
-- **EventSequencer**: Ensures events are properly ordered within turns (1.1, 1.2, 1.3...)
+- **CommandExecutor**: Thin orchestrator that coordinates the action pipeline
 
 ## Architecture
 
@@ -28,10 +27,11 @@ User Input
 [CommandExecutor] (Thin Orchestrator)
     ├─→ [Parser] → ParsedCommand
     ├─→ [Validator] → ValidatedCommand
-    └─→ [Action] (Three-Phase Pattern)
+    └─→ [Action] (Four-Phase Pattern)
          ├─→ validate() → ValidationResult
          ├─→ execute() → Mutations only
-         └─→ report() → ISemanticEvent[]
+         ├─→ report() → ISemanticEvent[]
+         └─→ blocked() → ISemanticEvent[] (validation failed)
     ↓
 [EventProcessor] → World Changes
     ↓
@@ -137,24 +137,6 @@ This enables:
 - **No World Queries**: The prose pipeline renders from embedded event data, not world lookups
 - **Consistency**: Entity state is captured after all mutations complete
 
-## Event Sequencing
-
-Events are automatically sequenced within turns:
-
-```typescript
-// Turn 1
-1.1 - action.started
-1.2 - if.event.taken (main action)
-1.3 - action.success
-
-// Turn 2
-2.1 - action.started
-2.2 - if.event.exited (leaving room)
-2.3 - if.event.entered (entering room)
-2.4 - if.event.looked (auto-look)
-2.5 - action.success
-```
-
 ## Language Management
 
 The parser and language provider are supplied to the engine at construction
@@ -202,23 +184,28 @@ trigger these hooks.
 
 ## Integration with Story Files
 
-The engine works with TypeScript story files implementing the `Story` interface:
+The engine works with TypeScript story files implementing the `Story` interface.
+A story module exports exactly one thing: a `createStory()` factory (ADR-248).
+No `story`/`config`/default singleton exports — every boot (including an
+in-process restart) calls the factory for a fresh instance:
 
 ```typescript
 // my-story.ts
-import { Story, StoryConfig } from '@sharpee/engine';
+import { Story } from '@sharpee/engine';
 
-export const story: Story = {
-  config: {
-    id: 'my-story',
-    title: 'My Adventure',
-    author: 'Me',
-    version: '1.0.0',
-    language: 'en-US'
-  },
-  initializeWorld(world) { /* create rooms, objects, NPCs */ },
-  createPlayer(world) { /* create and place the player */ }
-};
+export function createStory(): Story {
+  return {
+    config: {
+      id: 'my-story',
+      title: 'My Adventure',
+      author: 'Me',
+      version: '1.0.0',
+      language: 'en-US'
+    },
+    initializeWorld(world) { /* create rooms, objects, NPCs */ },
+    createPlayer(world) { /* create and place the player */ }
+  };
+}
 ```
 
 ## API Reference
@@ -254,27 +241,18 @@ Each turn returns:
 
 ```typescript
 interface TurnResult {
+  type?: 'turn';                       // Discriminator for the CommandResult union
   turn: number;
   input: string;
-  events: SequencedEvent[];
+  events: ISemanticEvent[];            // All events generated this turn (in sequence)
+  blocks?: ITextBlock[];               // Structured text blocks from TextService (ADR-133)
   success: boolean;
   error?: string;
+  timing?: TimingData;
   actionId?: string;
   parsedCommand?: IParsedCommand;
-  timing?: TimingData;
-}
-```
-
-Where SequencedEvent includes:
-```typescript
-interface SequencedEvent {
-  type: string;
-  data: any;
-  sequence: number;
-  timestamp: Date;
-  turn: number;
-  scope: 'turn' | 'global' | 'system';
-  source?: string;
+  validatedCommand?: IValidatedCommand; // Used for pronoun resolution (ADR-089)
+  needsInput?: boolean;                // Waiting for follow-up input (e.g., disambiguation)
 }
 ```
 
@@ -301,9 +279,7 @@ The engine package includes comprehensive test coverage:
 ### Unit Tests
 - `game-engine.test.ts` - Core game engine functionality
 - `command-executor.test.ts` - Command parsing and execution
-- `event-sequencer.test.ts` - Event ordering and utilities
 - `story.test.ts` - Story interface and configuration
-- `types.test.ts` - Type definitions and contracts
 
 ### Integration Tests
 - `integration.test.ts` - Full game flow and component interaction

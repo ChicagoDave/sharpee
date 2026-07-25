@@ -20,25 +20,16 @@ This package contains the shared domain types, events, and contracts that define
 - `IFEventCategory` - Event categorization for filtering and handling
 
 ### Contracts (`contracts.ts`)
-- `EventHandler` - Function type for handling events
-- `EventValidator` - Function type for validating events
-- `EventPreviewer` - Function type for previewing event effects
 - `WorldChange` - Interface for world state changes
-- `ProcessedEvents` - Result of event processing
-- `ProcessorOptions` - Event processing configuration
+- `WorldConfig`, `WorldState` - World behavior configuration and state storage
+- `FindOptions`, `ContentsOptions` - Options for finding entities and querying contents
+- `ProcessedEvents`, `ProcessorOptions` - Event processing result and configuration
+- `CommandInput`, `CommandSemantics`, `EntityReference` - Command contracts
+- `ValidationResult`, `IActionContext`, `IAction`, `IActionRegistry` - Action contracts
+- `ScopeLevel`, `IScopeResolver` - Scope contracts
 
 ### Changes (`changes.ts`)
 - `WorldChangeType` - Types of world state changes
-- `ContentsOptions` - Options for querying entity contents
-- `FindOptions` - Options for finding entities
-- `WorldConfig` - World behavior configuration
-- `WorldState` - World state storage interface
-
-### Sequencing (`sequencing.ts`)
-- `TurnPhase` - Phases of turn execution
-- `EventSequence` - Sequencing information for events
-- `SequencedEvent` - Event with sequence information
-- `EventSequencer` - Interface for event sequencing
 
 ### Language & Parser Contracts
 - `LanguageProvider`, `ParserLanguageProvider` - Language provider interfaces
@@ -49,11 +40,14 @@ This package contains the shared domain types, events, and contracts that define
 - Prompt types (ADR-137)
 - Channel-I/O type contracts (ADR-163) — the universal UI surface
 - Spatial sound propagation contracts (ADR-172)
+- Phrase algebra contracts (`phrase.ts`, ADR-192)
+- Room-description snippet contracts (`snippets.ts`, ADR-209)
+- Story ending contract (`endings.ts`, ADR-210)
 
 ## Usage
 
 ```typescript
-import { IFEvents, EventHandler, WorldChange } from '@sharpee/if-domain';
+import { IFEvents, WorldChange } from '@sharpee/if-domain';
 
 // Use event constants
 const moveEvent = {
@@ -61,9 +55,11 @@ const moveEvent = {
   // ...
 };
 
-// Implement event handlers
-const handleMove: EventHandler = (event, world) => {
-  // Handle the event
+// Describe world state changes
+const change: WorldChange = {
+  type: 'move',
+  entityId: 'player',
+  // ...
 };
 ```
 
@@ -71,12 +67,13 @@ const handleMove: EventHandler = (event, world) => {
 
 1. **Domain-Driven Design**: All types represent domain concepts, not technical implementations
 2. **Single Source of Truth**: Event constants and core types defined once
-3. **No Implementation**: Pure type definitions with no runtime code (except constants)
-4. **Minimal Dependencies**: Only depends on @sharpee/core for base types
+3. **Contracts First**: Mostly type definitions and constants, plus a small runtime surface (vocabulary registry, parser factory, grammar engine, scope builder)
+4. **Minimal Dependencies**: Only depends on @sharpee/core and @sharpee/text-blocks
 
 ## Dependencies
 
 - `@sharpee/core` - Core semantic event types
+- `@sharpee/text-blocks` - Text-block types used by the language, phrase, and channel contracts
 
 ## Build Order
 

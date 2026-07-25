@@ -35,16 +35,19 @@ const game2 = assembleGame(storyInstance);
 
 A `LoadedGame` exposes `engine`, `world`, `testingExtension`, the last turn's
 `lastOutput` / `lastEvents` / `lastTurnResult`, `getPluginRegistry()` (save/restore
-plugin state), and `executeCommand(input)`.
+plugin state), `executeCommand(input)`, and `reviveEngine()` (resume the engine
+after a game-over, for the runner's RETRY restore path).
 
 ## Exports
 
 | Export | Description |
 |--------|-------------|
 | `loadStory(location, opts?)` | Resolve + load a story directory, return a started `LoadedGame` |
-| `assembleGame(story)` | Assemble a `LoadedGame` from an already-loaded story instance |
+| `assembleGame(story, opts?)` | Assemble a `LoadedGame` from an already-loaded story instance; without `opts.freshStory` a confirmed RESTART reports "restart is not supported here" instead of rebooting (ADR-248) |
 | `resolveStoryModulePath(location, entry?)` | Resolve a story directory (entry-aware) to its module path |
-| `buildManifest` | Introspect a story into a project manifest |
+| `purgeStoryModuleCache(storyRoot)` | Purge a story directory's modules from the require cache (restart/reboot support) |
+| `moduleFreshStory(location, modulePath)` | Build an ADR-248 `freshStory` provider: purge, re-require, call `createStory()` |
+| `buildManifest(world, story, generatedFrom)` | Project an already-constructed world into a `ProjectManifest` (story id + `'cli' \| 'bridge'` origin) |
 | `CLI_CAPABILITIES` | Text-only CLI/test capability profile (ADR-165) |
 | `LoadedGame` | Type of a loaded, runnable game with output capture |
 

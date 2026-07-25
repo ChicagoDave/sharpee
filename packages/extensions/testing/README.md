@@ -13,9 +13,8 @@ npm install @sharpee/ext-testing
 This extension provides authoring and QA tooling for Sharpee stories:
 
 - **Debug mode** - interactive GDT-style commands with short codes
-- **Test commands** - `$teleport`, `$take`, `$assert`, and friends for transcripts
+- **Test commands** - `$teleport`, `$take`, `$state`, and friends for transcripts
 - **Checkpoints** - save/restore world state to file, memory, or local storage
-- **Deterministic testing** - seeded randomness for repeatable transcript runs
 - **Annotations** - playtester note capture (ADR-109)
 
 ## Usage

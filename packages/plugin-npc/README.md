@@ -26,7 +26,7 @@ import { NpcPlugin } from '@sharpee/plugin-npc';
 const npcPlugin = new NpcPlugin();
 
 // Register with the engine's plugin registry
-engine.plugins.register(npcPlugin);
+engine.getPluginRegistry().register(npcPlugin);
 
 // Add a story-specific NPC behaviour through the wrapped service
 const npcService = npcPlugin.getNpcService();

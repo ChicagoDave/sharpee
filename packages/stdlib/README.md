@@ -1,6 +1,6 @@
 # @sharpee/stdlib
 
-Standard library for the Sharpee IF Platform - 48 standard IF actions with four-phase pattern (validate/execute/report/blocked).
+Standard library for the Sharpee IF Platform - 57 standard IF actions with four-phase pattern (validate/execute/report/blocked).
 
 ## Installation
 
@@ -64,17 +64,14 @@ import { CommandValidator } from '@sharpee/stdlib';
 
 const validator = new CommandValidator(world, actionRegistry);
 
-const validated = validator.validate(parsedCommand, {
-  world,
-  player,
-  location: currentRoom,
-  scopeService
-});
+// world, action registry, and scope resolver come from the constructor
+const result = validator.validate(parsedCommand);
 
-// Returns ValidatedCommand with:
+// Returns Result<ValidatedCommand, IValidationError>. On success, the
+// ValidatedCommand carries:
 // - Resolved entities
 // - Action handler reference
-// - Validation score
+// - Scope info for each resolved object
 ```
 
 ### Entity Resolution Features
@@ -114,18 +111,21 @@ interface Action {
 > entity-specific verbs (LOWER, TURN, WAVE) are handled via traits + behaviors
 > rather than per-action branching.
 
-### Available Actions (48 Total)
+### Available Actions (57 Total)
 
 **Movement**: going, entering, exiting, climbing
-**Manipulation**: taking, dropping, putting, inserting, removing, giving, throwing
+**Manipulation**: taking, dropping, putting, inserting, removing, giving, throwing, cutting, digging, hiding, revealing
 **Containers/Doors**: opening, closing, locking, unlocking
 **Examination**: looking, examining, searching, reading
-**Interaction**: talking, showing, attacking
-**Devices**: switching on/off, pushing, pulling, raising, lowering
+**Interaction**: talking, asking, telling, showing, attacking
+**Devices**: switching on/off, pushing, pulling, turning, raising, lowering
 **Wearables**: wearing, taking off
 **Consumables**: eating, drinking
 **Senses**: touching, smelling, listening
 **Meta**: inventory, score, help, save, restore, restart, quit, undo, again, wait, about, version, sleep
+
+Two internal/author actions (deadly-room death handling and the trace debug
+action) round out the 57.
 
 ## Language System
 
@@ -174,7 +174,7 @@ const validator = new CommandValidator(world, actionRegistry);
 The stdlib follows Sharpee's core principles:
 
 1. **Separation of Concerns** - Parser doesn't know about world, validator doesn't execute
-2. **Pure Functions** - Actions return events, don't mutate state
+2. **Phase Discipline** - validate is pure, execute mutates via behaviors, report emits events
 3. **Extensible** - Easy to add new actions, vocabulary, messages
 4. **Type-Safe** - Full TypeScript support with proper types
 5. **Event-Driven** - All changes happen through semantic events
@@ -192,12 +192,6 @@ pnpm test:coverage
 
 # Watch mode
 pnpm test:watch
-
-# View coverage report
-pnpm coverage:view
-
-# Update coverage badge
-pnpm coverage:badge
 ```
 
 ### Test Structure
@@ -206,9 +200,15 @@ pnpm coverage:badge
 tests/
 ├── unit/           # Unit tests for individual components
 │   ├── actions/    # Action tests
+│   ├── capabilities/
+│   ├── chains/
+│   ├── npc/
 │   ├── parser/     # Parser tests
-│   ├── validation/ # Validator tests
-│   └── language/   # Language system tests
+│   ├── scope/
+│   ├── services/
+│   ├── utils/
+│   └── validation/ # Validator tests
+├── validation/     # Validation tests
 └── integration/    # Integration tests
 ```
 
