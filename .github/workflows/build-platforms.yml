@@ -24,35 +24,22 @@ jobs:
         node-version: '22'
         cache: 'pnpm'
 
+    # Plain install (no --ignore-scripts): pnpm gates dependency build scripts via
+    # onlyBuiltDependencies in pnpm-workspace.yaml; esbuild's binary is needed for
+    # repokit's bundle step and would be skipped by --ignore-scripts.
     - name: Install dependencies
-      run: pnpm install --ignore-scripts
+      run: pnpm install
 
-    - name: Build platform packages
-      run: |
-        # Build in dependency order (matches devkit PLATFORM_PACKAGES in packages/devkit/src/repo.ts)
-        pnpm --filter '@sharpee/core' run build
-        pnpm --filter '@sharpee/text-blocks' run build
-        pnpm --filter '@sharpee/if-domain' run build
-        pnpm --filter '@sharpee/media' run build
-        pnpm --filter '@sharpee/world-model' run build
-        pnpm --filter '@sharpee/helpers' run build
-        pnpm --filter '@sharpee/event-processor' run build
-        pnpm --filter '@sharpee/lang-en-us' run build
-        pnpm --filter '@sharpee/parser-en-us' run build
-        pnpm --filter '@sharpee/if-services' run build
-        pnpm --filter '@sharpee/channel-service' run build
-        pnpm --filter '@sharpee/stdlib' run build
-        pnpm --filter '@sharpee/character' run build
-        pnpm --filter '@sharpee/ext-basic-combat' run build
-        pnpm --filter '@sharpee/plugins' run build
-        pnpm --filter '@sharpee/plugin-npc' run build
-        pnpm --filter '@sharpee/plugin-scheduler' run build
-        pnpm --filter '@sharpee/plugin-state-machine' run build
-        pnpm --filter '@sharpee/ext-testing' run build
-        pnpm --filter '@sharpee/engine' run build
-        pnpm --filter '@sharpee/platform-browser' run build
-        pnpm --filter '@sharpee/sharpee' run build
-        pnpm --filter '@sharpee/transcript-tester' run build
+    # The repokit engine imports @sharpee/core and @sharpee/devkit; the `...`
+    # filter suffix builds its workspace dependency chain first on a cold checkout.
+    - name: Build repokit engine
+      run: pnpm --filter '@sharpee/repokit...' run build
+
+    # Single source of truth for build order (PLATFORM_PACKAGES in
+    # tools/repokit/src/repo.ts) — replaces the hand-maintained package list that
+    # drifted and broke when transcript-tester gained a @sharpee/bootstrap import.
+    - name: Build platform packages (repokit)
+      run: ./repokit build
 
     - name: Typecheck
       run: pnpm --filter '@sharpee/sharpee' exec tsc --noEmit

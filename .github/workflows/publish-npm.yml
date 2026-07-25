@@ -38,6 +38,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # The repokit engine is not committed built; its source imports @sharpee/core
+      # and @sharpee/devkit, so the `...` filter suffix builds the dependency chain
+      # first on a cold checkout. Without this, ./repokit exits "engine not built".
+      - name: Build repokit engine
+        run: pnpm --filter '@sharpee/repokit...' run build
+
       # MUST be the repokit build, not `pnpm run build`:
       # `pnpm run build` is `turbo run build` and does not stamp versions,
       # which is how @sharpee/stdlib@3.6.0 shipped a stale ENGINE_VERSION.
