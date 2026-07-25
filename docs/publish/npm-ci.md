@@ -304,13 +304,13 @@ In `sharpee_v2`:
         id-token: write        # required for OIDC — do not remove
 
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
 
-        - uses: pnpm/action-setup@v3
+        - uses: pnpm/action-setup@v4
           with:
             version: 10.13.1
 
-        - uses: actions/setup-node@v4
+        - uses: actions/setup-node@v5
           with:
             node-version: '22'
             cache: 'pnpm'
