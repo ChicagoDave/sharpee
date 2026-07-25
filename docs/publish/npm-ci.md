@@ -64,6 +64,43 @@ different sets.
 
 That divergence is why every release has been manual.
 
+### 1.4 The manual publish has already shipped a wrong artifact
+
+This is not hypothetical. The 3.6.0 release is live on npm with a stale constant
+baked into it.
+
+`@sharpee/stdlib@3.6.0` ships `ENGINE_VERSION = '3.5.0'`. The package manifest
+says `3.6.0`, but the compiled constant in the published tarball
+(`package/actions/standard/version/engine-version.js:8`) says `3.5.0`. Verified by
+downloading the tarball on 2026-07-25.
+
+The cause is a missing step, not a bug. `stampVersions()`
+(`tools/repokit/src/commands/build.ts:75-101`) regenerates
+`packages/stdlib/src/actions/standard/version/engine-version.ts` from
+`packages/sharpee/package.json` on every `./repokit build`. The 3.6.0 release
+bumped the 32 manifests and published, but never ran a stamping build, so stdlib
+compiled against the previous value.
+
+The user-visible effect is narrow but real. Per the comment at `build.ts:85-88`,
+that constant is the fallback version banner for Chord `.story` stories, which
+carry no stamped `src/version.ts` of their own. Authors on published 3.6.0 see
+`3.5.0` when they run `version` in a Chord story. TypeScript stories, which have
+their own stamped `version.ts`, are unaffected.
+
+A related gap surfaced in the same check. `packages/sharpee/package.json` declares
+`"files": ["dist", "docs"]`, but the published `@sharpee/sharpee@3.6.0` tarball
+contains 10 files and no `docs/` directory at all, so `docs/genai-api/` is not
+reaching authors despite both `CLAUDE.md` and the generator's own header stating
+that it ships with the package. The tarball paths are flattened
+(`package/index.js`, not `package/dist/index.js`), which shows tsf publishes from a
+rewritten staging manifest rather than packing the source directory, so the source
+`files` array is not what governs the result. The exact staging behavior has not
+been traced yet. See §10.5.
+
+Both problems share one root cause: a human assembles the release by remembering
+which steps to run. That is precisely what moving the build into CI fixes, provided
+the workflow runs the stamping build rather than a bare compile. See §7 Part B.
+
 ---
 
 ## 2. What stays under your control
@@ -287,8 +324,14 @@ In `sharpee_v2`:
         - name: Install dependencies
           run: pnpm install
 
-        - name: Build platform packages
-          run: pnpm run build
+        # MUST be the repokit build, not `pnpm run build`. See B2 below:
+        # `pnpm run build` is `turbo run build` and does not stamp versions,
+        # which is how @sharpee/stdlib@3.6.0 shipped a stale ENGINE_VERSION.
+        - name: Build platform packages (stamps versions first)
+          run: ./repokit build
+
+        - name: Fail if stamping changed a tracked file
+          run: git diff --exit-code
 
         - name: Build npm artifacts
           run: pnpm exec tsf build --npm
@@ -307,10 +350,31 @@ In `sharpee_v2`:
 
   Note there is **no `NODE_AUTH_TOKEN`**. That absence is the point.
 
-- [ ] **B2.** Confirm `pnpm run build` is the right build entry point for a clean
-      checkout, or substitute the correct sequence. The existing workflow used an
-      explicit 24-package ordered list; `turbo run build` should cover it, but this
-      needs one verification run before trusting it.
+- [ ] **B2.** Use `./repokit build` as the build entry point, **not**
+      `pnpm run build`. This is the fix for §1.4 and it is not optional.
+
+      The root `build` script is `turbo run build`, which compiles packages but
+      never calls repokit's `stampVersions()`. Under that entry point, CI compiles
+      whatever `engine-version.ts` happens to be committed, so a release whose bump
+      commit did not include a stamping build publishes a stale constant. That is
+      exactly how 3.6.0 shipped `ENGINE_VERSION = '3.5.0'`. Automating the publish
+      without changing this step would automate the bug rather than fix it.
+
+      Ordering matters: stamping must precede compilation. `runBuild()`
+      (`build.ts:214-237`) already guarantees this by calling `stampVersions()`
+      first, which is the second reason to invoke repokit rather than assemble the
+      steps by hand in YAML.
+
+      The `git diff --exit-code` step that follows is the safety net. If stamping
+      changed a tracked file, the release commit was incomplete and the job should
+      fail loudly rather than publish an artifact that disagrees with the repo.
+      Expect this to fire the first time; the fix is to commit the stamp and re-run,
+      not to delete the check.
+
+- [ ] **B2a.** Confirm `./repokit build` works from a clean CI checkout. It is
+      normally run against a warm tree, and the cold-build ordering has bitten us
+      before, so this needs one verification run before the first real publish. If
+      it fails cold, fix the ordering rather than falling back to `turbo run build`.
 - [ ] **B3.** Delete the dead `publish-npm` job from `beta-release.yml`, along with
       the now-unused `NPM_TOKEN` reference. Leave the build/test/release jobs alone.
 
@@ -383,7 +447,20 @@ discovery would try to publish it. Decide before the first real run — see §10
       - `npm view @sharpee/ext-hunger version` shows the new version.
       - The npm package page shows a green **Provenance** badge linking to the
         workflow run.
-- [ ] **D4.** Only after that succeeds, do a full lockstep release through CI.
+- [ ] **D4.** Verify the stamp actually landed in the published artifact, since
+      this is the failure §1.4 documents and a version number on the manifest does
+      not prove it. Download the tarball and read the constant directly:
+
+      ```bash
+      npm pack @sharpee/stdlib@<version>
+      tar -xzf sharpee-stdlib-<version>.tgz
+      grep ENGINE_VERSION package/actions/standard/version/engine-version.js
+      ```
+
+      It must match the published version. Checking `npm view` alone would have
+      reported 3.6.0 as healthy.
+
+- [ ] **D5.** Only after that succeeds, do a full lockstep release through CI.
 
 ### Part E — Close the door
 
@@ -464,7 +541,24 @@ Nothing here is one-way until Part E.
    it's a pnpm flag, not an npm one. npm should warn and ignore it. Harmless, but
    worth cleaning up in the tsf 1.0.1 release while you're in there.
 
-4. **Auto-publish on version-bump commits** — deliberately excluded. Could be added
+4. **Republishing 3.6.0** — the live `@sharpee/stdlib@3.6.0` carries the stale
+   `ENGINE_VERSION = '3.5.0'` described in §1.4. npm does not allow overwriting a
+   published version, so the options are to leave it and let 3.7.0 correct it, or
+   to publish a 3.6.1 for stdlib alone, which breaks the lockstep versioning
+   everything else relies on. Leaving it is probably right given the narrow impact,
+   but it is your call and it should be a conscious one.
+
+5. **`docs/genai-api/` is not reaching npm** — `packages/sharpee/package.json`
+   declares `"files": ["dist", "docs"]`, yet the published 3.6.0 tarball has no
+   `docs/` directory. Since tsf publishes from a rewritten staging manifest with
+   flattened paths rather than packing the source directory, the source `files`
+   array is not governing the tarball, and the staging behavior has not been traced
+   yet. Worth settling before the CI cutover, because the entire premise of those
+   docs is that an assistant reads them from the installed package. If they are
+   meant to ship, this is a tsf staging fix; if they are repo-only, then
+   `CLAUDE.md` and the generator header both need correcting instead.
+
+6. **Auto-publish on version-bump commits** — deliberately excluded. Could be added
    later by triggering on pushes to `main` that change
    `packages/sharpee/package.json`. That surrenders the "you decide when" property,
    so it should be a separate decision after the manual path is proven.
