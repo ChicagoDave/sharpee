@@ -239,7 +239,7 @@ missing, instead of erroring on "version already exists."
 
 In `/Users/david/repos/tsf`:
 
-- [ ] **A1.** Relax the login gate. Replace the block at `src/cli/publish.ts:129-138`:
+- [x] **A1.** Relax the login gate. Replace the block at `src/cli/publish.ts:129-138`:
 
   ```ts
   // Check npm login (skip for dry-run and for OIDC/trusted publishing).
@@ -263,13 +263,15 @@ In `/Users/david/repos/tsf`:
   Dropping the check is safe: if auth is genuinely broken, `npm publish` fails
   loudly on the first package and tsf's existing error path exits non-zero.
 
-- [ ] **A2.** Bump tsf to `1.0.1` and commit. This also ships the two unreleased
+- [x] **A2.** Bump tsf to `1.0.1` and commit. This also ships the two unreleased
       publish fixes (`dffd580`, `821d1e6`).
-- [ ] **A3.** Publish tsf to npm. **This is the last publish that needs the
-      5-minute link.**
-- [ ] **A4.** In Sharpee, update the dependency to `^1.0.1`, run `pnpm install`,
+- [x] **A3.** Publish tsf to npm. **This is the last publish that needs the
+      5-minute link.** *(1.0.1 verified live on npm, 2026-07-25.)*
+- [x] **A4.** In Sharpee, update the dependency to `^1.0.1`, run `pnpm install`,
       and commit the lockfile change. Verify:
       `node -p "require('./node_modules/@davidcornelson/tsf/package.json').version"`
+      *(Done 2026-07-25: verify prints 1.0.1, and the installed `dist/cli/publish.js`
+      contains the `ACTIONS_ID_TOKEN_REQUEST_URL` OIDC skip from A1.)*
 
 > Optional, later: give tsf its own trusted publisher so *its* releases are also
 > link-free. Not required for Sharpee — skipping it just means the occasional tsf

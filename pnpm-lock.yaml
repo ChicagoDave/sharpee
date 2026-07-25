@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@davidcornelson/tsf':
-        specifier: ^1.0.0
-        version: 1.0.0
+        specifier: ^1.0.1
+        version: 1.0.1
       '@stryker-mutator/core':
         specifier: ^9.6.0
         version: 9.6.0(@types/node@20.19.27)
@@ -1786,8 +1786,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@davidcornelson/tsf@1.0.0':
-    resolution: {integrity: sha512-hFXwkrTXQ1JFKy7KPjVsprs3rZV8R7ROqnRILOkb9qv0OEN9eQv+wI1XXCdJT7SLpdsJqxWH9QhSnsze3efnJA==}
+  '@davidcornelson/tsf@1.0.1':
+    resolution: {integrity: sha512-UBrC0ioIiGs1IapMwilvPUAELywyixZaV+Tt3KEv2YzoPvYUWqqfVNlUJtxv44qzmnQAW/smEfRiemxv0b5DKQ==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -4682,7 +4682,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@davidcornelson/tsf@1.0.0':
+  '@davidcornelson/tsf@1.0.1':
     dependencies:
       glob: 13.0.6
       typescript: 5.9.3
