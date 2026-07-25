@@ -59,8 +59,11 @@ jobs:
       - name: Build npm artifacts
         run: pnpm exec tsf build --npm
 
+      # --publish (tsf >= 1.0.2): gate only publishable packages — workspace
+      # members like stories/dungeo build locally but never ship, and wildcard
+      # subpath exports (platform-browser's ./styles/*) validate correctly.
       - name: Validate
-        run: pnpm exec tsf validate
+        run: pnpm exec tsf validate --publish
 
       - name: Publish (dry run)
         if: inputs.dry_run
