@@ -106,11 +106,11 @@ describe('Walk Through Pattern Matching', () => {
       // Mock context with NO south wall entity
       const contextNoEntity = {
         world: {
-          getTouchableEntities: () => [],
-          getVisibleEntities: () => [],
-          getCarriedEntities: () => [],
+          // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
+          getReachable: () => [],
+          getVisible: () => [],
+          getCarriedAndWorn: () => ({ carried: [], worn: [] }),
           getAllEntities: () => [],
-          getEntitiesAt: () => [],
           getEntity: () => null
         },
         actorId: 'player',
@@ -145,11 +145,11 @@ describe('Walk Through Pattern Matching', () => {
 
       const contextWithEntity = {
         world: {
-          getTouchableEntities: () => [southWallEntity],
-          getVisibleEntities: () => [southWallEntity],
-          getCarriedEntities: () => [],
+          // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
+          getReachable: () => [southWallEntity],
+          getVisible: () => [southWallEntity],
+          getCarriedAndWorn: () => ({ carried: [], worn: [] }),
           getAllEntities: () => [southWallEntity],
-          getEntitiesAt: () => [southWallEntity],
           getEntity: (id: string) => id === 'south-wall' ? southWallEntity : null
         },
         actorId: 'player',
@@ -190,11 +190,11 @@ describe('Walk Through Pattern Matching', () => {
 
       const contextWithEntity = {
         world: {
-          getTouchableEntities: () => [southWallEntity],
-          getVisibleEntities: () => [southWallEntity],
-          getCarriedEntities: () => [],
+          // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
+          getReachable: () => [southWallEntity],
+          getVisible: () => [southWallEntity],
+          getCarriedAndWorn: () => ({ carried: [], worn: [] }),
           getAllEntities: () => [southWallEntity],
-          getEntitiesAt: () => [southWallEntity],
           getEntity: (id: string) => id === 'south-wall' ? southWallEntity : null
         },
         actorId: 'player',

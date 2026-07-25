@@ -89,6 +89,19 @@ class MockWorldModel {
   getCarriedEntities(): MockEntity[] {
     return [];
   }
+
+  // ADR-273: the real WorldModel surface GrammarScopeResolver consumes
+  getVisible(): MockEntity[] {
+    return this.getVisibleEntities();
+  }
+
+  getReachable(): MockEntity[] {
+    return this.getVisible();
+  }
+
+  getCarriedAndWorn(): { carried: MockEntity[]; worn: MockEntity[] } {
+    return { carried: this.getCarriedEntities(), worn: [] };
+  }
 }
 
 describe('Story Grammar API', () => {

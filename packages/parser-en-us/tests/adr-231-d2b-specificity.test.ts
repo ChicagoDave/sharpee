@@ -65,6 +65,19 @@ class MockWorldModel {
   getCarriedEntities(): MockEntity[] {
     return [];
   }
+
+  // ADR-273: the real WorldModel surface GrammarScopeResolver consumes.
+  getVisible(): MockEntity[] {
+    return this.getAllEntities();
+  }
+
+  getReachable(): MockEntity[] {
+    return this.getAllEntities();
+  }
+
+  getCarriedAndWorn(): { carried: MockEntity[]; worn: MockEntity[] } {
+    return { carried: [], worn: [] };
+  }
 }
 
 describe('ADR-231 D2b — literal-before-slot specificity (full grammar)', () => {

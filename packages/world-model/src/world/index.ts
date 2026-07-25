@@ -46,6 +46,7 @@ export { bandOf } from './band.js';
 // Export other classes
 export { SpatialIndex } from './SpatialIndex.js';
 export { VisibilityBehavior, darkKey } from './VisibilityBehavior.js';
+export { ReachabilityBehavior } from './ReachabilityBehavior.js';
 export { AuthorModel, IDataStore, IItemSpec } from './AuthorModel.js';
 
 // Wall Adjacency (ADR-173)

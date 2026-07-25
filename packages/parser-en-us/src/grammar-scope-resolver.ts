@@ -4,8 +4,16 @@
  * during parsing to find entities matching `.where()` definitions.
  *
  * Pipeline role: PARSE PHASE — called by EntitySlotConsumer during grammar
- * matching. Delegates to WorldModel methods (getVisibleEntities,
- * getTouchableEntities, etc.) which internally use VisibilityBehavior.
+ * matching. Resolves scope bases against WorldModel's REAL surface (ADR-273):
+ *   visible   → world.getVisible(actorId)        (VisibilityBehavior)
+ *   touchable → world.getReachable(actorId)      (ReachabilityBehavior — sight
+ *               precondition, closed containers block, OpenInventoryTrait)
+ *   carried   → world.getCarriedAndWorn(actorId), carried ∪ worn
+ *   all       → world.getAllEntities()
+ *   nearby    → visible (no distinct nearby notion exists yet)
+ * A missing world or missing surface fails closed (zero candidates — a
+ * parse-time gate must not guess) and WARNS: silent degradation is the
+ * defect class ADR-273 exists to kill.
  *
  * NOT the same as the world-model's RuleScopeEvaluator (rule-based pre-parse
  * vocabulary) or the stdlib's StandardScopeResolver (validation-phase entity
@@ -41,8 +49,9 @@ export class GrammarScopeResolver {
     constraint: ScopeConstraint,
     context: GrammarContext
   ): IEntity[] {
-    // If no world model, return empty array
+    // If no world model, fail closed — but never silently (ADR-273 D3)
     if (!context.world) {
+      this.warnDegraded(constraint.base, 'setWorldContext was never called');
       return [];
     }
 
@@ -111,54 +120,73 @@ export class GrammarScopeResolver {
   }
 
   /**
-   * Get all entities in the world
+   * ADR-273 D3: fail closed, never silently — name the degraded base and
+   * what was missing, so a mock or mis-wired world surfaces immediately
+   * instead of parsing every constrained command into "can't see any such
+   * thing" (the defect this file's rewrite fixed).
+   */
+  private static warnDegraded(base: string, missing: string): void {
+    console.warn(
+      `GrammarScopeResolver: scope base '${base}' degraded to zero candidates — ${missing} (ADR-273 D3).`
+    );
+  }
+
+  /**
+   * Get all entities in the world (world.getAllEntities)
    */
   private static getAllEntities(context: GrammarContext): IEntity[] {
-    if (!context.world?.getAllEntities) {
+    if (typeof context.world?.getAllEntities !== 'function') {
+      this.warnDegraded('all', 'world.getAllEntities unavailable');
       return [];
     }
     return context.world.getAllEntities();
   }
 
   /**
-   * Get visible entities from current location
+   * Get physically visible entities (world.getVisible → VisibilityBehavior)
    */
   private static getVisibleEntities(context: GrammarContext): IEntity[] {
-    if (!context.world?.getVisibleEntities) {
+    if (typeof context.world?.getVisible !== 'function') {
+      this.warnDegraded('visible', 'world.getVisible unavailable');
       return [];
     }
-    return context.world.getVisibleEntities(context.actorId, context.currentLocation);
+    return context.world.getVisible(context.actorId);
   }
 
   /**
-   * Get touchable entities from current location
+   * Get physically reachable entities (world.getReachable →
+   * ReachabilityBehavior, ADR-273 D4: sight precondition, closed containers
+   * block transparent or not, another actor's inventory needs
+   * OpenInventoryTrait)
    */
   private static getTouchableEntities(context: GrammarContext): IEntity[] {
-    if (!context.world?.getTouchableEntities) {
+    if (typeof context.world?.getReachable !== 'function') {
+      this.warnDegraded('touchable', 'world.getReachable unavailable');
       return [];
     }
-    return context.world.getTouchableEntities(context.actorId, context.currentLocation);
+    return context.world.getReachable(context.actorId);
   }
 
   /**
-   * Get entities carried by the actor
+   * Get entities held by the actor (world.getCarriedAndWorn, carried ∪ worn
+   * — a worn cloak counts as held)
    */
   private static getCarriedEntities(context: GrammarContext): IEntity[] {
-    if (!context.world?.getCarriedEntities) {
+    if (typeof context.world?.getCarriedAndWorn !== 'function') {
+      this.warnDegraded('carried', 'world.getCarriedAndWorn unavailable');
       return [];
     }
-    return context.world.getCarriedEntities(context.actorId);
+    const { carried, worn } = context.world.getCarriedAndWorn(context.actorId);
+    return [...carried, ...worn];
   }
 
   /**
-   * Get nearby entities (visible + adjacent locations)
+   * Get nearby entities — no distinct nearby notion exists in the world
+   * model yet; visible is the honest fallback (as the pre-ADR-273 code
+   * intended).
    */
   private static getNearbyEntities(context: GrammarContext): IEntity[] {
-    if (!context.world?.getNearbyEntities) {
-      // Fallback to visible if nearby not implemented
-      return this.getVisibleEntities(context);
-    }
-    return context.world.getNearbyEntities(context.actorId, context.currentLocation);
+    return this.getVisibleEntities(context);
   }
 
   /**
@@ -242,7 +270,18 @@ export class GrammarScopeResolver {
   }
 
   /**
-   * Find entities by name in a given scope
+   * Find entities by name in a given scope.
+   *
+   * Matching is original-text-first: an entity whose name genuinely begins
+   * with an article ("The Grail") wins its exact match before any article
+   * stripping is attempted. Only when the original text matches nothing is
+   * a leading English article (the/a/an) stripped and the search retried —
+   * articles are noise in entity references platform-wide (the
+   * unconstrained resolution path already ignores them), so `wind the
+   * clock` must gate the same as `wind clock`. Non-article determiners
+   * (`my`, `that`, `some`) are NOT handled here — a known limit of the
+   * constrained path; the fuller fix is determiner-tagged token stripping
+   * in the slot consumer.
    */
   static findEntitiesByName(
     name: string,
@@ -250,26 +289,38 @@ export class GrammarScopeResolver {
     context: GrammarContext
   ): IEntity[] {
     const entitiesInScope = this.getEntitiesInScope(constraint, context);
+
+    const matchesFor = (searchName: string): IEntity[] => {
+      // Try exact match first (name or any alias)
+      const exactMatches = entitiesInScope.filter(e => {
+        if (!e) return false;
+        const names = this.getEntityNames(e);
+        return names.some(n => n.toLowerCase() === searchName);
+      });
+
+      if (exactMatches.length > 0) {
+        return exactMatches;
+      }
+
+      // Try partial match
+      return entitiesInScope.filter(e => {
+        if (!e) return false;
+        const names = this.getEntityNames(e);
+        return names.some(n => n.toLowerCase().includes(searchName));
+      });
+    };
+
     const searchName = name.toLowerCase();
-
-    // Try exact match first (name or any alias)
-    const exactMatches = entitiesInScope.filter(e => {
-      if (!e) return false;
-      const names = this.getEntityNames(e);
-      return names.some(n => n.toLowerCase() === searchName);
-    });
-
-    if (exactMatches.length > 0) {
-      return exactMatches;
+    const originalMatches = matchesFor(searchName);
+    if (originalMatches.length > 0) {
+      return originalMatches;
     }
 
-    // Try partial match
-    const partialMatches = entitiesInScope.filter(e => {
-      if (!e) return false;
-      const names = this.getEntityNames(e);
-      return names.some(n => n.toLowerCase().includes(searchName));
-    });
+    const stripped = searchName.replace(/^(?:the|a|an)\s+/, '');
+    if (stripped !== searchName && stripped.length > 0) {
+      return matchesFor(stripped);
+    }
 
-    return partialMatches;
+    return [];
   }
 }

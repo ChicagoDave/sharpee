@@ -136,6 +136,20 @@ class ButtonWorldModel {
     return this.getVisibleEntities(actorId, location);
   }
 
+  // ADR-273: the real WorldModel surface GrammarScopeResolver consumes.
+  // The player's location is fixed at 'maintenance-room' in this fixture.
+  getVisible(actorId: string): MockEntity[] {
+    return this.getVisibleEntities(actorId, 'maintenance-room');
+  }
+
+  getReachable(actorId: string): MockEntity[] {
+    return this.getVisible(actorId);
+  }
+
+  getCarriedAndWorn(_actorId: string): { carried: MockEntity[]; worn: MockEntity[] } {
+    return { carried: [], worn: [] };
+  }
+
   getCarriedEntities(actorId: string): MockEntity[] {
     return [];
   }

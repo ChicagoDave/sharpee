@@ -221,12 +221,21 @@ export class RuleScopeEvaluator {
   }
 
   /**
-   * Get touchable entities for backward compatibility
+   * Get touchable entities for backward compatibility.
+   *
+   * ADR-273 D4 (one-definition discipline): physical reachability is owned
+   * by ReachabilityBehavior via WorldModel.getReachable — this delegates
+   * rather than keeping a second live `touchable` definition ("touchable =
+   * visible") beside the real one.
    */
   getTouchableEntities(context: IScopeContext): string[] {
-    // For now, touchable = visible
-    // Can be extended with distance-based rules later
-    return this.getVisibleEntities(context);
+    const world = context.world as { getReachable?: (observerId: string) => Array<{ id: string }> };
+    if (typeof world?.getReachable !== 'function') {
+      // Rule-context worlds without the full WorldModel surface keep the
+      // old visible fallback rather than failing.
+      return this.getVisibleEntities(context);
+    }
+    return world.getReachable(context.actorId).map((e) => e.id);
   }
 
   /**

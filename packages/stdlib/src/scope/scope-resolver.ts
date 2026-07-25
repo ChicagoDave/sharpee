@@ -102,65 +102,15 @@ export class StandardScopeResolver implements ScopeResolver {
   }
 
   /**
-   * Check if actor can physically reach the target
+   * Check if actor can physically reach the target.
+   * Delegates to ReachabilityBehavior via WorldModel for the platform's one
+   * reachability definition (ADR-273 D4) — sight precondition, carried
+   * always reachable, closed containers block (transparent or not), another
+   * actor's inventory blocked unless OpenInventoryTrait. Same delegation
+   * shape as canSee above.
    */
   canReach(actor: IFEntity, target: IFEntity): boolean {
-    // Must be visible first
-    if (!this.canSee(actor, target)) {
-      return false;
-    }
-
-    // Check if in inventory
-    if (this.isCarried(actor, target)) {
-      return true;
-    }
-
-    // Get locations
-    const actorLocation = this.world.getLocation(actor.id);
-    const targetLocation = this.world.getLocation(target.id);
-
-    // In same immediate location (e.g., both on table)
-    if (actorLocation === targetLocation) {
-      return true;
-    }
-
-    // Check if target is in/on something in the room
-    const targetContainer = targetLocation ? this.world.getEntity(targetLocation) : null;
-    if (targetContainer) {
-      // NPC inventory: visible but not reachable by default.
-      // Like a closed transparent container — you can see the thief's knife
-      // but can't grab it. Authors add OpenInventoryTrait for accessible NPCs
-      // (e.g., a horse with saddlebags, a dead NPC).
-      if (targetContainer.has(TraitType.ACTOR) && targetContainer.id !== actor.id) {
-        return targetContainer.has(TraitType.OPEN_INVENTORY);
-      }
-
-      // On a supporter - reachable if we can see it
-      if (targetContainer.has(TraitType.SUPPORTER)) {
-        return true;
-      }
-
-      // In an open container - check depth
-      if (targetContainer.has(TraitType.CONTAINER)) {
-        const containerTrait = targetContainer.getTrait(TraitType.CONTAINER);
-
-        // Must be open
-        if (targetContainer.has(TraitType.OPENABLE)) {
-          const openable = targetContainer.getTrait(OpenableTrait);
-          if (openable && !openable.isOpen) {
-            return false;
-          }
-        }
-
-        // TODO: Check container depth/size for reachability
-        // For now, assume all open containers allow reach
-        return true;
-      }
-    }
-
-
-    // Default to reachable if in same room and visible
-    return true;
+    return this.world.canReach(actor.id, target.id);
   }
 
   /**

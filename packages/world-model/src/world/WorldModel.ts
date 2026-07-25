@@ -21,6 +21,7 @@ import { DirectionType, getOppositeDirection } from '../constants/directions.js'
 import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
+import { ReachabilityBehavior } from './ReachabilityBehavior.js';
 import { WorldSerializer } from './WorldSerializer.js';
 import { IDataStore } from './AuthorModel.js';
 import { canContain } from '../traits/container/container-utils.js';
@@ -397,6 +398,10 @@ export interface IWorldModel {
   getVisible(observerId: string): IFEntity[];
   getInScope(observerId: string): IFEntity[];
   canSee(observerId: string, targetId: string): boolean;
+  /** ADR-273 D4: physical reachability via ReachabilityBehavior (sight precondition, open containers, OpenInventoryTrait). */
+  canReach(observerId: string, targetId: string): boolean;
+  /** ADR-273 D4: all physically reachable entities — subset of getVisible(). */
+  getReachable(observerId: string): IFEntity[];
 
   // Relationship Queries
   getRelated(entityId: string, relationshipType: string): string[];
@@ -1683,6 +1688,40 @@ export class WorldModel implements IWorldModel {
     const target = this.getEntity(targetId);
     if (!observer || !target) return false;
     return VisibilityBehavior.canSee(observer, target, this);
+  }
+
+  /**
+   * Check if observer can physically reach target (ADR-273 D4)
+   *
+   * Uses ReachabilityBehavior — the platform's one reachability
+   * definition: sight precondition, carried always reachable, closed
+   * containers block (transparent or not), another actor's inventory
+   * blocked unless OpenInventoryTrait.
+   *
+   * @param observerId - The entity doing the reaching
+   * @param targetId - The entity being reached for
+   * @returns true if observer can physically reach target
+   */
+  canReach(observerId: string, targetId: string): boolean {
+    const observer = this.getEntity(observerId);
+    const target = this.getEntity(targetId);
+    if (!observer || !target) return false;
+    return ReachabilityBehavior.canReach(observer, target, this);
+  }
+
+  /**
+   * Get physically reachable entities using ReachabilityBehavior (ADR-273 D4)
+   *
+   * A subset of getVisible() (reach requires sight). This is what the
+   * parser's `.where()` touchable scope base reads.
+   *
+   * @param observerId - The entity doing the reaching
+   * @returns Array of entities that are physically reachable
+   */
+  getReachable(observerId: string): IFEntity[] {
+    const observer = this.getEntity(observerId);
+    if (!observer) return [];
+    return ReachabilityBehavior.getReachable(observer, this);
   }
 
   // ========== Convenience Creators ==========

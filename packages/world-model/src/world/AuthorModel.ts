@@ -252,6 +252,14 @@ export class AuthorModel implements IWorldModel {
     return this.worldModel.getInScope(observerId);
   }
 
+  canReach(observerId: string, targetId: string): boolean {
+    return this.worldModel.canReach(observerId, targetId);
+  }
+
+  getReachable(observerId: string): IFEntity[] {
+    return this.worldModel.getReachable(observerId);
+  }
+
   canSee(observerId: string, targetId: string): boolean {
     return this.worldModel.canSee(observerId, targetId);
   }

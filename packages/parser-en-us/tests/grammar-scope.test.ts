@@ -87,6 +87,20 @@ class MockWorldModel {
     return this.getVisibleEntities(actorId, location);
   }
 
+  // ADR-273: the real WorldModel surface GrammarScopeResolver consumes.
+  // The player's location is fixed at 'room' in this fixture.
+  getVisible(actorId: string): MockEntity[] {
+    return this.getVisibleEntities(actorId, 'room');
+  }
+
+  getReachable(actorId: string): MockEntity[] {
+    return this.getVisible(actorId);
+  }
+
+  getCarriedAndWorn(actorId: string): { carried: MockEntity[]; worn: MockEntity[] } {
+    return { carried: this.getCarriedEntities(actorId), worn: [] };
+  }
+
   getCarriedEntities(actorId: string): MockEntity[] {
     const inventory = this.inventories.get(actorId) || new Set();
     const carried: MockEntity[] = [];
