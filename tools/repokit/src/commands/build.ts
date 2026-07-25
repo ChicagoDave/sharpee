@@ -175,6 +175,14 @@ export function generateGenaiApi(root: string, opts: BuildOptions): void {
   });
 }
 
+/** Regenerate the ADR-265 stdlib-in-Chord reference from the built platform metadata. */
+export function generateStdlibChord(root: string, opts: BuildOptions): void {
+  execFileSync('node', ['scripts/generate-stdlib-chord.js'], {
+    cwd: root,
+    stdio: opts.quiet ? 'ignore' : 'inherit',
+  });
+}
+
 /** Build a story package (build.sh build_story + resolve_story_pkg). */
 export function buildStory(root: string, story: string, opts: BuildOptions): void {
   const resolved = resolveStory(root, story);
@@ -217,6 +225,7 @@ export function runBuild(opts: BuildOptions = {}): void {
   log(`version: ${version}${effective.story ? ` · story: ${effective.story}` : ''}`);
   buildPlatform(root, effective);
   if (!effective.noGenai) generateGenaiApi(root, effective);
+  if (!effective.noGenai) generateStdlibChord(root, effective);
   // ADR-252: a Chord `.story` story has no workspace TS package to compile — it ships
   // its source and compiles at boot. buildStory (pnpm --filter) applies to TS stories only.
   const isChordStory = effective.story ? chordStoryFile(root, effective.story) !== null : false;
