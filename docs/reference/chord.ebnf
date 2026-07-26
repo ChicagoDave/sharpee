@@ -157,7 +157,7 @@ story-on-clause = on-clause ;                              (* ADR-236 D7 (ratche
                                                               `it` unbound (compile error
                                                               analysis.story-clause-it) *)
 declaration  = create | define-condition | define-phrase | define-phrases
-             | define-verb | define-text
+             | define-text                                 (* define-verb REMOVED — ADR-270 D7 *)
              | define-trait | define-action | define-hatch
              | define-sequence
              | define-counter                              (* ADR-264 *)
@@ -167,7 +167,8 @@ declaration  = create | define-condition | define-phrase | define-phrases
              | define-topics                               (* ADR-239 *)
              | define-pronouns                             (* ADR-242 *)
              | define-phrasebook | import-phrasebook       (* ADR-245/250 *)
-             | override-message | override-messages ;     (* ADR-255 *)
+             | override-message | override-messages       (* ADR-255 *)
+             | extend-action | remove-from-action ;       (* ADR-270 *)
 
 (* ---- Message overrides (ADR-255, 2026-07-22) --------------------------- *)
 
@@ -389,8 +390,10 @@ define-phrase    = "define" "phrase" phrase-key [ "," ( STRATEGY | "verbatim" ) 
 variant          = prose-paragraph ;
 define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
 phrase-entry     = phrase-key ":" NL prose-paragraph ;     (* prose block only *)
-define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
-pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line *)
+(* define-verb REMOVED (ADR-270 D7, 2026-07-26, Chord 3.0.0): `extend action`
+   subsumes it — the parser emits parse.removed-define-verb with a fix-it. *)
+pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line
+                                                              and the ADR-270 alteration blocks *)
 pattern-elem     = plain-elem | "[" plain-elem "]" ;       (* [x] = optional (D9) *)
 plain-elem       = WORD { "or" WORD } | "the" WORD ;       (* or = alternation, ONE rule (D8);
                                                               "the" WORD = slot (D15) *)
@@ -440,6 +443,26 @@ pattern-line   = pattern [ "→" token { token } ] NL
                                                               (pattern-elem); → = cardinality;
                                                               indented "means <key> <value>" lines
                                                               = static defaults for THIS pattern (D12) *)
+
+(* ---- ADR-270 author alteration model (2026-07-26) ---------------------- *)
+
+extend-action  = "extend" "action" WORD NL action-line* ;  (* dedent-terminated. Grammar
+                                                              surfaces only: behavior lines
+                                                              (must-line, score-line, refuse,
+                                                              otherwise, phrases, statements)
+                                                              parse but are analyzer errors
+                                                              (analysis.alteration-behavior).
+                                                              The target action resolves
+                                                              story-first, else the stdlib
+                                                              id set — unknown name is a
+                                                              load error with a suggestion *)
+remove-from-action
+               = "remove" "from" "action" WORD NL
+                 >>> { pattern NL } ;                       (* shapes only — a "means" line or
+                                                              "→" cardinality here is
+                                                              analysis.removal-shape; an
+                                                              unmatched shape is a load
+                                                              error, never a silent no-op *)
 
 define-hatch   = "define" "action" WORD "from" STRING NL   (* action hatch *)
                | "define" "chain" WORD "from" STRING NL ;  (* chain hatch — ADR-094; WORD is

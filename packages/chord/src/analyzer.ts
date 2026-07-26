@@ -36,6 +36,8 @@ import {
   DefineTrait,
   EmitField,
   EmitValue,
+  ExtendAction,
+  RemoveFromAction,
   MachineTransition,
   MediaStmt,
   NameRef,
@@ -76,6 +78,8 @@ import {
   IRMeterRung,
   IRCounterDef,
   IRCounterDecl,
+  IRGrammarExtension,
+  IRGrammarRemoval,
   IRScoreDef,
   IRStatement,
   IRTopicRow,
@@ -566,7 +570,6 @@ class Analyzer {
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       messageOverrides: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       phrasebooks: [],
-      verbs: [],
       hatches: [],
       traits: [],
       actions: [],
@@ -594,13 +597,6 @@ class Analyzer {
             span: decl.span,
           });
           break;
-        case 'define-verb':
-          ir.verbs.push({
-            verbs: decl.verbs,
-            pattern: decl.pattern.map(lowerPatternPart),
-            span: decl.span,
-          });
-          break;
         case 'define-text':
           ir.hatches.push({ name: decl.name, modulePath: decl.modulePath, hatchKind: 'text', span: decl.span });
           break;
@@ -620,6 +616,14 @@ class Analyzer {
           break;
         case 'define-action':
           ir.actions.push(this.buildAction(decl));
+          break;
+        case 'extend-action':
+          // ADR-270 D2: story-scoped grammar addition to an existing action.
+          (ir.grammarExtensions ??= []).push(this.buildExtension(decl));
+          break;
+        case 'remove-from-action':
+          // ADR-270 D3: standard-grammar shapes removed at load.
+          (ir.grammarRemovals ??= []).push(this.buildRemoval(decl));
           break;
         case 'define-machine':
           ir.machines.push(this.buildMachine(decl));
@@ -1261,6 +1265,194 @@ class Analyzer {
     return clauses;
   }
 
+  /**
+   * The grammar-surface line checks shared by `define action` and
+   * `extend action` (ADR-270 D2): greedy lines (ADR-267 D10), the
+   * `directions` block (D12), typed slots (D11), and scope constraints
+   * (ADR-271 D1) — each validated against the block's own pattern slots.
+   */
+  private checkGrammarSurfaceLines(
+    name: string,
+    decl: Pick<DefineAction, 'constraints' | 'greedy' | 'slotTypes' | 'directions'>,
+    slots: Set<string>,
+  ): void {
+    // ADR-267 D10: a greedy line names a slot that must exist in at least
+    // one of the block's patterns — the constraint-line treatment.
+    for (const g of decl.greedy) {
+      if (!slots.has(g.slot)) {
+        this.diagnostics.error(
+          'analysis.unknown-slot',
+          `\`${g.slot}\` is not a grammar slot of \`${name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(g.slot, [...slots])}.`,
+          g.span,
+        );
+      }
+    }
+
+    // ADR-267 D12: a `directions` block binds to the slot named
+    // `direction` — a block with no pattern carrying that slot is the
+    // constraint-line treatment (analysis.unknown-slot), never a silently
+    // inert block. Duplicate words within one block are unanswerable
+    // (which canonical would the alias mean?) — refused, never guessed.
+    if (decl.directions.length > 0) {
+      if (!slots.has('direction')) {
+        this.diagnostics.error(
+          'analysis.unknown-slot',
+          `A \`directions\` block binds to the \`direction\` slot, but no pattern of \`${name}\` uses \`the direction\` — slots: ${[...slots].join(', ') || '(none)'}.`,
+          decl.directions[0].span,
+        );
+      }
+      const seen = new Set<string>();
+      for (const entry of decl.directions) {
+        for (const word of [entry.canonical, ...entry.aliases]) {
+          if (seen.has(word)) {
+            this.diagnostics.error(
+              'analysis.duplicate-direction',
+              `\`${word}\` appears twice in the \`directions\` block — each word maps to one canonical direction.`,
+              entry.span,
+            );
+          }
+          seen.add(word);
+        }
+      }
+    }
+
+    // ADR-267 D11: typed slots — the slot must exist (constraint-line
+    // treatment) and the type word is a closed two-word set (the ADR-271
+    // D11 precedent: an unknown word names the supported set, never
+    // silence).
+    for (const st of decl.slotTypes) {
+      if (!slots.has(st.slot)) {
+        this.diagnostics.error(
+          'analysis.unknown-slot',
+          `\`${st.slot}\` is not a grammar slot of \`${name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(st.slot, [...slots])}.`,
+          st.span,
+        );
+      }
+      if (st.type !== 'instrument' && st.type !== 'topic') {
+        this.diagnostics.error(
+          'analysis.unknown-slot-type',
+          `\`${st.type}\` is not a slot type — supported: instrument, topic${this.suggestText(st.type, ['instrument', 'topic'])}.`,
+          st.span,
+        );
+      }
+    }
+
+    for (const constraint of decl.constraints) {
+      if (!slots.has(constraint.slot)) {
+        this.diagnostics.error(
+          'analysis.unknown-slot',
+          `\`${constraint.slot}\` is not a grammar slot of \`${name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(constraint.slot, [...slots])}.`,
+          constraint.span,
+        );
+      }
+      // ADR-271 D1: the requirement word is validated against the closed
+      // catalog set, not accepted as any word — a constraint that cannot
+      // gate is a compile error, never a silent no-op (ADR-235 D2 class).
+      if (!(constraint.requirement in SCOPE_REQUIREMENT_PREDICATES)) {
+        const supported = Object.keys(SCOPE_REQUIREMENT_PREDICATES);
+        this.diagnostics.error(
+          'analysis.unknown-requirement',
+          `\`must be ${constraint.requirement}\` is not a supported scope requirement — supported: ${supported.join(', ')}${this.suggestText(constraint.requirement, supported)}.`,
+          constraint.span,
+        );
+      }
+    }
+  }
+
+  /**
+   * `extend action <name>` → IR (ADR-270 D2): the grammar-surface subset,
+   * with behavior sections rejected by name — the grammar-file-mode
+   * treatment (`analysis.alteration-behavior`, one per offending category).
+   * Target-name resolution is deliberately NOT here: the loader owns it
+   * (story-first, else the stdlib id set — chord stays stdlib-ignorant).
+   */
+  private buildExtension(decl: ExtendAction): IRGrammarExtension {
+    // The extension's own pattern lines are the slot universe for its
+    // constraint-family lines; the target's base slots are not in view.
+    const slots = new Set<string>();
+    for (const pattern of decl.patterns) {
+      for (const part of pattern.parts) {
+        if (part.kind !== 'slot') continue;
+        if (part.word.toLowerCase() === 'match') {
+          this.diagnostics.error('analysis.reserved-name', RESERVED_MATCH_MESSAGE, part.span);
+        }
+        slots.add(part.word);
+      }
+    }
+
+    const offend = (what: string, span: Span) =>
+      this.diagnostics.error(
+        'analysis.alteration-behavior',
+        `\`extend action\` alters grammar only — ${what} belongs to the action's implementation, not an alteration block (ADR-270).`,
+        span,
+      );
+    if (decl.musts.length > 0) offend('a `must` requirement', decl.musts[0].span);
+    if (decl.refusals.length > 0) offend('a refusal line', decl.refusals[0].span);
+    if (decl.otherwise) offend('`otherwise refuse`', decl.otherwise.span);
+    if (decl.scores.length > 0) offend('a `score` line', decl.scores[0].span);
+    if (decl.phrases) offend('a `phrases` block', decl.phrases.span);
+    if (decl.body.length > 0) offend('a body statement', decl.body[0].span);
+
+    if (decl.patterns.length === 0) {
+      this.diagnostics.error(
+        'analysis.empty-extension',
+        `\`extend action ${decl.name}\` adds nothing — a \`grammar\` section with at least one pattern line is required.`,
+        decl.span,
+      );
+    }
+
+    this.checkGrammarSurfaceLines(decl.name, decl, slots);
+
+    return {
+      action: decl.name,
+      patterns: decl.patterns.map((p) => ({
+        parts: p.parts.map(lowerPatternPart),
+        cardinality: p.cardinality,
+        ...(p.means.length > 0 ? { means: p.means.map((m) => ({ key: m.key, value: m.value })) } : {}),
+      })),
+      ...(decl.greedy.length > 0 ? { greedy: decl.greedy.map((g) => g.slot) } : {}),
+      ...(decl.slotTypes.length > 0
+        ? { slotTypes: decl.slotTypes.map((st) => ({ slot: st.slot, type: st.type as 'instrument' | 'topic' })) }
+        : {}),
+      ...(decl.directions.length > 0
+        ? { directions: decl.directions.map((d) => ({ canonical: d.canonical, aliases: d.aliases })) }
+        : {}),
+      // The cast is sound: checkGrammarSurfaceLines errors on any word
+      // outside the catalog set, and the IR is meaningful only when `ok`.
+      constraints: decl.constraints.map((sc) => ({ slot: sc.slot, requirement: sc.requirement as ScopeRequirementWord })),
+      span: decl.span,
+    };
+  }
+
+  /**
+   * `remove from action <name>` → IR (ADR-270 D3): pattern shapes only —
+   * `means` defaults and `→` cardinality are not part of a pattern's
+   * identity and are rejected by name (`analysis.removal-shape`).
+   */
+  private buildRemoval(decl: RemoveFromAction): IRGrammarRemoval {
+    for (const p of decl.patterns) {
+      if (p.means.length > 0) {
+        this.diagnostics.error(
+          'analysis.removal-shape',
+          'A removal line names a pattern shape only — `means` defaults are not part of a pattern\'s identity; remove the line.',
+          p.means[0].span,
+        );
+      }
+      if (p.cardinality) {
+        this.diagnostics.error(
+          'analysis.removal-shape',
+          '`→` cardinality is not part of a pattern\'s identity — state the pattern shape only.',
+          p.span,
+        );
+      }
+    }
+    return {
+      action: decl.name,
+      patterns: decl.patterns.map((p) => ({ parts: p.parts.map(lowerPatternPart), cardinality: null })),
+      span: decl.span,
+    };
+  }
+
   private buildAction(decl: DefineAction): IRActionDef {
     const slots = this.actionSlots.get(decl.name) ?? new Set<string>();
 
@@ -1306,87 +1498,7 @@ class Analyzer {
     }
     const scope: Scope = { owner: null, fields: null, slots: scopeSlots, ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false, semanticValues };
 
-    // ADR-267 D10: a greedy line names a slot that must exist in at least
-    // one of the action's patterns — the constraint-line treatment.
-    for (const g of decl.greedy) {
-      if (!slots.has(g.slot)) {
-        this.diagnostics.error(
-          'analysis.unknown-slot',
-          `\`${g.slot}\` is not a grammar slot of \`${decl.name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(g.slot, [...slots])}.`,
-          g.span,
-        );
-      }
-    }
-
-    // ADR-267 D12: a `directions` block binds to the slot named
-    // `direction` — a block with no pattern carrying that slot is the
-    // constraint-line treatment (analysis.unknown-slot), never a silently
-    // inert block. Duplicate words within one block are unanswerable
-    // (which canonical would the alias mean?) — refused, never guessed.
-    if (decl.directions.length > 0) {
-      if (!slots.has('direction')) {
-        this.diagnostics.error(
-          'analysis.unknown-slot',
-          `A \`directions\` block binds to the \`direction\` slot, but no pattern of \`${decl.name}\` uses \`the direction\` — slots: ${[...slots].join(', ') || '(none)'}.`,
-          decl.directions[0].span,
-        );
-      }
-      const seen = new Set<string>();
-      for (const entry of decl.directions) {
-        for (const word of [entry.canonical, ...entry.aliases]) {
-          if (seen.has(word)) {
-            this.diagnostics.error(
-              'analysis.duplicate-direction',
-              `\`${word}\` appears twice in the \`directions\` block — each word maps to one canonical direction.`,
-              entry.span,
-            );
-          }
-          seen.add(word);
-        }
-      }
-    }
-
-    // ADR-267 D11: typed slots — the slot must exist (constraint-line
-    // treatment) and the type word is a closed two-word set (the ADR-271
-    // D11 precedent: an unknown word names the supported set, never
-    // silence).
-    for (const st of decl.slotTypes) {
-      if (!slots.has(st.slot)) {
-        this.diagnostics.error(
-          'analysis.unknown-slot',
-          `\`${st.slot}\` is not a grammar slot of \`${decl.name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(st.slot, [...slots])}.`,
-          st.span,
-        );
-      }
-      if (st.type !== 'instrument' && st.type !== 'topic') {
-        this.diagnostics.error(
-          'analysis.unknown-slot-type',
-          `\`${st.type}\` is not a slot type — supported: instrument, topic${this.suggestText(st.type, ['instrument', 'topic'])}.`,
-          st.span,
-        );
-      }
-    }
-
-    for (const constraint of decl.constraints) {
-      if (!slots.has(constraint.slot)) {
-        this.diagnostics.error(
-          'analysis.unknown-slot',
-          `\`${constraint.slot}\` is not a grammar slot of \`${decl.name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(constraint.slot, [...slots])}.`,
-          constraint.span,
-        );
-      }
-      // ADR-271 D1: the requirement word is validated against the closed
-      // catalog set, not accepted as any word — a constraint that cannot
-      // gate is a compile error, never a silent no-op (ADR-235 D2 class).
-      if (!(constraint.requirement in SCOPE_REQUIREMENT_PREDICATES)) {
-        const supported = Object.keys(SCOPE_REQUIREMENT_PREDICATES);
-        this.diagnostics.error(
-          'analysis.unknown-requirement',
-          `\`must be ${constraint.requirement}\` is not a supported scope requirement — supported: ${supported.join(', ')}${this.suggestText(constraint.requirement, supported)}.`,
-          constraint.span,
-        );
-      }
-    }
+    this.checkGrammarSurfaceLines(decl.name, decl, slots);
 
     const refusals = decl.refusals.map((r) => {
       this.requirePhrase(r.phraseKey, r.span, null);

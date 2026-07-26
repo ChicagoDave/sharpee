@@ -212,4 +212,25 @@ describe('Story Grammar API', () => {
       }
     });
   });
+
+  describe('ADR-270 acceptance 5: TS-story removal via getStoryGrammar()', () => {
+    it('removes a standard rule by shape; the command stops resolving to the action, siblings survive', () => {
+      const before = parser.parse('get crystal');
+      expect(before.success).toBe(true);
+      if (before.success) expect(before.value.action).toBe('if.action.taking');
+
+      expect(grammar.removeRules('if.action.taking', 'get :item')).toBe(1);
+
+      const after = parser.parse('get crystal');
+      expect(after.success ? after.value.action : null).not.toBe('if.action.taking');
+
+      const take = parser.parse('take crystal');
+      expect(take.success).toBe(true);
+      if (take.success) expect(take.value.action).toBe('if.action.taking');
+    });
+
+    it('returns 0 on a shape the standard grammar does not carry', () => {
+      expect(grammar.removeRules('if.action.taking', 'yoink :item')).toBe(0);
+    });
+  });
 });

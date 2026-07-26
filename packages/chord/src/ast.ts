@@ -186,7 +186,8 @@ export type Declaration =
   | DefineCondition
   | DefinePhrase
   | DefinePhrases
-  | DefineVerb
+  // `define verb` REMOVED (ADR-270 D7, 2026-07-26) — `extend action`
+  // subsumes it; the parser emits parse.removed-define-verb with a fix-it.
   | DefineText
   // Phase B (design.md §2.2/§2.3/§2.5/§3.4):
   | DefineTrait
@@ -212,7 +213,10 @@ export type Declaration =
   | OverrideMessage
   | OverrideMessages
   // ADR-251 generalized import (David 2026-07-21):
-  | ImportDecl;
+  | ImportDecl
+  // ADR-270 author alteration model (David 2026-07-26):
+  | ExtendAction
+  | RemoveFromAction;
 
 /**
  * `define phrasebook <name> [while <condition>] … end phrasebook`
@@ -673,14 +677,6 @@ export interface PhraseEntry {
   span: Span;
 }
 
-/** `define verb hang or hook means put the something on the something` (ADR-267 D15 slot spelling) */
-export interface DefineVerb {
-  kind: 'define-verb';
-  verbs: string[];
-  pattern: PatternPart[];
-  span: Span;
-}
-
 /**
  * One pattern element (ADR-267): a literal word, a `the <name>` slot (D15),
  * or an `or`-joined alternation of words (D8) — any of them optionally
@@ -891,6 +887,48 @@ export interface SlotTypeDecl {
 export interface ScopeConstraint {
   slot: string;
   requirement: string;
+  span: Span;
+}
+
+/**
+ * `extend action <name>` (ADR-270 D2/D6) — grammar lines added to an
+ * EXISTING action, story tier. The block parses with the full define-action
+ * surface so the analyzer can reject behavior sections by name
+ * (`analysis.alteration-behavior`) — the grammar-file-mode treatment.
+ * Target resolution (story-first, else stdlib `if.action.<name>`) is the
+ * loader's; the analyzer validates structure only.
+ */
+export interface ExtendAction {
+  kind: 'extend-action';
+  /** The target action name as written (gerund), e.g. `taking`. */
+  name: string;
+  patterns: ActionPattern[];
+  constraints: ScopeConstraint[];
+  greedy: GreedySlotDecl[];
+  slotTypes: SlotTypeDecl[];
+  directions: DirectionEntry[];
+  /** Behavior sections — parsed but analyzer-rejected (ADR-270 D2). */
+  musts: MustRequirement[];
+  refusals: ActionRefusal[];
+  otherwise: { phraseKey: string; span: Span } | null;
+  scores: ScoreDecl[];
+  phrases: DefinePhrases | null;
+  body: Statement[];
+  span: Span;
+}
+
+/**
+ * `remove from action <name>` (ADR-270 D3/D6) — pattern shapes removed from
+ * a standard action, identified by shape (pattern-string equality). Each
+ * indented line is one pattern; `means` lines and `→` cardinality are not
+ * part of a pattern's identity and are analyzer-rejected
+ * (`analysis.removal-shape`).
+ */
+export interface RemoveFromAction {
+  kind: 'remove-from-action';
+  /** The target action name as written (gerund), e.g. `taking`. */
+  name: string;
+  patterns: ActionPattern[];
   span: Span;
 }
 

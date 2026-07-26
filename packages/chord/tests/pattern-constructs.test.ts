@@ -226,14 +226,14 @@ describe('direction map: `directions` block (ADR-267 D12)', () => {
   });
 });
 
-describe('define verb shares the pattern-elem production', () => {
-  it('alternation and optional parse in a verb pattern', () => {
-    const source = `${HEADER}define verb glance means look [quickly] at or toward the target\n\n${WORLD}`;
+describe('extend action shares the pattern-elem production (define verb removed, ADR-270 D7)', () => {
+  it('alternation and optional parse in an extension pattern', () => {
+    const source = `${HEADER}extend action examining\n  grammar\n    glance [quickly] at or toward the target\n\n${WORLD}`;
     const result = compile(source);
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
-    const verb = result.ir!.verbs.find((v) => v.verbs.includes('glance'))!;
-    expect(verb.pattern).toEqual([
-      { kind: 'word', word: 'look' },
+    const ext = result.ir!.grammarExtensions!.find((e) => e.action === 'examining')!;
+    expect(ext.patterns[0].parts).toEqual([
+      { kind: 'word', word: 'glance' },
       { kind: 'word', word: 'quickly', optional: true },
       { kind: 'alt', words: ['at', 'toward'] },
       { kind: 'slot', word: 'target' },

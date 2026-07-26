@@ -103,6 +103,37 @@ export abstract class GrammarEngine {
   }
 
   /**
+   * ADR-270 D3: remove registered rules by shape — the alteration model's
+   * removal primitive. Identity is (action id, pattern string, tier); rule
+   * ids are nondeterministic and never part of identity.
+   *
+   * Diagnostic-free by contract: returns the number of rules removed and
+   * never throws — the CALLER owns the miss diagnostic (the Chord loader
+   * raises its LoadError on 0; a TS story checks the return itself).
+   *
+   * @param action The action id whose rule is removed (e.g. 'if.action.taking').
+   * @param pattern The exact registered pattern string (e.g. 'get :item').
+   * @param tier The tier to remove from — 'standard' (default) targets the
+   *   platform grammar; story-tier rules are never touched unless asked.
+   * @returns The number of rules removed (0 = no rule matched the shape).
+   */
+  removeRules(action: string, pattern: string, tier: GrammarTier = 'standard'): number {
+    const matches = (rule: GrammarRule) =>
+      rule.action === action && rule.pattern === pattern && rule.tier === tier;
+    const removed = this.rules.filter(matches).length;
+    if (removed === 0) return 0;
+    // Definition order of the survivors is untouched — filter preserves it.
+    this.rules = this.rules.filter((rule) => !matches(rule));
+    const actionRules = this.rulesByAction.get(action);
+    if (actionRules) {
+      const remaining = actionRules.filter((rule) => !matches(rule));
+      if (remaining.length > 0) this.rulesByAction.set(action, remaining);
+      else this.rulesByAction.delete(action);
+    }
+    return removed;
+  }
+
+  /**
    * Get all rules
    */
   getRules(): GrammarRule[] {
@@ -466,6 +497,10 @@ export abstract class GrammarEngine {
 
       clear() {
         engine.clear();
+      },
+
+      removeRules(action: string, pattern: string, tier: GrammarTier = 'standard') {
+        return engine.removeRules(action, pattern, tier);
       }
     };
   }

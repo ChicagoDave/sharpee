@@ -34,6 +34,8 @@ import {
   CreateDecl,
   Declaration,
   DefineAction,
+  ExtendAction,
+  RemoveFromAction,
   DefineCondition,
   DefineHatch,
   DefinePhrase,
@@ -56,7 +58,6 @@ import {
   DefineText,
   DefineTopics,
   DefineTrait,
-  DefineVerb,
   DirectionEntry,
   EachStmt,
   EmitStmt,
@@ -311,6 +312,27 @@ class Parser {
         case 'override': {
           // ADR-255: `override message <alias>` / `override messages <locale>`.
           const d = this.parseOverride();
+          if (d) declarations.push(d);
+          break;
+        }
+        case 'extend': {
+          // ADR-270 D6: `extend action <name>` — story-level grammar
+          // alteration of an existing action.
+          const next = line.tokens[1];
+          if (!next || next.kind !== 'word' || next.text !== 'action') {
+            this.diagnostics.error('parse.extend-action', 'Expected `extend action <name>`.', lineSpan(line));
+            this.recoverToTopLevel(true);
+          } else {
+            const d = this.parseExtendAction();
+            if (d) declarations.push(d);
+          }
+          break;
+        }
+        case 'remove': {
+          // ADR-270 D6: `remove from action <name>` — story-level removal
+          // of standard-grammar shapes. (The entity-removal `remove` is a
+          // body statement; top level is unambiguous.)
+          const d = this.parseRemoveFromAction();
           if (d) declarations.push(d);
           break;
         }
@@ -1659,7 +1681,15 @@ class Parser {
       case 'phrases':
         return this.parseDefinePhrases();
       case 'verb':
-        return this.parseDefineVerb();
+        // ADR-270 D7 (2026-07-26): `define verb` is removed — the alteration
+        // model subsumes it generally (Chord 3.0.0).
+        this.diagnostics.error(
+          'parse.removed-define-verb',
+          '`define verb` was removed (ADR-270) — add the verb onto the action directly: `extend action <name>` with a `grammar` pattern line (e.g. `extend action putting` → `hook the item on the hook`).',
+          lineSpan(line),
+        );
+        this.recoverToTopLevel(true);
+        return null;
       case 'text':
         return this.parseDefineText();
       case 'flag':
@@ -2057,37 +2087,6 @@ class Parser {
     return { kind: 'define-phrases', locale, entries, span };
   }
 
-  private parseDefineVerb(): DefineVerb | null {
-    const line = this.lines[this.pos++];
-    const c = new Cursor(line.tokens, line);
-    c.next();
-    c.next(); // define verb
-    const verbs: string[] = [];
-    for (;;) {
-      const v = c.next();
-      if (!v || v.kind !== 'word') {
-        this.diagnostics.error('parse.verb-name', 'Expected a verb word.', v?.span ?? c.restSpan());
-        return null;
-      }
-      verbs.push(v.text);
-      if (!c.matchWord('or')) break;
-    }
-    if (!c.matchWord('means')) {
-      this.diagnostics.error('parse.verb-means', 'Expected `means <pattern>` in the verb definition.', c.restSpan());
-      return null;
-    }
-    // ADR-267 D1 (D15): one slot spelling — `the <name>` — through the same
-    // pattern-elem production `define action` uses (alternation and optional
-    // brackets included). Removed spellings are parse errors with fix-its.
-    const pattern: PatternPart[] = [];
-    while (!c.atEnd()) {
-      const part = this.parsePatternElem(c, 'verb');
-      if (!part) return null;
-      pattern.push(part);
-    }
-    return { kind: 'define-verb', verbs, pattern, span: lineSpan(line) };
-  }
-
   private parseDefineText(): DefineText | null {
     const line = this.lines[this.pos++];
     const c = new Cursor(line.tokens, line);
@@ -2273,6 +2272,16 @@ class Parser {
     }
     this.pos++;
 
+    const parts = this.parseActionBlockParts(headLine);
+    return { kind: 'define-action', name: nameTok.text, ...parts };
+  }
+
+  /**
+   * The indented body shared by `define action` and `extend action`
+   * (ADR-270 D6 parses the full surface; the analyzer owns the
+   * alteration-block gates). Caller has consumed the head line.
+   */
+  private parseActionBlockParts(headLine: Line): Omit<DefineAction, 'kind' | 'name'> {
     const patterns: ActionPattern[] = [];
     const constraints: ScopeConstraint[] = [];
     const greedy: GreedySlotDecl[] = [];
@@ -2360,7 +2369,69 @@ class Parser {
       span = mergeSpans(span, lineSpan(line));
     }
 
-    return { kind: 'define-action', name: nameTok.text, patterns, constraints, greedy, slotTypes, directions, musts, refusals, otherwise, scores, phrases, body, span };
+    return { patterns, constraints, greedy, slotTypes, directions, musts, refusals, otherwise, scores, phrases, body, span };
+  }
+
+  /**
+   * `extend action <name>` (ADR-270 D2/D6) — grammar lines added to an
+   * existing action. Parses the full define-action surface; the analyzer
+   * rejects behavior sections by name (`analysis.alteration-behavior`).
+   */
+  private parseExtendAction(): ExtendAction | null {
+    const headLine = this.lines[this.pos];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // extend action
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.extend-action', 'Expected an action name after `extend action`.', c.restSpan());
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.extend-action', 'Nothing may follow the action name — `extend action <name>` then the indented block.', c.restSpan());
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    this.pos++;
+    const parts = this.parseActionBlockParts(headLine);
+    return { kind: 'extend-action', name: nameTok.text, ...parts };
+  }
+
+  /**
+   * `remove from action <name>` (ADR-270 D3/D6) — indented pattern lines
+   * naming shapes to remove from a standard action. Shapes only: `means`
+   * lines and `→` cardinality are analyzer-rejected
+   * (`analysis.removal-shape`).
+   */
+  private parseRemoveFromAction(): RemoveFromAction | null {
+    const headLine = this.lines[this.pos];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next(); // remove
+    if (!c.matchWord('from') || !c.matchWord('action')) {
+      this.diagnostics.error('parse.remove-from-action', 'Expected `remove from action <name>`. (To remove an ENTITY from the world, `remove <name>` is a behavior statement inside an owner\'s block.)', c.restSpan());
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.remove-from-action', 'Expected an action name after `remove from action`.', c.restSpan());
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.remove-from-action', 'Nothing may follow the action name — `remove from action <name>` then the indented pattern lines.', c.restSpan());
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    this.pos++;
+    const patterns = this.parseActionPatterns(headLine);
+    if (patterns.length === 0) {
+      this.diagnostics.error('parse.remove-from-action', 'A `remove from action` block needs at least one pattern line to remove.', lineSpan(headLine));
+      return null;
+    }
+    const last = patterns[patterns.length - 1];
+    return { kind: 'remove-from-action', name: nameTok.text, patterns, span: mergeSpans(lineSpan(headLine), last.span) };
   }
 
   /**
@@ -2474,7 +2545,7 @@ class Parser {
    * named parse errors. Returns null after reporting — always having
    * consumed at least one token, so callers cannot loop in place.
    */
-  private parsePatternElem(c: Cursor, context: 'verb' | 'grammar'): PatternPart | null {
+  private parsePatternElem(c: Cursor): PatternPart | null {
     const t = c.next()!;
     if (t.kind === 'lbracket') {
       if (c.atEnd() || c.peek()!.kind === 'rbracket') {
@@ -2486,7 +2557,7 @@ class Parser {
         this.diagnostics.error('parse.pattern-bracket', 'Brackets do not nest in a pattern — one `[ ]` per optional element.', c.peek()!.span);
         return null;
       }
-      const inner = this.parsePatternElem(c, context);
+      const inner = this.parsePatternElem(c);
       if (!inner) return null;
       const close = c.next();
       if (!close || close.kind !== 'rbracket') {
@@ -2498,11 +2569,7 @@ class Parser {
     if (t.kind === 'word' && t.text === 'the') {
       const slot = c.next();
       if (!slot || slot.kind !== 'word') {
-        this.diagnostics.error(
-          context === 'verb' ? 'parse.verb-slot' : 'parse.action-slot',
-          `Expected a slot name after \`the\` in the ${context === 'verb' ? 'verb' : 'grammar'} pattern.`,
-          t.span,
-        );
+        this.diagnostics.error('parse.action-slot', 'Expected a slot name after `the` in the grammar pattern.', t.span);
         return null;
       }
       return { kind: 'slot', word: slot.text, span: mergeSpans(t.span, slot.span) };
@@ -2550,11 +2617,7 @@ class Parser {
       if (slot && slot.kind === 'word') c.next();
       return null;
     }
-    this.diagnostics.error(
-      context === 'verb' ? 'parse.verb-pattern' : 'parse.action-pattern',
-      `Unexpected \`${t.text}\` in ${context === 'verb' ? 'the verb' : 'a grammar'} pattern.`,
-      t.span,
-    );
+    this.diagnostics.error('parse.action-pattern', `Unexpected \`${t.text}\` in a grammar pattern.`, t.span);
     return null;
   }
 
@@ -2593,7 +2656,7 @@ class Parser {
           while (!c.atEnd()) cardinality.push(c.next()!.text);
           break;
         }
-        const part = this.parsePatternElem(c, 'grammar');
+        const part = this.parsePatternElem(c);
         if (part) parts.push(part);
       }
       if (parts.length === 0) {

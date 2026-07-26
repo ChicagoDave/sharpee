@@ -79,6 +79,8 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(CLOAK.replace('{garbled}', '{garbeld}'));
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.unbound-marker');
-    expect(errors[0].span.line).toBe(92);
+    // 94: the define-verb → extend-action migration (ADR-270 D7) added two
+    // lines above this site in the cloak-shaped source.
+    expect(errors[0].span.line).toBe(94);
   });
 });

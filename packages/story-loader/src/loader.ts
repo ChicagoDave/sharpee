@@ -3,9 +3,10 @@
  *
  * Purpose: interpret a compiled IR into the platform's standard story
  * lifecycle: world building (`initializeWorld`), player creation
- * (`createPlayer`), phrase registration (`extendLanguage`), custom verbs
- * (`getCustomVocabulary`), and completion (`isComplete` via the if-domain
- * ending flag). Phase A slice: static world only — when-rules, on-clause
+ * (`createPlayer`), phrase registration (`extendLanguage`), story grammar
+ * and alterations (`extendParser`, ADR-270), and completion (`isComplete`
+ * via the if-domain ending flag). Phase A slice: static world only — when-
+ * rules, on-clause
  * interceptors, derived properties, and the evaluator bind in Phase 5.
  *
  * Public interface: createStory(), ChordStory, StoryLoaderOptions.
@@ -32,10 +33,11 @@ import {
   SCOPE_REQUIREMENT_PREDICATES,
   StoryIR,
 } from '@sharpee/chord';
-import type { IRPatternPart, ScopeRequirementWord } from '@sharpee/chord';
+import type { IRActionPattern, IRPatternPart, ScopeRequirementWord } from '@sharpee/chord';
 import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
+  IFActions,
   DEADLY_ROOM_DEATH_ACTION_ID,
   DEADLY_ROOM_CAUSE_KEY,
   DEADLY_ROOM_MESSAGE_KEY,
@@ -51,7 +53,7 @@ import {
 import { type ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
-import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
+import type { Story, StoryConfig } from '@sharpee/engine';
 import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
@@ -705,9 +707,9 @@ export class ChordStory implements Story {
     }
   }
 
-  getCustomVocabulary(): CustomVocabulary {
-    return { verbs: this.ir.verbs.map((v) => toVocabularyVerb(v)) };
-  }
+  // getCustomVocabulary REMOVED (ADR-270 D7): `define verb` is gone from the
+  // language — `extend action` registers real grammar rules instead of the
+  // vocabulary-only path (which registered no rule; see ADR-270's Context).
 
   /**
    * Custom actions for engine registration: `define action` dispatch
@@ -1099,7 +1101,84 @@ export class ChordStory implements Story {
   extendParser(parser: Parameters<NonNullable<Story['extendParser']>>[0]): void {
     const grammar = (parser as unknown as { getStoryGrammar(): GrammarBuilder }).getStoryGrammar();
     for (const action of this.ir.actions) {
-      const actionId = `chord.action.${action.name}`;
+      // Bare-verb prefixes ride only full `define action` dispatch actions
+      // (platform-issue-sweep Phase 8 #13) — never alteration blocks.
+      this.registerActionGrammar(grammar, `chord.action.${action.name}`, action, { bareVerbForms: true });
+    }
+
+    // ADR-270 D2: `extend action` — grammar lines onto an EXISTING action.
+    // Story-first resolution (a story-defined action of the name wins, the
+    // shadowing semantic); else the name derives `if.action.<name>`,
+    // validated against stdlib's FULL exported id set (IFActions — not the
+    // interceptor-consulted subset); else a LoadError with a suggestion.
+    const storyActionNames = new Set(this.ir.actions.map((a) => a.name));
+    for (const ext of this.ir.grammarExtensions ?? []) {
+      let actionId: string;
+      if (storyActionNames.has(ext.action)) {
+        actionId = `chord.action.${ext.action}`;
+      } else {
+        const derived = `if.action.${ext.action}`;
+        if (!STDLIB_ACTION_IDS.has(derived)) {
+          throw new LoadError(
+            `\`extend action ${ext.action}\` — no story action or standard action has that name${suggestGerund(ext.action, storyActionNames)}.`,
+          );
+        }
+        actionId = derived;
+      }
+      // No dispatch conveniences (ADR-270 D2, mirroring ADR-269 D3): the
+      // extension registers exactly the stated lines at story tier.
+      this.registerActionGrammar(grammar, actionId, ext, { bareVerbForms: false });
+    }
+
+    // ADR-270 D3: `remove from action` — standard-tier rules removed by
+    // shape through the engine primitive. The loader owns the diagnostics:
+    // an unknown action name and an unmatched shape are each a LoadError,
+    // never a silent no-op (D1).
+    for (const removal of this.ir.grammarRemovals ?? []) {
+      const derived = `if.action.${removal.action}`;
+      if (!STDLIB_ACTION_IDS.has(derived)) {
+        throw new LoadError(
+          `\`remove from action ${removal.action}\` — no standard action has that name${suggestGerund(removal.action, new Set())}.`,
+        );
+      }
+      for (const pattern of removal.patterns) {
+        const text = pattern.parts.map((part) => renderPatternPart(part, [])).join(' ');
+        const removed = grammar.removeRules(derived, text);
+        if (removed === 0) {
+          const actual = grammar
+            .getRules()
+            .filter((rule) => rule.action === derived && rule.tier === 'standard')
+            .map((rule) => `\`${rule.pattern}\``);
+          throw new LoadError(
+            `\`remove from action ${removal.action}\` — no standard rule matches \`${text}\`. The action's standard patterns are: ${actual.join(', ') || '(none)'}.`,
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Register one action's grammar surfaces (ADR-271 D3 emission, shared by
+   * `define action` and ADR-270 `extend action`): pattern strings with
+   * per-pattern semantic defaults, `.where()` scope gates, `.slotType()`
+   * lines, and the `directions` cross-product — at story tier, grouped by
+   * identical defaults. `bareVerbForms` adds each pattern's literal verb
+   * prefix as its own rule (dispatch actions only).
+   */
+  private registerActionGrammar(
+    grammar: GrammarBuilder,
+    actionId: string,
+    def: {
+      patterns: IRActionPattern[];
+      constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;
+      greedy?: string[];
+      slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
+      directions?: Array<{ canonical: string; aliases: string[] }>;
+    },
+    opts: { bareVerbForms: boolean },
+  ): void {
+    {
+      const action = def;
       const greedy = action.greedy ?? [];
       const directions = action.directions ?? [];
 
@@ -1146,7 +1225,7 @@ export class ChordStory implements Story {
         // its own rule below the slotted forms — computed from the original
         // parts, direction expansion included (the prefix is the verb).
         const slotIndex = pattern.parts.findIndex((part) => part.kind === 'slot');
-        if (slotIndex > 0) {
+        if (opts.bareVerbForms && slotIndex > 0) {
           const bare = pattern.parts
             .slice(0, slotIndex)
             .map((part) => renderPatternPart(part, greedy))
@@ -2342,6 +2421,55 @@ function applyScopePredicate(
 }
 
 /**
+ * ADR-270 D2/D3: stdlib's FULL exported action-id set — the validation set
+ * for alteration targets. Deliberately not the interceptor-consulted
+ * subset (`interceptorConsultingActionIds`): a non-consulted action is
+ * still extendable.
+ */
+const STDLIB_ACTION_IDS: ReadonlySet<string> = new Set(Object.values(IFActions));
+
+/**
+ * Nearest-name suggestion for an unknown alteration target: candidates are
+ * the stdlib gerunds plus the story's own action names. Returns a
+ * ` — did you mean …?` tail, or '' when nothing is close (distance ≤ 2).
+ */
+function suggestGerund(name: string, storyNames: ReadonlySet<string>): string {
+  const candidates = [
+    ...[...STDLIB_ACTION_IDS].map((id) => id.replace(/^if\.action\./, '')),
+    ...storyNames,
+  ];
+  let best: string | null = null;
+  let bound = 3;
+  for (const candidate of candidates) {
+    const d = editDistance(name, candidate, bound);
+    if (d < bound) {
+      bound = d;
+      best = candidate;
+    }
+  }
+  return best ? ` — did you mean \`${best}\`?` : '';
+}
+
+/** Bounded Levenshtein distance; returns max+1 as soon as `max` is exceeded. */
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let rowMin = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+      cur.push(v);
+      if (v < rowMin) rowMin = v;
+    }
+    if (rowMin > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+/**
  * One IR pattern element → its Sharpee pattern-string token (ADR-267):
  * alternation → `a|b` (D8, one rule), optional → `[…]` (D9), a slot named
  * by a greedy line → `:slot...` (D10, TEXT_GREEDY). Plain words and slots
@@ -2357,31 +2485,3 @@ function renderPatternPart(part: IRPatternPart, greedy: readonly string[]): stri
   return part.optional ? `[${core}]` : core;
 }
 
-/**
- * `define verb` → engine CustomVocabulary. Phase A supports the two-slot
- * prepositional shape (`put the something on the something`, ADR-267 D15
- * spelling) that maps onto an existing two-object action, matching the
- * hand-written Cloak's PUT_ON registration.
- */
-function toVocabularyVerb(verb: { verbs: string[]; pattern: IRPatternPart[] }): NonNullable<CustomVocabulary['verbs']>[number] {
-  const words = verb.pattern.filter((p) => p.kind === 'word').map((p) => p.word);
-  const slots = verb.pattern.filter((p) => p.kind === 'slot').length;
-  const base = words[0];
-  const preposition = words[1];
-
-  const KNOWN: Record<string, string> = { 'put on': 'PUT_ON' };
-  const actionId = KNOWN[`${base} ${preposition ?? ''}`.trim()];
-  if (!actionId || slots !== 2) {
-    // ADR-271 D4: the docs page and this error state the same limit in the
-    // same words (acceptance 5).
-    throw new LoadError(
-      `\`define verb ${verb.verbs.join(' or ')}\` maps to \`${words.join(' ')}\` — for now, \`put the something on the something\` is the only pattern \`define verb\` can map onto.`,
-    );
-  }
-  return {
-    actionId,
-    verbs: verb.verbs,
-    pattern: 'VERB NOUN PREP NOUN',
-    prepositions: [preposition],
-  };
-}

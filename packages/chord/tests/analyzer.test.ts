@@ -150,8 +150,8 @@ describe('cloak.story IR', () => {
     ]);
   });
 
-  it('carries the verb definition and the hatch', () => {
-    expect(ir.verbs).toMatchObject([{ verbs: ['hang', 'hook'] }]);
+  it('carries the putting extension and the hatch (define verb removed, ADR-270 D7)', () => {
+    expect(ir.grammarExtensions).toMatchObject([{ action: 'putting' }]);
     expect(ir.hatches).toMatchObject([{ name: 'garbled', modulePath: './extras.ts' }]);
   });
 

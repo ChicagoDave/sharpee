@@ -40,6 +40,19 @@ export interface StoryIR {
    */
   grammarFile?: { name: string };
   /**
+   * `extend action <name>` blocks (ADR-270 D2) — story-scoped grammar lines
+   * added to an existing action. Target resolution (story-first, else the
+   * stdlib id set) and emission are the loader's. Additive and optional —
+   * absent when the story declares none.
+   */
+  grammarExtensions?: IRGrammarExtension[];
+  /**
+   * `remove from action <name>` blocks (ADR-270 D3) — standard-grammar
+   * shapes removed at load via the engine's removal primitive; an unmatched
+   * shape is a load error, never a silent no-op (D1). Additive and optional.
+   */
+  grammarRemovals?: IRGrammarRemoval[];
+  /**
    * The story object's declared phases (ownership package D2) and its
    * owned `on every turn` clauses (ADR-236 D7, ratchet R4) — daemons with
    * NO presence gate; `it` is unbound (compile-gated), narration
@@ -77,7 +90,8 @@ export interface StoryIR {
    * a `condition: null` book is the default (always) book (ADR-250 D3).
    */
   phrasebooks: IRPhrasebook[];
-  verbs: IRVerbDef[];
+  // `verbs` REMOVED (ADR-270 D7, 2026-07-26): `define verb` is gone from the
+  // language; `extend action` grammar lines carry the capability generally.
   hatches: IRHatch[];
   // Phase B (plan phase 3):
   traits: IRTraitDef[];
@@ -416,12 +430,6 @@ export interface IRNamedCondition {
   span: Span;
 }
 
-export interface IRVerbDef {
-  verbs: string[];
-  pattern: IRPatternPart[];
-  span: Span;
-}
-
 /**
  * One pattern element (ADR-267): a literal word, a `the <name>` slot (D15),
  * or an `or`-alternation of words (D8). `optional` is present only when the
@@ -532,6 +540,33 @@ export interface IRActionPattern {
 export type IRActionRefusal =
   | { kind: 'without'; slot: string; phraseKey: string; span: Span }
   | { kind: 'when'; condition: IRCondition; phraseKey: string; span: Span };
+
+/**
+ * `extend action <name>` (ADR-270 D2/D6) — the grammar-surface subset of
+ * IRActionDef, added to an EXISTING action at story tier. No behavior
+ * fields exist here by construction (analyzer-gated).
+ */
+export interface IRGrammarExtension {
+  /** The target action name as written (gerund) — the loader resolves it story-first, else against the stdlib id set. */
+  action: string;
+  patterns: IRActionPattern[];
+  constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;
+  greedy?: string[];
+  slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
+  directions?: Array<{ canonical: string; aliases: string[] }>;
+  span: Span;
+}
+
+/**
+ * `remove from action <name>` (ADR-270 D3/D6) — pattern shapes to remove.
+ * Identity is the pattern string; `means`/cardinality never appear here
+ * (analyzer-gated).
+ */
+export interface IRGrammarRemoval {
+  action: string;
+  patterns: IRActionPattern[];
+  span: Span;
+}
 
 /** `define score <name> worth <n>` — dedup-by-identity award (ADR-129). */
 export interface IRScoreDef {

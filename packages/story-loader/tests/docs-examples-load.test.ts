@@ -1,11 +1,11 @@
 /**
  * docs-examples-load.test.ts — ADR-271 D5 / acceptance 4: every ```chord
- * fence on the published `define verb` and `define action` pages loads.
- * Reads the MDX at test time (an edit that breaks an example fails CI, not
- * a reader), wraps each fence in the minimal story harness a fence
- * legitimately omits (header, room, player, a pettable-ish target), and
- * exercises the load surface: compile → createStory → initializeWorld →
- * createPlayer → getCustomVocabulary → extendParser.
+ * fence on the published `define action` page loads. (The `define-verb`
+ * page was removed with the construct — ADR-270 D7.) Reads the MDX at test
+ * time (an edit that breaks an example fails CI, not a reader), wraps each
+ * fence in the minimal story harness a fence legitimately omits (header,
+ * room, player, a pettable-ish target), and exercises the load surface:
+ * compile → createStory → initializeWorld → createPlayer → extendParser.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -50,12 +50,11 @@ function loadFence(fence: string): void {
   story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  story.getCustomVocabulary(); // `define verb` fences die here if unregisterable
-  captureGrammarRules(story); // `define action` grammar reaches a real builder
+  captureGrammarRules(story); // grammar (define action + alterations) reaches a real builder
 }
 
 describe('published Chord examples load (ADR-271 acceptance 4)', () => {
-  const pages = ['define-verb', 'define-action'] as const;
+  const pages = ['define-action'] as const;
 
   for (const page of pages) {
     const fences = chordFences(page);

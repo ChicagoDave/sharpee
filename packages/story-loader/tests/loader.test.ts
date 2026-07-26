@@ -26,6 +26,7 @@ import {
   darkKey,
 } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, ChordStory, createStory, LoadError } from '../src';
+import { captureGrammarRules } from './helpers/grammar-harness';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 
@@ -136,12 +137,11 @@ describe('cloak.story loads into a playable world', () => {
     expect(registered.get('velvet-cloak.description')).toContain('handsome cloak');
   });
 
-  it('maps the hang verb onto PUT_ON vocabulary', () => {
-    expect(story.getCustomVocabulary()).toEqual({
-      verbs: [
-        { actionId: 'PUT_ON', verbs: ['hang', 'hook'], pattern: 'VERB NOUN PREP NOUN', prepositions: ['on'] },
-      ],
-    });
+  it('registers the putting extension at story tier (define verb removed, ADR-270 D7)', () => {
+    const rules = captureGrammarRules(story).map((r) => ({ pattern: r.pattern, action: r.action, tier: r.tier }));
+    expect(rules).toContainEqual({ pattern: 'hook :item on :hook', action: 'if.action.putting', tier: 'story' });
+    // The vocabulary-only path is gone with the construct.
+    expect('getCustomVocabulary' in story).toBe(false);
   });
 
   it('binds the garbled hatch producer', () => {

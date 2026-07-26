@@ -317,6 +317,15 @@ export interface GrammarBuilder {
    * Clear all rules
    */
   clear(): void;
+
+  /**
+   * ADR-270 D3: remove registered rules by shape — (action id, pattern
+   * string, tier). Diagnostic-free: returns the count removed (0 = no rule
+   * matched); the caller owns any miss diagnostic. `tier` defaults to
+   * 'standard' — the alteration model removes platform rules, never story
+   * rules, unless explicitly asked.
+   */
+  removeRules(action: string, pattern: string, tier?: GrammarTier): number;
 }
 
 /**

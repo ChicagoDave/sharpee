@@ -290,3 +290,64 @@ describe('GrammarBuilder', () => {
     });
   });
 });
+describe('removeRules (ADR-270 D3)', () => {
+  let engine: TestGrammarEngine;
+  let builder: any;
+
+  beforeEach(() => {
+    engine = new TestGrammarEngine();
+    builder = engine.createBuilder();
+    builder.define('take :item').mapsTo('if.action.taking').build();
+    builder.define('get :item').mapsTo('if.action.taking').build();
+    builder.define('drop :item').mapsTo('if.action.dropping').build();
+  });
+
+  it('removes the matching standard-tier rule from getRules and the action index, returning 1', () => {
+    const removed = engine.removeRules('if.action.taking', 'get :item');
+
+    expect(removed).toBe(1);
+    expect(engine.getRules().map((r) => r.pattern)).toEqual(['take :item', 'drop :item']);
+    expect(engine.getRulesForAction('if.action.taking').map((r) => r.pattern)).toEqual(['take :item']);
+  });
+
+  it('preserves the definition order of survivors (ADR-268: order is semantic)', () => {
+    builder.define('snag :item').mapsTo('if.action.taking').build();
+    engine.removeRules('if.action.taking', 'get :item');
+
+    expect(engine.getRules().map((r) => r.pattern)).toEqual(['take :item', 'drop :item', 'snag :item']);
+  });
+
+  it('returns 0 on a shape no rule carries, leaving every rule in place', () => {
+    expect(engine.removeRules('if.action.taking', 'grab :item')).toBe(0);
+    expect(engine.removeRules('if.action.eating', 'take :item')).toBe(0);
+    expect(engine.getRules()).toHaveLength(3);
+  });
+
+  it('defaults to the standard tier — an identically-shaped story rule survives', () => {
+    const storyBuilder = engine.createBuilder('story');
+    storyBuilder.define('get :item').mapsTo('if.action.taking').build();
+
+    expect(engine.removeRules('if.action.taking', 'get :item')).toBe(1);
+    const remaining = engine.getRules().filter((r) => r.pattern === 'get :item');
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].tier).toBe('story');
+  });
+
+  it('removes a story-tier rule only when the tier is named', () => {
+    const storyBuilder = engine.createBuilder('story');
+    storyBuilder.define('yoink :item').mapsTo('if.action.taking').build();
+
+    expect(engine.removeRules('if.action.taking', 'yoink :item', 'story')).toBe(1);
+    expect(engine.getRules().some((r) => r.pattern === 'yoink :item')).toBe(false);
+  });
+
+  it('empties the action index when the last rule of an action is removed', () => {
+    engine.removeRules('if.action.dropping', 'drop :item');
+    expect(engine.getRulesForAction('if.action.dropping')).toEqual([]);
+  });
+
+  it('is reachable through the builder surface (dual-surface, umbrella D8)', () => {
+    expect(builder.removeRules('if.action.taking', 'get :item')).toBe(1);
+    expect(builder.getRules().map((r: any) => r.pattern)).toEqual(['take :item', 'drop :item']);
+  });
+});

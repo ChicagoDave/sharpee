@@ -19,13 +19,13 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 2.4.0 — ADR-269 D8: the grammar file — `grammar "<name>"` top-level
-  // header; define-action grammar surfaces only (analyzer-gated); headers
-  // mutually exclusive. Additive grammar → a minor.
-  // (2.3.0 group 4 means/directions; 2.2.0 group 3 typed slots;
+  // 3.0.0 — ADR-270 D7: `define verb` removed (extend action subsumes it;
+  // parse.removed-define-verb fix-it) — a removed construct → major.
+  // (2.5.0 ADR-270 alteration blocks; 2.4.0 ADR-269 grammar file;
+  //  2.3.0 group 4 means/directions; 2.2.0 group 3 typed slots;
   //  2.1.0 group 2; 2.0.0 D15 major.)
-  languageVersion: '2.4.0',
-  ebnfSha256: '1aacd8ba157fcff0f4434d8712280ae4f8ed8030103125b7385cb354eb10bdbb',
+  languageVersion: '3.0.0',
+  ebnfSha256: '8ef9ae470e1ab133a0460927d1f29105efd961e5b138212926151dadf2b17a04',
 };
 
 const EBNF_PATH = join(__dirname, '..', '..', '..', 'docs', 'reference', 'chord.ebnf');

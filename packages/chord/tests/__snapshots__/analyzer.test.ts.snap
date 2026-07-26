@@ -671,6 +671,41 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     },
   ],
   "format": "story language 1",
+  "grammarExtensions": [
+    {
+      "action": "putting",
+      "constraints": [],
+      "patterns": [
+        {
+          "cardinality": null,
+          "parts": [
+            {
+              "kind": "word",
+              "word": "hook",
+            },
+            {
+              "kind": "slot",
+              "word": "item",
+            },
+            {
+              "kind": "word",
+              "word": "on",
+            },
+            {
+              "kind": "slot",
+              "word": "hook",
+            },
+          ],
+        },
+      ],
+      "span": {
+        "column": 1,
+        "endColumn": 10,
+        "endLine": 83,
+        "line": 82,
+      },
+    },
+  ],
   "hasHatches": true,
   "hatches": [
     {
@@ -680,12 +715,12 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 39,
-        "endLine": 97,
-        "line": 97,
+        "endLine": 99,
+        "line": 99,
       },
     },
   ],
-  "languageVersion": "2.4.0",
+  "languageVersion": "3.0.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
@@ -724,8 +759,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 87,
-            "line": 85,
+            "endLine": 89,
+            "line": 87,
           },
           "strategy": null,
           "variants": [
@@ -784,8 +819,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 70,
-            "endLine": 91,
-            "line": 90,
+            "endLine": 93,
+            "line": 92,
           },
           "strategy": null,
           "variants": [
@@ -799,8 +834,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 69,
-            "endLine": 95,
-            "line": 94,
+            "endLine": 97,
+            "line": 96,
           },
           "strategy": null,
           "variants": [
@@ -814,8 +849,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 37,
-            "endLine": 93,
-            "line": 92,
+            "endLine": 95,
+            "line": 94,
           },
           "strategy": null,
           "variants": [
@@ -846,8 +881,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 53,
-            "endLine": 89,
-            "line": 88,
+            "endLine": 91,
+            "line": 90,
           },
           "strategy": null,
           "variants": [
@@ -886,37 +921,5 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
   },
   "traits": [],
   "uses": [],
-  "verbs": [
-    {
-      "pattern": [
-        {
-          "kind": "word",
-          "word": "put",
-        },
-        {
-          "kind": "slot",
-          "word": "something",
-        },
-        {
-          "kind": "word",
-          "word": "on",
-        },
-        {
-          "kind": "slot",
-          "word": "something",
-        },
-      ],
-      "span": {
-        "column": 1,
-        "endColumn": 66,
-        "endLine": 82,
-        "line": 82,
-      },
-      "verbs": [
-        "hang",
-        "hook",
-      ],
-    },
-  ],
 }
 `;

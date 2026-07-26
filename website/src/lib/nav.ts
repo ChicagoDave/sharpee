@@ -97,7 +97,6 @@ export const NAV: NavSection[] = [
           { title: 'define condition', href: '/chord/guide/vocabulary/define-condition' },
           { title: 'define phrase', href: '/chord/guide/vocabulary/define-phrase' },
           { title: 'define phrases', href: '/chord/guide/vocabulary/define-phrases' },
-          { title: 'define verb', href: '/chord/guide/vocabulary/define-verb' },
           { title: 'define text', href: '/chord/guide/vocabulary/define-text' },
           { title: 'define action hatches', href: '/chord/guide/vocabulary/define-action-hatches' },
           { title: 'define trait', href: '/chord/guide/vocabulary/define-trait' },

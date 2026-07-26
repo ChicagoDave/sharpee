@@ -7,7 +7,7 @@
  * the engine's own. The full production path (EnglishGrammarEngine + real
  * compiler + parse) is exercised by the transcript suites.
  */
-import type { CompiledPattern, GrammarContext, GrammarRule, PatternCompiler, PatternMatch, Token } from '@sharpee/if-domain';
+import type { CompiledPattern, GrammarBuilder, GrammarContext, GrammarRule, PatternCompiler, PatternMatch, Token } from '@sharpee/if-domain';
 import { GrammarEngine } from '@sharpee/if-domain';
 import type { ChordStory } from '../../src';
 
@@ -50,13 +50,27 @@ class TestGrammarEngine extends GrammarEngine {
 }
 
 /**
+ * Run the story's extendParser against a real engine and return the engine
+ * (ADR-270 alteration tests read rules AND removals from it). An optional
+ * `seedStandard` callback pre-registers standard-tier rules first — the
+ * parser-construction order (standard before story) that removal targets.
+ */
+export function captureGrammarEngine(
+  story: ChordStory,
+  seedStandard?: (builder: GrammarBuilder) => void,
+): GrammarEngine {
+  const engine = new TestGrammarEngine();
+  if (seedStandard) seedStandard(engine.createBuilder('standard'));
+  const fakeParser = { getStoryGrammar: () => engine.createBuilder('story') };
+  story.extendParser(fakeParser as never);
+  return engine;
+}
+
+/**
  * Run the story's extendParser against a real engine and return the
  * registered rules in registration (definition) order — the engine's own
  * order (ADR-268). The builder is story-tier, as getStoryGrammar() is.
  */
 export function captureGrammarRules(story: ChordStory): GrammarRule[] {
-  const engine = new TestGrammarEngine();
-  const fakeParser = { getStoryGrammar: () => engine.createBuilder('story') };
-  story.extendParser(fakeParser as never);
-  return engine.getRules();
+  return captureGrammarEngine(story).getRules();
 }

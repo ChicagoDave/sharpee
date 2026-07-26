@@ -18,7 +18,7 @@ import {
   DefinePhrase,
   DefinePhrases,
   DefineText,
-  DefineVerb,
+  ExtendAction,
   OrdinalBlock,
   parse,
   PhraseStmt,
@@ -59,7 +59,7 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
       'create', // velvet cloak
       'create', // brass hook
       'create', // message
-      'define-verb',
+      'extend-action',
       'define-phrases',
       'define-text',
     ]);
@@ -165,14 +165,14 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
     expect(third.body).toMatchObject([{ kind: 'change', entity: { words: ['message'] }, state: 'obliterated' }]);
   });
 
-  it('parses the hang verb definition', () => {
-    const verb = decls[8] as DefineVerb;
-    expect(verb.verbs).toEqual(['hang', 'hook']);
-    expect(verb.pattern).toMatchObject([
-      { kind: 'word', word: 'put' },
-      { kind: 'slot', word: 'something' },
+  it('parses the putting extension (define verb removed, ADR-270 D7)', () => {
+    const ext = decls[8] as ExtendAction;
+    expect(ext.name).toBe('putting');
+    expect(ext.patterns[0].parts).toMatchObject([
+      { kind: 'word', word: 'hook' },
+      { kind: 'slot', word: 'item' },
       { kind: 'word', word: 'on' },
-      { kind: 'slot', word: 'something' },
+      { kind: 'slot', word: 'hook' },
     ]);
   });
 

@@ -1,0 +1,35 @@
+title: ADR-270 acceptance 15 — alter the standard grammar
+story: grammar-alterations
+description: The I7 bar made assertable (umbrella ADR-266 acceptance 15 /
+  ADR-270 acceptance 1): (i) `snag` is a story-added synonym reaching stdlib
+  taking, asserted on state (the lamp is carried afterwards); (ii) `get` is
+  removed from taking and stops parsing; (iii) `read the target` restated
+  under examining outcompetes reading's standard rule — the response flips
+  from reading's "nothing written" to the examining description.
+
+---
+
+# (ii) removed: `get` no longer reaches taking
+> get lamp
+[OK: contains "I don't understand"]
+
+# (i) the extension synonym drives the stdlib implementation
+> snag lamp
+[OK: contains "Taken"]
+
+# ...asserted on state: the lamp is carried
+> inventory
+[OK: contains "lamp"]
+
+# untouched patterns of the same action still work
+> drop lamp
+[OK: contains "Dropped"]
+
+> take lamp
+[OK: contains "Taken"]
+
+# (iii) reorder: `read` resolves to examining (the description) — not to
+# reading, whose response would be "There's nothing written on the book."
+> read book
+[OK: contains "A dusty book"]
+[OK: not contains "nothing written"]

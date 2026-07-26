@@ -1,6 +1,6 @@
 /**
  * slot-spelling.test.ts — ADR-267 landing group 1 (D1/D15 + D2): one slot
- * spelling, `the <name>`, shared by `define verb` patterns and `define
+ * spelling, `the <name>`, shared by alteration-block patterns and `define
  * action` grammar lines. The removed spellings — `(word)` parens and
  * `:word` colon — are named parse errors (`parse.removed-slot-spelling`
  * with a fix-it naming the replacement), never legacy forms. D2:
@@ -30,21 +30,15 @@ describe('one slot production: `the <name>` (ADR-267 D1/D15)', () => {
     ]);
   });
 
-  it('define verb: `the <name>` slots parse through the same production', () => {
-    const source = `${HEADER}define verb hang or hook means put the something on the something\n\n${WORLD}`;
-    const result = compile(source);
-    expect(errorsOf(source)).toEqual([]);
-    const verb = result.ir!.verbs.find((v) => v.verbs.includes('hang'))!;
-    expect(verb.pattern).toEqual([
-      { kind: 'word', word: 'put' },
-      { kind: 'slot', word: 'something' },
-      { kind: 'word', word: 'on' },
-      { kind: 'slot', word: 'something' },
-    ]);
+  it('define verb is removed (ADR-270 D7) — parse.removed-define-verb with the extend-action fix-it', () => {
+    const errors = errorsOf(`${HEADER}define verb hang or hook means put the something on the something\n\n${WORLD}`);
+    const err = errors.find((e) => e.code === 'parse.removed-define-verb');
+    expect(err, errors.map((e) => `${e.code} ${e.message}`).join(' | ')).toBeDefined();
+    expect(err!.message).toContain('extend action');
   });
 
-  it('rejects the removed `(word)` verb spelling with the `the <name>` fix-it', () => {
-    const errors = errorsOf(`${HEADER}define verb sniff means smell (something)\n\n${WORLD}`);
+  it('rejects the removed `(word)` spelling with the `the <name>` fix-it', () => {
+    const errors = errorsOf(`${HEADER}extend action smelling\n  grammar\n    sniff (something)\n\n${WORLD}`);
     const err = errors.find((e) => e.code === 'parse.removed-slot-spelling');
     expect(err, errors.map((e) => `${e.code} ${e.message}`).join(' | ')).toBeDefined();
     expect(err!.message).toContain('`(something)`');

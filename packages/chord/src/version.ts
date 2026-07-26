@@ -62,5 +62,16 @@
  * header declaring a file that carries `define action` grammar surfaces only —
  * behavior lines and story declarations are analyzer errors; the two headers
  * are mutually exclusive. Additive grammar, a minor bump.
+ *
+ * **2.5.0** adds the author alteration blocks (ADR-270 D2/D3/D6):
+ * `extend action <name>` (grammar surfaces added to an existing action, story
+ * tier) and `remove from action <name>` (standard-grammar shapes removed at
+ * load; unmatched shapes are load errors). Additive grammar, a minor bump.
+ *
+ * **3.0.0** removes `define verb` (ADR-270 D7): `extend action` subsumes it
+ * generally, and the Phase A stub's consumption path was dead (it registered
+ * vocabulary that produced no grammar rule). Previously-valid syntax stops
+ * parsing (`parse.removed-define-verb` fix-it) — a major bump by D2's
+ * ordinary rule.
  */
-export const CHORD_LANGUAGE_VERSION = '2.4.0';
+export const CHORD_LANGUAGE_VERSION = '3.0.0';
