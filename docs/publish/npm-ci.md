@@ -1,6 +1,8 @@
 # Publishing Sharpee to npm from CI
 
-**Status**: proposal — nothing here has been implemented yet.
+**Status**: implemented through Part D3/D4 (2026-07-26) — first trusted-publishing
+release (`@sharpee/ext-hunger@3.6.1`) live with provenance. Remaining: D5 (full
+lockstep release through CI), Part E (lock down tokens), §10.1.
 **Audience**: David (the only person who can do the npmjs.com steps).
 **Goal**: replace the manual publish (with npm's 5-minute web-auth link) with a
 CI publish you trigger by hand, while keeping version decisions entirely local.
@@ -453,12 +455,20 @@ discovery would try to publish it. Decide before the first real run — see §10
       --no-genai for the stamping guard, tsf 1.0.2/1.0.3 validate + npm-12 pack
       fixes, npm pinned to 11.)* Trigger the workflow with `dry_run: true`. Confirm it reaches the
       publish step and that tsf's `--changed` filter selects only that package.
-- [ ] **D3.** Trigger again with `dry_run: false`. Confirm:
+- [x] **D3.** *(Done 2026-07-26: ext-hunger@3.6.1 published via OIDC — no link;
+      SLSA v1 provenance attestation + registry signature confirmed via
+      `npm view dist.attestations`. Two pipeline fixes were needed en route:
+      tsf 1.0.3 for npm 12's pack --json format, and a `repository` field
+      added to 9 manifests — provenance verification rejects manifests
+      without one matching the workflow repo.)* Trigger again with `dry_run: false`. Confirm:
       - No 5-minute link appears anywhere.
       - `npm view @sharpee/ext-hunger version` shows the new version.
       - The npm package page shows a green **Provenance** badge linking to the
         workflow run.
-- [ ] **D4.** Verify the stamp actually landed in the published artifact, since
+- [x] **D4.** *(Done 2026-07-26 for the canary: downloaded tarball verified —
+      correct contents, version, repository field, README included. The
+      ENGINE_VERSION grep below applies to the next stdlib publish, D5.)*
+      Verify the stamp actually landed in the published artifact, since
       this is the failure §1.4 documents and a version number on the manifest does
       not prove it. Download the tarball and read the constant directly:
 
