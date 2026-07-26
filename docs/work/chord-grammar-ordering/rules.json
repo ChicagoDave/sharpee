@@ -1,0 +1,5998 @@
+[
+ {
+  "index": 0,
+  "pattern": "hang :item on :hook",
+  "action": "if.action.putting",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "hook"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 1,
+  "pattern": "take :item from :container with|using :tool",
+  "action": "if.action.removing",
+  "priority": 110,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 3,
+  "slotNames": [
+   "item",
+   "container",
+   "tool"
+  ],
+  "hasGreedy": false,
+  "minTokens": 6
+ },
+ {
+  "index": 2,
+  "pattern": "remove :item from :container",
+  "action": "if.action.removing",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 3,
+  "pattern": "unlock :door with|using :key",
+  "action": "if.action.unlocking",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "door",
+   "key"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 4,
+  "pattern": "lock :target with|using :key",
+  "action": "if.action.locking",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "target",
+   "key"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 5,
+  "pattern": "open :container with|using :tool",
+  "action": "if.action.opening",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "container",
+   "tool"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 6,
+  "pattern": "cut :object with|using :tool",
+  "action": "if.action.cutting",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "object",
+   "tool"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 7,
+  "pattern": "attack :target with|using :weapon",
+  "action": "if.action.attacking",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "target",
+   "weapon"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 8,
+  "pattern": "kill :target with|using :weapon",
+  "action": "if.action.attacking",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "target",
+   "weapon"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 9,
+  "pattern": "hit :target with|using :weapon",
+  "action": "if.action.attacking",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "target",
+   "weapon"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 10,
+  "pattern": "strike :target with|using :weapon",
+  "action": "if.action.attacking",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "target",
+   "weapon"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 11,
+  "pattern": "dig :location with|using :tool",
+  "action": "if.action.digging",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "location",
+   "tool"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 12,
+  "pattern": "move :item to :destination",
+  "action": "if.action.putting",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "destination"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 13,
+  "pattern": "extract :item from :container",
+  "action": "if.action.removing",
+  "priority": 110,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 14,
+  "pattern": "put on :item",
+  "action": "if.action.wearing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 15,
+  "pattern": "take off :item",
+  "action": "if.action.taking_off",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 16,
+  "pattern": "take :item off",
+  "action": "if.action.taking_off",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 17,
+  "pattern": "move :target north",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 18,
+  "pattern": "move :target n",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 19,
+  "pattern": "move :target south",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 20,
+  "pattern": "move :target s",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 21,
+  "pattern": "move :target east",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 22,
+  "pattern": "move :target e",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 23,
+  "pattern": "move :target west",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 24,
+  "pattern": "move :target w",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 25,
+  "pattern": "move :target northeast",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 26,
+  "pattern": "move :target ne",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 27,
+  "pattern": "move :target northwest",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 28,
+  "pattern": "move :target nw",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 29,
+  "pattern": "move :target southeast",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 30,
+  "pattern": "move :target se",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 31,
+  "pattern": "move :target southwest",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 32,
+  "pattern": "move :target sw",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 33,
+  "pattern": "move :target up",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 34,
+  "pattern": "move :target u",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 35,
+  "pattern": "move :target down",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 36,
+  "pattern": "move :target d",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 37,
+  "pattern": "move :target in",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 38,
+  "pattern": "move :target inside",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 39,
+  "pattern": "move :target out",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 40,
+  "pattern": "move :target outside",
+  "action": "if.action.pushing",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 41,
+  "pattern": "go out",
+  "action": "if.action.exiting",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 42,
+  "pattern": "exit game",
+  "action": "if.action.quitting",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 43,
+  "pattern": "get in :portal",
+  "action": "if.action.entering",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "portal"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 44,
+  "pattern": "get into :portal",
+  "action": "if.action.entering",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "portal"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 45,
+  "pattern": "climb in :portal",
+  "action": "if.action.entering",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "portal"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 46,
+  "pattern": "climb into :portal",
+  "action": "if.action.entering",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "portal"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 47,
+  "pattern": "go in :portal",
+  "action": "if.action.entering",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "portal"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 48,
+  "pattern": "go into :portal",
+  "action": "if.action.entering",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "portal"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 49,
+  "pattern": "get out",
+  "action": "if.action.exiting",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 50,
+  "pattern": "climb out",
+  "action": "if.action.exiting",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 51,
+  "pattern": "get on :vehicle",
+  "action": "if.action.entering",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "vehicle"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 52,
+  "pattern": "get out of :container",
+  "action": "if.action.exiting",
+  "priority": 105,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 1,
+  "slotNames": [
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 53,
+  "pattern": "climb out of :container",
+  "action": "if.action.exiting",
+  "priority": 105,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 1,
+  "slotNames": [
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 54,
+  "pattern": "get off :vehicle",
+  "action": "if.action.exiting",
+  "priority": 105,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "vehicle"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 55,
+  "pattern": "look [around]",
+  "action": "if.action.looking",
+  "priority": 101,
+  "litRequired": 1,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 56,
+  "pattern": "look",
+  "action": "if.action.looking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 57,
+  "pattern": "l",
+  "action": "if.action.looking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 58,
+  "pattern": "examine :target",
+  "action": "if.action.examining",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 59,
+  "pattern": "x :target",
+  "action": "if.action.examining",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 60,
+  "pattern": "inspect :target",
+  "action": "if.action.examining",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 61,
+  "pattern": "check :target",
+  "action": "if.action.examining",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 62,
+  "pattern": "view :target",
+  "action": "if.action.examining",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 63,
+  "pattern": "observe :target",
+  "action": "if.action.examining",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 64,
+  "pattern": "search [carefully]",
+  "action": "if.action.searching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 65,
+  "pattern": "search :target",
+  "action": "if.action.searching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 66,
+  "pattern": "look in|inside :target",
+  "action": "if.action.searching",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 67,
+  "pattern": "look through :target",
+  "action": "if.action.searching",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 68,
+  "pattern": "take :item",
+  "action": "if.action.taking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 69,
+  "pattern": "get :item",
+  "action": "if.action.taking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 70,
+  "pattern": "grab :item",
+  "action": "if.action.taking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 71,
+  "pattern": "acquire :item",
+  "action": "if.action.taking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 72,
+  "pattern": "collect :item",
+  "action": "if.action.taking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 73,
+  "pattern": "pick up :item",
+  "action": "if.action.taking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 74,
+  "pattern": "drop :item",
+  "action": "if.action.dropping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 75,
+  "pattern": "discard :item",
+  "action": "if.action.dropping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 76,
+  "pattern": "release :item",
+  "action": "if.action.dropping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 77,
+  "pattern": "put down :item",
+  "action": "if.action.dropping",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 78,
+  "pattern": "wear :item",
+  "action": "if.action.wearing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 79,
+  "pattern": "don :item",
+  "action": "if.action.wearing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 80,
+  "pattern": "equip :item",
+  "action": "if.action.wearing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 81,
+  "pattern": "remove :item",
+  "action": "if.action.taking_off",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 82,
+  "pattern": "doff :item",
+  "action": "if.action.taking_off",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 83,
+  "pattern": "unequip :item",
+  "action": "if.action.taking_off",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 84,
+  "pattern": "eat :item",
+  "action": "if.action.eating",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 85,
+  "pattern": "consume :item",
+  "action": "if.action.eating",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 86,
+  "pattern": "devour :item",
+  "action": "if.action.eating",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 87,
+  "pattern": "munch :item",
+  "action": "if.action.eating",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 88,
+  "pattern": "nibble :item",
+  "action": "if.action.eating",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 89,
+  "pattern": "drink :item",
+  "action": "if.action.drinking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 90,
+  "pattern": "sip :item",
+  "action": "if.action.drinking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 91,
+  "pattern": "quaff :item",
+  "action": "if.action.drinking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 92,
+  "pattern": "swallow :item",
+  "action": "if.action.drinking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 93,
+  "pattern": "imbibe :item",
+  "action": "if.action.drinking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 94,
+  "pattern": "put :item in|into|inside :container",
+  "action": "if.action.inserting",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 95,
+  "pattern": "insert :item in|into :container",
+  "action": "if.action.inserting",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 96,
+  "pattern": "put :item on|onto :supporter",
+  "action": "if.action.putting",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "supporter"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 97,
+  "pattern": "read :target",
+  "action": "if.action.reading",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 98,
+  "pattern": "peruse :target",
+  "action": "if.action.reading",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 99,
+  "pattern": "study :target",
+  "action": "if.action.reading",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 100,
+  "pattern": "inventory",
+  "action": "if.action.inventory",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 101,
+  "pattern": "inv",
+  "action": "if.action.inventory",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 102,
+  "pattern": "i",
+  "action": "if.action.inventory",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 103,
+  "pattern": "north",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 104,
+  "pattern": "south",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 105,
+  "pattern": "east",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 106,
+  "pattern": "west",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 107,
+  "pattern": "northeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 108,
+  "pattern": "ne",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 109,
+  "pattern": "northwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 110,
+  "pattern": "nw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 111,
+  "pattern": "southeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 112,
+  "pattern": "se",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 113,
+  "pattern": "southwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 114,
+  "pattern": "sw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 115,
+  "pattern": "up",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 116,
+  "pattern": "down",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 117,
+  "pattern": "in",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 118,
+  "pattern": "inside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 119,
+  "pattern": "out",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 120,
+  "pattern": "outside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 121,
+  "pattern": "open :door",
+  "action": "if.action.opening",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "door"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 122,
+  "pattern": "close :door",
+  "action": "if.action.closing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "door"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 123,
+  "pattern": "turn on :device",
+  "action": "if.action.switching_on",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 124,
+  "pattern": "switch on :device",
+  "action": "if.action.switching_on",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 125,
+  "pattern": "flip on :device",
+  "action": "if.action.switching_on",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 126,
+  "pattern": "turn off :device",
+  "action": "if.action.switching_off",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 127,
+  "pattern": "switch off :device",
+  "action": "if.action.switching_off",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 128,
+  "pattern": "flip off :device",
+  "action": "if.action.switching_off",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 129,
+  "pattern": "turn :device on",
+  "action": "if.action.switching_on",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 130,
+  "pattern": "turn :device off",
+  "action": "if.action.switching_off",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 131,
+  "pattern": "push :target",
+  "action": "if.action.pushing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 132,
+  "pattern": "press :target",
+  "action": "if.action.pushing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 133,
+  "pattern": "shove :target",
+  "action": "if.action.pushing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 134,
+  "pattern": "move :target",
+  "action": "if.action.pushing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 135,
+  "pattern": "pull :target",
+  "action": "if.action.pulling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 136,
+  "pattern": "drag :target",
+  "action": "if.action.pulling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 137,
+  "pattern": "yank :target",
+  "action": "if.action.pulling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 138,
+  "pattern": "tug :target",
+  "action": "if.action.pulling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 139,
+  "pattern": "lower :target",
+  "action": "if.action.lowering",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 140,
+  "pattern": "raise :target",
+  "action": "if.action.raising",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 141,
+  "pattern": "lift :target",
+  "action": "if.action.raising",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 142,
+  "pattern": "wait",
+  "action": "if.action.waiting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 143,
+  "pattern": "z",
+  "action": "if.action.waiting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 144,
+  "pattern": "save",
+  "action": "if.action.saving",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 145,
+  "pattern": "restore",
+  "action": "if.action.restoring",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 146,
+  "pattern": "restart",
+  "action": "if.action.restarting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 147,
+  "pattern": "sleep",
+  "action": "if.action.sleeping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 148,
+  "pattern": "nap",
+  "action": "if.action.sleeping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 149,
+  "pattern": "doze",
+  "action": "if.action.sleeping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 150,
+  "pattern": "rest",
+  "action": "if.action.sleeping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 151,
+  "pattern": "slumber",
+  "action": "if.action.sleeping",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 152,
+  "pattern": "quit",
+  "action": "if.action.quitting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 153,
+  "pattern": "q",
+  "action": "if.action.quitting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 154,
+  "pattern": "undo",
+  "action": "if.action.undoing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 155,
+  "pattern": "score",
+  "action": "if.action.scoring",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 156,
+  "pattern": "version",
+  "action": "if.action.version",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 157,
+  "pattern": "help",
+  "action": "if.action.help",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 158,
+  "pattern": "about",
+  "action": "if.action.about",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 159,
+  "pattern": "info",
+  "action": "if.action.about",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 160,
+  "pattern": "credits",
+  "action": "if.action.about",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 161,
+  "pattern": "trace",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 162,
+  "pattern": "trace on",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 163,
+  "pattern": "trace off",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 164,
+  "pattern": "trace parser on",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 165,
+  "pattern": "trace parser off",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 166,
+  "pattern": "trace validation on",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 167,
+  "pattern": "trace validation off",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 168,
+  "pattern": "trace system on",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 169,
+  "pattern": "trace system off",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 170,
+  "pattern": "trace all on",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 171,
+  "pattern": "trace all off",
+  "action": "author.trace",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 172,
+  "pattern": "give :item to :recipient",
+  "action": "if.action.giving",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 173,
+  "pattern": "offer :item to :recipient",
+  "action": "if.action.giving",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 174,
+  "pattern": "show :item to :recipient",
+  "action": "if.action.showing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 175,
+  "pattern": "throw :item at :target",
+  "action": "if.action.throwing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 176,
+  "pattern": "throw :item to :recipient",
+  "action": "if.action.throwing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 177,
+  "pattern": "lock :target",
+  "action": "if.action.locking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 178,
+  "pattern": "unlock :target",
+  "action": "if.action.unlocking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 179,
+  "pattern": "cut :target",
+  "action": "if.action.cutting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 180,
+  "pattern": "slice :target",
+  "action": "if.action.cutting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 181,
+  "pattern": "chop :target",
+  "action": "if.action.cutting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 182,
+  "pattern": "attack :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 183,
+  "pattern": "kill :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 184,
+  "pattern": "fight :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 185,
+  "pattern": "slay :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 186,
+  "pattern": "murder :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 187,
+  "pattern": "hit :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 188,
+  "pattern": "strike :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 189,
+  "pattern": "break :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 190,
+  "pattern": "smash :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 191,
+  "pattern": "destroy :target",
+  "action": "if.action.attacking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 192,
+  "pattern": "dig :target",
+  "action": "if.action.digging",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 193,
+  "pattern": "tell :recipient about :topic",
+  "action": "if.action.telling",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "topic"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 194,
+  "pattern": "ask :recipient about :topic",
+  "action": "if.action.asking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "topic"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 195,
+  "pattern": "question :recipient about :topic",
+  "action": "if.action.asking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "topic"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 196,
+  "pattern": "inquire of :recipient about :topic",
+  "action": "if.action.asking",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "topic"
+  ],
+  "hasGreedy": false,
+  "minTokens": 5
+ },
+ {
+  "index": 197,
+  "pattern": "inform :recipient about :topic",
+  "action": "if.action.telling",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "topic"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 198,
+  "pattern": "talk to|with :target",
+  "action": "if.action.talking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 199,
+  "pattern": "speak to|with :target",
+  "action": "if.action.talking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 200,
+  "pattern": "chat with :target",
+  "action": "if.action.talking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 201,
+  "pattern": "converse with :target",
+  "action": "if.action.talking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 202,
+  "pattern": "go north",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 203,
+  "pattern": "go south",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 204,
+  "pattern": "go east",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 205,
+  "pattern": "go west",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 206,
+  "pattern": "go northeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 207,
+  "pattern": "go ne",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 208,
+  "pattern": "go northwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 209,
+  "pattern": "go nw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 210,
+  "pattern": "go southeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 211,
+  "pattern": "go se",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 212,
+  "pattern": "go southwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 213,
+  "pattern": "go sw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 214,
+  "pattern": "go up",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 215,
+  "pattern": "go down",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 216,
+  "pattern": "go in",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 217,
+  "pattern": "go inside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 218,
+  "pattern": "go out",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 219,
+  "pattern": "go outside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 220,
+  "pattern": "walk north",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 221,
+  "pattern": "walk south",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 222,
+  "pattern": "walk east",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 223,
+  "pattern": "walk west",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 224,
+  "pattern": "walk northeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 225,
+  "pattern": "walk ne",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 226,
+  "pattern": "walk northwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 227,
+  "pattern": "walk nw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 228,
+  "pattern": "walk southeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 229,
+  "pattern": "walk se",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 230,
+  "pattern": "walk southwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 231,
+  "pattern": "walk sw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 232,
+  "pattern": "walk up",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 233,
+  "pattern": "walk down",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 234,
+  "pattern": "walk in",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 235,
+  "pattern": "walk inside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 236,
+  "pattern": "walk out",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 237,
+  "pattern": "walk outside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 238,
+  "pattern": "run north",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 239,
+  "pattern": "run south",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 240,
+  "pattern": "run east",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 241,
+  "pattern": "run west",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 242,
+  "pattern": "run northeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 243,
+  "pattern": "run ne",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 244,
+  "pattern": "run northwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 245,
+  "pattern": "run nw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 246,
+  "pattern": "run southeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 247,
+  "pattern": "run se",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 248,
+  "pattern": "run southwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 249,
+  "pattern": "run sw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 250,
+  "pattern": "run up",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 251,
+  "pattern": "run down",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 252,
+  "pattern": "run in",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 253,
+  "pattern": "run inside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 254,
+  "pattern": "run out",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 255,
+  "pattern": "run outside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 256,
+  "pattern": "head north",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 257,
+  "pattern": "head south",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 258,
+  "pattern": "head east",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 259,
+  "pattern": "head west",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 260,
+  "pattern": "head northeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 261,
+  "pattern": "head ne",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 262,
+  "pattern": "head northwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 263,
+  "pattern": "head nw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 264,
+  "pattern": "head southeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 265,
+  "pattern": "head se",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 266,
+  "pattern": "head southwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 267,
+  "pattern": "head sw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 268,
+  "pattern": "head up",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 269,
+  "pattern": "head down",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 270,
+  "pattern": "head in",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 271,
+  "pattern": "head inside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 272,
+  "pattern": "head out",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 273,
+  "pattern": "head outside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 274,
+  "pattern": "travel north",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 275,
+  "pattern": "travel south",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 276,
+  "pattern": "travel east",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 277,
+  "pattern": "travel west",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 278,
+  "pattern": "travel northeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 279,
+  "pattern": "travel ne",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northeast"
+  }
+ },
+ {
+  "index": 280,
+  "pattern": "travel northwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 281,
+  "pattern": "travel nw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "northwest"
+  }
+ },
+ {
+  "index": 282,
+  "pattern": "travel southeast",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 283,
+  "pattern": "travel se",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southeast"
+  }
+ },
+ {
+  "index": 284,
+  "pattern": "travel southwest",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 285,
+  "pattern": "travel sw",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "southwest"
+  }
+ },
+ {
+  "index": 286,
+  "pattern": "travel up",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 287,
+  "pattern": "travel down",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 288,
+  "pattern": "travel in",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 289,
+  "pattern": "travel inside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "in"
+  }
+ },
+ {
+  "index": 290,
+  "pattern": "travel out",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 291,
+  "pattern": "travel outside",
+  "action": "if.action.going",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "out"
+  }
+ },
+ {
+  "index": 292,
+  "pattern": "hear",
+  "action": "if.action.listening",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 293,
+  "pattern": "hear :target",
+  "action": "if.action.listening",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 294,
+  "pattern": "take up :item",
+  "action": "if.action.taking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 295,
+  "pattern": "throw away :item",
+  "action": "if.action.dropping",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 296,
+  "pattern": "place :item in|into|inside :container",
+  "action": "if.action.putting",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 297,
+  "pattern": "place :item on|onto :supporter",
+  "action": "if.action.putting",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "supporter"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 298,
+  "pattern": "unwrap :door",
+  "action": "if.action.opening",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "door"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 299,
+  "pattern": "uncover :door",
+  "action": "if.action.opening",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "door"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 300,
+  "pattern": "shut :door",
+  "action": "if.action.closing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "door"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 301,
+  "pattern": "cover :door",
+  "action": "if.action.closing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "door"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 302,
+  "pattern": "secure :target",
+  "action": "if.action.locking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 303,
+  "pattern": "unsecure :target",
+  "action": "if.action.unlocking",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 304,
+  "pattern": "activate :device",
+  "action": "if.action.switching_on",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 305,
+  "pattern": "start :device",
+  "action": "if.action.switching_on",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 306,
+  "pattern": "deactivate :device",
+  "action": "if.action.switching_off",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 307,
+  "pattern": "stop :device",
+  "action": "if.action.switching_off",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 308,
+  "pattern": "hand :item to :recipient",
+  "action": "if.action.giving",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 309,
+  "pattern": "hand :recipient :item",
+  "action": "if.action.giving",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 310,
+  "pattern": "display :item to :recipient",
+  "action": "if.action.showing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 311,
+  "pattern": "present :item to :recipient",
+  "action": "if.action.showing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 312,
+  "pattern": "toss :item at :target",
+  "action": "if.action.throwing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 313,
+  "pattern": "toss :item to :recipient",
+  "action": "if.action.throwing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 314,
+  "pattern": "hurl :item at :target",
+  "action": "if.action.throwing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 315,
+  "pattern": "hurl :item to :recipient",
+  "action": "if.action.throwing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 2,
+  "slotNames": [
+   "item",
+   "recipient"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 316,
+  "pattern": "munch on :item",
+  "action": "if.action.eating",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 317,
+  "pattern": "nibble on :item",
+  "action": "if.action.eating",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 318,
+  "pattern": "drink from :target",
+  "action": "if.action.drinking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 319,
+  "pattern": "sip from :target",
+  "action": "if.action.drinking",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 320,
+  "pattern": "let go of :item",
+  "action": "if.action.dropping",
+  "priority": 100,
+  "litRequired": 3,
+  "litMax": 3,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 4
+ },
+ {
+  "index": 321,
+  "pattern": "open up :door",
+  "action": "if.action.opening",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "door"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 322,
+  "pattern": "power on :device",
+  "action": "if.action.switching_on",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 323,
+  "pattern": "power off :device",
+  "action": "if.action.switching_off",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "device"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 324,
+  "pattern": "save game",
+  "action": "if.action.saving",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 325,
+  "pattern": "load",
+  "action": "if.action.restoring",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 326,
+  "pattern": "load game",
+  "action": "if.action.restoring",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 327,
+  "pattern": "restore game",
+  "action": "if.action.restoring",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 328,
+  "pattern": "?",
+  "action": "if.action.help",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 329,
+  "pattern": "commands",
+  "action": "if.action.help",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 330,
+  "pattern": "points",
+  "action": "if.action.scoring",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 331,
+  "pattern": "touch :target",
+  "action": "if.action.touching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 332,
+  "pattern": "rub :target",
+  "action": "if.action.touching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 333,
+  "pattern": "feel :target",
+  "action": "if.action.touching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 334,
+  "pattern": "pat :target",
+  "action": "if.action.touching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 335,
+  "pattern": "stroke :target",
+  "action": "if.action.touching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 336,
+  "pattern": "poke :target",
+  "action": "if.action.touching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 337,
+  "pattern": "prod :target",
+  "action": "if.action.touching",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 338,
+  "pattern": "listen",
+  "action": "if.action.listening",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 339,
+  "pattern": "listen to :target",
+  "action": "if.action.listening",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 340,
+  "pattern": "smell",
+  "action": "if.action.smelling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 341,
+  "pattern": "sniff",
+  "action": "if.action.smelling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 342,
+  "pattern": "smell :target",
+  "action": "if.action.smelling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 343,
+  "pattern": "sniff :target",
+  "action": "if.action.smelling",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 344,
+  "pattern": "enter :portal",
+  "action": "if.action.entering",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "portal"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 345,
+  "pattern": "climb :target",
+  "action": "if.action.climbing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 346,
+  "pattern": "climb up :target",
+  "action": "if.action.climbing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 347,
+  "pattern": "climb down :target",
+  "action": "if.action.climbing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 348,
+  "pattern": "scale :target",
+  "action": "if.action.climbing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 349,
+  "pattern": "ascend :target",
+  "action": "if.action.climbing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 350,
+  "pattern": "descend :target",
+  "action": "if.action.climbing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 351,
+  "pattern": "exit",
+  "action": "if.action.exiting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 352,
+  "pattern": "board :vehicle",
+  "action": "if.action.entering",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "vehicle"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 353,
+  "pattern": "exit :container",
+  "action": "if.action.exiting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "container"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 354,
+  "pattern": "disembark",
+  "action": "if.action.exiting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 355,
+  "pattern": "disembark :vehicle",
+  "action": "if.action.exiting",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "vehicle"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 356,
+  "pattern": "again",
+  "action": "if.action.again",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 357,
+  "pattern": "hide behind :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "behind"
+  }
+ },
+ {
+  "index": 358,
+  "pattern": "duck behind :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "behind"
+  }
+ },
+ {
+  "index": 359,
+  "pattern": "crouch behind :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "behind"
+  }
+ },
+ {
+  "index": 360,
+  "pattern": "hide under :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "under"
+  }
+ },
+ {
+  "index": 361,
+  "pattern": "duck under :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "under"
+  }
+ },
+ {
+  "index": 362,
+  "pattern": "crouch under :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "under"
+  }
+ },
+ {
+  "index": 363,
+  "pattern": "hide on :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "on"
+  }
+ },
+ {
+  "index": 364,
+  "pattern": "hide in :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "inside"
+  }
+ },
+ {
+  "index": 365,
+  "pattern": "hide inside :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "inside"
+  }
+ },
+ {
+  "index": 366,
+  "pattern": "duck inside :target",
+  "action": "if.action.hiding",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3,
+  "defaultSemantics": {
+   "position": "inside"
+  }
+ },
+ {
+  "index": 367,
+  "pattern": "stand up",
+  "action": "if.action.revealing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 368,
+  "pattern": "come out",
+  "action": "if.action.revealing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 369,
+  "pattern": "reveal myself",
+  "action": "if.action.revealing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 370,
+  "pattern": "unhide",
+  "action": "if.action.revealing",
+  "priority": 100,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 371,
+  "pattern": "stop hiding",
+  "action": "if.action.revealing",
+  "priority": 100,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 372,
+  "pattern": "look [carefully] at :target",
+  "action": "if.action.examining",
+  "priority": 96,
+  "litRequired": 2,
+  "litMax": 3,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 373,
+  "pattern": "look at :target",
+  "action": "if.action.examining",
+  "priority": 95,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 374,
+  "pattern": "rummage in|through :target",
+  "action": "if.action.searching",
+  "priority": 95,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 375,
+  "pattern": "give :recipient :item",
+  "action": "if.action.giving",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 376,
+  "pattern": "show :recipient :item",
+  "action": "if.action.showing",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 2,
+  "slotNames": [
+   "recipient",
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 3
+ },
+ {
+  "index": 377,
+  "pattern": "throw :item",
+  "action": "if.action.throwing",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 378,
+  "pattern": "toss :item",
+  "action": "if.action.throwing",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 379,
+  "pattern": "hurl :item",
+  "action": "if.action.throwing",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "item"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 380,
+  "pattern": "turn :target",
+  "action": "if.action.turning",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 381,
+  "pattern": "rotate :target",
+  "action": "if.action.turning",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 382,
+  "pattern": "twist :target",
+  "action": "if.action.turning",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 1,
+  "slotNames": [
+   "target"
+  ],
+  "hasGreedy": false,
+  "minTokens": 2
+ },
+ {
+  "index": 383,
+  "pattern": "leave",
+  "action": "if.action.exiting",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 384,
+  "pattern": "alight",
+  "action": "if.action.exiting",
+  "priority": 95,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ },
+ {
+  "index": 385,
+  "pattern": "n",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 386,
+  "pattern": "s",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 387,
+  "pattern": "e",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 388,
+  "pattern": "w",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 389,
+  "pattern": "u",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 390,
+  "pattern": "d",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 391,
+  "pattern": "go n",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 392,
+  "pattern": "go s",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 393,
+  "pattern": "go e",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 394,
+  "pattern": "go w",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 395,
+  "pattern": "go u",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 396,
+  "pattern": "go d",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 397,
+  "pattern": "walk n",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 398,
+  "pattern": "walk s",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 399,
+  "pattern": "walk e",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 400,
+  "pattern": "walk w",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 401,
+  "pattern": "walk u",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 402,
+  "pattern": "walk d",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 403,
+  "pattern": "run n",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 404,
+  "pattern": "run s",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 405,
+  "pattern": "run e",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 406,
+  "pattern": "run w",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 407,
+  "pattern": "run u",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 408,
+  "pattern": "run d",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 409,
+  "pattern": "head n",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 410,
+  "pattern": "head s",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 411,
+  "pattern": "head e",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 412,
+  "pattern": "head w",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 413,
+  "pattern": "head u",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 414,
+  "pattern": "head d",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 415,
+  "pattern": "travel n",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "north"
+  }
+ },
+ {
+  "index": 416,
+  "pattern": "travel s",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "south"
+  }
+ },
+ {
+  "index": 417,
+  "pattern": "travel e",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "east"
+  }
+ },
+ {
+  "index": 418,
+  "pattern": "travel w",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "west"
+  }
+ },
+ {
+  "index": 419,
+  "pattern": "travel u",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "up"
+  }
+ },
+ {
+  "index": 420,
+  "pattern": "travel d",
+  "action": "if.action.going",
+  "priority": 90,
+  "litRequired": 2,
+  "litMax": 2,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 2,
+  "defaultSemantics": {
+   "direction": "down"
+  }
+ },
+ {
+  "index": 421,
+  "pattern": "g",
+  "action": "if.action.again",
+  "priority": 90,
+  "litRequired": 1,
+  "litMax": 1,
+  "slotCount": 0,
+  "slotNames": [],
+  "hasGreedy": false,
+  "minTokens": 1
+ }
+]

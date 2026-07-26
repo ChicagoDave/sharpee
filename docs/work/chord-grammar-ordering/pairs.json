@@ -1,0 +1,477 @@
+{
+ "AGREE": [
+  {
+   "confComparable": false,
+   "winner": "110/[lit=3] take :item from :container with|using :tool -> if.action.removing",
+   "loser": "105/[lit=2] take off :item -> if.action.taking_off"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=3] take :item from :container with|using :tool -> if.action.removing",
+   "loser": "105/[lit=2] take :item off -> if.action.taking_off"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=3] take :item from :container with|using :tool -> if.action.removing",
+   "loser": "100/[lit=1] take :item -> if.action.taking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=3] take :item from :container with|using :tool -> if.action.removing",
+   "loser": "100/[lit=2] take up :item -> if.action.taking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] remove :item from :container -> if.action.removing",
+   "loser": "100/[lit=1] remove :item -> if.action.taking_off"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] unlock :door with|using :key -> if.action.unlocking",
+   "loser": "100/[lit=1] unlock :target -> if.action.unlocking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] lock :target with|using :key -> if.action.locking",
+   "loser": "100/[lit=1] lock :target -> if.action.locking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] open :container with|using :tool -> if.action.opening",
+   "loser": "100/[lit=1] open :door -> if.action.opening"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] cut :object with|using :tool -> if.action.cutting",
+   "loser": "100/[lit=1] cut :target -> if.action.cutting"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] attack :target with|using :weapon -> if.action.attacking",
+   "loser": "100/[lit=1] attack :target -> if.action.attacking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] kill :target with|using :weapon -> if.action.attacking",
+   "loser": "100/[lit=1] kill :target -> if.action.attacking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] hit :target with|using :weapon -> if.action.attacking",
+   "loser": "100/[lit=1] hit :target -> if.action.attacking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] strike :target with|using :weapon -> if.action.attacking",
+   "loser": "100/[lit=1] strike :target -> if.action.attacking"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] dig :location with|using :tool -> if.action.digging",
+   "loser": "100/[lit=1] dig :target -> if.action.digging"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] take off :item -> if.action.taking_off",
+   "loser": "100/[lit=1] take :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] take :item off -> if.action.taking_off",
+   "loser": "100/[lit=1] take :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target north -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target n -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target south -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target s -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target east -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target e -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target west -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target w -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target northeast -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target ne -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target northwest -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target nw -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target southeast -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target se -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target southwest -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target sw -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target up -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target u -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target down -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target d -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target in -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target inside -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target out -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] move :target outside -> if.action.pushing",
+   "loser": "100/[lit=1] move :target -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "105/[lit=2] exit game -> if.action.quitting",
+   "loser": "100/[lit=1] exit :container -> if.action.exiting"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] get in :portal -> if.action.entering",
+   "loser": "100/[lit=1] get :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] get into :portal -> if.action.entering",
+   "loser": "100/[lit=1] get :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] climb in :portal -> if.action.entering",
+   "loser": "100/[lit=1] climb :target -> if.action.climbing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] climb into :portal -> if.action.entering",
+   "loser": "100/[lit=1] climb :target -> if.action.climbing"
+  },
+  {
+   "confComparable": false,
+   "winner": "105/[lit=2] get out -> if.action.exiting",
+   "loser": "100/[lit=1] get :item -> if.action.taking"
+  },
+  {
+   "confComparable": false,
+   "winner": "105/[lit=2] climb out -> if.action.exiting",
+   "loser": "100/[lit=1] climb :target -> if.action.climbing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] get on :vehicle -> if.action.entering",
+   "loser": "100/[lit=1] get :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=3] get out of :container -> if.action.exiting",
+   "loser": "100/[lit=1] get :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=3] climb out of :container -> if.action.exiting",
+   "loser": "100/[lit=1] climb :target -> if.action.climbing"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] get off :vehicle -> if.action.exiting",
+   "loser": "100/[lit=1] get :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "100/[lit=2] turn on :device -> if.action.switching_on",
+   "loser": "95/[lit=1] turn :target -> if.action.turning"
+  },
+  {
+   "confComparable": true,
+   "winner": "100/[lit=2] turn off :device -> if.action.switching_off",
+   "loser": "95/[lit=1] turn :target -> if.action.turning"
+  },
+  {
+   "confComparable": true,
+   "winner": "100/[lit=2] turn :device on -> if.action.switching_on",
+   "loser": "95/[lit=1] turn :target -> if.action.turning"
+  },
+  {
+   "confComparable": true,
+   "winner": "100/[lit=2] turn :device off -> if.action.switching_off",
+   "loser": "95/[lit=1] turn :target -> if.action.turning"
+  },
+  {
+   "confComparable": true,
+   "winner": "100/[lit=2] give :item to :recipient -> if.action.giving",
+   "loser": "95/[lit=1] give :recipient :item -> if.action.giving"
+  },
+  {
+   "confComparable": true,
+   "winner": "100/[lit=2] show :item to :recipient -> if.action.showing",
+   "loser": "95/[lit=1] show :recipient :item -> if.action.showing"
+  },
+  {
+   "confComparable": false,
+   "winner": "100/[lit=2] throw :item at :target -> if.action.throwing",
+   "loser": "95/[lit=1] throw :item -> if.action.throwing"
+  },
+  {
+   "confComparable": false,
+   "winner": "100/[lit=2] throw :item to :recipient -> if.action.throwing",
+   "loser": "95/[lit=1] throw :item -> if.action.throwing"
+  },
+  {
+   "confComparable": true,
+   "winner": "100/[lit=2] throw away :item -> if.action.dropping",
+   "loser": "95/[lit=1] throw :item -> if.action.throwing"
+  },
+  {
+   "confComparable": false,
+   "winner": "100/[lit=2] toss :item at :target -> if.action.throwing",
+   "loser": "95/[lit=1] toss :item -> if.action.throwing"
+  },
+  {
+   "confComparable": false,
+   "winner": "100/[lit=2] toss :item to :recipient -> if.action.throwing",
+   "loser": "95/[lit=1] toss :item -> if.action.throwing"
+  },
+  {
+   "confComparable": false,
+   "winner": "100/[lit=2] hurl :item at :target -> if.action.throwing",
+   "loser": "95/[lit=1] hurl :item -> if.action.throwing"
+  },
+  {
+   "confComparable": false,
+   "winner": "100/[lit=2] hurl :item to :recipient -> if.action.throwing",
+   "loser": "95/[lit=1] hurl :item -> if.action.throwing"
+  }
+ ],
+ "TIE": [
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] open :container with|using :tool -> if.action.opening",
+   "loser": "100/[lit=2] open up :door -> if.action.opening"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target north -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target n -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target south -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target s -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target east -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target e -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target west -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target w -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target northeast -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target ne -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target northwest -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target nw -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target southeast -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target se -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target southwest -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target sw -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target up -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target u -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target down -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target d -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target in -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target inside -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target out -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "110/[lit=2] move :item to :destination -> if.action.putting",
+   "loser": "105/[lit=2] move :target outside -> if.action.pushing"
+  },
+  {
+   "confComparable": false,
+   "winner": "105/[lit=2] put on :item -> if.action.wearing",
+   "loser": "100/[lit=2] put :item in|into|inside :container -> if.action.inserting"
+  },
+  {
+   "confComparable": false,
+   "winner": "105/[lit=2] put on :item -> if.action.wearing",
+   "loser": "100/[lit=2] put :item on|onto :supporter -> if.action.putting"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] take :item off -> if.action.taking_off",
+   "loser": "100/[lit=2] take up :item -> if.action.taking"
+  },
+  {
+   "confComparable": true,
+   "winner": "105/[lit=2] go out -> if.action.exiting",
+   "loser": "100/[lit=2] go out -> if.action.going"
+  }
+ ],
+ "REVERSE": []
+}
