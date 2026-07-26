@@ -55,6 +55,14 @@ Compiler bug fixes, IR-shape refactors, and platform releases do **not** bump it
 > this rule — and the owner ruled it ships as **Chord 1.1** regardless. That is a one-time override,
 > not an amendment: this rule is unchanged for every other case. See ADR-261 § Consequences.
 
+> **Recorded exception (2026-07-26, session 52a8f4 — consolidation).** The ADR-266 grammar-parity
+> program landed seven per-rule bumps in two days (interim 2.0.0–2.5.0 minors and the 3.0.0
+> `define verb` major). The owner ruled the language has not shipped publicly and these are **one**
+> author-visible revision: `CHORD_LANGUAGE_VERSION` is set to **2.0.0** — Chord 1.x pre-parity,
+> Chord 2.0.0 with the grammar surface complete. The per-landing history stays recorded in
+> `chord/src/version.ts`; ordinary D2 rules resume from 2.0.0. A one-time override, not an
+> amendment.
+
 ### D3 — "Breaking change" quantified: two independent axes; the loader gates only on the wire
 
 A "breaking change" in Chord is **two distinct events on independent axes**, and

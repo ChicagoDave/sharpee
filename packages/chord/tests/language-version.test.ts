@@ -19,12 +19,11 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 3.0.0 — ADR-270 D7: `define verb` removed (extend action subsumes it;
-  // parse.removed-define-verb fix-it) — a removed construct → major.
-  // (2.5.0 ADR-270 alteration blocks; 2.4.0 ADR-269 grammar file;
-  //  2.3.0 group 4 means/directions; 2.2.0 group 3 typed slots;
-  //  2.1.0 group 2; 2.0.0 D15 major.)
-  languageVersion: '3.0.0',
+  // 2.0.0 — owner consolidation ruling (2026-07-26, src/version.ts): the
+  // ADR-266 grammar-parity landings (interim 2.0.0–2.5.0 minors + the 3.0.0
+  // define-verb major) ship publicly as ONE major over Chord 1.x. The EBNF
+  // hash is unchanged — the grammar surface is exactly the consolidated one.
+  languageVersion: '2.0.0',
   ebnfSha256: '8ef9ae470e1ab133a0460927d1f29105efd961e5b138212926151dadf2b17a04',
 };
 

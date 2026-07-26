@@ -73,5 +73,18 @@
  * vocabulary that produced no grammar rule). Previously-valid syntax stops
  * parsing (`parse.removed-define-verb` fix-it) — a major bump by D2's
  * ordinary rule.
+ *
+ * **2.0.0 (owner consolidation ruling, 2026-07-26, session 52a8f4)** — a
+ * recorded override of the monotonic history above, the second after 1.1.0:
+ * the language has not shipped publicly, and the ADR-266 grammar-parity
+ * program's landings (the interim 2.0.0–2.5.0 minors and the 3.0.0
+ * define-verb major, all within two days) are ONE author-visible language
+ * revision, not seven. The public language version is therefore **2.0.0**:
+ * Chord 1.x is the pre-parity language, Chord 2.0.0 is the language with the
+ * grammar surface complete (slot spelling, alternation/optional/greedy,
+ * typed slots, means/directions, grammar files, alterations; `define verb`
+ * gone). The entries above stay as the true landing history; the numbers
+ * they carried were internal. Ordinary D2 rules resume from 2.0.0 —
+ * cross-noted at ADR-257 D2.
  */
-export const CHORD_LANGUAGE_VERSION = '3.0.0';
+export const CHORD_LANGUAGE_VERSION = '2.0.0';

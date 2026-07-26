@@ -108,8 +108,21 @@ Not yet committed.
   5; partials named explicitly in the test with default-load-tested-for-new-pages.
   Recorded in ADR-272 D6 addendum. Widening the bar to those pages = future ruling.
 
+## Post-commit: version bumps (after 4db20c31, David's instruction)
+
+- **Lockstep → 4.0.0**: `tsf version 4.0.0` (33 package.jsons; ext-hunger was a
+  3.6.1 straggler); `engine-version.ts` stamped 4.0.0.
+- **CHORD_LANGUAGE_VERSION 3.0.0 → 2.0.0** (owner consolidation ruling — David:
+  "should never have been 3.0; it was at 1.0.0 and now it should be 2.0.0"): the
+  ADR-266 program's seven interim bumps ship publicly as ONE major over Chord 1.x.
+  Recorded as ADR-257's second one-time exception (beside 1.1.0); version.ts keeps
+  the per-landing history; EBNF pin hash unchanged; ordinary D2 rules resume from
+  2.0.0. chord-grammar-changes.md consolidation row appended.
+- Fallout: chord pin test re-pinned; 4 IR snapshots re-recorded (languageVersion-only).
+  chord 615/615, story-loader 411/411.
+
 ## Next steps
 
-1. Commit (on go-ahead — not yet committed).
+1. Commit the version bumps (not yet committed).
 2. ADR-266 umbrella is fully landed (all six children) — candidate for a closing note
    on the umbrella's status line in a future pass.
