@@ -32,6 +32,14 @@ export interface StoryIR {
   languageVersion: string;
   meta: IRMeta;
   /**
+   * Present exactly when the source carried a `grammar` header (ADR-269 D8):
+   * the file is a grammar file — `define action` grammar surfaces only,
+   * analyzer-gated. Consumers (the standard-grammar build step) read this to
+   * switch on grammar-file handling (D10 id derivation); the story loader
+   * never sets or reads it. Additive and optional — absent on every story.
+   */
+  grammarFile?: { name: string };
+  /**
    * The story object's declared phases (ownership package D2) and its
    * owned `on every turn` clauses (ADR-236 D7, ratchet R4) — daemons with
    * NO presence gate; `it` is unbound (compile-gated), narration

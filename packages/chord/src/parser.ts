@@ -94,6 +94,7 @@ import {
   ImportDecl,
   StoryFile,
   StoryHeader,
+  GrammarHeader,
   TopicRow,
   RankDecl,
   HungerDecl,
@@ -127,7 +128,7 @@ const ORDINALS: Record<string, number> = {
 const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
-const TOP_KEYWORDS = new Set(['story', 'create', 'define', 'when', 'once', 'every', 'import', 'override']);
+const TOP_KEYWORDS = new Set(['story', 'grammar', 'create', 'define', 'when', 'once', 'every', 'import', 'override']);
 
 /**
  * Parse `.story` source into an AST.
@@ -241,6 +242,7 @@ class Parser {
 
   parseFile(): StoryFile {
     let header: StoryHeader | null = null;
+    let grammarHeader: GrammarHeader | null = null;
     const declarations: Declaration[] = [];
     const start = this.lines[0] ? lineSpan(this.lines[0]) : spanOf(1, 1);
 
@@ -268,11 +270,27 @@ class Parser {
       const word = firstWord(line);
       switch (word) {
         case 'story':
-          if (header) {
+          if (grammarHeader) {
+            this.diagnostics.error('parse.mixed-headers', 'A file carries either a `story` header or a `grammar` header, never both — this file is a grammar file (ADR-269).', lineSpan(line));
+            this.recoverToTopLevel(true);
+          } else if (header) {
             this.diagnostics.error('parse.duplicate-story-header', 'Duplicate story header — only one `story` line is allowed.', lineSpan(line));
             this.recoverToTopLevel(true);
           } else {
             header = this.parseStoryHeader();
+          }
+          break;
+        case 'grammar':
+          // ADR-269 D8: `grammar "<name>"` declares a grammar file — define
+          // action grammar surfaces only (analyzer-gated).
+          if (header) {
+            this.diagnostics.error('parse.mixed-headers', 'A file carries either a `story` header or a `grammar` header, never both — this file is a story.', lineSpan(line));
+            this.recoverToTopLevel(true);
+          } else if (grammarHeader) {
+            this.diagnostics.error('parse.duplicate-grammar-header', 'Duplicate grammar header — only one `grammar` line is allowed.', lineSpan(line));
+            this.recoverToTopLevel(true);
+          } else {
+            grammarHeader = this.parseGrammarHeader();
           }
           break;
         case 'create':
@@ -365,6 +383,7 @@ class Parser {
     return {
       kind: 'story-file',
       header,
+      grammarHeader,
       declarations,
       span: last ? mergeSpans(start, lineSpan(last)) : start,
     };
@@ -396,6 +415,33 @@ class Parser {
   }
 
   // ---------------------------------------------------------------- header
+
+  /**
+   * `grammar "<name>"` (ADR-269 D8). One line, no `by`, no indented body —
+   * a grammar file's content is its `define action` blocks, nothing else.
+   */
+  private parseGrammarHeader(): GrammarHeader {
+    const line = this.lines[this.pos++];
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('grammar');
+    const nameTok = c.peek();
+    let name = '';
+    if (nameTok && nameTok.kind === 'string') {
+      name = nameTok.text;
+      c.next();
+    } else {
+      this.diagnostics.error('parse.grammar-name', 'Expected a quoted grammar name after `grammar`.', c.restSpan());
+    }
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
+      this.diagnostics.error(
+        'parse.grammar-header-body',
+        'The `grammar` header takes no indented body — a grammar file carries only `define action` blocks.',
+        lineSpan(this.lines[this.pos]),
+      );
+      this.pos++;
+    }
+    return { kind: 'grammar-header', name, span: lineSpan(line) };
+  }
 
   private parseStoryHeader(): StoryHeader {
     const line = this.lines[this.pos++];

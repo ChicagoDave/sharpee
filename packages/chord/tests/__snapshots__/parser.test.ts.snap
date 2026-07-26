@@ -460,6 +460,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       },
     },
   ],
+  "grammarHeader": null,
   "header": {
     "author": "Sharpee Platform",
     "fields": {
@@ -1806,6 +1807,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       },
     },
   ],
+  "grammarHeader": null,
   "header": {
     "author": "Roger Firth (Sharpee implementation)",
     "fields": {

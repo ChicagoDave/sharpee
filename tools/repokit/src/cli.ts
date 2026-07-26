@@ -24,6 +24,7 @@ import { IntrospectCommand } from './commands/introspect';
 import { IfidCommand } from './commands/ifid';
 import { TestCommand } from './commands/test';
 import { PlayCommand } from './commands/play';
+import { GrammarCommand } from './commands/grammar';
 
 /**
  * Registered commands — each is its own class file (ADR-187 R1), ported from
@@ -36,6 +37,7 @@ const COMMANDS: Command[] = [
   new VerifyCommand(),
   new TestNpmCommand(),
   new CleanCommand(),
+  new GrammarCommand(),
   new TestCommand(),
   new PlayCommand(),
   new IntrospectCommand(),

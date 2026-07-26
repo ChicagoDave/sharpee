@@ -45,6 +45,7 @@ import { PartOfSpeech } from '@sharpee/world-model';
 import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine } from './english-grammar-engine.js';
 import { defineGrammar } from './grammar.js';
+import { definePlatformGrammar } from './platform-grammar.js';
 import { scope, GrammarBuilder } from '@sharpee/if-domain';
 import { parseDirection } from './direction-mappings.js';
 import { analyzeBestFailure } from './parse-failure.js';
@@ -140,10 +141,13 @@ export class EnglishParser implements Parser {
     this.language = language;
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
-    // Initialize grammar engine
+    // Initialize grammar engine. The standard grammar is generated from the
+    // Chord source (grammar/standard-en-us.story, ADR-269 D7); the ruled
+    // platform-side exception rules (`?`, `trace …`) register after it.
     this.grammarEngine = new EnglishGrammarEngine();
     const grammar = this.grammarEngine.createBuilder();
     defineGrammar(grammar);
+    definePlatformGrammar(grammar);
 
     // Initialize pronoun context (ADR-089)
     this.pronounContext = new PronounContextManager();

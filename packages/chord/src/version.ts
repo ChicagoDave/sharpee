@@ -57,5 +57,10 @@
  * block bound to the `direction` slot (alias × pattern expansion,
  * `direction: <canonical>` defaults, standalone bare forms) — additive
  * grammar, a minor bump.
+ *
+ * **2.4.0** adds the grammar file (ADR-269 D8): a `grammar "<name>"` top-level
+ * header declaring a file that carries `define action` grammar surfaces only —
+ * behavior lines and story declarations are analyzer errors; the two headers
+ * are mutually exclusive. Additive grammar, a minor bump.
  */
-export const CHORD_LANGUAGE_VERSION = '2.3.0';
+export const CHORD_LANGUAGE_VERSION = '2.4.0';

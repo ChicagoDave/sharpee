@@ -1,0 +1,3746 @@
+[
+ {
+  "ordinal": 0,
+  "pattern": "look",
+  "action": "if.action.looking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 1,
+  "pattern": "l",
+  "action": "if.action.looking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 2,
+  "pattern": "examine :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 3,
+  "pattern": "x :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 4,
+  "pattern": "inspect :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 5,
+  "pattern": "check :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 6,
+  "pattern": "view :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 7,
+  "pattern": "observe :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 8,
+  "pattern": "look at :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 9,
+  "pattern": "look [carefully] at :target",
+  "action": "if.action.examining",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 10,
+  "pattern": "look [around]",
+  "action": "if.action.looking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 11,
+  "pattern": "search [carefully]",
+  "action": "if.action.searching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 12,
+  "pattern": "search :target",
+  "action": "if.action.searching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 13,
+  "pattern": "look in|inside :target",
+  "action": "if.action.searching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 14,
+  "pattern": "look through :target",
+  "action": "if.action.searching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 15,
+  "pattern": "rummage in|through :target",
+  "action": "if.action.searching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 16,
+  "pattern": "take :item",
+  "action": "if.action.taking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 17,
+  "pattern": "get :item",
+  "action": "if.action.taking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 18,
+  "pattern": "grab :item",
+  "action": "if.action.taking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 19,
+  "pattern": "acquire :item",
+  "action": "if.action.taking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 20,
+  "pattern": "collect :item",
+  "action": "if.action.taking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 21,
+  "pattern": "pick up :item",
+  "action": "if.action.taking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 22,
+  "pattern": "drop :item",
+  "action": "if.action.dropping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 23,
+  "pattern": "discard :item",
+  "action": "if.action.dropping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 24,
+  "pattern": "release :item",
+  "action": "if.action.dropping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 25,
+  "pattern": "put down :item",
+  "action": "if.action.dropping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 26,
+  "pattern": "wear :item",
+  "action": "if.action.wearing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 27,
+  "pattern": "don :item",
+  "action": "if.action.wearing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 28,
+  "pattern": "equip :item",
+  "action": "if.action.wearing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 29,
+  "pattern": "put on :item",
+  "action": "if.action.wearing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 30,
+  "pattern": "remove :item",
+  "action": "if.action.taking_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 31,
+  "pattern": "doff :item",
+  "action": "if.action.taking_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 32,
+  "pattern": "unequip :item",
+  "action": "if.action.taking_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 33,
+  "pattern": "take off :item",
+  "action": "if.action.taking_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 34,
+  "pattern": "take :item off",
+  "action": "if.action.taking_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 35,
+  "pattern": "eat :item",
+  "action": "if.action.eating",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 36,
+  "pattern": "consume :item",
+  "action": "if.action.eating",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 37,
+  "pattern": "devour :item",
+  "action": "if.action.eating",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 38,
+  "pattern": "munch :item",
+  "action": "if.action.eating",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 39,
+  "pattern": "nibble :item",
+  "action": "if.action.eating",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 40,
+  "pattern": "drink :item",
+  "action": "if.action.drinking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 41,
+  "pattern": "sip :item",
+  "action": "if.action.drinking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 42,
+  "pattern": "quaff :item",
+  "action": "if.action.drinking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 43,
+  "pattern": "swallow :item",
+  "action": "if.action.drinking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 44,
+  "pattern": "imbibe :item",
+  "action": "if.action.drinking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 45,
+  "pattern": "put :item in|into|inside :container",
+  "action": "if.action.inserting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 46,
+  "pattern": "insert :item in|into :container",
+  "action": "if.action.inserting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 47,
+  "pattern": "put :item on|onto :supporter",
+  "action": "if.action.putting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 48,
+  "pattern": "hang :item on :hook",
+  "action": "if.action.putting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 49,
+  "pattern": "read :target",
+  "action": "if.action.reading",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 50,
+  "pattern": "peruse :target",
+  "action": "if.action.reading",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 51,
+  "pattern": "study :target",
+  "action": "if.action.reading",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 52,
+  "pattern": "inventory",
+  "action": "if.action.inventory",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 53,
+  "pattern": "inv",
+  "action": "if.action.inventory",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 54,
+  "pattern": "i",
+  "action": "if.action.inventory",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 55,
+  "pattern": "north",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 56,
+  "pattern": "n",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 57,
+  "pattern": "south",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 58,
+  "pattern": "s",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 59,
+  "pattern": "east",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 60,
+  "pattern": "e",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 61,
+  "pattern": "west",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 62,
+  "pattern": "w",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 63,
+  "pattern": "northeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 64,
+  "pattern": "ne",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 65,
+  "pattern": "northwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 66,
+  "pattern": "nw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 67,
+  "pattern": "southeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 68,
+  "pattern": "se",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 69,
+  "pattern": "southwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 70,
+  "pattern": "sw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 71,
+  "pattern": "up",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 72,
+  "pattern": "u",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 73,
+  "pattern": "down",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 74,
+  "pattern": "d",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 75,
+  "pattern": "in",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 76,
+  "pattern": "inside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 77,
+  "pattern": "out",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 78,
+  "pattern": "outside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 79,
+  "pattern": "open :door",
+  "action": "if.action.opening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 80,
+  "pattern": "close :door",
+  "action": "if.action.closing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 81,
+  "pattern": "turn on :device",
+  "action": "if.action.switching_on",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 82,
+  "pattern": "switch on :device",
+  "action": "if.action.switching_on",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 83,
+  "pattern": "flip on :device",
+  "action": "if.action.switching_on",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 84,
+  "pattern": "turn off :device",
+  "action": "if.action.switching_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 85,
+  "pattern": "switch off :device",
+  "action": "if.action.switching_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 86,
+  "pattern": "flip off :device",
+  "action": "if.action.switching_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 87,
+  "pattern": "turn :device on",
+  "action": "if.action.switching_on",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 88,
+  "pattern": "turn :device off",
+  "action": "if.action.switching_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 89,
+  "pattern": "push :target",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 90,
+  "pattern": "press :target",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 91,
+  "pattern": "shove :target",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 92,
+  "pattern": "move :target",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 93,
+  "pattern": "pull :target",
+  "action": "if.action.pulling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 94,
+  "pattern": "drag :target",
+  "action": "if.action.pulling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 95,
+  "pattern": "yank :target",
+  "action": "if.action.pulling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 96,
+  "pattern": "tug :target",
+  "action": "if.action.pulling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 97,
+  "pattern": "lower :target",
+  "action": "if.action.lowering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 98,
+  "pattern": "raise :target",
+  "action": "if.action.raising",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 99,
+  "pattern": "lift :target",
+  "action": "if.action.raising",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 100,
+  "pattern": "wait",
+  "action": "if.action.waiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 101,
+  "pattern": "z",
+  "action": "if.action.waiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 102,
+  "pattern": "save",
+  "action": "if.action.saving",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 103,
+  "pattern": "restore",
+  "action": "if.action.restoring",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 104,
+  "pattern": "restart",
+  "action": "if.action.restarting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 105,
+  "pattern": "sleep",
+  "action": "if.action.sleeping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 106,
+  "pattern": "nap",
+  "action": "if.action.sleeping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 107,
+  "pattern": "doze",
+  "action": "if.action.sleeping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 108,
+  "pattern": "rest",
+  "action": "if.action.sleeping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 109,
+  "pattern": "slumber",
+  "action": "if.action.sleeping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 110,
+  "pattern": "quit",
+  "action": "if.action.quitting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 111,
+  "pattern": "q",
+  "action": "if.action.quitting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 112,
+  "pattern": "undo",
+  "action": "if.action.undoing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 113,
+  "pattern": "score",
+  "action": "if.action.scoring",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 114,
+  "pattern": "version",
+  "action": "if.action.version",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 115,
+  "pattern": "help",
+  "action": "if.action.help",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 116,
+  "pattern": "about",
+  "action": "if.action.about",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 117,
+  "pattern": "info",
+  "action": "if.action.about",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 118,
+  "pattern": "credits",
+  "action": "if.action.about",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 119,
+  "pattern": "trace",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 120,
+  "pattern": "trace on",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 121,
+  "pattern": "trace off",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 122,
+  "pattern": "trace parser on",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 123,
+  "pattern": "trace parser off",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 124,
+  "pattern": "trace validation on",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 125,
+  "pattern": "trace validation off",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 126,
+  "pattern": "trace system on",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 127,
+  "pattern": "trace system off",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 128,
+  "pattern": "trace all on",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 129,
+  "pattern": "trace all off",
+  "action": "author.trace",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 130,
+  "pattern": "give :item to :recipient",
+  "action": "if.action.giving",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 131,
+  "pattern": "give :recipient :item",
+  "action": "if.action.giving",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 132,
+  "pattern": "offer :item to :recipient",
+  "action": "if.action.giving",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 133,
+  "pattern": "show :item to :recipient",
+  "action": "if.action.showing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 134,
+  "pattern": "show :recipient :item",
+  "action": "if.action.showing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 135,
+  "pattern": "throw :item at :target",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 136,
+  "pattern": "throw :item",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 137,
+  "pattern": "toss :item",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 138,
+  "pattern": "hurl :item",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 139,
+  "pattern": "throw :item to :recipient",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 140,
+  "pattern": "take :item from :container with|using :tool",
+  "action": "if.action.removing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "tool": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 141,
+  "pattern": "remove :item from :container",
+  "action": "if.action.removing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 142,
+  "pattern": "unlock :door with|using :key",
+  "action": "if.action.unlocking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "key": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 143,
+  "pattern": "lock :target",
+  "action": "if.action.locking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 144,
+  "pattern": "lock :target with|using :key",
+  "action": "if.action.locking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "key": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 145,
+  "pattern": "unlock :target",
+  "action": "if.action.unlocking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 146,
+  "pattern": "open :container with|using :tool",
+  "action": "if.action.opening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "tool": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 147,
+  "pattern": "cut :object with|using :tool",
+  "action": "if.action.cutting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "tool": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 148,
+  "pattern": "cut :target",
+  "action": "if.action.cutting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 149,
+  "pattern": "slice :target",
+  "action": "if.action.cutting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 150,
+  "pattern": "chop :target",
+  "action": "if.action.cutting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 151,
+  "pattern": "attack :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 152,
+  "pattern": "kill :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 153,
+  "pattern": "fight :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 154,
+  "pattern": "slay :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 155,
+  "pattern": "murder :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 156,
+  "pattern": "hit :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 157,
+  "pattern": "strike :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 158,
+  "pattern": "break :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 159,
+  "pattern": "smash :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 160,
+  "pattern": "destroy :target",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 161,
+  "pattern": "attack :target with|using :weapon",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "weapon": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 162,
+  "pattern": "kill :target with|using :weapon",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "weapon": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 163,
+  "pattern": "hit :target with|using :weapon",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "weapon": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 164,
+  "pattern": "strike :target with|using :weapon",
+  "action": "if.action.attacking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "weapon": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 165,
+  "pattern": "dig :location with|using :tool",
+  "action": "if.action.digging",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "tool": {
+    "type": "instrument"
+   }
+  }
+ },
+ {
+  "ordinal": 166,
+  "pattern": "dig :target",
+  "action": "if.action.digging",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 167,
+  "pattern": "tell :recipient about :topic",
+  "action": "if.action.telling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "topic": {
+    "type": "topic"
+   }
+  }
+ },
+ {
+  "ordinal": 168,
+  "pattern": "ask :recipient about :topic",
+  "action": "if.action.asking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "topic": {
+    "type": "topic"
+   }
+  }
+ },
+ {
+  "ordinal": 169,
+  "pattern": "question :recipient about :topic",
+  "action": "if.action.asking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "topic": {
+    "type": "topic"
+   }
+  }
+ },
+ {
+  "ordinal": 170,
+  "pattern": "inquire of :recipient about :topic",
+  "action": "if.action.asking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "topic": {
+    "type": "topic"
+   }
+  }
+ },
+ {
+  "ordinal": 171,
+  "pattern": "inform :recipient about :topic",
+  "action": "if.action.telling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {
+   "topic": {
+    "type": "topic"
+   }
+  }
+ },
+ {
+  "ordinal": 172,
+  "pattern": "talk to|with :target",
+  "action": "if.action.talking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 173,
+  "pattern": "speak to|with :target",
+  "action": "if.action.talking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 174,
+  "pattern": "chat with :target",
+  "action": "if.action.talking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 175,
+  "pattern": "converse with :target",
+  "action": "if.action.talking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 176,
+  "pattern": "go out",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 177,
+  "pattern": "move :item to :destination",
+  "action": "if.action.putting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 178,
+  "pattern": "go north",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 179,
+  "pattern": "go n",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 180,
+  "pattern": "go south",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 181,
+  "pattern": "go s",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 182,
+  "pattern": "go east",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 183,
+  "pattern": "go e",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 184,
+  "pattern": "go west",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 185,
+  "pattern": "go w",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 186,
+  "pattern": "go northeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 187,
+  "pattern": "go ne",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 188,
+  "pattern": "go northwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 189,
+  "pattern": "go nw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 190,
+  "pattern": "go southeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 191,
+  "pattern": "go se",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 192,
+  "pattern": "go southwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 193,
+  "pattern": "go sw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 194,
+  "pattern": "go up",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 195,
+  "pattern": "go u",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 196,
+  "pattern": "go down",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 197,
+  "pattern": "go d",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 198,
+  "pattern": "go in",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 199,
+  "pattern": "go inside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 200,
+  "pattern": "go out",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 201,
+  "pattern": "go outside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 202,
+  "pattern": "walk north",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 203,
+  "pattern": "walk n",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 204,
+  "pattern": "walk south",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 205,
+  "pattern": "walk s",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 206,
+  "pattern": "walk east",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 207,
+  "pattern": "walk e",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 208,
+  "pattern": "walk west",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 209,
+  "pattern": "walk w",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 210,
+  "pattern": "walk northeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 211,
+  "pattern": "walk ne",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 212,
+  "pattern": "walk northwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 213,
+  "pattern": "walk nw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 214,
+  "pattern": "walk southeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 215,
+  "pattern": "walk se",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 216,
+  "pattern": "walk southwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 217,
+  "pattern": "walk sw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 218,
+  "pattern": "walk up",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 219,
+  "pattern": "walk u",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 220,
+  "pattern": "walk down",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 221,
+  "pattern": "walk d",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 222,
+  "pattern": "walk in",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 223,
+  "pattern": "walk inside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 224,
+  "pattern": "walk out",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 225,
+  "pattern": "walk outside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 226,
+  "pattern": "run north",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 227,
+  "pattern": "run n",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 228,
+  "pattern": "run south",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 229,
+  "pattern": "run s",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 230,
+  "pattern": "run east",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 231,
+  "pattern": "run e",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 232,
+  "pattern": "run west",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 233,
+  "pattern": "run w",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 234,
+  "pattern": "run northeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 235,
+  "pattern": "run ne",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 236,
+  "pattern": "run northwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 237,
+  "pattern": "run nw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 238,
+  "pattern": "run southeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 239,
+  "pattern": "run se",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 240,
+  "pattern": "run southwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 241,
+  "pattern": "run sw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 242,
+  "pattern": "run up",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 243,
+  "pattern": "run u",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 244,
+  "pattern": "run down",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 245,
+  "pattern": "run d",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 246,
+  "pattern": "run in",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 247,
+  "pattern": "run inside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 248,
+  "pattern": "run out",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 249,
+  "pattern": "run outside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 250,
+  "pattern": "head north",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 251,
+  "pattern": "head n",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 252,
+  "pattern": "head south",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 253,
+  "pattern": "head s",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 254,
+  "pattern": "head east",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 255,
+  "pattern": "head e",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 256,
+  "pattern": "head west",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 257,
+  "pattern": "head w",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 258,
+  "pattern": "head northeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 259,
+  "pattern": "head ne",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 260,
+  "pattern": "head northwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 261,
+  "pattern": "head nw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 262,
+  "pattern": "head southeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 263,
+  "pattern": "head se",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 264,
+  "pattern": "head southwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 265,
+  "pattern": "head sw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 266,
+  "pattern": "head up",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 267,
+  "pattern": "head u",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 268,
+  "pattern": "head down",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 269,
+  "pattern": "head d",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 270,
+  "pattern": "head in",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 271,
+  "pattern": "head inside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 272,
+  "pattern": "head out",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 273,
+  "pattern": "head outside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 274,
+  "pattern": "travel north",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 275,
+  "pattern": "travel n",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "north"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 276,
+  "pattern": "travel south",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 277,
+  "pattern": "travel s",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "south"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 278,
+  "pattern": "travel east",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 279,
+  "pattern": "travel e",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "east"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 280,
+  "pattern": "travel west",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 281,
+  "pattern": "travel w",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "west"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 282,
+  "pattern": "travel northeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 283,
+  "pattern": "travel ne",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 284,
+  "pattern": "travel northwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 285,
+  "pattern": "travel nw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "northwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 286,
+  "pattern": "travel southeast",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 287,
+  "pattern": "travel se",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southeast"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 288,
+  "pattern": "travel southwest",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 289,
+  "pattern": "travel sw",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "southwest"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 290,
+  "pattern": "travel up",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 291,
+  "pattern": "travel u",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "up"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 292,
+  "pattern": "travel down",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 293,
+  "pattern": "travel d",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "down"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 294,
+  "pattern": "travel in",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 295,
+  "pattern": "travel inside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "in"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 296,
+  "pattern": "travel out",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 297,
+  "pattern": "travel outside",
+  "action": "if.action.going",
+  "tier": "standard",
+  "defaults": {
+   "direction": "out"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 298,
+  "pattern": "move :target north",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 299,
+  "pattern": "move :target n",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 300,
+  "pattern": "move :target south",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 301,
+  "pattern": "move :target s",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 302,
+  "pattern": "move :target east",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 303,
+  "pattern": "move :target e",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 304,
+  "pattern": "move :target west",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 305,
+  "pattern": "move :target w",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 306,
+  "pattern": "move :target northeast",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 307,
+  "pattern": "move :target ne",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 308,
+  "pattern": "move :target northwest",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 309,
+  "pattern": "move :target nw",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 310,
+  "pattern": "move :target southeast",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 311,
+  "pattern": "move :target se",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 312,
+  "pattern": "move :target southwest",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 313,
+  "pattern": "move :target sw",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 314,
+  "pattern": "move :target up",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 315,
+  "pattern": "move :target u",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 316,
+  "pattern": "move :target down",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 317,
+  "pattern": "move :target d",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 318,
+  "pattern": "move :target in",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 319,
+  "pattern": "move :target inside",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 320,
+  "pattern": "move :target out",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 321,
+  "pattern": "move :target outside",
+  "action": "if.action.pushing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 322,
+  "pattern": "hear",
+  "action": "if.action.listening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 323,
+  "pattern": "hear :target",
+  "action": "if.action.listening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 324,
+  "pattern": "take up :item",
+  "action": "if.action.taking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 325,
+  "pattern": "throw away :item",
+  "action": "if.action.dropping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 326,
+  "pattern": "place :item in|into|inside :container",
+  "action": "if.action.putting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 327,
+  "pattern": "place :item on|onto :supporter",
+  "action": "if.action.putting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 328,
+  "pattern": "unwrap :door",
+  "action": "if.action.opening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 329,
+  "pattern": "uncover :door",
+  "action": "if.action.opening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 330,
+  "pattern": "shut :door",
+  "action": "if.action.closing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 331,
+  "pattern": "cover :door",
+  "action": "if.action.closing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 332,
+  "pattern": "turn :target",
+  "action": "if.action.turning",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 333,
+  "pattern": "rotate :target",
+  "action": "if.action.turning",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 334,
+  "pattern": "twist :target",
+  "action": "if.action.turning",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 335,
+  "pattern": "secure :target",
+  "action": "if.action.locking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 336,
+  "pattern": "unsecure :target",
+  "action": "if.action.unlocking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 337,
+  "pattern": "activate :device",
+  "action": "if.action.switching_on",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 338,
+  "pattern": "start :device",
+  "action": "if.action.switching_on",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 339,
+  "pattern": "deactivate :device",
+  "action": "if.action.switching_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 340,
+  "pattern": "stop :device",
+  "action": "if.action.switching_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 341,
+  "pattern": "hand :item to :recipient",
+  "action": "if.action.giving",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 342,
+  "pattern": "hand :recipient :item",
+  "action": "if.action.giving",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 343,
+  "pattern": "display :item to :recipient",
+  "action": "if.action.showing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 344,
+  "pattern": "present :item to :recipient",
+  "action": "if.action.showing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 345,
+  "pattern": "toss :item at :target",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 346,
+  "pattern": "toss :item to :recipient",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 347,
+  "pattern": "hurl :item at :target",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 348,
+  "pattern": "hurl :item to :recipient",
+  "action": "if.action.throwing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 349,
+  "pattern": "munch on :item",
+  "action": "if.action.eating",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 350,
+  "pattern": "nibble on :item",
+  "action": "if.action.eating",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 351,
+  "pattern": "drink from :target",
+  "action": "if.action.drinking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 352,
+  "pattern": "sip from :target",
+  "action": "if.action.drinking",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 353,
+  "pattern": "let go of :item",
+  "action": "if.action.dropping",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 354,
+  "pattern": "open up :door",
+  "action": "if.action.opening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 355,
+  "pattern": "power on :device",
+  "action": "if.action.switching_on",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 356,
+  "pattern": "power off :device",
+  "action": "if.action.switching_off",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 357,
+  "pattern": "extract :item from :container",
+  "action": "if.action.removing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 358,
+  "pattern": "save game",
+  "action": "if.action.saving",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 359,
+  "pattern": "load",
+  "action": "if.action.restoring",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 360,
+  "pattern": "load game",
+  "action": "if.action.restoring",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 361,
+  "pattern": "restore game",
+  "action": "if.action.restoring",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 362,
+  "pattern": "exit game",
+  "action": "if.action.quitting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 363,
+  "pattern": "?",
+  "action": "if.action.help",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 364,
+  "pattern": "commands",
+  "action": "if.action.help",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 365,
+  "pattern": "points",
+  "action": "if.action.scoring",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 366,
+  "pattern": "touch :target",
+  "action": "if.action.touching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 367,
+  "pattern": "rub :target",
+  "action": "if.action.touching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 368,
+  "pattern": "feel :target",
+  "action": "if.action.touching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 369,
+  "pattern": "pat :target",
+  "action": "if.action.touching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 370,
+  "pattern": "stroke :target",
+  "action": "if.action.touching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 371,
+  "pattern": "poke :target",
+  "action": "if.action.touching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 372,
+  "pattern": "prod :target",
+  "action": "if.action.touching",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 373,
+  "pattern": "listen",
+  "action": "if.action.listening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 374,
+  "pattern": "listen to :target",
+  "action": "if.action.listening",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 375,
+  "pattern": "smell",
+  "action": "if.action.smelling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 376,
+  "pattern": "sniff",
+  "action": "if.action.smelling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 377,
+  "pattern": "smell :target",
+  "action": "if.action.smelling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 378,
+  "pattern": "sniff :target",
+  "action": "if.action.smelling",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 379,
+  "pattern": "enter :portal",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 380,
+  "pattern": "get in :portal",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 381,
+  "pattern": "get into :portal",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 382,
+  "pattern": "climb in :portal",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 383,
+  "pattern": "climb into :portal",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 384,
+  "pattern": "climb :target",
+  "action": "if.action.climbing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 385,
+  "pattern": "climb up :target",
+  "action": "if.action.climbing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 386,
+  "pattern": "climb down :target",
+  "action": "if.action.climbing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 387,
+  "pattern": "scale :target",
+  "action": "if.action.climbing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 388,
+  "pattern": "ascend :target",
+  "action": "if.action.climbing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 389,
+  "pattern": "descend :target",
+  "action": "if.action.climbing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 390,
+  "pattern": "go in :portal",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 391,
+  "pattern": "go into :portal",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 392,
+  "pattern": "exit",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 393,
+  "pattern": "get out",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 394,
+  "pattern": "leave",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 395,
+  "pattern": "climb out",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 396,
+  "pattern": "board :vehicle",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 397,
+  "pattern": "get on :vehicle",
+  "action": "if.action.entering",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 398,
+  "pattern": "exit :container",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 399,
+  "pattern": "get out of :container",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 400,
+  "pattern": "climb out of :container",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 401,
+  "pattern": "disembark",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 402,
+  "pattern": "disembark :vehicle",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 403,
+  "pattern": "get off :vehicle",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 404,
+  "pattern": "alight",
+  "action": "if.action.exiting",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 405,
+  "pattern": "again",
+  "action": "if.action.again",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 406,
+  "pattern": "g",
+  "action": "if.action.again",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 407,
+  "pattern": "hide behind :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "behind"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 408,
+  "pattern": "duck behind :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "behind"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 409,
+  "pattern": "crouch behind :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "behind"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 410,
+  "pattern": "hide under :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "under"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 411,
+  "pattern": "duck under :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "under"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 412,
+  "pattern": "crouch under :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "under"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 413,
+  "pattern": "hide on :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "on"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 414,
+  "pattern": "hide in :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "inside"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 415,
+  "pattern": "hide inside :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "inside"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 416,
+  "pattern": "duck inside :target",
+  "action": "if.action.hiding",
+  "tier": "standard",
+  "defaults": {
+   "position": "inside"
+  },
+  "slots": {}
+ },
+ {
+  "ordinal": 417,
+  "pattern": "stand up",
+  "action": "if.action.revealing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 418,
+  "pattern": "come out",
+  "action": "if.action.revealing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 419,
+  "pattern": "reveal myself",
+  "action": "if.action.revealing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 420,
+  "pattern": "unhide",
+  "action": "if.action.revealing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ },
+ {
+  "ordinal": 421,
+  "pattern": "stop hiding",
+  "action": "if.action.revealing",
+  "tier": "standard",
+  "defaults": null,
+  "slots": {}
+ }
+]

@@ -249,16 +249,6 @@ export class ChordStory implements Story {
     if (ir.format !== IR_FORMAT) {
       throw new LoadError(`Unsupported IR format \`${String(ir.format)}\` — this loader reads \`${IR_FORMAT}\`.`);
     }
-    // ADR-265 D2: a reference-only artifact is a generated Chord-form rendering
-    // of the standard library for reading — not a runnable story. Refuse it here,
-    // before any world is built, so it can never be mistaken for the library.
-    if (ir.meta.fields['reference-only'] === 'true') {
-      throw new LoadError(
-        'This is a reference-only Chord artifact (ADR-265) — a generated rendering of the standard ' +
-        'library for reading, NOT a runnable story. The real implementation is TypeScript in ' +
-        'packages/stdlib/. Remove the `reference-only: true` marker to load it as a story.',
-      );
-    }
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       title: ir.meta.title,

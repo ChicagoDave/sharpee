@@ -19,6 +19,7 @@ import {
   tsfBin,
 } from '../repo';
 import { runBundle } from './bundle';
+import { runGrammarStep } from './grammar';
 import { buildBrowserClient, chordStoryFile } from './browser';
 import { buildPlaygroundClient } from './playground';
 import { buildZifmiaServer } from './zifmia';
@@ -144,6 +145,10 @@ export function buildPlatform(root: string, opts: BuildOptions): void {
       if (dir === opts.skipTo) skipping = false;
       else continue;
     }
+    // ADR-269 D7: the standard grammar's registration module is generated from
+    // the Chord source before parser-en-us compiles (chord's dist is fresh —
+    // it builds 4th). Committed + freshness-gated in verify.
+    if (dir === 'parser-en-us') runGrammarStep(root, opts.quiet);
     run('pnpm', ['--filter', pkg, 'build']);
     // Invariant: assert the compile produced output (precludes the .tsbuildinfo silent no-op class).
     const distIndex = join(root, 'packages', dir, 'dist', 'index.js');
@@ -184,13 +189,6 @@ export function generateGenaiApi(root: string, opts: BuildOptions): void {
   });
 }
 
-/** Regenerate the ADR-265 stdlib-in-Chord reference from the built platform metadata. */
-export function generateStdlibChord(root: string, opts: BuildOptions): void {
-  execFileSync('node', ['scripts/generate-stdlib-chord.js'], {
-    cwd: root,
-    stdio: opts.quiet ? 'ignore' : 'inherit',
-  });
-}
 
 /** Build a story package (build.sh build_story + resolve_story_pkg). */
 export function buildStory(root: string, story: string, opts: BuildOptions): void {
@@ -234,7 +232,6 @@ export function runBuild(opts: BuildOptions = {}): void {
   log(`version: ${version}${effective.story ? ` · story: ${effective.story}` : ''}`);
   buildPlatform(root, effective);
   if (!effective.noGenai) generateGenaiApi(root, effective);
-  if (!effective.noGenai) generateStdlibChord(root, effective);
   // ADR-252: a Chord `.story` story has no workspace TS package to compile — it ships
   // its source and compiles at boot. buildStory (pnpm --filter) applies to TS stories only.
   const isChordStory = effective.story ? chordStoryFile(root, effective.story) !== null : false;

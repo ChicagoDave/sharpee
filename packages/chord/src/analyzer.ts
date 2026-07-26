@@ -471,6 +471,11 @@ class Analyzer {
   private partialCoverageWarned = new Set<string>();
 
   run(): StoryIR {
+    // ADR-269 D8: grammar-file mode — a `grammar` header confines the file
+    // to define-action grammar surfaces; behavior and story declarations
+    // are named errors, never silently ignored.
+    if (this.ast.grammarHeader) this.checkGrammarFileMode();
+
     this.collect();
 
     // ADR-215: validate `use` lines against the manifest registry — an
@@ -539,6 +544,10 @@ class Analyzer {
         author: this.ast.header?.author ?? '',
         fields: this.ast.header?.fields ?? {},
       },
+      // ADR-269 D8: mark grammar files so consumers (the standard-grammar
+      // build step) can switch on grammar-file handling; spread in only when
+      // present so a story's IR never carries the field.
+      ...(this.ast.grammarHeader ? { grammarFile: { name: this.ast.grammarHeader.name } } : {}),
       uses: [...this.usedExtensions],
       announceModes,
       story: {
@@ -1438,6 +1447,41 @@ class Analyzer {
   }
 
   // -------------------------------------------------------------- pass 1
+
+  /**
+   * ADR-269 D8/D4 gates: in a grammar file every declaration must be a
+   * `define action` carrying grammar surfaces only (patterns, scope
+   * constraints, greedy/typed-slot lines, `directions`, `means`). Anything
+   * that defines behavior — `must` requirements, refusal lines, `otherwise
+   * refuse`, scores, `phrases` blocks, body statements — and any other
+   * declaration kind is a compile error, one per offending category.
+   * (Imports are legal: the compile host splices them before analysis;
+   * an unresolved survivor already errors in collect().)
+   */
+  private checkGrammarFileMode(): void {
+    for (const decl of this.ast.declarations) {
+      if (decl.kind === 'define-action') {
+        const offend = (what: string, span: Span) =>
+          this.diagnostics.error(
+            'analysis.grammar-file-behavior',
+            `A grammar file carries grammar only — ${what} belongs to the action's implementation, not this file (ADR-269).`,
+            span,
+          );
+        if (decl.musts.length > 0) offend('a `must` requirement', decl.musts[0].span);
+        if (decl.refusals.length > 0) offend('a refusal line', decl.refusals[0].span);
+        if (decl.otherwise) offend('`otherwise refuse`', decl.otherwise.span);
+        if (decl.scores.length > 0) offend('a `score` line', decl.scores[0].span);
+        if (decl.phrases) offend('a `phrases` block', decl.phrases.span);
+        if (decl.body.length > 0) offend('a body statement', decl.body[0].span);
+      } else if (decl.kind !== 'import') {
+        this.diagnostics.error(
+          'analysis.grammar-file-declaration',
+          `\`${decl.kind}\` is not legal in a grammar file — a grammar file carries only \`define action\` grammar (ADR-269).`,
+          decl.span,
+        );
+      }
+    }
+  }
 
   private collect(): void {
     // Story header: declared phases + story-owned scores (ratchet D2/D12).

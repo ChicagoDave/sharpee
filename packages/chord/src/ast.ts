@@ -16,7 +16,25 @@ import type { Span } from './span.js';
 export interface StoryFile {
   kind: 'story-file';
   header: StoryHeader | null;
+  /**
+   * `grammar "<name>"` header (ADR-269 D8) — present exactly when the file is
+   * a grammar file. Mutually exclusive with `header` (parse-gated): a file
+   * carries a `story` header or a `grammar` header, never both.
+   */
+  grammarHeader: GrammarHeader | null;
   declarations: Declaration[];
+  span: Span;
+}
+
+/**
+ * `grammar "<name>"` — declares a grammar file (ADR-269 D8): a file carrying
+ * `define action` grammar surfaces only. The analyzer's grammar-file mode
+ * rejects behavior (bodies, refusals, phrases, scores) and story declarations.
+ */
+export interface GrammarHeader {
+  kind: 'grammar-header';
+  /** The quoted grammar name, e.g. `standard-en-us`. */
+  name: string;
   span: Span;
 }
 

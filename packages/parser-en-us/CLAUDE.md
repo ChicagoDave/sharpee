@@ -8,10 +8,26 @@
 
 | Package        | Owns                | Examples                                            |
 | -------------- | ------------------- | --------------------------------------------------- |
-| `parser-en-us` | Grammar patterns    | `grammar.ts`: verb patterns, slot constraints       |
+| `parser-en-us` | Grammar patterns    | `grammar/standard-en-us.story`: the standard grammar (Chord source) |
 | `lang-en-us`   | Messages, help text | `searching.ts`: error messages, action descriptions |
 
-- Add new command patterns to `src/grammar.ts`.
+## The Standard Grammar Is Chord (ADR-269)
+
+**`src/grammar.ts` is GENERATED — never edit it.** The standard grammar's
+editable source is `grammar/standard-en-us.story` (a Chord *grammar file*:
+`grammar "standard-en-us"` header, `define action` grammar surfaces only).
+
+- To change standard grammar: edit the `.story` file, run `./repokit grammar`,
+  and commit both files. `./repokit grammar --check` (run by `repokit verify`
+  and a repokit test) fails on drift between them.
+- `define action <name>` in the grammar file binds `if.action.<name>` — an
+  unknown name is a build error with a did-you-mean (D10).
+- **Definition order is semantic** (ADR-268): earlier definition wins remaining
+  ties. The `## ORDER IS LOAD-BEARING` comments mark the orderings that decide
+  real collisions — don't reorder blocks or lines casually.
+- The 12 platform-side exception rules (`?` → help, the `trace …` family →
+  `author.trace`) live in `src/platform-grammar.ts` (hand-maintained; ruled
+  exceptions — punctuation Chord can't lex, and author/debug tooling).
 - Patterns in `lang-en-us` action files are for documentation/help, not parsing.
 - Stories can extend grammar for story-specific commands via `extendParser()`.
 

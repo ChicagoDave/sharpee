@@ -10,6 +10,7 @@
 import { execFileSync } from 'node:child_process';
 import { findRepoRoot, tsfBin } from '../repo';
 import { Command } from './command';
+import { checkGrammarModule } from './grammar';
 
 export class VerifyCommand implements Command {
   readonly name = 'verify';
@@ -21,6 +22,16 @@ export class VerifyCommand implements Command {
     const tsf = tsfBin(root);
     const log = (m: string) => !quiet && console.log(m);
     const stdio = quiet ? 'ignore' : 'inherit';
+
+    // ADR-269 D7 freshness gate: a stale generated grammar module is a build
+    // error, never a silent divergence.
+    log('=== repokit verify: grammar --check ===');
+    if (!checkGrammarModule(root)) {
+      console.error(
+        'verify: parser-en-us/src/grammar.ts is STALE against grammar/standard-en-us.story — run `repokit grammar` and commit.',
+      );
+      return 1;
+    }
 
     log('=== repokit verify: tsf build --npm ===');
     execFileSync(tsf, ['build', '--npm'], { cwd: root, stdio });

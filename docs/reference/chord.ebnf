@@ -55,6 +55,27 @@ comment-run  = comment-line { comment-line } ; (* blank-delimited on both sides;
 (* ---- Top level --------------------------------------------------------- *)
 
 story-file   = [ comment-run ] [ story-header ] { declaration | comment-run } ;
+
+grammar-file   = [ comment-run ] grammar-header
+                 { define-action | "import" STRING NL | comment-run } ;
+                                                  (* ADR-269 D8: a grammar file carries
+                                                     define-action GRAMMAR surfaces only —
+                                                     behavior lines (must / refuse /
+                                                     otherwise / score / phrases / body)
+                                                     and every other declaration kind are
+                                                     analyzer errors
+                                                     (analysis.grammar-file-behavior /
+                                                     analysis.grammar-file-declaration).
+                                                     D10: `define action <name>` binds the
+                                                     platform action id derived from
+                                                     <name>, validated by the consuming
+                                                     build step — never minted as
+                                                     chord.action.*. The two headers are
+                                                     mutually exclusive
+                                                     (parse.mixed-headers). *)
+grammar-header = "grammar" STRING NL ;            (* no `by`, no indented body
+                                                     (parse.grammar-header-body) *)
+
 story-header = "story" STRING [ "by" STRING ] NL
                >>> { states-line | score-line | story-on-clause | use-line
                    | use-phrasebook-line

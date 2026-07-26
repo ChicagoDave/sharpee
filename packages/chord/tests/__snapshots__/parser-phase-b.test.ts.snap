@@ -1123,6 +1123,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       },
     },
   ],
+  "grammarHeader": null,
   "header": {
     "author": "Sharpee Platform",
     "fields": {
@@ -2808,6 +2809,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "wears": [],
     },
   ],
+  "grammarHeader": null,
   "header": {
     "author": "Sharpee Platform",
     "fields": {
@@ -4233,6 +4235,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       },
     },
   ],
+  "grammarHeader": null,
   "header": {
     "author": "Sharpee Platform",
     "fields": {
