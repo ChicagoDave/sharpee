@@ -121,8 +121,14 @@ Not yet committed.
 - Fallout: chord pin test re-pinned; 4 IR snapshots re-recorded (languageVersion-only).
   chord 615/615, story-loader 411/411.
 
+## Release (David, 2026-07-26)
+
+Version bumps committed/pushed as ecdfa038. David then built, **published Sharpee 4.0.0**,
+and deployed the updated website — the ADR-266 grammar-parity program is shipped
+end-to-end (language constructs, ordering, Chord source, alterations, docs) under
+Sharpee 4.0.0 · Chord 2.0.0 (public language version).
+
 ## Next steps
 
-1. Commit the version bumps (not yet committed).
-2. ADR-266 umbrella is fully landed (all six children) — candidate for a closing note
-   on the umbrella's status line in a future pass.
+1. ADR-266 umbrella is fully landed and shipped — candidate for a closing note on the
+   umbrella's status line in a future pass.
