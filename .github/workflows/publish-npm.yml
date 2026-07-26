@@ -28,9 +28,12 @@ jobs:
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
-      # setup-node ships npm 10.x with Node 22; trusted publishing needs >= 11.5.1
+      # setup-node ships npm 10.x with Node 22; trusted publishing needs >= 11.5.1.
+      # Pinned to 11 (not latest): npm 12 changed `pack --json` output from an
+      # array to an object keyed by package name, which tsf <= 1.0.2 cannot
+      # parse. Lift the pin once tsf handles both shapes.
       - name: Upgrade npm
-        run: npm install -g npm@latest
+        run: npm install -g npm@11
 
       - name: Verify npm version
         run: npm --version
