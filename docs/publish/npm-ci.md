@@ -373,7 +373,11 @@ In `sharpee_v2`:
       Expect this to fire the first time; the fix is to commit the stamp and re-run,
       not to delete the check.
 
-- [ ] **B2a.** Confirm `./repokit build` works from a clean CI checkout. It is
+- [x] **B2a.** *(Verified 2026-07-25/26: cold `./repokit build` is green in both
+      Build Platforms and the publish dry run, after adding a repokit-engine
+      bootstrap step — `pnpm --filter '@sharpee/repokit...' run build` — since
+      `./repokit` needs its own dist built first on a clean checkout.)*
+      Original item: Confirm `./repokit build` works from a clean CI checkout. It is
       normally run against a warm tree, and the cold-build ordering has bitten us
       before, so this needs one verification run before the first real publish. If
       it fails cold, fix the ordering rather than falling back to `turbo run build`.
@@ -445,7 +449,9 @@ discovery would try to publish it. Decide before the first real run — see §10
 - [x] **D1.** Bump one low-risk package locally (`@sharpee/ext-hunger` is a good
       candidate — small, few dependents) and commit the bump.
       *(Done 2026-07-25: ext-hunger 3.6.0 → 3.6.1, commit `e0ea9e7d`, pushed.)*
-- [ ] **D2.** Trigger the workflow with `dry_run: true`. Confirm it reaches the
+- [x] **D2.** *(Clean run 2026-07-26, after fixes: repokit engine bootstrap,
+      --no-genai for the stamping guard, tsf 1.0.2/1.0.3 validate + npm-12 pack
+      fixes, npm pinned to 11.)* Trigger the workflow with `dry_run: true`. Confirm it reaches the
       publish step and that tsf's `--changed` filter selects only that package.
 - [ ] **D3.** Trigger again with `dry_run: false`. Confirm:
       - No 5-minute link appears anywhere.
