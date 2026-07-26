@@ -32,7 +32,7 @@ import {
   SCOPE_REQUIREMENT_PREDICATES,
   StoryIR,
 } from '@sharpee/chord';
-import type { ScopeRequirementWord } from '@sharpee/chord';
+import type { IRPatternPart, ScopeRequirementWord } from '@sharpee/chord';
 import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SnippetEntry } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
@@ -1119,11 +1119,12 @@ export class ChordStory implements Story {
       // (or friendly-zoo's `pet`/`feed`) never parsed far enough to reach it.
       // Register each pattern's literal prefix as its own rule, below the
       // slotted forms so they win whenever a target is named.
+      const greedy = action.greedy ?? [];
       const bareForms = new Set<string>();
       for (const pattern of action.patterns) {
         if (pattern.cardinality) continue; // `→ each …` expansion is engine-owned (Phase C)
         const text = pattern.parts
-          .map((part) => (part.kind === 'slot' ? `:${part.word}` : part.word))
+          .map((part) => renderPatternPart(part, greedy))
           .join(' ');
         slotted.fullPattern(text);
 
@@ -1131,7 +1132,7 @@ export class ChordStory implements Story {
         if (slotIndex > 0) {
           const bare = pattern.parts
             .slice(0, slotIndex)
-            .map((part) => part.word)
+            .map((part) => renderPatternPart(part, greedy))
             .join(' ');
           if (bare) bareForms.add(bare);
         }
@@ -2302,12 +2303,28 @@ function applyScopePredicate(
 }
 
 /**
+ * One IR pattern element → its Sharpee pattern-string token (ADR-267):
+ * alternation → `a|b` (D8, one rule), optional → `[…]` (D9), a slot named
+ * by a greedy line → `:slot...` (D10, TEXT_GREEDY). Plain words and slots
+ * pass through as before — pre-267 patterns emit byte-identical strings.
+ */
+function renderPatternPart(part: IRPatternPart, greedy: readonly string[]): string {
+  const core =
+    part.kind === 'alt'
+      ? part.words.join('|')
+      : part.kind === 'slot'
+        ? `:${part.word}${greedy.includes(part.word) ? '...' : ''}`
+        : part.word;
+  return part.optional ? `[${core}]` : core;
+}
+
+/**
  * `define verb` → engine CustomVocabulary. Phase A supports the two-slot
  * prepositional shape (`put the something on the something`, ADR-267 D15
  * spelling) that maps onto an existing two-object action, matching the
  * hand-written Cloak's PUT_ON registration.
  */
-function toVocabularyVerb(verb: { verbs: string[]; pattern: Array<{ kind: string; word: string }> }): NonNullable<CustomVocabulary['verbs']>[number] {
+function toVocabularyVerb(verb: { verbs: string[]; pattern: IRPatternPart[] }): NonNullable<CustomVocabulary['verbs']>[number] {
   const words = verb.pattern.filter((p) => p.kind === 'word').map((p) => p.word);
   const slots = verb.pattern.filter((p) => p.kind === 'slot').length;
   const base = words[0];

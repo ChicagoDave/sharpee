@@ -370,7 +370,9 @@ define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
 phrase-entry     = phrase-key ":" NL prose-paragraph ;     (* prose block only *)
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
 pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line *)
-pattern-elem     = WORD | "the" WORD ;                     (* "the" WORD = slot (D15) *)
+pattern-elem     = plain-elem | "[" plain-elem "]" ;       (* [x] = optional (D9) *)
+plain-elem       = WORD { "or" WORD } | "the" WORD ;       (* or = alternation, ONE rule (D8);
+                                                              "the" WORD = slot (D15) *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; "br" reserved *)
 STRATEGY         = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;
                    (* Z5: mirrors the Choice selectors 1:1. `ordered`/`once`
@@ -399,6 +401,8 @@ trait-field    = field-words ":" [ "optional" ]
 define-action  = "define" "action" WORD NL action-line* ;  (* dedent-terminated *)
 action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
+               | "the" WORD "takes" "the" "rest" "of" "the" "line" NL
+                                                           (* greedy slot → :slot... (D10) *)
                | must-line                                 (* D6 requirement (has colon) *)
                | score-line
                | "refuse" "without" WORD ":" phrase-key NL

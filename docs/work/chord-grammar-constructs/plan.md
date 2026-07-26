@@ -168,8 +168,12 @@ planning convenience.
     alternation emits one rule (not N), optional marks the element optional, greedy produces a
     `TEXT_GREEDY`-consuming rule; a malformed form (e.g. a greedy line naming a slot absent from every
     pattern) produces the named diagnostic, never silence.
-- **Status note**: next up once its three rows are written (D8/D9/D10 rulings already made in the
-  ADR interview) and the user green-lights the phase.
+- **Status**: DONE (2026-07-25, session 2d5bc7, "Proceed"). Three rows written before
+  implementation; chord 569/569 (16 new pattern-construct tests; IR golden churn =
+  languageVersion only, AST goldens gain the additive `greedy: []` field), story-loader
+  389/389 (5 new emission-shape tests: one-rule alternation `look in|inside :target`,
+  `[carefully]`, `:message...`); ADR-257 minor bump 2.0.0 → 2.1.0 with ebnf pin; transcript
+  regression unchanged (friendly-zoo 76+56, fernhill 494+76, cloak 81).
 - **Exit state**: All three constructs landed whole (D3) with passing shape-asserting tests;
   `chord-grammar-changes.md` carries the three rows; ADR-257 bumped one **minor** for this landing
   group (additive constructs, D2). `pnpm --filter '@sharpee/chord' test` and the affected package

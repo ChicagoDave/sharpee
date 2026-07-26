@@ -40,6 +40,7 @@ import {
   MediaStmt,
   NameRef,
   OnClause,
+  PatternPart,
   StateName,
   Statement,
   StoryFile,
@@ -68,6 +69,7 @@ import {
   IRMachineDef,
   IRMachineTransition,
   IROnClause,
+  IRPatternPart,
   IRPhrase,
   IRRankDef,
   IRHungerDef,
@@ -82,6 +84,13 @@ import {
   StoryIR,
 } from './ir.js';
 import { Span } from './span.js';
+
+/** AST pattern part → IR: span dropped; `optional` present only when written `[…]` (ADR-267 D9). */
+function lowerPatternPart(part: PatternPart): IRPatternPart {
+  const base: IRPatternPart =
+    part.kind === 'alt' ? { kind: 'alt', words: part.words } : { kind: part.kind, word: part.word };
+  return part.optional ? { ...base, optional: true } : base;
+}
 
 /** Phase A stories register text in this locale (design.md §2.6). */
 const DEFAULT_LOCALE = 'en-US';
@@ -572,7 +581,7 @@ class Analyzer {
         case 'define-verb':
           ir.verbs.push({
             verbs: decl.verbs,
-            pattern: decl.pattern.map((p) => ({ kind: p.kind, word: p.word })),
+            pattern: decl.pattern.map(lowerPatternPart),
             span: decl.span,
           });
           break;
@@ -1240,6 +1249,18 @@ class Analyzer {
     const slots = this.actionSlots.get(decl.name) ?? new Set<string>();
     const scope: Scope = { owner: null, fields: null, slots, ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false };
 
+    // ADR-267 D10: a greedy line names a slot that must exist in at least
+    // one of the action's patterns — the constraint-line treatment.
+    for (const g of decl.greedy) {
+      if (!slots.has(g.slot)) {
+        this.diagnostics.error(
+          'analysis.unknown-slot',
+          `\`${g.slot}\` is not a grammar slot of \`${decl.name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(g.slot, [...slots])}.`,
+          g.span,
+        );
+      }
+    }
+
     for (const constraint of decl.constraints) {
       if (!slots.has(constraint.slot)) {
         this.diagnostics.error(
@@ -1296,9 +1317,10 @@ class Analyzer {
     return {
       name: decl.name,
       patterns: decl.patterns.map((p) => ({
-        parts: p.parts.map((part) => ({ kind: part.kind, word: part.word })),
+        parts: p.parts.map(lowerPatternPart),
         cardinality: p.cardinality,
       })),
+      ...(decl.greedy.length > 0 ? { greedy: decl.greedy.map((g) => g.slot) } : {}),
       // The cast is sound: the gate above errors on any word outside the
       // catalog set, and the IR is meaningful only when `ok` (atomic load).
       constraints: decl.constraints.map((sc) => ({ slot: sc.slot, requirement: sc.requirement as ScopeRequirementWord })),

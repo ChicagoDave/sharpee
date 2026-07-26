@@ -60,6 +60,7 @@ import {
   EachStmt,
   EmitStmt,
   ExitDecl,
+  GreedySlotDecl,
   MoveStmt,
   RemoveStmt,
   MustRequirement,
@@ -2027,33 +2028,14 @@ class Parser {
       this.diagnostics.error('parse.verb-means', 'Expected `means <pattern>` in the verb definition.', c.restSpan());
       return null;
     }
-    // ADR-267 D1 (D15): one slot spelling — `the <name>`. The paren form is
-    // removed, not deprecated (a parse error with a fix-it, never a legacy
-    // spelling); the same pattern-elem production serves `define action`.
+    // ADR-267 D1 (D15): one slot spelling — `the <name>` — through the same
+    // pattern-elem production `define action` uses (alternation and optional
+    // brackets included). Removed spellings are parse errors with fix-its.
     const pattern: PatternPart[] = [];
     while (!c.atEnd()) {
-      const t = c.next()!;
-      if (t.kind === 'word' && t.text === 'the') {
-        const slot = c.next();
-        if (!slot || slot.kind !== 'word') {
-          this.diagnostics.error('parse.verb-slot', 'Expected a slot name after `the` in the verb pattern.', t.span);
-          return null;
-        }
-        pattern.push({ kind: 'slot', word: slot.text, span: mergeSpans(t.span, slot.span) });
-      } else if (t.kind === 'lparen') {
-        const slot = c.peek();
-        const name = slot && slot.kind === 'word' ? slot.text : 'name';
-        this.diagnostics.error(
-          'parse.removed-slot-spelling',
-          `The \`(${name})\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
-          t.span,
-        );
-        return null;
-      } else if (t.kind === 'word') {
-        pattern.push({ kind: 'word', word: t.text, span: t.span });
-      } else {
-        this.diagnostics.error('parse.verb-pattern', `Unexpected \`${t.text}\` in the verb pattern.`, t.span);
-      }
+      const part = this.parsePatternElem(c, 'verb');
+      if (!part) return null;
+      pattern.push(part);
     }
     return { kind: 'define-verb', verbs, pattern, span: lineSpan(line) };
   }
@@ -2245,6 +2227,7 @@ class Parser {
 
     const patterns: ActionPattern[] = [];
     const constraints: ScopeConstraint[] = [];
+    const greedy: GreedySlotDecl[] = [];
     const musts: MustRequirement[] = [];
     const refusals: ActionRefusal[] = [];
     let otherwise: DefineAction['otherwise'] = null;
@@ -2275,6 +2258,12 @@ class Parser {
           const sc = this.parseScopeConstraint(line);
           if (sc) constraints.push(sc);
         }
+      } else if (word === 'the' && line.tokens.some((t) => t.kind === 'word' && t.text === 'takes')) {
+        // `the <slot> takes the rest of the line` — greedy slot (ADR-267
+        // D10), same declarative line family as the scope constraints.
+        this.pos++;
+        const g = this.parseGreedyLine(line);
+        if (g) greedy.push(g);
       } else if (word === 'score') {
         this.pos++;
         const s = this.parseScoreLine(line);
@@ -2304,7 +2293,7 @@ class Parser {
       span = mergeSpans(span, lineSpan(line));
     }
 
-    return { kind: 'define-action', name: nameTok.text, patterns, constraints, musts, refusals, otherwise, scores, phrases, body, span };
+    return { kind: 'define-action', name: nameTok.text, patterns, constraints, greedy, musts, refusals, otherwise, scores, phrases, body, span };
   }
 
   /**
@@ -2411,9 +2400,99 @@ class Parser {
     }
   }
 
-  /** grammar-block pattern lines: words + `the <slot>`s (ADR-267 D1/D15),
-   *  optional `→ each …` cardinality. The colon spelling is removed — a
-   *  parse error with a fix-it, never a legacy form. */
+  /**
+   * One pattern element (ADR-267): `the <slot>` (D15), a plain word, an
+   * `or`-alternation of words (D8), or any of these wrapped in `[ ]` (D9).
+   * Removed slot spellings (`(word)`, `:word`) and stray `or`/brackets are
+   * named parse errors. Returns null after reporting — always having
+   * consumed at least one token, so callers cannot loop in place.
+   */
+  private parsePatternElem(c: Cursor, context: 'verb' | 'grammar'): PatternPart | null {
+    const t = c.next()!;
+    if (t.kind === 'lbracket') {
+      if (c.atEnd() || c.peek()!.kind === 'rbracket') {
+        this.diagnostics.error('parse.pattern-bracket', 'Empty `[]` in the pattern — brackets wrap the optional element (`[carefully]`).', t.span);
+        if (!c.atEnd()) c.next();
+        return null;
+      }
+      if (c.peek()!.kind === 'lbracket') {
+        this.diagnostics.error('parse.pattern-bracket', 'Brackets do not nest in a pattern — one `[ ]` per optional element.', c.peek()!.span);
+        return null;
+      }
+      const inner = this.parsePatternElem(c, context);
+      if (!inner) return null;
+      const close = c.next();
+      if (!close || close.kind !== 'rbracket') {
+        this.diagnostics.error('parse.pattern-bracket', 'Missing `]` after the optional element.', inner.span);
+        return null;
+      }
+      return { ...inner, optional: true, span: mergeSpans(t.span, close.span) };
+    }
+    if (t.kind === 'word' && t.text === 'the') {
+      const slot = c.next();
+      if (!slot || slot.kind !== 'word') {
+        this.diagnostics.error(
+          context === 'verb' ? 'parse.verb-slot' : 'parse.action-slot',
+          `Expected a slot name after \`the\` in the ${context === 'verb' ? 'verb' : 'grammar'} pattern.`,
+          t.span,
+        );
+        return null;
+      }
+      return { kind: 'slot', word: slot.text, span: mergeSpans(t.span, slot.span) };
+    }
+    if (t.kind === 'word' && t.text === 'or') {
+      this.diagnostics.error('parse.pattern-or', '`or` joins two pattern words (`in or inside`) — it cannot start an element.', t.span);
+      return null;
+    }
+    if (t.kind === 'word') {
+      if (!c.isWord('or')) return { kind: 'word', word: t.text, span: t.span };
+      // D8: adjacent literals joined by `or` — one alternation element,
+      // emitted as ONE rule (never N split rules; rule identity, ADR-268).
+      const words = [t.text];
+      let end = t.span;
+      while (c.isWord('or')) {
+        const orTok = c.next()!;
+        const w = c.next();
+        if (!w || w.kind !== 'word' || w.text === 'the' || w.text === 'or') {
+          this.diagnostics.error('parse.pattern-or', '`or` joins single pattern words (`in or inside`) — it cannot join slots or bracketed elements.', orTok.span);
+          return null;
+        }
+        words.push(w.text);
+        end = w.span;
+      }
+      return { kind: 'alt', words, span: mergeSpans(t.span, end) };
+    }
+    if (t.kind === 'lparen') {
+      const slot = c.peek();
+      const name = slot && slot.kind === 'word' ? slot.text : 'name';
+      this.diagnostics.error(
+        'parse.removed-slot-spelling',
+        `The \`(${name})\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
+        t.span,
+      );
+      return null;
+    }
+    if (t.kind === 'colon') {
+      const slot = c.peek();
+      const name = slot && slot.kind === 'word' ? slot.text : 'name';
+      this.diagnostics.error(
+        'parse.removed-slot-spelling',
+        `The \`:${name}\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
+        t.span,
+      );
+      if (slot && slot.kind === 'word') c.next();
+      return null;
+    }
+    this.diagnostics.error(
+      context === 'verb' ? 'parse.verb-pattern' : 'parse.action-pattern',
+      `Unexpected \`${t.text}\` in ${context === 'verb' ? 'the verb' : 'a grammar'} pattern.`,
+      t.span,
+    );
+    return null;
+  }
+
+  /** grammar-block pattern lines: pattern elements (ADR-267 — `the <slot>`,
+   *  `or`-alternation, `[optional]`), optional `→ each …` cardinality. */
   private parseActionPatterns(grammarLine: Line): ActionPattern[] {
     const patterns: ActionPattern[] = [];
     while (this.pos < this.lines.length && this.lines[this.pos].indent > grammarLine.indent) {
@@ -2422,33 +2501,15 @@ class Parser {
       let cardinality: string[] | null = null;
       const c = new Cursor(line.tokens, line);
       while (!c.atEnd()) {
-        const t = c.next()!;
+        const t = c.peek()!;
         if (t.kind === 'punct' && t.text === '→') {
+          c.next();
           cardinality = [];
           while (!c.atEnd()) cardinality.push(c.next()!.text);
           break;
         }
-        if (t.kind === 'word' && t.text === 'the') {
-          const slot = c.next();
-          if (slot && slot.kind === 'word') {
-            parts.push({ kind: 'slot', word: slot.text, span: mergeSpans(t.span, slot.span) });
-          } else {
-            this.diagnostics.error('parse.action-slot', 'Expected a slot name after `the` in the grammar pattern.', t.span);
-          }
-        } else if (t.kind === 'colon') {
-          const slot = c.peek();
-          const name = slot && slot.kind === 'word' ? slot.text : 'name';
-          this.diagnostics.error(
-            'parse.removed-slot-spelling',
-            `The \`:${name}\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
-            t.span,
-          );
-          if (slot && slot.kind === 'word') c.next();
-        } else if (t.kind === 'word') {
-          parts.push({ kind: 'word', word: t.text, span: t.span });
-        } else {
-          this.diagnostics.error('parse.action-pattern', `Unexpected \`${t.text}\` in a grammar pattern.`, t.span);
-        }
+        const part = this.parsePatternElem(c, 'grammar');
+        if (part) parts.push(part);
       }
       if (parts.length === 0) {
         this.diagnostics.error('parse.action-pattern', 'Empty grammar pattern.', lineSpan(line));
@@ -2457,6 +2518,30 @@ class Parser {
       patterns.push({ parts, cardinality, span: lineSpan(line) });
     }
     return patterns;
+  }
+
+  /** `the <slot> takes the rest of the line` — greedy slot (ADR-267 D10):
+   *  greediness is a slot property (Sharpee `TEXT_GREEDY`), stated where
+   *  slot properties are stated, never in the pattern line. */
+  private parseGreedyLine(line: Line): GreedySlotDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.next(); // the
+    const slot = c.next();
+    if (!slot || slot.kind !== 'word') {
+      this.diagnostics.error('parse.action-greedy', 'Expected `the <slot> takes the rest of the line`.', c.restSpan());
+      return null;
+    }
+    for (const w of ['takes', 'the', 'rest', 'of', 'the', 'line']) {
+      if (!c.matchWord(w)) {
+        this.diagnostics.error('parse.action-greedy', 'Expected `the <slot> takes the rest of the line`.', c.restSpan());
+        return null;
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.action-greedy', 'Nothing may follow `takes the rest of the line`.', c.restSpan());
+      return null;
+    }
+    return { slot: slot.text, span: lineSpan(line) };
   }
 
   /** `the <slot> must be <requirement>` */

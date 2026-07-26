@@ -42,5 +42,10 @@
  * landing group 1): `define verb`'s `(something)` parens and `define action`'s
  * `:slot` colon are removed — previously-valid syntax stops parsing
  * (`parse.removed-slot-spelling`), a major bump by D2's ordinary rule.
+ *
+ * **2.1.0** adds landing group 2 (ADR-267 D8/D9/D10): `or`-alternation in
+ * patterns (one rule, never split), `[word]` optional elements, and the
+ * `the <slot> takes the rest of the line` greedy-slot declarative line —
+ * additive grammar, a minor bump.
  */
-export const CHORD_LANGUAGE_VERSION = '2.0.0';
+export const CHORD_LANGUAGE_VERSION = '2.1.0';

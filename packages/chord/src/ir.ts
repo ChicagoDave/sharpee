@@ -414,7 +414,16 @@ export interface IRVerbDef {
   span: Span;
 }
 
-export type IRPatternPart = { kind: 'word'; word: string } | { kind: 'slot'; word: string };
+/**
+ * One pattern element (ADR-267): a literal word, a `the <name>` slot (D15),
+ * or an `or`-alternation of words (D8). `optional` is present only when the
+ * element was written `[…]` (D9) — absent otherwise, keeping pre-267 IR
+ * byte-identical.
+ */
+export type IRPatternPart =
+  | { kind: 'word'; word: string; optional?: boolean }
+  | { kind: 'slot'; word: string; optional?: boolean }
+  | { kind: 'alt'; words: string[]; optional?: boolean };
 
 export interface IRHatch {
   name: string;
@@ -461,6 +470,12 @@ export interface IRActionDef {
   patterns: IRActionPattern[];
   /** Scope constraints (`the <slot> must be <requirement>`) — requirement words are catalog-validated (ADR-271 D1). */
   constraints: Array<{ slot: string; requirement: ScopeRequirementWord }>;
+  /**
+   * Greedy slots (`the <slot> takes the rest of the line`, ADR-267 D10) —
+   * each compiles to `:slot...` (TEXT_GREEDY) in the emitted pattern string.
+   * Present only when declared (absent keeps pre-267 IR byte-identical).
+   */
+  greedy?: string[];
   /** `must` requirement lines (ratchet D6) — checked before the body. */
   musts: IRMust[];
   refusals: IRActionRefusal[];

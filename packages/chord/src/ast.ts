@@ -663,9 +663,15 @@ export interface DefineVerb {
   span: Span;
 }
 
+/**
+ * One pattern element (ADR-267): a literal word, a `the <name>` slot (D15),
+ * or an `or`-joined alternation of words (D8) — any of them optionally
+ * bracket-wrapped (D9, `optional` present only when written `[…]`).
+ */
 export type PatternPart =
-  | { kind: 'word'; word: string; span: Span }
-  | { kind: 'slot'; word: string; span: Span };
+  | { kind: 'word'; word: string; optional?: boolean; span: Span }
+  | { kind: 'slot'; word: string; optional?: boolean; span: Span }
+  | { kind: 'alt'; words: string[]; optional?: boolean; span: Span };
 
 /**
  * `define sound|image|music <name> from "<file>"` (ADR-216) — a declared
@@ -786,6 +792,8 @@ export interface DefineAction {
   patterns: ActionPattern[];
   /** `the <slot> must be <requirement>` lines (scope kit, no phrase key). */
   constraints: ScopeConstraint[];
+  /** `the <slot> takes the rest of the line` lines (greedy slot, ADR-267 D10). */
+  greedy: GreedySlotDecl[];
   /** `<subject> must <predicate>: <key>` requirement lines (ratchet D6). */
   musts: MustRequirement[];
   /** `refuse without <slot>: <key>` / `refuse when <cond>: <key>` lines. */
@@ -821,6 +829,12 @@ export interface ActionPattern {
   parts: PatternPart[];
   /** Cardinality expansion words after `→` (`each reachable item not already held`). */
   cardinality: string[] | null;
+  span: Span;
+}
+
+/** `the <slot> takes the rest of the line` — greedy slot (ADR-267 D10). */
+export interface GreedySlotDecl {
+  slot: string;
   span: Span;
 }
 

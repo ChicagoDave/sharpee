@@ -787,6 +787,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
     {
       "body": [],
       "constraints": [],
+      "greedy": [],
       "kind": "define-action",
       "musts": [],
       "name": "snoozing",
@@ -1343,6 +1344,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "greedy": [],
       "kind": "define-action",
       "musts": [],
       "name": "petting",
@@ -1528,6 +1530,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "greedy": [],
       "kind": "define-action",
       "musts": [],
       "name": "feeding",

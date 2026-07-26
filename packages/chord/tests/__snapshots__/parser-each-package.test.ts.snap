@@ -574,6 +574,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         },
       ],
       "constraints": [],
+      "greedy": [],
       "kind": "define-action",
       "musts": [],
       "name": "tallying",
