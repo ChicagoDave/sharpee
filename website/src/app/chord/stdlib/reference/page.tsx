@@ -1,8 +1,9 @@
 import { DocPage } from "@/components/doc-page";
 import Content from "./content.mdx";
 
-// The Chord-form reference is GENERATED — its content.mdx comes from
-// scripts/generate-stdlib-chord.js (ADR-265). This wrapper is the stable route.
+// content.mdx is hand-maintained; each entry's grammar block renders via
+// <GrammarBlock> from grammar-blocks.ts, GENERATED from the shipped Chord
+// standard grammar by `repokit grammar` (ADR-272). This wrapper is the stable route.
 export default function Page() {
   return (
     <DocPage title="Chord reference">

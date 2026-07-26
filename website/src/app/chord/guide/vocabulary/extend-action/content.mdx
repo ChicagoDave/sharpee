@@ -1,0 +1,53 @@
+`extend action <name>` adds grammar to an action that already exists —
+one of the standard library's or one of your own. The new lines drive
+the action's real implementation: extend `taking` and your new phrasing
+takes things, updates the inventory, fires the same events.
+
+```chord
+extend action taking
+  grammar
+    snag the item
+```
+
+`snag the lamp` now works exactly as `take the lamp` does. Slot names
+refer to the slots the action already resolves — `taking` calls its
+object `the item`, so the extension does too (the standard names are
+listed on [define action](/chord/guide/vocabulary/define-action)).
+
+## Making a different action win
+
+Extensions also settle contests. A story's grammar always outranks the
+standard library's, so restating a pattern under a different action
+flips which one wins:
+
+```chord
+extend action examining
+  grammar
+    read the target
+```
+
+Out of the box `read the book` is reading; with this extension the
+restated line wins and `read the book` examines instead. No ordering
+syntax exists or is needed — write the line under the action you want,
+or [remove](/chord/guide/vocabulary/remove-from-action) the competitor.
+
+## Mistakes are loud
+
+An extension names an action that must exist. A misspelled name is a
+load error with a suggestion — never a silently minted new action:
+
+```text
+LoadError: `extend action tacking` — no story action or standard action
+has that name — did you mean `taking`?
+```
+
+Only grammar belongs in an extension block: refusals, scores, body
+statements, and phrases stay with the action that owns them, and the
+analyzer rejects them here by name.
+
+Extensions are story declarations — write them in the story file or in
+a spliced `.chord` fragment
+([multi-file stories](/chord/guide/project/multi-file-stories)), and
+pair them with
+[remove from action](/chord/guide/vocabulary/remove-from-action) when
+you also want standard phrasings gone.

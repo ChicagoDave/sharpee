@@ -9,6 +9,7 @@
  */
 
 import type { MDXComponents } from "mdx/types";
+import { GrammarBlock } from "@/components/grammar-block";
 import {
   Callout,
   CodeBlock,
@@ -28,6 +29,7 @@ const components: MDXComponents = {
   // Shared primitives, available in every .mdx without imports.
   Callout,
   CodeBlock,
+  GrammarBlock,
   h2: ProseH2,
   h3: ProseH3,
   a: ProseLink,

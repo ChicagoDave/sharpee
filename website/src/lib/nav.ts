@@ -101,6 +101,8 @@ export const NAV: NavSection[] = [
           { title: 'define action hatches', href: '/chord/guide/vocabulary/define-action-hatches' },
           { title: 'define trait', href: '/chord/guide/vocabulary/define-trait' },
           { title: 'define action', href: '/chord/guide/vocabulary/define-action' },
+          { title: 'extend action', href: '/chord/guide/vocabulary/extend-action' },
+          { title: 'remove from action', href: '/chord/guide/vocabulary/remove-from-action' },
           { title: 'define pronouns', href: '/chord/guide/vocabulary/define-pronouns' },
           { title: 'use', href: '/chord/guide/vocabulary/use' },
           { title: 'define phrasebook', href: '/chord/guide/vocabulary/define-phrasebook' },

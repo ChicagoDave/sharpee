@@ -1,0 +1,43 @@
+`remove from action <name>` deletes patterns from the standard
+library's grammar. Restate the lines you want gone — each line names one
+standard pattern by shape:
+
+```chord
+remove from action taking
+  get the item
+  take up the item
+```
+
+`take the lamp` still works; `get the lamp` now gets *"I don't
+understand."* The action itself is untouched — only the phrasings you
+listed stop reaching it.
+
+## Removals are exact, and loud
+
+A line must match a standard pattern's shape exactly, slot names
+included (`taking` calls its object `the item` — see the standard
+grammar on the [reference page](/chord/stdlib/reference)). A line that
+matches nothing is a load error that shows you what is actually there —
+never a silent no-op:
+
+```text
+LoadError: `remove from action taking` — no standard rule matches
+`grab the thing`. The action's standard patterns are: take the item,
+get the item, grab the item, …
+```
+
+A misspelled action name fails the same way, with a suggestion.
+
+## Removing to reorder
+
+When two patterns compete and the wrong one wins, you can remove the
+competitor — or leave it and restate the line you want under the other
+action, since a story's grammar always outranks the standard library's.
+Both idioms are shown on
+[extend action](/chord/guide/vocabulary/extend-action).
+
+Removals are story declarations — write them in the story file or in a
+spliced `.chord` fragment
+([multi-file stories](/chord/guide/project/multi-file-stories)). They
+are story-scoped: the standard grammar itself stays pristine, and other
+stories are unaffected.

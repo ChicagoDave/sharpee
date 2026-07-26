@@ -10,10 +10,14 @@
 import { describe, expect, it } from 'vitest';
 import { findRepoRoot } from '../repo';
 import {
+  checkDocsBlocksModule,
   checkGrammarModule,
   expandGrammarIr,
+  extractGrammarBlocks,
+  readReferenceEntryIds,
   readStdlibActionIds,
   validateActionNames,
+  validateDocsCoverage,
 } from './grammar';
 
 describe('D10 name validation (ADR-269 acceptance 9)', () => {
@@ -143,5 +147,63 @@ describe('IR expansion (loader-mirroring, standard-flavored)', () => {
 describe('freshness gate (ADR-269 D7)', () => {
   it('the committed generated module matches the Chord source', () => {
     expect(checkGrammarModule(findRepoRoot())).toBe(true);
+  });
+});
+
+describe('docs blocks derivation (ADR-272 D4/D5)', () => {
+  const FIXTURE = [
+    '## file header comment — never part of a block',
+    '',
+    'grammar "standard-en-us"',
+    '',
+    'define action looking',
+    '  grammar',
+    '    look',
+    '    l',
+    '',
+    '## ORDER IS LOAD-BEARING — top-level comment between blocks',
+    '',
+    'define action taking',
+    '  grammar',
+    '    take the item',
+    '    get the item',
+    '',
+  ].join('\n');
+
+  it('splits verbatim blocks by action id, excluding top-level comments and trailing blanks', () => {
+    const blocks = extractGrammarBlocks(FIXTURE);
+    expect([...blocks.keys()]).toEqual(['if.action.looking', 'if.action.taking']);
+    expect(blocks.get('if.action.looking')).toBe('define action looking\n  grammar\n    look\n    l');
+    expect(blocks.get('if.action.taking')).toBe('define action taking\n  grammar\n    take the item\n    get the item');
+  });
+
+  it('is loud in both directions, with the ruled grammarless exception allowed', () => {
+    const blockIds = ['if.action.looking', 'if.action.taking'];
+    const entryIds = ['if.action.looking', 'if.action.taking', 'if.action.deadly_room_death'];
+    expect(validateDocsCoverage(blockIds, entryIds)).toEqual([]);
+
+    const missingBlock = validateDocsCoverage(['if.action.looking'], entryIds);
+    expect(missingBlock).toHaveLength(1);
+    expect(missingBlock[0]).toContain('reference entry if.action.taking has no block');
+    expect(missingBlock[0]).toContain('ADR-272 D4');
+
+    const missingEntry = validateDocsCoverage(blockIds, ['if.action.looking']);
+    expect(missingEntry).toHaveLength(1);
+    expect(missingEntry[0]).toContain('source block if.action.taking has no entry');
+
+    const staleException = validateDocsCoverage([...blockIds, 'if.action.deadly_room_death'], entryIds);
+    expect(staleException).toHaveLength(1);
+    expect(staleException[0]).toContain('retire the exception');
+  });
+
+  it('reads the real reference page entry ids', () => {
+    const ids = readReferenceEntryIds(findRepoRoot());
+    expect(ids).toContain('if.action.taking');
+    expect(ids).toContain('if.action.deadly_room_death');
+    expect(ids.length).toBeGreaterThanOrEqual(40);
+  });
+
+  it('the committed docs data module matches the Chord source', () => {
+    expect(checkDocsBlocksModule(findRepoRoot())).toBe(true);
   });
 });

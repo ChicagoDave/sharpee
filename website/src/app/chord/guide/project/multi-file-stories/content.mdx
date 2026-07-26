@@ -47,8 +47,11 @@ one file.
 ## What a fragment may hold
 
 A `.chord` fragment holds **any complete declaration** the story does
-(rooms, people, sequences, `define phrasebook` blocks, `##` comments),
-with two exceptions:
+(rooms, people, sequences, `define phrasebook` blocks, `##` comments) —
+including grammar alterations, so a story can keep its
+[extend action](/chord/guide/vocabulary/extend-action) and
+[remove from action](/chord/guide/vocabulary/remove-from-action) blocks
+in a `grammar-tweaks.chord` of their own — with two exceptions:
 
 - **No `story` header.** The `story` block lives only in the main
   `.story` file.

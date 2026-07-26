@@ -10,7 +10,7 @@
 import { execFileSync } from 'node:child_process';
 import { findRepoRoot, tsfBin } from '../repo';
 import { Command } from './command';
-import { checkGrammarModule } from './grammar';
+import { checkDocsBlocksModule, checkGrammarModule } from './grammar';
 
 export class VerifyCommand implements Command {
   readonly name = 'verify';
@@ -29,6 +29,13 @@ export class VerifyCommand implements Command {
     if (!checkGrammarModule(root)) {
       console.error(
         'verify: parser-en-us/src/grammar.ts is STALE against grammar/standard-en-us.story — run `repokit grammar` and commit.',
+      );
+      return 1;
+    }
+    // ADR-272 D5: the docs data module rides the same gate.
+    if (!checkDocsBlocksModule(root)) {
+      console.error(
+        'verify: website grammar-blocks.ts is STALE against grammar/standard-en-us.story — run `repokit grammar` and commit.',
       );
       return 1;
     }

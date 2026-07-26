@@ -37,6 +37,11 @@ Reading it line by line:
   form as applying to each match rather than a single object.
 - **`the animal must be reachable`** is a scope constraint (no colon):
   a precondition on a slot the parser enforces during resolution.
+  Reachable means what it does in play: the animal is in the same place
+  or in an open container — a closed glass case blocks reach even though
+  you can see through it (that is why the example's refusal settles for
+  the glass), another creature's possessions are out of reach, and
+  reaching requires seeing, so darkness refuses too.
 - **`score`** attaches an action-owned score.
 - **`refuse without <slot>: <key>`** refuses when the slot was not
   filled at all (nothing to pet); **`refuse when <condition>: <key>`**
@@ -47,6 +52,124 @@ Reading it line by line:
   `phrase`) that run when the action
   proceeds.
 - **`phrases`** is the action's locale block.
+
+## Everything a pattern can say
+
+Pattern lines read exactly like the commands a player types. Beyond
+words and slots, three shapes cover the rest.
+
+**Alternation** — `or` between single words makes them alternates of one
+pattern; **optional words** go in square brackets:
+
+```chord
+define action peering
+  grammar
+    peer in or into the target
+    peer [closely] at the target
+```
+
+`peer in the box`, `peer into the box`, `peer at the box`, and
+`peer closely at the box` all match.
+
+**A slot that takes the rest of the line** — stated as a slot property,
+so the pattern still reads like the typed command:
+
+```chord
+define action inscribing
+  grammar
+    inscribe the message
+  the message takes the rest of the line
+```
+
+`inscribe meet me at the mill at dawn` puts the whole phrase in
+`the message`.
+
+## Slot properties
+
+Every statement about a slot is one idiom — a `the <slot> …` line under
+the grammar. You have seen `must be reachable`; slots can also require
+`must be visible` (seen but not necessarily touchable) or `must be held`
+(carried by the player):
+
+```chord
+define action flourishing
+  grammar
+    flourish the item
+  the item must be held
+```
+
+A slot can carry a type. `is an instrument` marks the tool something is
+done *with*; `is a topic` marks free text the player refers to rather
+than an object in the world:
+
+```chord
+define action prying
+  grammar
+    pry the target with the tool
+  the tool is an instrument
+  the target must be reachable
+```
+
+## Pattern meanings
+
+An indented `means <key> <value>` line under a pattern hands the action
+a fact about *which phrasing* the player chose:
+
+```chord
+define action lurking
+  grammar
+    lurk under the target
+      means position under
+    lurk behind the target
+      means position behind
+```
+
+Both patterns run the same action; `position` arrives as `under` or
+`behind` depending on the line that matched.
+
+## Direction words
+
+A `directions` block binds to the slot named `direction`, declares the
+word set with `or`-joined aliases, and expands every pattern using that
+slot — including the bare form, so the words work as commands on their
+own. It is vocabulary, not a compass: declare whatever directions your
+story's geometry needs.
+
+```chord
+define action sailing
+  grammar
+    sail the direction
+    the direction
+  directions
+    port or p
+    starboard or sb
+    fore
+    aft
+```
+
+`sail port`, `sail sb`, and a bare `starboard` all reach `sailing`, each
+carrying its canonical direction.
+
+## Which pattern wins
+
+When two patterns could match the same command, the more specific one —
+the one that spells out more of what was typed — wins. Between equally
+specific patterns, the one listed first wins, so the order of grammar
+lines (and of `define action` blocks) is meaningful. A story's grammar
+always outranks the standard library's, which is what makes
+[extend action](/chord/guide/vocabulary/extend-action) and
+[remove from action](/chord/guide/vocabulary/remove-from-action) work.
+
+## The standard slot names
+
+The standard library's grammar uses seventeen slot names, most-used
+first: `target`, `item`, `recipient`, `device`, `container`, `door`,
+`portal`, `topic`, `tool`, `weapon`, `vehicle`, `key`, `supporter`,
+`hook`, `object`, `location`, `destination`. Reuse them when you extend
+a standard action — an extension's lines refer to the same slots the
+action already resolves.
+
+## Actions and traits
 
 The relationship to traits: `define action` declares the verb, its
 grammar, and its default outcomes; a `define trait` with an `on <verb>`

@@ -118,8 +118,6 @@ resolve by name; `any` / `no` quantify over a named open condition.
 | `define phrase <key> … end phrase` | a text phrase, with `or` variants and a strategy (`randomly`, `cycling`, `stopping`, `sticky`, `first-time`) |
 | `define phrases <locale>` | a block of keyed phrases |
 | `define condition <name>: <condition>` | a named condition |
-| `extend action <name>` | grammar lines added to an existing (standard or story) action |
-| `remove from action <name>` | standard-grammar patterns removed from an action |
 | `define pronouns <name> … end pronouns` | a five-row pronoun set |
 | `define topics for <person> … end topics` | a conversation table |
 | `define trait <name> … end trait` | an authored trait: data fields, states, phrases, clauses |
@@ -127,6 +125,16 @@ resolve by name; `any` / `no` quantify over a named open condition.
 | `define sequence <name> … end sequence` | a timeline: `at turn N`, `N turns later`, `when <entity> becomes <state>` |
 | `define machine … end machine` | a state machine (`use state-machines`) |
 | `define sound/image/music <name> from "<file>"` | a media asset |
+
+## The alteration forms
+
+Top-level forms that change the standard library's grammar rather than
+declaring something new:
+
+| Form | Does |
+| ---- | ---- |
+| [`extend action <name>`](/chord/guide/vocabulary/extend-action) | grammar lines added to an existing (standard or story) action |
+| [`remove from action <name>`](/chord/guide/vocabulary/remove-from-action) | standard-grammar patterns removed from an action |
 
 ## The full grammar
 
