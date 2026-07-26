@@ -1,0 +1,39 @@
+title: Ship directions — nautical directions block (ADR-267 acceptance 8)
+story: nautical
+description: The owner condition on ADR-267 D12 — a directions block is
+  per-action vocabulary, never compass-hardcoded. `sail port` (expanded
+  slotted form), `sail sb` (alias), and bare `starboard` (standalone form)
+  all reach the sailing action's body with the RIGHT canonical direction
+  (word binding renders in the phrase, ADR-275 D2). `sail aft` proves word
+  equality in a refuse-when arm (ADR-275 D4); bare `sail` proves the
+  refuse-without arm over a semantic binding (ADR-275 D1).
+
+---
+
+# Expanded slotted form: the canonical word reaches the body
+> sail port
+[OK: contains "the sloop swings port"]
+
+# Alias form: the CANONICAL (starboard), not the alias (sb), is the binding
+> sail sb
+[OK: contains "the sloop swings starboard"]
+
+# Standalone bare-direction form from the bare `the direction` pattern
+> starboard
+[OK: contains "the sloop swings starboard"]
+
+# Standalone alias
+> p
+[OK: contains "the sloop swings port"]
+
+# Word equality in a refuse-when arm: aft is refused by name
+> sail aft
+[OK: contains "never aft"]
+
+# Bare verb: the refuse-without arm fires over the unbound semantic binding
+> sail
+[OK: contains "Sail which way?"]
+
+# Fore still sails (only aft is refused)
+> sail fore
+[OK: contains "the sloop swings fore"]

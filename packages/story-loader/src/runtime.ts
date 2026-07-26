@@ -1068,45 +1068,92 @@ export class ChordRuntime {
   private buildDispatchAction(def: IRActionDef) {
     const runtime = this;
     const actionId = `chord.action.${def.name}`;
-    const primarySlot = def.patterns.flatMap((p) => p.parts).find((part) => part.kind === 'slot')?.word;
+    // ADR-275: a directions-block action's `direction` slot is SEMANTIC —
+    // the primary (entity) slot skips it, and entity-less patterns are the
+    // ones carrying no entity slot at all.
+    const hasDirections = (def.directions ?? []).length > 0;
+    const isEntitySlot = (word: string) => !(hasDirections && word === 'direction');
+    const primarySlot = def.patterns
+      .flatMap((p) => p.parts)
+      .filter((part): part is { kind: 'slot'; word: string } => part.kind === 'slot')
+      .find((part) => isEntitySlot(part.word))?.word;
+    const hasEntityLessPattern = def.patterns.some(
+      (p) => !p.parts.some((part) => part.kind === 'slot' && isEntitySlot((part as { word: string }).word)),
+    );
+    // Semantic keys this action declares (ADR-275 D2): `direction` under a
+    // directions block, plus every `means` key. Only DECLARED keys bind —
+    // arbitrary parser extras never leak into body scope.
+    const semanticKeys = new Set<string>();
+    if (hasDirections) semanticKeys.add('direction');
+    for (const p of def.patterns) for (const m of p.means ?? []) semanticKeys.add(m.key);
 
     interface DispatchContext {
       world: WorldModel;
       player: IFEntity;
-      command: { directObject?: { entity?: IFEntity } };
+      // ADR-275 D2 (review fix): `parsed.extras` carries the matched rule's
+      // defaultSemantics (merged parser-side, ADR-148) — the access seam
+      // for semantic word bindings.
+      command: { directObject?: { entity?: IFEntity }; parsed?: { extras?: Record<string, unknown> } };
       sharedData: Record<string, unknown>;
       event(type: string, data: Record<string, unknown>): ISemanticEvent;
     }
+
+    /** Entity bindings + declared semantic WORDS (ADR-275 D2), one map. */
+    const bindings = (entity: IFEntity | undefined, context: DispatchContext): Record<string, string> => {
+      const slots: Record<string, string> = { actor: context.player.id };
+      if (entity && primarySlot) slots[primarySlot] = entity.id;
+      const extras = context.command.parsed?.extras ?? {};
+      for (const key of semanticKeys) {
+        const v = extras[key];
+        if (typeof v === 'string' && slots[key] === undefined) slots[key] = v;
+      }
+      return slots;
+    };
 
     return {
       id: actionId,
       group: 'interaction',
       validate(context: DispatchContext): { valid: boolean; error?: string } {
         const entity = context.command.directObject?.entity;
+        const slots = bindings(entity, context);
+        const evalCtx: ExecContext = { world: context.world, slots };
         for (const refusal of def.refusals) {
-          if (refusal.kind === 'without' && !entity) {
-            return { valid: false, error: refusal.phraseKey };
+          if (refusal.kind === 'without') {
+            // ADR-275 D1: the arm fires when the named binding is absent on
+            // THIS command — an entity slot needs the entity, a semantic
+            // key needs its word.
+            const bound = semanticKeys.has(refusal.slot ?? '') ? slots[refusal.slot!] !== undefined : !!entity;
+            if (!bound) return { valid: false, error: refusal.phraseKey };
           }
-          if (refusal.kind === 'when' && entity) {
-            const ctx: ExecContext = {
-              world: context.world,
-              slots: runtime.slotBindings(primarySlot, entity, context.player),
-            };
-            if (runtime.evaluator.evalCondition(refusal.condition, ctx)) {
+          if (refusal.kind === 'when') {
+            // ADR-275 D6: an arm whose condition references a binding
+            // absent on this command shape does NOT fire (prohibitions
+            // fail open where requirements fail closed) — the evaluator's
+            // unbound-read throw stays a loader bug, never author-reachable.
+            if (!runtime.conditionBindable(refusal.condition, slots)) continue;
+            if (runtime.evaluator.evalCondition(refusal.condition, evalCtx)) {
               return { valid: false, error: refusal.phraseKey };
             }
           }
         }
-        if (!entity) return { valid: false, error: def.otherwise ?? 'cant' };
-
-        const slots = runtime.slotBindings(primarySlot, entity, context.player);
+        // ADR-275 D1: entity-less dispatch exists only for actions that
+        // declare an entity-less shape AND carry a body (the body IS the
+        // semantics — no behavior host without an entity).
+        if (!entity && !(hasEntityLessPattern && def.body.length > 0)) {
+          return { valid: false, error: def.otherwise ?? 'cant' };
+        }
 
         // Action-level requirements (`<subject> must …: <key>`, D6) run
         // after the refusal ladder, before dispatch — the action's own
         // gate, evaluated in the slots context (wired with the each
-        // package's zoo-chain fixes, 2026-07-12).
+        // package's zoo-chain fixes, 2026-07-12). ADR-275 D6: a must whose
+        // subject cannot be bound on this command shape is UNMET — it
+        // refuses with its authored key, never silently evaporates.
         for (const must of def.musts) {
-          if (!runtime.evaluator.evalCondition(must.condition, { world: context.world, slots })) {
+          if (!runtime.conditionBindable(must.condition, slots)) {
+            return { valid: false, error: must.phraseKey };
+          }
+          if (!runtime.evaluator.evalCondition(must.condition, evalCtx)) {
             return { valid: false, error: must.phraseKey };
           }
         }
@@ -1126,16 +1173,18 @@ export class ChordRuntime {
         // claims immediately, exactly as before.
         let behavior: CapabilityBehavior | undefined;
         let capShared: CapabilitySharedData = { chordSlots: slots };
-        for (const trait of entity.traits.values()) {
-          const candidate = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
-          if (!candidate) continue;
-          const candidateShared: CapabilitySharedData = { chordSlots: slots };
-          const result = candidate.validate(entity, context.world, context.player.id, candidateShared);
-          if (!result.valid) return { valid: false, error: result.error };
-          if (candidateShared.chordSkip === true) continue; // gated out — not claiming
-          behavior = candidate;
-          capShared = candidateShared;
-          break;
+        if (entity) {
+          for (const trait of entity.traits.values()) {
+            const candidate = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
+            if (!candidate) continue;
+            const candidateShared: CapabilitySharedData = { chordSlots: slots };
+            const result = candidate.validate(entity, context.world, context.player.id, candidateShared);
+            if (!result.valid) return { valid: false, error: result.error };
+            if (candidateShared.chordSkip === true) continue; // gated out — not claiming
+            behavior = candidate;
+            capShared = candidateShared;
+            break;
+          }
         }
         // A behavior host is optional when the action carries its own body
         // (§5.4: the body IS the action's semantics — photographing has no
@@ -1153,6 +1202,9 @@ export class ChordRuntime {
         context.sharedData.capEntity = entity;
         context.sharedData.capBehavior = behavior;
         context.sharedData.capShared = capShared;
+        // ADR-275: one binding source — validate's map (entity ids +
+        // semantic words) carries to execute/report via sharedData.
+        context.sharedData.chordSlotMap = slots;
         return { valid: true };
       },
       execute(context: DispatchContext): void {
@@ -1161,23 +1213,24 @@ export class ChordRuntime {
         if (entity && behavior) {
           behavior.execute(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
         }
-        if (entity && def.body.length) {
-          runtime.execStatements(def.body, runtime.actionBodyCtx(primarySlot, entity, context), 'mutations');
+        if (def.body.length) {
+          runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context), 'mutations');
         }
       },
       report(context: DispatchContext): ISemanticEvent[] {
         const entity = context.sharedData.capEntity as IFEntity | undefined;
         const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
-        if (!entity) return [];
         const events: ISemanticEvent[] = [];
-        if (behavior) {
+        if (entity && behavior) {
           const effects = behavior.report(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
           events.push(...effects.map((e) => context.event(e.type, e.payload)));
         }
         if (def.body.length) {
-          events.push(...runtime.execStatements(def.body, runtime.actionBodyCtx(primarySlot, entity, context), 'reports'));
+          events.push(...runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context), 'reports'));
         }
-        events.push(...runtime.fireAfterClauses(def.name, entity, context.world));
+        // After-clauses bind to the target entity — an entity-less command
+        // has no owner to react (ADR-275 D1).
+        if (entity) events.push(...runtime.fireAfterClauses(def.name, entity, context.world));
         return events;
       },
       blocked(context: DispatchContext, result: { error?: string }): ISemanticEvent[] {
@@ -1203,20 +1256,39 @@ export class ChordRuntime {
   }
 
   /**
-   * Execution context for a `define action` body (§5.4): grammar slots
-   * bound, no `it` (action bodies have no owner), decision snapshot from
-   * validate carried through sharedData.
+   * Execution context for a `define action` body (§5.4): the binding map
+   * validate built (entity ids + ADR-275 semantic words), no `it` (action
+   * bodies have no owner), decision snapshot carried through sharedData.
    */
-  private actionBodyCtx(
-    primarySlot: string | undefined,
-    entity: IFEntity,
-    context: { world: WorldModel; player: IFEntity; sharedData: Record<string, unknown> },
-  ): ExecContext {
+  private actionBodyCtxFromSlots(context: {
+    world: WorldModel;
+    player: IFEntity;
+    sharedData: Record<string, unknown>;
+  }): ExecContext {
     return {
       world: context.world,
-      slots: this.slotBindings(primarySlot, entity, context.player),
+      slots: (context.sharedData.chordSlotMap as Record<string, string> | undefined) ?? { actor: context.player.id },
       decisions: context.sharedData.chordBodyDecisions as Map<IRStatement, string> | undefined,
     };
+  }
+
+  /**
+   * ADR-275 D6: true when every `{kind: 'slot'}` context read in the IR
+   * condition tree has a binding. Musts fail CLOSED on an unbindable
+   * subject (refuse with the authored key); `refuse when` arms fail OPEN
+   * (the arm gates a shape this command isn't). Keeps the evaluator's
+   * unbound-read throw a loader bug, never author-reachable.
+   */
+  private conditionBindable(node: unknown, slots: Record<string, string>): boolean {
+    if (Array.isArray(node)) return node.every((n) => this.conditionBindable(n, slots));
+    if (node && typeof node === 'object') {
+      const rec = node as Record<string, unknown>;
+      if (rec.kind === 'slot' && typeof rec.name === 'string') {
+        return rec.name === 'actor' || slots[rec.name] !== undefined;
+      }
+      return Object.values(rec).every((v) => this.conditionBindable(v, slots));
+    }
+    return true;
   }
 
   // -------------------------------------------- scheduler constructs (Phase B)
@@ -2019,11 +2091,16 @@ export class ChordRuntime {
     // clause body, zoo-chain fixes 2026-07-12): the slot entity's name
     // binds as the NounPhrase-default string — the template's own article
     // hint supplies `the`/`a`. Producers above win on a name collision.
+    // ADR-275 D2: a WORD binding (semantic value — `direction`, `means`
+    // keys) has no entity to resolve and renders VERBATIM — bound as a
+    // Literal atom, which the template binder passes through untouched
+    // (never an article-bearing NounPhrase: "swings port", not "swings
+    // the port").
     if (ctx.slots) {
       for (const [name, worldId] of Object.entries(ctx.slots)) {
         if (params[name] !== undefined) continue;
         const slotEntity = ctx.world.getEntity(worldId);
-        if (slotEntity) params[name] = slotEntity.name;
+        params[name] = slotEntity ? slotEntity.name : ({ kind: 'literal', text: worldId } satisfies Literal);
       }
     }
     if (phrase?.verbatim) {

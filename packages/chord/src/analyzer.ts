@@ -262,6 +262,13 @@ interface Scope {
    * unbound-referent gate this scope makes reachable.
    */
   storyOwned?: boolean;
+  /**
+   * ADR-275 D4: semantic keys in scope (directions `direction`, `means`
+   * keys) → the word set each can statically hold (directions canonicals /
+   * collected means values). `is <word>` against one validates against
+   * this set instead of the state/trait vocabulary.
+   */
+  semanticValues?: Map<string, string[]>;
 }
 
 const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null, inEach: false };
@@ -1247,7 +1254,48 @@ class Analyzer {
 
   private buildAction(decl: DefineAction): IRActionDef {
     const slots = this.actionSlots.get(decl.name) ?? new Set<string>();
-    const scope: Scope = { owner: null, fields: null, slots, ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false };
+
+    // ADR-275 D2/D5: semantic keys (`means` keys; `direction` under a
+    // directions block) join the BODY scope exactly like slots — one
+    // reference idiom. `slots` (pattern slots) stays the validation set
+    // for constraints/greedy/slotTypes below. A `means` key duplicating an
+    // ENTITY slot is refused — the word and the entity id would fight for
+    // one binding (D5; the directions block's own `direction` identity is
+    // exempt by construction).
+    const hasDirections = decl.directions.length > 0;
+    const entitySlots = new Set([...slots].filter((s) => !(hasDirections && s === 'direction')));
+    const scopeSlots = new Set(slots);
+    for (const p of decl.patterns) {
+      for (const m of p.means) {
+        if (entitySlots.has(m.key)) {
+          this.diagnostics.error(
+            'analysis.semantic-shadows-slot',
+            `\`${m.key}\` is a \`means\` key and also an entity slot of \`${decl.name}\` — the word and the entity would fight for one binding. Rename the key.`,
+            m.span,
+          );
+        } else if (hasDirections && m.key === 'direction') {
+          this.diagnostics.error(
+            'analysis.semantic-shadows-slot',
+            `\`direction\` is bound by the \`directions\` block — a \`means direction …\` line would fight it for the same binding. Remove the line, or rename the block's slot usage.`,
+            m.span,
+          );
+        }
+        scopeSlots.add(m.key);
+      }
+    }
+    // ADR-275 D4: the word set each semantic key can hold is statically
+    // knowable — directions canonicals; the union of a means key's values.
+    const semanticValues = new Map<string, string[]>();
+    if (hasDirections) semanticValues.set('direction', decl.directions.map((d) => d.canonical));
+    for (const p of decl.patterns) {
+      for (const m of p.means) {
+        if (entitySlots.has(m.key)) continue; // D5 error above; no value set
+        const list = semanticValues.get(m.key) ?? [];
+        if (!list.includes(m.value)) list.push(m.value);
+        semanticValues.set(m.key, list);
+      }
+    }
+    const scope: Scope = { owner: null, fields: null, slots: scopeSlots, ownStates: null, scoreOwner: `action.${decl.name}`, inEach: false, semanticValues };
 
     // ADR-267 D10: a greedy line names a slot that must exist in at least
     // one of the action's patterns — the constraint-line treatment.
@@ -3556,6 +3604,19 @@ class Analyzer {
       // (any world entity may match) — same stance as `change the match
       // to <state>`; the runtime resolves the word against the live match.
       if (subject.kind === 'match') return { kind: 'symbol', name: word };
+      // ADR-275 D4: a semantic-word subject (`the direction`, a `means`
+      // key) compares by word equality; its legal word set is the
+      // construct's own — validated here, never guessed.
+      if (subject.kind === 'slot' && scope.semanticValues?.has(subject.name)) {
+        const legal = scope.semanticValues.get(subject.name)!;
+        if (legal.includes(word)) return { kind: 'symbol', name: word };
+        this.diagnostics.error(
+          'analysis.unknown-value',
+          `\`${word}\` is not a value \`${subject.name}\` can hold${this.suggestText(word, legal)}.`,
+          span,
+        );
+        return { kind: 'symbol', name: word };
+      }
       const subjectEntity =
         subject.kind === 'entity' ? this.byId.get(subject.id) : subject.kind === 'it' ? scope.owner : null;
       // Trait scope: `it` validates against the trait's own declared states
