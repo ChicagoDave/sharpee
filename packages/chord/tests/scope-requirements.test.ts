@@ -12,7 +12,7 @@ const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
 
 /** A minimal story whose one action carries the given constraint line. */
 const storyWith = (constraintLine: string) =>
-  `${HEADER}define action petting\n  grammar\n    pet :animal\n  ${constraintLine}\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n`;
+  `${HEADER}define action petting\n  grammar\n    pet the animal\n  ${constraintLine}\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n`;
 
 function errorsOf(source: string) {
   return compile(source).diagnostics.filter((d) => d.severity === 'error');

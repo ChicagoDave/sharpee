@@ -37,5 +37,10 @@
  * **1.4.0** adds numeric counters (ADR-264): `define counter` / per-entity
  * `counter`, `raise`/`lower … by N`, and counter comparisons in conditions
  * (word `is at least`/… and symbolic `>=`/`<=`/`>`/`<`) — additive, a minor bump.
+ *
+ * **2.0.0** converges the slot spelling on `the <name>` (ADR-267 D1/D15,
+ * landing group 1): `define verb`'s `(something)` parens and `define action`'s
+ * `:slot` colon are removed — previously-valid syntax stops parsing
+ * (`parse.removed-slot-spelling`), a major bump by D2's ordinary rule.
  */
-export const CHORD_LANGUAGE_VERSION = '1.4.0';
+export const CHORD_LANGUAGE_VERSION = '2.0.0';

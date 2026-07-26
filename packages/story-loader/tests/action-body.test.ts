@@ -24,7 +24,7 @@ define condition yard-thing: it is in the Yard
 
 define action photographing
   grammar
-    photo :target
+    photo the target
   score snapshot worth 5
   the player must hold the camera: no-camera
   award snapshot
@@ -41,7 +41,7 @@ define action photographing
 
 define action sweeping
   grammar
-    sweep :target
+    sweep the target
   each yard-thing
     move the match to the Shed
     phrase swept-note when the match is in the Shed

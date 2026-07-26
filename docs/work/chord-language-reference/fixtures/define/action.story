@@ -5,9 +5,9 @@ story "Define Action" by "Sharpee Docs"
 
 define action petting
   grammar
-    pet :animal
-    pat :animal
-    stroke :animal → each nearby creature
+    pet the animal
+    pat the animal
+    stroke the animal → each nearby creature
   the animal must be reachable
   score gentle-hands worth 5
   refuse without animal: pet-what

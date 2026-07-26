@@ -542,7 +542,8 @@ define-pronouns  = "define" "pronouns" WORD NL             (* ADR-242 D7 (ratche
 PRONOUN-CASE     = "subject" | "object" | "possessive"
                  | "possessive-pronoun" | "reflexive" ;
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
-pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
+pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line *)
+pattern-elem     = WORD | "the" WORD ;                     (* "the" WORD = slot (D15) *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; name "br" reserved *)
 STRATEGY         = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;
                    (* Z5 (ADR-211 Decision 4): adverbs mirror the Choice

@@ -369,7 +369,8 @@ variant          = prose-paragraph ;
 define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
 phrase-entry     = phrase-key ":" NL prose-paragraph ;     (* prose block only *)
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
-pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
+pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line *)
+pattern-elem     = WORD | "the" WORD ;                     (* "the" WORD = slot (D15) *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; "br" reserved *)
 STRATEGY         = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;
                    (* Z5: mirrors the Choice selectors 1:1. `ordered`/`once`
@@ -405,7 +406,8 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "otherwise" "refuse" phrase-key NL        (* dispatch miss *)
                | "phrases" LOCALE NL >>> { phrase-entry }
                | statement ;
-pattern-line   = ( WORD | ":" WORD )+ [ "→" token { token } ] NL ; (* → = cardinality *)
+pattern-line   = pattern [ "→" token { token } ] NL ;      (* ADR-267 D1: one slot production
+                                                              (pattern-elem); → = cardinality *)
 
 define-hatch   = "define" "action" WORD "from" STRING NL   (* action hatch *)
                | "define" "chain" WORD "from" STRING NL ;  (* chain hatch — ADR-094; WORD is

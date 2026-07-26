@@ -2865,7 +2865,7 @@ class Analyzer {
         return this.resolveRefValue(expr.ref, scope);
       }
       case 'bare': {
-        const scoped = this.resolveScopedWords(expr.words, scope);
+        const scoped = this.resolveScopedWords(expr.words, scope, expr.span);
         return scoped ?? { kind: 'symbol', name: expr.words.join(' ') };
       }
       case 'match':
@@ -3160,14 +3160,29 @@ class Analyzer {
    * trait data fields read as `its <field>`; grammar slots and role words
    * are context values; declared flags are flag reads. Null = not scoped.
    */
-  private resolveScopedWords(rawWords: string[], scope: Scope): IRValue | null {
+  private resolveScopedWords(rawWords: string[], scope: Scope, span?: Span): IRValue | null {
     const joined = rawWords.join(' ').toLowerCase();
     if (scope.fields?.has(joined)) {
       return { kind: 'field', base: { kind: 'it' }, field: joined };
     }
     if (rawWords.length === 1) {
       const word = rawWords[0].toLowerCase();
-      if (scope.slots?.has(word)) return { kind: 'slot', name: word };
+      if (scope.slots?.has(word)) {
+        // ADR-267 D2: slot-first resolution is correct and does not change —
+        // the silence does. When the slot name also names an entity, the
+        // author may have meant the entity; warn, naming both.
+        if (span) {
+          const shadowed = this.findEntitySilent({ kind: 'name', article: null, words: [word], span });
+          if (shadowed) {
+            this.diagnostics.warning(
+              'analysis.slot-shadows-entity',
+              `\`${word}\` is a grammar slot here and also names the entity \`${shadowed.nameLower}\` — the slot wins. Rename the slot, or refer to the entity by its full name.`,
+              span,
+            );
+          }
+        }
+        return { kind: 'slot', name: word };
+      }
       // `the actor` — the acting entity, always bound inside trait/action
       // clauses (design.md §2.2 role vocabulary).
       if (word === 'actor' && (scope.fields !== null || scope.slots !== null)) {
@@ -3197,7 +3212,7 @@ class Analyzer {
       if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
       return { kind: 'field', base: { kind: 'it' }, field: words.slice(1).join(' ') };
     }
-    const scoped = this.resolveScopedWords(ref.words, scope);
+    const scoped = this.resolveScopedWords(ref.words, scope, ref.span);
     if (scoped) return scoped;
     const id = this.resolveEntityId(ref);
     if (id !== null) return id === 'player' ? { kind: 'player' } : { kind: 'entity', id };

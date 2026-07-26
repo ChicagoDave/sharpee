@@ -2,8 +2,8 @@ story "Define Verb" by "Sharpee Docs"
   id: chord-ref-def-verb
   version: 0.0.1
 
-define verb hang or hook means put (something) on (something)
-define verb sniff means smell (something)
+define verb hang or hook means put the something on the something
+define verb sniff means smell the something
 
 create the Mud Room
   a room

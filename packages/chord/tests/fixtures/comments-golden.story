@@ -87,7 +87,7 @@ create the message in the sawdust
     end select
   end on
 
-define verb hang or hook means put (something) on (something)
+define verb hang or hook means put the something on the something
 
 define phrases en-US
   cant-leave:

@@ -722,7 +722,7 @@ flavor on (`on touching it`) — listening plays the same role for sound
 
 ### 2.7 lowering and raising (per-entity verbs)
 
-`lower :target` and `raise`/`lift :target` parse out of the box, but these
+`lower <thing>` and `raise`/`lift <thing>` parse out of the box, but these
 verbs have **no standard behavior at all** — lowering the basket, the
 drawbridge, and your voice are three different mutations, so the platform
 refuses to invent one (ADR-090). Unhandled, the player sees the refusal
@@ -740,7 +740,7 @@ The author writes:
 ```story
 define action lowering
   grammar
-    lower :target
+    lower the target
   the target must be reachable
   refuse without target: lower-what
   otherwise refuse cant-lower

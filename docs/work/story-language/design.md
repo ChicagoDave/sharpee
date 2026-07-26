@@ -186,12 +186,12 @@ end trait
 ```
 define action taking
   grammar
-    take :item
-    get :item
-    pick up :item
-    grab :item
+    take the item
+    get the item
+    pick up the item
+    grab the item
     take all            → each reachable item not already held
-    take all but :exceptions
+    take all but the exceptions
   the item must be reachable
 
   refuse without item: no-target
@@ -426,7 +426,7 @@ create the message in the sawdust
     end select
   end on
 
-define verb hang or hook means put (something) on (something)
+define verb hang or hook means put the something on the something
 
 define phrases en-US
   cant-leave:
@@ -579,8 +579,8 @@ behavior + dispatch-lookup action + message maps + `fed-${id}` state keys).
 ```
 define action petting
   grammar
-    pet :animal
-    pat :animal
+    pet the animal
+    pat the animal
   the animal must be reachable
   refuse without animal: pet-what
   otherwise refuse cant-pet
@@ -593,7 +593,7 @@ define action petting
 
 define action feeding
   grammar
-    feed :animal
+    feed the animal
   the animal must be reachable
   refuse without animal: feed-what
   otherwise refuse not-hungry
@@ -673,7 +673,7 @@ create the rabbits
 
 Notes established by this example:
 
-- **Grammar slot names are the context values.** `feed :animal` is why conditions
+- **Grammar slot names are the context values.** `feed the animal` is why conditions
   and phrases reference `the animal` throughout the action and its traits.
 - **`otherwise refuse <phrase>`** is the canonical last-resort form: it compiles to
   the dispatch-miss case (no trait claimed the action on this target).

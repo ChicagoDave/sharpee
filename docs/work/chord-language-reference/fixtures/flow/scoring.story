@@ -49,7 +49,7 @@ create the moss rose
 
 define action composting
   grammar
-    compost :stuff
+    compost the stuff
   score turned-the-heap worth 10
   award turned-the-heap
   phrase composted

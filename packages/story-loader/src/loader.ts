@@ -2303,9 +2303,9 @@ function applyScopePredicate(
 
 /**
  * `define verb` → engine CustomVocabulary. Phase A supports the two-slot
- * prepositional shape (`put (something) on (something)`) that maps onto an
- * existing two-object action, matching the hand-written Cloak's PUT_ON
- * registration.
+ * prepositional shape (`put the something on the something`, ADR-267 D15
+ * spelling) that maps onto an existing two-object action, matching the
+ * hand-written Cloak's PUT_ON registration.
  */
 function toVocabularyVerb(verb: { verbs: string[]; pattern: Array<{ kind: string; word: string }> }): NonNullable<CustomVocabulary['verbs']>[number] {
   const words = verb.pattern.filter((p) => p.kind === 'word').map((p) => p.word);
@@ -2319,7 +2319,7 @@ function toVocabularyVerb(verb: { verbs: string[]; pattern: Array<{ kind: string
     // ADR-271 D4: the docs page and this error state the same limit in the
     // same words (acceptance 5).
     throw new LoadError(
-      `\`define verb ${verb.verbs.join(' or ')}\` maps to \`${words.join(' ')}\` — for now, \`put (something) on (something)\` is the only pattern \`define verb\` can map onto.`,
+      `\`define verb ${verb.verbs.join(' or ')}\` maps to \`${words.join(' ')}\` — for now, \`put the something on the something\` is the only pattern \`define verb\` can map onto.`,
     );
   }
   return {

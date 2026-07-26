@@ -110,7 +110,8 @@ define-phrases   = "define" "phrases" LOCALE NL >>> { phrase-entry } ;
 phrase-entry     = WORD ":" NL prose-block ;               (* prose block only — same-line
                                                               quoted/bare forms removed *)
 define-verb      = "define" "verb" WORD { "or" WORD } "means" pattern NL ;
-pattern          = { WORD | "(" WORD ")" } ;               (* (something) = slot *)
+pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared with pattern-line *)
+pattern-elem     = WORD | "the" WORD ;                     (* "the" WORD = slot (D15) *)
 define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; name "br" reserved *)
 define-flag      = "define" "flag" WORD "starts" token NL ;
 STRATEGY         = "randomly" | "cycling" | "ordered" | "once" ;

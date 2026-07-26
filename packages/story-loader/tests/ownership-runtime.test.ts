@@ -323,7 +323,7 @@ const MUSTS_STORY = `story "Musts" by "T"
 
 define action poking
   grammar
-    poke :thing
+    poke the thing
   refuse without thing: poke-what
   otherwise refuse cant-poke
 

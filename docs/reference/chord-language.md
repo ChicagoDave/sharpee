@@ -1211,7 +1211,7 @@ An action owns a score granted whenever the action succeeds:
 ```story
 define action composting
   grammar
-    compost :stuff
+    compost the stuff
   score turned-the-heap worth 10
   award turned-the-heap
   phrase composted
@@ -1661,13 +1661,13 @@ live in exactly this kind of block at the foot of each fixture.
 
 `define verb <word> {or <word>} means <pattern>` teaches the parser a
 new surface verb by mapping it onto an existing action's pattern. A
-`(something)` in the pattern is a slot the parser fills from the
+`the <name>` in the pattern is a slot the parser fills from the
 player's input:
 
 <!-- fixture: define/verb.story -->
 ```story
-define verb hang or hook means put (something) on (something)
-define verb sniff means smell (something)
+define verb hang or hook means put the something on the something
+define verb sniff means smell the something
 ```
 
 `hang the jacket on the hook` and `hook the jacket on the hook` now both
@@ -1829,9 +1829,9 @@ one action shows the whole surface:
 ```story
 define action petting
   grammar
-    pet :animal
-    pat :animal
-    stroke :animal → each nearby creature
+    pet the animal
+    pat the animal
+    stroke the animal → each nearby creature
   the animal must be reachable
   score gentle-hands worth 5
   refuse without animal: pet-what
@@ -1853,12 +1853,12 @@ define action petting
 
 Reading it line by line:
 
-- **`grammar`** lists the surface patterns. A `:word` is a slot, and the
-  slot name *is* the value name used everywhere else in the action —
-  because the pattern says `:animal`, the requirements and phrases all
-  refer to `the animal`. The `→` gives a pattern's cardinality: `stroke
-  :animal → each nearby creature` marks that form as applying to each
-  match rather than a single object.
+- **`grammar`** lists the surface patterns. `the <word>` marks a slot,
+  and the slot name *is* the value name used everywhere else in the
+  action — because the pattern says `the animal`, the requirements and
+  phrases all refer to `the animal`. The `→` gives a pattern's
+  cardinality: `stroke the animal → each nearby creature` marks that
+  form as applying to each match rather than a single object.
 - **`the animal must be reachable`** is a scope constraint (no colon):
   a precondition on a slot the parser enforces during resolution.
 - **`score`** attaches an action-owned score (§4.5).

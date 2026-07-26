@@ -80,7 +80,7 @@ create the player
 
 define action waving
   grammar
-    wave :thing
+    wave the thing
   phrase waved
 
 define phrase waved

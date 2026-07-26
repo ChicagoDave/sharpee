@@ -11,7 +11,7 @@ define condition keeper-present: it is a person
 
 define action tidying
   grammar
-    tidy :target
+    tidy the target
   refuse when no stray-crate: already-tidy
 
   phrases en-US
@@ -20,7 +20,7 @@ define action tidying
 
 define action polishing
   grammar
-    polish :target
+    polish the target
 
 define trait tidyable
   score tidied worth 3

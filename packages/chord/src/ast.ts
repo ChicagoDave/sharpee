@@ -655,7 +655,7 @@ export interface PhraseEntry {
   span: Span;
 }
 
-/** `define verb hang or hook means put (something) on (something)` */
+/** `define verb hang or hook means put the something on the something` (ADR-267 D15 slot spelling) */
 export interface DefineVerb {
   kind: 'define-verb';
   verbs: string[];
@@ -816,7 +816,7 @@ export interface MustRequirement {
   span: Span;
 }
 
-/** One grammar-block pattern: words + `:slot`s, optional `→ each …` cardinality. */
+/** One grammar-block pattern: words + `the <slot>`s (ADR-267 D15), optional `→ each …` cardinality. */
 export interface ActionPattern {
   parts: PatternPart[];
   /** Cardinality expansion words after `→` (`each reachable item not already held`). */

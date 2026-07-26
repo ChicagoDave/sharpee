@@ -1373,7 +1373,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
               "kind": "slot",
               "span": {
                 "column": 9,
-                "endColumn": 16,
+                "endColumn": 19,
                 "endLine": 19,
                 "line": 19,
               },
@@ -1382,7 +1382,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
           "span": {
             "column": 5,
-            "endColumn": 16,
+            "endColumn": 19,
             "endLine": 19,
             "line": 19,
           },
@@ -1404,7 +1404,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
               "kind": "slot",
               "span": {
                 "column": 9,
-                "endColumn": 16,
+                "endColumn": 19,
                 "endLine": 20,
                 "line": 20,
               },
@@ -1413,7 +1413,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
           "span": {
             "column": 5,
-            "endColumn": 16,
+            "endColumn": 19,
             "endLine": 20,
             "line": 20,
           },
@@ -1558,7 +1558,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
               "kind": "slot",
               "span": {
                 "column": 10,
-                "endColumn": 17,
+                "endColumn": 20,
                 "endLine": 33,
                 "line": 33,
               },
@@ -1567,7 +1567,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
           "span": {
             "column": 5,
-            "endColumn": 17,
+            "endColumn": 20,
             "endLine": 33,
             "line": 33,
           },

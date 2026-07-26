@@ -79,7 +79,7 @@ create the message in the sawdust
     end select
   end on
 
-define verb hang or hook means put (something) on (something)
+define verb hang or hook means put the something on the something
 
 define phrases en-US
   cant-leave:
@@ -94,4 +94,4 @@ define phrases en-US
   message-obliterated:
     The message has been trampled beyond recognition. You have lost!
 
-define text garbled from "./extras.ts"
+define text garbled from "./src/extras.ts"

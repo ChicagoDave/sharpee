@@ -182,7 +182,7 @@ create the player
 
 define action pet
   grammar
-    pet :animal
+    pet the animal
   ${refusalLine}
   phrase petted
 

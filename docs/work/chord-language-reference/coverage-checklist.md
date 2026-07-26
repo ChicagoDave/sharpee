@@ -120,7 +120,7 @@ Section numbers refer to `docs/reference/chord-language.md`.
 - [x] `define phrase <name>[, STRATEGY|verbatim] [while <cond>]` + `or` variants + `end phrase` (CP1') — §5.2 (define/phrase.story)
 - [x] `verbatim` mode (line structure preserved; no strategies/variants) — §5.2 (define/phrase.story)
 - [x] `define phrases <locale>` + `key:` prose entries (dedent-terminated, no `end phrases`; same-line forms removed) — §5.3 (define/phrases.story)
-- [x] `define verb <w> {or <w>} means <pattern>` + `(something)` slots — §5.4 (define/verb.story)
+- [x] `define verb <w> {or <w>} means <pattern>` + `the <name>` slots (ADR-267 D15) — §5.4 (define/verb.story)
 - [x] `define text <name> from "<module>"` (text hatch; `br` reserved) — §5.5 (define/hatches.story)
 - [x] `define action|behavior <name> from "<module>"` (hatch kinds; TS stub shown, binding out of harness scope — documented limitation) — §5.6 (define/hatches.story)
 - [x] `define trait` block + `end trait` — §5.7 (define/trait.story)

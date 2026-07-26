@@ -135,7 +135,7 @@ describe('capability pair: refused legibly, never silently overwritten', () => {
     const source = SOURCE.replace(`define trait chimed
   on pushing it`, `define action ringing
   grammar
-    ring :target
+    ring the target
   the target must be reachable
   otherwise refuse cant-ring
 

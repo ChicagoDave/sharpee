@@ -1629,7 +1629,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "kind": "slot",
           "span": {
             "column": 36,
-            "endColumn": 47,
+            "endColumn": 49,
             "endLine": 82,
             "line": 82,
           },
@@ -1638,8 +1638,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         {
           "kind": "word",
           "span": {
-            "column": 48,
-            "endColumn": 50,
+            "column": 50,
+            "endColumn": 52,
             "endLine": 82,
             "line": 82,
           },
@@ -1648,8 +1648,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         {
           "kind": "slot",
           "span": {
-            "column": 51,
-            "endColumn": 62,
+            "column": 53,
+            "endColumn": 66,
             "endLine": 82,
             "line": 82,
           },
@@ -1658,7 +1658,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       ],
       "span": {
         "column": 1,
-        "endColumn": 62,
+        "endColumn": 66,
         "endLine": 82,
         "line": 82,
       },

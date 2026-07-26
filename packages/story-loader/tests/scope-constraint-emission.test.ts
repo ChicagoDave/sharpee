@@ -35,7 +35,7 @@ function builtConstraint(rule: { slots: Map<string, { constraints: unknown[] }> 
 
 describe('scope-constraint emission (ADR-271 D2)', () => {
   const story = storyFrom(
-    `${HEADER}define action petting\n  grammar\n    pet :animal\n    pat :animal\n  the animal must be reachable\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\n${WORLD}`,
+    `${HEADER}define action petting\n  grammar\n    pet the animal\n    pat the animal\n  the animal must be reachable\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\n${WORLD}`,
   );
   const rules = captureGrammarRules(story);
 
@@ -65,7 +65,7 @@ describe('requirement → predicate mapping (ADR-271 D1 table, loader side)', ()
     ['held', 'carried'],
   ])('`must be %s` builds a `%s`-based scope constraint', (word, base) => {
     const story = storyFrom(
-      `${HEADER}define action poking\n  grammar\n    poke :thing\n  the thing must be ${word}\n  otherwise refuse cant-poke\n\n  phrases en-US\n    cant-poke:\n      No.\n\n${WORLD}`,
+      `${HEADER}define action poking\n  grammar\n    poke the thing\n  the thing must be ${word}\n  otherwise refuse cant-poke\n\n  phrases en-US\n    cant-poke:\n      No.\n\n${WORLD}`,
     );
     const rule = captureGrammarRules(story).find((r) => r.pattern === 'poke :thing')!;
     expect(builtConstraint(rule, 'thing').base).toBe(base);
@@ -75,7 +75,7 @@ describe('requirement → predicate mapping (ADR-271 D1 table, loader side)', ()
 describe('action-centric emission shape (ADR-271 D3, acceptance 3)', () => {
   it('a multi-pattern action with mixed slots shares one id; constraints land only on carrying lines', () => {
     const story = storyFrom(
-      `${HEADER}define action waving\n  grammar\n    wave :thing\n    wave hands\n  the thing must be visible\n  otherwise refuse cant-wave\n\n  phrases en-US\n    cant-wave:\n      No.\n\n${WORLD}`,
+      `${HEADER}define action waving\n  grammar\n    wave the thing\n    wave hands\n  the thing must be visible\n  otherwise refuse cant-wave\n\n  phrases en-US\n    cant-wave:\n      No.\n\n${WORLD}`,
     );
     const rules = captureGrammarRules(story);
     expect(new Set(rules.map((r) => r.action))).toEqual(new Set(['chord.action.waving']));

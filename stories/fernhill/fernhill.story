@@ -527,7 +527,7 @@ end trait
 
 define action feeding
   grammar
-    feed :creature
+    feed the creature
   the creature must be reachable
   otherwise refuse not-feedable
 
@@ -562,8 +562,8 @@ end trait
 
 define action pruning
   grammar
-    prune :target
-    trim :target
+    prune the target
+    trim the target
   the target must be reachable
   otherwise refuse cannot-prune
 
@@ -573,8 +573,8 @@ define action pruning
 
 define action winding
   grammar
-    wind :target
-    wind up :target
+    wind the target
+    wind up the target
   the target must be reachable
   otherwise refuse cannot-wind
 

@@ -2027,17 +2027,28 @@ class Parser {
       this.diagnostics.error('parse.verb-means', 'Expected `means <pattern>` in the verb definition.', c.restSpan());
       return null;
     }
+    // ADR-267 D1 (D15): one slot spelling — `the <name>`. The paren form is
+    // removed, not deprecated (a parse error with a fix-it, never a legacy
+    // spelling); the same pattern-elem production serves `define action`.
     const pattern: PatternPart[] = [];
     while (!c.atEnd()) {
       const t = c.next()!;
-      if (t.kind === 'lparen') {
+      if (t.kind === 'word' && t.text === 'the') {
         const slot = c.next();
-        const close = c.next();
-        if (!slot || slot.kind !== 'word' || !close || close.kind !== 'rparen') {
-          this.diagnostics.error('parse.verb-slot', 'Expected `(something)` slot in the verb pattern.', t.span);
+        if (!slot || slot.kind !== 'word') {
+          this.diagnostics.error('parse.verb-slot', 'Expected a slot name after `the` in the verb pattern.', t.span);
           return null;
         }
-        pattern.push({ kind: 'slot', word: slot.text, span: mergeSpans(t.span, close.span) });
+        pattern.push({ kind: 'slot', word: slot.text, span: mergeSpans(t.span, slot.span) });
+      } else if (t.kind === 'lparen') {
+        const slot = c.peek();
+        const name = slot && slot.kind === 'word' ? slot.text : 'name';
+        this.diagnostics.error(
+          'parse.removed-slot-spelling',
+          `The \`(${name})\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
+          t.span,
+        );
+        return null;
       } else if (t.kind === 'word') {
         pattern.push({ kind: 'word', word: t.text, span: t.span });
       } else {
@@ -2400,7 +2411,9 @@ class Parser {
     }
   }
 
-  /** grammar-block pattern lines: words + `:slot`s, optional `→ each …` cardinality. */
+  /** grammar-block pattern lines: words + `the <slot>`s (ADR-267 D1/D15),
+   *  optional `→ each …` cardinality. The colon spelling is removed — a
+   *  parse error with a fix-it, never a legacy form. */
   private parseActionPatterns(grammarLine: Line): ActionPattern[] {
     const patterns: ActionPattern[] = [];
     while (this.pos < this.lines.length && this.lines[this.pos].indent > grammarLine.indent) {
@@ -2415,13 +2428,22 @@ class Parser {
           while (!c.atEnd()) cardinality.push(c.next()!.text);
           break;
         }
-        if (t.kind === 'colon') {
+        if (t.kind === 'word' && t.text === 'the') {
           const slot = c.next();
           if (slot && slot.kind === 'word') {
             parts.push({ kind: 'slot', word: slot.text, span: mergeSpans(t.span, slot.span) });
           } else {
-            this.diagnostics.error('parse.action-slot', 'Expected a slot name after `:`.', t.span);
+            this.diagnostics.error('parse.action-slot', 'Expected a slot name after `the` in the grammar pattern.', t.span);
           }
+        } else if (t.kind === 'colon') {
+          const slot = c.peek();
+          const name = slot && slot.kind === 'word' ? slot.text : 'name';
+          this.diagnostics.error(
+            'parse.removed-slot-spelling',
+            `The \`:${name}\` slot spelling was removed (ADR-267 D15) — write \`the ${name}\`.`,
+            t.span,
+          );
+          if (slot && slot.kind === 'word') c.next();
         } else if (t.kind === 'word') {
           parts.push({ kind: 'word', word: t.text, span: t.span });
         } else {

@@ -521,8 +521,8 @@ end trait
 
 define action petting
   grammar
-    pet :animal
-    stroke :animal
+    pet the animal
+    stroke the animal
   the animal must be reachable
   refuse without animal: cant-pet
   otherwise refuse cant-pet
@@ -533,7 +533,7 @@ define action petting
 
 define action feeding
   grammar
-    feed :animal
+    feed the animal
   the animal must be reachable
   refuse without animal: not-an-animal
   otherwise refuse not-an-animal
@@ -544,9 +544,9 @@ define action feeding
 
 define action photographing
   grammar
-    photograph :target
-    photo :target
-    snap :target
+    photograph the target
+    photo the target
+    snap the target
   score snapshot worth 5
   the player must hold the disposable camera: no-camera
   award snapshot

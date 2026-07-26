@@ -237,7 +237,7 @@ describe('`match` is a reserved declaration name (David, 2026-07-12)', () => {
   });
 
   it('rejects a grammar slot named match', () => {
-    const errors = errorsOf(`${HEADER}define action striking\n  grammar\n    strike :match\n`);
+    const errors = errorsOf(`${HEADER}define action striking\n  grammar\n    strike the match\n`);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.reserved-name');
   });

@@ -222,7 +222,7 @@ describe('traits-basic IR (§2.2/§3.2 + ownership package)', () => {
 describe('ownership-package additions — inline sources', () => {
   it('compiles define-action must lines with infinitive normalization (D6)', () => {
     const result = compile(
-      `${HEADER}define action bowing\n  grammar\n    bow :noble\n  the noble must be reachable\n  the actor must hold the hat: no-hat\n  otherwise refuse cant-bow\n\n  phrases en-US\n    no-hat:\n      You need your hat.\n    cant-bow:\n      No.\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the hat\n  in the Hall\n\n  A hat.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
+      `${HEADER}define action bowing\n  grammar\n    bow the noble\n  the noble must be reachable\n  the actor must hold the hat: no-hat\n  otherwise refuse cant-bow\n\n  phrases en-US\n    no-hat:\n      You need your hat.\n    cant-bow:\n      No.\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the hat\n  in the Hall\n\n  A hat.\n\ncreate the player\n  starts in the Hall\n\n  You.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const bowing = result.ir.actions.find((a) => a.name === 'bowing')!;
@@ -257,7 +257,7 @@ describe('Phase B gate classes', () => {
 
   it('unknown slot in a constraint', () => {
     const errors = errorsOf(
-      `${HEADER}define action waving\n  grammar\n    wave :thing\n  the target must be reachable\n  otherwise refuse no-wave\n\n  phrases en-US\n    no-wave:\n      Nope.\n`,
+      `${HEADER}define action waving\n  grammar\n    wave the thing\n  the target must be reachable\n  otherwise refuse no-wave\n\n  phrases en-US\n    no-wave:\n      Nope.\n`,
     );
     expect(errors.some((e) => e.code === 'analysis.unknown-slot' && e.message.includes('thing'))).toBe(true);
   });

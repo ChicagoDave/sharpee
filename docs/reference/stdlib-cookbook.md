@@ -879,9 +879,9 @@ The author writes:
 ```story
 define action turning
   grammar
-    turn :target
-    rotate :target
-    twist :target
+    turn the target
+    rotate the target
+    twist the target
   the target must be reachable
   refuse without target: turn-what
   otherwise refuse cant-turn

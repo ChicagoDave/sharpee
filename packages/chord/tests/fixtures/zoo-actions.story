@@ -16,8 +16,8 @@ create the player
 
 define action petting
   grammar
-    pet :animal
-    pat :animal
+    pet the animal
+    pat the animal
   the animal must be reachable
   refuse without animal: pet-what
   otherwise refuse cant-pet
@@ -30,7 +30,7 @@ define action petting
 
 define action feeding
   grammar
-    feed :animal
+    feed the animal
   the animal must be reachable
   refuse without animal: feed-what
   otherwise refuse not-hungry

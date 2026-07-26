@@ -4,7 +4,7 @@ story "Bad Action" by "Nobody"
 
 define action waving
   grammar
-    wave :thing
+    wave the thing
   refuse without thing no-thing
 
   phrases en-US

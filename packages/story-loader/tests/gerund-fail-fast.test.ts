@@ -27,7 +27,7 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel } {
 
 const PRODDING_ACTION = `define action prodding
   grammar
-    prod :thing
+    prod the thing
   refuse without thing: prod-what
   otherwise refuse cant-prod
 
