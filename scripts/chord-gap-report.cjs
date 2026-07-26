@@ -36,9 +36,20 @@ const addGap = (construct, rule) => {
   gaps.get(construct).push(rule.pattern);
 };
 
+// Ruled exceptions (owner rulings — each stays a platform-side TS
+// registration outside the ADR-269 Chord-source migration):
+//   '?' → help (grammar.ts:860): punctuation-literal pattern, ruled a
+//   platform-side exception by David 2026-07-25 (session 2d5bc7).
+const RULED_EXCEPTIONS = new Set(['?']);
+
 let ordering = 0;
+let exceptions = 0;
 for (const rule of rules) {
   if (rule.priority !== 100) ordering++;
+  if (RULED_EXCEPTIONS.has(rule.pattern.trim())) {
+    exceptions++;
+    continue;
+  }
 
   // Slot types beyond Chord's set (D11 narrowed to the two with call sites).
   for (const [name, slot] of rule.slots ?? []) {
@@ -69,6 +80,8 @@ for (const [construct, patterns] of gaps) {
   console.log(`  ${construct}: ${patterns.length}`);
   for (const p of [...new Set(patterns)].slice(0, 10)) console.log(`    ${p}`);
 }
+console.log(`\n== RULED EXCEPTIONS (platform-side TS registrations, by owner ruling) ==`);
+console.log(`  ${exceptions} rule(s): ${[...RULED_EXCEPTIONS].join(', ')}`);
 console.log(`\n== ORDERING (ADR-268's, excluded by D7) ==`);
 console.log(`  rules with priority ≠ 100: ${ordering}`);
 console.log(`\nRESULT: ${gaps.size === 0 ? 'EMPTY except ordering — ADR-267 D7 satisfied' : `${gaps.size} blocking construct(s) remain`}`);

@@ -279,6 +279,14 @@ planning convenience.
   next child in the umbrella's sequence.
 - **Acceptance coverage**: Acceptance items 4 (semantic-defaults/direction-map slice), 5 (final rows +
   bump), 6 (gap report empty except ordering), 7 (existing suites green), 8 (ship-directions fixture).
+- **Status**: PARTIAL (2026-07-25, session 2d5bc7) — compile + emission landed and committed
+  (chord 581/581, loader 392/392, version 2.3.0, two rows). Gap report: generator BUILT
+  (`scripts/chord-gap-report.cjs`); **D7 SATISFIED** — empty except ordering (106), with the
+  newly-found `?` help alias ruled a platform-side exception (David, 2026-07-25). Acceptance 8
+  (ship-directions fixture + transcript) BLOCKED on the dispatch-runtime gap, surfaced and
+  ruled mini-ADR-first: **ADR-275** (DRAFT, 4 open questions) owns entity-less dispatch +
+  semantic value binding; the fixture lands when ADR-275 is ACCEPTED and implemented. Full
+  acceptance-7 regression (dungeo, thealderman) runs with that closure.
 - **Test gate**: `pnpm --filter '@sharpee/chord' test <name>`; `node dist/cli/sharpee.js --test --chain
   stories/*/walkthroughs/*.transcript` (per-story, per CLAUDE.md conventions) plus the new
   ship-directions fixture's transcript; the gap-report generator run against `grammar.ts`.
