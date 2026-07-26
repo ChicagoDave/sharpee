@@ -238,6 +238,9 @@ Examples:
     try {
       return resolveHatch(storyDir, modulePath);
     } catch (err) {
+      // ADR-274 D2: the named environmental error already carries the file and
+      // the remedy — pass it through so its name survives to the author.
+      if (err && err.name === 'HatchTranspileError') throw err;
       throw new Error(`Hatch module "${modulePath}" for ${storyDir}: ${err.message}`);
     }
   }

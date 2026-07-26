@@ -15,7 +15,7 @@
  * hatched story are contract errors, which the loader already rejects
  * atomically with a better message than `tsc` would give.
  *
- * Public interface: requireHatchModule.
+ * Public interface: requireHatchModule, HatchTranspileError (ADR-274 D2).
  * Owner context: @sharpee/devkit (the host owns module resolution; the loader
  * is filesystem-free — ADR-210 §5.6).
  */
@@ -23,6 +23,23 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+
+/**
+ * The environment cannot supply a working esbuild for a cold hatch transpile
+ * (ADR-274 D2). Named so hosts and tests can assert on it; the message names
+ * the remedy. Author-code build failures are NOT this error — esbuild's own
+ * BuildFailure passes through untouched.
+ */
+export class HatchTranspileError extends Error {
+  override readonly name = 'HatchTranspileError';
+  constructor(sourcePath: string, options?: ErrorOptions) {
+    super(
+      `Cannot transpile ${sourcePath}: esbuild is not available to the CLI bundle. ` +
+        `Run pnpm install in the workspace (or reinstall the sharpee CLI).`,
+      options,
+    );
+  }
+}
 
 /**
  * Transpile one authored TypeScript file to a Node-loadable CJS module and
@@ -38,10 +55,6 @@ import path from 'node:path';
  * repeat load of an unchanged hatch costs one `existsSync`.
  */
 function transpileToCjs(sourcePath: string): string {
-  // Required lazily: only a hatched story pays for esbuild.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const esbuild = require('esbuild') as typeof import('esbuild');
-
   const source = readFileSync(sourcePath, 'utf-8');
   const hash = createHash('sha256')
     .update(sourcePath)
@@ -53,17 +66,40 @@ function transpileToCjs(sourcePath: string): string {
   const outPath = path.join(cacheDir, `${hash}.cjs`);
   if (existsSync(outPath)) return outPath;
 
-  const result = esbuild.buildSync({
-    entryPoints: [sourcePath],
-    bundle: true,
-    packages: 'external',
-    platform: 'node',
-    format: 'cjs',
-    target: 'node18',
-    minify: false,
-    sourcemap: 'inline',
-    write: false,
-  });
+  // Required lazily, after the cache check: only a COLD hatch load pays for
+  // esbuild (ADR-259 D6 — the warm path costs one existsSync). The require is
+  // literal so the CLI bundle keeps it external (ADR-274 D1); if the host
+  // cannot resolve it, that is an environment problem, not an author problem.
+  let esbuild: typeof import('esbuild');
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    esbuild = require('esbuild') as typeof import('esbuild');
+  } catch (cause) {
+    throw new HatchTranspileError(sourcePath, { cause });
+  }
+
+  let result: ReturnType<typeof esbuild.buildSync>;
+  try {
+    result = esbuild.buildSync({
+      entryPoints: [sourcePath],
+      bundle: true,
+      packages: 'external',
+      platform: 'node',
+      format: 'cjs',
+      target: 'node18',
+      minify: false,
+      sourcemap: 'inline',
+      write: false,
+    });
+  } catch (err) {
+    // esbuild's BuildFailure (the author's code did not compile) carries an
+    // `errors` array — pass it through untouched. Anything else is the
+    // environment failing to run esbuild at all (binary missing, dead worker).
+    if (err && typeof err === 'object' && Array.isArray((err as { errors?: unknown }).errors)) {
+      throw err;
+    }
+    throw new HatchTranspileError(sourcePath, { cause: err });
+  }
   const output = result.outputFiles?.[0];
   if (!output) {
     throw new Error(`hatch module "${sourcePath}" produced no output from esbuild.`);

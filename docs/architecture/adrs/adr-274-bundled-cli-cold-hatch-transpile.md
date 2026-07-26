@@ -1,6 +1,6 @@
 # ADR-274: The bundled CLI cannot cold-transpile a hatched story
 
-## Status: DRAFT (2026-07-25) — defect ADR, found during ADR-273's Phase 4 verification. Carries Q-1 (fix route); DRAFT until it is resolved.
+## Status: ACCEPTED (2026-07-25) — defect ADR, found during ADR-273's Phase 4 verification. Q-1 (fix route) resolved same day via interview: esbuild external (route (a)); adr-review 13/13 after SMALL fix (D2 error named).
 
 ## Parent: none (standalone platform defect). Relates to ADR-259 D6 as amended 2026-07-23 (hatch modules resolve to authored TS, transpiled at load — the amendment that introduced the defect), ADR-187 (repokit owns the CLI bundle), ADR-180 (devkit as author tool), ADR-252 D2 (a story needs no package.json/tsconfig — the promise the transpile path serves).
 
@@ -40,14 +40,25 @@ failure mode is the worst kind — an infinite silent hang, not an error.
 
 ## Decision
 
-*(Direction, pending Q-1 — the load-time transpile stays; ADR-252 D2's no-toolchain promise is not
-reopened.)*
+*(The load-time transpile stays; ADR-252 D2's no-toolchain promise is not reopened.)*
 
-### D1 — The bundle must not inline esbuild
+### D1 — The bundle must not inline esbuild: mark it external (Q-1 resolved 2026-07-25)
 
-Whatever route Q-1 picks, the invariant is: `require('esbuild')` inside a bundled host must resolve
-to a real, working esbuild — never to a bundle-inlined copy whose sync worker cannot answer. The
-bundle build (repokit) enforces this structurally, not by convention.
+The invariant: `require('esbuild')` inside a bundled host must resolve to a real, working esbuild —
+never to a bundle-inlined copy whose sync worker cannot answer. The bundle build (repokit) enforces
+this structurally, not by convention.
+
+**Mechanism (route (a))**: repokit's CLI bundle marks esbuild external
+(`--external:esbuild`, alongside the existing `--external:readline` in
+`tools/repokit/src/commands/bundle.ts`), so `require('esbuild')` resolves at runtime from the
+workspace's `node_modules`. In-repo this always succeeds. The future globally-installed CLI
+(ADR-180 Phase U2) must then carry esbuild as a real runtime dependency (npm's per-platform
+optionalDependencies binary distribution — a solved pattern, but a real dep U2 inherits).
+
+Rejected within Q-1: (b) spawning the esbuild binary directly — inherits (a)'s
+locate-the-binary question while re-implementing option plumbing; (c) precompiling hatches at
+story build time — re-litigates the ADR-259 D6 amendment and weakens ADR-252 D2 (an edited hatch
+module would need a rebuild before the CLI sees it).
 
 ### D2 — A cold transpile failure must be an error, not a hang
 
@@ -55,6 +66,10 @@ If esbuild is unavailable or its worker cannot start, `requireHatchModule` fails
 telling the author what is missing — the ADR-273 D3 principle (fail closed, never silently) applied
 one layer up. A watchdog or preflight check around the sync call is acceptable; an unbounded
 `Atomics.wait` is not.
+
+The error is **`HatchTranspileError`**, message: `Cannot transpile <file>: esbuild is not
+available to the CLI bundle. Run pnpm install in the workspace (or reinstall the sharpee CLI).`
+Acceptance 3 asserts on the error name and that the message names the remedy.
 
 ## Acceptance
 
@@ -71,25 +86,13 @@ one layer up. A watchdog or preflight check around the sync call is acceptable; 
 **Gained.** Hatched stories work on fresh machines and CI runners; the author-facing failure mode
 becomes an actionable error. The temp-cache purge stops being a time bomb.
 
-**Cost.** A repokit bundle-config change (and possibly a devkit resolution change) sized by Q-1;
-the CLI bundle may need to ship or locate an external esbuild, which touches distribution.
+**Cost.** One repokit bundle-config flag now; ADR-180 Phase U2 inherits esbuild as a real runtime
+dependency of the globally-installed CLI (recorded here so U2's packaging work doesn't rediscover
+it).
 
 **Rejected.** Reverting the 7-23 amendment (per-story `tsc` output contradicted ADR-259 D8 /
 ADR-252 D2 — the transpile direction stands). Documenting "run once with network/deps present" —
 a silent hang is not documentable behavior.
-
-## Open Questions
-
-### Q-1: How does the bundle get a working esbuild?
-- **Why it matters**: three routes with different distribution costs. (a) **Mark esbuild external
-  in the repokit CLI bundle** and resolve it from the workspace/story `node_modules` at runtime —
-  smallest change, but a globally-installed CLI (ADR-180 U2) must then carry esbuild as a real
-  dependency. (b) **Spawn the esbuild binary directly** (its CLI, not the JS sync API) — avoids the
-  worker mechanism entirely, but re-implements option plumbing. (c) **Precompile hatches at story
-  build time** (repokit/devkit emit the `.cjs` beside the story, loader prefers it) — removes
-  load-time esbuild from the CLI entirely but partially reintroduces the build-step-per-story that
-  the 7-23 amendment removed.
-- **Blocks**: D1's mechanism; acceptance 1 and 3.
 
 ## Session
 
