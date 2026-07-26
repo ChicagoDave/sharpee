@@ -79,7 +79,7 @@ describe('GrammarBuilder', () => {
       expect(rule).toBeDefined();
       expect(rule.pattern).toBe('look');
       expect(rule.action).toBe('if.action.looking');
-      expect(rule.priority).toBe(100); // Default priority
+      expect(rule.tier).toBe('standard'); // Default tier (ADR-268 D2)
     });
     
     it('should create a verb-noun rule with slot', () => {
@@ -107,14 +107,13 @@ describe('GrammarBuilder', () => {
       expect(rule.compiledPattern.tokens[2].alternates).toContain('inside');
     });
     
-    it('should set custom priority', () => {
-      const rule = builder
+    it('should register story tier when the builder is created for it (ADR-268 D2)', () => {
+      const rule = engine.createBuilder('story')
         .define('hang :item on :hook')
         .mapsTo('if.action.putting')
-        .withPriority(150)
         .build();
-      
-      expect(rule.priority).toBe(150);
+
+      expect(rule.tier).toBe('story');
     });
   });
   
@@ -182,15 +181,15 @@ describe('GrammarBuilder', () => {
       expect(engine.getRules()).toHaveLength(1);
     });
     
-    it('should maintain rule priority order', () => {
-      builder.define('put :item on :hook').mapsTo('if.action.putting').withPriority(150).build();
-      builder.define('put :item on :supporter').mapsTo('if.action.putting').withPriority(100).build();
-      builder.define('hang :item on :hook').mapsTo('if.action.putting').withPriority(200).build();
-      
+    it('should keep rules in registration (definition) order — ADR-268', () => {
+      builder.define('put :item on :hook').mapsTo('if.action.putting').build();
+      builder.define('put :item on :supporter').mapsTo('if.action.putting').build();
+      builder.define('hang :item on :hook').mapsTo('if.action.putting').build();
+
       const rules = engine.getRules();
-      expect(rules[0].priority).toBe(200); // Highest priority first
-      expect(rules[1].priority).toBe(150);
-      expect(rules[2].priority).toBe(100);
+      expect(rules[0].pattern).toBe('put :item on :hook');
+      expect(rules[1].pattern).toBe('put :item on :supporter');
+      expect(rules[2].pattern).toBe('hang :item on :hook');
     });
     
     it('should group rules by action', () => {
@@ -207,12 +206,11 @@ describe('GrammarBuilder', () => {
   });
   
   describe('forAction fullPattern emission (ADR-271 D3)', () => {
-    it('registers one rule per full-pattern line, sharing the action id and priority', () => {
-      engine.createBuilder()
+    it('registers one rule per full-pattern line, sharing the action id and tier', () => {
+      engine.createBuilder('story')
         .forAction('chord.action.petting')
         .fullPattern('pet :animal')
         .fullPattern('pat :animal')
-        .withPriority(150)
         .build();
 
       const rules = engine.getRulesForAction('chord.action.petting');
@@ -220,7 +218,7 @@ describe('GrammarBuilder', () => {
       expect(rules.map(r => r.pattern).sort()).toEqual(['pat :animal', 'pet :animal']);
       for (const rule of rules) {
         expect(rule.action).toBe('chord.action.petting');
-        expect(rule.priority).toBe(150);
+        expect(rule.tier).toBe('story');
       }
     });
 
@@ -242,7 +240,6 @@ describe('GrammarBuilder', () => {
         .fullPattern('pet :animal')
         .fullPattern('stroke :animal')
         .where('animal', scope => scope.touchable())
-        .withPriority(150)
         .build();
 
       const rules = engine.getRulesForAction('chord.action.petting');

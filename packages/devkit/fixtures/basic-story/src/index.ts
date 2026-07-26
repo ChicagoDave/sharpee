@@ -158,20 +158,17 @@ class RegressionStory implements Story {
     grammar
       .define('inspect :thing')
       .mapsTo(INSPECT_ACTION_ID)
-      .withPriority(150)
       .build();
 
     // PING — no target, just the action (requires being on the rooftop)
     grammar
       .define('ping')
       .mapsTo(PING_ACTION_ID)
-      .withPriority(150)
       .build();
 
     grammar
       .define('ping antenna')
       .mapsTo(PING_ACTION_ID)
-      .withPriority(150)
       .build();
 
     // WEAR :thing — wearing grammar not in stdlib parser yet
@@ -184,20 +181,17 @@ class RegressionStory implements Story {
     grammar
       .define('put on :target')
       .mapsTo('if.action.wearing')
-      .withPriority(95)
       .build();
 
     // TAKE OFF :thing — removing worn items
     grammar
       .define('take off :target')
       .mapsTo('if.action.taking_off')
-      .withPriority(95)
       .build();
 
     grammar
       .define('remove :target')
       .mapsTo('if.action.taking_off')
-      .withPriority(95)
       .build();
 
     // CLIMB :thing — climbing grammar not in stdlib parser yet
@@ -210,20 +204,17 @@ class RegressionStory implements Story {
     grammar
       .define('climb up :target')
       .mapsTo('if.action.climbing')
-      .withPriority(95)
       .build();
 
     // TALK TO :actor — talking grammar not in stdlib parser
     grammar
       .define('talk to :target')
       .mapsTo('if.action.talking')
-      .withPriority(95)
       .build();
 
     grammar
       .define('talk :target')
       .mapsTo('if.action.talking')
-      .withPriority(90)
       .build();
 
     // SMELL :thing — smelling grammar not in stdlib parser
@@ -237,39 +228,33 @@ class RegressionStory implements Story {
     grammar
       .define('listen to :target')
       .mapsTo('if.action.listening')
-      .withPriority(95)
       .build();
 
     grammar
       .define('listen')
       .mapsTo('if.action.listening')
-      .withPriority(95)
       .build();
 
     // STATUS — reports custom state values
     grammar
       .define('status')
       .mapsTo(STATUS_ACTION_ID)
-      .withPriority(150)
       .build();
 
     grammar
       .define('facility status')
       .mapsTo(STATUS_ACTION_ID)
-      .withPriority(150)
       .build();
 
     // CHECK — reports annotation count on current room
     grammar
       .define('check room')
       .mapsTo(CHECK_ACTION_ID)
-      .withPriority(150)
       .build();
 
     grammar
       .define('check annotations')
       .mapsTo(CHECK_ACTION_ID)
-      .withPriority(150)
       .build();
   }
 

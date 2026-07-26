@@ -4,7 +4,8 @@
  * parser as `.where()` gates. Asserts on the REGISTERED RULE SHAPE against
  * a real if-domain GrammarEngine (acceptance 3): shared action id across a
  * multi-pattern action, constraints on the correct slots of every slotted
- * rule, priorities 150/140 split, bare-verb rules constraint-free.
+ * rule, story-tier registration (ADR-268 — the old 150/140 priority split
+ * collapsed into the tier), bare-verb rules constraint-free.
  */
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
@@ -40,7 +41,7 @@ describe('scope-constraint emission (ADR-271 D2)', () => {
   const rules = captureGrammarRules(story);
 
   it('emits every slotted rule of the action with the constraint attached', () => {
-    const slotted = rules.filter((r) => r.priority === 150);
+    const slotted = rules.filter((r) => r.pattern.includes(':'));
     expect(slotted.map((r) => r.pattern).sort()).toEqual(['pat :animal', 'pet :animal']);
     for (const rule of slotted) {
       expect(rule.action).toBe('chord.action.petting');
@@ -48,8 +49,8 @@ describe('scope-constraint emission (ADR-271 D2)', () => {
     }
   });
 
-  it('emits bare-verb rules at 140 with no constraint (refuse-without owns no-target)', () => {
-    const bare = rules.filter((r) => r.priority === 140);
+  it('emits bare-verb rules with no constraint (refuse-without owns no-target)', () => {
+    const bare = rules.filter((r) => !r.pattern.includes(':'));
     expect(bare.map((r) => r.pattern).sort()).toEqual(['pat', 'pet']);
     for (const rule of bare) {
       expect(rule.action).toBe('chord.action.petting');
@@ -84,7 +85,7 @@ describe('action-centric emission shape (ADR-271 D3, acceptance 3)', () => {
     expect(builtConstraint(slotted, 'thing').base).toBe('visible');
 
     const literal = rules.find((r) => r.pattern === 'wave hands')!;
-    expect(literal.priority).toBe(150);
+    expect(literal.tier).toBe('story');
     expect(literal.slots.has('thing')).toBe(false);
   });
 });

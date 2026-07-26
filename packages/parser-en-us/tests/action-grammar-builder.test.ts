@@ -101,17 +101,16 @@ describe('ADR-087: Action Grammar Builder', () => {
       });
     });
 
-    it('should apply priority to all generated patterns', () => {
-      grammar
+    it('should carry the builder tier on all generated patterns (ADR-268 D2)', () => {
+      engine.createBuilder('story')
         .forAction('if.action.pushing')
         .verbs(['push', 'press'])
         .pattern(':target')
-        .withPriority(110)
         .build();
 
       const rules = grammar.getRules();
       rules.forEach(rule => {
-        expect(rule.priority).toBe(110);
+        expect(rule.tier).toBe('story');
       });
     });
 
@@ -167,22 +166,21 @@ describe('ADR-087: Action Grammar Builder', () => {
       expect(nRule?.defaultSemantics?.direction).toBe('north');
     });
 
-    it('should use lower priority for single-character abbreviations', () => {
+    it('registers abbreviations at the same tier as full forms (ADR-268: no 90-band)', () => {
       grammar
         .forAction('if.action.going')
         .directions({
           'north': ['north', 'n']
         })
-        .withPriority(100)
         .build();
 
       const rules = grammar.getRules();
 
       const northRule = rules.find(r => r.pattern === 'north');
-      expect(northRule?.priority).toBe(100);
+      expect(northRule?.tier).toBe('standard');
 
       const nRule = rules.find(r => r.pattern === 'n');
-      expect(nRule?.priority).toBe(90); // Lower for abbreviation
+      expect(nRule?.tier).toBe('standard');
     });
   });
 

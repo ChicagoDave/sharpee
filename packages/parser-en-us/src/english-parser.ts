@@ -100,8 +100,8 @@ interface RichCandidate {
   indirectObject?: INounPhrase;
   pattern: string;
   confidence: number;
-  /** Grammar rule priority (explicit .withPriority() override; ADR-231 D2b ordering) */
-  priority: number;
+  /** Grammar rule tier (ADR-268 D2: story outranks standard) */
+  tier: 'standard' | 'story';
   /** Words consumed by literal pattern tokens (ADR-231 D2b literal-before-slot tiebreak) */
   literalSpecificity: number;
   action: string;
@@ -397,17 +397,17 @@ export class EnglishParser implements Parser {
       };
     }
     
-    // Full candidate ordering (ADR-231 D2b): confidence desc → rule priority
-    // desc → literal specificity desc → stable registration order (candidates
-    // arrive in engine order; Array.prototype.sort is stable). This mirrors
-    // EnglishGrammarEngine.findMatches — a confidence-only re-sort here would
-    // silently drop the priority and specificity tiebreaks.
+    // Full candidate ordering (ADR-268 D2): confidence desc → tier (story
+    // over standard) → literal specificity desc → definition order
+    // (candidates arrive in engine order; Array.prototype.sort is stable).
+    // This mirrors EnglishGrammarEngine.findMatches — a confidence-only
+    // re-sort here would silently drop the tier and specificity tiebreaks.
     candidates.sort((a, b) => {
       if (b.confidence !== a.confidence) {
         return b.confidence - a.confidence;
       }
-      if (b.priority !== a.priority) {
-        return b.priority - a.priority;
+      if (a.tier !== b.tier) {
+        return a.tier === 'story' ? -1 : 1;
       }
       return b.literalSpecificity - a.literalSpecificity;
     });
@@ -1040,7 +1040,7 @@ export class EnglishParser implements Parser {
           verb: verbPhrase,
           pattern: 'DIRECTION_ONLY',
           confidence: match.confidence,
-          priority: rule.priority,
+          tier: rule.tier,
           literalSpecificity: match.literalSpecificity ?? 0,
           action: rule.action,
           direction: directionToken.normalized
@@ -1068,7 +1068,7 @@ export class EnglishParser implements Parser {
       indirectObject,
       pattern,
       confidence: match.confidence,
-      priority: rule.priority,
+      tier: rule.tier,
       literalSpecificity: match.literalSpecificity ?? 0,
       action: rule.action,
       // ADR-080 additions
@@ -1160,7 +1160,7 @@ export class EnglishParser implements Parser {
    * @deprecated Use getStoryGrammar() for full API
    */
   registerGrammar(pattern: string, action: string, constraints?: Record<string, Constraint>): void {
-    const builder = this.grammarEngine.createBuilder().define(pattern)
+    const builder = this.grammarEngine.createBuilder('story').define(pattern)
       .mapsTo(action);
 
     // Apply constraints if provided
@@ -1179,9 +1179,12 @@ export class EnglishParser implements Parser {
    *
    * ADR-084: Returns the grammar builder directly instead of a wrapper,
    * giving stories full access to all PatternBuilder methods.
+   *
+   * ADR-268 D2: rules built here register at the 'story' tier and outrank
+   * the standard grammar unconditionally.
    */
   getStoryGrammar(): GrammarBuilder {
-    return this.grammarEngine.createBuilder();
+    return this.grammarEngine.createBuilder('story');
   }
 
   /**
@@ -1359,22 +1362,20 @@ export class EnglishParser implements Parser {
     
     vocabularyRegistry.registerDynamicVerbs([verbDef], 'story');
     
-    // Also register grammar patterns for the verb
-    const grammarBuilder = this.grammarEngine.createBuilder();
+    // Also register grammar patterns for the verb (story tier, ADR-268 D2)
+    const grammarBuilder = this.grammarEngine.createBuilder('story');
     for (const verb of verbs) {
       // Register patterns based on the pattern type
       if (pattern === 'VERB_OBJ' || pattern === 'VERB_NOUN') {
         // Register verb + object pattern
         grammarBuilder.define(`${verb} :object`)
           .mapsTo(actionId)
-          .withPriority(150)
           .build();
       } else if (pattern === 'VERB_PREP_NOUN' && prepositions) {
         // Register verb + preposition + object patterns
         for (const prep of prepositions) {
           grammarBuilder.define(`${verb} ${prep} :object`)
             .mapsTo(actionId)
-            .withPriority(150)
             .build();
         }
       } else if (pattern === 'VERB_NOUN_PREP_NOUN' && prepositions) {
@@ -1382,14 +1383,12 @@ export class EnglishParser implements Parser {
         for (const prep of prepositions) {
           grammarBuilder.define(`${verb} :object1 ${prep} :object2`)
             .mapsTo(actionId)
-            .withPriority(150)
             .build();
         }
       } else {
         // Default: verb only pattern
         grammarBuilder.define(verb)
           .mapsTo(actionId)
-          .withPriority(150)
           .build();
       }
     }
@@ -1466,15 +1465,14 @@ export class EnglishParser implements Parser {
 
     // Also register common grammar patterns that use this preposition
     // This allows actions like "put X <preposition> Y" to work
-    const grammarBuilder = this.grammarEngine.createBuilder();
+    // (story tier, ADR-268 D2 — this is story-driven vocabulary)
+    const grammarBuilder = this.grammarEngine.createBuilder('story');
     grammarBuilder.define(`put :object ${word} :location`)
       .mapsTo('if.action.putting')
-      .withPriority(150)
       .build();
 
     grammarBuilder.define(`place :object ${word} :location`)
       .mapsTo('if.action.putting')
-      .withPriority(150)
       .build();
     
     // Emit debug event if configured

@@ -3,7 +3,7 @@
  * @description Unit tests for multi-word literal patterns like "walk through south wall"
  *
  * This tests the Sharpee issue where "walk through south wall" fails even when
- * the literal pattern is defined with higher priority than "walk through :target"
+ * the literal pattern should beat "walk through :target" via literal specificity
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -31,24 +31,22 @@ describe('Walk Through Pattern Matching', () => {
 
   describe('Literal pattern vs slot pattern', () => {
     it('should match literal "walk through south wall" pattern', () => {
-      // Add both patterns - literal has higher priority
+      // Add both patterns — the literal one wins via specificity (ADR-268)
       grammar
         .define('walk through :target')
         .mapsTo('walk_through.generic')
-        .withPriority(150)
         .build();
 
       grammar
         .define('walk through south wall')
         .mapsTo('walk_through.south_wall')
-        .withPriority(155)
         .build();
 
       const tokens = createTokens(['walk', 'through', 'south', 'wall']);
       const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
       const matches = engine.findMatches(tokens, context);
 
-      // We expect the literal pattern to match (higher priority)
+      // We expect the literal pattern to match (higher literal specificity)
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].rule.action).toBe('walk_through.south_wall');
     });
@@ -57,13 +55,11 @@ describe('Walk Through Pattern Matching', () => {
       grammar
         .define('walk through :target')
         .mapsTo('walk_through.generic')
-        .withPriority(150)
         .build();
 
       grammar
         .define('walk through south wall')
         .mapsTo('walk_through.south_wall')
-        .withPriority(155)
         .build();
 
       const tokens = createTokens(['walk', 'through', 'curtain']);
@@ -79,7 +75,6 @@ describe('Walk Through Pattern Matching', () => {
       grammar
         .define('take :item')
         .mapsTo('taking')
-        .withPriority(100)
         .build();
 
       const tokens = createTokens(['take', 'rusty', 'key']);
@@ -98,7 +93,6 @@ describe('Walk Through Pattern Matching', () => {
         .define('walk through :target')
         .where('target', (scope: any) => scope.touchable())
         .mapsTo('walk_through.constrained')
-        .withPriority(150)
         .build();
 
       const tokens = createTokens(['walk', 'through', 'south', 'wall']);
@@ -129,7 +123,6 @@ describe('Walk Through Pattern Matching', () => {
         .define('walk through :target')
         .where('target', (scope: any) => scope.touchable())
         .mapsTo('walk_through.constrained')
-        .withPriority(150)
         .build();
 
       const tokens = createTokens(['walk', 'through', 'south', 'wall']);
@@ -168,7 +161,6 @@ describe('Walk Through Pattern Matching', () => {
         .define('walk through :target')
         .where('target', (scope: any) => scope.touchable())
         .mapsTo('walk_through.constrained')
-        .withPriority(150)
         .build();
 
       const tokens = createTokens(['walk', 'through', 'south', 'wall']);
@@ -209,25 +201,22 @@ describe('Walk Through Pattern Matching', () => {
     });
   });
 
-  describe('Pattern priority ordering', () => {
-    it('should try higher priority patterns first', () => {
-      // Lower priority first (to ensure order doesn't matter in definition)
+  describe('Pattern specificity ordering', () => {
+    it('should rank more-literal patterns first', () => {
+      // Generic slot pattern first — specificity, not definition order, decides here
       grammar
         .define('walk through :target')
         .mapsTo('walk_through.generic')
-        .withPriority(150)
         .build();
 
       grammar
         .define('walk through north wall')
         .mapsTo('walk_through.north_wall')
-        .withPriority(155)
         .build();
 
       grammar
         .define('walk through south wall')
         .mapsTo('walk_through.south_wall')
-        .withPriority(155)
         .build();
 
       // Test south wall

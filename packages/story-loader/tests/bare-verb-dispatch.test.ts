@@ -36,25 +36,27 @@ function compileFixture(name: string): StoryIR {
  * Captures grammar registrations against a real if-domain GrammarEngine
  * (ADR-271 D3 — the loader now emits action-centrically via forAction()).
  */
-function captureGrammar(story: ChordStory): Array<{ pattern: string; action: string; priority: number }> {
-  return captureGrammarRules(story).map((r) => ({ pattern: r.pattern, action: r.action, priority: r.priority }));
+function captureGrammar(story: ChordStory): Array<{ pattern: string; action: string; tier: string }> {
+  return captureGrammarRules(story).map((r) => ({ pattern: r.pattern, action: r.action, tier: r.tier }));
 }
 
 describe('bare-verb grammar for every define-action (Phase 8 #13)', () => {
-  it('registers each pattern literal prefix as a bare rule below the slotted forms', () => {
+  it('registers each pattern literal prefix as a bare story-tier rule (ADR-268 D2)', () => {
     const story = createStory(compileFixture('zoo-actions.story'));
     const rules = captureGrammar(story);
 
     // Slotted forms as before.
-    expect(rules).toContainEqual({ pattern: 'pet :animal', action: 'chord.action.petting', priority: 150 });
-    expect(rules).toContainEqual({ pattern: 'pat :animal', action: 'chord.action.petting', priority: 150 });
-    expect(rules).toContainEqual({ pattern: 'feed :animal', action: 'chord.action.feeding', priority: 150 });
+    expect(rules).toContainEqual({ pattern: 'pet :animal', action: 'chord.action.petting', tier: 'story' });
+    expect(rules).toContainEqual({ pattern: 'pat :animal', action: 'chord.action.petting', tier: 'story' });
+    expect(rules).toContainEqual({ pattern: 'feed :animal', action: 'chord.action.feeding', tier: 'story' });
 
     // NEW: bare-verb forms — a targetless `pet` / `pat` / `feed` parses and
     // reaches dispatch validate's no-target arm (`refuse without` → pet-what).
-    expect(rules).toContainEqual({ pattern: 'pet', action: 'chord.action.petting', priority: 140 });
-    expect(rules).toContainEqual({ pattern: 'pat', action: 'chord.action.petting', priority: 140 });
-    expect(rules).toContainEqual({ pattern: 'feed', action: 'chord.action.feeding', priority: 140 });
+    // Specificity keeps them below the slotted forms (ADR-268: the old
+    // 150/140 priorities collapsed into the single story tier).
+    expect(rules).toContainEqual({ pattern: 'pet', action: 'chord.action.petting', tier: 'story' });
+    expect(rules).toContainEqual({ pattern: 'pat', action: 'chord.action.petting', tier: 'story' });
+    expect(rules).toContainEqual({ pattern: 'feed', action: 'chord.action.feeding', tier: 'story' });
   });
 });
 

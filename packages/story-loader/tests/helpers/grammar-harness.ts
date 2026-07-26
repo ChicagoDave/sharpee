@@ -51,11 +51,12 @@ class TestGrammarEngine extends GrammarEngine {
 
 /**
  * Run the story's extendParser against a real engine and return the
- * registered rules, highest priority first (the engine's own order).
+ * registered rules in registration (definition) order — the engine's own
+ * order (ADR-268). The builder is story-tier, as getStoryGrammar() is.
  */
 export function captureGrammarRules(story: ChordStory): GrammarRule[] {
   const engine = new TestGrammarEngine();
-  const fakeParser = { getStoryGrammar: () => engine.createBuilder() };
+  const fakeParser = { getStoryGrammar: () => engine.createBuilder('story') };
   story.extendParser(fakeParser as never);
   return engine.getRules();
 }

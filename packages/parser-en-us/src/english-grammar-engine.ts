@@ -76,8 +76,17 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const failures: PartialMatchFailure[] = [];
     const { minConfidence = 0.1, maxMatches = 10 } = options;
 
+    // ADR-268 D5: iterate story-tier rules first so the maxMatches
+    // early-stop cannot exhaust its budget on standard rules and miss a
+    // story rule that would outrank them all. Within each tier, rules stay
+    // in registration (definition) order — the final tiebreak below.
+    const orderedRules = [
+      ...this.rules.filter((r) => r.tier === 'story'),
+      ...this.rules.filter((r) => r.tier !== 'story'),
+    ];
+
     // Try each rule
-    for (const rule of this.rules) {
+    for (const rule of orderedRules) {
       if (!rule.compiledPattern) continue;
 
       const result = this.tryMatchRuleWithFailure(rule, tokens, context);
@@ -100,19 +109,17 @@ export class EnglishGrammarEngine extends GrammarEngine {
     // Store failures for later retrieval
     this.lastFailures = failures;
 
-    // Full match ordering (ADR-231 D2b):
-    // confidence desc → rule priority desc → literal specificity desc →
-    // stable registration order (rules are iterated priority-first with
-    // stable insertion order, and Array.prototype.sort is stable).
-    // Explicit .withPriority() remains the override on top of specificity;
-    // specificity replaces registration order as the tiebreak within equal
-    // confidence AND equal priority.
+    // Full match ordering (ADR-268 D2):
+    // confidence desc → tier (story over standard) → literal specificity
+    // desc → definition order (rules are iterated tier-first in stable
+    // registration order, and Array.prototype.sort is stable, so equal keys
+    // fall through to definition order).
     matches.sort((a, b) => {
       if (b.confidence !== a.confidence) {
         return b.confidence - a.confidence;
       }
-      if (b.rule.priority !== a.rule.priority) {
-        return b.rule.priority - a.rule.priority;
+      if (a.rule.tier !== b.rule.tier) {
+        return a.rule.tier === 'story' ? -1 : 1;
       }
       // Literal-before-slot: literal tokens consuming words outrank an
       // unconstrained slot swallowing the same words.

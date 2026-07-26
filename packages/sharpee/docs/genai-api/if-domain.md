@@ -1600,11 +1600,6 @@ export interface PatternBuilder {
      */
     mapsTo(action: string): PatternBuilder;
     /**
-     * Set the priority for this pattern (higher = preferred)
-     * @param priority The priority value
-     */
-    withPriority(priority: number): PatternBuilder;
-    /**
      * Add semantic mappings for verbs
      * @param verbs Map of verb text to semantic properties
      */
@@ -1810,11 +1805,6 @@ export interface ActionGrammarBuilder {
      */
     where(slot: string, constraint: Constraint): ActionGrammarBuilder;
     /**
-     * Set priority for all generated patterns
-     * @param priority The priority value (higher = preferred)
-     */
-    withPriority(priority: number): ActionGrammarBuilder;
-    /**
      * Set default semantic properties for all generated patterns
      * @param defaults Default semantic properties
      */
@@ -1832,6 +1822,14 @@ export interface ActionGrammarBuilder {
     build(): void;
 }
 /**
+ * Grammar tier (ADR-268 D2): which layer defined the rule. Story-tier rules
+ * outrank standard-tier rules unconditionally (before specificity is
+ * consulted) — "story overrides platform". Set at the registration entry
+ * point: the standard grammar's builder registers 'standard'; the story
+ * grammar surface (getStoryGrammar()) and the Chord loader register 'story'.
+ */
+export type GrammarTier = 'standard' | 'story';
+/**
  * A compiled grammar rule
  */
 export interface GrammarRule {
@@ -1840,7 +1838,8 @@ export interface GrammarRule {
     compiledPattern?: CompiledPattern;
     slots: Map<string, SlotConstraint>;
     action: string;
-    priority: number;
+    /** ADR-268 D2: resolution layer — story outranks standard */
+    tier: GrammarTier;
     semantics?: SemanticMapping;
     defaultSemantics?: Partial<SemanticProperties>;
     experimentalConfidence?: number;
@@ -1938,8 +1937,8 @@ export interface PatternMatch {
      * Literal specificity (ADR-231 D2b): count of input words consumed by the
      * pattern's literal/alternate tokens (as opposed to slots). A rule whose
      * literals consume words outranks a rule whose unconstrained slot swallows
-     * the same words. Tiebreak order: confidence desc → rule priority desc →
-     * literalSpecificity desc → stable registration order.
+     * the same words. Resolution order (ADR-268 D2): confidence desc → tier
+     * (story over standard) → literalSpecificity desc → definition order.
      */
     literalSpecificity?: number;
     semantics?: SemanticProperties;
@@ -2001,7 +2000,7 @@ export declare class PatternSyntaxError extends Error {
  * @description Abstract base class for grammar matching engines
  */
 import { Token } from '../parser-contracts/parser-types.js';
-import { GrammarRule, PatternMatch, GrammarContext, GrammarBuilder } from './grammar-builder.js';
+import { GrammarRule, GrammarTier, PatternMatch, GrammarContext, GrammarBuilder } from './grammar-builder.js';
 import { PatternCompiler } from './pattern-compiler.js';
 /**
  * Grammar matching options
@@ -2024,7 +2023,12 @@ export declare abstract class GrammarEngine {
     protected compiler: PatternCompiler;
     constructor(compiler: PatternCompiler);
     /**
-     * Add a grammar rule
+     * Add a grammar rule.
+     *
+     * ADR-268: insertion is deliberately unsorted — registration order IS
+     * definition order, the final tiebreak of the resolution order
+     * (confidence → tier → literal specificity → definition order). Do not
+     * reintroduce a sort here; it would erase the semantics of file order.
      */
     addRule(rule: GrammarRule): void;
     /**
@@ -2052,13 +2056,14 @@ export declare abstract class GrammarEngine {
      */
     getRulesForAction(action: string): GrammarRule[];
     /**
-     * Sort rules by priority (descending)
+     * Create a grammar builder connected to this engine.
+     *
+     * @param tier ADR-268 D2: the layer rules built here register under.
+     *   'standard' (default) for the platform grammar; 'story' for the story
+     *   grammar surface and the Chord loader — story-tier rules outrank
+     *   standard-tier rules unconditionally.
      */
-    protected sortRules(): void;
-    /**
-     * Create a grammar builder connected to this engine
-     */
-    createBuilder(): GrammarBuilder;
+    createBuilder(tier?: GrammarTier): GrammarBuilder;
 }
 ```
 

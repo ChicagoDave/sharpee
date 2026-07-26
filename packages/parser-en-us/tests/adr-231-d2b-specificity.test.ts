@@ -1,11 +1,11 @@
 /**
  * @file ADR-231 D2b — Literal-before-slot specificity tests
- * @description Pins the general match-ordering contract: confidence desc →
- * rule priority desc → literal specificity desc → stable registration order.
- * A rule whose literal tokens consume words outranks a rule whose
- * unconstrained slot swallows the same words (`get in :portal` beats
- * `get :item` for "get in basket"); explicit .withPriority() remains the
- * override layered on top of specificity.
+ * @description Pins the general match-ordering contract (ADR-268 D2):
+ * confidence desc → tier (story over standard) → literal specificity desc →
+ * definition order. A rule whose literal tokens consume words outranks a
+ * rule whose unconstrained slot swallows the same words (`get in :portal`
+ * beats `get :item` for "get in basket"); the story tier is the override
+ * layered on top of specificity.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -188,7 +188,7 @@ describe('ADR-231 D2b — ordering contract (synthetic rules)', () => {
     grammar = engine.createBuilder();
   });
 
-  it('at equal priority, literal-consuming rule outranks slot-swallowing rule', () => {
+  it('within a tier, literal-consuming rule outranks slot-swallowing rule', () => {
     // Slot rule registered FIRST: under the old registration-order tiebreak
     // it would win; specificity must now decide.
     grammar.define('frob :thing').mapsTo('test.action.slot').build();
@@ -203,17 +203,27 @@ describe('ADR-231 D2b — ordering contract (synthetic rules)', () => {
     expect(matches[1].literalSpecificity).toBe(1); // "frob" only; slot swallowed "wob gizmo"
   });
 
-  it('explicit .withPriority() beats literal specificity', () => {
-    grammar.define('frob wob :thing').mapsTo('test.action.literal').build(); // default 100
-    grammar.define('frob :thing').mapsTo('test.action.slot').withPriority(150).build();
+  it('story tier beats literal specificity (ADR-268 D2: tier-first)', () => {
+    grammar.define('frob wob :thing').mapsTo('test.action.literal').build(); // standard tier
+    engine.createBuilder('story').define('frob :thing').mapsTo('test.action.slot').build();
 
     const matches = engine.findMatches(createTokens(['frob', 'wob', 'gizmo']), context as any);
 
     expect(matches.length).toBe(2);
     expect(matches[0].rule.action).toBe('test.action.slot');
-    expect(matches[0].rule.priority).toBe(150);
+    expect(matches[0].rule.tier).toBe('story');
     expect(matches[1].rule.action).toBe('test.action.literal');
     expect(matches[1].literalSpecificity).toBe(2);
+  });
+
+  it('within a tier at equal specificity, the earlier definition wins (ADR-268 D2)', () => {
+    grammar.define('frob wob').mapsTo('test.action.first').build();
+    grammar.define('frob wob').mapsTo('test.action.second').build();
+
+    const matches = engine.findMatches(createTokens(['frob', 'wob']), context as any);
+
+    expect(matches.length).toBe(2);
+    expect(matches[0].rule.action).toBe('test.action.first');
   });
 
   it('exposes literalSpecificity on every match candidate', () => {

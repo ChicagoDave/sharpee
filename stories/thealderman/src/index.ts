@@ -97,20 +97,17 @@ export class AldermanStory implements Story {
     grammar
       .define('accuse :target with :instrument')
       .mapsTo(ACCUSE_ACTION_ID)
-      .withPriority(150)
       .build();
 
     grammar
       .define('accuse :target')
       .mapsTo(ACCUSE_ACTION_ID)
-      .withPriority(140)
       .build();
 
     // CONFRONT [npc] — alias for TALK TO with aggressive intent
     grammar
       .define('confront :target')
       .mapsTo('if.action.talking')
-      .withPriority(150)
       .build();
 
     // SEARCH [thing] — use stdlib searching action
@@ -124,33 +121,28 @@ export class AldermanStory implements Story {
     grammar
       .define('talk to :target')
       .mapsTo('if.action.talking')
-      .withPriority(95)
       .build();
 
     grammar
       .define('question :target')
       .mapsTo('if.action.talking')
-      .withPriority(95)
       .build();
 
     grammar
       .define('interrogate :target')
       .mapsTo('if.action.talking')
-      .withPriority(95)
       .build();
 
     // ASK [npc] ABOUT [topic]
     grammar
       .define('ask :target about :topic')
       .mapsTo('if.action.talking')
-      .withPriority(100)
       .build();
 
     // SHOW [item] TO [npc]
     grammar
       .define('show :item to :target')
       .mapsTo('if.action.showing')
-      .withPriority(95)
       .build();
   }
 

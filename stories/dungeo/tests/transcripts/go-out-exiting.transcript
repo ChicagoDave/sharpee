@@ -1,0 +1,34 @@
+title: Go Out Resolves To Exiting
+story: dungeo
+description: ADR-268 acceptance 3 — `go out` resolves to exiting (D3 pair order), not going
+
+---
+
+# `go out` vs going — the only duplicate pattern with different actions in the
+# standard grammar. ADR-268 D3: the exiting rule is defined earlier, so
+# definition order decides the tie. Inside a vehicle, `go out` must exit the
+# vehicle (exiting), not attempt the room's "out" exit (going).
+
+## Setup - get lantern and navigate to the balloon
+> gdt
+[OK: contains "GDT ready"]
+
+> tk brass lantern
+[OK: contains "Taken"]
+
+> ah Volcano Bottom
+[OK: contains "Teleported"]
+
+> ex
+[OK: contains "Returning to game"]
+
+> turn on lantern
+[OK: contains "switches on"]
+
+## Enter the balloon
+> enter balloon
+[OK: contains "You get into the balloon."]
+
+## `go out` must resolve to exiting (climbing out of the vehicle)
+> go out
+[OK: contains "climb out of the balloon"]

@@ -1176,7 +1176,10 @@ export class ChordStory implements Story {
         groups.set(key, group);
       }
       for (const group of groups.values()) {
-        const slotted = grammar.forAction(actionId).withPriority(150);
+        // Story tier (ADR-268 D2): the builder from getStoryGrammar()
+        // registers 'story', which outranks the standard grammar outright —
+        // the old 150/140 priorities collapsed into that single tier.
+        const slotted = grammar.forAction(actionId);
         if (group.defaults) {
           // The cast is deliberate: `means` keys are author vocabulary and
           // direction words are per-action vocabulary (ship directions,
@@ -1194,10 +1197,11 @@ export class ChordStory implements Story {
         slotted.build();
       }
 
-      // Bare-verb prefixes stay at 140 and carry no `.where()` gate — the
-      // `refuse without` arm owns the no-target case (D2).
+      // Bare-verb prefixes carry no `.where()` gate — the `refuse without`
+      // arm owns the no-target case (D2). They register after the slotted
+      // forms; specificity orders them below the slotted forms anyway.
       if (bareForms.size > 0) {
-        const bare = grammar.forAction(actionId).withPriority(140);
+        const bare = grammar.forAction(actionId);
         for (const form of bareForms) bare.fullPattern(form);
         bare.build();
       }

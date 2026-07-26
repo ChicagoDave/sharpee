@@ -130,6 +130,9 @@ export declare class EnglishParser implements Parser {
      *
      * ADR-084: Returns the grammar builder directly instead of a wrapper,
      * giving stories full access to all PatternBuilder methods.
+     *
+     * ADR-268 D2: rules built here register at the 'story' tier and outrank
+     * the standard grammar unconditionally.
      */
     getStoryGrammar(): GrammarBuilder;
     /**

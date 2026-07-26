@@ -67,14 +67,12 @@ extendParser(parser: Parser): void {
   grammar
     .define('turn switch')
     .mapsTo(TURN_SWITCH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // Patterns with slots
   grammar
     .define('say :arg')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(150)
     .build();
 }
 ```
@@ -82,5 +80,9 @@ extendParser(parser: Parser): void {
 **Key points**:
 
 - Use `.define()` for literal patterns or phrasal verbs.
-- Higher priority (150+) for story-specific patterns.
+- Story grammar automatically outranks the standard grammar: `getStoryGrammar()`
+  registers rules at the story tier (ADR-268 — there is no numeric priority;
+  resolution is confidence → tier → literal specificity → definition order).
+- Definition order is semantic: when two story patterns tie on specificity,
+  the one defined earlier wins. Don't reorder grammar lines casually.
 - Stdlib grammar uses `.forAction()` — stories usually don't need this.

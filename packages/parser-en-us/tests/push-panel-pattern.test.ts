@@ -1,6 +1,6 @@
 /**
  * @file Push Panel Pattern Tests
- * @description Tests for understanding literal pattern priority vs slot patterns
+ * @description Tests for literal-pattern specificity vs slot patterns (ADR-268: story tier + literal specificity, no numeric priority)
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -85,13 +85,12 @@ describe('Push Panel Pattern Matching', () => {
     parser.setWorldContext(world, 'player', 'room');
   });
 
-  describe('literal pattern priority', () => {
+  describe('literal pattern specificity', () => {
     it('should match literal "push red panel" over "push :target"', () => {
-      // Register story pattern with literal words - higher priority
+      // Register story pattern with literal words — story tier outranks core
       grammar
         .define('push red panel')
         .mapsTo('story.action.push_panel')
-        .withPriority(170)
         .build();
 
       // Parse "push red panel"
@@ -108,7 +107,6 @@ describe('Push Panel Pattern Matching', () => {
       grammar
         .define('push red')
         .mapsTo('story.action.push_panel')
-        .withPriority(170)
         .build();
 
       const result = parser.parse('push red');
@@ -123,7 +121,6 @@ describe('Push Panel Pattern Matching', () => {
       grammar
         .define('push red panel')
         .mapsTo('story.action.push_panel')
-        .withPriority(170)
         .build();
 
       // Parse "push button" - should match core push
@@ -135,12 +132,11 @@ describe('Push Panel Pattern Matching', () => {
       }
     });
 
-    it('should prefer higher priority story pattern over lower priority core pattern', () => {
-      // Register multiple patterns with different priorities
+    it('should prefer story-tier pattern over core pattern (ADR-268 D2)', () => {
+      // Story tier wins over the core push pattern
       grammar
         .define('push red')
         .mapsTo('story.action.push_panel')
-        .withPriority(170) // Higher than core push (100)
         .build();
 
       const result = parser.parse('push red');
@@ -153,18 +149,16 @@ describe('Push Panel Pattern Matching', () => {
   });
 
   describe('slot pattern vs literal pattern', () => {
-    it('should prefer literal pattern over slot pattern with same priority', () => {
-      // Both patterns have same priority
+    it('should prefer literal pattern over slot pattern within the same tier', () => {
+      // Both patterns are story tier — literal specificity decides
       grammar
         .define('push red panel')
         .mapsTo('story.action.push_red_panel')
-        .withPriority(100)
         .build();
 
       grammar
         .define('push :target panel')
         .mapsTo('story.action.push_generic_panel')
-        .withPriority(100)
         .build();
 
       const result = parser.parse('push red panel');

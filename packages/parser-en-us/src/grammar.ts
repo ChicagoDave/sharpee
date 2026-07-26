@@ -2,11 +2,14 @@
  * @file English Grammar Rules
  * @description Standard grammar patterns for English interactive fiction
  *
- * Rule Priority Guidelines:
- * - 100+: Specific/phrasal patterns that must outrank broader ones
- * - 100: Standard patterns
- * - 95: Synonyms/alternatives
- * - 90: Abbreviations
+ * Rule ordering (ADR-268): there is no numeric priority. Resolution is
+ * confidence → tier (story over standard; everything here is standard) →
+ * literal specificity (ADR-231 D2b: words consumed by literal/alternate
+ * tokens) → definition order. Phrasal forms outrank bare verb-plus-slot
+ * forms structurally via their extra literals; where two co-matchable
+ * patterns tie on specificity, the one defined earlier in this file wins —
+ * such orderings are marked LOAD-BEARING below. Formatters and refactors
+ * must not reorder grammar definitions.
  *
  * Parse-time gating: `.where()` scope constraints are the one parse-time
  * gating mechanism. Trait-based refusal ("that's not something you can
@@ -40,7 +43,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('look at :target')
     .mapsTo('if.action.examining')
-    .withPriority(95)
     .build();
 
   // Looking with optional adverbs (ADR-230 D3a: the adverb form is just
@@ -48,44 +50,37 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('look [carefully] at :target')
     .mapsTo('if.action.examining')
-    .withPriority(96)
-    .build(); // Slightly higher priority, but confidence penalty for skipped optionals
+    .build(); // Same action as `look at :target`; confidence penalty when optionals are skipped
 
   grammar
     .define('look [around]')
     .mapsTo('if.action.looking')
-    .withPriority(101)
     .build();
 
   grammar
     .define('search [carefully]')
     .mapsTo('if.action.searching')
-    .withPriority(100)
     .build();
 
   // Searching with target
   grammar
     .define('search :target')
     .mapsTo('if.action.searching')
-    .withPriority(100)
     .build();
 
   grammar
     .define('look in|inside :target')
     .mapsTo('if.action.searching')
-    .withPriority(100)
     .build();
 
   grammar
     .define('look through :target')
     .mapsTo('if.action.searching')
-    .withPriority(100)
     .build();
 
   grammar
     .define('rummage in|through :target')
     .mapsTo('if.action.searching')
-    .withPriority(95)
     .build();
 
   // Taking and dropping (ADR-087: using forAction)
@@ -100,7 +95,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('pick up :item')
     .mapsTo('if.action.taking')
-    .withPriority(100)
     .build();
 
   // Scope (carried) handled by action validation
@@ -114,7 +108,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('put down :item')
     .mapsTo('if.action.dropping')
-    .withPriority(100)
     .build();
 
   // Wearing and taking off (wearables). The actions, messages, and verb
@@ -127,11 +120,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .pattern(':item')
     .build();
 
-  // "put on" is a phrasal verb - higher priority than generic put
+  // "put on" is a phrasal verb — LOAD-BEARING ORDER (ADR-268 D3): ties the
+  // generic `put :item in/on :container` forms on specificity, so it must
+  // be defined before them (it is — they follow below)
   grammar
     .define('put on :item')
     .mapsTo('if.action.wearing')
-    .withPriority(105)
     .build();
 
   grammar
@@ -140,17 +134,17 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .pattern(':item')
     .build();
 
-  // "take off" / "take :item off" are phrasal - higher priority than "take :item"
+  // "take off" / "take :item off" are phrasal — their extra literal wins
+  // over "take :item" via specificity; `take :item off` also ties
+  // `take up :item` (LOAD-BEARING ORDER, ADR-268 D3: defined before it)
   grammar
     .define('take off :item')
     .mapsTo('if.action.taking_off')
-    .withPriority(105)
     .build();
 
   grammar
     .define('take :item off')
     .mapsTo('if.action.taking_off')
-    .withPriority(105)
     .build();
 
   // Eating (ADR-087: using forAction)
@@ -179,27 +173,23 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('put :item in|into|inside :container')
     .mapsTo('if.action.inserting')
-    .withPriority(100)
     .build();
 
   grammar
     .define('insert :item in|into :container')
     .mapsTo('if.action.inserting')
-    .withPriority(100)
     .build();
 
   // Supporter operations (including hanging!)
   grammar
     .define('put :item on|onto :supporter')
     .mapsTo('if.action.putting')
-    .withPriority(100)
     .build();
 
   grammar
     .define('hang :item on :hook')
     .mapsTo('if.action.putting')
-    .withPriority(110)
-    .build(); // Higher priority than generic put
+    .build(); // Extra literal ("on" after the verb "hang") — wins via specificity
 
   // Reading (ADR-087: using forAction)
   grammar
@@ -244,13 +234,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('open :door')
     .mapsTo('if.action.opening')
-    .withPriority(100)
     .build();
 
   grammar
     .define('close :door')
     .mapsTo('if.action.closing')
-    .withPriority(100)
     .build();
 
   // Switching on/off (ADR-087: using forAction)
@@ -314,19 +302,16 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('save')
     .mapsTo('if.action.saving')
-    .withPriority(100)
     .build();
 
   grammar
     .define('restore')
     .mapsTo('if.action.restoring')
-    .withPriority(100)
     .build();
 
   grammar
     .define('restart')
     .mapsTo('if.action.restarting')
-    .withPriority(100)
     .build();
 
   // Sleeping (ADR-230 D2; +nap/doze/rest/slumber D4)
@@ -344,46 +329,39 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('undo')
     .mapsTo('if.action.undoing')
-    .withPriority(100)
     .build();
 
   // Score and version
   grammar
     .define('score')
     .mapsTo('if.action.scoring')
-    .withPriority(100)
     .build();
 
   grammar
     .define('version')
     .mapsTo('if.action.version')
-    .withPriority(100)
     .build();
 
   // Help
   grammar
     .define('help')
     .mapsTo('if.action.help')
-    .withPriority(100)
     .build();
 
   // About / Info / Credits
   grammar
     .define('about')
     .mapsTo('if.action.about')
-    .withPriority(100)
     .build();
 
   grammar
     .define('info')
     .mapsTo('if.action.about')
-    .withPriority(100)
     .build();
 
   grammar
     .define('credits')
     .mapsTo('if.action.about')
-    .withPriority(100)
     .build();
 
   // Author/debug commands
@@ -391,67 +369,56 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('trace')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace on')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace off')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace parser on')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace parser off')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace validation on')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace validation off')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace system on')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace system off')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace all on')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   grammar
     .define('trace all off')
     .mapsTo('author.trace')
-    .withPriority(100)
     .build();
 
   // VERB_NOUN_NOUN patterns (Phase 2)
@@ -461,39 +428,33 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('give :item to :recipient')
     .mapsTo('if.action.giving')
-    .withPriority(100)
     .build();
 
   grammar
     .define('give :recipient :item')
     .mapsTo('if.action.giving')
-    .withPriority(95)
-    .build(); // Slightly lower priority than explicit "to"
+    .build(); // The explicit "to" form wins via its extra literal
 
   grammar
     .define('offer :item to :recipient')
     .mapsTo('if.action.giving')
-    .withPriority(100)
     .build();
 
   // Showing
   grammar
     .define('show :item to :recipient')
     .mapsTo('if.action.showing')
-    .withPriority(100)
     .build();
 
   grammar
     .define('show :recipient :item')
     .mapsTo('if.action.showing')
-    .withPriority(95)
     .build();
 
   // Throwing
   grammar
     .define('throw :item at :target')
     .mapsTo('if.action.throwing')
-    .withPriority(100)
     .build();
 
   // Bare general throw (no target) — reaches the action's general-throw
@@ -502,25 +463,21 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('throw :item')
     .mapsTo('if.action.throwing')
-    .withPriority(95)
     .build();
 
   grammar
     .define('toss :item')
     .mapsTo('if.action.throwing')
-    .withPriority(95)
     .build();
 
   grammar
     .define('hurl :item')
     .mapsTo('if.action.throwing')
-    .withPriority(95)
     .build();
 
   grammar
     .define('throw :item to :recipient')
     .mapsTo('if.action.throwing')
-    .withPriority(100)
     .build();
 
   // Multiple preposition patterns (Phase 2.1)
@@ -533,16 +490,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('take :item from :container with|using :tool')
     .instrument('tool')
     .mapsTo('if.action.removing')
-    .withPriority(110)
     .build();
 
-  // Removing from a container (ADR-230 D2). Priority 110 like the other
-  // multi-preposition patterns here, so the from-form outranks taking_off's
-  // bare `remove :target` when the command names a source.
+  // Removing from a container (ADR-230 D2). The "from" literal makes the
+  // from-form outrank taking_off's bare `remove :target` via specificity
+  // when the command names a source.
   grammar
     .define('remove :item from :container')
     .mapsTo('if.action.removing')
-    .withPriority(110)
     .build();
 
   // Unlocking with key
@@ -550,7 +505,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('unlock :door with|using :key')
     .instrument('key')
     .mapsTo('if.action.unlocking')
-    .withPriority(110)
     .build();
 
   // Locking and keyless unlocking (ADR-230 D2). No trait constraint,
@@ -567,7 +521,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('lock :target with|using :key')
     .instrument('key')
     .mapsTo('if.action.locking')
-    .withPriority(110)
     .build();
 
   grammar
@@ -582,7 +535,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('open :container with|using :tool')
     .instrument('tool')
     .mapsTo('if.action.opening')
-    .withPriority(110)
     .build();
 
   // Cutting with tool
@@ -590,12 +542,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('cut :object with|using :tool')
     .instrument('tool')
     .mapsTo('if.action.cutting')
-    .withPriority(110)
     .build();
 
   // Cutting — bare form (2026-07-17, chord go-live G1 shortlist): an
   // untooled cuttable was unreachable for TS and Chord alike; the tooled
-  // form above keeps priority 110 so it wins when a tool is named.
+  // form above wins via its with/using literal when a tool is named.
   grammar
     .forAction('if.action.cutting')
     .verbs(['cut', 'slice', 'chop'])
@@ -609,33 +560,29 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .pattern(':target')
     .build();
 
-  // Attacking with weapon (higher priority than simple attack)
+  // Attacking with weapon (wins over simple attack via the with/using literal)
   grammar
     .define('attack :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
-    .withPriority(110)
     .build();
 
   grammar
     .define('kill :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
-    .withPriority(110)
     .build();
 
   grammar
     .define('hit :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
-    .withPriority(110)
     .build();
 
   grammar
     .define('strike :target with|using :weapon')
     .instrument('weapon')
     .mapsTo('if.action.attacking')
-    .withPriority(110)
     .build();
 
   // Digging with tool
@@ -643,7 +590,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('dig :location with|using :tool')
     .instrument('tool')
     .mapsTo('if.action.digging')
-    .withPriority(110)
     .build();
 
   // Digging — bare form (2026-07-17, chord go-live G1 shortlist): same
@@ -668,14 +614,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('tell :recipient about :topic')
     .topic('topic')
     .mapsTo('if.action.telling')
-    .withPriority(100)
     .build();
 
   grammar
     .define('ask :recipient about :topic')
     .topic('topic')
     .mapsTo('if.action.asking')
-    .withPriority(100)
     .build();
 
   // asking/telling aliases (ADR-230 Phase 6 — actions revived as minimal
@@ -684,21 +628,18 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     .define('question :recipient about :topic')
     .topic('topic')
     .mapsTo('if.action.asking')
-    .withPriority(100)
     .build();
 
   grammar
     .define('inquire of :recipient about :topic')
     .topic('topic')
     .mapsTo('if.action.asking')
-    .withPriority(100)
     .build();
 
   grammar
     .define('inform :recipient about :topic')
     .topic('topic')
     .mapsTo('if.action.telling')
-    .withPriority(100)
     .build();
 
   // Talking (ADR-229 R3): the core route to if.action.talking — the action
@@ -707,29 +648,25 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // trait-gated verbs now follow, ADR-231 D2a): talking's validate owns
   // not_actor/too_far, so those refusals flow through blocked() →
   // onBlocked (interceptor-visible) instead of dying as a parse failure.
-  // Story grammar outranks these on priority as usual.
+  // Story grammar outranks these via the story tier (ADR-268 D2) as usual.
   grammar
     .define('talk to|with :target')
     .mapsTo('if.action.talking')
-    .withPriority(100)
     .build();
 
   grammar
     .define('speak to|with :target')
     .mapsTo('if.action.talking')
-    .withPriority(100)
     .build();
 
   grammar
     .define('chat with :target')
     .mapsTo('if.action.talking')
-    .withPriority(100)
     .build();
 
   grammar
     .define('converse with :target')
     .mapsTo('if.action.talking')
-    .withPriority(100)
     .build();
 
   // ==========================================================================
@@ -737,6 +674,19 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Mechanical aliases of existing actions; phrasal/complex forms use
   // .define() per the ADR-087 convention.
   // ==========================================================================
+
+  // ORDER IS LOAD-BEARING (ADR-268 D3): the two rules below tie their
+  // competitors on confidence and literal specificity, so definition order
+  // decides. They must precede the direction-alias block below.
+  //
+  // `go out` → exiting must be listed before the going alias `go out`
+  // emitted by the loop (the only duplicate pattern with different actions
+  // in the standard grammar).
+  grammar.define('go out').mapsTo('if.action.exiting').build();
+  // `move :item to :destination` → putting must be listed before pushing's
+  // `move :target <direction>` expansion (":item" can swallow "X to" when
+  // the direction word doubles as the destination).
+  grammar.define('move :item to :destination').mapsTo('if.action.putting').build();
 
   // going aliases (verbs.ts: walk/run/head/travel; `move` LEFT the going
   // list — Phase 1 ruling, move is manipulation-only).
@@ -767,7 +717,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
           grammar
             .define(`${verb} ${alias}`)
             .mapsTo('if.action.going')
-            .withPriority(alias.length === 1 ? 90 : 100)
             .withDefaultSemantics({ direction: canonical as never })
             .build();
         }
@@ -780,86 +729,81 @@ export function defineGrammar(grammar: GrammarBuilder): void {
         grammar
           .define(`move :target ${alias}`)
           .mapsTo('if.action.pushing')
-          .withPriority(105)
           .build();
       }
     }
   }
 
-  // exiting alias
-  grammar.define('go out').mapsTo('if.action.exiting').withPriority(105).build(); // ADR-231 D2b: phrasal form above bare verb-plus-slot
-
   // listening alias (hear)
-  grammar.define('hear').mapsTo('if.action.listening').withPriority(100).build();
-  grammar.define('hear :target').mapsTo('if.action.listening').withPriority(100).build();
+  grammar.define('hear').mapsTo('if.action.listening').build();
+  grammar.define('hear :target').mapsTo('if.action.listening').build();
 
   // taking/dropping phrasal aliases
-  grammar.define('take up :item').mapsTo('if.action.taking').withPriority(100).build();
-  grammar.define('throw away :item').mapsTo('if.action.dropping').withPriority(100).build();
+  grammar.define('take up :item').mapsTo('if.action.taking').build();
+  grammar.define('throw away :item').mapsTo('if.action.dropping').build();
 
-  // putting aliases (place; move-to per the Phase 1 move ruling — putting
-  // resolves in/on by destination type when the preposition is `to`)
-  grammar.define('place :item in|into|inside :container').mapsTo('if.action.putting').withPriority(100).build();
-  grammar.define('place :item on|onto :supporter').mapsTo('if.action.putting').withPriority(100).build();
-  // 110 so the to-form outranks pushing's bare `move :target`
-  grammar.define('move :item to :destination').mapsTo('if.action.putting').withPriority(110).build();
+  // putting aliases (place — `move :item to :destination` lives above the
+  // direction-alias block, ADR-268 D3 ordering; putting resolves in/on by
+  // destination type when the preposition is `to`)
+  grammar.define('place :item in|into|inside :container').mapsTo('if.action.putting').build();
+  grammar.define('place :item on|onto :supporter').mapsTo('if.action.putting').build();
 
   // opening/closing aliases
-  grammar.define('unwrap :door').mapsTo('if.action.opening').withPriority(100).build();
-  grammar.define('uncover :door').mapsTo('if.action.opening').withPriority(100).build();
-  grammar.define('shut :door').mapsTo('if.action.closing').withPriority(100).build();
-  grammar.define('cover :door').mapsTo('if.action.closing').withPriority(100).build();
+  grammar.define('unwrap :door').mapsTo('if.action.opening').build();
+  grammar.define('uncover :door').mapsTo('if.action.opening').build();
+  grammar.define('shut :door').mapsTo('if.action.closing').build();
+  grammar.define('cover :door').mapsTo('if.action.closing').build();
 
   // turning (ADR-230 Phase 6 sketch ruling 1: capability dispatch like
-  // lowering/raising). Priority 95 so the switching phrasal forms
-  // (`turn :device on`, `turn on :device`) always win.
-  grammar.define('turn :target').mapsTo('if.action.turning').withPriority(95).build();
-  grammar.define('rotate :target').mapsTo('if.action.turning').withPriority(95).build();
-  grammar.define('twist :target').mapsTo('if.action.turning').withPriority(95).build();
+  // lowering/raising). The switching phrasal forms (`turn :device on`,
+  // `turn on :device`) always win via their extra literal.
+  grammar.define('turn :target').mapsTo('if.action.turning').build();
+  grammar.define('rotate :target').mapsTo('if.action.turning').build();
+  grammar.define('twist :target').mapsTo('if.action.turning').build();
 
   // locking/unlocking aliases
-  grammar.define('secure :target').mapsTo('if.action.locking').withPriority(100).build();
-  grammar.define('unsecure :target').mapsTo('if.action.unlocking').withPriority(100).build();
+  grammar.define('secure :target').mapsTo('if.action.locking').build();
+  grammar.define('unsecure :target').mapsTo('if.action.unlocking').build();
 
   // switching aliases (bare transitive forms — activate/start/deactivate/stop)
-  grammar.define('activate :device').mapsTo('if.action.switching_on').withPriority(100).build();
-  grammar.define('start :device').mapsTo('if.action.switching_on').withPriority(100).build();
-  grammar.define('deactivate :device').mapsTo('if.action.switching_off').withPriority(100).build();
-  grammar.define('stop :device').mapsTo('if.action.switching_off').withPriority(100).build();
+  grammar.define('activate :device').mapsTo('if.action.switching_on').build();
+  grammar.define('start :device').mapsTo('if.action.switching_on').build();
+  grammar.define('deactivate :device').mapsTo('if.action.switching_off').build();
+  grammar.define('stop :device').mapsTo('if.action.switching_off').build();
 
   // giving/showing aliases
-  grammar.define('hand :item to :recipient').mapsTo('if.action.giving').withPriority(100).build();
-  grammar.define('hand :recipient :item').mapsTo('if.action.giving').withPriority(100).build();
-  grammar.define('display :item to :recipient').mapsTo('if.action.showing').withPriority(100).build();
-  grammar.define('present :item to :recipient').mapsTo('if.action.showing').withPriority(100).build();
+  grammar.define('hand :item to :recipient').mapsTo('if.action.giving').build();
+  grammar.define('hand :recipient :item').mapsTo('if.action.giving').build();
+  grammar.define('display :item to :recipient').mapsTo('if.action.showing').build();
+  grammar.define('present :item to :recipient').mapsTo('if.action.showing').build();
 
   // throwing aliases
-  grammar.define('toss :item at :target').mapsTo('if.action.throwing').withPriority(100).build();
-  grammar.define('toss :item to :recipient').mapsTo('if.action.throwing').withPriority(100).build();
-  grammar.define('hurl :item at :target').mapsTo('if.action.throwing').withPriority(100).build();
-  grammar.define('hurl :item to :recipient').mapsTo('if.action.throwing').withPriority(100).build();
+  grammar.define('toss :item at :target').mapsTo('if.action.throwing').build();
+  grammar.define('toss :item to :recipient').mapsTo('if.action.throwing').build();
+  grammar.define('hurl :item at :target').mapsTo('if.action.throwing').build();
+  grammar.define('hurl :item to :recipient').mapsTo('if.action.throwing').build();
 
   // patterns-array reconciliation promotions (PIN 4b): phrasal forms the
   // lang help surface advertises
-  grammar.define('munch on :item').mapsTo('if.action.eating').withPriority(100).build();
-  grammar.define('nibble on :item').mapsTo('if.action.eating').withPriority(100).build();
-  grammar.define('drink from :target').mapsTo('if.action.drinking').withPriority(100).build();
-  grammar.define('sip from :target').mapsTo('if.action.drinking').withPriority(100).build();
-  grammar.define('let go of :item').mapsTo('if.action.dropping').withPriority(100).build();
-  grammar.define('open up :door').mapsTo('if.action.opening').withPriority(100).build();
-  grammar.define('power on :device').mapsTo('if.action.switching_on').withPriority(100).build();
-  grammar.define('power off :device').mapsTo('if.action.switching_off').withPriority(100).build();
-  grammar.define('extract :item from :container').mapsTo('if.action.removing').withPriority(110).build();
+  grammar.define('munch on :item').mapsTo('if.action.eating').build();
+  grammar.define('nibble on :item').mapsTo('if.action.eating').build();
+  grammar.define('drink from :target').mapsTo('if.action.drinking').build();
+  grammar.define('sip from :target').mapsTo('if.action.drinking').build();
+  grammar.define('let go of :item').mapsTo('if.action.dropping').build();
+  grammar.define('open up :door').mapsTo('if.action.opening').build();
+  grammar.define('power on :device').mapsTo('if.action.switching_on').build();
+  grammar.define('power off :device').mapsTo('if.action.switching_off').build();
+  grammar.define('extract :item from :container').mapsTo('if.action.removing').build();
 
   // meta aliases
-  grammar.define('save game').mapsTo('if.action.saving').withPriority(100).build();
-  grammar.define('load').mapsTo('if.action.restoring').withPriority(100).build();
-  grammar.define('load game').mapsTo('if.action.restoring').withPriority(100).build();
-  grammar.define('restore game').mapsTo('if.action.restoring').withPriority(100).build();
-  grammar.define('exit game').mapsTo('if.action.quitting').withPriority(105).build(); // outranks `exit :container`
-  grammar.define('?').mapsTo('if.action.help').withPriority(100).build();
-  grammar.define('commands').mapsTo('if.action.help').withPriority(100).build();
-  grammar.define('points').mapsTo('if.action.scoring').withPriority(100).build();
+  grammar.define('save game').mapsTo('if.action.saving').build();
+  grammar.define('load').mapsTo('if.action.restoring').build();
+  grammar.define('load game').mapsTo('if.action.restoring').build();
+  grammar.define('restore game').mapsTo('if.action.restoring').build();
+  grammar.define('exit game').mapsTo('if.action.quitting').build(); // outranks `exit :container` via its extra literal
+  grammar.define('?').mapsTo('if.action.help').build();
+  grammar.define('commands').mapsTo('if.action.help').build();
+  grammar.define('points').mapsTo('if.action.scoring').build();
 
   // Touching/sensory actions (ADR-087: using forAction)
   // Scope handled by action validation
@@ -874,13 +818,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('listen')
     .mapsTo('if.action.listening')
-    .withPriority(100)
     .build();
 
   grammar
     .define('listen to :target')
     .mapsTo('if.action.listening')
-    .withPriority(100)
     .build();
 
   grammar
@@ -899,43 +841,36 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   // Scope and trait-based refusal handled by action validation
   // ============================================================================
 
-  // Semantic: enter specific enterable thing (priority 100)
+  // Semantic: enter specific enterable thing
   grammar
     .define('enter :portal')
     .mapsTo('if.action.entering')
-    .withPriority(100)
     .build();
 
-  // Prepositional/phrasal entering forms sit at 105 (ADR-231 D2b): the file's
-  // guideline puts semantic/phrasal forms above bare verb-plus-slot forms, and
-  // these previously tied taking's `get :item` / climbing's `climb :target` at
-  // 100 (`exit game` at 105 is the precedent). The literal-before-slot
-  // specificity tiebreak also resolves this class structurally.
+  // Prepositional/phrasal entering forms: the literal-before-slot
+  // specificity tiebreak (ADR-231 D2b) puts them above bare verb-plus-slot
+  // forms like taking's `get :item` / climbing's `climb :target` structurally.
   grammar
     .define('get in :portal')
     .mapsTo('if.action.entering')
-    .withPriority(105)
     .build();
 
   grammar
     .define('get into :portal')
     .mapsTo('if.action.entering')
-    .withPriority(105)
     .build();
 
   grammar
     .define('climb in :portal')
     .mapsTo('if.action.entering')
-    .withPriority(105)
     .build();
 
   grammar
     .define('climb into :portal')
     .mapsTo('if.action.entering')
-    .withPriority(105)
     .build();
 
-  // Climb a climbable object (priority 100) — ADR-218 §1a (ratchet F2).
+  // Climb a climbable object — ADR-218 §1a (ratchet F2).
   // Routes `climb <thing>` and its synonyms to the climbing action's object-climb
   // path. [2026-07-17, ADR-231 D2a] This block originally claimed parse-time
   // CLIMBABLE gating via .hasTrait(); that call was a no-op and has been
@@ -945,130 +880,109 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('climb :target')
     .mapsTo('if.action.climbing')
-    .withPriority(100)
     .build();
 
   grammar
     .define('climb up :target')
     .mapsTo('if.action.climbing')
-    .withPriority(100)
     .build();
 
   grammar
     .define('climb down :target')
     .mapsTo('if.action.climbing')
-    .withPriority(100)
     .build();
 
   grammar
     .define('scale :target')
     .mapsTo('if.action.climbing')
-    .withPriority(100)
     .build();
 
   grammar
     .define('ascend :target')
     .mapsTo('if.action.climbing')
-    .withPriority(100)
     .build();
 
   grammar
     .define('descend :target')
     .mapsTo('if.action.climbing')
-    .withPriority(100)
     .build();
 
   grammar
     .define('go in :portal')
     .mapsTo('if.action.entering')
-    .withPriority(105) // ADR-231 D2b: phrasal form above bare verb-plus-slot
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   grammar
     .define('go into :portal')
     .mapsTo('if.action.entering')
-    .withPriority(105) // ADR-231 D2b: phrasal form above bare verb-plus-slot
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   // Exiting (bare command, no target - exits current container/location)
   grammar
     .define('exit')
     .mapsTo('if.action.exiting')
-    .withPriority(100)
     .build();
 
   grammar
     .define('get out')
     .mapsTo('if.action.exiting')
-    .withPriority(105) // ADR-231 D2b: outranks taking's `get :item` ("out" is not an item)
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   grammar
     .define('leave')
     .mapsTo('if.action.exiting')
-    .withPriority(95)
     .build();
 
   grammar
     .define('climb out')
     .mapsTo('if.action.exiting')
-    .withPriority(105) // ADR-231 D2b: outranks climbing's `climb :target`
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   // Vehicle-specific synonyms (map to entering/exiting actions)
   grammar
     .define('board :vehicle')
     .mapsTo('if.action.entering')
-    .withPriority(100)
     .build();
 
   grammar
     .define('get on :vehicle')
     .mapsTo('if.action.entering')
-    .withPriority(105) // ADR-231 D2b: phrasal form above taking's `get :item`
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   // Exiting with a target (exit specific container/vehicle)
   grammar
     .define('exit :container')
     .mapsTo('if.action.exiting')
-    .withPriority(100)
     .build();
 
   grammar
     .define('get out of :container')
     .mapsTo('if.action.exiting')
-    .withPriority(105) // ADR-231 D2b: phrasal form above taking's `get :item`
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   grammar
     .define('climb out of :container')
     .mapsTo('if.action.exiting')
-    .withPriority(105) // ADR-231 D2b: phrasal form above climbing's `climb :target`
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   grammar
     .define('disembark')
     .mapsTo('if.action.exiting')
-    .withPriority(100)
     .build();
 
   grammar
     .define('disembark :vehicle')
     .mapsTo('if.action.exiting')
-    .withPriority(100)
     .build();
 
   grammar
     .define('get off :vehicle')
     .mapsTo('if.action.exiting')
-    .withPriority(105) // ADR-231 D2b: phrasal form above taking's `get :item`
-    .build();
+    .build(); // ADR-231 D2b: extra literal wins via specificity
 
   grammar
     .define('alight')
     .mapsTo('if.action.exiting')
-    .withPriority(95)
     .build();
 
   // =========================================================================
@@ -1079,14 +993,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('again')
     .mapsTo('if.action.again')
-    .withPriority(100)
     .build();
 
   // Abbreviation "g"
   grammar
     .define('g')
     .mapsTo('if.action.again')
-    .withPriority(90)
     .build();
 
   // =========================================================================
@@ -1108,7 +1020,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
       grammar
         .define(`${verb} :target`)
         .mapsTo('if.action.hiding')
-        .withPriority(100)
         .withDefaultSemantics({ position })
         .build();
     }
@@ -1120,7 +1031,6 @@ export function defineGrammar(grammar: GrammarBuilder): void {
     grammar
       .define(pattern)
       .mapsTo('if.action.revealing')
-      .withPriority(100)
       .build();
   }
 }

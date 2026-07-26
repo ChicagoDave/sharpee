@@ -121,7 +121,6 @@ describe('Story Grammar API', () => {
       grammar
         .define('cast :spell')
         .mapsTo('story.action.casting')
-        .withPriority(100)
         .build();
 
       const result = parser.parse('cast fireball');
@@ -158,7 +157,6 @@ describe('Story Grammar API', () => {
         .define('push :direction wall')
         .direction('direction')
         .mapsTo('story.action.push_wall')
-        .withPriority(175)
         .build();
 
       const result = parser.parse('push east wall');
@@ -175,7 +173,6 @@ describe('Story Grammar API', () => {
         .define('yell :words')
         .text('words')
         .mapsTo('story.action.yelling')
-        .withPriority(150)
         .build();
 
       const result = parser.parse('yell hello');
@@ -194,7 +191,6 @@ describe('Story Grammar API', () => {
         .where('target', (scope: ScopeBuilder) => scope.visible().matching({ creature: true }))
         .where('weapon', (scope: ScopeBuilder) => scope.carried().matching({ weapon: true }))
         .mapsTo('story.action.attacking')
-        .withPriority(120)
         .build();
 
       // Move sword to inventory

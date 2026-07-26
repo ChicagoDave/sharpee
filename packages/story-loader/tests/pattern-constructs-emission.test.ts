@@ -28,7 +28,7 @@ const action = (lines: string) =>
 describe('landing group 2 emission (ADR-267 D3 bar)', () => {
   it('alternation: one registered rule carrying `|`, never N split rules', () => {
     const rules = rulesFrom(action('  grammar\n    look in or inside the target\n'));
-    const slotted = rules.filter((r) => r.priority === 150);
+    const slotted = rules.filter((r) => r.pattern.includes(':'));
     expect(slotted).toHaveLength(1);
     expect(slotted[0].pattern).toBe('look in|inside :target');
     expect(slotted[0].action).toBe('chord.action.testing');
@@ -36,7 +36,7 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
 
   it('optional elements: `[…]` marks the element in the emitted string, one rule', () => {
     const rules = rulesFrom(action('  grammar\n    look [carefully] at the target\n'));
-    const slotted = rules.filter((r) => r.priority === 150);
+    const slotted = rules.filter((r) => r.pattern.includes(':'));
     expect(slotted).toHaveLength(1);
     expect(slotted[0].pattern).toBe('look [carefully] at :target');
   });
@@ -50,13 +50,13 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
     const rules = rulesFrom(
       action('  grammar\n    write the message\n    sign the message for the witness\n  the message takes the rest of the line\n'),
     );
-    const patterns = rules.filter((r) => r.priority === 150).map((r) => r.pattern).sort();
+    const patterns = rules.filter((r) => r.pattern.includes(':')).map((r) => r.pattern).sort();
     expect(patterns).toEqual(['sign :message... for :witness', 'write :message...']);
   });
 
   it('a pattern with no group-2 constructs emits byte-identically to pre-267', () => {
     const rules = rulesFrom(action('  grammar\n    pet the animal\n'));
-    expect(rules.some((r) => r.pattern === 'pet :animal' && r.priority === 150)).toBe(true);
+    expect(rules.some((r) => r.pattern === 'pet :animal')).toBe(true);
   });
 
   it('means (D12): per-pattern defaults land on exactly that pattern\'s rules', () => {
@@ -64,7 +64,7 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
       action(
         '  grammar\n    hide under the target\n      means position under\n    hide behind the target\n      means position behind\n    hide near the target\n',
       ),
-    ).filter((r) => r.priority === 150);
+    ).filter((r) => r.pattern.includes(':'));
     expect(rules).toHaveLength(3);
     const by = (p: string) => rules.find((r) => r.pattern === p)!;
     expect(by('hide under :target').defaultSemantics).toEqual({ position: 'under' });
@@ -77,7 +77,7 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
       action(
         '  grammar\n    sail the direction\n    the direction\n  directions\n    port or p\n    starboard or sb\n    fore\n    aft\n',
       ),
-    ).filter((r) => r.priority === 150);
+    ).filter((r) => r.defaultSemantics?.direction); // expansion rules carry no ':'; excludes the bare `sail` prefix
     // 2 patterns × (2+2+1+1 alias words) = 12 rules, all for this action.
     expect(rules).toHaveLength(12);
     expect(rules.every((r) => r.action === 'chord.action.testing')).toBe(true);

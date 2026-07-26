@@ -25,19 +25,16 @@ export function registerRitualGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('ring :target')
     .mapsTo(RING_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('ring bell')
     .mapsTo(RING_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('ring the bell')
     .mapsTo(RING_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // ============================================================
@@ -48,57 +45,48 @@ export function registerRitualGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('break :target')
     .mapsTo(BREAK_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('smash :target')
     .mapsTo(BREAK_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('hit :target')
     .mapsTo(BREAK_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('destroy :target')
     .mapsTo(BREAK_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // Burn action - for burning incense
   grammar
     .define('burn :target')
     .mapsTo(BURN_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('light :target')
     .mapsTo(BURN_ACTION_ID)
-    .withPriority(145) // Lower than stdlib LIGHT for lantern
     .build();
 
   // Pray action - for blessing the basin
   grammar
     .define('pray')
     .mapsTo(PRAY_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('pray at :target')
     .mapsTo(PRAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('pray to :target')
     .mapsTo(PRAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // ============================================================
@@ -109,7 +97,6 @@ export function registerRitualGrammar(grammar: GrammarBuilder): void {
     .text('challenge')
     .text('response')
     .mapsTo(INCANT_ACTION_ID)
-    .withPriority(200)
     .build();
 
   // ============================================================
@@ -118,13 +105,11 @@ export function registerRitualGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('wave :target')
     .mapsTo(WAVE_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('wave :target at :location')
     .mapsTo(WAVE_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // ============================================================
@@ -133,12 +118,10 @@ export function registerRitualGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('wind :target')
     .mapsTo(WIND_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('wind up :target')
     .mapsTo(WIND_ACTION_ID)
-    .withPriority(155)
     .build();
 }

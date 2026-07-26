@@ -20,21 +20,18 @@ export function registerUtilityGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('diagnose')
     .mapsTo(DIAGNOSE_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // ROOM - verbose room description without objects
   grammar
     .define('room')
     .mapsTo(ROOM_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // RNAME - short room name only
   grammar
     .define('rname')
     .mapsTo(RNAME_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // OBJECTS - object descriptions without room description
@@ -42,12 +39,10 @@ export function registerUtilityGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('objects')
     .mapsTo(OBJECTS_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('object')
     .mapsTo(OBJECTS_ACTION_ID)
-    .withPriority(150)
     .build();
 }

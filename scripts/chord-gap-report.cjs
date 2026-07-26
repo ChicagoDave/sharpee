@@ -7,8 +7,10 @@
  * whose constructs Chord cannot yet express, with counts by construct.
  * Two sections stay distinct (D5): BLOCKING (rules the standard grammar has
  * that Chord cannot write) and NOT BLOCKING (builder capabilities nothing
- * exercises). Ordering rows (priority ≠ 100) are ADR-268's and are counted
- * separately — ADR-267 is done when the report is empty EXCEPT them (D7).
+ * exercises). The former ordering carve-out (priority ≠ 100) retired with
+ * ADR-268: numeric priority no longer exists — ordering is implicit
+ * (tier → specificity → definition order), so the report must read EMPTY,
+ * full stop.
  *
  * Lifetime: the migration's (ADR-266 D5) — when ADR-269 lands, grammar.ts
  * stops being the source and this generator retires with its report.
@@ -42,10 +44,8 @@ const addGap = (construct, rule) => {
 //   platform-side exception by David 2026-07-25 (session 2d5bc7).
 const RULED_EXCEPTIONS = new Set(['?']);
 
-let ordering = 0;
 let exceptions = 0;
 for (const rule of rules) {
-  if (rule.priority !== 100) ordering++;
   if (RULED_EXCEPTIONS.has(rule.pattern.trim())) {
     exceptions++;
     continue;
@@ -82,6 +82,4 @@ for (const [construct, patterns] of gaps) {
 }
 console.log(`\n== RULED EXCEPTIONS (platform-side TS registrations, by owner ruling) ==`);
 console.log(`  ${exceptions} rule(s): ${[...RULED_EXCEPTIONS].join(', ')}`);
-console.log(`\n== ORDERING (ADR-268's, excluded by D7) ==`);
-console.log(`  rules with priority ≠ 100: ${ordering}`);
-console.log(`\nRESULT: ${gaps.size === 0 ? 'EMPTY except ordering — ADR-267 D7 satisfied' : `${gaps.size} blocking construct(s) remain`}`);
+console.log(`\nRESULT: ${gaps.size === 0 ? 'EMPTY — ADR-268 acceptance 2 satisfied' : `${gaps.size} blocking construct(s) remain`}`);

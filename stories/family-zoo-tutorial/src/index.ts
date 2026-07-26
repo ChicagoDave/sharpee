@@ -297,12 +297,12 @@ export class FriendlyZooStory implements Story {
 
   extendParser(parser: Parser): void {
     const grammar = parser.getStoryGrammar();
-    grammar.define('feed :thing').mapsTo(FEED_ACTION_ID).withPriority(150).build();
-    grammar.define('photograph :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
-    grammar.define('photo :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
-    grammar.define('snap :thing').mapsTo(PHOTOGRAPH_ACTION_ID).withPriority(150).build();
-    grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
-    grammar.define('stroke :thing').mapsTo(PETTING_ACTION_ID).withPriority(150).build();
+    grammar.define('feed :thing').mapsTo(FEED_ACTION_ID).build();
+    grammar.define('photograph :thing').mapsTo(PHOTOGRAPH_ACTION_ID).build();
+    grammar.define('photo :thing').mapsTo(PHOTOGRAPH_ACTION_ID).build();
+    grammar.define('snap :thing').mapsTo(PHOTOGRAPH_ACTION_ID).build();
+    grammar.define('pet :thing').mapsTo(PETTING_ACTION_ID).build();
+    grammar.define('stroke :thing').mapsTo(PETTING_ACTION_ID).build();
   }
 
   extendLanguage(language: LanguageProvider): void {

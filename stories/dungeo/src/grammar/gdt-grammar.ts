@@ -1,7 +1,7 @@
 /**
  * GDT (Game Debugging Tool) Grammar
  *
- * Debug commands for testing and development. These are high-priority patterns
+ * Debug commands for testing and development. These are story-tier patterns
  * that are only functional when GDT mode is active.
  */
 
@@ -16,11 +16,10 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('gdt')
     .mapsTo(GDT_ACTION_ID)
-    .withPriority(200)
     .build();
 
   // GDT two-letter commands (only active when in GDT mode)
-  // These are high priority to override any other patterns
+  // Story tier: these override any standard patterns (ADR-268 D2)
 
   // Commands that don't take arguments
   const noArgCodes = [
@@ -41,7 +40,6 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
     grammar
       .define(code)
       .mapsTo(GDT_COMMAND_ACTION_ID)
-      .withPriority(250)
       .build();
   }
 
@@ -53,14 +51,12 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
     grammar
       .define(code)
       .mapsTo(GDT_COMMAND_ACTION_ID)
-      .withPriority(250)
       .build();
 
     // With arguments - use :arg... for greedy multi-word capture
     grammar
       .define(`${code} :arg...`)
       .mapsTo(GDT_COMMAND_ACTION_ID)
-      .withPriority(251)
       .build();
   }
 
@@ -70,14 +66,12 @@ export function registerGDTGrammar(grammar: GrammarBuilder): void {
     grammar
       .define(code)
       .mapsTo(GDT_COMMAND_ACTION_ID)
-      .withPriority(250)
       .build();
 
     // Use greedy capture - handler splits args from rawInput
     grammar
       .define(`${code} :arg...`)
       .mapsTo(GDT_COMMAND_ACTION_ID)
-      .withPriority(251)
       .build();
   }
 }

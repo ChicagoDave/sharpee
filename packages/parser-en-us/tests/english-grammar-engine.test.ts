@@ -154,25 +154,23 @@ describe('EnglishGrammarEngine', () => {
     });
   });
   
-  describe('Priority and Confidence', () => {
-    it('should respect rule priorities', () => {
+  describe('Ordering and Confidence', () => {
+    it('should pick the matching verb rule', () => {
       grammar
         .define('put :item on :supporter')
         .mapsTo('if.action.putting')
-        .withPriority(100)
         .build();
       
       grammar
         .define('hang :item on :hook')
         .mapsTo('if.action.hanging')
-        .withPriority(150)
         .build();
       
       const tokens = createTokens(['hang', 'cloak', 'on', 'hook']);
       const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
       const matches = engine.findMatches(tokens, context);
       
-      // Both should match, but hang should be first due to priority
+      // Only the hang rule matches this input
       expect(matches.length).toBeGreaterThanOrEqual(1);
       expect(matches[0].rule.action).toBe('if.action.hanging');
     });
@@ -181,13 +179,11 @@ describe('EnglishGrammarEngine', () => {
       grammar
         .define('look at :target')
         .mapsTo('if.action.examining')
-        .withPriority(100)
         .build();
         
       grammar
         .define('examine :target')
         .mapsTo('if.action.examining')
-        .withPriority(90)
         .build();
       
       const tokens1 = createTokens(['look', 'at', 'mirror']);
@@ -200,7 +196,7 @@ describe('EnglishGrammarEngine', () => {
       expect(matches1).toHaveLength(1);
       expect(matches2).toHaveLength(1);
       
-      // Higher priority rule should have higher confidence
+      // Full-literal match confidence is comparable across both forms
       expect(matches1[0].confidence).toBeGreaterThanOrEqual(matches2[0].confidence);
     });
   });
@@ -273,8 +269,33 @@ describe('EnglishGrammarEngine', () => {
       const tokens = createTokens(['look']);
       const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
       const matches = engine.findMatches(tokens, context, { maxMatches: 5 });
-      
+
       expect(matches).toHaveLength(5);
+    });
+
+    it('story rule survives maxMatches even when defined after enough standard rules (ADR-268 D5)', () => {
+      // Fill the maxMatches budget with standard rules that all match, then
+      // register a story rule last. Story-tier-first iteration must surface
+      // it — a plain registration-order scan would exhaust the budget on the
+      // standard rules and drop the rule that outranks them all.
+      for (let i = 0; i < 5; i++) {
+        grammar
+          .define('look')
+          .mapsTo(`if.action.looking${i}`)
+          .build();
+      }
+      engine.createBuilder('story')
+        .define('look')
+        .mapsTo('story.action.looking')
+        .build();
+
+      const tokens = createTokens(['look']);
+      const context = { world: null, actorId: 'player', currentLocation: 'room', slots: new Map() };
+      const matches = engine.findMatches(tokens, context, { maxMatches: 5 });
+
+      expect(matches).toHaveLength(5);
+      expect(matches[0].rule.action).toBe('story.action.looking');
+      expect(matches[0].rule.tier).toBe('story');
     });
   });
 });

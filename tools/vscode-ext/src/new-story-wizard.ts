@@ -188,7 +188,7 @@ const ${className}: Story = {
   extendParser(parser: Parser): void {
     // Add story-specific grammar here:
     // const grammar = parser.getStoryGrammar();
-    // grammar.define('verb :target').mapsTo(ACTION_ID).withPriority(150).build();
+    // grammar.define('verb :target').mapsTo(ACTION_ID).build();
   },
 
   registerMessages(language: LanguageProvider): void {

@@ -399,9 +399,9 @@ describe('Parser Grammar Engine Integration', () => {
 
     beforeEach(() => {
       const story = parser.getStoryGrammar();
-      story.define('say :message').mapsTo(SAY_ACTION).withPriority(150).build();
-      story.define('say :message to :recipient').mapsTo(SAY_ACTION).withPriority(155).build();
-      story.define('whisper :message to :recipient').mapsTo(WHISPER_ACTION).withPriority(150).build();
+      story.define('say :message').mapsTo(SAY_ACTION).build();
+      story.define('say :message to :recipient').mapsTo(SAY_ACTION).build();
+      story.define('whisper :message to :recipient').mapsTo(WHISPER_ACTION).build();
     });
 
     it('should parse a quoted string into the message slot', () => {

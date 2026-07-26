@@ -21,20 +21,17 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('say :arg')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(150)
     .build();
 
-  // Higher priority for specific magic words
+  // Specific magic words win via literal specificity
   grammar
     .define('say odysseus')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('say ulysses')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // Bare magic words (mainframe Zork style - no "say" prefix needed)
@@ -42,27 +39,23 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('echo')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // ulysses/odysseus - Cyclops puzzle
   grammar
     .define('ulysses')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('odysseus')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // xyzzy - classic Adventure reference (does nothing in Zork)
   grammar
     .define('xyzzy')
     .mapsTo(SAY_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // Commanding action (Robot commands - FORTRAN Zork)
@@ -71,13 +64,11 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('tell :npc to :command...')
     .mapsTo(COMMANDING_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('order :npc to :command...')
     .mapsTo(COMMANDING_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // Note: Pattern ":npc, :command..." removed - patterns can't start with slots
@@ -92,38 +83,32 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('hello :target')
     .mapsTo('if.action.talking')
-    .withPriority(150)
     .build();
 
   // KNOCK action (Dungeon Master trivia trigger)
   grammar
     .define('knock')
     .mapsTo(KNOCK_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('knock on :target')
     .mapsTo(KNOCK_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('knock on door')
     .mapsTo(KNOCK_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('knock on the door')
     .mapsTo(KNOCK_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('knock door')
     .mapsTo(KNOCK_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // ANSWER action (Trivia responses) - uses greedy text slot (:text... syntax)
@@ -131,6 +116,5 @@ export function registerSpeechGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('answer :text...')
     .mapsTo(ANSWER_ACTION_ID)
-    .withPriority(150)
     .build();
 }

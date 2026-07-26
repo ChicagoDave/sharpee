@@ -34,44 +34,37 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('walk through :target')
     .mapsTo(WALK_THROUGH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('go through :target')
     .mapsTo(WALK_THROUGH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('pass through :target')
     .mapsTo(WALK_THROUGH_ACTION_ID)
-    .withPriority(150)
     .build();
 
-  // Explicit patterns for walls (higher priority)
+  // Explicit patterns for walls (win via literal specificity)
   grammar
     .define('walk through south wall')
     .mapsTo(WALK_THROUGH_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('walk through north wall')
     .mapsTo(WALK_THROUGH_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('go through south wall')
     .mapsTo(WALK_THROUGH_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('go through north wall')
     .mapsTo(WALK_THROUGH_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // ============================================================
@@ -81,90 +74,76 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
     .define('push :direction wall')
     .direction('direction')
     .mapsTo(PUSH_WALL_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('push the :direction wall')
     .direction('direction')
     .mapsTo(PUSH_WALL_ACTION_ID)
-    .withPriority(160)
     .build();
 
   // ============================================================
   // Push panel action (Inside Mirror wall panels)
-  // Higher priority than stdlib push to bypass scenery check
+  // Story tier outranks stdlib push (bypasses scenery check)
   // ============================================================
   grammar
     .define('push red panel')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push red wall')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push red')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push yellow panel')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push yellow wall')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push yellow')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push mahogany panel')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push mahogany wall')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push mahogany')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push pine panel')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push pine wall')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   grammar
     .define('push pine')
     .mapsTo(PUSH_PANEL_ACTION_ID)
-    .withPriority(170)
     .build();
 
   // ============================================================
@@ -173,37 +152,31 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('lift pole')
     .mapsTo(LIFT_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('raise pole')
     .mapsTo(LIFT_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('lift short pole')
     .mapsTo(LIFT_ACTION_ID)
-    .withPriority(156)
     .build();
 
   grammar
     .define('raise short pole')
     .mapsTo(LIFT_ACTION_ID)
-    .withPriority(156)
     .build();
 
   grammar
     .define('lower pole')
     .mapsTo(LOWER_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('lower short pole')
     .mapsTo(LOWER_ACTION_ID)
-    .withPriority(156)
     .build();
 
   // ============================================================
@@ -213,65 +186,55 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
     .define('set dial to :number')
     .text('number')
     .mapsTo(SET_DIAL_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('turn dial to :number')
     .text('number')
     .mapsTo(SET_DIAL_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('set indicator to :number')
     .text('number')
     .mapsTo(SET_DIAL_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('turn indicator to :number')
     .text('number')
     .mapsTo(SET_DIAL_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // Push dial button - only specific patterns to avoid laser puzzle button conflict
   grammar
     .define('push dial button')
     .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('press dial button')
     .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('push the dial button')
     .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('press the dial button')
     .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('push sundial button')
     .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('press sundial button')
     .mapsTo(PUSH_DIAL_BUTTON_ACTION_ID)
-    .withPriority(165)
     .build();
 
   // ============================================================
@@ -280,7 +243,6 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('press :target')
     .mapsTo(PRESS_BUTTON_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // ============================================================
@@ -289,20 +251,17 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('turn bolt')
     .mapsTo(TURN_BOLT_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('turn the bolt')
     .mapsTo(TURN_BOLT_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('turn bolt with :instrument')
     .instrument('instrument')
     .mapsTo(TURN_BOLT_ACTION_ID)
-    .withPriority(155)
     .build();
 
   // ============================================================
@@ -311,37 +270,31 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('turn switch')
     .mapsTo(TURN_SWITCH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('turn the switch')
     .mapsTo(TURN_SWITCH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('flip switch')
     .mapsTo(TURN_SWITCH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('flip the switch')
     .mapsTo(TURN_SWITCH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('activate machine')
     .mapsTo(TURN_SWITCH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('activate the machine')
     .mapsTo(TURN_SWITCH_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // ============================================================
@@ -350,61 +303,51 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('put :item under :target')
     .mapsTo(PUT_UNDER_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('slide :item under :target')
     .mapsTo(PUT_UNDER_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('put mat under door')
     .mapsTo(PUT_UNDER_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('slide mat under door')
     .mapsTo(PUT_UNDER_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('push key with :tool')
     .mapsTo(PUSH_KEY_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('push key with screwdriver')
     .mapsTo(PUSH_KEY_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('use :tool on keyhole')
     .mapsTo(PUSH_KEY_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('use screwdriver on keyhole')
     .mapsTo(PUSH_KEY_ACTION_ID)
-    .withPriority(165)
     .build();
 
   grammar
     .define('poke key with :tool')
     .mapsTo(PUSH_KEY_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('push key through keyhole')
     .mapsTo(PUSH_KEY_ACTION_ID)
-    .withPriority(165)
     .build();
 
   // ============================================================
@@ -413,25 +356,21 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('dig')
     .mapsTo(DIG_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('dig with :tool')
     .mapsTo(DIG_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('dig :target')
     .mapsTo(DIG_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('dig in :target')
     .mapsTo(DIG_ACTION_ID)
-    .withPriority(150)
     .build();
 
   // ============================================================
@@ -440,25 +379,21 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
   grammar
     .define('send for brochure')
     .mapsTo(SEND_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('send for free brochure')
     .mapsTo(SEND_ACTION_ID)
-    .withPriority(155)
     .build();
 
   grammar
     .define('order brochure')
     .mapsTo(SEND_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('mail order')
     .mapsTo(SEND_ACTION_ID)
-    .withPriority(145)
     .build();
 
   // ============================================================
@@ -469,31 +404,26 @@ export function registerPuzzleGrammar(grammar: GrammarBuilder): void {
     .define('melt glacier with :instrument')
     .instrument('instrument')
     .mapsTo(MELT_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('melt ice with :instrument')
     .instrument('instrument')
     .mapsTo(MELT_ACTION_ID)
-    .withPriority(160)
     .build();
 
   grammar
     .define('melt glacier')
     .mapsTo(MELT_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('melt ice')
     .mapsTo(MELT_ACTION_ID)
-    .withPriority(150)
     .build();
 
   grammar
     .define('melt :target')
     .mapsTo(MELT_ACTION_ID)
-    .withPriority(145)
     .build();
 }

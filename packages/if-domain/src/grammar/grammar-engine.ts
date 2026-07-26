@@ -6,6 +6,7 @@
 import { Token } from '../parser-contracts/parser-types.js';
 import {
   GrammarRule,
+  GrammarTier,
   PatternMatch,
   GrammarContext,
   CompiledPattern,
@@ -44,23 +45,25 @@ export abstract class GrammarEngine {
   }
   
   /**
-   * Add a grammar rule
+   * Add a grammar rule.
+   *
+   * ADR-268: insertion is deliberately unsorted — registration order IS
+   * definition order, the final tiebreak of the resolution order
+   * (confidence → tier → literal specificity → definition order). Do not
+   * reintroduce a sort here; it would erase the semantics of file order.
    */
   addRule(rule: GrammarRule): void {
     // Compile the pattern if not already compiled
     if (!rule.compiledPattern) {
       rule.compiledPattern = this.compiler.compile(rule.pattern);
     }
-    
+
     this.rules.push(rule);
-    
+
     // Index by action for faster lookup
     const actionRules = this.rulesByAction.get(rule.action) || [];
     actionRules.push(rule);
     this.rulesByAction.set(rule.action, actionRules);
-    
-    // Sort by priority
-    this.sortRules();
   }
   
   /**
@@ -114,30 +117,23 @@ export abstract class GrammarEngine {
   }
   
   /**
-   * Sort rules by priority (descending)
+   * Create a grammar builder connected to this engine.
+   *
+   * @param tier ADR-268 D2: the layer rules built here register under.
+   *   'standard' (default) for the platform grammar; 'story' for the story
+   *   grammar surface and the Chord loader — story-tier rules outrank
+   *   standard-tier rules unconditionally.
    */
-  protected sortRules(): void {
-    this.rules.sort((a, b) => b.priority - a.priority);
-    
-    // Also sort within each action group
-    this.rulesByAction.forEach((rules) => {
-      rules.sort((a, b) => b.priority - a.priority);
-    });
-  }
-  
-  /**
-   * Create a grammar builder connected to this engine
-   */
-  createBuilder(): GrammarBuilder {
+  createBuilder(tier: GrammarTier = 'standard'): GrammarBuilder {
     const engine = this;
-    
+
     return {
       define(pattern: string) {
         const rule: Partial<GrammarRule> = {
           id: `rule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           pattern,
           slots: new Map(),
-          priority: 100 // Default priority
+          tier
         };
         
         const builder: PatternBuilder = {
@@ -166,12 +162,7 @@ export abstract class GrammarEngine {
             rule.action = action;
             return builder;
           },
-          
-          withPriority(priority: number) {
-            rule.priority = priority;
-            return builder;
-          },
-          
+
           withSemanticVerbs(verbs: Record<string, Partial<SemanticProperties>>) {
             if (!rule.semantics) rule.semantics = {};
             rule.semantics.verbs = verbs;
@@ -296,7 +287,6 @@ export abstract class GrammarEngine {
         const directionMap: Record<string, string[]> = {};
         const slotConstraints: Map<string, { constraint: Constraint }[]> = new Map();
         const slotTypes: Map<string, SlotType> = new Map();
-        let priority = 100;
         let defaultSemantics: Partial<SemanticProperties> | undefined;
 
         const actionBuilder: ActionGrammarBuilder = {
@@ -332,11 +322,6 @@ export abstract class GrammarEngine {
             const existing = slotConstraints.get(slot) || [];
             existing.push({ constraint });
             slotConstraints.set(slot, existing);
-            return actionBuilder;
-          },
-
-          withPriority(p: number) {
-            priority = p;
             return actionBuilder;
           },
 
@@ -387,9 +372,8 @@ export abstract class GrammarEngine {
                     : verb;
 
                   // Create the rule using the existing define() API
-                  let builder = engine.createBuilder().define(fullPattern);
+                  let builder = engine.createBuilder(tier).define(fullPattern);
                   builder = builder.mapsTo(actionId);
-                  builder = builder.withPriority(priority);
 
                   if (defaultSemantics) {
                     builder = builder.withDefaultSemantics(defaultSemantics);
@@ -425,9 +409,8 @@ export abstract class GrammarEngine {
                   .map((w) => w.slice(1).replace(/\.\.\.$/, '')),
               );
 
-              let builder = engine.createBuilder().define(fullPattern);
+              let builder = engine.createBuilder(tier).define(fullPattern);
               builder = builder.mapsTo(actionId);
-              builder = builder.withPriority(priority);
 
               if (defaultSemantics) {
                 builder = builder.withDefaultSemantics(defaultSemantics);
@@ -451,9 +434,8 @@ export abstract class GrammarEngine {
             // Generate standalone verb patterns (verb only, no template)
             if (verbList.length > 0 && patternList.length === 0) {
               for (const verb of verbList) {
-                let builder = engine.createBuilder().define(verb);
+                let builder = engine.createBuilder(tier).define(verb);
                 builder = builder.mapsTo(actionId);
-                builder = builder.withPriority(priority);
 
                 if (defaultSemantics) {
                   builder = builder.withDefaultSemantics(defaultSemantics);
@@ -466,10 +448,8 @@ export abstract class GrammarEngine {
             // Generate direction patterns
             for (const [canonical, aliases] of Object.entries(directionMap)) {
               for (const alias of aliases) {
-                let builder = engine.createBuilder().define(alias);
+                let builder = engine.createBuilder(tier).define(alias);
                 builder = builder.mapsTo(actionId);
-                // Lower priority for abbreviations (single character)
-                builder = builder.withPriority(alias.length === 1 ? 90 : priority);
                 builder = builder.withDefaultSemantics({ direction: canonical as SemanticProperties['direction'] });
                 builder.build();
               }
