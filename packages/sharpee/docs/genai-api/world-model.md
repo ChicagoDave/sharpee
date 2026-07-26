@@ -7054,6 +7054,10 @@ export interface IWorldModel {
     getVisible(observerId: string): IFEntity[];
     getInScope(observerId: string): IFEntity[];
     canSee(observerId: string, targetId: string): boolean;
+    /** ADR-273 D4: physical reachability via ReachabilityBehavior (sight precondition, open containers, OpenInventoryTrait). */
+    canReach(observerId: string, targetId: string): boolean;
+    /** ADR-273 D4: all physically reachable entities — subset of getVisible(). */
+    getReachable(observerId: string): IFEntity[];
     getRelated(entityId: string, relationshipType: string): string[];
     areRelated(entity1Id: string, entity2Id: string, relationshipType: string): boolean;
     addRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void;
@@ -7312,6 +7316,29 @@ export declare class WorldModel implements IWorldModel {
      * @returns true if observer can see target
      */
     canSee(observerId: string, targetId: string): boolean;
+    /**
+     * Check if observer can physically reach target (ADR-273 D4)
+     *
+     * Uses ReachabilityBehavior — the platform's one reachability
+     * definition: sight precondition, carried always reachable, closed
+     * containers block (transparent or not), another actor's inventory
+     * blocked unless OpenInventoryTrait.
+     *
+     * @param observerId - The entity doing the reaching
+     * @param targetId - The entity being reached for
+     * @returns true if observer can physically reach target
+     */
+    canReach(observerId: string, targetId: string): boolean;
+    /**
+     * Get physically reachable entities using ReachabilityBehavior (ADR-273 D4)
+     *
+     * A subset of getVisible() (reach requires sight). This is what the
+     * parser's `.where()` touchable scope base reads.
+     *
+     * @param observerId - The entity doing the reaching
+     * @returns Array of entities that are physically reachable
+     */
+    getReachable(observerId: string): IFEntity[];
     /**
      * Create a bidirectional connection between two rooms.
      * Sets exits in both directions (e.g. NORTH on room1, SOUTH on room2).
@@ -7653,6 +7680,65 @@ export declare class VisibilityBehavior extends Behavior {
 }
 ```
 
+### world/ReachabilityBehavior
+
+```typescript
+import { Behavior } from '../behaviors/behavior.js';
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from './WorldModel.js';
+/**
+ * The platform's ONE definition of physical reachability — the sibling of
+ * VisibilityBehavior (ADR-273 D4). The rule set is ported unchanged from
+ * stdlib's `ScopeResolver.canReach`, which now delegates here (as its
+ * `canSee` has always delegated to VisibilityBehavior):
+ *
+ * - sight precondition: an entity you cannot see is not reachable
+ *   (today's platform stance — darkness blocks reach; changing that is a
+ *   one-place change here, taking parse gate and validate phase together)
+ * - carried items are reachable
+ * - same immediate location (e.g. both on a table) is reachable
+ * - another actor's inventory is blocked unless the actor carries
+ *   OpenInventoryTrait (you can see the thief's knife, not grab it)
+ * - on a supporter: reachable
+ * - in a container: reachable only while the container is open
+ *   (closed blocks, transparent or not — you can see through glass,
+ *   you cannot reach through it)
+ * - default: same room and visible → reachable
+ *
+ * Public interface: canReach(observer, target, world),
+ * getReachable(observer, world). Consumed by WorldModel.canReach /
+ * WorldModel.getReachable; parse-time `.where()` scope gating reads it
+ * through those (ADR-273 D2), stdlib's validate phase through its
+ * delegating ScopeResolver.
+ *
+ * Owner context: world-model behavior layer (world/), beside
+ * VisibilityBehavior.
+ */
+export declare class ReachabilityBehavior extends Behavior {
+    static requiredTraits: never[];
+    /**
+     * Determines if an observer can physically reach a target entity.
+     *
+     * @param observer - The entity doing the reaching
+     * @param target - The entity being reached for
+     * @param world - The world model
+     * @returns true if the target is physically reachable
+     */
+    static canReach(observer: IFEntity, target: IFEntity, world: WorldModel): boolean;
+    /**
+     * Gets all entities the observer can physically reach.
+     *
+     * Reachable is a subset of visible (the sight precondition), so the
+     * candidate pool is VisibilityBehavior.getVisible, filtered by canReach.
+     *
+     * @param observer - The entity doing the reaching
+     * @param world - The world model
+     * @returns Array of entities that are physically reachable
+     */
+    static getReachable(observer: IFEntity, world: WorldModel): IFEntity[];
+}
+```
+
 ### world/AuthorModel
 
 ```typescript
@@ -7767,6 +7853,8 @@ export declare class AuthorModel implements IWorldModel {
     findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[];
     getVisible(observerId: string): IFEntity[];
     getInScope(observerId: string): IFEntity[];
+    canReach(observerId: string, targetId: string): boolean;
+    getReachable(observerId: string): IFEntity[];
     canSee(observerId: string, targetId: string): boolean;
     getRelated(entityId: string, relationshipType: string): string[];
     areRelated(entity1Id: string, entity2Id: string, relationshipType: string): boolean;
@@ -8206,7 +8294,12 @@ export declare class RuleScopeEvaluator {
      */
     getVisibleEntities(context: IScopeContext): string[];
     /**
-     * Get touchable entities for backward compatibility
+     * Get touchable entities for backward compatibility.
+     *
+     * ADR-273 D4 (one-definition discipline): physical reachability is owned
+     * by ReachabilityBehavior via WorldModel.getReachable — this delegates
+     * rather than keeping a second live `touchable` definition ("touchable =
+     * visible") beside the real one.
      */
     getTouchableEntities(context: IScopeContext): string[];
     /**

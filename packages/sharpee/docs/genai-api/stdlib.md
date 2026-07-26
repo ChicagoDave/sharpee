@@ -2754,7 +2754,12 @@ export declare class StandardScopeResolver implements ScopeResolver {
      */
     canSee(actor: IFEntity, target: IFEntity): boolean;
     /**
-     * Check if actor can physically reach the target
+     * Check if actor can physically reach the target.
+     * Delegates to ReachabilityBehavior via WorldModel for the platform's one
+     * reachability definition (ADR-273 D4) — sight precondition, carried
+     * always reachable, closed containers block (transparent or not), another
+     * actor's inventory blocked unless OpenInventoryTrait. Same delegation
+     * shape as canSee above.
      */
     canReach(actor: IFEntity, target: IFEntity): boolean;
     /**

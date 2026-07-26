@@ -1774,6 +1774,16 @@ export interface ActionGrammarBuilder {
      */
     patterns(patterns: string[]): ActionGrammarBuilder;
     /**
+     * ADR-271 D3: Define a complete pattern line, verb included
+     * (e.g. 'pet :animal'). Emitted as its own rule with the action's shared
+     * configuration applied — NOT crossed with verbs(). Slot-scoped
+     * configuration (.where(), slotType()) attaches only to lines that carry
+     * the slot. This is the Chord compiler's emission path, where grammar
+     * lines arrive whole rather than as verb + template.
+     * @param pattern Complete pattern line including its verb (non-empty)
+     */
+    fullPattern(pattern: string): ActionGrammarBuilder;
+    /**
      * Define direction patterns with aliases
      * Creates standalone direction patterns (no verb prefix)
      * @param directionMap Map of canonical direction to aliases
