@@ -29,9 +29,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       # setup-node ships npm 10.x with Node 22; trusted publishing needs >= 11.5.1.
-      # Pinned to 11 (not latest): npm 12 changed `pack --json` output from an
-      # array to an object keyed by package name, which tsf <= 1.0.2 cannot
-      # parse. Lift the pin once tsf handles both shapes.
+      # Pinned to 11 for one less variable during the first publishes. tsf >= 1.0.3
+      # parses both npm 11 (array) and npm 12 (name-keyed object) pack --json
+      # shapes, so this pin CAN move to npm@latest once the pipeline is proven.
       - name: Upgrade npm
         run: npm install -g npm@11
 
