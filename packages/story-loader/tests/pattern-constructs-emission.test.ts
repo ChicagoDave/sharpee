@@ -59,6 +59,42 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
     expect(rules.some((r) => r.pattern === 'pet :animal' && r.priority === 150)).toBe(true);
   });
 
+  it('means (D12): per-pattern defaults land on exactly that pattern\'s rules', () => {
+    const rules = rulesFrom(
+      action(
+        '  grammar\n    hide under the target\n      means position under\n    hide behind the target\n      means position behind\n    hide near the target\n',
+      ),
+    ).filter((r) => r.priority === 150);
+    expect(rules).toHaveLength(3);
+    const by = (p: string) => rules.find((r) => r.pattern === p)!;
+    expect(by('hide under :target').defaultSemantics).toEqual({ position: 'under' });
+    expect(by('hide behind :target').defaultSemantics).toEqual({ position: 'behind' });
+    expect(by('hide near :target').defaultSemantics).toBeUndefined();
+  });
+
+  it('directions (D12): alias × pattern cross-product, each rule carrying its canonical', () => {
+    const rules = rulesFrom(
+      action(
+        '  grammar\n    sail the direction\n    the direction\n  directions\n    port or p\n    starboard or sb\n    fore\n    aft\n',
+      ),
+    ).filter((r) => r.priority === 150);
+    // 2 patterns × (2+2+1+1 alias words) = 12 rules, all for this action.
+    expect(rules).toHaveLength(12);
+    expect(rules.every((r) => r.action === 'chord.action.testing')).toBe(true);
+    const by = (p: string) => rules.find((r) => r.pattern === p)!;
+    // Slotted pattern expands per alias, default = the CANONICAL direction.
+    expect(by('sail port').defaultSemantics).toEqual({ direction: 'port' });
+    expect(by('sail p').defaultSemantics).toEqual({ direction: 'port' });
+    expect(by('sail sb').defaultSemantics).toEqual({ direction: 'starboard' });
+    expect(by('sail fore').defaultSemantics).toEqual({ direction: 'fore' });
+    // The bare `the direction` pattern registers standalone forms.
+    expect(by('starboard').defaultSemantics).toEqual({ direction: 'starboard' });
+    expect(by('p').defaultSemantics).toEqual({ direction: 'port' });
+    expect(by('aft').defaultSemantics).toEqual({ direction: 'aft' });
+    // No rule keeps the unexpanded slot spelling.
+    expect(rules.some((r) => r.pattern.includes(':direction'))).toBe(false);
+  });
+
   it('typed slots (D11): the registered rule carries the SlotType for both type words', () => {
     const rules = rulesFrom(
       action(

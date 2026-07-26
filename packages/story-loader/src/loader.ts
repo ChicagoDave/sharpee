@@ -33,7 +33,7 @@ import {
   StoryIR,
 } from '@sharpee/chord';
 import type { IRPatternPart, ScopeRequirementWord } from '@sharpee/chord';
-import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SnippetEntry } from '@sharpee/if-domain';
+import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
   DEADLY_ROOM_DEATH_ACTION_ID,
@@ -1110,24 +1110,51 @@ export class ChordStory implements Story {
     const grammar = (parser as unknown as { getStoryGrammar(): GrammarBuilder }).getStoryGrammar();
     for (const action of this.ir.actions) {
       const actionId = `chord.action.${action.name}`;
-      const slotted = grammar.forAction(actionId).withPriority(150);
-
-      // Bare-verb forms (platform-issue-sweep Phase 8 #13, David's ruling:
-      // ALL dispatch actions): dispatch validate fully handles the no-target
-      // case (authored `refuse without` arm, else the platform default), but
-      // compiler-emitted grammar always carried the slot, so a bare `lower`
-      // (or friendly-zoo's `pet`/`feed`) never parsed far enough to reach it.
-      // Register each pattern's literal prefix as its own rule, below the
-      // slotted forms so they win whenever a target is named.
       const greedy = action.greedy ?? [];
+      const directions = action.directions ?? [];
+
+      // ADR-267 D12: collect the emitted pattern strings first, each with
+      // its per-pattern semantic defaults (`means` lines; the `directions`
+      // cross-product adds `direction: <canonical>`). Rules then register
+      // grouped by identical defaults — one forAction block per group, so
+      // defaults stay PER-PATTERN (never leak action-wide) while the
+      // pre-267 no-defaults path emits exactly as before.
+      const emissions: Array<{ text: string; defaults: Record<string, string> | null }> = [];
       const bareForms = new Set<string>();
       for (const pattern of action.patterns) {
         if (pattern.cardinality) continue; // `→ each …` expansion is engine-owned (Phase C)
-        const text = pattern.parts
-          .map((part) => renderPatternPart(part, greedy))
-          .join(' ');
-        slotted.fullPattern(text);
+        const means = pattern.means?.length
+          ? Object.fromEntries(pattern.means.map((m) => [m.key, m.value]))
+          : null;
+        const usesDirection =
+          directions.length > 0 && pattern.parts.some((p) => p.kind === 'slot' && p.word === 'direction');
 
+        if (usesDirection) {
+          // Expansion: one rule per alias × pattern, `direction: <canonical>`
+          // as that rule's default. A bare `the direction` pattern registers
+          // the standalone forms (`port`, `p`, …).
+          const isBare = pattern.parts.length === 1;
+          for (const entry of directions) {
+            for (const alias of [entry.canonical, ...entry.aliases]) {
+              const text = isBare
+                ? alias
+                : pattern.parts
+                    .map((part) =>
+                      part.kind === 'slot' && part.word === 'direction' ? alias : renderPatternPart(part, greedy),
+                    )
+                    .join(' ');
+              emissions.push({ text, defaults: { ...(means ?? {}), direction: entry.canonical } });
+            }
+          }
+        } else {
+          const text = pattern.parts.map((part) => renderPatternPart(part, greedy)).join(' ');
+          emissions.push({ text, defaults: means });
+        }
+
+        // Bare-verb forms (platform-issue-sweep Phase 8 #13, David's ruling:
+        // ALL dispatch actions): each pattern's literal prefix registers as
+        // its own rule below the slotted forms — computed from the original
+        // parts, direction expansion included (the prefix is the verb).
         const slotIndex = pattern.parts.findIndex((part) => part.kind === 'slot');
         if (slotIndex > 0) {
           const bare = pattern.parts
@@ -1138,23 +1165,34 @@ export class ChordStory implements Story {
         }
       }
 
-      // ADR-271 D2: `the <slot> must be <requirement>` becomes a `.where()`
-      // parse-time gate on every slotted rule carrying the slot. The
-      // requirement word was catalog-validated by the analyzer (D1), so the
-      // table lookup cannot miss.
-      for (const constraint of action.constraints) {
-        const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
-        slotted.where(constraint.slot, (scope: ScopeBuilder) => applyScopePredicate(scope, predicate));
+      // One builder per distinct defaults object; shared slot configuration
+      // (.where() gates, ADR-271 D2; .slotType(), ADR-267 D11) is applied to
+      // every group — it attaches only to rules that carry the slot.
+      const groups = new Map<string, { defaults: Record<string, string> | null; texts: string[] }>();
+      for (const e of emissions) {
+        const key = JSON.stringify(e.defaults);
+        const group = groups.get(key) ?? { defaults: e.defaults, texts: [] };
+        group.texts.push(e.text);
+        groups.set(key, group);
       }
-
-      // ADR-267 D11: typed slots reach the rule via the real builder
-      // surface (`.slotType()`), never carried-to-IR-and-dropped (the
-      // ADR-235 D2 bar). The analyzer gated the closed two-word set.
-      for (const st of action.slotTypes ?? []) {
-        slotted.slotType(st.slot, st.type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC);
+      for (const group of groups.values()) {
+        const slotted = grammar.forAction(actionId).withPriority(150);
+        if (group.defaults) {
+          // The cast is deliberate: `means` keys are author vocabulary and
+          // direction words are per-action vocabulary (ship directions,
+          // D12) — both wider than SemanticProperties' compass-typed union.
+          slotted.withDefaultSemantics(group.defaults as unknown as Partial<SemanticProperties>);
+        }
+        for (const text of group.texts) slotted.fullPattern(text);
+        for (const constraint of action.constraints) {
+          const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
+          slotted.where(constraint.slot, (scope: ScopeBuilder) => applyScopePredicate(scope, predicate));
+        }
+        for (const st of action.slotTypes ?? []) {
+          slotted.slotType(st.slot, st.type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC);
+        }
+        slotted.build();
       }
-
-      slotted.build();
 
       // Bare-verb prefixes stay at 140 and carry no `.where()` gate — the
       // `refuse without` arm owns the no-target case (D2).

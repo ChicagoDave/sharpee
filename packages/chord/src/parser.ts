@@ -57,6 +57,7 @@ import {
   DefineTopics,
   DefineTrait,
   DefineVerb,
+  DirectionEntry,
   EachStmt,
   EmitStmt,
   ExitDecl,
@@ -2230,6 +2231,7 @@ class Parser {
     const constraints: ScopeConstraint[] = [];
     const greedy: GreedySlotDecl[] = [];
     const slotTypes: SlotTypeDecl[] = [];
+    const directions: DirectionEntry[] = [];
     const musts: MustRequirement[] = [];
     const refusals: ActionRefusal[] = [];
     let otherwise: DefineAction['otherwise'] = null;
@@ -2273,6 +2275,16 @@ class Parser {
         this.pos++;
         const ts = this.parseSlotTypeLine(line);
         if (ts) slotTypes.push(ts);
+      } else if (word === 'directions' && line.tokens.length === 1) {
+        // `directions` block (ADR-267 D12) — bound to the `direction` slot;
+        // one block per action, `or`-joined aliases per line.
+        this.pos++;
+        if (directions.length > 0) {
+          this.diagnostics.error('parse.action-directions', 'Only one `directions` block per action.', lineSpan(line));
+          while (this.pos < this.lines.length && this.lines[this.pos].indent > line.indent) this.pos++;
+        } else {
+          directions.push(...this.parseDirectionsBlock(line));
+        }
       } else if (word === 'score') {
         this.pos++;
         const s = this.parseScoreLine(line);
@@ -2302,7 +2314,7 @@ class Parser {
       span = mergeSpans(span, lineSpan(line));
     }
 
-    return { kind: 'define-action', name: nameTok.text, patterns, constraints, greedy, slotTypes, musts, refusals, otherwise, scores, phrases, body, span };
+    return { kind: 'define-action', name: nameTok.text, patterns, constraints, greedy, slotTypes, directions, musts, refusals, otherwise, scores, phrases, body, span };
   }
 
   /**
@@ -2501,11 +2513,29 @@ class Parser {
   }
 
   /** grammar-block pattern lines: pattern elements (ADR-267 — `the <slot>`,
-   *  `or`-alternation, `[optional]`), optional `→ each …` cardinality. */
+   *  `or`-alternation, `[optional]`), optional `→ each …` cardinality, and
+   *  `means <key> <value>` static-default lines under their pattern (D12). */
   private parseActionPatterns(grammarLine: Line): ActionPattern[] {
     const patterns: ActionPattern[] = [];
     while (this.pos < this.lines.length && this.lines[this.pos].indent > grammarLine.indent) {
       const line = this.lines[this.pos++];
+      // ADR-267 D12: a line beginning `means` is a static default for the
+      // pattern above it — never a pattern (the reserved-surface audit
+      // holds the word; a leading `means` pattern is unwriteable).
+      if (line.tokens[0]?.kind === 'word' && line.tokens[0].text === 'means') {
+        const mc = new Cursor(line.tokens, line);
+        mc.next(); // means
+        const key = mc.next();
+        const value = mc.next();
+        if (!key || key.kind !== 'word' || !value || value.kind !== 'word' || !mc.atEnd()) {
+          this.diagnostics.error('parse.action-means', 'Expected `means <key> <value>` (two single words).', lineSpan(line));
+        } else if (patterns.length === 0) {
+          this.diagnostics.error('parse.action-means', 'A `means` line sits under the pattern it serves — there is no pattern line above.', lineSpan(line));
+        } else {
+          patterns[patterns.length - 1].means.push({ key: key.text, value: value.text, span: lineSpan(line) });
+        }
+        continue;
+      }
       const parts: PatternPart[] = [];
       let cardinality: string[] | null = null;
       const c = new Cursor(line.tokens, line);
@@ -2524,7 +2554,7 @@ class Parser {
         this.diagnostics.error('parse.action-pattern', 'Empty grammar pattern.', lineSpan(line));
         continue;
       }
-      patterns.push({ parts, cardinality, span: lineSpan(line) });
+      patterns.push({ parts, means: [], cardinality, span: lineSpan(line) });
     }
     return patterns;
   }
@@ -2551,6 +2581,43 @@ class Parser {
       return null;
     }
     return { slot: slot.text, span: lineSpan(line) };
+  }
+
+  /** `directions` block lines (ADR-267 D12): each is `WORD { or WORD }` —
+   *  the canonical direction first, aliases after each `or`. The block is
+   *  dedent-terminated like the grammar block. */
+  private parseDirectionsBlock(headerLine: Line): DirectionEntry[] {
+    const entries: DirectionEntry[] = [];
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > headerLine.indent) {
+      const line = this.lines[this.pos++];
+      const c = new Cursor(line.tokens, line);
+      const canonical = c.next();
+      if (!canonical || canonical.kind !== 'word' || canonical.text === 'or') {
+        this.diagnostics.error('parse.action-directions', 'Expected a direction word, optionally followed by `or <alias>` pairs.', lineSpan(line));
+        continue;
+      }
+      const aliases: string[] = [];
+      let bad = false;
+      while (!c.atEnd()) {
+        if (!c.matchWord('or')) {
+          this.diagnostics.error('parse.action-directions', 'Aliases join with `or` (`north or n`).', c.restSpan());
+          bad = true;
+          break;
+        }
+        const alias = c.next();
+        if (!alias || alias.kind !== 'word' || alias.text === 'or') {
+          this.diagnostics.error('parse.action-directions', 'Expected an alias word after `or`.', c.restSpan());
+          bad = true;
+          break;
+        }
+        aliases.push(alias.text);
+      }
+      if (!bad) entries.push({ canonical: canonical.text, aliases, span: lineSpan(line) });
+    }
+    if (entries.length === 0) {
+      this.diagnostics.error('parse.action-directions', 'A `directions` block needs at least one direction line.', lineSpan(headerLine));
+    }
+    return entries;
   }
 
   /** `the <slot> is an instrument` / `the <slot> is a topic` — typed slot

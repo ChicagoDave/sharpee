@@ -483,6 +483,14 @@ export interface IRActionDef {
    * declared (absent keeps pre-267 IR byte-identical).
    */
   slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
+  /**
+   * `directions` block (ADR-267 D12) — bound to the `direction` slot: every
+   * pattern using the slot expands across the set (one rule per alias ×
+   * pattern, `direction: <canonical>` as its semantic default); a bare
+   * `the direction` pattern registers the standalone forms. Per-action
+   * vocabulary, never compass-hardcoded. Present only when declared.
+   */
+  directions?: Array<{ canonical: string; aliases: string[] }>;
   /** `must` requirement lines (ratchet D6) — checked before the body. */
   musts: IRMust[];
   refusals: IRActionRefusal[];
@@ -505,6 +513,12 @@ export interface IRActionPattern {
   parts: IRPatternPart[];
   /** `→ each …` cardinality words, or null. */
   cardinality: string[] | null;
+  /**
+   * `means <key> <value>` static semantic defaults for THIS pattern's rules
+   * (ADR-267 D12) — per-pattern, never action-wide. Present only when
+   * declared (absent keeps pre-267 IR byte-identical).
+   */
+  means?: Array<{ key: string; value: string }>;
 }
 
 export type IRActionRefusal =

@@ -404,6 +404,9 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "takes" "the" "rest" "of" "the" "line" NL
                                                            (* greedy slot → :slot... (D10) *)
                | "the" WORD "is" ( "an" | "a" ) WORD NL    (* typed slot — instrument | topic (D11) *)
+               | "directions" NL >>> { WORD { "or" WORD } NL }
+                                                           (* direction map bound to the `direction`
+                                                              slot; per-action vocabulary (D12) *)
                | must-line                                 (* D6 requirement (has colon) *)
                | score-line
                | "refuse" "without" WORD ":" phrase-key NL
@@ -411,8 +414,11 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "otherwise" "refuse" phrase-key NL        (* dispatch miss *)
                | "phrases" LOCALE NL >>> { phrase-entry }
                | statement ;
-pattern-line   = pattern [ "→" token { token } ] NL ;      (* ADR-267 D1: one slot production
-                                                              (pattern-elem); → = cardinality *)
+pattern-line   = pattern [ "→" token { token } ] NL
+                 { "means" WORD WORD NL } ;                 (* ADR-267 D1: one slot production
+                                                              (pattern-elem); → = cardinality;
+                                                              indented "means <key> <value>" lines
+                                                              = static defaults for THIS pattern (D12) *)
 
 define-hatch   = "define" "action" WORD "from" STRING NL   (* action hatch *)
                | "define" "chain" WORD "from" STRING NL ;  (* chain hatch — ADR-094; WORD is

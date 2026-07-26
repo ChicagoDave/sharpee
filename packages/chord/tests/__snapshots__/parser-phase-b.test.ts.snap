@@ -787,6 +787,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
     {
       "body": [],
       "constraints": [],
+      "directions": [],
       "greedy": [],
       "kind": "define-action",
       "musts": [],
@@ -803,6 +804,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "patterns": [
         {
           "cardinality": null,
+          "means": [],
           "parts": [
             {
               "kind": "word",
@@ -828,6 +830,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "quiet",
             "corner",
           ],
+          "means": [],
           "parts": [
             {
               "kind": "word",
@@ -1345,6 +1348,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "directions": [],
       "greedy": [],
       "kind": "define-action",
       "musts": [],
@@ -1361,6 +1365,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "patterns": [
         {
           "cardinality": null,
+          "means": [],
           "parts": [
             {
               "kind": "word",
@@ -1392,6 +1397,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         },
         {
           "cardinality": null,
+          "means": [],
           "parts": [
             {
               "kind": "word",
@@ -1532,6 +1538,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           },
         },
       ],
+      "directions": [],
       "greedy": [],
       "kind": "define-action",
       "musts": [],
@@ -1548,6 +1555,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "patterns": [
         {
           "cardinality": null,
+          "means": [],
           "parts": [
             {
               "kind": "word",

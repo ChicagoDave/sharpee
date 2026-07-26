@@ -1261,6 +1261,34 @@ class Analyzer {
       }
     }
 
+    // ADR-267 D12: a `directions` block binds to the slot named
+    // `direction` — a block with no pattern carrying that slot is the
+    // constraint-line treatment (analysis.unknown-slot), never a silently
+    // inert block. Duplicate words within one block are unanswerable
+    // (which canonical would the alias mean?) — refused, never guessed.
+    if (decl.directions.length > 0) {
+      if (!slots.has('direction')) {
+        this.diagnostics.error(
+          'analysis.unknown-slot',
+          `A \`directions\` block binds to the \`direction\` slot, but no pattern of \`${decl.name}\` uses \`the direction\` — slots: ${[...slots].join(', ') || '(none)'}.`,
+          decl.directions[0].span,
+        );
+      }
+      const seen = new Set<string>();
+      for (const entry of decl.directions) {
+        for (const word of [entry.canonical, ...entry.aliases]) {
+          if (seen.has(word)) {
+            this.diagnostics.error(
+              'analysis.duplicate-direction',
+              `\`${word}\` appears twice in the \`directions\` block — each word maps to one canonical direction.`,
+              entry.span,
+            );
+          }
+          seen.add(word);
+        }
+      }
+    }
+
     // ADR-267 D11: typed slots — the slot must exist (constraint-line
     // treatment) and the type word is a closed two-word set (the ADR-271
     // D11 precedent: an unknown word names the supported set, never
@@ -1340,10 +1368,14 @@ class Analyzer {
       patterns: decl.patterns.map((p) => ({
         parts: p.parts.map(lowerPatternPart),
         cardinality: p.cardinality,
+        ...(p.means.length > 0 ? { means: p.means.map((m) => ({ key: m.key, value: m.value })) } : {}),
       })),
       ...(decl.greedy.length > 0 ? { greedy: decl.greedy.map((g) => g.slot) } : {}),
       ...(decl.slotTypes.length > 0
         ? { slotTypes: decl.slotTypes.map((st) => ({ slot: st.slot, type: st.type as 'instrument' | 'topic' })) }
+        : {}),
+      ...(decl.directions.length > 0
+        ? { directions: decl.directions.map((d) => ({ canonical: d.canonical, aliases: d.aliases })) }
         : {}),
       // The cast is sound: the gate above errors on any word outside the
       // catalog set, and the IR is meaningful only when `ok` (atomic load).

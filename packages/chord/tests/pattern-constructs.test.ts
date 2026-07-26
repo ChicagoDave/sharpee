@@ -165,6 +165,67 @@ describe('typed slots: `is an instrument` / `is a topic` (ADR-267 D11)', () => {
   });
 });
 
+describe('semantic defaults: `means <key> <value>` (ADR-267 D12)', () => {
+  it('carries per-pattern means entries in the IR, absent when undeclared', () => {
+    const a = irAction(
+      action('  grammar\n    hide under the target\n      means position under\n    hide behind the target\n      means position behind\n    hide\n'),
+    );
+    expect(a.patterns[0].means).toEqual([{ key: 'position', value: 'under' }]);
+    expect(a.patterns[1].means).toEqual([{ key: 'position', value: 'behind' }]);
+    expect(a.patterns[2].means).toBeUndefined();
+  });
+
+  it('rejects a malformed means line, by name', () => {
+    const errors = errorsOf(action('  grammar\n    hide under the target\n      means position\n'));
+    expect(errors.some((e) => e.code === 'parse.action-means')).toBe(true);
+  });
+
+  it('rejects a means line with no pattern above it, by name', () => {
+    const errors = errorsOf(action('  grammar\n    means position under\n'));
+    expect(errors.some((e) => e.code === 'parse.action-means')).toBe(true);
+  });
+});
+
+describe('direction map: `directions` block (ADR-267 D12)', () => {
+  const sailing =
+    '  grammar\n    sail the direction\n    the direction\n  directions\n    port or p\n    starboard or sb\n    fore\n    aft\n';
+
+  it('carries canonical + aliases on the IR action', () => {
+    const a = irAction(action(sailing));
+    expect(a.directions).toEqual([
+      { canonical: 'port', aliases: ['p'] },
+      { canonical: 'starboard', aliases: ['sb'] },
+      { canonical: 'fore', aliases: [] },
+      { canonical: 'aft', aliases: [] },
+    ]);
+  });
+
+  it('rejects a block when no pattern uses `the direction` (analysis.unknown-slot)', () => {
+    const errors = errorsOf(action('  grammar\n    sail the heading\n  directions\n    port or p\n'));
+    const err = errors.find((e) => e.code === 'analysis.unknown-slot');
+    expect(err, errors.map((e) => `${e.code} ${e.message}`).join(' | ')).toBeDefined();
+    expect(err!.message).toContain('directions');
+  });
+
+  it('rejects a duplicate word within the block, by name', () => {
+    const errors = errorsOf(
+      action('  grammar\n    sail the direction\n  directions\n    port or p\n    starboard or p\n'),
+    );
+    expect(errors.some((e) => e.code === 'analysis.duplicate-direction')).toBe(true);
+  });
+
+  it('rejects a second directions block, an empty block, and malformed alias lines, by name', () => {
+    const twice = errorsOf(
+      action('  grammar\n    sail the direction\n  directions\n    port or p\n  directions\n    fore\n'),
+    );
+    expect(twice.some((e) => e.code === 'parse.action-directions')).toBe(true);
+    const empty = errorsOf(action('  grammar\n    sail the direction\n  directions\n'));
+    expect(empty.some((e) => e.code === 'parse.action-directions')).toBe(true);
+    const bad = errorsOf(action('  grammar\n    sail the direction\n  directions\n    port p\n'));
+    expect(bad.some((e) => e.code === 'parse.action-directions')).toBe(true);
+  });
+});
+
 describe('define verb shares the pattern-elem production', () => {
   it('alternation and optional parse in a verb pattern', () => {
     const source = `${HEADER}define verb glance means look [quickly] at or toward the target\n\n${WORLD}`;

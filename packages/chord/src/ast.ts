@@ -796,6 +796,8 @@ export interface DefineAction {
   greedy: GreedySlotDecl[];
   /** `the <slot> is an instrument` / `is a topic` lines (typed slot, ADR-267 D11). */
   slotTypes: SlotTypeDecl[];
+  /** `directions` block entries — bound to the `direction` slot (ADR-267 D12). */
+  directions: DirectionEntry[];
   /** `<subject> must <predicate>: <key>` requirement lines (ratchet D6). */
   musts: MustRequirement[];
   /** `refuse without <slot>: <key>` / `refuse when <cond>: <key>` lines. */
@@ -826,9 +828,28 @@ export interface MustRequirement {
   span: Span;
 }
 
-/** One grammar-block pattern: words + `the <slot>`s (ADR-267 D15), optional `→ each …` cardinality. */
+/** `means <key> <value>` — a static semantic default for the pattern line
+ *  directly above it (ADR-267 D12). */
+export interface MeansDecl {
+  key: string;
+  value: string;
+  span: Span;
+}
+
+/** One `directions` block line: `north or n` — canonical word + aliases
+ *  (ADR-267 D12; `or` in exactly its D8 meaning). */
+export interface DirectionEntry {
+  canonical: string;
+  aliases: string[];
+  span: Span;
+}
+
+/** One grammar-block pattern: pattern elements (ADR-267), optional `→ each …`
+ *  cardinality, and any `means` static-default lines under it (D12). */
 export interface ActionPattern {
   parts: PatternPart[];
+  /** `means <key> <value>` lines indented under this pattern (ADR-267 D12). */
+  means: MeansDecl[];
   /** Cardinality expansion words after `→` (`each reachable item not already held`). */
   cardinality: string[] | null;
   span: Span;

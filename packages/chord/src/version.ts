@@ -51,5 +51,11 @@
  * **2.2.0** adds landing group 3 (ADR-267 D11): typed slots — `the <slot>
  * is an instrument` / `is a topic` declarative lines (the closed two-word
  * set; `.slotType()` emission) — additive grammar, a minor bump.
+ *
+ * **2.3.0** adds landing group 4 (ADR-267 D12, one design per D5): per-
+ * pattern `means <key> <value>` static-default lines and the `directions`
+ * block bound to the `direction` slot (alias × pattern expansion,
+ * `direction: <canonical>` defaults, standalone bare forms) — additive
+ * grammar, a minor bump.
  */
-export const CHORD_LANGUAGE_VERSION = '2.2.0';
+export const CHORD_LANGUAGE_VERSION = '2.3.0';
