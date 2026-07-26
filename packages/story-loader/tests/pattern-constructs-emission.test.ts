@@ -58,4 +58,19 @@ describe('landing group 2 emission (ADR-267 D3 bar)', () => {
     const rules = rulesFrom(action('  grammar\n    pet the animal\n'));
     expect(rules.some((r) => r.pattern === 'pet :animal' && r.priority === 150)).toBe(true);
   });
+
+  it('typed slots (D11): the registered rule carries the SlotType for both type words', () => {
+    const rules = rulesFrom(
+      action(
+        '  grammar\n    unlock the target with the key\n    consult the sage about the subject\n  the key is an instrument\n  the subject is a topic\n',
+      ),
+    );
+    const unlock = rules.find((r) => r.pattern === 'unlock :target with :key')!;
+    expect(unlock, rules.map((r) => r.pattern).join(' | ')).toBeDefined();
+    expect(unlock.slots.get('key')?.slotType).toBe('instrument');
+    const consult = rules.find((r) => r.pattern === 'consult :sage about :subject')!;
+    expect(consult.slots.get('subject')?.slotType).toBe('topic');
+    // The untyped slots stay untyped — the default ENTITY path.
+    expect(unlock.slots.get('target')?.slotType).toBeUndefined();
+  });
 });

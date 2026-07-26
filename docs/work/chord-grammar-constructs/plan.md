@@ -213,6 +213,14 @@ planning convenience.
     supported words.
 - **Exit state**: Typed slots landed whole; `chord-grammar-changes.md` carries the row; ADR-257
   bumped one **minor**. `pnpm --filter '@sharpee/chord' test` and affected package suites green.
+- **Status**: DONE (2026-07-25, session 2d5bc7). chord 574/574 (5 new typed-slot tests),
+  story-loader 390/390, if-domain 95/95; version 2.2.0 + pin; transcripts green
+  (friendly-zoo 76+56, fernhill 503 — one non-reproducing RNG flake on first run, per-file
+  all green — cloak 81). Implementation finding, fixed in-gate: if-domain
+  `grammar-engine.ts` `applySlotType` had no `SlotType.TOPIC` case — a declared TOPIC
+  slot silently dropped (the ADR-235 D2 class); one case added. Observation surfaced,
+  not changed: that switch's `default` still silently drops unmapped types
+  (e.g. QUOTED_TEXT).
 - **Acceptance coverage**: Acceptance item 4 (typed-slots slice), item 5 (row + bump for this group).
 - **Test gate**: `pnpm --filter '@sharpee/chord' test <name>`.
 - **Status**: PENDING

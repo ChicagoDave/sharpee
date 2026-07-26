@@ -19,12 +19,12 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 2.1.0 — ADR-267 landing group 2: `or`-alternation, `[word]` optional
-  // elements, `the <slot> takes the rest of the line` greedy slots.
-  // Additive grammar → a minor. (2.0.0 was D15's slot-spelling convergence,
-  // a major; 1.4.0 ADR-264's numeric counters.)
-  languageVersion: '2.1.0',
-  ebnfSha256: '12ac1334226fab2b012a21f6b1d416c6874de4ab59426de48c5fb35ba95eb2a6',
+  // 2.2.0 — ADR-267 landing group 3: typed slots (`the <slot> is an
+  // instrument` / `is a topic`, closed two-word set, `.slotType()`
+  // emission). Additive grammar → a minor. (2.1.0 was group 2's
+  // alternation/optional/greedy; 2.0.0 D15's slot-spelling major.)
+  languageVersion: '2.2.0',
+  ebnfSha256: '66ee68d05bc9b2faa47b774163ac0d23498d8f9b5594cda2074e8c6eed7df5ef',
 };
 
 const EBNF_PATH = join(__dirname, '..', '..', '..', 'docs', 'reference', 'chord.ebnf');

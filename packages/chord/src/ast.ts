@@ -794,6 +794,8 @@ export interface DefineAction {
   constraints: ScopeConstraint[];
   /** `the <slot> takes the rest of the line` lines (greedy slot, ADR-267 D10). */
   greedy: GreedySlotDecl[];
+  /** `the <slot> is an instrument` / `is a topic` lines (typed slot, ADR-267 D11). */
+  slotTypes: SlotTypeDecl[];
   /** `<subject> must <predicate>: <key>` requirement lines (ratchet D6). */
   musts: MustRequirement[];
   /** `refuse without <slot>: <key>` / `refuse when <cond>: <key>` lines. */
@@ -835,6 +837,14 @@ export interface ActionPattern {
 /** `the <slot> takes the rest of the line` — greedy slot (ADR-267 D10). */
 export interface GreedySlotDecl {
   slot: string;
+  span: Span;
+}
+
+/** `the <slot> is an instrument` / `is a topic` — typed slot (ADR-267 D11).
+ *  The type word is carried raw; the analyzer owns the closed-set check. */
+export interface SlotTypeDecl {
+  slot: string;
+  type: string;
   span: Span;
 }
 

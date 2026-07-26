@@ -403,6 +403,7 @@ action-line    = "grammar" NL >>> { pattern-line }
                | "the" WORD "must" "be" WORD NL            (* scope constraint (no colon) *)
                | "the" WORD "takes" "the" "rest" "of" "the" "line" NL
                                                            (* greedy slot → :slot... (D10) *)
+               | "the" WORD "is" ( "an" | "a" ) WORD NL    (* typed slot — instrument | topic (D11) *)
                | must-line                                 (* D6 requirement (has colon) *)
                | score-line
                | "refuse" "without" WORD ":" phrase-key NL

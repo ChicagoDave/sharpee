@@ -123,6 +123,48 @@ describe('greedy slot: `takes the rest of the line` (ADR-267 D10)', () => {
   });
 });
 
+describe('typed slots: `is an instrument` / `is a topic` (ADR-267 D11)', () => {
+  it('carries {slot, type} pairs on the IR action', () => {
+    const a = irAction(
+      action('  grammar\n    unlock the target with the key\n  the key is an instrument\n'),
+    );
+    expect(a.slotTypes).toEqual([{ slot: 'key', type: 'instrument' }]);
+  });
+
+  it('accepts `is a topic` and is absent when undeclared', () => {
+    const a = irAction(
+      action('  grammar\n    consult the sage about the subject\n  the subject is a topic\n'),
+    );
+    expect(a.slotTypes).toEqual([{ slot: 'subject', type: 'topic' }]);
+    const plain = irAction(action('  grammar\n    pet the animal\n'));
+    expect(plain.slotTypes).toBeUndefined();
+  });
+
+  it('rejects an unknown type word, listing the supported set', () => {
+    const errors = errorsOf(
+      action('  grammar\n    unlock the target with the key\n  the key is an implement\n'),
+    );
+    const err = errors.find((e) => e.code === 'analysis.unknown-slot-type');
+    expect(err, errors.map((e) => `${e.code} ${e.message}`).join(' | ')).toBeDefined();
+    expect(err!.message).toContain('`implement`');
+    expect(err!.message).toContain('instrument, topic');
+  });
+
+  it('rejects a typed-slot line naming a slot absent from every pattern (analysis.unknown-slot)', () => {
+    const errors = errorsOf(
+      action('  grammar\n    unlock the target\n  the key is an instrument\n'),
+    );
+    expect(errors.some((e) => e.code === 'analysis.unknown-slot')).toBe(true);
+  });
+
+  it('rejects a malformed typed-slot line, by name', () => {
+    const errors = errorsOf(
+      action('  grammar\n    unlock the target with the key\n  the key is instrument\n'),
+    );
+    expect(errors.some((e) => e.code === 'parse.action-slot-type')).toBe(true);
+  });
+});
+
 describe('define verb shares the pattern-elem production', () => {
   it('alternation and optional parse in a verb pattern', () => {
     const source = `${HEADER}define verb glance means look [quickly] at or toward the target\n\n${WORLD}`;

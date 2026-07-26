@@ -62,6 +62,7 @@ import {
   ExitDecl,
   GreedySlotDecl,
   MoveStmt,
+  SlotTypeDecl,
   RemoveStmt,
   MustRequirement,
   NameRef,
@@ -2228,6 +2229,7 @@ class Parser {
     const patterns: ActionPattern[] = [];
     const constraints: ScopeConstraint[] = [];
     const greedy: GreedySlotDecl[] = [];
+    const slotTypes: SlotTypeDecl[] = [];
     const musts: MustRequirement[] = [];
     const refusals: ActionRefusal[] = [];
     let otherwise: DefineAction['otherwise'] = null;
@@ -2264,6 +2266,13 @@ class Parser {
         this.pos++;
         const g = this.parseGreedyLine(line);
         if (g) greedy.push(g);
+      } else if (word === 'the' && line.tokens.some((t) => t.kind === 'word' && t.text === 'is')) {
+        // `the <slot> is an instrument` / `is a topic` — typed slot
+        // (ADR-267 D11), the same declarative line family. The type word's
+        // closed-set check is the analyzer's.
+        this.pos++;
+        const ts = this.parseSlotTypeLine(line);
+        if (ts) slotTypes.push(ts);
       } else if (word === 'score') {
         this.pos++;
         const s = this.parseScoreLine(line);
@@ -2293,7 +2302,7 @@ class Parser {
       span = mergeSpans(span, lineSpan(line));
     }
 
-    return { kind: 'define-action', name: nameTok.text, patterns, constraints, greedy, musts, refusals, otherwise, scores, phrases, body, span };
+    return { kind: 'define-action', name: nameTok.text, patterns, constraints, greedy, slotTypes, musts, refusals, otherwise, scores, phrases, body, span };
   }
 
   /**
@@ -2542,6 +2551,30 @@ class Parser {
       return null;
     }
     return { slot: slot.text, span: lineSpan(line) };
+  }
+
+  /** `the <slot> is an instrument` / `the <slot> is a topic` — typed slot
+   *  (ADR-267 D11). Article `a`/`an` accepted either way; the type word is
+   *  carried raw — the analyzer owns the closed-set check (ADR-271 D11
+   *  precedent), so a new type word is one analyzer-table change. */
+  private parseSlotTypeLine(line: Line): SlotTypeDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.next(); // the
+    const slot = c.next();
+    if (!slot || slot.kind !== 'word' || !c.matchWord('is')) {
+      this.diagnostics.error('parse.action-slot-type', 'Expected `the <slot> is an instrument` or `the <slot> is a topic`.', c.restSpan());
+      return null;
+    }
+    if (!c.matchWord('an') && !c.matchWord('a')) {
+      this.diagnostics.error('parse.action-slot-type', 'Expected `an instrument` or `a topic` after `is`.', c.restSpan());
+      return null;
+    }
+    const type = c.next();
+    if (!type || type.kind !== 'word' || !c.atEnd()) {
+      this.diagnostics.error('parse.action-slot-type', 'Expected a single type word (`instrument` or `topic`) ending the line.', c.restSpan());
+      return null;
+    }
+    return { slot: slot.text, type: type.text, span: lineSpan(line) };
   }
 
   /** `the <slot> must be <requirement>` */

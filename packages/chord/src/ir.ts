@@ -476,6 +476,13 @@ export interface IRActionDef {
    * Present only when declared (absent keeps pre-267 IR byte-identical).
    */
   greedy?: string[];
+  /**
+   * Typed slots (`the <slot> is an instrument` / `is a topic`, ADR-267 D11)
+   * — each emits `.slotType(slot, INSTRUMENT | TOPIC)` on the registered
+   * rules. The closed two-word set is analyzer-gated; present only when
+   * declared (absent keeps pre-267 IR byte-identical).
+   */
+  slotTypes?: Array<{ slot: string; type: 'instrument' | 'topic' }>;
   /** `must` requirement lines (ratchet D6) — checked before the body. */
   musts: IRMust[];
   refusals: IRActionRefusal[];

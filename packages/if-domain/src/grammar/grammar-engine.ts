@@ -368,6 +368,10 @@ export abstract class GrammarEngine {
                   return builder.direction(slot);
                 case SlotType.MANNER:
                   return builder.manner(slot);
+                case SlotType.TOPIC:
+                  // ADR-267 D11: `topic()` existed on PatternBuilder but was
+                  // missing here, so a declared TOPIC slot silently dropped.
+                  return builder.topic(slot);
                 default:
                   return builder;
               }

@@ -895,6 +895,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "worth": 1,
         },
       ],
+      "slotTypes": [],
       "span": {
         "column": 1,
         "endColumn": 16,
@@ -1509,6 +1510,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         },
       ],
       "scores": [],
+      "slotTypes": [],
       "span": {
         "column": 1,
         "endColumn": 16,
@@ -1664,6 +1666,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         },
       ],
       "scores": [],
+      "slotTypes": [],
       "span": {
         "column": 1,
         "endColumn": 16,

@@ -1261,6 +1261,27 @@ class Analyzer {
       }
     }
 
+    // ADR-267 D11: typed slots — the slot must exist (constraint-line
+    // treatment) and the type word is a closed two-word set (the ADR-271
+    // D11 precedent: an unknown word names the supported set, never
+    // silence).
+    for (const st of decl.slotTypes) {
+      if (!slots.has(st.slot)) {
+        this.diagnostics.error(
+          'analysis.unknown-slot',
+          `\`${st.slot}\` is not a grammar slot of \`${decl.name}\` — slots: ${[...slots].join(', ') || '(none)'}${this.suggestText(st.slot, [...slots])}.`,
+          st.span,
+        );
+      }
+      if (st.type !== 'instrument' && st.type !== 'topic') {
+        this.diagnostics.error(
+          'analysis.unknown-slot-type',
+          `\`${st.type}\` is not a slot type — supported: instrument, topic${this.suggestText(st.type, ['instrument', 'topic'])}.`,
+          st.span,
+        );
+      }
+    }
+
     for (const constraint of decl.constraints) {
       if (!slots.has(constraint.slot)) {
         this.diagnostics.error(
@@ -1321,6 +1342,9 @@ class Analyzer {
         cardinality: p.cardinality,
       })),
       ...(decl.greedy.length > 0 ? { greedy: decl.greedy.map((g) => g.slot) } : {}),
+      ...(decl.slotTypes.length > 0
+        ? { slotTypes: decl.slotTypes.map((st) => ({ slot: st.slot, type: st.type as 'instrument' | 'topic' })) }
+        : {}),
       // The cast is sound: the gate above errors on any word outside the
       // catalog set, and the IR is meaningful only when `ok` (atomic load).
       constraints: decl.constraints.map((sc) => ({ slot: sc.slot, requirement: sc.requirement as ScopeRequirementWord })),

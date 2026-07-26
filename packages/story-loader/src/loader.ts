@@ -50,7 +50,7 @@ import {
 } from '@sharpee/ext-hunger';
 import { type ISemanticEvent } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
-import { STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
+import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { CustomVocabulary, Story, StoryConfig } from '@sharpee/engine';
 import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
 import { NpcPlugin } from '@sharpee/plugin-npc';
@@ -1145,6 +1145,13 @@ export class ChordStory implements Story {
       for (const constraint of action.constraints) {
         const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
         slotted.where(constraint.slot, (scope: ScopeBuilder) => applyScopePredicate(scope, predicate));
+      }
+
+      // ADR-267 D11: typed slots reach the rule via the real builder
+      // surface (`.slotType()`), never carried-to-IR-and-dropped (the
+      // ADR-235 D2 bar). The analyzer gated the closed two-word set.
+      for (const st of action.slotTypes ?? []) {
+        slotted.slotType(st.slot, st.type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC);
       }
 
       slotted.build();

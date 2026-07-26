@@ -680,6 +680,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
         },
       ],
       "scores": [],
+      "slotTypes": [],
       "span": {
         "column": 1,
         "endColumn": 44,
