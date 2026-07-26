@@ -1,6 +1,6 @@
 # ADR-275: Chord dispatch runtime — entity-less commands and semantic value binding
 
-## Status: DRAFT (2026-07-25) — open questions below; not ACCEPTED until they are resolved (ADR-0009 discipline).
+## Status: ACCEPTED (2026-07-25) — all four open questions resolved via interview same day (Q-1 word-values route (a), Q-2 word equality, Q-3 warn+error shadow rules, Q-4 musts fail closed / refuse-when arms fail open); adr-review 14/14 after two SMALL fixes (module list on D2; unbound refuse-when semantics on D6).
 
 ## Parent: ADR-267 (D12 direction map / acceptance 8 — the owner's ship-directions condition is this ADR's reason to exist). Relates to ADR-090 (capability dispatch), ADR-271 (dispatch grammar emission), ADR-268 (ordering — unaffected), the ADR-266 umbrella (D8 boundary: this is runtime wiring for a grammar construct, not a trait/behavior surface).
 
@@ -37,31 +37,52 @@ over implement-in-gate).
   bindings), `refuse without <slot>` arms refuse only when the named slot is an entity
   slot of the matched rule. A body remains required — no body and no claiming behavior is
   still the dispatch miss (§5.4 unchanged for entity commands).
-- **D2 — Semantics bind into the evaluation context.** The matched rule's semantic values
-  (the `directions` canonical, `means` keys) become readable in the action's body scope by
-  name — the same scope discipline as grammar slots (slot-first, single-word). The exact
-  value surface is Q-1/Q-2.
+- **D2 — Semantics bind into the evaluation context as WORDS in the slots context (Q-1
+  resolved 2026-07-25, route (a)).** The matched rule's semantic values (the `directions`
+  canonical, `means` keys) join the body's slots context by name as plain word values —
+  `the direction` resolves to `port` exactly as an entity slot resolves to its target;
+  `{the direction}` in a phrase renders the word verbatim; `means` keys (`position`) join
+  body scope the same way. One reference idiom, no new grammar (`direction` is already a
+  declared slot of the pattern; means keys join the analyzer's slot scope). The cost is
+  runtime bookkeeping, not language: `ctx.slots` carries words alongside entity ids, and
+  every consumer must stay honest about which it holds. Rejected: a distinct word-read
+  form (a second reference idiom for one concept — Given 7).
+  *Modules (review fix, 2026-07-25):* `runtime.ts` `buildDispatchAction` (second,
+  entity-less validate/execute shape; `DispatchContext.command` widens to expose the
+  parsed command's `semantics` — the access seam for the matched rule's
+  `defaultSemantics`), `evaluator.ts` (word values legal in `ctx.slots`; `is`
+  word-equality per D4), chord `analyzer.ts` (semantic keys join the action's slot
+  scope; `analysis.semantic-shadows-slot`), and the phrase-param path that renders slot
+  interpolations (word bindings render verbatim, never via entity lookup).
 - **D3 — The acceptance test is ADR-267 acceptance 8's fixture**, unchanged: a nautical
   sailing action; a transcript proves `sail port` and bare `starboard` reach the body with
   the right direction (direction-dependent output, no RNG).
-
-## Open Questions
-
-- **Q-1 (value surface):** How does a body read a semantic value? (a) semantic keys join
-  the slots context as **word values** — `the direction` resolves to `port` (a word, not
-  an entity); `{the direction}` in a phrase renders the word verbatim; or (b) a distinct
-  reference form for semantics (e.g. only interpolation, no condition use), keeping
-  entity-slot reads and word reads visibly different.
-- **Q-2 (condition use):** May conditions compare semantic words — `refuse when the
-  direction is aft: no-sailing-aft`, `select on the direction`? If yes, `is <word>`
-  against a semantic value is plain word equality (never entity resolution); if no, the
-  fixture proves direction via per-direction `select`-free means (e.g. distinct patterns),
-  which weakens the proof.
-- **Q-3 (shadowing):** A semantic key that collides with an entity name or a declared
-  slot: does `analysis.slot-shadows-entity` (ADR-267 D2) extend to semantic keys, and does
-  a semantic key lose to a real slot of the same name in the same action?
-- **Q-4 (scope):** Do `must` requirement lines evaluate for entity-less commands (with
-  entity-dependent predicates failing loud), or are they skipped when no entity is bound?
+- **D4 — Conditions and `select` arms compare semantic words by WORD EQUALITY (Q-2
+  resolved 2026-07-25).** `refuse when the direction is aft: <key>` and `select on the
+  direction` are legal; `is <word>` against a word-valued binding is plain word
+  comparison — never entity resolution, never a guess (the `the match` live-comparison
+  precedent). This is what makes the acceptance-8 transcript a strong proof:
+  direction-dependent refusals/arms, not interpolation alone. Rejected:
+  interpolation-only (weak proof, and an arbitrary hole in the condition kit).
+- **D5 — Shadow rules extend to semantic keys (Q-3 resolved 2026-07-25): warn on entity
+  collisions, ERROR on slot collisions.** Semantic keys live in slot scope, so
+  `analysis.slot-shadows-entity` (ADR-267 D2) fires for them exactly as for slots. A
+  `means` key that duplicates one of the action's ENTITY slot names is a compile error
+  (new gate, `analysis.semantic-shadows-slot`) — the word and the entity id would fight
+  for one binding, which is unanswerable and therefore refused, never guessed. The
+  `directions` construct's own `direction` key/slot identity is exempt by construction —
+  that identity IS the construct. Rejected: silent slot-first (exactly the silence D2
+  exists to kill).
+- **D6 — `must` lines always evaluate; an unbindable subject REFUSES with its key (Q-4
+  resolved 2026-07-25).** On an entity-less command, a `must` whose subject binding is
+  absent for this command shape counts as UNMET and refuses with its authored phrase key —
+  loud through the author's own message. No gate ever silently evaporates (skip-when-
+  unbound rejected as the silent-drop class); no runtime crash for a legitimate
+  mixed-shape action (hard-error rejected). A `refuse when` arm whose condition
+  references a binding absent on this command shape does NOT fire (the arm gates the
+  entity shape; prohibitions fail open where requirements fail closed) — and the
+  evaluator's unbound-read throw is reserved for loader bugs, never reachable from an
+  author's mixed-shape action (review fix, 2026-07-25).
 
 ## Consequences
 
