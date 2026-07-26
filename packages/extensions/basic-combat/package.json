@@ -39,5 +39,10 @@
     "combat"
   ],
   "license": "MIT",
-  "module": "./dist-esm/index.js"
+  "module": "./dist-esm/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChicagoDave/sharpee.git",
+    "directory": "packages/extensions/basic-combat"
+  }
 }
