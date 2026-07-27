@@ -39,7 +39,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     private let schemeHandler = PlayURLSchemeHandler()
     private var webView: WKWebView!
     private let header = PlayHeaderView()
-    private let placeholder = NSTextField(labelWithString: "Build the story to play it")
+    private let placeholder = NSTextField(labelWithString: "Build (⌘B) to play the story")
 
     /// The bundle directory (`dist/web/<id>/`) currently loaded, or nil.
     private var loaded: URL?
@@ -184,7 +184,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         header.setPlayAfterBuild(on)
     }
 
-    private static let notBuiltPlaceholder = "Build the story to play it"
+    private static let notBuiltPlaceholder = "Build (⌘B) to play the story"
 
     private func showPlaceholder(_ text: String = PlayViewController.notBuiltPlaceholder) {
         placeholder.stringValue = text

@@ -474,29 +474,21 @@ private final class MainSplitViewController: NSSplitViewController {
     }
 
     /// Reflects the latest compose state into the Play pane: a grammar file is
-    /// explicitly unplayable (D2); a story auto-loads its already-built bundle
-    /// once the header id is known — but never reloads over a running game.
+    /// explicitly unplayable (D2). Nothing else auto-loads — Play shows only
+    /// what an explicit ⌘B just built (David's ruling), so a pre-existing
+    /// bundle of unknown vintage never masquerades as the current source.
     private func syncPlayToComposeState() {
         guard case .populated(let ir, _) = treeState.display else { return }
         if ir.grammarFile != nil {
             playViewController.showUnplayable(
                 reason: "A grammar file is not a story — Build and Play are disabled")
-        } else if !playViewController.isLoaded, !playViewController.isAwaitingRebuild {
-            // Never auto-load a bundle the source has diverged from — after an
-            // edit, only a successful build revalidates the surface.
-            playViewController.load(bundleDirectory: bundleDirectory())
         }
     }
 
-    /// Loads (or clears) the Play pane. The bundle path needs the story's IR
-    /// header id, so before the first clean compile this shows the placeholder;
-    /// syncPlayToComposeState() completes the load when the id arrives.
+    /// Resets the Play pane to its placeholder (project open/close). Play only
+    /// ever loads via reloadPlayAfterBuild — the user builds to see an update.
     fileprivate func refreshPlay(projectRoot: URL?) {
-        guard projectRoot != nil else {
-            playViewController.load(bundleDirectory: nil)
-            return
-        }
-        playViewController.load(bundleDirectory: bundleDirectory())
+        playViewController.load(bundleDirectory: nil)
     }
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
