@@ -395,6 +395,15 @@ private final class MainSplitViewController: NSSplitViewController {
     private static let editorMinWidth: CGFloat = 320
     private static let playMinWidth: CGFloat = 240
 
+    /// Manual divider persistence (project/play pane widths). AppKit's frame
+    /// autosave is deliberately NOT used: it restores while the window is
+    /// still at its pre-appearance fitting width, which squashes the play
+    /// pane to its minimum before the window grows back — the extra width
+    /// then goes to the editor (lowest holding priority) and the play pane
+    /// opened at 240 on every launch regardless of what was saved.
+    private static let projectWidthKey = "SharpeeIDEMainSplitProjectWidth"
+    private static let playWidthKey = "SharpeeIDEMainSplitPlayWidth"
+
     private let railViewController = RailViewController()
     private let projectPaneViewController = ProjectPaneViewController()
     private let composeScheduler = ComposeScheduler()
@@ -420,7 +429,10 @@ private final class MainSplitViewController: NSSplitViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         splitView.dividerStyle = .thin
-        splitView.autosaveName = "SharpeeIDEMainSplit"
+        // No splitView.autosaveName — see projectWidthKey/playWidthKey.
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(persistDividerPositions(_:)),
+            name: NSSplitView.didResizeSubviewsNotification, object: splitView)
 
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
         projectPaneViewController.onActivateFile = { [weak self] url in self?.editorViewController.openDocument(at: url) }
@@ -635,21 +647,35 @@ private final class MainSplitViewController: NSSplitViewController {
         super.viewDidAppear()
         guard !didApplyInitialLayout else { return }
         didApplyInitialLayout = true
-        applyInitialDividerPositionsIfNeeded()
+        applyInitialDividerPositions()
     }
 
-    /// First-run divider positions. Skipped on subsequent launches so the user's drags persist.
-    private func applyInitialDividerPositionsIfNeeded() {
-        let autosaveKey = "NSSplitView Subview Frames \(splitView.autosaveName ?? "")"
-        guard UserDefaults.standard.object(forKey: autosaveKey) == nil else { return }
-
+    /// Opening divider positions, applied once the window is at its real size:
+    /// saved pane widths when present (drags persist across launches), the
+    /// defaults otherwise — editor and play split the remaining width equally.
+    private func applyInitialDividerPositions() {
+        let defaults = UserDefaults.standard
         let totalWidth = splitView.bounds.width
-        let editorPlusPlay = max(0, totalWidth - Self.railWidth - Self.projectWidth)
-        let playWidth = max(Self.playMinWidth, editorPlusPlay / 2)
+
+        let savedProject = defaults.object(forKey: Self.projectWidthKey) as? Double
+        let projectWidth = max(Self.projectMinWidth, savedProject.map { CGFloat($0) } ?? Self.projectWidth)
+        let editorPlusPlay = max(0, totalWidth - Self.railWidth - projectWidth)
+        let savedPlay = defaults.object(forKey: Self.playWidthKey) as? Double
+        let playWidth = max(Self.playMinWidth, savedPlay.map { CGFloat($0) } ?? editorPlusPlay / 2)
 
         splitView.setPosition(Self.railWidth, ofDividerAt: 0)
-        splitView.setPosition(Self.railWidth + Self.projectWidth, ofDividerAt: 1)
+        splitView.setPosition(Self.railWidth + projectWidth, ofDividerAt: 1)
         splitView.setPosition(totalWidth - playWidth, ofDividerAt: 2)
+    }
+
+    /// Persists the project/play pane widths on every divider or window
+    /// resize — but only after the opening layout has been applied, so the
+    /// pre-appearance constraint churn can never overwrite the saved widths.
+    @objc private func persistDividerPositions(_ note: Notification) {
+        guard didApplyInitialLayout else { return }
+        let defaults = UserDefaults.standard
+        defaults.set(Double(splitView.arrangedSubviews[1].frame.width), forKey: Self.projectWidthKey)
+        defaults.set(Double(splitView.arrangedSubviews[3].frame.width), forKey: Self.playWidthKey)
     }
 
     private func makeRailItem() -> NSSplitViewItem {

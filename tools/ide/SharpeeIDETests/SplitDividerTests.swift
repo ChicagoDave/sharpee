@@ -130,4 +130,74 @@ final class SplitDividerTests: XCTestCase {
         pump(0.2)
         XCTAssertEqual(play.frame.width, settled, accuracy: 1)
     }
+
+    // MARK: - Opening layout (manual divider persistence)
+
+    private static let legacyFramesKey = "NSSplitView Subview Frames SharpeeIDEMainSplit"
+    private static let projectWidthKey = "SharpeeIDEMainSplitProjectWidth"
+    private static let playWidthKey = "SharpeeIDEMainSplitPlayWidth"
+
+    /// Runs `body` with the split's persisted layout state cleared, restoring
+    /// whatever was there afterward so other tests are unaffected.
+    private func withCleanLayoutDefaults(_ body: () throws -> Void) rethrows {
+        let defaults = UserDefaults.standard
+        let keys = [Self.legacyFramesKey, Self.projectWidthKey, Self.playWidthKey]
+        let saved = keys.map { defaults.object(forKey: $0) }
+        defer {
+            for (key, value) in zip(keys, saved) {
+                if let value { defaults.set(value, forKey: key) }
+                else { defaults.removeObject(forKey: key) }
+            }
+        }
+        keys.forEach { defaults.removeObject(forKey: $0) }
+        try body()
+    }
+
+    private func launchWindow() throws -> (MainWindowController, NSWindow, NSSplitView) {
+        let controller = MainWindowController()
+        let window = try XCTUnwrap(controller.window)
+        window.setFrame(NSRect(x: 0, y: 0, width: 1400, height: 900), display: true)
+        window.orderFront(nil)
+        pump()
+        let split = try XCTUnwrap(findMainSplit(in: window.contentView!))
+        return (controller, window, split)
+    }
+
+    /// With no saved pane widths, the window opens with the EQUAL editor|play
+    /// split — even when a legacy AppKit frame-autosave entry exists. (The
+    /// autosave restore ran at the pre-appearance fitting width and squashed
+    /// the play pane to its 240 minimum on every launch; it is ignored now.)
+    func testOpensWithEqualEditorPlaySplitByDefault() throws {
+        try withCleanLayoutDefaults {
+            UserDefaults.standard.set("legacy-frames-ignored", forKey: Self.legacyFramesKey)
+
+            let (_, window, split) = try launchWindow()
+            defer { window.orderOut(nil) }
+            let editor = split.arrangedSubviews[2].frame.width
+            let play = split.arrangedSubviews[3].frame.width
+            // Divider thickness comes out of the editor's share — allow a few points.
+            XCTAssertEqual(editor, play, accuracy: 8,
+                           "editor and play must open at equal widths")
+            XCTAssertGreaterThan(play, 400,
+                                 "the play pane must not open at its 240 minimum")
+        }
+    }
+
+    /// At the CURRENT layout version, a dragged layout still persists across
+    /// relaunch — the reset fires once per version bump, not every launch.
+    func testUserDragPersistsAcrossRelaunchAtCurrentVersion() throws {
+        try withCleanLayoutDefaults {
+            do {
+                let (_, window, split) = try launchWindow()
+                split.setPosition(split.bounds.width - 300, ofDividerAt: 2)
+                pump()
+                XCTAssertEqual(split.arrangedSubviews[3].frame.width, 300, accuracy: 2)
+                window.orderOut(nil)
+            }
+            let (_, window, split) = try launchWindow()
+            defer { window.orderOut(nil) }
+            XCTAssertEqual(split.arrangedSubviews[3].frame.width, 300, accuracy: 2,
+                           "a user drag made at the current version must survive relaunch")
+        }
+    }
 }
