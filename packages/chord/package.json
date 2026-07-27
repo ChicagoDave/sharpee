@@ -18,7 +18,8 @@
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "build:npm": "tsc --outDir dist",
     "test": "vitest",
-    "test:ci": "vitest run"
+    "test:ci": "vitest run",
+    "golden:lexer": "UPDATE_GOLDEN=1 vitest run lexer-golden"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",

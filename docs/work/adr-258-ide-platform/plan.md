@@ -339,7 +339,7 @@ plan's output:
   - Full `@sharpee/chord` suite (`pnpm --filter '@sharpee/chord' test`)
     green — this phase adds tests, it does not touch existing lexer/parser/
     analyzer behavior.
-- **Status**: CURRENT
+- **Status**: DONE
 
 ## Session state seed
 
