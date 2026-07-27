@@ -406,6 +406,16 @@ private final class MainSplitViewController: NSSplitViewController {
         editorViewController.onStoryEdited = { [weak self] url, content in
             self?.composeScheduler.noteEdit(storyURL: url, content: content)
         }
+        editorViewController.onDocumentEdited = { [weak self] url in
+            // A source change invalidates the whole play surface (David's
+            // ruling): any edited document inside the open story's folder means
+            // the running build no longer matches the source.
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            let storyDir = storyURL.deletingLastPathComponent().standardizedFileURL.path
+            if url.standardizedFileURL.path.hasPrefix(storyDir) {
+                self.playViewController.invalidateForSourceChange()
+            }
+        }
         composeScheduler.onOutcome = { [weak self] outcome in
             guard let self else { return }
             // The tree folds every outcome through last-ok retention (D6)…
@@ -451,7 +461,9 @@ private final class MainSplitViewController: NSSplitViewController {
         if ir.grammarFile != nil {
             playViewController.showUnplayable(
                 reason: "A grammar file is not a story — Build and Play are disabled")
-        } else if !playViewController.isLoaded {
+        } else if !playViewController.isLoaded, !playViewController.isAwaitingRebuild {
+            // Never auto-load a bundle the source has diverged from — after an
+            // edit, only a successful build revalidates the surface.
             playViewController.load(bundleDirectory: bundleDirectory())
         }
     }

@@ -47,6 +47,11 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// True when a bundle is currently loaded in the pane.
     var isLoaded: Bool { loaded != nil }
 
+    /// True after a source edit invalidated the surface: the built bundle no
+    /// longer matches the source, so nothing auto-loads until the next
+    /// successful build (reloadAfterBuild clears this).
+    private(set) var isAwaitingRebuild = false
+
     /// Whether a successful Browser build should auto-load into the pane. Persisted in SessionState.
     private(set) var playAfterBuild = true
 
@@ -138,9 +143,30 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         showPlaceholder(reason)
     }
 
+    /// A source edit invalidated the running surface (David's ruling: the play
+    /// surface renders a PARTICULAR build; diverged source clears it whole).
+    /// Clears the play origin's localStorage first — the client's autosave
+    /// restore-on-start would otherwise replay the stale world over the next
+    /// boot (the playground-autosave failure mode) — then unloads to an
+    /// explicit "build to play" state. No-op when nothing is loaded.
+    func invalidateForSourceChange() {
+        guard isLoaded else { return }
+        // Clear storage FIRST (on the still-loaded origin), then tear the page
+        // down — navigating immediately could cancel the script, and a merely
+        // hidden page would keep running its turn timers.
+        webView.evaluateJavaScript("try { localStorage.clear() } catch (e) {}") { [weak self] _, _ in
+            self?.webView.load(URLRequest(url: URL(string: "about:blank")!))
+        }
+        loaded = nil
+        isAwaitingRebuild = true
+        showPlaceholder("Source changed — build to play")
+    }
+
     /// Loads the just-built bundle after a successful build, honouring the
-    /// "Play after build" toggle.
+    /// "Play after build" toggle. Always clears the awaiting-rebuild latch —
+    /// the new bundle matches the source again.
     func reloadAfterBuild(bundleDirectory: URL) {
+        isAwaitingRebuild = false
         guard playAfterBuild else { return }
         load(bundleDirectory: bundleDirectory)
     }

@@ -55,6 +55,10 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// the compose pipeline runs after a debounce (ADR-258 D5, Q3 ruling).
     var onStoryEdited: ((URL, String) -> Void)?
 
+    /// Fired on every edit to ANY document (story, hatch module, browser page) —
+    /// a source change invalidates the play surface (David's ruling).
+    var onDocumentEdited: ((URL) -> Void)?
+
     /// The ranges currently carrying a diagnostic underline, so they can be cleared
     /// before the next compose result (or on edit, when they go stale).
     private var diagnosticUnderlineRanges: [NSRange] = []
@@ -431,6 +435,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         if doc.url.pathExtension == "story" {
             onStoryEdited?(doc.url, doc.content)
         }
+        onDocumentEdited?(doc.url)
     }
 
     /// Highlights the bracket adjacent to the caret and its balanced partner whenever the
