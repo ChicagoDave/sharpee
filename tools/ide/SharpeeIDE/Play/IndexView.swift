@@ -15,7 +15,6 @@ final class IndexView: NSView {
     /// Invoked when a row with a span is double-clicked (jump to the source).
     var onActivate: ((DiagnosticSpan) -> Void)?
 
-    private let statsLabel = NSTextField(labelWithString: "")
     private let staleBanner = NSTextField(labelWithString: "Showing last good compile — the story has errors")
     private let sectionStrip = TabStripView()
     private let scrollView = NSScrollView()
@@ -37,11 +36,6 @@ final class IndexView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-
-        statsLabel.font = NSFont.systemFont(ofSize: 11, weight: .medium)
-        statsLabel.textColor = Theme.foreground
-        statsLabel.lineBreakMode = .byWordWrapping
-        statsLabel.maximumNumberOfLines = 0
 
         staleBanner.font = NSFont.systemFont(ofSize: 10)
         staleBanner.textColor = NSColor.systemYellow
@@ -78,26 +72,22 @@ final class IndexView: NSView {
         placeholder.lineBreakMode = .byWordWrapping
         placeholder.maximumNumberOfLines = 0
 
-        for view in [statsLabel, staleBanner, sectionStrip, scrollView, placeholder] {
+        for view in [staleBanner, sectionStrip, scrollView, placeholder] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
         // Wrapping labels must never dictate the pane's width (the divider
         // fight): compress before resisting.
-        for label in [statsLabel, staleBanner, placeholder] {
+        for label in [staleBanner, placeholder] {
             label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         }
 
         NSLayoutConstraint.activate([
-            statsLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            statsLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
-            statsLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
-
-            staleBanner.topAnchor.constraint(equalTo: statsLabel.bottomAnchor, constant: 2),
+            staleBanner.topAnchor.constraint(equalTo: topAnchor, constant: 4),
             staleBanner.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             staleBanner.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
 
-            sectionStrip.topAnchor.constraint(equalTo: staleBanner.bottomAnchor, constant: 4),
+            sectionStrip.topAnchor.constraint(equalTo: staleBanner.bottomAnchor, constant: 2),
             sectionStrip.leadingAnchor.constraint(equalTo: leadingAnchor),
             sectionStrip.trailingAnchor.constraint(equalTo: trailingAnchor),
 
@@ -141,28 +131,26 @@ final class IndexView: NSView {
         case .empty(let reason):
             sections = []
             selectedKind = nil
-            statsLabel.stringValue = ""
             placeholder.stringValue = reason
             staleBanner.isHidden = true
             tableView.alphaValue = 1
         case .populated(let ir, let stale):
             sections = StoryIndex.sections(of: ir)
-            statsLabel.attributedStringValue = Self.attributedStatsLine(for: ir)
             placeholder.stringValue = "This story defines nothing to index yet"
             staleBanner.isHidden = !stale
             tableView.alphaValue = stale ? 0.55 : 1
         }
-        // Rebuild the section tabs, keeping the previously selected section
-        // when the recomposed story still has it.
+        // Rebuild the section tabs — counts ride IN the titles (David's ruling:
+        // no separate stats row) — keeping the previously selected section when
+        // the recomposed story still has it.
         let keepIndex = sections.firstIndex { $0.kind == selectedKind } ?? 0
-        sectionStrip.setTabs(sections.map { $0.title }, select: keepIndex)
+        sectionStrip.setTabs(sections.map { "\($0.title) · \($0.rows.count)" }, select: keepIndex)
         selectedKind = currentSection?.kind
         tableView.reloadData()
 
         let isEmpty = sections.isEmpty
         scrollView.isHidden = isEmpty
         sectionStrip.isHidden = isEmpty
-        statsLabel.isHidden = isEmpty
         placeholder.isHidden = !isEmpty
     }
 

@@ -649,10 +649,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private func syncWrapWidth(force: Bool = false) {
         guard effectiveWrap, let container = textView.textContainer else { return }
         let clipWidth = scrollView.contentSize.width
-        // Wrap INSIDE the visible area: text draws offset by the container
-        // inset, so wrapping at the full clip width pushed each line's tail
-        // past the divider by the inset amount.
-        let wrapWidth = clipWidth - textView.textContainerInset.width * 2
+        // Wrap INSIDE the visible area. Two width thieves must be subtracted:
+        // the container inset (text draws offset by it), and — measured live,
+        // because contentSize does NOT reliably exclude it — the line-number
+        // ruler (46pt), which otherwise pushes every line's tail past the
+        // divider by the gutter width.
+        let rulerWidth = scrollView.verticalRulerView?.ruleThickness ?? 0
+        let rulerAlreadyExcluded = (scrollView.frame.width - clipWidth) >= rulerWidth - 1
+        let visibleWidth = rulerAlreadyExcluded ? clipWidth : clipWidth - rulerWidth
+        let wrapWidth = visibleWidth - textView.textContainerInset.width * 2
         guard clipWidth > 0, wrapWidth > 50,
               force || abs(container.containerSize.width - wrapWidth) > 0.5 else { return }
         container.containerSize = NSSize(width: wrapWidth,
