@@ -52,25 +52,23 @@ enum FontScale: String, CaseIterable {
         }
     }
 
-    /// The story-pane (editor) point size.
-    var editorSize: CGFloat {
+    /// ONE point size per scale, everywhere the IDE speaks (David's ruling:
+    /// the story pane must align with the other panes — no per-surface scales).
+    var pointSize: CGFloat {
         switch self {
         case .sm: return 11
         case .md: return 13
-        case .lg: return 16
-        case .xl: return 19
+        case .lg: return 15
+        case .xl: return 17
         }
     }
 
-    /// The right-panel text size (Build output, Index rows, Diagnosis).
-    var panelSize: CGFloat {
-        switch self {
-        case .sm: return 10
-        case .md: return 11.5
-        case .lg: return 13.5
-        case .xl: return 16
-        }
-    }
+    /// The story-pane (editor) point size — same as everywhere.
+    var editorSize: CGFloat { pointSize }
+
+    /// The panel text size (directory, Build output, Index rows, Diagnosis) —
+    /// same as everywhere.
+    var panelSize: CGFloat { pointSize }
 }
 
 @MainActor
