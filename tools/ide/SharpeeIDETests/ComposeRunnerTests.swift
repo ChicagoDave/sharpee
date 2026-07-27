@@ -191,24 +191,28 @@ final class ComposeRunnerTests: XCTestCase {
         let ir = try XCTUnwrap(payload.ir, "fernhill composes clean")
         XCTAssertFalse(ir.allEntities.isEmpty)
 
-        let tree = ProjectStructure.build(from: ir)
-        let rooms = try XCTUnwrap(tree.first { $0.category == .room },
-                                  "fernhill has rooms in its tree")
-        XCTAssertFalse(rooms.children.isEmpty)
+        let sections = StoryIndex.sections(of: ir)
+        let rooms = try XCTUnwrap(sections.first { $0.kind == .rooms },
+                                  "fernhill has rooms in its Index")
+        XCTAssertFalse(rooms.rows.isEmpty)
 
         // The Story Index projections work off the same real IR: stats populate
         // and the build report leads with the story, not the toolchain.
         let stats = StoryIndex.stats(of: ir)
         XCTAssertGreaterThan(stats.rooms, 0)
-        XCTAssertGreaterThan(stats.phrases, 0, "fernhill's phrase keys decode")
+        XCTAssertGreaterThan(stats.phrases, 0, "fernhill's AUTHORED phrases count")
+        let phraseRows = try XCTUnwrap(sections.first { $0.kind == .phrases }).rows
+        XCTAssertFalse(phraseRows.contains { $0.title.contains(".") },
+                       "platform-synthesized dotted keys never reach the Index")
         XCTAssertTrue(StoryIndex.buildReport(for: ir).contains("The Folly at Fernhill"))
 
         let source = try String(contentsOf: fernhill, encoding: .utf8)
         let lineCount = source.split(separator: "\n", omittingEmptySubsequences: false).count
-        let leaf = try XCTUnwrap(rooms.children.first?.leaf)
-        XCTAssertLessThanOrEqual(leaf.span.line, lineCount,
-                                 "leaf spans point into the real authored file")
-        XCTAssertNotNil(SpanText.characterRange(of: leaf.span, in: source),
+        let row = try XCTUnwrap(rooms.rows.first)
+        let rowSpan = try XCTUnwrap(row.span, "Index rows are span-navigable")
+        XCTAssertLessThanOrEqual(rowSpan.line, lineCount,
+                                 "row spans point into the real authored file")
+        XCTAssertNotNil(SpanText.characterRange(of: rowSpan, in: source),
                         "the span resolves to a real character range in the source")
     }
 
@@ -247,10 +251,9 @@ final class ComposeRunnerTests: XCTestCase {
         let ir = try XCTUnwrap(payload.ir)
         XCTAssertNotNil(ir.grammarFile, "a grammar header must surface on the IR (D2)")
 
-        let tree = ProjectStructure.build(from: ir)
-        let actions = try XCTUnwrap(tree.first { $0.category == .action },
-                                    "a grammar file's tree is its define action blocks")
-        XCTAssertFalse(actions.children.isEmpty)
+        let actions = try XCTUnwrap(StoryIndex.sections(of: ir).first { $0.kind == .actions },
+                                    "a grammar file's Index is its define action blocks")
+        XCTAssertFalse(actions.rows.isEmpty)
     }
 
     // MARK: - Failure shapes (fixture scripts)

@@ -422,12 +422,6 @@ private final class MainSplitViewController: NSSplitViewController {
 
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
         projectPaneViewController.onActivateFile = { [weak self] url in self?.editorViewController.openDocument(at: url) }
-        projectPaneViewController.onActivateLeaf = { [weak self] leaf in
-            // Exact-span navigation (D6): the leaf's span points into the story
-            // file the retained IR was compiled from — no name matching.
-            guard let self, let storyURL = self.treeState.storyURL else { return }
-            self.editorViewController.openDocument(at: storyURL, span: leaf.span)
-        }
         projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStoryActivated = { [weak self] url, content in
@@ -448,10 +442,9 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         composeScheduler.onOutcome = { [weak self] outcome in
             guard let self else { return }
-            // The tree and the Index fold every outcome through last-ok
-            // retention (D6)…
+            // The Index folds every outcome through last-ok retention (D6) —
+            // it is THE IR-sourced story view (the former Structure tab is gone)…
             self.treeState.apply(outcome)
-            self.projectPaneViewController.setTreeState(self.treeState.display)
             self.rightPanelViewController.index.setState(self.treeState.display)
             self.syncPlayToComposeState()
             // …while Problems always reflects the current source (RootViewController).
@@ -621,9 +614,10 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.clearDiagnosis()
     }
 
-    /// Shows the empty project state with a one-line reason (D8).
+    /// Shows the empty story state with a one-line reason (D8) — rendered in
+    /// the Index, the IR-sourced story view.
     fileprivate func showEmptyStateExplanation(_ text: String) {
-        projectPaneViewController.setTreeState(.empty(reason: text))
+        rightPanelViewController.index.setState(.empty(reason: text))
     }
 
     /// Composes `storyURL` from its on-disk content (project open — no editor

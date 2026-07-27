@@ -46,8 +46,10 @@ final class StoryIndexTests: XCTestCase {
         actions: [ComposeStoryIR.ActionDef(name: "polishing", span: span(40))],
         phrases: .init(defaultLocale: "en-US", locales: [
             "en-US": .init(names: [
+                .init(key: "cellar.description", span: nil), // platform-synthesized
                 .init(key: "cold-returns", span: span(50)),
                 .init(key: "night-wind", span: span(51)),
+                .init(key: "player.description", span: nil), // platform-synthesized
             ]),
         ]),
         hatches: [.init(name: "weather", modulePath: "./weather.ts", span: span(60))])
@@ -58,7 +60,18 @@ final class StoryIndexTests: XCTestCase {
     func testStatsCountByKindWithPlayerAmongPeople() {
         let stats = StoryIndex.stats(of: sampleIR)
         XCTAssertEqual(stats, StoryStats(rooms: 2, regions: 1, things: 1, people: 2,
-                                         actions: 1, phrases: 2, hatches: 1))
+                                         actions: 1, phrases: 2, hatches: 1),
+                       "phrases counts AUTHORED names only — dotted synthesized keys excluded")
+    }
+
+    /// Dots cannot be written in an authored phrase name (the lexer's word class
+    /// has no `.`); dotted keys are analyzer-synthesized platform ids
+    /// (`<entity-id>.description`) and must never surface as the author's phrases.
+    func testSynthesizedDottedKeysAreExcludedEverywhere() throws {
+        let phrases = try XCTUnwrap(StoryIndex.sections(of: sampleIR).first { $0.kind == .phrases })
+        XCTAssertEqual(phrases.rows.map { $0.title }, ["cold-returns", "night-wind"])
+        XCTAssertFalse(StoryIndex.buildReport(for: sampleIR).contains("4 phrases"))
+        XCTAssertTrue(StoryIndex.buildReport(for: sampleIR).contains("2 phrases"))
     }
 
     // MARK: - Build report (the PR)
@@ -93,13 +106,14 @@ final class StoryIndexTests: XCTestCase {
 
     func testSectionsCarryRowsWithSpansAndDetails() throws {
         let sections = StoryIndex.sections(of: sampleIR)
-        XCTAssertEqual(sections.map { $0.title },
-                       ["Rooms", "Regions", "Things", "People", "Actions", "Phrases", "Hatch Modules"])
+        XCTAssertEqual(sections.map { $0.kind },
+                       [.rooms, .regions, .things, .people, .actions, .phrases, .hatches])
 
         let rooms = sections[0]
         XCTAssertEqual(rooms.rows.map { $0.title }, ["Cellar", "Iron Gates"])
         XCTAssertEqual(rooms.rows[0].detail, "dark", "extra kinds surface as detail")
         XCTAssertEqual(rooms.rows[0].span, span(10), "every row is span-navigable")
+        XCTAssertFalse(rooms.rows[0].isCode)
 
         let people = sections[3]
         XCTAssertEqual(people.rows.map { $0.title }, ["player", "Wren"])
@@ -108,14 +122,16 @@ final class StoryIndexTests: XCTestCase {
         let phrases = sections[5]
         XCTAssertEqual(phrases.rows.map { $0.title }, ["cold-returns", "night-wind"])
         XCTAssertEqual(phrases.rows[0].span, span(50))
+        XCTAssertTrue(phrases.rows[0].isCode, "phrase keys render monospace")
 
         let hatches = sections[6]
         XCTAssertEqual(hatches.rows[0].detail, "./weather.ts")
+        XCTAssertTrue(hatches.rows[0].isCode)
     }
 
     func testEmptySectionsAreOmitted() {
         let sections = StoryIndex.sections(of: ir(entities: [entity("Lab", kinds: ["room"])]))
-        XCTAssertEqual(sections.map { $0.title }, ["Rooms"])
+        XCTAssertEqual(sections.map { $0.kind }, [.rooms])
     }
 
     // MARK: - Stats line (Index header)

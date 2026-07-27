@@ -7,10 +7,12 @@
 import AppKit
 
 /// Soft word-wrap preference, persisted globally (applies to all documents).
+/// Defaults ON (David's ruling: text wraps in the story pane — Chord is prose);
+/// the View → Word Wrap toggle still turns it off.
 enum WordWrapPreference {
     private static let key = "SharpeeWordWrap"
     static var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: key) }
+        get { UserDefaults.standard.object(forKey: key) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: key) }
     }
 }

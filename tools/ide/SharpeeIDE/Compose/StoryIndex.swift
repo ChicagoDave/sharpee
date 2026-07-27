@@ -24,18 +24,40 @@ struct StoryStats: Equatable {
     let hatches: Int
 }
 
+/// The Index's section identities — each carries its display title; the view
+/// maps a kind to its icon and accent color.
+enum IndexSectionKind: CaseIterable, Equatable {
+    case rooms, regions, things, people, actions, phrases, hatches
+
+    var title: String {
+        switch self {
+        case .rooms: return "Rooms"
+        case .regions: return "Regions"
+        case .things: return "Things"
+        case .people: return "People"
+        case .actions: return "Actions"
+        case .phrases: return "Phrases"
+        case .hatches: return "Hatch Modules"
+        }
+    }
+}
+
 /// One Index section (Rooms, Things, People, Actions, Phrases, Hatches…).
 struct IndexSection: Equatable {
-    let title: String
+    let kind: IndexSectionKind
     let rows: [IndexRow]
+
+    var title: String { kind.title }
 }
 
 /// One Index row: display title, an optional dim detail (kinds, module path),
-/// and the authored span when the IR carries one (D6 navigation).
+/// whether the title is a code-like identifier (rendered monospace), and the
+/// authored span when the IR carries one (D6 navigation).
 struct IndexRow: Equatable {
     let title: String
     let detail: String?
-    let span: DiagnosticSpan?
+    var isCode: Bool = false
+    var span: DiagnosticSpan?
 }
 
 enum StoryIndex {
@@ -54,8 +76,17 @@ enum StoryIndex {
                           things: things,
                           people: people,
                           actions: ir.allActions.count,
-                          phrases: ir.phrases?.defaultLocaleNames.count ?? 0,
+                          phrases: authoredPhraseNames(of: ir).count,
                           hatches: ir.allHatches.count)
+    }
+
+    /// The AUTHORED phrase names: dotted keys (`lab.description`) are
+    /// platform-synthesized ids the analyzer generates when lowering prose —
+    /// the author cannot even write a dot in a phrase name (David's dotted-names
+    /// framework: dots = platform ids, kebab = author labels). They are not
+    /// phrases the author wrote, so neither the counts nor the listing show them.
+    static func authoredPhraseNames(of ir: ComposeStoryIR) -> [ComposeStoryIR.PhraseName] {
+        (ir.phrases?.defaultLocaleNames ?? []).filter { !$0.key.contains(".") }
     }
 
     /// The build-output report (the PR): the story's name, byline, and numbers.
@@ -128,20 +159,20 @@ enum StoryIndex {
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
             .map { IndexRow(title: $0.name, detail: nil, span: $0.span) }
 
-        let phrases = (ir.phrases?.defaultLocaleNames ?? [])
-            .map { IndexRow(title: $0.key, detail: nil, span: $0.span) }
+        let phrases = authoredPhraseNames(of: ir)
+            .map { IndexRow(title: $0.key, detail: nil, isCode: true, span: $0.span) }
 
         let hatches = ir.allHatches
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            .map { IndexRow(title: $0.name, detail: $0.modulePath, span: $0.span) }
+            .map { IndexRow(title: $0.name, detail: $0.modulePath, isCode: true, span: $0.span) }
 
-        let all: [(String, [IndexRow])] = [
-            ("Rooms", rooms), ("Regions", regions), ("Things", things),
-            ("People", people), ("Actions", actions), ("Phrases", phrases),
-            ("Hatch Modules", hatches),
+        let all: [(IndexSectionKind, [IndexRow])] = [
+            (.rooms, rooms), (.regions, regions), (.things, things),
+            (.people, people), (.actions, actions), (.phrases, phrases),
+            (.hatches, hatches),
         ]
-        return all.compactMap { title, rows in
-            rows.isEmpty ? nil : IndexSection(title: title, rows: rows)
+        return all.compactMap { kind, rows in
+            rows.isEmpty ? nil : IndexSection(kind: kind, rows: rows)
         }
     }
 }

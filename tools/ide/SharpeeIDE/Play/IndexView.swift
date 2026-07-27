@@ -108,7 +108,7 @@ final class IndexView: NSView {
             outlineView.alphaValue = 1
         case .populated(let ir, let stale):
             nodes = StoryIndex.sections(of: ir).map(IndexNode.init)
-            statsLabel.stringValue = Self.statsLine(for: ir)
+            statsLabel.attributedStringValue = Self.attributedStatsLine(for: ir)
             placeholder.stringValue = "This story defines nothing to index yet"
             staleBanner.isHidden = !stale
             outlineView.alphaValue = stale ? 0.55 : 1
@@ -121,13 +121,13 @@ final class IndexView: NSView {
         placeholder.isHidden = !isEmpty
     }
 
-    /// The headline stats line ("18 rooms · 41 things · …" — omitting zeros).
-    static func statsLine(for ir: ComposeStoryIR) -> String {
+    /// The headline stats parts ("18 rooms", "41 things", … — zeros omitted).
+    static func statsParts(for ir: ComposeStoryIR) -> [(count: Int, label: String)] {
         let stats = StoryIndex.stats(of: ir)
-        var parts: [String] = []
+        var parts: [(Int, String)] = []
         func add(_ n: Int, _ singular: String, _ plural: String? = nil) {
             guard n > 0 else { return }
-            parts.append("\(n) \(n == 1 ? singular : (plural ?? singular + "s"))")
+            parts.append((n, n == 1 ? singular : (plural ?? singular + "s")))
         }
         add(stats.rooms, "room")
         add(stats.regions, "region")
@@ -136,7 +136,48 @@ final class IndexView: NSView {
         add(stats.actions, "action")
         add(stats.phrases, "phrase")
         add(stats.hatches, "hatch module")
-        return parts.joined(separator: " · ")
+        return parts
+    }
+
+    /// The stats line as plain text (tests pin this shape).
+    static func statsLine(for ir: ComposeStoryIR) -> String {
+        statsParts(for: ir).map { "\($0.count) \($0.label)" }.joined(separator: " · ")
+    }
+
+    /// The stats line styled: numbers accented, labels dim, dot separators faint.
+    static func attributedStatsLine(for ir: ComposeStoryIR) -> NSAttributedString {
+        let text = NSMutableAttributedString()
+        let parts = statsParts(for: ir)
+        for (i, part) in parts.enumerated() {
+            if i > 0 {
+                text.append(NSAttributedString(string: "  ·  ", attributes: [
+                    .foregroundColor: Theme.foregroundFaint,
+                    .font: NSFont.systemFont(ofSize: 11),
+                ]))
+            }
+            text.append(NSAttributedString(string: "\(part.count)", attributes: [
+                .foregroundColor: Theme.tokenNumber,
+                .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold),
+            ]))
+            text.append(NSAttributedString(string: " \(part.label)", attributes: [
+                .foregroundColor: Theme.foregroundDim,
+                .font: NSFont.systemFont(ofSize: 11),
+            ]))
+        }
+        return text
+    }
+
+    /// Section identity: icon + accent color (the "Fonts and Color" pass).
+    static func decoration(for kind: IndexSectionKind) -> (symbol: String, color: NSColor) {
+        switch kind {
+        case .rooms: return ("square.split.bottomrightquarter", Theme.tokenType)
+        case .regions: return ("map", Theme.tokenFunction)
+        case .things: return ("cube", Theme.tokenNumber)
+        case .people: return ("person", Theme.tokenKeyword)
+        case .actions: return ("bolt", Theme.accent)
+        case .phrases: return ("text.quote", Theme.tokenString)
+        case .hatches: return ("puzzlepiece.extension", Theme.tokenComment)
+        }
     }
 
     @objc private func doubleClicked() {
@@ -152,17 +193,21 @@ final class IndexView: NSView {
 private final class IndexNode {
     let section: IndexSection?
     let row: IndexRow?
+    /// The owning section's kind (row nodes) — drives the row's icon + tint.
+    let sectionKind: IndexSectionKind?
     let children: [IndexNode]
 
     init(section: IndexSection) {
         self.section = section
         self.row = nil
-        self.children = section.rows.map { IndexNode(row: $0) }
+        self.sectionKind = section.kind
+        self.children = section.rows.map { IndexNode(row: $0, kind: section.kind) }
     }
 
-    init(row: IndexRow) {
+    init(row: IndexRow, kind: IndexSectionKind) {
         self.section = nil
         self.row = row
+        self.sectionKind = kind
         self.children = []
     }
 }
@@ -189,27 +234,44 @@ extension IndexView: NSOutlineViewDelegate {
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
         guard let node = item as? IndexNode else { return nil }
 
+        let cell = outlineView.makeView(withIdentifier: Self.cellIdentifier, owner: self)
+            as? NSTableCellView ?? makeCell()
         let text = NSMutableAttributedString()
+
         if let section = node.section {
+            let deco = Self.decoration(for: section.kind)
+            cell.imageView?.image = NSImage(systemSymbolName: deco.symbol,
+                                            accessibilityDescription: section.title)
+            cell.imageView?.contentTintColor = deco.color
             text.append(NSAttributedString(
-                string: "\(section.title)  (\(section.rows.count))",
-                attributes: [.foregroundColor: Theme.foreground,
+                string: section.title,
+                attributes: [.foregroundColor: deco.color,
                              .font: NSFont.systemFont(ofSize: 12, weight: .semibold)]))
-        } else if let row = node.row {
+            text.append(NSAttributedString(
+                string: "  \(section.rows.count)",
+                attributes: [.foregroundColor: Theme.foregroundFaint,
+                             .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)]))
+        } else if let row = node.row, let kind = node.sectionKind {
+            let deco = Self.decoration(for: kind)
+            cell.imageView?.image = NSImage(systemSymbolName: deco.symbol,
+                                            accessibilityDescription: nil)
+            cell.imageView?.contentTintColor = deco.color.withAlphaComponent(0.55)
+            let titleFont: NSFont = row.isCode
+                ? .monospacedSystemFont(ofSize: 11.5, weight: .regular)
+                : .systemFont(ofSize: 12)
             text.append(NSAttributedString(
                 string: row.title,
-                attributes: [.foregroundColor: Theme.foregroundDim,
-                             .font: NSFont.systemFont(ofSize: 12)]))
+                attributes: [.foregroundColor: Theme.foreground, .font: titleFont]))
             if let detail = row.detail {
+                let detailFont: NSFont = row.isCode
+                    ? .monospacedSystemFont(ofSize: 10.5, weight: .regular)
+                    : .systemFont(ofSize: 11)
                 text.append(NSAttributedString(
                     string: "   \(detail)",
-                    attributes: [.foregroundColor: Theme.foregroundFaint,
-                                 .font: NSFont.systemFont(ofSize: 11)]))
+                    attributes: [.foregroundColor: Theme.foregroundFaint, .font: detailFont]))
             }
         }
 
-        let cell = outlineView.makeView(withIdentifier: Self.cellIdentifier, owner: self)
-            as? NSTableCellView ?? makeCell()
         cell.textField?.attributedStringValue = text
         return cell
     }
@@ -217,13 +279,27 @@ extension IndexView: NSOutlineViewDelegate {
     private func makeCell() -> NSTableCellView {
         let cell = NSTableCellView()
         cell.identifier = Self.cellIdentifier
+
+        let icon = NSImageView()
+        icon.imageScaling = .scaleProportionallyDown
+        icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        cell.imageView = icon
+        cell.addSubview(icon)
+
         let label = NSTextField(labelWithString: "")
         label.lineBreakMode = .byTruncatingTail
         label.translatesAutoresizingMaskIntoConstraints = false
         cell.textField = label
         cell.addSubview(label)
+
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 2),
+            icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 2),
+            icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
+            icon.widthAnchor.constraint(equalToConstant: 16),
+            icon.heightAnchor.constraint(equalToConstant: 16),
+
+            label.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 6),
             label.trailingAnchor.constraint(equalTo: cell.trailingAnchor, constant: -4),
             label.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
         ])
