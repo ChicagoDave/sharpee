@@ -95,6 +95,12 @@ final class MainWindowController: NSWindowController {
         rootViewController?.composedStory
     }
 
+    /// Shows the empty project state with a one-line reason (D8: a restored
+    /// session pointing at a retired TypeScript project explains itself).
+    func showEmptyStateExplanation(_ text: String) {
+        rootViewController?.showEmptyStateExplanation(text)
+    }
+
     /// Applies a persisted "Play after build" value (session restore).
     func setPlayAfterBuild(_ on: Bool) {
         rootViewController?.applyPlayAfterBuild(on)
@@ -338,6 +344,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.composedStory
     }
 
+    func showEmptyStateExplanation(_ text: String) {
+        mainSplitViewController.showEmptyStateExplanation(text)
+    }
+
     func applyPlayAfterBuild(_ on: Bool) {
         mainSplitViewController.setPlayAfterBuild(on)
     }
@@ -540,6 +550,11 @@ private final class MainSplitViewController: NSSplitViewController {
 
     fileprivate func clearDiagnosis() {
         rightPanelViewController.clearDiagnosis()
+    }
+
+    /// Shows the empty project state with a one-line reason (D8).
+    fileprivate func showEmptyStateExplanation(_ text: String) {
+        projectPaneViewController.setTreeState(.empty(reason: text))
     }
 
     /// Composes `storyURL` from its on-disk content (project open — no editor

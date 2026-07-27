@@ -166,6 +166,24 @@ final class ComposeRunnerTests: XCTestCase {
                         "the span resolves to a real character range in the source")
     }
 
+    /// ADR-258 Acceptance (amended): an alteration error — a bad
+    /// `remove from action` target — reaches the diagnostics stream as a compile
+    /// record WITH its span, which required ADR-276's census arc: before it,
+    /// these were load-time LoadErrors invisible to the no-load-proof mode.
+    func testAlterationErrorArrivesAsCompileRecordWithSpan() throws {
+        let story = try writeStory(TestToolchain.cleanStory
+            + "\nremove from action snarf\n  grammar\n    take the item\n",
+            name: "alteration.story")
+        let result = composeReal(story)
+
+        guard case .success(let payload) = result else {
+            return XCTFail("expected success, got \(String(describing: result))")
+        }
+        let record = try XCTUnwrap(payload.diagnostics.first(where: { $0.code == "analysis.removal-target" }),
+                                   "got: \(payload.diagnostics.map { $0.code })")
+        XCTAssertNotNil(record.span, "alteration errors carry a full span into Problems")
+    }
+
     /// D2 amendment (ADR-269 D8): a grammar-header `.story` composes like any
     /// Chord source — the payload's IR carries the grammarFile marker (Build and
     /// Play gate on it) and its tree content is `define action` blocks. Uses the

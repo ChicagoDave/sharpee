@@ -39,12 +39,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         NSApp.activate(ignoringOtherApps: true)
 
         restoreSession(into: controller)
+
+        // D9: warn (non-blocking) when the installed toolchain speaks a newer
+        // Chord than this IDE was written against — clear signal, no mis-highlight.
+        ChordVersionCheck.fetch { [weak self] installed in
+            guard let installed,
+                  ChordVersionCheck.isNewer(installed,
+                                            thanSupported: ChordVersionCheck.supportedLanguageVersion)
+            else { return }
+            self?.presentChordVersionWarning(installed: installed)
+        }
+    }
+
+    /// One-line, dismissible D9 warning: the toolchain's Chord is ahead of the IDE.
+    private func presentChordVersionWarning(installed: String) {
+        let alert = NSAlert()
+        alert.messageText = "This IDE is behind the installed Chord"
+        alert.informativeText =
+            "The Sharpee toolchain speaks Chord \(installed); this IDE was written for Chord " +
+            "\(ChordVersionCheck.supportedLanguageVersion). Editing works, but highlighting and " +
+            "the project tree may lag newer syntax — update the IDE when you can."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        if let window = mainWindowController?.window {
+            alert.beginSheetModal(for: window, completionHandler: nil)
+        } else {
+            alert.runModal()
+        }
     }
 
     /// Reads the persisted session and replays it: project, open tabs, active tab.
     /// Silently skips a project whose folder no longer exists, and individual files that
     /// no longer exist. If the saved active index is out of range after skips, falls back
-    /// to the last surviving tab.
+    /// to the last surviving tab. A restored project that is no longer a story
+    /// target — an ADR-185-era TypeScript project — opens the empty state with a
+    /// one-line explanation instead (ADR-258 D8).
     private func restoreSession(into controller: MainWindowController) {
         guard let state = SessionStateStore.load() else { return }
 
@@ -52,6 +81,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         guard let projectURL = state.projectURL,
               fm.fileExists(atPath: projectURL.path) else {
+            return
+        }
+
+        guard StoryTarget.isStoryProject(projectURL) else {
+            controller.showEmptyStateExplanation(
+                "“\(projectURL.lastPathComponent)” is not a Chord story — the IDE opens .story files (the TypeScript author path was retired)")
             return
         }
 
@@ -178,7 +213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // The open target is the folder's `.story` file (ADR-258 D2). Composing
         // it populates the tree and Problems straight from source — the IDE
         // never prompts for or runs npm/node_modules/init-browser.
-        currentStoryURL = Self.storyFile(in: url)
+        currentStoryURL = StoryTarget.storyFile(in: url)
 
         // Show the built browser client in the Play pane (placeholder if none built).
         mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
@@ -186,19 +221,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         if let storyURL = currentStoryURL {
             mainWindowController?.composeStory(at: storyURL)
         }
-    }
-
-    /// The `.story` file the opened folder is organized around: prefers one named
-    /// after the folder, else the alphabetically first at the top level. Nil for
-    /// non-Chord projects.
-    private static func storyFile(in url: URL) -> URL? {
-        let fm = FileManager.default
-        guard let entries = try? fm.contentsOfDirectory(at: url, includingPropertiesForKeys: nil,
-                                                        options: [.skipsHiddenFiles]) else { return nil }
-        let stories = entries.filter { $0.pathExtension == "story" }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        let folderNamed = stories.first { $0.deletingPathExtension().lastPathComponent == url.lastPathComponent }
-        return folderNamed ?? stories.first
     }
 
     /// File → Open Recent → <project>. Loads the chosen folder. If the folder is no longer

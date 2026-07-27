@@ -14,13 +14,17 @@ enum RecentProjectsStore {
     static let maxCount = 10
 
     /// Reads the persisted recent-project list. Returns [] when nothing is
-    /// stored or when stored bytes fail to decode.
+    /// stored or when stored bytes fail to decode. Entries that are no longer
+    /// story targets — e.g. ADR-185-era TypeScript projects — are dropped from
+    /// the returned list rather than offered and failing at open time
+    /// (ADR-258 D8; the persisted data is a cache of user convenience, so no
+    /// migration file and no version bump).
     static func load(from defaults: UserDefaults = .standard) -> [URL] {
         guard let data = defaults.data(forKey: key),
               let urls = try? JSONDecoder().decode([URL].self, from: data) else {
             return []
         }
-        return urls
+        return urls.filter { StoryTarget.isStoryProject($0) }
     }
 
     /// Moves `url` to the front of the list. If `url` was already present,
