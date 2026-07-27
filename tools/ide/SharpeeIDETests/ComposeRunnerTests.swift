@@ -196,6 +196,13 @@ final class ComposeRunnerTests: XCTestCase {
                                   "fernhill has rooms in its tree")
         XCTAssertFalse(rooms.children.isEmpty)
 
+        // The Story Index projections work off the same real IR: stats populate
+        // and the build report leads with the story, not the toolchain.
+        let stats = StoryIndex.stats(of: ir)
+        XCTAssertGreaterThan(stats.rooms, 0)
+        XCTAssertGreaterThan(stats.phrases, 0, "fernhill's phrase keys decode")
+        XCTAssertTrue(StoryIndex.buildReport(for: ir).contains("The Folly at Fernhill"))
+
         let source = try String(contentsOf: fernhill, encoding: .utf8)
         let lineCount = source.split(separator: "\n", omittingEmptySubsequences: false).count
         let leaf = try XCTUnwrap(rooms.children.first?.leaf)

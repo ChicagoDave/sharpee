@@ -26,7 +26,7 @@ final class ProjectStructureTests: XCTestCase {
         ComposeStoryIR(format: "story language 1", languageVersion: "2.1.0",
                        meta: .init(title: "T", author: "A", fields: [:]),
                        grammarFile: grammarFile ? .init(name: "std") : nil,
-                       entities: entities, actions: actions)
+                       entities: entities, actions: actions, phrases: nil, hatches: nil)
     }
 
     func testCategorizesByKindWithPlayerUnderNPCs() throws {

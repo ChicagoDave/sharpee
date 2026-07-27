@@ -59,11 +59,17 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     let entities: [Entity]?
     /// `define action` blocks — the tree content for grammar files (D2 amendment).
     let actions: [ActionDef]?
+    /// The story's phrasebook — the Index lists the KEYS only; bodies stay opaque.
+    let phrases: PhraseBook?
+    /// Declared hatch modules (name, module path, kind, span).
+    let hatches: [Hatch]?
 
     /// Entities as a non-optional list.
     var allEntities: [Entity] { entities ?? [] }
     /// Actions as a non-optional list.
     var allActions: [ActionDef] { actions ?? [] }
+    /// Hatches as a non-optional list.
+    var allHatches: [Hatch] { hatches ?? [] }
 
     struct Meta: Codable, Equatable, Sendable {
         let title: String
@@ -99,6 +105,63 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     struct ActionDef: Codable, Equatable, Sendable {
         let name: String
         let span: DiagnosticSpan
+    }
+
+    /// A declared hatch module.
+    struct Hatch: Codable, Equatable, Sendable {
+        let name: String
+        let modulePath: String
+        let span: DiagnosticSpan?
+    }
+
+    /// The phrasebook: locales → phrase NAMES (keys + spans). Phrase bodies
+    /// (strategies, variants) are deliberately not decoded — the Index lists
+    /// names; prose stays in the editor.
+    struct PhraseBook: Codable, Equatable, Sendable {
+        let defaultLocale: String
+        let locales: [String: PhraseSet]
+
+        /// Phrase names of the default locale (the Index's headline list).
+        var defaultLocaleNames: [PhraseName] {
+            locales[defaultLocale]?.names ?? []
+        }
+    }
+
+    /// One locale's phrase keys, decoded from the wire's `{key: {…}}` map —
+    /// keys sorted for stable display; each carries its span when present.
+    struct PhraseSet: Codable, Equatable, Sendable {
+        let names: [PhraseName]
+
+        init(names: [PhraseName]) {
+            self.names = names
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: DynamicKey.self)
+            names = try container.allKeys.map { key in
+                let entry = try container.nestedContainer(keyedBy: DynamicKey.self, forKey: key)
+                let span = try entry.decodeIfPresent(DiagnosticSpan.self,
+                                                     forKey: DynamicKey(stringValue: "span")!)
+                return PhraseName(key: key.stringValue, span: span)
+            }.sorted { $0.key < $1.key }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            // The IDE never re-emits IR; encoding a PhraseSet writes nothing.
+        }
+    }
+
+    struct PhraseName: Codable, Equatable, Sendable {
+        let key: String
+        let span: DiagnosticSpan?
+    }
+
+    private struct DynamicKey: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { return nil }
+        init(_ value: String) { self.stringValue = value }
     }
 }
 

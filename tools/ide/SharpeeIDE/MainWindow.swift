@@ -85,6 +85,12 @@ final class MainWindowController: NSWindowController {
         rootViewController?.showBuildOutput()
     }
 
+    /// The story report to append after a successful build (nil before any
+    /// clean compile).
+    func storyBuildReport() -> String? {
+        rootViewController?.storyBuildReport()
+    }
+
     /// Loads (or clears) the Play pane for the given story's web bundle.
     func refreshPlay(projectRoot: URL?) {
         rootViewController?.refreshPlay(projectRoot: projectRoot)
@@ -318,6 +324,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.showBuildTab()
     }
 
+    func storyBuildReport() -> String? {
+        mainSplitViewController.storyBuildReport()
+    }
+
     /// Routes a compose outcome to the Problems tab and the editor's underlines.
     private func handleComposeOutcome(_ outcome: ComposeScheduler.Outcome) {
         switch outcome.result {
@@ -438,12 +448,18 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         composeScheduler.onOutcome = { [weak self] outcome in
             guard let self else { return }
-            // The tree folds every outcome through last-ok retention (D6)…
+            // The tree and the Index fold every outcome through last-ok
+            // retention (D6)…
             self.treeState.apply(outcome)
             self.projectPaneViewController.setTreeState(self.treeState.display)
+            self.rightPanelViewController.index.setState(self.treeState.display)
             self.syncPlayToComposeState()
             // …while Problems always reflects the current source (RootViewController).
             self.onComposeOutcome?(outcome)
+        }
+        rightPanelViewController.index.onActivate = { [weak self] span in
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            self.editorViewController.openDocument(at: storyURL, span: span)
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
@@ -563,6 +579,14 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Build-output plumbing — the Build tab lives in the right panel next to Play.
     fileprivate func appendBuildOutput(_ text: String) {
         rightPanelViewController.buildPanel.append(text)
+    }
+
+    /// The story report appended after a successful build (the "PR"): the
+    /// story's name and numbers from the retained IR, or nil before any clean
+    /// compile.
+    fileprivate func storyBuildReport() -> String? {
+        guard case .populated(let ir, _) = treeState.display else { return nil }
+        return StoryIndex.buildReport(for: ir)
     }
 
     fileprivate func clearBuildOutput() {

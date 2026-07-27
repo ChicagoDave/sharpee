@@ -44,12 +44,29 @@ final class ComposeDiagnosticsTests: XCTestCase {
                             "traits":[],"span":{"line":5,"column":1,"endLine":8,"endColumn":15}}],
                "actions":[{"name":"xyzzy","patterns":[],
                            "span":{"line":20,"column":1,"endLine":24,"endColumn":4}}],
+               "phrases":{"defaultLocale":"en-US","locales":{"en-US":{
+                   "night-wind":{"strategy":null,"variants":[],
+                                 "span":{"line":30,"column":3,"endLine":30,"endColumn":14}},
+                   "cold-returns":{"strategy":null,"variants":[]}}}},
+               "hatches":[{"name":"weather","modulePath":"./weather.ts","hatchKind":"text",
+                           "span":{"line":40,"column":1,"endLine":40,"endColumn":36}}],
                "unknownFutureField":42}}
         """))
         let ir = try XCTUnwrap(payload.ir)
         XCTAssertEqual(ir.languageVersion, "2.1.0")
         XCTAssertEqual(ir.meta.fields["id"], "probe")
         XCTAssertNil(ir.grammarFile)
+
+        let names = try XCTUnwrap(ir.phrases?.defaultLocaleNames)
+        XCTAssertEqual(names.map { $0.key }, ["cold-returns", "night-wind"],
+                       "phrase KEYS decode sorted; bodies stay opaque")
+        XCTAssertEqual(names[1].span?.line, 30)
+        XCTAssertNil(names[0].span, "a span-less phrase entry decodes without one")
+
+        let hatch = try XCTUnwrap(ir.allHatches.first)
+        XCTAssertEqual(hatch.name, "weather")
+        XCTAssertEqual(hatch.modulePath, "./weather.ts")
+        XCTAssertEqual(hatch.span?.line, 40)
 
         let entity = try XCTUnwrap(ir.allEntities.first)
         XCTAssertEqual(entity.name, "Lab")

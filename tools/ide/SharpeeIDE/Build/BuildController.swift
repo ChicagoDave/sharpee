@@ -62,7 +62,9 @@ final class BuildController: BuildRunnerDelegate {
         let status: BuildStatusDisplay
         switch result.state {
         case .success:
-            line = "\n✓ Build succeeded.\n"
+            // The story report (the PR): name in lights + the numbers.
+            let report = window?.storyBuildReport().map { "\n\($0)" } ?? ""
+            line = "\n✓ Build succeeded.\n\(report)"
             status = .succeeded(duration: duration)
         case .failure:
             line = "\n✗ Build failed (exit \(result.exitCode)).\n"

@@ -17,7 +17,8 @@ final class IRTreeStateTests: XCTestCase {
     private func okIR(title: String) -> ComposeStoryIR {
         ComposeStoryIR(format: "story language 1", languageVersion: "2.1.0",
                        meta: .init(title: title, author: "T", fields: [:]),
-                       grammarFile: nil, entities: [], actions: [])
+                       grammarFile: nil, entities: [], actions: [],
+                       phrases: nil, hatches: nil)
     }
 
     private func okOutcome(_ url: URL, title: String = "OK") -> ComposeScheduler.Outcome {
