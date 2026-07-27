@@ -1,11 +1,13 @@
 // StoryScaffoldTests.swift
-// Covers StoryScaffold: kebab id derivation, template substitution + file creation
-// from an injected fixture template directory, and the non-empty / missing-template
-// error paths.
+// Covers StoryScaffold (Chord, ADR-258 D2): kebab id derivation, rendering
+// story.story.template to `<id>.story` with substitutions, the hard guarantee
+// that NO package.json / src/ / tsconfig lands in a new story, the real bundled
+// devkit template, and the non-empty / missing-template error paths.
 
 import XCTest
 @testable import SharpeeIDE
 
+@MainActor
 final class StoryScaffoldTests: XCTestCase {
 
     private var tmp: URL!
@@ -18,11 +20,15 @@ final class StoryScaffoldTests: XCTestCase {
             .resolvingSymlinksInPath()
         templateDir = tmp.appendingPathComponent("template", isDirectory: true)
         try FileManager.default.createDirectory(at: templateDir, withIntermediateDirectories: true)
-        try write("index.ts.template", "// {{STORY_TITLE}} by {{AUTHOR}}\nexport const id = '{{STORY_ID}}';")
-        try write("package.json.template",
-                  "{\"name\":\"{{STORY_ID}}\",\"dependencies\":{\"@sharpee/sharpee\":\"{{SHARPEE_VERSION}}\"},"
-                  + "\"devDependencies\":{\"@sharpee/devkit\":\"{{DEVKIT_VERSION}}\"}}")
-        try write("tsconfig.json.template", "{ \"compilerOptions\": {} }")
+        try Self.write("story.story.template", """
+        story "{{STORY_TITLE}}" by "{{AUTHOR}}"
+          id: {{STORY_ID}}
+          version: 0.1.0
+          blurb: {{DESCRIPTION}}
+        """, into: templateDir)
+        // A sibling package.json.template exists in the real devkit template dir —
+        // the IDE scaffold must IGNORE it (D2: never create a package.json).
+        try Self.write("package.json.template", "{\"name\":\"{{STORY_ID}}\"}", into: templateDir)
     }
 
     override func tearDownWithError() throws {
@@ -33,8 +39,8 @@ final class StoryScaffoldTests: XCTestCase {
         super.tearDown()
     }
 
-    private func write(_ name: String, _ contents: String) throws {
-        try contents.write(to: templateDir.appendingPathComponent(name), atomically: true, encoding: .utf8)
+    private nonisolated static func write(_ name: String, _ contents: String, into dir: URL) throws {
+        try contents.write(to: dir.appendingPathComponent(name), atomically: true, encoding: .utf8)
     }
 
     private func info(_ title: String) -> StoryScaffold.Info {
@@ -47,22 +53,51 @@ final class StoryScaffoldTests: XCTestCase {
         XCTAssertEqual(StoryScaffold.storyId(from: "***"), "my-story")
     }
 
-    func testCreateWritesSubstitutedFiles() throws {
+    func testCreateWritesSubstitutedStoryFileOnly() throws {
         let dir = tmp.appendingPathComponent("the-lost-key")
         try StoryScaffold.create(in: dir, info: info("The Lost Key"), templateDirectory: templateDir)
 
-        let index = try String(contentsOf: dir.appendingPathComponent("src/index.ts"), encoding: .utf8)
-        XCTAssertTrue(index.contains("// The Lost Key by Ada"))
-        XCTAssertTrue(index.contains("id = 'the-lost-key'"))
+        let story = try String(contentsOf: dir.appendingPathComponent("the-lost-key.story"),
+                               encoding: .utf8)
+        XCTAssertTrue(story.contains("story \"The Lost Key\" by \"Ada\""))
+        XCTAssertTrue(story.contains("id: the-lost-key"))
+        XCTAssertTrue(story.contains("blurb: An adventure"))
+        XCTAssertFalse(story.contains("{{"), "no unsubstituted placeholders")
 
-        let pkg = try String(contentsOf: dir.appendingPathComponent("package.json"), encoding: .utf8)
-        XCTAssertTrue(pkg.contains("\"name\":\"the-lost-key\""))
-        XCTAssertTrue(pkg.contains("@sharpee/sharpee\":\"^1.0.0"))
-        XCTAssertTrue(pkg.contains("@sharpee/devkit\":\"^1.0.0"))
-        XCTAssertFalse(pkg.contains("{{"))  // no unsubstituted placeholders
+        let fm = FileManager.default
+        XCTAssertFalse(fm.fileExists(atPath: dir.appendingPathComponent("package.json").path),
+                       "the IDE never creates a package.json (D2)")
+        XCTAssertFalse(fm.fileExists(atPath: dir.appendingPathComponent("src").path))
+        XCTAssertFalse(fm.fileExists(atPath: dir.appendingPathComponent("tsconfig.json").path))
+        XCTAssertTrue(fm.fileExists(atPath: dir.appendingPathComponent(".gitignore").path))
+    }
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: dir.appendingPathComponent("tsconfig.json").path))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: dir.appendingPathComponent(".gitignore").path))
+    /// The REAL bundled template: a scaffolded story composes clean through the
+    /// real CLI (rule 13a) — proving template, scaffold, and compiler agree.
+    func testRealTemplateScaffoldComposesClean() throws {
+        let realTemplates = TestToolchain.repoRoot
+            .appendingPathComponent("packages/devkit/templates/story-chord")
+        let dir = tmp.appendingPathComponent("fresh-adventure")
+        try StoryScaffold.create(in: dir, info: info("Fresh Adventure"),
+                                 templateDirectory: realTemplates)
+        let story = dir.appendingPathComponent("fresh-adventure.story")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: story.path))
+
+        let runner = ComposeRunner()
+        let done = expectation(description: "compose completes")
+        var captured: Result<ComposeJsonPayload, ComposeRunner.Failure>!
+        TestToolchain.composeInvoker(runner: runner)(story) { result in
+            captured = result
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 60)
+
+        guard case .success(let payload) = captured! else {
+            return XCTFail("expected success, got \(String(describing: captured))")
+        }
+        XCTAssertTrue(payload.diagnostics.isEmpty,
+                      "the scaffold template must compose clean: \(payload.diagnostics)")
+        XCTAssertEqual(payload.ir?.meta.fields["id"], "fresh-adventure")
     }
 
     func testRejectsNonEmptyDirectory() throws {

@@ -47,6 +47,18 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// Not fired on dirty-flag toggles or content edits — those don't affect persistable state.
     var onStateChanged: (() -> Void)?
 
+    /// Fired when a `.story` document becomes active (open, tab switch) with its URL and
+    /// buffer content — the compose pipeline runs immediately (ADR-258 D5/D6).
+    var onStoryActivated: ((URL, String) -> Void)?
+
+    /// Fired on every edit to the active `.story` document with its URL and buffer content —
+    /// the compose pipeline runs after a debounce (ADR-258 D5, Q3 ruling).
+    var onStoryEdited: ((URL, String) -> Void)?
+
+    /// The ranges currently carrying a diagnostic underline, so they can be cleared
+    /// before the next compose result (or on edit, when they go stale).
+    private var diagnosticUnderlineRanges: [NSRange] = []
+
     override func loadView() {
         let pane = NSView()
         pane.wantsLayer = true
@@ -117,6 +129,61 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.scrollRangeToVisible(range)
         view.window?.makeFirstResponder(textView)
         lineNumberRuler?.errorLines = [line] // flag it in the gutter
+    }
+
+    /// Opens (or focuses) `url`, then selects the exact diagnostic span — the
+    /// underline-range navigation Problems rows use (ADR-258 D5). Falls back to
+    /// whole-line selection when the span no longer fits the buffer (stale record).
+    func openDocument(at url: URL, span: DiagnosticSpan) {
+        openDocument(at: url)
+        guard activeDocument?.url == url else { return }
+        if let range = SpanText.characterRange(of: span, in: textView.string), range.length > 0 {
+            textView.setSelectedRange(range)
+            textView.scrollRangeToVisible(range)
+            view.window?.makeFirstResponder(textView)
+            lineNumberRuler?.errorLines = [span.line]
+        } else if let range = characterRange(ofLine: span.line) {
+            textView.setSelectedRange(range)
+            textView.scrollRangeToVisible(range)
+            view.window?.makeFirstResponder(textView)
+            lineNumberRuler?.errorLines = [span.line]
+        }
+    }
+
+    /// Underlines each record's span in the active document (errors red, warnings
+    /// yellow) and flags their lines in the gutter. Records for other files (hatch
+    /// modules) are ignored. Cleared on the next edit — the following compose
+    /// repaints against the new buffer.
+    func setDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
+        clearDiagnosticUnderlines()
+        guard let doc = activeDocument, doc.url == url,
+              let storage = textView.textStorage else { return }
+
+        var flaggedLines: Set<Int> = []
+        for record in records {
+            guard record.file == url.path, let span = record.span,
+                  let range = SpanText.characterRange(of: span, in: textView.string),
+                  range.length > 0, NSMaxRange(range) <= storage.length else { continue }
+            let color: NSColor = record.severity == .error ? .systemRed : .systemYellow
+            storage.addAttribute(.underlineStyle,
+                                 value: NSUnderlineStyle.thick.rawValue, range: range)
+            storage.addAttribute(.underlineColor, value: color, range: range)
+            diagnosticUnderlineRanges.append(range)
+            flaggedLines.insert(record.line)
+        }
+        lineNumberRuler?.errorLines = flaggedLines
+    }
+
+    private func clearDiagnosticUnderlines() {
+        guard let storage = textView.textStorage else {
+            diagnosticUnderlineRanges = []
+            return
+        }
+        for r in diagnosticUnderlineRanges where NSMaxRange(r) <= storage.length {
+            storage.removeAttribute(.underlineStyle, range: r)
+            storage.removeAttribute(.underlineColor, range: r)
+        }
+        diagnosticUnderlineRanges = []
     }
 
     /// The character range of the 1-based `line` in the text view, or nil if out of range.
@@ -216,6 +283,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         loadActiveDocumentIntoTextView()
         refreshUI()
         onStateChanged?()
+        if wasActive { notifyStoryActivated() }
     }
 
     /// Activates the tab at `index`. Persists the text view's edits to the previously-active
@@ -231,6 +299,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         loadActiveDocumentIntoTextView()
         refreshUI()
         onStateChanged?()
+        notifyStoryActivated()
+    }
+
+    /// Reports a newly-active `.story` document to the compose pipeline.
+    private func notifyStoryActivated() {
+        guard let doc = activeDocument, doc.url.pathExtension == "story" else { return }
+        onStoryActivated?(doc.url, doc.content)
     }
 
     /// Clears all open documents and returns to the placeholder state.
@@ -322,6 +397,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.scroll(.zero)
         lineNumberRuler?.errorLines = [] // marks are document-specific
         bracketRanges = [] // match highlights belong to the previous document
+        diagnosticUnderlineRanges = [] // underline attrs died with the replaced text
         applyHighlighting()
     }
 
@@ -346,10 +422,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         guard !isSwappingContent, let doc = activeDocument else { return }
         doc.content = textView.string
         lineNumberRuler?.errorLines = [] // editing invalidates the flagged error
+        clearDiagnosticUnderlines() // stale against the new buffer; the next compose repaints
         applyHighlighting() // spike: full re-highlight on each edit (incremental re-parse lands with Neon)
         if !doc.isDirty {
             doc.isDirty = true
             refreshUI()
+        }
+        if doc.url.pathExtension == "story" {
+            onStoryEdited?(doc.url, doc.content)
         }
     }
 

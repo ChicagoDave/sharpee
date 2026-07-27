@@ -39,10 +39,13 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     private let schemeHandler = PlayURLSchemeHandler()
     private var webView: WKWebView!
     private let header = PlayHeaderView()
-    private let placeholder = NSTextField(labelWithString: "Build with Browser enabled to play")
+    private let placeholder = NSTextField(labelWithString: "Build the story to play it")
 
-    /// The project root currently loaded, so reload after a rebuild can re-resolve its bundle.
+    /// The bundle directory (`dist/web/<id>/`) currently loaded, or nil.
     private var loaded: URL?
+
+    /// True when a bundle is currently loaded in the pane.
+    var isLoaded: Bool { loaded != nil }
 
     /// Whether a successful Browser build should auto-load into the pane. Persisted in SessionState.
     private(set) var playAfterBuild = true
@@ -107,17 +110,20 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         showPlaceholder()
     }
 
-    /// Loads the project's web bundle (`<projectRoot>/dist/web/`) if present, otherwise shows the
-    /// placeholder. Passing nil (no project) or an unbuilt project shows the placeholder.
-    func load(projectRoot: URL?) {
-        guard let projectRoot, WebBundle.indexURL(projectRoot: projectRoot) != nil else {
+    /// Loads a story's web bundle directory (`dist/web/<id>/`, resolved by the
+    /// caller from the IR header per ADR-258 D4) if its index.html exists,
+    /// otherwise shows the placeholder. Passing nil shows the placeholder.
+    func load(bundleDirectory: URL?) {
+        guard let bundleDirectory,
+              FileManager.default.fileExists(
+                  atPath: bundleDirectory.appendingPathComponent("index.html").path) else {
             loaded = nil
-            showPlaceholder()
+            showPlaceholder(Self.notBuiltPlaceholder)
             return
         }
-        loaded = projectRoot
+        loaded = bundleDirectory
         PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
-        schemeHandler.rootDirectory = WebBundle.directory(projectRoot: projectRoot)
+        schemeHandler.rootDirectory = bundleDirectory
         placeholder.isHidden = true
         webView.isHidden = false
         header.setLoaded(true)
@@ -125,11 +131,18 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         webView.load(URLRequest(url: url))
     }
 
-    /// Loads the just-built project after a successful build, honouring the "Play after build"
-    /// toggle. No-op when the toggle is off (or the project has no browser client).
-    func reloadAfterBuild(projectRoot: URL) {
+    /// Shows an explicit "cannot play" state (e.g. a grammar-header file — not a
+    /// story, no `dist/web/<id>` exists for it; ADR-258 D2).
+    func showUnplayable(reason: String) {
+        loaded = nil
+        showPlaceholder(reason)
+    }
+
+    /// Loads the just-built bundle after a successful build, honouring the
+    /// "Play after build" toggle.
+    func reloadAfterBuild(bundleDirectory: URL) {
         guard playAfterBuild else { return }
-        load(projectRoot: projectRoot)
+        load(bundleDirectory: bundleDirectory)
     }
 
     /// Restarts the running story by reloading from origin. (If the client later adds
@@ -145,7 +158,10 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         header.setPlayAfterBuild(on)
     }
 
-    private func showPlaceholder() {
+    private static let notBuiltPlaceholder = "Build the story to play it"
+
+    private func showPlaceholder(_ text: String = PlayViewController.notBuiltPlaceholder) {
+        placeholder.stringValue = text
         webView.isHidden = true
         placeholder.isHidden = false
         header.setLoaded(false)
@@ -160,8 +176,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
                                             translation: SharpeeErrorTranslator.translate(message: text)))
             return
         }
-        let bundleDir = WebBundle.directory(projectRoot: loaded)
-        onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: bundleDir))
+        onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: loaded))
     }
 }
 

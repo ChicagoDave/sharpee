@@ -1,136 +1,105 @@
 // SyntaxHighlighter.swift
-// P2 spike (step 2.0): tree-sitter syntax highlighting for TypeScript documents.
-// Public interface: `canHighlight(_:)` reports whether a URL is a supported language;
-// `highlight(_:)` parses an NSTextStorage and applies foreground token colors.
+// Chord syntax highlighting via the in-process ChordLexer (ADR-258 D7): colors
+// key off TokenKind — no parse tree, no tree-sitter. Comment lines color whole;
+// strings, numbers, comparisons, and a curated structural-keyword set color by
+// token; everything else (prose words, punctuation) stays at base foreground.
+// Re-highlights the whole document per call (matches the editor's existing
+// full-pass cadence).
+// Public interface: `canHighlight(_:)` reports whether a URL is a supported
+// language; `highlight(_:)` lexes an NSTextStorage and applies token colors.
 // Owner context: tools/ide — Editor pane.
-//
-// SPIKE SCOPE: proves the parse → highlights-query → color pipeline end-to-end against
-// the vendored grammar. It re-highlights the whole document on each call (no incremental
-// re-parse yet — that's the Neon layer in P2 step 2.3+). Not wired for performance.
 
 import AppKit
-import SwiftTreeSitter
-import TreeSitterTypeScript
 
-/// Maps tree-sitter highlight capture names to editor colors, and applies them to a text storage.
 final class SyntaxHighlighter {
 
-    /// Capture-name → color. Keys match the *head* of a tree-sitter capture name, so a dotted
-    /// capture like `keyword.control` or `punctuation.bracket` resolves via its first segment.
-    private static let colorsByCapture: [String: NSColor] = [
-        "keyword":  Theme.tokenKeyword,
-        "string":   Theme.tokenString,
-        "comment":  Theme.tokenComment,
-        "number":   Theme.tokenNumber,
-        "type":     Theme.tokenType,
-        "constant": Theme.tokenNumber,
-        "function": Theme.tokenFunction,
-        "method":   Theme.tokenFunction,
+    /// Structural keywords colored as keywords when they appear as word tokens.
+    /// A display choice, not language surface — the lexer has no keyword kind.
+    /// Deliberately excludes words common in prose (`the`, `a`, `is`, `on`, …):
+    /// token-level highlighting colors matches inside prose lines too, and a
+    /// parse tree that could tell the difference is exactly what D7 declined.
+    static let keywords: Set<String> = [
+        "story", "grammar", "create", "define", "extend", "remove",
+        "action", "actions", "use", "means", "directions",
+        "phrase", "phrases", "starts", "announce",
+        "state", "states", "counter", "counters", "channel", "channels",
+        "score", "scores", "rank", "ranks", "sequence", "machine",
+        "topics", "pronouns", "trait", "traits",
     ]
 
-    /// Curated highlight queries, split into independent groups. Each group compiles on its own,
-    /// so a node/token name that the grammar doesn't recognize disables only its group rather than
-    /// killing all highlighting. (Grammar-bundled query auto-discovery via LanguageConfiguration
-    /// does NOT resolve from an app target — see plan-20260619-p2; we load our own instead.)
-    static let querySources: [String] = [
-        // Group 1 — core JS keywords (bedrock anonymous tokens).
-        """
-        [
-          "const" "let" "var" "function" "return" "if" "else" "for" "while" "do"
-          "switch" "case" "break" "continue" "new" "delete" "typeof" "instanceof"
-          "class" "extends" "import" "export" "from" "throw" "try" "catch" "finally"
-        ] @keyword
-        """,
-        // Group 2 — TypeScript-specific keywords (isolated so an unknown token can't disable group 1).
-        """
-        [
-          "interface" "type" "enum" "namespace" "implements" "as" "keyof" "declare"
-          "public" "private" "protected" "readonly" "static" "abstract"
-          "async" "await" "yield"
-        ] @keyword
-        """,
-        // Group 3 — literals and comments.
-        """
-        (comment) @comment
-        (string) @string
-        (template_string) @string
-        (number) @number
-        """,
-        // Group 4 — types.
-        """
-        (type_identifier) @type
-        (predefined_type) @type
-        """,
-        // Group 5 — functions & methods (patterns lifted from the upstream JS highlights query).
-        """
-        (function_declaration name: (identifier) @function)
-        (function_expression name: (identifier) @function)
-        (call_expression function: (identifier) @function)
-        (call_expression function: (member_expression property: (property_identifier) @function.method))
-        (method_definition name: (property_identifier) @function.method)
-        """,
-        // Group 6 — builtin constants.
-        """
-        [(true) (false) (null) (undefined)] @constant.builtin
-        """,
-    ]
-
-    private let parser = Parser()
-    private let queries: [Query]
-    private let languageReady: Bool
-
-    /// `querySources` is injectable so tests can exercise group-isolation and the load-failure
-    /// path; production uses the curated default.
-    init(querySources: [String] = SyntaxHighlighter.querySources) {
-        // Use LanguageConfiguration only to obtain the Language; build our own queries from it.
-        let config = try? LanguageConfiguration(tree_sitter_typescript(), name: "TypeScript")
-        if let config {
-            self.languageReady = ((try? parser.setLanguage(config.language)) != nil)
-            self.queries = querySources.compactMap { source in
-                guard let data = source.data(using: .utf8) else { return nil }
-                return try? Query(language: config.language, data: data)
-            }
-        } else {
-            self.languageReady = false
-            self.queries = []
+    /// Color for one token, or nil to leave it at base foreground.
+    static func color(for token: ChordToken) -> NSColor? {
+        switch token.kind {
+        case .string:  return Theme.tokenString
+        case .number:  return Theme.tokenNumber
+        case .compare: return Theme.tokenKeyword
+        case .word:    return keywords.contains(token.text.lowercased()) ? Theme.tokenKeyword : nil
+        default:       return nil
         }
     }
 
-    /// True if this highlighter can color the file at `url` (TypeScript family only, for now).
+    /// True if this highlighter can color the file at `url` (Chord `.story` only).
     func canHighlight(_ url: URL) -> Bool {
-        ["ts", "tsx", "mts", "cts"].contains(url.pathExtension.lowercased())
+        url.pathExtension.lowercased() == "story"
     }
 
-    /// Resolves a (possibly dotted) tree-sitter capture name to a token color, or nil if unmapped.
-    static func color(forCapture capture: String) -> NSColor? {
-        let head = capture.split(separator: ".").first.map(String.init) ?? capture
-        return colorsByCapture[head]
-    }
-
-    /// Parses `storage`'s contents and applies foreground token colors over the whole document.
-    /// Resets every character to the base foreground first so stale colors from a prior pass are
-    /// cleared. No-op (leaves text at base foreground) if the grammar or query failed to load.
+    /// Lexes `storage`'s contents and applies foreground token colors over the
+    /// whole document. Resets every character to the base foreground first so
+    /// stale colors from a prior pass are cleared.
     func highlight(_ storage: NSTextStorage) {
         let source = storage.string
-        let fullRange = NSRange(location: 0, length: (source as NSString).length)
+        let ns = source as NSString
+        let fullRange = NSRange(location: 0, length: ns.length)
 
         storage.beginEditing()
         defer { storage.endEditing() }
         storage.addAttribute(.foregroundColor, value: Theme.foreground, range: fullRange)
 
-        guard languageReady, !queries.isEmpty, let tree = parser.parse(source) else {
-            return
-        }
+        let lineStarts = Self.lineStartOffsets(ns)
 
-        for query in queries {
-            let highlights = query.execute(in: tree).resolve(with: .init(string: source)).highlights()
-            for namedRange in highlights {
-                guard let color = Self.color(forCapture: namedRange.name) else { continue }
-                // Guard against any range the query reports past the current text length.
-                let r = namedRange.range
-                guard r.location >= 0, NSMaxRange(r) <= fullRange.length else { continue }
-                storage.addAttribute(.foregroundColor, value: color, range: r)
+        for line in ChordLexer.lex(source) {
+            guard line.lineNo - 1 < lineStarts.count else { continue }
+            let lineStart = lineStarts[line.lineNo - 1]
+
+            if line.comment {
+                let length = (line.raw as NSString).length
+                apply(Theme.tokenComment, at: NSRange(location: lineStart, length: length),
+                      within: fullRange, to: storage)
+                continue
+            }
+
+            for token in line.tokens {
+                guard let color = Self.color(for: token) else { continue }
+                let location = lineStart + token.span.column - 1
+                let length = token.span.endColumn - token.span.column
+                apply(color, at: NSRange(location: location, length: length),
+                      within: fullRange, to: storage)
             }
         }
+    }
+
+    private func apply(_ color: NSColor, at range: NSRange, within fullRange: NSRange,
+                       to storage: NSTextStorage) {
+        guard range.location >= 0, NSMaxRange(range) <= fullRange.length else { return }
+        storage.addAttribute(.foregroundColor, value: color, range: range)
+    }
+
+    /// UTF-16 offsets of each line start, splitting like the lexer (`\r\n`|`\n`|`\r`).
+    private static func lineStartOffsets(_ text: NSString) -> [Int] {
+        var starts: [Int] = [0]
+        var i = 0
+        while i < text.length {
+            let c = text.character(at: i)
+            if c == 0x0D { // `\r` (or `\r\n`)
+                i += (i + 1 < text.length && text.character(at: i + 1) == 0x0A) ? 2 : 1
+                starts.append(i)
+            } else if c == 0x0A { // `\n`
+                i += 1
+                starts.append(i)
+            } else {
+                i += 1
+            }
+        }
+        return starts
     }
 }

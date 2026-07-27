@@ -13,11 +13,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     private var mainWindowController: MainWindowController?
     private var buildController: BuildController?
 
-    /// Monorepo root for the currently loaded project — the closest ancestor carrying the
-    /// Sharpee signature (`pnpm-workspace.yaml` + `packages/core/`), home of the `./sharpee` CLI.
-    /// Nil when no project is loaded, or when no ancestor carries the signature.
-    /// Drives Build menu enablement via `validateUserInterfaceItem(_:)`.
+    /// Root folder of the currently loaded project (the folder around the story,
+    /// ADR-258 D2). Nil when no project is loaded.
     private var currentRepoRoot: URL?
+
+    /// The `.story` file the open project is organized around (ADR-258 D2) —
+    /// the Build target. Nil for a non-Chord folder; Build is disabled then.
+    private var currentStoryURL: URL?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
@@ -37,12 +39,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         NSApp.activate(ignoringOtherApps: true)
 
         restoreSession(into: controller)
+
+        // D9: warn (non-blocking) when the installed toolchain speaks a newer
+        // Chord than this IDE was written against — clear signal, no mis-highlight.
+        ChordVersionCheck.fetch(near: currentStoryURL) { [weak self] installed in
+            guard let installed,
+                  ChordVersionCheck.isNewer(installed,
+                                            thanSupported: ChordVersionCheck.supportedLanguageVersion)
+            else { return }
+            self?.presentChordVersionWarning(installed: installed)
+        }
+    }
+
+    /// One-line, dismissible D9 warning: the toolchain's Chord is ahead of the IDE.
+    private func presentChordVersionWarning(installed: String) {
+        let alert = NSAlert()
+        alert.messageText = "This IDE is behind the installed Chord"
+        alert.informativeText =
+            "The Sharpee toolchain speaks Chord \(installed); this IDE was written for Chord " +
+            "\(ChordVersionCheck.supportedLanguageVersion). Editing works, but highlighting and " +
+            "the project tree may lag newer syntax — update the IDE when you can."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        if let window = mainWindowController?.window {
+            alert.beginSheetModal(for: window, completionHandler: nil)
+        } else {
+            alert.runModal()
+        }
     }
 
     /// Reads the persisted session and replays it: project, open tabs, active tab.
     /// Silently skips a project whose folder no longer exists, and individual files that
     /// no longer exist. If the saved active index is out of range after skips, falls back
-    /// to the last surviving tab.
+    /// to the last surviving tab. A restored project that is no longer a story
+    /// target — an ADR-185-era TypeScript project — opens the empty state with a
+    /// one-line explanation instead (ADR-258 D8).
     private func restoreSession(into controller: MainWindowController) {
         guard let state = SessionStateStore.load() else { return }
 
@@ -50,6 +81,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         guard let projectURL = state.projectURL,
               fm.fileExists(atPath: projectURL.path) else {
+            return
+        }
+
+        guard StoryTarget.isStoryProject(projectURL) else {
+            controller.showEmptyStateExplanation(
+                "“\(projectURL.lastPathComponent)” is not a Chord story — the IDE opens .story files (the TypeScript author path was retired)")
             return
         }
 
@@ -146,9 +183,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                                       description: "An interactive fiction adventure")
         do {
             try StoryScaffold.create(in: url, info: info)
-            // New Story (ADR-185): after the deps install, auto-add the browser client so the
-            // new project is immediately playable in the Play pane.
-            loadProject(at: url, autoInitBrowser: true)
+            // The scaffold is a bare `<id>.story` (ADR-258 D2 — no package.json,
+            // no npm step); opening it composes immediately, so the tree and
+            // Problems are live before any build.
+            loadProject(at: url)
         } catch {
             let alert = NSAlert(error: error)
             alert.alertStyle = .warning
@@ -166,35 +204,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// Opens the project rooted at `url` and sets the window title. Centralized so that
     /// the Open Project panel, restore-session, and Open Recent all share the same path.
     /// `expandedFolderURLs` is honoured by restore-session; the menu paths leave it empty.
-    private func loadProject(at url: URL, expandedFolderURLs: [URL] = [], autoInitBrowser: Bool = false) {
+    private func loadProject(at url: URL, expandedFolderURLs: [URL] = []) {
         let project = Project(rootURL: url)
         mainWindowController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
         mainWindowController?.window?.title = "Sharpee — \(project.name)"
-        // Author mode (ADR-185): the open folder *is* the story project — no monorepo lookup.
         currentRepoRoot = url
+
+        // The open target is the folder's `.story` file (ADR-258 D2). Composing
+        // it populates the tree and Problems straight from source — the IDE
+        // never prompts for or runs npm/node_modules/init-browser.
+        currentStoryURL = StoryTarget.storyFile(in: url)
 
         // Show the built browser client in the Play pane (placeholder if none built).
         mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
 
-        // Author housekeeping (ADR-185): a project with a package.json but no installed `sharpee`
-        // bin needs its dependencies — install them silently (`npm install`). A project that is
-        // already built introspects immediately to populate the Structure view.
-        let fm = FileManager.default
-        let hasPackageJSON = fm.fileExists(atPath: url.appendingPathComponent("package.json").path)
-        let hasBin = fm.fileExists(atPath: url.appendingPathComponent("node_modules/.bin/sharpee").path)
-        if hasPackageJSON && !hasBin {
-            buildController?.installDependencies(projectDir: url, thenInitBrowser: autoInitBrowser)
-        } else if Self.isBuiltAuthorProject(url) {
-            mainWindowController?.introspectProject(projectRoot: url)
+        if let storyURL = currentStoryURL {
+            mainWindowController?.composeStory(at: storyURL)
         }
-    }
-
-    /// True iff `url` is a built author story project — it has the installed `sharpee` bin and a
-    /// compiled `dist/index.js`, so `sharpee introspect` can load it.
-    private static func isBuiltAuthorProject(_ url: URL) -> Bool {
-        let fm = FileManager.default
-        return fm.fileExists(atPath: url.appendingPathComponent("node_modules/.bin/sharpee").path)
-            && fm.fileExists(atPath: url.appendingPathComponent("dist/index.js").path)
     }
 
     /// File → Open Recent → <project>. Loads the chosen folder. If the folder is no longer
@@ -233,19 +259,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     // MARK: - Build menu actions
 
-    /// Build → Build (⌘B). Runs the open project's installed `sharpee build` (ADR-185),
-    /// streaming output into the Build panel; on success the Structure view re-introspects.
+    /// Build → Build (⌘B). Runs `sharpee build <file>.story` (ADR-258 D4),
+    /// streaming output into the Build panel; on success Play reloads the
+    /// freshly-built `dist/web/<id>/`. Grammar-header files never build (D2).
     @objc func buildProject(_ sender: Any?) {
-        guard let projectRoot = currentRepoRoot else { return }
-        buildController?.build(projectDir: projectRoot)
-    }
-
-    /// Build → Build Settings…. Presents the per-project build options as a sheet.
-    /// Enabled only when a workspace root is known (see validateMenuItem).
-    @objc func openBuildSettings(_ sender: Any?) {
-        guard let repoRoot = currentRepoRoot,
-              let presenter = mainWindowController?.window?.contentViewController else { return }
-        presenter.presentAsSheet(BuildSettingsViewController(repoRoot: repoRoot))
+        guard let storyURL = currentStoryURL,
+              mainWindowController?.composedStory?.isGrammar != true else { return }
+        buildController?.build(storyFile: storyURL)
     }
 
     /// Build → Cancel Build. Cancels the running build (SIGTERM, then SIGKILL).
@@ -261,14 +281,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     // MARK: - NSUserInterfaceValidations (menu enable/disable)
 
     /// AppKit calls this when a menu containing one of our actions is about to display.
-    /// Build / Build Settings… require a workspace root. Cancel Build is permanently disabled
-    /// until step 4.6 wires it to runner state.
+    /// Build requires an open `.story` that is not a grammar-header file (D2).
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(buildProject(_:)):
-            return currentRepoRoot != nil && !(buildController?.isBuilding ?? false)
-        case #selector(openBuildSettings(_:)):
-            return currentRepoRoot != nil
+            return currentStoryURL != nil
+                && mainWindowController?.composedStory?.isGrammar != true
+                && !(buildController?.isBuilding ?? false)
         case #selector(cancelBuild(_:)):
             return buildController?.isBuilding ?? false
         case #selector(toggleWordWrap(_:)):

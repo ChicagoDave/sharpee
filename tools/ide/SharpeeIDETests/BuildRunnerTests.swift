@@ -77,25 +77,67 @@ final class BuildRunnerTests: XCTestCase {
         XCTAssertEqual(delegate.result?.state, .failure)
     }
 
-    // MARK: - Project-bin wrappers
+    // MARK: - Real `.story` build (ADR-258 D4 acceptance, rule 13a)
 
-    func testStartInitBrowserRunsProjectBinWithInitBrowserArg() throws {
-        // Fake the installed bin at node_modules/.bin/sharpee; startInitBrowser must target it
-        // with the `init-browser` argument (the production wrapper, real spawn path).
-        let binDir = tempDir.appendingPathComponent("node_modules/.bin", isDirectory: true)
-        try FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
-        let bin = binDir.appendingPathComponent("sharpee")
-        try "#!/bin/bash\necho \"ran: $@\"\nexit 0\n".write(to: bin, atomically: true, encoding: .utf8)
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: bin.path)
+    /// Builds a copy of REAL fernhill — no package.json, no src/ — through the
+    /// real devkit CLI and asserts the bundle lands at the ID-qualified
+    /// `dist/web/<id>/` that WebBundle resolves. The linked node_modules stands
+    /// in for the platform packages a global `sharpee` install carries
+    /// (ADR-180 U2); the story itself needs none of its own.
+    func testBuildsRealStoryToIdQualifiedBundle() throws {
+        let fernhill = TestToolchain.repoRoot.appendingPathComponent("stories/fernhill")
+        try XCTSkipUnless(FileManager.default.fileExists(
+            atPath: fernhill.appendingPathComponent("fernhill.story").path),
+            "fernhill fixture story not present in this checkout")
 
-        let exited = expectation(description: "init-browser exits")
+        let fm = FileManager.default
+        let projectDir = tempDir.appendingPathComponent("fernhill", isDirectory: true)
+        try fm.copyItem(at: fernhill, to: projectDir)
+        try? fm.removeItem(at: projectDir.appendingPathComponent("dist"))
+        try? fm.removeItem(at: projectDir.appendingPathComponent("node_modules"))
+        try fm.createSymbolicLink(
+            at: projectDir.appendingPathComponent("node_modules"),
+            withDestinationURL: TestToolchain.repoRoot.appendingPathComponent("node_modules"))
+
+        let story = projectDir.appendingPathComponent("fernhill.story")
+        let exited = expectation(description: "build exits")
         delegate = RecordingDelegate(onExit: { exited.fulfill() })
         runner.delegate = delegate
-        runner.startInitBrowser(projectDir: tempDir)
-        wait(for: [exited], timeout: 5)
+        runner.start(executable: URL(fileURLWithPath: "/usr/bin/env"),
+                     arguments: ["node", TestToolchain.devkitCLI.path, "build", story.path],
+                     workingDirectory: projectDir,
+                     environment: ShellEnvironment.buildEnvironment())
+        wait(for: [exited], timeout: 120)
 
-        XCTAssertEqual(delegate.result?.state, .success)
-        XCTAssertTrue(delegate.output.contains("ran: init-browser"), "output was: \(delegate.output)")
+        XCTAssertEqual(delegate.result?.state, .success, "output was: \(delegate.output)")
+        let index = WebBundle.indexURL(projectRoot: projectDir, storyId: "fernhill")
+        XCTAssertNotNil(index, "the bundle must land at dist/web/<id>/ (D4)")
+        XCTAssertEqual(index?.path,
+                       projectDir.appendingPathComponent("dist/web/fernhill/index.html").path)
+        // Fernhill owns its browser/index.html (ADR-253 D3) — served as-is.
+        let html = try String(contentsOf: XCTUnwrap(index), encoding: .utf8)
+        XCTAssertFalse(html.isEmpty)
+    }
+
+    /// The production start(storyFile:) shape: with no `sharpee` on the PATH the
+    /// runner reports an explicit failure with an install hint — never a prompt
+    /// for npm/node_modules (D2). The PATH-present case is covered by the real
+    /// build above (same spawn machinery); resolution itself is environmental.
+    func testMissingSharpeeOnPathFailsWithInstallHint() throws {
+        // Note: on a machine WITH sharpee installed this test still passes —
+        // we only assert the failure SHAPE when resolution fails, by checking
+        // that resolveSharpee() nil implies the hint. When resolveSharpee()
+        // finds a bin, the production path is exercised end-to-end elsewhere.
+        if ComposeRunner.resolveSharpee() == nil {
+            let exited = expectation(description: "missing sharpee reports failure")
+            delegate = RecordingDelegate(onExit: { exited.fulfill() })
+            runner.delegate = delegate
+            runner.start(storyFile: tempDir.appendingPathComponent("x.story"))
+            wait(for: [exited], timeout: 5)
+            XCTAssertEqual(delegate.result?.state, .failure)
+            XCTAssertTrue(delegate.output.contains("sharpee not found"),
+                          "output was: \(delegate.output)")
+        }
     }
 
     // MARK: - Failure

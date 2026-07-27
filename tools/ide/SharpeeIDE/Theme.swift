@@ -17,7 +17,7 @@ enum Theme {
     static let accent             = NSColor(srgb: 0x89B4FA)
     static let statusBarText      = NSColor(srgb: 0x11131A)
 
-    // Syntax token colors (P2 — tree-sitter highlighting). Catppuccin-ish on the dark editor bg.
+    // Syntax token colors (ChordLexer highlighting, ADR-258 D7). Catppuccin-ish on the dark editor bg.
     static let tokenKeyword       = NSColor(srgb: 0xCBA6F7) // mauve
     static let tokenString        = NSColor(srgb: 0xA6E3A1) // green
     static let tokenComment       = NSColor(srgb: 0x6C7086) // overlay/grey

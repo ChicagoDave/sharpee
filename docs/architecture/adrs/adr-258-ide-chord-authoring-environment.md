@@ -1,6 +1,6 @@
 # ADR-258: The IDE is a Chord authoring environment (TypeScript author path dropped)
 
-## Status: ACCEPTED (2026-07-23, session 341218) — the IDE becomes a Chord authoring environment and the TypeScript author path is dropped (D1). Highlighting is an in-process Swift lexer port pinned by a TS-side golden fixture (D7); the project tree is Story-IR-sourced, not world-introspected (D6); Problems is fed by structured Chord diagnostics over `compose --json` (D5). Open Questions resolved by `adr-interview`; `adr-review` 9/15 → **15/15** after three blocker fixes (atomic-load vs. the live tree, the undercounted `compose` mode, the conformance pin with no CI to fail). Depends on ADR-259 (ACCEPTED). Not implemented.
+## Status: ACCEPTED (2026-07-23, session 341218) — the IDE becomes a Chord authoring environment and the TypeScript author path is dropped (D1). Highlighting is an in-process Swift lexer port pinned by a TS-side golden fixture (D7); the project tree is Story-IR-sourced, not world-introspected (D6); Problems is fed by structured Chord diagnostics over `compose --json` (D5). Open Questions resolved by `adr-interview`; `adr-review` 9/15 → **15/15** after three blocker fixes (atomic-load vs. the live tree, the undercounted `compose` mode, the conformance pin with no CI to fail). Depends on ADR-259 (ACCEPTED). **IMPLEMENTED 2026-07-27** — platform half session 834109, Swift/Mac half session 59006f (see the Implementation addendum below).
 
 **Re-assessed 2026-07-27 (session 332f30), post-2.0.0**: architecture intact; D7 strengthened (the grammar arc never touched the lexer). One blocker surfaced — ADR-270 landed author-reachable alteration errors (`extend action`/`remove from action` target names, unmatched shapes) as load-time `LoadError`s, so D5's "compile is authoritative for diagnostics" no longer covered them. **ADR-276** (Chord compile authoritative for every source-derivable error; stdlib manifest) restores that premise. **ADR-276 ACCEPTED and the amendment applied same day** — see the Amended markers at D2 (grammar-file kind), D5 (authority re-grounding + hatch-record wire type + residue), and D7 (lexer freshness, 2.0.0 golden corpus). Implementation planning is unblocked; implementation of the Problems surface sequences **after** ADR-276's one-arc census migration (its Q-1 ruling).
 
@@ -15,6 +15,61 @@ that D5's `--json` serializes. This closes ADR-276 Acceptance item 9.
 Platform-side implementation proceeds per `docs/work/adr-258-ide-platform/plan.md`
 (`compose --json` + `ide-protocol` wire contract; D7 golden lexer fixture); the
 Swift/Mac half remains pending on the Mac.
+
+## Status: IMPLEMENTED (2026-07-27, session 59006f, branch `adr-258-swift`)
+
+**Implementation addendum — the Swift/Mac half, five phases on
+`docs/work/adr-258-ide-swift/plan.md`** (platform half: `adr-258-ide-platform`,
+shipped in 4.1.x):
+
+- **Phase 1 (b7f770f2), swap row b — D5**: `ComposeJsonPayload` Swift decoder
+  (schema gate probed BEFORE shape decode; loud reject pinned), supersedable
+  `ComposeRunner` (exits 0 AND 1 decode — gate errors are data), debounced
+  `ComposeScheduler` (unsaved buffers snapshot to a hidden sibling in the
+  story's own folder so import/hatch resolution stays real; record sites
+  remapped back), Problems tab with exact-span click-through, editor span
+  underlines. `TSCDiagnostic` + parser tests left in the same commit.
+- **Phase 2 (9ceac2b2), swap row c — D6**: IR-sourced tree (kind-based
+  Rooms/Objects/NPCs/Regions, player under NPCs, Actions group), `IRTreeState`
+  last-ok retention with stale marker (never renders a non-ok IR; never wears
+  another story's structure), exact-span navigation. `EntitySourceIndex` +
+  tests deleted; introspect-driven tree population removed
+  (`IntrospectionRunner`/`ProjectManifest` stay as dormant world-model-path
+  units per Consequences).
+- **Phase 3 (2c341089), swap row a — D7**: `ChordLexer.swift` (UTF-16
+  code-unit columns for span parity with JS string indexing), conformance
+  XCTest deep-equal against the committed `lexer-golden.json` — deliberate
+  mismatch demonstrated (compare-token break → RED naming
+  `alterations-counters.story:12` → reverted green). Chord-native
+  `SyntaxHighlighter`; `project.yml` declares NO tree-sitter dependency.
+- **Phase 4 (904d4231), swap row d — D2/D4**: `sharpee build <file>.story`
+  (PATH-resolved, explicit not-found failure), `dist/web/<id>/` Play from the
+  IR header id, grammar-header gating (Build menu + unplayable Play state),
+  Chord scaffold writing `<id>.story` ONLY (no package.json — D2's letter,
+  recorded divergence from `sharpee init`). `BrowserEntry` + tests and every
+  npm/init-browser path left in the same commit. Real-path: a fernhill copy
+  (no package.json; linked node_modules standing in for the ADR-180 U2 global
+  install) builds through the real CLI and `WebBundle` resolves the bundle.
+- **Phase 5 (3e25a7a7) — D8/D9**: `StoryTarget` predicate; recents drop
+  non-story entries on load; stale-session restore explains itself;
+  `ChordVersionCheck` launch warning (supported 2.1.0); README's "Phase 0"
+  claim gone. Suite: 213 tests green, zero host restarts.
+
+**Found and fixed during the arc (platform, approved)**: devkit `cli.ts`
+`process.exit(code)` truncated PIPED `compose --json` payloads at the 64KB
+pipe buffer (node async stdout; file redirects flush — invisible to the
+in-process platform tests, caught by the Swift real-path fernhill test).
+Fixed to `process.exitCode` + a >64KB piped regression test (47e325e8).
+Ships with the next release.
+
+**Recorded limitations** (unchanged from Consequences): the IDE suite runs
+only in local Xcode (no macOS CI); `BuildSettings*`/`StoryDetector`/
+`PackageDetector`/`IntrospectionRunner`/`ProjectManifest` remain as dormant
+compiling units pending a removal ruling; production `sharpee` resolution is
+workspace-shim-first (an in-repo story tracks the local toolchain build),
+else the login-shell PATH (the globally-installed `@sharpee/devkit` bin —
+shipped; the Q1 PATH-only assumption was corrected after the first real
+Build on the dev Mac).
 
 ## Date: 2026-07-23
 

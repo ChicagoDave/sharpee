@@ -199,3 +199,44 @@ describe('compose --json — NO load-proof (the D5 core claim)', () => {
     }
   });
 });
+
+describe('compose --json — piped stdout integrity (the real IDE transport)', () => {
+  // The IDE consumes --json over a PIPE, where node's stdout is asynchronous:
+  // a process.exit() in the CLI tears the process down mid-flush and silently
+  // truncates any payload past the 64KB pipe buffer (caught by the Swift side
+  // against fernhill, 110KB). This pins the subprocess path — dist/cli.js with
+  // stdio pipes — not the in-process runCompose call, which never exits.
+  it('delivers a >64KB payload intact through a pipe', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const cli = new URL('../dist/cli.js', import.meta.url).pathname;
+
+    const first = ['Amber', 'Basalt', 'Cedar', 'Dune', 'Ember', 'Flint', 'Garnet',
+      'Hazel', 'Iris', 'Jasper', 'Kestrel', 'Larch', 'Maple', 'Nettle', 'Onyx', 'Pine'];
+    const second = ['Hall', 'Gallery', 'Cellar', 'Attic', 'Study', 'Parlor', 'Vault',
+      'Landing', 'Passage', 'Alcove', 'Rotunda', 'Annex', 'Loggia', 'Solar', 'Undercroft', 'Gatehouse'];
+    const lines = ['story "Big Pipe" by "Test"', '  id: big-pipe', ''];
+    for (const a of first) {
+      for (const b of second) {
+        lines.push(`create the ${a} ${b}`, '  a room', '',
+          `  The ${a} ${b} stretches on, panelled and echoing, its far corners lost in shadow.`, '');
+      }
+    }
+    lines.push('create the player', `  starts in the ${first[0]} ${second[0]}`, '', '  You.', '');
+
+    const sub = mkdtempSync(join(DIR, 'bigpipe-'));
+    const file = join(sub, 'big.story');
+    writeFileSync(file, lines.join('\n'));
+
+    const stdout = execFileSync(process.execPath, [cli, 'compose', file, '--json'], {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 60_000,
+      maxBuffer: 16 * 1024 * 1024,
+    });
+
+    expect(stdout.length, 'payload must exceed the 64KB pipe buffer to pin the flush').toBeGreaterThan(65_536);
+    const payload = JSON.parse(stdout) as ComposeJsonPayload; // throws on truncation
+    expect(isComposeJsonPayload(payload)).toBe(true);
+    expect(payload.ir?.entities).toHaveLength(first.length * second.length + 1);
+  });
+});

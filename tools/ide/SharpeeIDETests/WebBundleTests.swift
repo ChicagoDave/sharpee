@@ -1,6 +1,7 @@
 // WebBundleTests.swift
-// Covers WebBundle: directory path construction and index.html presence detection
-// against a fixture project tree (author mode — <projectRoot>/dist/web/).
+// Covers WebBundle: ID-qualified path construction (`dist/web/<id>/`, ADR-258
+// D4 — the id comes from the story's IR header) and index.html presence
+// detection against a fixture project tree.
 
 import XCTest
 @testable import SharpeeIDE
@@ -25,32 +26,39 @@ final class WebBundleTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeBundle(withIndex: Bool) throws {
-        let dir = projectRoot.appendingPathComponent("dist/web", isDirectory: true)
+    private func makeBundle(id: String, withIndex: Bool) throws {
+        let dir = projectRoot.appendingPathComponent("dist/web/\(id)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         if withIndex {
             try Data("<html></html>".utf8).write(to: dir.appendingPathComponent("index.html"))
         }
     }
 
-    func testDirectoryIsDistWeb() {
-        let dir = WebBundle.directory(projectRoot: projectRoot)
-        XCTAssertEqual(dir.path, projectRoot.appendingPathComponent("dist/web").path)
+    func testDirectoryIsIdQualified() {
+        let dir = WebBundle.directory(projectRoot: projectRoot, storyId: "fernhill")
+        XCTAssertEqual(dir.path, projectRoot.appendingPathComponent("dist/web/fernhill").path,
+                       "the bundle path carries the IR header id — never bare dist/web (D4)")
     }
 
     func testIndexURLReturnsURLWhenBundleBuilt() throws {
-        try makeBundle(withIndex: true)
-        let index = WebBundle.indexURL(projectRoot: projectRoot)
-        XCTAssertEqual(index?.lastPathComponent, "index.html")
-        XCTAssertEqual(index?.path, projectRoot.appendingPathComponent("dist/web/index.html").path)
+        try makeBundle(id: "probe", withIndex: true)
+        let index = WebBundle.indexURL(projectRoot: projectRoot, storyId: "probe")
+        XCTAssertEqual(index?.path,
+                       projectRoot.appendingPathComponent("dist/web/probe/index.html").path)
     }
 
     func testIndexURLNilWhenNoBundle() {
-        XCTAssertNil(WebBundle.indexURL(projectRoot: projectRoot))
+        XCTAssertNil(WebBundle.indexURL(projectRoot: projectRoot, storyId: "probe"))
     }
 
     func testIndexURLNilWhenDirExistsButNoIndexHTML() throws {
-        try makeBundle(withIndex: false)
-        XCTAssertNil(WebBundle.indexURL(projectRoot: projectRoot))
+        try makeBundle(id: "probe", withIndex: false)
+        XCTAssertNil(WebBundle.indexURL(projectRoot: projectRoot, storyId: "probe"))
+    }
+
+    func testIndexURLNilForWrongId() throws {
+        try makeBundle(id: "probe", withIndex: true)
+        XCTAssertNil(WebBundle.indexURL(projectRoot: projectRoot, storyId: "other"),
+                     "another story's bundle must not resolve")
     }
 }

@@ -73,11 +73,6 @@ final class MainWindowController: NSWindowController {
         rootViewController?.clearBuildOutput()
     }
 
-    /// Sets the repo root the Build panel uses to resolve diagnostic paths.
-    func setBuildPanelRepoRoot(_ url: URL) {
-        rootViewController?.setBuildPanelRepoRoot(url)
-    }
-
     /// Loads (or clears) the Play pane for the given story's web bundle.
     func refreshPlay(projectRoot: URL?) {
         rootViewController?.refreshPlay(projectRoot: projectRoot)
@@ -88,14 +83,22 @@ final class MainWindowController: NSWindowController {
         rootViewController?.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
-    /// After any successful build, refresh the Structure view's manifest (ADR-184).
-    func buildSucceeded(repoRoot: URL, story: String) {
-        rootViewController?.buildSucceeded(repoRoot: repoRoot, story: story)
+    /// Composes `storyURL` to populate the project tree + Problems (ADR-258 D6:
+    /// live, source-derived — no build gate). Called on project open.
+    func composeStory(at storyURL: URL) {
+        rootViewController?.composeStory(at: storyURL)
     }
 
-    /// Author-mode (ADR-185): introspect the open project via its installed `sharpee` bin.
-    func introspectProject(projectRoot: URL) {
-        rootViewController?.introspectProject(projectRoot: projectRoot)
+    /// The composed story's identity for Build/Play menu gating (D2): nil until
+    /// a compose has run; `isGrammar` disables Build for grammar-header files.
+    var composedStory: (url: URL, isGrammar: Bool)? {
+        rootViewController?.composedStory
+    }
+
+    /// Shows the empty project state with a one-line reason (D8: a restored
+    /// session pointing at a retired TypeScript project explains itself).
+    func showEmptyStateExplanation(_ text: String) {
+        rootViewController?.showEmptyStateExplanation(text)
     }
 
     /// Applies a persisted "Play after build" value (session restore).
@@ -148,9 +151,22 @@ private final class RootViewController: NSViewController {
                                                        line: location.line,
                                                        column: location.column)
         }
-        bottomPanelViewController.buildPanel.onSourceClick = openLocation
         bottomPanelViewController.gameErrors.onDoubleClick = openLocation
         mainSplitViewController.setDiagnosisOpenLocation(openLocation)
+
+        // Compose pipeline (ADR-258 D5): results feed Problems + editor underlines;
+        // a Problems row opens the exact span (hatch records: file:line).
+        mainSplitViewController.onComposeOutcome = { [weak self] outcome in
+            self?.handleComposeOutcome(outcome)
+        }
+        bottomPanelViewController.problems.onActivate = { [weak self] item in
+            if let span = item.record.span {
+                self?.mainSplitViewController.openDocument(at: item.fileURL, span: span)
+            } else {
+                self?.mainSplitViewController.openDocument(at: item.fileURL,
+                                                           line: item.record.line, column: 1)
+            }
+        }
 
         bottomPanelViewController.gameErrors.onErrorFocused = { [weak self] error in
             self?.mainSplitViewController.revealDiagnosis(error)
@@ -282,8 +298,34 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.clearDiagnosis()
     }
 
-    func setBuildPanelRepoRoot(_ url: URL) {
-        bottomPanelViewController.buildPanel.repoRoot = url
+    /// Routes a compose outcome to the Problems tab and the editor's underlines.
+    private func handleComposeOutcome(_ outcome: ComposeScheduler.Outcome) {
+        switch outcome.result {
+        case .success(let payload):
+            bottomPanelViewController.setProblems(payload.diagnostics, for: outcome.storyURL)
+            mainSplitViewController.applyComposeDiagnostics(payload.diagnostics,
+                                                            forFile: outcome.storyURL)
+        case .failure(let failure):
+            bottomPanelViewController.setProblemsStatus(Self.statusMessage(for: failure))
+        }
+    }
+
+    /// One-line Problems status for a compose-pipeline failure.
+    private static func statusMessage(for failure: ComposeRunner.Failure) -> String {
+        switch failure {
+        case .sharpeeNotFound:
+            return "sharpee not found — install the Sharpee CLI (or open a story inside a Sharpee checkout) to see problems"
+        case .launch(let reason):
+            return "compose could not start: \(reason)"
+        case .nonZeroExit(let code, let stderr):
+            let firstLine = stderr.split(separator: "\n").first.map(String.init) ?? ""
+            return "compose failed (exit \(code))\(firstLine.isEmpty ? "" : ": \(firstLine)")"
+        case .decode(let error):
+            if case ComposeJsonPayload.DecodeError.schemaVersionMismatch(let found, let expected) = error {
+                return "This IDE is out of date for the installed Sharpee toolchain (compose schema \(found), IDE understands \(expected))"
+            }
+            return "compose output could not be read — is the Sharpee CLI up to date?"
+        }
     }
 
     func refreshPlay(projectRoot: URL?) {
@@ -294,12 +336,16 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
-    func buildSucceeded(repoRoot: URL, story: String) {
-        mainSplitViewController.buildSucceeded(repoRoot: repoRoot, story: story)
+    func composeStory(at storyURL: URL) {
+        mainSplitViewController.composeStory(at: storyURL)
     }
 
-    func introspectProject(projectRoot: URL) {
-        mainSplitViewController.introspectProject(projectRoot: projectRoot)
+    var composedStory: (url: URL, isGrammar: Bool)? {
+        mainSplitViewController.composedStory
+    }
+
+    func showEmptyStateExplanation(_ text: String) {
+        mainSplitViewController.showEmptyStateExplanation(text)
     }
 
     func applyPlayAfterBuild(_ on: Bool) {
@@ -319,7 +365,9 @@ private final class MainSplitViewController: NSSplitViewController {
 
     private let railViewController = RailViewController()
     private let projectPaneViewController = ProjectPaneViewController()
-    private let introspectionRunner = IntrospectionRunner()
+    private let composeScheduler = ComposeScheduler()
+    /// Last-ok-IR retention behind the project tree (ADR-258 D6).
+    private var treeState = IRTreeState()
     private let editorViewController = EditorViewController()
     private let rightPanelViewController = RightPanelViewController()
     /// The Play tab inside the right panel — most wiring targets it directly.
@@ -331,6 +379,8 @@ private final class MainSplitViewController: NSSplitViewController {
     fileprivate var buildPanelVisibleProvider: (() -> Bool)?
     /// Invoked with each symbolicated Play-runtime error. Owned by RootViewController.
     fileprivate var onPlayConsoleError: ((PlayConsoleError) -> Void)?
+    /// Invoked with each finished compose attempt (ADR-258 D5). Owned by RootViewController.
+    fileprivate var onComposeOutcome: ((ComposeScheduler.Outcome) -> Void)?
 
     private var currentProject: Project?
     private var didApplyInitialLayout = false
@@ -342,9 +392,29 @@ private final class MainSplitViewController: NSSplitViewController {
 
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
         projectPaneViewController.onActivateFile = { [weak self] url in self?.editorViewController.openDocument(at: url) }
-        projectPaneViewController.onActivateEntity = { [weak self] entity in self?.openEntitySource(entity) }
+        projectPaneViewController.onActivateLeaf = { [weak self] leaf in
+            // Exact-span navigation (D6): the leaf's span points into the story
+            // file the retained IR was compiled from — no name matching.
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            self.editorViewController.openDocument(at: storyURL, span: leaf.span)
+        }
         projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
+        editorViewController.onStoryActivated = { [weak self] url, content in
+            self?.composeScheduler.composeNow(storyURL: url, content: content)
+        }
+        editorViewController.onStoryEdited = { [weak self] url, content in
+            self?.composeScheduler.noteEdit(storyURL: url, content: content)
+        }
+        composeScheduler.onOutcome = { [weak self] outcome in
+            guard let self else { return }
+            // The tree folds every outcome through last-ok retention (D6)…
+            self.treeState.apply(outcome)
+            self.projectPaneViewController.setTreeState(self.treeState.display)
+            self.syncPlayToComposeState()
+            // …while Problems always reflects the current source (RootViewController).
+            self.onComposeOutcome?(outcome)
+        }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
 
@@ -354,9 +424,47 @@ private final class MainSplitViewController: NSSplitViewController {
         addSplitViewItem(makePlayItem())
     }
 
-    /// Loads (or clears) the Play pane for the given story's web bundle.
+    /// The composed story's identity for Build/Play gating: its URL and whether
+    /// it is a grammar-header file (Build and Play disabled, ADR-258 D2).
+    var composedStory: (url: URL, isGrammar: Bool)? {
+        guard let url = treeState.storyURL else { return nil }
+        if case .populated(let ir, _) = treeState.display {
+            return (url, ir.grammarFile != nil)
+        }
+        return (url, false)
+    }
+
+    /// The current story's built bundle directory (`dist/web/<id>/`, D4), or nil
+    /// until a clean compile has revealed the story's header id.
+    private func bundleDirectory() -> URL? {
+        guard let storyURL = treeState.storyURL,
+              case .populated(let ir, _) = treeState.display,
+              let id = ir.meta.fields["id"] else { return nil }
+        return WebBundle.directory(projectRoot: storyURL.deletingLastPathComponent(), storyId: id)
+    }
+
+    /// Reflects the latest compose state into the Play pane: a grammar file is
+    /// explicitly unplayable (D2); a story auto-loads its already-built bundle
+    /// once the header id is known — but never reloads over a running game.
+    private func syncPlayToComposeState() {
+        guard case .populated(let ir, _) = treeState.display else { return }
+        if ir.grammarFile != nil {
+            playViewController.showUnplayable(
+                reason: "A grammar file is not a story — Build and Play are disabled")
+        } else if !playViewController.isLoaded {
+            playViewController.load(bundleDirectory: bundleDirectory())
+        }
+    }
+
+    /// Loads (or clears) the Play pane. The bundle path needs the story's IR
+    /// header id, so before the first clean compile this shows the placeholder;
+    /// syncPlayToComposeState() completes the load when the id arrives.
     fileprivate func refreshPlay(projectRoot: URL?) {
-        playViewController.load(projectRoot: projectRoot)
+        guard projectRoot != nil else {
+            playViewController.load(bundleDirectory: nil)
+            return
+        }
+        playViewController.load(bundleDirectory: bundleDirectory())
     }
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
@@ -376,6 +484,16 @@ private final class MainSplitViewController: NSSplitViewController {
 
     func openDocument(at url: URL, line: Int, column: Int) {
         editorViewController.openDocument(at: url, line: line, column: column)
+    }
+
+    /// Opens `url` selecting the exact diagnostic span (Problems click-through, D5).
+    func openDocument(at url: URL, span: DiagnosticSpan) {
+        editorViewController.openDocument(at: url, span: span)
+    }
+
+    /// Applies a compose run's records as editor underlines for `url`.
+    fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
+        editorViewController.setDiagnostics(records, forFile: url)
     }
 
     func switchToDocument(at index: Int) {
@@ -403,9 +521,11 @@ private final class MainSplitViewController: NSSplitViewController {
         SessionStateStore.save(state)
     }
 
-    /// After a successful Browser build, load the freshly-built story (honours the toggle).
+    /// After a successful build, load the freshly-built `dist/web/<id>/` bundle
+    /// (honours the toggle). The id comes from the retained IR header (D4).
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
-        playViewController.reloadAfterBuild(projectRoot: projectRoot)
+        guard let bundleDir = bundleDirectory() else { return }
+        playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
     }
 
     /// Applies a persisted "Play after build" value (session restore).
@@ -432,54 +552,17 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.clearDiagnosis()
     }
 
-    /// After any successful build, refresh the Structure view from the built story (ADR-184).
-    fileprivate func buildSucceeded(repoRoot: URL, story: String) {
-        guard let storyDir = Self.storyDirectory(repoRoot: repoRoot, name: story) else { return }
-        introspectAndPopulate(projectDir: storyDir)
+    /// Shows the empty project state with a one-line reason (D8).
+    fileprivate func showEmptyStateExplanation(_ text: String) {
+        projectPaneViewController.setTreeState(.empty(reason: text))
     }
 
-    /// Author-mode (ADR-185): introspect an open story project via its installed `sharpee`
-    /// bin and populate the Structure view. Called on project open (when built) and after builds.
-    fileprivate func introspectProject(projectRoot: URL) {
-        introspectAndPopulate(projectDir: projectRoot)
-    }
-
-    /// Runs `sharpee introspect` for `projectDir`, joins source positions (ADR-184), and feeds
-    /// the Structure view. Best-effort: failure (not built / no installed bin) leaves the prior
-    /// structure untouched.
-    private func introspectAndPopulate(projectDir: URL) {
-        introspectionRunner.introspect(projectDir: projectDir) { [weak self] result in
-            guard let self else { return }
-            if case .success(let manifest) = result {
-                let index = EntitySourceIndex.build(storyDirectory: projectDir)
-                self.projectPaneViewController.setManifest(index.annotating(manifest))
-            }
-        }
-    }
-
-    /// Resolves a story *name* to its directory under stories/ or tutorials/.
-    private static func storyDirectory(repoRoot: URL, name: String) -> URL? {
-        let fm = FileManager.default
-        for sub in ["stories", "tutorials"] {
-            let url = repoRoot.appendingPathComponent(sub).appendingPathComponent(name)
-            if fm.fileExists(atPath: url.path) { return url }
-        }
-        return nil
-    }
-
-    /// Opens an activated entity's source location, when the manifest carries one.
-    /// CLI manifests have no source yet (added by the tree-sitter index, a later step).
-    private func openEntitySource(_ entity: EntityNode) {
-        guard let source = entity.source else { return }
-        // The index records absolute paths; a future wire/bridge source may be workspace-relative.
-        let url: URL?
-        if source.file.hasPrefix("/") {
-            url = URL(fileURLWithPath: source.file)
-        } else {
-            url = currentProject.map { $0.rootURL.appendingPathComponent(source.file) }
-        }
-        guard let url else { return }
-        editorViewController.openDocument(at: url, line: source.line, column: 0)
+    /// Composes `storyURL` from its on-disk content (project open — no editor
+    /// buffer yet). The outcome populates the tree and Problems through the
+    /// standard pipeline.
+    fileprivate func composeStory(at storyURL: URL) {
+        let content = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
+        composeScheduler.composeNow(storyURL: storyURL, content: content)
     }
 
     override func viewDidAppear() {

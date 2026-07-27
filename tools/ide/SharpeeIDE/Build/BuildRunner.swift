@@ -1,8 +1,9 @@
 // BuildRunner.swift
-// Owns a single child `./sharpee build` process: spawns it, streams stdout/stderr to
-// a delegate, tracks state (idle→building→success/failure/cancelled), and supports
-// graceful cancel (SIGTERM, escalating to SIGKILL after 2s).
-// Public interface: BuildRunner.start(projectDir:), cancel(), state, delegate.
+// Owns a single child `sharpee build <file>.story` process (ADR-258 D4): spawns
+// it, streams stdout/stderr to a delegate, tracks state
+// (idle→building→success/failure/cancelled), and supports graceful cancel
+// (SIGTERM, escalating to SIGKILL after 2s).
+// Public interface: BuildRunner.start(storyFile:), cancel(), state, delegate.
 // Owner context: tools/ide — Build.
 
 import Foundation
@@ -49,33 +50,22 @@ final class BuildRunner {
 
     // MARK: - Start
 
-    /// Author-mode build (ADR-185): runs the project's installed `sharpee build` (the
-    /// `@sharpee/devkit` bin) with the project directory as the working directory. It compiles
-    /// `src/`, emits `.sharpee`, and the browser client when `src/browser-entry.ts` is present.
-    /// A missing bin (no `npm install`) surfaces as a launch failure / `failure` result.
-    func start(projectDir: URL) {
-        start(executable: projectDir.appendingPathComponent("node_modules/.bin/sharpee"),
-              arguments: ["build"],
-              workingDirectory: projectDir,
-              environment: ShellEnvironment.buildEnvironment())
-    }
-
-    /// Author housekeeping (ADR-185): runs `npm install` in the project directory to fetch the
-    /// platform + the `sharpee` bin. `npm` resolves from the login-shell PATH via `/usr/bin/env`.
-    func startInstall(projectDir: URL) {
-        start(executable: URL(fileURLWithPath: "/usr/bin/env"),
-              arguments: ["npm", "install"],
-              workingDirectory: projectDir,
-              environment: ShellEnvironment.buildEnvironment())
-    }
-
-    /// Author housekeeping (ADR-185): runs the project's installed `sharpee init-browser`, which
-    /// adds the browser client (`src/browser-entry.ts` + `browser/<id>.css`), the browser runtime
-    /// dependencies, and a `build:browser` script. Requires the bin, so it runs after `npm install`.
-    func startInitBrowser(projectDir: URL) {
-        start(executable: projectDir.appendingPathComponent("node_modules/.bin/sharpee"),
-              arguments: ["init-browser"],
-              workingDirectory: projectDir,
+    /// Chord build (ADR-258 D4): runs the resolved `sharpee build <file>.story`
+    /// in the story's folder — browser is the default client (no `--browser`,
+    /// ADR-252 D1/D6). Resolution: login-shell PATH, else the enclosing Sharpee
+    /// workspace's `./sharpee` shim. No npm, no project-local bin (D2). A miss
+    /// surfaces as an explicit failure with an install hint.
+    func start(storyFile: URL) {
+        guard let sharpee = ComposeRunner.resolveSharpee(near: storyFile) else {
+            delegate?.runner(self, didEmit:
+                "sharpee not found — install the Sharpee CLI (or open a story inside a Sharpee checkout) to build stories.\n")
+            state = .failure
+            delegate?.runner(self, didExit: Result(state: .failure, exitCode: -1))
+            return
+        }
+        start(executable: sharpee,
+              arguments: ["build", storyFile.path],
+              workingDirectory: storyFile.deletingLastPathComponent(),
               environment: ShellEnvironment.buildEnvironment())
     }
 
