@@ -1,0 +1,97 @@
+/**
+ * manifest-browser-parity.test.ts — ADR-276 Phase 3 browser parity harness.
+ *
+ * The browser client compiles the shipped `.story` at boot with the SAME
+ * `@sharpee/chord` build that `game.js` bundles (chord-browser-entry
+ * template), and the browser BUILD runs that compile as its fail-fast gate
+ * (browser-core.ts). So the parity proof is two REAL paths, no stubs:
+ * (1) the actual runInitCommand → runBuildBrowserCommand chain FAILS loudly
+ * when the story carries a bad alteration target — the diagnostic the IDE
+ * and CLI see is the one the browser pipeline sees; (2) the BUILT chord
+ * dist (the exact module game.js bundles — not the workspace TS source)
+ * reports the same code and span for the same source.
+ *
+ * Recorded limitation (the ADR-259 Phase F precedent): asserting the
+ * diagnostic inside a RUNNING browser page needs a headless browser this
+ * harness does not have; parity is pinned at the build-path and
+ * bundled-module level. Later ADR-276 phases extend this file per slice.
+ *
+ * Owner context: @sharpee/devkit test suite.
+ */
+import { describe, it, expect, afterAll, beforeAll, vi } from 'vitest';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { runInitCommand } from './init.js';
+import { runBuildBrowserCommand } from './build-browser.js';
+
+const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
+
+let tmp = '';
+let projectDir = '';
+let storyPath = '';
+let cleanSource = '';
+
+beforeAll(async () => {
+  vi.spyOn(console, 'log').mockImplementation(() => {}); // quiet scaffold/build chatter
+  tmp = mkdtempSync(join(REPO_ROOT, '.tmp-manifest-parity-'));
+  projectDir = join(tmp, 'gatehouse');
+  await runInitCommand([projectDir, '-y']);
+  storyPath = join(projectDir, 'gatehouse.story');
+  cleanSource = readFileSync(storyPath, 'utf-8');
+}, 30_000);
+
+afterAll(() => {
+  vi.restoreAllMocks();
+  if (tmp && existsSync(tmp)) rmSync(tmp, { recursive: true, force: true });
+});
+
+const BAD_REMOVAL = '\nremove from action snarf\n  take the item\n';
+
+describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pipeline', () => {
+  it('the real browser build fails loudly on a bad removal target, naming the compile code', async () => {
+    const errors: string[] = [];
+    const errSpy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      errors.push(args.map(String).join(' '));
+    });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as never);
+    writeFileSync(storyPath, cleanSource + BAD_REMOVAL);
+    try {
+      // The command surfaces the gate failure either as the thrown gate error
+      // or by printing it and exiting 1 — both are loud; silence is the bug.
+      await expect(runBuildBrowserCommand([], projectDir)).rejects.toThrow(
+        /failed the load-time gates|process\.exit\(1\)/,
+      );
+      expect(errors.join('\n')).toContain('analysis.removal-target');
+      expect(errors.join('\n')).toContain('`remove from action snarf` — no standard action');
+    } finally {
+      exitSpy.mockRestore();
+      errSpy.mockRestore();
+      writeFileSync(storyPath, cleanSource);
+    }
+  });
+
+  it('the BUILT chord dist (the module game.js bundles) reports the same diagnostic with a span', () => {
+    // Require the dist artifact, not the workspace TS — this is the code the
+    // browser bundle ships for compile-at-boot.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const chord = require(join(REPO_ROOT, 'packages/chord/dist/index.js')) as typeof import('@sharpee/chord');
+    const result = chord.compile(cleanSource + BAD_REMOVAL);
+    expect(result.ok).toBe(false);
+    const found = result.diagnostics.filter((d) => d.code === 'analysis.removal-target');
+    expect(found).toHaveLength(1);
+    expect(found[0].span.line).toBeGreaterThan(0);
+    // And the manifest itself ships in the dist surface the bundle carries.
+    const manifest = (chord as unknown as { STDLIB_MANIFEST?: { actionIds: ReadonlySet<string> } }).STDLIB_MANIFEST;
+    expect(manifest?.actionIds.has('if.action.taking')).toBe(true);
+  });
+
+  it('a clean story still builds the browser bundle end to end', async () => {
+    vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as never);
+    await runBuildBrowserCommand([], projectDir);
+    expect(existsSync(join(projectDir, 'dist', 'web', 'gatehouse', 'game.js'))).toBe(true);
+  });
+});

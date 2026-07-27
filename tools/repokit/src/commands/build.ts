@@ -20,6 +20,7 @@ import {
 } from '../repo';
 import { runBundle } from './bundle';
 import { runGrammarStep } from './grammar';
+import { runManifestStep } from './manifest';
 import { buildBrowserClient, chordStoryFile } from './browser';
 import { buildPlaygroundClient } from './playground';
 import { buildZifmiaServer } from './zifmia';
@@ -149,6 +150,9 @@ export function buildPlatform(root: string, opts: BuildOptions): void {
     // the Chord source before parser-en-us compiles (chord's dist is fresh —
     // it builds 4th). Committed + freshness-gated in verify.
     if (dir === 'parser-en-us') runGrammarStep(root, opts.quiet);
+    // ADR-276 D2: the stdlib manifest is generated from stdlib SOURCE (no
+    // dist needed) before chord compiles — the analyzer imports it.
+    if (dir === 'chord') runManifestStep(root, opts.quiet);
     run('pnpm', ['--filter', pkg, 'build']);
     // Invariant: assert the compile produced output (precludes the .tsbuildinfo silent no-op class).
     const distIndex = join(root, 'packages', dir, 'dist', 'index.js');

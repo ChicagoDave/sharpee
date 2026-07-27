@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
+import { captureGrammarRules } from './helpers/grammar-harness';
 
 function compileClean(source: string): StoryIR {
   const result = compile(source);
@@ -108,6 +109,30 @@ create the keeper
     expect(() =>
       story.onEngineReady({ getPluginRegistry: () => ({ register: () => undefined }) } as never),
     ).toThrowError(/needs `with route/);
+  });
+
+  it('census 1: an extend-action target naming no action still throws at grammar registration', () => {
+    const rogue = structuredClone(compileClean(BASE));
+    (rogue as { grammarExtensions?: unknown[] }).grammarExtensions = [
+      { action: 'snarf', patterns: [], constraints: [], span },
+    ];
+    const story = createStory(rogue);
+    const world = new WorldModel();
+    story.initializeWorld(world);
+    story.createPlayer(world);
+    expect(() => captureGrammarRules(story)).toThrowError(LoadError);
+    expect(() => captureGrammarRules(story)).toThrowError(/`extend action snarf` — no story action or standard action/);
+  });
+
+  it('census 2: a removal target naming no standard action still throws at grammar registration', () => {
+    const rogue = structuredClone(compileClean(BASE));
+    (rogue as { grammarRemovals?: unknown[] }).grammarRemovals = [{ action: 'snarf', patterns: [], span }];
+    const story = createStory(rogue);
+    const world = new WorldModel();
+    story.initializeWorld(world);
+    story.createPlayer(world);
+    expect(() => captureGrammarRules(story)).toThrowError(LoadError);
+    expect(() => captureGrammarRules(story)).toThrowError(/`remove from action snarf` — no standard action/);
   });
 
   it('census 17: an unknown kind noun still throws', () => {

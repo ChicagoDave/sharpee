@@ -52,6 +52,7 @@ import {
   ValueExpr,
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
+import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
@@ -727,6 +728,7 @@ class Analyzer {
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
     this.checkCompositionLegality(ir);
+    this.checkAlterationTargets(ir);
     this.checkMarkers();
     this.checkDescriptionMarkers();
     this.checkChannelReturns(ir.channels); // ADR-253 D1: return-field cross-check (all emits collected)
@@ -873,6 +875,41 @@ class Analyzer {
             site.span,
           );
         }
+      }
+    }
+  }
+
+  /**
+   * ADR-276 Phase 3 (census entries 1–2): alteration target names resolve at
+   * compile against the story's own actions plus the generated stdlib
+   * manifest, mirroring the loader's story-first order (ADR-270 D2) exactly.
+   * The loader keeps the same checks as first-throw backstops for rogue IR.
+   */
+  private checkAlterationTargets(ir: StoryIR): void {
+    const storyActionNames = new Set(ir.actions.map((a) => a.name));
+    const stdlibBareNames = [...STDLIB_MANIFEST.actionIds].map((id) => id.slice('if.action.'.length));
+
+    for (const ext of ir.grammarExtensions ?? []) {
+      // Story-first (the shadowing semantic): a story-defined action of the
+      // same name wins and needs no stdlib id.
+      if (storyActionNames.has(ext.action)) continue;
+      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`)) {
+        this.diagnostics.error(
+          'analysis.extend-target',
+          `\`extend action ${ext.action}\` — no story action or standard action has that name${this.suggestText(ext.action, [...storyActionNames, ...stdlibBareNames])}.`,
+          ext.span,
+        );
+      }
+    }
+    for (const removal of ir.grammarRemovals ?? []) {
+      // Removals name STANDARD actions only (ADR-270 D3) — a story action
+      // has no standard-tier rules to remove.
+      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${removal.action}`)) {
+        this.diagnostics.error(
+          'analysis.removal-target',
+          `\`remove from action ${removal.action}\` — no standard action has that name${this.suggestText(removal.action, stdlibBareNames)}.`,
+          removal.span,
+        );
       }
     }
   }
@@ -1500,8 +1537,11 @@ class Analyzer {
    * `extend action <name>` → IR (ADR-270 D2): the grammar-surface subset,
    * with behavior sections rejected by name — the grammar-file-mode
    * treatment (`analysis.alteration-behavior`, one per offending category).
-   * Target-name resolution is deliberately NOT here: the loader owns it
-   * (story-first, else the stdlib id set — chord stays stdlib-ignorant).
+   * Target-name resolution happens in checkAlterationTargets (a whole-IR
+   * post-pass — story actions may be declared after the alteration), gated
+   * against the generated stdlib manifest (ADR-276 D1: chord is
+   * platform-free but no longer stdlib-ignorant); the loader keeps the same
+   * story-first resolution as its rogue-IR backstop.
    */
   private buildExtension(decl: ExtendAction): IRGrammarExtension {
     // The extension's own pattern lines are the slot universe for its

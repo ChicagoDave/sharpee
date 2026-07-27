@@ -11,6 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { findRepoRoot, tsfBin } from '../repo';
 import { Command } from './command';
 import { checkDocsBlocksModule, checkGrammarModule } from './grammar';
+import { checkManifestModule } from './manifest';
 
 export class VerifyCommand implements Command {
   readonly name = 'verify';
@@ -36,6 +37,13 @@ export class VerifyCommand implements Command {
     if (!checkDocsBlocksModule(root)) {
       console.error(
         'verify: website grammar-blocks.ts is STALE against grammar/standard-en-us.story — run `repokit grammar` and commit.',
+      );
+      return 1;
+    }
+    // ADR-276 D2: a stale stdlib manifest is a build error, never silent drift.
+    if (!checkManifestModule(root)) {
+      console.error(
+        'verify: chord/src/stdlib-manifest.ts is STALE against the stdlib action surface — run `repokit manifest` and commit.',
       );
       return 1;
     }

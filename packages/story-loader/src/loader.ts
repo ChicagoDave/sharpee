@@ -1122,6 +1122,8 @@ export class ChordStory implements Story {
       } else {
         const derived = `if.action.${ext.action}`;
         if (!STDLIB_ACTION_IDS.has(derived)) {
+          // ADR-276 census 1: the compiler's gate refuses this
+          // (analysis.extend-target) — defensive backstop.
           throw new LoadError(
             `\`extend action ${ext.action}\` — no story action or standard action has that name${suggestGerund(ext.action, storyActionNames)}.`,
           );
@@ -1140,6 +1142,8 @@ export class ChordStory implements Story {
     for (const removal of this.ir.grammarRemovals ?? []) {
       const derived = `if.action.${removal.action}`;
       if (!STDLIB_ACTION_IDS.has(derived)) {
+        // ADR-276 census 2: the compiler's gate refuses this
+        // (analysis.removal-target) — defensive backstop.
         throw new LoadError(
           `\`remove from action ${removal.action}\` — no standard action has that name${suggestGerund(removal.action, new Set())}.`,
         );

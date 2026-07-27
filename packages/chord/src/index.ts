@@ -24,6 +24,8 @@ export { CHORD_LANGUAGE_VERSION } from './version.js';
 export { analyze, normalizeTopic } from './analyzer.js';
 export { KIND_NOUNS, TRAIT_ADJECTIVES, STATE_ADJECTIVES, PLATFORM_STATE_PAIRS, STARTS_STATE_PAIRINGS, EVENT_VERBS, CLIENT_CAPABILITY_FLAGS, capabilityKeyOf, PRONOUN_WORDS, PRONOUN_CASES, MESSAGE_OVERRIDE_ALIASES, STDLIB_CHAIN_NAMES, SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 export type { ScopeRequirementWord } from './catalog.js';
+export { STDLIB_MANIFEST } from './stdlib-manifest.js';
+export type { StdlibManifest, StdlibLocaleFacts } from './stdlib-manifest.js';
 export { EXTENSION_MANIFESTS, COMBAT_MANIFEST, NPC_MANIFEST, manifestForAdjective } from './manifests/index.js';
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './manifests/index.js';
 export { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
