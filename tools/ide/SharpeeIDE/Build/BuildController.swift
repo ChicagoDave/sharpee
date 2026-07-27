@@ -109,25 +109,17 @@ final class BuildController: BuildRunnerDelegate {
         if !line.isEmpty { window?.appendBuildOutput(line) }
         window?.updateBuildStatus(status)
 
-        // Route success by what just ran (ADR-185).
+        // Route success by what just ran (ADR-185). The project tree needs no
+        // refresh here — it is source-derived via compose (ADR-258 D6), not built.
         if result.state == .success, let current {
             switch current.op {
             case .build:
-                // Refresh the Structure view (introspect) and reload the Play pane.
-                window?.introspectProject(projectRoot: current.dir)
                 window?.reloadPlayAfterBuild(projectRoot: current.dir)
             case .install:
                 if autoInitBrowser {
                     // New Story: the bin is now installed — add the browser client.
                     autoInitBrowser = false
                     initBrowser(projectDir: current.dir)
-                } else {
-                    // Deps are now installed; introspect if the project is already built (else the
-                    // build-gated tree stays empty until the author builds).
-                    let dist = current.dir.appendingPathComponent("dist/index.js")
-                    if FileManager.default.fileExists(atPath: dist.path) {
-                        window?.introspectProject(projectRoot: current.dir)
-                    }
                 }
             case .initBrowser:
                 // The browser client appended its runtime deps to package.json — install them.

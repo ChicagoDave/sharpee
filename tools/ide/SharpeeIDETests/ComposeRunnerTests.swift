@@ -135,6 +135,37 @@ final class ComposeRunnerTests: XCTestCase {
         XCTAssertNotNil(payload.ir, "gates + IR despite the unresolvable hatch module")
     }
 
+    /// D6 acceptance: the tree populates for fernhill — the ADR's worked example,
+    /// a real story with no package.json/node_modules — straight from source, no
+    /// build required. Composes the real file, builds the real tree model, and
+    /// checks a leaf's span lands inside the actual file.
+    func testFernhillTreePopulatesFromSourceAlone() throws {
+        let fernhill = TestToolchain.repoRoot
+            .appendingPathComponent("stories/fernhill/fernhill.story")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhill.path),
+                          "fernhill fixture story not present in this checkout")
+
+        let result = composeReal(fernhill)
+        guard case .success(let payload) = result else {
+            return XCTFail("expected success, got \(String(describing: result))")
+        }
+        let ir = try XCTUnwrap(payload.ir, "fernhill composes clean")
+        XCTAssertFalse(ir.allEntities.isEmpty)
+
+        let tree = ProjectStructure.build(from: ir)
+        let rooms = try XCTUnwrap(tree.first { $0.category == .room },
+                                  "fernhill has rooms in its tree")
+        XCTAssertFalse(rooms.children.isEmpty)
+
+        let source = try String(contentsOf: fernhill, encoding: .utf8)
+        let lineCount = source.split(separator: "\n", omittingEmptySubsequences: false).count
+        let leaf = try XCTUnwrap(rooms.children.first?.leaf)
+        XCTAssertLessThanOrEqual(leaf.span.line, lineCount,
+                                 "leaf spans point into the real authored file")
+        XCTAssertNotNil(SpanText.characterRange(of: leaf.span, in: source),
+                        "the span resolves to a real character range in the source")
+    }
+
     // MARK: - Failure shapes (fixture scripts)
 
     func testBumpedSchemaVersionRejectsLoudly() throws {

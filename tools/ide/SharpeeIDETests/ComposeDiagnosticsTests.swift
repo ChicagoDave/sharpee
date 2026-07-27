@@ -38,12 +38,28 @@ final class ComposeDiagnosticsTests: XCTestCase {
         {"schemaVersion":1,"diagnostics":[],
          "ir":{"format":"story language 1","languageVersion":"2.1.0",
                "meta":{"title":"Probe","author":"Tests","fields":{"id":"probe","version":"1.0.0"}},
-               "entities":[],"unknownFutureField":42}}
+               "entities":[{"id":"lab","name":"Lab","article":"the","isPlayer":false,
+                            "kinds":[{"name":"room","config":[],"condition":null,
+                                      "span":{"line":6,"column":3,"endLine":6,"endColumn":9}}],
+                            "traits":[],"span":{"line":5,"column":1,"endLine":8,"endColumn":15}}],
+               "actions":[{"name":"xyzzy","patterns":[],
+                           "span":{"line":20,"column":1,"endLine":24,"endColumn":4}}],
+               "unknownFutureField":42}}
         """))
         let ir = try XCTUnwrap(payload.ir)
         XCTAssertEqual(ir.languageVersion, "2.1.0")
         XCTAssertEqual(ir.meta.fields["id"], "probe")
         XCTAssertNil(ir.grammarFile)
+
+        let entity = try XCTUnwrap(ir.allEntities.first)
+        XCTAssertEqual(entity.name, "Lab")
+        XCTAssertTrue(entity.hasKind("room"))
+        XCTAssertFalse(entity.isPlayer)
+        XCTAssertEqual(entity.span, DiagnosticSpan(line: 5, column: 1, endLine: 8, endColumn: 15))
+
+        let action = try XCTUnwrap(ir.allActions.first)
+        XCTAssertEqual(action.name, "xyzzy")
+        XCTAssertEqual(action.span.line, 20)
     }
 
     func testDecodesGrammarFileMarker() throws {

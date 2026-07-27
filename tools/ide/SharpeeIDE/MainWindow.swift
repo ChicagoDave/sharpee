@@ -83,14 +83,10 @@ final class MainWindowController: NSWindowController {
         rootViewController?.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
-    /// After any successful build, refresh the Structure view's manifest (ADR-184).
-    func buildSucceeded(repoRoot: URL, story: String) {
-        rootViewController?.buildSucceeded(repoRoot: repoRoot, story: story)
-    }
-
-    /// Author-mode (ADR-185): introspect the open project via its installed `sharpee` bin.
-    func introspectProject(projectRoot: URL) {
-        rootViewController?.introspectProject(projectRoot: projectRoot)
+    /// Composes `storyURL` to populate the project tree + Problems (ADR-258 D6:
+    /// live, source-derived — no build gate). Called on project open.
+    func composeStory(at storyURL: URL) {
+        rootViewController?.composeStory(at: storyURL)
     }
 
     /// Applies a persisted "Play after build" value (session restore).
@@ -328,12 +324,8 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
-    func buildSucceeded(repoRoot: URL, story: String) {
-        mainSplitViewController.buildSucceeded(repoRoot: repoRoot, story: story)
-    }
-
-    func introspectProject(projectRoot: URL) {
-        mainSplitViewController.introspectProject(projectRoot: projectRoot)
+    func composeStory(at storyURL: URL) {
+        mainSplitViewController.composeStory(at: storyURL)
     }
 
     func applyPlayAfterBuild(_ on: Bool) {
@@ -353,8 +345,9 @@ private final class MainSplitViewController: NSSplitViewController {
 
     private let railViewController = RailViewController()
     private let projectPaneViewController = ProjectPaneViewController()
-    private let introspectionRunner = IntrospectionRunner()
     private let composeScheduler = ComposeScheduler()
+    /// Last-ok-IR retention behind the project tree (ADR-258 D6).
+    private var treeState = IRTreeState()
     private let editorViewController = EditorViewController()
     private let rightPanelViewController = RightPanelViewController()
     /// The Play tab inside the right panel — most wiring targets it directly.
@@ -379,7 +372,12 @@ private final class MainSplitViewController: NSSplitViewController {
 
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
         projectPaneViewController.onActivateFile = { [weak self] url in self?.editorViewController.openDocument(at: url) }
-        projectPaneViewController.onActivateEntity = { [weak self] entity in self?.openEntitySource(entity) }
+        projectPaneViewController.onActivateLeaf = { [weak self] leaf in
+            // Exact-span navigation (D6): the leaf's span points into the story
+            // file the retained IR was compiled from — no name matching.
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            self.editorViewController.openDocument(at: storyURL, span: leaf.span)
+        }
         projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStoryActivated = { [weak self] url, content in
@@ -388,7 +386,14 @@ private final class MainSplitViewController: NSSplitViewController {
         editorViewController.onStoryEdited = { [weak self] url, content in
             self?.composeScheduler.noteEdit(storyURL: url, content: content)
         }
-        composeScheduler.onOutcome = { [weak self] outcome in self?.onComposeOutcome?(outcome) }
+        composeScheduler.onOutcome = { [weak self] outcome in
+            guard let self else { return }
+            // The tree folds every outcome through last-ok retention (D6)…
+            self.treeState.apply(outcome)
+            self.projectPaneViewController.setTreeState(self.treeState.display)
+            // …while Problems always reflects the current source (RootViewController).
+            self.onComposeOutcome?(outcome)
+        }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
 
@@ -486,54 +491,12 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.clearDiagnosis()
     }
 
-    /// After any successful build, refresh the Structure view from the built story (ADR-184).
-    fileprivate func buildSucceeded(repoRoot: URL, story: String) {
-        guard let storyDir = Self.storyDirectory(repoRoot: repoRoot, name: story) else { return }
-        introspectAndPopulate(projectDir: storyDir)
-    }
-
-    /// Author-mode (ADR-185): introspect an open story project via its installed `sharpee`
-    /// bin and populate the Structure view. Called on project open (when built) and after builds.
-    fileprivate func introspectProject(projectRoot: URL) {
-        introspectAndPopulate(projectDir: projectRoot)
-    }
-
-    /// Runs `sharpee introspect` for `projectDir`, joins source positions (ADR-184), and feeds
-    /// the Structure view. Best-effort: failure (not built / no installed bin) leaves the prior
-    /// structure untouched.
-    private func introspectAndPopulate(projectDir: URL) {
-        introspectionRunner.introspect(projectDir: projectDir) { [weak self] result in
-            guard let self else { return }
-            if case .success(let manifest) = result {
-                let index = EntitySourceIndex.build(storyDirectory: projectDir)
-                self.projectPaneViewController.setManifest(index.annotating(manifest))
-            }
-        }
-    }
-
-    /// Resolves a story *name* to its directory under stories/ or tutorials/.
-    private static func storyDirectory(repoRoot: URL, name: String) -> URL? {
-        let fm = FileManager.default
-        for sub in ["stories", "tutorials"] {
-            let url = repoRoot.appendingPathComponent(sub).appendingPathComponent(name)
-            if fm.fileExists(atPath: url.path) { return url }
-        }
-        return nil
-    }
-
-    /// Opens an activated entity's source location, when the manifest carries one.
-    /// CLI manifests have no source yet (added by the tree-sitter index, a later step).
-    private func openEntitySource(_ entity: EntityNode) {
-        guard let source = entity.source else { return }
-        // The index records absolute paths; a future wire/bridge source may be workspace-relative.
-        let url: URL?
-        if source.file.hasPrefix("/") {
-            url = URL(fileURLWithPath: source.file)
-        } else {
-            url = currentProject.map { $0.rootURL.appendingPathComponent(source.file) }
-        }
-        guard let url else { return }
-        editorViewController.openDocument(at: url, line: source.line, column: 0)
+    /// Composes `storyURL` from its on-disk content (project open — no editor
+    /// buffer yet). The outcome populates the tree and Problems through the
+    /// standard pipeline.
+    fileprivate func composeStory(at storyURL: URL) {
+        let content = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
+        composeScheduler.composeNow(storyURL: storyURL, content: content)
     }
 
     override func viewDidAppear() {

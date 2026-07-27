@@ -54,6 +54,16 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     /// Present exactly when the source carried a `grammar` header (ADR-269 D8):
     /// the file is a grammar file — Build and Play are disabled for it (D2).
     let grammarFile: GrammarFile?
+    /// Authored entities, each with its exact source span (D6 navigation).
+    /// Optional on the wire for robustness; read via `allEntities`.
+    let entities: [Entity]?
+    /// `define action` blocks — the tree content for grammar files (D2 amendment).
+    let actions: [ActionDef]?
+
+    /// Entities as a non-optional list.
+    var allEntities: [Entity] { entities ?? [] }
+    /// Actions as a non-optional list.
+    var allActions: [ActionDef] { actions ?? [] }
 
     struct Meta: Codable, Equatable, Sendable {
         let title: String
@@ -65,6 +75,30 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
 
     struct GrammarFile: Codable, Equatable, Sendable {
         let name: String
+    }
+
+    /// One authored entity: name, kind memberships, player marker, and the exact
+    /// span of its `create` block.
+    struct Entity: Codable, Equatable, Sendable {
+        let id: String
+        let name: String
+        let isPlayer: Bool
+        let kinds: [Kind]
+        let span: DiagnosticSpan
+
+        /// True when the entity declares membership in `kind` (`room`/`region`/`person`).
+        func hasKind(_ kind: String) -> Bool { kinds.contains { $0.name == kind } }
+    }
+
+    /// A kind membership (`a room`, `a person`, ...). Extra wire fields ignored.
+    struct Kind: Codable, Equatable, Sendable {
+        let name: String
+    }
+
+    /// A `define action` block with its exact span.
+    struct ActionDef: Codable, Equatable, Sendable {
+        let name: String
+        let span: DiagnosticSpan
     }
 }
 

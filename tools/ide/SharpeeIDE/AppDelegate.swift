@@ -176,25 +176,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // Show the built browser client in the Play pane (placeholder if none built).
         mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
 
-        // Author housekeeping (ADR-185): a project with a package.json but no installed `sharpee`
-        // bin needs its dependencies — install them silently (`npm install`). A project that is
-        // already built introspects immediately to populate the Structure view.
+        // Chord story (ADR-258 D2/D6): a folder holding a `.story` file needs no
+        // toolchain to populate the tree — compose it immediately, live-updating
+        // from the source. No npm, no build gate.
+        if let storyURL = Self.storyFile(in: url) {
+            mainWindowController?.composeStory(at: storyURL)
+            return
+        }
+
+        // Author housekeeping (ADR-185, TypeScript path — retired by ADR-258 D3's
+        // build/play swap): a project with a package.json but no installed `sharpee`
+        // bin installs its dependencies silently.
         let fm = FileManager.default
         let hasPackageJSON = fm.fileExists(atPath: url.appendingPathComponent("package.json").path)
         let hasBin = fm.fileExists(atPath: url.appendingPathComponent("node_modules/.bin/sharpee").path)
         if hasPackageJSON && !hasBin {
             buildController?.installDependencies(projectDir: url, thenInitBrowser: autoInitBrowser)
-        } else if Self.isBuiltAuthorProject(url) {
-            mainWindowController?.introspectProject(projectRoot: url)
         }
     }
 
-    /// True iff `url` is a built author story project — it has the installed `sharpee` bin and a
-    /// compiled `dist/index.js`, so `sharpee introspect` can load it.
-    private static func isBuiltAuthorProject(_ url: URL) -> Bool {
+    /// The `.story` file the opened folder is organized around: prefers one named
+    /// after the folder, else the alphabetically first at the top level. Nil for
+    /// non-Chord projects.
+    private static func storyFile(in url: URL) -> URL? {
         let fm = FileManager.default
-        return fm.fileExists(atPath: url.appendingPathComponent("node_modules/.bin/sharpee").path)
-            && fm.fileExists(atPath: url.appendingPathComponent("dist/index.js").path)
+        guard let entries = try? fm.contentsOfDirectory(at: url, includingPropertiesForKeys: nil,
+                                                        options: [.skipsHiddenFiles]) else { return nil }
+        let stories = entries.filter { $0.pathExtension == "story" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        let folderNamed = stories.first { $0.deletingPathExtension().lastPathComponent == url.lastPathComponent }
+        return folderNamed ?? stories.first
     }
 
     /// File → Open Recent → <project>. Loads the chosen folder. If the folder is no longer

@@ -93,31 +93,43 @@ final class ComposeRunner {
         proc.standardOutput = outPipe
         proc.standardError = errPipe
 
+        // Blocking EOF reads on background queues — no readabilityHandler, so
+        // there is no drain race to lose the tail of a large payload (a full
+        // Story IR runs to hundreds of KB). The group completes only when BOTH
+        // streams hit EOF (write ends close at process exit) AND the process
+        // has reported its termination status.
         let outBuffer = DataBuffer()
         let errBuffer = DataBuffer()
-        outPipe.fileHandleForReading.readabilityHandler = { handle in
-            outBuffer.append(handle.availableData)
+        let group = DispatchGroup()
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            outBuffer.append(outPipe.fileHandleForReading.readDataToEndOfFile())
+            group.leave()
         }
-        errPipe.fileHandleForReading.readabilityHandler = { handle in
-            errBuffer.append(handle.availableData)
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            errBuffer.append(errPipe.fileHandleForReading.readDataToEndOfFile())
+            group.leave()
         }
 
-        proc.terminationHandler = { [weak self] finished in
-            outPipe.fileHandleForReading.readabilityHandler = nil
-            errPipe.fileHandleForReading.readabilityHandler = nil
-            outBuffer.append((try? outPipe.fileHandleForReading.readToEnd()) ?? Data())
-            errBuffer.append((try? errPipe.fileHandleForReading.readToEnd()) ?? Data())
+        group.enter() // left by terminationHandler
+        proc.terminationHandler = { _ in group.leave() }
+
+        // Notify on the MAIN queue: this closure is MainActor-isolated (it touches
+        // self), and dispatching it to a global queue trips the Swift 6 runtime
+        // isolation assertion — a SIGTRAP, not a compile error.
+        group.notify(queue: .main) { [weak self] in
+            // Identity guard FIRST: on the launch-failure path this fires for a
+            // never-launched process, whose terminationStatus throws (ObjC).
+            guard let self, proc === self.process else { return }
             let stdout = outBuffer.data
             let stderr = String(data: errBuffer.data, encoding: .utf8) ?? ""
-            let code = finished.terminationStatus
-            let exited = finished.terminationReason == .exit
-            Task { @MainActor [weak self] in
-                guard let self, finished === self.process else { return }
-                self.process = nil
-                let completion = self.pending
-                self.pending = nil
-                completion?(Self.outcome(exited: exited, code: code, stdout: stdout, stderr: stderr))
-            }
+            let code = proc.terminationStatus
+            let exited = proc.terminationReason == .exit
+            self.process = nil
+            let completion = self.pending
+            self.pending = nil
+            completion?(Self.outcome(exited: exited, code: code, stdout: stdout, stderr: stderr))
         }
 
         process = proc
@@ -125,11 +137,19 @@ final class ComposeRunner {
         do {
             try proc.run()
         } catch {
-            outPipe.fileHandleForReading.readabilityHandler = nil
-            errPipe.fileHandleForReading.readabilityHandler = nil
+            // The child never ran: balance the termination enter (its handler
+            // will never fire) and close the write ends so the EOF readers
+            // unblock — otherwise the group deallocates with a pending enter,
+            // which crashes. The identity guard (process is nil'd here) keeps
+            // the group's completion from double-firing.
+            proc.terminationHandler = nil
+            group.leave()
+            try? outPipe.fileHandleForWriting.close()
+            try? errPipe.fileHandleForWriting.close()
             process = nil
             pending = nil
             completion(.failure(.launch(error.localizedDescription)))
+            return
         }
     }
 

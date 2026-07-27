@@ -1,66 +1,85 @@
 // ProjectStructureTests.swift
-// Covers ProjectStructure.build(from:): category grouping in display order,
-// omission of empty categories, case-insensitive entity sorting, and the
-// category-header → entity-leaf shape.
+// IR → tree grouping (ADR-258 D6): kind-based categorization (room / region /
+// person / player / everything-else), define-action grouping (the whole tree for
+// a grammar file), fixed category order, alphabetical leaves, empty categories
+// omitted, and span propagation onto every leaf (exact navigation, no name match).
 
 import XCTest
 @testable import SharpeeIDE
 
 final class ProjectStructureTests: XCTestCase {
 
-    private func entity(_ name: String, _ category: EntityCategory) -> EntityNode {
-        EntityNode(id: name.lowercased(), displayName: name, category: category,
-                   traits: TraitSummary(identity: nil, room: nil, container: nil), source: nil)
+    private func span(_ line: Int) -> DiagnosticSpan {
+        DiagnosticSpan(line: line, column: 1, endLine: line + 2, endColumn: 10)
     }
 
-    private func manifest(_ entities: [EntityNode]) -> ProjectManifest {
-        ProjectManifest(schemaVersion: 1, story: "test", generatedFrom: .cli, entities: entities)
+    private func entity(_ name: String, kinds: [String] = [], isPlayer: Bool = false,
+                        line: Int = 1) -> ComposeStoryIR.Entity {
+        ComposeStoryIR.Entity(id: name.lowercased(), name: name, isPlayer: isPlayer,
+                              kinds: kinds.map { ComposeStoryIR.Kind(name: $0) },
+                              span: span(line))
     }
 
-    func testGroupsByCategoryInDisplayOrder() {
-        // Intentionally out of order: region, npc, object, room.
-        let nodes = ProjectStructure.build(from: manifest([
-            entity("Underground", .region),
-            entity("thief", .npc),
-            entity("lantern", .object),
-            entity("West of House", .room),
+    private func ir(entities: [ComposeStoryIR.Entity] = [],
+                    actions: [ComposeStoryIR.ActionDef] = [],
+                    grammarFile: Bool = false) -> ComposeStoryIR {
+        ComposeStoryIR(format: "story language 1", languageVersion: "2.1.0",
+                       meta: .init(title: "T", author: "A", fields: [:]),
+                       grammarFile: grammarFile ? .init(name: "std") : nil,
+                       entities: entities, actions: actions)
+    }
+
+    func testCategorizesByKindWithPlayerUnderNPCs() throws {
+        let tree = ProjectStructure.build(from: ir(entities: [
+            entity("Lab", kinds: ["room"], line: 5),
+            entity("Cellar", kinds: ["room", "dark"], line: 10),
+            entity("Lantern", kinds: ["portable"], line: 15),
+            entity("Guard", kinds: ["person"], line: 20),
+            entity("player", isPlayer: true, line: 25),
+            entity("Grounds", kinds: ["region"], line: 30),
         ]))
-        XCTAssertEqual(nodes.map { $0.group?.category }, [.room, .object, .npc, .region])
-        XCTAssertEqual(nodes.map { $0.group?.title }, ["Rooms", "Objects", "NPCs", "Regions"])
+
+        XCTAssertEqual(tree.map { $0.category }, [.room, .object, .npc, .region])
+        XCTAssertEqual(tree[0].children.map { $0.leaf?.title }, ["Cellar", "Lab"],
+                       "rooms sort case-insensitively by name")
+        XCTAssertEqual(tree[1].children.map { $0.leaf?.title }, ["Lantern"])
+        XCTAssertEqual(tree[2].children.map { $0.leaf?.title }, ["Guard", "player"],
+                       "person entities and the player file under NPCs")
+        XCTAssertEqual(tree[3].children.map { $0.leaf?.title }, ["Grounds"])
     }
 
-    func testOmitsEmptyCategories() {
-        let nodes = ProjectStructure.build(from: manifest([
-            entity("West of House", .room),
-            entity("lantern", .object),
-        ]))
-        // No NPCs or Regions → only two headers.
-        XCTAssertEqual(nodes.map { $0.group?.category }, [.room, .object])
+    func testLeavesCarryTheirExactSpan() throws {
+        let tree = ProjectStructure.build(from: ir(entities: [entity("Lab", kinds: ["room"], line: 7)]))
+        let leaf = try XCTUnwrap(tree.first?.children.first?.leaf)
+        XCTAssertEqual(leaf.span, span(7), "navigation is span-exact — no name-matching fallback")
     }
 
-    func testSortsEntitiesCaseInsensitivelyWithinCategory() {
-        let nodes = ProjectStructure.build(from: manifest([
-            entity("brass lantern", .object),
-            entity("Apple", .object),
-            entity("anvil", .object),
-        ]))
-        let objects = try? XCTUnwrap(nodes.first { $0.group?.category == .object })
-        XCTAssertEqual(objects?.group?.entities.map(\.displayName), ["anvil", "Apple", "brass lantern"])
+    func testEmptyCategoriesAreOmitted() {
+        let tree = ProjectStructure.build(from: ir(entities: [entity("Lab", kinds: ["room"])]))
+        XCTAssertEqual(tree.map { $0.category }, [.room])
     }
 
-    func testCategoryNodeChildrenAreEntityLeaves() {
-        let nodes = ProjectStructure.build(from: manifest([
-            entity("West of House", .room),
-            entity("Kitchen", .room),
-        ]))
-        let rooms = nodes[0]
-        XCTAssertTrue(rooms.isCategory)
-        XCTAssertEqual(rooms.children.count, 2)
-        XCTAssertTrue(rooms.children.allSatisfy { !$0.isCategory })
-        XCTAssertEqual(rooms.children.compactMap { $0.entity?.displayName }, ["Kitchen", "West of House"])
+    func testActionsFormTheirOwnGroup() throws {
+        let tree = ProjectStructure.build(from: ir(
+            entities: [entity("Lab", kinds: ["room"])],
+            actions: [ComposeStoryIR.ActionDef(name: "xyzzy", span: span(40))]))
+        XCTAssertEqual(tree.map { $0.category }, [.room, .action])
+        XCTAssertEqual(tree[1].children.first?.leaf?.title, "xyzzy")
+        XCTAssertEqual(tree[1].children.first?.leaf?.span, span(40))
     }
 
-    func testEmptyManifestYieldsNoNodes() {
-        XCTAssertTrue(ProjectStructure.build(from: manifest([])).isEmpty)
+    /// A grammar file (ADR-269 D8) has no entities — its tree is its
+    /// `define action` blocks (D2 amendment acceptance).
+    func testGrammarFileTreeIsItsActionBlocks() {
+        let tree = ProjectStructure.build(from: ir(
+            actions: [ComposeStoryIR.ActionDef(name: "waving", span: span(3)),
+                      ComposeStoryIR.ActionDef(name: "digging", span: span(9))],
+            grammarFile: true))
+        XCTAssertEqual(tree.map { $0.category }, [.action])
+        XCTAssertEqual(tree[0].children.map { $0.leaf?.title }, ["digging", "waving"])
+    }
+
+    func testEmptyIRYieldsEmptyTree() {
+        XCTAssertTrue(ProjectStructure.build(from: ir()).isEmpty)
     }
 }

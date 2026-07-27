@@ -1,18 +1,19 @@
 // ProjectStructureViewController.swift
-// Renders a ProjectManifest (ADR-184) as the Sharpee-aware project view: category
-// headers (Rooms / Objects / NPCs / Regions) with their entities, in an
-// NSOutlineView. Build-gated — shows a "build to populate" affordance until a
-// manifest is supplied. Grouping logic lives in ProjectStructure; this is the thin
-// AppKit shell.
-// Public interface: ProjectStructureViewController.setManifest(_:), delegate.
+// Renders a compose run's Story IR (ADR-258 D6) as the Sharpee-aware project
+// view: category headers (Rooms / Objects / NPCs / Regions / Actions) with their
+// leaves, in an NSOutlineView. Live — no build gate: the tree tracks the source
+// via the compose pipeline, retaining the last ok IR marked stale while the
+// source has errors, and stating why when there is nothing to show. Grouping
+// logic lives in ProjectStructure; this is the thin AppKit shell.
+// Public interface: ProjectStructureViewController.setState(_:), delegate.
 // Owner context: tools/ide — Project.
 
 import AppKit
 
 @MainActor
 protocol ProjectStructureDelegate: AnyObject {
-    /// The user activated (double-clicked / Return) an entity row.
-    func projectStructure(_ controller: ProjectStructureViewController, didActivate entity: EntityNode)
+    /// The user activated (double-clicked / Return) a leaf row.
+    func projectStructure(_ controller: ProjectStructureViewController, didActivate leaf: StructureLeaf)
 }
 
 final class ProjectStructureViewController: NSViewController {
@@ -21,11 +22,11 @@ final class ProjectStructureViewController: NSViewController {
 
     private let outlineView = NSOutlineView()
     private let scrollView = NSScrollView()
-    private let placeholder = NSTextField(labelWithString: "Build to populate the project tree")
+    private let placeholder = NSTextField(labelWithString: "Open a story to populate the project tree")
+    private let staleBanner = NSTextField(labelWithString: "Showing last good compile — the story has errors")
 
-    /// Top-level category nodes; empty until a manifest is set.
+    /// Top-level category nodes; empty until an IR arrives.
     private var nodes: [StructureNode] = []
-    private var hasManifest = false
 
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("StructureCell")
 
@@ -37,39 +38,55 @@ final class ProjectStructureViewController: NSViewController {
         configureOutlineView()
         configureScrollView()
         configurePlaceholder()
+        configureStaleBanner()
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         placeholder.translatesAutoresizingMaskIntoConstraints = false
+        staleBanner.translatesAutoresizingMaskIntoConstraints = false
+        pane.addSubview(staleBanner)
         pane.addSubview(scrollView)
         pane.addSubview(placeholder)
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: pane.topAnchor),
+            staleBanner.topAnchor.constraint(equalTo: pane.topAnchor, constant: 2),
+            staleBanner.leadingAnchor.constraint(equalTo: pane.leadingAnchor, constant: 8),
+            staleBanner.trailingAnchor.constraint(equalTo: pane.trailingAnchor, constant: -8),
+
+            scrollView.topAnchor.constraint(equalTo: staleBanner.bottomAnchor, constant: 2),
             scrollView.leadingAnchor.constraint(equalTo: pane.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: pane.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: pane.bottomAnchor),
 
             placeholder.centerXAnchor.constraint(equalTo: pane.centerXAnchor),
             placeholder.centerYAnchor.constraint(equalTo: pane.centerYAnchor),
+            placeholder.leadingAnchor.constraint(greaterThanOrEqualTo: pane.leadingAnchor, constant: 8),
+            placeholder.trailingAnchor.constraint(lessThanOrEqualTo: pane.trailingAnchor, constant: -8),
         ])
 
         view = pane
-        updateEmptyState()
+        setState(.empty(reason: "Open a story to populate the project tree"))
     }
 
-    /// Replace the displayed structure from a manifest. Pass nil to return to the
-    /// build-gated empty state (e.g. when no successful build has produced a manifest).
-    func setManifest(_ manifest: ProjectManifest?) {
-        if let manifest {
-            nodes = ProjectStructure.build(from: manifest)
-            hasManifest = true
-        } else {
+    /// Render a tree display state (from IRTreeState): populated (optionally
+    /// stale) or empty-with-reason.
+    func setState(_ state: IRTreeState.Display) {
+        switch state {
+        case .empty(let reason):
             nodes = []
-            hasManifest = false
+            placeholder.stringValue = reason
+            staleBanner.isHidden = true
+            outlineView.alphaValue = 1
+        case .populated(let ir, let stale):
+            nodes = ProjectStructure.build(from: ir)
+            placeholder.stringValue = "This story defines no entities yet"
+            staleBanner.isHidden = !stale
+            outlineView.alphaValue = stale ? 0.55 : 1
         }
         outlineView.reloadData()
         outlineView.expandItem(nil, expandChildren: true) // categories open by default
-        updateEmptyState()
+        let isEmpty = nodes.isEmpty
+        scrollView.isHidden = isEmpty
+        placeholder.isHidden = !isEmpty
     }
 
     // MARK: - Setup
@@ -106,26 +123,17 @@ final class ProjectStructureViewController: NSViewController {
         placeholder.font = NSFont.systemFont(ofSize: 11)
         placeholder.textColor = Theme.foregroundFaint
         placeholder.alignment = .center
+        placeholder.lineBreakMode = .byWordWrapping
+        placeholder.maximumNumberOfLines = 0
         placeholder.isHidden = true
     }
 
-    private func updateEmptyState() {
-        let isEmpty = !hasManifest || nodes.isEmpty
-        scrollView.isHidden = isEmpty
-        placeholder.isHidden = !isEmpty
-        placeholder.stringValue = hasManifest
-            ? "This story defines no entities yet"
-            : "Build to populate the project tree"
-    }
-
-    /// SF Symbol name for an entity category's leaf icon.
-    private static func symbolName(for category: EntityCategory) -> String {
-        switch category {
-        case .room: return "square.split.bottomrightquarter"
-        case .object: return "cube"
-        case .npc: return "person"
-        case .region: return "map"
-        }
+    private func configureStaleBanner() {
+        staleBanner.font = NSFont.systemFont(ofSize: 10)
+        staleBanner.textColor = NSColor.systemYellow
+        staleBanner.lineBreakMode = .byWordWrapping
+        staleBanner.maximumNumberOfLines = 0
+        staleBanner.isHidden = true
     }
 
     // MARK: - Actions
@@ -140,8 +148,8 @@ final class ProjectStructureViewController: NSViewController {
             } else {
                 outlineView.animator().expandItem(node)
             }
-        } else if let entity = node.entity {
-            delegate?.projectStructure(self, didActivate: entity)
+        } else if let leaf = node.leaf {
+            delegate?.projectStructure(self, didActivate: leaf)
         }
     }
 }
@@ -175,16 +183,16 @@ extension ProjectStructureViewController: NSOutlineViewDelegate {
         let cell = outlineView.makeView(withIdentifier: Self.cellIdentifier, owner: self) as? NSTableCellView
             ?? makeCell()
 
-        if let group = node.group {
-            cell.textField?.stringValue = "\(group.title)  (\(group.entities.count))"
+        if let category = node.category {
+            cell.textField?.stringValue = "\(category.title)  (\(node.children.count))"
             cell.textField?.textColor = Theme.foreground
             cell.textField?.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
             cell.imageView?.image = nil
-        } else if let entity = node.entity {
-            cell.textField?.stringValue = entity.displayName
+        } else if let leaf = node.leaf {
+            cell.textField?.stringValue = leaf.title
             cell.textField?.textColor = Theme.foregroundDim
             cell.textField?.font = NSFont.systemFont(ofSize: 12, weight: .regular)
-            cell.imageView?.image = NSImage(systemSymbolName: Self.symbolName(for: entity.category),
+            cell.imageView?.image = NSImage(systemSymbolName: leaf.category.symbolName,
                                             accessibilityDescription: nil)
         }
         return cell

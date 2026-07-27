@@ -15,8 +15,8 @@ final class ProjectPaneViewController: NSViewController,
 
     /// A leaf file was activated in the Files tree.
     var onActivateFile: ((URL) -> Void)?
-    /// An entity was activated in the Structure view.
-    var onActivateEntity: ((EntityNode) -> Void)?
+    /// A structure leaf was activated — navigate to its exact span (ADR-258 D6).
+    var onActivateLeaf: ((StructureLeaf) -> Void)?
     /// The Files tree's expansion changed (persist session).
     var onExpansionChanged: (() -> Void)?
 
@@ -83,9 +83,9 @@ final class ProjectPaneViewController: NSViewController,
 
     var expandedFolderURLs: [URL] { filesController.expandedFolderURLs }
 
-    /// Feed the Structure view a fresh manifest (nil → build-gated placeholder).
-    func setManifest(_ manifest: ProjectManifest?) {
-        structureController.setManifest(manifest)
+    /// Render a tree display state (populated / stale / empty-with-reason, D6).
+    func setTreeState(_ state: IRTreeState.Display) {
+        structureController.setState(state)
     }
 
     // MARK: - Toggle
@@ -109,7 +109,7 @@ final class ProjectPaneViewController: NSViewController,
         onExpansionChanged?()
     }
 
-    func projectStructure(_ controller: ProjectStructureViewController, didActivate entity: EntityNode) {
-        onActivateEntity?(entity)
+    func projectStructure(_ controller: ProjectStructureViewController, didActivate leaf: StructureLeaf) {
+        onActivateLeaf?(leaf)
     }
 }
