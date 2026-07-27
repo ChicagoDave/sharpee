@@ -3,7 +3,8 @@
  * `extend action <name>` and `remove from action <name>` alteration blocks —
  * parse forms, the grammar-surfaces-only gates, IR shape (additive, absent
  * when undeclared), and grammar-file-mode rejection. Target-name resolution
- * and emission are the loader's (Phase 3), not chord's — not here.
+ * is compile-side since ADR-276 Phase 3 (alteration-targets.test.ts);
+ * emission stays the loader's.
  */
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
@@ -38,12 +39,12 @@ describe('extend action (ADR-270 D2/D6)', () => {
   it('typed slots, greedy slots, and directions are grammar surfaces — legal in an extension', () => {
     const result = compile(
       `${STORY}extend action going\n  grammar\n    scurry the direction\n  directions\n    north or n\n\n` +
-        `extend action writing\n  grammar\n    scribble the message\n  the message takes the rest of the line\n\n` +
+        `extend action answering\n  grammar\n    reply the message\n  the message takes the rest of the line\n\n` +
         `extend action unlocking\n  grammar\n    jimmy the target with the tool\n  the tool is an instrument\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const exts = result.ir!.grammarExtensions!;
-    expect(exts.map((e) => e.action)).toEqual(['going', 'writing', 'unlocking']);
+    expect(exts.map((e) => e.action)).toEqual(['going', 'answering', 'unlocking']);
     expect(exts[0].directions).toEqual([{ canonical: 'north', aliases: ['n'] }]);
     expect(exts[1].greedy).toEqual(['message']);
     expect(exts[2].slotTypes).toEqual([{ slot: 'tool', type: 'instrument' }]);

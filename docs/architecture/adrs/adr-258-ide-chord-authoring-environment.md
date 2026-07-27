@@ -2,9 +2,23 @@
 
 ## Status: ACCEPTED (2026-07-23, session 341218) — the IDE becomes a Chord authoring environment and the TypeScript author path is dropped (D1). Highlighting is an in-process Swift lexer port pinned by a TS-side golden fixture (D7); the project tree is Story-IR-sourced, not world-introspected (D6); Problems is fed by structured Chord diagnostics over `compose --json` (D5). Open Questions resolved by `adr-interview`; `adr-review` 9/15 → **15/15** after three blocker fixes (atomic-load vs. the live tree, the undercounted `compose` mode, the conformance pin with no CI to fail). Depends on ADR-259 (ACCEPTED). Not implemented.
 
+**Re-assessed 2026-07-27 (session 332f30), post-2.0.0**: architecture intact; D7 strengthened (the grammar arc never touched the lexer). One blocker surfaced — ADR-270 landed author-reachable alteration errors (`extend action`/`remove from action` target names, unmatched shapes) as load-time `LoadError`s, so D5's "compile is authoritative for diagnostics" no longer covered them. **ADR-276** (Chord compile authoritative for every source-derivable error; stdlib manifest) restores that premise. **ADR-276 ACCEPTED and the amendment applied same day** — see the Amended markers at D2 (grammar-file kind), D5 (authority re-grounding + hatch-record wire type + residue), and D7 (lexer freshness, 2.0.0 golden corpus). Implementation planning is unblocked; implementation of the Problems surface sequences **after** ADR-276's one-arc census migration (its Q-1 ruling).
+
+**Amended 2026-07-27 (session 834109): the D5 sequencing gate is OPEN.** ADR-276 is
+**IMPLEMENTED** (same day, branch `adr-276-p1`, Phases 1–8 — see its Implementation
+addendum): the full census is analyzer-gated with loader backstops (50 sites
+re-audited, no third category), the D5 residue is exactly as this ADR's D5 amendment
+records it (hatch provision/export-shape, language-provider capability,
+profile/IR-format — Build output, not Problems), and its D4 landed the one
+diagnostics collection (`runComposeGates`/`ComposeDiagnostic` in devkit `compose.ts`)
+that D5's `--json` serializes. This closes ADR-276 Acceptance item 9.
+Platform-side implementation proceeds per `docs/work/adr-258-ide-platform/plan.md`
+(`compose --json` + `ide-protocol` wire contract; D7 golden lexer fixture); the
+Swift/Mac half remains pending on the Mac.
+
 ## Date: 2026-07-23
 
-## Parent: ADR-185 (the IDE is a standalone authoring tool). Supersedes ADR-182 (IDE syntax highlighting via tree-sitter **TypeScript**). Supersedes ADR-184's *mechanism* — the project tree is now IR-sourced, not introspected from the runtime world — while keeping its deliverable. Downstream of ADR-210 (Chord), ADR-252 (`.story` first-class browser build), ADR-253 (channel `return` + layout escape hatch), ADR-257 (Chord language version). **Depends on ADR-259** (the Chord browser build supports hatch modules): D4's build/play surface covers *every* `.story` only once a hatched story can be built, so no hatch carve-out appears in D3's swap table.
+## Parent: ADR-185 (the IDE is a standalone authoring tool). Supersedes ADR-182 (IDE syntax highlighting via tree-sitter **TypeScript**). Supersedes ADR-184's *mechanism* — the project tree is now IR-sourced, not introspected from the runtime world — while keeping its deliverable. Downstream of ADR-210 (Chord), ADR-252 (`.story` first-class browser build), ADR-253 (channel `return` + layout escape hatch), ADR-257 (Chord language version). **Depends on ADR-259** (the Chord browser build supports hatch modules): D4's build/play surface covers *every* `.story` only once a hatched story can be built, so no hatch carve-out appears in D3's swap table. **Amended 2026-07-27 (session 332f30): also depends on ADR-276** (Chord compile authoritative for every source-derivable error) — D5's authority premise and the census migration the Problems panel relies on. ADR-259 has since been IMPLEMENTED (2026-07-24, merged).
 
 ## Context — verified, not assumed
 
@@ -73,6 +87,14 @@ The open target is a `.story` file and the folder around it (which may hold
 `browser/index.html`, assets, and hatch modules). The IDE must not require —
 or create — `package.json`, `node_modules`, or a `sharpee` bin, and must not run
 `npm install`. ADR-185 decision 3's automatic housekeeping is withdrawn for Chord.
+
+**Amended 2026-07-27 (ADR-269 D8)**: a `.story` file may carry a `grammar` header
+instead of a `story` header. The IDE opens grammar files as ordinary Chord source —
+highlighting (D7) and compile diagnostics (D5) apply unchanged, and the tree (D6)
+shows the file's `define action` blocks — but Build and Play are disabled: a grammar
+file is not a story and produces no `dist/web/<id>`. Grammar files are platform-side
+only today (`packages/parser-en-us/grammar/standard-en-us.story`); this ruling keeps
+the IDE correct if one is opened rather than adding a workflow for them.
 
 ### D3 — The dead TypeScript subsystems are removed
 
@@ -148,6 +170,24 @@ is therefore explicit:
 
 `--json` composes with `--check` (gates only, no IR), so CI gains a machine-readable
 gate result it does not have today.
+
+**Amended 2026-07-27 (session 332f30, ADR-276)**: between this ADR's acceptance and
+implementation, the premise "the compile is authoritative for diagnostics" was
+silently broken — ADR-270 landed author-reachable alteration errors (`extend action`
+/ `remove from action` target names, unmatched removal shapes) as load-time
+`LoadError`s, invisible to a mode that skips the load-proof. ADR-276 restores the
+premise: every source-derivable error becomes a compile diagnostic (one arc,
+census-audited), so `--json` is sufficient for Problems for everything except
+ADR-276 D5's residue — hatch module provision and export-shape errors,
+language-provider capabilities — which surface in Build output, not Problems, and
+are accepted as such. Two consequences ride the amendment:
+
+- The payload carries the hatch-lint findings (`hatch.chord-namespace`, ADR-276 D4)
+  as a **second record type**: `{severity, code, message}` with a `file` + `line`
+  site — the hatch module, not the `.story`, no end-span. Problems groups them under
+  the hatch file and marks the line, not a range.
+- The Problems panel's implementation sequences **after** ADR-276's migration arc:
+  built against today's compiler it would ship blind to alteration errors.
 
 ### D6 — The project tree is sourced from the Story IR, not the assembled world
 
@@ -225,6 +265,13 @@ makes a lexer change visible to whoever must update the Swift port.
 
 Both tests are part of the deliverable, not a follow-up.
 
+**Amended 2026-07-27**: the lexer is 203 lines (ADR-264 added `number` and `compare`
+tokens); the entire ADR-266 grammar arc landed without touching it — the token layer
+is stabler than this ADR assumed, which strengthens the port bet. The golden corpus
+must cover the shipped **Chord 2.0.0** surface: slot spellings, or-alternation,
+`[optional]` words, typed slots, `means`/`directions`, the `grammar` header,
+`extend action`/`remove from action`, and counter comparisons.
+
 *Recorded limitation*: this pins the lexer specifically. The IDE's other 27 test files
 still run only locally in Xcode — the IDE has never been under CI. Bringing the whole
 suite under a macOS runner is worth doing and is **out of scope here**.
@@ -295,6 +342,12 @@ with no `package.json`, no `node_modules`, no `src/` — and the IDE:
   `.story` — no stubbed toolchain (rule 13a).
 - `tools/ide/README.md` no longer claims "Phase 0 — empty 3-pane shell" (stale since
   P1–P5 shipped).
+- *(Amended 2026-07-27)* Opening a grammar-header `.story` highlights, populates the
+  tree with its `define action` blocks, and disables Build and Play (D2).
+- *(Amended 2026-07-27)* Hatch-lint findings cross `--json` as the second record type
+  with their file+line site (D5), and an alteration error — a bad
+  `remove from action` target — appears in Problems with its span, which requires
+  ADR-276's census arc to have landed first (D5).
 
 ## Consequences
 

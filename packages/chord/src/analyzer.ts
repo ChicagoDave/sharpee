@@ -51,7 +51,8 @@ import {
   UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
+import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
@@ -726,6 +727,8 @@ class Analyzer {
     this.applyTopics(ir.entities);
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
+    this.checkCompositionLegality(ir);
+    this.checkAlterationTargets(ir);
     this.checkMarkers();
     this.checkDescriptionMarkers();
     this.checkChannelReturns(ir.channels); // ADR-253 D1: return-field cross-check (all emits collected)
@@ -740,6 +743,272 @@ class Analyzer {
    * containment cycles. Runs after every entity is built so cross-entity
    * lookups and spans are all available.
    */
+  /**
+   * ADR-276 Phase 1 (census entries 9, 11–15): composition-legality rules
+   * migrated from story-loader — every rule here is derivable from the IR
+   * alone, so it reports as a collected compile diagnostic with a span; the
+   * loader keeps the same rules as first-throw defensive backstops for
+   * rogue IR. Mirrors loader.ts `applyTraitAdjectives` (conditional gate,
+   * `dark`, undeclared traits), `checkCuttableImplementations` (tool-gated
+   * gerunds), the player `wears` loop, and the patrol-route requirement.
+   */
+  private checkCompositionLegality(ir: StoryIR): void {
+    const traitDefs = new Map(ir.traits.map((t) => [t.name, t]));
+
+    for (const entity of ir.entities) {
+      // Census 17 (discovered in Phase 1 — the phrasebook fixtures compiled
+      // `a thing` clean): kind nouns are the closed catalog set the loader's
+      // entity builder switches on.
+      for (const k of entity.kinds) {
+        if (!KIND_NOUNS.has(k.name)) {
+          this.diagnostics.error(
+            'analysis.unknown-kind-noun',
+            `\`${entity.name}\`: unknown kind noun \`${k.name}\`.`,
+            k.span,
+          );
+        }
+      }
+      // Census 18 (discovered in Phase 1): one kind noun per entity.
+      if (entity.kinds.length > 1) {
+        this.diagnostics.error(
+          'analysis.multiple-kind-nouns',
+          `\`${entity.name}\` declares more than one kind noun.`,
+          entity.kinds[1].span,
+        );
+      }
+
+      const isRoom = entity.kinds.some((k) => k.name === 'room');
+      for (const comp of entity.traits) {
+        // Census 14: conditional composition legality — room-`dark`, or a
+        // declared trait whose clauses are ALL NPC-behavior-shaped (`on
+        // every turn …`). `proper` has its own earlier gates (ADR-242 D1).
+        if (comp.condition !== null && comp.name !== 'proper') {
+          const def = traitDefs.get(comp.name);
+          const npcShaped =
+            def !== undefined && def.onClauses.length > 0 && def.onClauses.every((c) => c.binding === 'every-turn');
+          if (!(comp.name === 'dark' && isRoom) && !npcShaped) {
+            this.diagnostics.error(
+              'analysis.conditional-composition-unsupported',
+              `Conditional composition isn't supported for \`${comp.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
+              comp.span,
+            );
+            continue;
+          }
+        }
+        // Census 11: `dark` is room-only (the room builder consumes it).
+        if (comp.name === 'dark' && !isRoom) {
+          this.diagnostics.error('analysis.dark-rooms-only', '`dark` applies to rooms only.', comp.span);
+          continue;
+        }
+        // Census 10 (ADR-276 Phase 6): the hiding-position domain is the
+        // manifest's closed set (ratchet G3, one source with the loader).
+        if (comp.name === 'hiding-spot') {
+          const position = comp.config.find((c) => c.key === 'position')?.value;
+          if (position !== undefined && !STDLIB_MANIFEST.hidingPositions.includes(position)) {
+            const list = [...STDLIB_MANIFEST.hidingPositions];
+            const listed = `${list.slice(0, -1).join(', ')}, or ${list[list.length - 1]}`;
+            this.diagnostics.error(
+              'analysis.unknown-hiding-position',
+              `\`${position}\` is not a hiding position — use ${listed}.`,
+              comp.span,
+            );
+          }
+        }
+
+        // Census 9: a `patrol` NPC needs a route. A route whose entries all
+        // failed to resolve has already errored through the unknown-entity
+        // gate — only a MISSING route reports here (the loader's emptiness
+        // backstop stays for rogue IR).
+        if (comp.name === 'patrol' && !comp.config.some((c) => c.key === 'route')) {
+          this.diagnostics.error(
+            'analysis.patrol-needs-route',
+            'A `patrol` NPC needs `with route [ … ]` naming its rooms.',
+            comp.span,
+          );
+        }
+        // Census 15: neither a v1 adjective, nor extension vocabulary, nor
+        // a declared `define trait`.
+        if (!TRAIT_ADJECTIVES.has(comp.name) && !manifestForAdjective(comp.name) && !traitDefs.has(comp.name)) {
+          this.diagnostics.error(
+            'analysis.trait-not-declared',
+            `Trait \`${comp.name}\` is not declared (\`define trait ${comp.name}\`) and is not a v1 adjective.`,
+            comp.span,
+          );
+        }
+
+        // Census 4/6 (ADR-276 Phase 5): setting value domains from the
+        // manifest's schema slice. Extension traits run only when admitted —
+        // buildEntity's extension gates own the `use`-missing case. The
+        // number domain needs no check here: valueKind mismatch is already
+        // `analysis.extension-config-value` (census 5 was pre-gated).
+        const schema = STDLIB_MANIFEST.settingSchema[comp.name];
+        if (schema) {
+          const contributed = manifestForAdjective(comp.name);
+          const admitted =
+            !contributed || contributed.manifest.core || this.usedExtensions.has(contributed.manifest.name);
+          if (admitted) {
+            for (const cfg of comp.config) {
+              // Keyless v1 entity ref (`lockable with the iron key`): the
+              // parser stores it under the empty key; the schema's one
+              // entity-ref entry supplies the message label.
+              const label =
+                cfg.key !== '' ? cfg.key : Object.keys(schema).find((k) => schema[k] === 'entity-ref') ?? cfg.key;
+              const type = schema[label];
+              if (type === 'boolean' && cfg.value !== 'true' && cfg.value !== 'false') {
+                this.diagnostics.error(
+                  'analysis.setting-not-boolean',
+                  `\`${entity.name}\`: \`${label}\` takes \`true\` or \`false\`, got \`${cfg.value}\`.`,
+                  comp.span,
+                );
+              } else if (type === 'entity-ref' && cfg.valueKind === 'name' && !this.resolveConfigEntity(ir, cfg.value)) {
+                this.diagnostics.error(
+                  'analysis.setting-names-no-entity',
+                  `\`${cfg.value}\` (config \`${label}\`) names no entity.`,
+                  comp.span,
+                );
+              }
+            }
+          }
+        } else if (traitDefs.has(comp.name)) {
+          // Census 6 (declared traits, IR-internal): a `with <key> <name>`
+          // value resolves against the story's entities — mirroring the
+          // loader's duck-typing on valueKind exactly (the declared field
+          // type is not consulted; behavior parity over strictness).
+          for (const cfg of comp.config) {
+            if (cfg.valueKind === 'name' && !this.resolveConfigEntity(ir, cfg.value)) {
+              this.diagnostics.error(
+                'analysis.setting-names-no-entity',
+                `\`${cfg.value}\` (config \`${cfg.key}\`) names no entity.`,
+                comp.span,
+              );
+            }
+          }
+        }
+      }
+
+      // Census 12: items the player wears must be wearable. Only the player's
+      // `wears` list is applied at load — mirror that scope exactly.
+      if (entity.isPlayer) {
+        for (const wornId of entity.wears) {
+          const worn = ir.entities.find((e) => e.id === wornId);
+          if (worn && !worn.traits.some((t) => t.name === 'wearable')) {
+            this.diagnostics.error(
+              'analysis.worn-not-wearable',
+              `\`${wornId}\` is worn by the player but is not wearable.`,
+              worn.span,
+            );
+          }
+        }
+      }
+    }
+
+    // Census 13: tool-gated gerunds (ADR-230 D3c) — exactly one
+    // implementation. The Chord surfaces (entity clause, composed-trait
+    // clause) are IR-visible; the ADR-090 capability surface (TS/hatch) is
+    // not. Two-plus Chord surfaces double-fire regardless of any capability
+    // surface, so that half is unconditional; the zero-surface half is
+    // sound only when the story has no hatches at all (a hatch may register
+    // the capability behavior) — with hatches present, the zero case stays
+    // the loader's check (ADR-276 D5 residue boundary).
+    const TOOL_GATED_GERUNDS = [
+      { adjective: 'cuttable', gerund: 'cutting' },
+      { adjective: 'diggable', gerund: 'digging' },
+    ] as const;
+    const gerundSurface = (c: IROnClause, gerund: string): boolean =>
+      c.clauseKind === 'on' && c.action === gerund && c.binding !== 'every-turn';
+    for (const { adjective, gerund } of TOOL_GATED_GERUNDS) {
+      for (const entity of ir.entities) {
+        const site = entity.traits.find((t) => t.name === adjective);
+        if (!site) continue;
+        let surfaces = 0;
+        if (entity.onClauses.some((c) => gerundSurface(c, gerund))) surfaces++;
+        for (const comp of entity.traits) {
+          const def = traitDefs.get(comp.name);
+          if (def?.onClauses.some((c) => gerundSurface(c, gerund))) surfaces++;
+        }
+        if (surfaces > 1) {
+          this.diagnostics.error(
+            'analysis.gerund-implementation',
+            `\`${entity.name}\` has ${surfaces} ${gerund} implementations — a ${adjective} entity registers exactly one (one \`on ${gerund} it\` clause or one capability behavior).`,
+            site.span,
+          );
+        } else if (surfaces === 0 && ir.hatches.length === 0) {
+          this.diagnostics.error(
+            'analysis.gerund-implementation',
+            `\`${entity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
+            site.span,
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Resolve a trait-config entity NAME the way the loader's entityRefFor
+   * does — display-name or `aka` alias, lowercased, first match — so the
+   * census-6 compile gate is exactly as strict as the load check it fronts.
+   */
+  private resolveConfigEntity(ir: StoryIR, name: string): boolean {
+    const lower = name.toLowerCase();
+    return ir.entities.some((e) => e.name.toLowerCase() === lower || e.aka.includes(lower));
+  }
+
+  /**
+   * ADR-276 Phase 3 (census entries 1–2): alteration target names resolve at
+   * compile against the story's own actions plus the generated stdlib
+   * manifest, mirroring the loader's story-first order (ADR-270 D2) exactly.
+   * The loader keeps the same checks as first-throw backstops for rogue IR.
+   */
+  private checkAlterationTargets(ir: StoryIR): void {
+    const storyActionNames = new Set(ir.actions.map((a) => a.name));
+    const stdlibBareNames = [...STDLIB_MANIFEST.actionIds].map((id) => id.slice('if.action.'.length));
+
+    for (const ext of ir.grammarExtensions ?? []) {
+      // Story-first (the shadowing semantic): a story-defined action of the
+      // same name wins and needs no stdlib id.
+      if (storyActionNames.has(ext.action)) continue;
+      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${ext.action}`)) {
+        this.diagnostics.error(
+          'analysis.extend-target',
+          `\`extend action ${ext.action}\` — no story action or standard action has that name${this.suggestText(ext.action, [...storyActionNames, ...stdlibBareNames])}.`,
+          ext.span,
+        );
+      }
+    }
+    for (const removal of ir.grammarRemovals ?? []) {
+      // Removals name STANDARD actions only (ADR-270 D3) — a story action
+      // has no standard-tier rules to remove.
+      if (!STDLIB_MANIFEST.actionIds.has(`if.action.${removal.action}`)) {
+        this.diagnostics.error(
+          'analysis.removal-target',
+          `\`remove from action ${removal.action}\` — no standard action has that name${this.suggestText(removal.action, stdlibBareNames)}.`,
+          removal.span,
+        );
+        continue;
+      }
+      // Census 3: each removal pattern must match a standard-grammar shape —
+      // rendered exactly as the loader renders it (renderPatternPart with no
+      // greedy suffix) and compared by the same string equality removeRules
+      // uses. The manifest's shapes derive from the same expansion that
+      // emits the registered rules, so agreement is structural.
+      const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes[`if.action.${removal.action}`] ?? [];
+      const renderPart = (p: IRPatternPart): string => {
+        const core = p.kind === 'alt' ? p.words.join('|') : p.kind === 'slot' ? `:${p.word}` : p.word;
+        return p.optional ? `[${core}]` : core;
+      };
+      for (const pattern of removal.patterns) {
+        const text = pattern.parts.map(renderPart).join(' ');
+        if (!shapes.includes(text)) {
+          this.diagnostics.error(
+            'analysis.unmatched-removal-pattern',
+            `\`remove from action ${removal.action}\` — no standard rule matches \`${text}\`. The action's standard patterns are: ${shapes.map((s) => `\`${s}\``).join(', ') || '(none)'}.`,
+            removal.span,
+          );
+        }
+      }
+    }
+  }
+
   private checkRegions(entities: IREntity[]): void {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const isRegionEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'region');
@@ -1363,8 +1632,11 @@ class Analyzer {
    * `extend action <name>` → IR (ADR-270 D2): the grammar-surface subset,
    * with behavior sections rejected by name — the grammar-file-mode
    * treatment (`analysis.alteration-behavior`, one per offending category).
-   * Target-name resolution is deliberately NOT here: the loader owns it
-   * (story-first, else the stdlib id set — chord stays stdlib-ignorant).
+   * Target-name resolution happens in checkAlterationTargets (a whole-IR
+   * post-pass — story actions may be declared after the alteration), gated
+   * against the generated stdlib manifest (ADR-276 D1: chord is
+   * platform-free but no longer stdlib-ignorant); the loader keeps the same
+   * story-first resolution as its rogue-IR backstop.
    */
   private buildExtension(decl: ExtendAction): IRGrammarExtension {
     // The extension's own pattern lines are the slot universe for its

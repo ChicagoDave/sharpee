@@ -140,7 +140,7 @@ end phrasebook
 describe('book coverage vs the missing-phrase gate (ADR-250 D4.6)', () => {
   const reference = (books: string) =>
     story(`${books}create the lamp
-  a thing, portable
+  wearable
   starts in the Cave
 
   A lamp.
@@ -164,7 +164,7 @@ describe('book coverage vs the missing-phrase gate (ADR-250 D4.6)', () => {
   });
 
   it('an unreferenced, uncovered key still errors analysis.missing-phrase', () => {
-    const src = story('create the lamp\n  a thing, portable\n  starts in the Cave\n\n  A lamp.\n\n  on taking it\n    phrase never-declared\n  end on\n\n');
+    const src = story('create the lamp\n  wearable\n  starts in the Cave\n\n  A lamp.\n\n  on taking it\n    phrase never-declared\n  end on\n\n');
     expect(errorCodes(src)).toContain('analysis.missing-phrase');
   });
 });
@@ -197,7 +197,7 @@ describe('use phrasebook (ADR-250 D2/D3)', () => {
 
   it('a used-book key satisfies the missing-phrase gate via the manifest key list', () => {
     PHRASEBOOK_REGISTRY.set('voices', { name: 'voices', keys: ['cold-returns'] });
-    const src = story('create the lamp\n  a thing, portable\n  starts in the Cave\n\n  A lamp.\n\n  on taking it\n    phrase cold-returns\n  end on\n\n', '  use phrasebook voices');
+    const src = story('create the lamp\n  wearable\n  starts in the Cave\n\n  A lamp.\n\n  on taking it\n    phrase cold-returns\n  end on\n\n', '  use phrasebook voices');
     expect(errorCodes(src)).toEqual([]);
   });
 

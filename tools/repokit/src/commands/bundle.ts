@@ -9,7 +9,7 @@
  * after esbuild (the no-silent-✓ invariant).
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BUNDLE_ALIASES, BUNDLE_DTS, findRepoRoot } from '../repo';
 
@@ -52,6 +52,18 @@ export function runBundle(opts: BundleOptions = {}): void {
   const out = join(root, 'dist', 'cli', 'sharpee.js');
   if (!existsSync(out) || statSync(out).size === 0) {
     throw new Error('bundle failed: dist/cli/sharpee.js is missing or empty after esbuild');
+  }
+  // ADR-274 D1 invariant, made executable (2026-07-27 incident: a stale repokit
+  // dist bundled without --external:esbuild and every cold hatch transpile hung
+  // in Atomics.wait). ESBUILD_WORKER_THREADS appears only in esbuild's own lib —
+  // its presence means esbuild was inlined and the sync-API worker handshake
+  // would spawn the CLI bundle as its worker.
+  if (readFileSync(out, 'utf-8').includes('ESBUILD_WORKER_THREADS')) {
+    throw new Error(
+      'bundle invariant violated (ADR-274 D1): esbuild is inlined in dist/cli/sharpee.js — ' +
+        'its buildSync worker handshake deadlocks inside a bundle. The --external:esbuild ' +
+        'flag did not take effect; check the bundle step and rebuild.',
+    );
   }
   log(`bundle: dist/cli/sharpee.js (${statSync(out).size} bytes)`);
 }

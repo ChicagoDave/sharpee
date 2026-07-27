@@ -74,8 +74,13 @@ describe('extend action → loader emission (ADR-270 D2, acceptance 2–3)', () 
     expect(rules.some((r) => r.action === 'if.action.petting')).toBe(false);
   });
 
-  it('an unknown extension target is a LoadError with a did-you-mean (acceptance 3)', () => {
-    const story = createStory(compileSource('extend action takng\n  grammar\n    snag the item\n'));
+  it('backstop: an unknown extension target in rogue IR is a LoadError with a did-you-mean (acceptance 3; the compiler gates this as analysis.extend-target, ADR-276)', () => {
+    // Gate-clean compile, then swap the target in the IR — the analyzer can
+    // no longer be reached this way, so the loader backstop must still throw.
+    const ir = compileSource('extend action taking\n  grammar\n    snag the item\n');
+    const rogue = structuredClone(ir);
+    rogue.grammarExtensions![0].action = 'takng';
+    const story = createStory(rogue);
     expect(() => captureGrammarEngine(story)).toThrow(LoadError);
     expect(() => captureGrammarEngine(story)).toThrow(/did you mean `taking`/);
   });
@@ -99,16 +104,24 @@ describe('remove from action → the removal primitive (ADR-270 D3, acceptance 4
     expect(standard).toEqual(['take :item', 'pick up :item']);
   });
 
-  it('an unmatched shape is a LoadError listing the action’s actual standard patterns', () => {
-    const story = createStory(compileSource('remove from action taking\n  yoink the item\n'));
+  it('backstop: an unmatched shape in rogue IR is a LoadError listing the action’s actual standard patterns (the compiler gates this as analysis.unmatched-removal-pattern, ADR-276)', () => {
+    // Gate-clean compile (`get :item` matches), then swap the word in the IR.
+    const ir = compileSource('remove from action taking\n  get the item\n');
+    const rogue = structuredClone(ir);
+    const word = rogue.grammarRemovals![0].patterns[0].parts.find((p) => p.kind === 'word') as { word: string };
+    word.word = 'yoink';
+    const story = createStory(rogue);
     expect(() => captureGrammarEngine(story, seedTaking)).toThrow(LoadError);
     expect(() => captureGrammarEngine(story, seedTaking)).toThrow(
       /no standard rule matches `yoink :item`.*`take :item`.*`get :item`/,
     );
   });
 
-  it('an unknown removal target is a LoadError with a did-you-mean', () => {
-    const story = createStory(compileSource('remove from action taking_offf\n  remove the item\n'));
+  it('backstop: an unknown removal target in rogue IR is a LoadError with a did-you-mean (the compiler gates this as analysis.removal-target, ADR-276)', () => {
+    const ir = compileSource('remove from action taking\n  get the item\n');
+    const rogue = structuredClone(ir);
+    rogue.grammarRemovals![0].action = 'taking_offf';
+    const story = createStory(rogue);
     expect(() => captureGrammarEngine(story, seedTaking)).toThrow(/did you mean `taking_off`/);
   });
 

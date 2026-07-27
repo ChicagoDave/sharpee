@@ -19,6 +19,7 @@ import { registerBasicCombat } from '@sharpee/ext-basic-combat';
 import { registerScoring, registerScoringPlugin } from '@sharpee/ext-scoring';
 import { registerHunger } from '@sharpee/ext-hunger';
 import type { WorldModel } from '@sharpee/world-model';
+import { SETTING_SCHEMA } from './setting-schema';
 
 /**
  * Where one Chord `with`-field lands on the platform: the target trait and
@@ -33,49 +34,50 @@ export interface FieldRoute {
 }
 
 /**
- * `combatant`/`weapon` field routing (ADR-215 combat spelling). Exported so
+ * `combatant`/`weapon` field routing (ADR-215 combat spelling) — a DERIVED
+ * VIEW of SETTING_SCHEMA (ADR-276 Q-3: one declarative source for setting
+ * value types; the manifest generator reads the same table). Exported so
  * the manifest-conformance test can assert every chord-manifest key has a
  * route AND every route's field exists on the real trait — the drift gate.
  * Note the ADR-226 split: `health`/`max-health` route to the REQUIRED
  * HealthTrait (auto-attached), never to CombatantTrait.
  */
-export const COMBAT_FIELD_ROUTES: ReadonlyMap<string, FieldRoute> = new Map<string, FieldRoute>([
-  ['health', { trait: 'health', field: 'health', convert: 'number' }],
-  ['max-health', { trait: 'health', field: 'maxHealth', convert: 'number' }],
-  ['skill', { trait: 'combatant', field: 'skill', convert: 'number' }],
-  ['base-damage', { trait: 'combatant', field: 'baseDamage', convert: 'number' }],
-  ['armor', { trait: 'combatant', field: 'armor', convert: 'number' }],
-  ['attack-power', { trait: 'combatant', field: 'attackPower', convert: 'number' }],
-  ['defense', { trait: 'combatant', field: 'defense', convert: 'number' }],
-  ['experience-value', { trait: 'combatant', field: 'experienceValue', convert: 'number' }],
-  ['hostile', { trait: 'combatant', field: 'hostile', convert: 'boolean' }],
-  ['can-retaliate', { trait: 'combatant', field: 'canRetaliate', convert: 'boolean' }],
-  ['drops-inventory', { trait: 'combatant', field: 'dropsInventory', convert: 'boolean' }],
-  ['is-undead', { trait: 'combatant', field: 'isUndead', convert: 'boolean' }],
-  ['damage', { trait: 'weapon', field: 'damage', convert: 'number' }],
-  ['skill-bonus', { trait: 'weapon', field: 'skillBonus', convert: 'number' }],
-  ['is-blessed', { trait: 'weapon', field: 'isBlessed', convert: 'boolean' }],
-  ['glows-near-danger', { trait: 'weapon', field: 'glowsNearDanger', convert: 'boolean' }],
-]);
+export const COMBAT_FIELD_ROUTES: ReadonlyMap<string, FieldRoute> = (() => {
+  const routes = new Map<string, FieldRoute>();
+  for (const adjective of ['combatant', 'weapon'] as const) {
+    for (const [key, spec] of SETTING_SCHEMA.get(adjective)!) {
+      if (!spec.route || spec.route.trait === 'npc') continue;
+      routes.set(key, {
+        trait: spec.route.trait,
+        field: spec.route.field,
+        convert: spec.value === 'number' ? 'number' : 'boolean',
+      });
+    }
+  }
+  return routes;
+})();
 
 /**
  * NpcTrait routing for the CORE NPC behavior adjectives (ADR-215 Q4 —
- * always on, no `use`). Behavior-factory params (`move-chance`,
- * `immediate`, `route`, `loop`, `wait-turns`) are NOT trait fields — they
- * configure the per-entity behavior instance at engine-ready and are
- * proven by the REAL-PATH tests, not this table.
+ * always on, no `use`) — a DERIVED VIEW of SETTING_SCHEMA's shared NPC
+ * settings. Behavior-factory params (`move-chance`, `immediate`, `route`,
+ * `loop`, `wait-turns`) are NOT trait fields — they carry no route in the
+ * schema, configure the per-entity behavior instance at engine-ready, and
+ * are proven by the REAL-PATH tests, not this table.
  */
 export interface NpcFieldRoute {
   field: string;
   convert: 'boolean' | 'rooms';
 }
 
-export const NPC_FIELD_ROUTES: ReadonlyMap<string, NpcFieldRoute> = new Map<string, NpcFieldRoute>([
-  ['can-move', { field: 'canMove', convert: 'boolean' }],
-  ['announces-movement', { field: 'announcesMovement', convert: 'boolean' }],
-  ['allowed-rooms', { field: 'allowedRooms', convert: 'rooms' }],
-  ['forbidden-rooms', { field: 'forbiddenRooms', convert: 'rooms' }],
-]);
+export const NPC_FIELD_ROUTES: ReadonlyMap<string, NpcFieldRoute> = (() => {
+  const routes = new Map<string, NpcFieldRoute>();
+  for (const [key, spec] of SETTING_SCHEMA.get('guard')!) {
+    if (!spec.route || spec.route.trait !== 'npc') continue;
+    routes.set(key, { field: spec.route.field, convert: spec.value === 'rooms' ? 'rooms' : 'boolean' });
+  }
+  return routes;
+})();
 
 /** The five core behavior adjectives (stdlib's standard NPC library). */
 export const NPC_BEHAVIOR_ADJECTIVES: ReadonlySet<string> = new Set([

@@ -114,6 +114,7 @@ import { resolveChain } from './chain-map.js';
 import { LoadError } from './errors.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
+import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
 import { ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
@@ -223,6 +224,8 @@ export class ChordStory implements Story {
       (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
     );
     if (!target) {
+      // ADR-276 census 6: the compiler's gate refuses this
+      // (analysis.setting-names-no-entity) — defensive backstop.
       throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span as never);
     }
     return { irRefId: target.id, ownerName: owner.name, span, apply };
@@ -485,6 +488,8 @@ export class ChordStory implements Story {
       // to one command transformer in onEngineReady.
       for (const deadly of irEntity.deadlyExits) {
         if (deadly.condition !== null) {
+          // The compiler's gate refuses this
+          // (analysis.deadly-while-unsupported) — defensive backstop.
           throw new LoadError(
             '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
             deadly.span,
@@ -669,6 +674,9 @@ export class ChordStory implements Story {
       const worn = world.getEntity(wornId);
       const wearable = worn?.get(TraitType.WEARABLE) as WearableTrait | undefined;
       if (!wearable) {
+        // ADR-276 census 12: the compiler's gate refuses this
+        // (analysis.worn-not-wearable) — this is the loader's defensive
+        // backstop against rogue IR.
         throw new LoadError(`\`${wornIrId}\` is worn by the player but is not wearable.`, irPlayer?.span);
       }
       wearable.worn = true;
@@ -1119,6 +1127,8 @@ export class ChordStory implements Story {
       } else {
         const derived = `if.action.${ext.action}`;
         if (!STDLIB_ACTION_IDS.has(derived)) {
+          // ADR-276 census 1: the compiler's gate refuses this
+          // (analysis.extend-target) — defensive backstop.
           throw new LoadError(
             `\`extend action ${ext.action}\` — no story action or standard action has that name${suggestGerund(ext.action, storyActionNames)}.`,
           );
@@ -1137,6 +1147,8 @@ export class ChordStory implements Story {
     for (const removal of this.ir.grammarRemovals ?? []) {
       const derived = `if.action.${removal.action}`;
       if (!STDLIB_ACTION_IDS.has(derived)) {
+        // ADR-276 census 2: the compiler's gate refuses this
+        // (analysis.removal-target) — defensive backstop.
         throw new LoadError(
           `\`remove from action ${removal.action}\` — no standard action has that name${suggestGerund(removal.action, new Set())}.`,
         );
@@ -1145,6 +1157,9 @@ export class ChordStory implements Story {
         const text = pattern.parts.map((part) => renderPatternPart(part, [])).join(' ');
         const removed = grammar.removeRules(derived, text);
         if (removed === 0) {
+          // ADR-276 census 3: the compiler's gate refuses this
+          // (analysis.unmatched-removal-pattern, from the manifest's
+          // grammar-shape slice) — defensive backstop.
           const actual = grammar
             .getRules()
             .filter((rule) => rule.action === derived && rule.tier === 'standard')
@@ -1343,6 +1358,8 @@ export class ChordStory implements Story {
 
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
     if (irEntity.kinds.length > 1) {
+      // ADR-276 census 18: the compiler's gate refuses this
+      // (analysis.multiple-kind-nouns) — defensive backstop.
       throw new LoadError(`\`${irEntity.name}\` declares more than one kind noun.`, irEntity.span);
     }
     const kind = irEntity.kinds[0]?.name ?? null;
@@ -1451,6 +1468,8 @@ export class ChordStory implements Story {
         break;
       }
       default:
+        // ADR-276 census 17: the compiler's gate refuses this
+        // (analysis.unknown-kind-noun) — defensive backstop.
         throw new LoadError(`\`${irEntity.name}\`: unknown kind noun \`${kind}\`.`, irEntity.span);
     }
 
@@ -1551,6 +1570,12 @@ export class ChordStory implements Story {
           surfaces++;
         }
 
+        // ADR-276 census 13: the compiler's gate refuses the pure-Chord
+        // cases (analysis.gerund-implementation) — zero Chord surfaces in a
+        // hatch-free story, or 2+ Chord surfaces anywhere. This check stays
+        // AUTHORITATIVE (not just a backstop) for the ADR-090 capability
+        // surface, which is registered by TS/hatch code the compiler cannot
+        // see (ADR-276 D5 residue boundary).
         if (surfaces === 0) {
           throw new LoadError(
             `\`${irEntity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
@@ -1581,6 +1606,8 @@ export class ChordStory implements Story {
           entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
           continue;
         }
+        // ADR-276 census 14: the compiler's gate refuses this
+        // (analysis.conditional-composition-unsupported) — defensive backstop.
         throw new LoadError(
           `Conditional composition isn't supported for \`${trait.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
           trait.span,
@@ -1697,10 +1724,13 @@ export class ChordStory implements Story {
         }
         case 'hiding-spot': {
           // Ratchet G3 (2026-07-17): bare = the actor may hide at any
-          // position; `with position <word>` narrows to exactly one.
-          const HIDING_POSITIONS = ['behind', 'under', 'on', 'inside'] as const;
+          // position; `with position <word>` narrows to exactly one. The
+          // domain is setting-schema's HIDING_POSITIONS (one source with
+          // the manifest generator, ADR-276 census 10).
           const position = configValue(trait, 'position');
           if (position !== undefined && !(HIDING_POSITIONS as readonly string[]).includes(position)) {
+            // ADR-276 census 10: the compiler's gate refuses this
+            // (analysis.unknown-hiding-position) — defensive backstop.
             throw new LoadError(
               `\`${position}\` is not a hiding position — use behind, under, on, or inside.`,
               trait.span,
@@ -1737,8 +1767,9 @@ export class ChordStory implements Story {
         case 'combatant':
         case 'weapon': {
           // ADR-215 combat vocabulary — `use combat` extension adjectives.
-          // The analyzer gated use-declaration and field names/types; this
-          // check is the rogue-IR backstop.
+          // The analyzer gated use-declaration and field names/types
+          // (ADR-276 census 7: pre-gated, analysis.extension-not-used);
+          // this check is the rogue-IR backstop.
           if (!(this.ir.uses ?? []).includes('combat')) {
             throw new LoadError(
               `\`${trait.name}\` is \`combat\` extension vocabulary — add \`use combat\` to the story header.`,
@@ -1755,6 +1786,8 @@ export class ChordStory implements Story {
         }
         case 'dark': {
           if (kind !== 'room') {
+            // ADR-276 census 11: the compiler's gate refuses this
+            // (analysis.dark-rooms-only) — defensive backstop.
             throw new LoadError(`\`dark\` applies to rooms only.`, trait.span);
           }
           break; // unconditional dark handled by the room builder
@@ -1768,6 +1801,8 @@ export class ChordStory implements Story {
             entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
             break;
           }
+          // ADR-276 census 15: the compiler's gate refuses this
+          // (analysis.trait-not-declared) — defensive backstop.
           throw new LoadError(
             `Trait \`${trait.name}\` is not declared (\`define trait ${trait.name}\`) and is not a v1 adjective.`,
             trait.span,
@@ -1805,6 +1840,8 @@ export class ChordStory implements Story {
       if (!route) continue; // behavior-factory params — consumed at engine-ready
       if (route.convert === 'boolean') {
         if (setting.value !== 'true' && setting.value !== 'false') {
+          // ADR-276 census 4: the compiler's gate refuses this
+          // (analysis.setting-not-boolean) — defensive backstop.
           throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
         }
         data[route.field] = setting.value === 'true';
@@ -1859,6 +1896,8 @@ export class ChordStory implements Story {
       case 'patrol': {
         const routeSetting = pending.config.find((s) => s.key === 'route');
         if (!routeSetting || (routeSetting.values ?? []).length === 0) {
+          // ADR-276 census 9: the compiler's gate refuses this
+          // (analysis.patrol-needs-route) — defensive backstop.
           throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span as never);
         }
         const route = (routeSetting.values ?? []).map((irId) => {
@@ -1874,6 +1913,10 @@ export class ChordStory implements Story {
         break;
       }
       default:
+        // ADR-276 census 8: pre-gated — only the closed applyTraitAdjectives
+        // switch routes here (guard/passive/wanderer/follower/patrol), and
+        // the analyzer's extension manifests gate the vocabulary. Defensive
+        // backstop for rogue IR.
         throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span as never);
     }
     behavior.id = `chord.npc.${pending.irId}`;
@@ -1992,11 +2035,16 @@ export class ChordStory implements Story {
       if (route.convert === 'number') {
         const parsed = Number(setting.value);
         if (Number.isNaN(parsed)) {
+          // ADR-276 census 5: the compiler's valueKind gate refuses this
+          // (analysis.extension-config-value — pre-gated, discovered in
+          // Phase 5) — defensive backstop.
           throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` needs a number, got \`${setting.value}\`.`, trait.span);
         }
         values[route.trait][route.field] = parsed;
       } else {
         if (setting.value !== 'true' && setting.value !== 'false') {
+          // ADR-276 census 4: the compiler's gate refuses this
+          // (analysis.setting-not-boolean) — defensive backstop.
           throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
         }
         values[route.trait][route.field] = setting.value === 'true';
@@ -2038,6 +2086,8 @@ export class ChordStory implements Story {
           (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
         );
         if (!target) {
+          // ADR-276 census 6: the compiler's gate refuses this
+          // (analysis.setting-names-no-entity) — defensive backstop.
           throw new LoadError(`\`${setting.value}\` (config \`${setting.key}\`) names no entity.`, comp.span);
         }
         values[setting.key] = target.id;
@@ -2360,6 +2410,11 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
 /** Chord direction word → world-model DirectionType. */
 function toDirection(word: string, at?: IREntity): DirectionType {
   const dir = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+  // ADR-276 census 16: pre-gated by the PARSER — chord's closed exit
+  // DIRECTIONS set (parser.ts) is a strict subset of the Direction enum, so
+  // gate-clean IR cannot carry an unknown word here. Defensive backstop
+  // (also guards parser/enum drift — pinned by the story-loader
+  // direction-conformance test).
   if (!dir) throw new LoadError(`Unknown direction \`${word}\`.`, at?.span);
   return dir;
 }

@@ -247,7 +247,9 @@ create the player
     expect(signs.has(TraitType.SCENERY)).toBe(true);
   });
 
-  it('rejects a worn item that is not wearable', () => {
+  it('backstop: rejects rogue IR wearing a non-wearable (ADR-276 census 12 — the compiler gates this as analysis.worn-not-wearable)', () => {
+    // Gate-clean source (the anvil IS wearable), then strip the trait from
+    // the IR directly — the loader's defensive backstop must still throw.
     const ir = compileSource(`story "Coverage" by "Nobody"
   id: coverage-2
   version: 0.0.1
@@ -258,6 +260,7 @@ create the Pantry
   A pantry.
 
 create the anvil
+  wearable
   in the Pantry
 
   Heavy.
@@ -268,12 +271,14 @@ create the player
 
   You.
 `);
-    const story = createStory(ir);
+    const rogue = structuredClone(ir);
+    rogue.entities.find((e) => e.id === 'anvil')!.traits = [];
+    const story = createStory(rogue);
     const world = new WorldModel();
     story.initializeWorld(world);
     expect(() => story.createPlayer(world)).toThrow(LoadError);
     expect(() => {
-      const s = createStory(ir);
+      const s = createStory(rogue);
       const w = new WorldModel();
       s.initializeWorld(w);
       s.createPlayer(w);

@@ -153,14 +153,25 @@ describe('G3: hiding-spot adjective', () => {
     expect(concealment.positions).toEqual(['behind']);
   });
 
-  it('rejects a word that is not a hiding position at load time', () => {
-    const source = storyWith(`create the curtain
+  it('backstop: rejects rogue IR with a non-position word (the compiler gates this as analysis.unknown-hiding-position, ADR-276)', () => {
+    // Gate-clean source, then swap the position in the IR — the loader's
+    // defensive backstop must still throw.
+    const ir = compileSource(storyWith(`create the curtain
   in the Shed
-  hiding-spot with position sideways
+  hiding-spot with position behind
 
-  A curtain.`);
-    expect(() => loadStory(source)).toThrowError(LoadError);
-    expect(() => loadStory(source)).toThrowError(/not a hiding position/);
+  A curtain.`));
+    const rogue = structuredClone(ir);
+    const spot = rogue.entities.find((e) => e.id === 'curtain')!.traits.find((t) => t.name === 'hiding-spot')!;
+    spot.config.find((c) => c.key === 'position')!.value = 'sideways';
+    const load = () => {
+      const story = createStory(rogue, { seed: 11 });
+      const world = new WorldModel();
+      story.initializeWorld(world);
+      story.createPlayer(world);
+    };
+    expect(load).toThrowError(LoadError);
+    expect(load).toThrowError(/not a hiding position/);
   });
 });
 

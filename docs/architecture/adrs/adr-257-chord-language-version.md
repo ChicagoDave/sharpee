@@ -63,6 +63,13 @@ Compiler bug fixes, IR-shape refactors, and platform releases do **not** bump it
 > `chord/src/version.ts`; ordinary D2 rules resume from 2.0.0. A one-time override, not an
 > amendment.
 
+> **Recorded exception (2026-07-27, session 834109).** Chord ships **2.1.0** alongside Sharpee
+> 4.1.0 with the grammar surface (`chord.ebnf`) unchanged — not a D2 grammar minor. The owner
+> ruled the ADR-276 source-authoritative diagnostics arc (every source-derivable error is now a
+> collected compile diagnostic with a span, surfaced identically by `compose`, `compose --json`,
+> and the browser boot compile) an author-visible language revision worth a minor. Third
+> departure from D2's letter; a one-time override, not an amendment.
+
 ### D3 — "Breaking change" quantified: two independent axes; the loader gates only on the wire
 
 A "breaking change" in Chord is **two distinct events on independent axes**, and

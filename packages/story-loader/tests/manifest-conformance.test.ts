@@ -80,6 +80,26 @@ describe('manifest ↔ registry conformance (ADR-215 AC-2)', () => {
     expect(chordFlags).toEqual(platformFlags);
   });
 
+  it('every parser exit-direction word maps into the world-model Direction enum (ADR-276 census 16 pin)', async () => {
+    // The golden list mirrors chord/src/parser.ts DIRECTIONS (parser-internal
+    // by design — chord depends on no platform package, so the pin lives
+    // here, where both sides are visible). If the parser grows a direction
+    // the enum lacks, the loader's toDirection backstop would become
+    // author-reachable again — this test turns that into a failure first.
+    const PARSER_DIRECTIONS = [
+      'north', 'south', 'east', 'west',
+      'northeast', 'northwest', 'southeast', 'southwest',
+      'up', 'down',
+    ];
+    const { Direction } = await import('@sharpee/world-model');
+    for (const word of PARSER_DIRECTIONS) {
+      expect(
+        (Direction as unknown as Record<string, string>)[word.toUpperCase()],
+        `Direction.${word.toUpperCase()}`,
+      ).toBeDefined();
+    }
+  });
+
   it('every NPC route lands on a real, constructor-persisted NpcTrait field', () => {
     const probe: Record<string, unknown> = {};
     for (const route of NPC_FIELD_ROUTES.values()) {
