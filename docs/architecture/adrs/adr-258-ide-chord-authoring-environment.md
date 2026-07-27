@@ -4,6 +4,18 @@
 
 **Re-assessed 2026-07-27 (session 332f30), post-2.0.0**: architecture intact; D7 strengthened (the grammar arc never touched the lexer). One blocker surfaced — ADR-270 landed author-reachable alteration errors (`extend action`/`remove from action` target names, unmatched shapes) as load-time `LoadError`s, so D5's "compile is authoritative for diagnostics" no longer covered them. **ADR-276** (Chord compile authoritative for every source-derivable error; stdlib manifest) restores that premise. **ADR-276 ACCEPTED and the amendment applied same day** — see the Amended markers at D2 (grammar-file kind), D5 (authority re-grounding + hatch-record wire type + residue), and D7 (lexer freshness, 2.0.0 golden corpus). Implementation planning is unblocked; implementation of the Problems surface sequences **after** ADR-276's one-arc census migration (its Q-1 ruling).
 
+**Amended 2026-07-27 (session 834109): the D5 sequencing gate is OPEN.** ADR-276 is
+**IMPLEMENTED** (same day, branch `adr-276-p1`, Phases 1–8 — see its Implementation
+addendum): the full census is analyzer-gated with loader backstops (50 sites
+re-audited, no third category), the D5 residue is exactly as this ADR's D5 amendment
+records it (hatch provision/export-shape, language-provider capability,
+profile/IR-format — Build output, not Problems), and its D4 landed the one
+diagnostics collection (`runComposeGates`/`ComposeDiagnostic` in devkit `compose.ts`)
+that D5's `--json` serializes. This closes ADR-276 Acceptance item 9.
+Platform-side implementation proceeds per `docs/work/adr-258-ide-platform/plan.md`
+(`compose --json` + `ide-protocol` wire contract; D7 golden lexer fixture); the
+Swift/Mac half remains pending on the Mac.
+
 ## Date: 2026-07-23
 
 ## Parent: ADR-185 (the IDE is a standalone authoring tool). Supersedes ADR-182 (IDE syntax highlighting via tree-sitter **TypeScript**). Supersedes ADR-184's *mechanism* — the project tree is now IR-sourced, not introspected from the runtime world — while keeping its deliverable. Downstream of ADR-210 (Chord), ADR-252 (`.story` first-class browser build), ADR-253 (channel `return` + layout escape hatch), ADR-257 (Chord language version). **Depends on ADR-259** (the Chord browser build supports hatch modules): D4's build/play surface covers *every* `.story` only once a hatched story can be built, so no hatch carve-out appears in D3's swap table. **Amended 2026-07-27 (session 332f30): also depends on ADR-276** (Chord compile authoritative for every source-derivable error) — D5's authority premise and the census migration the Problems panel relies on. ADR-259 has since been IMPLEMENTED (2026-07-24, merged).
