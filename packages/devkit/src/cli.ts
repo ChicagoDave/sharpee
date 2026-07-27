@@ -173,9 +173,15 @@ async function main(argv: string[]): Promise<number> {
   }
 }
 
+// Set exitCode rather than calling process.exit(): exit() tears the process
+// down before async stdout writes flush, truncating any piped payload past the
+// 64KB pipe buffer — which silently corrupts `compose --json` for real stories
+// (ADR-258 D5's transport). exitCode lets node drain stdout and exit naturally.
 main(process.argv.slice(2))
-  .then((code) => process.exit(code))
+  .then((code) => {
+    process.exitCode = code;
+  })
   .catch((err) => {
     console.error('sharpee: ' + (err instanceof Error ? err.message : String(err)));
-    process.exit(2);
+    process.exitCode = 2;
   });
