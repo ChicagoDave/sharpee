@@ -19,11 +19,12 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 2.0.0 — owner consolidation ruling (2026-07-26, src/version.ts): the
-  // ADR-266 grammar-parity landings (interim 2.0.0–2.5.0 minors + the 3.0.0
-  // define-verb major) ship publicly as ONE major over Chord 1.x. The EBNF
-  // hash is unchanged — the grammar surface is exactly the consolidated one.
-  languageVersion: '2.0.0',
+  // 2.1.0 — owner ruling (2026-07-27, src/version.ts): ships alongside
+  // Sharpee 4.1.0, naming the ADR-276 source-authoritative diagnostics arc.
+  // The EBNF hash is unchanged — the grammar surface did not move.
+  // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
+  //  ship publicly as ONE major over Chord 1.x.)
+  languageVersion: '2.1.0',
   ebnfSha256: '8ef9ae470e1ab133a0460927d1f29105efd961e5b138212926151dadf2b17a04',
 };
 

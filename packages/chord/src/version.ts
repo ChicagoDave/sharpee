@@ -86,5 +86,16 @@
  * gone). The entries above stay as the true landing history; the numbers
  * they carried were internal. Ordinary D2 rules resume from 2.0.0 —
  * cross-noted at ADR-257 D2.
+ *
+ * **2.1.0 (owner ruling, 2026-07-27, session 834109)** — ships alongside
+ * Sharpee 4.1.0. The grammar surface (`chord.ebnf`) is unchanged — the pin
+ * hash stands — so this is not a D2 grammar minor; the author-visible
+ * language-experience change it names is the ADR-276 source-authoritative
+ * diagnostics arc: every source-derivable error is now a collected compile
+ * diagnostic with a span (16-entry census migrated; loader sites are
+ * backstops), surfaced identically by `compose`, `compose --json`
+ * (ADR-258 D5), and the browser boot compile. Third recorded departure
+ * from D2's letter (after 1.1.0 and the 2.0.0 consolidation) —
+ * cross-noted at ADR-257 D2.
  */
-export const CHORD_LANGUAGE_VERSION = '2.0.0';
+export const CHORD_LANGUAGE_VERSION = '2.1.0';
