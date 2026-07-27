@@ -31,3 +31,11 @@ export {
 // Chord Story IR schema (ADR-210 Interface Contract 1) — source of truth
 // is @sharpee/chord; published here beside the manifest types.
 export * from './story-ir.js';
+
+// `compose --json` wire contract (ADR-258 D5): the versioned gates+IR payload.
+export type { ComposeDiagnosticRecord, ComposeJsonPayload } from './compose-diagnostics.js';
+export {
+  COMPOSE_JSON_SCHEMA_VERSION,
+  isComposeDiagnosticRecord,
+  isComposeJsonPayload,
+} from './compose-diagnostics.js';

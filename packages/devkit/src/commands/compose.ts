@@ -9,9 +9,10 @@
  * Status/diagnostics go to stderr so stdout carries only the IR.
  *
  * Compile diagnostics and hatch-lint findings join ONE in-memory diagnostics
- * collection (ADR-276 D4) — the stream a future `--json` mode (ADR-258 D5)
- * serializes. D4 defines the record shape, not a new transport: the text
- * output below is unchanged in behavior.
+ * collection (ADR-276 D4). `--json` (ADR-258 D5) serializes it: gates + IR,
+ * NO load-proof — the payload (`ComposeJsonPayload`, wire-typed in
+ * @sharpee/ide-protocol) goes to stdout; `--json --check` omits the IR.
+ * Text modes are unchanged in behavior.
  *
  * Public interface: runCompose(rest) → process exit code;
  * runComposeGates(file) → ComposeGatesResult (the unified diagnostics stream).
@@ -19,33 +20,25 @@
  */
 import * as path from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import type { CompileResult, Span, DiagnosticSeverity } from '@sharpee/chord';
+import type { CompileResult } from '@sharpee/chord';
+// Type-only (DEVARCH 8b: one declaration, in ide-protocol) — the VALUE import
+// of the schema constant is lazy-required in the --json branch so the CLI's
+// startup keeps the lazy-compiler pattern (ide-protocol's barrel pulls chord).
+import type { ComposeDiagnosticRecord, ComposeJsonPayload } from '@sharpee/ide-protocol';
 import { lintHatchSources, type HatchLintFinding } from '../hatch-lint.js';
 // Shared hatch-module resolution + fs import-resolver policy (one
 // implementation — also used by the author-game loader behind
 // `sharpee test`/`play`).
 import { requireHatchModule, makeFsImportResolver } from '../standalone/author-game.js';
 
-const USAGE = 'usage: sharpee compose <file.story> [--check] [-o <ir.json>]';
+const USAGE = 'usage: sharpee compose <file.story> [--check] [--json] [-o <ir.json>]';
 
 /**
- * One record in compose's unified diagnostics stream (ADR-276 D4): compile
- * diagnostics and hatch-lint findings, same `{severity, code, message}`
- * shape with a file+line site. `span` is present exactly for compile
- * diagnostics — hatch findings have no end-span (D4).
+ * One record in compose's unified diagnostics stream (ADR-276 D4). The shape
+ * is declared ONCE, in @sharpee/ide-protocol (ADR-258 D5 wire contract);
+ * this alias keeps the Phase 7 export name.
  */
-export interface ComposeDiagnostic {
-  severity: DiagnosticSeverity;
-  /** Stable machine code — `parse.*`/`analysis.*`, or `hatch.*` for lint findings. */
-  code: string;
-  message: string;
-  /** Site file: the `.story` file for compile diagnostics, the hatch module for hatch findings. */
-  file: string;
-  /** 1-based line of the site. */
-  line: number;
-  /** Full source span — compile diagnostics only (hatch findings carry none). */
-  span?: Span;
-}
+export type ComposeDiagnostic = ComposeDiagnosticRecord;
 
 /** Result of running compose's gates: compile + hatch lint, one diagnostics stream. */
 export interface ComposeGatesResult {
@@ -121,17 +114,21 @@ function formatDiagnostic(r: ComposeDiagnostic): string {
  * Run `sharpee compose`.
  *
  * @param rest CLI args after the subcommand: `<file.story>` plus optional
- *   `--check` (gates only, no IR emit/load) and `-o|--out <file>`.
+ *   `--check` (gates only, no IR emit/load), `--json` (ADR-258 D5: gates + IR
+ *   payload on stdout, NO load-proof; with `--check`, gates only — no IR), and
+ *   `-o|--out <file>` (default text mode only).
  * @returns process exit code — 0 gate-clean, 1 gate errors, 2 usage error.
  */
 export async function runCompose(rest: string[]): Promise<number> {
   let check = false;
+  let json = false;
   let out: string | undefined;
   let file: string | undefined;
 
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
     if (arg === '--check') check = true;
+    else if (arg === '--json') json = true;
     else if (arg === '-o' || arg === '--out') out = rest[++i];
     else if (!arg.startsWith('-') && !file) file = arg;
     else {
@@ -151,6 +148,23 @@ export async function runCompose(rest: string[]): Promise<number> {
 
   const gates = runComposeGates(file);
   const result = gates.compile;
+
+  if (json) {
+    // ADR-258 D5: gates + IR, no load-proof — hatch modules are never
+    // resolved on this path (the IDE's editor loop must not require the
+    // author's toolchain). The payload is the whole stdout; nothing else
+    // is printed. `--json --check` omits the `ir` key entirely; a failed
+    // compile never carries an IR (atomic load, ADR-210).
+    const { COMPOSE_JSON_SCHEMA_VERSION } =
+      require('@sharpee/ide-protocol') as typeof import('@sharpee/ide-protocol');
+    const payload: ComposeJsonPayload = {
+      schemaVersion: COMPOSE_JSON_SCHEMA_VERSION,
+      diagnostics: gates.diagnostics,
+      ...(!check && result.ok ? { ir: result.ir } : {}),
+    };
+    process.stdout.write(JSON.stringify(payload) + '\n');
+    return gates.ok ? 0 : 1;
+  }
 
   for (const r of gates.diagnostics) {
     if (r.span) console.error(formatDiagnostic(r));
@@ -197,12 +211,12 @@ export async function runCompose(rest: string[]): Promise<number> {
       `${result.ir.hatches.length} hatch(es)`
   );
 
-  const json = JSON.stringify(result.ir, null, 2) + '\n';
+  const irJson = JSON.stringify(result.ir, null, 2) + '\n';
   if (out) {
-    writeFileSync(out, json);
+    writeFileSync(out, irJson);
     console.error(`compose: IR written to ${out}`);
   } else {
-    process.stdout.write(json);
+    process.stdout.write(irJson);
   }
   return 0;
 }

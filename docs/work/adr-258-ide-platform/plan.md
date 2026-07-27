@@ -272,7 +272,7 @@ plan's output:
     friendly-zoo, nautical, acceptance stories — green (compose is outside
     the bundle's runtime path, but a corpus sweep is the standing regression
     gate per the ADR-276 plan's precedent).
-- **Status**: CURRENT
+- **Status**: DONE
 
 ### Phase 3: D7 — golden lexer fixture (TS-side conformance pin)
 - **Tier**: Medium
@@ -339,7 +339,7 @@ plan's output:
   - Full `@sharpee/chord` suite (`pnpm --filter '@sharpee/chord' test`)
     green — this phase adds tests, it does not touch existing lexer/parser/
     analyzer behavior.
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ## Session state seed
 

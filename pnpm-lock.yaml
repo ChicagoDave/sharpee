@@ -277,6 +277,9 @@ importers:
       '@sharpee/engine':
         specifier: workspace:*
         version: link:../engine
+      '@sharpee/ide-protocol':
+        specifier: workspace:*
+        version: link:../ide-protocol
       '@sharpee/story-loader':
         specifier: workspace:*
         version: link:../story-loader
