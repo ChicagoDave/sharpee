@@ -22,4 +22,17 @@ if [ ! -f "$CLI" ]; then
   exit 1
 fi
 
+# Staleness gate (2026-07-27 incident): a repokit dist compiled before its
+# source ran builds WITHOUT later fixes — e3ff8fb9's --external:esbuild never
+# took effect and every bundle hung on cold hatch transpile. If any engine
+# source is newer than the last engine build, rebuild inline (a no-op compile
+# costs ~2s) and stamp the anchor — incremental tsc emits nothing on unchanged
+# content, so the stamp (not dist mtimes) is what marks "built from this src".
+BUILDINFO="$ROOT/tools/repokit/tsconfig.tsbuildinfo"
+if [ ! -f "$BUILDINFO" ] || [ -n "$(find "$ROOT/tools/repokit/src" -name '*.ts' -newer "$BUILDINFO" -print -quit)" ]; then
+  echo "repokit: engine source is newer than its last build — rebuilding the engine first." >&2
+  (cd "$ROOT" && pnpm --filter @sharpee/repokit build >&2)
+  touch "$BUILDINFO"
+fi
+
 exec node "$CLI" "$@"
