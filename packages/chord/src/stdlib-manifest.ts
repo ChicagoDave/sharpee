@@ -27,6 +27,13 @@ export interface StdlibLocaleFacts {
 export interface StdlibManifest {
   /** Full stdlib action-id set (`if.action.*`), from stdlib actions/constants.ts. */
   actionIds: ReadonlySet<string>;
+  /**
+   * Platform trait setting value types (trait adjective → key → type) —
+   * the Q-3 declarative table from story-loader's setting-schema.ts.
+   * Keyless v1 entity refs (`lockable with the iron key`) appear under
+   * their message label (`key`/`tool`). Locale-neutral: platform facts.
+   */
+  settingSchema: Readonly<Record<string, Readonly<Record<string, 'boolean' | 'number' | 'entity-ref' | 'rooms'>>>>;
   /** Locale-owned facts, keyed by locale id (ADR-276 Q-2). */
   locales: Readonly<Record<string, StdlibLocaleFacts>>;
 }
@@ -104,6 +111,19 @@ export const STDLIB_MANIFEST: StdlibManifest = {
     "if.action.waving",
     "if.action.wearing",
   ]),
+  settingSchema: {
+    "combatant": { "health": "number", "max-health": "number", "skill": "number", "base-damage": "number", "armor": "number", "attack-power": "number", "defense": "number", "experience-value": "number", "hostile": "boolean", "can-retaliate": "boolean", "drops-inventory": "boolean", "is-undead": "boolean" },
+    "weapon": { "damage": "number", "skill-bonus": "number", "is-blessed": "boolean", "glows-near-danger": "boolean" },
+    "guard": { "can-move": "boolean", "announces-movement": "boolean", "allowed-rooms": "rooms", "forbidden-rooms": "rooms" },
+    "passive": { "can-move": "boolean", "announces-movement": "boolean", "allowed-rooms": "rooms", "forbidden-rooms": "rooms" },
+    "wanderer": { "can-move": "boolean", "announces-movement": "boolean", "allowed-rooms": "rooms", "forbidden-rooms": "rooms", "move-chance": "number" },
+    "follower": { "can-move": "boolean", "announces-movement": "boolean", "allowed-rooms": "rooms", "forbidden-rooms": "rooms", "immediate": "boolean" },
+    "patrol": { "can-move": "boolean", "announces-movement": "boolean", "allowed-rooms": "rooms", "forbidden-rooms": "rooms", "route": "rooms", "loop": "boolean", "wait-turns": "number" },
+    "openable": { "tool": "entity-ref" },
+    "lockable": { "key": "entity-ref" },
+    "cuttable": { "tool": "entity-ref" },
+    "diggable": { "tool": "entity-ref" },
+  },
   locales: {
     'en-US': {
       grammarShapes: {

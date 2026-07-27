@@ -135,6 +135,47 @@ create the keeper
     expect(() => captureGrammarRules(story)).toThrowError(/`remove from action snarf` — no standard action/);
   });
 
+  it('census 4: a non-boolean word on a boolean setting still throws', () => {
+    const ir = compileClean(
+      BASE +
+        `
+create the keeper
+  a person, patrol with route [the Vault] and can-move false
+  in the Vault
+
+  A keeper.
+`,
+    );
+    const rogue = structuredClone(ir);
+    const patrol = rogue.entities.find((e) => e.id === 'keeper')!.traits.find((t) => t.name === 'patrol')!;
+    patrol.config.find((c) => c.key === 'can-move')!.value = 'maybe';
+    expect(load(rogue)).toThrowError(LoadError);
+    expect(load(rogue)).toThrowError(/`can-move` takes `true` or `false`, got `maybe`/);
+  });
+
+  it('census 6: an entity-ref config naming nothing still throws', () => {
+    const ir = compileClean(
+      BASE +
+        `
+create the chest
+  lockable with the iron key
+  in the Vault
+
+  A chest.
+
+create the iron key
+  in the Vault
+
+  A key.
+`,
+    );
+    const rogue = structuredClone(ir);
+    const lockable = rogue.entities.find((e) => e.id === 'chest')!.traits.find((t) => t.name === 'lockable')!;
+    lockable.config.find((c) => c.key === '')!.value = 'ghost key';
+    expect(load(rogue)).toThrowError(LoadError);
+    expect(load(rogue)).toThrowError(/`ghost key` \(config `key`\) names no entity/);
+  });
+
   it('census 17: an unknown kind noun still throws', () => {
     const rogue = structuredClone(compileClean(BASE));
     rogue.entities.find((e) => e.id === 'crate')!.kinds[0].name = 'thing';

@@ -820,6 +820,55 @@ class Analyzer {
             comp.span,
           );
         }
+
+        // Census 4/6 (ADR-276 Phase 5): setting value domains from the
+        // manifest's schema slice. Extension traits run only when admitted —
+        // buildEntity's extension gates own the `use`-missing case. The
+        // number domain needs no check here: valueKind mismatch is already
+        // `analysis.extension-config-value` (census 5 was pre-gated).
+        const schema = STDLIB_MANIFEST.settingSchema[comp.name];
+        if (schema) {
+          const contributed = manifestForAdjective(comp.name);
+          const admitted =
+            !contributed || contributed.manifest.core || this.usedExtensions.has(contributed.manifest.name);
+          if (admitted) {
+            for (const cfg of comp.config) {
+              // Keyless v1 entity ref (`lockable with the iron key`): the
+              // parser stores it under the empty key; the schema's one
+              // entity-ref entry supplies the message label.
+              const label =
+                cfg.key !== '' ? cfg.key : Object.keys(schema).find((k) => schema[k] === 'entity-ref') ?? cfg.key;
+              const type = schema[label];
+              if (type === 'boolean' && cfg.value !== 'true' && cfg.value !== 'false') {
+                this.diagnostics.error(
+                  'analysis.setting-not-boolean',
+                  `\`${entity.name}\`: \`${label}\` takes \`true\` or \`false\`, got \`${cfg.value}\`.`,
+                  comp.span,
+                );
+              } else if (type === 'entity-ref' && cfg.valueKind === 'name' && !this.resolveConfigEntity(ir, cfg.value)) {
+                this.diagnostics.error(
+                  'analysis.setting-names-no-entity',
+                  `\`${cfg.value}\` (config \`${label}\`) names no entity.`,
+                  comp.span,
+                );
+              }
+            }
+          }
+        } else if (traitDefs.has(comp.name)) {
+          // Census 6 (declared traits, IR-internal): a `with <key> <name>`
+          // value resolves against the story's entities — mirroring the
+          // loader's duck-typing on valueKind exactly (the declared field
+          // type is not consulted; behavior parity over strictness).
+          for (const cfg of comp.config) {
+            if (cfg.valueKind === 'name' && !this.resolveConfigEntity(ir, cfg.value)) {
+              this.diagnostics.error(
+                'analysis.setting-names-no-entity',
+                `\`${cfg.value}\` (config \`${cfg.key}\`) names no entity.`,
+                comp.span,
+              );
+            }
+          }
+        }
       }
 
       // Census 12: items the player wears must be wearable. Only the player's
@@ -877,6 +926,16 @@ class Analyzer {
         }
       }
     }
+  }
+
+  /**
+   * Resolve a trait-config entity NAME the way the loader's entityRefFor
+   * does — display-name or `aka` alias, lowercased, first match — so the
+   * census-6 compile gate is exactly as strict as the load check it fronts.
+   */
+  private resolveConfigEntity(ir: StoryIR, name: string): boolean {
+    const lower = name.toLowerCase();
+    return ir.entities.some((e) => e.name.toLowerCase() === lower || e.aka.includes(lower));
   }
 
   /**

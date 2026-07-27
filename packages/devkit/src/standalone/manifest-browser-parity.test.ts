@@ -97,6 +97,16 @@ describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pi
     expect(found!.message).toContain('`take :item`');
   });
 
+  it('Phase 5 slice: the built chord dist reports analysis.setting-not-boolean', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const chord = require(join(REPO_ROOT, 'packages/chord/dist/index.js')) as typeof import('@sharpee/chord');
+    const result = chord.compile(
+      cleanSource + '\ncreate the keeper\n  a person, patrol with route [the Hall] and can-move maybe\n\n  A keeper.\n',
+    );
+    const codes = result.diagnostics.map((d) => d.code);
+    expect(codes).toContain('analysis.setting-not-boolean');
+  });
+
   it('a clean story still builds the browser bundle end to end', async () => {
     vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
       throw new Error(`process.exit(${code})`);

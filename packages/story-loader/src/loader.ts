@@ -223,6 +223,8 @@ export class ChordStory implements Story {
       (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
     );
     if (!target) {
+      // ADR-276 census 6: the compiler's gate refuses this
+      // (analysis.setting-names-no-entity) — defensive backstop.
       throw new LoadError(`\`${name}\` (config \`${configKey}\`) names no entity.`, span as never);
     }
     return { irRefId: target.id, ownerName: owner.name, span, apply };
@@ -1831,6 +1833,8 @@ export class ChordStory implements Story {
       if (!route) continue; // behavior-factory params — consumed at engine-ready
       if (route.convert === 'boolean') {
         if (setting.value !== 'true' && setting.value !== 'false') {
+          // ADR-276 census 4: the compiler's gate refuses this
+          // (analysis.setting-not-boolean) — defensive backstop.
           throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
         }
         data[route.field] = setting.value === 'true';
@@ -2020,11 +2024,16 @@ export class ChordStory implements Story {
       if (route.convert === 'number') {
         const parsed = Number(setting.value);
         if (Number.isNaN(parsed)) {
+          // ADR-276 census 5: the compiler's valueKind gate refuses this
+          // (analysis.extension-config-value — pre-gated, discovered in
+          // Phase 5) — defensive backstop.
           throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` needs a number, got \`${setting.value}\`.`, trait.span);
         }
         values[route.trait][route.field] = parsed;
       } else {
         if (setting.value !== 'true' && setting.value !== 'false') {
+          // ADR-276 census 4: the compiler's gate refuses this
+          // (analysis.setting-not-boolean) — defensive backstop.
           throw new LoadError(`\`${irEntity.name}\`: \`${setting.key}\` takes \`true\` or \`false\`, got \`${setting.value}\`.`, trait.span);
         }
         values[route.trait][route.field] = setting.value === 'true';
@@ -2066,6 +2075,8 @@ export class ChordStory implements Story {
           (e) => e.name.toLowerCase() === lower || e.aka.includes(lower),
         );
         if (!target) {
+          // ADR-276 census 6: the compiler's gate refuses this
+          // (analysis.setting-names-no-entity) — defensive backstop.
           throw new LoadError(`\`${setting.value}\` (config \`${setting.key}\`) names no entity.`, comp.span);
         }
         values[setting.key] = target.id;
