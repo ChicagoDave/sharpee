@@ -55,6 +55,14 @@ final class ProjectTreeViewController: NSViewController {
 
         view = pane
         updateEmptyState()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(fontPreferenceChanged),
+                                               name: FontPreference.didChangeNotification,
+                                               object: nil)
+    }
+
+    @objc private func fontPreferenceChanged() {
+        outlineView.reloadData()
     }
 
     /// Replace the tree with a new project's contents. Pass nil to clear.
@@ -220,9 +228,12 @@ extension ProjectTreeViewController: NSOutlineViewDelegate {
 
         cell.textField?.stringValue = node.name
         cell.textField?.textColor = node.isDirectory ? Theme.foreground : Theme.foregroundDim
+        // Directory pane follows the reader font (David's ruling); folders keep
+        // a heavier weight of the same family via the bold trait when available.
+        let base = FontPreference.panelFont
         cell.textField?.font = node.isDirectory
-            ? NSFont.systemFont(ofSize: 12, weight: .medium)
-            : NSFont.systemFont(ofSize: 12, weight: .regular)
+            ? NSFontManager.shared.convert(base, toHaveTrait: .boldFontMask)
+            : base
         cell.imageView?.image = NSWorkspace.shared.icon(forFile: node.url.path)
         return cell
     }

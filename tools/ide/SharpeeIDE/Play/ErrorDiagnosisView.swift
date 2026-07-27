@@ -14,6 +14,8 @@ final class ErrorDiagnosisView: NSView {
 
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
+    /// Retained so a font-preference change re-renders the same content.
+    private var lastError: PlayConsoleError?
     private let emptyLabel = NSTextField(labelWithString: "Select a game error to see its explanation")
 
     /// Clickable locations, indexed by the `sharpee-diag:<index>` link URLs.
@@ -66,6 +68,10 @@ final class ErrorDiagnosisView: NSView {
             emptyLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
         clear()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(fontPreferenceChanged),
+                                               name: FontPreference.didChangeNotification,
+                                               object: nil)
     }
 
     required init?(coder: NSCoder) {
@@ -78,7 +84,12 @@ final class ErrorDiagnosisView: NSView {
         layer?.backgroundColor = Theme.playBackground.cgColor
     }
 
+    @objc private func fontPreferenceChanged() {
+        if let lastError { show(lastError) }
+    }
+
     func clear() {
+        lastError = nil
         locations = []
         textView.textStorage?.setAttributedString(NSAttributedString(string: ""))
         scrollView.isHidden = true
@@ -86,6 +97,7 @@ final class ErrorDiagnosisView: NSView {
     }
 
     func show(_ error: PlayConsoleError) {
+        lastError = error
         locations = []
         let body = NSMutableAttributedString()
         let location = error.frames.compactMap(\.location).first
