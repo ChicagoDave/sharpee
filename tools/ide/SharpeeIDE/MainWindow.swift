@@ -231,7 +231,9 @@ private final class RootViewController: NSViewController {
         let bottom = NSSplitViewItem(viewController: bottomPanelViewController)
         bottom.canCollapse = true
         bottom.minimumThickness = Self.buildPanelMinHeight
-        bottom.holdingPriority = .defaultHigh
+        // Same drag-vs-hold rule as the project item: hold above the main
+        // split's content (defaultLow) but below divider-drag priority.
+        bottom.holdingPriority = NSLayoutConstraint.Priority(300)
 
         verticalSplitViewController.addSplitViewItem(top)
         verticalSplitViewController.addSplitViewItem(bottom)
@@ -662,7 +664,11 @@ private final class MainSplitViewController: NSSplitViewController {
     private func makeProjectItem() -> NSSplitViewItem {
         let item = NSSplitViewItem(viewController: projectPaneViewController)
         item.minimumThickness = Self.projectMinWidth
-        item.holdingPriority = .defaultHigh
+        // Above editor/play (250) so window resizes stretch those panes, but
+        // BELOW the divider-drag priorities (~490-510): .defaultHigh (750)
+        // out-prioritized user drags entirely — the divider bounced back and
+        // the pane behaved as fixed-width (SplitDividerTests reproduces).
+        item.holdingPriority = NSLayoutConstraint.Priority(300)
         return item
     }
 

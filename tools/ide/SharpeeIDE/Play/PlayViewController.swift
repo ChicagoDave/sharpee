@@ -88,6 +88,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
         placeholder.font = NSFont.systemFont(ofSize: 11)
         placeholder.textColor = Theme.foregroundFaint
+        placeholder.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         placeholder.translatesAutoresizingMaskIntoConstraints = false
 
         pane.addSubview(header)

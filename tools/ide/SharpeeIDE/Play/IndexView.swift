@@ -69,6 +69,13 @@ final class IndexView: NSView {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
+        // Wrapping labels must never dictate the pane's width: at the default
+        // 750 compression resistance, a long single-line stats string beats the
+        // split divider's constraints and the divider bounces back (hidden tabs
+        // still constrain, so this bit even while Play was frontmost).
+        for label in [statsLabel, staleBanner, placeholder] {
+            label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        }
 
         NSLayoutConstraint.activate([
             statsLabel.topAnchor.constraint(equalTo: topAnchor, constant: 8),
