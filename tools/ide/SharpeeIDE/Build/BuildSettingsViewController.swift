@@ -53,7 +53,7 @@ final class BuildSettingsViewController: NSViewController {
         clients.spacing = 16
         [browserCheckbox, zifmiaCheckbox].forEach { $0.contentTintColor = Theme.foreground }
 
-        // Re-evaluate the browser-entry note when the story or Browser selection changes.
+        // Re-evaluate the (now permanently hidden) note when the selection changes.
         storyPopUp.target = self
         storyPopUp.action = #selector(selectionChanged)
         browserCheckbox.target = self
@@ -151,17 +151,12 @@ final class BuildSettingsViewController: NSViewController {
         updateBrowserEntryNote()
     }
 
-    /// Shows a note when Browser is selected for a story that has no browser entry yet.
+    /// The browser-entry concept died with the TypeScript author path (ADR-258
+    /// D3 — `init-browser` and `src/browser-entry.ts` are gone); the note never
+    /// shows. This sheet is repokit-era UI with no presenter — kept compiling
+    /// pending a removal ruling.
     private func updateBrowserEntryNote() {
-        let storyIndex = storyPopUp.indexOfSelectedItem - 1
-        let story = stories.indices.contains(storyIndex) ? stories[storyIndex].name : nil
-        if browserCheckbox.state == .on, let story,
-           !BrowserEntry.exists(repoRoot: repoRoot, story: story) {
-            browserEntryNote.stringValue = "⚠︎ ‘\(story)’ has no browser entry — Build will offer to create one."
-            browserEntryNote.isHidden = false
-        } else {
-            browserEntryNote.isHidden = true
-        }
+        browserEntryNote.isHidden = true
     }
 
     /// Builds a BuildSettings from the current control state.

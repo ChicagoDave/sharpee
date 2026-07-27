@@ -166,6 +166,29 @@ final class ComposeRunnerTests: XCTestCase {
                         "the span resolves to a real character range in the source")
     }
 
+    /// D2 amendment (ADR-269 D8): a grammar-header `.story` composes like any
+    /// Chord source — the payload's IR carries the grammarFile marker (Build and
+    /// Play gate on it) and its tree content is `define action` blocks. Uses the
+    /// real platform grammar file, the only grammar-header file in the repo.
+    func testGrammarHeaderFileMarksIRAndYieldsActionTree() throws {
+        let grammar = TestToolchain.repoRoot
+            .appendingPathComponent("packages/parser-en-us/grammar/standard-en-us.story")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: grammar.path),
+                          "standard grammar file not present in this checkout")
+
+        let result = composeReal(grammar)
+        guard case .success(let payload) = result else {
+            return XCTFail("expected success, got \(String(describing: result))")
+        }
+        let ir = try XCTUnwrap(payload.ir)
+        XCTAssertNotNil(ir.grammarFile, "a grammar header must surface on the IR (D2)")
+
+        let tree = ProjectStructure.build(from: ir)
+        let actions = try XCTUnwrap(tree.first { $0.category == .action },
+                                    "a grammar file's tree is its define action blocks")
+        XCTAssertFalse(actions.children.isEmpty)
+    }
+
     // MARK: - Failure shapes (fixture scripts)
 
     func testBumpedSchemaVersionRejectsLoudly() throws {

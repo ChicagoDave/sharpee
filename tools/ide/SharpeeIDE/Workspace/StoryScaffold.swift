@@ -1,9 +1,9 @@
 // StoryScaffold.swift
-// Creates a new author story project by copying the bundled story template (the same
-// `templates/story` that @sharpee/devkit ships) into a chosen folder, substituting the
-// author's title/author/description and the platform version ranges. The IDE's "New
-// Story…" command uses this so authors can scaffold a project entirely within the IDE,
-// with no global CLI required (ADR-185).
+// Creates a new Chord story by rendering the bundled `story.story.template` (the
+// same `templates/story-chord` that @sharpee/devkit ships) into a chosen folder
+// as `<id>.story`. Deliberately writes NO package.json, no src/, no tsconfig —
+// a `.story` needs none of them (ADR-258 D2), diverging from `sharpee init`'s
+// current Chord scaffold, which still writes a package.json.
 // Public interface: StoryScaffold.create(in:info:templateDirectory:), storyId(from:).
 // Owner context: tools/ide — Workspace.
 
@@ -30,19 +30,9 @@ enum StoryScaffold {
         }
     }
 
-    /// The dependency range scaffolded projects pin (the current platform major line). Matches
-    /// what `sharpee init` injects; `^1.x` resolves to the latest published 1.x on install.
-    private static let platformRange = "^1.0.0"
-
-    /// Template file → destination within the project.
-    private static let files: [(template: String, dest: String)] = [
-        ("index.ts.template", "src/index.ts"),
-        ("package.json.template", "package.json"),
-        ("tsconfig.json.template", "tsconfig.json"),
-    ]
+    private static let storyTemplate = "story.story.template"
 
     private static let gitignore = """
-    node_modules/
     dist/
     *.log
     .DS_Store
@@ -56,8 +46,10 @@ enum StoryScaffold {
         return id.isEmpty ? "my-story" : id
     }
 
-    /// Scaffold a story project into `dir` from `templateDirectory` (defaults to the app
-    /// bundle's resources). Creates `dir` if needed; throws if it exists and is non-empty.
+    /// Scaffold a story into `dir` from `templateDirectory` (defaults to the app
+    /// bundle's resources): renders `story.story.template` to `<id>.story` plus a
+    /// minimal .gitignore. Creates `dir` if needed; throws if it exists and is
+    /// non-empty.
     static func create(in dir: URL, info: Info, templateDirectory: URL? = nil) throws {
         let fm = FileManager.default
         let templates = templateDirectory ?? Bundle.main.resourceURL ?? Bundle.main.bundleURL
@@ -68,17 +60,16 @@ enum StoryScaffold {
                 throw ScaffoldError.directoryNotEmpty(dir)
             }
         }
-        try fm.createDirectory(at: dir.appendingPathComponent("src"), withIntermediateDirectories: true)
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
 
         let id = storyId(from: info.title)
-        for file in files {
-            let src = templates.appendingPathComponent(file.template)
-            guard let raw = try? String(contentsOf: src, encoding: .utf8) else {
-                throw ScaffoldError.templateMissing(file.template)
-            }
-            let rendered = substitute(raw, info: info, id: id)
-            try rendered.write(to: dir.appendingPathComponent(file.dest), atomically: true, encoding: .utf8)
+        let src = templates.appendingPathComponent(storyTemplate)
+        guard let raw = try? String(contentsOf: src, encoding: .utf8) else {
+            throw ScaffoldError.templateMissing(storyTemplate)
         }
+        let rendered = substitute(raw, info: info, id: id)
+        try rendered.write(to: dir.appendingPathComponent("\(id).story"),
+                           atomically: true, encoding: .utf8)
         try gitignore.write(to: dir.appendingPathComponent(".gitignore"), atomically: true, encoding: .utf8)
     }
 
@@ -88,7 +79,5 @@ enum StoryScaffold {
             .replacingOccurrences(of: "{{STORY_TITLE}}", with: info.title)
             .replacingOccurrences(of: "{{AUTHOR}}", with: info.author)
             .replacingOccurrences(of: "{{DESCRIPTION}}", with: info.description)
-            .replacingOccurrences(of: "{{SHARPEE_VERSION}}", with: platformRange)
-            .replacingOccurrences(of: "{{DEVKIT_VERSION}}", with: platformRange)
     }
 }

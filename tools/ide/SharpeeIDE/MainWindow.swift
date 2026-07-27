@@ -89,6 +89,12 @@ final class MainWindowController: NSWindowController {
         rootViewController?.composeStory(at: storyURL)
     }
 
+    /// The composed story's identity for Build/Play menu gating (D2): nil until
+    /// a compose has run; `isGrammar` disables Build for grammar-header files.
+    var composedStory: (url: URL, isGrammar: Bool)? {
+        rootViewController?.composedStory
+    }
+
     /// Applies a persisted "Play after build" value (session restore).
     func setPlayAfterBuild(_ on: Bool) {
         rootViewController?.applyPlayAfterBuild(on)
@@ -328,6 +334,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.composeStory(at: storyURL)
     }
 
+    var composedStory: (url: URL, isGrammar: Bool)? {
+        mainSplitViewController.composedStory
+    }
+
     func applyPlayAfterBuild(_ on: Bool) {
         mainSplitViewController.setPlayAfterBuild(on)
     }
@@ -391,6 +401,7 @@ private final class MainSplitViewController: NSSplitViewController {
             // The tree folds every outcome through last-ok retention (D6)…
             self.treeState.apply(outcome)
             self.projectPaneViewController.setTreeState(self.treeState.display)
+            self.syncPlayToComposeState()
             // …while Problems always reflects the current source (RootViewController).
             self.onComposeOutcome?(outcome)
         }
@@ -403,9 +414,47 @@ private final class MainSplitViewController: NSSplitViewController {
         addSplitViewItem(makePlayItem())
     }
 
-    /// Loads (or clears) the Play pane for the given story's web bundle.
+    /// The composed story's identity for Build/Play gating: its URL and whether
+    /// it is a grammar-header file (Build and Play disabled, ADR-258 D2).
+    var composedStory: (url: URL, isGrammar: Bool)? {
+        guard let url = treeState.storyURL else { return nil }
+        if case .populated(let ir, _) = treeState.display {
+            return (url, ir.grammarFile != nil)
+        }
+        return (url, false)
+    }
+
+    /// The current story's built bundle directory (`dist/web/<id>/`, D4), or nil
+    /// until a clean compile has revealed the story's header id.
+    private func bundleDirectory() -> URL? {
+        guard let storyURL = treeState.storyURL,
+              case .populated(let ir, _) = treeState.display,
+              let id = ir.meta.fields["id"] else { return nil }
+        return WebBundle.directory(projectRoot: storyURL.deletingLastPathComponent(), storyId: id)
+    }
+
+    /// Reflects the latest compose state into the Play pane: a grammar file is
+    /// explicitly unplayable (D2); a story auto-loads its already-built bundle
+    /// once the header id is known — but never reloads over a running game.
+    private func syncPlayToComposeState() {
+        guard case .populated(let ir, _) = treeState.display else { return }
+        if ir.grammarFile != nil {
+            playViewController.showUnplayable(
+                reason: "A grammar file is not a story — Build and Play are disabled")
+        } else if !playViewController.isLoaded {
+            playViewController.load(bundleDirectory: bundleDirectory())
+        }
+    }
+
+    /// Loads (or clears) the Play pane. The bundle path needs the story's IR
+    /// header id, so before the first clean compile this shows the placeholder;
+    /// syncPlayToComposeState() completes the load when the id arrives.
     fileprivate func refreshPlay(projectRoot: URL?) {
-        playViewController.load(projectRoot: projectRoot)
+        guard projectRoot != nil else {
+            playViewController.load(bundleDirectory: nil)
+            return
+        }
+        playViewController.load(bundleDirectory: bundleDirectory())
     }
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
@@ -462,9 +511,11 @@ private final class MainSplitViewController: NSSplitViewController {
         SessionStateStore.save(state)
     }
 
-    /// After a successful Browser build, load the freshly-built story (honours the toggle).
+    /// After a successful build, load the freshly-built `dist/web/<id>/` bundle
+    /// (honours the toggle). The id comes from the retained IR header (D4).
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
-        playViewController.reloadAfterBuild(projectRoot: projectRoot)
+        guard let bundleDir = bundleDirectory() else { return }
+        playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
     }
 
     /// Applies a persisted "Play after build" value (session restore).

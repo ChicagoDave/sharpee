@@ -29,18 +29,11 @@ final class IntrospectionRunner {
     /// through `self` on the main actor rather than capturing a non-Sendable closure.
     private var pending: Completion?
 
-    /// Author-mode entry point (ADR-185): run the project's installed `sharpee introspect`
-    /// (the `@sharpee/devkit` bin) with the project directory as the working directory. The
-    /// bin loads the built story + node_modules platform and emits the manifest. `node` is on
-    /// the login-shell PATH the bin's shebang resolves against (via `ShellEnvironment`).
-    func introspect(projectDir: URL, completion: @escaping Completion) {
-        let bin = projectDir.appendingPathComponent("node_modules/.bin/sharpee")
-        run(executable: bin,
-            arguments: ["introspect"],
-            workingDirectory: projectDir,
-            environment: ShellEnvironment.buildEnvironment(),
-            completion: completion)
-    }
+    // The ADR-185 author-mode entry point (the project-local `sharpee introspect`
+    // bin) was retired by ADR-258: the project tree is IR-sourced via
+    // ComposeRunner (D6), and `introspect` stays a TypeScript/world-model tool
+    // with no IDE consumer. The generic run() below remains for the
+    // world-model-path manifest decode this class still owns.
 
     /// Spawns `executable`, buffers stdout/stderr, and on exit either decodes the
     /// manifest (exit 0) or reports `nonZeroExit`. Tests drive this directly with a

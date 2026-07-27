@@ -31,9 +31,11 @@ targets:
     platform: macOS
     sources:
       - path: SharpeeIDE
-      # Bundle the @sharpee/devkit story template so "New Story…" can scaffold a project
-      # without a global CLI (ADR-185). StoryScaffold reads these from Bundle.main.
-      - path: ../../packages/devkit/templates/story
+      # Bundle the @sharpee/devkit Chord story template so "New Story…" can
+      # scaffold a `.story` without any CLI (ADR-258 D2). StoryScaffold reads
+      # story.story.template from Bundle.main (package.json.template is bundled
+      # but unused — the IDE scaffold never writes one).
+      - path: ../../packages/devkit/templates/story-chord
         buildPhase: resources
     dependencies:
       - sdk: WebKit.framework

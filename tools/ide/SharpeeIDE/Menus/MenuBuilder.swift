@@ -132,12 +132,6 @@ enum MenuBuilder {
         build.target = target
         menu.addItem(build)
 
-        let settings = NSMenuItem(title: "Build Settings…",
-                                  action: #selector(AppDelegate.openBuildSettings(_:)),
-                                  keyEquivalent: "")
-        settings.target = target
-        menu.addItem(settings)
-
         menu.addItem(NSMenuItem.separator())
 
         let cancel = NSMenuItem(title: "Cancel Build",
