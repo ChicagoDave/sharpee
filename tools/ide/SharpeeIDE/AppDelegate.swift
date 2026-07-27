@@ -265,6 +265,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     @objc func buildProject(_ sender: Any?) {
         guard let storyURL = currentStoryURL,
               mainWindowController?.composedStory?.isGrammar != true else { return }
+        // The build reads DISK while compose reads the buffer — save everything
+        // first or an unsaved edit silently builds the old source.
+        guard mainWindowController?.saveAllDocuments() != false else { return }
         buildController?.build(storyFile: storyURL)
     }
 

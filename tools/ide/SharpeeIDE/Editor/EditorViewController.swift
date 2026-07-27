@@ -335,6 +335,27 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         }
     }
 
+    /// Saves every dirty document (build-precondition: the build reads DISK,
+    /// while compose reads the buffer — an unsaved buffer would silently build
+    /// the old source). Returns false if any save failed (alert shown).
+    @discardableResult
+    func saveAllDocuments() -> Bool {
+        persistTextViewToActiveDocument()
+        var allSaved = true
+        for doc in documents where doc.isDirty {
+            do {
+                try doc.save()
+            } catch {
+                allSaved = false
+                let alert = NSAlert(error: error)
+                alert.alertStyle = .warning
+                alert.runModal()
+            }
+        }
+        refreshUI()
+        return allSaved
+    }
+
     // MARK: - UI sync
 
     private func refreshUI() {

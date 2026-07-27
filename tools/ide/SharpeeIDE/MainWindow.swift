@@ -43,6 +43,13 @@ final class MainWindowController: NSWindowController {
         rootViewController?.saveActiveDocument()
     }
 
+    /// Saves every dirty document — Build's precondition (the build reads disk).
+    /// Returns false when a save failed and the build should not proceed.
+    @discardableResult
+    func saveAllDocuments() -> Bool {
+        rootViewController?.saveAllDocuments() ?? true
+    }
+
     /// Opens a document URL in the editor — used by session restoration.
     func openDocument(at url: URL) {
         rootViewController?.openDocument(at: url)
@@ -276,6 +283,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.saveActiveDocument()
     }
 
+    func saveAllDocuments() -> Bool {
+        mainSplitViewController.saveAllDocuments()
+    }
+
     func openDocument(at url: URL) {
         mainSplitViewController.openDocument(at: url)
     }
@@ -488,6 +499,10 @@ private final class MainSplitViewController: NSSplitViewController {
 
     func saveActiveDocument() {
         editorViewController.saveActiveDocument()
+    }
+
+    func saveAllDocuments() -> Bool {
+        editorViewController.saveAllDocuments()
     }
 
     func openDocument(at url: URL) {
