@@ -55,6 +55,16 @@ final class TabStripView: NSView {
         layer?.backgroundColor = Theme.railBackground.cgColor
     }
 
+    /// Replaces ALL tabs (dynamic tab sets — the Index's sections change per
+    /// story). Selection is clamped; pass `select` to choose explicitly.
+    func setTabs(_ titles: [String], select index: Int = 0) {
+        for item in items { item.removeFromSuperview() }
+        items.removeAll()
+        selectedIndex = min(max(0, index), max(0, titles.count - 1))
+        for title in titles { addTab(title: title) }
+        if !titles.isEmpty { select(selectedIndex) }
+    }
+
     /// Appends a tab. The first added tab is selected.
     func addTab(title: String) {
         let index = items.count

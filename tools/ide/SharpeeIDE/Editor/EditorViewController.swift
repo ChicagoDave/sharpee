@@ -648,11 +648,16 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// stale — the "autowrap not working" bug).
     private func syncWrapWidth(force: Bool = false) {
         guard effectiveWrap, let container = textView.textContainer else { return }
-        let width = scrollView.contentSize.width
-        guard width > 0, force || abs(container.containerSize.width - width) > 0.5 else { return }
-        container.containerSize = NSSize(width: width,
+        let clipWidth = scrollView.contentSize.width
+        // Wrap INSIDE the visible area: text draws offset by the container
+        // inset, so wrapping at the full clip width pushed each line's tail
+        // past the divider by the inset amount.
+        let wrapWidth = clipWidth - textView.textContainerInset.width * 2
+        guard clipWidth > 0, wrapWidth > 50,
+              force || abs(container.containerSize.width - wrapWidth) > 0.5 else { return }
+        container.containerSize = NSSize(width: wrapWidth,
                                          height: CGFloat.greatestFiniteMagnitude)
-        textView.setFrameSize(NSSize(width: width, height: textView.frame.height))
+        textView.setFrameSize(NSSize(width: clipWidth, height: textView.frame.height))
         textView.needsLayout = true
     }
 

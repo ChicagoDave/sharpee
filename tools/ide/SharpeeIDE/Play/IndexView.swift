@@ -1,9 +1,10 @@
 // IndexView.swift
 // The Index tab (right panel): the story's granular reference — headline stats
-// over collapsible sections (Rooms / Regions / Things / People / Actions /
-// Phrases / Hatch Modules), live off the same retained IR as the project tree
-// (no build required), stale-marked with it, every row span-navigable. The
-// granularity the build output deliberately does not carry lives here.
+// over SECTION TABS (Rooms / Regions / Things / People / Actions / Phrases /
+// Hatch Modules; David's ruling: tabs, not expanders), each showing a flat,
+// span-navigable list. Live off the same retained IR as everything else, stale-
+// marked with it. Section tabs are rebuilt per story (empty sections omitted);
+// the selected section survives recomposes when it still exists.
 // Public interface: IndexView.setState(_:), onActivate.
 // Owner context: tools/ide — Play (right panel).
 
@@ -16,11 +17,18 @@ final class IndexView: NSView {
 
     private let statsLabel = NSTextField(labelWithString: "")
     private let staleBanner = NSTextField(labelWithString: "Showing last good compile — the story has errors")
+    private let sectionStrip = TabStripView()
     private let scrollView = NSScrollView()
-    private let outlineView = NSOutlineView()
+    private let tableView = NSTableView()
     private let placeholder = NSTextField(labelWithString: "Open a story to build its index")
 
-    private var nodes: [IndexNode] = []
+    private var sections: [IndexSection] = []
+    private var selectedKind: IndexSectionKind?
+    private var rows: [IndexRow] { currentSection?.rows ?? [] }
+    private var currentSection: IndexSection? {
+        sections.first { $0.kind == selectedKind } ?? sections.first
+    }
+
     /// Retained so a font-preference change can re-render the same content.
     private var lastState: IRTreeState.Display = .empty(reason: "Open a story to build its index")
 
@@ -39,23 +47,28 @@ final class IndexView: NSView {
         staleBanner.textColor = NSColor.systemYellow
         staleBanner.isHidden = true
 
+        sectionStrip.onSelect = { [weak self] index in
+            guard let self, self.sections.indices.contains(index) else { return }
+            self.selectedKind = self.sections[index].kind
+            self.tableView.reloadData()
+        }
+
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("entry"))
         column.resizingMask = .autoresizingMask
-        outlineView.addTableColumn(column)
-        outlineView.outlineTableColumn = column
-        outlineView.headerView = nil
-        outlineView.indentationPerLevel = 14
-        outlineView.rowSizeStyle = .small
-        outlineView.style = .plain
-        outlineView.dataSource = self
-        outlineView.delegate = self
-        outlineView.target = self
-        outlineView.doubleAction = #selector(doubleClicked)
-        outlineView.backgroundColor = .clear
-        outlineView.usesAlternatingRowBackgroundColors = false
+        tableView.addTableColumn(column)
+        tableView.headerView = nil
+        tableView.rowSizeStyle = .small
+        tableView.style = .plain
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.target = self
+        tableView.doubleAction = #selector(doubleClicked)
+        tableView.backgroundColor = .clear
+        tableView.usesAlternatingRowBackgroundColors = false
 
-        scrollView.documentView = outlineView
+        scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
         scrollView.drawsBackground = false
         scrollView.contentView.drawsBackground = false
 
@@ -65,14 +78,12 @@ final class IndexView: NSView {
         placeholder.lineBreakMode = .byWordWrapping
         placeholder.maximumNumberOfLines = 0
 
-        for view in [statsLabel, staleBanner, scrollView, placeholder] {
+        for view in [statsLabel, staleBanner, sectionStrip, scrollView, placeholder] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
-        // Wrapping labels must never dictate the pane's width: at the default
-        // 750 compression resistance, a long single-line stats string beats the
-        // split divider's constraints and the divider bounces back (hidden tabs
-        // still constrain, so this bit even while Play was frontmost).
+        // Wrapping labels must never dictate the pane's width (the divider
+        // fight): compress before resisting.
         for label in [statsLabel, staleBanner, placeholder] {
             label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         }
@@ -86,7 +97,11 @@ final class IndexView: NSView {
             staleBanner.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             staleBanner.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
 
-            scrollView.topAnchor.constraint(equalTo: staleBanner.bottomAnchor, constant: 6),
+            sectionStrip.topAnchor.constraint(equalTo: staleBanner.bottomAnchor, constant: 4),
+            sectionStrip.leadingAnchor.constraint(equalTo: leadingAnchor),
+            sectionStrip.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+            scrollView.topAnchor.constraint(equalTo: sectionStrip.bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -104,10 +119,6 @@ final class IndexView: NSView {
                                                object: nil)
     }
 
-    @objc private func fontPreferenceChanged() {
-        setState(lastState)
-    }
-
     required init?(coder: NSCoder) {
         fatalError("IndexView is not Storyboard-instantiable")
     }
@@ -118,28 +129,39 @@ final class IndexView: NSView {
         layer?.backgroundColor = Theme.playBackground.cgColor
     }
 
-    /// Renders a tree display state (shared with the project tree: populated /
+    @objc private func fontPreferenceChanged() {
+        setState(lastState)
+    }
+
+    /// Renders a tree display state (shared with the rest of the IDE: populated /
     /// stale / empty-with-reason).
     func setState(_ state: IRTreeState.Display) {
         lastState = state
         switch state {
         case .empty(let reason):
-            nodes = []
+            sections = []
+            selectedKind = nil
             statsLabel.stringValue = ""
             placeholder.stringValue = reason
             staleBanner.isHidden = true
-            outlineView.alphaValue = 1
+            tableView.alphaValue = 1
         case .populated(let ir, let stale):
-            nodes = StoryIndex.sections(of: ir).map(IndexNode.init)
+            sections = StoryIndex.sections(of: ir)
             statsLabel.attributedStringValue = Self.attributedStatsLine(for: ir)
             placeholder.stringValue = "This story defines nothing to index yet"
             staleBanner.isHidden = !stale
-            outlineView.alphaValue = stale ? 0.55 : 1
+            tableView.alphaValue = stale ? 0.55 : 1
         }
-        outlineView.reloadData()
-        outlineView.expandItem(nil, expandChildren: true)
-        let isEmpty = nodes.isEmpty
+        // Rebuild the section tabs, keeping the previously selected section
+        // when the recomposed story still has it.
+        let keepIndex = sections.firstIndex { $0.kind == selectedKind } ?? 0
+        sectionStrip.setTabs(sections.map { $0.title }, select: keepIndex)
+        selectedKind = currentSection?.kind
+        tableView.reloadData()
+
+        let isEmpty = sections.isEmpty
         scrollView.isHidden = isEmpty
+        sectionStrip.isHidden = isEmpty
         statsLabel.isHidden = isEmpty
         placeholder.isHidden = !isEmpty
     }
@@ -205,99 +227,43 @@ final class IndexView: NSView {
     }
 
     @objc private func doubleClicked() {
-        let row = outlineView.clickedRow
-        guard row >= 0, let node = outlineView.item(atRow: row) as? IndexNode,
-              let span = node.row?.span else { return }
+        let row = tableView.clickedRow
+        guard rows.indices.contains(row), let span = rows[row].span else { return }
         onActivate?(span)
-    }
-}
-
-// MARK: - Nodes (reference identity for NSOutlineView)
-
-private final class IndexNode {
-    let section: IndexSection?
-    let row: IndexRow?
-    /// The owning section's kind (row nodes) — drives the row's icon + tint.
-    let sectionKind: IndexSectionKind?
-    let children: [IndexNode]
-
-    init(section: IndexSection) {
-        self.section = section
-        self.row = nil
-        self.sectionKind = section.kind
-        self.children = section.rows.map { IndexNode(row: $0, kind: section.kind) }
-    }
-
-    init(row: IndexRow, kind: IndexSectionKind) {
-        self.section = nil
-        self.row = row
-        self.sectionKind = kind
-        self.children = []
     }
 }
 
 // MARK: - Data source / delegate
 
-extension IndexView: NSOutlineViewDataSource {
-    func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
-        if item == nil { return nodes.count }
-        return (item as? IndexNode)?.children.count ?? 0
-    }
-
-    func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
-        if item == nil { return nodes[index] }
-        return (item as! IndexNode).children[index]
-    }
-
-    func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
-        (item as? IndexNode)?.section != nil
-    }
+extension IndexView: NSTableViewDataSource {
+    func numberOfRows(in tableView: NSTableView) -> Int { rows.count }
 }
 
-extension IndexView: NSOutlineViewDelegate {
-    func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
-        guard let node = item as? IndexNode else { return nil }
+extension IndexView: NSTableViewDelegate {
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row rowIndex: Int) -> NSView? {
+        guard rows.indices.contains(rowIndex), let kind = currentSection?.kind else { return nil }
+        let row = rows[rowIndex]
+        let deco = Self.decoration(for: kind)
 
-        let cell = outlineView.makeView(withIdentifier: Self.cellIdentifier, owner: self)
+        let cell = tableView.makeView(withIdentifier: Self.cellIdentifier, owner: self)
             as? NSTableCellView ?? makeCell()
+        cell.imageView?.image = NSImage(systemSymbolName: deco.symbol, accessibilityDescription: nil)
+        cell.imageView?.contentTintColor = deco.color.withAlphaComponent(0.55)
+
         let text = NSMutableAttributedString()
-
-        if let section = node.section {
-            let deco = Self.decoration(for: section.kind)
-            cell.imageView?.image = NSImage(systemSymbolName: deco.symbol,
-                                            accessibilityDescription: section.title)
-            cell.imageView?.contentTintColor = deco.color
-            let size = FontPreference.scale.panelSize
+        let titleFont: NSFont = row.isCode ? FontPreference.panelMonoFont : FontPreference.panelFont
+        text.append(NSAttributedString(
+            string: row.title,
+            attributes: [.foregroundColor: Theme.foreground, .font: titleFont]))
+        if let detail = row.detail {
+            let smaller = FontPreference.scale.panelSize - 1
+            let detailFont: NSFont = row.isCode
+                ? .monospacedSystemFont(ofSize: smaller, weight: .regular)
+                : FontPreference.family.font(size: smaller)
             text.append(NSAttributedString(
-                string: section.title,
-                attributes: [.foregroundColor: deco.color,
-                             .font: NSFont.systemFont(ofSize: size + 0.5, weight: .semibold)]))
-            text.append(NSAttributedString(
-                string: "  \(section.rows.count)",
-                attributes: [.foregroundColor: Theme.foregroundFaint,
-                             .font: NSFont.monospacedDigitSystemFont(ofSize: size - 0.5, weight: .regular)]))
-        } else if let row = node.row, let kind = node.sectionKind {
-            let deco = Self.decoration(for: kind)
-            cell.imageView?.image = NSImage(systemSymbolName: deco.symbol,
-                                            accessibilityDescription: nil)
-            cell.imageView?.contentTintColor = deco.color.withAlphaComponent(0.55)
-            let titleFont: NSFont = row.isCode
-                ? FontPreference.panelMonoFont
-                : FontPreference.panelFont
-            text.append(NSAttributedString(
-                string: row.title,
-                attributes: [.foregroundColor: Theme.foreground, .font: titleFont]))
-            if let detail = row.detail {
-                let smaller = FontPreference.scale.panelSize - 1
-                let detailFont: NSFont = row.isCode
-                    ? .monospacedSystemFont(ofSize: smaller, weight: .regular)
-                    : FontPreference.family.font(size: smaller)
-                text.append(NSAttributedString(
-                    string: "   \(detail)",
-                    attributes: [.foregroundColor: Theme.foregroundFaint, .font: detailFont]))
-            }
+                string: "   \(detail)",
+                attributes: [.foregroundColor: Theme.foregroundFaint, .font: detailFont]))
         }
-
         cell.textField?.attributedStringValue = text
         return cell
     }
@@ -320,7 +286,7 @@ extension IndexView: NSOutlineViewDelegate {
         cell.addSubview(label)
 
         NSLayoutConstraint.activate([
-            icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 2),
+            icon.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 6),
             icon.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
             icon.widthAnchor.constraint(equalToConstant: 16),
             icon.heightAnchor.constraint(equalToConstant: 16),
