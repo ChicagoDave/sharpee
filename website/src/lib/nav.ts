@@ -22,6 +22,12 @@ export interface NavGroup {
 
 export interface NavSection {
   title: string;
+  /**
+   * Released version shown beside the section label in the rail (display
+   * only — title stays the identity for keys, crumbs, and the pager).
+   * Updated at release time alongside the platform version bump.
+   */
+  version?: string;
   groups: NavGroup[];
   /** Ungrouped items rendered directly under the section label. */
   items?: NavItem[];
@@ -30,6 +36,7 @@ export interface NavSection {
 export const NAV: NavSection[] = [
   {
     title: 'Chord',
+    version: '2.1.0',
     groups: [
       {
         title: 'Getting Started',
@@ -300,6 +307,7 @@ export const NAV: NavSection[] = [
   },
   {
     title: 'Sharpee',
+    version: '4.1.0',
     groups: [
       { title: 'Platform', items: [{ title: 'Overview', href: '/sharpee/platform' }] },
       { title: 'Actions & Traits', items: [{ title: 'Overview', href: '/sharpee/actions-and-traits' }] },

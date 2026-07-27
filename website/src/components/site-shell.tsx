@@ -119,6 +119,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             <div key={section.title}>
               <div className="px-5 pt-4 pb-1 text-[13px] font-bold tracking-widest text-muted uppercase">
                 {section.title}
+                {section.version && (
+                  <span className="ml-1.5 font-normal tracking-normal normal-case">({section.version})</span>
+                )}
               </div>
               {section.groups.map((group) => {
                 const key = `${section.title}::${group.title}`;
