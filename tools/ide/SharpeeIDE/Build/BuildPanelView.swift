@@ -10,7 +10,7 @@ import AppKit
 
 final class BuildPanelView: NSView {
 
-    private static let font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+    private static var font: NSFont { FontPreference.panelFont }
 
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
@@ -41,10 +41,22 @@ final class BuildPanelView: NSView {
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+
+        NotificationCenter.default.addObserver(self, selector: #selector(fontPreferenceChanged),
+                                               name: FontPreference.didChangeNotification,
+                                               object: nil)
     }
 
     required init?(coder: NSCoder) {
         fatalError("BuildPanelView is not Storyboard-instantiable")
+    }
+
+    /// Live font change: re-font everything already in the panel.
+    @objc private func fontPreferenceChanged() {
+        textView.font = Self.font
+        guard let storage = textView.textStorage else { return }
+        storage.addAttribute(.font, value: Self.font,
+                             range: NSRange(location: 0, length: storage.length))
     }
 
     override var wantsUpdateLayer: Bool { true }

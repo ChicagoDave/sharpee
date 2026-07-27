@@ -116,6 +116,32 @@ enum MenuBuilder {
         wordWrap.target = target
         menu.addItem(wordWrap)
 
+        menu.addItem(NSMenuItem.separator())
+
+        // Font family + size for the story pane and the right-panel text
+        // surfaces. Radio state applied in AppDelegate.validateMenuItem.
+        let fontMenu = NSMenu(title: "Font")
+        for family in FontFamily.allCases {
+            let item = NSMenuItem(title: family.displayName,
+                                  action: #selector(AppDelegate.selectFontFamily(_:)),
+                                  keyEquivalent: "")
+            item.target = target
+            item.representedObject = family.rawValue
+            fontMenu.addItem(item)
+        }
+        fontMenu.addItem(NSMenuItem.separator())
+        for scale in FontScale.allCases {
+            let item = NSMenuItem(title: scale.displayName,
+                                  action: #selector(AppDelegate.selectFontScale(_:)),
+                                  keyEquivalent: "")
+            item.target = target
+            item.representedObject = scale.rawValue
+            fontMenu.addItem(item)
+        }
+        let font = NSMenuItem(title: "Font", action: nil, keyEquivalent: "")
+        font.submenu = fontMenu
+        menu.addItem(font)
+
         let item = NSMenuItem()
         item.submenu = menu
         return item

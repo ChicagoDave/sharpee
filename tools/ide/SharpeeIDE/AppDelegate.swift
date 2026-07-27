@@ -280,6 +280,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         mainWindowController?.setWordWrap(!WordWrapPreference.isEnabled)
     }
 
+    /// View → Font → Courier/Arial/Georgia. Persists and rebroadcasts.
+    @objc func selectFontFamily(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let family = FontFamily(rawValue: raw) else { return }
+        FontPreference.family = family
+    }
+
+    /// View → Font → Small/Medium/Large/Extra Large.
+    @objc func selectFontScale(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let scale = FontScale(rawValue: raw) else { return }
+        FontPreference.scale = scale
+    }
+
     // MARK: - NSUserInterfaceValidations (menu enable/disable)
 
     /// AppKit calls this when a menu containing one of our actions is about to display.
@@ -294,6 +308,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return buildController?.isBuilding ?? false
         case #selector(toggleWordWrap(_:)):
             menuItem.state = WordWrapPreference.isEnabled ? .on : .off
+            return true
+        case #selector(selectFontFamily(_:)):
+            let raw = menuItem.representedObject as? String
+            menuItem.state = (raw == FontPreference.family.rawValue) ? .on : .off
+            return true
+        case #selector(selectFontScale(_:)):
+            let raw = menuItem.representedObject as? String
+            menuItem.state = (raw == FontPreference.scale.rawValue) ? .on : .off
             return true
         default:
             return true

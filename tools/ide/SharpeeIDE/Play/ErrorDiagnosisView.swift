@@ -21,8 +21,8 @@ final class ErrorDiagnosisView: NSView {
 
     private static let titleFont = NSFont.systemFont(ofSize: 15, weight: .semibold)
     private static let headerFont = NSFont.systemFont(ofSize: 10, weight: .semibold)
-    private static let bodyFont = NSFont.systemFont(ofSize: 12.5)
-    private static let monoFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+    private static var bodyFont: NSFont { FontPreference.panelFont }
+    private static var monoFont: NSFont { FontPreference.panelMonoFont }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)

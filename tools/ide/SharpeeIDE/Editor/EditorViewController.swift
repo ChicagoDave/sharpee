@@ -98,6 +98,25 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
 
         view = pane
         refreshUI()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(fontPreferenceChanged),
+                                               name: FontPreference.didChangeNotification,
+                                               object: nil)
+    }
+
+    /// Live font change: the story pane re-fonts in place (colors untouched).
+    @objc private func fontPreferenceChanged() {
+        textView.font = FontPreference.editorFont
+        if let storage = textView.textStorage {
+            storage.addAttribute(.font, value: FontPreference.editorFont,
+                                 range: NSRange(location: 0, length: storage.length))
+        }
+        lineNumberRuler?.refresh()
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        syncWrapWidth() // window/split resizes must re-wrap, never bounce back
     }
 
     // MARK: - Tab operations
@@ -505,7 +524,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     private func configureTextView() {
-        textView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+        textView.font = FontPreference.editorFont
         textView.textColor = Theme.foreground
         textView.backgroundColor = Theme.editorBackground
         textView.insertionPointColor = Theme.foreground
@@ -590,7 +609,22 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     @objc private func refreshRuler() {
+        syncWrapWidth()
         lineNumberRuler?.refresh()
+    }
+
+    /// Wrap mode keeps the text view exactly as wide as the clip view. The old
+    /// implementation froze the width at toggle time — a stale (wider) width
+    /// then resisted window narrowing and the resize bounced back. Re-syncing on
+    /// every clip-bounds change keeps the wrapped width honest in both
+    /// directions.
+    private func syncWrapWidth() {
+        guard WordWrapPreference.isEnabled, let container = textView.textContainer else { return }
+        let width = scrollView.contentSize.width
+        guard width > 0, abs(textView.frame.width - width) > 0.5 else { return }
+        textView.setFrameSize(NSSize(width: width, height: textView.frame.height))
+        container.containerSize = NSSize(width: width,
+                                         height: CGFloat.greatestFiniteMagnitude)
     }
 
     private func configurePlaceholder() {

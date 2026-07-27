@@ -21,6 +21,8 @@ final class IndexView: NSView {
     private let placeholder = NSTextField(labelWithString: "Open a story to build its index")
 
     private var nodes: [IndexNode] = []
+    /// Retained so a font-preference change can re-render the same content.
+    private var lastState: IRTreeState.Display = .empty(reason: "Open a story to build its index")
 
     private static let cellIdentifier = NSUserInterfaceItemIdentifier("IndexCell")
 
@@ -89,6 +91,14 @@ final class IndexView: NSView {
         ])
 
         setState(.empty(reason: "Open a story to build its index"))
+
+        NotificationCenter.default.addObserver(self, selector: #selector(fontPreferenceChanged),
+                                               name: FontPreference.didChangeNotification,
+                                               object: nil)
+    }
+
+    @objc private func fontPreferenceChanged() {
+        setState(lastState)
     }
 
     required init?(coder: NSCoder) {
@@ -104,6 +114,7 @@ final class IndexView: NSView {
     /// Renders a tree display state (shared with the project tree: populated /
     /// stale / empty-with-reason).
     func setState(_ state: IRTreeState.Display) {
+        lastState = state
         switch state {
         case .empty(let reason):
             nodes = []
@@ -160,13 +171,14 @@ final class IndexView: NSView {
                     .font: NSFont.systemFont(ofSize: 11),
                 ]))
             }
+            let size = FontPreference.scale.panelSize
             text.append(NSAttributedString(string: "\(part.count)", attributes: [
                 .foregroundColor: Theme.tokenNumber,
-                .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold),
+                .font: NSFont.monospacedDigitSystemFont(ofSize: size + 0.5, weight: .semibold),
             ]))
             text.append(NSAttributedString(string: " \(part.label)", attributes: [
                 .foregroundColor: Theme.foregroundDim,
-                .font: NSFont.systemFont(ofSize: 11),
+                .font: FontPreference.family.font(size: size - 1),
             ]))
         }
         return text
@@ -248,29 +260,31 @@ extension IndexView: NSOutlineViewDelegate {
             cell.imageView?.image = NSImage(systemSymbolName: deco.symbol,
                                             accessibilityDescription: section.title)
             cell.imageView?.contentTintColor = deco.color
+            let size = FontPreference.scale.panelSize
             text.append(NSAttributedString(
                 string: section.title,
                 attributes: [.foregroundColor: deco.color,
-                             .font: NSFont.systemFont(ofSize: 12, weight: .semibold)]))
+                             .font: NSFont.systemFont(ofSize: size + 0.5, weight: .semibold)]))
             text.append(NSAttributedString(
                 string: "  \(section.rows.count)",
                 attributes: [.foregroundColor: Theme.foregroundFaint,
-                             .font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)]))
+                             .font: NSFont.monospacedDigitSystemFont(ofSize: size - 0.5, weight: .regular)]))
         } else if let row = node.row, let kind = node.sectionKind {
             let deco = Self.decoration(for: kind)
             cell.imageView?.image = NSImage(systemSymbolName: deco.symbol,
                                             accessibilityDescription: nil)
             cell.imageView?.contentTintColor = deco.color.withAlphaComponent(0.55)
             let titleFont: NSFont = row.isCode
-                ? .monospacedSystemFont(ofSize: 11.5, weight: .regular)
-                : .systemFont(ofSize: 12)
+                ? FontPreference.panelMonoFont
+                : FontPreference.panelFont
             text.append(NSAttributedString(
                 string: row.title,
                 attributes: [.foregroundColor: Theme.foreground, .font: titleFont]))
             if let detail = row.detail {
+                let smaller = FontPreference.scale.panelSize - 1
                 let detailFont: NSFont = row.isCode
-                    ? .monospacedSystemFont(ofSize: 10.5, weight: .regular)
-                    : .systemFont(ofSize: 11)
+                    ? .monospacedSystemFont(ofSize: smaller, weight: .regular)
+                    : FontPreference.family.font(size: smaller)
                 text.append(NSAttributedString(
                     string: "   \(detail)",
                     attributes: [.foregroundColor: Theme.foregroundFaint, .font: detailFont]))
