@@ -36,7 +36,6 @@ final class ProblemsView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.backgroundColor = Theme.playBackground.cgColor
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("problem"))
         column.resizingMask = .autoresizingMask
@@ -73,6 +72,12 @@ final class ProblemsView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("ProblemsView is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.playBackground.cgColor
     }
 
     /// Replaces the list with a compose run's records. `storyURL` resolves any

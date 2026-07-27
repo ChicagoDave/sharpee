@@ -27,7 +27,6 @@ final class ErrorDiagnosisView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.backgroundColor = Theme.playBackground.cgColor
 
         let huge = CGFloat.greatestFiniteMagnitude
         textView.isEditable = false
@@ -71,6 +70,12 @@ final class ErrorDiagnosisView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("ErrorDiagnosisView is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.playBackground.cgColor
     }
 
     func clear() {

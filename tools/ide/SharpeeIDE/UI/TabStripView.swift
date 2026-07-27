@@ -21,7 +21,6 @@ final class TabStripView: NSView {
     init() {
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.backgroundColor = Theme.railBackground.cgColor
 
         stack.orientation = .horizontal
         stack.spacing = 0
@@ -30,9 +29,7 @@ final class TabStripView: NSView {
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
 
-        let border = NSView()
-        border.wantsLayer = true
-        border.layer?.backgroundColor = Theme.border.cgColor
+        let border = ThemedPane(color: Theme.border)
         border.translatesAutoresizingMaskIntoConstraints = false
         addSubview(border)
 
@@ -50,6 +47,12 @@ final class TabStripView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("TabStripView is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.railBackground.cgColor
     }
 
     /// Appends a tab. The first added tab is selected.
@@ -84,14 +87,13 @@ private final class TabItemView: NSView {
 
     private let titleLabel = NSTextField(labelWithString: "")
     private let badge = NSTextField(labelWithString: "")
-    private let accentBar = NSView()
+    private let accentBar = ThemedPane(color: Theme.accent)
+    private var isActive = false
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
 
-        accentBar.wantsLayer = true
-        accentBar.layer?.backgroundColor = Theme.accent.cgColor
         accentBar.isHidden = true
         accentBar.translatesAutoresizingMaskIntoConstraints = false
 
@@ -102,7 +104,6 @@ private final class TabItemView: NSView {
         badge.textColor = Theme.railBackground
         badge.alignment = .center
         badge.wantsLayer = true
-        badge.layer?.backgroundColor = NSColor.systemRed.cgColor
         badge.layer?.cornerRadius = 7
         badge.isHidden = true
 
@@ -131,6 +132,13 @@ private final class TabItemView: NSView {
         fatalError("TabItemView is not Storyboard-instantiable")
     }
 
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = isActive ? Theme.playBackground.cgColor : NSColor.clear.cgColor
+        badge.layer?.backgroundColor = NSColor.systemRed.cgColor
+    }
+
     func setTitle(_ title: String) { titleLabel.stringValue = title }
 
     func setCount(_ count: Int) {
@@ -139,9 +147,10 @@ private final class TabItemView: NSView {
     }
 
     func setActive(_ active: Bool) {
+        isActive = active
         accentBar.isHidden = !active
         titleLabel.textColor = active ? Theme.foreground : Theme.foregroundDim
-        layer?.backgroundColor = (active ? Theme.playBackground : .clear).cgColor
+        needsDisplay = true
     }
 
     override func mouseDown(with event: NSEvent) {

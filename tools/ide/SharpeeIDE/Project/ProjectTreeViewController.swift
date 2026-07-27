@@ -32,8 +32,6 @@ final class ProjectTreeViewController: NSViewController {
 
     override func loadView() {
         let pane = NSView()
-        pane.wantsLayer = true
-        pane.layer?.backgroundColor = Theme.projectBackground.cgColor
 
         configureOutlineView()
         configureScrollView()

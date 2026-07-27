@@ -66,9 +66,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private var diagnosticUnderlineRanges: [NSRange] = []
 
     override func loadView() {
-        let pane = NSView()
-        pane.wantsLayer = true
-        pane.layer?.backgroundColor = Theme.editorBackground.cgColor
+        let pane = ThemedPane(color: Theme.editorBackground)
 
         configureTabBar()
         configureTextView()
@@ -512,7 +510,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.backgroundColor = Theme.editorBackground
         textView.insertionPointColor = Theme.foreground
         textView.selectedTextAttributes = [
-            .backgroundColor: NSColor(srgbRed: 0.3, green: 0.4, blue: 0.6, alpha: 0.5),
+            .backgroundColor: Theme.selectionBackground,
             .foregroundColor: Theme.foreground,
         ]
         textView.isAutomaticQuoteSubstitutionEnabled = false

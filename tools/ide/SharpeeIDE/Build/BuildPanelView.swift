@@ -18,7 +18,6 @@ final class BuildPanelView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.backgroundColor = Theme.playBackground.cgColor
 
         textView.isEditable = false
         textView.isSelectable = true
@@ -46,6 +45,12 @@ final class BuildPanelView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("BuildPanelView is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.playBackground.cgColor
     }
 
     /// Appends a chunk of build output and scrolls to the tail.

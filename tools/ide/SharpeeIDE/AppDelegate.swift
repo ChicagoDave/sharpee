@@ -23,10 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        // The IDE paints a dark palette; tell AppKit so system-drawn controls (outline
-        // disclosure triangles, default text, scrollers) render dark-appropriately.
-        // (Light-mode support is a separate theming refactor — see below.)
-        NSApp.appearance = NSAppearance(named: .darkAqua)
+        // The IDE follows the system appearance: Theme tokens are dynamic
+        // (dark Mocha-ish / light Latte) and layer-backed surfaces re-resolve
+        // through updateLayer (ThemedPane).
         NSApp.mainMenu = MenuBuilder.makeMainMenu(target: self)
 
         let controller = MainWindowController()

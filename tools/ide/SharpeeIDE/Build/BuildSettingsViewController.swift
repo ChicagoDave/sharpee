@@ -40,8 +40,6 @@ final class BuildSettingsViewController: NSViewController {
 
     override func loadView() {
         let container = NSView()
-        container.wantsLayer = true
-        container.layer?.backgroundColor = Theme.projectBackground.cgColor
         container.translatesAutoresizingMaskIntoConstraints = false
 
         let heading = NSTextField(labelWithString: "Build Settings")

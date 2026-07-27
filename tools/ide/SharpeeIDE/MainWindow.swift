@@ -690,9 +690,7 @@ private final class RailViewController: NSViewController {
     private let buildButton = NSButton()
 
     override func loadView() {
-        let pane = NSView()
-        pane.wantsLayer = true
-        pane.layer?.backgroundColor = Theme.railBackground.cgColor
+        let pane = ThemedPane(color: Theme.railBackground)
 
         buildButton.title = ""
         buildButton.image = NSImage(systemSymbolName: "hammer", accessibilityDescription: "Build")
@@ -747,9 +745,7 @@ private final class PlaceholderPaneViewController: NSViewController {
     }
 
     override func loadView() {
-        let pane = NSView()
-        pane.wantsLayer = true
-        pane.layer?.backgroundColor = paneColor.cgColor
+        let pane = ThemedPane(color: paneColor)
 
         if showLabel {
             let label = NSTextField(labelWithString: paneLabel.uppercased())
@@ -779,11 +775,11 @@ private final class StatusBarView: NSView {
     private let spinner = NSProgressIndicator()
     private let pillLabel = NSTextField(labelWithString: "")
     private let pill = NSView()
+    private var lastStatus: BuildStatusDisplay = .idle
 
     init() {
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.backgroundColor = Theme.accent.cgColor
 
         let label = NSTextField(labelWithString: "main · Sharpee 0.1.0")
         label.font = NSFont.systemFont(ofSize: 11)
@@ -807,6 +803,13 @@ private final class StatusBarView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("StatusBarView is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.accent.cgColor
+        dot.layer?.backgroundColor = Self.dotColor(for: lastStatus).cgColor
     }
 
     private func configurePill() {
@@ -867,8 +870,9 @@ private final class StatusBarView: NSView {
             spinner.stopAnimation(nil)
             spinner.isHidden = true
             dot.isHidden = false
-            dot.layer?.backgroundColor = Self.dotColor(for: status).cgColor
         }
+        lastStatus = status
+        needsDisplay = true
     }
 
     private static func dotColor(for status: BuildStatusDisplay) -> NSColor {

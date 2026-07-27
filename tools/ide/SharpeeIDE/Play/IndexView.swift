@@ -27,7 +27,6 @@ final class IndexView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.backgroundColor = Theme.playBackground.cgColor
 
         statsLabel.font = NSFont.systemFont(ofSize: 11, weight: .medium)
         statsLabel.textColor = Theme.foreground
@@ -94,6 +93,12 @@ final class IndexView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("IndexView is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.playBackground.cgColor
     }
 
     /// Renders a tree display state (shared with the project tree: populated /

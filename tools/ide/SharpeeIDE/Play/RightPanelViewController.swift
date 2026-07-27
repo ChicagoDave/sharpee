@@ -30,9 +30,7 @@ final class RightPanelViewController: NSViewController {
     private static let diagnosisTab = 3
 
     override func loadView() {
-        let container = NSView()
-        container.wantsLayer = true
-        container.layer?.backgroundColor = Theme.playBackground.cgColor
+        let container = ThemedPane(color: Theme.playBackground)
 
         addChild(play)
         tabStrip.addTab(title: "Build")

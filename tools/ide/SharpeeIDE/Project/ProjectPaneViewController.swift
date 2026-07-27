@@ -18,9 +18,7 @@ final class ProjectPaneViewController: NSViewController, ProjectTreeDelegate {
     private let filesController = ProjectTreeViewController()
 
     override func loadView() {
-        let pane = NSView()
-        pane.wantsLayer = true
-        pane.layer?.backgroundColor = Theme.projectBackground.cgColor
+        let pane = ThemedPane(color: Theme.projectBackground)
 
         filesController.delegate = self
 

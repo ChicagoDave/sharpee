@@ -19,7 +19,7 @@ final class TabBarView: NSView {
     var onClose: ((Int) -> Void)?
 
     private let stackView = NSStackView()
-    private let bottomBorder = NSView()
+    private let bottomBorder = ThemedPane(color: Theme.border)
 
     private(set) var tabs: [TabModel] = []
     private(set) var activeIndex: Int?
@@ -34,9 +34,14 @@ final class TabBarView: NSView {
         commonInit()
     }
 
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = Theme.projectBackground.cgColor
+    }
+
     private func commonInit() {
         wantsLayer = true
-        layer?.backgroundColor = Theme.projectBackground.cgColor
 
         stackView.orientation = .horizontal
         stackView.spacing = 0
@@ -44,8 +49,6 @@ final class TabBarView: NSView {
         stackView.distribution = .fill
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
-        bottomBorder.wantsLayer = true
-        bottomBorder.layer?.backgroundColor = Theme.border.cgColor
         bottomBorder.translatesAutoresizingMaskIntoConstraints = false
 
         addSubview(stackView)
@@ -94,13 +97,15 @@ private final class TabCellView: NSView {
 
     private let label = NSTextField(labelWithString: "")
     private let closeButton = NSButton()
-    private let separator = NSView()
+    private let separator = ThemedPane(color: Theme.border)
+    private var dot: NSView?
+    private let isActive: Bool
 
     init(title: String, isActive: Bool, isDirty: Bool) {
+        self.isActive = isActive
         super.init(frame: .zero)
 
         wantsLayer = true
-        layer?.backgroundColor = (isActive ? Theme.editorBackground : Theme.projectBackground).cgColor
 
         label.stringValue = title
         label.font = NSFont.systemFont(ofSize: 12, weight: isActive ? .medium : .regular)
@@ -122,8 +127,6 @@ private final class TabCellView: NSView {
         closeButton.action = #selector(closeClicked)
         closeButton.translatesAutoresizingMaskIntoConstraints = false
 
-        separator.wantsLayer = true
-        separator.layer?.backgroundColor = Theme.border.cgColor
         separator.translatesAutoresizingMaskIntoConstraints = false
 
         addSubview(label)
@@ -152,8 +155,8 @@ private final class TabCellView: NSView {
         // Leading edge: a dirty marker dot (when applicable) precedes the label.
         if isDirty {
             let dot = NSView()
+            self.dot = dot
             dot.wantsLayer = true
-            dot.layer?.backgroundColor = (isActive ? Theme.foreground : Theme.foregroundDim).cgColor
             dot.layer?.cornerRadius = 3
             dot.translatesAutoresizingMaskIntoConstraints = false
             addSubview(dot)
@@ -172,6 +175,15 @@ private final class TabCellView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("TabCellView is not Storyboard-instantiable")
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor =
+            (isActive ? Theme.editorBackground : Theme.projectBackground).cgColor
+        dot?.layer?.backgroundColor =
+            (isActive ? Theme.foreground : Theme.foregroundDim).cgColor
     }
 
     override func mouseDown(with event: NSEvent) {

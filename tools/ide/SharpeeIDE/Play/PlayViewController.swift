@@ -63,9 +63,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
     override func loadView() {
-        let pane = NSView()
-        pane.wantsLayer = true
-        pane.layer?.backgroundColor = Theme.playBackground.cgColor
+        let pane = ThemedPane(color: Theme.playBackground)
 
         // Serve the bundle over a custom scheme (real origin → localStorage works),
         // not file:// (null origin → storage SecurityError).

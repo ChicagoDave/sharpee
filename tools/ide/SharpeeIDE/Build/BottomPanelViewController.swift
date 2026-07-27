@@ -19,9 +19,7 @@ final class BottomPanelViewController: NSViewController {
     private static let errorsTab = 1
 
     override func loadView() {
-        let container = NSView()
-        container.wantsLayer = true
-        container.layer?.backgroundColor = Theme.playBackground.cgColor
+        let container = ThemedPane(color: Theme.playBackground)
 
         tabStrip.addTab(title: "Problems")
         tabStrip.addTab(title: "Game Errors")
