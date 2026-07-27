@@ -537,7 +537,10 @@ export class BrowserClient implements BrowserClientInterface {
       // the freshly-initialized world and rebuilds from the snapshot,
       // restoring score / capabilities / state values / relationships
       // / ID counters that the v3 in-house serializer used to drop.
-      const autosaveEnvelope = this.saveManager.loadAutosaveEnvelope();
+      // Gated on `autoSave` like the per-turn write: a client that never
+      // writes autosaves must never restore a stale one (the playground
+      // reboots into DIFFERENT stories under one storage prefix).
+      const autosaveEnvelope = this.config.autoSave ? this.saveManager.loadAutosaveEnvelope() : null;
       if (autosaveEnvelope) {
         console.log('[startup] Found autosave, restoring...');
         try {

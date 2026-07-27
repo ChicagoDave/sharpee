@@ -85,6 +85,10 @@ function boot(source: string): void {
     const author = story.config.author;
     client = new BrowserClient({
       storagePrefix: '{{STORAGE_PREFIX}}-',
+      // The playground reboots into DIFFERENT stories under this one prefix:
+      // a per-turn autosave from story A must never restore over story B on
+      // the next Play. No autosave written, none restored.
+      autoSave: false,
       // ADR-248: RESTART reboots by re-running the boot path with the last source.
       reboot: () => boot(lastSource),
       defaultTheme: '{{DEFAULT_THEME}}',
