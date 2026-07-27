@@ -4,8 +4,8 @@
 
 story "The Folly at Fernhill" by "The Sharpee Project"
   id: fernhill
-  version: 0.1.0
-  blurb: One winter night to find the deed that keeps Fernhill in the family.
+  version: 0.3.0
+  blurb: One cold winter night to find the deed that keeps Fernhill in the family.
   states: evening, midnight
   use state-machines
   use scoring
