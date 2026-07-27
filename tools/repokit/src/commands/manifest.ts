@@ -10,12 +10,14 @@
  * Phase 5) at top level, locale-owned (grammar shapes, direction words —
  * Phases 4/6) under `locales`, `en-US` the sole entry today.
  *
- * This phase's slice: the stdlib action-id set, read from
+ * Slices: the stdlib action-id set, read from
  * `packages/stdlib/src/actions/constants.ts` SOURCE (the `readStdlibActionIds`
  * mechanism `repokit grammar` already uses — stdlib builds after chord, so no
- * dist exists to consult). `--check` is the freshness gate: regenerate and
- * diff against the committed module, exit 1 on drift; `repokit verify` and the
- * platform build (before chord compiles) both run it.
+ * dist exists to consult); and the per-action standard grammar pattern shapes
+ * (locale-owned), derived from the SAME `compileStandardGrammarRules`
+ * expansion that emits parser-en-us/src/grammar.ts. `--check` is the
+ * freshness gate: regenerate and diff against the committed module, exit 1 on
+ * drift; `repokit verify` and the platform build both run it.
  *
  * Public interface: ManifestCommand, runManifestStep, checkManifestModule.
  * Owner context: tools/repokit — the in-repo platform build tool (unpublished).
@@ -24,13 +26,29 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { findRepoRoot } from '../repo';
 import { Command } from './command';
-import { readStdlibActionIds } from './grammar';
+import { compileStandardGrammarRules, readStdlibActionIds } from './grammar';
 
 const MODULE_PATH = 'packages/chord/src/stdlib-manifest.ts';
 
-/** Produce the generated module's TS text from the stdlib source of truth. */
-export function generateManifestModule(root: string): { source: string; actionIds: number } {
+/** Produce the generated module's TS text from the stdlib sources of truth. */
+export function generateManifestModule(root: string): { source: string; actionIds: number; shapedActions: number } {
   const actionIds = [...readStdlibActionIds(root)].sort();
+
+  // Grammar-shape slice (ADR-276 Phase 4, census 3): the per-action pattern
+  // shapes the loader's removeRules compares by EXACT string equality —
+  // derived from the same compileStandardGrammarRules expansion that emits
+  // parser-en-us/src/grammar.ts, so the manifest and the registered rules
+  // cannot drift. The platform-side exception rules (platform-grammar.ts:
+  // `?`, `trace …`) are deliberately absent: `?` is unlexable in Chord and
+  // `trace` derives no stdlib id, so neither is expressible as a removal —
+  // the Chord grammar source IS the removable surface.
+  const { rules } = compileStandardGrammarRules(root);
+  const grammarShapes = new Map<string, string[]>();
+  for (const rule of rules) {
+    const list = grammarShapes.get(rule.action) ?? [];
+    if (!list.includes(rule.pattern)) list.push(rule.pattern);
+    grammarShapes.set(rule.action, list);
+  }
 
   const lines: string[] = [];
   lines.push('/**');
@@ -49,8 +67,15 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push(' * Owner context: @sharpee/chord (generated artifact; browser-safe).');
   lines.push(' */');
   lines.push('');
-  lines.push('/** Locale-owned stdlib facts — filled by later ADR-276 phases (grammar shapes, direction words). */');
-  lines.push('export interface StdlibLocaleFacts {}');
+  lines.push('/** Locale-owned stdlib facts (direction words join in a later ADR-276 phase). */');
+  lines.push('export interface StdlibLocaleFacts {');
+  lines.push('  /**');
+  lines.push("   * Standard grammar pattern shapes per action id — the loader's removable");
+  lines.push('   * surface (ADR-270 D3), rendered exactly as the registered rule patterns');
+  lines.push('   * (`take :item`); removal matching is string equality on these.');
+  lines.push('   */');
+  lines.push('  grammarShapes: Readonly<Record<string, readonly string[]>>;');
+  lines.push('}');
   lines.push('');
   lines.push('export interface StdlibManifest {');
   lines.push('  /** Full stdlib action-id set (`if.action.*`), from stdlib actions/constants.ts. */');
@@ -65,17 +90,41 @@ export function generateManifestModule(root: string): { source: string; actionId
     lines.push(`    ${JSON.stringify(id)},`);
   }
   lines.push('  ]),');
-  lines.push("  locales: { 'en-US': {} },");
+  lines.push('  locales: {');
+  lines.push("    'en-US': {");
+  lines.push('      grammarShapes: {');
+  for (const [action, shapes] of [...grammarShapes.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    lines.push(`        ${JSON.stringify(action)}: [${shapes.map((s) => JSON.stringify(s)).join(', ')}],`);
+  }
+  lines.push('      },');
+  lines.push('    },');
+  lines.push('  },');
   lines.push('};');
   lines.push('');
-  return { source: lines.join('\n'), actionIds: actionIds.length };
+  return { source: lines.join('\n'), actionIds: actionIds.length, shapedActions: grammarShapes.size };
 }
 
-/** Generate and write the manifest module (runs before chord compiles in the platform build). */
+/**
+ * Generate and write the manifest module (runs before chord compiles in the
+ * platform build). The grammar-shape slice needs a chord dist (any prior
+ * build's) to compile the grammar source; on a COLD build with no dist yet,
+ * the committed module stands in — the verify gate still proves freshness
+ * once a dist exists.
+ */
 export function runManifestStep(root: string, quiet = false): void {
-  const { source, actionIds } = generateManifestModule(root);
+  if (!existsSync(join(root, 'packages/chord/dist/index.js'))) {
+    if (existsSync(join(root, MODULE_PATH))) {
+      if (!quiet) console.log('manifest: cold build (no chord dist yet) — using the committed module');
+      return;
+    }
+    throw new Error(
+      'manifest: no chord dist and no committed stdlib-manifest.ts — build chord once, then run `repokit manifest`',
+    );
+  }
+  const { source, actionIds, shapedActions } = generateManifestModule(root);
   writeFileSync(join(root, MODULE_PATH), source);
-  if (!quiet) console.log(`manifest: ${MODULE_PATH} regenerated — ${actionIds} action ids`);
+  if (!quiet)
+    console.log(`manifest: ${MODULE_PATH} regenerated — ${actionIds} action ids, ${shapedActions} shaped actions`);
 }
 
 /** The freshness gate: regenerated text must match the committed module byte-for-byte. */

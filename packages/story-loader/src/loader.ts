@@ -1152,6 +1152,9 @@ export class ChordStory implements Story {
         const text = pattern.parts.map((part) => renderPatternPart(part, [])).join(' ');
         const removed = grammar.removeRules(derived, text);
         if (removed === 0) {
+          // ADR-276 census 3: the compiler's gate refuses this
+          // (analysis.unmatched-removal-pattern, from the manifest's
+          // grammar-shape slice) — defensive backstop.
           const actual = grammar
             .getRules()
             .filter((rule) => rule.action === derived && rule.tier === 'standard')

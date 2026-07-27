@@ -87,6 +87,16 @@ describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pi
     expect(manifest?.actionIds.has('if.action.taking')).toBe(true);
   });
 
+  it('Phase 4 slice: the built chord dist reports analysis.unmatched-removal-pattern with the shape listing', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const chord = require(join(REPO_ROOT, 'packages/chord/dist/index.js')) as typeof import('@sharpee/chord');
+    const result = chord.compile(cleanSource + '\nremove from action taking\n  yoink the item\n');
+    expect(result.ok).toBe(false);
+    const found = result.diagnostics.find((d) => d.code === 'analysis.unmatched-removal-pattern');
+    expect(found).toBeDefined();
+    expect(found!.message).toContain('`take :item`');
+  });
+
   it('a clean story still builds the browser bundle end to end', async () => {
     vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
       throw new Error(`process.exit(${code})`);

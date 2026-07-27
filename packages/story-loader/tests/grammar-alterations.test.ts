@@ -104,8 +104,13 @@ describe('remove from action → the removal primitive (ADR-270 D3, acceptance 4
     expect(standard).toEqual(['take :item', 'pick up :item']);
   });
 
-  it('an unmatched shape is a LoadError listing the action’s actual standard patterns', () => {
-    const story = createStory(compileSource('remove from action taking\n  yoink the item\n'));
+  it('backstop: an unmatched shape in rogue IR is a LoadError listing the action’s actual standard patterns (the compiler gates this as analysis.unmatched-removal-pattern, ADR-276)', () => {
+    // Gate-clean compile (`get :item` matches), then swap the word in the IR.
+    const ir = compileSource('remove from action taking\n  get the item\n');
+    const rogue = structuredClone(ir);
+    const word = rogue.grammarRemovals![0].patterns[0].parts.find((p) => p.kind === 'word') as { word: string };
+    word.word = 'yoink';
+    const story = createStory(rogue);
     expect(() => captureGrammarEngine(story, seedTaking)).toThrow(LoadError);
     expect(() => captureGrammarEngine(story, seedTaking)).toThrow(
       /no standard rule matches `yoink :item`.*`take :item`.*`get :item`/,
@@ -113,7 +118,7 @@ describe('remove from action → the removal primitive (ADR-270 D3, acceptance 4
   });
 
   it('backstop: an unknown removal target in rogue IR is a LoadError with a did-you-mean (the compiler gates this as analysis.removal-target, ADR-276)', () => {
-    const ir = compileSource('remove from action taking\n  remove the item\n');
+    const ir = compileSource('remove from action taking\n  get the item\n');
     const rogue = structuredClone(ir);
     rogue.grammarRemovals![0].action = 'taking_offf';
     const story = createStory(rogue);

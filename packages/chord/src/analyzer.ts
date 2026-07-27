@@ -910,6 +910,27 @@ class Analyzer {
           `\`remove from action ${removal.action}\` — no standard action has that name${this.suggestText(removal.action, stdlibBareNames)}.`,
           removal.span,
         );
+        continue;
+      }
+      // Census 3: each removal pattern must match a standard-grammar shape —
+      // rendered exactly as the loader renders it (renderPatternPart with no
+      // greedy suffix) and compared by the same string equality removeRules
+      // uses. The manifest's shapes derive from the same expansion that
+      // emits the registered rules, so agreement is structural.
+      const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes[`if.action.${removal.action}`] ?? [];
+      const renderPart = (p: IRPatternPart): string => {
+        const core = p.kind === 'alt' ? p.words.join('|') : p.kind === 'slot' ? `:${p.word}` : p.word;
+        return p.optional ? `[${core}]` : core;
+      };
+      for (const pattern of removal.patterns) {
+        const text = pattern.parts.map(renderPart).join(' ');
+        if (!shapes.includes(text)) {
+          this.diagnostics.error(
+            'analysis.unmatched-removal-pattern',
+            `\`remove from action ${removal.action}\` — no standard rule matches \`${text}\`. The action's standard patterns are: ${shapes.map((s) => `\`${s}\``).join(', ') || '(none)'}.`,
+            removal.span,
+          );
+        }
       }
     }
   }

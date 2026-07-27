@@ -48,6 +48,25 @@ describe('alteration targets (ADR-276 census 1–2)', () => {
     expect(errors(`${STORY}extend action taking\n  grammar\n    snag the item\n`)).toEqual([]);
   });
 
+  it('census 3: a removal pattern matching no standard shape is analysis.unmatched-removal-pattern, listing the shapes', () => {
+    const found = errors(`${STORY}remove from action taking\n  yoink the item\n`);
+    expect(found.map((d) => d.code)).toEqual(['analysis.unmatched-removal-pattern']);
+    expect(found[0].message).toContain('no standard rule matches `yoink :item`');
+    expect(found[0].message).toContain('`take :item`');
+    expect(found[0].message).toContain('`pick up :item`');
+  });
+
+  it('census 3: a matching removal pattern compiles clean (not stricter than the load check)', () => {
+    expect(errors(`${STORY}remove from action taking\n  get the item\n  take up the item\n`)).toEqual([]);
+  });
+
+  it('census 3: the manifest shape strings are the registered rule patterns verbatim', () => {
+    const shapes = STDLIB_MANIFEST.locales['en-US'].grammarShapes['if.action.taking'];
+    expect(shapes).toContain('take :item');
+    expect(shapes).toContain('get :item');
+    expect(Object.keys(STDLIB_MANIFEST.locales['en-US'].grammarShapes).length).toBeGreaterThanOrEqual(50);
+  });
+
   it('removals do not resolve story-first — a story action name is still analysis.removal-target', () => {
     const src =
       `${STORY}remove from action snoozing\n  grammar\n    snooze\n\n` +
