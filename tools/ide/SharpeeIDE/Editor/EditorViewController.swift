@@ -25,6 +25,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     private var lineNumberRuler: LineNumberRulerView?
     private let placeholder = NSTextField(labelWithString: "Open a file from the project pane")
     private let highlighter = SyntaxHighlighter()
+    private let transcriptHighlighter = TranscriptHighlighter()
     /// The two single-character ranges currently carrying the bracket-match background, so they
     /// can be cleared before the next match is applied.
     private var bracketRanges: [NSRange] = []
@@ -466,9 +467,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// Attribute-only edits do not fire `textDidChange`/`NSText.didChangeNotification`, so this
     /// does not recurse or churn the line-number ruler.
     private func applyHighlighting() {
-        guard let url = activeDocument?.url, highlighter.canHighlight(url),
-              let storage = textView.textStorage else { return }
-        highlighter.highlight(storage)
+        guard let url = activeDocument?.url, let storage = textView.textStorage else { return }
+        // Per-extension dispatch: `.story` → ChordLexer (ADR-258 D7);
+        // `.transcript` → the line classifier (ADR-277 D4). Never both.
+        if highlighter.canHighlight(url) {
+            highlighter.highlight(storage)
+        } else if transcriptHighlighter.canHighlight(url) {
+            transcriptHighlighter.highlight(storage)
+        }
     }
 
     private func persistTextViewToActiveDocument() {

@@ -365,6 +365,12 @@ function parseAssertion(tag: string): Assertion | null {
     return { type: 'skip' };
   }
 
+  // [OK: any] — presence-only (ADR-277 D5): passes when the command produced
+  // any output; asserts nothing about the text. The recorder's default.
+  if (/^OK:\s*any$/i.test(inner)) {
+    return { type: 'ok-any' };
+  }
+
   // [OK: contains "text"]
   const containsMatch = inner.match(/^OK:\s*contains\s+"([^"]+)"$/i);
   if (containsMatch) {

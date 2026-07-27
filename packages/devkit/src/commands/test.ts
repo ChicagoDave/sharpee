@@ -3,48 +3,67 @@
  *
  * Author-side counterpart of the platform bundle's `--test` (ADR-187 R1:
  * both tools carry a test command, each its own implementation). Resolves
- * the project (cwd, a registered name, or a path), finds its transcripts
- * (`tests/` subtree, or explicit `.transcript` arguments), loads the story
- * through the shared author-game loader (Chord `.story` or module story),
- * and drives @sharpee/transcript-tester's real runner/reporter.
+ * the project (cwd, a registered name, a directory, or a `.story` file —
+ * ADR-277 D1: the file's containing folder is the project), finds its
+ * transcripts (`tests/` subtree; under `--chain` with no explicit files,
+ * the `walkthroughs/` chain in filename order — ADR-277 D3), loads the
+ * story through the shared author-game loader (Chord `.story` or module
+ * story), and drives @sharpee/transcript-tester's real runner/reporter.
+ * With `--json`, emits the ADR-277 D1 NDJSON record stream on stdout
+ * instead of the human reporter; a validation- or load-failed transcript
+ * is a `status: 'error'` record in both modes, never a silent skip.
  *
  * Public interface: runTestCommand(rest) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
  */
 import * as path from 'node:path';
 import { existsSync, statSync } from 'node:fs';
-import type { TestableGame, TranscriptResult, TestRunResult } from '@sharpee/transcript-tester';
+import type {
+  TestableGame,
+  Transcript,
+  TranscriptResult,
+} from '@sharpee/transcript-tester';
 import { loadAuthorGame } from '../standalone/author-game.js';
 import { lookupStory } from '../registry.js';
 
 const USAGE =
-  'usage: sharpee test [name|path] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v]';
+  'usage: sharpee test [name|dir|file.story] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v] [--json]';
 
 /**
  * Run `sharpee test`.
  *
  * @param rest CLI args after the subcommand: optional project (registered
- *   name or directory), optional explicit `.transcript` files, and flags
- *   `--chain` (one game instance across all transcripts), `--stop-on-failure`,
- *   `--verbose`.
- * @returns process exit code — 0 all passed, 1 failures, 2 usage error,
- *   3 story load error (transcript-tester's convention).
+ *   name, directory, or `.story` file), optional explicit `.transcript`
+ *   files, and flags `--chain` (one game instance across all transcripts;
+ *   with no explicit files it runs the `walkthroughs/` chain),
+ *   `--stop-on-failure`, `--verbose`, `--json` (NDJSON record stream on
+ *   stdout — ADR-277 D1).
+ * @returns process exit code — 0 all passed, 1 failures or transcript
+ *   errors, 2 usage error, 3 story load error (transcript-tester's
+ *   convention). Never calls `process.exit()` — a piped `--json` stream
+ *   must flush completely (the 64KB-pipe gotcha, see cli.ts).
  */
 export async function runTestCommand(rest: string[]): Promise<number> {
   // Lazy require (compose.ts pattern): pull the harness only when testing.
   const {
+    aggregateTestRun,
     findTranscripts,
     getExitCode,
+    ndjsonLine,
     parseTranscriptFile,
     reportTestRun,
     reportTranscript,
+    runEndRecord,
+    runStartRecord,
     runTranscript,
+    transcriptRecords,
     validateTranscript,
   } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
   let chain = false;
   let stopOnFailure = false;
   let verbose = false;
+  let json = false;
   let projectDir: string | undefined;
   const transcriptPaths: string[] = [];
 
@@ -52,11 +71,24 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     if (arg === '--chain' || arg === '-c') chain = true;
     else if (arg === '--stop-on-failure' || arg === '-s') stopOnFailure = true;
     else if (arg === '--verbose' || arg === '-v') verbose = true;
+    else if (arg === '--json') json = true;
     else if (arg.startsWith('-')) {
       console.error(`test: unknown flag '${arg}'\n${USAGE}`);
       return 2;
     } else if (arg.endsWith('.transcript')) {
       transcriptPaths.push(arg);
+    } else if (arg.endsWith('.story')) {
+      // ADR-277 D1: one mental model across build/compose/test — the
+      // `.story` file's containing folder is the project.
+      if (projectDir) {
+        console.error(`test: unexpected argument '${arg}'\n${USAGE}`);
+        return 2;
+      }
+      if (!existsSync(arg) || !statSync(arg).isFile()) {
+        console.error(`test: story file '${arg}' not found`);
+        return 2;
+      }
+      projectDir = path.dirname(path.resolve(arg));
     } else if (!projectDir) {
       if (existsSync(arg) && statSync(arg).isDirectory()) projectDir = arg;
       else {
@@ -78,16 +110,55 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   const dir = path.resolve(projectDir ?? process.cwd());
   let transcripts = transcriptPaths.map((p) => path.resolve(p));
   if (transcripts.length === 0) {
-    const testsDir = path.join(dir, 'tests');
-    if (existsSync(testsDir)) transcripts = findTranscripts(testsDir);
+    if (chain) {
+      // ADR-277 D3: `--chain` with no explicit files runs the walkthroughs/
+      // chain in filename order. The bare run below never scans it.
+      const walkthroughsDir = path.join(dir, 'walkthroughs');
+      if (existsSync(walkthroughsDir)) transcripts = findTranscripts(walkthroughsDir).sort();
+      if (transcripts.length === 0) {
+        console.error(
+          `test: no walkthrough transcripts found (--chain with no files scans ${walkthroughsDir})`,
+        );
+        return 2;
+      }
+    } else {
+      const testsDir = path.join(dir, 'tests');
+      if (existsSync(testsDir)) transcripts = findTranscripts(testsDir);
+      if (transcripts.length === 0) {
+        console.error(`test: no transcript files found (looked in ${testsDir})`);
+        return 2;
+      }
+    }
   }
   transcripts = [...new Set(transcripts)];
-  if (transcripts.length === 0) {
-    console.error(`test: no transcript files found (looked in ${path.join(dir, 'tests')})`);
-    return 2;
-  }
 
-  console.log(`Loading story from: ${dir}`);
+  // In --json mode, stdout is exclusively the NDJSON stream: informational
+  // lines are dropped (diagnostics stay on stderr) and the chalk reporter
+  // never runs. `process.stdout.write`, never `process.exit()` (header doc).
+  const info = (msg: string): void => {
+    if (!json) console.log(msg);
+  };
+  const emitTranscript = (result: TranscriptResult, index: number): void => {
+    if (!json) return;
+    for (const record of transcriptRecords(result, index)) process.stdout.write(ndjsonLine(record));
+  };
+
+  /** An error-status result for a transcript that never ran (ADR-277 D1). */
+  const errorResult = (transcriptPath: string, errorMessage: string, transcript?: Transcript): TranscriptResult => ({
+    transcript: transcript ?? { filePath: transcriptPath, header: {}, commands: [], comments: [] },
+    commands: [],
+    status: 'error',
+    passed: 0,
+    failed: 0,
+    expectedFailures: 0,
+    skipped: 0,
+    duration: 0,
+    errorMessage,
+  });
+
+  if (json) process.stdout.write(ndjsonLine(runStartRecord(chain ? 'chain' : 'tests', transcripts.length)));
+
+  info(`Loading story from: ${dir}`);
   // Chain mode shares one game across transcripts; per-transcript mode loads
   // fresh below (honoring each transcript's optional `entry:` header).
   let game: TestableGame | undefined;
@@ -95,21 +166,48 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     try {
       game = await loadAuthorGame(dir);
     } catch (error) {
-      console.error(`Error loading story: ${error instanceof Error ? error.message : error}`);
+      const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
+      console.error(message);
+      // Nothing can run — every transcript is an error record, never absent.
+      const results = transcripts.map((t, i) => {
+        const r = errorResult(t, message);
+        emitTranscript(r, i);
+        return r;
+      });
+      if (json) process.stdout.write(ndjsonLine(runEndRecord(aggregateTestRun(results), 3)));
       return 3;
     }
   }
 
-  console.log(`Found ${transcripts.length} transcript(s) to run`);
-  if (chain) console.log('Chain mode: Game state will persist between transcripts');
+  info(`Found ${transcripts.length} transcript(s) to run`);
+  if (chain) info('Chain mode: Game state will persist between transcripts');
 
   const results: TranscriptResult[] = [];
-  for (const transcriptPath of transcripts) {
-    const transcript = parseTranscriptFile(transcriptPath);
+  let loadError = false;
+  for (let index = 0; index < transcripts.length; index++) {
+    const transcriptPath = transcripts[index];
+
+    let transcript: Transcript;
+    try {
+      transcript = parseTranscriptFile(transcriptPath);
+    } catch (error) {
+      const message = `Error parsing transcript: ${error instanceof Error ? error.message : error}`;
+      console.error(`\n${transcriptPath}: ${message}`);
+      const result = errorResult(transcriptPath, message);
+      results.push(result);
+      emitTranscript(result, index);
+      if (!json) reportTranscript(result, { verbose });
+      continue;
+    }
+
     const errors = validateTranscript(transcript);
     if (errors.length > 0) {
       console.error(`\nErrors in ${transcriptPath}:`);
       for (const err of errors) console.error(`  - ${err}`);
+      const result = errorResult(transcriptPath, `Transcript validation failed: ${errors.join('; ')}`, transcript);
+      results.push(result);
+      emitTranscript(result, index);
+      if (!json) reportTranscript(result, { verbose });
       continue;
     }
 
@@ -117,25 +215,30 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       try {
         game = await loadAuthorGame(dir, { entry: transcript.header.entry });
       } catch (error) {
-        console.error(`Error loading story: ${error instanceof Error ? error.message : error}`);
-        return 3;
+        const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
+        console.error(message);
+        // The story is broken for this and every remaining transcript: each
+        // gets an error record (never a silent gap), and the run exits 3.
+        for (let j = index; j < transcripts.length; j++) {
+          const r = errorResult(transcripts[j], message);
+          results.push(r);
+          emitTranscript(r, j);
+        }
+        loadError = true;
+        break;
       }
     }
 
     const result = await runTranscript(transcript, game!, { verbose, stopOnFailure });
     results.push(result);
-    reportTranscript(result, { verbose });
+    emitTranscript(result, index);
+    if (!json) reportTranscript(result, { verbose });
     if (stopOnFailure && result.failed > 0) break;
   }
 
-  const runResult: TestRunResult = {
-    transcripts: results,
-    totalPassed: results.reduce((sum, r) => sum + r.passed, 0),
-    totalFailed: results.reduce((sum, r) => sum + r.failed, 0),
-    totalExpectedFailures: results.reduce((sum, r) => sum + r.expectedFailures, 0),
-    totalSkipped: results.reduce((sum, r) => sum + r.skipped, 0),
-    totalDuration: results.reduce((sum, r) => sum + r.duration, 0),
-  };
-  if (results.length > 1) reportTestRun(runResult, { verbose });
-  return getExitCode(runResult);
+  const runResult = aggregateTestRun(results);
+  if (!json && results.length > 1) reportTestRun(runResult, { verbose });
+  const code = loadError ? 3 : getExitCode(runResult);
+  if (json) process.stdout.write(ndjsonLine(runEndRecord(runResult, code)));
+  return code;
 }

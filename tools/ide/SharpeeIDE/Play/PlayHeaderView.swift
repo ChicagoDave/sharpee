@@ -13,9 +13,11 @@ final class PlayHeaderView: NSView {
 
     var onRestart: (() -> Void)?
     var onPlayAfterBuildToggle: ((Bool) -> Void)?
+    var onRecordToggle: (() -> Void)?
 
     private let dot = NSView()
     private let restartButton = NSButton()
+    private let recordButton = NSButton()
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
 
     override func layout() {
@@ -23,6 +25,7 @@ final class PlayHeaderView: NSView {
         // Header controls never dictate the pane's width (divider stays free);
         // they clip before they resist.
         restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        recordButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
@@ -42,6 +45,13 @@ final class PlayHeaderView: NSView {
         restartButton.action = #selector(restartClicked)
         restartButton.translatesAutoresizingMaskIntoConstraints = false
 
+        recordButton.title = "Record"
+        recordButton.bezelStyle = .rounded
+        recordButton.controlSize = .small
+        recordButton.target = self
+        recordButton.action = #selector(recordClicked)
+        recordButton.translatesAutoresizingMaskIntoConstraints = false
+
         playAfterBuildCheckbox.target = self
         playAfterBuildCheckbox.action = #selector(playAfterBuildChanged)
         playAfterBuildCheckbox.controlSize = .small
@@ -50,6 +60,7 @@ final class PlayHeaderView: NSView {
 
         addSubview(dot)
         addSubview(restartButton)
+        addSubview(recordButton)
         addSubview(playAfterBuildCheckbox)
 
         NSLayoutConstraint.activate([
@@ -60,6 +71,9 @@ final class PlayHeaderView: NSView {
 
             restartButton.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 10),
             restartButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            recordButton.leadingAnchor.constraint(equalTo: restartButton.trailingAnchor, constant: 6),
+            recordButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             playAfterBuildCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             playAfterBuildCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -72,10 +86,17 @@ final class PlayHeaderView: NSView {
         fatalError("PlayHeaderView is not Storyboard-instantiable")
     }
 
-    /// Green dot + enabled Restart when a story is loaded; dim dot + disabled Restart otherwise.
+    /// Green dot + enabled Restart/Record when a story is loaded; dim + disabled otherwise.
     func setLoaded(_ loaded: Bool) {
         dot.layer?.backgroundColor = (loaded ? NSColor.systemGreen : Theme.foregroundFaint).cgColor
         restartButton.isEnabled = loaded
+        recordButton.isEnabled = loaded
+    }
+
+    /// Reflects recording state: red "Stop Recording" while capturing.
+    func setRecording(_ recording: Bool) {
+        recordButton.title = recording ? "Stop Recording" : "Record"
+        recordButton.contentTintColor = recording ? .systemRed : nil
     }
 
     func setPlayAfterBuild(_ on: Bool) {
@@ -84,6 +105,10 @@ final class PlayHeaderView: NSView {
 
     @objc private func restartClicked() {
         onRestart?()
+    }
+
+    @objc private func recordClicked() {
+        onRecordToggle?()
     }
 
     @objc private func playAfterBuildChanged() {

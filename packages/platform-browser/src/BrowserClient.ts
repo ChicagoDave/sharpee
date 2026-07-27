@@ -25,6 +25,7 @@ import { SaveManager } from './managers/SaveManager.js';
 import { DialogManager } from './managers/DialogManager.js';
 import { MenuManager } from './managers/MenuManager.js';
 import { InputManager } from './managers/InputManager.js';
+import { emitTurnEvent } from './turn-events.js';
 import { TextDisplay } from './display/TextDisplay.js';
 import { StatusLine } from './display/StatusLine.js';
 import { AudioManager } from './audio/AudioManager.js';
@@ -594,6 +595,12 @@ export class BrowserClient implements BrowserClientInterface {
     // completes before any queued events fire into a still-suspended context.
     await this.audioManager.unlock();
 
+    // Recording bridge (ADR-277 D5): the turn's response is whatever lands in
+    // the main text slot after this point — channel prose AND system messages
+    // both append there (`layout.main` adapts to the same element).
+    const textSlot = this.elements?.textContent ?? null;
+    const childCountBeforeTurn = textSlot?.children.length ?? 0;
+
     // Display command echo
     this.textDisplay.displayCommand(command);
 
@@ -605,6 +612,19 @@ export class BrowserClient implements BrowserClientInterface {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.textDisplay.displayText(`[Error: ${message}]`);
+    }
+
+    // Emit the completed turn to an embedding IDE (no-op outside one) —
+    // BEFORE any deferred reboot clears the slot.
+    if (textSlot) {
+      const parts: string[] = [];
+      for (let i = childCountBeforeTurn; i < textSlot.children.length; i++) {
+        const child = textSlot.children[i];
+        if (child.classList.contains('command-echo')) continue;
+        const text = child.textContent?.trim();
+        if (text) parts.push(text);
+      }
+      emitTurnEvent(command, parts.join('\n'));
     }
 
     // ADR-248: a confirmed restart defers its reboot to here — the turn is

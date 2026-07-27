@@ -24,6 +24,7 @@ import {
 } from './reporter.js';
 import { loadStory, findTranscripts, TestableGame } from './story-loader.js';
 import { TranscriptResult, TestRunResult } from './types.js';
+import { aggregateTestRun } from './aggregate.js';
 
 interface CliOptions {
   storyPath: string;
@@ -366,15 +367,8 @@ async function main(): Promise<void> {
     }
   }
 
-  // Aggregate results
-  const runResult: TestRunResult = {
-    transcripts: results,
-    totalPassed: results.reduce((sum, r) => sum + r.passed, 0),
-    totalFailed: results.reduce((sum, r) => sum + r.failed, 0),
-    totalExpectedFailures: results.reduce((sum, r) => sum + r.expectedFailures, 0),
-    totalSkipped: results.reduce((sum, r) => sum + r.skipped, 0),
-    totalDuration: results.reduce((sum, r) => sum + r.duration, 0)
-  };
+  // Aggregate results (the one shared reduce — ADR-277 D1)
+  const runResult: TestRunResult = aggregateTestRun(results);
 
   // Final report if multiple transcripts
   if (results.length > 1) {

@@ -16,6 +16,7 @@ final class RightPanelViewController: NSViewController {
     let play = PlayViewController()
     let index = IndexView()
     let diagnosis = ErrorDiagnosisView()
+    let testPanel = TestPanelView()
 
     /// Forwarded from the Diagnosis view: a clicked source location to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)? {
@@ -28,6 +29,7 @@ final class RightPanelViewController: NSViewController {
     private static let playTab = 1
     private static let indexTab = 2
     private static let diagnosisTab = 3
+    private static let testTab = 4
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
@@ -37,6 +39,7 @@ final class RightPanelViewController: NSViewController {
         tabStrip.addTab(title: "Play")
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
+        tabStrip.addTab(title: "Test")
         tabStrip.onSelect = { [weak self] tab in self?.show(tab: tab) }
         tabStrip.translatesAutoresizingMaskIntoConstraints = false
 
@@ -44,11 +47,13 @@ final class RightPanelViewController: NSViewController {
         play.view.translatesAutoresizingMaskIntoConstraints = false
         index.translatesAutoresizingMaskIntoConstraints = false
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
+        testPanel.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
         container.addSubview(play.view)
         container.addSubview(index)
         container.addSubview(diagnosis)
+        container.addSubview(testPanel)
 
         NSLayoutConstraint.activate([
             tabStrip.topAnchor.constraint(equalTo: container.topAnchor),
@@ -74,6 +79,11 @@ final class RightPanelViewController: NSViewController {
             diagnosis.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             diagnosis.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             diagnosis.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            testPanel.topAnchor.constraint(equalTo: play.view.topAnchor),
+            testPanel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            testPanel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            testPanel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
         view = container
@@ -107,10 +117,16 @@ final class RightPanelViewController: NSViewController {
         tabStrip.setCount(0, forTab: Self.diagnosisTab)
     }
 
+    /// Switches to the Test tab (a test run just started — results stream here).
+    func showTestTab() {
+        tabStrip.select(Self.testTab)
+    }
+
     private func show(tab selected: Int) {
         buildPanel.isHidden = selected != Self.buildTab
         play.view.isHidden = selected != Self.playTab
         index.isHidden = selected != Self.indexTab
         diagnosis.isHidden = selected != Self.diagnosisTab
+        testPanel.isHidden = selected != Self.testTab
     }
 }

@@ -91,6 +91,33 @@ final class MainWindowController: NSWindowController {
         rootViewController?.storyBuildReport()
     }
 
+    /// The right panel's Tests surface (ADR-277 D2) — wired by TestController.
+    /// Force-unwrap-free: the panel exists for the window's lifetime; the
+    /// fallback instance only serves a window-less controller (tests).
+    var testPanel: TestPanelView {
+        rootViewController?.testPanel ?? TestPanelView()
+    }
+
+    /// Switches the right panel to the Test tab (a test run just started).
+    func showTestTab() {
+        rootViewController?.showTestTab()
+    }
+
+    /// Points Play recording at the open story (ADR-277 D5).
+    func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
+        rootViewController?.configureRecording(saveDirectory: saveDirectory, onRecorded: onRecorded)
+    }
+
+    /// The editor's focused document (Run Current Test File target), or nil.
+    var activeDocumentURL: URL? {
+        rootViewController?.activeDocumentURL
+    }
+
+    /// Opens a document at an exact line (test-result click-through, D2).
+    func openDocument(at url: URL, line: Int, column: Int) {
+        rootViewController?.openDocument(at: url, line: line, column: column)
+    }
+
     /// Loads (or clears) the Play pane for the given story's web bundle.
     func refreshPlay(projectRoot: URL?) {
         rootViewController?.refreshPlay(projectRoot: projectRoot)
@@ -324,6 +351,25 @@ private final class RootViewController: NSViewController {
 
     func showBuildOutput() {
         mainSplitViewController.showBuildTab()
+    }
+
+    /// The right panel's Tests surface (ADR-277 D2) — wired by TestController.
+    var testPanel: TestPanelView { mainSplitViewController.testPanel }
+
+    func showTestTab() {
+        mainSplitViewController.showTestTab()
+    }
+
+    /// Points Play recording at the open story (ADR-277 D5).
+    func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
+        mainSplitViewController.configureRecording(saveDirectory: saveDirectory, onRecorded: onRecorded)
+    }
+
+    /// The editor's focused document (Run Current Test File enablement/target).
+    var activeDocumentURL: URL? { mainSplitViewController.activeDocumentURL }
+
+    func openDocument(at url: URL, line: Int, column: Int) {
+        mainSplitViewController.openDocument(at: url, line: line, column: column)
     }
 
     func storyBuildReport() -> String? {
@@ -603,6 +649,28 @@ private final class MainSplitViewController: NSSplitViewController {
 
     fileprivate func showBuildTab() {
         rightPanelViewController.showBuildTab()
+    }
+
+    /// Tests-panel plumbing — the Test tab lives in the right panel (ADR-277 D2).
+    fileprivate var testPanel: TestPanelView { rightPanelViewController.testPanel }
+
+    /// Points Play recording at the open story (save-panel default dir +
+    /// re-discovery hook for the Tests panel) — ADR-277 D5.
+    fileprivate func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
+        playViewController.recordingSaveDirectory = saveDirectory
+        playViewController.onTranscriptRecorded = onRecorded
+    }
+
+    fileprivate func showTestTab() {
+        rightPanelViewController.showTestTab()
+    }
+
+    /// The editor's focused document, or nil when nothing is open (drives the
+    /// Test menu's Run Current File).
+    fileprivate var activeDocumentURL: URL? {
+        guard let index = editorViewController.activeDocumentIndex else { return nil }
+        let urls = editorViewController.openDocumentURLs
+        return urls.indices.contains(index) ? urls[index] : nil
     }
 
     /// Applies a persisted "Play after build" value (session restore).

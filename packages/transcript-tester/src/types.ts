@@ -125,7 +125,8 @@ export interface TranscriptHeader {
  * A single assertion about command output, events, or state
  */
 export interface Assertion {
-  type: 'ok' | 'ok-contains' | 'ok-contains-any' | 'ok-matches' | 'ok-not-contains' | 'fail' | 'skip' | 'todo'
+  type: 'ok' | 'ok-any' | 'ok-contains' | 'ok-contains-any' | 'ok-matches' | 'ok-not-contains'
+      | 'fail' | 'skip' | 'todo'
       | 'event-count' | 'event-assert' | 'state-assert';
   value?: string;      // For contains/matches
   values?: string[];   // For contains_any: match any of these
@@ -213,11 +214,19 @@ export interface AssertionResult {
 export interface TranscriptResult {
   transcript: Transcript;
   commands: CommandResult[];
+  /**
+   * Per-transcript outcome (ADR-277 D1). `error` = the transcript never ran
+   * (validation or story-load failure) — it still gets a result record
+   * instead of vanishing from the run.
+   */
+  status: 'passed' | 'failed' | 'error';
   passed: number;
   failed: number;
   expectedFailures: number;
   skipped: number;
   duration: number;  // milliseconds
+  /** Present exactly when `status` is `'error'`: why the transcript never ran. */
+  errorMessage?: string;
 }
 
 /**
@@ -229,6 +238,8 @@ export interface TestRunResult {
   totalFailed: number;
   totalExpectedFailures: number;
   totalSkipped: number;
+  /** Count of transcripts with `status: 'error'` (ADR-277 D1). */
+  totalErrors: number;
   totalDuration: number;
 }
 

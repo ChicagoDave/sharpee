@@ -69,6 +69,18 @@ Lines starting with `#` are comments (ignored):
 
 Text assertions check the game's textual output.
 
+### Any Output
+
+Check only that the command produced some output — no assertion about the
+text. The IDE's Play recorder writes this form; RNG-varied story text
+replays green:
+
+```
+> look
+[OK: any]
+# The response captured at record time stays here as a comment.
+```
+
 ### Contains
 
 Check that output contains a substring (case-sensitive):

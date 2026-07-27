@@ -133,6 +133,7 @@ export async function runTranscript(
   return {
     transcript,
     commands: results,
+    status: failed > 0 ? 'failed' as const : 'passed' as const,
     passed,
     failed,
     expectedFailures,
@@ -318,6 +319,7 @@ async function runSmartTranscript(
   return {
     transcript,
     commands: results,
+    status: failed > 0 ? 'failed' as const : 'passed' as const,
     passed,
     failed,
     expectedFailures,
@@ -1177,6 +1179,16 @@ function checkAssertion(
         passed: matches,
         message: matches ? undefined : `Output did not match expected`
       };
+
+    case 'ok-any': {
+      // Presence-only (ADR-277 D5): the command produced SOME output.
+      const hasOutput = actualOutput.trim().length > 0;
+      return {
+        assertion,
+        passed: hasOutput,
+        message: hasOutput ? undefined : 'No output produced'
+      };
+    }
 
     case 'ok-contains':
       const contains = actualOutput.toLowerCase().includes(assertion.value!.toLowerCase());

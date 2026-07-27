@@ -14,6 +14,7 @@ enum MenuBuilder {
         mainMenu.addItem(makeEditMenuItem())
         mainMenu.addItem(makeViewMenuItem(target: target))
         mainMenu.addItem(makeBuildMenuItem(target: target))
+        mainMenu.addItem(makeTestMenuItem(target: target))
         mainMenu.addItem(makeWindowMenuItem())
         return mainMenu
     }
@@ -163,6 +164,44 @@ enum MenuBuilder {
         let cancel = NSMenuItem(title: "Cancel Build",
                                 action: #selector(AppDelegate.cancelBuild(_:)),
                                 keyEquivalent: ".")
+        cancel.target = target
+        menu.addItem(cancel)
+
+        let item = NSMenuItem()
+        item.submenu = menu
+        return item
+    }
+
+    // MARK: - Test menu (ADR-277 D2)
+
+    private static func makeTestMenuItem(target: AnyObject) -> NSMenuItem {
+        let menu = NSMenu(title: "Test")
+
+        let runAll = NSMenuItem(title: "Run All Tests",
+                                action: #selector(AppDelegate.runAllTests(_:)),
+                                keyEquivalent: "u")
+        runAll.target = target
+        menu.addItem(runAll)
+
+        let runChain = NSMenuItem(title: "Run Walkthrough Chain",
+                                  action: #selector(AppDelegate.runTestChain(_:)),
+                                  keyEquivalent: "u")
+        runChain.keyEquivalentModifierMask = [.command, .option]
+        runChain.target = target
+        menu.addItem(runChain)
+
+        let runFile = NSMenuItem(title: "Run Current Test File",
+                                 action: #selector(AppDelegate.runCurrentTestFile(_:)),
+                                 keyEquivalent: "u")
+        runFile.keyEquivalentModifierMask = [.command, .control]
+        runFile.target = target
+        menu.addItem(runFile)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let cancel = NSMenuItem(title: "Cancel Test Run",
+                                action: #selector(AppDelegate.cancelTestRun(_:)),
+                                keyEquivalent: "")
         cancel.target = target
         menu.addItem(cancel)
 

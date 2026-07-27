@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     private var mainWindowController: MainWindowController?
     private var buildController: BuildController?
+    private var testController: TestController?
 
     /// Root folder of the currently loaded project (the folder around the story,
     /// ADR-258 D2). Nil when no project is loaded.
@@ -31,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         let controller = MainWindowController()
         mainWindowController = controller
         buildController = BuildController(window: controller)
+        testController = TestController(window: controller)
         controller.onBuildPillCancel = { [weak self] in self?.buildController?.cancel() }
         controller.showWindow(nil)
         controller.window?.makeKeyAndOrderFront(nil)
@@ -214,6 +216,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         // never prompts for or runs npm/node_modules/init-browser.
         currentStoryURL = StoryTarget.storyFile(in: url)
 
+        // The Tests panel tracks the same target (ADR-277 D2): discover its
+        // tests/ + walkthroughs/ tree now; runs are user-initiated. Play
+        // recording saves into the story's tests/ and re-discovers on save (D5).
+        if let storyURL = currentStoryURL {
+            testController?.attach(storyFile: storyURL)
+            mainWindowController?.configureRecording(
+                saveDirectory: storyURL.deletingLastPathComponent().appendingPathComponent("tests"),
+                onRecorded: { [weak self] _ in
+                    guard let self, let story = self.currentStoryURL else { return }
+                    self.testController?.attach(storyFile: story)
+                })
+        } else {
+            testController?.detach()
+        }
+
         // Show the built browser client in the Play pane (placeholder if none built).
         mainWindowController?.refreshPlay(projectRoot: currentRepoRoot)
 
@@ -275,6 +292,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         buildController?.cancel()
     }
 
+    // MARK: - Test menu actions (ADR-277 D2/D3)
+
+    /// Test → Run All Tests (⌘U). Runs the story's `tests/` subtree via
+    /// `sharpee test <file>.story --json`, streaming into the Test tab.
+    @objc func runAllTests(_ sender: Any?) {
+        testController?.runAll()
+    }
+
+    /// Test → Run Walkthrough Chain (⌥⌘U). Runs `walkthroughs/` with `--chain`
+    /// (one game, state persists — D3).
+    @objc func runTestChain(_ sender: Any?) {
+        testController?.runChain()
+    }
+
+    /// Test → Run Current Test File (^⌘U). Runs the editor's focused
+    /// `.transcript` against the story.
+    @objc func runCurrentTestFile(_ sender: Any?) {
+        guard let transcript = mainWindowController?.activeDocumentURL,
+              transcript.pathExtension == "transcript" else { return }
+        testController?.runFile(transcript)
+    }
+
+    /// Test → Cancel Test Run. SIGTERM, then SIGKILL; decoded results stay.
+    @objc func cancelTestRun(_ sender: Any?) {
+        testController?.cancel()
+    }
+
     /// View → Word Wrap. Toggles soft wrap in the editor (persisted).
     @objc func toggleWordWrap(_ sender: Any?) {
         mainWindowController?.setWordWrap(!WordWrapPreference.isEnabled)
@@ -306,6 +350,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(buildController?.isBuilding ?? false)
         case #selector(cancelBuild(_:)):
             return buildController?.isBuilding ?? false
+        case #selector(runAllTests(_:)), #selector(runTestChain(_:)):
+            return currentStoryURL != nil
+                && mainWindowController?.composedStory?.isGrammar != true
+                && !(testController?.isTesting ?? false)
+        case #selector(runCurrentTestFile(_:)):
+            return currentStoryURL != nil
+                && mainWindowController?.activeDocumentURL?.pathExtension == "transcript"
+                && !(testController?.isTesting ?? false)
+        case #selector(cancelTestRun(_:)):
+            return testController?.isTesting ?? false
         case #selector(toggleWordWrap(_:)):
             menuItem.state = WordWrapPreference.isEnabled ? .on : .off
             return true

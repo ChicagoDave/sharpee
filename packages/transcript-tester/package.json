@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/transcript-tester",
-  "version": "4.1.2",
+  "version": "4.2.0",
   "description": "Transcript-based testing tool for Sharpee interactive fiction",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -11,7 +11,8 @@
     "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
-    "build:npm": "tsc --outDir dist"
+    "build:npm": "tsc --outDir dist",
+    "test": "vitest run"
   },
   "dependencies": {
     "@sharpee/bootstrap": "workspace:*",
@@ -26,6 +27,7 @@
     "glob": "^10.3.10"
   },
   "devDependencies": {
+    "@sharpee/ide-protocol": "workspace:*",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",

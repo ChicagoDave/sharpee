@@ -12,6 +12,9 @@ import WebKit
 final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     private static let consoleHandlerName = "playConsole"
+    /// The turn-events bridge (ADR-277 D5): the browser client posts
+    /// `{command, response}` JSON here after each turn's response renders.
+    private static let turnEventsHandlerName = "turnEvents"
 
     /// Hooks the page's console.error / window.onerror / unhandledrejection and forwards
     /// them to Swift, so Play-runtime errors are visible in the IDE (no WebView inspector
@@ -62,6 +65,17 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// against the bundle's source map into a navigable error.
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
+    /// Captures turns while the header's Record toggle is active (ADR-277 D5).
+    let recording = RecordingSession()
+
+    /// Where the save panel opens for a recorded transcript — the open story's
+    /// `tests/` directory; set by the project-load path.
+    var recordingSaveDirectory: URL?
+
+    /// Fired after a recorded `.transcript` is written, so the Tests panel can
+    /// re-discover its tree.
+    var onTranscriptRecorded: ((URL) -> Void)?
+
     override func loadView() {
         let pane = ThemedPane(color: Theme.playBackground)
 
@@ -74,12 +88,14 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
                                                      injectionTime: .atDocumentStart,
                                                      forMainFrameOnly: true))
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
+        contentController.add(WeakScriptMessageHandler(self), name: Self.turnEventsHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true // right-click → Inspect Element to debug the running story
         webView.translatesAutoresizingMaskIntoConstraints = false
 
         header.translatesAutoresizingMaskIntoConstraints = false
         header.onRestart = { [weak self] in self?.restart() }
+        header.onRecordToggle = { [weak self] in self?.toggleRecording() }
         header.onPlayAfterBuildToggle = { [weak self] on in
             self?.playAfterBuild = on
             self?.onPlayAfterBuildChanged?()
@@ -192,16 +208,84 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         header.setLoaded(false)
     }
 
+    // MARK: - Recording (ADR-277 D5)
+
+    /// Record ⇄ Stop. Stopping with captured turns offers the save panel;
+    /// stopping an empty capture just resets the toggle.
+    private func toggleRecording() {
+        if recording.isRecording {
+            recording.stop()
+            header.setRecording(false)
+            if !recording.turns.isEmpty { saveRecording() }
+        } else {
+            recording.start()
+            header.setRecording(true)
+        }
+    }
+
+    /// Writes the captured session as a draft `.transcript` where the author
+    /// chooses (defaulting into the story's `tests/`), then announces it so
+    /// the Tests panel re-discovers.
+    private func saveRecording() {
+        guard let window = view.window else { return }
+        let panel = NSSavePanel()
+        panel.title = "Save Recorded Transcript"
+        panel.nameFieldStringValue = "recorded.transcript"
+        if let dir = recordingSaveDirectory {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            panel.directoryURL = dir
+        }
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard let self, response == .OK, let url = panel.url else { return }
+            do {
+                try self.writeRecording(to: url)
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = "Could not save the transcript"
+                alert.informativeText = error.localizedDescription
+                alert.alertStyle = .warning
+                alert.beginSheetModal(for: window, completionHandler: nil)
+            }
+        }
+    }
+
+    /// Serializes the captured session to `url` and announces it (the panel
+    /// flow's write half, split out so tests drive the real write + announce
+    /// without an NSSavePanel).
+    func writeRecording(to url: URL) throws {
+        let title = url.deletingPathExtension().lastPathComponent
+        try recording.serialize(title: "Recorded: \(title)")
+            .write(to: url, atomically: true, encoding: .utf8)
+        onTranscriptRecorded?(url)
+    }
+
     // MARK: - WKScriptMessageHandler
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard message.name == Self.consoleHandlerName, let text = message.body as? String else { return }
-        guard let loaded else {
-            onConsoleError?(PlayConsoleError(message: text, frames: [],
-                                            translation: SharpeeErrorTranslator.translate(message: text)))
-            return
+        switch message.name {
+        case Self.turnEventsHandlerName:
+            guard let body = message.body as? String,
+                  let data = body.data(using: .utf8),
+                  let turn = try? JSONDecoder().decode(TurnEventBody.self, from: data) else { return }
+            recording.record(command: turn.command, response: turn.response)
+        case Self.consoleHandlerName:
+            guard let text = message.body as? String else { return }
+            guard let loaded else {
+                onConsoleError?(PlayConsoleError(message: text, frames: [],
+                                                translation: SharpeeErrorTranslator.translate(message: text)))
+                return
+            }
+            onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: loaded))
+        default:
+            break
         }
-        onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: loaded))
+    }
+
+    /// The `turnEvents` message body — mirrors platform-browser's
+    /// `TurnEventPayload` (the D5 wire shape).
+    private struct TurnEventBody: Codable {
+        let command: String
+        let response: String
     }
 }
 

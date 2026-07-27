@@ -39,3 +39,22 @@ export {
   isComposeDiagnosticRecord,
   isComposeJsonPayload,
 } from './compose-diagnostics.js';
+
+// `test --json` NDJSON wire contract (ADR-277 D1): the versioned record stream.
+export type {
+  RunStartRecord,
+  TranscriptStartRecord,
+  CommandResultRecord,
+  TranscriptEndRecord,
+  RunEndRecord,
+  TestResultRecord,
+} from './test-results.js';
+export {
+  TEST_RESULTS_SCHEMA_VERSION,
+  isRunStartRecord,
+  isTranscriptStartRecord,
+  isCommandResultRecord,
+  isTranscriptEndRecord,
+  isRunEndRecord,
+  isTestResultRecord,
+} from './test-results.js';

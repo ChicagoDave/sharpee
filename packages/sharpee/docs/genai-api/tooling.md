@@ -460,7 +460,7 @@ export interface TranscriptHeader {
  * A single assertion about command output, events, or state
  */
 export interface Assertion {
-    type: 'ok' | 'ok-contains' | 'ok-contains-any' | 'ok-matches' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert';
+    type: 'ok' | 'ok-any' | 'ok-contains' | 'ok-contains-any' | 'ok-matches' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert';
     value?: string;
     values?: string[];
     pattern?: RegExp;
@@ -536,11 +536,19 @@ export interface AssertionResult {
 export interface TranscriptResult {
     transcript: Transcript;
     commands: CommandResult[];
+    /**
+     * Per-transcript outcome (ADR-277 D1). `error` = the transcript never ran
+     * (validation or story-load failure) — it still gets a result record
+     * instead of vanishing from the run.
+     */
+    status: 'passed' | 'failed' | 'error';
     passed: number;
     failed: number;
     expectedFailures: number;
     skipped: number;
     duration: number;
+    /** Present exactly when `status` is `'error'`: why the transcript never ran. */
+    errorMessage?: string;
 }
 /**
  * Result of running multiple transcripts
@@ -551,6 +559,8 @@ export interface TestRunResult {
     totalFailed: number;
     totalExpectedFailures: number;
     totalSkipped: number;
+    /** Count of transcripts with `status: 'error'` (ADR-277 D1). */
+    totalErrors: number;
     totalDuration: number;
 }
 /**
@@ -707,7 +717,12 @@ export declare function reportTranscript(result: TranscriptResult, options?: Rep
  */
 export declare function reportTestRun(result: TestRunResult, options?: ReporterOptions): void;
 /**
- * Get exit code based on results
+ * Get exit code based on results.
+ *
+ * 1 when any command failed OR any transcript errored (validation/load —
+ * ADR-277 D1: an errored transcript must fail the run, not slip through).
+ * The `totalErrors` check tolerates legacy callers whose aggregate predates
+ * the field (undefined compares false).
  */
 export declare function getExitCode(result: TestRunResult): number;
 /**
@@ -722,6 +737,66 @@ export declare function writeResultsToJson(result: TestRunResult, outputDir: str
  * Write a human-readable report to a text file
  */
 export declare function writeReportToFile(result: TestRunResult, outputDir: string, timestamp: string): string;
+```
+
+### aggregate
+
+```typescript
+/**
+ * aggregate.ts — run-level aggregation and the `test --json` NDJSON record
+ * builders (ADR-277 D1).
+ *
+ * Purpose: the ONE shared aggregation over TranscriptResults (replacing the
+ *   per-caller inline reduces) and the pure builders that turn results into
+ *   `@sharpee/ide-protocol` test-result records. Builders, not a buffered
+ *   serializer: the emitting CLI writes `run-start` before the loop, each
+ *   transcript's records as it completes, and `run-end` last — so the stream
+ *   is live (D1's streaming ruling) while the record shapes live once in the
+ *   contract.
+ * Public interface: aggregateTestRun, runStartRecord, transcriptRecords,
+ *   runEndRecord, ndjsonLine.
+ * Owner context: @sharpee/transcript-tester. The ide-protocol import is
+ *   TYPE-ONLY (ADR-277 D1, review finding 2) — ide-protocol re-exports the
+ *   Chord Story IR wholesale, and this package must not gain a runtime edge
+ *   to it; builders construct plain literals shaped by the imported types.
+ */
+import type { RunEndRecord, RunStartRecord, TestResultRecord } from '@sharpee/ide-protocol';
+import type { TestRunResult, TranscriptResult } from './types.js';
+/**
+ * Aggregate per-transcript results into a run result — the one shared
+ * reduce (ADR-277 D1 Consequences).
+ *
+ * @param transcripts Results in run order, including error-status entries.
+ * @returns Totals over every entry; `totalErrors` counts `status: 'error'`.
+ */
+export declare function aggregateTestRun(transcripts: TranscriptResult[]): TestRunResult;
+/**
+ * Build the stream's opening record.
+ *
+ * @param mode `'chain'` when state persists across transcripts (D3).
+ * @param transcriptCount Number of transcripts about to run.
+ */
+export declare function runStartRecord(mode: 'tests' | 'chain', transcriptCount: number): RunStartRecord;
+/**
+ * Build one finished transcript's records: `transcript-start`, one
+ * `command-result` per executed command (with its 1-based `.transcript`
+ * source line for click-through), and the closing `transcript-end` whose
+ * `status: 'error'` carries `errorMessage` (never a silent skip).
+ *
+ * @param result The transcript's result — including error-status results
+ *   that never ran (zero commands).
+ * @param index 0-based position in the run order.
+ */
+export declare function transcriptRecords(result: TranscriptResult, index: number): TestResultRecord[];
+/**
+ * Build the stream's closing record.
+ *
+ * @param run The aggregated run result.
+ * @param exitCode The exit code the CLI is about to return.
+ */
+export declare function runEndRecord(run: TestRunResult, exitCode: number): RunEndRecord;
+/** Serialize one record as an NDJSON line (single line, trailing newline). */
+export declare function ndjsonLine(record: TestResultRecord): string;
 ```
 
 ### trait-formatter

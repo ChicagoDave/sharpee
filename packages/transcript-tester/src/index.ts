@@ -21,6 +21,15 @@ export { runTranscript } from './runner.js';
 // Reporter
 export { reportTranscript, reportTestRun, getExitCode } from './reporter.js';
 
+// Aggregation + `test --json` NDJSON record builders (ADR-277 D1)
+export {
+  aggregateTestRun,
+  runStartRecord,
+  transcriptRecords,
+  runEndRecord,
+  ndjsonLine,
+} from './aggregate.js';
+
 // Trait Formatter
 export { formatEntityTraitLines, formatTraitProse } from './trait-formatter.js';
 

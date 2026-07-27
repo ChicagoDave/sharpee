@@ -45,6 +45,13 @@ export function reportTranscript(
 
   console.log();
 
+  // Error-status transcript (ADR-277 D1): it never ran — say why, loudly,
+  // instead of rendering an empty command list as if nothing were wrong.
+  if (result.status === 'error') {
+    console.log(chalk.red.bold(`  ✗ ERROR: ${result.errorMessage ?? 'transcript did not run'}`));
+    return;
+  }
+
   for (const cmd of result.commands) {
     reportCommand(cmd, verbose, emitTraits);
   }
@@ -216,7 +223,7 @@ export function reportTestRun(result: TestRunResult, options: ReporterOptions = 
   console.log();
 
   // Overall summary
-  const { totalPassed, totalFailed, totalExpectedFailures, totalSkipped, totalDuration } = result;
+  const { totalPassed, totalFailed, totalExpectedFailures, totalSkipped, totalErrors, totalDuration } = result;
   const total = totalPassed + totalFailed + totalExpectedFailures + totalSkipped;
 
   console.log(chalk.bold(`Total: ${total} tests in ${result.transcripts.length} transcripts`));
@@ -234,24 +241,34 @@ export function reportTestRun(result: TestRunResult, options: ReporterOptions = 
   if (totalSkipped > 0) {
     parts.push(chalk.yellow(`${totalSkipped} skipped`));
   }
+  if (totalErrors > 0) {
+    parts.push(chalk.red.bold(`${totalErrors} transcript error(s)`));
+  }
 
   console.log(parts.join(', '));
   console.log(chalk.gray(`Duration: ${totalDuration}ms`));
   console.log();
 
   // Final status
-  if (totalFailed === 0) {
+  if (totalFailed === 0 && !(totalErrors > 0)) {
     console.log(chalk.green.bold('✓ All tests passed!'));
-  } else {
+  } else if (totalFailed > 0) {
     console.log(chalk.red.bold(`✗ ${totalFailed} test(s) failed`));
+  } else {
+    console.log(chalk.red.bold(`✗ ${totalErrors} transcript(s) errored`));
   }
 }
 
 /**
- * Get exit code based on results
+ * Get exit code based on results.
+ *
+ * 1 when any command failed OR any transcript errored (validation/load —
+ * ADR-277 D1: an errored transcript must fail the run, not slip through).
+ * The `totalErrors` check tolerates legacy callers whose aggregate predates
+ * the field (undefined compares false).
  */
 export function getExitCode(result: TestRunResult): number {
-  if (result.totalFailed > 0) {
+  if (result.totalFailed > 0 || result.totalErrors > 0) {
     return 1;
   }
   return 0;

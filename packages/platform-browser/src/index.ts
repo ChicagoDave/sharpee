@@ -31,6 +31,9 @@ export { DialogManager } from './managers/DialogManager.js';
 export { MenuManager } from './managers/MenuManager.js';
 export { InputManager } from './managers/InputManager.js';
 
+// IDE recording bridge (ADR-277 D5)
+export { emitTurnEvent, type TurnEventPayload } from './turn-events.js';
+
 // Display components
 export { TextDisplay } from './display/TextDisplay.js';
 export { StatusLine } from './display/StatusLine.js';
