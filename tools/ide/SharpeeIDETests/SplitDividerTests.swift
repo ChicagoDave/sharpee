@@ -90,4 +90,44 @@ final class SplitDividerTests: XCTestCase {
         XCTAssertEqual(project.frame.width, narrower, accuracy: 2,
                        "narrowing must stick too")
     }
+
+    /// The right pane: divider 2 (editor|play) must move both ways and stick —
+    /// the play pane is not fixed-width (reported live with the Play header +
+    /// placeholder showing, so that exact content is on screen here).
+    func testEditorPlayDividerMovesBothWaysAndSticks() throws {
+        let controller = MainWindowController()
+        let window = try XCTUnwrap(controller.window)
+        window.setFrame(NSRect(x: 0, y: 0, width: 1400, height: 900), display: true)
+        window.orderFront(nil)
+        defer { window.orderOut(nil) }
+        pump()
+
+        let split = try XCTUnwrap(findMainSplit(in: window.contentView!))
+        let indexView = try XCTUnwrap(findIndexView(in: window.contentView!))
+        indexView.setState(.populated(ir: fatIR, stale: false))
+        pump()
+
+        let play = split.arrangedSubviews[3]
+        let before = play.frame.width
+
+        // Widen the play pane by 120 (divider 2 moves left).
+        split.setPosition(play.frame.minX - 120, ofDividerAt: 2)
+        pump()
+        XCTAssertEqual(play.frame.width, before + 120, accuracy: 2,
+                       "the right pane must widen and stay widened")
+
+        // Narrow it back down toward (but above) its 240 minimum.
+        let target = max(before, 250)
+        split.setPosition(split.bounds.width - target, ofDividerAt: 2)
+        pump()
+        XCTAssertEqual(play.frame.width, target, accuracy: 2,
+                       "the right pane must narrow and stay narrowed")
+
+        // And the position survives further layout passes (the snap-back property).
+        let settled = play.frame.width
+        split.needsLayout = true
+        window.contentView?.needsLayout = true
+        pump(0.2)
+        XCTAssertEqual(play.frame.width, settled, accuracy: 1)
+    }
 }

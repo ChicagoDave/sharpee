@@ -456,6 +456,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         lineNumberRuler?.errorLines = [] // marks are document-specific
         lineNumberRuler?.navigationLines = []
         bracketRanges = [] // match highlights belong to the previous document
+        applyWordWrap() // wrap policy is per-document (.story always wraps)
         diagnosticUnderlineRanges = [] // underline attrs died with the replaced text
         applyHighlighting()
     }
@@ -578,10 +579,19 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         applyWordWrap()
     }
 
+    /// Whether the ACTIVE document wraps: `.story` files always do (David's
+    /// ruling — the story pane wraps, whatever the toggle says; an old stored
+    /// preference must not leave prose scrolling sideways); other files follow
+    /// the View → Word Wrap preference.
+    private var effectiveWrap: Bool {
+        if activeDocument?.url.pathExtension.lowercased() == "story" { return true }
+        return WordWrapPreference.isEnabled
+    }
+
     private func applyWordWrap() {
         let huge = CGFloat.greatestFiniteMagnitude
         guard let container = textView.textContainer else { return }
-        if WordWrapPreference.isEnabled {
+        if effectiveWrap {
             // Soft-wrap: the CONTAINER width is driven explicitly from the clip
             // width (syncWrapWidth), never via widthTracksTextView — the
             // tracking heuristics left the container stale (width 0 before the
@@ -637,7 +647,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// which the autoresizing mask kept plausible while the container stayed
     /// stale — the "autowrap not working" bug).
     private func syncWrapWidth(force: Bool = false) {
-        guard WordWrapPreference.isEnabled, let container = textView.textContainer else { return }
+        guard effectiveWrap, let container = textView.textContainer else { return }
         let width = scrollView.contentSize.width
         guard width > 0, force || abs(container.containerSize.width - width) > 0.5 else { return }
         container.containerSize = NSSize(width: width,

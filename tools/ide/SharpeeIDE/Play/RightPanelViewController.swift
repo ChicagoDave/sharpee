@@ -77,7 +77,7 @@ final class RightPanelViewController: NSViewController {
         ])
 
         view = container
-        show(tab: Self.playTab)
+        tabStrip.select(Self.playTab) // strip + content agree from first paint
     }
 
     /// Switches to the Build tab (a build just started — its output streams here).

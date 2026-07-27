@@ -682,7 +682,12 @@ private final class MainSplitViewController: NSSplitViewController {
     private func makePlayItem() -> NSSplitViewItem {
         let item = NSSplitViewItem(viewController: rightPanelViewController)
         item.minimumThickness = Self.playMinWidth
-        item.holdingPriority = .defaultLow
+        // MUST differ from the editor's (250): with EQUAL holding priorities on
+        // both sides of a divider, the solver is indifferent to its position
+        // (errors trade 1:1) and the fallback-at-current-width constraint pins
+        // it — the divider is immovable for drags AND setPosition (the
+        // "right pane has a fixed width" bug; see SplitDividerTests).
+        item.holdingPriority = NSLayoutConstraint.Priority(260)
         return item
     }
 }

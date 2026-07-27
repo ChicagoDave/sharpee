@@ -18,6 +18,14 @@ final class PlayHeaderView: NSView {
     private let restartButton = NSButton()
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
 
+    override func layout() {
+        super.layout()
+        // Header controls never dictate the pane's width (divider stays free);
+        // they clip before they resist.
+        restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+    }
+
     init() {
         super.init(frame: .zero)
         wantsLayer = true
