@@ -43,6 +43,14 @@ final class TabStripView: NSView {
             border.bottomAnchor.constraint(equalTo: bottomAnchor),
             border.heightAnchor.constraint(equalToConstant: 1),
         ])
+
+        NotificationCenter.default.addObserver(self, selector: #selector(fontPreferenceChanged),
+                                               name: FontPreference.didChangeNotification,
+                                               object: nil)
+    }
+
+    @objc private func fontPreferenceChanged() {
+        for item in items { item.applyFont() }
     }
 
     required init?(coder: NSCoder) {
@@ -107,8 +115,8 @@ private final class TabItemView: NSView {
         accentBar.isHidden = true
         accentBar.translatesAutoresizingMaskIntoConstraints = false
 
-        titleLabel.font = NSFont.systemFont(ofSize: 11)
         titleLabel.textColor = Theme.foregroundDim
+        applyFont()
 
         badge.font = NSFont.systemFont(ofSize: 10, weight: .semibold)
         badge.textColor = Theme.railBackground
@@ -150,6 +158,11 @@ private final class TabItemView: NSView {
     }
 
     func setTitle(_ title: String) { titleLabel.stringValue = title }
+
+    /// Tab titles follow the reader font (one point smaller than panel text).
+    func applyFont() {
+        titleLabel.font = FontPreference.family.font(size: FontPreference.scale.panelSize - 1)
+    }
 
     func setCount(_ count: Int) {
         badge.stringValue = "\(count)"

@@ -54,6 +54,10 @@ final class TabBarView: NSView {
         addSubview(stackView)
         addSubview(bottomBorder)
 
+        NotificationCenter.default.addObserver(self, selector: #selector(fontPreferenceChanged),
+                                               name: FontPreference.didChangeNotification,
+                                               object: nil)
+
         // Stack has no trailing constraint, so it stays at the sum of its cells' intrinsic widths.
         NSLayoutConstraint.activate([
             stackView.topAnchor.constraint(equalTo: topAnchor),
@@ -65,6 +69,11 @@ final class TabBarView: NSView {
             bottomBorder.trailingAnchor.constraint(equalTo: trailingAnchor),
             bottomBorder.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
+    }
+
+    /// Live font change: rebuild the cells with the current preference.
+    @objc private func fontPreferenceChanged() {
+        setTabs(tabs, activeIndex: activeIndex)
     }
 
     /// Replaces the visible cells with a fresh batch and applies the active highlight.
@@ -108,7 +117,7 @@ private final class TabCellView: NSView {
         wantsLayer = true
 
         label.stringValue = title
-        label.font = NSFont.systemFont(ofSize: 12, weight: isActive ? .medium : .regular)
+        label.font = isActive ? FontPreference.panelBoldFont : FontPreference.panelFont
         label.textColor = isActive ? Theme.foreground : Theme.foregroundDim
         label.lineBreakMode = .byTruncatingMiddle
         label.maximumNumberOfLines = 1
