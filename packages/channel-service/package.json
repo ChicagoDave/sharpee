@@ -8,14 +8,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
-      "require": "./dist/index.js",
-      "esm": "./dist-esm/index.js"
+      "require": "./dist/index.js"
     },
     "./wire": {
       "types": "./dist/wire/index.d.ts",
       "import": "./dist-esm/wire/index.js",
-      "require": "./dist/wire/index.js",
-      "esm": "./dist-esm/wire/index.js"
+      "require": "./dist/wire/index.js"
     }
   },
   "scripts": {

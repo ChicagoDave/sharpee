@@ -9,8 +9,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
-      "require": "./dist/index.js",
-      "esm": "./dist-esm/index.js"
+      "require": "./dist/index.js"
     }
   },
   "scripts": {

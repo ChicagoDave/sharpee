@@ -9,14 +9,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
-      "require": "./dist/index.js",
-      "esm": "./dist-esm/index.js"
+      "require": "./dist/index.js"
     },
     "./runtime-surface": {
       "types": "./dist/runtime-surface.d.ts",
       "import": "./dist-esm/runtime-surface.js",
-      "require": "./dist/runtime-surface.js",
-      "esm": "./dist-esm/runtime-surface.js"
+      "require": "./dist/runtime-surface.js"
     }
   },
   "scripts": {

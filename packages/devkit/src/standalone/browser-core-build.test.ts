@@ -56,7 +56,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
     const outDir = buildBrowser(FERNHILL, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' });
 
-    // The deliverable exists and traces to the IR (fernhill id + version 0.1.0).
+    // The deliverable exists and traces to the IR (fernhill id + header version).
     expect(outDir).toBe(join(root, 'dist', 'web', 'fernhill'));
     expect(statSync(join(outDir, 'game.js')).size).toBeGreaterThan(100_000);
     // story.story is the source, byte for byte (compile-at-boot, ADR-210).
@@ -65,8 +65,12 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     expect(existsSync(join(outDir, 'package.json'))).toBe(false);
     // ADR-253: fernhill has no src/browser-entry.ts — the entry is GENERATED, and its
     // version.ts (bundled into game.js) carries the IR version, not a package.json 1.0.0.
+    // Read the expected value FROM the story header — fernhill is a living example
+    // story and its version must not be pinned here (build-propagation is the claim).
+    const headerVersion = /^\s*version:\s*(\S+)/m.exec(readFileSync(FERNHILL, 'utf-8'))?.[1];
+    expect(headerVersion, 'fernhill.story must declare a header version').toBeTruthy();
     expect(readFileSync(join(root, 'dist', '.browser-entry', 'fernhill', 'version.ts'), 'utf-8'))
-      .toContain("STORY_VERSION = '0.1.0'");
+      .toContain(`STORY_VERSION = '${headerVersion}'`);
     // index.html is fernhill's OWN custom page (ADR-253 D3): story-id token substituted
     // (override link), classic-only menu, and the clock element it places.
     const html = readFileSync(join(outDir, 'index.html'), 'utf-8');
