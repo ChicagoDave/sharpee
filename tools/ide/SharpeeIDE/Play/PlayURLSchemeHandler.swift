@@ -28,23 +28,33 @@ final class PlayURLSchemeHandler: NSObject, WKURLSchemeHandler {
         if relativePath.isEmpty { relativePath = "index.html" }
 
         let fileURL = root.appendingPathComponent(relativePath).standardizedFileURL
-        // Guard against path traversal outside the bundle root.
+        // A missing file (or a traversal attempt) is an HTTP 404 RESPONSE, not a
+        // network failure: on a real server `fetch` of an absent optional file
+        // (the client's `./imports.json` probe) resolves with `ok == false` and
+        // the client takes its no-imports path. `didFailWithError` would make
+        // the same fetch REJECT — surfacing as "Load failed" and killing boot.
         guard fileURL.path.hasPrefix(root.standardizedFileURL.path),
               let data = try? Data(contentsOf: fileURL) else {
-            task.didFailWithError(URLError(.fileDoesNotExist))
+            respond(task, url: url, statusCode: 404, data: Data(),
+                    contentType: "text/plain; charset=utf-8")
             return
         }
 
+        respond(task, url: url, statusCode: 200, data: data,
+                contentType: Self.mimeType(forExtension: fileURL.pathExtension))
+    }
+
+    private func respond(_ task: WKURLSchemeTask, url: URL, statusCode: Int,
+                         data: Data, contentType: String) {
         let response = HTTPURLResponse(
             url: url,
-            statusCode: 200,
+            statusCode: statusCode,
             httpVersion: "HTTP/1.1",
             headerFields: [
-                "Content-Type": Self.mimeType(forExtension: fileURL.pathExtension),
+                "Content-Type": contentType,
                 "Content-Length": "\(data.count)",
                 "Cache-Control": "no-cache",
             ])!
-
         task.didReceive(response)
         task.didReceive(data)
         task.didFinish()
