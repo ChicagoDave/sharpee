@@ -30,6 +30,14 @@ enum FontFamily: String, CaseIterable {
         }
     }
 
+    private var boldFontName: String {
+        switch self {
+        case .courier: return "CourierNewPS-BoldMT"
+        case .arial: return "Arial-BoldMT"
+        case .georgia: return "Georgia-Bold"
+        }
+    }
+
     /// The family at `size`, falling back to the system font when the face is
     /// unavailable (Courier falls back monospaced — it is the monospace choice).
     func font(size: CGFloat) -> NSFont {
@@ -37,6 +45,14 @@ enum FontFamily: String, CaseIterable {
         return self == .courier
             ? .monospacedSystemFont(ofSize: size, weight: .regular)
             : .systemFont(ofSize: size)
+    }
+
+    /// The family's bold face at `size` — looked up by explicit PostScript name:
+    /// both NSFontManager.convert(toHaveTrait:) and descriptor symbolic-trait
+    /// resolution silently fall back to the SYSTEM font for these faces
+    /// (ProjectTreeFontTests caught folders rendering in .SFNS).
+    func boldFont(size: CGFloat) -> NSFont {
+        NSFont(name: boldFontName, size: size) ?? font(size: size)
     }
 }
 
@@ -108,6 +124,9 @@ enum FontPreference {
 
     /// The right-panel text font (Build output, Index rows, Diagnosis body).
     static var panelFont: NSFont { family.font(size: scale.panelSize) }
+
+    /// The bold panel face (directory folders, emphasis).
+    static var panelBoldFont: NSFont { family.boldFont(size: scale.panelSize) }
 
     /// Monospace at panel size — code identifiers (phrase keys, module paths,
     /// diagnostic codes) keep a fixed pitch regardless of the family choice.

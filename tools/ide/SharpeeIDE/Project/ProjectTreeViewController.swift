@@ -128,7 +128,11 @@ final class ProjectTreeViewController: NSViewController {
         outlineView.outlineTableColumn = column
         outlineView.headerView = nil
         outlineView.indentationPerLevel = 14
-        outlineView.rowSizeStyle = .small
+        // .custom: we own the row fonts. Any standard rowSizeStyle lets AppKit
+        // re-standardize cell fonts on styled (expandable) rows — folder rows
+        // silently reverted to the system font (ProjectTreeFontTests).
+        outlineView.rowSizeStyle = .custom
+        outlineView.rowHeight = 20
         outlineView.style = .plain
         outlineView.dataSource = self
         outlineView.delegate = self
@@ -229,11 +233,13 @@ extension ProjectTreeViewController: NSOutlineViewDelegate {
         cell.textField?.stringValue = node.name
         cell.textField?.textColor = node.isDirectory ? Theme.foreground : Theme.foregroundDim
         // Directory pane follows the reader font (David's ruling); folders keep
-        // a heavier weight of the same family via the bold trait when available.
-        let base = FontPreference.panelFont
+        // a heavier weight of the same family via a DESCRIPTOR bold —
+        // NSFontManager.convert(toHaveTrait:) silently fails for these faces
+        // and returns the system font (folders looked like the preference was
+        // being ignored; ProjectTreeFontTests pins this).
         cell.textField?.font = node.isDirectory
-            ? NSFontManager.shared.convert(base, toHaveTrait: .boldFontMask)
-            : base
+            ? FontPreference.panelBoldFont
+            : FontPreference.panelFont
         cell.imageView?.image = NSWorkspace.shared.icon(forFile: node.url.path)
         return cell
     }
