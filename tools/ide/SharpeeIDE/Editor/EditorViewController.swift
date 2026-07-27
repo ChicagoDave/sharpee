@@ -173,6 +173,20 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         }
     }
 
+    /// Index navigation (David's ruling): highlight the object's FIRST line and
+    /// mark the gutter with the neutral accent dot — the red dot is reserved for
+    /// errors. (The IR entity span can under-cover trailing blocks; first-line
+    /// is the honest, sufficient target.)
+    func openDocument(at url: URL, navigateTo span: DiagnosticSpan) {
+        openDocument(at: url)
+        guard activeDocument?.url == url, let range = characterRange(ofLine: span.line) else { return }
+        textView.setSelectedRange(range)
+        textView.scrollRangeToVisible(range)
+        view.window?.makeFirstResponder(textView)
+        lineNumberRuler?.errorLines = []
+        lineNumberRuler?.navigationLines = [span.line]
+    }
+
     /// Underlines each record's span in the active document (errors red, warnings
     /// yellow) and flags their lines in the gutter. Records for other files (hatch
     /// modules) are ignored. Cleared on the next edit — the following compose
@@ -440,6 +454,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.undoManager?.removeAllActions()
         textView.scroll(.zero)
         lineNumberRuler?.errorLines = [] // marks are document-specific
+        lineNumberRuler?.navigationLines = []
         bracketRanges = [] // match highlights belong to the previous document
         diagnosticUnderlineRanges = [] // underline attrs died with the replaced text
         applyHighlighting()
@@ -466,6 +481,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         guard !isSwappingContent, let doc = activeDocument else { return }
         doc.content = textView.string
         lineNumberRuler?.errorLines = [] // editing invalidates the flagged error
+        lineNumberRuler?.navigationLines = []
         clearDiagnosticUnderlines() // stale against the new buffer; the next compose repaints
         applyHighlighting() // spike: full re-highlight on each edit (incremental re-parse lands with Neon)
         if !doc.isDirty {

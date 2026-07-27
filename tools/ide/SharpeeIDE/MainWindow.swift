@@ -452,7 +452,8 @@ private final class MainSplitViewController: NSSplitViewController {
         }
         rightPanelViewController.index.onActivate = { [weak self] span in
             guard let self, let storyURL = self.treeState.storyURL else { return }
-            self.editorViewController.openDocument(at: storyURL, span: span)
+            // Index jump: first line + neutral gutter dot (red = errors only).
+            self.editorViewController.openDocument(at: storyURL, navigateTo: span)
         }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }

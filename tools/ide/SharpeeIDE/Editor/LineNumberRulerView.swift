@@ -12,6 +12,10 @@ final class LineNumberRulerView: NSRulerView {
     /// 1-based line numbers to flag with an error badge.
     var errorLines: Set<Int> = [] { didSet { needsDisplay = true } }
 
+    /// Lines flagged by NAVIGATION (Index jumps) — drawn as a neutral accent dot.
+    /// Red is reserved for errors (David's ruling).
+    var navigationLines: Set<Int> = [] { didSet { needsDisplay = true } }
+
     private weak var textView: NSTextView?
 
     private static let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular)
@@ -69,6 +73,11 @@ final class LineNumberRulerView: NSRulerView {
                 let d = Self.flagDiameter
                 let flag = NSRect(x: 4, y: y + (fragment.height - d) / 2, width: d, height: d)
                 NSColor.systemRed.setFill()
+                NSBezierPath(ovalIn: flag).fill()
+            } else if navigationLines.contains(lineNumber) {
+                let d = Self.flagDiameter
+                let flag = NSRect(x: 4, y: y + (fragment.height - d) / 2, width: d, height: d)
+                Theme.accent.setFill()
                 NSBezierPath(ovalIn: flag).fill()
             }
 
