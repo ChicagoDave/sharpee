@@ -51,7 +51,7 @@ import {
   UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
 import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
@@ -726,6 +726,7 @@ class Analyzer {
     this.applyTopics(ir.entities);
     this.checkRegions(ir.entities);
     this.checkDoors(ir.entities);
+    this.checkCompositionLegality(ir);
     this.checkMarkers();
     this.checkDescriptionMarkers();
     this.checkChannelReturns(ir.channels); // ADR-253 D1: return-field cross-check (all emits collected)
@@ -740,6 +741,142 @@ class Analyzer {
    * containment cycles. Runs after every entity is built so cross-entity
    * lookups and spans are all available.
    */
+  /**
+   * ADR-276 Phase 1 (census entries 9, 11–15): composition-legality rules
+   * migrated from story-loader — every rule here is derivable from the IR
+   * alone, so it reports as a collected compile diagnostic with a span; the
+   * loader keeps the same rules as first-throw defensive backstops for
+   * rogue IR. Mirrors loader.ts `applyTraitAdjectives` (conditional gate,
+   * `dark`, undeclared traits), `checkCuttableImplementations` (tool-gated
+   * gerunds), the player `wears` loop, and the patrol-route requirement.
+   */
+  private checkCompositionLegality(ir: StoryIR): void {
+    const traitDefs = new Map(ir.traits.map((t) => [t.name, t]));
+
+    for (const entity of ir.entities) {
+      // Census 17 (discovered in Phase 1 — the phrasebook fixtures compiled
+      // `a thing` clean): kind nouns are the closed catalog set the loader's
+      // entity builder switches on.
+      for (const k of entity.kinds) {
+        if (!KIND_NOUNS.has(k.name)) {
+          this.diagnostics.error(
+            'analysis.unknown-kind-noun',
+            `\`${entity.name}\`: unknown kind noun \`${k.name}\`.`,
+            k.span,
+          );
+        }
+      }
+      // Census 18 (discovered in Phase 1): one kind noun per entity.
+      if (entity.kinds.length > 1) {
+        this.diagnostics.error(
+          'analysis.multiple-kind-nouns',
+          `\`${entity.name}\` declares more than one kind noun.`,
+          entity.kinds[1].span,
+        );
+      }
+
+      const isRoom = entity.kinds.some((k) => k.name === 'room');
+      for (const comp of entity.traits) {
+        // Census 14: conditional composition legality — room-`dark`, or a
+        // declared trait whose clauses are ALL NPC-behavior-shaped (`on
+        // every turn …`). `proper` has its own earlier gates (ADR-242 D1).
+        if (comp.condition !== null && comp.name !== 'proper') {
+          const def = traitDefs.get(comp.name);
+          const npcShaped =
+            def !== undefined && def.onClauses.length > 0 && def.onClauses.every((c) => c.binding === 'every-turn');
+          if (!(comp.name === 'dark' && isRoom) && !npcShaped) {
+            this.diagnostics.error(
+              'analysis.conditional-composition-unsupported',
+              `Conditional composition isn't supported for \`${comp.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
+              comp.span,
+            );
+            continue;
+          }
+        }
+        // Census 11: `dark` is room-only (the room builder consumes it).
+        if (comp.name === 'dark' && !isRoom) {
+          this.diagnostics.error('analysis.dark-rooms-only', '`dark` applies to rooms only.', comp.span);
+          continue;
+        }
+        // Census 9: a `patrol` NPC needs a route. A route whose entries all
+        // failed to resolve has already errored through the unknown-entity
+        // gate — only a MISSING route reports here (the loader's emptiness
+        // backstop stays for rogue IR).
+        if (comp.name === 'patrol' && !comp.config.some((c) => c.key === 'route')) {
+          this.diagnostics.error(
+            'analysis.patrol-needs-route',
+            'A `patrol` NPC needs `with route [ … ]` naming its rooms.',
+            comp.span,
+          );
+        }
+        // Census 15: neither a v1 adjective, nor extension vocabulary, nor
+        // a declared `define trait`.
+        if (!TRAIT_ADJECTIVES.has(comp.name) && !manifestForAdjective(comp.name) && !traitDefs.has(comp.name)) {
+          this.diagnostics.error(
+            'analysis.trait-not-declared',
+            `Trait \`${comp.name}\` is not declared (\`define trait ${comp.name}\`) and is not a v1 adjective.`,
+            comp.span,
+          );
+        }
+      }
+
+      // Census 12: items the player wears must be wearable. Only the player's
+      // `wears` list is applied at load — mirror that scope exactly.
+      if (entity.isPlayer) {
+        for (const wornId of entity.wears) {
+          const worn = ir.entities.find((e) => e.id === wornId);
+          if (worn && !worn.traits.some((t) => t.name === 'wearable')) {
+            this.diagnostics.error(
+              'analysis.worn-not-wearable',
+              `\`${wornId}\` is worn by the player but is not wearable.`,
+              worn.span,
+            );
+          }
+        }
+      }
+    }
+
+    // Census 13: tool-gated gerunds (ADR-230 D3c) — exactly one
+    // implementation. The Chord surfaces (entity clause, composed-trait
+    // clause) are IR-visible; the ADR-090 capability surface (TS/hatch) is
+    // not. Two-plus Chord surfaces double-fire regardless of any capability
+    // surface, so that half is unconditional; the zero-surface half is
+    // sound only when the story has no hatches at all (a hatch may register
+    // the capability behavior) — with hatches present, the zero case stays
+    // the loader's check (ADR-276 D5 residue boundary).
+    const TOOL_GATED_GERUNDS = [
+      { adjective: 'cuttable', gerund: 'cutting' },
+      { adjective: 'diggable', gerund: 'digging' },
+    ] as const;
+    const gerundSurface = (c: IROnClause, gerund: string): boolean =>
+      c.clauseKind === 'on' && c.action === gerund && c.binding !== 'every-turn';
+    for (const { adjective, gerund } of TOOL_GATED_GERUNDS) {
+      for (const entity of ir.entities) {
+        const site = entity.traits.find((t) => t.name === adjective);
+        if (!site) continue;
+        let surfaces = 0;
+        if (entity.onClauses.some((c) => gerundSurface(c, gerund))) surfaces++;
+        for (const comp of entity.traits) {
+          const def = traitDefs.get(comp.name);
+          if (def?.onClauses.some((c) => gerundSurface(c, gerund))) surfaces++;
+        }
+        if (surfaces > 1) {
+          this.diagnostics.error(
+            'analysis.gerund-implementation',
+            `\`${entity.name}\` has ${surfaces} ${gerund} implementations — a ${adjective} entity registers exactly one (one \`on ${gerund} it\` clause or one capability behavior).`,
+            site.span,
+          );
+        } else if (surfaces === 0 && ir.hatches.length === 0) {
+          this.diagnostics.error(
+            'analysis.gerund-implementation',
+            `\`${entity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
+            site.span,
+          );
+        }
+      }
+    }
+  }
+
   private checkRegions(entities: IREntity[]): void {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const isRegionEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'region');

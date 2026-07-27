@@ -86,14 +86,22 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
     expect(cuttable.toolId).not.toBe('knife');
   });
 
-  it('rejects a cuttable with no cutting implementation at load time', () => {
-    const source = storyWith(`create the rope
-  in the Shed
-  cuttable with the knife
-
-  A rope.`);
-    expect(() => loadStory(source)).toThrowError(LoadError);
-    expect(() => loadStory(source)).toThrowError(/registers no cutting implementation/);
+  it('backstop: rejects rogue IR whose cuttable has no cutting implementation (ADR-276 census 13 — the compiler gates this as analysis.gerund-implementation)', () => {
+    // Gate-clean source, then strip the implementation from the IR directly —
+    // the analyzer can no longer be reached this way, so the loader's
+    // defensive backstop must still throw.
+    const ir = compileSource(storyWith(CUTTABLE_ROPE));
+    const rogue = structuredClone(ir);
+    const rope = rogue.entities.find((e) => e.id === 'rope')!;
+    rope.onClauses = rope.onClauses.filter((c) => c.action !== 'cutting');
+    const load = () => {
+      const story = createStory(rogue, { seed: 11 });
+      const world = new WorldModel();
+      story.initializeWorld(world);
+      story.createPlayer(world);
+    };
+    expect(load).toThrowError(LoadError);
+    expect(load).toThrowError(/registers no cutting implementation/);
   });
 
   it('rejects a tool name that matches no entity', () => {

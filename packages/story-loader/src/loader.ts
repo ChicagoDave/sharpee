@@ -669,6 +669,9 @@ export class ChordStory implements Story {
       const worn = world.getEntity(wornId);
       const wearable = worn?.get(TraitType.WEARABLE) as WearableTrait | undefined;
       if (!wearable) {
+        // ADR-276 census 12: the compiler's gate refuses this
+        // (analysis.worn-not-wearable) — this is the loader's defensive
+        // backstop against rogue IR.
         throw new LoadError(`\`${wornIrId}\` is worn by the player but is not wearable.`, irPlayer?.span);
       }
       wearable.worn = true;
@@ -1343,6 +1346,8 @@ export class ChordStory implements Story {
 
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
     if (irEntity.kinds.length > 1) {
+      // ADR-276 census 18: the compiler's gate refuses this
+      // (analysis.multiple-kind-nouns) — defensive backstop.
       throw new LoadError(`\`${irEntity.name}\` declares more than one kind noun.`, irEntity.span);
     }
     const kind = irEntity.kinds[0]?.name ?? null;
@@ -1451,6 +1456,8 @@ export class ChordStory implements Story {
         break;
       }
       default:
+        // ADR-276 census 17: the compiler's gate refuses this
+        // (analysis.unknown-kind-noun) — defensive backstop.
         throw new LoadError(`\`${irEntity.name}\`: unknown kind noun \`${kind}\`.`, irEntity.span);
     }
 
@@ -1551,6 +1558,12 @@ export class ChordStory implements Story {
           surfaces++;
         }
 
+        // ADR-276 census 13: the compiler's gate refuses the pure-Chord
+        // cases (analysis.gerund-implementation) — zero Chord surfaces in a
+        // hatch-free story, or 2+ Chord surfaces anywhere. This check stays
+        // AUTHORITATIVE (not just a backstop) for the ADR-090 capability
+        // surface, which is registered by TS/hatch code the compiler cannot
+        // see (ADR-276 D5 residue boundary).
         if (surfaces === 0) {
           throw new LoadError(
             `\`${irEntity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
@@ -1581,6 +1594,8 @@ export class ChordStory implements Story {
           entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
           continue;
         }
+        // ADR-276 census 14: the compiler's gate refuses this
+        // (analysis.conditional-composition-unsupported) — defensive backstop.
         throw new LoadError(
           `Conditional composition isn't supported for \`${trait.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
           trait.span,
@@ -1755,6 +1770,8 @@ export class ChordStory implements Story {
         }
         case 'dark': {
           if (kind !== 'room') {
+            // ADR-276 census 11: the compiler's gate refuses this
+            // (analysis.dark-rooms-only) — defensive backstop.
             throw new LoadError(`\`dark\` applies to rooms only.`, trait.span);
           }
           break; // unconditional dark handled by the room builder
@@ -1768,6 +1785,8 @@ export class ChordStory implements Story {
             entity.add(new ChordDataTrait(CHORD_TRAIT_PREFIX + def.name, this.traitFieldValues(def, trait)));
             break;
           }
+          // ADR-276 census 15: the compiler's gate refuses this
+          // (analysis.trait-not-declared) — defensive backstop.
           throw new LoadError(
             `Trait \`${trait.name}\` is not declared (\`define trait ${trait.name}\`) and is not a v1 adjective.`,
             trait.span,
@@ -1859,6 +1878,8 @@ export class ChordStory implements Story {
       case 'patrol': {
         const routeSetting = pending.config.find((s) => s.key === 'route');
         if (!routeSetting || (routeSetting.values ?? []).length === 0) {
+          // ADR-276 census 9: the compiler's gate refuses this
+          // (analysis.patrol-needs-route) — defensive backstop.
           throw new LoadError(`A \`patrol\` NPC needs \`with route [ … ]\` naming its rooms.`, pending.span as never);
         }
         const route = (routeSetting.values ?? []).map((irId) => {
