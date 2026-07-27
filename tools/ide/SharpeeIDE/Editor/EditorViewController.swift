@@ -566,16 +566,16 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         let huge = CGFloat.greatestFiniteMagnitude
         guard let container = textView.textContainer else { return }
         if WordWrapPreference.isEnabled {
-            // Soft-wrap the whole document: bound the text view to the visible width and let
-            // the container track it. Resetting the frame width is essential — otherwise it
-            // keeps the wide frame from no-wrap mode and almost nothing wraps.
-            let width = scrollView.contentSize.width
+            // Soft-wrap: the CONTAINER width is driven explicitly from the clip
+            // width (syncWrapWidth), never via widthTracksTextView — the
+            // tracking heuristics left the container stale (width 0 before the
+            // first layout; frozen wide after a resize), which is why wrap
+            // either didn't engage or fought window narrowing.
             scrollView.hasHorizontalScroller = false
             textView.isHorizontallyResizable = false
             textView.maxSize = NSSize(width: huge, height: huge)
-            container.widthTracksTextView = true
-            container.containerSize = NSSize(width: width, height: huge)
-            textView.setFrameSize(NSSize(width: width, height: textView.frame.height))
+            container.widthTracksTextView = false
+            syncWrapWidth(force: true)
         } else {
             scrollView.hasHorizontalScroller = true
             textView.isHorizontallyResizable = true
@@ -613,18 +613,21 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         lineNumberRuler?.refresh()
     }
 
-    /// Wrap mode keeps the text view exactly as wide as the clip view. The old
-    /// implementation froze the width at toggle time — a stale (wider) width
-    /// then resisted window narrowing and the resize bounced back. Re-syncing on
-    /// every clip-bounds change keeps the wrapped width honest in both
-    /// directions.
-    private func syncWrapWidth() {
+    /// Wrap mode keeps the CONTAINER (the thing TextKit actually wraps against)
+    /// and the text-view frame exactly as wide as the clip view — re-synced on
+    /// every clip-bounds change and layout pass, so wrap engages from first
+    /// layout and window narrowing re-wraps instead of bouncing. The guard
+    /// compares the container's width (the previous version compared the frame,
+    /// which the autoresizing mask kept plausible while the container stayed
+    /// stale — the "autowrap not working" bug).
+    private func syncWrapWidth(force: Bool = false) {
         guard WordWrapPreference.isEnabled, let container = textView.textContainer else { return }
         let width = scrollView.contentSize.width
-        guard width > 0, abs(textView.frame.width - width) > 0.5 else { return }
-        textView.setFrameSize(NSSize(width: width, height: textView.frame.height))
+        guard width > 0, force || abs(container.containerSize.width - width) > 0.5 else { return }
         container.containerSize = NSSize(width: width,
                                          height: CGFloat.greatestFiniteMagnitude)
+        textView.setFrameSize(NSSize(width: width, height: textView.frame.height))
+        textView.needsLayout = true
     }
 
     private func configurePlaceholder() {

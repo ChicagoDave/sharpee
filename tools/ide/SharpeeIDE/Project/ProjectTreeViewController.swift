@@ -135,6 +135,12 @@ final class ProjectTreeViewController: NSViewController {
     private func configureScrollView() {
         scrollView.documentView = outlineView
         scrollView.hasVerticalScroller = true
+        // No horizontal scrolling in the file tree (David's ruling): the single
+        // column tracks the pane width and long names truncate.
+        scrollView.hasHorizontalScroller = false
+        scrollView.horizontalScrollElasticity = .none
+        outlineView.autoresizesOutlineColumn = true
+        outlineView.columnAutoresizingStyle = .firstColumnOnlyAutoresizingStyle
         scrollView.drawsBackground = false
         scrollView.contentView.drawsBackground = false
     }
