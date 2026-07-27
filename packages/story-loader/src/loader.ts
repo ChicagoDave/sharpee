@@ -114,6 +114,7 @@ import { resolveChain } from './chain-map.js';
 import { LoadError } from './errors.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
+import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
 import { ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
@@ -1721,10 +1722,13 @@ export class ChordStory implements Story {
         }
         case 'hiding-spot': {
           // Ratchet G3 (2026-07-17): bare = the actor may hide at any
-          // position; `with position <word>` narrows to exactly one.
-          const HIDING_POSITIONS = ['behind', 'under', 'on', 'inside'] as const;
+          // position; `with position <word>` narrows to exactly one. The
+          // domain is setting-schema's HIDING_POSITIONS (one source with
+          // the manifest generator, ADR-276 census 10).
           const position = configValue(trait, 'position');
           if (position !== undefined && !(HIDING_POSITIONS as readonly string[]).includes(position)) {
+            // ADR-276 census 10: the compiler's gate refuses this
+            // (analysis.unknown-hiding-position) — defensive backstop.
             throw new LoadError(
               `\`${position}\` is not a hiding position — use behind, under, on, or inside.`,
               trait.span,
@@ -1761,8 +1765,9 @@ export class ChordStory implements Story {
         case 'combatant':
         case 'weapon': {
           // ADR-215 combat vocabulary — `use combat` extension adjectives.
-          // The analyzer gated use-declaration and field names/types; this
-          // check is the rogue-IR backstop.
+          // The analyzer gated use-declaration and field names/types
+          // (ADR-276 census 7: pre-gated, analysis.extension-not-used);
+          // this check is the rogue-IR backstop.
           if (!(this.ir.uses ?? []).includes('combat')) {
             throw new LoadError(
               `\`${trait.name}\` is \`combat\` extension vocabulary — add \`use combat\` to the story header.`,
@@ -1906,6 +1911,10 @@ export class ChordStory implements Story {
         break;
       }
       default:
+        // ADR-276 census 8: pre-gated — only the closed applyTraitAdjectives
+        // switch routes here (guard/passive/wanderer/follower/patrol), and
+        // the analyzer's extension manifests gate the vocabulary. Defensive
+        // backstop for rogue IR.
         throw new LoadError(`Unknown NPC behavior adjective \`${pending.adjective}\`.`, pending.span as never);
     }
     behavior.id = `chord.npc.${pending.irId}`;
@@ -2399,6 +2408,11 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
 /** Chord direction word → world-model DirectionType. */
 function toDirection(word: string, at?: IREntity): DirectionType {
   const dir = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+  // ADR-276 census 16: pre-gated by the PARSER — chord's closed exit
+  // DIRECTIONS set (parser.ts) is a strict subset of the Direction enum, so
+  // gate-clean IR cannot carry an unknown word here. Defensive backstop
+  // (also guards parser/enum drift — pinned by the story-loader
+  // direction-conformance test).
   if (!dir) throw new LoadError(`Unknown direction \`${word}\`.`, at?.span);
   return dir;
 }

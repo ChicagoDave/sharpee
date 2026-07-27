@@ -69,6 +69,25 @@ describe('census 5 — number domain was pre-gated (analysis.extension-config-va
   });
 });
 
+describe('census 10 — hiding positions are the closed domain (analysis.unknown-hiding-position)', () => {
+  it('reports an unknown position with the listed domain', () => {
+    const found = errors(
+      story('create the wardrobe\n  hiding-spot with position sideways\n  in the Vault\n\n  A wardrobe.'),
+    );
+    expect(found.map((d) => d.code)).toEqual(['analysis.unknown-hiding-position']);
+    expect(found[0].message).toContain('`sideways` is not a hiding position — use behind, under, on, or inside');
+  });
+
+  it('accepts each domain word, and the bare form', () => {
+    for (const pos of ['behind', 'under', 'on', 'inside']) {
+      expect(
+        errorCodes(story(`create the wardrobe\n  hiding-spot with position ${pos}\n  in the Vault\n\n  A wardrobe.`)),
+      ).toEqual([]);
+    }
+    expect(errorCodes(story('create the wardrobe\n  hiding-spot\n  in the Vault\n\n  A wardrobe.'))).toEqual([]);
+  });
+});
+
 describe('census 6 — entity-ref settings resolve (analysis.setting-names-no-entity)', () => {
   it('reports a keyless v1 ref naming no entity, labeled with the schema key', () => {
     const found = errors(story('create the chest\n  lockable with the missing key\n  in the Vault\n\n  A chest.'));

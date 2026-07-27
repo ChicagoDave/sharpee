@@ -107,6 +107,15 @@ describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pi
     expect(codes).toContain('analysis.setting-not-boolean');
   });
 
+  it('Phase 6 slice: the built chord dist reports analysis.unknown-hiding-position', () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const chord = require(join(REPO_ROOT, 'packages/chord/dist/index.js')) as typeof import('@sharpee/chord');
+    const result = chord.compile(
+      cleanSource + '\ncreate the wardrobe\n  hiding-spot with position sideways\n\n  A wardrobe.\n',
+    );
+    expect(result.diagnostics.map((d) => d.code)).toContain('analysis.unknown-hiding-position');
+  });
+
   it('a clean story still builds the browser bundle end to end', async () => {
     vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
       throw new Error(`process.exit(${code})`);

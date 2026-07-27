@@ -176,6 +176,24 @@ create the iron key
     expect(load(rogue)).toThrowError(/`ghost key` \(config `key`\) names no entity/);
   });
 
+  it('census 10: an unknown hiding position still throws', () => {
+    const ir = compileClean(
+      BASE +
+        `
+create the wardrobe
+  hiding-spot with position behind
+  in the Vault
+
+  A wardrobe.
+`,
+    );
+    const rogue = structuredClone(ir);
+    const spot = rogue.entities.find((e) => e.id === 'wardrobe')!.traits.find((t) => t.name === 'hiding-spot')!;
+    spot.config.find((c) => c.key === 'position')!.value = 'sideways';
+    expect(load(rogue)).toThrowError(LoadError);
+    expect(load(rogue)).toThrowError(/`sideways` is not a hiding position/);
+  });
+
   it('census 17: an unknown kind noun still throws', () => {
     const rogue = structuredClone(compileClean(BASE));
     rogue.entities.find((e) => e.id === 'crate')!.kinds[0].name = 'thing';

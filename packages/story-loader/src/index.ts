@@ -16,7 +16,7 @@
  */
 
 export { LoadError } from './errors.js';
-export { SETTING_SCHEMA } from './setting-schema.js';
+export { HIDING_POSITIONS, SETTING_SCHEMA } from './setting-schema.js';
 export type { SettingSpec, SettingValueType } from './setting-schema.js';
 export { EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS, REGION_EVENT_TRIGGERS } from './event-contract.js';
 export { HATCH_CONTEXT_VERSION, stagingRenderContext, findChordLiteral } from './hatch-context.js';

@@ -56,8 +56,9 @@ export function generateManifestModule(root: string): { source: string; actionId
   // dist require is exact; the chord-dist precedent above. Locale-NEUTRAL:
   // setting value types are platform facts, not language facts.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { SETTING_SCHEMA } = require(join(root, 'packages/story-loader/dist/setting-schema.js')) as {
+  const { SETTING_SCHEMA, HIDING_POSITIONS } = require(join(root, 'packages/story-loader/dist/setting-schema.js')) as {
     SETTING_SCHEMA: ReadonlyMap<string, ReadonlyMap<string, { value: string }>>;
+    HIDING_POSITIONS: readonly string[];
   };
   const settingSchema: Array<[string, Array<[string, string]>]> = [];
   for (const [trait, entries] of SETTING_SCHEMA) {
@@ -101,6 +102,8 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push("   * their message label (`key`/`tool`). Locale-neutral: platform facts.");
   lines.push('   */');
   lines.push("  settingSchema: Readonly<Record<string, Readonly<Record<string, 'boolean' | 'number' | 'entity-ref' | 'rooms'>>>>;");
+  lines.push('  /** The closed hiding-position domain (ratchet G3) — listing order is the message order. */');
+  lines.push('  hidingPositions: readonly string[];');
   lines.push('  /** Locale-owned facts, keyed by locale id (ADR-276 Q-2). */');
   lines.push('  locales: Readonly<Record<string, StdlibLocaleFacts>>;');
   lines.push('}');
@@ -118,6 +121,7 @@ export function generateManifestModule(root: string): { source: string; actionId
     );
   }
   lines.push('  },');
+  lines.push(`  hidingPositions: [${HIDING_POSITIONS.map((p) => JSON.stringify(p)).join(', ')}],`);
   lines.push('  locales: {');
   lines.push("    'en-US': {");
   lines.push('      grammarShapes: {');

@@ -22,6 +22,14 @@
 /** What a setting's value is — the compile-facing contract (ADR-276 D2). */
 export type SettingValueType = 'boolean' | 'number' | 'entity-ref' | 'rooms';
 
+/**
+ * The closed hiding-position domain (ratchet G3): `hiding-spot with
+ * position <word>` narrows to exactly one of these. Declared here (ADR-276
+ * census 10) so the loader's composition and the manifest generator consume
+ * ONE source; order is the message's listing order.
+ */
+export const HIDING_POSITIONS = ['behind', 'under', 'on', 'inside'] as const;
+
 export interface SettingSpec {
   value: SettingValueType;
   /**

@@ -800,6 +800,21 @@ class Analyzer {
           this.diagnostics.error('analysis.dark-rooms-only', '`dark` applies to rooms only.', comp.span);
           continue;
         }
+        // Census 10 (ADR-276 Phase 6): the hiding-position domain is the
+        // manifest's closed set (ratchet G3, one source with the loader).
+        if (comp.name === 'hiding-spot') {
+          const position = comp.config.find((c) => c.key === 'position')?.value;
+          if (position !== undefined && !STDLIB_MANIFEST.hidingPositions.includes(position)) {
+            const list = [...STDLIB_MANIFEST.hidingPositions];
+            const listed = `${list.slice(0, -1).join(', ')}, or ${list[list.length - 1]}`;
+            this.diagnostics.error(
+              'analysis.unknown-hiding-position',
+              `\`${position}\` is not a hiding position — use ${listed}.`,
+              comp.span,
+            );
+          }
+        }
+
         // Census 9: a `patrol` NPC needs a route. A route whose entries all
         // failed to resolve has already errored through the unknown-entity
         // gate — only a MISSING route reports here (the loader's emptiness

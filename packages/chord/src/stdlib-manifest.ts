@@ -34,6 +34,8 @@ export interface StdlibManifest {
    * their message label (`key`/`tool`). Locale-neutral: platform facts.
    */
   settingSchema: Readonly<Record<string, Readonly<Record<string, 'boolean' | 'number' | 'entity-ref' | 'rooms'>>>>;
+  /** The closed hiding-position domain (ratchet G3) — listing order is the message order. */
+  hidingPositions: readonly string[];
   /** Locale-owned facts, keyed by locale id (ADR-276 Q-2). */
   locales: Readonly<Record<string, StdlibLocaleFacts>>;
 }
@@ -124,6 +126,7 @@ export const STDLIB_MANIFEST: StdlibManifest = {
     "cuttable": { "tool": "entity-ref" },
     "diggable": { "tool": "entity-ref" },
   },
+  hidingPositions: ["behind", "under", "on", "inside"],
   locales: {
     'en-US': {
       grammarShapes: {
