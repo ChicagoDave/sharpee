@@ -1,6 +1,6 @@
 # ADR-276: Chord compile is authoritative for every source-derivable error (the stdlib manifest)
 
-## Status: ACCEPTED (2026-07-27, session 332f30) — all three open questions resolved via the open-questions interview same day: Q-1 **full census, one arc** (one end-of-arc audit; ADR-258 implementation waits on the whole census), Q-2 **locale-keyed manifest from day one** (`en-US` sole entry), Q-3 **declarative setting-schema table owned by story-loader** (loader and generator consume one source). adr-review **15/15** after two SMALL fixes (corpus-green no-false-positives gate; D4 defines the record shape, ADR-258's `--json` is its transport). Not implemented. Next: ADR-258's D5 amendment rides on this, then the migration arc's implementation plan.
+## Status: ACCEPTED (2026-07-27, session 332f30) — all three open questions resolved via the open-questions interview same day: Q-1 **full census, one arc** (one end-of-arc audit; ADR-258 implementation waits on the whole census), Q-2 **locale-keyed manifest from day one** (`en-US` sole entry), Q-3 **declarative setting-schema table owned by story-loader** (loader and generator consume one source). adr-review **15/15** after two SMALL fixes (corpus-green no-false-positives gate; D4 defines the record shape, ADR-258's `--json` is its transport). **IMPLEMENTED** (2026-07-27, sessions 332f30 + 834109, branch `adr-276-p1`, Phases 1–8) — census re-audited: all 50 `loader.ts` `LoadError` sites are backstops (41) or D5 residue (9), no third category; see the Implementation addendum. Next: ADR-258's D5 amendment (Acceptance item 9).
 
 ## Date: 2026-07-27
 
@@ -243,3 +243,97 @@ whole rather than optimizing for the IDE unblock. Q-2 likewise (locale-keyed now
 not deferred). adr-review surfaced two SMALL gaps, both fixed inline: the acceptance
 set lacked a no-false-positives corpus gate, and D4 implied a structured transport
 that only exists once ADR-258's `--json` lands.
+
+## Implementation addendum (2026-07-27, session 834109, branch adr-276-p1 — Phases 1–8)
+
+### What landed where
+
+- **Phase 1** (no-new-data): `analysis.patrol-needs-route` (9),
+  `analysis.dark-rooms-only` (11), `analysis.worn-not-wearable` (12),
+  `analysis.ambiguous-gerund-surface` (13), `analysis.conditional-composition-unsupported`
+  (14), `analysis.trait-not-declared` (15), plus discovered
+  `analysis.unknown-kind-noun` (17) and `analysis.multiple-kind-nouns` (18).
+- **Phase 2**: `story-loader/src/setting-schema.ts` — the Q-3 declarative table;
+  `COMBAT_FIELD_ROUTES`/`NPC_FIELD_ROUTES` are derived views.
+- **Phase 3**: `repokit manifest` generator + `--check` freshness gate (verify AND
+  platform build); locale-keyed `chord/src/stdlib-manifest.ts` (70 action ids);
+  `analysis.extend-target` (1), `analysis.removal-target` (2), story-first order
+  preserved; browser parity harness established.
+- **Phase 4**: grammar-shapes slice (one compile + one expansion shared with
+  `repokit grammar`); `analysis.unmatched-removal-pattern` (3).
+- **Phase 5**: settingSchema slice; `analysis.setting-not-boolean` (4),
+  `analysis.setting-names-no-entity` (6).
+- **Phase 6**: `hidingPositions` slice; `analysis.unknown-hiding-position` (10).
+- **Phase 7** (D4): compose's hatch lint re-emitted as `{severity, code, message,
+  file, line}` records joining compile diagnostics in ONE in-memory collection
+  (`runComposeGates`/`ComposeDiagnostic` in devkit `compose.ts`); text output
+  byte-identical (pinned by test); the stream is complete even on a failed compile.
+- **Phase 8**: census re-audit + acceptance verification (below).
+
+### Census corrections found in source (probe-first)
+
+- **5** (number domain): already compile-gated by `analysis.extension-config-value`.
+- **7** (combat vocabulary without `use combat`): pre-gated by
+  `analysis.extension-not-used`.
+- **8** (unknown NPC adjective): pre-gated by the extension manifest field gates.
+- **16** (unknown direction word): PARSER-gated — chord's closed exit `DIRECTIONS`
+  set is a strict subset of the world-model `Direction` enum (conformance-pinned);
+  a non-direction word never parses as an exit and surfaces as
+  `analysis.trait-not-declared` via composition parsing. No manifest
+  `directionWords` slice was added — it would duplicate a parser-internal set to
+  validate what the parser already refuses.
+- **13** boundary: 2+ Chord surfaces error unconditionally; the zero-surface check
+  compiles-gates only hatch-free entities — hatch-registered (ADR-090 capability)
+  surfaces are invisible to source, so the loader's surface-counting check remains
+  authoritative for hatched stories (recorded D5 residue boundary).
+
+### Census re-audit (Acceptance item 5): 50 sites, no third category
+
+All 50 `throw new LoadError` sites in `loader.ts` classify as exactly two kinds:
+
+- **Backstops (41)** — analyzer-gated census sites (codes above), pre-existing
+  compiler-gate backstops (doors, scoring/state-machine `use` gates, chains,
+  extensions, verbatim markers, phrase existence, region cycles, starts-state
+  pairing, `analysis.deadly-while-unsupported` — annotated this phase), and
+  internal-consistency/drift guards (never-built entity refs, route/field tables
+  out-of-step, direction-word backstop conformance-pinned, exhaustive scope
+  predicate).
+- **D5 residue (9)** — IR-format refusal (`:255`), pure-IR profile refusal
+  (`:290`), hatch provision/`chord.*`-bind/export-shape (`:298`, `:311`, `:320`,
+  `:332`, `:344`), language-provider capability (`:699`, `:710`).
+
+Load-time `LoadError`s are exactly: defensive backstops, hatch provision/
+export-shape errors, language-provider capability errors, profile/IR-format
+refusals — as D5 states.
+
+### Acceptance verification (recorded runs, 2026-07-27)
+
+1. **Composite four-violation story** — `chord/tests/adr-276-acceptance.test.ts` +
+   `devkit/tests/adr-276-acceptance.test.ts` (fixture
+   `devkit/tests/fixtures/adr-276-composite.story` through the REAL
+   `sharpee compose --check`): all four diagnostics with spans in one run, exit 1,
+   no load, no IR (the unknown direction surfaces as `analysis.trait-not-declared`
+   per the census-16 correction).
+2. **Browser parity** — `manifest-browser-parity.test.ts` Phase 8 sweep: the SAME
+   fixture compiled by the built chord dist (the module `game.js` bundles) reports
+   the same four codes; the real `runBuildBrowserCommand` fails loudly with
+   multiple codes from one run. 8/8.
+3. **Freshness gates** — demonstrated by deliberate stale edits during Phases 3
+   (action ids), 4 (grammar shapes), 5 (setting schema): STALE exit 1 → restored 0.
+4. **Rogue-IR backstops** — `story-loader/tests/adr-276-backstops.test.ts` and the
+   migrated per-fixture rogue-IR tests: hand-built IR still fails with the backstop
+   `LoadError`s.
+5. **Collected** — three alteration errors (census 1, 2, 3) in one compile
+   (`adr-276-acceptance.test.ts`); the composite is four across four entries.
+6. **Import direction** — chord imports nothing (no `dependencies`, no `@sharpee/*`
+   in src — unchanged vs pre-arc baseline `7d505ee3`); `bundle-entry.js` keeps
+   chord out of bootstrap; story-loader's chord import block is byte-identical to
+   pre-arc (the pre-existing IR contract).
+7. **No false positives (corpus, one recorded sweep)** — dungeo units 1783 passed
+   (9 expected failures, 4 skipped — convention), wt chain 907/907 (17 transcripts,
+   `--chain --stop-on-failure`), cloak 81/81, friendly-zoo 76/76, fernhill 500/500,
+   nautical 7/7, grammar-alterations 6/6. Suites: chord 654/654, story-loader
+   428/428, devkit 95 passed + 1 pre-existing skip, root tsc clean.
+
+Item 9 (ADR-258 D5 amendment citing this ADR) is the recorded next step, outside
+this arc.

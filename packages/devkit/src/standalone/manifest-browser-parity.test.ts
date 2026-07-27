@@ -116,6 +116,57 @@ describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pi
     expect(result.diagnostics.map((d) => d.code)).toContain('analysis.unknown-hiding-position');
   });
 
+  it('Phase 8 sweep: the built chord dist reports the composite fixture’s four codes — same as the CLI path', () => {
+    // Acceptance item 2: the SAME fixture file `sharpee compose --check`
+    // runs in tests/adr-276-acceptance.test.ts, compiled by the exact chord
+    // module game.js bundles — one source, both consumers, same diagnostics.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const chord = require(join(REPO_ROOT, 'packages/chord/dist/index.js')) as typeof import('@sharpee/chord');
+    const source = readFileSync(
+      join(REPO_ROOT, 'packages', 'devkit', 'tests', 'fixtures', 'adr-276-composite.story'),
+      'utf-8',
+    );
+    const result = chord.compile(source);
+    expect(result.ok).toBe(false);
+    expect(result.diagnostics.map((d) => d.code)).toEqual([
+      'analysis.trait-not-declared', // unknown direction word — census 16 is parser-gated (Phase 6)
+      'analysis.setting-not-boolean',
+      'analysis.removal-target',
+      'analysis.unmatched-removal-pattern',
+    ]);
+    for (const d of result.diagnostics) expect(d.span.line).toBeGreaterThan(0);
+  });
+
+  it('Phase 8 sweep: the real browser build fails loudly with multiple codes from one run', async () => {
+    const errors: string[] = [];
+    const errSpy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      errors.push(args.map(String).join(' '));
+    });
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit(${code})`);
+    }) as never);
+    // Three violations that need no `use` header: bad removal target,
+    // unmatched removal shape, unknown direction word on a fresh room.
+    const tail =
+      '\ncreate the Annex\n  a room\n  sideways to the Annex\n\n  An annex.\n' +
+      '\nremove from action snarf\n  take the item\n' +
+      '\nremove from action taking\n  yoink the item\n';
+    writeFileSync(storyPath, cleanSource + tail);
+    try {
+      await expect(runBuildBrowserCommand([], projectDir)).rejects.toThrow(
+        /failed the load-time gates|process\.exit\(1\)/,
+      );
+      const output = errors.join('\n');
+      expect(output).toContain('analysis.trait-not-declared');
+      expect(output).toContain('analysis.removal-target');
+      expect(output).toContain('analysis.unmatched-removal-pattern');
+    } finally {
+      exitSpy.mockRestore();
+      errSpy.mockRestore();
+      writeFileSync(storyPath, cleanSource);
+    }
+  });
+
   it('a clean story still builds the browser bundle end to end', async () => {
     vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
       throw new Error(`process.exit(${code})`);

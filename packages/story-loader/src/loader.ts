@@ -488,6 +488,8 @@ export class ChordStory implements Story {
       // to one command transformer in onEngineReady.
       for (const deadly of irEntity.deadlyExits) {
         if (deadly.condition !== null) {
+          // The compiler's gate refuses this
+          // (analysis.deadly-while-unsupported) — defensive backstop.
           throw new LoadError(
             '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope (mirror: role-bound trait clauses). Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
             deadly.span,

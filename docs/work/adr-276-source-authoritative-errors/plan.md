@@ -485,7 +485,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   results recorded (not just asserted) in the work summary — this phase's
   entire content is verification, so "ran and passed" with the actual command
   output/log reference is the bar, not narrative claim.
-- **Status**: CURRENT
+- **Status**: DONE
 
 ## Session state seed
 
