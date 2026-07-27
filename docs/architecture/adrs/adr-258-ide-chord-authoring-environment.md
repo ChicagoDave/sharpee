@@ -66,7 +66,10 @@ Ships with the next release.
 only in local Xcode (no macOS CI); `BuildSettings*`/`StoryDetector`/
 `PackageDetector`/`IntrospectionRunner`/`ProjectManifest` remain as dormant
 compiling units pending a removal ruling; production `sharpee` resolution is
-the login-shell PATH (the Q1 assumption — revisit at ADR-180 U2).
+workspace-shim-first (an in-repo story tracks the local toolchain build),
+else the login-shell PATH (the globally-installed `@sharpee/devkit` bin —
+shipped; the Q1 PATH-only assumption was corrected after the first real
+Build on the dev Mac).
 
 ## Date: 2026-07-23
 

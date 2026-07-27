@@ -47,12 +47,13 @@ enum ChordVersionCheck {
         } ?? []
     }
 
-    /// Runs the PATH-resolved `sharpee --version` and reports the installed
-    /// Chord version (nil when sharpee is absent or the output is foreign).
-    /// Best-effort and non-blocking — a missing toolchain is surfaced by the
-    /// compose/build paths, not here.
-    static func fetch(completion: @escaping (String?) -> Void) {
-        guard let sharpee = ComposeRunner.resolveSharpee() else {
+    /// Runs the resolved `sharpee --version` (PATH, else the workspace shim
+    /// enclosing `near`) and reports the installed Chord version (nil when
+    /// sharpee is absent or the output is foreign). Best-effort and
+    /// non-blocking — a missing toolchain is surfaced by the compose/build
+    /// paths, not here.
+    static func fetch(near: URL? = nil, completion: @escaping (String?) -> Void) {
+        guard let sharpee = ComposeRunner.resolveSharpee(near: near) else {
             completion(nil)
             return
         }

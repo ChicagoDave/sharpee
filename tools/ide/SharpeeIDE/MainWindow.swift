@@ -314,7 +314,7 @@ private final class RootViewController: NSViewController {
     private static func statusMessage(for failure: ComposeRunner.Failure) -> String {
         switch failure {
         case .sharpeeNotFound:
-            return "sharpee not found on PATH — install the Sharpee CLI to see problems"
+            return "sharpee not found — install the Sharpee CLI (or open a story inside a Sharpee checkout) to see problems"
         case .launch(let reason):
             return "compose could not start: \(reason)"
         case .nonZeroExit(let code, let stderr):

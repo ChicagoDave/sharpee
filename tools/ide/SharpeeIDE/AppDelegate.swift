@@ -42,7 +42,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         // D9: warn (non-blocking) when the installed toolchain speaks a newer
         // Chord than this IDE was written against — clear signal, no mis-highlight.
-        ChordVersionCheck.fetch { [weak self] installed in
+        ChordVersionCheck.fetch(near: currentStoryURL) { [weak self] installed in
             guard let installed,
                   ChordVersionCheck.isNewer(installed,
                                             thanSupported: ChordVersionCheck.supportedLanguageVersion)

@@ -70,6 +70,45 @@ final class ComposeRunnerTests: XCTestCase {
         return captured
     }
 
+    // MARK: - Toolchain resolution (Q1 + workspace fallback)
+
+    /// A story inside a Sharpee checkout resolves the workspace's own `./sharpee`
+    /// shim when no global install is on the PATH (ADR-187: in-repo, the wrapper
+    /// IS the entry point) — found live when David's first IDE build failed.
+    func testWorkspaceShimResolvesForInRepoStory() throws {
+        let fixture = tempDir.appendingPathComponent("ws", isDirectory: true)
+        let storyDir = fixture.appendingPathComponent("stories/mine", isDirectory: true)
+        let fm = FileManager.default
+        try fm.createDirectory(at: storyDir, withIntermediateDirectories: true)
+        try fm.createDirectory(at: fixture.appendingPathComponent("packages/core"),
+                               withIntermediateDirectories: true)
+        try "packages:\n".write(to: fixture.appendingPathComponent("pnpm-workspace.yaml"),
+                                atomically: true, encoding: .utf8)
+        let shim = fixture.appendingPathComponent("sharpee")
+        try "#!/bin/bash\nexit 0\n".write(to: shim, atomically: true, encoding: .utf8)
+        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: shim.path)
+
+        let story = storyDir.appendingPathComponent("mine.story")
+        XCTAssertEqual(ComposeRunner.workspaceShim(near: story)?.path,
+                       shim.resolvingSymlinksInPath().path)
+        XCTAssertNotNil(ComposeRunner.resolveSharpee(near: story),
+                        "resolution must not fail for an in-workspace story")
+    }
+
+    func testNoWorkspaceShimOutsideTheMonorepo() {
+        XCTAssertNil(ComposeRunner.workspaceShim(near: tempDir.appendingPathComponent("x.story")))
+    }
+
+    /// This repo's real shim resolves for a real in-repo story — the exact
+    /// situation of the IDE running on the dev Mac with no global install.
+    func testRealRepoShimResolvesForFernhill() throws {
+        let fernhill = TestToolchain.repoRoot
+            .appendingPathComponent("stories/fernhill/fernhill.story")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhill.path))
+        XCTAssertEqual(ComposeRunner.workspaceShim(near: fernhill)?.lastPathComponent, "sharpee")
+        XCTAssertNotNil(ComposeRunner.resolveSharpee(near: fernhill))
+    }
+
     // MARK: - Real CLI, real stories
 
     func testCleanStoryYieldsEmptyDiagnosticsAndIR() throws {

@@ -50,14 +50,15 @@ final class BuildRunner {
 
     // MARK: - Start
 
-    /// Chord build (ADR-258 D4): runs the PATH-resolved `sharpee build <file>.story`
+    /// Chord build (ADR-258 D4): runs the resolved `sharpee build <file>.story`
     /// in the story's folder — browser is the default client (no `--browser`,
-    /// ADR-252 D1/D6). No npm, no project-local bin (D2). A missing `sharpee`
-    /// on the PATH surfaces as an explicit failure with an install hint.
+    /// ADR-252 D1/D6). Resolution: login-shell PATH, else the enclosing Sharpee
+    /// workspace's `./sharpee` shim. No npm, no project-local bin (D2). A miss
+    /// surfaces as an explicit failure with an install hint.
     func start(storyFile: URL) {
-        guard let sharpee = ComposeRunner.resolveSharpee() else {
+        guard let sharpee = ComposeRunner.resolveSharpee(near: storyFile) else {
             delegate?.runner(self, didEmit:
-                "sharpee not found on PATH — install the Sharpee CLI to build stories.\n")
+                "sharpee not found — install the Sharpee CLI (or open a story inside a Sharpee checkout) to build stories.\n")
             state = .failure
             delegate?.runner(self, didExit: Result(state: .failure, exitCode: -1))
             return

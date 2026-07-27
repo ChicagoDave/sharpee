@@ -135,7 +135,7 @@ final class BuildRunnerTests: XCTestCase {
             runner.start(storyFile: tempDir.appendingPathComponent("x.story"))
             wait(for: [exited], timeout: 5)
             XCTAssertEqual(delegate.result?.state, .failure)
-            XCTAssertTrue(delegate.output.contains("sharpee not found on PATH"),
+            XCTAssertTrue(delegate.output.contains("sharpee not found"),
                           "output was: \(delegate.output)")
         }
     }

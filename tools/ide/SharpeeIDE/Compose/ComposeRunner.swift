@@ -38,11 +38,12 @@ final class ComposeRunner {
     /// through `self` on the main actor. Dropped when a newer run supersedes it.
     private var pending: Completion?
 
-    /// Production entry point: compose `storyFile` with the PATH-resolved `sharpee`
-    /// executable. Fails with `.sharpeeNotFound` when the CLI is not installed —
+    /// Production entry point: compose `storyFile` with the resolved `sharpee`
+    /// executable (login-shell PATH, else the enclosing Sharpee workspace's own
+    /// `./sharpee` shim). Fails with `.sharpeeNotFound` when neither exists —
     /// the IDE never falls back to `node_modules/.bin` (D2).
     func compose(storyFile: URL, completion: @escaping Completion) {
-        guard let sharpee = Self.resolveSharpee() else {
+        guard let sharpee = Self.resolveSharpee(near: storyFile) else {
             completion(.failure(.sharpeeNotFound))
             return
         }
@@ -53,17 +54,34 @@ final class ComposeRunner {
             completion: completion)
     }
 
-    /// The first executable named `sharpee` on the login-shell PATH, or nil.
-    /// Resolved per call — cheap (PATH itself is cached by ShellEnvironment), and
-    /// picks up a mid-session install without relaunching the IDE.
-    static func resolveSharpee() -> URL? {
-        guard let path = ShellEnvironment.buildEnvironment()["PATH"] else { return nil }
+    /// The `sharpee` executable to invoke. Resolution order:
+    /// 1. When `near` sits inside the Sharpee monorepo, the workspace's own
+    ///    `./sharpee` shim (ADR-187: in-repo, the wrapper IS the entry point) —
+    ///    an in-repo story must track the LOCAL toolchain build, not whatever
+    ///    version a global install happens to be.
+    /// 2. Else the first `sharpee` on the login-shell PATH — the globally
+    ///    installed `@sharpee/devkit` bin (the shipped author CLI).
+    /// A `.story` FILE target builds directly either way (no repokit redirect).
+    /// Resolved per call — cheap (PATH is cached by ShellEnvironment), and picks
+    /// up a mid-session install without relaunch.
+    static func resolveSharpee(near: URL? = nil) -> URL? {
+        if let near, let shim = workspaceShim(near: near) { return shim }
         let fm = FileManager.default
-        for dir in path.split(separator: ":") {
-            let candidate = URL(fileURLWithPath: String(dir)).appendingPathComponent("sharpee")
-            if fm.isExecutableFile(atPath: candidate.path) { return candidate }
+        if let path = ShellEnvironment.buildEnvironment()["PATH"] {
+            for dir in path.split(separator: ":") {
+                let candidate = URL(fileURLWithPath: String(dir)).appendingPathComponent("sharpee")
+                if fm.isExecutableFile(atPath: candidate.path) { return candidate }
+            }
         }
         return nil
+    }
+
+    /// The enclosing Sharpee workspace's executable `./sharpee` shim, or nil
+    /// when `near` is outside the monorepo (or the shim is absent).
+    static func workspaceShim(near: URL) -> URL? {
+        guard let root = WorkspaceRoot.find(from: near) else { return nil }
+        let shim = root.appendingPathComponent("sharpee")
+        return FileManager.default.isExecutableFile(atPath: shim.path) ? shim : nil
     }
 
     /// Spawns `executable`, buffers stdout/stderr, and on exit decodes the payload
