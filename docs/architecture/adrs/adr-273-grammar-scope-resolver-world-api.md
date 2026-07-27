@@ -2,6 +2,12 @@
 
 ## Status: ACCEPTED (2026-07-25) — defect ADR, split out of ADR-271's implementation by owner ruling. ADR-271's acceptance items 1 and 6 (parse-time gating demonstrated by transcript; fernhill/friendly-zoo suites green) are **blocked on this ADR**. Q-1 ruled (build real reachability — D4); Q-2 ruled (define action page via ADR-272 — D5). Reviewed at acceptance: 14/14 READY; the review's one SMALL finding (one-definition discipline for `ScopeEvaluator`'s touchable stub) folded into D4 before the flip.
 
+**IMPLEMENTED (closing marker 2026-07-27, session 834109).** The fix landed as `f929ea60`
+(ReachabilityBehavior; GrammarScopeResolver on the real WorldModel API) with the genai-api
+regeneration `56f4f6f5`; ADR-271's acceptance items 1 and 6 unblocked and discharged — the fernhill
+and friendly-zoo transcript suites have been green since, through the Chord 2.x arc and the ADR-276
+census migration. Recorded at the ADR-266 umbrella's close.
+
 ## Parent: raised by ADR-271 (whose Consequences reserved exactly this: latent defects on the scope-gating path are "raised, not silently absorbed"). Relates to ADR-266 (umbrella), ADR-231 D2a (`.where()` is the one parse-time gating mechanism — the mechanism this defect disables), ADR-088 (slot-consumer registry, the call path into the resolver), ADR-230 (grammar reachability).
 
 ## Date: 2026-07-25

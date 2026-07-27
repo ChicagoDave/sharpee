@@ -2,6 +2,25 @@
 
 ## Status: ACCEPTED (2026-07-25) — **supersedes ADR-265**, and is **widened twice** past it. The ask was to see how the grammar would be defined in Chord; auditing that exposed a Chord grammar surface materially narrower than Sharpee's, a compiler that discards what Chord already says, a taught construct enforced nowhere, a documented surface whose own published example fails to load, and no way for an author to modify standard grammar at all. Measured against the Inform 7 bar the feedback invoked — extend, alter, order — Chord has none of the three. **Owner direction 2026-07-25: option (iv) — the readable Chord grammar becomes the editable source, not a reference.** The standard grammar's Chord form is loadable and author-modifiable, as I7's Standard Rules are; actions stay TypeScript. This reverses ADR-265's reference-only stance entirely and converts Gap 2's missing constructs from a backlog into a prerequisite. ADR-265's generated set is replaced in full. **Umbrella ADR** (owner ruling, same session): the direction and constraints live here; the work lands in six named children, ADR-267 through ADR-272 (D14). Per project convention an umbrella is never implemented directly — **accepting this ADR authorizes no code**; it fixes the direction, the boundary (D8), the required-construct set (D12′), the slot spelling (D15), and the allocation of acceptance to children. Each child must be written and accepted before its phase begins. Acceptance carries no Open Questions (all devolved, D14). Reviewed at acceptance: 15/15, READY as an umbrella.
 
+**CLOSED 2026-07-27 (session 834109) — the programme is complete.** All six children reached their
+terminal state: **ADR-267** IMPLEMENTED (2026-07-25, session 2d5bc7 — four landing groups whole;
+reserved-surface audit PASS; gap report empty), **ADR-268** IMPLEMENTED (2026-07-26, session b88ed7 —
+confidence → tier → specificity → definition order), **ADR-269** IMPLEMENTED (2026-07-26, session
+f9e069 — the standard grammar is Chord source, 422-rule equivalence verified, freshness-gated
+generation), **ADR-270** IMPLEMENTED (2026-07-26, session 0ea0e5 — `extend action` / `remove from
+action`; `define verb` removed), **ADR-271** complete (Phases 1–3 landed session b52717; its blocked
+acceptance items 1 and 6 discharged by the split-out **ADR-273** reachability fix — fernhill and
+friendly-zoo suites green since), **ADR-272** IMPLEMENTED (2026-07-26 — umbrella items 16/17
+discharged). The programme also produced two spin-offs beyond the roster: ADR-273 (the
+`GrammarScopeResolver` reachability defect) and ADR-275 (the directions runtime slice — entity-less
+dispatch + semantic word binding). The seventeen-item acceptance set above is discharged as tagged.
+The I7 bar the feedback invoked — **extend, alter, order** — is met on all three. The interim
+language bumps consolidated to public **Chord 2.0.0** (ADR-257 second recorded exception).
+Afterlife: ADR-269 D7's freshness-gated generation became ADR-276's stdlib-manifest mechanism, the
+Chord standard-grammar source now also feeds the manifest's grammar-shapes slice, and ADR-270's
+load-time alteration errors were migrated to compile diagnostics by ADR-276 (story-first resolution
+order preserved). Current as of Sharpee 4.1.0 / Chord 2.1.0.
+
 ## Parent: supersedes ADR-265 (same author feedback, `docs/feedback/intfiction-20260724.txt`, Nathaniel Lindell). Serves the Sharpee↔Chord parity goal. Relates to ADR-087 (action-centric grammar — the `forAction` shape at the centre of this), ADR-084 (removed the story-grammar wrapper; the reason `extendParser` is already at full capability), ADR-088 (grammar engine refactor), ADR-054 (semantic grammar), ADR-230 (grammar reachability), ADR-231 D2a (parse-time gating; `.hasTrait()` removal), ADR-210/ADR-218 (Chord `define action` + `grammar` block), ADR-215 (extensions add grammar), ADR-235 D2 (the "compiles but cannot work" class this ADR finds another member of), ADR-257 (Chord language version — bumped by any construct promoted from the gap list), `docs/architecture/chord-grammar-changes.md` (where such a promotion is approved), ADR-258 (the IDE), ADR-255/ADR-090/ADR-052 (the change mechanisms ADR-265 catalogued).
 
 ## Date: 2026-07-25

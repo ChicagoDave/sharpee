@@ -2,6 +2,14 @@
 
 ## Status: ACCEPTED (2026-07-25) — first child of ADR-266 (D14). Ships **first and independently**: none of its work depends on direction (iv), and its three defects harm Chord authors today. Carries the umbrella's D10 (compiler pass-through), D11 (dropped scope constraint + analyzer validation), and D13 (`define verb`). Inherited Q-10 was resolved by owner ruling (2026-07-25, interview): narrow the docs (D4). No open questions remain.
 
+**COMPLETE (closing marker 2026-07-27, session 834109).** Phases 1–3 landed session b52717 (see the
+implementation addendum); the blocked acceptance items 1 and 6 were discharged when ADR-273's
+reachability fix landed (`f929ea60` — ReachabilityBehavior; GrammarScopeResolver on the real
+WorldModel API): the fernhill (`must be reachable` gates throughout) and friendly-zoo transcript
+suites have been green since, through the Chord 2.x arc and the ADR-276 census migration. Items 4/5
+(docs) shipped with the narrowed `define verb` page — later removed entirely by ADR-270 D7, which
+superseded the construct. Recorded at the umbrella's close (ADR-266).
+
 ## Parent: ADR-266 (umbrella — grammar definition parity). Relates to ADR-087 (action-centric grammar; the `.forAction()` shape D3 emits), ADR-084 (`getStoryGrammar()` returns the full builder — the surface this ADR finally uses), ADR-231 D2a (`.where()` scope constraints are the one parse-time gating mechanism), ADR-235 D2 (the "compiles but cannot work" class both defects belong to), ADR-254 (label keys, incidental), ADR-257 (Chord language version — **not** bumped here, see D1), ADR-270 (the alteration model whose arrival shapes Q-10).
 
 ## Date: 2026-07-25
