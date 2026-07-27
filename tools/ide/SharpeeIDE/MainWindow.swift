@@ -73,11 +73,6 @@ final class MainWindowController: NSWindowController {
         rootViewController?.clearBuildOutput()
     }
 
-    /// Sets the repo root the Build panel uses to resolve diagnostic paths.
-    func setBuildPanelRepoRoot(_ url: URL) {
-        rootViewController?.setBuildPanelRepoRoot(url)
-    }
-
     /// Loads (or clears) the Play pane for the given story's web bundle.
     func refreshPlay(projectRoot: URL?) {
         rootViewController?.refreshPlay(projectRoot: projectRoot)
@@ -148,9 +143,22 @@ private final class RootViewController: NSViewController {
                                                        line: location.line,
                                                        column: location.column)
         }
-        bottomPanelViewController.buildPanel.onSourceClick = openLocation
         bottomPanelViewController.gameErrors.onDoubleClick = openLocation
         mainSplitViewController.setDiagnosisOpenLocation(openLocation)
+
+        // Compose pipeline (ADR-258 D5): results feed Problems + editor underlines;
+        // a Problems row opens the exact span (hatch records: file:line).
+        mainSplitViewController.onComposeOutcome = { [weak self] outcome in
+            self?.handleComposeOutcome(outcome)
+        }
+        bottomPanelViewController.problems.onActivate = { [weak self] item in
+            if let span = item.record.span {
+                self?.mainSplitViewController.openDocument(at: item.fileURL, span: span)
+            } else {
+                self?.mainSplitViewController.openDocument(at: item.fileURL,
+                                                           line: item.record.line, column: 1)
+            }
+        }
 
         bottomPanelViewController.gameErrors.onErrorFocused = { [weak self] error in
             self?.mainSplitViewController.revealDiagnosis(error)
@@ -282,8 +290,34 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.clearDiagnosis()
     }
 
-    func setBuildPanelRepoRoot(_ url: URL) {
-        bottomPanelViewController.buildPanel.repoRoot = url
+    /// Routes a compose outcome to the Problems tab and the editor's underlines.
+    private func handleComposeOutcome(_ outcome: ComposeScheduler.Outcome) {
+        switch outcome.result {
+        case .success(let payload):
+            bottomPanelViewController.setProblems(payload.diagnostics, for: outcome.storyURL)
+            mainSplitViewController.applyComposeDiagnostics(payload.diagnostics,
+                                                            forFile: outcome.storyURL)
+        case .failure(let failure):
+            bottomPanelViewController.setProblemsStatus(Self.statusMessage(for: failure))
+        }
+    }
+
+    /// One-line Problems status for a compose-pipeline failure.
+    private static func statusMessage(for failure: ComposeRunner.Failure) -> String {
+        switch failure {
+        case .sharpeeNotFound:
+            return "sharpee not found on PATH — install the Sharpee CLI to see problems"
+        case .launch(let reason):
+            return "compose could not start: \(reason)"
+        case .nonZeroExit(let code, let stderr):
+            let firstLine = stderr.split(separator: "\n").first.map(String.init) ?? ""
+            return "compose failed (exit \(code))\(firstLine.isEmpty ? "" : ": \(firstLine)")"
+        case .decode(let error):
+            if case ComposeJsonPayload.DecodeError.schemaVersionMismatch(let found, let expected) = error {
+                return "This IDE is out of date for the installed Sharpee toolchain (compose schema \(found), IDE understands \(expected))"
+            }
+            return "compose output could not be read — is the Sharpee CLI up to date?"
+        }
     }
 
     func refreshPlay(projectRoot: URL?) {
@@ -320,6 +354,7 @@ private final class MainSplitViewController: NSSplitViewController {
     private let railViewController = RailViewController()
     private let projectPaneViewController = ProjectPaneViewController()
     private let introspectionRunner = IntrospectionRunner()
+    private let composeScheduler = ComposeScheduler()
     private let editorViewController = EditorViewController()
     private let rightPanelViewController = RightPanelViewController()
     /// The Play tab inside the right panel — most wiring targets it directly.
@@ -331,6 +366,8 @@ private final class MainSplitViewController: NSSplitViewController {
     fileprivate var buildPanelVisibleProvider: (() -> Bool)?
     /// Invoked with each symbolicated Play-runtime error. Owned by RootViewController.
     fileprivate var onPlayConsoleError: ((PlayConsoleError) -> Void)?
+    /// Invoked with each finished compose attempt (ADR-258 D5). Owned by RootViewController.
+    fileprivate var onComposeOutcome: ((ComposeScheduler.Outcome) -> Void)?
 
     private var currentProject: Project?
     private var didApplyInitialLayout = false
@@ -345,6 +382,13 @@ private final class MainSplitViewController: NSSplitViewController {
         projectPaneViewController.onActivateEntity = { [weak self] entity in self?.openEntitySource(entity) }
         projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
+        editorViewController.onStoryActivated = { [weak self] url, content in
+            self?.composeScheduler.composeNow(storyURL: url, content: content)
+        }
+        editorViewController.onStoryEdited = { [weak self] url, content in
+            self?.composeScheduler.noteEdit(storyURL: url, content: content)
+        }
+        composeScheduler.onOutcome = { [weak self] outcome in self?.onComposeOutcome?(outcome) }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
 
@@ -376,6 +420,16 @@ private final class MainSplitViewController: NSSplitViewController {
 
     func openDocument(at url: URL, line: Int, column: Int) {
         editorViewController.openDocument(at: url, line: line, column: column)
+    }
+
+    /// Opens `url` selecting the exact diagnostic span (Problems click-through, D5).
+    func openDocument(at url: URL, span: DiagnosticSpan) {
+        editorViewController.openDocument(at: url, span: span)
+    }
+
+    /// Applies a compose run's records as editor underlines for `url`.
+    fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
+        editorViewController.setDiagnostics(records, forFile: url)
     }
 
     func switchToDocument(at index: Int) {

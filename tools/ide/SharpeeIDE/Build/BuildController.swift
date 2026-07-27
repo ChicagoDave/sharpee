@@ -36,7 +36,6 @@ final class BuildController: BuildRunnerDelegate {
     func build(projectDir: URL) {
         guard !runner.isRunning else { return }
         current = (projectDir, .build)
-        window?.setBuildPanelRepoRoot(projectDir)
         window?.setBuildPanelVisible(true)
         window?.clearBuildOutput()
         window?.appendBuildOutput("$ sharpee build\n\n")
@@ -54,7 +53,6 @@ final class BuildController: BuildRunnerDelegate {
         guard !runner.isRunning else { return }
         autoInitBrowser = thenInitBrowser
         current = (projectDir, .install)
-        window?.setBuildPanelRepoRoot(projectDir)
         window?.setBuildPanelVisible(true)
         window?.clearBuildOutput()
         window?.appendBuildOutput("$ npm install\n\n")
@@ -68,7 +66,6 @@ final class BuildController: BuildRunnerDelegate {
     private func initBrowser(projectDir: URL) {
         guard !runner.isRunning else { return }
         current = (projectDir, .initBrowser)
-        window?.setBuildPanelRepoRoot(projectDir)
         window?.setBuildPanelVisible(true)
         window?.appendBuildOutput("\n$ sharpee init-browser\n\n")
         startUptime = ProcessInfo.processInfo.systemUptime
