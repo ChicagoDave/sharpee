@@ -8,18 +8,114 @@
  * the IR actually loads, then emits the IR JSON to stdout (or `-o <file>`).
  * Status/diagnostics go to stderr so stdout carries only the IR.
  *
- * Public interface: runCompose(rest) → process exit code.
+ * Compile diagnostics and hatch-lint findings join ONE in-memory diagnostics
+ * collection (ADR-276 D4) — the stream a future `--json` mode (ADR-258 D5)
+ * serializes. D4 defines the record shape, not a new transport: the text
+ * output below is unchanged in behavior.
+ *
+ * Public interface: runCompose(rest) → process exit code;
+ * runComposeGates(file) → ComposeGatesResult (the unified diagnostics stream).
  * Owner context: @sharpee/devkit — the standalone `sharpee` CLI (author tool).
  */
 import * as path from 'node:path';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { lintHatchSources } from '../hatch-lint.js';
+import type { CompileResult, Span, DiagnosticSeverity } from '@sharpee/chord';
+import { lintHatchSources, type HatchLintFinding } from '../hatch-lint.js';
 // Shared hatch-module resolution + fs import-resolver policy (one
 // implementation — also used by the author-game loader behind
 // `sharpee test`/`play`).
 import { requireHatchModule, makeFsImportResolver } from '../standalone/author-game.js';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [-o <ir.json>]';
+
+/**
+ * One record in compose's unified diagnostics stream (ADR-276 D4): compile
+ * diagnostics and hatch-lint findings, same `{severity, code, message}`
+ * shape with a file+line site. `span` is present exactly for compile
+ * diagnostics — hatch findings have no end-span (D4).
+ */
+export interface ComposeDiagnostic {
+  severity: DiagnosticSeverity;
+  /** Stable machine code — `parse.*`/`analysis.*`, or `hatch.*` for lint findings. */
+  code: string;
+  message: string;
+  /** Site file: the `.story` file for compile diagnostics, the hatch module for hatch findings. */
+  file: string;
+  /** 1-based line of the site. */
+  line: number;
+  /** Full source span — compile diagnostics only (hatch findings carry none). */
+  span?: Span;
+}
+
+/** Result of running compose's gates: compile + hatch lint, one diagnostics stream. */
+export interface ComposeGatesResult {
+  /** The raw chord compile result (`ir` meaningful only when `compile.ok`). */
+  compile: CompileResult;
+  /** Raw hatch-lint findings (empty when clean). */
+  hatchFindings: HatchLintFinding[];
+  /** The ONE collection (D4): compile diagnostics first, then hatch records. */
+  diagnostics: ComposeDiagnostic[];
+  /** True iff the compile succeeded and the hatch lint found nothing. */
+  ok: boolean;
+}
+
+/**
+ * Run compose's gates on a `.story` file: chord compile, then the hatch
+ * source lint (design.md §5.6), folding both into one diagnostics
+ * collection (ADR-276 D4). The lint runs even when the compile failed —
+ * hatch declarations still lower into the IR, so the stream is complete
+ * in one pass; text-mode `runCompose` keeps its historical gating and
+ * only PRINTS hatch findings after a clean compile.
+ *
+ * @param file path to the `.story` file, as given (used verbatim as the
+ *   compile diagnostics' site file)
+ * @returns the compile result, raw findings, and the unified stream
+ */
+export function runComposeGates(file: string): ComposeGatesResult {
+  // Lazy require (introspect.ts pattern): pull the compiler only when composing.
+  const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
+  const storyDir = path.dirname(path.resolve(file));
+  const compile = chord.compile(readFileSync(file, 'utf-8'), {
+    importResolver: makeFsImportResolver(storyDir),
+  });
+
+  // Hatch source lint (design.md §5.6, authoritative layer): the chord.*
+  // state namespace is loader-private; a quoted literal in hatch source is
+  // a build error in --check and full mode alike. Comments don't trip it.
+  const hatchFindings = lintHatchSources(
+    storyDir,
+    compile.ir.hatches.map((h) => h.modulePath)
+  );
+
+  const diagnostics: ComposeDiagnostic[] = [
+    ...compile.diagnostics.map((d) => ({
+      severity: d.severity,
+      code: d.code,
+      message: d.message,
+      file,
+      line: d.span.line,
+      span: d.span,
+    })),
+    ...hatchFindings.map((f) => ({
+      severity: 'error' as const,
+      code: 'hatch.chord-namespace',
+      message: `\`${f.text}\` — the chord.* state namespace is loader-private; hatches read the world through their context only (design.md §5.6)`,
+      file: f.file,
+      line: f.line,
+    })),
+  ];
+
+  return { compile, hatchFindings, diagnostics, ok: compile.ok && hatchFindings.length === 0 };
+}
+
+/**
+ * Format one diagnostic record as compose's stderr line. Compile records
+ * (span present) include the column; hatch records are file:line only.
+ */
+function formatDiagnostic(r: ComposeDiagnostic): string {
+  const site = r.span ? `${r.file}:${r.line}:${r.span.column}` : `${r.file}:${r.line}`;
+  return `${site} ${r.severity} [${r.code}] ${r.message}`;
+}
 
 /**
  * Run `sharpee compose`.
@@ -53,15 +149,11 @@ export async function runCompose(rest: string[]): Promise<number> {
     return 2;
   }
 
-  // Lazy require (introspect.ts pattern): pull the compiler only when composing.
-  const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
-  const storyDir = path.dirname(path.resolve(file));
-  const result = chord.compile(readFileSync(file, 'utf-8'), {
-    importResolver: makeFsImportResolver(storyDir),
-  });
+  const gates = runComposeGates(file);
+  const result = gates.compile;
 
-  for (const d of result.diagnostics) {
-    console.error(`${file}:${d.span.line}:${d.span.column} ${d.severity} [${d.code}] ${d.message}`);
+  for (const r of gates.diagnostics) {
+    if (r.span) console.error(formatDiagnostic(r));
   }
   if (!result.ok) {
     const errors = result.diagnostics.filter((d) => d.severity === 'error').length;
@@ -69,20 +161,11 @@ export async function runCompose(rest: string[]): Promise<number> {
     return 1;
   }
 
-  // Hatch source lint (design.md §5.6, authoritative layer): the chord.*
-  // state namespace is loader-private; a quoted literal in hatch source is
-  // a build error in --check and full mode alike. Comments don't trip it.
-  const hatchFindings = lintHatchSources(
-    storyDir,
-    result.ir.hatches.map((h) => h.modulePath)
-  );
-  for (const f of hatchFindings) {
-    console.error(
-      `${f.file}:${f.line} error [hatch.chord-namespace] \`${f.text}\` — the chord.* state namespace is loader-private; hatches read the world through their context only (design.md §5.6)`
-    );
+  for (const r of gates.diagnostics) {
+    if (!r.span) console.error(formatDiagnostic(r));
   }
-  if (hatchFindings.length > 0) {
-    console.error(`compose: ${file} hatch source references chord.* (${hatchFindings.length} hit(s))`);
+  if (gates.hatchFindings.length > 0) {
+    console.error(`compose: ${file} hatch source references chord.* (${gates.hatchFindings.length} hit(s))`);
     return 1;
   }
 
@@ -96,6 +179,7 @@ export async function runCompose(rest: string[]): Promise<number> {
   const { createStory } = require('@sharpee/story-loader') as typeof import('@sharpee/story-loader');
   const { WorldModel } = require('@sharpee/world-model') as typeof import('@sharpee/world-model');
 
+  const storyDir = path.dirname(path.resolve(file));
   const hatchModules: Record<string, Record<string, unknown>> = {};
   for (const hatch of result.ir.hatches) {
     if (!(hatch.modulePath in hatchModules)) {

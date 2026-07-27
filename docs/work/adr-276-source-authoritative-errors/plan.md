@@ -139,7 +139,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   - Full corpus re-run: `node dist/cli/sharpee.js --test --chain
     stories/dungeo/walkthroughs/wt-*.transcript`, cloak, fernhill,
     friendly-zoo, nautical, acceptance-story transcripts — must stay green.
-- **Status**: CURRENT
+- **Status**: DONE
 
 ### Phase 2: Declarative setting-schema table (story-loader prerequisite for entries 4–6)
 - **Tier**: Medium
@@ -187,7 +187,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
     spirit of the existing `EXTENSION_REGISTRY`/chord-manifest conformance
     test noted in `extension-registry.ts`'s header).
   - Full corpus re-run, byte-for-byte same pass/fail set as Phase 1's baseline.
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 3: Locale-keyed stdlib manifest generator + freshness gate + action-id entries
 - **Tier**: Large
@@ -253,7 +253,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   - Rogue-IR backstop tests for both sites (hand-built `StoryIR` bypassing the
     analyzer).
   - Full corpus green.
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 4: Grammar-shapes manifest slice + removal-pattern matching
 - **Tier**: Medium
@@ -299,7 +299,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   - Rogue-IR backstop test.
   - Full corpus green, `go-out-exiting.transcript` and the acceptance-15 story
     specifically re-checked (both ADR-269/ADR-270 regression touchpoints).
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 5: Setting-schema manifest slice + trait-setting entries
 - **Tier**: Medium
@@ -338,7 +338,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   - Full corpus green, with specific attention to any story using
     `combatant`/`weapon`/NPC adjectives with `with`-config (dungeo's combat
     content is the natural regression surface here).
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 6: Closed-vocabulary manifest slices (combat names, NPC adjectives, hiding positions, direction words)
 - **Tier**: Medium
@@ -397,7 +397,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   - Four rogue-IR backstop tests.
   - Full corpus green, `go-out-exiting.transcript` re-checked (direction
     vocabulary touches exit-word parsing).
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 7: Hatch lint as structured diagnostic records (D4)
 - **Tier**: Small
@@ -429,7 +429,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   - New test asserting the structured record's shape and that it appears in
     the same collection as a compile diagnostic from a story with both an
     analyzer error and a hatch violation in one `compose --check` run.
-- **Status**: PENDING
+- **Status**: DONE
 
 ### Phase 8: Census re-audit and acceptance verification
 - **Tier**: Medium
@@ -485,7 +485,7 @@ landing after this arc completes (ADR-276 Acceptance item 9). Not a phase here.
   results recorded (not just asserted) in the work summary — this phase's
   entire content is verification, so "ran and passed" with the actual command
   output/log reference is the bar, not narrative claim.
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ## Session state seed
 
