@@ -70,14 +70,19 @@ final class MainWindowController: NSWindowController {
         rootViewController?.applyBuildPanelVisible(visible)
     }
 
-    /// Appends a chunk of build output to the Build panel.
+    /// Appends a chunk of build output to the right panel's Build tab.
     func appendBuildOutput(_ text: String) {
         rootViewController?.appendBuildOutput(text)
     }
 
-    /// Clears the Build panel (called at the start of a build).
+    /// Clears the Build tab (called at the start of a build).
     func clearBuildOutput() {
         rootViewController?.clearBuildOutput()
+    }
+
+    /// Switches the right panel to the Build tab (a build just started).
+    func showBuildOutput() {
+        rootViewController?.showBuildOutput()
     }
 
     /// Loads (or clears) the Play pane for the given story's web bundle.
@@ -300,13 +305,17 @@ private final class RootViewController: NSViewController {
     }
 
     func appendBuildOutput(_ text: String) {
-        bottomPanelViewController.buildPanel.append(text)
+        mainSplitViewController.appendBuildOutput(text)
     }
 
     func clearBuildOutput() {
-        bottomPanelViewController.buildPanel.clear()
+        mainSplitViewController.clearBuildOutput()
         bottomPanelViewController.clearPlayErrors() // a new build supersedes prior game errors
         mainSplitViewController.clearDiagnosis()
+    }
+
+    func showBuildOutput() {
+        mainSplitViewController.showBuildTab()
     }
 
     /// Routes a compose outcome to the Problems tab and the editor's underlines.
@@ -549,10 +558,27 @@ private final class MainSplitViewController: NSSplitViewController {
     }
 
     /// After a successful build, load the freshly-built `dist/web/<id>/` bundle
-    /// (honours the toggle). The id comes from the retained IR header (D4).
+    /// (honours the toggle) and bring the Play tab forward. The id comes from
+    /// the retained IR header (D4).
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
         guard let bundleDir = bundleDirectory() else { return }
         playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
+        if playViewController.isLoaded {
+            rightPanelViewController.showPlayTab()
+        }
+    }
+
+    /// Build-output plumbing — the Build tab lives in the right panel next to Play.
+    fileprivate func appendBuildOutput(_ text: String) {
+        rightPanelViewController.buildPanel.append(text)
+    }
+
+    fileprivate func clearBuildOutput() {
+        rightPanelViewController.buildPanel.clear()
+    }
+
+    fileprivate func showBuildTab() {
+        rightPanelViewController.showBuildTab()
     }
 
     /// Applies a persisted "Play after build" value (session restore).
@@ -665,7 +691,7 @@ private final class RailViewController: NSViewController {
         buildButton.isBordered = false
         buildButton.bezelStyle = .regularSquare
         buildButton.contentTintColor = Theme.foregroundDim
-        buildButton.toolTip = "Toggle Build Panel"
+        buildButton.toolTip = "Toggle Problems Panel"
         buildButton.target = self
         buildButton.action = #selector(toggleBuild)
         buildButton.translatesAutoresizingMaskIntoConstraints = false

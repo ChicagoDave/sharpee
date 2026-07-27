@@ -33,7 +33,7 @@ final class BuildController: BuildRunnerDelegate {
     func build(storyFile: URL) {
         guard !runner.isRunning else { return }
         currentStory = storyFile
-        window?.setBuildPanelVisible(true)
+        window?.showBuildOutput() // the right panel's Build tab, next to Play
         window?.clearBuildOutput()
         window?.appendBuildOutput("$ sharpee build \(storyFile.lastPathComponent)\n\n")
         startUptime = ProcessInfo.processInfo.systemUptime
