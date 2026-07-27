@@ -296,7 +296,7 @@ name-matching fallback), golden token stream / conformance pin, grammar-header
     `ComposeRunner` invocation, not one per keystroke.
   - Full `SharpeeIDETests` suite green at this commit (no `TSCDiagnostic*`
     remaining).
-- **Status**: CURRENT
+- **Status**: DONE — commit b7f770f2
 
 ### Phase 2: D6 — IR-sourced project tree (retires `EntitySourceIndex`)
 - **Tier**: Large
@@ -360,7 +360,7 @@ name-matching fallback), golden token stream / conformance pin, grammar-header
   - No-name-matching: grep the diff for any reintroduced `.scope`/name-index
     resolution — must be absent.
   - Full `SharpeeIDETests` suite green at this commit.
-- **Status**: PENDING
+- **Status**: DONE — commit 9ceac2b2 (devkit pipe fix 47e325e8)
 
 ### Phase 3: D7 — `ChordLexer.swift` port + conformance pin (retires tree-sitter)
 - **Tier**: Medium
@@ -419,7 +419,7 @@ name-matching fallback), golden token stream / conformance pin, grammar-header
     `project.yml`'s own removed lines (i.e. nothing) — confirms the swap is
     total, not partial.
   - Full `SharpeeIDETests` suite green at this commit.
-- **Status**: PENDING
+- **Status**: DONE — commit 2c341089 (mismatch demo run + reverted in-phase)
 
 ### Phase 4: D2/D3/D4 — `.story` build/play paths (retires `BrowserEntry`, npm housekeeping)
 - **Tier**: Large
@@ -512,7 +512,7 @@ name-matching fallback), golden token stream / conformance pin, grammar-header
     tools/ide/SharpeeIDE tools/ide/SharpeeIDETests` returns nothing —
     confirms the swap is total.
   - Full `SharpeeIDETests` suite green at this commit.
-- **Status**: PENDING
+- **Status**: DONE — commit 904d4231
 
 ### Phase 5: D8/D9 — persisted-state migration, language-version check, polish
 - **Tier**: Medium
@@ -568,7 +568,7 @@ name-matching fallback), golden token stream / conformance pin, grammar-header
     Acceptance bullet from the ADR in one session, recorded as this phase's
     completion evidence.
   - Full `SharpeeIDETests` suite green; `xcodebuild build` clean.
-- **Status**: PENDING
+- **Status**: DONE — commit 3e25a7a7 (ADR flipped IMPLEMENTED)
 
 ## Build/test commands (all phases)
 ```bash
