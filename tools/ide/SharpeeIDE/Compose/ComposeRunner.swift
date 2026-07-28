@@ -9,7 +9,7 @@
 // diagnostics are data here, not process failure.
 // Public interface: ComposeRunner.compose(storyFile:completion:),
 // run(executable:arguments:workingDirectory:environment:completion:),
-// ComposeRunner.resolveSharpee().
+// ComposeRunner.resolveSharpee(), ComposeRunner.resolve(near:searchPATH:bundledResources:).
 // Owner context: tools/ide — Compose.
 
 import Foundation
@@ -20,7 +20,10 @@ final class ComposeRunner {
     /// Why a compose attempt failed. Gate errors are NOT failures — they arrive
     /// as diagnostics inside a successful payload.
     enum Failure: Error {
-        /// No `sharpee` executable on the login-shell PATH (production resolution, D2/D4).
+        /// No `sharpee` executable from any tier — workspace shim, login-shell
+        /// PATH, or the app's own bundled toolchain (ADR-279 D4). With a
+        /// vendored toolchain present this is unreachable in a shipped build;
+        /// it survives for dev builds assembled without the vendor step.
         case sharpeeNotFound
         /// The child process could not be launched.
         case launch(String)
@@ -39,9 +42,9 @@ final class ComposeRunner {
     private var pending: Completion?
 
     /// Production entry point: compose `storyFile` with the resolved `sharpee`
-    /// executable (login-shell PATH, else the enclosing Sharpee workspace's own
-    /// `./sharpee` shim). Fails with `.sharpeeNotFound` when neither exists —
-    /// the IDE never falls back to `node_modules/.bin` (D2).
+    /// executable (workspace shim, else login-shell PATH, else the bundled
+    /// toolchain — ADR-279 D4). Fails with `.sharpeeNotFound` when no tier
+    /// yields one; the IDE never falls back to `node_modules/.bin` (D2).
     func compose(storyFile: URL, completion: @escaping Completion) {
         guard let sharpee = Self.resolveSharpee(near: storyFile) else {
             completion(.failure(.sharpeeNotFound))
@@ -54,26 +57,45 @@ final class ComposeRunner {
             completion: completion)
     }
 
-    /// The `sharpee` executable to invoke. Resolution order:
+    /// The `sharpee` executable to invoke. Resolution order (ADR-279 D4):
     /// 1. When `near` sits inside the Sharpee monorepo, the workspace's own
     ///    `./sharpee` shim (ADR-187: in-repo, the wrapper IS the entry point) —
     ///    an in-repo story must track the LOCAL toolchain build, not whatever
     ///    version a global install happens to be.
     /// 2. Else the first `sharpee` on the login-shell PATH — the globally
     ///    installed `@sharpee/devkit` bin (the shipped author CLI).
+    /// 3. Else the toolchain bundled inside the app (ADR-279 D4). Last, not
+    ///    first: an author's deliberate global install still wins, and the
+    ///    in-repo dev loop still tracks the local build. Tiers 1 and 2 are
+    ///    unchanged from ADR-258 D2/Q1.
     /// A `.story` FILE target builds directly either way (no repokit redirect).
     /// Resolved per call — cheap (PATH is cached by ShellEnvironment), and picks
     /// up a mid-session install without relaunch.
     static func resolveSharpee(near: URL? = nil) -> URL? {
+        resolve(near: near,
+                searchPATH: ShellEnvironment.buildEnvironment()["PATH"],
+                bundledResources: Bundle.main.resourceURL)
+    }
+
+    /// Resolution over injected inputs — the seam that lets tests pin the
+    /// three-tier order (AC6) without mutating the process PATH or packaging
+    /// an .app. `resolveSharpee` is this function bound to the live sources.
+    ///
+    /// - Parameters:
+    ///   - near: a story file whose enclosing workspace supplies tier 1, if any.
+    ///   - searchPATH: colon-separated directories for tier 2.
+    ///   - bundledResources: the app bundle's `Resources` directory for tier 3.
+    /// - Returns: the first tier that yields an executable file, else nil.
+    static func resolve(near: URL?, searchPATH: String?, bundledResources: URL?) -> URL? {
         if let near, let shim = workspaceShim(near: near) { return shim }
         let fm = FileManager.default
-        if let path = ShellEnvironment.buildEnvironment()["PATH"] {
-            for dir in path.split(separator: ":") {
+        if let searchPATH {
+            for dir in searchPATH.split(separator: ":") {
                 let candidate = URL(fileURLWithPath: String(dir)).appendingPathComponent("sharpee")
                 if fm.isExecutableFile(atPath: candidate.path) { return candidate }
             }
         }
-        return nil
+        return BundledToolchain.executable(resourcesURL: bundledResources)
     }
 
     /// The enclosing Sharpee workspace's executable `./sharpee` shim, or nil

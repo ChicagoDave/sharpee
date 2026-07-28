@@ -23,6 +23,7 @@ import { execFileSync } from 'node:child_process';
 import type { IRMeta, StoryIR } from '@sharpee/chord';
 import { makeFsImportResolver } from './author-game.js';
 import { requireHatchModule } from './hatch-transpile.js';
+import { resolveEsbuild } from './esbuild-bin.js';
 
 // --------------------------------------------------------------------------
 // Metadata + client config from the compiled Story IR (ADR-252 D2/D3)
@@ -661,7 +662,6 @@ export function buildBrowser(
   // --- Bundle the entry → dist/web/<id>/game.js (single IIFE payload). ---
   log('  Bundling game.js...');
   const esbuildArgs = [
-    'esbuild',
     entryFile,
     '--bundle',
     '--platform=browser',
@@ -677,7 +677,11 @@ export function buildBrowser(
   if (opts.minify !== false) esbuildArgs.push('--minify');
   if (opts.sourcemap !== false) esbuildArgs.push('--sourcemap');
   try {
-    execFileSync('npx', esbuildArgs, { cwd: env.esbuildCwd, stdio: opts.quiet ? 'pipe' : 'inherit' });
+    const esbuild = resolveEsbuild();
+    execFileSync(esbuild.command, [...esbuild.prefixArgs, ...esbuildArgs], {
+      cwd: env.esbuildCwd,
+      stdio: opts.quiet ? 'pipe' : 'inherit',
+    });
   } catch (error: unknown) {
     const stderr = (error as { stderr?: Buffer }).stderr;
     if (stderr) console.error(stderr.toString());
@@ -849,7 +853,6 @@ export function buildPlaygroundBundle(
   // --- Bundle the entry → dist/playground/game.js (single IIFE payload). ---
   log('  Bundling game.js...');
   const esbuildArgs = [
-    'esbuild',
     entryFile,
     '--bundle',
     '--platform=browser',
@@ -865,7 +868,11 @@ export function buildPlaygroundBundle(
   if (opts.minify !== false) esbuildArgs.push('--minify');
   if (opts.sourcemap !== false) esbuildArgs.push('--sourcemap');
   try {
-    execFileSync('npx', esbuildArgs, { cwd: env.esbuildCwd, stdio: opts.quiet ? 'pipe' : 'inherit' });
+    const esbuild = resolveEsbuild();
+    execFileSync(esbuild.command, [...esbuild.prefixArgs, ...esbuildArgs], {
+      cwd: env.esbuildCwd,
+      stdio: opts.quiet ? 'pipe' : 'inherit',
+    });
   } catch (error: unknown) {
     const stderr = (error as { stderr?: Buffer }).stderr;
     if (stderr) console.error(stderr.toString());

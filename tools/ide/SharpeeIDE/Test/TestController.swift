@@ -3,7 +3,8 @@
 // discovers the open story's transcripts into the panel model, starts
 // run-all / chain / single-file runs, folds streamed records into the model
 // (re-rendering live), routes click-through to the editor, and surfaces
-// pipeline failures (sharpee missing, schema mismatch) as status lines.
+// pipeline failures (sharpee missing, schema mismatch, and the ADR-279 D4
+// fence-grammar/toolchain mismatch) as status lines.
 // Public interface: TestController.attach(storyFile:), runAll(), runChain(),
 // runFile(_:), cancel(), isTesting.
 // Owner context: tools/ide — Test.
@@ -115,8 +116,18 @@ final class TestController: TestRunnerDelegate {
         case .cancelled:
             panel?.setStatus("Cancelled")
         case .failed where model.runEnd == nil:
-            // The run died before its stream completed (launch/load failure).
-            panel?.setStatus("Test run failed (exit \(result.exitCode))")
+            // The run died before its stream completed (launch/load failure) —
+            // which is exactly where a fence-unaware toolchain fails, since it
+            // cannot get past parsing the transcript (ADR-279 D4 / ADR-287).
+            var status = "Test run failed (exit \(result.exitCode))"
+            if let note = ToolchainFenceNote.note(transcripts: model.entries.map(\.file),
+                                                  resolved: storyFile.flatMap {
+                                                      ComposeRunner.resolveSharpee(near: $0)
+                                                  },
+                                                  bundled: BundledToolchain.executable()) {
+                status += " — " + note
+            }
+            panel?.setStatus(status)
         default:
             break // runSummary from run-end already rendered by reloadModel()
         }

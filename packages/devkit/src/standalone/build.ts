@@ -7,7 +7,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
+import { resolveEsbuild } from './esbuild-bin.js';
 import { zipSync, strToU8 } from 'fflate';
 import { runBuildBrowserCommand } from './build-browser.js';
 import { stampVersion } from './version-stamp.js';
@@ -138,8 +139,23 @@ export async function runBuildCommand(args: string[], projectDirArg?: string): P
   const tsconfigArg = fs.existsSync(tsconfigPath) ? `--tsconfig=${tsconfigPath}` : '';
 
   try {
-    execSync(
-      `npx esbuild "${storySrc}" --bundle --platform=browser --format=esm --target=es2020 --outfile="${storyJsPath}" --external:@sharpee/* ${tsconfigArg}`,
+    // execFileSync, not a shell string: `--external:@sharpee/*` went through a
+    // shell unquoted and was one matching directory away from being glob-expanded
+    // into something esbuild never meant to receive. An argv array cannot glob.
+    const esbuild = resolveEsbuild();
+    execFileSync(
+      esbuild.command,
+      [
+        ...esbuild.prefixArgs,
+        storySrc,
+        '--bundle',
+        '--platform=browser',
+        '--format=esm',
+        '--target=es2020',
+        `--outfile=${storyJsPath}`,
+        '--external:@sharpee/*',
+        ...(tsconfigArg ? [tsconfigArg] : []),
+      ],
       { cwd: projectDir, stdio: 'pipe' }
     );
     console.log('  story.js');

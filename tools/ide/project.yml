@@ -39,6 +39,25 @@ targets:
         buildPhase: resources
     dependencies:
       - sdk: WebKit.framework
+    # ADR-279 D4 — assemble the bundled toolchain into Contents/Resources.
+    # OPT-IN, not automatic: assembling costs a `pnpm deploy` (~1-2 min on a
+    # cold run) and ~176MB, which would violate Acceptance 5's "dev-loop builds
+    # are unaffected" if it ran on every xcodebuild. Release packaging
+    # (package.sh, Phase 3) sets the flag; a developer wanting to exercise the
+    # bundled tier locally runs:
+    #   SHARPEE_VENDOR_TOOLCHAIN=1 xcodebuild -scheme SharpeeIDE
+    # Without it the app simply has no third tier — BundledToolchain resolves
+    # nil and the shim/PATH tiers carry the dev loop exactly as before.
+    postBuildScripts:
+      - name: Vendor Sharpee toolchain (ADR-279 D4)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "${SHARPEE_VENDOR_TOOLCHAIN:-0}" = "1" ]; then
+            "$PROJECT_DIR/vendor-toolchain.sh" \
+              "$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          else
+            echo "note: skipping bundled toolchain (set SHARPEE_VENDOR_TOOLCHAIN=1 to assemble it)"
+          fi
     info:
       path: SharpeeIDE/Info.plist
       properties:
@@ -64,6 +83,12 @@ targets:
         # SharpeeIDE` keeps working across SharpeeIDETests.
         PRODUCT_NAME: Chord Writer
         PRODUCT_MODULE_NAME: SharpeeIDE
+        # ADR-279 D4: the bundled Node runtime is vendored for arm64 ONLY
+        # (tools/ide/vendor/node). ARCHS is pinned to match — a universal
+        # build would ship an x86_64 slice whose Build button has no
+        # toolchain behind it. macOS 26 is the last release supporting
+        # Intel Macs, and the deployment target is already 26.0.
+        ARCHS: arm64
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         ENABLE_HARDENED_RUNTIME: YES
