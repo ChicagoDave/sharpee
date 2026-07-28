@@ -69,6 +69,30 @@ Lines starting with `#` are comments (ignored):
 
 Text assertions check the game's textual output.
 
+Before comparing, both the actual output and the expected text are **normalized**:
+CRLF becomes LF, every line is trimmed, and the whole string is trimmed. Blank
+lines are **not** removed — a paragraph break inside a response is part of an
+exact match, and stories emit them (Dungeo's `open mailbox` replies with two
+sentences separated by a blank line).
+
+### Exact Match
+
+A bare `[OK]` asserts that the response matches the expected-output block —
+the plain lines written under the command — exactly, after normalization:
+
+```
+> examine mailbox
+It's a small mailbox.
+[OK]
+```
+
+Exact matches are the most brittle assertion: any prose edit breaks them. Reach
+for `[OK: contains]` when you only care about one load-bearing phrase.
+
+For responses containing brackets, quotes, or lines that start with `>` or `#`,
+the expected-output block cannot express the text — use a
+[fenced literal payload](#fenced-literal-payloads) instead.
+
 ### Any Output
 
 Check only that the command produced some output — no assertion about the
@@ -83,7 +107,7 @@ replays green:
 
 ### Contains
 
-Check that output contains a substring (case-sensitive):
+Check that output contains a substring (case-insensitive):
 
 ```
 > look
@@ -91,9 +115,62 @@ Check that output contains a substring (case-sensitive):
 [OK: contains "trophy case"]
 ```
 
+The inline payload is matched **raw** — it is not normalized, so leading and
+trailing spaces inside the quotes count. It also cannot contain a double quote
+(the payload is parsed as `"[^"]+"`) or span lines; use a fence for either.
+
+### Fenced Literal Payloads
+
+A fence carries expected text **literally**. Everything between the delimiters
+is uninterpreted — brackets, `>`, `#`, quotes and blank lines all survive — so
+any response can be asserted verbatim, including ones the forms above cannot
+express at all:
+
+````
+> read sign
+[OK]
+```
+[Notice] The vault closes at dusk.
+Beware the "night porter."
+```
+````
+
+A fence opens with a line of **three or more backticks** and closes with a line
+of **exactly the same length**; a longer run inside is literal content, so wrap
+content containing three backticks in four (markdown's rule).
+
+Two assertions take a fence:
+
+- **`[OK]` + fence** — exact match against the fence content.
+- **`[OK: contains]` + fence** — contains match, with the fence as the fragment.
+  Written with no inline payload. Because the fragment may span lines, it is
+  normalized the same way the output is (unlike the inline form above), and
+  matched case-insensitively.
+
+The fence must begin on the line **immediately after** the assertion — a blank
+line between them detaches it, and the backticks are then read as ordinary
+expected-output prose.
+
+These are validation errors, reported with line numbers, never silently ignored:
+
+- a fence that is never closed, or whose closing run is a different length
+- an empty fence
+- a fence after any other assertion or directive (`[OK: any]`,
+  `[OK: contains "x"]`, `[ENSURES: …]`, …)
+- `[OK: contains]` with neither an inline payload nor a fence
+- a command carrying both a fence and an expected-output block
+
+**Caveat for existing transcripts**: fences are additive — every other form
+parses exactly as before — with one collision window. A line of nothing but
+backticks *immediately after* `[OK]` or `[OK: contains]` is now read as a fence
+opener rather than as prose. No transcript in this repository contains such a
+line (checked across all 183), but an author project that puts bare backticks
+there will need to move or indent them.
+
 ### Not Contains
 
-Check that output does NOT contain a substring:
+Check that output does NOT contain a substring (case-insensitive, and matched
+raw like the inline `contains` form):
 
 ```
 > look

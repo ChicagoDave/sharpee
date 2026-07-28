@@ -142,6 +142,38 @@ export interface Assertion {
 
   // State assertions
   stateExpression?: string;     // For state-assert: the expression to evaluate (e.g., "egg.location = thief")
+
+  /**
+   * Literal fence content (ADR-287 D1), one entry per line, uninterpreted —
+   * brackets, `>`, `#`, quotes and blank lines all survive verbatim.
+   *
+   * Set only on `ok` (exact match against the fence) and payload-less
+   * `ok-contains` (the fence is the fragment). Stored separately from
+   * `TranscriptCommand.expectedOutput` so D1's "a fence or a classic block,
+   * never both" stays checkable rather than conflated.
+   */
+  fence?: string[];
+
+  /**
+   * Line of the assertion tag this fence hangs off, for failure display.
+   *
+   * Deliberately set ONLY on fenced assertions: stamping every assertion would
+   * change the parse of all 182 existing transcripts and break ADR-287 D2's
+   * byte-identical guarantee (tests/parse-baseline.test.ts).
+   */
+  lineNumber?: number;
+}
+
+/**
+ * A structural problem found while parsing, carrying the line it occurred on.
+ *
+ * These cannot be recovered from a finished AST — an unclosed fence leaves no
+ * trace once parsing has swallowed the rest of the file — so the parser records
+ * them as it goes and `validateTranscript` merges them into its report.
+ */
+export interface ParseError {
+  lineNumber: number;
+  message: string;
 }
 
 /**
@@ -164,6 +196,14 @@ export interface Transcript {
   items?: TranscriptItem[];              // New: commands + directives in order
   goals?: GoalDefinition[];              // Parsed goal segments
   comments: string[];
+
+  /**
+   * Structural parse failures (ADR-287 AC4), surfaced via `validateTranscript`.
+   *
+   * Absent — not an empty array — when the file parsed cleanly, so a clean
+   * transcript's AST is byte-identical to its pre-fence parse (ADR-287 D2).
+   */
+  parseErrors?: ParseError[];
 }
 
 /**

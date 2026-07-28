@@ -1171,14 +1171,23 @@ function checkAssertion(
   world?: WorldModel
 ): AssertionResult {
   switch (assertion.type) {
-    case 'ok':
-      // Exact match (after normalization)
-      const matches = actualOutput === expectedOutput;
+    case 'ok': {
+      // Exact match (after normalization). ADR-287 D1: when a fence is present
+      // it supplies the expected text in place of the classic expected-output
+      // block — the parser guarantees a command never carries both. The fence is
+      // normalized through the SAME normalizeOutput the classic path already
+      // used, so a blessed verbatim test cannot flap on whitespace differences
+      // between the play pane's rendered text and headless channel output.
+      const expected = assertion.fence
+        ? normalizeOutput(assertion.fence.join('\n'))
+        : expectedOutput;
+      const matches = actualOutput === expected;
       return {
         assertion,
         passed: matches,
         message: matches ? undefined : `Output did not match expected`
       };
+    }
 
     case 'ok-any': {
       // Presence-only (ADR-277 D5): the command produced SOME output.
@@ -1190,13 +1199,26 @@ function checkAssertion(
       };
     }
 
-    case 'ok-contains':
-      const contains = actualOutput.toLowerCase().includes(assertion.value!.toLowerCase());
+    case 'ok-contains': {
+      // ADR-287 D1: a fenced fragment may span lines, so it is normalized the
+      // same way the actual output is — otherwise its line breaks and
+      // indentation could never match. The INLINE form is deliberately left
+      // alone: it matches against its raw value exactly as it always has, and
+      // pinning that divergence is part of this ADR's test surface.
+      const fragment = assertion.fence
+        ? normalizeOutput(assertion.fence.join('\n'))
+        : assertion.value!;
+      const contains = actualOutput.toLowerCase().includes(fragment.toLowerCase());
       return {
         assertion,
         passed: contains,
-        message: contains ? undefined : `Output does not contain "${assertion.value}"`
+        message: contains
+          ? undefined
+          : assertion.fence
+            ? 'Output does not contain the fenced fragment'
+            : `Output does not contain "${assertion.value}"`
       };
+    }
 
     case 'ok-not-contains':
       const notContains = !actualOutput.toLowerCase().includes(assertion.value!.toLowerCase());

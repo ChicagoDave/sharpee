@@ -168,6 +168,28 @@ describe('sharpee test --json (real story, real runner)', () => {
     }
   });
 
+  it('a malformed ADR-287 fence is an error record carrying its line number', async () => {
+    // ADR-287 D3 parity: the fence grammar lands once in transcript-tester, and
+    // BOTH consumers inherit it. The bundle's reporter is the other one; this
+    // pins the consumer the IDE test panel actually reads (ADR-277 D1/AC2), so
+    // AC4's "never silently dropped" is proven where an author would see it.
+    // Inheritance is by construction — parse errors ride validateTranscript's
+    // return — but nothing asserted it until here.
+    const fenced = join(projectDir, 'tests', 'transcripts', 'c-bad-fence.transcript');
+    writeFileSync(fenced, 'title: Bad fence\n---\n\n> look\n[OK]\n```\nA small square den.\n');
+    try {
+      const { code, records } = await run(['--json', projectDir]);
+      expect(code).toBe(1);
+      const errorEnd = ofType<TranscriptEndRecord>(records, 'transcript-end').find(
+        (e) => e.file === fenced,
+      );
+      expect(errorEnd?.status).toBe('error');
+      expect(errorEnd!.errorMessage).toContain('Line 6: Unclosed fenced block');
+    } finally {
+      rmSync(fenced);
+    }
+  });
+
   it('accepts a .story FILE argument, resolving the containing folder (D1)', async () => {
     const viaFile = await run(['--json', join(projectDir, 'mini.story')]);
     const viaDir = await run(['--json', projectDir]);

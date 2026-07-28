@@ -1,0 +1,59 @@
+title: ADR-287 fenced literal payloads
+story: dungeo
+description: Real-path proof that fenced assertions match real story output headless.
+---
+
+# The banner rides along with the first command's output, so this one only
+# asserts presence — the fenced assertions below start from a clean turn.
+> look
+[OK: any]
+
+# The load-bearing case: this response contains a double quote, which the
+# inline form CANNOT express — its payload regex is [^"]+ (parser.ts). Before
+# ADR-287 there was no way to assert this text at all.
+> examine welcome mat
+[OK]
+```
+A rubber mat saying "Welcome to Dungeon!"
+```
+
+# Multi-line exact match through a fence. The blank line is REAL story output —
+# a paragraph break the engine emits — and normalizeOutput preserves it, so the
+# fence has to carry it too. (This is the capture-parity point ADR-282 D2 makes
+# about rendered text vs channel-flattened text.)
+> open mailbox
+[OK]
+```
+You open the small mailbox.
+
+Inside the small mailbox you see leaflet.
+```
+
+# Fenced contains: a quoted fragment of a longer response.
+> examine welcome mat
+[OK: contains]
+```
+saying "Welcome to Dungeon!"
+```
+
+# Block parity (ADR-287 D1's last grammar rule): attachment is at the assertion
+# level, so a fence inside [IF] behaves exactly as one at top level. This test
+# proves the inheritance rather than adding machinery for it.
+[IF: location = "West of House"]
+> examine welcome mat
+[OK]
+```
+A rubber mat saying "Welcome to Dungeon!"
+```
+[END IF]
+
+# The failing direction, pinned in-suite: the fence deliberately does not match
+# the real response, so the assertion fails and [FAIL] records that as expected.
+# (The reporter's display of fence content on failure is pinned separately, in
+# transcript-tester's fenced-reporter.test.ts — a passing command prints no diff.)
+> examine welcome mat
+[FAIL]
+[OK]
+```
+A rubber mat saying "Welcome to Somewhere Else!"
+```
