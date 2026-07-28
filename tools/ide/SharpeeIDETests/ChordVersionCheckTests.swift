@@ -20,6 +20,17 @@ final class ChordVersionCheckTests: XCTestCase {
         XCTAssertNil(ChordVersionCheck.chordVersion(fromVersionOutput: ""))
     }
 
+    /// The platform half of the same line — ADR-279 D1's status bar displays
+    /// both, so both components are parsed from one `--version` read.
+    func testParsesPlatformVersionFromVersionLine() {
+        XCTAssertEqual(ChordVersionCheck.sharpeeVersion(fromVersionOutput: "Sharpee 4.2.0 · Chord 2.1.0"),
+                       "4.2.0")
+        XCTAssertEqual(ChordVersionCheck.sharpeeVersion(fromVersionOutput: "Sharpee 5.0.0-rc.1 · Chord 3.0.0"),
+                       "5.0.0-rc.1")
+        XCTAssertNil(ChordVersionCheck.sharpeeVersion(fromVersionOutput: "sharpee: engine not built"))
+        XCTAssertNil(ChordVersionCheck.sharpeeVersion(fromVersionOutput: ""))
+    }
+
     // MARK: - Compare
 
     func testNewerComparisonIsNumericPerComponent() {

@@ -1,0 +1,85 @@
+# Session Plan: Implement ADR-279 — Chord Writer signed, notarized, downloadable DMG
+
+**Created**: 2026-07-28
+**Overall scope**: Take the Chord Writer macOS app (currently named "Sharpee", ad-hoc signed, PATH-dependent) through D1-D7 of ADR-279: rename/rebrand, bundle a self-contained toolchain, script the archive/sign/notarize/DMG pipeline, and ship distribution + Sparkle auto-update. All work is in `tools/ide/` (Swift/Xcode) plus new shell scripting; `packages/` platform code is not modified in this plan.
+**Bounded contexts touched**: N/A — infrastructure/tooling (macOS app identity, code signing, packaging, and distribution plumbing; no domain behavior changes). Per session-planner's DDD-applicability check, this is framed in plain technical terms throughout.
+**Key domain language**: N/A
+
+**Why this plan is scoped to ADR-279 alone**: ADR-279 is the explicit `Parent:` of ADR-280, ADR-281, and ADR-284 in the Chord Writer 1.0 family (279-282, 284-287 ACCEPTED; 283 REJECTED). D4 (bundled toolchain) is a hard prerequisite for ADR-280 D3 ("New Story" invoking `sharpee init` via the resolved toolchain) and ADR-284 D1 (Publish invoking `sharpee publish` the same way). D3 (`tools/ide/package.sh`) is a hard prerequisite for ADR-281, which states its help-index step "cannot begin before it." ADR-287 (transcript fenced payloads) has no dependency on 279 and is an independent parallel track that unblocks ADR-282 — it is explicitly **not** in this plan's scope.
+
+**Coordination risk (flagged, not resolved)**: `tools/ide/` is Swift/Xcode work, not `packages/`, so CLAUDE.md's platform-change discussion gate does not formally apply. David has historically run IDE work in a separate parallel Claude Code session, though. This plan does not assume this session owns the Swift edits — confirm before starting Phase 1 whether this session or the parallel IDE session executes it, to avoid two sessions editing `tools/ide/` concurrently.
+
+**Standing gate on every phase (ADR-279 Acceptance 5)**: the IDE test suite (`SharpeeIDETests`) stays green, and the dev-loop (`xcodegen` + `xcodebuild`) is unaffected. This is not a phase — verify it before closing out each phase below.
+
+**Explicitly out of scope (ADR-279 "Deferred, not decided")**: an "Install Command Line Tool…" menu item that symlinks the bundled CLI onto PATH. Do not build it as part of any phase here; it needs its own ruling first.
+
+## References consulted
+- `docs/architecture/adrs/adr-279-chord-writer-packaging.md` — the plan's source ADR: D1-D7 decisions, Acceptance 1-7, Implementation touchpoints, and Consequences (external credentials required, DMG size growth, Sparkle secret surface) all constrain phase scope directly.
+- `docs/architecture/adrs/adr-258-ide-chord-authoring-environment.md` — D2/Q1 fixes the toolchain resolution order D4 extends (workspace shim → login-shell PATH → *now* bundled); D8 governs persisted IDE state across a format/identity change, and carries a 2026-07-28 clarification (added by this session, David's ruling) splitting its two cases: stale entries are discarded, an identity change migrates the domain forward. Phase 1 implements the latter.
+- `docs/architecture/adrs/adr-280-chord-writer-project-model.md` — sibling whose D3 (New Story → `sharpee init`) depends on this plan's D4 output; not implemented here, cited for the dependency only.
+- `docs/architecture/adrs/adr-284-chord-writer-publishing.md` — sibling whose D1 (Publish → `sharpee publish`) depends on this plan's D4 output; not implemented here.
+- `docs/architecture/adrs/adr-281-chord-writer-embedded-help.md` — sibling whose help-index step depends on this plan's D3 (`package.sh`) existing; not implemented here.
+- `docs/architecture/adrs/adr-287-transcript-fenced-payloads.md` — the fence-grammar coupling ADR-279 D4 cross-references (older PATH-resolved toolchains can't parse fenced transcripts written by the IDE); independent of this plan, mitigation is a UI note folded into Phase 2.
+- `docs/context/project-profile.md` — confirms pnpm/TypeScript/Turborepo stack, the ADR-187 two-CLI split (repokit stays Node-only and IDE-ignorant — Phase 3's `package.sh` must not route through repokit), and that the IDE has no macOS CI (all phases self-test locally in Xcode; no CI packaging step to lean on).
+- `docs/context/session-20260727-2100-main.md` — most recent session; confirms the whole Chord Writer 1.0 family is ACCEPTED with zero implementation started, records the IDE-parallel-session working pattern, and lists each sibling ADR's deferred (non-blocking) questions as work items for whichever session implements *that* ADR — not this one.
+
+## Phases
+
+### Phase 1: Rebrand to Chord Writer (D1)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: N/A (infrastructure). Touches: `tools/ide/project.yml` (bundle id, display name, version), `tools/ide/SharpeeIDE/MainWindow.swift` (status-bar label), and a new one-time `UserDefaults` migration unit covering the seven persisting sites (`MainWindow.swift`, `UI/FontPreference.swift`, `Persistence/SessionState.swift`, `Persistence/RecentProjectsStore.swift`, `Build/BuildSettingsStore.swift`, `Build/BuildSettingsViewController.swift`, `Editor/EditorViewController.swift`).
+- **Entry state**: ADR-279 ACCEPTED (done); coordination question above resolved (this session or the parallel IDE session owns the edit); current bundle id `net.sharpee.ide`, version `0.1.0`, display name "Sharpee" confirmed still current in `project.yml:45-60`.
+- **Deliverable**:
+  - `project.yml`: `CFBundleName`/`CFBundleDisplayName` → "Chord Writer", `PRODUCT_BUNDLE_IDENTIFIER` → `net.sharpee.chord-writer`, `CFBundleShortVersionString` → `1.0.0`, `CFBundleVersion` reset to `1` (own version line, independent of platform 4.2.0/Chord 2.1.0 per D1).
+  - `MainWindow.swift` status bar: replace the hardcoded "Sharpee 0.1.0" label with "Chord Writer <app-version> · Sharpee <platform-version> / Chord <chord-version>", sourcing platform/Chord versions the same way `ChordVersionCheck` already does.
+  - A one-time defaults migration unit, `net.sharpee.ide` → `net.sharpee.chord-writer`: copy the full `net.sharpee.ide` defaults domain across once on first launch under the new id, then use the new domain exclusively; the old domain is left in place, never deleted. **Ruled 2026-07-28 (session e57808)** and recorded as a clarification on ADR-258 D8 itself, so the discard-vs-migrate question does not resurface: a stale *entry* is discarded (D8's original case), a change of *identity* migrates forward (this case).
+  - About panel copy update (app name/version display).
+- **Exit state**: app presents as "Chord Writer" in menu bar, About, window title, status bar, and Finder (built .app). Migration test pins: seed `net.sharpee.ide` defaults in a test harness, launch under the new id, assert every one of the seven persisted values (recents list, session state, divider widths, play-after-build flag, font choice, build settings) round-trips unchanged.
+- **Acceptance criteria covered**: AC1 (name presents everywhere — tested by inspecting the built bundle's Info.plist keys and a UI test/screenshot of menu bar + About + window title + status bar), AC4 (persisted state survives the id change — tested by the migration unit test above, not a manual check). Standing AC5 applies.
+- **External prerequisites before this phase can start**: none — pure code change, no credentials, no design ambiguity outside the D8-precedent call above (resolved above, confirm with David if he wants a different resolution).
+- **Status**: DONE
+
+### Phase 2: Bundle the toolchain (D4)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: N/A (infrastructure). Touches: `tools/ide/SharpeeIDE/Compose/ComposeRunner.swift` (`resolveSharpee`, currently line 67) to add the bundled fallback; new build-time step that vendors a Node runtime + `@sharpee/devkit` CLI bundle into `Chord Writer.app/Contents/Resources`; the test panel's parse-error surface (fence-grammar coupling note).
+- **Entry state**: Phase 1 done (app identity stable — the bundled toolchain's version pairing is tied to the app version per D4's "exact ChordVersionCheck pairing" claim, so bundling before renaming would re-churn the bundle path). D2/Q1's existing resolution order (workspace shim → login-shell PATH) confirmed still intact in `ComposeRunner.swift`.
+- **Deliverable**:
+  - A build-time step (invoked from Phase 3's `package.sh`, but the resolution logic and Resources layout are built and testable in isolation here) that places a Node runtime binary and the `devkit` CLI bundle under `Contents/Resources` — **decision needed from David first**: which Node version to embed and whether it's vendored as a committed binary or fetched at build time (not a credential, but a design call that blocks the bundling mechanism; do not default silently).
+  - `resolveSharpee` gains the third fallback tier: workspace shim → login-shell PATH → bundled toolchain path under `Contents/Resources`. Order is unchanged for the first two tiers (ADR-258 D2/Q1 preserved).
+  - Test panel error surface: when a `compose`/`build`/`test` invocation against a PATH-resolved (non-bundled) toolchain produces a fence-grammar parse failure, surface a one-line "minimum toolchain version" note pointing at the bundled fallback as the fix (ADR-279's 2026-07-28 D4 coupling note, cross-referencing ADR-287).
+  - Explicitly excluded here: the "Install Command Line Tool…" menu item (deferred per ADR-279).
+- **Exit state**: a debug-signed (ad-hoc, per existing `CODE_SIGN_IDENTITY: "-"`) build of the app runs `sharpee init` and `sharpee build` successfully with zero global Node/npm/devkit installed and zero Sharpee checkout on the test machine.
+- **REAL-PATH TEST (rule 13a — no stub)**: a subprocess test harness that launches the bundled CLI binary directly (or drives the built .app's Cmd-B path) inside an environment with `PATH` reduced to just system binaries (no `node`, `npm`, `nvm` shims) and `HOME` pointed at a fresh empty temp directory (no `.npmrc`, no global node_modules, no workspace checkout reachable). Assert `sharpee init <name>` scaffolds a story and the subsequent build succeeds, sourced entirely from `Contents/Resources`. This is the mechanical stand-in for "a machine with no Node, no npm, and no Sharpee checkout" (AC6) without needing a literal clean VM for every iteration; a one-time clean-VM or fresh-user-account confirmation run is still recommended before Phase 3 ships the real DMG (folds into Phase 3's real-path test, since that's where a truly clean machine is exercised for AC3 anyway).
+- **Acceptance criteria covered**: AC6 (bundled Cmd-B works with no Node/npm/checkout, shim→PATH→bundled order pinned by a test). Standing AC5 applies.
+- **External prerequisites before this phase can start**: David's decision on Node version + vendoring mechanism (see above). No signing/notary credentials required — ad-hoc signing suffices for this phase's tests.
+- **Status**: CURRENT
+
+### Phase 3: Packaging script — archive, sign, notarize, DMG (D2/D3)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: N/A (infrastructure). New file: `tools/ide/package.sh`. Touches `project.yml`'s release signing config (`CODE_SIGN_STYLE`/`CODE_SIGN_IDENTITY` for the release configuration, distinct from the existing ad-hoc dev config).
+- **Entry state**: Phase 2 done (the bundled-toolchain step this script invokes exists and is tested). David has provisioned the external credentials listed below on the build Mac.
+- **Deliverable**: `tools/ide/package.sh`, a single scripted pipeline: platform build for the D4 toolchain bundle → `xcodegen` → `xcodebuild archive` → export with Developer ID → `codesign` verify → `notarytool submit` + wait → staple → DMG assembly (`ChordWriter-<version>.dmg`, version read from `project.yml`) → checksum file. Fails loudly (non-zero exit, clear message) at any unsigned/unnotarized intermediate step — no silent fallthrough to an ad-hoc-signed artifact. Secrets (signing identity, notary credentials) come from environment/keychain only, never written to the repo or the script itself.
+- **Exit state**: running `tools/ide/package.sh` on a clean checkout with credentials present produces one checksummed DMG; running it without credentials fails at the first step that needs them, with a message naming which credential is missing.
+- **REAL-PATH TEST (rule 13a — no stub)**: run `package.sh` for real on the dev Mac with real Developer ID + notary credentials, producing a genuine signed/notarized/stapled DMG (not a self-signed or ad-hoc test artifact standing in for it). Then transfer that DMG to a second machine (a different Mac, or a clean macOS VM/user account) that has never built this checkout and has no relationship to the signing identity, and run `spctl --assess --type open --context context:primary-signature ChordWriter-<version>.dmg` there — this is the literal "a machine that never built it" condition AC3 requires. This same clean-machine run also serves as the deferred clean-VM confirmation noted in Phase 2 for AC6 (do the `sharpee init`/Cmd-B check on the same untouched machine while it's available).
+- **Acceptance criteria covered**: AC2 (one command produces the DMG from a clean checkout, fails loudly at unsigned/unnotarized steps — tested by running the script both with and without credentials present), AC3 (Gatekeeper accepts the stapled DMG on a never-built-it machine — tested via the second-machine `spctl` run above). Standing AC5 applies.
+- **External prerequisites before this phase can start (hard blocker — do not start without these)**: David's Apple Developer ID Application certificate installed in the build Mac's keychain; a `notarytool` keychain profile (App Store Connect API key or Apple ID app-specific password) configured on that Mac. Neither is code-resolvable — confirm both are provisioned before beginning.
+- **Status**: PENDING
+
+### Phase 4: Distribution and Sparkle auto-update (D6/D7)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: N/A (infrastructure). Touches: `tools/ide/package.sh` (gains release/appcast steps), new Sparkle 2 framework embedding in the Xcode project, a "Check for Updates…" menu item, and sharpee.net (site-side, outside this repo) for the download page and appcast hosting.
+- **Entry state**: Phase 3 done (a real signed/notarized/stapled DMG pipeline exists and is proven on a clean machine). External prerequisites below provisioned.
+- **Deliverable**:
+  - GitHub Releases tagging convention `chord-writer-v<version>`, distinct from platform tags (D6). `package.sh` gains a release step that creates/updates the tagged release and uploads the DMG + checksum as assets.
+  - Sparkle 2 framework embedded in the app bundle; `SUFeedURL` pointing at the sharpee.net-hosted appcast; standard "Check for Updates…" menu item plus scheduled background checks (D7 app side).
+  - `package.sh` gains the release-signing steps: generate/EdDSA-sign the update archive, append the new appcast entry, publish the updated appcast XML to sharpee.net.
+  - sharpee.net (separate repo/deploy) gains or updates: the download page/button pointing at the latest GitHub Release asset (D6 front door), and the appcast XML hosting path (D7). This is site-side work outside `sharpee` — coordinate as a separate deploy, not a `tools/ide/` edit.
+- **Exit state**: an installed Chord Writer build, offered a newer version via the real sharpee.net appcast, downloads it, EdDSA-verifies it, and relaunches at the new version — no manual DMG re-download.
+- **REAL-PATH TEST (rule 13a — no stub feed)**: package and publish two real versions (e.g. 1.0.0 and 1.0.1) through the real pipeline — real GitHub Release, real EdDSA-signed archive, real appcast entry published to sharpee.net (or a staging path on the same site if David wants to avoid a public dry-run release). Install the 1.0.0 build, trigger "Check for Updates…" against the live feed URL, and confirm it downloads, verifies, and relaunches as 1.0.1. A test that points Sparkle at a local/mocked feed file only proves the Sparkle integration compiles — it does not satisfy AC7's real update path.
+- **Acceptance criteria covered**: AC7 (real update flow described above). D6's distribution mechanic (GitHub Releases + sharpee.net front door) has no standalone numbered AC — verify it manually as part of this phase by confirming the sharpee.net download button resolves to the correct release asset after a real publish. Standing AC5 applies.
+- **External prerequisites before this phase can start (hard blockers)**: Sparkle EdDSA key pair generated, private key stored outside the repo (keychain/env, per D3-class secret handling); confirmed push access for `chord-writer-v*` GitHub Releases (likely already available via existing repo access — confirm, don't assume); sharpee.net deploy access for publishing the appcast XML and the download page (Next.js site behind Apache on plover.net — coordinate with however that site is normally deployed).
+- **Status**: PENDING

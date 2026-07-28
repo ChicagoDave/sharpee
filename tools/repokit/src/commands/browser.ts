@@ -25,15 +25,23 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import {
-  type BrowserBuildEnv,
-  buildBrowser,
-  findStoryFile,
-  resolveWiredThemes,
-  copyWiredThemes,
-  injectThemes,
-} from '@sharpee/devkit';
-import { resolveStoryDir } from '../repo';
+import type { BrowserBuildEnv } from '@sharpee/devkit';
+import { findChordStoryFile, resolveStoryDir } from '../repo';
+
+/**
+ * devkit, loaded on first use rather than at module load.
+ *
+ * `build.ts` imports this file, and `cli.ts` imports `build.ts`, so a top-level
+ * `import ... from '@sharpee/devkit'` made devkit's `dist/` a hard prerequisite
+ * for running ANY repokit command — including `repokit build`, the command that
+ * builds devkit, and `repokit clean`, which deletes it. That left repokit unable
+ * to rebuild after its own clean. Only the `--browser` path genuinely needs
+ * devkit, so only that path pays for it. The type import above is erased at
+ * compile time and costs nothing at runtime.
+ */
+function devkit(): typeof import('@sharpee/devkit') {
+  return require('@sharpee/devkit');
+}
 
 export interface BrowserBuildOptions {
   quiet?: boolean;
@@ -55,7 +63,7 @@ function readThemes(storyDir: string): unknown[] {
 export function chordStoryFile(root: string, story: string): string | null {
   const storyDir = resolveStoryDir(root, story);
   if (!storyDir) return null;
-  return findStoryFile(storyDir);
+  return findChordStoryFile(storyDir);
 }
 
 /** Read the lockstep platform (sharpee) version — stamped into the story's version.ts. */
@@ -105,7 +113,7 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
       engineVersion: sharpeeVersion(root),
       mirror: (outDir, storyId) => mirrorToWebsite(root, outDir, storyId),
     };
-    buildBrowser(storyFile, env, { quiet: opts.quiet });
+    devkit().buildBrowser(storyFile, env, { quiet: opts.quiet });
     return;
   }
 
@@ -148,12 +156,12 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
   // Resolve the themes the story listed: built-in ids (from platform-browser's
   // styles/themes/) + inline author themes. Explicit opt-in; AC-9.
   const platformThemesDir = join(root, 'packages', 'platform-browser', 'styles', 'themes');
-  const wiredThemes = resolveWiredThemes(platformThemesDir, readThemes(storyDir));
+  const wiredThemes = devkit().resolveWiredThemes(platformThemesDir, readThemes(storyDir));
   // index.html stays a repo template (title set at runtime by BrowserClient from story
   // config); the build wires the theme <link>s + menu items into it (ADR-188 Phase 4).
   const tplHtml = join(tpl, 'index.html');
   if (existsSync(tplHtml)) {
-    writeFileSync(join(outDir, 'index.html'), injectThemes(readFileSync(tplHtml, 'utf8'), wiredThemes));
+    writeFileSync(join(outDir, 'index.html'), devkit().injectThemes(readFileSync(tplHtml, 'utf8'), wiredThemes));
   }
   // Engine CSS (base/engine/decorations) is owned by @sharpee/platform-browser (ADR-188),
   // copied from the in-repo package. The theme packages' CSS is wired below.
@@ -165,7 +173,7 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
   // is rebuilt by copyWiredThemes (which clears it first), so a rebuild over an existing
   // output never serves stale theme CSS/fonts (AC-4).
   rmSync(join(outDir, 'styles.css'), { force: true });
-  copyWiredThemes(wiredThemes, outDir);
+  devkit().copyWiredThemes(wiredThemes, outDir);
 
   // Story assets (audio, images): copy the contents of <story>/assets/ into the output.
   // Skip dotfiles to match build.sh's `cp "$ASSETS_DIR"/*` (bash glob excludes dotfiles,

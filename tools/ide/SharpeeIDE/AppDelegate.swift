@@ -22,7 +22,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
     /// the Build target. Nil for a non-Chord folder; Build is disabled then.
     private var currentStoryURL: URL?
 
+    /// Versions reported by the resolved toolchain, displayed (not encoded) in
+    /// the status bar and About panel per ADR-279 D1. Empty until the launch
+    /// `sharpee --version` answers, and left empty when no toolchain resolves.
+    private var toolchainVersions = ChordVersionCheck.ToolchainVersions(sharpee: nil, chord: nil)
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // FIRST, before anything reads persisted state: carry the pre-ADR-279
+        // defaults domain forward across the bundle-identifier change. The
+        // window controller reads recents, session, and divider autosaves as it
+        // builds, so a later migration would arrive after the empty read.
+        DefaultsMigration.migrateLegacyDomainIfNeeded()
+
         NSApp.setActivationPolicy(.regular)
         // The IDE follows the system appearance: Theme tokens are dynamic
         // (dark Mocha-ish / light Latte) and layer-backed surfaces re-resolve
@@ -41,15 +52,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         restoreSession(into: controller)
 
-        // D9: warn (non-blocking) when the installed toolchain speaks a newer
-        // Chord than this IDE was written against — clear signal, no mis-highlight.
-        ChordVersionCheck.fetch(near: currentStoryURL) { [weak self] installed in
-            guard let installed,
+        // One `sharpee --version` serves two consumers: ADR-279 D1's status-bar
+        // version line, and D9's non-blocking warning when the installed
+        // toolchain speaks a newer Chord than this IDE was written against.
+        ChordVersionCheck.fetchVersions(near: currentStoryURL) { [weak self] versions in
+            self?.toolchainVersions = versions
+            self?.mainWindowController?.showToolchainVersions(versions)
+            guard let installed = versions.chord,
                   ChordVersionCheck.isNewer(installed,
                                             thanSupported: ChordVersionCheck.supportedLanguageVersion)
             else { return }
             self?.presentChordVersionWarning(installed: installed)
         }
+    }
+
+    /// The About panel, carrying the app's own version plus the toolchain's
+    /// (ADR-279 D1). Uses the standard panel with an overridden version string
+    /// rather than a bespoke window — nothing here warrants custom chrome.
+    @objc func showAboutPanel(_ sender: Any?) {
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationVersion: AppIdentity.version,
+            .version: "",  // suppresses the parenthesized CFBundleVersion build number
+            .credits: NSAttributedString(
+                string: AppIdentity.aboutToolchainLine(
+                    sharpeeVersion: toolchainVersions.sharpee,
+                    chordVersion: toolchainVersions.chord),
+                attributes: [.font: NSFont.systemFont(ofSize: 11)]),
+        ])
     }
 
     /// One-line, dismissible D9 warning: the toolchain's Chord is ahead of the IDE.

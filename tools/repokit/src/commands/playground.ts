@@ -15,7 +15,16 @@
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { type PlaygroundBuildEnv, buildPlaygroundBundle } from '@sharpee/devkit';
+import type { PlaygroundBuildEnv } from '@sharpee/devkit';
+
+/**
+ * devkit, loaded on first use — see the note in `browser.ts`. This file is on
+ * `cli.ts`'s import path via `build.ts`, so a top-level value import would make
+ * devkit's `dist/` a prerequisite for every repokit command.
+ */
+function devkit(): typeof import('@sharpee/devkit') {
+  return require('@sharpee/devkit');
+}
 
 export interface PlaygroundBuildOptions {
   quiet?: boolean;
@@ -58,5 +67,5 @@ export function buildPlaygroundClient(root: string, opts: PlaygroundBuildOptions
     engineVersion: sharpeeVersion(root),
     sync: (outDir, version) => syncToWebsite(root, outDir, version),
   };
-  buildPlaygroundBundle(env, { quiet: opts.quiet });
+  devkit().buildPlaygroundBundle(env, { quiet: opts.quiet });
 }

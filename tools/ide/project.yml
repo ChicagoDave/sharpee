@@ -42,9 +42,13 @@ targets:
     info:
       path: SharpeeIDE/Info.plist
       properties:
-        CFBundleName: Sharpee
-        CFBundleDisplayName: Sharpee
-        CFBundleShortVersionString: "0.1.0"
+        # ADR-279 D1: the product is "Chord Writer", on its own version line
+        # starting 1.0.0 (platform/Chord versions are displayed alongside, not
+        # encoded here). The Xcode target and Swift module stay `SharpeeIDE` —
+        # an internal identifier, never user-visible.
+        CFBundleName: Chord Writer
+        CFBundleDisplayName: Chord Writer
+        CFBundleShortVersionString: "1.0.0"
         CFBundleVersion: "1"
         LSMinimumSystemVersion: "26.0"
         NSHumanReadableCopyright: "Copyright © 2026 David Cornelson"
@@ -54,8 +58,12 @@ targets:
         NSSupportsSuddenTermination: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: net.sharpee.ide
-        PRODUCT_NAME: SharpeeIDE
+        PRODUCT_BUNDLE_IDENTIFIER: net.sharpee.chord-writer
+        # The bundle ships as "Chord Writer.app" (ADR-279 D1/D2, Acceptance 1);
+        # PRODUCT_MODULE_NAME pins the Swift module so `@testable import
+        # SharpeeIDE` keeps working across SharpeeIDETests.
+        PRODUCT_NAME: Chord Writer
+        PRODUCT_MODULE_NAME: SharpeeIDE
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         ENABLE_HARDENED_RUNTIME: YES
@@ -71,10 +79,10 @@ targets:
       - target: SharpeeIDE
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: net.sharpee.ide.tests
+        PRODUCT_BUNDLE_IDENTIFIER: net.sharpee.chord-writer.tests
         PRODUCT_NAME: SharpeeIDETests
         BUNDLE_LOADER: "$(TEST_HOST)"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/SharpeeIDE.app/Contents/MacOS/SharpeeIDE"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Chord Writer.app/Contents/MacOS/Chord Writer"
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         GENERATE_INFOPLIST_FILE: YES

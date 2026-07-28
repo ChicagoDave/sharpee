@@ -1,5 +1,7 @@
 // MenuBuilder.swift
-// Builds the application menu bar for Sharpee programmatically.
+// Builds the application menu bar for Chord Writer programmatically. The product
+// name comes from AppIdentity (ADR-279 D1) rather than being spelled inline, so
+// the app menu, About, Hide, and Quit items can never drift apart.
 // Public interface: MenuBuilder.makeMainMenu(target:) returns the NSMenu to assign to NSApp.mainMenu.
 // Owner context: tools/ide — App shell.
 
@@ -9,7 +11,7 @@ enum MenuBuilder {
 
     static func makeMainMenu(target: AnyObject) -> NSMenu {
         let mainMenu = NSMenu()
-        mainMenu.addItem(makeAppMenuItem())
+        mainMenu.addItem(makeAppMenuItem(target: target))
         mainMenu.addItem(makeFileMenuItem(target: target))
         mainMenu.addItem(makeEditMenuItem())
         mainMenu.addItem(makeViewMenuItem(target: target))
@@ -21,12 +23,18 @@ enum MenuBuilder {
 
     // MARK: - App menu
 
-    private static func makeAppMenuItem() -> NSMenuItem {
-        let menu = NSMenu(title: "Sharpee")
+    private static func makeAppMenuItem(target: AnyObject) -> NSMenuItem {
+        let name = AppIdentity.productName
+        let menu = NSMenu(title: name)
 
-        menu.addItem(withTitle: "About Sharpee",
-                     action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
-                     keyEquivalent: "")
+        // Routed through AppDelegate rather than NSApplication's standard
+        // selector so the panel can carry the toolchain versions alongside the
+        // app's own (ADR-279 D1: "About and the status bar show both").
+        let about = NSMenuItem(title: "About \(name)",
+                               action: #selector(AppDelegate.showAboutPanel(_:)),
+                               keyEquivalent: "")
+        about.target = target
+        menu.addItem(about)
         menu.addItem(NSMenuItem.separator())
 
         let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
@@ -36,7 +44,7 @@ enum MenuBuilder {
         menu.addItem(services)
         menu.addItem(NSMenuItem.separator())
 
-        menu.addItem(withTitle: "Hide Sharpee",
+        menu.addItem(withTitle: "Hide \(name)",
                      action: #selector(NSApplication.hide(_:)),
                      keyEquivalent: "h")
 
@@ -51,7 +59,7 @@ enum MenuBuilder {
                      keyEquivalent: "")
         menu.addItem(NSMenuItem.separator())
 
-        menu.addItem(withTitle: "Quit Sharpee",
+        menu.addItem(withTitle: "Quit \(name)",
                      action: #selector(NSApplication.terminate(_:)),
                      keyEquivalent: "q")
 

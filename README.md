@@ -222,8 +222,13 @@ git clone https://github.com/ChicagoDave/sharpee.git
 cd sharpee
 pnpm install
 
-# Build everything (devkit; ADR-180)
-./sharpee build dungeo
+# FRESH CLONE ONLY (needed once): tsf compiles the platform packages, then
+# repokit itself is built — tsf does not build it, so ./repokit won't exist yet.
+npx tsf build
+pnpm --filter @sharpee/repokit build
+
+# Build everything (repokit; ADR-187)
+./repokit build dungeo
 
 # Run tests
 pnpm test

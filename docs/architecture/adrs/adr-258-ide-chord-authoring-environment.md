@@ -340,6 +340,24 @@ restored session pointing at such a project opens the empty state with a one-lin
 explanation. No migration file, no version bump — the persisted data is a cache of
 user convenience, and the correct handling of a stale entry is to discard it.
 
+**Clarified 2026-07-28 (session e57808, David's ruling — recorded so this does not
+come up again).** D8 covers two different situations that its worked example above
+conflates, and they resolve in opposite directions:
+
+- **A stale or unreadable *entry*** — a recents path that no longer opens, a session
+  pointing at a project that can't be restored. **Discard it.** That is the case
+  above, and it stands unchanged.
+- **A change of *identity* — the defaults domain itself moving.** The state is not
+  stale; only its address changed. **Migrate the domain forward once, then use the
+  new domain exclusively.** The old domain is left in place, not deleted.
+
+The forcing case is ADR-279 D1's rename of the bundle identifier
+`net.sharpee.ide` → `net.sharpee.chord-writer`, whose Acceptance 4 pins that
+recents, session, divider widths, and fonts survive it. Reading D8's discard
+precedent as authority for starting fresh under the new id would silently throw
+away state that is perfectly valid — the opposite of what "migrated, not silently
+broken" means.
+
 ### D9 — The IDE tracks the Chord language version
 
 The IDE reports and checks the language version it supports against

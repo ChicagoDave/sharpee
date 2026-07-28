@@ -16,8 +16,16 @@ git clone https://github.com/ChicagoDave/sharpee.git
 cd sharpee
 pnpm install
 
-# Build everything (platform + Dungeon story) — devkit (ADR-180)
-./sharpee build dungeo
+# FRESH CLONE ONLY — two bootstrap steps, needed once:
+#   1. tsf compiles the platform packages. repokit's own tsc needs the type
+#      declarations @sharpee/devkit / core / bootstrap emit into their dist/.
+#   2. build repokit itself. tsf does not build it (tools/repokit is not in
+#      ts-forge.config.json), so ./repokit does not exist until you do this.
+npx tsf build
+pnpm --filter @sharpee/repokit build
+
+# Build everything (platform + Dungeon story) — repokit (ADR-187)
+./repokit build dungeo
 
 # Run unit tests
 pnpm test
@@ -28,20 +36,30 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 # Run walkthrough chain
 node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
 
-# Interactive play
-node dist/cli/sharpee.js --play
+# Interactive play (--story is required; there is no default story)
+node dist/cli/sharpee.js --play --story stories/dungeo
 ```
 
-### Build (devkit)
+### Build (repokit)
 
-Use `devkit build` (the `@sharpee/devkit` CLI, ADR-180) instead of manual `pnpm build` commands. In-repo, invoke via `./sharpee`.
+ADR-187 splits the two CLIs by audience: **`./repokit`** is the in-repo platform
+build (what contributors use), and **`./sharpee`** is the author tool that builds
+an author's own story project. Use `./repokit` for everything in this repo, not
+manual `pnpm build` commands.
 
 ```bash
-./sharpee                       # Show help
-./sharpee build dungeo          # Build platform + story
-./sharpee build dungeo --browser   # Include browser client
-./sharpee build dungeo --skip stdlib # Resume from stdlib (faster)
+./repokit                          # Show help
+./repokit build dungeo             # Build platform + story
+./repokit build dungeo --browser   # Include browser client
+./repokit build dungeo --skip stdlib # Resume from stdlib (faster)
+./repokit clean                    # Remove dist/, dist-esm/, tsbuildinfo
 ```
+
+`clean` deliberately skips repokit's own `dist/` — a build tool has to survive
+its own clean — and repokit loads `@sharpee/devkit` only when a command actually
+needs it (`--browser`, `--playground`). So `./repokit clean && ./repokit build
+dungeo` rebuilds the whole tree with no `tsf` step. To clear repokit itself, run
+`pnpm --filter @sharpee/repokit run clean` explicitly.
 
 ## Repository Structure
 

@@ -6,7 +6,8 @@
 // warning rather than a silent mis-highlight. Pure parse/compare logic here;
 // AppDelegate spawns the process and presents the warning.
 // Public interface: ChordVersionCheck.supportedLanguageVersion,
-// chordVersion(fromVersionOutput:), isNewer(_:thanSupported:), fetch(completion:).
+// chordVersion(fromVersionOutput:), sharpeeVersion(fromVersionOutput:),
+// isNewer(_:thanSupported:), fetch(completion:), fetchVersions(completion:).
 // Owner context: tools/ide — Compose.
 
 import Foundation
@@ -26,6 +27,22 @@ enum ChordVersionCheck {
                                        options: .regularExpression) else { return nil }
         let match = output[range]
         return match.split(separator: " ").last.map(String.init)
+    }
+
+    /// Extracts the platform version from `sharpee --version` output
+    /// ("Sharpee 4.1.1 · Chord 2.1.0" → "4.1.1"). Nil when the shape is foreign.
+    static func sharpeeVersion(fromVersionOutput output: String) -> String? {
+        guard let range = output.range(of: #"Sharpee\s+([0-9][0-9A-Za-z.\-]*)"#,
+                                       options: .regularExpression) else { return nil }
+        let match = output[range]
+        return match.split(separator: " ").last.map(String.init)
+    }
+
+    /// The pair reported by `sharpee --version`; either component is nil when
+    /// the toolchain is absent or its output shape is foreign.
+    struct ToolchainVersions: Equatable {
+        let sharpee: String?
+        let chord: String?
     }
 
     /// True when `found` is a strictly newer semver than `supported` (numeric
@@ -53,8 +70,18 @@ enum ChordVersionCheck {
     /// non-blocking — a missing toolchain is surfaced by the compose/build
     /// paths, not here.
     static func fetch(near: URL? = nil, completion: @escaping (String?) -> Void) {
+        fetchVersions(near: near) { completion($0.chord) }
+    }
+
+    /// Runs the resolved `sharpee --version` and reports BOTH the platform and
+    /// Chord versions — the pair ADR-279 D1's status bar displays alongside the
+    /// app's own version. Same best-effort, non-blocking contract as `fetch`:
+    /// a missing toolchain yields `ToolchainVersions(nil, nil)` rather than an
+    /// error, because the compose/build paths own that diagnosis.
+    static func fetchVersions(near: URL? = nil,
+                              completion: @escaping (ToolchainVersions) -> Void) {
         guard let sharpee = ComposeRunner.resolveSharpee(near: near) else {
-            completion(nil)
+            completion(ToolchainVersions(sharpee: nil, chord: nil))
             return
         }
         let proc = Process()
@@ -78,7 +105,8 @@ enum ChordVersionCheck {
         proc.terminationHandler = { _ in group.leave() }
         group.notify(queue: .main) {
             let text = String(data: buffer.data, encoding: .utf8) ?? ""
-            completion(chordVersion(fromVersionOutput: text))
+            completion(ToolchainVersions(sharpee: sharpeeVersion(fromVersionOutput: text),
+                                         chord: chordVersion(fromVersionOutput: text)))
         }
         do {
             try proc.run()

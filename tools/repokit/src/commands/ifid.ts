@@ -1,7 +1,14 @@
 // packages/sharpee/src/cli/ifid.ts
 // IFID CLI commands
 
-import { generateIfid, validateIfid, normalizeIfid } from '@sharpee/core';
+/**
+ * core, loaded on first use — see the note in `browser.ts`. `cli.ts` registers
+ * this command, so a top-level value import would make core's `dist/` a
+ * prerequisite for running `repokit build`, which is what builds core.
+ */
+function core(): typeof import('@sharpee/core') {
+  return require('@sharpee/core');
+}
 
 export function runIfidCommand(args: string[]): void {
   const subcommand = args[0];
@@ -25,7 +32,7 @@ export function runIfidCommand(args: string[]): void {
 }
 
 function handleGenerate(): void {
-  const ifid = generateIfid();
+  const ifid = core().generateIfid();
   console.log(ifid);
 }
 
@@ -37,13 +44,13 @@ function handleValidate(args: string[]): void {
     process.exit(1);
   }
 
-  const isValid = validateIfid(ifid);
+  const isValid = core().validateIfid(ifid);
 
   if (isValid) {
     console.log(`Valid IFID: ${ifid}`);
   } else {
     // Try normalizing (uppercase conversion)
-    const normalized = normalizeIfid(ifid);
+    const normalized = core().normalizeIfid(ifid);
     if (normalized) {
       console.log(`Valid after normalization:`);
       console.log(`  Original:   ${ifid}`);

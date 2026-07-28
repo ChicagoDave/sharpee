@@ -91,6 +91,24 @@ Read `/docs/reference/core-concepts.md` at the start of each session for:
 
 Use `./repokit build` (it orchestrates; tsf compiles) instead of manual `pnpm build`.
 
+**Cold start (fresh clone only)** — two bootstrap steps before `./repokit` exists:
+
+```bash
+pnpm install
+npx tsf build                            # platform packages; emits the .d.ts repokit's tsc needs
+pnpm --filter @sharpee/repokit build     # tsf does NOT build repokit (not in ts-forge.config.json)
+./repokit build dungeo
+```
+
+Once `./repokit` is built these steps are never needed again — `./repokit clean
+&& ./repokit build dungeo` rebuilds the whole tree unaided (verified
+2026-07-28). `clean` preserves repokit's own `dist/`, and repokit loads
+`@sharpee/devkit` only for `--browser`/`--playground`.
+
+`pnpm build` (turbo) is NOT a substitute for `tsf build`: it misses ~12 packages
+including `engine` and `devkit`, and dies on `platform-browser` with a TS2307
+for `@sharpee/engine`.
+
 ```bash
 # Show help
 ./repokit

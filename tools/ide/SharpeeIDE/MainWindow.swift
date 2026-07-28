@@ -156,6 +156,12 @@ final class MainWindowController: NSWindowController {
         rootViewController?.updateBuildStatus(status)
     }
 
+    /// Fills in the toolchain half of the status-bar version line (ADR-279 D1),
+    /// once `sharpee --version` answers.
+    func showToolchainVersions(_ versions: ChordVersionCheck.ToolchainVersions) {
+        rootViewController?.showToolchainVersions(versions)
+    }
+
     /// Sets the handler invoked when the build pill is clicked mid-build (cancel).
     var onBuildPillCancel: (() -> Void)? {
         get { rootViewController?.onBuildPillCancel }
@@ -290,6 +296,10 @@ private final class RootViewController: NSViewController {
     fileprivate func updateBuildStatus(_ status: BuildStatusDisplay) {
         currentBuildStatus = status
         statusBar.setBuildStatus(status)
+    }
+
+    fileprivate func showToolchainVersions(_ versions: ChordVersionCheck.ToolchainVersions) {
+        statusBar.setToolchainVersions(versions)
     }
 
     /// Pill click: cancel while building, otherwise toggle the Build panel.
@@ -882,12 +892,25 @@ private final class StatusBarView: NSView {
     private let pillLabel = NSTextField(labelWithString: "")
     private let pill = NSView()
     private var lastStatus: BuildStatusDisplay = .idle
+    private let versionLabel = NSTextField(
+        labelWithString: AppIdentity.statusBarLabel(appVersion: AppIdentity.version,
+                                                    sharpeeVersion: nil,
+                                                    chordVersion: nil))
+
+    /// Fills in the toolchain half of the version line once `sharpee --version`
+    /// answers (ADR-279 D1). Until then the label shows the app version alone.
+    func setToolchainVersions(_ versions: ChordVersionCheck.ToolchainVersions) {
+        versionLabel.stringValue = AppIdentity.statusBarLabel(
+            appVersion: AppIdentity.version,
+            sharpeeVersion: versions.sharpee,
+            chordVersion: versions.chord)
+    }
 
     init() {
         super.init(frame: .zero)
         wantsLayer = true
 
-        let label = NSTextField(labelWithString: "main · Sharpee 0.1.0")
+        let label = versionLabel
         label.font = NSFont.systemFont(ofSize: 11)
         label.textColor = Theme.statusBarText
         label.translatesAutoresizingMaskIntoConstraints = false

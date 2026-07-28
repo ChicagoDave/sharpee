@@ -8,7 +8,7 @@
  * Public interface: findRepoRoot(), PLATFORM_PACKAGES, BUNDLE_ALIASES, BUNDLE_DTS,
  * storyVersionFile(), resolveStoryDir().
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
 /**
@@ -158,6 +158,31 @@ export function resolveStoryDir(root: string, name: string): string | null {
     if (existsSync(dir)) return dir;
   }
   return null;
+}
+
+/**
+ * The single `.story` file in `dir` (ADR-252: a Chord project has exactly one),
+ * or null when the directory holds none — i.e. a TypeScript story.
+ *
+ * Deliberately a local copy of devkit's `findStoryFile` rather than an import.
+ * This runs during version stamping, on the build path for EVERY `repokit
+ * build` — importing devkit for it made devkit's `dist/` a prerequisite for the
+ * command that builds devkit, so a cleaned tree could never rebuild itself. The
+ * duplicated logic is eight lines of `readdirSync` with no devkit machinery in
+ * it; the shared part is the one-`.story`-per-project invariant, which is a
+ * project-model rule (ADR-252), not devkit's to own.
+ *
+ * @throws when the directory holds more than one `.story` file.
+ */
+export function findChordStoryFile(dir: string): string | null {
+  const stories = readdirSync(dir).filter((f) => f.endsWith('.story')).sort();
+  if (stories.length === 0) return null;
+  if (stories.length > 1) {
+    throw new Error(
+      `project has ${stories.length} .story files (${stories.join(', ')}) — a project has exactly one; remove or rename the others`,
+    );
+  }
+  return join(dir, stories[0]);
 }
 
 /** The story version.ts path build.sh stamps (stories/<name> only — tutorials are NOT stamped). */
