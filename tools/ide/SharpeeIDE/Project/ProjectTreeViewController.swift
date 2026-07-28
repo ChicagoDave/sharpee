@@ -1,5 +1,8 @@
 // ProjectTreeViewController.swift
-// Renders a Project's filesystem tree in an NSOutlineView inside the Project pane.
+// Renders a Project as typed artifact groups (ADR-280 D1) in an NSOutlineView
+// inside the Project pane: top-level rows are ArtifactGroups, their children are
+// the FileNodes belonging to each. Groups are lenses over the real folder, so a
+// file's row position does not imply its on-disk parent.
 // Public interface: ProjectTreeViewController.setProject(_:) replaces the displayed tree.
 // Owner context: tools/ide — Project pane.
 
@@ -24,6 +27,10 @@ final class ProjectTreeViewController: NSViewController {
     private let placeholder = NSTextField(labelWithString: "No project open")
 
     private var project: Project?
+    /// The typed groups for the open project, rebuilt whenever it changes.
+    /// Held rather than recomputed per data-source call so outline rows keep a
+    /// stable identity across reloads.
+    private var groups: [ArtifactGroup] = []
     /// Suppresses delegate notifications while we apply expansion programmatically
     /// (e.g. during session restoration).
     private var isApplyingProgrammaticExpansion = false
@@ -36,6 +43,7 @@ final class ProjectTreeViewController: NSViewController {
         configureOutlineView()
         configureScrollView()
         configurePlaceholder()
+        configureContextMenu()
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         placeholder.translatesAutoresizingMaskIntoConstraints = false
@@ -70,49 +78,56 @@ final class ProjectTreeViewController: NSViewController {
     /// (parents are expanded first so child matches resolve). Otherwise leaves the tree collapsed.
     func setProject(_ project: Project?, expandedFolderURLs: [URL] = []) {
         self.project = project
+        self.groups = project.map(ProjectArtifacts.groups(for:)) ?? []
         outlineView.reloadData()
-        guard let project = project else {
+        guard project != nil else {
             updateEmptyState()
             return
         }
 
-        outlineView.expandItem(nil, expandChildren: false)
-
         isApplyingProgrammaticExpansion = true
         defer { isApplyingProgrammaticExpansion = false }
 
-        if expandedFolderURLs.isEmpty {
-            for child in project.rootNode.children where child.isDirectory {
-                outlineView.collapseItem(child)
-            }
-        } else {
+        // Story opens; every other group starts collapsed (David's ruling). A
+        // mature story has dozens of transcript tests — opening them all pushes
+        // the later groups below the fold, and the story is what you came for.
+        for group in groups where group.kind == .story {
+            outlineView.expandItem(group)
+        }
+
+        if !expandedFolderURLs.isEmpty {
             let urlSet = Set(expandedFolderURLs)
-            applyExpansion(below: project.rootNode, matching: urlSet)
+            for group in groups {
+                applyExpansion(below: group.members, matching: urlSet)
+            }
         }
 
         updateEmptyState()
     }
 
     /// URLs of every currently-expanded directory in the displayed tree.
+    /// Group rows are not included — they have no URL, and their open-by-default
+    /// state is not something session restore needs to carry.
     var expandedFolderURLs: [URL] {
-        guard let project = project else { return [] }
         var result: [URL] = []
-        collectExpanded(below: project.rootNode, into: &result)
+        for group in groups {
+            collectExpanded(among: group.members, into: &result)
+        }
         return result
     }
 
-    private func collectExpanded(below parent: FileNode, into result: inout [URL]) {
-        for child in parent.children where child.isDirectory && outlineView.isItemExpanded(child) {
-            result.append(child.url)
-            collectExpanded(below: child, into: &result)
+    private func collectExpanded(among nodes: [FileNode], into result: inout [URL]) {
+        for node in nodes where node.isDirectory && outlineView.isItemExpanded(node) {
+            result.append(node.url)
+            collectExpanded(among: node.children, into: &result)
         }
     }
 
-    private func applyExpansion(below parent: FileNode, matching urls: Set<URL>) {
-        for child in parent.children where child.isDirectory {
-            if urls.contains(child.url) {
-                outlineView.expandItem(child)
-                applyExpansion(below: child, matching: urls)
+    private func applyExpansion(below nodes: [FileNode], matching urls: Set<URL>) {
+        for node in nodes where node.isDirectory {
+            if urls.contains(node.url) {
+                outlineView.expandItem(node)
+                applyExpansion(below: node.children, matching: urls)
             }
         }
     }
@@ -173,17 +188,48 @@ final class ProjectTreeViewController: NSViewController {
 
     @objc private func outlineDoubleClicked(_ sender: Any?) {
         let row = outlineView.clickedRow
-        guard row >= 0, let node = outlineView.item(atRow: row) as? FileNode else { return }
+        guard row >= 0, let item = outlineView.item(atRow: row) else { return }
 
-        if node.isDirectory {
-            if outlineView.isItemExpanded(node) {
-                outlineView.animator().collapseItem(node)
-            } else {
-                outlineView.animator().expandItem(node)
-            }
-        } else {
+        if let node = item as? FileNode, !node.isDirectory {
             delegate?.projectTree(self, didActivate: node)
+            return
         }
+        // Groups and directories toggle.
+        if outlineView.isItemExpanded(item) {
+            outlineView.animator().collapseItem(item)
+        } else {
+            outlineView.animator().expandItem(item)
+        }
+    }
+
+    // MARK: - Reveal in Finder (ADR-280 Q-3)
+
+    /// What "Reveal in Finder" selects for the clicked row: a file or directory
+    /// selects itself; a group selects its backing folder when it has one; a
+    /// group assembled from scattered files, or a click in empty space, falls
+    /// back to the project root. Nil only when no project is open.
+    func revealTarget(forRow row: Int) -> URL? {
+        guard let project = project else { return nil }
+        guard row >= 0, let item = outlineView.item(atRow: row) else { return project.rootURL }
+        if let node = item as? FileNode { return node.url }
+        if let group = item as? ArtifactGroup { return group.directoryURL ?? project.rootURL }
+        return project.rootURL
+    }
+
+    @objc private func revealInFinder(_ sender: Any?) {
+        guard let url = revealTarget(forRow: outlineView.clickedRow) else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+
+    private func configureContextMenu() {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let reveal = NSMenuItem(title: "Reveal in Finder",
+                                action: #selector(revealInFinder(_:)),
+                                keyEquivalent: "")
+        reveal.target = self
+        menu.addItem(reveal)
+        outlineView.menu = menu
     }
 }
 
@@ -192,21 +238,28 @@ final class ProjectTreeViewController: NSViewController {
 extension ProjectTreeViewController: NSOutlineViewDataSource {
 
     func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
-        if item == nil {
-            return project?.rootNode.children.count ?? 0
+        switch item {
+        case nil: return groups.count
+        case let group as ArtifactGroup: return group.members.count
+        case let node as FileNode: return node.children.count
+        default: return 0
         }
-        return (item as? FileNode)?.children.count ?? 0
     }
 
     func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
-        if item == nil {
-            return project!.rootNode.children[index]
+        switch item {
+        case nil: return groups[index]
+        case let group as ArtifactGroup: return group.members[index]
+        default: return (item as! FileNode).children[index]
         }
-        return (item as! FileNode).children[index]
     }
 
     func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
-        (item as? FileNode)?.isDirectory ?? false
+        switch item {
+        case let group as ArtifactGroup: return !group.members.isEmpty
+        case let node as FileNode: return node.isDirectory
+        default: return false
+        }
     }
 }
 
@@ -225,6 +278,9 @@ extension ProjectTreeViewController: NSOutlineViewDelegate {
     }
 
     func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
+        if let group = item as? ArtifactGroup {
+            return groupCell(for: group)
+        }
         guard let node = item as? FileNode else { return nil }
 
         let cell = outlineView.makeView(withIdentifier: Self.cellIdentifier, owner: self) as? NSTableCellView
@@ -241,6 +297,21 @@ extension ProjectTreeViewController: NSOutlineViewDelegate {
             ? FontPreference.panelBoldFont
             : FontPreference.panelFont
         cell.imageView?.image = NSWorkspace.shared.icon(forFile: node.url.path)
+        return cell
+    }
+
+    /// A group header row. Uses the same cell shape as a file row so the reader
+    /// font applies uniformly (ProjectTreeFontTests pins the family across every
+    /// row), with the artifact's symbol standing in for a file icon.
+    private func groupCell(for group: ArtifactGroup) -> NSTableCellView {
+        let cell = outlineView.makeView(withIdentifier: Self.cellIdentifier, owner: self) as? NSTableCellView
+            ?? makeCell()
+
+        cell.textField?.stringValue = group.displayName
+        cell.textField?.textColor = Theme.foreground
+        cell.textField?.font = FontPreference.panelBoldFont
+        cell.imageView?.image = NSImage(systemSymbolName: group.kind.symbolName,
+                                        accessibilityDescription: group.displayName)
         return cell
     }
 

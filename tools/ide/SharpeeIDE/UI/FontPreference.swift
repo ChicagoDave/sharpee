@@ -1,6 +1,6 @@
 // FontPreference.swift
 // The reader-facing type choice for the story pane and the right-panel text
-// surfaces (David's ruling): family Courier / Arial / Georgia, size S/M/L/XL,
+// surfaces (David's ruling): family Courier / SF Mono / Arial / Georgia, size S/M/L/XL,
 // persisted in UserDefaults, broadcast via a notification so live surfaces
 // re-render. Chord is prose — the editor is allowed a proportional serif.
 // Code-like identifiers (phrase keys, module paths) stay monospaced and only
@@ -12,11 +12,12 @@
 import AppKit
 
 enum FontFamily: String, CaseIterable {
-    case courier, arial, georgia
+    case courier, sfMono, arial, georgia
 
     var displayName: String {
         switch self {
         case .courier: return "Courier"
+        case .sfMono: return "SF Mono"
         case .arial: return "Arial"
         case .georgia: return "Georgia"
         }
@@ -25,6 +26,7 @@ enum FontFamily: String, CaseIterable {
     private var fontName: String {
         switch self {
         case .courier: return "Courier New"
+        case .sfMono: return "SFMono-Regular"
         case .arial: return "Arial"
         case .georgia: return "Georgia"
         }
@@ -33,16 +35,27 @@ enum FontFamily: String, CaseIterable {
     private var boldFontName: String {
         switch self {
         case .courier: return "CourierNewPS-BoldMT"
+        case .sfMono: return "SFMono-Bold"
         case .arial: return "Arial-BoldMT"
         case .georgia: return "Georgia-Bold"
         }
     }
 
+    /// Whether this family is a fixed-pitch choice — decides which system face
+    /// stands in when the named face is unavailable.
+    private var isMonospaced: Bool {
+        self == .courier || self == .sfMono
+    }
+
     /// The family at `size`, falling back to the system font when the face is
-    /// unavailable (Courier falls back monospaced — it is the monospace choice).
+    /// unavailable. Monospace families (Courier, SF Mono) fall back to the
+    /// system monospaced face — on macOS that face IS the SF Mono design, so
+    /// SF Mono renders correctly whether or not the author has installed the
+    /// standalone SFMono-Regular face (it is not registered system-wide by
+    /// default; it ships inside Terminal.app's Resources).
     func font(size: CGFloat) -> NSFont {
         if let font = NSFont(name: fontName, size: size) { return font }
-        return self == .courier
+        return isMonospaced
             ? .monospacedSystemFont(ofSize: size, weight: .regular)
             : .systemFont(ofSize: size)
     }
@@ -50,9 +63,14 @@ enum FontFamily: String, CaseIterable {
     /// The family's bold face at `size` — looked up by explicit PostScript name:
     /// both NSFontManager.convert(toHaveTrait:) and descriptor symbolic-trait
     /// resolution silently fall back to the SYSTEM font for these faces
-    /// (ProjectTreeFontTests caught folders rendering in .SFNS).
+    /// (ProjectTreeFontTests caught folders rendering in .SFNS). Monospace
+    /// families fall back to the bold system monospaced face rather than to
+    /// their own regular weight, so bold stays visibly bold.
     func boldFont(size: CGFloat) -> NSFont {
-        NSFont(name: boldFontName, size: size) ?? font(size: size)
+        if let font = NSFont(name: boldFontName, size: size) { return font }
+        return isMonospaced
+            ? .monospacedSystemFont(ofSize: size, weight: .bold)
+            : font(size: size)
     }
 }
 

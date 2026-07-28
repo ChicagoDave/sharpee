@@ -169,11 +169,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         loadProject(at: url)
     }
 
-    /// File → New Story… (⌘N). Prompts for a title, picks/creates a folder, scaffolds the
-    /// devkit story template into it, and opens it (ADR-185).
-    @objc func newStory(_ sender: Any?) {
-        guard let title = promptStoryTitle(), !title.isEmpty else { return }
+    /// What the writer asked for in the New Story prompt.
+    private enum NewStoryRequest {
+        /// Create under the default project home — the path the writer never has to think about.
+        case createAtDefaultHome(title: String)
+        /// The writer explicitly asked to place the story themselves.
+        case chooseLocation(title: String)
+        case cancel
+    }
 
+    /// File → New Story… (⌘N). Prompts for a title and scaffolds into
+    /// `~/Documents/Chord/<story-id>/` — no location picker (ADR-280 D2). The
+    /// picker remains reachable from the prompt for writers who want it.
+    @objc func newStory(_ sender: Any?) {
+        switch promptNewStory() {
+        case .cancel:
+            return
+        case .createAtDefaultHome(let title):
+            createStoryAtDefaultHome(title: title)
+        case .chooseLocation(let title):
+            chooseLocationAndScaffold(title: title)
+        }
+    }
+
+    /// Scaffolds into the default project home and opens the result, presenting
+    /// the refusal when a story of that name is already there.
+    private func createStoryAtDefaultHome(title: String) {
+        do {
+            loadProject(at: try scaffoldStoryAtDefaultHome(title: title))
+        } catch {
+            presentScaffoldFailure(error)
+        }
+    }
+
+    /// The explicit "choose location" path — the pre-ADR-280 flow, now opt-in
+    /// rather than mandatory.
+    private func chooseLocationAndScaffold(title: String) {
         let panel = NSSavePanel()
         panel.title = "New Sharpee Story"
         panel.prompt = "Create"
@@ -192,36 +223,88 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
     }
 
-    /// Prompts for the new story's title with a modal alert + text field. Returns nil on cancel.
-    private func promptStoryTitle() -> String? {
+    /// Prompts for the new story's title with a modal alert + text field, and for
+    /// whether the writer wants the default home or to place the story themselves.
+    /// An empty title is treated as a cancel.
+    private func promptNewStory() -> NewStoryRequest {
         let alert = NSAlert()
         alert.messageText = "New Story"
         alert.informativeText = "Enter a title for your story."
-        alert.addButton(withTitle: "Continue")
+        alert.addButton(withTitle: "Create")
+        alert.addButton(withTitle: "Choose Location…")
         alert.addButton(withTitle: "Cancel")
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
         field.placeholderString = "My Adventure"
         alert.accessoryView = field
         alert.window.initialFirstResponder = field
-        guard alert.runModal() == .alertFirstButtonReturn else { return nil }
-        return field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let response = alert.runModal()
+        guard response != .alertThirdButtonReturn else { return .cancel }
+        let title = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return .cancel }
+        return response == .alertFirstButtonReturn
+            ? .createAtDefaultHome(title: title)
+            : .chooseLocation(title: title)
     }
 
     private func scaffoldAndOpen(at url: URL, title: String) {
+        do {
+            loadProject(at: try scaffoldStory(at: url, title: title))
+        } catch {
+            presentScaffoldFailure(error)
+        }
+    }
+
+    /// Creates a new story on disk at `directory`. The mutation half of New
+    /// Story, deliberately free of presentation and of `loadProject` so it can
+    /// be driven directly by tests.
+    ///
+    /// - Parameters:
+    ///   - directory: the folder the story is written into; created if absent.
+    ///   - title: the author-entered story title.
+    ///   - templateDirectory: overrides the bundled devkit template; tests pass
+    ///     the in-repo `packages/devkit/templates/story-chord`.
+    /// - Returns: `directory`, now holding the story — the value `loadProject` opens.
+    /// - Throws: `StoryScaffold.ScaffoldError` when the template is missing or
+    ///   the target is occupied. Nothing is opened on the throwing path.
+    @discardableResult
+    func scaffoldStory(at directory: URL, title: String,
+                       templateDirectory: URL? = nil) throws -> URL {
         let author = NSFullUserName().isEmpty ? "Anonymous" : NSFullUserName()
         let info = StoryScaffold.Info(title: title, author: author,
                                       description: "An interactive fiction adventure")
-        do {
-            try StoryScaffold.create(in: url, info: info)
-            // The scaffold is a bare `<id>.story` (ADR-258 D2 — no package.json,
-            // no npm step); opening it composes immediately, so the tree and
-            // Problems are live before any build.
-            loadProject(at: url)
-        } catch {
-            let alert = NSAlert(error: error)
-            alert.alertStyle = .warning
-            alert.runModal()
-        }
+        // The scaffold is a bare `<id>.story` (ADR-258 D2 — no package.json,
+        // no npm step); opening it composes immediately, so the tree and
+        // Problems are live before any build.
+        try StoryScaffold.create(in: directory, info: info, templateDirectory: templateDirectory)
+        return directory
+    }
+
+    /// Resolves the default project home for `title` (ADR-280 D2), then scaffolds
+    /// into it — the exact path New Story takes when the writer does not ask to
+    /// choose a location.
+    ///
+    /// - Parameters:
+    ///   - title: the author-entered story title.
+    ///   - root: the project home; defaults to `~/Documents/Chord`. Tests inject
+    ///     a temp root so no run writes into the developer's real Documents.
+    ///   - templateDirectory: as `scaffoldStory(at:title:templateDirectory:)`.
+    /// - Returns: the created project directory.
+    /// - Throws: `StoryHome.HomeError.projectAlreadyExists` when the target is
+    ///   occupied — and in that case nothing is created and nothing is opened.
+    @discardableResult
+    func scaffoldStoryAtDefaultHome(title: String,
+                                    in root: URL = StoryHome.defaultRoot,
+                                    templateDirectory: URL? = nil) throws -> URL {
+        let target = try StoryHome.resolveNewProjectDirectory(forTitle: title, in: root)
+        return try scaffoldStory(at: target, title: title, templateDirectory: templateDirectory)
+    }
+
+    /// The one place a failed scaffold is surfaced to the writer.
+    private func presentScaffoldFailure(_ error: Error) {
+        let alert = NSAlert(error: error)
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     /// File → Save (⌘S). Forwards to the active editor; no-op when no document is open.
