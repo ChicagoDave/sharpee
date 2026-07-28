@@ -14,7 +14,7 @@
  * matching target arrives (ADR-165 §4 step 2).
  */
 
-import type { ChannelRenderer } from '@sharpee/channel-service';
+import { joinMainEntries, type ChannelRenderer } from '@sharpee/channel-service';
 import type { MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { renderTextContent } from './text-content.js';
@@ -25,6 +25,18 @@ export interface MainChannelRendererOptions {
    * this to scroll the slot's containing window to the bottom.
    */
   onAfterAppend?(slot: HTMLElement): void;
+
+  /**
+   * Optional callback fired with this packet's entries flattened to plain
+   * text, by the same rule the headless harness uses (`joinMainEntries`).
+   *
+   * Exists so the IDE recording bridge can serialize what the ENGINE said
+   * rather than re-reading the DOM: `textContent` loses the tight/loose
+   * distinction, so a blessed multi-paragraph assertion captured from the
+   * DOM would not match headless (ADR-282 D2 and its 2026-07-28
+   * amendment). Not fired when the packet flattens to nothing.
+   */
+  onEntriesText?(text: string): void;
 }
 
 /**
@@ -42,6 +54,12 @@ export function createMainChannelRenderer(
   return {
     onValue(value: unknown): void {
       if (!Array.isArray(value)) return;
+      // Report the engine's own text BEFORE rendering, so the recording
+      // bridge never depends on what the DOM ends up looking like.
+      if (opts.onEntriesText) {
+        const text = joinMainEntries(value);
+        if (text) opts.onEntriesText(text);
+      }
       for (const raw of value) {
         const entry = normalizeEntry(raw);
         if (!entry) continue;

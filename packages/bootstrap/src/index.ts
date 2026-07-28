@@ -15,7 +15,7 @@ import { resolveStoryModulePath } from './resolve.js';
 import { purgeStoryModuleCache } from './purge.js';
 import { GameEngine, TurnResult } from '@sharpee/engine';
 import { ISemanticEvent } from '@sharpee/core';
-import { flattenContent } from '@sharpee/channel-service';
+import { joinMainEntries } from '@sharpee/channel-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
@@ -179,25 +179,7 @@ export function assembleGame(story: any, opts?: { freshStory?: () => any }): Loa
     // plain text. Two entry shapes: legacy TextContent[] and MainEntry
     // { content, tight? }; tight entries continue the prior line.
     engine.on('channel:packet', (packet: any) => {
-      const mainEntries = packet?.payload?.main;
-      if (!Array.isArray(mainEntries) || mainEntries.length === 0) return;
-      let out = '';
-      for (const raw of mainEntries) {
-        let content: any;
-        let tight = false;
-        if (Array.isArray(raw)) {
-          content = raw;
-        } else if (raw && typeof raw === 'object' && Array.isArray(raw.content)) {
-          content = raw.content;
-          tight = Boolean(raw.tight);
-        } else {
-          continue;
-        }
-        const text = flattenContent(content);
-        if (!text.trim()) continue;
-        if (out) out += tight ? '\n' : '\n\n';
-        out += text;
-      }
+      const out = joinMainEntries(packet?.payload?.main);
       if (out) outputBuffer.push(out);
     });
 

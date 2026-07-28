@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { CmgtPacket } from '@sharpee/if-domain';
 import { BrowserClient } from '../src/BrowserClient';
 import { emitTurnEvent } from '../src/turn-events';
+import { joinMainEntries } from '@sharpee/channel-service';
 
 function installBridge(): string[] {
   const posted: string[] = [];
@@ -159,8 +160,25 @@ describe('BrowserClient turn capture (real render path)', () => {
     expect(posted).toHaveLength(1);
     const payload = JSON.parse(posted[0]);
     expect(payload.command).toBe('look');
-    expect(payload.response).toBe('You stand at the cave mouth.\nA lamp glints.');
+    // The BLANK LINE is load-bearing — do not "tidy" it to a single newline.
+    // Two non-tight entries are separate paragraphs, and the headless harness
+    // (`@sharpee/bootstrap`, what `sharpee test` compares against) joins them
+    // with '\n\n'. normalizeOutput preserves blank lines, so a single newline
+    // here means every blessed multi-paragraph assertion fails on its first
+    // headless run — the exact bug ADR-282's 2026-07-28 amendment fixed.
+    // Both sides now share `joinMainEntries`; this pins the observable result.
+    expect(payload.response).toBe('You stand at the cave mouth.\n\nA lamp glints.');
     expect(payload.response).not.toContain('> look');
+  });
+
+  it('continues a tight entry on the next line, not as a new paragraph', () => {
+    // The distinction the old DOM-reading bridge could not see: it read
+    // `textContent` off each <p> and joined everything with '\n', so tight and
+    // loose entries were indistinguishable in the recorded transcript.
+    expect(joinMainEntries([
+      { content: ['Score: 10'] },
+      { content: ['Turns: 4'], tight: true },
+    ])).toBe('Score: 10\nTurns: 4');
   });
 
   it('captures only the current turn — a second command emits its own response', async () => {

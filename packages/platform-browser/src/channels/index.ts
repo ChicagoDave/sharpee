@@ -100,6 +100,13 @@ export interface RegisterDefaultBrowserRenderersOptions {
    * window to the bottom.
    */
   onMainAfterAppend?(slot: HTMLElement): void;
+
+  /**
+   * Fired with each `main` packet's entries flattened to plain text, by the
+   * same rule the headless harness uses. The client accumulates these across
+   * a turn for the IDE recording bridge (ADR-282 D2).
+   */
+  onMainEntriesText?(text: string): void;
   /**
    * Optional hotspot-click handler for image channels. When a
    * hotspot is clicked the renderer calls this with the hotspot's
@@ -153,6 +160,7 @@ export function registerDefaultBrowserRenderers(
     'main',
     createMainChannelRenderer(layout.main, {
       onAfterAppend: opts.onMainAfterAppend,
+      onEntriesText: opts.onMainEntriesText,
     }),
   );
   renderer.registerRenderer(

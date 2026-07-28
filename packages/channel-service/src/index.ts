@@ -55,6 +55,7 @@ export type {
 export { createDecoder, type Decoder, type DecoderState } from './wire/index.js';
 
 export { flattenContent } from './utils/flatten.js';
+export { joinMainEntries } from './utils/join-main-entries.js';
 
 // Display flatteners (ADR-174 Phase 2 — `renderToString` / `renderStatusLine`
 // migrated here from `@sharpee/text-service` per OQ-1 resolution).

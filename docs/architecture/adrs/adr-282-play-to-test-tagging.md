@@ -171,10 +171,43 @@ against its Q-2.)
 - Wrong responses observed during play leave no artifact — the author
   fixes the story. Bug tracking stays outside the test system (GitHub
   issues, per standing practice).
-- One platform change is authorized by this ADR: the `actualOutput` field
-  on ide-protocol's `CommandResultRecord` (feeds the re-bless failure
-  view). The fence grammar is authorized by ADR-287 — this ADR is its
-  motivating consumer. Nothing else platform-side (ADR-283 rejected).
+- **Two** platform changes are authorized by this ADR:
+  1. The `actualOutput` field on ide-protocol's `CommandResultRecord`
+     (feeds the re-bless failure view).
+  2. **The turn-events bridge carries channel-flattened text**
+     (`packages/platform-browser`) — see the amendment below.
+
+  The fence grammar is authorized by ADR-287 — this ADR is its motivating
+  consumer. Nothing else platform-side (ADR-283 rejected).
+
+### Amendment, 2026-07-28 (session aaa5bb): the bridge fix D2 requires
+
+D2 rules that the recorded response is "the channel-flattened text — the
+same form the headless runner compares — carried over the turn-events
+bridge; DOM `textContent` is never the serialization source." **The bridge
+did not do this**, and the original Consequences section forbade changing
+it — so as accepted, this ADR contradicted itself. Verified in code during
+implementation:
+
+- Headless (`packages/bootstrap/src/index.ts:196-201`) flattens each block
+  and joins blocks with `'\n\n'`, or `'\n'` when the block is `tight`.
+- The bridge (`packages/platform-browser/src/BrowserClient.ts:619-627`)
+  built its payload from DOM children's `textContent`, joined **always**
+  with `'\n'`, with no notion of `tight`.
+- `normalizeOutput` (`packages/transcript-tester/src/runner.ts:1590`)
+  trims lines and rejoins; it does **not** collapse blank lines.
+
+So a two-paragraph response captured as `para1\npara2` and ran headless as
+`para1\n\npara2` — every blessed verbatim test on a multi-paragraph
+response would have failed on its first run. This is the exact divergence
+D2 names.
+
+**Resolution (David's ruling, 2026-07-28): amend, and fix the bridge.**
+The bridge now emits the channel-flattened text built by the same rule the
+headless path uses. The rejected alternative was reconstructing block
+boundaries from the `main-entry--tight` CSS class in the DOM, which would
+couple transcript serialization to class names — the brittleness D2 exists
+to prevent.
 
 ## Session
 

@@ -40,5 +40,5 @@ Generated for Sharpee 4.2.0
 | [combat.md](combat.md) | @sharpee/ext-basic-combat | Basic combat extension — attack/defend mechanics. (5 files, ~261 lines) |
 | [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (31 files, ~3134 lines) |
 | [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~792 lines) |
-| [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (24 files, ~2391 lines) |
+| [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (25 files, ~2448 lines) |
 | [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (12 files, ~894 lines) |
