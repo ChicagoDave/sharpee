@@ -109,6 +109,14 @@ Deferred, not decided: an "Install Command Line Tool…" menu item (VS Code
 style) that symlinks the bundled CLI onto PATH for authors who want the
 book's terminal workflow without npm.
 
+Coupling note (2026-07-28, from the ADR-282/287 review): the IDE now
+*writes* artifacts (fence-grammar transcripts) that a PATH-resolved
+toolchain older than ADR-287 cannot parse. The failure is a loud parse
+error and the bundled fallback (always current) is the recovery; a
+minimum-toolchain note in the test panel's error surface is the cheap
+mitigation. The bundled devkit carries whatever the devkit carries —
+e.g. the ADR-286 template transform — with no packaging change.
+
 *(Original D4 — "no silent bundling; first-run says `npm install -g
 @sharpee/devkit`" — is superseded by this ruling.)*
 
@@ -193,8 +201,8 @@ so updates must reach writers without a manual download ritual.
 2. One command produces `ChordWriter-<version>.dmg` from a clean checkout
    (given credentials); the script fails loudly at any unsigned/unnotarized
    intermediate.
-3. `spctl --assess --type open` (Gatekeeper) accepts the stapled DMG on a
-   machine that never built it.
+3. `spctl --assess --type open --context context:primary-signature`
+   (Gatekeeper) accepts the stapled DMG on a machine that never built it.
 4. Persisted state (recents, session, dividers, fonts) survives the id
    change to `net.sharpee.chord-writer` (D1) — a test pins the one-time
    defaults migration from `net.sharpee.ide`.

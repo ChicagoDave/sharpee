@@ -1,6 +1,6 @@
 # ADR-280: Chord Writer project model — typed artifacts, a default home, devkit-owned scaffolding
 
-## Status: DRAFT (2026-07-27, session fda0f0) — Open Questions unresolved
+## Status: ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking)
 
 ## Date: 2026-07-27
 
@@ -37,9 +37,12 @@ directory listing:
 - **Walkthroughs** — `walkthroughs/`
 - **Transcript Tests** — `tests/transcripts/`
 - **Assets** — `assets/`
-- **Web Template** — the per-story override of the browser client's
-  `index.html`/css/assets (the IDE surface of the standing
-  author-customizable-client ruling)
+- **Web Template** — the story's `<storyId>.templates` layout file
+  (ADR-286's template DSL), plus the `browser/` escape hatches (the
+  `<storyId>.css` styling override; raw `index.html` under `use html`).
+  The group shows these **wherever they sit on disk** — the `.templates`
+  file lives beside the `.story` file, the escapes in `browser/`: groups
+  are typed lenses, not folder mirrors.
 
 The view is **open, not strict** (David's ruling): files that match no
 artifact type still appear (an "Other" group), never hidden and never
@@ -81,6 +84,10 @@ the file-list mindset showing through.)
    appears in the view (open-view ruling) — a test pins this.
 5. The typed groups map onto the exact folder names ADR-277's test panel
    consumes; the test panel finds the seeded tests with no configuration.
+6. Rejections: New Story into a name that collides with an existing
+   folder refuses with the path shown — never overwrites; a mid-scaffold
+   `sharpee init` failure surfaces its error in the sheet and no
+   half-scaffold is left opened as a project.
 
 ## Consequences
 
@@ -90,19 +97,29 @@ the file-list mindset showing through.)
 - `sharpee init` templates gain seeded test/walkthrough/web-template
   content; template content is authored by David (standing ruling: Claude
   does not invent story content).
-- The Web Template's default seed must come from the platform's shipped
-  client defaults, keeping override-by-copy honest.
+- The Web Template seed is the default `standard` template expressed in
+  the layout syntax (ADR-286 D1) — the platform default made visible and
+  editable, a friendly few-line `.templates` file rather than copied
+  HTML.
 
-## Open Questions
+## Deferred questions (non-blocking, ruled at implementation)
 
 ### Q-1: What greets a first launch with no story?
 - **Why it matters**: the zero-state (welcome pane with New/Open/recents/
   example vs. plain empty window) is the first thing every writer sees.
+  Note: a notarized app's first write into `~/Documents` raises the
+  one-time macOS Documents-consent prompt mid-New-Story — the zero-state
+  design should make that moment unsurprising.
 - **Blocks**: onboarding implementation start; nothing in D1–D4.
 
 ### Q-2: What exactly do the seeds contain?
 - **Why it matters**: seeded content teaches; David authors it (no
   invented story content). Needs his walkthrough/test/starter-story text.
+  Constraint from ADR-282 D4: the seeded walkthrough must be
+  `wt-01-*`-named — the walkthroughs directory is the chain, and recorded
+  segments append after the highest `wt-NN`. Constraint from ADR-286:
+  the Web Template seed is a `.templates` file containing a `standard`
+  block.
 - **Blocks**: D3's template content; Acceptance 3.
 
 ### Q-3: Reveal in Finder?

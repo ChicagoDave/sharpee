@@ -1,6 +1,6 @@
 # ADR-285: Chord Writer asset management — images and audio as first-class citizens
 
-## Status: DRAFT (2026-07-27, session fda0f0) — Open Questions unresolved
+## Status: ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking)
 
 ## Date: 2026-07-27
 
@@ -22,8 +22,11 @@
   hand-write `define` lines with no preview, no import flow, and no view
   of what is declared vs what is on disk.
 
-So this ADR is **pure IDE + devkit surface over an existing platform
-pipeline** — no platform seam.
+So this ADR is **IDE + devkit surface over an existing platform
+pipeline** — no engine/client seam; the devkit compose surface grows one
+check (D2's missing-file detection — nothing detects it today: the
+analyzer checks names only, filesystem-free, and the build copies
+`assets/` wholesale).
 
 ## Decision
 
@@ -44,7 +47,12 @@ The asset manager shows both directions of drift:
 
 Both states are visible in the Assets group and surfaced through the
 existing Problems machinery, so the writer's mental model is "the app
-knows my assets," not "two lists I diff by hand."
+knows my assets," not "two lists I diff by hand." **The missing-file
+check runs in devkit's compose path** (post-compile, over the IR's
+declared assets), emitting into the same diagnostics stream Problems
+already consumes — chord's analyzer stays filesystem-free. Where the
+inserted `define` line lands in the `.story` (D3) is settled at
+implementation with the same one-home discipline.
 
 ### D3 — Import can declare
 
@@ -73,7 +81,7 @@ single truth; the manager never maintains a parallel manifest.
   supported formats; the mapping must live in one place the IDE reads,
   not be duplicated in Swift.
 
-## Open Questions
+## Deferred questions (non-blocking, ruled at implementation)
 
 ### Q-1: Which formats, and who says so?
 - **Why it matters**: the browser client plays what browsers play; the

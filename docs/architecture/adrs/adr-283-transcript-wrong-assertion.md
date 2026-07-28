@@ -1,6 +1,8 @@
 # ADR-283: Transcript format — the `[WRONG]` assertion (expect-not)
 
-## Status: DRAFT (2026-07-27, session fda0f0) — Open Questions unresolved
+## Status: REJECTED (2026-07-27, session fda0f0) — David's ruling during the open-questions interview: play-to-test tags **only good responses** ("story testing is by nature asserting what should exist"). There is no incorrect verdict, so no negative assertion is needed; a wrong response is a bug the author fixes in the story, not a test artifact. ADR-282 was amended accordingly (its D1/D2 no longer reference this ADR). Review context that informed the rejection: `[OK: not contains]` already covers permanent exclusions, so this directive's only novelty was verdict intent — which the ruling removed. Kept for the record; do not implement. The body below is the
+pre-rejection draft, kept unedited; its ADR-282 section/acceptance
+references predate that ADR's same-day amendment and no longer resolve.
 
 ## Date: 2026-07-27
 
@@ -72,7 +74,7 @@ and IDE test panel alike. It is one grammar addition, not a mode.
 - ADR-282 is blocked on this landing in `transcript-tester` and the CLI
   bundle.
 
-## Open Questions
+## Open Questions (moot — rejected)
 
 ### Q-1: Is `WRONG` the right keyword?
 - **Why it matters**: the word appears in every author-facing transcript

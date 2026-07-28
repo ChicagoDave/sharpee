@@ -1,5 +1,14 @@
 # ADR-253: Channel `return` and render-by-DOM-name convention
 
+> **Supersession note (2026-07-28, session fda0f0)**: this ADR's written
+> D3 (custom placement via a theme/layout plugin package) is **superseded
+> for layout by ADR-286** (the template DSL) — retired unimplemented.
+> What shipped under the "ADR-253 D3" citation in code — the story-local
+> `browser/index.html` escape — remains, as ADR-286 D3's `use html`
+> escape hatch. The channel `return` construct, `#<channel>` DOM-name
+> convention, and D4's generic-panel fallback are unaffected (ADR-286
+> builds on all three).
+
 ## Status: ACCEPTED (2026-07-22, session 74219a — design ruled by David directly. Pivot from the original "declarative renderers in Chord" stub: there is NO render construct. A channel `return`s any construct (a field, a text template, or a phrase); its value renders into a DOM element named for the channel, and an author customizes placement via a theme/layout package (ADR-188, extended from CSS-only to DOM-contributing) — no Chord render syntax, no TypeScript. `take` + `from event` collapse into one `return <construct> from <event>` line; `take` is removed. All prior open questions dissolved by the pivot. adr-review same session: found a seam (D3 leaned on an unspecified ADR-252 template capability); resolved by David to the theme/plugin placement path, and the D2 non-string rendering contract clarified — both folded before this flip. No Open Questions remain. Not implemented.)
 
 ## Date: 2026-07-22

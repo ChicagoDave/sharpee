@@ -163,6 +163,11 @@ authoritative. No conformance pin.
 
 ### D5 — Recording a transcript from Play requires a turn-events bridge
 
+> **Extended by ADR-282 (2026-07-27)**: the recorded turn record gains
+> per-turn verdict (bless), response-selection, and checkpoint marks;
+> saves with zero blessed turns are refused (supersedes Acceptance 7's
+> unconditional save).
+
 Capturing play into a draft `.transcript` needs the browser client to post
 command/response turn events over a new WKWebView message channel (sibling of
 `playConsole`) — a `platform-browser` change, since no turn-level JS→Swift
@@ -218,6 +223,9 @@ against a real fixture story, not a stand-in.
 7. Recording (follow-on phase): a play session in the Play pane can be
    captured and saved as a `.transcript` (per-turn `[OK: any]` + `#`-comment
    responses) that immediately re-runs green against the same build.
+   *Superseded by ADR-282 Acceptance 3 (2026-07-27): zero-bless saves are
+   refused once play-to-test lands; the shipped real-path test for this
+   criterion is updated accordingly.*
 
 ## Consequences
 

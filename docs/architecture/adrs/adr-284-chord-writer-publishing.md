@@ -1,6 +1,6 @@
 # ADR-284: Chord Writer publishing — a first-class Publish action for finished stories
 
-## Status: DRAFT (2026-07-27, session fda0f0) — Open Questions unresolved
+## Status: ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; remaining questions deferred as non-blocking)
 
 ## Date: 2026-07-27
 
@@ -28,6 +28,11 @@ included (ADR-280 artifacts) — and produces a distributable artifact. It
 is not a debug/export buried in a submenu; it is the finish line the
 project view points toward.
 
+**The mechanics live in devkit** (working form: `sharpee publish` —
+browser build + zip); Chord Writer's Publish invokes it via the resolved
+toolchain, the ADR-280 D3 one-owner pattern. A terminal author gets the
+identical artifact; there is no IDE-only publish path.
+
 ### D2 — The baseline artifact is a self-contained web zip
 
 The v1 target: a **zip of the self-contained browser build** — unzip
@@ -50,10 +55,11 @@ root). Further targets are Q-1.
 
 - Publish invokes the resolved toolchain (ADR-279 D4), so it works on a
   fresh install with the bundled devkit.
-- The Web Template contract (ADR-286) becomes load-bearing: whatever the
-  template promises, Publish delivers to strangers' browsers.
+- The ADR-286 transform becomes load-bearing: what it emits, Publish
+  delivers to strangers' browsers; validation is the transform's own
+  diagnostics plus the `use html` escape hatch's warnings.
 
-## Open Questions
+## Deferred questions (non-blocking, ruled at implementation)
 
 ### Q-1: What targets beyond the zip?
 - **Why it matters**: candidates with different weights: an itch.io
