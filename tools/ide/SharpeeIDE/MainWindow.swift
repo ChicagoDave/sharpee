@@ -19,7 +19,10 @@ final class MainWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "Sharpee"
+        // The title is the product name alone, set once (ADR-279 D1). The open
+        // project is already named in the project tree and status bar; repeating
+        // it in the title bar just re-brands the window per-project.
+        window.title = AppIdentity.productName
         window.minSize = NSSize(width: 900, height: 600)
         window.contentViewController = RootViewController()
         // Re-apply the desired content size after contentViewController is assigned —

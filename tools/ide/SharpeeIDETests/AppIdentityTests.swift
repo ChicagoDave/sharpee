@@ -66,4 +66,29 @@ final class AppIdentityTests: XCTestCase {
             AppIdentity.aboutToolchainLine(sharpeeVersion: "4.2.0", chordVersion: nil),
             "Sharpee 4.2.0")
     }
+
+    // MARK: - Window title
+    //
+    // Two literals survived the Phase 1 rebrand here: the window opened as
+    // "Sharpee", and AppDelegate.loadProject retitled it "Sharpee — <project>"
+    // on every open. The retitle is gone, so the title is now set exactly once,
+    // at construction — which is what this pins.
+    //
+    // The removed retitle is not covered here on purpose: reaching it means
+    // driving MainWindowController.loadProject, which pushes to the REAL
+    // UserDefaults recent-projects list (RecentProjectsStore.push defaults to
+    // .standard). Polluting the author's Open Recent menu is too high a price
+    // for asserting a string that no code path writes any more.
+
+    /// `@MainActor` on the method rather than the class: this is the only case
+    /// here that touches AppKit — the rest are pure string formatting.
+    @MainActor
+    func testWindowOpensTitledWithTheProductNameAlone() throws {
+        let title = try XCTUnwrap(MainWindowController().window?.title)
+        XCTAssertEqual(title, "Chord Writer")
+        XCTAssertFalse(title.contains("Sharpee"),
+                       "the platform name is not the product name (ADR-279 D1)")
+        XCTAssertFalse(title.contains("—"),
+                       "the title is the product name alone — no ' — <project>' suffix")
+    }
 }

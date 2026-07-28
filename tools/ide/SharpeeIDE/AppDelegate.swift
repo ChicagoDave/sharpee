@@ -231,13 +231,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     // MARK: - Recent Projects
 
-    /// Opens the project rooted at `url` and sets the window title. Centralized so that
-    /// the Open Project panel, restore-session, and Open Recent all share the same path.
+    /// Opens the project rooted at `url`. Centralized so that the Open Project panel,
+    /// restore-session, and Open Recent all share the same path.
     /// `expandedFolderURLs` is honoured by restore-session; the menu paths leave it empty.
+    ///
+    /// Deliberately does NOT retitle the window: the title stays the product name
+    /// (ADR-279 D1), and the open project is identified by the tree and status bar.
     private func loadProject(at url: URL, expandedFolderURLs: [URL] = []) {
         let project = Project(rootURL: url)
         mainWindowController?.loadProject(project, expandedFolderURLs: expandedFolderURLs)
-        mainWindowController?.window?.title = "Sharpee — \(project.name)"
         currentRepoRoot = url
 
         // The open target is the folder's `.story` file (ADR-258 D2). Composing
