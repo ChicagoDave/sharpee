@@ -63,6 +63,23 @@
   - Also closed here: Phase 1's carried-over AC1 window-title check. Two literals had survived the rebrand — `MainWindow.swift` opened the window as `"Sharpee"`, and `AppDelegate.loadProject` retitled it `"Sharpee — <project>"` on every open. Both now resolve to `AppIdentity.productName`; the per-project retitle was removed outright (the tree and status bar already name the open project), so the title is set once at construction. Pinned by `AppIdentityTests.testWindowOpensTitledWithTheProductNameAlone`. Confirmed visually by David on the running app.
 
 ### Phase 3: Packaging script — archive, sign, notarize, DMG (D2/D3)
+
+> **PAUSED 2026-07-29 (session 47d0be), David's call: "we can stop notarization
+> too — we're not ready for that."** Not blocked and not failed: everything
+> through local signature verification runs green on the real path (see the
+> progress note below). The pause is a product judgment, not a technical one —
+> ADR-290 reconsiders test creation, the IDE's flagship authoring flow, and
+> shipping a signed DMG whose headline feature is mid-redesign would put an
+> unrecallable artifact in authors' hands. Resume when ADR-290 settles.
+>
+> One submission was left in flight with Apple
+> (`d1494f8d-cb16-41e6-9781-277092df932b`) after `notarytool` crashed mid-wait.
+> It is diagnostic only — the archive it refers to was discarded by the script's
+> cleanup trap — and needs no action. Re-running submits fresh.
+>
+> Before resuming, read the "no resume, cleans up on failure" open item: pass
+> `--keep-work` (or make the trap keep the work dir on non-zero exit), so a
+> crash in steps 7-9 stops costing a fully-built, fully-signed archive.
 - **Tier**: Large
 - **Budget**: 400
 - **Domain focus**: N/A (infrastructure). New file: `tools/ide/package.sh`. Touches `project.yml`'s release signing config (`CODE_SIGN_STYLE`/`CODE_SIGN_IDENTITY` for the release configuration, distinct from the existing ad-hoc dev config).

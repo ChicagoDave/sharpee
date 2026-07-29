@@ -7,6 +7,10 @@ down here rather than frozen prematurely.
 
 Not to be implemented from this document.
 
+Tracked as [#197](https://github.com/ChicagoDave/sharpee/issues/197) (filed
+2026-07-29) so it appears in triage. This document remains the source of truth;
+the issue summarizes it and will drift if edited independently.
+
 ## Origin
 
 Emerged sideways out of the ADR-286 template-DSL grammar freeze. The sketch's

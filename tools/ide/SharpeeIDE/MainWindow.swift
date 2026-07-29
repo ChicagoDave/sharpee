@@ -111,6 +111,12 @@ final class MainWindowController: NSWindowController {
         rootViewController?.configureRecording(storyDirectory: storyDirectory, onRecorded: onRecorded)
     }
 
+    /// Re-reads the open project from disk so files written from outside the
+    /// tree (a recorded transcript) become visible without reopening.
+    func refreshProjectTree() {
+        rootViewController?.refreshProjectTree()
+    }
+
     /// Whether Test → Bless Last Turn should be enabled (ADR-282 D1).
     var canBlessLatestPlayTurn: Bool {
         rootViewController?.canBlessLatestPlayTurn ?? false
@@ -414,6 +420,11 @@ private final class RootViewController: NSViewController {
                                                    onRecorded: onRecorded)
     }
 
+    /// Re-reads the open project from disk, preserving expansion state.
+    func refreshProjectTree() {
+        mainSplitViewController.refreshProjectTree()
+    }
+
     /// Whether the live bless gesture is available (ADR-282 D1).
     var canBlessLatestPlayTurn: Bool { mainSplitViewController.canBlessLatestPlayTurn }
 
@@ -640,6 +651,25 @@ private final class MainSplitViewController: NSSplitViewController {
         projectPaneViewController.setProject(project, expandedFolderURLs: expandedFolderURLs)
         RecentProjectsStore.push(project.rootURL)
         persistSession()
+    }
+
+    /// Re-reads the open project from disk and re-applies it, preserving which
+    /// folders are expanded.
+    ///
+    /// The tree is a snapshot of one scan, so anything that writes into the
+    /// project from OUTSIDE the tree leaves it stale — a recorded transcript
+    /// (ADR-282 D3/D4) lands in `tests/transcripts/` or `walkthroughs/` and is
+    /// simply invisible until the project is reopened. Re-applying rather than
+    /// reloading keeps `RecentProjectsStore` and the persisted session out of
+    /// it: nothing about the project changed, only what is inside it.
+    ///
+    /// A no-op when no project is open.
+    fileprivate func refreshProjectTree() {
+        guard let root = currentProject?.rootURL else { return }
+        let expanded = projectPaneViewController.expandedFolderURLs
+        let rescanned = Project(rootURL: root)
+        currentProject = rescanned
+        projectPaneViewController.setProject(rescanned, expandedFolderURLs: expanded)
     }
 
     func saveActiveDocument() {

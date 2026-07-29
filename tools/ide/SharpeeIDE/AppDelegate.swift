@@ -344,6 +344,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 onRecorded: { [weak self] _ in
                     guard let self, let story = self.currentStoryURL else { return }
                     self.testController?.attach(storyFile: story)
+                    // The Tests panel re-discovers, but the file tree was built
+                    // from an earlier scan and would keep the new transcript
+                    // invisible until reopen — the author saves a test and sees
+                    // nothing appear.
+                    self.mainWindowController?.refreshProjectTree()
                 })
         } else {
             testController?.detach()

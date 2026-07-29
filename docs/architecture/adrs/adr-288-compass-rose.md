@@ -7,8 +7,10 @@
 > (D5) — are the opposite of what was ruled later the same session: **the
 > author creates the channel and supplies the assets that consume its data.**
 > The general capability underneath is **Web Extensions**, captured at
-> `docs/work/web-extensions/concept.md`. Whatever replaces this should be an
-> ADR about Web Extensions, with the compass as the worked example.
+> `docs/work/web-extensions/concept.md` and tracked as
+> [#197](https://github.com/ChicagoDave/sharpee/issues/197). Whatever replaces
+> this should be an ADR about Web Extensions, with the compass as the worked
+> example.
 >
 > Kept rather than deleted for two reasons: the Context section's verified
 > groundwork (no `exits` channel exists; twelve directions, not eight;

@@ -1,6 +1,8 @@
 # Dynamic Text Formatting — Scenario Inventory
 
-**Status:** examination / pre-ADR working doc
+**Status:** examination / pre-ADR working doc — **the ✓/✗/◐ grades below are a
+2026-06-25 snapshot and have been overtaken; see "Surfaced issues" (2026-07-29
+verification pass)**
 **Date:** 2026-06-25
 **Purpose:** catalog the ways a story needs to format text *dynamically* (from world
 state), using **Inform 7** as the comparison baseline, record what **Sharpee** does
@@ -543,6 +545,38 @@ prose in ADR-197" instead of an acceptance criterion. The stdlib `talking` actio
 ---
 
 ## Surfaced issues (docs-as-review)
+
+> **All four RESOLVED as of 2026-07-29 (session 47d0be), verified against code.**
+> This section is kept rather than deleted — it is the record of what the review
+> found and what each item became. The four are struck through below with their
+> resolutions.
+>
+> 1. **Room first-visit (S14) — fixed, ADR-196 Phase 4.** `looking-data.ts:105`
+>    reads `context.sharedData?.isFirstVisit`, staged before the room is marked
+>    visited. Chord exposes it as `first time` prose. Filed as
+>    [#171](https://github.com/ChicagoDave/sharpee/issues/171), now closed.
+>    *(The TODO still near that line concerns verbose mode, not first-visit.)*
+> 2. **`IdentityTrait.adjectives` (S5) — fixed, wired not removed.**
+>    `noun-phrase.ts:109` reads it; `english-assembler.ts:153-159` renders
+>    article + adjectives + noun "agreed as a whole." Filed as
+>    [#172](https://github.com/ChicagoDave/sharpee/issues/172), now closed.
+> 3. **Speech verbs hardcoded (S39) — fixed.**
+>    `lang-en-us/src/actions/talking.ts:32-38` now emits
+>    `{capitalize the target} {verb:says target}`. Never filed as an issue.
+> 4. **Pronoun capitalization (S40) — fixed, ADR-201.**
+>    `parse-phrase-template.ts:197` cites this scenario by name: the
+>    `{capitalize pronoun:…}` head "sets the S40 explicit override so the
+>    pronoun caps regardless of position." Auto sentence-start capitalization
+>    also exists (`english-assembler.ts:670`). Covered by
+>    `tests/parser/quote-pronoun-parse.test.ts`. Never filed as an issue.
+>
+> **The grades above this section are also stale**, spot-checked the same day:
+> **S5** (`✗` state adjective in the noun phrase) shipped as ADR-193's opt-in
+> `stateAdjectives`; **S12/S13** (`✗` random alternation, cycling / stopping /
+> sticky) are live Chord select strategies — `ast.ts:622` carries
+> `randomly | cycling | stopping | sticky | first-time`. Rows not named here
+> were not re-checked; treat every grade as needing re-verification before it
+> is cited as current platform behavior.
 
 - **Room first-visit is half-wired (S14).** `RoomTrait.initialDescription` is stored but
   never auto-rendered by `visited`, and `looking-data.ts:103` hardcodes first-visit as
