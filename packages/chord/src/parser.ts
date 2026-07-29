@@ -129,7 +129,17 @@ const ORDINALS: Record<string, number> = {
 const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
-const TOP_KEYWORDS = new Set(['story', 'grammar', 'create', 'define', 'when', 'once', 'every', 'import', 'override']);
+/**
+ * Words that open a top-level block — the resynchronization set for error
+ * recovery, and the "this block ended" signal for unterminated-block
+ * detection. `extend`/`remove` are the ADR-270 alteration openers; without
+ * them (ADR-289 D8 L1) recovery ran straight past a whole `extend action`
+ * block after any earlier parse error, dropping its grammar lines silently.
+ */
+const TOP_KEYWORDS = new Set([
+  'story', 'grammar', 'create', 'define', 'when', 'once', 'every', 'import', 'override',
+  'extend', 'remove',
+]);
 
 /**
  * Parse `.story` source into an AST.
@@ -233,6 +243,14 @@ function lineHasMust(line: Line): boolean {
 
 class Parser {
   private pos = 0;
+
+  /**
+   * The line that sat in prose position after `phrase <key>` but opened with a
+   * lowercase statement keyword (ADR-289 D8 §3.1). A parse failure on this
+   * exact line gets the misparse hint; every other line's message is unchanged,
+   * so a genuine `set the flag` error is not told to capitalize itself.
+   */
+  private proseCandidate: Line | null = null;
 
   constructor(
     private readonly lines: Line[],
@@ -3860,6 +3878,13 @@ class Parser {
         const next = this.lines[this.pos];
         if (next && next.indent > line.indent && !isStatementLine(next)) {
           inlineText = this.parseProseParagraph(line.indent + 1, line.indent);
+        } else if (next && next.indent > line.indent) {
+          // The fork D8 §3.1 is about: this line sits where prose is legal but
+          // opens with a lowercase statement keyword, so it is read as a
+          // statement. The heuristic is unchanged — we only remember that
+          // prose was possible here, so a parse failure on this exact line can
+          // name the author's remedy instead of only the parser's confusion.
+          this.proseCandidate = next;
         }
         const span = inlineText ? mergeSpans(lineSpan(line), inlineText.span) : lineSpan(line);
         return { kind: 'phrase', phraseKey: key, params, inlineText, stmtWhen, span } as PhraseStmt;
@@ -3903,7 +3928,7 @@ class Parser {
         c.next();
         const target = this.parseValueExpr(c, line, new Set(['to']));
         if (!c.matchWord('to')) {
-          this.diagnostics.error('parse.set-to', 'Expected `to <value>` in the `set` statement.', c.restSpan());
+          this.diagnostics.error('parse.set-to', `Expected \`to <value>\` in the \`set\` statement.${this.misparseHint(line)}`, c.restSpan());
           return null;
         }
         const value = this.parseValueExpr(c, line, new Set());
@@ -3948,7 +3973,7 @@ class Parser {
         c.next();
         const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
         if (!c.matchWord('to')) {
-          this.diagnostics.error('parse.move-to', 'Expected `to <place>` in the `move` statement.', c.restSpan());
+          this.diagnostics.error('parse.move-to', `Expected \`to <place>\` in the \`move\` statement.${this.misparseHint(line)}`, c.restSpan());
           return null;
         }
         const place = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
@@ -4037,7 +4062,7 @@ class Parser {
       default:
         this.diagnostics.error(
           'parse.unknown-statement',
-          `Unknown statement \`${word ?? line.raw.trim()}\` in \`${blockName}\` block.`,
+          `Unknown statement \`${word ?? line.raw.trim()}\` in \`${blockName}\` block.${this.misparseHint(line)}`,
           lineSpan(line),
         );
         this.pos++;
@@ -4067,6 +4092,20 @@ class Parser {
     const condCursor = new Cursor(line.tokens.slice(2, colonIndex), line);
     const condition = this.parseCondition(condCursor, line);
     return { kind: 'refuse-when', condition, phraseKey: key, span: lineSpan(line) };
+  }
+
+  /**
+   * The second line a misparsed prose paragraph's diagnostic carries (ADR-289
+   * D8 §3.1, Acceptance 21). Empty for every line that was not sitting in
+   * prose position — "every error names its fix" is the bar, and a fix that
+   * does not apply is worse than none.
+   *
+   * @param line the line the diagnostic is about
+   * @returns the hint, prefixed with a space, or `''`
+   */
+  private misparseHint(line: Line): string {
+    if (line !== this.proseCandidate) return '';
+    return ' If this was meant to be prose, capitalize the first word or quote the paragraph — a lowercase keyword in this position reads as a statement.';
   }
 
   /** `refuse`/`must` inside an `after` clause — reactions cannot refuse (D3). */

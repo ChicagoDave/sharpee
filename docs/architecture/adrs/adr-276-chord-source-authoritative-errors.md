@@ -287,6 +287,35 @@ that only exists once ADR-258's `--json` lands.
   surfaces are invisible to source, so the loader's surface-counting check remains
   authoritative for hatched stories (recorded D5 residue boundary).
 
+### Census re-audit addendum (ADR-289 Acceptance 20, 2026-07-29): 51 sites
+
+Re-run at the end of ADR-289's implementation. `loader.ts` now holds **51**
+`throw new LoadError` sites — the 50 below plus one, and the two categories
+still cover every site with no third kind:
+
+- **Backstops (42)** — the 41 below, plus ADR-289 D6's non-room exit: an
+  entity carrying an exit, blocked exit, or deadly exit without `RoomTrait`,
+  refused first by the compiler's `analysis.exit-non-room` gate. One site
+  covers all three exit forms.
+- **D5 residue (9)** — unchanged.
+
+**Out-of-census modules.** The census is `loader.ts`-scoped by construction,
+and two sibling modules now carry `LoadError` throws that it deliberately does
+not count:
+
+| Module | Sites | Why it is outside |
+| --- | --- | --- |
+| `evaluator.ts` | 12 | Pre-existing; condition-evaluation guards, not load-time refusals |
+| `select-ids.ts` | 1 | ADR-289 D2's id-less-select backstop (`assertSelectIds`) |
+
+ADR-289's plan expected 52, assuming D2's backstop would land in `loader.ts`
+beside the format gate. It landed in `select-ids.ts` — a cohesive home for
+everything about select ids — so the honest count is 51 with the module named
+here, rather than a 52 that no single file holds. The alternative (moving the
+throw to restore the arithmetic) was considered and declined: the census exists
+to make load-time refusals auditable, and naming the module does that as well
+as relocating code would.
+
 ### Census re-audit (Acceptance item 5): 50 sites, no third category
 
 All 50 `throw new LoadError` sites in `loader.ts` classify as exactly two kinds:

@@ -121,9 +121,19 @@ to that layer's blank-text rules.
 
 - Version pegging: a relations feature is major-release-worthy on both
   surfaces — candidate anchor for **Sharpee 5.0.0 / Chord 3.0.0** (current
-  published pair: 4.0.0 / 2.0.0). Not a breaking change per se (the dormant
-  store has no users to break), but a headline capability that warrants the
-  major pair and lockstep versioning.
+  published pair: 4.3.0 / 2.2.0 as of 2026-07-29, ADR-289). Not a breaking
+  change per se (the dormant store has no users to break), but a headline
+  capability that warrants the major pair and lockstep versioning.
+
+  > **Note (ADR-289, 2026-07-29).** The reservation is unaffected by the
+  > releases since: relations as *declared syntax* would be **additive**, and
+  > additive syntax is a **minor** by ADR-257 D2's ordinary rule. What earns
+  > 3.0.0 here is the headline capability, not the grammar delta — so the
+  > reservation is a naming decision, deliberately held above the line D2
+  > would otherwise draw. Chord's public line has meanwhile reached 2.2.0
+  > (2.0.0 → 2.1.0 → 2.2.0); the interim landing history in
+  > `chord/src/version.ts` also spends a `3.0.0`, which is history and not a
+  > claim on this reservation.
 - Umbrella discipline: child ADRs (E1-E4 are the candidates) carry all
   decisions; this ADR only indexes them once they exist.
 - The existing ad-hoc pair state (wall `between`, conversation participants,

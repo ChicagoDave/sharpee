@@ -466,10 +466,28 @@ export class Evaluator {
   }
 
   /** True when `thing` is located inside `container` at any depth. */
+  /**
+   * Walk the containment chain upward from `thing`, looking for `container`.
+   *
+   * The visited set (ADR-289 D8) is a termination guard, not a correctness
+   * one: a containment CYCLE is rogue world state that no author construct
+   * can produce, but `AuthorModel.moveEntity` writes the spatial index with
+   * no cycle check, so one bad world-construction step used to spin this loop
+   * forever. A hang is the worst failure shape available — a synchronous
+   * infinite loop cannot be interrupted by a test timeout or a turn budget,
+   * so it takes the whole process with it rather than failing loudly.
+   *
+   * @param thing     the entity to walk up from
+   * @param container the ancestor being looked for
+   * @returns true when `container` is an ancestor of `thing`; false on a cycle
+   */
   private isWithin(world: WorldModel, thing: string, container: string): boolean {
+    const visited = new Set<string>([thing]);
     let current = world.getLocation(thing);
     while (current) {
       if (current === container) return true;
+      if (visited.has(current)) return false;
+      visited.add(current);
       current = world.getLocation(current);
     }
     return false;

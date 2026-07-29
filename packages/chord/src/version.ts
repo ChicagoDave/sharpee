@@ -97,5 +97,43 @@
  * (ADR-258 D5), and the browser boot compile. Third recorded departure
  * from D2's letter (after 1.1.0 and the 2.0.0 consolidation) —
  * cross-noted at ADR-257 D2.
+ *
+ * **2.2.0 (owner ruling, 2026-07-29, ADR-289)** — ships alongside Sharpee
+ * 4.3.0. The grammar surface (`chord.ebnf`) is unchanged — the pin hash
+ * stands — so this is not a D2 grammar minor. It names **four breaking
+ * compile gates**, each refusing a construct that compiled before:
+ *   - **D3** — a refusal outside the leading validate partition (after a
+ *     non-refusal statement, or nested in a routing block) is an error.
+ *   - **D5** — a second `define action` or `define trait` of the same name
+ *     is a duplicate-name error.
+ *   - **D6** — an exit, blocked exit, or deadly exit on a non-room block is
+ *     an error.
+ *   - **D2** — IR claiming `story language 2` must carry a compiler-assigned
+ *     select id; there is no line-number fallback.
+ * Four breaking gates would be a MAJOR by D2's letter; the owner ruled they
+ * ship as a minor. **Fourth recorded departure from D2's letter** (after
+ * 1.1.0, the 2.0.0 consolidation, and 2.1.0) — cross-noted at ADR-257 D2.
+ *
+ * ---
+ *
+ * ## Landing history → public versions (ADR-289 D8 §3.5)
+ *
+ * Three numbers in the history above are spent twice — once as an interim
+ * landing number during the ADR-266 grammar-parity program, once as a
+ * consolidated public version. That is honest but reads as a contradiction,
+ * so the mapping is written down rather than reconstructed:
+ *
+ * | Number  | As landing history (internal)              | As a public version        |
+ * | ------- | ------------------------------------------ | -------------------------- |
+ * | `2.0.0` | ADR-267 D1/D15 slot-spelling convergence   | The consolidated post-parity language (2026-07-26 ruling) |
+ * | `2.1.0` | ADR-267 D8/D9/D10 landing group 2          | ADR-276 source-authoritative diagnostics (2026-07-27 ruling) |
+ * | `2.2.0` | ADR-267 D11 typed slots (landing group 3)  | ADR-289's four breaking compile gates (2026-07-29 ruling) |
+ *
+ * `2.3.0`–`2.5.0` and the interim `3.0.0` are landing history only; they were
+ * never public versions and no public version has reused them yet. The public
+ * line is therefore `1.x` → `2.0.0` → `2.1.0` → `2.2.0`, and the entries above
+ * record what actually shipped when. **`3.0.0` and `5.0.0` remain reserved**
+ * (ADR-278) — reserving them is why the public line does not simply continue
+ * the landing numbers.
  */
-export const CHORD_LANGUAGE_VERSION = '2.1.0';
+export const CHORD_LANGUAGE_VERSION = '2.2.0';

@@ -1142,9 +1142,17 @@ export class ChordStory implements Story {
                 holds: (world: WorldModel): boolean => {
                   const playerId = world.getPlayer()?.id;
                   const playerRoom = playerId ? world.getContainingRoom(playerId)?.id : undefined;
+                  // ADR-289 D8 L8: `getContainingRoom` walks UPWARD, so it is
+                  // undefined when the owner IS the room — and a room's own
+                  // `present` entry could never pass its gate. The owner's
+                  // room is itself when it is one.
+                  const owner = world.getEntity(ownerWorldId);
+                  const ownerRoom = owner?.has(TraitType.ROOM)
+                    ? ownerWorldId
+                    : world.getContainingRoom(ownerWorldId)?.id;
                   return (
                     playerRoom !== undefined &&
-                    world.getContainingRoom(ownerWorldId)?.id === playerRoom &&
+                    ownerRoom === playerRoom &&
                     this.evaluator.evalCondition(condition, { world })
                   );
                 },
@@ -1682,11 +1690,17 @@ export class ChordStory implements Story {
         case 'scenery':
           if (!entity.has(TraitType.SCENERY)) entity.add(new SceneryTrait());
           break;
+        // ADR-289 D8 L5: first add wins, uniformly. `IFEntity.add` is a
+        // `Map.set`, so an unguarded second add REPLACES the first — and a
+        // duplicate bare adjective (nothing gates `readable, readable`)
+        // silently discarded the configured one's text.
         case 'wearable':
-          entity.add(new WearableTrait({}));
+          if (!entity.has(TraitType.WEARABLE)) entity.add(new WearableTrait({}));
           break;
         case 'readable':
-          entity.add(new ReadableTrait({ text: configValue(trait, 'text') ?? '' }));
+          if (!entity.has(TraitType.READABLE)) {
+            entity.add(new ReadableTrait({ text: configValue(trait, 'text') ?? '' }));
+          }
           break;
         case 'openable': {
           // Defect D3 fix (2026-07-17, ratchet G4): `openable with the
