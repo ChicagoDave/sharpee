@@ -80,3 +80,80 @@ the harness at the case itself.
 
 **Proposed:** none. Recorded so AC19 is not read as fully discharged by revert
 probe, and so the next session does not spend time trying to make it bite.
+
+---
+
+## F4 — The D3 phase-order gate reaches clause bodies and topic rows only
+
+**Severity: low, but it is a hole in a rule stated without qualification.**
+
+D3 says a refusal "anywhere outside the leading validate partition" is an
+error. `checkPhaseOrder` has exactly two call sites — the clause body
+(`analyzer.ts:3049`) and the topic row (`:1339`) — so `define sequence` steps
+and `define action` bodies are never walked. The parser does not close the gap
+either: `parseStatements` is called with `'sequence'` as its clause keyword,
+and only `'after'` bans refusals, so a refusal in a sequence step parses and
+compiles today.
+
+Left alone deliberately in Phase 4: no acceptance criterion covers those hosts,
+nothing in the corpus writes a refusal there, and widening a gate beyond what
+the ADR's acceptance pins is the kind of scope drift the corpus gate exists to
+catch. Recorded because D3's letter is broader than D3's implementation, and
+the next reader should not have to rediscover that.
+
+**Proposed:** decide whether a refusal in a sequence step or an action body is
+meaningful at all. If it is not, the gate is a two-line extension of the same
+walk; if it is, D3's wording should say so.
+
+---
+
+## F5 — Nothing stops a raw control byte from entering source
+
+**Severity: low frequency, high blast radius — and now demonstrated twice.**
+
+D7 fixed two literal NULs in `runtime.ts`. Implementing D5 I put a fresh one
+into `analyzer.ts`, in the `registerUnique` key join, and it had exactly the
+D7 symptom: `grep` stopped matching **anything** in a 4,400-line file, silently.
+It was found only because a search for a symbol that certainly existed came
+back empty. `tsc` compiled it happily — a NUL inside a template literal is
+valid TypeScript, and the code was even *correct*, since NUL is the right
+separator for a key join.
+
+That is the whole problem: the byte is invisible in every editor and diff, it
+does not fail the build, it does not fail a test, and its only symptom is that
+search tooling quietly lies to whoever comes next — human or agent.
+
+D7 fixed the two instances it knew about. It did not close the class, and the
+class reopened within one ADR's implementation.
+
+**Proposed:** a `repokit verify` check that fails on any raw control byte
+outside `\t`/`\n`/`\r` in `packages/*/src/**/*.ts`. Mechanical, no false
+positives (an intentional control character belongs in source as an escape —
+which is D7's rule stated positively), and it is the same freshness-gate shape
+F1 asks for. A pre-commit hook would catch it earlier still.
+
+---
+
+## F6 — AC20's census arithmetic does not add up as the plan assumed
+
+**Severity: blocks a clean Acceptance 20 in Phase 6 until decided.**
+
+The plan's Phase 3 pinned D2's id-less-select backstop to `loader.ts`
+specifically so ADR-276's `loader.ts`-scoped census would reach 52 — "AC20's
+count only reaches 52 if this and D6's backstop both live there." It landed in
+`select-ids.ts:74` instead, a new module Phase 3 introduced.
+
+Measured after Phase 5: `loader.ts` carries **51** `new LoadError` sites (50 at
+the ADR's baseline, plus D6's non-room exit). D2's backstop is the missing
+52nd, and it is one file over.
+
+Neither outcome is wrong on its own — `select-ids.ts` is a cohesive home for
+everything about select ids, and the ADR already tolerates out-of-census
+modules (`evaluator.ts`'s twelve sites). What cannot stand is Phase 6
+recording "52" against a file that holds 51.
+
+**Proposed:** in Phase 6, either (a) move the `assertSelectIds` throw into
+`loader.ts` beside the format gate, restoring the plan's arithmetic, or
+(b) record 51 and extend ADR-276's addendum to name `select-ids.ts` as
+out-of-census alongside `evaluator.ts`, with the reason. Decide it before
+updating the addendum, not while writing the number.

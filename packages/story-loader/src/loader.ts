@@ -420,7 +420,13 @@ export class ChordStory implements Story {
     // 2026-07-18, matching the TS story path's established pattern).
     const author = new AuthorModel(world.getDataStore(), world);
     for (const { ir: irEntity, entity } of built) {
-      if (irEntity.placement && irEntity.placement.relation !== 'starts-in') {
+      // ADR-289 D4: place what the author wrote, whichever of the three
+      // relations they spelled. `starts in` is the emphatic spelling for a
+      // thing expected to move, not a second placement concept — and every
+      // entity's location is mutable, so there is no principled line to
+      // draw. Testing the relation here silently dropped every NPC declared
+      // `starts in <room>`.
+      if (irEntity.placement) {
         author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
       }
       // ADR-236 D2: region membership through the platform seam —
@@ -432,6 +438,20 @@ export class ChordStory implements Story {
         if (memberIr && memberIr.kinds.some((k) => k.name === 'room')) {
           world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
         }
+      }
+      // ADR-289 D6 backstop (ADR-276 two-layer): exits are gated to rooms at
+      // compile (`analysis.exit-non-room`), so a non-room carrying any of the
+      // three exit forms is rogue IR. Checked once for all three — exits wire
+      // into RoomTrait.exits, which a non-room does not have, and the blocked
+      // and deadly tables would key a room id that never resolves.
+      if (
+        (irEntity.exits.length > 0 || irEntity.blockedExits.length > 0 || irEntity.deadlyExits.length > 0) &&
+        !entity.has(TraitType.ROOM)
+      ) {
+        throw new LoadError(
+          `\`${irEntity.name}\` declares an exit but is not a room — rogue IR (the compiler's \`analysis.exit-non-room\` gate refuses this).`,
+          irEntity.exits[0]?.span ?? irEntity.blockedExits[0]?.span ?? irEntity.deadlyExits[0]?.span ?? irEntity.span,
+        );
       }
       for (const exit of irEntity.exits) {
         const toId = this.requireWorldId(exit.to, irEntity);
@@ -648,13 +668,28 @@ export class ChordStory implements Story {
     const irPlayer = this.ir.entities.find((e) => e.isPlayer) ?? null;
     const player = world.getEntity(this.playerId!)!;
 
-    // Starting location: the player's `starts in`, else the first room.
+    // Starting location: whatever placement line the player carries — `in`,
+    // `on`, or `starts in` alike (ADR-289 D4) — else the first declared
+    // room. The fallback survives only for a player with NO placement line;
+    // consulting the relation sent a player declared `in the Kitchen` to the
+    // first room instead, ignoring what the author wrote.
     const startIr =
-      irPlayer?.placement?.relation === 'starts-in'
-        ? irPlayer.placement.place
-        : this.ir.entities.find((e) => e.kinds.some((k) => k.name === 'room'))?.id;
+      irPlayer?.placement?.place ?? this.ir.entities.find((e) => e.kinds.some((k) => k.name === 'room'))?.id;
     if (startIr) {
       world.moveEntity(player.id, this.requireWorldId(startIr, irPlayer ?? undefined));
+    }
+
+    // ADR-289 D4: the player seeds like any other entity. Pass 2 never
+    // reaches it — `built` excludes the player by construction — so the two
+    // seedings that pass runs (`states[0]`, per-entity counter `starts`)
+    // happen here. The divergence was an omission, not a design.
+    if (irPlayer) {
+      if (irPlayer.states.length > 0) {
+        world.setStateValue(CHORD_STATE_PREFIX + irPlayer.id, irPlayer.states[0]);
+      }
+      for (const counter of irPlayer.counters) {
+        world.setStateValue(counterKey(counter.name, irPlayer.id), counter.starts);
+      }
     }
 
     // Player-block composition (Gap-2 ruling, David 2026-07-18): the

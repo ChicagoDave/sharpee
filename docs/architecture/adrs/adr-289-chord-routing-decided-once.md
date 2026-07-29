@@ -366,6 +366,33 @@ D3 governs where a refusal may be *written*. A `refuse when` in the leading
 partition with an unbindable subject still fails open exactly as ADR-275
 ruled.
 
+#### D3 note — the code each dead-refusal shape carries (owner ruling, 2026-07-29)
+
+D3 names three changes but no diagnostic code, and Acceptance 8 and 10 cannot
+both hold under one: AC8 wants a refusal inside a `select` arm to error, while
+AC10 wants that same arm-two refusal **not** to be
+`analysis.refusal-after-mutation`. Two codes, ruled by David during
+implementation:
+
+- `analysis.refusal-after-mutation` — unchanged, and still the code for the
+  straight-line shape AC9 names. `raise`/`lower` joining the mutation set
+  widens what reaches it; the message and the remedy stand.
+- `analysis.refusal-misplaced` — **new**, for every other dead refusal: after
+  a non-refusal statement that is not a mutation (AC8's refusal-after-`phrase`),
+  and nested inside any routing block — a `select` arm or alternative, an
+  ordinal block, or an `each` body. No mutation is being blamed in either
+  shape, and the remedy is to lift the refusal to the top of the clause rather
+  than to move it above some particular line.
+
+Rejected: a third code splitting the nested case from the after-a-statement
+case. The remedy is the same sentence in both, and D3 asks for one gate.
+
+**Consequence, worth stating because it changes an existing test.** A refusal
+written after a mutation *inside the same select arm* is now reported as
+misplaced, not as after-mutation — position beats sequence once the refusal is
+inside a branch. `packages/chord/tests/ac3-cloak-sweep.test.ts` asserted the
+old classification and moves with the rule.
+
 ### D4 — The player seeds and places through the same path as every other entity
 
 `states[0]` and per-entity counter `starts` are seeded for the player. The
@@ -404,6 +431,34 @@ each slightly differently, and misses two constructs. One
 line count — it is that a table makes the omission of the eighth construct
 impossible rather than unnoticed.
 
+#### D5 note — the table's shape, and what stayed out of it (implementation, 2026-07-29)
+
+`registerUnique(namespace, name, span, code)` keeps the signature D5 names.
+The *table* is `UNIQUE_NAMESPACES`, a closed union of eleven namespaces, and
+one `Map<string, Span>` keyed `<namespace> <name>` behind it. Three
+things worth recording:
+
+- **Two new codes**, for the two constructs the hand-rolled gates missed:
+  `analysis.duplicate-action` and `analysis.duplicate-trait`. Every
+  pre-existing code is unchanged, which is why `code` stays a parameter
+  rather than being derived from the namespace.
+- **Every duplicate message now cites the first span** — "is already declared
+  at line N" — where six of the seven said only "already exists." That was
+  `registerPhrasebookName`'s shape, generalized; Acceptance 14 requires it,
+  and the other six inherit it for free. No test asserted the old text.
+- **The two channel families are two rows**, not one: an ambient bed and an
+  image layer may share a name, exactly as the per-family map allowed before.
+
+**Deliberately outside the table: per-entity counters.** `analysis.duplicate-counter`
+on an entity block is a different rule — unique *within one owner*, not within
+the story — and folding it in would need a scope argument the ADR's signature
+does not carry. D5's "seven" counts the story-global gates.
+
+**One behavioural trap, avoided.** The entity gate tested `byId.has(id)` where
+`id` is `nameWords.join('-').toLowerCase()`. Keyed on the display form,
+`create the Hall` and `create the hall` would have stopped colliding; the call
+site lowercases so the gate keeps its old reach.
+
 ### D6 — Exits are gated to rooms at compile
 
 `north to the Hall` inside a non-room `create` block is an analyzer error,
@@ -418,6 +473,24 @@ ADR-276's own sense (a compile gate refuses them first), so the categories
 hold and only the count moves. Implementation re-runs the census and updates
 ADR-276's addendum in the same commit; leaving a stale "50" is how an audited
 claim quietly stops being audited.
+
+#### D6 note — the gate, the backstop, and the census count (implementation, 2026-07-29)
+
+The compile gate is `analysis.exit-non-room`, spanned on the offending line and
+keyed off the same derived `kinds` the sibling `analysis.first-time-non-room`
+gate uses. All three exit forms ride it, as D6 requires.
+
+The loader backstop is **one** `LoadError` site covering all three forms,
+raised before any of them is wired — which is what the census arithmetic
+assumes. `loader.ts` therefore goes 50 → 51 here.
+
+**It does not reach 52, and Phase 6 must resolve that before recording a
+count.** D2's id-less-select backstop landed in `select-ids.ts:74`, not in
+`loader.ts` as this ADR's plan pinned it. Either that throw moves, or
+ADR-276's addendum records 51 with `select-ids.ts` named as out-of-census
+alongside `evaluator.ts`'s twelve. Acceptance 20 says "re-audited," not
+"52" — but the plan's expected arithmetic assumed both new backstops in one
+file, and they are not.
 
 ### D7 — No raw control bytes in source
 
