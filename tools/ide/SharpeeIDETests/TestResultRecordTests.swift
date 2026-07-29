@@ -45,6 +45,31 @@ final class TestResultRecordTests: XCTestCase {
         XCTAssertFalse(failed.passed)
     }
 
+    // ADR-282 D2 added `actualOutput` as ADDITIVE, which is the whole reason
+    // currentSchemaVersion stayed 1. That claim only holds if a version-1 line
+    // decodes with the key present OR absent — and the absent half matters
+    // most: an author on a toolchain that predates the field would otherwise
+    // see the Tests panel go blank on every line.
+    func testDecodesACommandResultWithActualOutputPresentOrAbsent() throws {
+        let withOutput = try TestResultRecord.decode(line: line(
+            #"{"schemaVersion":1,"type":"command-result","file":"/s/tests/a.transcript","line":9,"input":"x lamp","passed":false,"expectedFailure":false,"skipped":false,"actualOutput":"A tarnished lamp.\n\nIt is not lit."}"#))
+        guard case .commandResult(let failed) = withOutput else {
+            return XCTFail("wrong variant: \(withOutput)")
+        }
+        XCTAssertEqual(failed.actualOutput, "A tarnished lamp.\n\nIt is not lit.",
+                       "paragraph boundaries survive the wire")
+
+        // The same line a pre-ADR-282 toolchain writes.
+        let without = try TestResultRecord.decode(line: line(
+            #"{"schemaVersion":1,"type":"command-result","file":"/s/tests/a.transcript","line":9,"input":"x lamp","passed":false,"expectedFailure":false,"skipped":false}"#))
+        guard case .commandResult(let old) = without else {
+            return XCTFail("wrong variant: \(without)")
+        }
+        XCTAssertNil(old.actualOutput)
+        XCTAssertEqual(TestResultRecord.currentSchemaVersion, 1,
+                       "an additive field must not have bumped the version")
+    }
+
     func testDecodesTranscriptEndIncludingErrorStatus() throws {
         let record = try TestResultRecord.decode(line: line(
             #"{"schemaVersion":1,"type":"transcript-end","file":"/s/tests/b.transcript","status":"error","passed":0,"failed":0,"expectedFailures":0,"skipped":0,"duration":0,"errorMessage":"Transcript validation failed"}"#))

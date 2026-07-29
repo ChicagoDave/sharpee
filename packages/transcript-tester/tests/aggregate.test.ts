@@ -140,6 +140,62 @@ describe('transcriptRecords', () => {
     expect(command.passed).toBe(false);
     expect(command.error).toBe('assertion failed');
   });
+
+  // ADR-282 D2 — the "new" side of the IDE's old-vs-new failure view.
+  it('a FAILED command result carries what the story actually printed', () => {
+    const records = transcriptRecords(failed, 1);
+    const command = records[1];
+    if (command.type !== 'command-result') throw new Error('unreachable');
+    expect(command.actualOutput).toBe('You cannot.');
+    expect(isTestResultRecord(command)).toBe(true);
+  });
+
+  it('a PASSING command result omits the key entirely, not as undefined', () => {
+    const records = transcriptRecords(passed, 0);
+    const command = records[1];
+    if (command.type !== 'command-result') throw new Error('unreachable');
+    // `in`, not `=== undefined`: an explicit `actualOutput: undefined` would
+    // still stringify away, but the object would no longer be the shape a green
+    // run has today. The point is that nothing was added.
+    expect('actualOutput' in command).toBe(false);
+    expect(JSON.parse(ndjsonLine(command))).not.toHaveProperty('actualOutput');
+  });
+
+  it('a SKIPPED command omits it too — a skip reports passed, and ran nothing', () => {
+    const skippedResult: TranscriptResult = {
+      ...passed,
+      commands: [
+        {
+          command: { lineNumber: 6, input: 'open hatch', expectedOutput: [], assertions: [] },
+          actualOutput: '',
+          actualEvents: [],
+          passed: true,
+          expectedFailure: false,
+          skipped: true,
+          assertionResults: [],
+        },
+      ],
+    };
+    const command = transcriptRecords(skippedResult, 0)[1];
+    if (command.type !== 'command-result') throw new Error('unreachable');
+    expect(command.skipped).toBe(true);
+    expect('actualOutput' in command).toBe(false);
+  });
+
+  it('survives the NDJSON round trip with multi-paragraph, bracketed text', () => {
+    // The content shape ADR-282 Acceptance 5 names — if the wire mangled a
+    // paragraph boundary, the failure view would show a difference that is not
+    // the story's.
+    const prose = '[posted by order of the proving board]\n\nShe said "take it".';
+    const withProse: TranscriptResult = {
+      ...failed,
+      commands: [{ ...failed.commands[0], actualOutput: prose }],
+    };
+    const command = transcriptRecords(withProse, 0)[1];
+    const decoded: unknown = JSON.parse(ndjsonLine(command));
+    expect(isTestResultRecord(decoded)).toBe(true);
+    expect((decoded as { actualOutput: string }).actualOutput).toBe(prose);
+  });
 });
 
 describe('run records and NDJSON framing', () => {

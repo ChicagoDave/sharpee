@@ -143,6 +143,19 @@ final class MainWindowController: NSWindowController {
         rootViewController?.openDocument(at: url, line: line, column: column)
     }
 
+    /// Whether an open tab for `url` holds edits the author has not saved.
+    /// Asked before a re-bless rewrites a transcript (ADR-282 D2), because
+    /// overwriting would lose those edits and saving the tab afterwards would
+    /// lose the re-bless.
+    func hasUnsavedChanges(at url: URL) -> Bool {
+        rootViewController?.hasUnsavedChanges(at: url) ?? false
+    }
+
+    /// Refreshes an open tab after something outside the editor rewrote `url`.
+    func reloadFromDisk(at url: URL) {
+        rootViewController?.reloadFromDisk(at: url)
+    }
+
     /// Loads (or clears) the Play pane for the given story's web bundle.
     func refreshPlay(projectRoot: URL?) {
         rootViewController?.refreshPlay(projectRoot: projectRoot)
@@ -422,6 +435,17 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.openDocument(at: url, line: line, column: column)
     }
 
+    /// Whether an open tab for `url` holds edits the author has not saved.
+    /// Asked before a re-bless rewrites a transcript (ADR-282 D2).
+    func hasUnsavedChanges(at url: URL) -> Bool {
+        mainSplitViewController.hasUnsavedChanges(at: url)
+    }
+
+    /// Refreshes an open tab after something outside the editor rewrote `url`.
+    func reloadFromDisk(at url: URL) {
+        mainSplitViewController.reloadFromDisk(at: url)
+    }
+
     func storyBuildReport() -> String? {
         mainSplitViewController.storyBuildReport()
     }
@@ -637,6 +661,14 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Opens `url` selecting the exact diagnostic span (Problems click-through, D5).
     func openDocument(at url: URL, span: DiagnosticSpan) {
         editorViewController.openDocument(at: url, span: span)
+    }
+
+    fileprivate func hasUnsavedChanges(at url: URL) -> Bool {
+        editorViewController.hasUnsavedChanges(at: url)
+    }
+
+    fileprivate func reloadFromDisk(at url: URL) {
+        editorViewController.reloadFromDisk(at: url)
     }
 
     /// Applies a compose run's records as editor underlines for `url`.

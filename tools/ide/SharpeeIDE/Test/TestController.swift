@@ -32,6 +32,18 @@ final class TestController: TestRunnerDelegate {
         panel.onOpenLocation = { [weak self] location in
             self?.window?.openDocument(at: location.file, line: location.line, column: location.column)
         }
+        // ADR-282 D2. The editor is the only thing that knows a transcript has
+        // unsaved edits, and it is the only reason to refuse a re-bless the
+        // model would otherwise allow.
+        panel.hostReblessObstacle = { [weak self] command in
+            guard self?.window?.hasUnsavedChanges(at: URL(fileURLWithPath: command.file)) == true
+            else { return nil }
+            return "This transcript has unsaved edits — save or revert it first."
+        }
+        panel.onDidRebless = { [weak self] command in
+            // The tab, if open, is now showing text that is no longer on disk.
+            self?.window?.reloadFromDisk(at: URL(fileURLWithPath: command.file))
+        }
     }
 
     /// True while a run is in flight — drives menu enablement and blocks re-entry.

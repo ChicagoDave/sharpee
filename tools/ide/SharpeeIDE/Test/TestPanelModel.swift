@@ -6,8 +6,15 @@
 // row to the SourceLocation the editor opens (click-through by line —
 // transcripts are line-oriented, no span). Pure state + FileManager reads; no
 // AppKit, so tests drive it directly.
+//
+// ADR-282 D2 adds the drift lifecycle on top: a failed command result now
+// carries what the story ACTUALLY printed, so the panel can show it against
+// the text the author blessed and offer re-bless — which rewrites that one
+// assertion's literal block in the transcript (the rules live in Rebless).
+// This is where the file is read and written; the view stays presentation.
 // Public interface: TestPanelModel.discover(storyDir:), entries, apply(_:),
-// reset(), location(for:), runSummary.
+// reset(), location(for:), blessedText(for:), canRebless(_:), rebless(_:),
+// runSummary.
 // Owner context: tools/ide — Test.
 
 import Foundation
@@ -137,6 +144,68 @@ final class TestPanelModel {
         SourceLocation(file: URL(fileURLWithPath: command.file).standardizedFileURL,
                        line: command.line,
                        column: 1)
+    }
+
+    // MARK: - Re-bless (ADR-282 D2)
+
+    /// The text the author blessed, read back from the transcript on disk.
+    ///
+    /// The "old" side of the failure view's old-vs-new. It comes from the FILE
+    /// rather than the wire because the wire carries only what the story now
+    /// prints — the blessed text is the assertion itself, and the assertion is
+    /// the file.
+    ///
+    /// - Parameter command: a command result row.
+    /// - Returns: the blessed block's content.
+    /// - Throws: `Rebless.Failure` when the command carries no verbatim bless,
+    ///   or a read error when the transcript cannot be opened.
+    func blessedText(for command: TestCommandResult) throws -> String {
+        let source = try String(contentsOf: URL(fileURLWithPath: command.file), encoding: .utf8)
+        return try Rebless.locate(in: source.components(separatedBy: "\n"),
+                                  commandLine: command.line).content
+    }
+
+    /// Why re-bless is not on offer for this row, or nil when it is.
+    ///
+    /// Answered by computing the whole rewrite and DISCARDING it — nothing is
+    /// written — so the button is offered exactly when pressing it would
+    /// succeed, and the reason it is not is the reason the press would have
+    /// failed. Asking the question must never be the thing that changes the
+    /// file.
+    func reblessObstacle(for command: TestCommandResult) -> Error? {
+        do {
+            _ = try reblessedSource(for: command)
+            return nil
+        } catch {
+            return error
+        }
+    }
+
+    /// Whether the failure view should offer re-bless for this row.
+    func canRebless(_ command: TestCommandResult) -> Bool {
+        reblessObstacle(for: command) == nil
+    }
+
+    /// Rewrite `command`'s blessed text to what the story now prints, in place.
+    ///
+    /// The rewrite is computed in full before anything is written, so every
+    /// refusal leaves the transcript exactly as it was.
+    ///
+    /// - Parameter command: the failed command result whose assertion drifted.
+    /// - Throws: `Rebless.Failure` when re-bless does not apply, or a file
+    ///   error when the transcript cannot be read or written.
+    func rebless(_ command: TestCommandResult) throws {
+        let rewritten = try reblessedSource(for: command)
+        try rewritten.write(to: URL(fileURLWithPath: command.file),
+                            atomically: true, encoding: .utf8)
+    }
+
+    /// What `rebless` would write. Split out so the enablement check runs the
+    /// same code path the button does, rather than a second opinion of it.
+    private func reblessedSource(for command: TestCommandResult) throws -> String {
+        guard let actual = command.actualOutput else { throw Rebless.Failure.noCapturedOutput }
+        let source = try String(contentsOf: URL(fileURLWithPath: command.file), encoding: .utf8)
+        return try Rebless.rewrite(source: source, commandLine: command.line, actual: actual)
     }
 
     /// One-line run summary for the status label, or nil before `run-end`.

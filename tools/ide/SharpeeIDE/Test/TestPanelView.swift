@@ -6,8 +6,15 @@
 // command's source line; on a transcript row, the file itself. A pipeline
 // failure (sharpee missing, schema mismatch) renders as a status line —
 // the panel never silently goes blank (the ProblemsView rule).
+// Selecting a FAILED command row opens the ADR-282 D2 failure pane beneath the
+// outline: the text the author blessed above what the story now prints, with a
+// Re-bless action that rewrites that one assertion in the transcript. The pane
+// stays closed for anything with no old-vs-new to show, and the action is
+// offered only when it would succeed — the reason stands in its place when it
+// would not.
 // Public interface: setModel/reloadModel, setStatus(_:), setRunning(_:),
-// onRunAll, onRunChain, onCancel, onOpenLocation.
+// showFailure(for:), performRebless(), onRunAll, onRunChain, onCancel,
+// onOpenLocation, onDidRebless.
 // Owner context: tools/ide — Test.
 
 import AppKit
@@ -20,6 +27,14 @@ final class TestPanelView: NSView {
     var onCancel: (() -> Void)?
     /// A clicked row's source location to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)?
+    /// The author accepted the story's new text for a drifted verbatim bless
+    /// (ADR-282 D2). The transcript has already been rewritten on disk.
+    var onDidRebless: ((TestCommandResult) -> Void)?
+    /// An obstacle only the host knows about — chiefly that the transcript is
+    /// open in the editor with unsaved edits, where writing it would discard
+    /// the author's work and saving the tab afterwards would discard the
+    /// re-bless. Returns a reason to refuse, or nil to proceed.
+    var hostReblessObstacle: ((TestCommandResult) -> String?)?
 
     private let runAllButton = NSButton(title: "Run All", target: nil, action: nil)
     private let runChainButton = NSButton(title: "Run Chain", target: nil, action: nil)
@@ -28,6 +43,20 @@ final class TestPanelView: NSView {
     private let scrollView = NSScrollView()
     private let outlineView = NSOutlineView()
     private let emptyLabel = NSTextField(labelWithString: "No transcripts — add tests/ or walkthroughs/ next to the story")
+
+    // The old-vs-new failure pane (ADR-282 D2), below the outline.
+    private let failurePane = NSView()
+    private let blessedHeading = NSTextField(labelWithString: "Blessed")
+    private let actualHeading = NSTextField(labelWithString: "Now")
+    private let reblessButton = NSButton(title: "Re-bless", target: nil, action: nil)
+    private let reblessReason = NSTextField(labelWithString: "")
+    private let blessedText = NSTextView()
+    private let actualText = NSTextView()
+    private var failurePaneHeight: NSLayoutConstraint!
+    /// The row the pane is currently describing, and what re-bless would write.
+    private var failureCommand: TestCommandResult?
+
+    private static let failurePaneHeight: CGFloat = 190
 
     private static let bodyFont = NSFont.systemFont(ofSize: 11.5)
     private static let monoFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
@@ -89,14 +118,24 @@ final class TestPanelView: NSView {
         emptyLabel.textColor = Theme.foregroundFaint
         emptyLabel.translatesAutoresizingMaskIntoConstraints = false
 
+        buildFailurePane()
+
         addSubview(runAllButton)
         addSubview(runChainButton)
         addSubview(cancelButton)
         addSubview(statusLabel)
         addSubview(scrollView)
         addSubview(emptyLabel)
+        addSubview(failurePane)
+
+        failurePaneHeight = failurePane.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
+            failurePane.leadingAnchor.constraint(equalTo: leadingAnchor),
+            failurePane.trailingAnchor.constraint(equalTo: trailingAnchor),
+            failurePane.bottomAnchor.constraint(equalTo: bottomAnchor),
+            failurePaneHeight,
+
             runAllButton.topAnchor.constraint(equalTo: topAnchor, constant: 6),
             runAllButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             runChainButton.topAnchor.constraint(equalTo: runAllButton.topAnchor),
@@ -111,7 +150,7 @@ final class TestPanelView: NSView {
             scrollView.topAnchor.constraint(equalTo: runAllButton.bottomAnchor, constant: 6),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: failurePane.topAnchor),
 
             emptyLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
             emptyLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -155,6 +194,10 @@ final class TestPanelView: NSView {
             }
         }
         if let summary = model?.runSummary { statusLabel.stringValue = summary }
+        // Results changed, so any comparison on screen describes a run that is
+        // no longer the current one — an author must not re-bless against a
+        // stale reading of the file.
+        hideFailure()
         updateEmptyState()
     }
 
@@ -177,11 +220,157 @@ final class TestPanelView: NSView {
         emptyLabel.isHidden = !isEmpty
     }
 
+    // MARK: - Failure pane (ADR-282 D2)
+
+    /// Builds the old-vs-new pane: the blessed text above what the story now
+    /// prints, with the re-bless action between them.
+    private func buildFailurePane() {
+        failurePane.translatesAutoresizingMaskIntoConstraints = false
+        failurePane.wantsLayer = true
+        failurePane.isHidden = true
+
+        for heading in [blessedHeading, actualHeading] {
+            heading.font = NSFont.systemFont(ofSize: 10, weight: .semibold)
+            heading.textColor = Theme.foregroundDim
+            heading.translatesAutoresizingMaskIntoConstraints = false
+        }
+        reblessButton.bezelStyle = .accessoryBarAction
+        reblessButton.font = NSFont.systemFont(ofSize: 11)
+        reblessButton.target = self
+        reblessButton.action = #selector(reblessClicked)
+        reblessButton.translatesAutoresizingMaskIntoConstraints = false
+
+        reblessReason.font = NSFont.systemFont(ofSize: 10)
+        reblessReason.textColor = Theme.foregroundFaint
+        reblessReason.lineBreakMode = .byTruncatingTail
+        reblessReason.translatesAutoresizingMaskIntoConstraints = false
+
+        var scrollers: [NSScrollView] = []
+        for text in [blessedText, actualText] {
+            text.isEditable = false
+            text.drawsBackground = false
+            text.font = Self.monoFont
+            text.textColor = Theme.foreground
+            text.textContainerInset = NSSize(width: 4, height: 3)
+            let scroller = NSScrollView()
+            scroller.documentView = text
+            scroller.hasVerticalScroller = true
+            scroller.drawsBackground = false
+            scroller.translatesAutoresizingMaskIntoConstraints = false
+            scrollers.append(scroller)
+        }
+        let (blessedScroller, actualScroller) = (scrollers[0], scrollers[1])
+
+        for subview in [blessedHeading, reblessButton, reblessReason,
+                        blessedScroller, actualHeading, actualScroller] {
+            failurePane.addSubview(subview)
+        }
+
+        NSLayoutConstraint.activate([
+            blessedHeading.topAnchor.constraint(equalTo: failurePane.topAnchor, constant: 6),
+            blessedHeading.leadingAnchor.constraint(equalTo: failurePane.leadingAnchor, constant: 8),
+            reblessButton.centerYAnchor.constraint(equalTo: blessedHeading.centerYAnchor),
+            reblessButton.trailingAnchor.constraint(equalTo: failurePane.trailingAnchor, constant: -8),
+            reblessReason.centerYAnchor.constraint(equalTo: blessedHeading.centerYAnchor),
+            reblessReason.leadingAnchor.constraint(equalTo: blessedHeading.trailingAnchor, constant: 8),
+            reblessReason.trailingAnchor.constraint(equalTo: reblessButton.leadingAnchor, constant: -6),
+
+            blessedScroller.topAnchor.constraint(equalTo: blessedHeading.bottomAnchor, constant: 3),
+            blessedScroller.leadingAnchor.constraint(equalTo: failurePane.leadingAnchor),
+            blessedScroller.trailingAnchor.constraint(equalTo: failurePane.trailingAnchor),
+
+            actualHeading.topAnchor.constraint(equalTo: blessedScroller.bottomAnchor, constant: 6),
+            actualHeading.leadingAnchor.constraint(equalTo: blessedHeading.leadingAnchor),
+
+            actualScroller.topAnchor.constraint(equalTo: actualHeading.bottomAnchor, constant: 3),
+            actualScroller.leadingAnchor.constraint(equalTo: failurePane.leadingAnchor),
+            actualScroller.trailingAnchor.constraint(equalTo: failurePane.trailingAnchor),
+            actualScroller.bottomAnchor.constraint(equalTo: failurePane.bottomAnchor, constant: -8),
+            // Equal halves: neither side is the "real" one — the author is
+            // judging whether the new text is as good as the old.
+            actualScroller.heightAnchor.constraint(equalTo: blessedScroller.heightAnchor),
+        ])
+    }
+
+    /// Shows the pane for a drifted verbatim bless, or hides it.
+    ///
+    /// Only a FAILED command that carries captured text and owns a verbatim
+    /// bless has an old-vs-new to show. Anything else — a passing row, a
+    /// transcript row, an `[OK: any]` failure — leaves the pane closed rather
+    /// than showing an empty comparison the author cannot act on.
+    ///
+    /// - Parameter command: the selected command row, or nil for no selection.
+    func showFailure(for command: TestCommandResult?) {
+        guard let model, let command, !command.passed,
+              let actual = command.actualOutput,
+              let blessed = try? model.blessedText(for: command) else {
+            return hideFailure()
+        }
+        failureCommand = command
+        blessedText.string = blessed
+        actualText.string = actual
+        blessedHeading.stringValue = "Blessed  \(command.file.split(separator: "/").last.map(String.init) ?? ""):\(command.line)"
+
+        // The button is offered exactly when pressing it would work; when it
+        // would not, the reason is shown in its place rather than a dead
+        // control the author has to press to learn about. Asking writes
+        // nothing — `reblessObstacle` computes the rewrite and discards it.
+        let reason = model.reblessObstacle(for: command).map(Self.reason(for:))
+            ?? hostReblessObstacle?(command)
+        reblessButton.isHidden = reason != nil
+        reblessReason.stringValue = reason ?? ""
+        failurePane.isHidden = false
+        failurePaneHeight.constant = Self.failurePaneHeight
+    }
+
+    private func hideFailure() {
+        failureCommand = nil
+        blessedText.string = ""
+        actualText.string = ""
+        failurePane.isHidden = true
+        failurePaneHeight.constant = 0
+    }
+
+    /// An obstacle in the author's terms.
+    private static func reason(for error: Error) -> String {
+        (error as? Rebless.Failure)?.errorDescription ?? error.localizedDescription
+    }
+
     // MARK: - Actions
 
     @objc private func runAllClicked() { onRunAll?() }
     @objc private func runChainClicked() { onRunChain?() }
     @objc private func cancelClicked() { onCancel?() }
+
+    /// Accepts the story's new text for the drifted bless on show.
+    ///
+    /// Split from the click handler so tests drive it directly. On success the
+    /// pane reopens against the rewritten file — so the "Blessed" side now
+    /// reads what the story says, which is the author's confirmation that the
+    /// edit landed.
+    @discardableResult
+    func performRebless() -> Bool {
+        guard let model, let command = failureCommand else { return false }
+        // Re-checked at the press, not only at selection: a tab can go dirty
+        // while the comparison sits on screen.
+        if let blocked = hostReblessObstacle?(command) {
+            reblessButton.isHidden = true
+            reblessReason.stringValue = blocked
+            return false
+        }
+        do {
+            try model.rebless(command)
+        } catch {
+            reblessButton.isHidden = true
+            reblessReason.stringValue = Self.reason(for: error)
+            return false
+        }
+        showFailure(for: command)
+        onDidRebless?(command)
+        return true
+    }
+
+    @objc private func reblessClicked() { performRebless() }
 
     @objc private func rowActivated() {
         let row = outlineView.clickedRow >= 0 ? outlineView.clickedRow : outlineView.selectedRow
@@ -239,6 +428,13 @@ extension TestPanelView: NSOutlineViewDelegate {
     }
 
     func outlineView(_ outlineView: NSOutlineView, heightOfRowByItem item: Any) -> CGFloat { 20 }
+
+    /// Selecting a failed command row opens its old-vs-new (ADR-282 D2).
+    func outlineViewSelectionDidChange(_ notification: Notification) {
+        let row = outlineView.selectedRow
+        let item = row >= 0 ? outlineView.item(atRow: row) : nil
+        showFailure(for: (item as? CommandItem)?.command)
+    }
 
     private static func entryLine(_ entry: TestPanelModel.Entry) -> NSAttributedString {
         let (dot, color): (String, NSColor) = {

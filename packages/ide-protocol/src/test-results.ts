@@ -57,6 +57,17 @@ export interface CommandResultRecord {
   skipped: boolean;
   /** Runtime error text when the command threw rather than merely failing. */
   error?: string;
+  /**
+   * What the story actually printed, present exactly on FAILED command results
+   * (ADR-282 D2) — the "new" side of the test panel's old-vs-new failure view,
+   * which feeds re-bless. Absent on passing and skipped results: only a failure
+   * has anything to compare against, and carrying it everywhere would inflate a
+   * green chain run by every transcript's full text.
+   *
+   * Additive and optional, so `TEST_RESULTS_SCHEMA_VERSION` stays 1 — both
+   * sides' guards accept a version-1 line with the key present or absent.
+   */
+  actualOutput?: string;
 }
 
 /**
@@ -142,7 +153,8 @@ export function isCommandResultRecord(value: unknown): value is CommandResultRec
     typeof value.passed === 'boolean' &&
     typeof value.expectedFailure === 'boolean' &&
     typeof value.skipped === 'boolean' &&
-    (value.error === undefined || typeof value.error === 'string')
+    (value.error === undefined || typeof value.error === 'string') &&
+    (value.actualOutput === undefined || typeof value.actualOutput === 'string')
   );
 }
 

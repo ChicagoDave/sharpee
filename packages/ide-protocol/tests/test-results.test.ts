@@ -90,6 +90,22 @@ describe('per-variant guards', () => {
     expect(isRunEndRecord({ ...runEnd, schemaVersion: 999 })).toBe(false);
   });
 
+  // ADR-282 D2 authorized `actualOutput` as ADDITIVE — the claim being that
+  // schemaVersion stays 1 because a version-1 line is valid with the key either
+  // present or absent. That claim is what makes an old IDE and a new toolchain
+  // (and the reverse) interoperate, so it is pinned rather than assumed.
+  it('accepts a version-1 command result with actualOutput present OR absent', () => {
+    expect(isCommandResultRecord(commandResult)).toBe(true);
+    expect(TEST_RESULTS_SCHEMA_VERSION).toBe(1);
+    const withOutput: CommandResultRecord = {
+      ...commandResult,
+      passed: false,
+      actualOutput: 'The lamp is already lit.',
+    };
+    expect(isCommandResultRecord(withOutput)).toBe(true);
+    expect(withOutput.schemaVersion).toBe(TEST_RESULTS_SCHEMA_VERSION);
+  });
+
   it('rejects a wrong or missing type discriminator', () => {
     expect(isRunStartRecord({ ...runStart, type: 'run-end' })).toBe(false);
     const { type: _dropped, ...untyped } = commandResult;
@@ -101,6 +117,7 @@ describe('per-variant guards', () => {
     expect(isTranscriptStartRecord({ ...transcriptStart, index: '0' })).toBe(false);
     expect(isCommandResultRecord({ ...commandResult, line: '7' })).toBe(false);
     expect(isCommandResultRecord({ ...commandResult, error: 42 })).toBe(false);
+    expect(isCommandResultRecord({ ...commandResult, actualOutput: 42 })).toBe(false);
     expect(isTranscriptEndRecord({ ...transcriptEnd, status: 'skipped' })).toBe(false);
     expect(isRunEndRecord({ ...runEnd, totalErrors: undefined })).toBe(false);
   });

@@ -69,7 +69,9 @@ export function runStartRecord(mode: 'tests' | 'chain', transcriptCount: number)
  * Build one finished transcript's records: `transcript-start`, one
  * `command-result` per executed command (with its 1-based `.transcript`
  * source line for click-through), and the closing `transcript-end` whose
- * `status: 'error'` carries `errorMessage` (never a silent skip).
+ * `status: 'error'` carries `errorMessage` (never a silent skip). A FAILED
+ * command result also carries `actualOutput` — what the story really printed
+ * (ADR-282 D2), which the IDE's failure view shows against the blessed text.
  *
  * @param result The transcript's result — including error-status results
  *   that never ran (zero commands).
@@ -88,6 +90,11 @@ export function transcriptRecords(result: TranscriptResult, index: number): Test
     expectedFailure: c.expectedFailure,
     skipped: c.skipped,
     ...(c.error !== undefined ? { error: c.error } : {}),
+    // ADR-282 D2: the "new" side of the IDE's old-vs-new failure view, carried
+    // on failures ONLY. A green chain run's stream stays exactly as small as it
+    // was — and a passing command has nothing to compare against anyway.
+    // `skipped` results report `passed: true`, so they are excluded here too.
+    ...(c.passed ? {} : { actualOutput: c.actualOutput }),
   }));
   const end: TranscriptEndRecord = {
     schemaVersion: SCHEMA_VERSION,

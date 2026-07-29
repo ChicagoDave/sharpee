@@ -75,7 +75,7 @@ final class TestPanelModelTests: XCTestCase {
 
         let command = TestCommandResult(file: file.path, line: 4, input: "look",
                                         passed: true, expectedFailure: false,
-                                        skipped: false, error: nil)
+                                        skipped: false, error: nil, actualOutput: nil)
         model.apply(.commandResult(command))
         XCTAssertEqual(model.entries[0].commands, [command])
 
@@ -129,7 +129,7 @@ final class TestPanelModelTests: XCTestCase {
         let file = try write("tests/a.transcript")
         let command = TestCommandResult(file: file.path, line: 17, input: "north",
                                         passed: false, expectedFailure: false,
-                                        skipped: false, error: nil)
+                                        skipped: false, error: nil, actualOutput: nil)
         let location = model.location(for: command)
         XCTAssertEqual(location.file, file)
         XCTAssertEqual(location.line, 17)

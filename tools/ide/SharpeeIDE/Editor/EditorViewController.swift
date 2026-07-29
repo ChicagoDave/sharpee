@@ -1,7 +1,9 @@
 // EditorViewController.swift
 // Owns the Editor pane: a tab strip plus an NSTextView, configured for code editing.
 // Public interface: openDocument(at:) opens a file in a new or existing tab;
-// closeDocument(at:) closes a tab; switchTo(index:) activates a tab.
+// closeDocument(at:) closes a tab; switchTo(index:) activates a tab;
+// hasUnsavedChanges(at:)/reloadFromDisk(at:) let a writer outside the editor
+// (ADR-282's re-bless) avoid clobbering an open tab, and refresh it afterwards.
 // Owner context: tools/ide — Editor pane.
 
 import AppKit
@@ -153,6 +155,30 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         textView.scrollRangeToVisible(range)
         view.window?.makeFirstResponder(textView)
         lineNumberRuler?.errorLines = [line] // flag it in the gutter
+    }
+
+    /// Whether `url` is open in a tab carrying edits the author has not saved.
+    ///
+    /// Asked before anything outside the editor rewrites a file the editor
+    /// holds (ADR-282's re-bless is the first such writer): overwriting would
+    /// discard those edits, and saving the tab afterwards would discard the
+    /// external write. Neither is the author's choice to lose silently.
+    func hasUnsavedChanges(at url: URL) -> Bool {
+        documents.contains { $0.url == url && $0.isDirty }
+    }
+
+    /// Re-reads `url` from disk into its open tab, if it has one.
+    ///
+    /// For use after something outside the editor rewrote the file, so the tab
+    /// stops showing text that is no longer on disk. A dirty tab is left alone —
+    /// callers must check `hasUnsavedChanges(at:)` BEFORE writing, not rely on
+    /// this to arbitrate afterwards.
+    func reloadFromDisk(at url: URL) {
+        guard let index = documents.firstIndex(where: { $0.url == url }),
+              !documents[index].isDirty,
+              let reloaded = try? Document.load(from: url) else { return }
+        documents[index] = reloaded
+        if activeIndex == index { switchTo(index: index) }
     }
 
     /// Opens (or focuses) `url`, then selects the exact diagnostic span — the

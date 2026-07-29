@@ -99,6 +99,16 @@ struct TestCommandResult: Codable, Equatable, Sendable {
     let skipped: Bool
     /// Runtime error text when the command threw rather than merely failing.
     let error: String?
+    /// What the story actually printed, present exactly on FAILED results
+    /// (ADR-282 D2) — the "new" half of the failure view's old-vs-new, and the
+    /// text a re-bless writes back into the transcript's literal block.
+    ///
+    /// Optional on the wire AND here: the field is additive, so
+    /// `currentSchemaVersion` stays 1 and a line from a toolchain that predates
+    /// it still decodes. `Codable` gives that for free for an optional let —
+    /// pinned by a test rather than assumed, since a missing key throwing here
+    /// would blank the whole Tests panel on an older toolchain.
+    let actualOutput: String?
 }
 
 /// A transcript finished. `status: error` covers validation failures and
