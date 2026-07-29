@@ -207,6 +207,19 @@ enum MenuBuilder {
 
         menu.addItem(NSMenuItem.separator())
 
+        // ADR-282 D1. A key equivalent rather than only the header button: the
+        // gesture is play-and-bless in one motion, and while playing the
+        // author's focus is in the story's own input field. A menu shortcut
+        // fires from there; a button click would not.
+        let bless = NSMenuItem(title: "Bless Last Turn",
+                               action: #selector(AppDelegate.blessLastTurn(_:)),
+                               keyEquivalent: "b")
+        bless.keyEquivalentModifierMask = [.command, .shift]
+        bless.target = target
+        menu.addItem(bless)
+
+        menu.addItem(NSMenuItem.separator())
+
         let cancel = NSMenuItem(title: "Cancel Test Run",
                                 action: #selector(AppDelegate.cancelTestRun(_:)),
                                 keyEquivalent: "")

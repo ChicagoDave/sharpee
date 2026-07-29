@@ -1,10 +1,10 @@
 # ADR-282: Play-to-test — blessing good turns while playing becomes transcript tests
 
-## Status: ACCEPTED (2026-07-27, session fda0f0) — drafted, interviewed (4 questions resolved), and twice re-reviewed the same day; accepted after the fence-grammar (ADR-287) and review-fix folds
+## Status: ACCEPTED (2026-07-27, session fda0f0) — drafted, interviewed (4 questions resolved), and twice re-reviewed the same day; accepted after the ADR-287 grammar (backtick fences then, literal text blocks now) and review-fix folds
 
 ## Date: 2026-07-27
 
-## Parent: ADR-277 (integrated testing + transcript recording — the machinery this builds on), ADR-280 (project model — the folders these tests land in), ADR-287 (fenced literal payloads — the grammar form bless serialization requires). Inspiration: Inform 7's Skein/bless model, deliberately simplified twice: no tree (per-turn tags, not thread blessing), and no negative verdict (David's ruling — see Context).
+## Parent: ADR-277 (integrated testing + transcript recording — the machinery this builds on), ADR-280 (project model — the folders these tests land in), ADR-287 (literal text blocks — the grammar form bless serialization requires). Inspiration: Inform 7's Skein/bless model, deliberately simplified twice: no tree (per-turn tags, not thread blessing), and no negative verdict (David's ruling — see Context).
 
 ## Context — verified, not assumed
 
@@ -53,8 +53,9 @@ A tagged play session **is** a `.transcript`:
 - Blessed turn → `> command` + an `[OK]` assertion derived
   **selection-aware** (Q-2 resolved 2026-07-27, session fda0f0): with no
   text selected, the bless asserts the full response — serialized as
-  `[OK]` + an ADR-287 fenced literal block (delimiter per ADR-287; if
-  its revisit note reopens the delimiter, this contract follows it), so
+  `[OK]` + an ADR-287 literal text block (`text` … `end text`; form per
+  ADR-287, and this contract follows it wherever it lands — its 2026-07-27
+  revisit note was exercised on 2026-07-28, replacing backtick fences), so
   any response round-trips **losslessly through the format** (matching
   uses the runner's normalized comparison, per ADR-287). **The recorded
   response is the channel-flattened text — the same form the headless
@@ -63,12 +64,17 @@ A tagged play session **is** a `.transcript`:
   paragraph boundaries, which normalization preserves — capture parity
   is what Acceptance 5 pins). A turn whose response is empty carries no
   bless affordance: blank output is a runner-level failure regardless of
-  assertion, and an empty fence is an ADR-287 validation error. With a
+  assertion, and an empty block is an ADR-287 validation error. With a
   selection in the response, the bless asserts the load-bearing fragment
   the author pointed at — inline `[OK: contains "<selection>"]` when the
   fragment fits the inline form (single line containing no `"` — the
-  parser's inline-payload rule), `[OK: contains]` + fence otherwise. **Nothing is unencodable**; the
-  bless UX never refuses a gesture or silently weakens an assertion.
+  parser's inline-payload rule), `[OK: contains]` + block otherwise.
+  **Nothing is unencodable** — with the one exception ADR-287 introduces
+  and this ADR accepts: `end text` alone at column 0 is reserved syntax
+  (David's ruling, 2026-07-28), so a response ending a phrase that way
+  fails validation loudly until the prose changes. Everything else
+  encodes, and the bless UX never refuses a gesture or silently weakens an
+  assertion.
   When a verbatim bless later fails against reworded prose, the test
   panel's failure view shows old-vs-new and offers **re-bless** — drift is
   handled by the lifecycle, not by weakening assertions. The "new" text
@@ -83,6 +89,24 @@ A tagged play session **is** a `.transcript`:
   preserved as `#` comment lines — ADR-277 D5's existing recorder default,
   which also satisfies the validator's every-command-needs-an-assertion
   rule (a bare command would fail validation).
+- **Opening turn** (amendment 2026-07-28, session 2f31b0) → every saved
+  transcript begins with `> look` + `[OK: any]` and a `#` comment saying
+  why, ahead of the captured turns. This is not a turn the author typed:
+  the browser client boots by running `look` itself, outside the
+  recording, so the story banner is already on screen before the first
+  captured response and is absent from it. A fresh headless run has no
+  such opening turn and prints the banner with whatever command comes
+  first — so without this line, a verbatim bless on a session's first turn
+  compares banner-plus-response against response and fails every time.
+  Found in implementation, not in review: Acceptance 1 and 5 both failed
+  on their first real run for exactly this reason. `[OK: any]` rather than
+  a blessed assertion, because the author never vouched for it.
+
+  **In a chain (D4), only the first segment carries it.** `--chain` runs
+  one game across the files, so segments 2..N are not fresh runs and have
+  no banner to absorb; giving each segment an opening `look` would insert
+  turns that never happened and shift the world state the next segment
+  inherits.
 
 **Randomness stays unseeded** (Q-3 resolved 2026-07-27, session fda0f0:
 ADR-277 D5's standing policy is kept, not reversed). Fully-random scenes
@@ -133,7 +157,7 @@ against its Q-2.)
   `walkthroughs/` chains (D4); refuses zero-bless saves (Acceptance 3).
 - Test panel failure view — old-vs-new diff with re-bless (D2), fed by
   the new actual-output field.
-- `packages/transcript-tester` — ADR-287 fence grammar (its own ADR).
+- `packages/transcript-tester` — ADR-287 literal-block grammar (its own ADR).
 - `packages/ide-protocol` (`CommandResultRecord`) + the transcript-tester
   NDJSON emitter — actual-output field (authorized in D2).
 - ADR-277's Acceptance-7 real-path test — updated for the zero-bless
@@ -156,8 +180,8 @@ against its Q-2.)
    transcripts in `walkthroughs/` that pass under `sharpee test --chain`,
    with state carried across the boundaries (D4 pinned end-to-end).
 5. Blessing a response containing bracket-shaped lines, quotes, and
-   multi-line prose saves via ADR-287 fences and passes headless —
-   lossless round-trip pinned end-to-end: the saved fence content is
+   multi-line prose saves via ADR-287 literal blocks and passes headless —
+   lossless round-trip pinned end-to-end: the saved block content is
    identical to the captured response, and matching uses the runner's
    normalized comparison.
 
@@ -177,7 +201,7 @@ against its Q-2.)
   2. **The turn-events bridge carries channel-flattened text**
      (`packages/platform-browser`) — see the amendment below.
 
-  The fence grammar is authorized by ADR-287 — this ADR is its motivating
+  The literal-block grammar is authorized by ADR-287 — this ADR is its motivating
   consumer. Nothing else platform-side (ADR-283 rejected).
 
 ### Amendment, 2026-07-28 (session aaa5bb): the bridge fix D2 requires

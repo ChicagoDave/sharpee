@@ -332,11 +332,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         // The Tests panel tracks the same target (ADR-277 D2): discover its
         // tests/ + walkthroughs/ tree now; runs are user-initiated. Play
-        // recording saves into the story's tests/ and re-discovers on save (D5).
+        // recording saves into the story's `tests/transcripts/` and
+        // re-discovers on save — ADR-280's classifier looks for exactly that
+        // path, so anything saved beside it would be invisible in the sidebar
+        // (ADR-282 D3).
         if let storyURL = currentStoryURL {
             testController?.attach(storyFile: storyURL)
             mainWindowController?.configureRecording(
-                saveDirectory: storyURL.deletingLastPathComponent().appendingPathComponent("tests"),
+                saveDirectory: storyURL.deletingLastPathComponent()
+                    .appendingPathComponent("tests")
+                    .appendingPathComponent("transcripts"),
                 onRecorded: { [weak self] _ in
                     guard let self, let story = self.currentStoryURL else { return }
                     self.testController?.attach(storyFile: story)
@@ -428,6 +433,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         testController?.runFile(transcript)
     }
 
+    /// Test → Bless Last Turn (⇧⌘B). Vouches for the response now on screen in
+    /// the Play pane, or takes the vouch back (ADR-282 D1). Reachable by
+    /// keyboard while the author is typing into the running story, which the
+    /// header button alone is not.
+    @objc func blessLastTurn(_ sender: Any?) {
+        mainWindowController?.blessLatestPlayTurn()
+    }
+
     /// Test → Cancel Test Run. SIGTERM, then SIGKILL; decoded results stay.
     @objc func cancelTestRun(_ sender: Any?) {
         testController?.cancel()
@@ -474,6 +487,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(testController?.isTesting ?? false)
         case #selector(cancelTestRun(_:)):
             return testController?.isTesting ?? false
+        case #selector(blessLastTurn(_:)):
+            // Only while a recording holds a blessable turn — an empty response
+            // carries no affordance (ADR-282 D2).
+            return mainWindowController?.canBlessLatestPlayTurn ?? false
         case #selector(toggleWordWrap(_:)):
             menuItem.state = WordWrapPreference.isEnabled ? .on : .off
             return true

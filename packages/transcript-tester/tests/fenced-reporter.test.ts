@@ -1,7 +1,7 @@
 /**
- * fenced-reporter.test.ts — ADR-287 AC1: a failing fenced assertion must SHOW
- * its fence content. Before this, the reporter keyed its diff solely off
- * `command.expectedOutput`, so a fenced failure printed no expected text at all.
+ * fenced-reporter.test.ts — ADR-287 AC1: a failing block assertion must SHOW
+ * its block content. Before this, the reporter keyed its diff solely off
+ * `command.expectedOutput`, so a block failure printed no expected text at all.
  *
  * Also pins that blank lines survive into the Output block. `normalizeOutput`
  * preserves paragraph breaks, so a blank line is load-bearing for an exact
@@ -32,13 +32,13 @@ async function reportOf(source: string, response: string): Promise<string> {
   return lines.join('\n').replace(/\[[0-9;]*m/g, '');
 }
 
-describe('ADR-287 AC1 — a failed fenced assertion shows its fence', () => {
-  it('prints the fence content under an "Expected (fenced)" heading', async () => {
+describe("ADR-287 AC1 — a failed block assertion shows its block", () => {
+  it("prints the block content under an \"Expected (text block)\" heading", async () => {
     const report = await reportOf(
-      'title: T\n---\n\n> read sign\n[OK]\n```\nThe vault closes at dusk.\nBeware the "night porter."\n```\n',
+      'title: T\n---\n\n> read sign\n[OK]\ntext\nThe vault closes at dusk.\nBeware the "night porter."\nend text\n',
       'The vault closes at DAWN.',
     );
-    expect(report).toContain('Expected (fenced):');
+    expect(report).toContain('Expected (text block):');
     expect(report).toContain('+ The vault closes at dusk.');
     expect(report).toContain('+ Beware the "night porter."');
   });
@@ -49,13 +49,13 @@ describe('ADR-287 AC1 — a failed fenced assertion shows its fence', () => {
       'A large round hall.',
     );
     expect(report).toContain('Expected:');
-    expect(report).not.toContain('Expected (fenced):');
+    expect(report).not.toContain('Expected (text block):');
     expect(report).toContain('+ A small square den.');
   });
 
-  it('prints nothing extra when the fenced assertion passes', async () => {
+  it("prints nothing extra when the block assertion passes", async () => {
     const report = await reportOf(
-      'title: T\n---\n\n> look\n[OK]\n```\nA small square den.\n```\n',
+      'title: T\n---\n\n> look\n[OK]\ntext\nA small square den.\nend text\n',
       'A small square den.',
     );
     expect(report).not.toContain('Expected');
@@ -68,7 +68,7 @@ describe('blank lines survive into the Output block', () => {
     // texts look identical on screen. This is the real dungeo `open mailbox`
     // shape ("...mailbox.\n\nInside...").
     const report = await reportOf(
-      'title: T\n---\n\n> open mailbox\n[OK]\n```\nYou open the small mailbox.\nInside you see leaflet.\n```\n',
+      'title: T\n---\n\n> open mailbox\n[OK]\ntext\nYou open the small mailbox.\nInside you see leaflet.\nend text\n',
       'You open the small mailbox.\n\nInside you see leaflet.',
     );
     const outputBlock = report.slice(report.indexOf('─── Output ───'), report.indexOf('─────────────'));

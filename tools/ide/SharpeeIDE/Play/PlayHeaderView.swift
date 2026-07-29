@@ -1,7 +1,9 @@
 // PlayHeaderView.swift
-// The Play pane's header bar: a status dot (green when a story is loaded), a Restart
-// button, and a "Play after build" toggle. Pure view — the controller owns behaviour.
-// Public interface: onRestart / onPlayAfterBuildToggle callbacks; setLoaded(_:),
+// The Play pane's header bar: a status dot (green when a story is loaded), Restart
+// and Record buttons, the per-turn Bless gesture (ADR-282 D1), and a "Play after
+// build" toggle. Pure view — the controller owns behaviour.
+// Public interface: onRestart / onRecordToggle / onBless / onPlayAfterBuildToggle
+// callbacks; setLoaded(_:), setRecording(_:), setBless(available:isBlessed:),
 // setPlayAfterBuild(_:).
 // Owner context: tools/ide — Play.
 
@@ -14,10 +16,14 @@ final class PlayHeaderView: NSView {
     var onRestart: (() -> Void)?
     var onPlayAfterBuildToggle: ((Bool) -> Void)?
     var onRecordToggle: (() -> Void)?
+    /// The per-turn bless gesture (ADR-282 D1) — vouch for the response on
+    /// screen, or take the vouch back.
+    var onBless: (() -> Void)?
 
     private let dot = NSView()
     private let restartButton = NSButton()
     private let recordButton = NSButton()
+    private let blessButton = NSButton()
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
 
     override func layout() {
@@ -26,6 +32,7 @@ final class PlayHeaderView: NSView {
         // they clip before they resist.
         restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         recordButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        blessButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
@@ -52,6 +59,18 @@ final class PlayHeaderView: NSView {
         recordButton.action = #selector(recordClicked)
         recordButton.translatesAutoresizingMaskIntoConstraints = false
 
+        blessButton.title = Self.blessTitle
+        blessButton.bezelStyle = .rounded
+        blessButton.controlSize = .small
+        blessButton.target = self
+        blessButton.action = #selector(blessClicked)
+        // Clicking must not pull first responder out of the story's input field:
+        // D1's gesture is play-and-bless in one motion, and an author who has to
+        // click back into the game to keep typing has been interrupted.
+        blessButton.refusesFirstResponder = true
+        blessButton.toolTip = "Vouch for this turn's response (⇧⌘B)"
+        blessButton.translatesAutoresizingMaskIntoConstraints = false
+
         playAfterBuildCheckbox.target = self
         playAfterBuildCheckbox.action = #selector(playAfterBuildChanged)
         playAfterBuildCheckbox.controlSize = .small
@@ -61,6 +80,7 @@ final class PlayHeaderView: NSView {
         addSubview(dot)
         addSubview(restartButton)
         addSubview(recordButton)
+        addSubview(blessButton)
         addSubview(playAfterBuildCheckbox)
 
         NSLayoutConstraint.activate([
@@ -75,12 +95,19 @@ final class PlayHeaderView: NSView {
             recordButton.leadingAnchor.constraint(equalTo: restartButton.trailingAnchor, constant: 6),
             recordButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
+            blessButton.leadingAnchor.constraint(equalTo: recordButton.trailingAnchor, constant: 6),
+            blessButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+
             playAfterBuildCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             playAfterBuildCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
 
         setLoaded(false)
+        setBless(available: false, isBlessed: false)
     }
+
+    private static let blessTitle = "Bless"
+    private static let blessedTitle = "Blessed ✓"
 
     required init?(coder: NSCoder) {
         fatalError("PlayHeaderView is not Storyboard-instantiable")
@@ -91,12 +118,29 @@ final class PlayHeaderView: NSView {
         dot.layer?.backgroundColor = (loaded ? NSColor.systemGreen : Theme.foregroundFaint).cgColor
         restartButton.isEnabled = loaded
         recordButton.isEnabled = loaded
+        // Nothing on screen to vouch for. The controller re-enables this as
+        // soon as a turn arrives.
+        if !loaded { setBless(available: false, isBlessed: false) }
     }
 
     /// Reflects recording state: red "Stop Recording" while capturing.
     func setRecording(_ recording: Bool) {
         recordButton.title = recording ? "Stop Recording" : "Record"
         recordButton.contentTintColor = recording ? .systemRed : nil
+    }
+
+    /// Reflects the bless state of the turn on screen (ADR-282 D1).
+    ///
+    /// - Parameters:
+    ///   - available: whether the latest turn can carry a bless at all. A turn
+    ///     with a blank response gets no affordance, so this disables rather
+    ///     than merely dimming.
+    ///   - isBlessed: whether the author has already vouched for it — the
+    ///     button reads back the standing verdict, since the gesture toggles.
+    func setBless(available: Bool, isBlessed: Bool) {
+        blessButton.isEnabled = available
+        blessButton.title = isBlessed ? Self.blessedTitle : Self.blessTitle
+        blessButton.contentTintColor = isBlessed ? .systemGreen : nil
     }
 
     func setPlayAfterBuild(_ on: Bool) {
@@ -109,6 +153,10 @@ final class PlayHeaderView: NSView {
 
     @objc private func recordClicked() {
         onRecordToggle?()
+    }
+
+    @objc private func blessClicked() {
+        onBless?()
     }
 
     @objc private func playAfterBuildChanged() {

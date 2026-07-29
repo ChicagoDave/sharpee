@@ -38,10 +38,10 @@ final class ToolchainFenceNoteTests: XCTestCase {
         """
         > look
         [OK]
-        ```
+        text
         You are in a small lab.
         Exits lead north.
-        ```
+        end text
 
         """
     }
@@ -54,29 +54,29 @@ final class ToolchainFenceNoteTests: XCTestCase {
         """
     }
 
-    // MARK: - Fence detection (mirrors transcript-tester's FENCE_DELIMITER)
+    // MARK: - Block detection (mirrors transcript-tester's BLOCK_OPEN)
 
-    func testThreeBackticksOnTheirOwnLineIsAFence() {
-        XCTAssertTrue(ToolchainFenceNote.containsFence("> look\n```\nout\n```\n"))
+    func testATextLineOnItsOwnOpensABlock() {
+        XCTAssertTrue(ToolchainFenceNote.containsFence("> look\ntext\nout\nend text\n"))
     }
 
-    func testLongerRunIsAlsoAFence() {
-        XCTAssertTrue(ToolchainFenceNote.containsFence("````\nout\n````\n"))
+    func testTrailingWhitespaceOnTheOpenerIsForgiven() {
+        XCTAssertTrue(ToolchainFenceNote.containsFence("text  \nout\nend text\n"))
     }
 
-    /// Two backticks are not a fence — the grammar's floor is three.
-    func testTwoBackticksIsNotAFence() {
-        XCTAssertFalse(ToolchainFenceNote.containsFence("``\nout\n``\n"))
+    /// Column 0 is the rule — an INDENTED `text` line is payload content, which
+    /// is exactly how a transcript can quote the grammar without claiming it.
+    func testAnIndentedTextLineDoesNotOpenABlock() {
+        XCTAssertFalse(ToolchainFenceNote.containsFence("  text\nout\n  end text\n"))
     }
 
-    /// An info string makes the line something other than a bare delimiter,
-    /// exactly as `^`{3,}$` treats it in the tester.
-    func testBackticksWithTrailingTextIsNotAFence() {
-        XCTAssertFalse(ToolchainFenceNote.containsFence("```json\n{}\n```json\n"))
+    /// A whole line, not a word inside one.
+    func testTheWordTextInProseIsNotABlock() {
+        XCTAssertFalse(ToolchainFenceNote.containsFence("[OK: contains] the text is faded\n"))
     }
 
-    func testInlineBackticksAreNotAFence() {
-        XCTAssertFalse(ToolchainFenceNote.containsFence("[OK: contains] the `lamp` is lit\n"))
+    func testTextWithTrailingContentIsNotABlock() {
+        XCTAssertFalse(ToolchainFenceNote.containsFence("text of the sign\nout\n"))
     }
 
     func testPlainTranscriptCarriesNoFence() {

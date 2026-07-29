@@ -1,7 +1,7 @@
 /**
- * parse-baseline.test.ts — the D2 safety net for ADR-287 (fenced literal payloads).
+ * parse-baseline.test.ts — the D2 safety net for ADR-287 (literal text blocks).
  *
- * ADR-287 D2 rules the fence *additive*: every existing transcript must parse
+ * ADR-287 D2 rules the block *additive*: every existing transcript must parse
  * exactly as it did before the grammar grew. Acceptance 3 asks for
  * "byte-identical results before and after the change".
  *

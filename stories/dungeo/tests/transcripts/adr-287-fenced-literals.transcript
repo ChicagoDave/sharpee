@@ -1,10 +1,10 @@
-title: ADR-287 fenced literal payloads
+title: ADR-287 literal text blocks
 story: dungeo
-description: Real-path proof that fenced assertions match real story output headless.
+description: Real-path proof that text-block assertions match real story output headless.
 ---
 
 # The banner rides along with the first command's output, so this one only
-# asserts presence — the fenced assertions below start from a clean turn.
+# asserts presence — the block assertions below start from a clean turn.
 > look
 [OK: any]
 
@@ -13,47 +13,47 @@ description: Real-path proof that fenced assertions match real story output head
 # ADR-287 there was no way to assert this text at all.
 > examine welcome mat
 [OK]
-```
+text
 A rubber mat saying "Welcome to Dungeon!"
-```
+end text
 
-# Multi-line exact match through a fence. The blank line is REAL story output —
+# Multi-line exact match through a text block. The blank line is REAL story output —
 # a paragraph break the engine emits — and normalizeOutput preserves it, so the
-# fence has to carry it too. (This is the capture-parity point ADR-282 D2 makes
+# block has to carry it too. (This is the capture-parity point ADR-282 D2 makes
 # about rendered text vs channel-flattened text.)
 > open mailbox
 [OK]
-```
+text
 You open the small mailbox.
 
 Inside the small mailbox you see leaflet.
-```
+end text
 
-# Fenced contains: a quoted fragment of a longer response.
+# Block contains: a quoted fragment of a longer response.
 > examine welcome mat
 [OK: contains]
-```
+text
 saying "Welcome to Dungeon!"
-```
+end text
 
 # Block parity (ADR-287 D1's last grammar rule): attachment is at the assertion
-# level, so a fence inside [IF] behaves exactly as one at top level. This test
+# level, so a block inside [IF] behaves exactly as one at top level. This test
 # proves the inheritance rather than adding machinery for it.
 [IF: location = "West of House"]
 > examine welcome mat
 [OK]
-```
+text
 A rubber mat saying "Welcome to Dungeon!"
-```
+end text
 [END IF]
 
-# The failing direction, pinned in-suite: the fence deliberately does not match
+# The failing direction, pinned in-suite: the block deliberately does not match
 # the real response, so the assertion fails and [FAIL] records that as expected.
-# (The reporter's display of fence content on failure is pinned separately, in
+# (The reporter's display of block content on failure is pinned separately, in
 # transcript-tester's fenced-reporter.test.ts — a passing command prints no diff.)
 > examine welcome mat
 [FAIL]
 [OK]
-```
+text
 A rubber mat saying "Welcome to Somewhere Else!"
-```
+end text

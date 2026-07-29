@@ -1,9 +1,9 @@
 // PlayViewController.swift
-// The Play pane: a header (status / Restart / "Play after build") over a WKWebView that
-// embeds the story's self-contained browser client (dist/web/<story>/, served via a
-// custom scheme), or a placeholder when no bundle is built.
+// The Play pane: a header (status / Restart / Record / Bless / "Play after build") over
+// a WKWebView that embeds the story's self-contained browser client (dist/web/<story>/,
+// served via a custom scheme), or a placeholder when no bundle is built.
 // Public interface: load(projectRoot:), reloadAfterBuild(projectRoot:), restart(),
-// playAfterBuild, onPlayAfterBuildChanged.
+// playAfterBuild, onPlayAfterBuildChanged, canBlessLatestTurn, blessLatestTurn().
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -96,6 +96,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         header.translatesAutoresizingMaskIntoConstraints = false
         header.onRestart = { [weak self] in self?.restart() }
         header.onRecordToggle = { [weak self] in self?.toggleRecording() }
+        header.onBless = { [weak self] in Task { await self?.blessLatestTurn() } }
         header.onPlayAfterBuildToggle = { [weak self] on in
             self?.playAfterBuild = on
             self?.onPlayAfterBuildChanged?()
@@ -216,18 +217,73 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         if recording.isRecording {
             recording.stop()
             header.setRecording(false)
+            updateBlessAffordance()
             if !recording.turns.isEmpty { saveRecording() }
         } else {
             recording.start()
             header.setRecording(true)
+            updateBlessAffordance()
         }
     }
 
-    /// Writes the captured session as a draft `.transcript` where the author
-    /// chooses (defaulting into the story's `tests/`), then announces it so
-    /// the Tests panel re-discovers.
+    // MARK: - Bless (ADR-282 D1)
+
+    /// Whether the live bless gesture is available right now — drives the Test
+    /// menu's enablement as well as the header button's.
+    var canBlessLatestTurn: Bool { recording.canBlessLatestTurn }
+
+    /// Vouches for the turn the author is looking at, or takes the vouch back.
+    ///
+    /// The selection is sampled from the live page at the moment of the gesture
+    /// rather than cached: it is the author's pointer at the load-bearing
+    /// fragment, and it is only theirs while it is on screen. Reading it needs
+    /// no page cooperation and nothing in `packages/platform-browser` —
+    /// `PlaySelectionCaptureTests` pins that.
+    ///
+    /// A no-op when nothing blessable has been captured.
+    func blessLatestTurn() async {
+        guard recording.canBlessLatestTurn else { return }
+        let selection = (try? await evaluateInPlaySurface("window.getSelection().toString()")) ?? nil
+        recording.toggleBlessOnLatestTurn(rawSelection: selection as? String)
+        updateBlessAffordance()
+    }
+
+    /// Evaluates JavaScript against the running story's page.
+    ///
+    /// The one door into the play surface's script context, so the pane has a
+    /// single place where it reaches into the page rather than a scattering of
+    /// `evaluateJavaScript` call sites. Tests drive the same door the bless
+    /// gesture does.
+    ///
+    /// - Parameter script: the expression to evaluate.
+    /// - Returns: the bridged result, or nil for a void script.
+    /// - Throws: whatever WebKit reports (a syntax error, a dead page).
+    @discardableResult
+    func evaluateInPlaySurface(_ script: String) async throws -> Any? {
+        try await webView.evaluateJavaScript(script)
+    }
+
+    /// Repaints the header's bless control from the session's standing verdict.
+    /// Called on every captured turn so the affordance appears with the
+    /// response it belongs to (D1's live-flow requirement).
+    private func updateBlessAffordance() {
+        let latest = recording.isRecording ? recording.turns.last : nil
+        header.setBless(available: recording.canBlessLatestTurn,
+                        isBlessed: latest?.isBlessed ?? false)
+    }
+
+    /// Saves the blessed session as a `.transcript` where the author chooses,
+    /// defaulting into the story's `tests/transcripts/` (ADR-280's classified
+    /// path, so the sidebar discovers it), then announces it so the Tests panel
+    /// re-discovers. Refuses a session nobody blessed (Acceptance 3).
     private func saveRecording() {
         guard let window = view.window else { return }
+        // Acceptance 3: refuse before the panel, not after the author has
+        // picked a name — the objection is to the session, not to the filename.
+        guard recording.hasAuthorAssertions else {
+            presentSaveFailure(RecordingSaveError.noBlessedTurns, in: window)
+            return
+        }
         let panel = NSSavePanel()
         panel.title = "Save Recorded Transcript"
         panel.nameFieldStringValue = "recorded.transcript"
@@ -240,19 +296,37 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
             do {
                 try self.writeRecording(to: url)
             } catch {
-                let alert = NSAlert()
-                alert.messageText = "Could not save the transcript"
-                alert.informativeText = error.localizedDescription
-                alert.alertStyle = .warning
-                alert.beginSheetModal(for: window, completionHandler: nil)
+                self.presentSaveFailure(error, in: window)
             }
         }
+    }
+
+    /// Reports why a recording was not saved. The recovery suggestion carries
+    /// the actionable half (what to do about it), so the refusal reads as a
+    /// missing step rather than a rejection.
+    private func presentSaveFailure(_ error: Error, in window: NSWindow) {
+        let alert = NSAlert()
+        alert.messageText = "Could not save the transcript"
+        alert.informativeText = [error.localizedDescription,
+                                 (error as? LocalizedError)?.recoverySuggestion]
+            .compactMap { $0 }
+            .joined(separator: "\n\n")
+        alert.alertStyle = .warning
+        alert.beginSheetModal(for: window, completionHandler: nil)
     }
 
     /// Serializes the captured session to `url` and announces it (the panel
     /// flow's write half, split out so tests drive the real write + announce
     /// without an NSSavePanel).
+    ///
+    /// - Parameter url: where to write the `.transcript`.
+    /// - Throws: `RecordingSaveError.noBlessedTurns` when nothing in the session
+    ///   was blessed — checked HERE, not only in the panel flow, so no caller
+    ///   can route around Acceptance 3. Also rethrows any write error.
     func writeRecording(to url: URL) throws {
+        guard recording.hasAuthorAssertions else {
+            throw RecordingSaveError.noBlessedTurns
+        }
         let title = url.deletingPathExtension().lastPathComponent
         try recording.serialize(title: "Recorded: \(title)")
             .write(to: url, atomically: true, encoding: .utf8)
@@ -268,6 +342,9 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
                   let data = body.data(using: .utf8),
                   let turn = try? JSONDecoder().decode(TurnEventBody.self, from: data) else { return }
             recording.record(command: turn.command, response: turn.response)
+            // The affordance belongs to the response as it appears (D1) — a new
+            // turn resets it to untagged, and a blank one offers nothing.
+            updateBlessAffordance()
         case Self.consoleHandlerName:
             guard let text = message.body as? String else { return }
             guard let loaded else {

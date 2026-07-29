@@ -136,17 +136,17 @@ function reportCommand(result: CommandResult, verbose: boolean, emitTraits: bool
     }
 
     // Show diff for failures with expected output — either the classic block or
-    // an ADR-287 fenced payload (AC1 requires the fence content to be shown on
-    // failure; without this branch a fenced assertion fails displaying nothing).
+    // an ADR-287 text block (AC1 requires the block content to be shown on
+    // failure; without this branch a block assertion fails displaying nothing).
     if (!passed && !skipped) {
-      const failedFence = result.assertionResults
-        .find(r => !r.passed && r.assertion.fence !== undefined)?.assertion.fence;
-      const expectedLines = command.expectedOutput.length > 0 ? command.expectedOutput : failedFence;
+      const failedBlock = result.assertionResults
+        .find(r => !r.passed && r.assertion.block !== undefined)?.assertion.block;
+      const expectedLines = command.expectedOutput.length > 0 ? command.expectedOutput : failedBlock;
 
       if (expectedLines && expectedLines.length > 0) {
         console.log();
-        console.log(chalk.gray(failedFence && command.expectedOutput.length === 0
-          ? '    Expected (fenced):'
+        console.log(chalk.gray(failedBlock && command.expectedOutput.length === 0
+          ? "    Expected (text block):"
           : '    Expected:'));
         for (const line of expectedLines) {
           console.log(chalk.green(`    + ${line}`));
@@ -174,8 +174,8 @@ function formatAssertion(result: AssertionResult): string {
     case 'ok':
       return message || 'Exact match';
     case 'ok-contains':
-      // A fenced fragment has no inline value to quote (ADR-287 D1).
-      return message || (assertion.fence ? 'Contains the fenced fragment' : `Contains "${assertion.value}"`);
+      // A block fragment has no inline value to quote (ADR-287 D1).
+      return message || (assertion.block ? "Contains the text block fragment" : `Contains "${assertion.value}"`);
     case 'ok-not-contains':
       return message || `Does not contain "${assertion.value}"`;
     case 'ok-matches':

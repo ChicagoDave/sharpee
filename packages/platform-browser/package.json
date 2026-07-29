@@ -61,8 +61,12 @@
   },
   "devDependencies": {
     "@sharpee/channel-service": "workspace:*",
+    "@sharpee/chord": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
+    "@sharpee/story-loader": "workspace:*",
     "@sharpee/text-blocks": "workspace:*",
     "@playwright/test": "^1.48.0",
     "@types/lz-string": "^1.5.0",

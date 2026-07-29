@@ -26,6 +26,105 @@ enum TestToolchain {
         repoRoot.appendingPathComponent("packages/devkit/dist/cli.js")
     }
 
+    /// The platform CLI bundle. Only `captureResponses` needs it — the devkit
+    /// CLI above stays the toolchain for everything that RUNS tests (ADR-187).
+    static var cliBundle: URL {
+        repoRoot.appendingPathComponent("dist/cli/sharpee.js")
+    }
+
+    /// The story's real responses to `commands`, in order.
+    ///
+    /// ADR-282's loop is capture-then-replay, so a test that blesses text the
+    /// story never printed proves nothing about the serializer. This plays the
+    /// commands through the real engine and hands back what it actually said,
+    /// which the caller then blesses.
+    ///
+    /// Standing in for the Play pane's capture here is sound because
+    /// `packages/platform-browser/tests/capture-parity.test.ts` pins the two as
+    /// byte-identical (ADR-282 Acceptance 5, capture half) — without that proof
+    /// this substitution would be an assumption.
+    ///
+    /// A priming `look` runs first and is dropped: the browser client opens
+    /// with its own `look` outside the recording, so the first captured turn is
+    /// the second turn of the game. Its output also carries the story banner.
+    ///
+    /// - Parameters:
+    ///   - storyFile: the `.story` to run.
+    ///   - commands: commands to play, none containing `/` (the `--exec`
+    ///     separator).
+    /// - Returns: one response per command.
+    /// - Throws: if the CLI cannot be launched, exits non-zero, or prints fewer
+    ///   command markers than were asked for.
+    static func captureResponses(storyFile: URL, commands: [String]) throws -> [String] {
+        let played = ["look"] + commands
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["node", cliBundle.path,
+                             "--exec", played.joined(separator: "/"),
+                             "--story", storyFile.path]
+        process.environment = ShellEnvironment.buildEnvironment()
+        let output = Pipe()
+        let errors = Pipe()
+        process.standardOutput = output
+        process.standardError = errors
+        try process.run()
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        let errorData = errors.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            throw CaptureError.cliFailed(
+                status: process.terminationStatus,
+                stderr: String(data: errorData, encoding: .utf8) ?? "")
+        }
+
+        let stdout = String(data: data, encoding: .utf8) ?? ""
+        return try blocks(in: stdout, for: played).dropFirst().map { $0 }
+    }
+
+    /// Split `--exec` output into one block per command.
+    ///
+    /// The CLI prints `> <command>`, the response, then one blank line. That
+    /// trailing blank is the CLI's own separator, not part of the response — a
+    /// channel-flattened response never ends blank.
+    private static func blocks(in stdout: String, for commands: [String]) throws -> [String] {
+        let lines = stdout.replacingOccurrences(of: "\r\n", with: "\n")
+            .components(separatedBy: "\n")
+        var markers: [Int] = []
+        for (index, line) in lines.enumerated()
+        where markers.count < commands.count && line == "> \(commands[markers.count])" {
+            markers.append(index)
+        }
+        guard markers.count == commands.count else {
+            throw CaptureError.unparsableOutput(expected: commands.count,
+                                                found: markers.count,
+                                                stdout: stdout)
+        }
+
+        return markers.enumerated().map { position, start in
+            let end = position + 1 < markers.count ? markers[position + 1] : lines.count
+            var body = Array(lines[(start + 1)..<end])
+            while body.last?.isEmpty == true { body.removeLast() }
+            return body.joined(separator: "\n")
+        }
+    }
+
+    /// Why a response capture could not be completed.
+    enum CaptureError: LocalizedError {
+        case cliFailed(status: Int32, stderr: String)
+        case unparsableOutput(expected: Int, found: Int, stdout: String)
+
+        var errorDescription: String? {
+            switch self {
+            case .cliFailed(let status, let stderr):
+                return "sharpee --exec exited \(status):\n\(stderr)"
+            case .unparsableOutput(let expected, let found, let stdout):
+                return "expected \(expected) command markers, found \(found):\n\(stdout)"
+            }
+        }
+    }
+
     /// Drives `runner.run` with `node devkitCLI compose <story> --json` — the real
     /// CLI, the real Process/pipe/decode path; only executable resolution differs
     /// from production.

@@ -1,11 +1,16 @@
 // RecordingSessionTests.swift
 // Covers Play-session recording (ADR-277 D5): session state (capture only
-// while recording), the capture format (per turn `> command` + `[OK: any]` +
-// `#`-comment response, never asserted output), the WKScriptMessage decode
-// path into the session, and the closing real-path proof (rule 13a): a
-// serialized recording written into a real story's tests/ re-runs GREEN
-// through the actual `sharpee test --json` CLI — despite the recorded
-// response text never matching what the story prints.
+// while recording), the draft capture format for UNTAGGED turns (per turn
+// `> command` + `[OK: any]` + `#`-comment response, never asserted output), and
+// the WKScriptMessage decode path into the session.
+//
+// ADR-282 Acceptance 3 SUPERSEDES this file's original closing test, which
+// proved an unconditional all-`[OK: any]` save re-ran green through the real
+// CLI. That save is now refused — a recording nobody vouched for asserts
+// nothing an author meant — so the real-path test below pins the REFUSAL
+// instead. The "a saved recording re-runs green" proof did not disappear: it
+// moved to RecordingSaveAsTestTests, where the session has a bless in it and
+// the assertion being replayed is a real one.
 
 import WebKit
 import XCTest
@@ -52,6 +57,12 @@ final class RecordingSessionTests: XCTestCase {
         title: Recorded: smoke
         ---
 
+        > look
+        [OK: any]
+        # The play session's own opening turn, replayed so the story banner
+        # lands here. A fresh run prints it with the first command, and it
+        # would otherwise be prepended to the first blessed response below.
+
         > take the brass lamp
         [OK: any]
         # Taken.
@@ -96,6 +107,11 @@ final class RecordingSessionTests: XCTestCase {
         let play = PlayViewController()
         play.recording.start()
         play.recording.record(command: "look", response: "A room.")
+        play.recording.record(command: "wait", response: "Time passes.")
+        // ADR-282 Acceptance 3: a save needs at least one of the author's own
+        // assertions. One bless, one turn left untagged — the mixed shape the
+        // save flow actually writes.
+        play.recording.bless(turnAt: 1)
         play.recording.stop()
         var announced: URL?
         play.onTranscriptRecorded = { announced = $0 }
@@ -107,72 +123,52 @@ final class RecordingSessionTests: XCTestCase {
         let written = try String(contentsOf: url, encoding: .utf8)
         XCTAssertTrue(written.hasPrefix("title: Recorded: smoke\n---\n"))
         XCTAssertTrue(written.contains("> look\n[OK: any]\n# A room.\n"))
+        XCTAssertTrue(written.contains("> wait\n[OK]\ntext\nTime passes.\nend text\n"))
     }
 
-    // MARK: - Real-path (rule 13a, Acceptance 7's core)
+    /// The refusal, at the write boundary rather than only in the panel flow —
+    /// no caller can route around Acceptance 3 by calling this directly.
+    func testWriteRecordingRefusesASessionNobodyBlessed() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SharpeeIDE-WriteRefusal-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
 
-    /// A recorded session re-runs GREEN through the real CLI immediately: the
-    /// `[OK: any]` presence assertions pass although the recorded `#` response
-    /// text never matches the story's actual output.
-    func testSerializedRecordingReRunsGreenThroughTheRealCLI() throws {
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SharpeeIDE-RecordingTests-\(UUID().uuidString)", isDirectory: true)
-            .resolvingSymlinksInPath()
-        try FileManager.default.createDirectory(
-            at: tempDir.appendingPathComponent("tests"), withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: tempDir) }
+        let play = PlayViewController()
+        play.recording.start()
+        play.recording.record(command: "look", response: "A room.")
+        play.recording.stop()
+        var announced: URL?
+        play.onTranscriptRecorded = { announced = $0 }
 
-        let story = """
-        story "Mini" by "T"
-          id: mini
-          version: 0.0.1
+        let url = dir.appendingPathComponent("unvouched.transcript")
+        XCTAssertThrowsError(try play.writeRecording(to: url)) { error in
+            XCTAssertEqual(error as? RecordingSaveError, .noBlessedTurns)
+        }
 
-        create the Den
-          a room
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path),
+                       "a refused save must leave no file behind")
+        XCTAssertNil(announced, "nothing was written, so the Tests panel must not be told to re-scan")
+    }
 
-          A small square den.
-
-        create the brass lamp
-          in the Den
-
-          It gleams dully.
-
-        create the player
-          starts in the Den
-
-          You.
-
-        """
-        try story.write(to: tempDir.appendingPathComponent("mini.story"),
-                        atomically: true, encoding: .utf8)
-
+    /// An untagged turn still replays on presence alone — the property ADR-277
+    /// D5 chose `[OK: any]` for, and the reason a mixed save's untagged turns
+    /// survive story rewording. Pinned on the serialized text here; that the
+    /// whole file really passes the CLI is RecordingSaveAsTestTests' job.
+    func testAnUntaggedTurnAssertsPresenceNotItsRecordedText() {
         let session = RecordingSession()
         session.start()
-        session.record(command: "take the brass lamp", response: "RNG text that will differ on replay")
+        session.record(command: "take the brass lamp",
+                       response: "RNG text that will differ on replay")
+        session.bless(turnAt: 0)
         session.record(command: "look", response: "Also never matched")
         session.stop()
-        try session.serialize(title: "Recorded: smoke")
-            .write(to: tempDir.appendingPathComponent("tests/recorded.transcript"),
-                   atomically: true, encoding: .utf8)
 
-        let runner = TestRunner()
-        let delegate = RecordingRunObserver()
-        runner.delegate = delegate
-        let exited = expectation(description: "recorded transcript run exits")
-        delegate.onExit = { exited.fulfill() }
-        runner.start(executable: URL(fileURLWithPath: "/usr/bin/env"),
-                     arguments: ["node", TestToolchain.devkitCLI.path, "test", tempDir.path, "--json"],
-                     workingDirectory: tempDir,
-                     environment: ShellEnvironment.buildEnvironment())
-        wait(for: [exited], timeout: 120)
-
-        XCTAssertEqual(delegate.result?.state, .passed, "recorded transcript must re-run green")
-        XCTAssertEqual(delegate.result?.exitCode, 0)
-        let ends = delegate.records.compactMap { record -> TestTranscriptEnd? in
-            if case .transcriptEnd(let end) = record { return end } else { return nil }
-        }
-        XCTAssertEqual(ends.map(\.status), [.passed])
-        XCTAssertEqual(ends.first?.passed, 2, "both recorded turns executed and passed")
+        let source = session.serialize(title: "Recorded: smoke")
+        XCTAssertTrue(source.contains("> look\n[OK: any]\n# Also never matched"),
+                      "the untagged turn's recorded text stays a comment, never an assertion")
+        XCTAssertFalse(source.contains("[OK]\ntext\nAlso never matched"),
+                       "an untagged turn must not acquire an assertion it was never given")
     }
 }
 
@@ -187,20 +183,4 @@ private final class FakeScriptMessage: WKScriptMessage {
     }
     override var name: String { fakeName }
     override var body: Any { fakeBody }
-}
-
-@MainActor
-private final class RecordingRunObserver: TestRunnerDelegate {
-    private(set) var records: [TestResultRecord] = []
-    var result: TestRunner.Result?
-    var onExit: (() -> Void)?
-
-    func runner(_ runner: TestRunner, didDecode record: TestResultRecord) { records.append(record) }
-    func runner(_ runner: TestRunner, didFailDecode error: Error) {}
-    func runner(_ runner: TestRunner, didEmitStderr text: String) {}
-    func runner(_ runner: TestRunner, didChangeState state: TestRunner.State) {}
-    func runner(_ runner: TestRunner, didExit result: TestRunner.Result) {
-        self.result = result
-        onExit?()
-    }
 }

@@ -111,6 +111,17 @@ final class MainWindowController: NSWindowController {
         rootViewController?.configureRecording(saveDirectory: saveDirectory, onRecorded: onRecorded)
     }
 
+    /// Whether Test → Bless Last Turn should be enabled (ADR-282 D1).
+    var canBlessLatestPlayTurn: Bool {
+        rootViewController?.canBlessLatestPlayTurn ?? false
+    }
+
+    /// Test → Bless Last Turn (⇧⌘B). Toggles the author's vouch on the turn
+    /// showing in the Play pane.
+    func blessLatestPlayTurn() {
+        rootViewController?.blessLatestPlayTurn()
+    }
+
     /// The editor's focused document (Run Current Test File target), or nil.
     var activeDocumentURL: URL? {
         rootViewController?.activeDocumentURL
@@ -376,6 +387,13 @@ private final class RootViewController: NSViewController {
     /// Points Play recording at the open story (ADR-277 D5).
     func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
         mainSplitViewController.configureRecording(saveDirectory: saveDirectory, onRecorded: onRecorded)
+    }
+
+    /// Whether the live bless gesture is available (ADR-282 D1).
+    var canBlessLatestPlayTurn: Bool { mainSplitViewController.canBlessLatestPlayTurn }
+
+    func blessLatestPlayTurn() {
+        mainSplitViewController.blessLatestPlayTurn()
     }
 
     /// The editor's focused document (Run Current Test File enablement/target).
@@ -672,6 +690,14 @@ private final class MainSplitViewController: NSSplitViewController {
     fileprivate func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
         playViewController.recordingSaveDirectory = saveDirectory
         playViewController.onTranscriptRecorded = onRecorded
+    }
+
+    /// The live bless gesture, reached from the Test menu (ADR-282 D1). The
+    /// header button drives the same path directly.
+    fileprivate var canBlessLatestPlayTurn: Bool { playViewController.canBlessLatestTurn }
+
+    fileprivate func blessLatestPlayTurn() {
+        Task { await playViewController.blessLatestTurn() }
     }
 
     fileprivate func showTestTab() {

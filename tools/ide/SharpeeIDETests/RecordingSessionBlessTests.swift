@@ -117,6 +117,99 @@ final class RecordingSessionBlessTests: XCTestCase {
                       "a withdrawn bless must not still count toward the save-flow's bless check")
     }
 
+    // MARK: - The live gesture (D1): toggle the turn on screen
+
+    func testTheLiveGestureTargetsTheMostRecentTurn() {
+        let session = RecordingSession()
+        session.start()
+        session.record(command: "look", response: "The cellar door hangs open.")
+        session.record(command: "take lantern", response: "Taken.")
+
+        XCTAssertTrue(session.toggleBlessOnLatestTurn())
+
+        XCTAssertEqual(session.turns[1].verdict, .blessed(selection: nil),
+                       "the author vouches for the response they are looking at")
+        XCTAssertEqual(session.turns[0].verdict, .untagged)
+    }
+
+    func testTheLiveGestureTakesTheVouchBackOnASecondPress() {
+        let session = sessionWithTurns()
+        session.record(command: "read sign", response: "It says GO BACK.")
+        session.toggleBlessOnLatestTurn()
+
+        XCTAssertTrue(session.toggleBlessOnLatestTurn())
+
+        XCTAssertEqual(session.turns.last?.verdict, .untagged,
+                       "a judgment the author cannot revise would be a trap")
+        XCTAssertTrue(session.blessedTurns.isEmpty)
+    }
+
+    func testTheLiveGestureKeepsASelectionThatBelongsToThisTurn() {
+        let session = RecordingSession()
+        session.start()
+        session.record(command: "look", response: "The cellar door hangs open.")
+
+        session.toggleBlessOnLatestTurn(rawSelection: "  cellar door hangs open  ")
+
+        // Trimmed, because the surface reports whatever the drag covered — the
+        // fragment the author meant is the text, not its surrounding whitespace.
+        XCTAssertEqual(session.turns[0].verdict,
+                       .blessed(selection: "cellar door hangs open"))
+    }
+
+    func testTheLiveGestureDropsASelectionFromSomewhereElseAndBlessesVerbatim() {
+        let session = RecordingSession()
+        session.start()
+        session.record(command: "look", response: "The cellar door hangs open.")
+
+        // A selection standing in an earlier turn, the status line, or the
+        // command echo is not a fragment OF this response. Encoding it would
+        // produce an assertion the author never made (D2), so the bless falls
+        // back to the whole response rather than to a wrong fragment.
+        session.toggleBlessOnLatestTurn(rawSelection: "Score: 10 | Turns: 4")
+
+        XCTAssertEqual(session.turns[0].verdict, .blessed(selection: nil))
+    }
+
+    func testAnEmptySelectionIsTheVerbatimCaseNotAnEmptyFragment() {
+        let session = RecordingSession()
+        session.start()
+        session.record(command: "look", response: "The cellar door hangs open.")
+
+        session.toggleBlessOnLatestTurn(rawSelection: "   \n  ")
+
+        XCTAssertEqual(session.turns[0].verdict, .blessed(selection: nil),
+                       "no selection means assert the full response — not assert nothing")
+    }
+
+    func testTheLiveGestureIsUnavailableWithNothingCaptured() {
+        let session = RecordingSession()
+        session.start()
+
+        XCTAssertFalse(session.canBlessLatestTurn)
+        XCTAssertFalse(session.toggleBlessOnLatestTurn())
+        XCTAssertNil(session.latestTurnIndex)
+    }
+
+    func testTheLiveGestureIsUnavailableWhenTheLatestResponseIsBlank() {
+        let session = sessionWithTurns() // last turn has an empty response
+
+        XCTAssertFalse(session.canBlessLatestTurn,
+                       "an empty response carries no bless affordance (D2)")
+        XCTAssertFalse(session.toggleBlessOnLatestTurn())
+        XCTAssertTrue(session.blessedTurns.isEmpty)
+    }
+
+    func testTheLiveGestureIsUnavailableOnceRecordingStops() {
+        let session = sessionWithTurns()
+        session.stop()
+
+        // The captured turns stay reviewable, but the live gesture belongs to
+        // the moment of play — nothing to vouch for once the pane is idle.
+        XCTAssertFalse(session.canBlessLatestTurn)
+        XCTAssertFalse(session.toggleBlessOnLatestTurn())
+    }
+
     // MARK: - Checkpoints (D4)
 
     func testCheckpointsAreIndependentOfBlessing() {
@@ -149,19 +242,26 @@ final class RecordingSessionBlessTests: XCTestCase {
 
     // MARK: - Phase boundary
 
-    func testSerializationIsUnchangedByBlessingInThisPhase() {
+    func testACheckpointStillDoesNotAffectSerialization() {
         let session = sessionWithTurns()
         session.bless(turnAt: 0, selection: "cellar door")
         session.setCheckpoint(true, turnAt: 1)
 
-        // Phase 1 CARRIES the marks; Phase 2 encodes them. Until then a blessed
-        // turn must still serialize as ADR-277 D5's draft, so the recording
-        // feature that already shipped is unregressed.
+        // Phase 2 encodes the BLESS (this file's sibling,
+        // RecordingSerializationTests, owns those rules). Splitting a
+        // checkpointed session into a walkthrough chain is still Phase 3 — until
+        // then a checkpoint is carried and not acted on, so the mark must leave
+        // no trace in a single-file save.
         let output = session.serialize(title: "Draft")
-        XCTAssertTrue(output.contains("[OK: any]"))
-        XCTAssertFalse(output.contains("[OK: contains"),
-                       "Phase 1 must not start encoding assertions — that is Phase 2")
-        XCTAssertEqual(output.components(separatedBy: "[OK: any]").count - 1, 3,
-                       "every captured turn still carries the draft assertion")
+        let unmarked = RecordingSession()
+        unmarked.start()
+        for turn in session.turns {
+            unmarked.record(command: turn.command, response: turn.response)
+        }
+        unmarked.bless(turnAt: 0, selection: "cellar door")
+
+        XCTAssertEqual(output, unmarked.serialize(title: "Draft"),
+                       "a checkpoint must not change what a single-file save writes")
+        XCTAssertTrue(output.contains("[OK: contains \"cellar door\"]"))
     }
 }

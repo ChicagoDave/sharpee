@@ -144,20 +144,23 @@ export interface Assertion {
   stateExpression?: string;     // For state-assert: the expression to evaluate (e.g., "egg.location = thief")
 
   /**
-   * Literal fence content (ADR-287 D1), one entry per line, uninterpreted —
-   * brackets, `>`, `#`, quotes and blank lines all survive verbatim.
+   * Literal `text` block content (ADR-287 D1), one entry per line,
+   * uninterpreted — brackets, `>`, `#`, quotes, blank lines and leading
+   * whitespace all survive verbatim. Storage is byte-faithful even though
+   * MATCHING normalizes; that distinction is why the block delimiter is a
+   * keyword and not indentation.
    *
-   * Set only on `ok` (exact match against the fence) and payload-less
-   * `ok-contains` (the fence is the fragment). Stored separately from
-   * `TranscriptCommand.expectedOutput` so D1's "a fence or a classic block,
+   * Set only on `ok` (exact match against the block) and payload-less
+   * `ok-contains` (the block is the fragment). Stored separately from
+   * `TranscriptCommand.expectedOutput` so D1's "a block or a classic block,
    * never both" stays checkable rather than conflated.
    */
-  fence?: string[];
+  block?: string[];
 
   /**
-   * Line of the assertion tag this fence hangs off, for failure display.
+   * Line of the assertion tag this block hangs off, for failure display.
    *
-   * Deliberately set ONLY on fenced assertions: stamping every assertion would
+   * Deliberately set ONLY on block assertions: stamping every assertion would
    * change the parse of all 182 existing transcripts and break ADR-287 D2's
    * byte-identical guarantee (tests/parse-baseline.test.ts).
    */
@@ -167,7 +170,7 @@ export interface Assertion {
 /**
  * A structural problem found while parsing, carrying the line it occurred on.
  *
- * These cannot be recovered from a finished AST — an unclosed fence leaves no
+ * These cannot be recovered from a finished AST — an unclosed block leaves no
  * trace once parsing has swallowed the rest of the file — so the parser records
  * them as it goes and `validateTranscript` merges them into its report.
  */
@@ -201,7 +204,7 @@ export interface Transcript {
    * Structural parse failures (ADR-287 AC4), surfaced via `validateTranscript`.
    *
    * Absent — not an empty array — when the file parsed cleanly, so a clean
-   * transcript's AST is byte-identical to its pre-fence parse (ADR-287 D2).
+   * transcript's AST is byte-identical to its pre-block parse (ADR-287 D2).
    */
   parseErrors?: ParseError[];
 }

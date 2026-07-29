@@ -15,7 +15,7 @@ exports[`ADR-287 D2 — existing transcripts parse identically > parses every tr
   "stories/concealment-test/tests/transcripts/concealment.transcript": "f46957c4008d06fc",
   "stories/concealment-test/tests/transcripts/snippets.transcript": "6fb93012879c7dc1",
   "stories/counter-demo/tests/dread.transcript": "8091246725fa3433",
-  "stories/dungeo/tests/transcripts/adr-287-fenced-literals.transcript": "0cf734b59092efda",
+  "stories/dungeo/tests/transcripts/adr-287-fenced-literals.transcript": "1a83e13b11534c43",
   "stories/dungeo/tests/transcripts/again-minimal.transcript": "ee9774ce3e0342ce",
   "stories/dungeo/tests/transcripts/again-simple.transcript": "64c15fd23f10df48",
   "stories/dungeo/tests/transcripts/again.transcript": "c6ce5c86cf242b05",

@@ -18,34 +18,48 @@ import {
 } from './types.js';
 
 /**
- * A fence delimiter: a line whose trimmed content is only backticks, three or
- * more (ADR-287 D1). The close must repeat the opening length exactly, so a
- * shorter run inside a longer fence is literal content — markdown's rule.
+ * A literal text block opens with `text` and closes with `end text`, each on
+ * its own line at column 0 (ADR-287 D1).
+ *
+ * Column 0 is load-bearing, not decoration: an INDENTED `end text` inside the
+ * payload is content and does not close the block, which is what lets a story
+ * quote the syntax at all. Only a payload line at column 0 reading exactly
+ * `end text` collides — and that shape is reserved (David's ruling,
+ * 2026-07-28). There is no escape, because the collision cannot be silent:
+ * the block closes early, the rest of the payload falls through to the classic
+ * expected-output path below, and `finalizeCommand`'s both-forms check turns it
+ * into a validation error with a line number.
  */
-const FENCE_DELIMITER = /^`{3,}$/;
+const BLOCK_OPEN = 'text';
+const BLOCK_CLOSE = 'end text';
 
-/** Can this assertion carry a fence? `[OK]`, or `[OK: contains]` with no inline payload. */
-function acceptsFence(assertion: Assertion): boolean {
+/** Is this line a block delimiter? Column 0, trailing whitespace forgiven. */
+function isBlockLine(line: string, keyword: string): boolean {
+  return line.trimEnd() === keyword;
+}
+
+/** Can this assertion carry a block? `[OK]`, or `[OK: contains]` with no inline payload. */
+function acceptsBlock(assertion: Assertion): boolean {
   return assertion.type === 'ok' || (assertion.type === 'ok-contains' && assertion.value === undefined);
 }
 
 /**
- * Read a fenced literal block whose opening delimiter is at `lines[openIndex]`.
+ * Read a literal text block whose `text` opener is at `lines[openIndex]`.
  *
- * Returns the verbatim content lines and the index of the closing delimiter, or
- * `null` when no matching close appears before EOF. Content is never
- * interpreted — that is the entire point of the form.
+ * Returns the verbatim content lines and the index of the closing `end text`,
+ * or `null` when no close appears before EOF. Content is never interpreted and
+ * never re-indented — that is the entire point of the form, and the reason
+ * indentation was rejected as the delimiter (it cannot preserve a payload whose
+ * every line is indented).
  */
-function readFence(
+function readTextBlock(
   lines: string[],
   openIndex: number
 ): { content: string[]; closeIndex: number } | null {
-  const openLength = lines[openIndex].trim().length;
   const content: string[] = [];
 
   for (let i = openIndex + 1; i < lines.length; i++) {
-    const candidate = lines[i].trim();
-    if (FENCE_DELIMITER.test(candidate) && candidate.length === openLength) {
+    if (isBlockLine(lines[i], BLOCK_CLOSE)) {
       return { content, closeIndex: i };
     }
     content.push(lines[i]);
@@ -80,7 +94,7 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
   let currentCommand: TranscriptCommand | null = null;
   const parseErrors: ParseError[] = [];
 
-  // Indexed rather than for-of: a fence consumes the lines that follow its
+  // Indexed rather than for-of: a block consumes the lines that follow its
   // opening delimiter, so the loop has to be able to skip ahead (ADR-287 D1).
   for (let index = 0; index < lines.length; index++) {
     const line = lines[index];
@@ -160,12 +174,12 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
 
     // Directive or assertion tags (both use [ ])
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-      // ADR-287 D1: a fence attaches only on the IMMEDIATELY following line —
-      // an intervening blank line detaches it, leaving a backtick line to parse
-      // as ordinary prose exactly as it did before fences existed (D2).
-      const fenceIndex = index + 1;
-      const nextIsFence =
-        fenceIndex < lines.length && FENCE_DELIMITER.test(lines[fenceIndex].trim());
+      // ADR-287 D1: a block attaches only on the IMMEDIATELY following line —
+      // an intervening blank line detaches it, leaving a `text` line to parse
+      // as ordinary prose exactly as it did before blocks existed (D2).
+      const blockIndex = index + 1;
+      const nextIsBlock =
+        blockIndex < lines.length && isBlockLine(lines[blockIndex], BLOCK_OPEN);
 
       // Try to parse as directive first
       const directive = parseDirective(trimmed, lineNumber);
@@ -179,10 +193,10 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
         }
         transcript.items!.push({ type: 'directive', directive });
 
-        if (nextIsFence) {
-          index = skipInvalidFence(
-            lines, fenceIndex, parseErrors,
-            `Fenced block cannot follow the directive "${trimmed}" — fences attach only to [OK] or [OK: contains]`
+        if (nextIsBlock) {
+          index = skipInvalidBlock(
+            lines, blockIndex, parseErrors,
+            `A text block cannot follow the directive "${trimmed}" — blocks attach only to [OK] or [OK: contains]`
           );
         }
         continue;
@@ -194,35 +208,34 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
         if (assertion) {
           currentCommand.assertions.push(assertion);
 
-          if (nextIsFence && !acceptsFence(assertion)) {
-            index = skipInvalidFence(
-              lines, fenceIndex, parseErrors,
-              `Fenced block cannot follow "${trimmed}" — fences attach only to [OK] or payload-less [OK: contains]`
+          if (nextIsBlock && !acceptsBlock(assertion)) {
+            index = skipInvalidBlock(
+              lines, blockIndex, parseErrors,
+              `A text block cannot follow "${trimmed}" — blocks attach only to [OK] or payload-less [OK: contains]`
             );
-          } else if (nextIsFence) {
-            const fence = readFence(lines, fenceIndex);
-            if (!fence) {
-              const openLength = lines[fenceIndex].trim().length;
+          } else if (nextIsBlock) {
+            const block = readTextBlock(lines, blockIndex);
+            if (!block) {
               parseErrors.push({
-                lineNumber: fenceIndex + 1,
-                message: `Unclosed fenced block — expected a closing line of exactly ${openLength} backticks before end of file`
+                lineNumber: blockIndex + 1,
+                message: `Unclosed text block — expected a line reading "${BLOCK_CLOSE}" before end of file`
               });
               index = lines.length;  // the author meant everything after to be literal
-            } else if (fence.content.length === 0) {
+            } else if (block.content.length === 0) {
               parseErrors.push({
-                lineNumber: fenceIndex + 1,
-                message: 'Empty fenced block — a fence must contain at least one line'
+                lineNumber: blockIndex + 1,
+                message: 'Empty text block — a block must contain at least one line'
               });
-              index = fence.closeIndex;
+              index = block.closeIndex;
             } else {
-              assertion.fence = fence.content;
+              assertion.block = block.content;
               assertion.lineNumber = lineNumber;
-              index = fence.closeIndex;
+              index = block.closeIndex;
             }
           } else if (assertion.type === 'ok-contains' && assertion.value === undefined) {
             parseErrors.push({
               lineNumber,
-              message: '[OK: contains] with no inline payload requires a fenced block on the next line'
+              message: '[OK: contains] with no inline payload requires a text block on the next line'
             });
           }
         }
@@ -247,7 +260,7 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
   transcript.goals = parseGoals(transcript.items!);
 
   // Attached only when non-empty: a clean transcript's AST must stay
-  // byte-identical to its pre-fence parse (ADR-287 D2, pinned by
+  // byte-identical to its pre-block parse (ADR-287 D2, pinned by
   // tests/parse-baseline.test.ts).
   if (parseErrors.length > 0) {
     transcript.parseErrors = parseErrors;
@@ -257,7 +270,7 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
 }
 
 /**
- * Consume a fence that cannot legally attach where it appears, recording why.
+ * Consume a text block that cannot legally attach where it appears, recording why.
  *
  * The block is swallowed rather than left in place so its literal content —
  * which may contain `>` commands or `[...]` tags — cannot be re-read as
@@ -265,15 +278,15 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
  *
  * @returns the index the parse loop should resume from (EOF if never closed)
  */
-function skipInvalidFence(
+function skipInvalidBlock(
   lines: string[],
   openIndex: number,
   parseErrors: ParseError[],
   message: string
 ): number {
-  const fence = readFence(lines, openIndex);
+  const block = readTextBlock(lines, openIndex);
   parseErrors.push({ lineNumber: openIndex + 1, message });
-  return fence ? fence.closeIndex : lines.length;
+  return block ? block.closeIndex : lines.length;
 }
 
 /**
@@ -485,8 +498,8 @@ function parseAssertion(tag: string): Assertion | null {
     return { type: 'ok-any' };
   }
 
-  // [OK: contains] — payload-less; the fragment is the fenced block on the next
-  // line (ADR-287 D1). Without a fence this is a validation error, raised by the
+  // [OK: contains] — payload-less; the fragment is the text block on the next
+  // line (ADR-287 D1). Without a block this is a validation error, raised by the
   // parse loop, which is the only place that can see whether one follows.
   if (/^OK:\s*contains$/i.test(inner)) {
     return { type: 'ok-contains' };
@@ -619,7 +632,7 @@ function parseAssertion(tag: string): Assertion | null {
  * @param command the command being closed out
  * @param parseErrors collector for structural problems only visible once the
  *   command is complete — expected-output lines can arrive after the assertion
- *   that carries the fence, so the both-forms check cannot run at attach time
+ *   that carries the block, so the both-forms check cannot run at attach time
  */
 function finalizeCommand(command: TranscriptCommand, parseErrors: ParseError[]): void {
   // Trim trailing empty lines from expected output
@@ -629,18 +642,22 @@ function finalizeCommand(command: TranscriptCommand, parseErrors: ParseError[]):
   }
 
   // If no explicit assertion and we have expected output, default to [OK].
-  // A fenced assertion is an assertion, so it never acquires this default —
-  // audited against ADR-287 D1's "a fence or a classic block, never both".
+  // A block assertion is an assertion, so it never acquires this default —
+  // audited against ADR-287 D1's "a block or a classic block, never both".
   if (command.assertions.length === 0 && command.expectedOutput.length > 0) {
     command.assertions.push({ type: 'ok' });
   }
 
-  // ADR-287 D1: a command may carry a fence OR a classic expected-output block.
-  const fenced = command.assertions.find(a => a.fence !== undefined);
-  if (fenced && command.expectedOutput.length > 0) {
+  // ADR-287 D1: a command may carry a text block OR a classic expected-output
+  // block. This check is also what makes the reserved `end text` line safe to
+  // rule with no escape: a payload containing one closes its block early and
+  // the remainder lands in expectedOutput, so the collision surfaces HERE with
+  // a line number instead of producing a plausible-looking assertion.
+  const blocked = command.assertions.find(a => a.block !== undefined);
+  if (blocked && command.expectedOutput.length > 0) {
     parseErrors.push({
-      lineNumber: fenced.lineNumber ?? command.lineNumber,
-      message: `Command "${command.input}" carries both a fenced block and a classic expected-output block — use one or the other`
+      lineNumber: blocked.lineNumber ?? command.lineNumber,
+      message: `Command "${command.input}" carries both a text block and a classic expected-output block — use one or the other`
     });
   }
 }
