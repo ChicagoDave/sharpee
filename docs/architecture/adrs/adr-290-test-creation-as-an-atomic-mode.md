@@ -122,6 +122,45 @@ which has native equivalents. For a published game it means no save/restore UI
 at all unless the author supplies one, so the publish option must say so where
 the choice is made.
 
+### D8. The save location is inferred, never asked
+
+Saving a test presents **no file panel**. The author names the test; where it
+lands is the flow's job.
+
+David's ruling, 2026-07-29: "the user shouldn't even know and the location
+should be inferred (correctly)."
+
+The location was never actually a choice. ADR-280's classifier looks for exactly
+`tests/transcripts/` and `walkthroughs/`; anything saved elsewhere is invisible
+in the sidebar and undiscovered by the Tests panel. Offering a browsable panel
+therefore offers the author precisely one correct answer and an unbounded set of
+wrong ones — and the wrong ones fail silently, as a test that simply never
+appears.
+
+The codebase already does this correctly on one path: `saveChain` (D4) presents
+no panel, because "the author is not naming a file — the flow names N of them
+and where they land is fixed." D8 says the same reasoning always applied to the
+single-transcript save; it just kept a panel.
+
+**The defect this replaces**, which is the bug that prompted the ruling: the
+panel's default directory is set conditionally —
+
+```swift
+if let dir = transcriptsSaveDirectory { panel.directoryURL = dir }
+```
+
+— and `transcriptsSaveDirectory` is nil whenever `storyDirectory` is, which is
+whenever `StoryTarget.storyFile(in:)` found no `.story` **directly inside** the
+opened folder (`contentsOfDirectory`, non-recursive; a parent folder or a
+workspace with stories one level down yields nil). In that case no
+`directoryURL` is set, no warning is raised, and the panel opens at whatever
+location it last used. The chain path, given the same nil, fails loudly with
+`RecordingSaveError.noStoryDirectory`. Two paths, one missing value, one shrugs.
+
+Removing the panel does not remove that hole — it relocates it. With no panel,
+an unresolved story directory must be a **loud, named failure before capture
+begins**, not at save time when the author has already done the work.
+
 ### D7. A write into the project has one owner for "who else observes this"
 
 The saved-test-invisible bug was not a missing call; it was a missing owner.
@@ -189,6 +228,7 @@ ADR is where the decisions live, not a substitute for the issues.
 | [#194](https://github.com/ChicagoDave/sharpee/issues/194) | Blessed turns unmarked in the Play panel | D5; Q3 |
 | [#195](https://github.com/ChicagoDave/sharpee/issues/195) | Restart does not clear the pane — autosave replays the old world | D2, D3 |
 | [#196](https://github.com/ChicagoDave/sharpee/issues/196) | Menu-less client for the IDE; menu as a publish option | D6; Q4 |
+| [#198](https://github.com/ChicagoDave/sharpee/issues/198) | Save should not ask for a location; its default silently falls back when the story dir is unresolved | D8 |
 
 **Not filed**: the saved-test-invisible bug (D7's motivating case) was fixed in the
 same session it was found — `refreshProjectTree()` in `MainWindow.swift`, called
