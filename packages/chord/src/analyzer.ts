@@ -389,6 +389,47 @@ interface StateSetInfo {
   reversible: boolean;
 }
 
+/**
+ * Every namespace that admits one declaration per name (ADR-289 D5).
+ *
+ * The list is the point. The rule was implemented seven times, each slightly
+ * differently, and two constructs — `define action` and `define trait` — were
+ * simply missed, which nothing could reveal because there was nowhere for a
+ * row to be absent from. A construct that forgets its gate is now a missing
+ * entry here rather than an omission nobody notices.
+ *
+ * Each value is the noun the diagnostic uses; the article is derived.
+ */
+const UNIQUE_NAMESPACES = [
+  'action',
+  'ambient bed',
+  'asset',
+  'channel',
+  'counter',
+  'entity',
+  'image layer',
+  'machine',
+  'phrasebook',
+  'pronoun set',
+  'trait',
+] as const;
+
+type UniqueNamespace = (typeof UNIQUE_NAMESPACES)[number];
+
+/**
+ * How a clause body's leading validate partition ended (ADR-289 D3): the
+ * first non-refusal statement, and whether it mutated. Null while the
+ * partition is still open and a refusal may still be written.
+ */
+interface PhaseOrderState {
+  ended: { kind: 'mutation' | 'statement'; what: string } | null;
+}
+
+/** The source keyword a statement was written with, for phase-order messages. */
+function statementWord(stmt: Statement): string {
+  return stmt.kind === 'media' ? stmt.form : stmt.kind;
+}
+
 class Analyzer {
   private entities: EntitySymbol[] = [];
   private byId = new Map<string, EntitySymbol>();
@@ -462,6 +503,13 @@ class Analyzer {
     entries?: Record<string, IRPhrase>;
     span: Span;
   }> = [];
+
+  /**
+   * The single duplicate-declaration store (ADR-289 D5): `<namespace> <name>`
+   * → the span that first declared it. One map, so every namespace in
+   * `UNIQUE_NAMESPACES` gets the same rule and the same message shape.
+   */
+  private uniqueNames = new Map<string, Span>();
 
   /** Book name → declaring span (`analysis.duplicate-phrasebook` gate). */
   private phrasebookNames = new Map<string, Span>();
@@ -561,8 +609,8 @@ class Analyzer {
         // Story-owned every-turn clauses (ADR-236 D7): built in STORY_SCOPE
         // so `it` reports the unbound-referent gate; narration broadcasts
         // (the story is everywhere — D11 satisfied trivially).
-        onClauses: (this.ast.header?.onClauses ?? []).map((c) => ({
-          ...this.buildOnClause(c, STORY_SCOPE),
+        onClauses: (this.ast.header?.onClauses ?? []).map((c, i) => ({
+          ...this.buildOnClause(c, STORY_SCOPE, 'story', i),
           narration: 'broadcast' as const,
         })),
       },
@@ -659,11 +707,13 @@ class Analyzer {
             name: decl.name.join(' '),
             // Decision 10: sequences are story-owned — narration broadcasts.
             narration: 'broadcast',
-            steps: decl.steps.map((step) => ({
+            steps: decl.steps.map((step, stepIndex) => ({
               timing: step.timing,
               turns: step.turns,
               anchor: this.resolveStepAnchor(step),
-              body: step.body.map((s) => this.resolveStatement(s, TOP_SCOPE)),
+              body: step.body.map((s, i) =>
+                this.resolveStatement(s, TOP_SCOPE, `sequence.${decl.name.join('-')}.step-${stepIndex}.${i}`),
+              ),
               span: step.span,
             })),
             span: decl.span,
@@ -1278,7 +1328,11 @@ class Analyzer {
           seenEntities.set(id, row.span);
           rows.push({
             filter: { kind: 'entity', id },
-            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            // Keyed on the IR row index — the same index the runtime's topic
+            // occurrence key uses, so the two cannot drift.
+            body: row.body.map((s, i) =>
+              this.resolveStatement(s, scope, `topic.${ownerId}.row-${rows.length}.${i}`),
+            ),
             span: row.span,
           });
         } else {
@@ -1310,11 +1364,13 @@ class Analyzer {
           if (rejected) continue;
           rows.push({
             filter: { kind: 'text', primary: row.filter.primary, aliases: row.filter.aliases },
-            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            body: row.body.map((s, i) =>
+              this.resolveStatement(s, scope, `topic.${ownerId}.row-${rows.length}.${i}`),
+            ),
             span: row.span,
           });
         }
-        this.checkPhaseOrder(row.body, { mutated: false });
+        this.checkPhaseOrder(row.body, { ended: null });
       }
 
       owner.topics = rows;
@@ -1343,9 +1399,7 @@ class Analyzer {
       );
     }
     const name = decl.name.join(' ');
-    if (this.machineNames.has(name)) {
-      this.diagnostics.error('analysis.duplicate-machine', `A machine named \`${name}\` already exists.`, decl.span);
-    }
+    this.registerUnique('machine', name, decl.span, 'analysis.duplicate-machine');
     this.machineNames.add(name);
 
     const stateNames = new Set(decl.states.map((s) => s.name));
@@ -1431,8 +1485,12 @@ class Analyzer {
         name: s.name,
         terminal: s.terminal,
         transitions: s.transitions.map(buildTransition),
-        onEnter: s.onEnter.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
-        onExit: s.onExit.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
+        onEnter: s.onEnter.map((stmt, i) =>
+          this.resolveStatement(stmt, STORY_SCOPE, `machine.${decl.name}.${s.name}.enter.${i}`),
+        ),
+        onExit: s.onExit.map((stmt, i) =>
+          this.resolveStatement(stmt, STORY_SCOPE, `machine.${decl.name}.${s.name}.exit.${i}`),
+        ),
         span: s.span,
       })),
       span: decl.span,
@@ -1494,7 +1552,7 @@ class Analyzer {
       states: decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
       scores: decl.scores.map((s) => ({ name: `trait.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c) => this.buildOnClause(c, scope)),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c, i) => this.buildOnClause(c, scope, `trait.${decl.name}`, i)),
       span: decl.span,
     };
   }
@@ -1825,7 +1883,7 @@ class Analyzer {
       refusals,
       otherwise: decl.otherwise?.phraseKey ?? null,
       scores: decl.scores.map((s) => ({ name: `action.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      body: decl.body.map((s) => this.resolveStatement(s, scope)),
+      body: decl.body.map((s, i) => this.resolveStatement(s, scope, `action.${decl.name}.body.${i}`)),
       span: decl.span,
     };
   }
@@ -1898,9 +1956,7 @@ class Analyzer {
       }
       else if (decl.kind === 'define-counter') {
         // ADR-264: register the story-global counter name; duplicate is an error.
-        if (this.storyCounterNames.has(decl.name)) {
-          this.diagnostics.error('analysis.duplicate-counter', `A counter named \`${decl.name}\` is already declared.`, decl.span);
-        } else {
+        if (this.registerUnique('counter', decl.name, decl.span, 'analysis.duplicate-counter')) {
           this.storyCounterNames.add(decl.name);
         }
       }
@@ -1921,22 +1977,17 @@ class Analyzer {
       }
       else if (decl.kind === 'define-asset') {
         // ADR-216: declared media assets — DATA references, one namespace.
-        if (this.assets.has(decl.name)) {
-          this.diagnostics.error('analysis.duplicate-asset', `An asset named \`${decl.name}\` already exists.`, decl.span);
-        } else {
+        if (this.registerUnique('asset', decl.name, decl.span, 'analysis.duplicate-asset')) {
           this.assets.set(decl.name, { kind: decl.assetKind, path: decl.path, span: decl.span });
         }
       }
       else if (decl.kind === 'define-family-channel') {
-        // ADR-241 D2: named family channels, per-family namespace.
+        // ADR-241 D2: named family channels, per-family namespace — each
+        // family is its own row in the table, so an ambient bed and an image
+        // layer may share a name.
         const family = this.familyChannels[decl.family];
-        if (family.has(decl.name)) {
-          this.diagnostics.error(
-            'analysis.duplicate-channel',
-            `An ${decl.family === 'ambient' ? 'ambient bed' : 'image layer'} named \`${decl.name}\` is already declared.`,
-            decl.span,
-          );
-        } else {
+        const familyNs: UniqueNamespace = decl.family === 'ambient' ? 'ambient bed' : 'image layer';
+        if (this.registerUnique(familyNs, decl.name, decl.span, 'analysis.duplicate-channel')) {
           family.set(decl.name, decl.span);
         }
       }
@@ -1949,13 +2000,15 @@ class Analyzer {
             `\`${decl.name}\` is a standard pronoun set — \`define pronouns\` names a new set; pick another name.`,
             decl.span,
           );
-        } else if (this.pronounSetDecls.has(decl.name)) {
-          this.diagnostics.error('analysis.duplicate-pronoun-set', `A pronoun set named \`${decl.name}\` is already defined.`, decl.span);
-        } else {
+        } else if (this.registerUnique('pronoun set', decl.name, decl.span, 'analysis.duplicate-pronoun-set')) {
           this.pronounSetDecls.set(decl.name, decl);
         }
       }
       else if (decl.kind === 'define-trait') {
+        // ADR-289 D5: one of the two constructs the hand-rolled gates missed
+        // — a second `define trait guard` used to compile, the later block
+        // silently winning wherever the two disagreed.
+        this.registerUnique('trait', decl.name, decl.span, 'analysis.duplicate-trait');
         this.traitNames.add(decl.name);
         for (const field of decl.data) {
           // Trait data fields resolve in value positions — the reserved-
@@ -1974,6 +2027,9 @@ class Analyzer {
         for (const clause of decl.onClauses) this.collectInlineTexts(clause.body);
       }
       else if (decl.kind === 'define-action') {
+        // ADR-289 D5: the other missed construct — a second `define action
+        // petting` used to overwrite the first's slots silently.
+        this.registerUnique('action', decl.name, decl.span, 'analysis.duplicate-action');
         const slots = new Set<string>();
         for (const pattern of decl.patterns) {
           for (const part of pattern.parts) {
@@ -2280,8 +2336,11 @@ class Analyzer {
         this.diagnostics.error('analysis.reserved-name', RESERVED_MATCH_MESSAGE, decl.name.span);
       }
     }
-    if (this.byId.has(id)) {
-      this.diagnostics.error('analysis.duplicate-entity', `An entity named \`${nameWords.join(' ')}\` already exists.`, decl.name.span);
+    // Keyed on the LOWERCASED name, matching the `id` derivation this gate
+    // used to test directly (`nameWords.join('-').toLowerCase()`) — `Hall`
+    // and `hall` are one entity, and keying on the display form would have
+    // quietly let the second one through.
+    if (!this.registerUnique('entity', nameWords.join(' ').toLowerCase(), decl.name.span, 'analysis.duplicate-entity')) {
       return;
     }
     this.checkStateSet(decl.states, nameWords.join(' ').toLowerCase());
@@ -2570,19 +2629,34 @@ class Analyzer {
     return { text: value.text, markers: value.markers.map((m) => m.content) };
   }
 
-  /** Duplicate-name gate shared by `define phrasebook` and `use phrasebook`. */
-  private registerPhrasebookName(name: string, span: Span): boolean {
-    const first = this.phrasebookNames.get(name);
+  /**
+   * The one duplicate-declaration gate (ADR-289 D5): name → first span,
+   * error on the second, citing where the first one is.
+   *
+   * @param namespace  which namespace the name lives in — namespaces are
+   *                   independent, so an action and a trait may share a name
+   * @param name       the declared name, already normalized by the caller
+   * @param span       the span of THIS declaration, where the error lands
+   * @param code       the diagnostic code, kept per-namespace so existing
+   *                   codes (`analysis.duplicate-machine`, …) are unchanged
+   * @returns true when the name is newly registered; false when it duplicates
+   *          one already seen, so callers can skip building a second symbol
+   */
+  private registerUnique(namespace: UniqueNamespace, name: string, span: Span, code: string): boolean {
+    const key = `${namespace}\u0000${name}`;
+    const first = this.uniqueNames.get(key);
     if (first) {
-      this.diagnostics.error(
-        'analysis.duplicate-phrasebook',
-        `A phrasebook named \`${name}\` is already declared at line ${first.line}.`,
-        span,
-      );
+      const article = /^[aeiou]/i.test(namespace) ? 'An' : 'A';
+      this.diagnostics.error(code, `${article} ${namespace} named \`${name}\` is already declared at line ${first.line}.`, span);
       return false;
     }
-    this.phrasebookNames.set(name, span);
+    this.uniqueNames.set(key, span);
     return true;
+  }
+
+  /** Duplicate-name gate shared by `define phrasebook` and `use phrasebook`. */
+  private registerPhrasebookName(name: string, span: Span): boolean {
+    return this.registerUnique('phrasebook', name, span, 'analysis.duplicate-phrasebook');
   }
 
   /** Book coverage bookkeeping: key → covered by a default (always) book? */
@@ -2901,6 +2975,23 @@ class Analyzer {
       );
     }
 
+    // ADR-289 D6: an exit wires into RoomTrait.exits, which only a room
+    // carries — anywhere else the line compiles and then does nothing, the
+    // silent no-op Chord exists to refuse. Blocked and deadly exits ride the
+    // same gate: each names a direction out of a place, and a non-room is
+    // not a place you leave. The loader keeps a defensive throw against
+    // rogue IR (ADR-276's two-layer pattern).
+    if (!kinds.some((k) => k.name === 'room')) {
+      const strayExit = decl.exits[0] ?? decl.blockedExits[0] ?? decl.deadlyExits[0];
+      if (strayExit) {
+        this.diagnostics.error(
+          'analysis.exit-non-room',
+          `Exits belong to rooms — \`${decl.name.words.join(' ')}\` is not a room. Remove the line, or make this block \`a room\`.`,
+          strayExit.span,
+        );
+      }
+    }
+
     return {
       id,
       name: decl.name.words.join(' '),
@@ -2975,8 +3066,8 @@ class Analyzer {
       counters: decl.counters.map((c) => this.buildCounterDecl(c)),
       descriptionKey: decl.description ? `${id}.description` : null,
       initialDescriptionKey: decl.initialDescription ? `${id}.initial-description` : null,
-      onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
-        this.buildOnClause(c, entityScope(sym ?? null)),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c, i) =>
+        this.buildOnClause(c, entityScope(sym ?? null), id, i),
       ),
       // Filled by applyTopics after every entity is built (ADR-239).
       topics: [],
@@ -2984,7 +3075,14 @@ class Analyzer {
     };
   }
 
-  private buildOnClause(clause: OnClause, scope: Scope): IROnClause {
+  /**
+   * @param ownerKey ADR-289 D2 id prefix naming the compile-time owner —
+   *   an entity IR id, `trait.<name>`, or `story`.
+   * @param clauseIndex position among this owner's clauses. Required for
+   *   uniqueness: the duplicate-clause gate skips `every-turn` clauses and
+   *   separates event verbs only by condition, so kind+action can repeat.
+   */
+  private buildOnClause(clause: OnClause, scope: Scope, ownerKey: string, clauseIndex: number): IROnClause {
     // §5.4 compiler rule, both halves: clauses on dispatch verbs (`define
     // action` names) compile to CapabilityBehaviors; clauses on standard-
     // semantics actions compile to ActionInterceptors (the Phase A path).
@@ -3011,8 +3109,9 @@ class Analyzer {
     const clauseScope: Scope = { ...scope, slots: extraSlots.size ? extraSlots : scope.slots };
 
     const condition = clause.condition ? this.resolveCondition(clause.condition, clauseScope) : null;
-    const body = clause.body.map((s) => this.resolveStatement(s, clauseScope));
-    this.checkPhaseOrder(clause.body, { mutated: false });
+    const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}-${clauseIndex}`;
+    const body = clause.body.map((s, i) => this.resolveStatement(s, clauseScope, `${clausePath}.${i}`));
+    this.checkPhaseOrder(clause.body, { ended: null });
     return {
       clauseKind: clause.clauseKind,
       once: clause.once,
@@ -3038,11 +3137,24 @@ class Analyzer {
   }
 
   /**
-   * Phase-order rule (§5.3 gate 4): within an `on` block, `refuse` must
-   * precede the first mutation. Traversal is source order, descending into
-   * nested blocks.
+   * Phase-order rule (§5.3 gate 4), as ADR-289 D3 widened it: a clause body
+   * opens with a leading validate partition of refusals only, and a refusal
+   * outside it cannot fire.
+   *
+   * Two errors, one gate. A refusal after a mutation keeps
+   * `analysis.refusal-after-mutation` — the oldest and most common shape,
+   * with the remedy authors already know. Every other dead refusal is
+   * `analysis.refusal-misplaced`: after a non-refusal statement that is not
+   * a mutation, or nested inside a routing block, where no mutation is
+   * being blamed and the remedy is to lift the refusal out.
+   *
+   * Arms and alternatives branch: they cannot co-execute, so arm one's
+   * mutation must never accuse arm two's refusal (Acceptance 10). On exit
+   * the block closes the partition for its parent, as a mutation when any
+   * branch mutated — but never displacing an earlier ender, since the
+   * message names the *first* statement that closed the partition.
    */
-  private checkPhaseOrder(body: Statement[], state: { mutated: boolean }): void {
+  private checkPhaseOrder(body: Statement[], state: PhaseOrderState, nestedIn: string | null = null): void {
     for (const stmt of body) {
       switch (stmt.kind) {
         case 'set':
@@ -3050,42 +3162,91 @@ class Analyzer {
         case 'move':
         case 'remove':
         case 'award':
-          state.mutated = true;
+        case 'raise':
+        case 'lower':
+          // `raise`/`lower` are mutations (D3) — a counter change is world
+          // state, and a refusal after one is as dead as after a `change`.
+          state.ended ??= { kind: 'mutation', what: statementWord(stmt) };
           break;
         case 'refuse':
         case 'must':
-        case 'refuse-when':
-          if (state.mutated) {
+        case 'refuse-when': {
+          const refusal = stmt.kind === 'must' ? 'must' : `refuse ${stmt.phraseKey}`;
+          if (nestedIn) {
+            this.diagnostics.error(
+              'analysis.refusal-misplaced',
+              `Refusal inside ${nestedIn} — it never fires, because refusals are decided before any branch runs. Move \`${refusal}\` to the top of the clause, above the block.`,
+              stmt.span,
+            );
+          } else if (state.ended?.kind === 'mutation') {
             this.diagnostics.error(
               'analysis.refusal-after-mutation',
-              `Refusal after mutation — move the check above the first set/change/move (\`${stmt.kind === 'must' ? 'must' : `refuse ${stmt.phraseKey}`}\` must precede mutations).`,
+              `Refusal after mutation — move the check above the first set/change/move (\`${refusal}\` must precede mutations).`,
+              stmt.span,
+            );
+          } else if (state.ended) {
+            this.diagnostics.error(
+              'analysis.refusal-misplaced',
+              `Refusal after \`${state.ended.what}\` — refusals must lead the clause. Move \`${refusal}\` above the first \`${state.ended.what}\`.`,
               stmt.span,
             );
           }
           break;
+        }
         case 'select-on':
-          for (const arm of stmt.arms) this.checkPhaseOrder(arm.body, state);
+          this.checkRoutingBlock(
+            stmt.arms.map((arm) => arm.body),
+            state,
+            'a `select` arm',
+            'select',
+          );
           break;
         case 'select-strategy':
-          for (const alt of stmt.alternatives) this.checkPhaseOrder(alt, state);
+          this.checkRoutingBlock(stmt.alternatives, state, 'a `select` alternative', 'select');
           break;
         case 'ordinal':
-          this.checkPhaseOrder(stmt.body, state);
+          this.checkRoutingBlock([stmt.body], state, `a \`${stmt.ordinalWord} time\` block`, `${stmt.ordinalWord} time`);
           break;
         case 'each':
-          // The block's body mutates per match — refusals after it (or
-          // inside it, after a mutation) violate the phase order.
-          this.checkPhaseOrder(stmt.body, state);
+          // The block's body runs per match, after the matching — a refusal
+          // inside it is as dead as one inside a select arm, and a mutation
+          // inside it closes the partition for what follows.
+          this.checkRoutingBlock([stmt.body], state, 'an `each` block', 'each');
           break;
         default:
+          state.ended ??= { kind: 'statement', what: statementWord(stmt) };
           break;
       }
     }
   }
 
+  /**
+   * Walk each branch of a routing block under its own partition state, then
+   * close the parent's partition on the block itself.
+   *
+   * @param branches   the arm/alternative bodies — each cannot see the others
+   * @param state      the parent partition state, updated on exit
+   * @param nestedIn   how the block is named when accusing a refusal inside it
+   * @param word       the block keyword, for the parent's "after `<word>`" message
+   */
+  private checkRoutingBlock(
+    branches: Statement[][],
+    state: PhaseOrderState,
+    nestedIn: string,
+    word: string,
+  ): void {
+    let mutated = false;
+    for (const branch of branches) {
+      const branchState: PhaseOrderState = { ended: state.ended };
+      this.checkPhaseOrder(branch, branchState, nestedIn);
+      if (branchState.ended?.kind === 'mutation') mutated = true;
+    }
+    state.ended ??= { kind: mutated ? 'mutation' : 'statement', what: word };
+  }
+
   // ----------------------------------------------------------- statements
 
-  private resolveStatement(stmt: Statement, scope: Scope): IRStatement {
+  private resolveStatement(stmt: Statement, scope: Scope, path: string): IRStatement {
     switch (stmt.kind) {
       case 'refuse':
       case 'phrase': {
@@ -3324,26 +3485,33 @@ class Analyzer {
         return {
           kind: 'select-on',
           subject,
-          arms: stmt.arms.map((a) => ({
+          arms: stmt.arms.map((a, armIndex) => ({
             value: a.value,
-            body: a.body.map((s) => this.resolveStatement(s, scope)),
+            body: a.body.map((s, i) => this.resolveStatement(s, scope, `${path}.${armIndex}.${i}`)),
             span: a.span,
           })),
           span: stmt.span,
         };
       }
       case 'select-strategy':
+        // ADR-289 D2: the compiler assigns the stable id that keys this
+        // select's persisted occurrence counter. Line numbers are NOT
+        // identity — `import` splices fragments that keep their own, and a
+        // select in a trait clause is shared by every composing entity.
         return {
           kind: 'select-strategy',
+          id: path,
           strategy: stmt.strategy,
-          alternatives: stmt.alternatives.map((alt) => alt.map((s) => this.resolveStatement(s, scope))),
+          alternatives: stmt.alternatives.map((alt, altIndex) =>
+            alt.map((s, i) => this.resolveStatement(s, scope, `${path}.${altIndex}.${i}`)),
+          ),
           span: stmt.span,
         };
       case 'ordinal':
         return {
           kind: 'ordinal',
           ordinal: stmt.ordinal,
-          body: stmt.body.map((s) => this.resolveStatement(s, scope)),
+          body: stmt.body.map((s, i) => this.resolveStatement(s, scope, `${path}.${i}`)),
           span: stmt.span,
         };
       case 'each': {
@@ -3356,7 +3524,7 @@ class Analyzer {
         return {
           kind: 'each',
           condition: stmt.condition,
-          body: stmt.body.map((s) => this.resolveStatement(s, eachScope)),
+          body: stmt.body.map((s, i) => this.resolveStatement(s, eachScope, `${path}.${i}`)),
           span: stmt.span,
         };
       }
@@ -3554,9 +3722,7 @@ class Analyzer {
    * duplicating a story channel is not.
    */
   private buildChannel(decl: DefineChannel): IRDataChannelDef {
-    if (this.channelNames.has(decl.name)) {
-      this.diagnostics.error('analysis.duplicate-channel', `A channel named \`${decl.name}\` already exists.`, decl.span);
-    }
+    this.registerUnique('channel', decl.name, decl.span, 'analysis.duplicate-channel');
     this.channelNames.add(decl.name);
     if (decl.mode === null || !['replace', 'append', 'event'].includes(decl.mode)) {
       this.diagnostics.error(
@@ -4047,9 +4213,13 @@ class Analyzer {
       }
       const subjectEntity =
         subject.kind === 'entity' ? this.byId.get(subject.id) : subject.kind === 'it' ? scope.owner : null;
-      // Trait scope: `it` validates against the trait's own declared states
-      // (ratchet D8) when no concrete owner entity is in scope.
-      const validStates = subjectEntity?.states ?? (subject.kind === 'it' ? scope.ownStates ?? [] : []);
+      // Which closure `it` validates against depends on how it is bound.
+      // Owner entity → its own states. Trait scope → the trait's declared
+      // states (ratchet D8). Unbound — a top-level `define condition`, whose
+      // whole purpose is quantifying over unknown subjects — the union of
+      // every state some trait or entity declares (ADR-289 D10). The
+      // vocabulary stays closed and validated; only the closure changes.
+      const validStates = subjectEntity?.states ?? (subject.kind === 'it' ? scope.ownStates ?? this.declaredStateUnion() : []);
       if (validStates.includes(word)) return { kind: 'symbol', name: word };
       if (TRAIT_ADJECTIVES.has(word)) return { kind: 'symbol', name: word };
       // State adjectives (ratchet D1): read live from world trait state.
@@ -4065,6 +4235,18 @@ class Analyzer {
       return { kind: 'symbol', name: word };
     }
     return this.resolveValue(expr, scope);
+  }
+
+  /**
+   * Every state declared by some trait or entity (ADR-289 D10) — the closure
+   * an unbound `it` validates against, and the pool its nearest-match
+   * suggestion draws from.
+   */
+  private declaredStateUnion(): string[] {
+    const union = new Set<string>();
+    for (const entity of this.entities) for (const state of entity.states) union.add(state);
+    for (const states of this.traitStates.values()) for (const state of states) union.add(state);
+    return [...union];
   }
 
   /** Valid comparison values for a trait-field subject, or null. */

@@ -1,5 +1,5 @@
 /**
- * ir.ts — the Story IR wire types (`story language 1`).
+ * ir.ts — the Story IR wire types (`story language 2`).
  *
  * Purpose: the versioned, JSON-serializable product of Chord compilation
  * (ADR-210: the IR is the product). Everything is resolved — entity
@@ -17,7 +17,7 @@ import type { ScopeRequirementWord } from './catalog.js';
 import type { Span } from './span.js';
 
 /** Format stamp of this IR schema. Consumers refuse unknown formats. */
-export const IR_FORMAT = 'story language 1';
+export const IR_FORMAT = 'story language 2';
 
 /** Root of a compiled story. */
 export interface StoryIR {
@@ -800,7 +800,22 @@ export type IRStatement =
   /** `refuse when <cond>: <key>` as a body statement (prohibition, D6). */
   | { kind: 'refuse-when'; condition: IRCondition; phraseKey: string; span: Span }
   | { kind: 'select-on'; subject: IRValue; arms: IRSelectArm[]; span: Span }
-  | { kind: 'select-strategy'; strategy: string; alternatives: IRStatement[][]; span: Span }
+  | {
+      kind: 'select-strategy';
+      /**
+       * ADR-289 D2: compiler-assigned stable id keying this select's persisted
+       * occurrence counter — `<owner>.<clause-key>.<statement-path>`, e.g.
+       * `troll.on-attacking-0.2.0`. NEVER bare digits: that shape is reserved
+       * for the retired line-number key space the load/restore sweep removes.
+       * Positional by construction, so editing or reordering clauses and
+       * statements re-keys the select and resets its counter (ADR-289 D2
+       * consequence). `select-on` carries no id — it has no persisted state.
+       */
+      id: string;
+      strategy: string;
+      alternatives: IRStatement[][];
+      span: Span;
+    }
   | { kind: 'ordinal'; ordinal: number; body: IRStatement[]; span: Span }
   /**
    * `each <open-condition> … end each` (ratchet E3, 2026-07-12): run the

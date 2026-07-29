@@ -3770,7 +3770,17 @@ class Parser {
    * Parse statement lines until an `end`/`else`/`or`/`when`-arm boundary at
    * or below `openIndent` is reached. The terminator line is NOT consumed.
    */
-  private parseStatements(openIndent: number, blockKeyword: string): Statement[] {
+  /**
+   * Parse an indented statement body.
+   *
+   * @param openIndent     indent of the line that opened the body
+   * @param clauseKeyword  the HOST CLAUSE's keyword (`on`, `after`, …), which
+   *                       governs refusal legality and descends unchanged into
+   *                       nested routing blocks (ADR-289 D3)
+   * @param blockName      the innermost enclosing block, for diagnostics only;
+   *                       defaults to the clause when the body is the clause's own
+   */
+  private parseStatements(openIndent: number, clauseKeyword: string, blockName = clauseKeyword): Statement[] {
     const body: Statement[] = [];
     while (this.pos < this.lines.length) {
       const line = this.lines[this.pos];
@@ -3780,18 +3790,18 @@ class Parser {
         this.skipCommentInsideBlock(line);
         continue;
       }
-      const stmt = this.parseStatement(line, blockKeyword);
+      const stmt = this.parseStatement(line, clauseKeyword, blockName);
       if (stmt) body.push(stmt);
     }
     return body;
   }
 
-  private parseStatement(line: Line, blockKeyword: string): Statement | null {
+  private parseStatement(line: Line, blockKeyword: string, blockName: string = blockKeyword): Statement | null {
     const word = firstWord(line);
     const c = new Cursor(line.tokens, line);
 
     if (word && ORDINALS[word] !== undefined && c.isWord('time', 1)) {
-      return this.parseOrdinalBlock(line);
+      return this.parseOrdinalBlock(line, blockKeyword);
     }
 
     // `<subject> must <predicate>: <key>` body statement (ratchet D6).
@@ -4021,13 +4031,13 @@ class Parser {
         this.recoverPastEndNested('if', line.indent);
         return null;
       case 'select':
-        return this.parseSelect(line);
+        return this.parseSelect(line, blockKeyword);
       case 'each':
         return this.parseEachBlock(line, blockKeyword);
       default:
         this.diagnostics.error(
           'parse.unknown-statement',
-          `Unknown statement \`${word ?? line.raw.trim()}\` in \`${blockKeyword}\` block.`,
+          `Unknown statement \`${word ?? line.raw.trim()}\` in \`${blockName}\` block.`,
           lineSpan(line),
         );
         this.pos++;
@@ -4121,7 +4131,13 @@ class Parser {
     return params;
   }
 
-  private parseOrdinalBlock(headLine: Line): OrdinalBlock {
+  /**
+   * `<ordinal> time … ` — the body takes the host's statement kit, so
+   * refusal legality follows the host clause (ADR-289 D3): a refusal nested
+   * here inside an `after` clause is as illegal as one written directly in
+   * it. Same rule `parseEachBlock` has always followed.
+   */
+  private parseOrdinalBlock(headLine: Line, blockKeyword: string): OrdinalBlock {
     this.pos++;
     const word = firstWord(headLine)!;
     const body: Statement[] = [];
@@ -4130,7 +4146,7 @@ class Parser {
       const line = this.lines[this.pos];
       if (line.indent <= headLine.indent) break;
       if (isEndLine(line)) break;
-      const stmt = this.parseStatement(line, 'ordinal');
+      const stmt = this.parseStatement(line, blockKeyword, `${word} time`);
       if (stmt) {
         body.push(stmt);
         span = mergeSpans(span, stmt.span);
@@ -4163,12 +4179,17 @@ class Parser {
         c.restSpan(),
       );
     }
-    const body = this.parseStatements(headLine.indent, blockKeyword);
+    const body = this.parseStatements(headLine.indent, blockKeyword, 'each');
     const endSpan = this.consumeEnd('each', headLine);
     return { kind: 'each', condition: nameTok.text, body, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
-  private parseSelect(headLine: Line): SelectOnStmt | SelectStrategyStmt | null {
+  /**
+   * `select on <value>` / `select <strategy>` — arm and alternative bodies
+   * take the host's statement kit (ADR-289 D3), so the `after`-clause
+   * refusal ban descends instead of being lost at the block boundary.
+   */
+  private parseSelect(headLine: Line, blockKeyword: string): SelectOnStmt | SelectStrategyStmt | null {
     this.pos++;
     const c = new Cursor(headLine.tokens, headLine);
     c.matchWord('select');
@@ -4188,7 +4209,7 @@ class Parser {
             this.diagnostics.error('parse.select-arm', 'Expected a value after `when` in the select arm.', lineSpan(line));
             continue;
           }
-          const body = this.parseStatements(line.indent, 'select');
+          const body = this.parseStatements(line.indent, blockKeyword, 'select');
           arms.push({ value: valueTok.text, body, span: lineSpan(line) });
         } else {
           this.diagnostics.error('parse.select-body', `Expected \`when <value>\` arm in \`select on\`, got \`${line.raw.trim()}\`.`, lineSpan(line));
@@ -4217,7 +4238,7 @@ class Parser {
     }
     const alternatives: Statement[][] = [];
     for (;;) {
-      alternatives.push(this.parseStatements(headLine.indent, 'select'));
+      alternatives.push(this.parseStatements(headLine.indent, blockKeyword, 'select'));
       const line = this.lines[this.pos];
       if (line && firstWord(line) === 'or' && line.tokens.length === 1 && line.indent === headLine.indent) {
         this.pos++;

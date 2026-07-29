@@ -1,10 +1,10 @@
 # ADR-289: Chord routing is decided once — closing the compiler review's correctness findings
 
-## Status: ACCEPTED (2026-07-29, session eb49e6) — drafted from the Chord review, interviewed (3 questions resolved: D10 open-condition vocabulary, D4 placement unification, D2 counter reset), then adr-reviewed twice: 11/14 with two BLOCKER and one SMALL finding folded plus two cross-ADR seams (ADR-276 census, ADR-275 D6), then 13/14 with the versioning BLOCKER folded on David's ruling (Chord 2.2.0, the fourth recorded departure from D2's letter — breaking gates ship without a major). Accepted at 14/14. **Not yet implemented**; the platform change to `packages/chord` and `packages/story-loader` is approved in principle by this acceptance, and D9's harness is written failing before any fix.
+## Status: ACCEPTED (2026-07-29, session eb49e6) — drafted from the Chord review, interviewed (3 questions resolved: D10 open-condition vocabulary, D4 placement unification, D2 counter reset), then adr-reviewed twice: 11/14 with two BLOCKER and one SMALL finding folded plus two cross-ADR seams (ADR-276 census, ADR-275 D6), then 13/14 with the versioning BLOCKER folded on David's ruling (Chord 2.2.0, the fourth recorded departure from D2's letter — breaking gates ship without a major). Accepted at 14/14. **Implementation in progress** (branch `adr-289-p1`); the platform change to `packages/chord` and `packages/story-loader` is approved in principle by this acceptance, and D9's harness is written failing before any fix. **D1 amended 2026-07-29 during implementation** — the pre-mutation snapshot regressed `stories/fernhill` (495/495 → 116 failures); "once" is at the statement's position during the mutations pass, not before the body. See the D1 amendment; Acceptance 7 is unchanged and is satisfied by the amended rule.
 
 ## Date: 2026-07-29
 
-## Parent: ADR-228 (the validate/mutations/reports partition this hardens), ADR-276 (compile gate + loader backstop — the two-layer pattern every new gate here follows), ADR-264 (counters — the seeding path D4 extends). Source: the Chord compiler & language review of 2026-07-29 (`docs/work/chord/fable-review.md`), against Chord 2.1.0 / IR `story language 1`. Platform change: `packages/chord`, `packages/story-loader` — requires David's approval before implementation.
+## Parent: ADR-228 (the validate/mutations/reports partition this hardens), ADR-276 (compile gate + loader backstop — the two-layer pattern every new gate here follows), ADR-264 (counters — the seeding path D4 extends). Source: the Chord compiler & language review of 2026-07-29 (`docs/work/chord/fable-review.md`), against Chord 2.1.0 / IR `story language 1`. Platform change: `packages/chord`, `packages/story-loader`, and — extended by owner ruling 2026-07-29 — `packages/engine` (the `Story.onWorldRestored?` hook AC4/AC5 require; see the D2 scope extension). Requires David's approval before implementation.
 
 ## Context — verified, not assumed
 
@@ -144,6 +144,139 @@ The comment at `runtime.ts:1594-1597` is wrong today and is corrected as
 part of this: the suffix is snapshotted, so the passes agree because the
 truth was pinned, not because of statement ordering.
 
+#### D1 amendment — "once" is at the statement's position, not before the body (2026-07-29, implementation session)
+
+**D1 as written above is wrong about *when* "once" is, and the first
+implementation broke a shipped story proving it.** Pinning at snapshot time —
+`postValidate`, before anything has run — was tried and regressed
+`stories/fernhill` from 495/495 to 567/683 (116 failures). The clause that
+exposed it, `fernhill.story:663`:
+
+```
+on giving it
+  change it to softened when it has the sherry bottle
+  award softened, once when it is softened
+  phrase kettle-softened when it is softened
+```
+
+`when it has the sherry bottle` is true only *after* the standard `giving`
+action transfers the bottle, which happens between `postValidate` and
+`postExecute`. Pinned at snapshot time it evaluates false and the whole
+clause no-ops.
+
+**The apparent conflict with Acceptance 7 is not real.** AC7 wants
+`phrase warning when it is armed` followed by `change it to spent` to emit;
+fernhill wants `phrase … when it is softened` to fire *because* the line
+above it changed the state. Read as a straight-line program these are the
+same rule — **each suffix is evaluated at its own position, against the world
+as it stands when that line is reached.** "Pre-mutation" is not a global
+property to choose; it is positional. The two-pass split is an ADR-228
+implementation artifact, and the invariant that actually matters is that the
+body behaves as if executed once, top to bottom.
+
+**Amended decision: the mutations pass IS the decision pass.** Every routing
+decision is recorded at its own position as the mutations pass walks the
+body; the reports pass replays the record and re-derives nothing. There is no
+separate pre-walk — `snapshotDecisions` is deleted rather than extended.
+
+This satisfies D1's stated goal (*the report pass sees the routing the
+execute pass took*) more literally than the pre-walk did, and it is smaller:
+
+- **The duplicate walker goes away.** `snapshotDecisions`'s walk mirrored
+  `execStatements`'s branch logic — two places that had to independently
+  agree on which branches are taken. That is the leaky-abstraction failure
+  this ADR exists to close, reproduced inside its own fix.
+- **Three traversals become two.**
+- **The counter advances only when the body runs.** Pinning at validate time
+  meant a firing vetoed downstream still advanced the select. "Consumes its
+  counter exactly once per firing" now means what it says.
+- **Single-pass contexts need no record at all** — one pass cannot disagree
+  with itself, so `after` clauses, daemons, sequences and turn clauses simply
+  decide live.
+
+The `each`-body caveat survives unchanged and becomes load-bearing: an
+`each` body executes once per match, so its statements use a **live** ledger
+in *both* passes rather than being recorded per statement identity, which
+would otherwise give every iteration the last iteration's answer. Widening
+the key to `(statement, match)` remains out of scope.
+
+The `runtime.ts:1594-1597` comment is still corrected, but for a different
+reason than the paragraph above states: the passes agree because each
+suffix's truth is recorded at its position during the mutations pass, not
+because the truth was pinned before the body began.
+
+#### D2 scope note — the id is carried by `select-strategy` only (same amendment)
+
+D2 below says "each select block" and Acceptance 6 says "a select carrying no
+id." Implementation narrows both to **`select-strategy`**. The id exists to
+name *persisted* state, and `select-on` has none: its arm is derived from a
+subject value and lives only in the per-firing decision record. A required IR
+field that nothing ever reads is the same disease as a dead refusal — a
+construct carried but inert — which D3 makes a compile error one level up.
+
+This is an intent-preserving narrowing, recorded here rather than left to
+implementation because the fernhill episode established the rule: a change to
+a decision's letter goes on the record, not into quiet code.
+
+#### D2 scope extension — the platform-change set grows to include `packages/engine` (owner ruling, 2026-07-29)
+
+The Parent line names `packages/chord` and `packages/story-loader` as this
+ADR's platform-change set. **Acceptance 4 and 5 were never dischargeable
+inside it.** Both require the retired-key sweep to run on *restore*; restore
+lives in `packages/engine`'s `save-restore-service.ts`, and the `Story`
+interface carried no restore-facing hook (`initialize?`, `onEngineReady?`,
+`registerChannels?` — verified in source, 2026-07-29).
+
+Approved: an optional **`Story.onWorldRestored?(world)`**, fired by
+`loadSaveData`. The engine is the only layer that knows a restore happened; a
+story is the only layer that knows what its own persisted keys mean. The hook
+joins the two without either reaching into the other, and its name follows the
+interface's existing `on*` convention.
+
+Two rejected alternatives, recorded so they are not re-proposed: piggybacking
+on the plugin `setStates` restore hook (which exists) invents a plugin whose
+purpose is key hygiene; sweeping lazily inside `decideStrategy` behind a
+"swept" marker hides a lifecycle fact inside a routing decision. Both put the
+knowledge somewhere that does not own it.
+
+Two contract riders, both load-bearing:
+
+- **Fired LAST, not after `loadJSON`.** The restore sequence is world snapshot
+  → plugin states → action-RNG reseed → undo-snapshot clearing. A hook fired
+  mid-sequence would let the story observe a half-restored engine — the same
+  defect class this ADR closes. The contract is *the engine is fully restored
+  when this runs*, and it is pinned by a test that fails if the call moves one
+  line earlier.
+- **Undo does NOT get the hook.** `undo()` also replaces the world via
+  `loadJSON`, which will tempt a future symmetry-minded change. It should not:
+  undo snapshots are taken from the current session's world, already swept at
+  load or restore, and `clearUndoSnapshots()` runs after every restore, so no
+  pre-D2 key can enter the undo buffer. Recorded as a comment at the undo site
+  so the reasoning does not have to be re-derived.
+
+**The rubric gap this exposes.** Three `adr-review` passes (11/14, 13/14,
+14/14) did not catch that two acceptance criteria were undischargeable within
+the ADR's own approved scope. That is a mechanically checkable property, and
+the harness now checks it: *every acceptance criterion must be dischargeable
+within the packages the platform-change line names* — added to the adr-review
+rubric so a future ADR meets a BLOCKER instead of an implementing session
+meeting a surprise.
+
+#### D2 consequence — positional identity re-keys on source edits
+
+Both the clause key and the statement path are **positional**. Inserting or
+reordering a clause on an owner, or a statement inside a clause body,
+silently changes the id of every select at or after that point — which resets
+its occurrence counter, exactly as the D2 key migration does. This is
+inherent to positional identity and is not a defect of the shape; the
+alternative (author-declared select names) buys stability at the cost of
+making every author name something they never refer to.
+
+D2 already accepts counter resets as survivable, so this is recorded as a
+known consequence rather than a blocker. It is written down so it is not
+rediscovered as a bug: a story edited between saves may find a `cycling`
+select restarting at its first alternative.
+
 ### D2 — Select blocks carry a compiler-assigned stable id
 
 The compiler assigns each select block an id in the IR, derived from owner
@@ -233,6 +366,33 @@ D3 governs where a refusal may be *written*. A `refuse when` in the leading
 partition with an unbindable subject still fails open exactly as ADR-275
 ruled.
 
+#### D3 note — the code each dead-refusal shape carries (owner ruling, 2026-07-29)
+
+D3 names three changes but no diagnostic code, and Acceptance 8 and 10 cannot
+both hold under one: AC8 wants a refusal inside a `select` arm to error, while
+AC10 wants that same arm-two refusal **not** to be
+`analysis.refusal-after-mutation`. Two codes, ruled by David during
+implementation:
+
+- `analysis.refusal-after-mutation` — unchanged, and still the code for the
+  straight-line shape AC9 names. `raise`/`lower` joining the mutation set
+  widens what reaches it; the message and the remedy stand.
+- `analysis.refusal-misplaced` — **new**, for every other dead refusal: after
+  a non-refusal statement that is not a mutation (AC8's refusal-after-`phrase`),
+  and nested inside any routing block — a `select` arm or alternative, an
+  ordinal block, or an `each` body. No mutation is being blamed in either
+  shape, and the remedy is to lift the refusal to the top of the clause rather
+  than to move it above some particular line.
+
+Rejected: a third code splitting the nested case from the after-a-statement
+case. The remedy is the same sentence in both, and D3 asks for one gate.
+
+**Consequence, worth stating because it changes an existing test.** A refusal
+written after a mutation *inside the same select arm* is now reported as
+misplaced, not as after-mutation — position beats sequence once the refusal is
+inside a branch. `packages/chord/tests/ac3-cloak-sweep.test.ts` asserted the
+old classification and moves with the rule.
+
 ### D4 — The player seeds and places through the same path as every other entity
 
 `states[0]` and per-entity counter `starts` are seeded for the player. The
@@ -271,6 +431,34 @@ each slightly differently, and misses two constructs. One
 line count — it is that a table makes the omission of the eighth construct
 impossible rather than unnoticed.
 
+#### D5 note — the table's shape, and what stayed out of it (implementation, 2026-07-29)
+
+`registerUnique(namespace, name, span, code)` keeps the signature D5 names.
+The *table* is `UNIQUE_NAMESPACES`, a closed union of eleven namespaces, and
+one `Map<string, Span>` keyed `<namespace> <name>` behind it. Three
+things worth recording:
+
+- **Two new codes**, for the two constructs the hand-rolled gates missed:
+  `analysis.duplicate-action` and `analysis.duplicate-trait`. Every
+  pre-existing code is unchanged, which is why `code` stays a parameter
+  rather than being derived from the namespace.
+- **Every duplicate message now cites the first span** — "is already declared
+  at line N" — where six of the seven said only "already exists." That was
+  `registerPhrasebookName`'s shape, generalized; Acceptance 14 requires it,
+  and the other six inherit it for free. No test asserted the old text.
+- **The two channel families are two rows**, not one: an ambient bed and an
+  image layer may share a name, exactly as the per-family map allowed before.
+
+**Deliberately outside the table: per-entity counters.** `analysis.duplicate-counter`
+on an entity block is a different rule — unique *within one owner*, not within
+the story — and folding it in would need a scope argument the ADR's signature
+does not carry. D5's "seven" counts the story-global gates.
+
+**One behavioural trap, avoided.** The entity gate tested `byId.has(id)` where
+`id` is `nameWords.join('-').toLowerCase()`. Keyed on the display form,
+`create the Hall` and `create the hall` would have stopped colliding; the call
+site lowercases so the gate keeps its old reach.
+
 ### D6 — Exits are gated to rooms at compile
 
 `north to the Hall` inside a non-room `create` block is an analyzer error,
@@ -285,6 +473,24 @@ ADR-276's own sense (a compile gate refuses them first), so the categories
 hold and only the count moves. Implementation re-runs the census and updates
 ADR-276's addendum in the same commit; leaving a stale "50" is how an audited
 claim quietly stops being audited.
+
+#### D6 note — the gate, the backstop, and the census count (implementation, 2026-07-29)
+
+The compile gate is `analysis.exit-non-room`, spanned on the offending line and
+keyed off the same derived `kinds` the sibling `analysis.first-time-non-room`
+gate uses. All three exit forms ride it, as D6 requires.
+
+The loader backstop is **one** `LoadError` site covering all three forms,
+raised before any of them is wired — which is what the census arithmetic
+assumes. `loader.ts` therefore goes 50 → 51 here.
+
+**It does not reach 52, and Phase 6 must resolve that before recording a
+count.** D2's id-less-select backstop landed in `select-ids.ts:74`, not in
+`loader.ts` as this ADR's plan pinned it. Either that throw moves, or
+ADR-276's addendum records 51 with `select-ids.ts` named as out-of-census
+alongside `evaluator.ts`'s twelve. Acceptance 20 says "re-audited," not
+"52" — but the plan's expected arithmetic assumed both new backstops in one
+file, and they are not.
 
 ### D7 — No raw control bytes in source
 

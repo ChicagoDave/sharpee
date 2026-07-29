@@ -252,6 +252,30 @@ export interface Story {
    * the engine. Re-registrations persist across the session.
    */
   registerChannels?(registry: IChannelRegistry): void;
+
+  /**
+   * Called after a save has been fully restored (optional, ADR-289 D2).
+   *
+   * The engine is the only layer that knows a restore happened; a story is
+   * the only layer that knows what its own persisted keys mean. This hook
+   * joins the two without either reaching into the other.
+   *
+   * **Contract: the engine is FULLY restored when this runs.** It fires as
+   * the last act of the restore — after the world snapshot, plugin states,
+   * the action-RNG reseed, and undo-snapshot clearing — never immediately
+   * after `world.loadJSON`. A hook fired mid-sequence would let the story
+   * observe a half-restored engine, which is the same class of defect
+   * ADR-289 exists to close: an observer seeing state mid-mutation.
+   *
+   * **Not called on undo.** `undo()` also replaces the world via
+   * `loadJSON`, but undo snapshots are taken from the current session's
+   * world — already swept at load or restore — and `clearUndoSnapshots()`
+   * runs after every restore, so no stale key can enter the undo buffer.
+   * See the comment at the undo site.
+   *
+   * @param world - The fully restored world model
+   */
+  onWorldRestored?(world: WorldModel): void;
 }
 
 /**

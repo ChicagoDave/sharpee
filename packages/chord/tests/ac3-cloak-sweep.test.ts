@@ -60,16 +60,22 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     expect(errors[0].message).toContain('opera cloak');
   });
 
-  it('refusal after mutation (phase-order rule, on-block)', () => {
-    // The trampled branch mutates first (`change`), then refuses — the
-    // refuse lands on line 76 of the mutated copy.
+  it('refusal inside a select arm (phase-order rule, on-block)', () => {
+    // The trampled arm mutates first (`change`), then refuses — the refuse
+    // lands on line 76 of the mutated copy. ADR-289 D3 reclassified this:
+    // the refusal is inside a `select` arm, so it is dead by position
+    // regardless of what any arm mutated, and arm one's `change` is never
+    // what gets blamed. The straight-line after-mutation shape keeps
+    // `analysis.refusal-after-mutation` — see analyzer.test.ts's
+    // `gates/refusal-after-mutation.story`.
     const mutated = CLOAK.replace(
       '        phrase message-trampled',
       '        change the message to obliterated\n        refuse message-trampled',
     );
     const errors = errorsOf(mutated);
     expect(errors).toHaveLength(1);
-    expect(errors[0].code).toBe('analysis.refusal-after-mutation');
+    expect(errors[0].code).toBe('analysis.refusal-misplaced');
+    expect(errors[0].message).toContain('select');
     expect(errors[0].span.line).toBe(76);
   });
 

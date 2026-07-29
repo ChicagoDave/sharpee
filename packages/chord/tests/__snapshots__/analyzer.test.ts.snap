@@ -670,7 +670,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "wears": [],
     },
   ],
-  "format": "story language 1",
+  "format": "story language 2",
   "grammarExtensions": [
     {
       "action": "putting",

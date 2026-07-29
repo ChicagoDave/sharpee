@@ -158,6 +158,37 @@ ${WORLD}`;
     expect(action.validate(ctx)).toEqual({ valid: false, error: 'boat-gone' });
   });
 
+  it('D6: a refuse-when arm over an unbindable subject does NOT fire (fails open) — ADR-289 Acceptance 11', () => {
+    // The mirror of the must above, and the case ADR-289 D3 must leave
+    // alone: same mixed-shape action, same unfillable `the boat` binding,
+    // but written as a prohibition. Requirements fail closed; prohibitions
+    // fail open, so `sail port` sails. D3 governs where a refusal may be
+    // WRITTEN — this arm is in the leading validate partition and stays
+    // legal — never whether it evaluates.
+    const source = `${HEADER}define action sailing
+  grammar
+    sail the boat
+    sail the direction
+    the direction
+  directions
+    port or p
+    starboard or sb
+  refuse when the boat holds the tiller: boat-fouled
+  phrase sailed
+
+  phrases en-US
+    boat-fouled:
+      The tiller is fouled.
+    sailed:
+      The sloop swings {the direction}.
+
+${WORLD}`;
+    const loaded = load(source);
+    const action = loaded.actions.get('chord.action.sailing')!;
+    const ctx = ctxOf(loaded.world, loaded.player, { direction: 'port' });
+    expect(action.validate(ctx)).toEqual({ valid: true });
+  });
+
   it('D1: an action with no entity-less pattern keeps the dispatch miss', () => {
     const source = `${HEADER}define action polishing\n  grammar\n    polish the target\n  otherwise refuse cant-polish\n\n  phrases en-US\n    cant-polish:\n      No.\n\n${WORLD}`;
     const loaded = load(source);

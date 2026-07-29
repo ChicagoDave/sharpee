@@ -37,3 +37,36 @@ export const CHORD_COUNTER_PREFIX = 'chord.counter.';
 export function counterKey(name: string, ownerId?: string): string {
   return ownerId ? `${CHORD_COUNTER_PREFIX}${ownerId}.${name}` : `${CHORD_COUNTER_PREFIX}${name}`;
 }
+
+/** Prefix for a `select-strategy`'s persisted occurrence counter (ADR-289 D2). */
+export const CHORD_SELECT_PREFIX = `${CHORD_OCCURRENCE_PREFIX}select.`;
+
+/**
+ * The world-state key for one `select-strategy`'s occurrence counter.
+ *
+ * `id` is the compiler-assigned statement id (ADR-289 D2). `ownerIrId` is
+ * supplied only where the executing owner varies at runtime — a trait clause
+ * is one piece of IR shared by every composing entity, so each needs its own
+ * counter, the same way phrase `Choice` atoms key per `(entityId, messageKey)`.
+ *
+ * The compiler id is deliberately a strict PREFIX of every per-owner key, so
+ * "all counters for this statement" stays addressable by prefix for tooling
+ * and sweeps.
+ *
+ * @param id        compiler-assigned select id, never bare digits
+ * @param ownerIrId composing entity, for trait-owned selects only
+ */
+export function selectOccurrenceKey(id: string, ownerIrId?: string): string {
+  return ownerIrId ? `${CHORD_SELECT_PREFIX}${id}.${ownerIrId}` : `${CHORD_SELECT_PREFIX}${id}`;
+}
+
+/**
+ * The retired line-number key space (`chord.occurrence.select.<line>`), swept
+ * on load and restore (ADR-289 D2).
+ *
+ * Matches bare digits ONLY. It must never be widened to a
+ * `chord.occurrence.select.*` glob: that prefix is also the *new* key space,
+ * and a glob would delete the live counters the sweep exists to protect. The
+ * reserved bare-digits id shape is what keeps the two distinguishable forever.
+ */
+export const RETIRED_SELECT_KEY = /^chord\.occurrence\.select\.\d+$/;
