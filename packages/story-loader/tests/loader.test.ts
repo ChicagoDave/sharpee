@@ -292,6 +292,14 @@ describe('atomic load rejections', () => {
   it('rejects an unknown IR format', () => {
     const ir = { ...cloakIr(), format: 'story language 99' } as unknown as StoryIR;
     expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(LoadError);
+    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 2/);
+  });
+
+  it('rejects the retired `story language 1` (ADR-289 D2, AC6)', () => {
+    // The format gate — not the select-id backstop — is what refuses pre-D2
+    // IR wholesale. An author holding a stale compiled artifact gets one
+    // clear message, not a per-statement complaint.
+    const ir = { ...cloakIr(), format: 'story language 1' } as unknown as StoryIR;
     expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 1/);
   });
 

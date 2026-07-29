@@ -561,8 +561,8 @@ class Analyzer {
         // Story-owned every-turn clauses (ADR-236 D7): built in STORY_SCOPE
         // so `it` reports the unbound-referent gate; narration broadcasts
         // (the story is everywhere — D11 satisfied trivially).
-        onClauses: (this.ast.header?.onClauses ?? []).map((c) => ({
-          ...this.buildOnClause(c, STORY_SCOPE),
+        onClauses: (this.ast.header?.onClauses ?? []).map((c, i) => ({
+          ...this.buildOnClause(c, STORY_SCOPE, 'story', i),
           narration: 'broadcast' as const,
         })),
       },
@@ -659,11 +659,13 @@ class Analyzer {
             name: decl.name.join(' '),
             // Decision 10: sequences are story-owned — narration broadcasts.
             narration: 'broadcast',
-            steps: decl.steps.map((step) => ({
+            steps: decl.steps.map((step, stepIndex) => ({
               timing: step.timing,
               turns: step.turns,
               anchor: this.resolveStepAnchor(step),
-              body: step.body.map((s) => this.resolveStatement(s, TOP_SCOPE)),
+              body: step.body.map((s, i) =>
+                this.resolveStatement(s, TOP_SCOPE, `sequence.${decl.name.join('-')}.step-${stepIndex}.${i}`),
+              ),
               span: step.span,
             })),
             span: decl.span,
@@ -1278,7 +1280,11 @@ class Analyzer {
           seenEntities.set(id, row.span);
           rows.push({
             filter: { kind: 'entity', id },
-            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            // Keyed on the IR row index — the same index the runtime's topic
+            // occurrence key uses, so the two cannot drift.
+            body: row.body.map((s, i) =>
+              this.resolveStatement(s, scope, `topic.${ownerId}.row-${rows.length}.${i}`),
+            ),
             span: row.span,
           });
         } else {
@@ -1310,7 +1316,9 @@ class Analyzer {
           if (rejected) continue;
           rows.push({
             filter: { kind: 'text', primary: row.filter.primary, aliases: row.filter.aliases },
-            body: row.body.map((s) => this.resolveStatement(s, scope)),
+            body: row.body.map((s, i) =>
+              this.resolveStatement(s, scope, `topic.${ownerId}.row-${rows.length}.${i}`),
+            ),
             span: row.span,
           });
         }
@@ -1431,8 +1439,12 @@ class Analyzer {
         name: s.name,
         terminal: s.terminal,
         transitions: s.transitions.map(buildTransition),
-        onEnter: s.onEnter.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
-        onExit: s.onExit.map((stmt) => this.resolveStatement(stmt, STORY_SCOPE)),
+        onEnter: s.onEnter.map((stmt, i) =>
+          this.resolveStatement(stmt, STORY_SCOPE, `machine.${decl.name}.${s.name}.enter.${i}`),
+        ),
+        onExit: s.onExit.map((stmt, i) =>
+          this.resolveStatement(stmt, STORY_SCOPE, `machine.${decl.name}.${s.name}.exit.${i}`),
+        ),
         span: s.span,
       })),
       span: decl.span,
@@ -1494,7 +1506,7 @@ class Analyzer {
       states: decl.states.map((s) => s.name),
       statesReversible: decl.statesReversible,
       scores: decl.scores.map((s) => ({ name: `trait.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c) => this.buildOnClause(c, scope)),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, `trait \`${decl.name}\``).map((c, i) => this.buildOnClause(c, scope, `trait.${decl.name}`, i)),
       span: decl.span,
     };
   }
@@ -1825,7 +1837,7 @@ class Analyzer {
       refusals,
       otherwise: decl.otherwise?.phraseKey ?? null,
       scores: decl.scores.map((s) => ({ name: `action.${decl.name}.${s.name}`, worth: s.worth, span: s.span })),
-      body: decl.body.map((s) => this.resolveStatement(s, scope)),
+      body: decl.body.map((s, i) => this.resolveStatement(s, scope, `action.${decl.name}.body.${i}`)),
       span: decl.span,
     };
   }
@@ -2975,8 +2987,8 @@ class Analyzer {
       counters: decl.counters.map((c) => this.buildCounterDecl(c)),
       descriptionKey: decl.description ? `${id}.description` : null,
       initialDescriptionKey: decl.initialDescription ? `${id}.initial-description` : null,
-      onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c) =>
-        this.buildOnClause(c, entityScope(sym ?? null)),
+      onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c, i) =>
+        this.buildOnClause(c, entityScope(sym ?? null), id, i),
       ),
       // Filled by applyTopics after every entity is built (ADR-239).
       topics: [],
@@ -2984,7 +2996,14 @@ class Analyzer {
     };
   }
 
-  private buildOnClause(clause: OnClause, scope: Scope): IROnClause {
+  /**
+   * @param ownerKey ADR-289 D2 id prefix naming the compile-time owner —
+   *   an entity IR id, `trait.<name>`, or `story`.
+   * @param clauseIndex position among this owner's clauses. Required for
+   *   uniqueness: the duplicate-clause gate skips `every-turn` clauses and
+   *   separates event verbs only by condition, so kind+action can repeat.
+   */
+  private buildOnClause(clause: OnClause, scope: Scope, ownerKey: string, clauseIndex: number): IROnClause {
     // §5.4 compiler rule, both halves: clauses on dispatch verbs (`define
     // action` names) compile to CapabilityBehaviors; clauses on standard-
     // semantics actions compile to ActionInterceptors (the Phase A path).
@@ -3011,7 +3030,8 @@ class Analyzer {
     const clauseScope: Scope = { ...scope, slots: extraSlots.size ? extraSlots : scope.slots };
 
     const condition = clause.condition ? this.resolveCondition(clause.condition, clauseScope) : null;
-    const body = clause.body.map((s) => this.resolveStatement(s, clauseScope));
+    const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}-${clauseIndex}`;
+    const body = clause.body.map((s, i) => this.resolveStatement(s, clauseScope, `${clausePath}.${i}`));
     this.checkPhaseOrder(clause.body, { mutated: false });
     return {
       clauseKind: clause.clauseKind,
@@ -3085,7 +3105,7 @@ class Analyzer {
 
   // ----------------------------------------------------------- statements
 
-  private resolveStatement(stmt: Statement, scope: Scope): IRStatement {
+  private resolveStatement(stmt: Statement, scope: Scope, path: string): IRStatement {
     switch (stmt.kind) {
       case 'refuse':
       case 'phrase': {
@@ -3324,26 +3344,33 @@ class Analyzer {
         return {
           kind: 'select-on',
           subject,
-          arms: stmt.arms.map((a) => ({
+          arms: stmt.arms.map((a, armIndex) => ({
             value: a.value,
-            body: a.body.map((s) => this.resolveStatement(s, scope)),
+            body: a.body.map((s, i) => this.resolveStatement(s, scope, `${path}.${armIndex}.${i}`)),
             span: a.span,
           })),
           span: stmt.span,
         };
       }
       case 'select-strategy':
+        // ADR-289 D2: the compiler assigns the stable id that keys this
+        // select's persisted occurrence counter. Line numbers are NOT
+        // identity — `import` splices fragments that keep their own, and a
+        // select in a trait clause is shared by every composing entity.
         return {
           kind: 'select-strategy',
+          id: path,
           strategy: stmt.strategy,
-          alternatives: stmt.alternatives.map((alt) => alt.map((s) => this.resolveStatement(s, scope))),
+          alternatives: stmt.alternatives.map((alt, altIndex) =>
+            alt.map((s, i) => this.resolveStatement(s, scope, `${path}.${altIndex}.${i}`)),
+          ),
           span: stmt.span,
         };
       case 'ordinal':
         return {
           kind: 'ordinal',
           ordinal: stmt.ordinal,
-          body: stmt.body.map((s) => this.resolveStatement(s, scope)),
+          body: stmt.body.map((s, i) => this.resolveStatement(s, scope, `${path}.${i}`)),
           span: stmt.span,
         };
       case 'each': {
@@ -3356,7 +3383,7 @@ class Analyzer {
         return {
           kind: 'each',
           condition: stmt.condition,
-          body: stmt.body.map((s) => this.resolveStatement(s, eachScope)),
+          body: stmt.body.map((s, i) => this.resolveStatement(s, eachScope, `${path}.${i}`)),
           span: stmt.span,
         };
       }

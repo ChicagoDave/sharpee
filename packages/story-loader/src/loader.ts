@@ -112,6 +112,7 @@ import {
 } from '@sharpee/world-model';
 import { resolveChain } from './chain-map.js';
 import { LoadError } from './errors.js';
+import { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
 import { HIDING_POSITIONS } from './setting-schema.js';
@@ -254,6 +255,7 @@ export class ChordStory implements Story {
     if (ir.format !== IR_FORMAT) {
       throw new LoadError(`Unsupported IR format \`${String(ir.format)}\` — this loader reads \`${IR_FORMAT}\`.`);
     }
+    assertSelectIds(ir);
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       title: ir.meta.title,
@@ -360,6 +362,11 @@ export class ChordStory implements Story {
 
   initializeWorld(world: WorldModel): void {
     this.world = world;
+
+    // ADR-289 D2: drop the retired line-number select keys. Orphans that
+    // still look like live state are what mislead a debugging session two
+    // years out. Also runs on restore — see sweepRetiredSelectKeys.
+    sweepRetiredSelectKeys(world);
 
     // ADR-094 chain hatches: register each replacement handler under its stdlib
     // chain key. `registerStandardChains` ran at engine init (before setStory →

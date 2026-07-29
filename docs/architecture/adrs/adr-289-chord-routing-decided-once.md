@@ -205,6 +205,34 @@ reason than the paragraph above states: the passes agree because each
 suffix's truth is recorded at its position during the mutations pass, not
 because the truth was pinned before the body began.
 
+#### D2 scope note — the id is carried by `select-strategy` only (same amendment)
+
+D2 below says "each select block" and Acceptance 6 says "a select carrying no
+id." Implementation narrows both to **`select-strategy`**. The id exists to
+name *persisted* state, and `select-on` has none: its arm is derived from a
+subject value and lives only in the per-firing decision record. A required IR
+field that nothing ever reads is the same disease as a dead refusal — a
+construct carried but inert — which D3 makes a compile error one level up.
+
+This is an intent-preserving narrowing, recorded here rather than left to
+implementation because the fernhill episode established the rule: a change to
+a decision's letter goes on the record, not into quiet code.
+
+#### D2 consequence — positional identity re-keys on source edits
+
+Both the clause key and the statement path are **positional**. Inserting or
+reordering a clause on an owner, or a statement inside a clause body,
+silently changes the id of every select at or after that point — which resets
+its occurrence counter, exactly as the D2 key migration does. This is
+inherent to positional identity and is not a defect of the shape; the
+alternative (author-declared select names) buys stability at the cost of
+making every author name something they never refer to.
+
+D2 already accepts counter resets as survivable, so this is recorded as a
+known consequence rather than a blocker. It is written down so it is not
+rediscovered as a bug: a story edited between saves may find a `cycling`
+select restarting at its first alternative.
+
 ### D2 — Select blocks carry a compiler-assigned stable id
 
 The compiler assigns each select block an id in the IR, derived from owner

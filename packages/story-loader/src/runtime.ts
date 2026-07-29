@@ -54,6 +54,7 @@ import {
   CHORD_STORY_STATE_KEY,
   CHORD_TRAIT_PREFIX,
   counterKey,
+  selectOccurrenceKey,
 } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 import { stagingRenderContext } from './hatch-context.js';
@@ -106,6 +107,14 @@ interface ExecContext extends EvalContext {
    * decide live. Absent means live.
    */
   ledger?: DecisionLedger;
+  /**
+   * The composing entity, for bodies whose compile-time owner is a TRAIT
+   * (ADR-289 D2). One trait clause is shared IR; each composing entity needs
+   * its own select counter, so the runtime — the layer that knows which
+   * entity is executing — appends it to the compiler's statement id. Absent
+   * for entity-owned bodies, whose id already names the owner.
+   */
+  owner?: string;
 }
 
 /** What a scheduler tick provides (structural subset of plugin-scheduler's SchedulerContext). */
@@ -972,6 +981,12 @@ export class ChordRuntime {
       slots: { ...(data.chordSlots as Record<string, string> | undefined), actor: actorId },
       occurrence: data.chordOccurrence as number | undefined,
       ledger: runtime.ledgerFor(data as Record<string, unknown>, 'chordDecisions', phase),
+      // ADR-289 D2: a trait clause is ONE piece of IR shared by every
+      // composing entity, so its selects must count per entity. The compiler
+      // cannot name composing entities — the runtime is the layer that knows
+      // — and the compiler's id stays a strict prefix of the key it builds,
+      // keeping "every counter for this statement" addressable by prefix.
+      owner: runtime.host.irIdOf(entity.id),
     });
 
     return {
@@ -1992,7 +2007,7 @@ export class ChordRuntime {
     // the persisted chance stream (via one draw per firing). Sticky (Z5)
     // reuses the same slot with the Choice encoding instead of an
     // occurrence count: stored = chosen index + 1, 0/undefined = unchosen.
-    const key = CHORD_OCCURRENCE_PREFIX + `select.${stmt.span.line}`;
+    const key = selectOccurrenceKey(stmt.id, ctx.owner);
     if (stmt.strategy === 'sticky') {
       const stored = ctx.world.getStateValue(key) as number | undefined;
       if (stored && stored > 0) return Math.min(stored - 1, count - 1);

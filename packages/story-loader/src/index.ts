@@ -28,6 +28,14 @@ export type { PhrasebookData } from './phrasebook-data.js';
 export {
   CHORD_OCCURRENCE_PREFIX,
   CHORD_RNG_KEY,
+  CHORD_SELECT_PREFIX,
   CHORD_STATE_PREFIX,
   CHORD_TRAIT_PREFIX,
+  RETIRED_SELECT_KEY,
+  selectOccurrenceKey,
 } from './state-keys.js';
+/**
+ * ADR-289 D2. `sweepRetiredSelectKeys` is exported because it must also run on
+ * RESTORE, which happens outside this package — see its doc comment.
+ */
+export { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
