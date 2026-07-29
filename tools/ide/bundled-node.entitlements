@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  bundled-node.entitlements — entitlements for the vendored Node runtime that
+  Chord Writer ships inside Contents/Resources/toolchain (ADR-279 D4).
+
+  Owner context: tools/ide — packaging. Applied by package.sh, never by Xcode:
+  the runtime is a Resources payload, not a build product, so nothing in the
+  Xcode target signs it.
+
+  WHY THIS FILE EXISTS AT ALL. nodejs.org ships node already Developer-ID-signed
+  with the hardened runtime, which looks shippable — but its entitlement set
+  includes com.apple.security.get-task-allow, a debug entitlement Apple's notary
+  service rejects outright. So the binary must be re-signed with our identity,
+  and re-signing replaces the entitlement set wholesale. Every key below is one
+  V8 genuinely needs and would crash without; get-task-allow is the one
+  deliberately absent.
+
+  Keep this list MINIMAL. Each key weakens the hardened runtime, and anything
+  added here ships to every author.
+-->
+<plist version="1.0">
+<dict>
+	<!-- V8 compiles JavaScript to native code at runtime; without this the
+	     first script the CLI runs dies on an mmap of executable memory. -->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+
+	<!-- V8's older code paths write to pages not covered by the MAP_JIT
+	     allowance above. Node's own signature carries this for the same reason. -->
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+
+	<!-- Native addons (.node) are third-party Mach-O loaded into the node
+	     process and are not signed by our team. Without this, library
+	     validation refuses them and any addon-using dependency fails to load. -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+
+	<!-- Carried over from nodejs.org's own signature rather than reasoned from
+	     first principles. It governs DYLD_* variables only (NODE_PATH, which the
+	     bin/sharpee shim exports, is unaffected either way), so the shim does
+	     not depend on it — but upstream ships it, and dropping an entitlement
+	     the runtime was built and tested with is a risk with no upside. -->
+	<key>com.apple.security.cs.allow-dyld-environment-variables</key>
+	<true/>
+
+	<!-- W^X page-protection relaxation V8 depends on for its code cache. -->
+	<key>com.apple.security.cs.disable-executable-page-protection</key>
+	<true/>
+</dict>
+</plist>

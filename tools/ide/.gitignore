@@ -12,6 +12,19 @@ DerivedData/
 xcuserdata/
 *.xcworkspace/xcuserdata/
 
+# Release artifacts from package.sh (ADR-279 D3). The DMG runs ~160MB thanks to
+# the bundled Node runtime — far past GitHub's 100MB per-file limit — and is a
+# build output, not a source. Distribution happens off a release page, not the repo.
+release/
+
+# Signing material must never be committed. package.sh reads the identity from
+# the keychain and the notary credential from a notarytool profile, so nothing
+# here should ever appear — this is the backstop for a stray manual copy.
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+
 # Swift Package Manager
 .build/
 .swiftpm/

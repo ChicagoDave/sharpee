@@ -21,7 +21,16 @@
 # INVARIANT — the toolchain is SEALED: once assembled it must resolve every
 # module, binary, and asset from inside itself. It never consults the author's
 # project, a global install, or the network. The shim enforces this with
-# NODE_PATH; this script enforces it by shipping the full closure.
+# NODE_PATH; this script enforces it by shipping the full closure AND by
+# mechanically proving no symlink escapes the toolchain root (step 4.5).
+#
+# That proof is not ceremony. `pnpm deploy` leaves workspace-source symlinks
+# behind, and grafting platform-browser in re-parents its nested ones to the
+# wrong depth — five links pointed at /Users/<you>/repos/sharpee/packages/*
+# before step 4.5 existed. They dangled in the app bundle only because the ../
+# padding overshot; the seal held by accident of directory depth, not by
+# construction. A machine where those paths did resolve would have silently
+# built against a live checkout.
 #
 # Fails loudly at every step. A half-assembled toolchain must never look like
 # success — the app would silently lose its bundled tier and authors would hit
@@ -184,6 +193,99 @@ cp -R "$STAGING/${NODE_DIST}/bin" "$TOOLCHAIN.incoming/node/bin"
 cp -R "$STAGING/devkit" "$TOOLCHAIN.incoming/devkit"
 cp -R "$STAGING/bin" "$TOOLCHAIN.incoming/bin"
 echo "$FINGERPRINT" > "$TOOLCHAIN.incoming/.stamp"
+
+# --- 4.5 Enforce the seal -------------------------------------------
+# Run against `.incoming` rather than staging deliberately: escape is a
+# function of DEPTH, and `.incoming` is the only tree that sits at the exact
+# path the toolchain will occupy. A link checked at staging depth can pass
+# there and escape here.
+#
+# Resolution is lexical via path.resolve, which clamps `..` at `/` exactly as
+# the kernel does — so a link is judged by where it would actually land, and
+# dangling links are still classified rather than skipped.
+step "Enforcing the seal (no symlink may escape the toolchain root)"
+escaping="$(SEAL_ROOT="$TOOLCHAIN.incoming" node <<'JS'
+const fs = require('fs'), path = require('path');
+const root = path.resolve(process.env.SEAL_ROOT);
+const out = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isSymbolicLink()) {
+      const target = path.resolve(path.dirname(p), fs.readlinkSync(p));
+      if (target !== root && !target.startsWith(root + path.sep)) {
+        out.push(p + '\t' + target);
+      }
+    } else if (e.isDirectory()) {
+      walk(p);
+    }
+  }
+})(root);
+process.stdout.write(out.join('\n'));
+JS
+)" || die "seal scan failed to run."
+
+if [ -n "$escaping" ]; then
+  # Every escaping link observed so far is a redundant duplicate of a module
+  # the .pnpm store already seals, so pruning it lets Node's ordinary upward
+  # node_modules walk (plus the shim's NODE_PATH) find the sealed copy. Prune
+  # only when that sealed copy is provably present — otherwise the closure is
+  # genuinely incomplete and silently dropping the link would ship a toolchain
+  # that fails at the author's first build.
+  # Herestring, not a pipe: a piped `while` runs in a subshell, where `die`
+  # would exit only that subshell and let the swap proceed with a leaky seal.
+  while IFS=$'\t' read -r link target; do
+    [ -n "$link" ] || continue
+    spec="${link##*/node_modules/}"
+    sealed="$TOOLCHAIN.incoming/devkit/node_modules/$spec"
+    if [ "$link" != "$sealed" ] && [ -e "$sealed" ]; then
+      rm -f "$link"
+      echo "    pruned $spec (sealed copy at devkit/node_modules/$spec)"
+    elif [ "$link" = "$TOOLCHAIN.incoming/devkit/node_modules/@sharpee/devkit" ]; then
+      # The deploy root's link to itself. Nothing inside the seal resolves the
+      # `@sharpee/devkit` specifier — the shim execs devkit/dist/cli.js by
+      # absolute path — so this one is dropped outright rather than re-pointed
+      # at ../.., which would introduce a symlink cycle for codesign to walk.
+      rm -f "$link"
+      echo "    pruned @sharpee/devkit (deploy root self-reference)"
+    else
+      die "symlink escapes the toolchain and has no sealed replacement:
+    $link
+      -> $target
+  Pruning it would break resolution of '$spec'. The dependency closure is
+  incomplete — deploy the missing package into the seal instead."
+    fi
+  done <<< "$escaping"
+fi
+
+# Re-scan: proves the prune actually closed the seal rather than assuming it,
+# and catches any link left dangling INSIDE the toolchain (a dangling link is
+# a codesign and notarization hazard even when it does not escape).
+residue="$(SEAL_ROOT="$TOOLCHAIN.incoming" node <<'JS'
+const fs = require('fs'), path = require('path');
+const root = path.resolve(process.env.SEAL_ROOT);
+const bad = [];
+(function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isSymbolicLink()) {
+      const target = path.resolve(path.dirname(p), fs.readlinkSync(p));
+      if (target !== root && !target.startsWith(root + path.sep)) {
+        bad.push('escapes:  ' + p + ' -> ' + target);
+      } else if (!fs.existsSync(p)) {
+        bad.push('dangling: ' + p + ' -> ' + target);
+      }
+    } else if (e.isDirectory()) {
+      walk(p);
+    }
+  }
+})(root);
+process.stdout.write(bad.join('\n'));
+JS
+)" || die "seal re-scan failed to run."
+[ -z "$residue" ] || die "the toolchain is not sealed:
+$residue"
+echo "    seal verified — every symlink resolves inside the toolchain"
 
 [ -d "$TOOLCHAIN" ] && mv "$TOOLCHAIN" "$TOOLCHAIN.outgoing"
 mv "$TOOLCHAIN.incoming" "$TOOLCHAIN"
