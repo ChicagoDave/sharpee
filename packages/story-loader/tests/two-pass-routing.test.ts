@@ -10,12 +10,17 @@
  * Public interface: none — a test module. Owner context: `@sharpee/story-loader`,
  * the Chord runtime's interceptor path (`runtime.ts` `buildInterceptor`).
  *
- * **Written RED on purpose** (ADR-289 §D9, "written failing, against H1's
- * cycling case"; plan Phase 1). `select-strategy` and the statement `when`
- * suffix are absent from `snapshotDecisions` today, so those cases fail until
- * D1 lands. `select-on`, `each`, and `ordinal` pass now and are the controls:
- * they prove the harness detects the defect class rather than merely detecting
- * a broken story.
+ * Written RED first (ADR-289 §D9, "written failing, against H1's cycling
+ * case"; plan Phase 1), green since D1 landed. Reverting the ledger for
+ * `select-on`, `select-strategy`, `each`, or the `when` suffix turns it red
+ * again — `ordinal` cannot be made to fail on revert, see the note on that
+ * case.
+ *
+ * The two `when`-suffix cases pin **both directions** of positional
+ * semantics, and are the reason D1 was amended: a suffix must NOT see a later
+ * mutation in the same body (the trap), and MUST see an earlier one (the
+ * kettle). A pre-mutation snapshot satisfies the first and breaks the second —
+ * which is exactly how the first implementation regressed `stories/fernhill`.
  *
  * Method: every branch carries a WITNESS PAIR — a counter it raises (visible
  * only to the mutations pass) and a phrase it emits (visible only to the
@@ -103,6 +108,19 @@ create the trap
     phrase warning when it is armed
       The trap is armed.
     change it to spent
+  end on
+
+create the kettle
+  scenery, readable
+  in the Lab
+  states: wary, softened
+
+  A stern kettle.
+
+  on reading it
+    change it to softened when it is wary
+    phrase softened-note when it is softened
+      Something in her eases.
   end on
 
 create the ledger
@@ -242,7 +260,24 @@ describe('ADR-289 D9 — the report pass narrates the branch whose mutations ran
     expect(cw.world.getStateValue('chord.state.trap')).toBe('spent');
   });
 
-  // ---- Controls: already snapshotted, green today -------------------------
+  it('statement `when` suffix: sees an EARLIER statement’s mutation (fernhill:663)', () => {
+    const cw = load();
+    const report = fire(cw, 'kettle', 'if.action.reading');
+
+    // `change it to softened when it is wary` precedes
+    // `phrase softened-note when it is softened`. The phrase's suffix is only
+    // true BECAUSE the line above it ran, so a suffix pinned before the body
+    // began evaluates false and the phrase vanishes.
+    //
+    // This is the shape that regressed stories/fernhill 495/495 → 116 failures
+    // under D1's original pre-mutation snapshot. It is the exact inverse of
+    // the trap case above, and the pair is why D1 was amended: routing is
+    // decided at each statement's OWN position, not before the body.
+    expect(cw.world.getStateValue('chord.state.kettle')).toBe('softened');
+    expect(report.override?.messageId).toBe('kettle.softened-note');
+  });
+
+  // ---- Controls: recorded before ADR-289 too -------------------------------
 
   it('select-on: the arm survives its own body mutating the subject', () => {
     const cw = load();

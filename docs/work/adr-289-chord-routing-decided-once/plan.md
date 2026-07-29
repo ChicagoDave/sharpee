@@ -41,16 +41,27 @@ no routing code changed.
 ## Phase 2 — D1: one decision record, resolved pre-mutation — Large
 
 **Entry**: Phase 1 harness red.
-**Work**:
-- New `packages/story-loader/src/decisions.ts` — decision-record type + snapshot builder.
-- `snapshotDecisions` becomes authority over all five constructs: adds `select-strategy`
-  (chosen alternative index) and the statement `when` suffix (pinned truth); `ordinal`
-  moves from walked-not-recorded to recorded.
-- `decideStrategy` consumes its counter exactly once per firing, at snapshot time.
-- Both passes read the record; neither re-derives. Both the interceptor path and the
-  capability-behavior path import the one module.
+**Work** (revised mid-phase — see "D1 amended" below):
+- New `packages/story-loader/src/decisions.ts` — `RoutingDecision`, `DecisionRecord`,
+  and a `DecisionLedger` with three modes: record (mutations pass), replay (reports
+  pass), live (single-pass contexts and `each` bodies).
+- `execStatements` resolves all five constructs through the ledger: `select-on` arm,
+  `select-strategy` alternative, `ordinal` match, `each` match set, statement `when`.
+- `decideStrategy` consumes its counter exactly once per firing, in the mutations pass.
+- The `when` suffix is evaluated before the phase gate, so the mutations pass decides
+  and records the suffix of a report-only statement at its position.
+- `snapshotDecisions` is deleted, not extended. Single-pass sites record nothing.
 - Correct the wrong comment at `runtime.ts:1594-1597`.
-- The `each`-body caveat (`runtime.ts:1926-1930`) stays documented in place — out of scope.
+- `each` bodies run under a live ledger in both passes — the caveat stays, and becomes
+  load-bearing rather than incidental.
+
+**D1 amended (2026-07-29).** The first implementation followed D1's letter — a
+pre-mutation snapshot taken at `postValidate` — and regressed `stories/fernhill`
+495/495 → 116 failures. `change it to softened when it has the sherry bottle` is true
+only after the standard action runs, which happens after validate. The amendment:
+**the mutations pass is the decision pass**, each decision made at the statement's own
+position. AC7 and fernhill are then the same rule, not opposing ones. Recorded in the
+ADR as a D1 amendment.
 
 **Exit**: harness green for all five constructs; reverting the snapshot for any one
 construct turns it red again. **Plus a transcript gate** — D1 changes which text is

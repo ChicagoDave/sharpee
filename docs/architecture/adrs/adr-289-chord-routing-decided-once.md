@@ -1,6 +1,6 @@
 # ADR-289: Chord routing is decided once — closing the compiler review's correctness findings
 
-## Status: ACCEPTED (2026-07-29, session eb49e6) — drafted from the Chord review, interviewed (3 questions resolved: D10 open-condition vocabulary, D4 placement unification, D2 counter reset), then adr-reviewed twice: 11/14 with two BLOCKER and one SMALL finding folded plus two cross-ADR seams (ADR-276 census, ADR-275 D6), then 13/14 with the versioning BLOCKER folded on David's ruling (Chord 2.2.0, the fourth recorded departure from D2's letter — breaking gates ship without a major). Accepted at 14/14. **Not yet implemented**; the platform change to `packages/chord` and `packages/story-loader` is approved in principle by this acceptance, and D9's harness is written failing before any fix.
+## Status: ACCEPTED (2026-07-29, session eb49e6) — drafted from the Chord review, interviewed (3 questions resolved: D10 open-condition vocabulary, D4 placement unification, D2 counter reset), then adr-reviewed twice: 11/14 with two BLOCKER and one SMALL finding folded plus two cross-ADR seams (ADR-276 census, ADR-275 D6), then 13/14 with the versioning BLOCKER folded on David's ruling (Chord 2.2.0, the fourth recorded departure from D2's letter — breaking gates ship without a major). Accepted at 14/14. **Implementation in progress** (branch `adr-289-p1`); the platform change to `packages/chord` and `packages/story-loader` is approved in principle by this acceptance, and D9's harness is written failing before any fix. **D1 amended 2026-07-29 during implementation** — the pre-mutation snapshot regressed `stories/fernhill` (495/495 → 116 failures); "once" is at the statement's position during the mutations pass, not before the body. See the D1 amendment; Acceptance 7 is unchanged and is satisfied by the amended rule.
 
 ## Date: 2026-07-29
 
@@ -143,6 +143,67 @@ exception and stays documented in place; widening the key to
 The comment at `runtime.ts:1594-1597` is wrong today and is corrected as
 part of this: the suffix is snapshotted, so the passes agree because the
 truth was pinned, not because of statement ordering.
+
+#### D1 amendment — "once" is at the statement's position, not before the body (2026-07-29, implementation session)
+
+**D1 as written above is wrong about *when* "once" is, and the first
+implementation broke a shipped story proving it.** Pinning at snapshot time —
+`postValidate`, before anything has run — was tried and regressed
+`stories/fernhill` from 495/495 to 567/683 (116 failures). The clause that
+exposed it, `fernhill.story:663`:
+
+```
+on giving it
+  change it to softened when it has the sherry bottle
+  award softened, once when it is softened
+  phrase kettle-softened when it is softened
+```
+
+`when it has the sherry bottle` is true only *after* the standard `giving`
+action transfers the bottle, which happens between `postValidate` and
+`postExecute`. Pinned at snapshot time it evaluates false and the whole
+clause no-ops.
+
+**The apparent conflict with Acceptance 7 is not real.** AC7 wants
+`phrase warning when it is armed` followed by `change it to spent` to emit;
+fernhill wants `phrase … when it is softened` to fire *because* the line
+above it changed the state. Read as a straight-line program these are the
+same rule — **each suffix is evaluated at its own position, against the world
+as it stands when that line is reached.** "Pre-mutation" is not a global
+property to choose; it is positional. The two-pass split is an ADR-228
+implementation artifact, and the invariant that actually matters is that the
+body behaves as if executed once, top to bottom.
+
+**Amended decision: the mutations pass IS the decision pass.** Every routing
+decision is recorded at its own position as the mutations pass walks the
+body; the reports pass replays the record and re-derives nothing. There is no
+separate pre-walk — `snapshotDecisions` is deleted rather than extended.
+
+This satisfies D1's stated goal (*the report pass sees the routing the
+execute pass took*) more literally than the pre-walk did, and it is smaller:
+
+- **The duplicate walker goes away.** `snapshotDecisions`'s walk mirrored
+  `execStatements`'s branch logic — two places that had to independently
+  agree on which branches are taken. That is the leaky-abstraction failure
+  this ADR exists to close, reproduced inside its own fix.
+- **Three traversals become two.**
+- **The counter advances only when the body runs.** Pinning at validate time
+  meant a firing vetoed downstream still advanced the select. "Consumes its
+  counter exactly once per firing" now means what it says.
+- **Single-pass contexts need no record at all** — one pass cannot disagree
+  with itself, so `after` clauses, daemons, sequences and turn clauses simply
+  decide live.
+
+The `each`-body caveat survives unchanged and becomes load-bearing: an
+`each` body executes once per match, so its statements use a **live** ledger
+in *both* passes rather than being recorded per statement identity, which
+would otherwise give every iteration the last iteration's answer. Widening
+the key to `(statement, match)` remains out of scope.
+
+The `runtime.ts:1594-1597` comment is still corrected, but for a different
+reason than the paragraph above states: the passes agree because each
+suffix's truth is recorded at its position during the mutations pass, not
+because the truth was pinned before the body began.
 
 ### D2 — Select blocks carry a compiler-assigned stable id
 

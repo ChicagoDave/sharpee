@@ -46,7 +46,7 @@ import {
 } from '@sharpee/world-model';
 import { exitBlockedKey, exitMessageKey, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
 import { Evaluator, EvalContext } from './evaluator.js';
-import { snapshotDecisions, type DecisionRecord } from './decisions.js';
+import { DecisionLedger, type DecisionRecord } from './decisions.js';
 import { LoadError } from './errors.js';
 import {
   CHORD_OCCURRENCE_PREFIX,
@@ -101,11 +101,11 @@ interface ExecContext extends EvalContext {
   /** Occurrence count of the enclosing rule firing (ordinal blocks test it). */
   occurrence?: number;
   /**
-   * Pre-mutation routing for this clause body (ADR-289 D1) — every construct,
-   * not a subset. Absent in single-pass contexts, where deciding live is
-   * correct because there is only one pass to agree with.
+   * How this pass answers routing questions (ADR-289 D1 as amended): the
+   * mutations pass records, the reports pass replays, single-pass contexts
+   * decide live. Absent means live.
    */
-  decisions?: DecisionRecord;
+  ledger?: DecisionLedger;
 }
 
 /** What a scheduler tick provides (structural subset of plugin-scheduler's SchedulerContext). */
@@ -566,8 +566,8 @@ export class ChordRuntime {
     if (clause.once && occurrence > 1) return null; // `, once` — one lifetime firing (D5)
     world.setStateValue(occKey, occurrence);
     ctx.occurrence = occurrence;
-    ctx.decisions = this.snapshotDecisions(clause.body, ctx);
 
+    // Single pass — routing decided live, nothing recorded (ADR-289 D1).
     return this.execStatements(clause.body, ctx);
   }
 
@@ -756,21 +756,20 @@ export class ChordRuntime {
         world.setStateValue(occurrenceKey, occurrence);
         ctx.occurrence = occurrence;
         bag.occurrence = occurrence;
-        bag.decisions = runtime.snapshotDecisions(clause.body, ctx);
         return null;
       },
 
       postExecute(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): void {
         const bag = runtime.clauseBag(data, ns);
         if (target.id !== ownWorldId() || bag.skip === true) return;
-        const ctx = runtime.restoreCtx(world, entity.id, bag);
+        const ctx = runtime.restoreCtx(world, entity.id, bag, 'mutations');
         runtime.execStatements(clause.body, ctx, 'mutations');
       },
 
       postReport(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const bag = runtime.clauseBag(data, ns);
         if (target.id !== ownWorldId() || bag.skip === true) return {};
-        const ctx = runtime.restoreCtx(world, entity.id, bag);
+        const ctx = runtime.restoreCtx(world, entity.id, bag, 'reports');
         const reports = runtime.execStatements(clause.body, ctx, 'reports');
 
         const result: InterceptorReportResult = {};
@@ -792,13 +791,47 @@ export class ChordRuntime {
     };
   }
 
-  private restoreCtx(world: WorldModel, itIrId: string, bag: Record<string, unknown>): ExecContext {
+  /**
+   * Rebuild the exec context for one pass of a two-pass clause body.
+   *
+   * @param phase `'mutations'` opens a fresh record in the bag and decides
+   *   into it; `'reports'` replays that record; omitted decides live.
+   */
+  private restoreCtx(
+    world: WorldModel,
+    itIrId: string,
+    bag: Record<string, unknown>,
+    phase?: 'mutations' | 'reports',
+  ): ExecContext {
     return {
       world,
       it: itIrId,
       occurrence: bag.occurrence as number | undefined,
-      decisions: bag.decisions as DecisionRecord | undefined,
+      ledger: this.ledgerFor(bag, 'decisions', phase),
     };
+  }
+
+  /**
+   * The ledger for one pass, backed by `slot` on the caller's shared bag.
+   *
+   * The mutations pass installs a fresh record BEFORE executing (the Map is
+   * shared by reference, so it fills as the walk proceeds) and the reports
+   * pass reads that same record back. Anything else decides live.
+   */
+  private ledgerFor(
+    bag: Record<string, unknown>,
+    slot: string,
+    phase?: 'mutations' | 'reports',
+  ): DecisionLedger {
+    if (phase === 'mutations') {
+      const entries: DecisionRecord = new Map();
+      bag[slot] = entries;
+      return DecisionLedger.recording(entries);
+    }
+    if (phase === 'reports') {
+      return DecisionLedger.replaying(bag[slot] as DecisionRecord | undefined);
+    }
+    return DecisionLedger.live();
   }
 
   // ------------------------------------------------- topic tables (ADR-239)
@@ -864,7 +897,6 @@ export class ChordRuntime {
         world.setStateValue(key, occurrence);
         ctx.occurrence = occurrence;
         bag.occurrence = occurrence;
-        bag.decisions = runtime.snapshotDecisions(row.body, ctx);
         return null;
       },
 
@@ -874,14 +906,14 @@ export class ChordRuntime {
           catchAll?.postExecute?.(target, world, actorId, data);
           return;
         }
-        const ctx = runtime.restoreCtx(world, entity.id, runtime.clauseBag(data, `topic.${entity.id}`));
+        const ctx = runtime.restoreCtx(world, entity.id, runtime.clauseBag(data, `topic.${entity.id}`), 'mutations');
         runtime.execStatements(row.body, ctx, 'mutations');
       },
 
       postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const row = rows[rowIndexFor(data)];
         if (!row) return catchAll?.postReport?.(target, world, actorId, data) ?? {};
-        const ctx = runtime.restoreCtx(world, entity.id, runtime.clauseBag(data, `topic.${entity.id}`));
+        const ctx = runtime.restoreCtx(world, entity.id, runtime.clauseBag(data, `topic.${entity.id}`), 'reports');
         const reports = runtime.execStatements(row.body, ctx, 'reports');
 
         const result: InterceptorReportResult = {};
@@ -928,12 +960,18 @@ export class ChordRuntime {
    */
   private buildCapabilityBehavior(traitName: string, clause: IROnClause): CapabilityBehavior {
     const runtime = this;
-    const ctxOf = (entity: IFEntity, world: WorldModel, actorId: string, data: CapabilitySharedData): ExecContext => ({
+    const ctxOf = (
+      entity: IFEntity,
+      world: WorldModel,
+      actorId: string,
+      data: CapabilitySharedData,
+      phase?: 'mutations' | 'reports',
+    ): ExecContext => ({
       world,
       it: runtime.host.irIdOf(entity.id),
       slots: { ...(data.chordSlots as Record<string, string> | undefined), actor: actorId },
       occurrence: data.chordOccurrence as number | undefined,
-      decisions: data.chordDecisions as DecisionRecord | undefined,
+      ledger: runtime.ledgerFor(data as Record<string, unknown>, 'chordDecisions', phase),
     });
 
     return {
@@ -960,16 +998,15 @@ export class ChordRuntime {
         world.setStateValue(key, occurrence);
         ctx.occurrence = occurrence;
         data.chordOccurrence = occurrence;
-        data.chordDecisions = runtime.snapshotDecisions(clause.body, ctx);
         return { valid: true };
       },
       execute(entity, world, actorId, data): void {
         if (data.chordSkip === true) return;
-        runtime.execStatements(clause.body, ctxOf(entity, world, actorId, data), 'mutations');
+        runtime.execStatements(clause.body, ctxOf(entity, world, actorId, data, 'mutations'), 'mutations');
       },
       report(entity, world, actorId, data): CapabilityEffect[] {
         if (data.chordSkip === true) return [];
-        const events = runtime.execStatements(clause.body, ctxOf(entity, world, actorId, data), 'reports');
+        const events = runtime.execStatements(clause.body, ctxOf(entity, world, actorId, data, 'reports'), 'reports');
         return events.map((e) => ({ type: e.type, payload: (e.data ?? {}) as Record<string, unknown> }));
       },
       blocked(entity, world, actorId, error, data): CapabilityEffect[] {
@@ -1029,18 +1066,17 @@ export class ChordRuntime {
         world.setStateValue(key, occurrence);
         ctx.occurrence = occurrence;
         bag.occurrence = occurrence;
-        bag.decisions = runtime.snapshotDecisions(clause.body, ctx);
         return null;
       },
       postExecute(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): void {
         const bag = runtime.clauseBag(data, ns);
         if (bag.skip === true) return;
-        runtime.execStatements(clause.body, runtime.restoreCtx(world, itOf(target), bag), 'mutations');
+        runtime.execStatements(clause.body, runtime.restoreCtx(world, itOf(target), bag, 'mutations'), 'mutations');
       },
       postReport(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const bag = runtime.clauseBag(data, ns);
         if (bag.skip === true) return {};
-        const reports = runtime.execStatements(clause.body, runtime.restoreCtx(world, itOf(target), bag), 'reports');
+        const reports = runtime.execStatements(clause.body, runtime.restoreCtx(world, itOf(target), bag, 'reports'), 'reports');
         const result: InterceptorReportResult = {};
         const emit: CapabilityEffect[] = [];
         for (const event of reports) {
@@ -1197,12 +1233,11 @@ export class ChordRuntime {
         // the dispatch miss.
         if (!behavior && def.body.length === 0) return { valid: false, error: def.otherwise ?? 'cant' };
         if (def.body.length) {
-          // The body's own validate partition (leading refusals/musts) and
-          // the pre-mutation decision snapshot (§5.4).
+          // The body's own validate partition (leading refusals/musts).
+          // Routing is decided by the mutations pass, not here (ADR-289 D1).
           const bodyCtx: ExecContext = { world: context.world, slots };
           const refusal = runtime.findRefusal(def.body, bodyCtx);
           if (refusal) return { valid: false, error: refusal };
-          context.sharedData.chordBodyDecisions = runtime.snapshotDecisions(def.body, bodyCtx);
         }
         context.sharedData.capEntity = entity;
         context.sharedData.capBehavior = behavior;
@@ -1219,7 +1254,7 @@ export class ChordRuntime {
           behavior.execute(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
         }
         if (def.body.length) {
-          runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context), 'mutations');
+          runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'mutations'), 'mutations');
         }
       },
       report(context: DispatchContext): ISemanticEvent[] {
@@ -1231,7 +1266,7 @@ export class ChordRuntime {
           events.push(...effects.map((e) => context.event(e.type, e.payload)));
         }
         if (def.body.length) {
-          events.push(...runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context), 'reports'));
+          events.push(...runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'reports'), 'reports'));
         }
         // After-clauses bind to the target entity — an entity-less command
         // has no owner to react (ADR-275 D1).
@@ -1265,15 +1300,18 @@ export class ChordRuntime {
    * validate built (entity ids + ADR-275 semantic words), no `it` (action
    * bodies have no owner), decision snapshot carried through sharedData.
    */
-  private actionBodyCtxFromSlots(context: {
-    world: WorldModel;
-    player: IFEntity;
-    sharedData: Record<string, unknown>;
-  }): ExecContext {
+  private actionBodyCtxFromSlots(
+    context: {
+      world: WorldModel;
+      player: IFEntity;
+      sharedData: Record<string, unknown>;
+    },
+    phase?: 'mutations' | 'reports',
+  ): ExecContext {
     return {
       world: context.world,
       slots: (context.sharedData.chordSlotMap as Record<string, string> | undefined) ?? { actor: context.player.id },
-      decisions: context.sharedData.chordBodyDecisions as DecisionRecord | undefined,
+      ledger: this.ledgerFor(context.sharedData, 'chordBodyDecisions', phase),
     };
   }
 
@@ -1518,7 +1556,8 @@ export class ChordRuntime {
       if (clause.once && occurrence > 1) return; // `, once` (D5)
       world.setStateValue(key, occurrence);
       ctx.occurrence = occurrence;
-      ctx.decisions = this.snapshotDecisions(clause.body, ctx);
+      // Single pass: one walk cannot disagree with itself, so routing is
+      // decided live and nothing is recorded (ADR-289 D1 as amended).
       out.push(...this.execStatements(clause.body, ctx));
     });
     return out;
@@ -1596,25 +1635,31 @@ export class ChordRuntime {
     phase: 'all' | 'mutations' | 'reports' = 'all',
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
+    const ledger = ctx.ledger ?? DecisionLedger.live();
     // Statement `when` suffix (ratchet D7): the statement acts only if the
-    // condition holds. ADR-289 D1 — the truth is PINNED pre-mutation in the
-    // decision record, so the passes agree because the answer was decided
-    // once, not because of statement ordering. (The previous comment here
-    // claimed ordering was sufficient; it is not. An EARLIER statement in the
-    // same body mutating what the suffix reads is exactly the divergence:
-    // `phrase warning when it is armed` followed by `change it to spent`
-    // emitted nothing, because the reports pass re-asked after the mutation.)
-    // Falls back to live evaluation only where no record exists: single-pass
-    // contexts, and inside `each` bodies (decisions.ts, note 2).
+    // condition holds. ADR-289 D1 as amended — the truth is decided at this
+    // statement's OWN position during the mutations pass and replayed in the
+    // reports pass, so each line sees the effects of the lines above it and
+    // both passes agree. (The comment that stood here claimed the passes
+    // agree because the suffix runs before either phase's own mutations. That
+    // is the guarantee that did not hold: `phrase … when it is armed`
+    // followed by `change it to spent` emitted nothing, because by the reports
+    // pass the mutation had already landed.)
     const whenHolds = (stmt: IRStatement & { stmtWhen?: IRCondition | null }): boolean => {
-      const pinned = ctx.decisions?.get(stmt)?.when;
-      if (pinned !== undefined) return pinned;
-      return !stmt.stmtWhen || this.evaluator.evalCondition(stmt.stmtWhen, ctx);
+      const suffix = stmt.stmtWhen;
+      if (!suffix) return true;
+      return ledger.resolve(stmt, 'when', () => this.evaluator.evalCondition(suffix, ctx));
     };
     for (const stmt of body) {
+      // Evaluated FIRST, before the phase gate, so the mutations pass decides
+      // (and records) the suffix of a report-only statement at its position in
+      // the sequence. Short-circuiting on `phase` here — as `phase !== '…' &&
+      // whenHolds(stmt)` used to — would skip the recording pass entirely for
+      // phrase/emit/win/lose/kill and leave the reports pass to re-derive.
+      const holds = whenHolds(stmt);
       switch (stmt.kind) {
         case 'phrase':
-          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.phraseEvent(stmt.phraseKey, ctx, stmt.params));
+          if (phase !== 'mutations' && holds) events.push(this.phraseEvent(stmt.phraseKey, ctx, stmt.params));
           break;
         case 'emit':
           // ADR-216: the payload evaluates live against the turn context —
@@ -1624,11 +1669,11 @@ export class ChordRuntime {
           // platform runtime type here (media.* → dotted; author events pass
           // through). Not inside rawEvent — that also mints the internal
           // `chord.phrase` event, which must not be translated.
-          if (phase !== 'mutations' && whenHolds(stmt)) events.push(this.rawEvent(translateEventId(stmt.event), this.emitPayload(stmt.payload, ctx)));
+          if (phase !== 'mutations' && holds) events.push(this.rawEvent(translateEventId(stmt.event), this.emitPayload(stmt.payload, ctx)));
           break;
         case 'win':
         case 'lose':
-          if (phase !== 'mutations' && whenHolds(stmt)) {
+          if (phase !== 'mutations' && holds) {
             if (stmt.phraseKey) events.push(this.phraseEvent(stmt.phraseKey, ctx));
             events.push(
               this.host.triggerEnding(ctx.world, stmt.kind === 'win' ? 'victory' : 'defeat', stmt.phraseKey ?? undefined),
@@ -1641,7 +1686,7 @@ export class ChordRuntime {
           // canonical if.event.player.died it returns; triggerEnding is NOT
           // called (a distinct lowering target from win/lose). The phrase
           // carries the death text; the cause derives from the phrase key.
-          if (phase !== 'mutations' && whenHolds(stmt)) {
+          if (phase !== 'mutations' && holds) {
             if (stmt.phraseKey) events.push(this.phraseEvent(stmt.phraseKey, ctx));
             const player = ctx.world.getPlayer();
             if (player) {
@@ -1654,7 +1699,7 @@ export class ChordRuntime {
           }
           break;
         case 'change': {
-          if (phase !== 'reports' && whenHolds(stmt)) {
+          if (phase !== 'reports' && holds) {
             if (stmt.entity.kind === 'story') {
               // `change the story to <state>` — the story object's phase (D2).
               this.checkForwardMarch(
@@ -1685,7 +1730,7 @@ export class ChordRuntime {
           break;
         }
         case 'move': {
-          if (phase !== 'reports' && whenHolds(stmt)) {
+          if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
             const place = this.evaluator.entityValue(stmt.place, ctx);
             this.moveWithLifecycle(thing, place, ctx);
@@ -1693,7 +1738,7 @@ export class ChordRuntime {
           break;
         }
         case 'remove': {
-          if (phase !== 'reports' && whenHolds(stmt)) {
+          if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
             // Z6 (ADR-213): the loader's pre-removal observer fires inside
             // removeEntity and enqueues any witnessed `disappeared`
@@ -1718,7 +1763,7 @@ export class ChordRuntime {
           break;
         }
         case 'award': {
-          if (phase !== 'reports' && whenHolds(stmt)) {
+          if (phase !== 'reports' && holds) {
             // `award <score>` — dedup by identity (ADR-129), so repeat
             // awards are no-ops and `, once` is automatic. Names arrive
             // owner-qualified from the analyzer (ratchet D12).
@@ -1737,7 +1782,7 @@ export class ChordRuntime {
         case 'raise':
         case 'lower': {
           // ADR-264 D2: additive counter mutation with silent two-sided clamp.
-          if (phase !== 'reports' && whenHolds(stmt)) {
+          if (phase !== 'reports' && holds) {
             const ownerIrId = stmt.owner === null ? null : this.irIdOfValue(stmt.owner, ctx);
             const key = counterKey(stmt.counter, ownerIrId ?? undefined);
             const bounds = this.counterBounds(stmt.counter, ownerIrId);
@@ -1758,23 +1803,22 @@ export class ChordRuntime {
           // phase); nothing to do in execute/report passes.
           break;
         case 'select-on': {
-          const decided = ctx.decisions?.get(stmt)?.arm ?? this.decideSelectOn(stmt, ctx);
+          const decided = ledger.resolve(stmt, 'arm', () => this.decideSelectOn(stmt, ctx));
           const arm = stmt.arms.find((a) => a.value === decided);
           if (arm) events.push(...this.execStatements(arm.body, ctx, phase));
           break;
         }
         case 'select-strategy': {
-          // ADR-289 D1: read the pinned alternative. Calling decideStrategy
-          // here would read-increment the occurrence counter a SECOND time —
-          // the H1 double-advance. The fallback is for single-pass contexts
-          // only, where one call is one consumption.
-          const index = ctx.decisions?.get(stmt)?.alternative ?? this.decideStrategy(stmt, ctx);
+          // ADR-289 D1: the counter is consumed by the mutations pass, at this
+          // position, and the index replayed to the reports pass. Deciding in
+          // both passes is the H1 double-advance.
+          const index = ledger.resolve(stmt, 'alternative', () => this.decideStrategy(stmt, ctx));
           const alternative = stmt.alternatives[index];
           if (alternative) events.push(...this.execStatements(alternative, ctx, phase));
           break;
         }
         case 'ordinal': {
-          const met = ctx.decisions?.get(stmt)?.ordinalMet ?? ctx.occurrence === stmt.ordinal;
+          const met = ledger.resolve(stmt, 'ordinalMet', () => ctx.occurrence === stmt.ordinal);
           if (met) {
             events.push(...this.execStatements(stmt.body, ctx, phase));
           }
@@ -1784,8 +1828,16 @@ export class ChordRuntime {
           // E3 (ratchet 2026-07-12): run the body once per matching entity
           // in creation order, `the match` bound to it; `it` and every
           // other binding pass through untouched. Empty set = no-op.
+          //
+          // ADR-289 D1: the match SET is recorded (one answer, keyed by this
+          // statement), but the BODY runs under a live ledger in both passes.
+          // The record is keyed by statement identity alone, so recording
+          // inside the body would hand every iteration the last iteration's
+          // answer. Live-in-both-passes is how `each` bodies behaved before
+          // the ledger existed; the two passes may disagree there, and that
+          // is D1's one recorded gap.
           for (const irId of this.eachMatches(stmt, ctx)) {
-            events.push(...this.execStatements(stmt.body, { ...ctx, match: irId }, phase));
+            events.push(...this.execStatements(stmt.body, { ...ctx, match: irId, ledger: DecisionLedger.live() }, phase));
           }
           break;
       }
@@ -1919,43 +1971,14 @@ export class ChordRuntime {
   }
 
   /**
-   * Snapshot every routing decision this body will take, before mutations
-   * run (ADR-289 D1). The walk itself lives in `decisions.ts` — one module,
-   * one authority — so the invariant holds by construction rather than by
-   * each call site remembering. This method only binds the world-touching
-   * primitives that walk needs.
-   *
-   * Side effect: each reached `select-strategy` consumes its occurrence
-   * counter exactly once, here. Both exec passes read the index back off the
-   * record and neither re-derives it.
-   *
-   * One consequence worth naming: consumption moves from the exec passes to
-   * validate time, so a firing vetoed downstream now advances the select
-   * (previously it advanced zero times, having never reached postExecute).
-   * That matches how the clause's OWN occurrence counter already behaves —
-   * `postValidate` bumps it before any veto can intervene — so the two
-   * counters now move together instead of disagreeing.
-   */
-  private snapshotDecisions(body: IRStatement[], ctx: ExecContext): DecisionRecord {
-    return snapshotDecisions(body, ctx, {
-      decideSelectOn: (stmt, c) => this.decideSelectOn(stmt, c),
-      decideStrategy: (stmt, c) => this.decideStrategy(stmt, c),
-      matchesOf: (condition, c) => this.evaluator.matchesOf(condition, c),
-      evalCondition: (condition, c) => this.evaluator.evalCondition(condition, c),
-    });
-  }
-
-  /**
-   * The match set for an `each` block: the pre-mutation snapshot when one
-   * exists (§5.4 — the report pass must visit the same entities the
-   * execute pass did, even after the body's own mutations change who
-   * matches), else a live enumeration (single-pass contexts: event
-   * clauses, sequences, daemons, and blocks nested inside another `each`).
+   * The match set for an `each` block: decided by the mutations pass at this
+   * statement's position and replayed to the reports pass (§5.4 — the report
+   * pass must visit the same entities the execute pass did, even after the
+   * body's own mutations change who matches). Live in single-pass contexts.
    */
   private eachMatches(stmt: Extract<IRStatement, { kind: 'each' }>, ctx: ExecContext): string[] {
-    const snapped = ctx.decisions?.get(stmt)?.matches;
-    if (snapped !== undefined) return snapped;
-    return this.evaluator.matchesOf(stmt.condition, ctx);
+    const ledger = ctx.ledger ?? DecisionLedger.live();
+    return ledger.resolve(stmt, 'matches', () => this.evaluator.matchesOf(stmt.condition, ctx));
   }
 
   private decideSelectOn(stmt: Extract<IRStatement, { kind: 'select-on' }>, ctx: ExecContext): string {

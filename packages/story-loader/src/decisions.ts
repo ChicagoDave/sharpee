@@ -1,55 +1,66 @@
 /**
- * decisions.ts — ADR-289 D1: every routing decision, resolved once.
+ * decisions.ts — ADR-289 D1 (as amended): every routing decision, made once.
  *
- * Purpose: build the pre-mutation record of *all* routing a clause body will
- * take, so the mutations pass and the reports pass read the same answers
- * instead of each re-deriving them. The invariant this module exists to make
- * structural: **the report pass sees the routing the execute pass took.**
+ * Purpose: let the mutations pass and the reports pass of a two-pass clause
+ * body reach the same routing answers, so that **the report pass narrates the
+ * branch whose mutations ran**.
  *
  * Public interface: {@link RoutingDecision}, {@link DecisionRecord},
- * {@link DecisionDeps}, {@link snapshotDecisions}. Owner context:
- * `@sharpee/story-loader`, the Chord runtime — imported by `runtime.ts` and
- * consumed by both the interceptor path and the capability-behavior path.
+ * {@link DecisionLedger}. Owner context: `@sharpee/story-loader`, the Chord
+ * runtime — used by `runtime.ts`'s `execStatements` and threaded through the
+ * interceptor, capability-behavior, topic-table and action-body paths.
  *
- * The five routing constructs and what is pinned for each:
+ * ## Where "once" is
  *
- * | Construct         | Recorded                              |
- * | ----------------- | ------------------------------------- |
- * | `select-on`       | the decided arm value                 |
- * | `select-strategy` | the chosen alternative index          |
- * | `ordinal`         | whether the occurrence matched        |
- * | `each`            | the match set, in creation order      |
- * | statement `when`  | the condition's truth                 |
+ * D1 originally specified a pre-mutation snapshot: walk the body at validate
+ * time, decide everything, then have both passes read the answers. That was
+ * implemented and **regressed `stories/fernhill` 495/495 -> 116 failures**,
+ * because a suffix like `change it to softened when it has the sherry bottle`
+ * is true only *after* the standard action has run — which happens after
+ * validate. Deciding before the body begins is deciding too early.
  *
- * Before ADR-289 only `select-on` and `each` were recorded; `ordinal` was
- * walked but not stored, and `select-strategy` and the `when` suffix were
- * re-derived on every pass. That is what made a `cycling` select advance
- * twice per firing and narrate the branch it had not mutated.
+ * The amended rule: **the mutations pass is the decision pass.** Each decision
+ * is made at the statement's own position as the mutations pass walks the
+ * body, and replayed when the reports pass reaches the same statement. That is
+ * what an author writes — a straight-line program in which each line sees the
+ * effects of the lines above it — and the two-pass split is an ADR-228
+ * implementation artifact that must stay invisible to them.
  *
- * Dependencies flow inward: this module knows IR and nothing else. The
- * primitives that touch world state — deciding a strategy, enumerating a
- * match set, evaluating a condition — are injected via {@link DecisionDeps},
- * so the walk is testable without a world and the module cannot grow a
- * dependency on the runtime it serves.
+ * It also makes Acceptance 7 and fernhill the same rule rather than opposing
+ * ones:
  *
- * **Two deliberate non-walks**, both load-bearing:
+ * ```
+ * phrase warning when it is armed    // still armed here -> emits
+ * change it to spent
  *
- * 1. *Untaken branches are not walked.* Only the arm/alternative/ordinal body
- *    actually taken is descended, so a select nested in a branch that does not
- *    run consumes no counter.
- * 2. *`each` bodies are not walked.* The record is keyed by statement identity
- *    alone, and an `each` body runs once per match — one pinned value cannot
- *    represent N iterations. Statements inside an `each` body therefore decide
- *    live on each pass, exactly as they did before this module existed. This
- *    is the one known gap in D1's "resolved once" property; widening the key
- *    to `(statement, match)` is recorded as out of scope in ADR-289 D1.
+ * change it to softened when it has the sherry bottle
+ * phrase kettle-softened when it is softened  // softened above -> emits
+ * ```
+ *
+ * ## Modes
+ *
+ * - `recording` — the mutations pass: decide live, remember the answer.
+ * - `replaying` — the reports pass: return the remembered answer.
+ * - `live` — single-pass contexts (`after` clauses, daemons, sequences, turn
+ *   clauses) and `each` bodies: decide live, remember nothing. One pass cannot
+ *   disagree with itself, so there is nothing to record.
+ *
+ * ## The `each`-body exception
+ *
+ * An `each` body runs once per match, but the record is keyed by statement
+ * identity alone — so recording inside one would hand every iteration the last
+ * iteration's answer. `each` bodies therefore run under a **live** ledger in
+ * *both* passes, which is exactly how they behaved before this module existed.
+ * The two passes can disagree there; that is the one known gap in D1's
+ * "decided once" property, and widening the key to `(statement, match)` is
+ * recorded as out of scope in ADR-289 D1.
  */
-import type { IRCondition, IRStatement } from '@sharpee/chord';
+import type { IRStatement } from '@sharpee/chord';
 
 /**
- * One statement's pinned routing. Fields are populated only for the construct
- * that applies; `when` may co-occur with any of them, since a `when` suffix is
- * a property of a statement rather than a statement kind of its own.
+ * One statement's routing. Fields are populated only for the construct that
+ * applies; `when` may co-occur with any of them, since a `when` suffix is a
+ * property of a statement rather than a statement kind of its own.
  */
 export interface RoutingDecision {
   /** `select-on` — the arm value the subject resolved to. */
@@ -58,108 +69,74 @@ export interface RoutingDecision {
   alternative?: number;
   /** `ordinal` — whether this firing's occurrence matched the block. */
   ordinalMet?: boolean;
-  /** `each` — the matching IR ids, pinned in creation order. */
+  /** `each` — the matching IR ids, in creation order. */
   matches?: string[];
-  /** Statement `when` suffix — the condition's truth, pre-mutation. */
+  /** Statement `when` suffix — the condition's truth at this position. */
   when?: boolean;
 }
 
-/** Pre-mutation routing for one clause body, keyed by statement identity. */
+/** Routing for one clause body, keyed by statement identity. */
 export type DecisionRecord = Map<IRStatement, RoutingDecision>;
 
+type Mode = 'record' | 'replay' | 'live';
+
 /**
- * The world-touching primitives the walk needs, injected by `runtime.ts`.
+ * Decides-or-replays a single routing question for one statement.
  *
- * `decideStrategy` is the only one that mutates: it read-increments the
- * select's persisted occurrence counter. Calling it here — once, at snapshot
- * time — is precisely what stops the double advance.
+ * The ledger is the only thing `execStatements` consults about routing, so
+ * "the reports pass never re-derives" is enforced in one place rather than at
+ * each construct's call site.
  */
-export interface DecisionDeps<Ctx> {
-  /** Resolve a `select-on` subject to its arm value. */
-  decideSelectOn(stmt: Extract<IRStatement, { kind: 'select-on' }>, ctx: Ctx): string;
-  /** Choose a `select-strategy` alternative, consuming its counter once. */
-  decideStrategy(stmt: Extract<IRStatement, { kind: 'select-strategy' }>, ctx: Ctx): number;
+export class DecisionLedger {
+  private constructor(
+    private readonly mode: Mode,
+    /** The backing record. Shared by reference with the caller's bag. */
+    readonly entries: DecisionRecord,
+  ) {}
+
   /**
-   * Enumerate an `each` block's matches in creation order. Takes the declared
-   * condition's NAME — an `each` block references a `define condition` by name
-   * rather than carrying an inline condition tree.
+   * The mutations pass. Decisions are made live and written into `into`, which
+   * the caller stashes for the reports pass.
    */
-  matchesOf(conditionName: string, ctx: Ctx): string[];
-  /** Evaluate a statement `when` suffix. */
-  evalCondition(condition: IRCondition, ctx: Ctx): boolean;
-}
+  static recording(into: DecisionRecord = new Map()): DecisionLedger {
+    return new DecisionLedger('record', into);
+  }
 
-/** A statement that may carry a `when` suffix (most kinds do). */
-type MaybeSuffixed = { stmtWhen?: IRCondition | null };
+  /** The reports pass. Returns what the mutations pass decided. */
+  static replaying(entries: DecisionRecord | undefined): DecisionLedger {
+    return new DecisionLedger('replay', entries ?? new Map());
+  }
 
-/**
- * Record every routing decision this body will take, before any mutation runs.
- *
- * Walks only taken paths (see the module header). Advances each reached
- * `select-strategy`'s occurrence counter exactly once, as a side effect of
- * `deps.decideStrategy`.
- *
- * @param body the clause body to walk
- * @param ctx  the evaluation context, passed opaquely to `deps`; only
- *             `occurrence` is read here, to settle `ordinal` blocks
- * @param deps the world-touching primitives (see {@link DecisionDeps})
- * @returns the decision record; empty when the body has no routing
- */
-export function snapshotDecisions<Ctx extends { occurrence?: number }>(
-  body: IRStatement[],
-  ctx: Ctx,
-  deps: DecisionDeps<Ctx>,
-): DecisionRecord {
-  const decisions: DecisionRecord = new Map();
+  /** Single-pass contexts and `each` bodies — decide live, remember nothing. */
+  static live(): DecisionLedger {
+    return new DecisionLedger('live', new Map());
+  }
 
-  const record = (stmt: IRStatement, part: RoutingDecision): void => {
-    const existing = decisions.get(stmt);
-    decisions.set(stmt, existing ? { ...existing, ...part } : part);
-  };
-
-  const walk = (stmts: IRStatement[]): void => {
-    for (const stmt of stmts) {
-      // The `when` suffix is routing too — it decides whether the statement
-      // acts. Pinning it here is what makes `phrase warning when it is armed`
-      // survive a later `change it to spent` in the same body: the reports
-      // pass reads the pre-mutation truth instead of re-asking a world the
-      // mutations pass has already changed.
-      const suffix = (stmt as MaybeSuffixed).stmtWhen;
-      if (suffix) record(stmt, { when: deps.evalCondition(suffix, ctx) });
-
-      switch (stmt.kind) {
-        case 'select-on': {
-          const arm = deps.decideSelectOn(stmt, ctx);
-          record(stmt, { arm });
-          const taken = stmt.arms.find((a) => a.value === arm);
-          if (taken) walk(taken.body);
-          break;
-        }
-        case 'select-strategy': {
-          // The counter is consumed HERE and only here. Both exec passes read
-          // the index back off the record.
-          const alternative = deps.decideStrategy(stmt, ctx);
-          record(stmt, { alternative });
-          const taken = stmt.alternatives[alternative];
-          if (taken) walk(taken);
-          break;
-        }
-        case 'ordinal': {
-          const ordinalMet = ctx.occurrence === stmt.ordinal;
-          record(stmt, { ordinalMet });
-          if (ordinalMet) walk(stmt.body);
-          break;
-        }
-        case 'each':
-          // Pin the match set; do NOT walk the body (module header, note 2).
-          record(stmt, { matches: deps.matchesOf(stmt.condition, ctx) });
-          break;
-        default:
-          break;
-      }
+  /**
+   * Answer one routing question for `stmt`.
+   *
+   * @param stmt   the statement the decision belongs to
+   * @param field  which question (see {@link RoutingDecision})
+   * @param decide how to answer it live; called at most once
+   * @returns the remembered answer when replaying, else the live one
+   *
+   * A replay miss falls through to `decide()` rather than throwing. It is not
+   * expected — the reports pass walks the branches the mutations pass
+   * recorded — but narrating something slightly stale beats throwing mid-report.
+   */
+  resolve<K extends keyof RoutingDecision>(
+    stmt: IRStatement,
+    field: K,
+    decide: () => NonNullable<RoutingDecision[K]>,
+  ): NonNullable<RoutingDecision[K]> {
+    if (this.mode === 'replay') {
+      const remembered = this.entries.get(stmt)?.[field];
+      if (remembered !== undefined) return remembered as NonNullable<RoutingDecision[K]>;
     }
-  };
-
-  walk(body);
-  return decisions;
+    const value = decide();
+    if (this.mode === 'record') {
+      this.entries.set(stmt, { ...this.entries.get(stmt), [field]: value });
+    }
+    return value;
+  }
 }
