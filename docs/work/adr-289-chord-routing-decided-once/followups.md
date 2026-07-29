@@ -107,9 +107,34 @@ walk; if it is, D3's wording should say so.
 
 ---
 
-## F5 — Nothing stops a raw control byte from entering source
+## F5 — Nothing stops a raw control byte from entering source — **CLOSED 2026-07-29**
 
-**Severity: low frequency, high blast radius — and now demonstrated twice.**
+**Resolution.** `repokit verify` gained the gate: `tools/repokit/src/commands/
+control-bytes.ts`, wired in beside the ADR-269 D7 / ADR-276 D2 freshness gates
+it was modelled on. Every C0 control except tab, newline and carriage return —
+plus DEL — is a build failure in text sources, reported with file, line and
+codepoint. Build output, dependencies, sourcemaps and golden snapshots are out
+of scope by construction (an allowlist of text extensions, not a denylist).
+
+Before it could land, the class had to be cleared: a repo sweep of 7,046 text
+files found **eight** offending lines across seven files — two written during
+ADR-289 itself, **six pre-existing** (`lang-en-us` assembler tests ×4,
+`generate-standard-grammar-chord.cjs` ×2, a raw ESC in
+`fenced-reporter.test.ts`). All were rewritten as escapes, behaviour-identical.
+
+**Verified by planting, not by reasoning:** a raw NUL was written into
+`packages/chord/src/version.ts` and `repokit verify` exited 1 naming the site;
+removing it returned exit 0. Ten unit tests cover the gate itself, including
+that the *escape* form — the fix the gate demands — does not trip it.
+
+**One more data point for the class, collected while closing it.** The first
+draft of the gate's own source contained a raw control byte, in the character
+class meant to match raw control bytes. It was caught by the sweeper, not by
+review, `tsc`, or the eye. That is now three instances written by someone who
+knew exactly what the defect was and was actively looking for it — which is the
+argument for a mechanical gate stated as well as it can be stated.
+
+**Severity (as recorded before closure): low frequency, high blast radius.**
 
 D7 fixed two literal NULs in `runtime.ts`. Implementing D5 I put a fresh one
 into `analyzer.ts`, in the `registerUnique` key join, and it had exactly the
