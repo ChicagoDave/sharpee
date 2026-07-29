@@ -736,6 +736,23 @@ export class ChordStory implements Story {
   }
 
   /**
+   * ADR-289 D2: sweep the retired `chord.occurrence.select.<line>` keys out
+   * of a restored world.
+   *
+   * A restore replaces world state wholesale from the save snapshot, so the
+   * load-time sweep in `initializeWorld` never sees those keys — a save
+   * written before D2 would otherwise carry its orphans back in. Idempotent,
+   * so a save written after D2 sweeps to zero and its live counters (which
+   * are never bare digits) are untouched.
+   *
+   * The engine fires this only when a restore has fully completed; see
+   * `Story.onWorldRestored`.
+   */
+  onWorldRestored(world: WorldModel): void {
+    sweepRetiredSelectKeys(world);
+  }
+
+  /**
    * Register scheduler constructs (`once`/`every`/`define sequence`/
    * every-turn trait clauses) as plugin-scheduler daemons. All progression
    * state is world state — no runner-state plumbing (design.md §6).

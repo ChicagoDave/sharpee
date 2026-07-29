@@ -52,6 +52,8 @@ Review an Architecture Decision Record for implementation readiness. This skill 
 - [ ] **Explicit acceptance criteria.** Does the ADR have a section (or equivalent) that lists concrete, verifiable conditions for "this is done"? If the Implementation section is the only guide, it's underspecified — implementation describes work, not completion.
 - [ ] **Save/restore implications.** If the feature adds new state, does the ADR address serialization? State that persists across save/restore needs to be included in the save format.
 - [ ] **Backward compatibility.** If the feature changes existing interfaces, does the ADR address what happens to existing stories? Breaking changes need migration guidance.
+- [ ] **Every criterion is dischargeable within the declared scope.** BLOCKER. For each acceptance criterion, name the package that must change to satisfy it, and check that package appears in the ADR's platform-change line. A criterion whose only home is an unlisted package is undischargeable as written — the ADR is either missing a package or claiming something it cannot deliver. Mechanical: read the criteria, read the scope line, compare.
+  > Added from ADR-289 (2026-07-29). Its AC4/AC5 required a sweep on restore, which lives in `packages/engine`, while its platform-change line named only `packages/chord` and `packages/story-loader`. Three review passes (11/14, 13/14, 14/14) missed it and an implementing session discovered it mid-flight. This check is what turns that into a BLOCKER.
 
 ### Open Questions
 

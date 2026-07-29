@@ -164,7 +164,15 @@ export class SaveRestoreService {
     const snapshot = this.undoSnapshots.pop()!;
     const turn = this.undoSnapshotTurns.pop()!;
 
-    // Restore world state
+    // Restore world state.
+    //
+    // Deliberately NO `story.onWorldRestored?.()` here, and this is a
+    // decision rather than an oversight (ADR-289 D2). Undo snapshots are
+    // taken from the CURRENT session's world, which was already swept at
+    // load or restore, and `clearUndoSnapshots()` runs after every restore
+    // — so no pre-D2 key can ever enter the undo buffer. Adding the hook
+    // here for symmetry would re-run a sweep that provably has nothing to
+    // find, on the hottest path in the service.
     world.loadJSON(snapshot);
 
     return { turn };
@@ -296,6 +304,15 @@ export class SaveRestoreService {
     // Clear undo snapshots after restore — they were taken against the
     // pre-restore world and are no longer meaningful.
     this.clearUndoSnapshots();
+
+    // ADR-289 D2: the story's post-restore hook, fired LAST — after the
+    // world snapshot, plugin states, the RNG reseed, and undo clearing. The
+    // contract is "the engine is fully restored when this runs": a hook
+    // placed right after `loadJSON` would hand the story a half-restored
+    // engine, which is the same defect class this ADR closes (an observer
+    // seeing state mid-mutation). Optional, so stories that do not persist
+    // their own keys are unaffected.
+    story?.onWorldRestored?.(world);
 
     return {
       eventSource,

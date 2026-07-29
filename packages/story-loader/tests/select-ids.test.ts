@@ -249,4 +249,45 @@ describe('ADR-289 D2 — the retired key sweep', () => {
     expect(sweepRetiredSelectKeys(world)).toBe(1);
     expect(sweepRetiredSelectKeys(world)).toBe(0);
   });
+
+  // AC4 / AC5. The sweep must also run on RESTORE: restored state arrives
+  // wholesale from the save snapshot, so a load-only sweep would never see
+  // the keys it exists to remove. `ChordStory.onWorldRestored` is what the
+  // engine calls (ADR-289 D2); the engine-side ordering contract is pinned
+  // in @sharpee/engine's on-world-restored.test.ts.
+  it('AC4: a pre-D2 save restores with no bare-digit key surviving', () => {
+    const { story, world } = loadedWorld();
+    // Simulate the restored snapshot: pre-D2 counters, mid-sequence.
+    world.setStateValue('chord.occurrence.select.40', 3);
+    world.setStateValue('chord.occurrence.select.117', 7);
+
+    story.onWorldRestored(world);
+
+    expect(world.getStateValue('chord.occurrence.select.40')).toBeUndefined();
+    expect(world.getStateValue('chord.occurrence.select.117')).toBeUndefined();
+  });
+
+  it('AC4: the select resumes from its first alternative after that restore', () => {
+    const { story, world } = loadedWorld();
+    world.setStateValue('chord.occurrence.select.40', 3);
+    story.onWorldRestored(world);
+
+    // Nothing under the NEW key, so the next firing starts the cycle over.
+    expect(world.getStateValue(selectOccurrenceKey('tablet.on-reading-0.0'))).toBeUndefined();
+  });
+
+  it('AC5: a post-D2 save round-trips its counters intact', () => {
+    const { story, world } = loadedWorld();
+    const live = selectOccurrenceKey('tablet.on-reading-0.0');
+    const traitLive = selectOccurrenceKey('trait.chimed.on-pushing-0.0', 'bell');
+    // A cycling select mid-sequence, as a real save would carry it.
+    world.setStateValue(live, 3);
+    world.setStateValue(traitLive, 1);
+
+    story.onWorldRestored(world);
+
+    // Untouched — proving the sweep did not match the new key space.
+    expect(world.getStateValue(live)).toBe(3);
+    expect(world.getStateValue(traitLive)).toBe(1);
+  });
 });

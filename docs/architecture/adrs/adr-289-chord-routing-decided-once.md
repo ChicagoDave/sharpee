@@ -4,7 +4,7 @@
 
 ## Date: 2026-07-29
 
-## Parent: ADR-228 (the validate/mutations/reports partition this hardens), ADR-276 (compile gate + loader backstop — the two-layer pattern every new gate here follows), ADR-264 (counters — the seeding path D4 extends). Source: the Chord compiler & language review of 2026-07-29 (`docs/work/chord/fable-review.md`), against Chord 2.1.0 / IR `story language 1`. Platform change: `packages/chord`, `packages/story-loader` — requires David's approval before implementation.
+## Parent: ADR-228 (the validate/mutations/reports partition this hardens), ADR-276 (compile gate + loader backstop — the two-layer pattern every new gate here follows), ADR-264 (counters — the seeding path D4 extends). Source: the Chord compiler & language review of 2026-07-29 (`docs/work/chord/fable-review.md`), against Chord 2.1.0 / IR `story language 1`. Platform change: `packages/chord`, `packages/story-loader`, and — extended by owner ruling 2026-07-29 — `packages/engine` (the `Story.onWorldRestored?` hook AC4/AC5 require; see the D2 scope extension). Requires David's approval before implementation.
 
 ## Context — verified, not assumed
 
@@ -217,6 +217,50 @@ construct carried but inert — which D3 makes a compile error one level up.
 This is an intent-preserving narrowing, recorded here rather than left to
 implementation because the fernhill episode established the rule: a change to
 a decision's letter goes on the record, not into quiet code.
+
+#### D2 scope extension — the platform-change set grows to include `packages/engine` (owner ruling, 2026-07-29)
+
+The Parent line names `packages/chord` and `packages/story-loader` as this
+ADR's platform-change set. **Acceptance 4 and 5 were never dischargeable
+inside it.** Both require the retired-key sweep to run on *restore*; restore
+lives in `packages/engine`'s `save-restore-service.ts`, and the `Story`
+interface carried no restore-facing hook (`initialize?`, `onEngineReady?`,
+`registerChannels?` — verified in source, 2026-07-29).
+
+Approved: an optional **`Story.onWorldRestored?(world)`**, fired by
+`loadSaveData`. The engine is the only layer that knows a restore happened; a
+story is the only layer that knows what its own persisted keys mean. The hook
+joins the two without either reaching into the other, and its name follows the
+interface's existing `on*` convention.
+
+Two rejected alternatives, recorded so they are not re-proposed: piggybacking
+on the plugin `setStates` restore hook (which exists) invents a plugin whose
+purpose is key hygiene; sweeping lazily inside `decideStrategy` behind a
+"swept" marker hides a lifecycle fact inside a routing decision. Both put the
+knowledge somewhere that does not own it.
+
+Two contract riders, both load-bearing:
+
+- **Fired LAST, not after `loadJSON`.** The restore sequence is world snapshot
+  → plugin states → action-RNG reseed → undo-snapshot clearing. A hook fired
+  mid-sequence would let the story observe a half-restored engine — the same
+  defect class this ADR closes. The contract is *the engine is fully restored
+  when this runs*, and it is pinned by a test that fails if the call moves one
+  line earlier.
+- **Undo does NOT get the hook.** `undo()` also replaces the world via
+  `loadJSON`, which will tempt a future symmetry-minded change. It should not:
+  undo snapshots are taken from the current session's world, already swept at
+  load or restore, and `clearUndoSnapshots()` runs after every restore, so no
+  pre-D2 key can enter the undo buffer. Recorded as a comment at the undo site
+  so the reasoning does not have to be re-derived.
+
+**The rubric gap this exposes.** Three `adr-review` passes (11/14, 13/14,
+14/14) did not catch that two acceptance criteria were undischargeable within
+the ADR's own approved scope. That is a mechanically checkable property, and
+the harness now checks it: *every acceptance criterion must be dischargeable
+within the packages the platform-change line names* — added to the adr-review
+rubric so a future ADR meets a BLOCKER instead of an implementing session
+meeting a surprise.
 
 #### D2 consequence — positional identity re-keys on source edits
 
