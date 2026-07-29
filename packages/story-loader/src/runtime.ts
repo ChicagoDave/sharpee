@@ -301,7 +301,7 @@ export class ChordRuntime {
       }
       const manifestKeys = [...(PHRASEBOOK_REGISTRY.get(book.name)?.keys ?? [])].sort();
       const dataKeys = Object.keys(data.entries).sort();
-      if (manifestKeys.join(' ') !== dataKeys.join(' ')) {
+      if (manifestKeys.join('\u0000') !== dataKeys.join('\u0000')) {
         throw new LoadError(`Phrasebook \`${book.name}\`: manifest keys [${manifestKeys.join(', ')}] and data keys [${dataKeys.join(', ')}] disagree.`);
       }
       for (const key of dataKeys) {
