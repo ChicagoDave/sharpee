@@ -11,6 +11,7 @@
  *   scanStaging(stagingDir)                  -> name->dir map of @sharpee packages
  *   readSharpeeSeed(storyPkgPath)            -> story's direct @sharpee deps
  *   computeClosure(seed, depsOf)             -> full transitive @sharpee set (pure)
+ *   packFilenameFrom(stdout, packageName)    -> tarball filename from `npm pack --json` (pure)
  *   generateConsumer(opts)                   -> writes package.json (+ tarballs for local)
  */
 import { execFileSync } from 'node:child_process';
@@ -73,6 +74,45 @@ export function stagingDepsOf(stagingDir: string, staging: StagingMap, name: str
   return Object.keys(p.dependencies || {}).filter((n) => n.startsWith(SHARPEE) && staging[n]);
 }
 
+/**
+ * Extract the produced tarball filename from `npm pack --json` stdout.
+ *
+ * The output shape is npm-major-dependent and both are accepted here:
+ *   - npm <= 11 emits an **array** of pack results — `[{ filename, ... }]`
+ *   - npm 12 emits an **object keyed by package name** — `{ "@sharpee/core": { filename, ... } }`
+ *
+ * Only the first entry is read: each call packs exactly one directory.
+ *
+ * @param stdout Raw stdout from `npm pack --json`.
+ * @param packageName Package being packed — named in the error so a shape change is diagnosable.
+ * @returns The tarball filename written into the pack destination.
+ * @throws if stdout is not valid JSON, or if neither shape yields a `filename`.
+ */
+export function packFilenameFrom(stdout: string, packageName: string): string {
+  const fail = (why: string): never => {
+    throw new Error(`npm pack --json: ${why} for ${packageName}`);
+  };
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stdout);
+  } catch {
+    return fail(`output was not valid JSON (got ${JSON.stringify(stdout.slice(0, 120))})`);
+  }
+
+  const entry = Array.isArray(parsed)
+    ? parsed[0]
+    : parsed && typeof parsed === 'object'
+      ? Object.values(parsed as Record<string, unknown>)[0]
+      : undefined;
+
+  const filename = (entry as { filename?: unknown } | undefined)?.filename;
+  if (typeof filename !== 'string' || !filename) {
+    return fail('unexpected output shape — no entry with a filename');
+  }
+  return filename;
+}
+
 export interface GenerateConsumerOptions {
   /** 'local' packs the full closure as tarballs from staging; 'registry' declares seed deps. */
   mode: 'local' | 'registry';
@@ -130,7 +170,7 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
         ['pack', dir, '--pack-destination', vendorDir, '--ignore-scripts', '--json'],
         { encoding: 'utf8' },
       );
-      return JSON.parse(out)[0].filename;
+      return packFilenameFrom(out, name);
     };
     written = [...computeClosure(seed, (n) => stagingDepsOf(opts.stagingDir, staging, n))].sort();
     for (const n of written) dependencies[n] = `file:vendor/${pack(n)}`;

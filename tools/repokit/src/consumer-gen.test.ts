@@ -6,7 +6,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { computeClosure, scanStaging, readSharpeeSeed, generateConsumer } from './consumer-gen';
+import {
+  computeClosure,
+  scanStaging,
+  readSharpeeSeed,
+  generateConsumer,
+  packFilenameFrom,
+} from './consumer-gen';
 
 describe('computeClosure', () => {
   it('returns the full transitive set including the seed', () => {
@@ -26,6 +32,46 @@ describe('computeClosure', () => {
     };
     const closure = computeClosure(['@sharpee/a'], (n) => deps[n] ?? []);
     expect([...closure].sort()).toEqual(['@sharpee/a', '@sharpee/b']);
+  });
+});
+
+describe('packFilenameFrom', () => {
+  it('reads the array shape emitted by npm <= 11', () => {
+    const stdout = JSON.stringify([
+      { id: '@sharpee/core@4.3.0', name: '@sharpee/core', filename: 'sharpee-core-4.3.0.tgz' },
+    ]);
+    expect(packFilenameFrom(stdout, '@sharpee/core')).toBe('sharpee-core-4.3.0.tgz');
+  });
+
+  it('reads the package-keyed object shape emitted by npm 12', () => {
+    const stdout = JSON.stringify({
+      '@sharpee/core': {
+        id: '@sharpee/core@4.3.0',
+        name: '@sharpee/core',
+        version: '4.3.0',
+        filename: 'sharpee-core-4.3.0.tgz',
+        files: [],
+      },
+    });
+    expect(packFilenameFrom(stdout, '@sharpee/core')).toBe('sharpee-core-4.3.0.tgz');
+  });
+
+  it('names npm pack and the package when neither shape yields a filename', () => {
+    // The pre-fix failure was a bare "Cannot read properties of undefined (reading 'filename')",
+    // which named neither the tool nor the package (#199).
+    expect(() => packFilenameFrom('{}', '@sharpee/core')).toThrow(
+      /npm pack --json: unexpected output shape — no entry with a filename for @sharpee\/core/,
+    );
+    expect(() => packFilenameFrom('[]', '@sharpee/engine')).toThrow(/for @sharpee\/engine/);
+    expect(() => packFilenameFrom(JSON.stringify([{ name: 'x' }]), '@sharpee/engine')).toThrow(
+      /unexpected output shape/,
+    );
+  });
+
+  it('rejects non-JSON stdout, naming the package', () => {
+    expect(() => packFilenameFrom('npm warn tarball mismatch\n', '@sharpee/stdlib')).toThrow(
+      /npm pack --json: output was not valid JSON .* for @sharpee\/stdlib/,
+    );
   });
 });
 
