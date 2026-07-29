@@ -47,6 +47,15 @@ export class InputManager {
 
     // Keep focus on input (but not when dialog is open)
     document.addEventListener('click', (e) => {
+      // A drag that selects prose ends in a click, and focusing an input
+      // collapses the document selection — so refocusing here would destroy
+      // the selection at the instant the author finishes making it. Reading
+      // the transcript is a first-class use of the pane (and the IDE's
+      // selection-aware bless samples window.getSelection()), so a live
+      // selection wins over the type-without-clicking convenience.
+      const selection = window.getSelection();
+      if (selection && !selection.isCollapsed) return;
+
       if (this.commandInput && !this.commandInput.disabled && !this.isDialogOpen()) {
         // Don't steal focus from dialog elements
         const target = e.target as HTMLElement;

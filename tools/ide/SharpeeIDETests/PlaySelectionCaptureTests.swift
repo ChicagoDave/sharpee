@@ -18,6 +18,17 @@
 // Kept rather than deleted so the finding stays true: if a future change makes
 // selection unreadable from Swift (a `user-select: none` in engine.css, a
 // sandboxed frame), this fails and names the reason.
+//
+// SCOPE — read this before trusting the finding above (ADR-282 amendment,
+// 2026-07-29). These tests load their own `responseHTML`, so they prove the
+// MECHANISM and nothing about the real client. They passed for months while
+// selection in the actual Play pane never worked: InputManager registered a
+// document-level click listener that refocused the command input, a selecting
+// drag ends in a click, and focusing an input collapses the selection — so
+// bless read "" every time. Fixed in platform-browser and pinned by
+// packages/platform-browser/tests/input-focus-selection.test.ts, which is the
+// test that can actually fail when the client breaks this. A green run here
+// means Swift can still read a selection, NOT that the author can make one.
 
 import XCTest
 import WebKit

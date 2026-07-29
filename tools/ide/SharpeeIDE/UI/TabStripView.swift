@@ -38,6 +38,12 @@ final class TabStripView: NSView {
             stack.topAnchor.constraint(equalTo: topAnchor),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
             stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            // The strip must never paint past its pane. Without this the stack
+            // sizes to its content and simply overflows — in the Index's right
+            // panel, seven sections carrying inline counts ("Phrases · 41")
+            // pushed the last tab's number off the edge. Bounded here so the
+            // overflow becomes truncation inside TabItemView instead.
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -8),
             border.leadingAnchor.constraint(equalTo: leadingAnchor),
             border.trailingAnchor.constraint(equalTo: trailingAnchor),
             border.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -116,6 +122,10 @@ private final class TabItemView: NSView {
         accentBar.translatesAutoresizingMaskIntoConstraints = false
 
         titleLabel.textColor = Theme.foregroundDim
+        titleLabel.lineBreakMode = .byTruncatingTail
+        // Yields first when the strip is too narrow for every tab, so a
+        // cramped strip truncates a title rather than overflowing its pane.
+        titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         applyFont()
 
         badge.font = NSFont.systemFont(ofSize: 10, weight: .semibold)

@@ -74,8 +74,22 @@ final class ChordVersionCheckTests: XCTestCase {
         let chord = try XCTUnwrap(ChordVersionCheck.chordVersion(fromVersionOutput: text),
                                   "--version output was: \(text)")
         XCTAssertTrue(chord.range(of: #"^\d+\.\d+\.\d+"#, options: .regularExpression) != nil)
-        XCTAssertFalse(ChordVersionCheck.isNewer(ChordVersionCheck.supportedLanguageVersion,
-                                                 thanSupported: chord),
-                       "the IDE's supported Chord (\(ChordVersionCheck.supportedLanguageVersion)) must not be AHEAD of the toolchain's (\(chord)) in this repo — bump one of them")
+
+        // EQUALITY, not "not ahead". The one-directional assertion this
+        // replaced passed happily while the IDE sat at Chord 2.1.0 and the
+        // toolchain moved to 2.2.0 (ADR-289) — the IDE being BEHIND was the
+        // drift that actually happened, and nothing caught it. In this repo
+        // the bundled toolchain IS the IDE's toolchain, so a mismatch in
+        // either direction is a bug: behind means Chord Writer ships firing
+        // its own D9 warning at itself on every launch; ahead means the
+        // language surfaces claim support the toolchain cannot deliver.
+        XCTAssertEqual(ChordVersionCheck.supportedLanguageVersion, chord,
+                       """
+                       Chord version drift: the IDE supports \
+                       \(ChordVersionCheck.supportedLanguageVersion), the repo's toolchain \
+                       speaks \(chord). Bump ChordVersionCheck.supportedLanguageVersion \
+                       after confirming ChordLexerGoldenTests is green against a corpus \
+                       that exercises the new syntax.
+                       """)
     }
 }

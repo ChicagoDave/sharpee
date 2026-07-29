@@ -195,11 +195,13 @@ against its Q-2.)
 - Wrong responses observed during play leave no artifact — the author
   fixes the story. Bug tracking stays outside the test system (GitHub
   issues, per standing practice).
-- **Two** platform changes are authorized by this ADR:
+- **Three** platform changes are authorized by this ADR:
   1. The `actualOutput` field on ide-protocol's `CommandResultRecord`
      (feeds the re-bless failure view).
   2. **The turn-events bridge carries channel-flattened text**
-     (`packages/platform-browser`) — see the amendment below.
+     (`packages/platform-browser`) — see the first amendment below.
+  3. **The play surface lets a selection survive a click**
+     (`packages/platform-browser`) — see the second amendment below.
 
   The literal-block grammar is authorized by ADR-287 — this ADR is its motivating
   consumer. Nothing else platform-side (ADR-283 rejected).
@@ -232,6 +234,48 @@ headless path uses. The rejected alternative was reconstructing block
 boundaries from the `main-entry--tight` CSS class in the DOM, which would
 couple transcript serialization to class names — the brittleness D2 exists
 to prevent.
+
+### Amendment, 2026-07-29 (session 47d0be): selection-aware bless does need a platform change
+
+D2's bless is selection-aware: `PlayViewController.blessLatestTurn()` samples
+`window.getSelection().toString()` from the live page at the moment of the
+gesture. The Phase 1 spike concluded this needed **no** `packages/platform-browser`
+change, and that conclusion is recorded in `PlaySelectionCaptureTests`'
+own header. The conclusion was half right, and the half that was wrong
+made the feature inert from the day it shipped.
+
+- **Right about the mechanism.** Swift really can read the selection with no
+  page cooperation — no injected helper, no message handler, nothing the
+  client must ship. That part still holds.
+- **Wrong about the product.** The spike verified the mechanism against its
+  own synthetic `responseHTML` with a selection set programmatically. The
+  real client was never in the test, so nothing in it could fail the test.
+
+What the real client did (`packages/platform-browser/src/managers/InputManager.ts`):
+a document-level `click` listener refocused the command input on every click
+outside a dialog — a convenience so an author can type without clicking the
+box first. But a drag that selects prose **ends in a click**, and focusing an
+`<input>` collapses the document selection. The selection was therefore
+destroyed at the instant the author finished making it, and
+`getSelection().toString()` returned `""` on every bless. Confirmed by David
+against the running app: selection in the Play pane had never worked.
+
+The spike's header claims "a real mouse drag leaves the same selection state
+these tests set programmatically." True in isolation, and still misleading:
+the drag does leave that state, and the client's own click handler then wipes
+it a moment later.
+
+**Resolution (David's ruling, 2026-07-29): amend, and fix the client.**
+The click handler now returns early when `window.getSelection()` is
+non-collapsed, so a live selection wins over the type-without-clicking
+convenience; ordinary clicks still focus the input.
+`packages/platform-browser/tests/input-focus-selection.test.ts` pins both
+halves plus the disabled-input case.
+
+**Standing lesson for spikes under this ADR:** a spike that proves a
+mechanism against a synthetic page has proved the mechanism, not the
+feature. Where the finding is "no platform change is needed," the product's
+own page is the only thing that can establish it.
 
 ## Session
 

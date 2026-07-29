@@ -18,7 +18,16 @@ enum ChordVersionCheck {
     /// The Chord LANGUAGE version this IDE's language surfaces (ChordLexer,
     /// highlighting, golden corpus) were written against. Bump alongside the
     /// golden regeneration when the platform's CHORD_LANGUAGE_VERSION moves.
-    static let supportedLanguageVersion = "2.1.0"
+    ///
+    /// Bumping is only honest once `ChordLexerGoldenTests` is green against a
+    /// corpus that actually exercises the new version's surface — a green
+    /// golden over a corpus missing the new syntax proves nothing.
+    ///
+    /// 2.2.0 (ADR-289, 2026-07-29): typed slots (ADR-267 D11) are already in
+    /// `grammar-surface.story`, the Swift port matches the golden exactly, and
+    /// `testGoldenDecodesWithFullTokenKindCoverage` confirms no new TokenKind —
+    /// so the language surfaces needed no change, only this constant.
+    static let supportedLanguageVersion = "2.2.0"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.
