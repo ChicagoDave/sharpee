@@ -48,6 +48,11 @@ create the Lab
 
   A bare lab.
 
+create the Vault
+  a room
+
+  A locked vault.
+
 create the tablet
   scenery, readable
   in the Lab
@@ -132,6 +137,7 @@ create the shelf
   on reading it
     each loose-crate
       raise crate-visits by 1
+      move the match to the Vault
       phrase counted
         Counted.
     end each
@@ -249,6 +255,12 @@ describe('ADR-289 D9 — the report pass narrates the branch whose mutations ran
     expect(cw.world.getStateValue('chord.state.dial')).toBe('right');
   });
 
+  // NB (AC19): reverting D1's snapshot for `ordinal` does NOT turn this red,
+  // and cannot. `ctx.occurrence` is pinned into the interceptor bag before
+  // either pass runs, so re-deriving `occurrence === stmt.ordinal` gives the
+  // same answer every time. Recording it is defensive — it completes the
+  // decision table so a future construct cannot silently regress — not a fix
+  // for a live divergence. Every other construct here fails on revert.
   it('ordinal: both passes agree on the occurrence block', () => {
     const cw = load();
 
@@ -261,11 +273,13 @@ describe('ADR-289 D9 — the report pass narrates the branch whose mutations ran
     expect(second.narrated).toBe('beta');
   });
 
-  it('each: both passes visit the same match set', () => {
+  it('each: the reports pass visits the entities the mutations pass moved out', () => {
     const cw = load();
     const report = fire(cw, 'shelf', 'if.action.reading');
 
-    // One container in the Lab, so exactly one raise and one phrase.
+    // The body moves each match to the Vault, so by the reports pass nothing
+    // satisfies `loose-crate` any more. Re-deriving the match set would visit
+    // an empty set and narrate nothing; the pinned set still visits the bin.
     expect(cw.world.getStateValue(counterKey('crate-visits'))).toBe(1);
     expect(report.override?.messageId).toBe('shelf.counted');
   });

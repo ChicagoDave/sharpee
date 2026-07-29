@@ -46,6 +46,7 @@ import {
 } from '@sharpee/world-model';
 import { exitBlockedKey, exitMessageKey, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
 import { Evaluator, EvalContext } from './evaluator.js';
+import { snapshotDecisions, type DecisionRecord } from './decisions.js';
 import { LoadError } from './errors.js';
 import {
   CHORD_OCCURRENCE_PREFIX,
@@ -99,8 +100,12 @@ export interface RuntimeHost {
 interface ExecContext extends EvalContext {
   /** Occurrence count of the enclosing rule firing (ordinal blocks test it). */
   occurrence?: number;
-  /** Pre-mutation select-on decisions, keyed by statement identity. */
-  decisions?: Map<IRStatement, string>;
+  /**
+   * Pre-mutation routing for this clause body (ADR-289 D1) — every construct,
+   * not a subset. Absent in single-pass contexts, where deciding live is
+   * correct because there is only one pass to agree with.
+   */
+  decisions?: DecisionRecord;
 }
 
 /** What a scheduler tick provides (structural subset of plugin-scheduler's SchedulerContext). */
@@ -792,7 +797,7 @@ export class ChordRuntime {
       world,
       it: itIrId,
       occurrence: bag.occurrence as number | undefined,
-      decisions: bag.decisions as Map<IRStatement, string> | undefined,
+      decisions: bag.decisions as DecisionRecord | undefined,
     };
   }
 
@@ -928,7 +933,7 @@ export class ChordRuntime {
       it: runtime.host.irIdOf(entity.id),
       slots: { ...(data.chordSlots as Record<string, string> | undefined), actor: actorId },
       occurrence: data.chordOccurrence as number | undefined,
-      decisions: data.chordDecisions as Map<IRStatement, string> | undefined,
+      decisions: data.chordDecisions as DecisionRecord | undefined,
     });
 
     return {
@@ -1268,7 +1273,7 @@ export class ChordRuntime {
     return {
       world: context.world,
       slots: (context.sharedData.chordSlotMap as Record<string, string> | undefined) ?? { actor: context.player.id },
-      decisions: context.sharedData.chordBodyDecisions as Map<IRStatement, string> | undefined,
+      decisions: context.sharedData.chordBodyDecisions as DecisionRecord | undefined,
     };
   }
 
@@ -1592,11 +1597,20 @@ export class ChordRuntime {
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     // Statement `when` suffix (ratchet D7): the statement acts only if the
-    // condition holds at execution. Evaluated per phase-pass over the same
-    // snapshot world — mutations and reports agree because the suffix runs
-    // before either phase's own mutations of this statement.
-    const whenHolds = (stmt: { stmtWhen?: import('@sharpee/chord').IRCondition | null }): boolean =>
-      !stmt.stmtWhen || this.evaluator.evalCondition(stmt.stmtWhen, ctx);
+    // condition holds. ADR-289 D1 — the truth is PINNED pre-mutation in the
+    // decision record, so the passes agree because the answer was decided
+    // once, not because of statement ordering. (The previous comment here
+    // claimed ordering was sufficient; it is not. An EARLIER statement in the
+    // same body mutating what the suffix reads is exactly the divergence:
+    // `phrase warning when it is armed` followed by `change it to spent`
+    // emitted nothing, because the reports pass re-asked after the mutation.)
+    // Falls back to live evaluation only where no record exists: single-pass
+    // contexts, and inside `each` bodies (decisions.ts, note 2).
+    const whenHolds = (stmt: IRStatement & { stmtWhen?: IRCondition | null }): boolean => {
+      const pinned = ctx.decisions?.get(stmt)?.when;
+      if (pinned !== undefined) return pinned;
+      return !stmt.stmtWhen || this.evaluator.evalCondition(stmt.stmtWhen, ctx);
+    };
     for (const stmt of body) {
       switch (stmt.kind) {
         case 'phrase':
@@ -1744,22 +1758,28 @@ export class ChordRuntime {
           // phase); nothing to do in execute/report passes.
           break;
         case 'select-on': {
-          const decided = ctx.decisions?.get(stmt) ?? this.decideSelectOn(stmt, ctx);
+          const decided = ctx.decisions?.get(stmt)?.arm ?? this.decideSelectOn(stmt, ctx);
           const arm = stmt.arms.find((a) => a.value === decided);
           if (arm) events.push(...this.execStatements(arm.body, ctx, phase));
           break;
         }
         case 'select-strategy': {
-          const index = this.decideStrategy(stmt, ctx);
+          // ADR-289 D1: read the pinned alternative. Calling decideStrategy
+          // here would read-increment the occurrence counter a SECOND time —
+          // the H1 double-advance. The fallback is for single-pass contexts
+          // only, where one call is one consumption.
+          const index = ctx.decisions?.get(stmt)?.alternative ?? this.decideStrategy(stmt, ctx);
           const alternative = stmt.alternatives[index];
           if (alternative) events.push(...this.execStatements(alternative, ctx, phase));
           break;
         }
-        case 'ordinal':
-          if (ctx.occurrence === stmt.ordinal) {
+        case 'ordinal': {
+          const met = ctx.decisions?.get(stmt)?.ordinalMet ?? ctx.occurrence === stmt.ordinal;
+          if (met) {
             events.push(...this.execStatements(stmt.body, ctx, phase));
           }
           break;
+        }
         case 'each':
           // E3 (ratchet 2026-07-12): run the body once per matching entity
           // in creation order, `the match` bound to it; `it` and every
@@ -1899,44 +1919,30 @@ export class ChordRuntime {
   }
 
   /**
-   * Snapshot every branching decision (`if` and `select-on`) before
-   * mutations run, walking only the branches actually taken (§5.4: the
-   * report phase must see the same routing the execute phase did).
+   * Snapshot every routing decision this body will take, before mutations
+   * run (ADR-289 D1). The walk itself lives in `decisions.ts` — one module,
+   * one authority — so the invariant holds by construction rather than by
+   * each call site remembering. This method only binds the world-touching
+   * primitives that walk needs.
+   *
+   * Side effect: each reached `select-strategy` consumes its occurrence
+   * counter exactly once, here. Both exec passes read the index back off the
+   * record and neither re-derives it.
+   *
+   * One consequence worth naming: consumption moves from the exec passes to
+   * validate time, so a firing vetoed downstream now advances the select
+   * (previously it advanced zero times, having never reached postExecute).
+   * That matches how the clause's OWN occurrence counter already behaves —
+   * `postValidate` bumps it before any veto can intervene — so the two
+   * counters now move together instead of disagreeing.
    */
-  private snapshotDecisions(body: IRStatement[], ctx: ExecContext): Map<IRStatement, string> {
-    const decisions = new Map<IRStatement, string>();
-    const walk = (stmts: IRStatement[]): void => {
-      for (const stmt of stmts) {
-        switch (stmt.kind) {
-          case 'select-on': {
-            const decided = this.decideSelectOn(stmt, ctx);
-            decisions.set(stmt, decided);
-            const arm = stmt.arms.find((a) => a.value === decided);
-            if (arm) walk(arm.body);
-            break;
-          }
-          case 'select-strategy':
-            stmt.alternatives.forEach((a) => walk(a));
-            break;
-          case 'ordinal':
-            if (ctx.occurrence === stmt.ordinal) walk(stmt.body);
-            break;
-          case 'each':
-            // Pin the match set pre-mutation (iteration is routing, same
-            // as a select arm): joined IR ids, '' for the empty set. The
-            // body is NOT walked — a select-on inside an `each` body may
-            // decide differently per match, and this map is keyed by
-            // statement identity alone, so those decide live per pass
-            // (recorded follow-up; no shipped construct hits it).
-            decisions.set(stmt, this.evaluator.matchesOf(stmt.condition, ctx).join('|'));
-            break;
-          default:
-            break;
-        }
-      }
-    };
-    walk(body);
-    return decisions;
+  private snapshotDecisions(body: IRStatement[], ctx: ExecContext): DecisionRecord {
+    return snapshotDecisions(body, ctx, {
+      decideSelectOn: (stmt, c) => this.decideSelectOn(stmt, c),
+      decideStrategy: (stmt, c) => this.decideStrategy(stmt, c),
+      matchesOf: (condition, c) => this.evaluator.matchesOf(condition, c),
+      evalCondition: (condition, c) => this.evaluator.evalCondition(condition, c),
+    });
   }
 
   /**
@@ -1947,8 +1953,8 @@ export class ChordRuntime {
    * clauses, sequences, daemons, and blocks nested inside another `each`).
    */
   private eachMatches(stmt: Extract<IRStatement, { kind: 'each' }>, ctx: ExecContext): string[] {
-    const snapped = ctx.decisions?.get(stmt);
-    if (snapped !== undefined) return snapped ? snapped.split('|') : [];
+    const snapped = ctx.decisions?.get(stmt)?.matches;
+    if (snapped !== undefined) return snapped;
     return this.evaluator.matchesOf(stmt.condition, ctx);
   }
 
