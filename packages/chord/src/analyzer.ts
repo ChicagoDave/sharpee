@@ -2484,6 +2484,7 @@ class Analyzer {
     if (!decl) return undefined;
 
     const seen = new Set<number>();
+    const seenBands = new Set<string>();
     const rungs: IRMeterRung[] = [];
     for (const rung of decl.rungs) {
       if (!rung.band) {
@@ -2498,7 +2499,32 @@ class Analyzer {
         );
         continue;
       }
+      // ADR-289 D8 L7: the band name is its IDENTITY downstream — it becomes
+      // BandRung.id, which the crossing watcher and the narrator both key on.
+      // Two rungs sharing a name make "which band am I in" unanswerable, and
+      // the threshold gate above never saw it because the thresholds differ.
+      if (seenBands.has(rung.band)) {
+        this.diagnostics.error(
+          'analysis.duplicate-hunger-band',
+          `Two hunger bands are both named \`${rung.band}\` — the band id is what the narrator and the \`band_crossed\` event carry, so it must name one band.`,
+          rung.span,
+        );
+        continue;
+      }
+      // ADR-289 D8 L7: `fatal at N` kills at severity N, and the daemon runs
+      // ahead of the narrator — so a band ABOVE that threshold is a rung the
+      // meter can never reach. A band exactly AT `fatal` is the dying band and
+      // stays legal.
+      if (decl.fatal !== undefined && rung.threshold > decl.fatal) {
+        this.diagnostics.error(
+          'analysis.hunger-band-above-fatal',
+          `Band \`${rung.band}\` sits at ${rung.threshold}, above \`fatal at ${decl.fatal}\` — the player dies before the meter reaches it, so it can never narrate.`,
+          rung.span,
+        );
+        continue;
+      }
       seen.add(rung.threshold);
+      seenBands.add(rung.band);
       rungs.push({
         id: rung.band,
         threshold: rung.threshold,

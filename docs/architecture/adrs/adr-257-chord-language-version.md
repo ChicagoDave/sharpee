@@ -70,6 +70,20 @@ Compiler bug fixes, IR-shape refactors, and platform releases do **not** bump it
 > and the browser boot compile) an author-visible language revision worth a minor. Third
 > departure from D2's letter; a one-time override, not an amendment.
 
+> **Recorded exception (2026-07-29, ADR-289).** Chord ships **2.2.0** alongside Sharpee 4.3.0
+> carrying **four breaking compile gates** — ADR-289 D3 (a refusal outside the leading validate
+> partition), D5 (duplicate `define action` / `define trait` names), D6 (exits on a non-room), and
+> D2's required select id in `story language 2` IR. Each refuses a construct that compiled before,
+> which is **four majors** by this rule's letter; the owner ruled they ship as one **minor**. The
+> grammar surface (`chord.ebnf`) is unchanged and the pin hash stands — the gates refuse constructs
+> the grammar still describes, which is precisely why D2's letter and the outcome diverge here.
+> Fourth departure from D2's letter; a one-time override, not an amendment.
+>
+> Four one-time overrides in six days is itself a signal. The pattern in all four: D2 keys "major"
+> off *whether a story stops compiling*, while every ruling has keyed it off *whether an author
+> would experience a new language*. If a fifth arises, the question to put is whether D2 should be
+> amended to say that, rather than overridden again.
+
 ### D3 — "Breaking change" quantified: two independent axes; the loader gates only on the wire
 
 A "breaking change" in Chord is **two distinct events on independent axes**, and

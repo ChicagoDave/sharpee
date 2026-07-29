@@ -29,7 +29,7 @@ async function reportOf(source: string, response: string): Promise<string> {
     spy.mockRestore();
   }
   // Strip ANSI colour so assertions read on the text, not the escapes.
-  return lines.join('\n').replace(/\[[0-9;]*m/g, '');
+  return lines.join('\n').replace(/\u001b\[[0-9;]*m/g, '');
 }
 
 describe("ADR-287 AC1 — a failed block assertion shows its block", () => {

@@ -19,12 +19,16 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 2.1.0 — owner ruling (2026-07-27, src/version.ts): ships alongside
-  // Sharpee 4.1.0, naming the ADR-276 source-authoritative diagnostics arc.
-  // The EBNF hash is unchanged — the grammar surface did not move.
+  // 2.2.0 — owner ruling (2026-07-29, src/version.ts): ships alongside
+  // Sharpee 4.3.0, naming ADR-289's four breaking compile gates (D3, D5, D6,
+  // and D2's required select id). Four breaking gates would be a major by
+  // ADR-257 D2's letter; shipped as a minor — the fourth recorded departure.
+  // The EBNF hash is unchanged: the gates refuse constructs the grammar still
+  // describes, so the grammar surface did not move.
+  // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
-  languageVersion: '2.1.0',
+  languageVersion: '2.2.0',
   ebnfSha256: '8ef9ae470e1ab133a0460927d1f29105efd961e5b138212926151dadf2b17a04',
 };
 

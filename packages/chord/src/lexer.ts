@@ -70,7 +70,11 @@ const NUMBER_RE = /^[0-9]+(?:\.[0-9]+)*/;
 /**
  * Tokenize source into logical lines.
  * @param source full `.story` text
- * @param diagnostics receives lex errors (tabs in indentation, unterminated strings)
+ * @param diagnostics receives lex errors — tabs in indentation. An unclosed
+ *   quote is NOT one: a lone `"` is prose punctuation (multi-line dialogue in
+ *   prose blocks), so it lexes as `punct` and the positions that actually
+ *   require a string — the header, hatch paths — diagnose it at parse time
+ *   (ADR-289 D8 L2: this comment claimed a diagnostic the lexer never emitted)
  * @returns non-blank lines in source order
  */
 export function lex(source: string, diagnostics: DiagnosticBag): Line[] {

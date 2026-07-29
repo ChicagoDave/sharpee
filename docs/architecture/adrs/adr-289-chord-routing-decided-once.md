@@ -435,7 +435,7 @@ impossible rather than unnoticed.
 
 `registerUnique(namespace, name, span, code)` keeps the signature D5 names.
 The *table* is `UNIQUE_NAMESPACES`, a closed union of eleven namespaces, and
-one `Map<string, Span>` keyed `<namespace> <name>` behind it. Three
+one `Map<string, Span>` keyed `<namespace>\u0000<name>` behind it. Three
 things worth recording:
 
 - **Two new codes**, for the two constructs the hand-rolled gates missed:
@@ -556,6 +556,44 @@ Not in scope, with the structural refactors in Consequences: the table-driven
 line dispatcher for `parseCreate`'s ten-way `else if` chain (§3.4), and
 folding `parseConfigSettings` and `parseEmitFields` into one
 last-token-is-the-value helper (§5).
+
+#### D8 disposition table (Acceptance 22, completed 2026-07-29)
+
+Every numbered review item, with where it went. Seven items above are answered
+by a *decision* rather than by name, which made Acceptance 22 unverifiable by
+inspection — precisely the failure mode D8 opens by naming ("an unrecorded item
+is indistinguishable from an overlooked one"). The mapping is written down so
+the claim can be checked rather than trusted.
+
+| Item | Disposition | Where |
+| --- | --- | --- |
+| H1 | Shipped | D1 — the double-advance; the mutations pass is the decision pass |
+| H2 | Shipped | D10 — open conditions validate against the declared-state union |
+| H3 | Shipped | D4 — the player seeds `states[0]` and per-entity counters |
+| H4 | Shipped | D3 — dead refusals are compile errors |
+| M1 | Shipped | D2 — compiler-assigned select ids replace the line-number key |
+| M2 | Shipped | D3 — `raise`/`lower` count as mutations |
+| M3 | Shipped | D1 — the `when` suffix is decided at its own position |
+| M4 | Shipped | D5 — `define action` / `define trait` gated through `registerUnique` |
+| M5 | Shipped | D4 — `in`/`on`/`starts in` are one placement concept |
+| M6 | Shipped | D6 — exits are gated to rooms at compile |
+| M7 | Shipped | D3 — `{mutated}` branches per arm and per alternative |
+| L1 | Shipped | D8 — `recoverToTopLevel` learns `extend`/`remove` |
+| L2 | Shipped | D8 — `lex()`'s comment drift corrected |
+| L3 | Deferred | D8 — a phrasebook key named `phrase` |
+| L4 | Deferred | D8 — `isNegationOf` fused prefixes |
+| L5 | Shipped | D8 — consistent trait double-add guards |
+| L6 | Deferred | D8 — multi-word event ids |
+| L7 | Shipped | D8 — hunger duplicate band ids and the `fatal` rung position |
+| L8 | Shipped | D8 — `registerPresentEntries`' gate for a room owner |
+| L9 | Deferred | D8 — two Levenshtein implementations |
+| L10 | Declined | D8 — three files named `index.ts` |
+| §3.1 | Shipped | D8 — the misparse hint names both remedies |
+| §3.5 | Shipped | D8 — the version-history table in `version.ts` |
+| §3.2 | Shipped | D1 — "two passes are a leaky abstraction"; the decision ledger is the answer |
+| §3.3 | Shipped | D5 — duplicate gates as a table |
+| §3.4 | Not in scope | Structural refactor, above |
+| §5 | Deferred / not in scope | Non-null assertions and `as never` casts deferred; the fold not in scope, above |
 
 ### D9 — One harness, added first
 
