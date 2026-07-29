@@ -10,6 +10,7 @@
 import { execFileSync } from 'node:child_process';
 import { findRepoRoot, tsfBin } from '../repo';
 import { Command } from './command';
+import { findControlBytes, formatControlByteFailure } from './control-bytes';
 import { checkDocsBlocksModule, checkGrammarModule } from './grammar';
 import { checkManifestModule } from './manifest';
 
@@ -45,6 +46,17 @@ export class VerifyCommand implements Command {
       console.error(
         'verify: chord/src/stdlib-manifest.ts is STALE against the stdlib action surface — run `repokit manifest` and commit.',
       );
+      return 1;
+    }
+
+    // ADR-289 D7: a raw control byte in source is a build error. Nothing else
+    // in the toolchain can see one — tsc compiles it, tests pass, and search
+    // silently reports no matches for the whole file — so nothing else can
+    // gate it.
+    log('=== repokit verify: control bytes ===');
+    const controlBytes = findControlBytes(root);
+    if (controlBytes.length > 0) {
+      console.error(formatControlByteFailure(controlBytes));
       return 1;
     }
 

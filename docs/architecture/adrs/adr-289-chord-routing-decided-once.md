@@ -501,6 +501,23 @@ reads it. This is not cosmetic: it silently blanks the file from every
 search, including searches by agents, and it is the reason this review's
 runtime findings could not be reproduced by grep on the first attempt.
 
+#### D7 note — the class is now gated, not just the instances (2026-07-29)
+
+D7 fixed two bytes in one file. That did not close the class, and the class
+reopened twice during this ADR's own implementation — once in `analyzer.ts`,
+once in the character class of the gate written to catch it.
+
+`repokit verify` now refuses any raw C0 control (except tab, newline, carriage
+return) or DEL in text sources, reported with file, line and codepoint —
+`tools/repokit/src/commands/control-bytes.ts`, beside the ADR-269 D7 and
+ADR-276 D2 freshness gates it is modelled on. Clearing the tree for it turned
+up **six pre-existing sites** in three packages that had nothing to do with
+this ADR, which is the measure of how invisible the defect is: `tsc` compiles
+it, tests pass, and search reports no matches rather than an error.
+
+Verified by planting a NUL and watching `verify` exit 1, then removing it and
+watching it exit 0 — not by reading the code. See followups F5 (closed).
+
 ### D8 — Review disposition: every remaining item ships, defers, or is declined
 
 Shipping with the above, each being a one-site fix in a file already open:
