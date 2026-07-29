@@ -107,8 +107,8 @@ final class MainWindowController: NSWindowController {
     }
 
     /// Points Play recording at the open story (ADR-277 D5).
-    func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        rootViewController?.configureRecording(saveDirectory: saveDirectory, onRecorded: onRecorded)
+    func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
+        rootViewController?.configureRecording(storyDirectory: storyDirectory, onRecorded: onRecorded)
     }
 
     /// Whether Test → Bless Last Turn should be enabled (ADR-282 D1).
@@ -120,6 +120,17 @@ final class MainWindowController: NSWindowController {
     /// showing in the Play pane.
     func blessLatestPlayTurn() {
         rootViewController?.blessLatestPlayTurn()
+    }
+
+    /// Whether Test → Checkpoint Here should be enabled (ADR-282 D4).
+    var canCheckpointLatestPlayTurn: Bool {
+        rootViewController?.canCheckpointLatestPlayTurn ?? false
+    }
+
+    /// Test → Checkpoint Here (⇧⌘K). Toggles the chain-segment mark on the turn
+    /// showing in the Play pane.
+    func checkpointLatestPlayTurn() {
+        rootViewController?.checkpointLatestPlayTurn()
     }
 
     /// The editor's focused document (Run Current Test File target), or nil.
@@ -385,8 +396,9 @@ private final class RootViewController: NSViewController {
     }
 
     /// Points Play recording at the open story (ADR-277 D5).
-    func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        mainSplitViewController.configureRecording(saveDirectory: saveDirectory, onRecorded: onRecorded)
+    func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
+        mainSplitViewController.configureRecording(storyDirectory: storyDirectory,
+                                                   onRecorded: onRecorded)
     }
 
     /// Whether the live bless gesture is available (ADR-282 D1).
@@ -394,6 +406,13 @@ private final class RootViewController: NSViewController {
 
     func blessLatestPlayTurn() {
         mainSplitViewController.blessLatestPlayTurn()
+    }
+
+    /// Whether the live checkpoint gesture is available (ADR-282 D4).
+    var canCheckpointLatestPlayTurn: Bool { mainSplitViewController.canCheckpointLatestPlayTurn }
+
+    func checkpointLatestPlayTurn() {
+        mainSplitViewController.checkpointLatestPlayTurn()
     }
 
     /// The editor's focused document (Run Current Test File enablement/target).
@@ -687,8 +706,8 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// Points Play recording at the open story (save-panel default dir +
     /// re-discovery hook for the Tests panel) — ADR-277 D5.
-    fileprivate func configureRecording(saveDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        playViewController.recordingSaveDirectory = saveDirectory
+    fileprivate func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
+        playViewController.storyDirectory = storyDirectory
         playViewController.onTranscriptRecorded = onRecorded
     }
 
@@ -698,6 +717,14 @@ private final class MainSplitViewController: NSSplitViewController {
 
     fileprivate func blessLatestPlayTurn() {
         Task { await playViewController.blessLatestTurn() }
+    }
+
+    /// The live checkpoint gesture, reached from the Test menu (ADR-282 D4).
+    /// The header button drives the same path directly.
+    fileprivate var canCheckpointLatestPlayTurn: Bool { playViewController.canCheckpointLatestTurn }
+
+    fileprivate func checkpointLatestPlayTurn() {
+        playViewController.checkpointLatestTurn()
     }
 
     fileprivate func showTestTab() {

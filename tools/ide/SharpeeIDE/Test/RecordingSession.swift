@@ -8,18 +8,20 @@
 //
 // ADR-282 adds the author's marks on top of that capture: a per-turn bless
 // verdict (carrying the optional selected fragment) and checkpoint marks that
-// split a saved session into a walkthrough chain. `serialize` now encodes the
+// split a saved session into a walkthrough chain. `serialize` encodes the
 // bless verdicts per D2 — `[OK]` + an ADR-287 `text` block for a verbatim bless,
 // `[OK: contains …]` for a selection — while untagged turns keep ADR-277 D5's
-// `[OK: any]` draft unchanged. Splitting a checkpointed session into a chain is
-// still Phase 3's job; this file carries the checkpoint marks without acting on
-// them.
+// `[OK: any]` draft unchanged. `segments` / `serializeChain(title:)` act on the
+// checkpoint marks, splitting the session into the sequential transcripts D4
+// names.
 //
 // Public interface: isRecording, turns, blessedTurns, latestTurnIndex,
-// canBlessLatestTurn, hasAuthorAssertions, start(), stop(),
-// record(command:response:), bless(turnAt:selection:), unbless(turnAt:),
+// canBlessLatestTurn, canCheckpointLatestTurn, hasCheckpoints,
+// hasAuthorAssertions, segments, start(), stop(), record(command:response:),
+// bless(turnAt:selection:), unbless(turnAt:),
 // toggleBlessOnLatestTurn(rawSelection:), setCheckpoint(_:turnAt:),
-// serialize(title:), assertionLines(for:), inlinePayload(_:).
+// toggleCheckpointOnLatestTurn(), serialize(title:), serializeChain(title:),
+// assertionLines(for:), inlinePayload(_:).
 // Owner context: tools/ide — Test (recording).
 
 import Foundation
@@ -188,6 +190,57 @@ final class RecordingSession {
         return true
     }
 
+    /// Whether the Play pane should offer the live checkpoint gesture right now.
+    ///
+    /// Unlike bless, a blank response is no objection: a checkpoint says where
+    /// the author reached, not that the text was right, so it rides any
+    /// captured turn.
+    var canCheckpointLatestTurn: Bool {
+        isRecording && latestTurnIndex != nil
+    }
+
+    /// The Play pane's live checkpoint gesture: end a chain segment at the turn
+    /// on screen, or take the mark back.
+    ///
+    /// The mark closes the segment it sits on, because the gesture is pressed
+    /// after seeing the turn that finished a chapter — "this far" rather than
+    /// "from here".
+    ///
+    /// - Returns: true when the mark changed; false when nothing is captured or
+    ///   the session is not recording, in which case nothing is mutated.
+    @discardableResult
+    func toggleCheckpointOnLatestTurn() -> Bool {
+        guard canCheckpointLatestTurn, let index = latestTurnIndex else { return false }
+        return setCheckpoint(!turns[index].isCheckpoint, turnAt: index)
+    }
+
+    /// Whether this session saves as a chain (D4) rather than a single
+    /// transcript (D3).
+    var hasCheckpoints: Bool { turns.contains(where: \.isCheckpoint) }
+
+    /// The session split into chain segments at its checkpoint marks (D4).
+    ///
+    /// A checkpointed turn is the LAST turn of its segment. A trailing
+    /// checkpoint on the final turn therefore adds no empty segment — an author
+    /// who marks the end of the last chapter meant the chapter, not an empty
+    /// file after it.
+    ///
+    /// An unmarked session is one segment, so a caller need not branch on
+    /// `hasCheckpoints` to walk it.
+    var segments: [[RecordedTurn]] {
+        var built: [[RecordedTurn]] = []
+        var current: [RecordedTurn] = []
+        for turn in turns {
+            current.append(turn)
+            if turn.isCheckpoint {
+                built.append(current)
+                current = []
+            }
+        }
+        if !current.isEmpty { built.append(current) }
+        return built
+    }
+
     /// Whether this session may be saved as a test (ADR-282 Acceptance 3).
     ///
     /// A recording nobody vouched for asserts nothing an author meant — every
@@ -222,11 +275,45 @@ final class RecordingSession {
     /// validator requires title or story), the opening turn above, then each
     /// captured turn encoded per D2.
     func serialize(title: String) -> String {
+        Self.serialize(turns, title: title, openingTurn: true)
+    }
+
+    /// The session as a walkthrough chain: one transcript source per segment,
+    /// in play order (D4).
+    ///
+    /// **Only the first segment carries the opening `look`** (ADR-282's chain
+    /// amendment). `--chain` runs ONE game across the files, so segments 2..N
+    /// are not fresh runs and have no banner to absorb; an opening `look` in
+    /// each would insert turns that never happened and shift the world state
+    /// the next segment inherits.
+    ///
+    /// - Parameter title: the chain's name; each segment's `title:` header
+    ///   carries its position, so a failure report says which segment failed.
+    /// - Returns: one source string per segment, in order.
+    func serializeChain(title: String) -> [String] {
+        let parts = segments
+        return parts.enumerated().map { index, turns in
+            Self.serialize(turns,
+                           title: "\(title) - part \(index + 1) of \(parts.count)",
+                           openingTurn: index == 0)
+        }
+    }
+
+    /// One transcript's source.
+    ///
+    /// - Parameters:
+    ///   - turns: the turns to encode, in play order.
+    ///   - title: the `title:` header's value.
+    ///   - openingTurn: whether to replay the client's own `look` at the head
+    ///     (true for a single file and a chain's first segment only).
+    private static func serialize(_ turns: [RecordedTurn],
+                                  title: String,
+                                  openingTurn: Bool) -> String {
         var lines: [String] = ["title: \(title)", "---", ""]
-        lines.append(contentsOf: Self.openingTurn)
+        if openingTurn { lines.append(contentsOf: Self.openingTurn) }
         for turn in turns {
             lines.append("> \(turn.command)")
-            lines.append(contentsOf: Self.assertionLines(for: turn))
+            lines.append(contentsOf: assertionLines(for: turn))
             lines.append("")
         }
         return lines.joined(separator: "\n")
@@ -311,10 +398,16 @@ enum RecordingSaveError: LocalizedError {
     /// Nothing in the session was blessed (ADR-282 Acceptance 3).
     case noBlessedTurns
 
+    /// A checkpointed session has a fixed home — the open story's
+    /// `walkthroughs/` — and there is no open story to put it in.
+    case noStoryDirectory
+
     var errorDescription: String? {
         switch self {
         case .noBlessedTurns:
             return "A test with no assertions of the author's is not a test."
+        case .noStoryDirectory:
+            return "A walkthrough chain saves into the story's walkthroughs/ folder, and no story is open."
         }
     }
 
@@ -322,6 +415,8 @@ enum RecordingSaveError: LocalizedError {
         switch self {
         case .noBlessedTurns:
             return "Bless at least one turn (⇧⌘B) to say what this test is checking, then save again."
+        case .noStoryDirectory:
+            return "Open the story project, then record and save again."
         }
     }
 }

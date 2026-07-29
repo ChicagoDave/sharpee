@@ -218,6 +218,14 @@ enum MenuBuilder {
         bless.target = target
         menu.addItem(bless)
 
+        // ADR-282 D4, and a key equivalent for the same reason as Bless above.
+        let checkpoint = NSMenuItem(title: "Checkpoint Here",
+                                    action: #selector(AppDelegate.checkpointHere(_:)),
+                                    keyEquivalent: "k")
+        checkpoint.keyEquivalentModifierMask = [.command, .shift]
+        checkpoint.target = target
+        menu.addItem(checkpoint)
+
         menu.addItem(NSMenuItem.separator())
 
         let cancel = NSMenuItem(title: "Cancel Test Run",

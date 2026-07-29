@@ -332,16 +332,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
         // The Tests panel tracks the same target (ADR-277 D2): discover its
         // tests/ + walkthroughs/ tree now; runs are user-initiated. Play
-        // recording saves into the story's `tests/transcripts/` and
-        // re-discovers on save — ADR-280's classifier looks for exactly that
-        // path, so anything saved beside it would be invisible in the sidebar
-        // (ADR-282 D3).
+        // recording saves beneath the story's own directory and re-discovers on
+        // save — into `tests/transcripts/` for an unmarked session (ADR-282 D3)
+        // or `walkthroughs/` for a checkpointed chain (D4). The pane derives
+        // both, since ADR-280's classifier looks for exactly those paths and
+        // anything saved beside them would be invisible in the sidebar.
         if let storyURL = currentStoryURL {
             testController?.attach(storyFile: storyURL)
             mainWindowController?.configureRecording(
-                saveDirectory: storyURL.deletingLastPathComponent()
-                    .appendingPathComponent("tests")
-                    .appendingPathComponent("transcripts"),
+                storyDirectory: storyURL.deletingLastPathComponent(),
                 onRecorded: { [weak self] _ in
                     guard let self, let story = self.currentStoryURL else { return }
                     self.testController?.attach(storyFile: story)
@@ -441,6 +440,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         mainWindowController?.blessLatestPlayTurn()
     }
 
+    /// Test → Checkpoint Here (⇧⌘K). Ends a walkthrough-chain segment at the
+    /// turn now on screen, or takes the mark back (ADR-282 D4). Keyboard-
+    /// reachable for the same reason Bless is: the gesture happens mid-play.
+    @objc func checkpointHere(_ sender: Any?) {
+        mainWindowController?.checkpointLatestPlayTurn()
+    }
+
     /// Test → Cancel Test Run. SIGTERM, then SIGKILL; decoded results stay.
     @objc func cancelTestRun(_ sender: Any?) {
         testController?.cancel()
@@ -491,6 +497,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             // Only while a recording holds a blessable turn — an empty response
             // carries no affordance (ADR-282 D2).
             return mainWindowController?.canBlessLatestPlayTurn ?? false
+        case #selector(checkpointHere(_:)):
+            // Only while a recording holds a turn to mark (ADR-282 D4). A blank
+            // response is no objection here — see canCheckpointLatestTurn.
+            return mainWindowController?.canCheckpointLatestPlayTurn ?? false
         case #selector(toggleWordWrap(_:)):
             menuItem.state = WordWrapPreference.isEnabled ? .on : .off
             return true

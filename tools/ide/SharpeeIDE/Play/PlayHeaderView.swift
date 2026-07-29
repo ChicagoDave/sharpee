@@ -1,9 +1,10 @@
 // PlayHeaderView.swift
 // The Play pane's header bar: a status dot (green when a story is loaded), Restart
-// and Record buttons, the per-turn Bless gesture (ADR-282 D1), and a "Play after
-// build" toggle. Pure view — the controller owns behaviour.
-// Public interface: onRestart / onRecordToggle / onBless / onPlayAfterBuildToggle
-// callbacks; setLoaded(_:), setRecording(_:), setBless(available:isBlessed:),
+// and Record buttons, the per-turn Bless gesture (ADR-282 D1) and Checkpoint mark
+// (D4), and a "Play after build" toggle. Pure view — the controller owns behaviour.
+// Public interface: onRestart / onRecordToggle / onBless / onCheckpoint /
+// onPlayAfterBuildToggle callbacks; setLoaded(_:), setRecording(_:),
+// setBless(available:isBlessed:), setCheckpoint(available:isCheckpoint:),
 // setPlayAfterBuild(_:).
 // Owner context: tools/ide — Play.
 
@@ -19,11 +20,15 @@ final class PlayHeaderView: NSView {
     /// The per-turn bless gesture (ADR-282 D1) — vouch for the response on
     /// screen, or take the vouch back.
     var onBless: (() -> Void)?
+    /// The checkpoint mark (ADR-282 D4) — end a walkthrough-chain segment at
+    /// the turn on screen, or take the mark back.
+    var onCheckpoint: (() -> Void)?
 
     private let dot = NSView()
     private let restartButton = NSButton()
     private let recordButton = NSButton()
     private let blessButton = NSButton()
+    private let checkpointButton = NSButton()
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
 
     override func layout() {
@@ -33,6 +38,7 @@ final class PlayHeaderView: NSView {
         restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         recordButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         blessButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        checkpointButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
@@ -71,6 +77,17 @@ final class PlayHeaderView: NSView {
         blessButton.toolTip = "Vouch for this turn's response (⇧⌘B)"
         blessButton.translatesAutoresizingMaskIntoConstraints = false
 
+        checkpointButton.title = Self.checkpointTitle
+        checkpointButton.bezelStyle = .rounded
+        checkpointButton.controlSize = .small
+        checkpointButton.target = self
+        checkpointButton.action = #selector(checkpointClicked)
+        // Same reason as Bless: the gesture happens mid-play, and an author who
+        // has to click back into the game to keep typing has been interrupted.
+        checkpointButton.refusesFirstResponder = true
+        checkpointButton.toolTip = "End a walkthrough-chain segment here (⇧⌘K)"
+        checkpointButton.translatesAutoresizingMaskIntoConstraints = false
+
         playAfterBuildCheckbox.target = self
         playAfterBuildCheckbox.action = #selector(playAfterBuildChanged)
         playAfterBuildCheckbox.controlSize = .small
@@ -81,6 +98,7 @@ final class PlayHeaderView: NSView {
         addSubview(restartButton)
         addSubview(recordButton)
         addSubview(blessButton)
+        addSubview(checkpointButton)
         addSubview(playAfterBuildCheckbox)
 
         NSLayoutConstraint.activate([
@@ -98,16 +116,22 @@ final class PlayHeaderView: NSView {
             blessButton.leadingAnchor.constraint(equalTo: recordButton.trailingAnchor, constant: 6),
             blessButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
+            checkpointButton.leadingAnchor.constraint(equalTo: blessButton.trailingAnchor, constant: 6),
+            checkpointButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+
             playAfterBuildCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             playAfterBuildCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
 
         setLoaded(false)
         setBless(available: false, isBlessed: false)
+        setCheckpoint(available: false, isCheckpoint: false)
     }
 
     private static let blessTitle = "Bless"
     private static let blessedTitle = "Blessed ✓"
+    private static let checkpointTitle = "Checkpoint"
+    private static let checkpointedTitle = "Checkpoint ✓"
 
     required init?(coder: NSCoder) {
         fatalError("PlayHeaderView is not Storyboard-instantiable")
@@ -118,9 +142,12 @@ final class PlayHeaderView: NSView {
         dot.layer?.backgroundColor = (loaded ? NSColor.systemGreen : Theme.foregroundFaint).cgColor
         restartButton.isEnabled = loaded
         recordButton.isEnabled = loaded
-        // Nothing on screen to vouch for. The controller re-enables this as
-        // soon as a turn arrives.
-        if !loaded { setBless(available: false, isBlessed: false) }
+        // Nothing on screen to vouch for or mark. The controller re-enables
+        // these as soon as a turn arrives.
+        if !loaded {
+            setBless(available: false, isBlessed: false)
+            setCheckpoint(available: false, isCheckpoint: false)
+        }
     }
 
     /// Reflects recording state: red "Stop Recording" while capturing.
@@ -143,6 +170,20 @@ final class PlayHeaderView: NSView {
         blessButton.contentTintColor = isBlessed ? .systemGreen : nil
     }
 
+    /// Reflects the checkpoint mark on the turn on screen (ADR-282 D4).
+    ///
+    /// - Parameters:
+    ///   - available: whether there is a captured turn to mark at all. Unlike
+    ///     bless, a blank response is no objection — a checkpoint says where the
+    ///     author reached, not that the text was right.
+    ///   - isCheckpoint: whether this turn already ends a segment — the button
+    ///     reads back the standing mark, since the gesture toggles.
+    func setCheckpoint(available: Bool, isCheckpoint: Bool) {
+        checkpointButton.isEnabled = available
+        checkpointButton.title = isCheckpoint ? Self.checkpointedTitle : Self.checkpointTitle
+        checkpointButton.contentTintColor = isCheckpoint ? .systemBlue : nil
+    }
+
     func setPlayAfterBuild(_ on: Bool) {
         playAfterBuildCheckbox.state = on ? .on : .off
     }
@@ -157,6 +198,10 @@ final class PlayHeaderView: NSView {
 
     @objc private func blessClicked() {
         onBless?()
+    }
+
+    @objc private func checkpointClicked() {
+        onCheckpoint?()
     }
 
     @objc private func playAfterBuildChanged() {
