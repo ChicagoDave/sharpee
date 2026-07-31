@@ -13,7 +13,7 @@ English parser, grammar patterns, story grammar extension API.
  * This parser handles English-specific grammar patterns and preserves all information
  * in rich structured commands.
  */
-import { Parser, ParserOptions, Token as InternalToken, InternalParseResult, ParserLanguageProvider, VerbVocabulary, VocabularyEntry, Constraint } from '@sharpee/if-domain';
+import { Parser, ParserOptions, Token as InternalToken, InternalParseResult, ParserLanguageProvider, VerbVocabulary, VocabularyEntry } from '@sharpee/if-domain';
 import type { IParsedCommand, IValidatedCommand, IParseError as CoreParseError } from '@sharpee/world-model';
 import type { ISystemEvent, Result } from '@sharpee/core';
 import { GrammarBuilder } from '@sharpee/if-domain';
@@ -119,11 +119,6 @@ export declare class EnglishParser implements Parser {
      *   article, nothing is stripped (the phrase keeps at least one word).
      */
     private splitLeadingArticles;
-    /**
-     * Register story-specific grammar rules
-     * @deprecated Use getStoryGrammar() for full API
-     */
-    registerGrammar(pattern: string, action: string, constraints?: Record<string, Constraint>): void;
     /**
      * Get the grammar builder for story-specific rules.
      * Stories use this to define custom grammar patterns.

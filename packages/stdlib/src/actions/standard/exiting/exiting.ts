@@ -4,7 +4,7 @@
  * This action handles exiting objects that the actor is currently inside/on.
  */
 
-import { Action, ActionContext, ValidationResult, EnhancedActionContext } from '../../enhanced-types.js';
+import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,

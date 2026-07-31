@@ -67,13 +67,6 @@ export abstract class MetaAction implements Action {
   }
   
   /**
-   * @deprecated Use validate() instead. This will be removed after refactoring.
-   * Optional method to check if action can execute
-   * Override for complex conditions beyond verb matching
-   */
-  canExecute?(context: ActionContext): boolean;
-  
-  /**
    * Message ID for action description (for help/documentation)
    */
   descriptionMessageId?: string;

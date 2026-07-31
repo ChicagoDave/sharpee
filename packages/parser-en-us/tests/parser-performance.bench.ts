@@ -15,8 +15,9 @@ describe('Parser Performance', () => {
   const parser = new EnglishParser(language);
   
   // Add some custom grammar rules to make it more realistic
+  const storyGrammar = parser.getStoryGrammar();
   for (let i = 0; i < 50; i++) {
-    parser.registerGrammar(`custom${i} :item`, `custom.action.${i}`);
+    storyGrammar.define(`custom${i} :item`).mapsTo(`custom.action.${i}`).build();
   }
   
   describe('Simple Commands', () => {
@@ -102,8 +103,9 @@ describe('Parser Performance', () => {
     // Create parsers with different numbers of rules
     for (const ruleCount of [10, 50, 100, 200]) {
       const p = new EnglishParser(language);
+      const pGrammar = p.getStoryGrammar();
       for (let i = 0; i < ruleCount; i++) {
-        p.registerGrammar(`test${i} :obj${i}`, `test.action.${i}`);
+        pGrammar.define(`test${i} :obj${i}`).mapsTo(`test.action.${i}`).build();
       }
       parsers.push(p);
     }

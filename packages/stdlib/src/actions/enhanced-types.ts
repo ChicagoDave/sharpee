@@ -95,8 +95,12 @@ export interface ImplicitTakeResult {
  * 
  * Provides both world querying capabilities and event creation methods.
  * This is the single context interface used by all actions.
- * 
- * Phase 2: Consolidates ActionContext and EnhancedActionContext into one interface
+ *
+ * ADR-041 (Amendment 1): exactly one method creates events — `event(type, data)`.
+ * There is deliberately no `emit()`/`emitSuccess()`/`emitError()`/`emitMany()`/
+ * `createEvent()`. Everything else here is world querying or phase plumbing, not
+ * a second event-creation path. The former `EnhancedActionContext` alias was
+ * consolidated into this interface and removed (#141).
  */
 export interface ActionContext {
   // World querying capabilities
@@ -393,18 +397,6 @@ export interface ActionContext {
 }
 
 /**
- * @deprecated Use ActionContext instead. Will be removed in Phase 2.2.
- * 
- * Enhanced action context with helper methods for event creation
- * 
- * This interface is now redundant as ActionContext includes all capabilities.
- * Kept temporarily for backward compatibility during migration.
- */
-export interface EnhancedActionContext extends ActionContext {
-  // All methods now inherited from unified ActionContext
-}
-
-/**
  * Result from action validation
  * 
  * Used to determine if an action can be executed and provide
@@ -595,13 +587,6 @@ export interface Action {
    * @returns Array of blocked/error events
    */
   blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[];
-  
-  /**
-   * @deprecated Use validate() instead. This will be removed after refactoring.
-   * Optional method to validate if this action can handle the command
-   * By default, pattern matching is sufficient
-   */
-  canExecute?(context: ActionContext): boolean;
   
   /**
    * Message ID for the action description (for help/documentation)

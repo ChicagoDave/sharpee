@@ -228,7 +228,10 @@ describe('Parser Grammar Engine Integration', () => {
     it('should allow registration of custom grammar rules', () => {
       // Register a custom pattern
       // Note: Use 'object' and 'recipient' slot names which map to directObject/indirectObject
-      parser.registerGrammar('cast :object on :recipient', 'custom.action.casting');
+      parser.getStoryGrammar()
+        .define('cast :object on :recipient')
+        .mapsTo('custom.action.casting')
+        .build();
       
       const result = parser.parse('cast fireball on goblin');
       

@@ -1,6 +1,6 @@
 /**
  * Regression test: applyInterceptorReportResult MUST work through the
- * class-based EnhancedActionContext (ISSUE-074).
+ * class-based InternalActionContext (ISSUE-074).
  *
  * Context: ActionContext has TWO production implementations:
  *
@@ -61,7 +61,7 @@ function fakeCommand(actionId: string): ValidatedCommand {
   };
 }
 
-describe('applyInterceptorReportResult through EnhancedActionContext', () => {
+describe('applyInterceptorReportResult through InternalActionContext', () => {
   test('emit appends events without "this" being lost (regression for ISSUE-074 wt-15 crash)', () => {
     const { world } = setupBasicWorld();
     const ctx = createActionContext(world, world.getPlayer()!, fakeAction, fakeCommand('if.action.fake'));

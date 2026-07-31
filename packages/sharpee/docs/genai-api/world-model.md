@@ -8924,8 +8924,8 @@ export interface InterceptorBlockedResult {
 /**
  * Minimal context shape required by `applyInterceptorReportResult`.
  *
- * Real action contexts (both the engine's closure-based factory and the
- * stdlib's class-based `EnhancedActionContext`) satisfy this structurally
+ * Real action contexts (both the engine's closure-based factory and
+ * stdlib's class-based `InternalActionContext`) satisfy this structurally
  * by exposing `event(type, data)`. Passing the *context object* — rather
  * than an unbound `context.event` callback — preserves `this` for the
  * class-based implementation, which would otherwise crash inside

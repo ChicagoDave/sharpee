@@ -27,7 +27,7 @@ function makeContext() {
   return createRealTestContext(insertingAction, world, command);
 }
 
-describe('EnhancedActionContext.event() payload shape (Phase 3b)', () => {
+describe('ActionContext.event() payload shape (Phase 3b)', () => {
   test('story/custom event types pass through unwrapped — messageId stays top-level', () => {
     const context = makeContext();
 

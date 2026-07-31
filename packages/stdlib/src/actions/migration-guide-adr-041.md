@@ -4,7 +4,12 @@ This guide helps you migrate actions from the old multi-method context API to th
 
 ## What Changed
 
-The `EnhancedActionContext` interface has been simplified from multiple methods to a single `event()` method:
+The action context interface has been simplified from multiple methods to a single `event()` method:
+
+> **Naming note (ADR-041 Amendment 1, 2026-07-30):** this guide originally called
+> that interface `EnhancedActionContext`. It is now `ActionContext` — the two were
+> consolidated, and the `EnhancedActionContext` alias has been removed.
+
 
 **Old Methods (Removed):**
 - `emitSuccess(messageId, params)` 

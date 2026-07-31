@@ -1,6 +1,6 @@
 # Proposal: Tracker Low-Hanging Fruit
 
-**Status**: ACCEPTED ITEMS COMPLETE — all five (P-1, P-2, P-5, P-7, P-8) DONE (2026-07-30); P-3, P-4, P-6 remain PROPOSED, blocked on ADR work
+**Status**: ACCEPTED ITEMS COMPLETE — six of eight DONE (P-1, P-2, P-3, P-5, P-7, P-8), all 2026-07-30. P-3 was unblocked by ADR-041 Amendment 1 and delivered the same session. P-4 and P-6 remain PROPOSED, still awaiting the ADR-231 D2a and ADR-178 amendments
 **Origin**: issue set — the small, unblocked, well-understood items from the 36 open GitHub issues, surveyed 2026-07-29 after the full triage pass of session 3ef8b98a
 **Date**: 2026-07-29
 **Session**: 5c4586
@@ -75,13 +75,62 @@ entity handlers. No back-compat is owed.
   is retained; removal is confirmed against the **generated** `docs/genai-api/`
   output, not the source barrels (source absence is not proof — see session
   3ef8b98a's #141 correction); the tree builds and the full suite passes.
-- **Status**: PROPOSED
+- **Status**: DONE — ACCEPTED by owner 2026-07-30 (session deae34) once the ADR blocker
+  was discharged, and delivered the same session. **Four of the five symbols removed;
+  `EventHandler` retained with a comment, which this item's Done-when explicitly
+  permits.**
+  - `EnhancedActionContext` (`stdlib/src/actions/enhanced-types.ts`) — removed. It was
+    an empty `extends ActionContext` alias; its one live reference was an unused import
+    in `standard/exiting/exiting.ts`.
+  - `ScopeLevelStrings` (`stdlib/src/scope/types.ts`) — removed. Zero references
+    repo-wide.
+  - `Action.canExecute` (`enhanced-types.ts`) **and `MetaAction.canExecute`
+    (`meta-action.ts`)** — both removed. Neither had an implementer or a caller; no
+    dispatcher ever invoked them. P-3 named only the `Action` one, but leaving the
+    identical dead member on the sibling abstract class would have re-created the
+    finding.
+  - `registerGrammar` (`parser-en-us/src/english-parser.ts`) — removed. It was exactly
+    `getStoryGrammar()` (same `createBuilder('story')` tier) plus a constraint loop, so
+    the three call sites in `parser-integration.test.ts` and
+    `parser-performance.bench.ts` migrated as a pure equivalence; none passed
+    constraints. The now-unused `Constraint` import went with it.
+  - `EventHandler` (`event-processor/src/types.ts`) — **RETAINED.** The item's premise
+    is wrong: ISSUE-068 removed *entity* `on[...]` handlers, not the world-level
+    registry. `EventHandler` is the signature of `WorldModel.registerEventHandler()`
+    (ADR-052) and types nine live handlers in `handlers/state-change.ts`. Removing it
+    would untype all nine. A comment at the export records this, per the Done-when.
+- **Verification**: `npx tsf build` → 30 packages clean. `@sharpee/stdlib` 1576 passing /
+  27 skipped; `@sharpee/parser-en-us` 311 passing / 3 skipped; `@sharpee/world-model`
+  1432 passing / 10 skipped; `@sharpee/event-processor` 18 passing — 0 failures anywhere.
+  Dungeo walkthrough chain **857 passing, 0 failures**; unit transcripts **1760 passed,
+  10 expected failures, 4 skipped** (baseline). Removal confirmed the way the Done-when
+  requires — `scripts/generate-genai-api.js` re-run and the regenerated
+  `packages/sharpee/docs/genai-api/` greps clean of all four symbols (the single
+  remaining string is a deliberate comment recording the removal).
 - **Blocked by** (proposal-review, STALE ADR): ADR-041 (ACCEPTED) still defines
   `EnhancedActionContext` as the action-execution context and specifies its
   shape; the code marks it `@deprecated` and the ADR was never amended.
   Removing the export leaves an ACCEPTED ADR describing a type that no longer
   exists. Mark ADR-041 superseded — almost certainly by ADR-051's four-phase
   context — in the same commit that removes the symbol.
+- **Discharge**: ADR-041 **Amendment 1** (2026-07-30, session deae34) — amended, not
+  superseded. Two corrections to the finding above:
+  - **ADR-051 is not the successor.** It is *Action Behaviors for Complex Action
+    Handling*, is itself Superseded by ADR-052, and never touched the context
+    interface. The four-phase pattern comes from ADR-058 (`report()`) plus ADR-228
+    (lifecycle engine).
+  - **ADR-041's decision is still live.** It decides that exactly one method creates
+    events (`event(type, data)`, no `emit*`/`createEvent`) — true of `ActionContext`
+    today. Only the interface *name* went stale: `ActionContext` and
+    `EnhancedActionContext` were consolidated in code with no ADR, leaving
+    `EnhancedActionContext` an empty `@deprecated` alias
+    (`stdlib/src/actions/enhanced-types.ts:403`). Superseding wholesale would have
+    discarded a binding decision and pointed at an ADR that does not exist.
+
+  Amendment 1 retargets the ADR to `ActionContext`, records the consolidation, flags
+  the stale `execute(): SemanticEvent[]` example, and states that removing the
+  `EnhancedActionContext` export is consistent with the record. No ACCEPTED ADR now
+  describes a removed type.
 
 ### P-4: Narrow `where()`'s constraint type to the scope builder (#163 + #89)
 

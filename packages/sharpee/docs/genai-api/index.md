@@ -30,8 +30,8 @@ Generated for Sharpee 4.3.0
 | [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (23 files, ~3464 lines) |
 | [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (119 files, ~9353 lines) |
 | [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (38 files, ~3331 lines) |
-| [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (47 files, ~4489 lines) |
-| [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~443 lines) |
+| [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (47 files, ~4460 lines) |
+| [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~438 lines) |
 | [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (17 files, ~2677 lines) |
 | [plugins.md](plugins.md) | Plugins | Plugin system, NPC plugin, scheduler (daemons/fuses), state machine. (13 files, ~949 lines) |
 | [text.md](text.md) | Text System | Text blocks, decorations, rendering. (3 files, ~275 lines) |

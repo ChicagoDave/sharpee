@@ -24,7 +24,6 @@ import {
   VerbVocabulary,
   VocabularyEntry,
   PatternMatch,
-  Constraint,
   SlotType
 } from '@sharpee/if-domain';
 
@@ -1157,24 +1156,6 @@ export class EnglishParser implements Parser {
       text: rest.map(t => t.word).join(' '),
       head: rest[rest.length - 1].normalized
     };
-  }
-
-  /**
-   * Register story-specific grammar rules
-   * @deprecated Use getStoryGrammar() for full API
-   */
-  registerGrammar(pattern: string, action: string, constraints?: Record<string, Constraint>): void {
-    const builder = this.grammarEngine.createBuilder('story').define(pattern)
-      .mapsTo(action);
-
-    // Apply constraints if provided
-    if (constraints) {
-      for (const [slot, constraint] of Object.entries(constraints)) {
-        builder.where(slot, constraint);
-      }
-    }
-
-    builder.build();
   }
 
   /**

@@ -92,7 +92,11 @@ export interface ImplicitTakeResult {
  * Provides both world querying capabilities and event creation methods.
  * This is the single context interface used by all actions.
  *
- * Phase 2: Consolidates ActionContext and EnhancedActionContext into one interface
+ * ADR-041 (Amendment 1): exactly one method creates events — `event(type, data)`.
+ * There is deliberately no `emit()`/`emitSuccess()`/`emitError()`/`emitMany()`/
+ * `createEvent()`. Everything else here is world querying or phase plumbing, not
+ * a second event-creation path. The former `EnhancedActionContext` alias was
+ * consolidated into this interface and removed (#141).
  */
 export interface ActionContext {
     /**
@@ -360,16 +364,6 @@ export interface ActionContext {
     emitSound(sound: Omit<ISound, 'sourceEntity' | 'sourceLocation'>): void;
 }
 /**
- * @deprecated Use ActionContext instead. Will be removed in Phase 2.2.
- *
- * Enhanced action context with helper methods for event creation
- *
- * This interface is now redundant as ActionContext includes all capabilities.
- * Kept temporarily for backward compatibility during migration.
- */
-export interface EnhancedActionContext extends ActionContext {
-}
-/**
  * Result from action validation
  *
  * Used to determine if an action can be executed and provide
@@ -547,12 +541,6 @@ export interface Action {
      * @returns Array of blocked/error events
      */
     blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[];
-    /**
-     * @deprecated Use validate() instead. This will be removed after refactoring.
-     * Optional method to validate if this action can handle the command
-     * By default, pattern matching is sufficient
-     */
-    canExecute?(context: ActionContext): boolean;
     /**
      * Message ID for the action description (for help/documentation)
      * The language provider should have this message
@@ -848,12 +836,6 @@ export declare abstract class MetaAction implements Action {
      * @returns Validation result (defaults to always valid)
      */
     validate(context: ActionContext): ValidationResult;
-    /**
-     * @deprecated Use validate() instead. This will be removed after refactoring.
-     * Optional method to check if action can execute
-     * Override for complex conditions beyond verb matching
-     */
-    canExecute?(context: ActionContext): boolean;
     /**
      * Message ID for action description (for help/documentation)
      */
@@ -2485,17 +2467,6 @@ export declare enum ScopeLevel {
     /** In actor's inventory - always accessible (drop, eat, wear, insert) */
     CARRIED = 4
 }
-/**
- * @deprecated Use ScopeLevel instead. These string values are for backwards compatibility.
- */
-export declare const ScopeLevelStrings: {
-    readonly CARRIED: "carried";
-    readonly REACHABLE: "reachable";
-    readonly VISIBLE: "visible";
-    readonly AUDIBLE: "audible";
-    readonly DETECTABLE: "detectable";
-    readonly OUT_OF_SCOPE: "out_of_scope";
-};
 /**
  * Types of sensory perception
  */

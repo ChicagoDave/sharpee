@@ -32,18 +32,6 @@ export enum ScopeLevel {
 }
 
 /**
- * @deprecated Use ScopeLevel instead. These string values are for backwards compatibility.
- */
-export const ScopeLevelStrings = {
-  CARRIED: 'carried',
-  REACHABLE: 'reachable',
-  VISIBLE: 'visible',
-  AUDIBLE: 'audible',
-  DETECTABLE: 'detectable',
-  OUT_OF_SCOPE: 'out_of_scope'
-} as const;
-
-/**
  * Types of sensory perception
  */
 export enum SenseType {
