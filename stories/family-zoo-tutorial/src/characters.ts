@@ -140,7 +140,9 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
   const zookeeper = actor('zookeeper')
     .description('A friendly zookeeper in khaki overalls. A name tag reads "Sam."')
     .aliases('keeper', 'zookeeper', 'sam')
-    .addTrait(new NpcTrait({ behaviorId: KEEPER_PATROL_ID, canMove: true, announcesMovement: true, isAlive: true, isConscious: true }))
+    // Life-state (alive/conscious) moved to HealthTrait in ADR-226 and is opt-in:
+    // an NPC with no HealthTrait is always active, which is what the zoo wants.
+    .addTrait(new NpcTrait({ behaviorId: KEEPER_PATROL_ID, canMove: true, announcesMovement: true }))
     .in(mainPathEntity)
     .build();
 
@@ -149,7 +151,7 @@ export function createCharacters(world: WorldModel, rooms: RoomIds): CharacterId
   const parrot = actor('parrot')
     .description('A magnificent scarlet macaw perched on a rope. It tilts its head and watches you with one bright eye.')
     .aliases('parrot', 'macaw', 'scarlet macaw')
-    .addTrait(new NpcTrait({ behaviorId: 'zoo-parrot', canMove: false, isAlive: true, isConscious: true }))
+    .addTrait(new NpcTrait({ behaviorId: 'zoo-parrot', canMove: false }))
     .addTrait(new PettableTrait('parrot'))
     .in(aviaryEntity)
     .build();
