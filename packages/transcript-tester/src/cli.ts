@@ -353,7 +353,14 @@ async function main(): Promise<void> {
     const result = await runTranscript(transcript, game!, {
       verbose: options.verbose,
       emitTraits: options.emitTraits,
-      stopOnFailure: options.stopOnFailure
+      stopOnFailure: options.stopOnFailure,
+      // `assembleGame` builds the ext-testing extension and hangs it off LoadedGame,
+      // but this bin used to drop it — so every `$teleport`/`$restore`/`$take` run
+      // through the published `transcript-test` was silently skipped while the
+      // transcript still reported green. The in-repo bundle has always threaded it
+      // (scripts/bundle-entry.js), which is why the divergence only surfaced once
+      // `test:npm --local` could reach the install step.
+      testingExtension: game!.testingExtension ?? undefined
     });
 
     results.push(result);

@@ -837,11 +837,15 @@ async function handleDirective(
       }
 
       if (!options.testingExtension) {
-        // No testing extension available - warn and skip
-        if (verbose) {
-          console.log(`  [${directive.testCommand}] - skipped (no testing extension)`);
-        }
-        return { nextIndex: currentIndex + 1 };
+        // Skipping silently reports a green transcript whose setup never ran — the
+        // failure mode that hid the unwired `transcript-test` bin for four weeks.
+        // Surface it the same way the adjacent missing-world case does.
+        return {
+          nextIndex: currentIndex + 1,
+          error:
+            `Test command "${directive.testCommand}" needs ext-testing, ` +
+            `but no testing extension was supplied to the runner`
+        };
       }
 
       if (!world) {
