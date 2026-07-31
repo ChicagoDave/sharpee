@@ -135,6 +135,12 @@ stories/reflections/
 # Transcript test results
 test-results/
 
+# Checkpoint snapshots written by the testing extension's `$bookmark` (#204).
+# The store path is cwd-relative (default './checkpoints'), so running the CLI from the
+# repo root lands them here. Anchored to the root on purpose: an unanchored rule would
+# also swallow packages/extensions/testing/src/checkpoints/, which is source.
+/checkpoints/
+
 # Generated source maps
 website/public/games/dungeo/dungeo.js.map
 
