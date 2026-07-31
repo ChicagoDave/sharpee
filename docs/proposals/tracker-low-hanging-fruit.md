@@ -1,6 +1,6 @@
 # Proposal: Tracker Low-Hanging Fruit
 
-**Status**: PARTIALLY PLANNED — P-1, P-2, P-5, P-7, P-8 PLANNED (`docs/work/tracker-low-hanging-fruit/plan.md`); P-3, P-4, P-6 remain PROPOSED, blocked on ADR work
+**Status**: PARTIALLY PLANNED — P-1 DONE (2026-07-30); P-2, P-5, P-7, P-8 PLANNED (`docs/work/tracker-low-hanging-fruit/plan.md`); P-3, P-4, P-6 remain PROPOSED, blocked on ADR work
 **Origin**: issue set — the small, unblocked, well-understood items from the 36 open GitHub issues, surveyed 2026-07-29 after the full triage pass of session 3ef8b98a
 **Date**: 2026-07-29
 **Session**: 5c4586
@@ -36,7 +36,14 @@ the registry branch never calls `pack()`.
   and installs; `pack()` accepts both the array and keyed-object shapes; and when
   neither yields a filename it throws an error naming `npm pack --json` and the
   package. Re-running #120's comparison is then possible.
-- **Status**: PLANNED — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 1
+- **Status**: DONE — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 1, completed
+  2026-07-30 (session 405116). `pack()` shape fix in `78f5c4ec` (was `a83b2604`);
+  the install half needed two further defects cleared — #201 (dev-dep closure never
+  vendored) and the stale local staging tree. `./repokit test:npm stories/dungeo
+  --local` now reports **115 passing, 0 failures**.
+  **Caveat**: the bare-name form this Done-when literally names
+  (`test:npm dungeo --local`) still fails at `lookupStory` — that is #202, filed
+  separately and out of P-1's scope. The explicit-path form is what was verified.
 
 ### P-2: Widen `CheckpointData.version` off the string literal (#142)
 
