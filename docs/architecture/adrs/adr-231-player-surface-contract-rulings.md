@@ -2,6 +2,55 @@
 
 ## Status: ACCEPTED (2026-07-17 — all six open questions ruled by David via interview, session 1befbd)
 
+## Amendment 1 (2026-07-31, session ec1c25) — D2a: what "`.where()` function constraints" names
+
+D2a's surviving-mechanism sentence reads "`.where()` function
+constraints remain the one parse-time gating mechanism for rules that
+genuinely need it." **"Function constraints" there means the
+scope-builder callback form — `.where(slot, scope => scope.touchable())`,
+typed `ScopeConstraintBuilder`.** It does *not* mean the type named
+`FunctionConstraint` (`(entity, context) => boolean`), which
+`.where()` also accepted at the time of the ruling.
+
+The phrase has now been misread twice in the same way, so it is pinned
+here rather than left to inference:
+
+- **What actually gates.** The scope-callback form is evaluated end to
+  end: `entity-slot-consumer.ts` dispatches it on arity, builds the
+  `ScopeConstraint`, and `grammar-scope-resolver.ts` applies its base
+  scope, its `filters` (from `ScopeBuilder.matching()`), and its
+  `traitFilters` (from `ScopeBuilder.hasTrait()`). ADR-273 reads D2a
+  this way throughout — "the `.where()` mechanism ADR-231 D2a
+  designates" — and made it work end to end; its Consequences record
+  "parse-time scope gating works for the first time."
+- **What never gated.** `.where()`'s other two accepted forms —
+  `PropertyConstraint` (an object literal) and `FunctionConstraint` —
+  reach `evaluateSlotConstraints`'s `else` branches, which
+  `console.warn` "not yet supported" and evaluate nothing. They were
+  never a gating mechanism at any point, so D2a cannot have meant
+  them.
+- **The `.hasTrait()` deletion is unaffected.** D2a deleted *rule-level*
+  `.hasTrait()` and `SlotConstraint.traitFilters` (dead plumbing,
+  zero consumers). `ScopeBuilder.hasTrait()` *inside* `.where()`
+  survives and is live. That distinction was pinned before delivery —
+  `docs/work/player-surface-contracts/pins.md` PIN 4, "a
+  same-name/different-type conflation" — and Phase 4 shipped
+  accordingly (`f56b88fa`, zero parse-behavior change).
+
+**Consequence for the record.** Narrowing `.where()`'s parameter from
+the three-member `Constraint` union to `ScopeConstraintBuilder` alone
+*discharges* this ruling rather than contradicting it: it removes the
+two forms that never gated and leaves the designated mechanism as the
+only thing `.where()` accepts. It also fixes the TS7006 that the union
+forced on every author — with a union of function types TypeScript
+cannot contextually type the callback parameter, so a bare
+`scope => scope.touchable()` errors and the book (Part 5, ch. 17)
+teaches `(scope: any)` as the workaround. `PropertyConstraint` and
+`FunctionConstraint` remain in place for `ScopeBuilder.matching()`,
+which does evaluate them.
+
+Original Context, Decision, and Consequences below are unchanged.
+
 ## Date: 2026-07-17
 
 > Successor to ADR-230, same pattern: the stdlib-phrasebook verification

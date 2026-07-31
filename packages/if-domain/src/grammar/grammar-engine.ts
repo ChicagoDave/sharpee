@@ -15,7 +15,7 @@ import {
   ActionGrammarBuilder,
   SemanticProperties,
   SlotType,
-  Constraint
+  ScopeConstraintBuilder
 } from './grammar-builder.js';
 import { PatternCompiler } from './pattern-compiler.js';
 
@@ -168,7 +168,7 @@ export abstract class GrammarEngine {
         };
         
         const builder: PatternBuilder = {
-          where(slot: string, constraint: any) {
+          where(slot: string, constraint: ScopeConstraintBuilder) {
             const slotConstraint = rule.slots!.get(slot) || { name: slot, constraints: [] };
             slotConstraint.constraints.push(constraint);
             rule.slots!.set(slot, slotConstraint);
@@ -316,7 +316,7 @@ export abstract class GrammarEngine {
         const patternList: string[] = [];
         const fullPatternList: string[] = []; // ADR-271 D3: complete lines, verb included
         const directionMap: Record<string, string[]> = {};
-        const slotConstraints: Map<string, { constraint: Constraint }[]> = new Map();
+        const slotConstraints: Map<string, { constraint: ScopeConstraintBuilder }[]> = new Map();
         const slotTypes: Map<string, SlotType> = new Map();
         let defaultSemantics: Partial<SemanticProperties> | undefined;
 
@@ -349,7 +349,7 @@ export abstract class GrammarEngine {
             return actionBuilder;
           },
 
-          where(slot: string, constraint: Constraint) {
+          where(slot: string, constraint: ScopeConstraintBuilder) {
             const existing = slotConstraints.get(slot) || [];
             existing.push({ constraint });
             slotConstraints.set(slot, existing);

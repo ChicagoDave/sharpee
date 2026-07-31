@@ -49,16 +49,18 @@ export enum SlotType {
 }
 
 /**
- * Constraint types for slot matching
+ * Constraint types for slot matching.
+ *
+ * `PropertyConstraint` and `FunctionConstraint` are evaluated by
+ * `ScopeBuilder.matching()` only. `.where()` takes a
+ * `ScopeConstraintBuilder` and nothing else — ADR-231 D2a Amendment 1:
+ * the other two forms never gated at parse time, and admitting them as a
+ * union of function types defeated contextual typing of the callback
+ * parameter (TS7006).
  */
 export type PropertyConstraint = Record<string, any>;
 export type FunctionConstraint = (entity: IEntity, context: GrammarContext) => boolean;
 export type ScopeConstraintBuilder = (scope: ScopeBuilder) => ScopeBuilder;
-
-export type Constraint = 
-  | PropertyConstraint 
-  | FunctionConstraint 
-  | ScopeConstraintBuilder;
 
 /**
  * Context provided to constraint functions
@@ -125,14 +127,14 @@ export type TypedSlotValue =
  */
 export interface PatternBuilder {
   /**
-   * Define a constraint for a slot.
+   * Define a scope constraint for a slot.
    * `.where(slot, scope => scope...)` scope constraints (including the
    * ScopeBuilder's `.hasTrait()`) are the one parse-time gating mechanism;
    * trait-based refusal lives in each action's validate().
    * @param slot The slot name from the pattern
-   * @param constraint The constraint to apply
+   * @param constraint A scope-builder callback, e.g. `scope => scope.touchable()`
    */
-  where(slot: string, constraint: Constraint): PatternBuilder;
+  where(slot: string, constraint: ScopeConstraintBuilder): PatternBuilder;
 
   /**
    * Mark a slot as capturing raw text (single token) instead of resolving to entity
@@ -395,13 +397,13 @@ export interface ActionGrammarBuilder {
   directions(directionMap: Record<string, string[]>): ActionGrammarBuilder;
 
   /**
-   * Define a constraint for a slot (applies to all generated patterns).
+   * Define a scope constraint for a slot (applies to all generated patterns).
    * `.where()` scope constraints are the one parse-time gating mechanism;
    * trait-based refusal lives in each action's validate().
    * @param slot The slot name from the pattern
-   * @param constraint The constraint to apply
+   * @param constraint A scope-builder callback, e.g. `scope => scope.touchable()`
    */
-  where(slot: string, constraint: Constraint): ActionGrammarBuilder;
+  where(slot: string, constraint: ScopeConstraintBuilder): ActionGrammarBuilder;
 
   /**
    * Set default semantic properties for all generated patterns
@@ -495,7 +497,7 @@ export interface SemanticMapping {
  */
 export interface SlotConstraint {
   name: string;
-  constraints: Constraint[];
+  constraints: ScopeConstraintBuilder[];
   /** How the parser should handle this slot (default: ENTITY) */
   slotType?: SlotType;
   /** For VOCABULARY slots: the category name to match against */

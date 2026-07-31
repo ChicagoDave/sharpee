@@ -117,55 +117,71 @@ describe('GrammarBuilder', () => {
     });
   });
   
+  // ADR-231 D2a Amendment 1: `.where()` takes a scope-builder callback and
+  // nothing else. Property and function predicates reach the resolver through
+  // `ScopeBuilder.matching()`, which is what these tests exercise — the bare
+  // property/function forms `.where()` used to accept were never evaluated.
   describe('Slot Constraints', () => {
-    it('should add property constraints to slots', () => {
+    it('should carry a property predicate through into the built scope constraint', () => {
       const rule = builder
         .define('take :item')
-        .where('item', { portable: true })
+        .where('item', s => s.visible().matching({ portable: true }))
         .mapsTo('if.action.taking')
         .build();
-      
+
       expect(rule.slots.has('item')).toBe(true);
       const itemConstraint = rule.slots.get('item');
       expect(itemConstraint?.constraints).toHaveLength(1);
-      expect(itemConstraint?.constraints[0]).toEqual({ portable: true });
+
+      const built = itemConstraint!.constraints[0](scope()).build();
+      expect(built.base).toBe('visible');
+      expect(built.filters).toEqual([{ portable: true }]);
     });
-    
-    it('should add function constraints to slots', () => {
+
+    it('should carry a function predicate through into the built scope constraint', () => {
       const testFn = (entity: any) => entity.weight < 10;
-      
+
       const rule = builder
         .define('take :item')
-        .where('item', testFn)
+        .where('item', s => s.carried().matching(testFn))
         .mapsTo('if.action.taking')
         .build();
-      
+
       const itemConstraint = rule.slots.get('item');
       expect(itemConstraint?.constraints).toHaveLength(1);
-      expect(typeof itemConstraint?.constraints[0]).toBe('function');
+
+      const built = itemConstraint!.constraints[0](scope()).build();
+      expect(built.base).toBe('carried');
+      expect(built.filters).toEqual([testFn]);
     });
-    
+
     it('should add scope constraints to slots', () => {
       const rule = builder
         .define('examine :target')
         .where('target', scope => scope.visible())
         .mapsTo('if.action.examining')
         .build();
-      
+
       const targetConstraint = rule.slots.get('target');
       expect(targetConstraint?.constraints).toHaveLength(1);
+      expect(targetConstraint!.constraints[0](scope()).build().base).toBe('visible');
     });
-    
+
     it('should allow multiple constraints on same slot', () => {
       const rule = builder
         .define('take :item')
-        .where('item', { portable: true })
-        .where('item', (entity: any) => entity.weight < 10)
+        .where('item', s => s.touchable())
+        .where('item', s => s.carried().hasTrait('portable'))
         .mapsTo('if.action.taking')
         .build();
-      
+
       const itemConstraint = rule.slots.get('item');
       expect(itemConstraint?.constraints).toHaveLength(2);
+      expect(itemConstraint!.constraints[0](scope()).build().base).toBe('touchable');
+
+      const second = itemConstraint!.constraints[1](scope()).build();
+      expect(second.base).toBe('carried');
+      expect(second.traitFilters).toEqual(['portable']);
     });
   });
   

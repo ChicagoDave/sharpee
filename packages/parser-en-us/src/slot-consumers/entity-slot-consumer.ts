@@ -428,61 +428,52 @@ export class EntitySlotConsumer implements SlotConsumer {
       console.log(`Evaluating constraints for slot text: "${slotText}"`);
     }
 
+    // ADR-231 D2a Amendment 1: `.where()` takes a ScopeConstraintBuilder and
+    // nothing else, so every constraint here is a scope-builder callback. The
+    // property- and function-constraint branches this loop used to carry only
+    // ever emitted "not yet supported" warnings; both forms were removed from
+    // `.where()` rather than left as silent no-ops. Property and function
+    // predicates still reach the resolver, via `ScopeBuilder.matching()`.
     for (const constraint of slotConstraints.constraints) {
-      if (typeof constraint === 'function') {
-        // Check if it's a ScopeConstraintBuilder (1 arg) vs FunctionConstraint (2 args)
-        if (constraint.length === 1) {
-          // ScopeConstraintBuilder
-          const scopeBuilder = new ScopeBuilderImpl();
-          const scope = (constraint as ScopeConstraintBuilder)(scopeBuilder);
-          const scopeConstraint = scope.build();
+      const scopeBuilder = new ScopeBuilderImpl();
+      const scope = (constraint as ScopeConstraintBuilder)(scopeBuilder);
+      const scopeConstraint = scope.build();
 
-          // Find entities matching the text within the scope
-          const matchingEntities = GrammarScopeResolver.findEntitiesByName(
-            slotText,
-            scopeConstraint,
-            context
-          );
+      // Find entities matching the text within the scope
+      const matchingEntities = GrammarScopeResolver.findEntitiesByName(
+        slotText,
+        scopeConstraint,
+        context
+      );
 
-          if (process.env.PARSER_DEBUG === 'true') {
-            console.log(`Found ${matchingEntities.length} matching entities for "${slotText}"`);
-            // Show scope details
-            console.log(`  Scope base: ${scopeConstraint.base}, filters: ${scopeConstraint.filters.length}`);
-            // Show what entities are in scope before filtering
-            const allInScope = GrammarScopeResolver.getEntitiesInScope(
-              { ...scopeConstraint, filters: [] }, // Without filters
-              context
-            );
-            console.log(`  Entities in ${scopeConstraint.base} scope: ${allInScope.length}`);
-            for (const e of allInScope.slice(0, 5)) {
-              const eAny = e as unknown as Record<string, unknown>;
-              const getFn = eAny.get as ((type: string) => Record<string, unknown> | undefined) | undefined;
-              const identity = getFn?.('identity');
-              const name = identity?.name || e.id;
-              const enterable = eAny.enterable;
-              console.log(`    - ${name} (enterable=${enterable})`);
-            }
-            if (allInScope.length > 5) {
-              console.log(`    ... and ${allInScope.length - 5} more`);
-            }
-          }
-
-          if (matchingEntities.length > 0) {
-            hasMatchingEntity = true;
-            // Store matched entities in context for later resolution
-            const existingEntities = context.slots.get(slotText) || [];
-            context.slots.set(slotText, [...existingEntities, ...matchingEntities]);
-          }
-        } else {
-          // FunctionConstraint - needs entity and context
-          // For now, we'll need to get candidate entities first
-          // This is a limitation - we'd need to refactor to support this properly
-          console.warn('FunctionConstraint in slot constraints not yet supported');
+      if (process.env.PARSER_DEBUG === 'true') {
+        console.log(`Found ${matchingEntities.length} matching entities for "${slotText}"`);
+        // Show scope details
+        console.log(`  Scope base: ${scopeConstraint.base}, filters: ${scopeConstraint.filters.length}`);
+        // Show what entities are in scope before filtering
+        const allInScope = GrammarScopeResolver.getEntitiesInScope(
+          { ...scopeConstraint, filters: [] }, // Without filters
+          context
+        );
+        console.log(`  Entities in ${scopeConstraint.base} scope: ${allInScope.length}`);
+        for (const e of allInScope.slice(0, 5)) {
+          const eAny = e as unknown as Record<string, unknown>;
+          const getFn = eAny.get as ((type: string) => Record<string, unknown> | undefined) | undefined;
+          const identity = getFn?.('identity');
+          const name = identity?.name || e.id;
+          const enterable = eAny.enterable;
+          console.log(`    - ${name} (enterable=${enterable})`);
         }
-      } else {
-        // PropertyConstraint
-        // TODO: Handle property constraints
-        console.warn('PropertyConstraint in slot constraints not yet supported');
+        if (allInScope.length > 5) {
+          console.log(`    ... and ${allInScope.length - 5} more`);
+        }
+      }
+
+      if (matchingEntities.length > 0) {
+        hasMatchingEntity = true;
+        // Store matched entities in context for later resolution
+        const existingEntities = context.slots.get(slotText) || [];
+        context.slots.set(slotText, [...existingEntities, ...matchingEntities]);
       }
     }
 

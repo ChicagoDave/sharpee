@@ -1,6 +1,6 @@
 # Proposal: Tracker Low-Hanging Fruit
 
-**Status**: ACCEPTED ITEMS COMPLETE — six of eight DONE (P-1, P-2, P-3, P-5, P-7, P-8), all 2026-07-30. P-3 was unblocked by ADR-041 Amendment 1 and delivered the same session. P-4 and P-6 remain PROPOSED, still awaiting the ADR-231 D2a and ADR-178 amendments
+**Status**: ACCEPTED ITEMS COMPLETE — seven of eight DONE (P-1, P-2, P-3, P-4, P-5, P-7, P-8). P-3 was unblocked by ADR-041 Amendment 1 and delivered 2026-07-30; P-4 by ADR-231 Amendment 1 and delivered 2026-07-31. P-6 remains PROPOSED, still awaiting the ADR-178 v2-baseline amendment
 **Origin**: issue set — the small, unblocked, well-understood items from the 36 open GitHub issues, surveyed 2026-07-29 after the full triage pass of session 3ef8b98a
 **Date**: 2026-07-29
 **Session**: 5c4586
@@ -149,7 +149,16 @@ once; both types stay in place for `matching()` (`:82`), which does evaluate the
   annotation under `noImplicitAny`; `where()` no longer accepts the property or
   function forms; parser-en-us and stdlib suites pass; the dungeo walkthrough
   chain runs clean.
-- **Status**: PROPOSED
+- **Status**: DONE — ACCEPTED by owner 2026-07-31 (session ec1c25) once the ADR
+  blocker was shown to rest on a misreading, and delivered the same session.
+  `.where()` on both `PatternBuilder` and `ActionGrammarBuilder` now takes
+  `ScopeConstraintBuilder`; `SlotConstraint.constraints` narrowed with it; the
+  three-member `Constraint` union is removed (it had no consumer outside
+  if-domain's own grammar module once `.where()` narrowed). The two dead
+  branches in `evaluateSlotConstraints` — the ones that only ever
+  `console.warn`ed "not yet supported" — are gone with the forms that reached
+  them. `PropertyConstraint` and `FunctionConstraint` stay in place for
+  `ScopeBuilder.matching()`, which does evaluate them.
 - **Blocked by** (proposal-review, STALE ADR): ADR-231 D2a (ACCEPTED,
   `adr-231:153-154`) deleted `.hasTrait()` on the premise that ".where()
   function constraints remain the one parse-time gating mechanism for rules
@@ -161,6 +170,46 @@ once; both types stay in place for `matching()` (`:82`), which does evaluate the
   constraints in the slot consumer, or record that parse-time gating is gone
   and refusal belongs wholly to action `validate()`. P-4 then discharges the
   amendment rather than contradicting the record.
+- **Discharge**: ADR-231 **Amendment 1** (2026-07-31, session ec1c25) — the
+  finding above is wrong on two points, both verified against code and the
+  prior delivery record before anything was changed:
+  - **"Function constraints" names the scope-callback form**, `.where(slot,
+    scope => …)` (`ScopeConstraintBuilder`), not the type called
+    `FunctionConstraint`. ADR-273 reads D2a that way throughout ("the
+    `.where()` mechanism ADR-231 D2a designates") and its Consequences record
+    that it made exactly this path work: "parse-time scope gating works for
+    the first time."
+  - **Parse-time gating does exist and does work.** The scope-callback form is
+    evaluated end to end — `entity-slot-consumer.ts` builds the
+    `ScopeConstraint`, `grammar-scope-resolver.ts:82-93` applies its base
+    scope, its `filters` (from `matching()`), and its `traitFilters` (from
+    `ScopeBuilder.hasTrait()`). D2a deleted only *rule-level* `.hasTrait()`;
+    the scope-builder's survives. That distinction was pinned before delivery
+    (`docs/work/player-surface-contracts/pins.md` PIN 4, "a
+    same-name/different-type conflation") and Phase 4 shipped on it
+    (`f56b88fa`, zero parse-behavior change). The blocker is the same
+    conflation one level up.
+
+  So P-4 narrows `.where()` *onto* the mechanism D2a designates rather than
+  deleting it, and needs a clarifying amendment rather than the
+  "implement function constraints" fork the finding proposed. Amendment 1 pins
+  what the phrase means, records that the property and function forms never
+  gated at any point, and states that narrowing discharges the ruling.
+- **Verification**: the Done-when's compile claims were checked with `tsc`
+  rather than asserted — bare `scope => scope.touchable()` against the old
+  union gives `TS7006: Parameter 'scope' implicitly has an 'any' type`, and
+  compiles clean against the narrowed signature. The annotation this existed to
+  force is dropped at the one production call site that carried it
+  (`story-loader/src/loader.ts:1343`), so `tsf build` typechecks the inference
+  on every build. `npx tsf build` → 30 packages clean; `npx tsf build --npm`
+  clean. `@sharpee/if-domain` 102 passing; `@sharpee/parser-en-us` 311 passing
+  / 3 skipped; `@sharpee/story-loader` 472 passing; `@sharpee/stdlib` 1576
+  passing / 27 skipped — 0 failures anywhere. Dungeo walkthrough chain **885
+  passing, 0 failures**. Unit transcripts reached a clean run at **1755 passed,
+  0 unexpected failures, 10 expected failures, 4 skipped**; the same bundle
+  produced 10, 9, 5, 2 and 0 unexpected failures across repeated runs, and both
+  transcripts involved (`royal-puzzle-basic`, `royal-puzzle-exit`) pass 5/5 in
+  isolation — the known thief-RNG flake class, not a regression.
 
 ### P-5: Collapse the eleven literal `trace` grammar patterns into one (#81)
 
@@ -264,6 +313,14 @@ Verdict: **BLOCKING FINDINGS** on P-3, P-4, P-6 — each recorded on its item
 above. P-1, P-2, P-5, P-7, P-8 clean and ACCEPTED by owner decision the same
 session, then PLANNED the same session into `docs/work/tracker-low-hanging-fruit/plan.md`
 (Phases 1-5 respectively); the three blocked items stay PROPOSED pending ADR work.
+
+**Two of the three blocking findings did not survive contact with the code.**
+P-3's cited successor was the wrong ADR and supersession the wrong verb
+(ADR-041 Amendment 1); P-4's "no working parse-time gating" was a
+same-name/different-type conflation the delivery record had already resolved
+once (ADR-231 Amendment 1). Both were written from search-level reading of the
+ADR text. Worth carrying into how entry-state claims get asserted: read the
+source and the prior plan/pins before recording a blocker.
 
 One set-level advisory, not item-scoped: `docs/work/adr-279-chord-writer-packaging/plan.md`
 Phase 3 (archive/sign/notarize/DMG) is **CURRENT and not DONE**. Planning from

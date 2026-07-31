@@ -1340,7 +1340,10 @@ export class ChordStory implements Story {
         for (const text of group.texts) slotted.fullPattern(text);
         for (const constraint of action.constraints) {
           const predicate = SCOPE_REQUIREMENT_PREDICATES[constraint.requirement];
-          slotted.where(constraint.slot, (scope: ScopeBuilder) => applyScopePredicate(scope, predicate));
+          // No `: ScopeBuilder` annotation needed — `.where()` narrowed to a
+          // single callback type, so `scope` is contextually typed
+          // (ADR-231 D2a Amendment 1).
+          slotted.where(constraint.slot, (scope) => applyScopePredicate(scope, predicate));
         }
         for (const st of action.slotTypes ?? []) {
           slotted.slotType(st.slot, st.type === 'instrument' ? SlotType.INSTRUMENT : SlotType.TOPIC);
