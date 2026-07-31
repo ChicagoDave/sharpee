@@ -1,0 +1,16 @@
+{
+  "name": "helpers-boundary-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "External story fixture for the @sharpee/helpers bundle-boundary real-path test (issue #146, ADR-140 Amendment 1).",
+  "main": "./dist/index.js",
+  "sharpee": {
+    "title": "Helpers Boundary Fixture",
+    "author": "Sharpee",
+    "language": "en"
+  },
+  "dependencies": {
+    "@sharpee/helpers": "*",
+    "@sharpee/world-model": "*"
+  }
+}

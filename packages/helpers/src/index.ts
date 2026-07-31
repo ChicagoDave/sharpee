@@ -1,18 +1,23 @@
 /**
  * @sharpee/helpers — Fluent entity builder helpers for the Sharpee IF platform.
  *
- * Public interface: Importing this module activates world.helpers() via
- * declaration merging on IWorldModel. Also exports createHelpers() and
- * EntityHelpers for direct use.
+ * Public interface: createHelpers() and EntityHelpers, plus the five builder
+ * classes. Call createHelpers(world) to obtain builders bound to that world.
  *
- * Owner context: @sharpee/helpers (ADR-140)
+ * Owner context: @sharpee/helpers (ADR-140; ADR-237 D1 — author-facing only,
+ * no platform package may depend on this one)
+ *
+ * ADR-140 Amendment 1 retired the `WorldModel.prototype.helpers` augmentation.
+ * `createHelpers(world)` is the only entry form: the prototype patch landed on
+ * whichever copy of `@sharpee/world-model` the importer resolved, so it never
+ * reached the engine's world across a bundle boundary (issue #146).
  *
  * @example
  * ```typescript
- * import '@sharpee/helpers';
+ * import { createHelpers } from '@sharpee/helpers';
  *
  * initializeWorld(world: WorldModel): void {
- *   const { room, object, actor } = world.helpers();
+ *   const { room, object, actor } = createHelpers(world);
  *
  *   const kitchen = room('Kitchen')
  *     .description('A warm kitchen.')
@@ -21,10 +26,6 @@
  * ```
  */
 
-// Side-effect import: patches WorldModel.prototype.helpers
-import './augment.js';
-
-// Named exports for direct use
 export { createHelpers, EntityHelpers } from './create-helpers.js';
 export { RoomBuilder } from './builders/room.js';
 export { ObjectBuilder } from './builders/object.js';

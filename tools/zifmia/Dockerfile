@@ -75,11 +75,11 @@ RUN pnpm --filter @sharpee/zifmia --prod --legacy deploy /deploy
 FROM node:20-bookworm-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS runtime
 
 # ADR-178 §AC-3: every Zifmia image records the Story Runtime Baseline
-# version it ships in this label. The default fallback (1) matches the
-# v1 baseline; `devkit build --zifmia` reads the value from
-# `@sharpee/story-runtime-baseline` and overrides via --build-arg so
-# the manifest stays the single source of truth.
-ARG BASELINE_VERSION=1
+# version it ships in this label. The default fallback (2) matches the
+# v2 baseline (ADR-178 Amendment 1); `devkit build --zifmia` reads the
+# value from `@sharpee/story-runtime-baseline` and overrides via
+# --build-arg so the manifest stays the single source of truth.
+ARG BASELINE_VERSION=2
 LABEL org.sharpee.story-runtime-baseline="${BASELINE_VERSION}"
 
 ENV NODE_ENV=production \

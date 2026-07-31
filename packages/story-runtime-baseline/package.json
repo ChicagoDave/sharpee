@@ -21,6 +21,7 @@
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/event-processor": "workspace:*",
+    "@sharpee/helpers": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/if-services": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",

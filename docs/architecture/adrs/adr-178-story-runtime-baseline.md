@@ -4,6 +4,46 @@
 
 ## Date: 2026-05-13 (accepted 2026-05-13)
 
+## Amendment 1 (2026-07-31, session 8b1a26) — baseline v2 adds `@sharpee/helpers`
+
+Per AC-7, this amendment names the package, the reason, and the new
+baseline version.
+
+- **Package added**: `@sharpee/helpers`
+- **New `BASELINE_VERSION`**: **2** (was 1)
+- **Nothing removed** — Invariant 3 holds; this is an add-only bump.
+
+**Reason.** The v1 baseline and ADR-237 contradict each other as
+written. ADR-237 D1 rules that `@sharpee/helpers` is *exclusively
+author-facing*: "Its consumers are story authors (TS canon stories,
+fixtures written as TS stories)," and platform packages must not
+depend on it — ADR-237 D2 unravelled `packages/story-loader`'s
+dependency for exactly that reason. Invariant 2 of this ADR says
+stories may import baseline packages only, no exceptions. Helpers is
+absent from the v1 list. The two rulings therefore combine to say the
+platform ships a package whose sole intended audience is forbidden to
+use it, and every consumer that does use it —
+`tutorials/familyzoo/v2.0.0` declares `"@sharpee/helpers": "^2.0.0"`,
+`stories/family-zoo-tutorial` declares `workspace:*` — is in violation
+today. This is a contradiction in the accepted record, not an author
+preference, so it clears the Invariant 4 bar ("I want X is not
+sufficient").
+
+**What this does not change.** The baseline governs *what stories may
+import*, never what platform packages may depend on. ADR-237 D1 stands
+unamended: promoting helpers to the baseline gives story authors a
+sanctioned import, and gives platform code no new licence to reach for
+it. `packages/story-loader`, `packages/chord`, and platform machinery
+generally remain forbidden from depending on `@sharpee/helpers`.
+
+**Paired amendment.** ADR-140 Amendment 1 (same session) retires the
+`WorldModel.prototype.helpers` augmentation, leaving
+`createHelpers(world)` as the package's only entry form. The two
+amendments are complementary, not alternatives: this one makes helpers
+legal for stories to import, that one removes the import form that
+breaks whenever the story and the engine resolve separate copies of
+`@sharpee/world-model`. Issue #146 needed both.
+
 ## Context
 
 Zifmia (ADR-177) ships as a self-contained Docker image. Operators
@@ -81,6 +121,9 @@ Runtime Baseline** that names every package a `.sharpee` bundle may
 import. Bumping the baseline is an ADR-amendment to this one.
 
 ### v1 baseline
+
+> Superseded by Amendment 1 above, which adds `@sharpee/helpers` and
+> makes this the v2 baseline. The list below is v1 as accepted.
 
 Three groups, all shipped together by every Zifmia image.
 

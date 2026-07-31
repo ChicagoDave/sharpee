@@ -12,19 +12,26 @@ npm install @sharpee/helpers
 
 Concise, chainable builders that take the boilerplate out of constructing entities and their traits:
 
-- **`world.helpers()`** - Importing the package augments `WorldModel`, exposing `room`, `object`, `container`, `actor`, and `door` builders.
+- **`createHelpers(world)`** - Returns `room`, `object`, `container`, `actor`, and `door` builders bound to that world.
 - **Fluent traits** - Set descriptions, aliases, locations, and common traits without hand-assembling `IdentityTrait`, `SceneryTrait`, etc.
 - **`.plural()`** - Marks an object as grammatically plural so messages agree in number ("the goats **are** fixed in place").
-- **Direct use** - `createHelpers()` and the `EntityHelpers` / builder classes are exported for use outside the augmentation.
+- **Builder classes** - `EntityHelpers` and the five builder classes are exported for direct use.
+
+> **Changed in 2.x** — earlier versions also let you write `world.helpers()`
+> after a side-effect `import '@sharpee/helpers'`. That form patched
+> `WorldModel.prototype` on whichever copy of `@sharpee/world-model` the
+> importer resolved, so it silently failed wherever the story and the engine
+> resolved different copies. It is gone; `createHelpers(world)` is the only
+> entry form (ADR-140 Amendment 1).
 
 ## Usage
 
 ```typescript
-import '@sharpee/helpers'; // side-effect import: activates world.helpers()
+import { createHelpers } from '@sharpee/helpers';
 import { WorldModel } from '@sharpee/world-model';
 
 function initializeWorld(world: WorldModel): void {
-  const { room, object, container, actor } = world.helpers();
+  const { room, object, container, actor } = createHelpers(world);
 
   const kitchen = room('Kitchen')
     .description('A warm kitchen.')

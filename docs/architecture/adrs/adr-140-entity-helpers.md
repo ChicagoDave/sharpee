@@ -4,6 +4,62 @@
 
 ## Date: 2026-04-03
 
+## Amendment 1 (2026-07-31, session 8b1a26) — the prototype augmentation is retired
+
+**`createHelpers(world)` is now the only entry form.** Decision §2's
+declaration-merging mechanism — `import '@sharpee/helpers'` patching
+`WorldModel.prototype.helpers` so authors can call `world.helpers()` —
+is withdrawn. `packages/helpers/src/augment.ts` is deleted and
+`src/index.ts` no longer carries the side-effect import. The five
+builders, the `EntityHelpers` shape, `.skipValidation()`, the
+AuthorModel alignment of Decision §1, and every Design Principle are
+unchanged; only the activation mechanism goes.
+
+**Reason: the mechanism is unsound across module-graph boundaries.**
+The patch mutates whichever `WorldModel` class object the *importer*
+resolved. When the engine and the story resolve separate copies of
+`@sharpee/world-model` — every `node dist/cli/sharpee.js --story
+<external>` load, since the CLI bundle inlines its own copy while the
+story resolves its own from `node_modules` — the patched class and the
+instantiated class are different objects, and the engine's world never
+gains the method. That is issue #146: `TypeError: world.helpers is not
+a function`. Nothing in the story or the platform is misconfigured;
+the mechanism cannot survive the boundary. The browser build works
+only because it is a single module graph, which is a coincidence of
+that target rather than a property of the design.
+
+**It was already abandoned in practice.** Every live consumer moved to
+`createHelpers(world)` on 2026-06-28 (`stories/family-zoo-tutorial`,
+`tutorials/familyzoo/v2.0.0`) for exactly this reason. At the time of
+this amendment no source in the repository calls `world.helpers()`
+except the frozen `tutorials/familyzoo/v1.5.0` edition — which pins
+published `@sharpee/helpers@^1.5.0` and is therefore unaffected — the
+`docs/archive/tutorial/v17|v18` snapshots, and the root `README.md`
+(corrected in this session). `packages/helpers/tests/` never covered
+`augment.ts`. This amendment removes a mechanism that no longer has a
+caller, rather than reversing a live one.
+
+**It is also what Design Principle 3 asks for.** "No hidden magic —
+builders call the same `createEntity`, `entity.add()`, and
+`moveEntity` that story code calls manually. They're syntactic sugar,
+not a new abstraction layer." A prototype patch applied by import side
+effect is the one part of the package that was not that.
+`createHelpers(world)` costs authors one explicit call and one named
+import, and works identically in every target.
+
+**Cost accepted.** The Consequences below claim `world.helpers()` is
+"discoverable — no factory function or wiring to learn." That
+advantage is given up: authors now import `createHelpers` and pass the
+world. Sections below that show `import '@sharpee/helpers'` or
+`world.helpers()` record the design as accepted in 2026-04 and are
+marked where they no longer describe the package.
+
+**Paired amendment.** ADR-178 Amendment 1 (same session) promotes
+`@sharpee/helpers` to baseline v2, so stories may legally import it.
+The two are complementary: that one makes the package importable by
+stories, this one removes the import form that broke across bundle
+boundaries. Issue #146 needed both.
+
 ## Context
 
 ### The Problem
@@ -72,6 +128,11 @@ WorldModel.prototype.helpers = function () {
 ```
 
 #### Story Author Experience
+
+> **Superseded by Amendment 1.** The current form is
+> `import { createHelpers } from '@sharpee/helpers'` followed by
+> `const { room, object, ... } = createHelpers(world)`. Everything
+> below the destructuring line is unchanged.
 
 Stories import `@sharpee/helpers` to activate the augmentation. From that point, `world.helpers()` is available with full type safety:
 
@@ -208,8 +269,9 @@ packages/helpers/
   package.json           — @sharpee/helpers, depends on @sharpee/world-model
   tsconfig.json
   src/
-    index.ts             — side-effect import: patches WorldModel.prototype.helpers
+    index.ts             — named exports (Amendment 1: no side-effect import)
     augment.ts           — declare module augmentation + prototype patch
+                           (Amendment 1: deleted)
     create-helpers.ts    — factory that binds world and returns EntityHelpers
     builders/
       room.ts            — RoomBuilder class
@@ -226,6 +288,14 @@ packages/helpers/
 3. **Documentation** — guide update, genai-api generation
 
 ## Consequences
+
+> **Amendment 1 note.** Five bullets below turn on the prototype
+> augmentation and no longer hold: the "discoverable `world.helpers()`"
+> and "declaration merging is an established pattern" positives, the
+> "augmentation is opt-in via import" positive, the "prototype patching
+> is a runtime side effect" negative (resolved — the side effect is
+> gone), and the neutral about stories that skip the side-effect
+> import. Everything else stands.
 
 ### Positive
 

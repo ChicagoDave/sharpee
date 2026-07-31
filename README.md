@@ -46,7 +46,7 @@ open dist/web/index.html
 | `@sharpee/stdlib` | 51 standard IF actions (take, drop, open, lock, etc.) |
 | `@sharpee/lang-en-us` | English language output |
 | `@sharpee/parser-en-us` | English natural language parser |
-| `@sharpee/helpers` | Fluent entity builders (`world.helpers()`) |
+| `@sharpee/helpers` | Fluent entity builders (`createHelpers(world)`) |
 | `@sharpee/queries` | LINQ-style fluent entity query API |
 | `@sharpee/character` | NPC behavior chain: character model, conversation, goals, influence, propagation |
 | `@sharpee/plugins` | Plugin contracts for engine turn-cycle extensibility |
@@ -88,7 +88,7 @@ open dist/web/index.html
 ```typescript
 import { Story, StoryConfig } from '@sharpee/engine';
 import { WorldModel, IFEntity, Direction } from '@sharpee/world-model';
-import '@sharpee/helpers';
+import { createHelpers } from '@sharpee/helpers';
 
 export const config: StoryConfig = {
   id: 'my-adventure',
@@ -101,7 +101,7 @@ export class MyStory implements Story {
   config = config;
 
   initializeWorld(world: WorldModel): void {
-    const { room, object } = world.helpers();
+    const { room, object } = createHelpers(world);
 
     const start = room('Starting Room')
       .description('A simple room with a lamp on the floor.')
@@ -117,7 +117,7 @@ export class MyStory implements Story {
   }
 
   createPlayer(world: WorldModel): IFEntity {
-    const { actor } = world.helpers();
+    const { actor } = createHelpers(world);
 
     return actor('yourself')
       .description('As good-looking as ever.')
@@ -136,12 +136,12 @@ See the [Getting Started](https://sharpee.net/docs/getting-started/installation/
 
 ## Entity Helpers
 
-`world.helpers()` returns fluent builders for common entity types:
+`createHelpers(world)` returns fluent builders for common entity types:
 
 ```typescript
-import '@sharpee/helpers';
+import { createHelpers } from '@sharpee/helpers';
 
-const { room, object, container, actor, door } = world.helpers();
+const { room, object, container, actor, door } = createHelpers(world);
 
 // Rooms
 const cave = room('Dark Cave').description('A damp cave.').dark().build();

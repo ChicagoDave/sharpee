@@ -19,6 +19,7 @@ export const STORY_RUNTIME_BASELINE: ReadonlyArray<string> = Object.freeze([
   '@sharpee/core',
   '@sharpee/engine',
   '@sharpee/event-processor',
+  '@sharpee/helpers',
   '@sharpee/if-domain',
   '@sharpee/if-services',
   '@sharpee/lang-en-us',
@@ -35,4 +36,4 @@ export const STORY_RUNTIME_BASELINE: ReadonlyArray<string> = Object.freeze([
   'lz-string',
 ]);
 
-export const BASELINE_VERSION = 1;
+export const BASELINE_VERSION = 2;

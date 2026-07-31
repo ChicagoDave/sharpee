@@ -1,6 +1,6 @@
 # Proposal: Tracker Low-Hanging Fruit
 
-**Status**: ACCEPTED ITEMS COMPLETE — seven of eight DONE (P-1, P-2, P-3, P-4, P-5, P-7, P-8). P-3 was unblocked by ADR-041 Amendment 1 and delivered 2026-07-30; P-4 by ADR-231 Amendment 1 and delivered 2026-07-31. P-6 remains PROPOSED, still awaiting the ADR-178 v2-baseline amendment
+**Status**: COMPLETE — all eight items DONE. P-3 was unblocked by ADR-041 Amendment 1 and delivered 2026-07-30; P-4 by ADR-231 Amendment 1 and delivered 2026-07-31; P-6 by ADR-178 Amendment 1 + ADR-140 Amendment 1 (David ruled both, the blocker's two paths being complementary rather than exclusive) and delivered 2026-07-31
 **Origin**: issue set — the small, unblocked, well-understood items from the 36 open GitHub issues, surveyed 2026-07-29 after the full triage pass of session 3ef8b98a
 **Date**: 2026-07-29
 **Session**: 5c4586
@@ -239,22 +239,45 @@ of `@sharpee/world-model`; the story's `import '@sharpee/helpers'` patches
 that omission is the bug. Affects every `--story` load that calls
 `world.helpers()`; the browser build (one module graph) is unaffected.
 
-- **Done when**: the documented `--story <external> --play` command reaches the
-  first prompt for a helper-using story — via a baseline entry or by retiring the
-  prototype augmentation, whichever the implementation shows is right; the
-  baseline package's `exports.test.ts` passes.
-- **Status**: PROPOSED
-- **Blocked by** (proposal-review, DECISION-IN-DISGUISE + UNPLANNABLE):
-  ADR-178's Decision states "Bumping the baseline is an ADR-amendment to this
-  one," and Invariant 4 requires ADR-level justification for additions ("I want
-  X is not sufficient"). Promoting `@sharpee/helpers` is exactly that bump. The
-  alternative path in the Done-when — retiring the prototype augmentation —
-  separately reverses ADR-140's declaration-merging mechanism, and offering two
-  mutually exclusive outcomes leaves `session-planner` no single exit criterion.
-  Amend ADR-178 (v2 baseline) to settle the path, then restate the outcome as
-  one assertable condition. Related: ADR-178 Invariant 2 limits stories to
-  baseline packages, so `tutorials/familyzoo` importing `@sharpee/helpers` is
-  already a baseline violation today.
+- **Done when** (restated 2026-07-31 after the blocker was ruled — one condition
+  set, no fork): `node dist/cli/sharpee.js --story <external-dir> --play` reaches
+  the first prompt and renders a room for a story that builds its world through
+  `createHelpers(world)` resolved from its **own** `node_modules`;
+  `@sharpee/helpers` is in `STORY_RUNTIME_BASELINE` with `BASELINE_VERSION = 2`;
+  the package no longer patches `WorldModel.prototype`; and the baseline
+  package's `exports.test.ts` passes.
+- **Status**: DONE — delivered 2026-07-31 (session 8b1a26). David ruled **both
+  amendments**, the blocker's two paths having turned out to be complementary
+  rather than exclusive.
+  - `ADR-178 Amendment 1` — `@sharpee/helpers` promoted, `BASELINE_VERSION` 1 → 2.
+    The Invariant-4 justification is a contradiction in the accepted record, not a
+    preference: ADR-237 D1 makes story authors helpers' *exclusive* audience while
+    ADR-178 Invariant 2 forbade stories from importing it.
+  - `ADR-140 Amendment 1` — the `WorldModel.prototype.helpers` augmentation is
+    retired; `packages/helpers/src/augment.ts` deleted, side-effect import removed.
+    This turned out to be removing dead code, not reversing a live mechanism: every
+    live consumer moved to `createHelpers(world)` on 2026-06-28, and no source
+    outside the frozen `tutorials/familyzoo/v1.5.0` edition still called
+    `world.helpers()`.
+  - **REAL-PATH verification**: an external fixture with its own `node_modules`
+    run through `dist/cli/sharpee.js --play`. A probe on the same fixture proved
+    the boundary is genuine — `world instanceof <story-side WorldModel>` is
+    `false` and `typeof world.helpers` is `undefined`, i.e. the retired form would
+    have thrown there. Guarded durably by
+    `packages/helpers/tests/no-prototype-augmentation.test.ts`.
+  - **Also cleared**: `tools/repokit/src/repo.ts` still aliased `@sharpee/helpers`
+    into the CLI bundle for a story-loader dependency ADR-237 D2 had already
+    removed. The alias was inert (`grep -c createHelpers dist/cli/sharpee.js` → 0)
+    and is gone.
+- **Blocker record** (proposal-review, DECISION-IN-DISGUISE + UNPLANNABLE):
+  the finding correctly identified that a baseline bump needs an ADR-178
+  amendment, and correctly flagged that `tutorials/familyzoo` importing
+  `@sharpee/helpers` was already an Invariant-2 violation. Where it went wrong was
+  calling the two paths "mutually exclusive outcomes" — they answer different
+  questions and neither was optional. It also inherited the issue's stale premise
+  that the crash was live: `tutorials/familyzoo` has had no story at that path
+  since the v1.5.0/v2.0.0 split, and both live editions had already migrated off
+  the failing form five weeks earlier.
 
 ### P-7: Copy the story CSS override in the monorepo `--browser` build (#147)
 
@@ -314,13 +337,19 @@ above. P-1, P-2, P-5, P-7, P-8 clean and ACCEPTED by owner decision the same
 session, then PLANNED the same session into `docs/work/tracker-low-hanging-fruit/plan.md`
 (Phases 1-5 respectively); the three blocked items stay PROPOSED pending ADR work.
 
-**Two of the three blocking findings did not survive contact with the code.**
+**All three blocking findings needed correcting before the items could be
+delivered — none was simply wrong, and none was simply right.**
 P-3's cited successor was the wrong ADR and supersession the wrong verb
 (ADR-041 Amendment 1); P-4's "no working parse-time gating" was a
 same-name/different-type conflation the delivery record had already resolved
-once (ADR-231 Amendment 1). Both were written from search-level reading of the
-ADR text. Worth carrying into how entry-state claims get asserted: read the
-source and the prior plan/pins before recording a blocker.
+once (ADR-231 Amendment 1); P-6's two paths were called "mutually exclusive
+outcomes" when they answer different questions and neither was optional, and the
+finding inherited the issue's stale premise that the crash was still live (both
+live tutorial editions had migrated off the failing form five weeks earlier).
+All three were written from search-level reading of ADR and issue text. Worth
+carrying into how entry-state claims get asserted: read the source, the prior
+plan/pins, **and the issue's own currency** before recording a blocker — an
+open GitHub issue is a claim about the past, not a reproduction.
 
 One set-level advisory, not item-scoped: `docs/work/adr-279-chord-writer-packaging/plan.md`
 Phase 3 (archive/sign/notarize/DMG) is **CURRENT and not DONE**. Planning from

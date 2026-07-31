@@ -81,11 +81,13 @@ export const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/bootstrap', './packages/bootstrap/dist/index.js'],
   ['@sharpee/transcript-tester', './packages/transcript-tester/dist/index.js'],
   // Chord `.story` support (ADR-210 Phase A): the CLI compiles + interprets
-  // .story files, so the frontend, the interpreter, and the interpreter's
-  // helpers dependency must resolve to the same in-bundle copies.
+  // .story files, so the frontend and the interpreter must resolve to the
+  // same in-bundle copies. `@sharpee/helpers` was aliased here for the
+  // interpreter's dependency on it; ADR-237 D2 removed that dependency, so
+  // the alias was inert (nothing in the CLI graph imports helpers) and is
+  // gone. Helpers is author-facing only — it must never re-enter this list.
   ['@sharpee/chord', './packages/chord/dist/index.js'],
   ['@sharpee/story-loader', './packages/story-loader/dist/index.js'],
-  ['@sharpee/helpers', './packages/helpers/dist/index.js'],
 ];
 
 /** Hand-written CLI bundle declarations (build.sh build_bundle, 607-619) — verbatim. */

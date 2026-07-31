@@ -47,7 +47,7 @@ const COMPLETION_CONTEXTS: CompletionContext[] = [
   // keyId: '...' — entity ID (usually a key)
   { pattern: /keyId:\s*['"`]$/, kinds: ['entity'] },
 
-  // world.helpers().room('...' — room ID
+  // createHelpers(world).room('...' — room ID
   { pattern: /\.room\(\s*['"`]$/, kinds: ['room'] },
 
   // setStateValue(key, '...' — could be any entity
