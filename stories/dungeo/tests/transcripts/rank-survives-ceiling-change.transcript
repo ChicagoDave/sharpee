@@ -7,7 +7,10 @@ description: |
   bands it would silently DEMOTE a player who earned nothing and lost nothing —
   which is the whole reason ADR-260 D2 made thresholds absolute.
 
-  Restores from wt-13, which is the chain state immediately after the fight.
+  Builds its own state via GDT — AA SCORE to reach a scored position, KL to
+  kill the thief — so the rank is read on BOTH sides of the ceiling change.
+  Never $restore: that made this a unit test wearing a chain test's clothes,
+  dependent on walkthrough output that does not exist in a fresh checkout.
 ---
 
 # ============================================================================
@@ -16,20 +19,37 @@ description: |
 
 [GOAL: Rank is unchanged across the 616 -> 650 ceiling change]
 
-# State from the end of wt-13 — the thief is dead, so the ceiling has
-# already risen to 650.
-$restore wt-13
+# Position the score without replaying a walkthrough. 493 is the discriminating
+# value: 493/616 = 80% against 493/650 = 76%, so a percentage ladder would have
+# to re-rank here while an absolute threshold cannot.
+> gdt
+[OK: any]
+> aa score 493
+[OK: contains "493"]
+> ex
+[OK: any]
 
-# The ledger is the single home for scoring (ADR-260 D1): SCORE reads it and
-# nothing else. "Adventurer" is dungeo's own rank name — ported verbatim from
-# ADR-085 — and appears in no platform source, which is what proves stdlib
-# invented nothing (ADR-260 acceptance #3).
-#
-# The rank follows from the ABSOLUTE threshold: 400 <= 493 < 616 is
-# "Adventurer", and it stays "Adventurer" whether the ceiling reads 616 or
-# 650. A percentage ladder would have to recompute here, and 493/616 = 80%
-# against 493/650 = 76% is exactly the kind of drift that silently re-ranks a
-# player who did nothing.
+# BEFORE the ceiling change. The ledger is the single home for scoring
+# (ADR-260 D1): SCORE reads it and nothing else. "Adventurer" is dungeo's own
+# rank name — ported verbatim from ADR-085 — and appears in no platform source,
+# which is what proves stdlib invented nothing (ADR-260 acceptance #3).
+> score
+[OK: contains "493 out of 616"]
+[OK: contains "rank of an Adventurer"]
+
+# Kill the thief. ADR-078: this raises maxScore to 650 and awards NO points
+# ("No bonus points for killing the thief" — melee-interceptor.ts), so the
+# score is held fixed while the ceiling alone moves.
+> gdt
+[OK: any]
+> kl thief
+[OK: any]
+> ex
+[OK: any]
+
+# AFTER the ceiling change: same score, higher ceiling, SAME RANK.
+# 400 <= 493 < 616 is "Adventurer" under the absolute threshold, and it stays
+# "Adventurer" whether the ceiling reads 616 or 650.
 > score
 [OK: contains "493 out of 650"]
 [OK: contains "rank of an Adventurer"]

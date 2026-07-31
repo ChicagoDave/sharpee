@@ -19,6 +19,7 @@ import { dxHandler } from './dx';
 import { ahHandler } from './ah';
 import { tkHandler } from './tk';
 import { aoHandler } from './ao';
+import { aaHandler } from './aa';
 // Phase 3 - Display/Alter Flags
 import { dfHandler } from './df';
 import { afHandler } from './af';
@@ -64,6 +65,7 @@ handlers.set('DX', dxHandler);
 handlers.set('AH', ahHandler);
 handlers.set('TK', tkHandler);
 handlers.set('AO', aoHandler);
+handlers.set('AA', aaHandler);
 
 // Register Phase 3 - Display/Alter Flags
 handlers.set('DF', dfHandler);
@@ -158,6 +160,7 @@ export { dxHandler } from './dx';
 export { ahHandler } from './ah';
 export { tkHandler } from './tk';
 export { aoHandler } from './ao';
+export { aaHandler } from './aa';
 export { dfHandler } from './df';
 export { afHandler } from './af';
 export { ndHandler } from './nd';

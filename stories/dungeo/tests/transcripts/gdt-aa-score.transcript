@@ -1,0 +1,77 @@
+title: GDT AA (Alter Adventurer) — score setting and its rejections
+story: dungeo
+description: |
+  AA SCORE sets the player's total to an exact value so a test can start from a
+  scored position without replaying a walkthrough. The score ledger (ADR-129) is
+  append-only with unique ids and no setter, so AA carries the difference in one
+  reserved entry (gdt.score.adjustment) and leaves earned entries intact.
+
+  Covers the rejection paths as well as the happy path.
+---
+
+[GOAL: AA SCORE sets an exact total and rejects bad input]
+
+> gdt
+[OK: any]
+
+# --- happy path: an exact total, from zero ---
+> aa score 493
+[OK: contains "493"]
+> ex
+[OK: any]
+> score
+[OK: contains "493 out of 616"]
+
+# --- idempotent: setting again REPLACES the adjustment, never stacks ---
+# A naive implementation that appended a second ledger entry would land on 986.
+> gdt
+[OK: any]
+> aa score 493
+[OK: contains "493"]
+> ex
+[OK: any]
+> score
+[OK: contains "493 out of 616"]
+
+# --- a different value overwrites cleanly, downward included ---
+> gdt
+[OK: any]
+> aa score 25
+[OK: any]
+> ex
+[OK: any]
+> score
+[OK: contains "25 out of 616"]
+
+# --- rejections: each names the problem and leaves the score untouched ---
+> gdt
+[OK: any]
+
+# no attribute
+> aa
+[OK: contains "Usage"]
+
+# unknown attribute
+> aa bogus 5
+[OK: contains "Unknown adventurer attribute"]
+
+# attribute with no value
+> aa score
+[OK: contains "Usage"]
+
+# not a number
+> aa score twelve
+[OK: contains "Not a non-negative integer"]
+
+# negative
+> aa score -5
+[OK: contains "Not a non-negative integer"]
+
+> ex
+[OK: any]
+
+# The rejected calls changed nothing — still the last successful value.
+> score
+[OK: contains "25 out of 616"]
+
+[END GOAL]
