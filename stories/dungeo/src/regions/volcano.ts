@@ -305,7 +305,6 @@ function createGlacierRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  glacier.add(new SceneryTrait());
   world.moveEntity(glacier.id, roomId);
 }
 
@@ -341,7 +340,6 @@ function createDustyRoomObjects(world: WorldModel, roomId: string): void {
   }));
   slot.add(new ContainerTrait({ capacity: { maxItems: 1 } }));
   slot.add(new OpenableTrait({ isOpen: true }));
-  slot.add(new SceneryTrait());
   world.moveEntity(slot.id, roomId);
 
   // Lord Dimwit Flathead's Crown - treasure inside the safe (MDL: CROWN)
@@ -501,7 +499,6 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     properName: false,
     article: 'a'
   }));
-  clothBag.add(new SceneryTrait());
   clothBag.add(new InflatableTrait({
     isInflated: false,
     inflatedDescription: 'The silk bag billows overhead, filled with hot air.',
@@ -518,7 +515,6 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     properName: false,
     article: 'a'
   }));
-  hook1.add(new SceneryTrait());
   hook1.attributes.hookId = 'hook1';
   hook1.setMinimumScope(3, [roomIds.volcanoNearSmallLedge]);
   world.moveEntity(hook1.id, roomIds.narrowLedge);
@@ -551,7 +547,6 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     properName: false,
     article: 'a'
   }));
-  hook2.add(new SceneryTrait());
   hook2.attributes.hookId = 'hook2';
   hook2.setMinimumScope(3, [roomIds.volcanoNearWideLedge]);
   world.moveEntity(hook2.id, roomIds.wideLedge);
@@ -566,7 +561,6 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     properName: false,
     article: 'a'
   }));
-  wire.add(new SceneryTrait());
   world.moveEntity(wire.id, balloon.id);
 
   // Dead balloon template - spawned on crash
@@ -578,7 +572,6 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     properName: false,
     article: 'a'
   }));
-  deadBalloon.add(new SceneryTrait());
 
   return {
     balloonId: balloon.id,

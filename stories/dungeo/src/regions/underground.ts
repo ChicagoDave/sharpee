@@ -272,7 +272,6 @@ function createCellarObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  ramp.add(new SceneryTrait());
   world.moveEntity(ramp.id, roomId);
 }
 
@@ -376,7 +375,6 @@ function createStudioObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  chimney.add(new SceneryTrait());
   world.moveEntity(chimney.id, roomId);
 
   // Paint splatters (scenery)
@@ -388,7 +386,6 @@ function createStudioObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'some'
   }));
-  paint.add(new SceneryTrait());
   world.moveEntity(paint.id, roomId);
 }
 
@@ -404,7 +401,6 @@ function createDomeRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  railing.add(new SceneryTrait());
   world.moveEntity(railing.id, roomId);
 }
 

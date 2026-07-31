@@ -383,7 +383,6 @@ function createNorthWall(world: WorldModel, roomId: string, uniqueId: string): I
     properName: false,
     article: 'the'
   }));
-  wall.add(new SceneryTrait());
   world.moveEntity(wall.id, roomId);
   return wall;
 }
@@ -397,7 +396,6 @@ function createSouthWall(world: WorldModel, roomId: string): IFEntity {
     properName: false,
     article: 'the'
   }));
-  wall.add(new SceneryTrait());
   world.moveEntity(wall.id, roomId);
   return wall;
 }

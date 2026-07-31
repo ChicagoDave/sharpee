@@ -244,8 +244,15 @@ export interface CommandRegistry {
  * Serialized checkpoint data
  */
 export interface CheckpointData {
-  /** Format version */
-  version: '1.0.0';
+  /**
+   * Checkpoint format version.
+   *
+   * Deliberately typed `string`, not a literal union: a format bump must not be a
+   * breaking type change for anyone holding a `CheckpointData`. Support is decided at
+   * read time instead — see `SUPPORTED_CHECKPOINT_VERSIONS` and
+   * `deserializeCheckpoint()` in `checkpoints/serializer.ts`.
+   */
+  version: string;
   /** When checkpoint was created */
   timestamp: number;
   /** Metadata about the checkpoint */
@@ -453,7 +460,10 @@ export interface ITestingExtension {
   saveCheckpoint(name: string, world: WorldModel): Promise<void>;
 
   /**
-   * Restore state from checkpoint
+   * Restore state from checkpoint.
+   *
+   * Resolves false when no checkpoint is stored under `name`; rejects when a stored
+   * checkpoint's format version is not readable by this build.
    */
   restoreCheckpoint(name: string, world: WorldModel): Promise<boolean>;
 

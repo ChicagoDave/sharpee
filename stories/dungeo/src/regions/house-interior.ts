@@ -136,7 +136,6 @@ function createKitchenObjects(world: WorldModel, kitchenId: string): void {
     properName: false,
     article: 'a'
   }));
-  table.add(new SceneryTrait());
   world.moveEntity(table.id, kitchenId);
 
   const sack = world.createEntity('brown sack', EntityType.CONTAINER);
@@ -265,7 +264,6 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     openDescription: 'The trap door is open, revealing a rickety staircase descending into darkness.',
     closedDescription: 'The dusty cover of a closed trap door.'
   }));
-  trapdoor.add(new SceneryTrait());
 
   const rug = world.createEntity('oriental rug', EntityType.SCENERY);
   rug.add(new IdentityTrait({
@@ -275,7 +273,6 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     properName: false,
     article: 'a'
   }));
-  rug.add(new SceneryTrait());
   rug.add(new PushableTrait({ pushType: 'moveable', repeatable: false, state: 'default' }));
   // RugTrait stores entity references for the RugPushInterceptor (ISSUE-068 Phase 4)
   if (cellarId) {
@@ -292,7 +289,6 @@ function createLivingRoomObjects(world: WorldModel, livingRoomId: string, cellar
     properName: false,
     article: 'a'
   }));
-  woodenDoor.add(new SceneryTrait());
   world.moveEntity(woodenDoor.id, livingRoomId);
 }
 
@@ -307,7 +303,6 @@ function createAtticObjects(world: WorldModel, atticId: string): void {
     properName: false,
     article: 'a'
   }));
-  table.add(new SceneryTrait());
   world.moveEntity(table.id, atticId);
 
   const rope = world.createEntity('rope', EntityType.ITEM);

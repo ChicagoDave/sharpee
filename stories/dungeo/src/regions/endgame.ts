@@ -279,8 +279,6 @@ function createLaserBeam(world: WorldModel, roomId: string): IFEntity {
     article: 'a'
   }));
 
-  beam.add(new SceneryTrait());
-
   world.moveEntity(beam.id, roomId);
 
   beam.attributes.isLaserBeam = true;

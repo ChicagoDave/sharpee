@@ -420,7 +420,15 @@ export class TestingExtension implements ITestingExtension {
   }
 
   /**
-   * Restore from a checkpoint
+   * Restore from a checkpoint.
+   *
+   * @param name - Checkpoint name to load
+   * @param world - World model to overwrite with the checkpoint's state
+   * @returns true when the world was restored; false when no checkpoint is stored under
+   *   `name` (or the stored data is structurally invalid)
+   * @throws Error when the stored checkpoint's format version is not readable by this
+   *   build. Deliberately distinct from the `false` return: "written by a format I don't
+   *   understand" is not "not there", and must not be reported as a plain miss.
    */
   async restoreCheckpoint(name: string, world: WorldModel): Promise<boolean> {
     const data = await this.checkpoints.load(name);

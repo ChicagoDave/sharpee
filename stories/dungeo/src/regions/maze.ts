@@ -17,7 +17,6 @@ import {
   EntityType,
   Direction,
   DirectionType,
-  SceneryTrait,
   OpenableTrait,
   LockableTrait,
   ContainerTrait
@@ -584,7 +583,6 @@ function createGratingRoomObjects(world: WorldModel, roomId: string, keyId: stri
     properName: false,
     article: 'a'
   }));
-  grating.add(new SceneryTrait());
   grating.add(new OpenableTrait({ isOpen: false }));
   grating.add(new LockableTrait({
     startsLocked: true,
@@ -607,7 +605,6 @@ function createMaze5Objects(world: WorldModel, roomId: string): string {
     properName: false,
     article: 'a'
   }));
-  skeleton.add(new SceneryTrait());
   world.moveEntity(skeleton.id, roomId);
 
   // Bag of coins (treasure) - BAGCO in MDL

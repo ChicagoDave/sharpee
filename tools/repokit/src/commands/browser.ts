@@ -11,7 +11,14 @@
  * an author's own theme is a [data-theme] block in the override stylesheet, listed
  * inline as { id, name } (ADR-188).
  *
- * Public interface: buildBrowserClient(root, story, opts) -> void.
+ * The story override stylesheet (browser/<id>.css) is copied to <outDir>/<id>.css and
+ * linked last by the template, matching the Chord path (#147). Both paths mirror to the
+ * website through the same mirrorToWebsite() full-tree copy — one implementation, so a
+ * new output file cannot be forgotten in one of two enumerations.
+ *
+ * Public interface: buildBrowserClient(root, story, opts) -> void,
+ * mirrorToWebsite(root, outDir, storyId), writeOverrideStylesheet(storyDir, outDir, storyId),
+ * processStoryTokens(html, storyId), chordStoryFile(root, story).
  */
 import { execFileSync } from 'node:child_process';
 import {
@@ -69,6 +76,46 @@ export function chordStoryFile(root: string, story: string): string | null {
 /** Read the lockstep platform (sharpee) version — stamped into the story's version.ts. */
 function sharpeeVersion(root: string): string {
   return JSON.parse(readFileSync(join(root, 'packages', 'sharpee', 'package.json'), 'utf8')).version;
+}
+
+/**
+ * Substitute the story tokens the browser index.html template carries.
+ *
+ * Duplicated from devkit's private `processTemplate` rather than imported: ADR-187 R1
+ * keeps repokit and devkit separate codebases with no cross-dependency, and this is two
+ * lines. `templates/browser/index.html` (the TypeScript path's template) carries only
+ * `{{STORY_ID}}`; the title is set at runtime by BrowserClient from story config.
+ *
+ * @param html    the raw template text
+ * @param storyId the story id, substituted for every `{{STORY_ID}}`
+ * @returns the processed HTML
+ */
+export function processStoryTokens(html: string, storyId: string): string {
+  return html.replace(/\{\{STORY_ID\}\}/g, storyId);
+}
+
+/**
+ * Write the story's override stylesheet to `<outDir>/<storyId>.css`.
+ *
+ * The page links `<storyId>.css` last (ADR-188 R4 — the override must win the cascade on
+ * equal specificity), so the file has to exist even when the story ships no overrides,
+ * else every load takes a 404. Mirrors devkit's `buildBrowser` behavior for Chord stories
+ * (browser-core.ts) — duplicated, not imported, per ADR-187 R1.
+ *
+ * @param storyDir the story's source directory
+ * @param outDir   the browser build output directory
+ * @param storyId  the story id — names both the source and the output stylesheet
+ * @returns true when the story's own stylesheet was copied; false when a placeholder was written
+ */
+export function writeOverrideStylesheet(storyDir: string, outDir: string, storyId: string): boolean {
+  const source = join(storyDir, 'browser', `${storyId}.css`);
+  const target = join(outDir, `${storyId}.css`);
+  if (existsSync(source)) {
+    cpSync(source, target);
+    return true;
+  }
+  writeFileSync(target, `/* ${storyId} — story overrides (none yet) */\n`);
+  return false;
 }
 
 /**
@@ -161,7 +208,8 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
   // config); the build wires the theme <link>s + menu items into it (ADR-188 Phase 4).
   const tplHtml = join(tpl, 'index.html');
   if (existsSync(tplHtml)) {
-    writeFileSync(join(outDir, 'index.html'), devkit().injectThemes(readFileSync(tplHtml, 'utf8'), wiredThemes));
+    const html = processStoryTokens(readFileSync(tplHtml, 'utf8'), story);
+    writeFileSync(join(outDir, 'index.html'), devkit().injectThemes(html, wiredThemes));
   }
   // Engine CSS (base/engine/decorations) is owned by @sharpee/platform-browser (ADR-188),
   // copied from the in-repo package. The theme packages' CSS is wired below.
@@ -175,6 +223,9 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
   rmSync(join(outDir, 'styles.css'), { force: true });
   devkit().copyWiredThemes(wiredThemes, outDir);
 
+  // Story override stylesheet → dist/web/<id>/<id>.css, linked last by the template.
+  if (writeOverrideStylesheet(storyDir, outDir, story)) log(`  ✓ Copied ${story}.css`);
+
   // Story assets (audio, images): copy the contents of <story>/assets/ into the output.
   // Skip dotfiles to match build.sh's `cp "$ASSETS_DIR"/*` (bash glob excludes dotfiles,
   // so .DS_Store and friends never reach the deliverable).
@@ -186,20 +237,12 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
     }
   }
 
-  // Website mirror.
-  if (existsSync(join(root, 'website', 'public'))) {
-    const webDir = join(root, 'website', 'public', 'web', story);
-    mkdirSync(webDir, { recursive: true });
-    cpSync(join(outDir, 'game.js'), join(webDir, 'game.js'));
-    if (existsSync(join(outDir, 'index.html'))) cpSync(join(outDir, 'index.html'), join(webDir, 'index.html'));
-    for (const css of ['base.css', 'engine.css', 'decorations.css']) {
-      if (existsSync(join(outDir, css))) cpSync(join(outDir, css), join(webDir, css));
-    }
-    // Mirror the wired theme CSS/assets; clear first so a de-listed theme never lingers.
-    rmSync(join(webDir, 'styles.css'), { force: true });
-    rmSync(join(webDir, 'themes'), { recursive: true, force: true });
-    if (existsSync(join(outDir, 'themes'))) cpSync(join(outDir, 'themes'), join(webDir, 'themes'), { recursive: true });
-  }
+  // Website mirror — the same full-tree copy the Chord path already uses as its `mirror`
+  // callback. This was a hand-picked file enumeration (game.js + index.html + the three
+  // engine stylesheets + themes/), which silently dropped everything else the deliverable
+  // carries: the story override stylesheet, story assets, the sourcemap. One
+  // implementation now, so a new output file can never be forgotten in one of two places.
+  mirrorToWebsite(root, outDir, story);
 
   // Invariant: assert the deliverable exists (no silent success on an empty build).
   const gameJs = join(outDir, 'game.js');

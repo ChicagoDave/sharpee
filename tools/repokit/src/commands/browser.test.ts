@@ -6,7 +6,14 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildBrowserClient, chordStoryFile, mirrorToWebsite } from './browser';
+import {
+  buildBrowserClient,
+  chordStoryFile,
+  mirrorToWebsite,
+  processStoryTokens,
+  writeOverrideStylesheet,
+} from './browser';
+import { findMonorepoRoot } from '../repo';
 
 describe('buildBrowserClient rejection paths (TypeScript story)', () => {
   let root: string;
@@ -46,6 +53,94 @@ describe('chordStoryFile — Chord vs TypeScript story detection (ADR-252 D5)', 
 
   it('returns null when the story does not exist', () => {
     expect(chordStoryFile(root, 'ghost')).toBeNull();
+  });
+});
+
+describe('writeOverrideStylesheet — the story override the TS path used to drop (#147)', () => {
+  let root: string;
+  let storyDir: string;
+  let outDir: string;
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'repokit-override-'));
+    storyDir = join(root, 'stories', 'dungeo');
+    outDir = join(root, 'dist', 'web', 'dungeo');
+    mkdirSync(outDir, { recursive: true });
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  it("copies the story's browser/<id>.css into the deliverable", () => {
+    mkdirSync(join(storyDir, 'browser'), { recursive: true });
+    writeFileSync(join(storyDir, 'browser', 'dungeo.css'), '[data-theme="cave"]{--x:1}\n');
+
+    const copied = writeOverrideStylesheet(storyDir, outDir, 'dungeo');
+
+    expect(copied).toBe(true);
+    expect(readFileSync(join(outDir, 'dungeo.css'), 'utf8')).toContain('[data-theme="cave"]');
+  });
+
+  it('writes a placeholder when the story ships no override, so the link never 404s', () => {
+    mkdirSync(storyDir, { recursive: true });
+
+    const copied = writeOverrideStylesheet(storyDir, outDir, 'dungeo');
+
+    expect(copied).toBe(false);
+    expect(existsSync(join(outDir, 'dungeo.css'))).toBe(true);
+    expect(readFileSync(join(outDir, 'dungeo.css'), 'utf8')).toMatch(/^\/\*.*\*\/\n$/);
+  });
+
+  it('overwrites a stale override from a previous build', () => {
+    mkdirSync(join(storyDir, 'browser'), { recursive: true });
+    writeFileSync(join(outDir, 'dungeo.css'), '.stale{}');
+    writeFileSync(join(storyDir, 'browser', 'dungeo.css'), '.fresh{}');
+
+    writeOverrideStylesheet(storyDir, outDir, 'dungeo');
+
+    expect(readFileSync(join(outDir, 'dungeo.css'), 'utf8')).toBe('.fresh{}');
+  });
+});
+
+describe('processStoryTokens', () => {
+  it('substitutes every {{STORY_ID}} occurrence', () => {
+    const html = '<!-- browser/{{STORY_ID}}.css --><link href="{{STORY_ID}}.css">';
+
+    expect(processStoryTokens(html, 'dungeo')).toBe(
+      '<!-- browser/dungeo.css --><link href="dungeo.css">',
+    );
+  });
+
+  it('leaves markup without tokens untouched', () => {
+    expect(processStoryTokens('<link href="engine.css">', 'dungeo')).toBe(
+      '<link href="engine.css">',
+    );
+  });
+});
+
+describe('templates/browser/index.html — override cascade order (ADR-188 R4)', () => {
+  // The shipped template, not a fixture: the override must be linked last or it loses to
+  // the theme CSS on equal specificity, which is the whole point of the override slot.
+  const template = () => {
+    const repoRoot = findMonorepoRoot(__dirname);
+    expect(repoRoot).not.toBeNull();
+    return readFileSync(join(repoRoot!, 'templates', 'browser', 'index.html'), 'utf8');
+  };
+
+  it('links the story override after the engine CSS and the theme links', () => {
+    const html = template();
+    const override = html.indexOf('{{STORY_ID}}.css">');
+    const engine = html.indexOf('href="engine.css"');
+    const themeMarker = html.indexOf('THEME_LINKS');
+
+    expect(override).toBeGreaterThan(-1);
+    expect(engine).toBeGreaterThan(-1);
+    expect(themeMarker).toBeGreaterThan(-1);
+    expect(override).toBeGreaterThan(engine);
+    expect(override).toBeGreaterThan(themeMarker);
+  });
+
+  it('links the override inside <head>, before the page body', () => {
+    const html = template();
+
+    expect(html.indexOf('{{STORY_ID}}.css">')).toBeLessThan(html.indexOf('</head>'));
   });
 });
 

@@ -279,8 +279,6 @@ function createFrontDoor(world: WorldModel): IFEntity {
     article: 'the'
   }));
 
-  door.add(new SceneryTrait());
-
   // The door is boarded up - no OpenableTrait needed since it can't be opened
   // The description already explains why
 
@@ -302,8 +300,6 @@ function createWindow(world: WorldModel): IFEntity {
     properName: false,
     article: 'the'
   }));
-
-  window.add(new SceneryTrait());
 
   window.add(new OpenableTrait({
     isOpen: false,  // Starts "slightly ajar" but not fully open
@@ -358,8 +354,6 @@ function createHouseScenery(world: WorldModel, roomIds: WhiteHouseRoomIds): void
       properName: false,
       article: 'the'
     }));
-
-    house.add(new SceneryTrait());
 
     world.moveEntity(house.id, roomId);
   }

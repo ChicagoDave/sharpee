@@ -231,7 +231,6 @@ function createForestPath1Objects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  tree.add(new SceneryTrait());
   world.moveEntity(tree.id, roomId);
 }
 
@@ -246,7 +245,6 @@ function createClearingObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  leaves.add(new SceneryTrait());
   world.moveEntity(leaves.id, roomId);
 
   // NOTE: The grating is a single entity created in maze.ts (createGratingRoomObjects).

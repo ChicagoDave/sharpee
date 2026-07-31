@@ -48,7 +48,25 @@ Phases 2 through 5 are independent of one another (different packages/tools, no 
 - **Entry state**: `packages/extensions/testing/src/types.ts:248` types `CheckpointData.version` as the literal `'1.0.0'`, making every format bump a breaking type change. `CheckpointStore` (`types.ts:294`) is an interface with no concrete implementation in this repo — the one load call site is `TestingExtension.restoreCheckpoint()` in `packages/extensions/testing/src/extension.ts:425-433`, which calls `this.checkpoints.load(name)` and passes the result straight to `deserializeCheckpoint(data, world)` with no version check today.
 - **Deliverable**: `CheckpointData.version` widened to `string`. Runtime version validation added at the checkpoint-load consumption point (`restoreCheckpoint` in `extension.ts`) so an unrecognized/unsupported version is rejected with a clear error rather than silently deserialized — the versioned-reader approach the item calls for. Tests added/extended in the testing extension's suite covering: a supported version loads and deserializes normally (regression), and an unrecognized version is rejected with a clear error rather than silently deserialized. Implements P-2.
 - **Exit state**: `pnpm --filter '@sharpee/ext-testing' test` passes (no `2>&1`). If the platform-wide TypeScript build (`./repokit build --skip <other-packages>` or the relevant tsf slice) surfaces a compile error from the widened type at another call site, report it and stop rather than patching around it silently.
-- **Status**: PENDING
+- **Status**: DONE — completed 2026-07-30 (session af7835). Both exit clauses met:
+  `pnpm --filter '@sharpee/ext-testing' test` passes (17 tests — the package had no suite
+  before, so this is its first), and `npx tsf build` compiles all 30 packages clean, so the
+  widened type breaks no call site.
+- **Entry-state correction**: the phase text says `CheckpointStore` has no concrete
+  implementation. It has three — `createFileStore`, `createMemoryStore`,
+  `createLocalStorageStore` in `src/checkpoints/store.ts` — and the file/localStorage
+  `load()` both called `validateCheckpoint()`, which rejected any version ≠ `'1.0.0'` by
+  returning `undefined`. So an unsupported-version checkpoint read back as *"checkpoint not
+  found"* with only a `console.warn`. That, not the missing check at `restoreCheckpoint`,
+  was the silent path the item describes.
+- **As delivered**: `version` widened to `string`; `CHECKPOINT_FORMAT_VERSION`,
+  `SUPPORTED_CHECKPOINT_VERSIONS`, and `isSupportedCheckpointVersion()` added to
+  `serializer.ts`, which is now the sole authority on version support;
+  `deserializeCheckpoint` throws an error naming the version and the readable list, before
+  `world.loadJSON`; `validateCheckpoint` reduced to a structural check (version must be a
+  non-empty string). The version gate stayed in the reader rather than being duplicated
+  into `extension.ts` — `restoreCheckpoint` calls the reader, and its `false` return now
+  means only "not found", with an unreadable version propagating as a distinct throw.
 
 ### Phase 3: Collapse the eleven literal `trace` grammar patterns into one parameterized pattern (P-5, #81)
 - **Tier**: Small
@@ -57,7 +75,29 @@ Phases 2 through 5 are independent of one another (different packages/tools, no 
 - **Entry state**: `definePlatformGrammar()` registers eleven separate literal `grammar.define('trace …')` calls (bare `trace`, `trace on`, `trace off`, and `trace <parser|validation|system|all> on|off`), all mapping to `author.trace`. This is one of two hand-maintained platform-side exception rules (ADR-269 D1, cited in the file's own header) that Chord cannot express — the other (`?` → `if.action.help`) is out of scope here. No existing parser test file covers the `trace` matrix (none found under `packages/parser-en-us/**/*.test.ts` matching `trace` or `platform`).
 - **Deliverable**: The eleven `define('trace …')` calls collapsed into one parameterized pattern (using whatever optional-parameter syntax `GrammarBuilder` supports for two optional slots — category and on/off) that still maps every one of `trace`, `trace on|off`, and `trace <parser|validation|system|all> on|off` to `author.trace` with the same parameters as today. A new parser test file (or an addition to an existing platform-grammar test) exercises the full matrix — all eleven original phrasings plus at least one negative case (e.g. `trace bogus on` does not match). Implements P-5.
 - **Exit state**: `pnpm --filter '@sharpee/parser-en-us' test` passes covering the new matrix test. A quick manual check that `author.trace`'s handler (`packages/stdlib/src/actions/author/trace.ts`) still receives the same parameter shape from the collapsed pattern as it did from the eleven literals (no `stdlib` change should be needed — if one is, stop and report before making it, since `stdlib` changes are a separate platform-discussion surface).
-- **Status**: PENDING
+- **Status**: DONE — completed 2026-07-30 (session af7835). `pnpm --filter
+  '@sharpee/parser-en-us' test` → **311 passing, 3 skipped, 0 failures** (24 of them the
+  new `tests/platform-grammar.test.ts`). No `stdlib` change was needed. `npx tsf build`
+  clean.
+- **Collapsed to two patterns, not one** — and this is a limit of the pattern syntax, not a
+  shortcut. `EnglishPatternCompiler.expandOptionalElements` rewrites `[x]` to
+  `[optional] x`, marking exactly the *next word* optional; there is no optional *group*.
+  So `trace [parser|validation|system|all] [on|off]` cannot express "a category only ever
+  arrives with a state" — as one pattern it would also accept `trace parser`, `trace all`,
+  etc., widening the accepted language and pushing those through to `TraceAction`'s
+  `invalid_state` error instead of a parse failure. The two patterns
+  (`trace [on|off]` and `trace parser|validation|system|all on|off`) accept exactly what
+  the eleven literals did — 11 → 2.
+- **Literal alternates, not slots**: `TraceAction` reads `command.parsed.tokens` and does
+  its own category/state validation, binding no slots. Slots would also have sent
+  `parser`/`all` through entity scope resolution, which has nothing to resolve them to.
+  The test asserts the token list for one-, two-, and three-word forms and that no
+  direct/indirect object is bound — that token list is the actual contract with stdlib.
+- **Test written before the change and run against the eleven literals first** (24 passing
+  on the old code), so the seven rejection cases are a real before/after guard rather than
+  a description of the new behavior.
+- Also updated: the file header's "Twelve rules stay TypeScript" and the same count in
+  `packages/parser-en-us/CLAUDE.md` — three patterns now cover the twelve phrasings.
 
 ### Phase 4: Fix the dropped story-CSS override and converge the two `--browser` mirror implementations (P-7, #147)
 - **Tier**: Small
@@ -66,7 +106,31 @@ Phases 2 through 5 are independent of one another (different packages/tools, no 
 - **Entry state**: `tools/repokit/src/commands/browser.ts` has two paths. The Chord path (`buildBrowserClient` → `chordStoryFile()` branch, ~line 106-118) delegates to devkit's shared `buildBrowser()` core, which already copies `browser/<storyId>.css` → `dist/web/<id>/<id>.css` and links it last (`browser-core.ts:719-723`) — that path is correct today. The legacy TypeScript path (dungeo — the only in-repo TS story; ~line 120-210) hand-copies `base.css`/`engine.css`/`decorations.css` and wired theme CSS (lines 166-176, 189-202) but has **no** override-CSS copy or link at all, and its website-mirror block (lines 189-202) is a hand-picked file enumeration, duplicating logic that `mirrorToWebsite()` (line 85-91, already used as the Chord path's `env.mirror` callback) already does generically. `stories/dungeo` has no `browser/dungeo.css` today, so a fixture override stylesheet is needed to exercise the fix.
 - **Deliverable**: The TS/dungeo path in `browser.ts` copies `<storyDir>/browser/<storyId>.css` to `<outDir>/<storyId>.css` when present (mirroring `browser-core.ts:719-723`'s logic) and links it in `index.html` **after** the engine/theme `<link>` tags (ADR-188 R4 cascade order — confirm via `devkit().injectThemes()`'s insertion point or an equivalent explicit append). The website-mirror block (lines 189-202) is replaced with a call to the existing `mirrorToWebsite()` function, so the TS path's website mirror is the same full-recursive copy the Chord path already uses — converging the two implementations onto one (the item's second Done-when clause). Implements P-7.
 - **Exit state**: A temporary fixture `stories/dungeo/browser/dungeo.css` (a trivial `[data-theme="fixture"] { --theme-accent: #ff00ff; }` block is enough) proves the fix real-path: `./repokit build dungeo --browser` produces `dist/web/dungeo/dungeo.css` containing the fixture content, and `dist/web/dungeo/index.html` links it after `engine.css`/any theme `<link>`s. Ask before deciding whether the fixture stays as a permanent regression fixture or is removed (CLAUDE.md: never delete files without confirmation — this includes scaffolding this phase itself creates). `pnpm --filter '@sharpee/repokit' test browser` passes.
-- **Status**: PENDING
+- **Status**: DONE — completed 2026-07-30 (session af7835). `./repokit build dungeo
+  --browser` produces `dist/web/dungeo/dungeo.css` with the fixture content, and
+  `index.html` links `dungeo.css` after `engine.css` and after all four wired theme links,
+  inside `<head>`. `pnpm --filter '@sharpee/repokit' test` → **81 passing, 1 skipped**
+  (browser.test.ts 9 → 16).
+- **The link was missing from the template, not just the copy.** `templates/browser/`
+  (the TS path's template) and `packages/devkit/templates/browser/` differed by exactly
+  the two override lines — devkit's carries
+  `<link rel="stylesheet" href="{{STORY_ID}}.css">`, the repo's did not. So the fix is
+  three parts: add the link to `templates/browser/index.html`, substitute `{{STORY_ID}}`
+  (devkit's `processTemplate` is private, so `processStoryTokens` is a two-line duplicate
+  per ADR-187 R1), and copy the stylesheet.
+- **A placeholder is written when the story has no override**, mirroring devkit — the page
+  links `<id>.css` unconditionally, so the file must exist or every load takes a 404.
+- **Mirror convergence**: the hand-picked enumeration is gone; the TS path now calls
+  `mirrorToWebsite()`. Verified on the real mirror — `website/public/web/dungeo/` now
+  carries `dungeo.css`, `audio/`, and `game.js.map`, all of which the enumeration dropped.
+  Both `dist/` and `website/public/web/` are gitignored, so this adds no tracked files.
+- **Fixture removed** at David's instruction (asked, per this phase's exit text) — Dungeo is
+  a real story and the standing rule is not to use it as a platform test fixture; the
+  repokit unit tests cover the behavior with their own temp fixtures. Re-running
+  `./repokit build dungeo --browser` with no override present then verified the *other*
+  branch real-path: `dist/web/dungeo/dungeo.css` holds
+  `/* dungeo — story overrides (none yet) */` and the `<link>` still resolves, so the
+  unconditional link never 404s. Both branches are now proven against the real build.
 
 ### Phase 5: Drop dungeo's redundant `SceneryTrait` adds now covered by the ADR-189 default (P-8, #170)
 - **Tier**: Medium
@@ -75,7 +139,34 @@ Phases 2 through 5 are independent of one another (different packages/tools, no 
 - **Entry state**: ADR-189 (ACCEPTED) makes `createEntity(name, EntityType.SCENERY)` auto-add a bare `SceneryTrait`, and `IFEntity.add()` is replace-on-same-type (AC-7) — so a redundant `new SceneryTrait()` (no args) added after a SCENERY-typed `createEntity` call is a silent no-op today, not a bug, but dead code the item wants removed. Pattern precedent: #169 (book + Family Zoo) already did this cleanup elsewhere. A spot-check during planning found both shapes present: `forest.ts:269` (`nest.add(new SceneryTrait())`, bare — a removal candidate) and `thiefs-canvas-objects.ts:39` (`frame.add(new SceneryTrait({ cantTakeMessage: 'dungeo.frame.cant_take' }))`, configured — must be preserved).
 - **Deliverable**: For every `new SceneryTrait()` add in `stories/dungeo/src/`, remove it **only if** (a) it is a bare `new SceneryTrait()` with no constructor args (i.e., carries no custom `cantTakeMessage` or other configured field), **and** (b) the entity it's added to was created via `createEntity(name, EntityType.SCENERY, ...)` (not opted out with `{ defaultTraits: false }`) — i.e., the add is strictly redundant with the ADR-189 default. Preserve every add on a non-SCENERY-typed entity and every add carrying a custom message or other config, per the item's Done-when. Implements P-8.
 - **Exit state**: `grep -rn "new SceneryTrait()" stories/dungeo/src` (bare, no-args form) returns nothing left on a SCENERY-typed entity — spot-check a sample of remaining `new SceneryTrait(...)` hits to confirm each is either configured or on a non-SCENERY type. The dungeo walkthrough chain runs clean: `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` — one clean run is sufficient proof of no regression (the project's recorded one-good-run convention; thief-RNG failure counts across runs are not evidence of a problem). A failing chain is a stop-and-report, not a fix-and-rerun loop.
-- **Status**: PENDING
+- **Status**: DONE — completed 2026-07-30 (session af7835). **34 of the 70 adds removed**,
+  36 preserved. Walkthrough chain **873/873 clean**; unit transcripts **1757 passed, 10
+  expected failures, 4 skipped** (baseline unchanged).
+- **Audited before editing, not sampled.** A read-only script paired every
+  `X.add(new SceneryTrait(…))` with the nearest preceding `const X = …createEntity(…)`,
+  reporting the arg list, the `EntityType`, any `{ defaultTraits: false }`, and the
+  enclosing function. All 70 resolved — no unparsed sites, no declaration found in a
+  different function, none missing. The 34 removals are exactly the rows that were bare
+  **and** SCENERY-typed **and** not opted out.
+- **The 36 preserved**: `thiefs-canvas-objects.ts:39` `frame` (configured
+  `cantTakeMessage`, AC-3) plus 35 bare adds on **non-SCENERY** types — ITEM (17),
+  OBJECT (10), CONTAINER (5), DOOR (1). Those types have no registry entry, so their add
+  is the only thing making the entity scenery. Removing them would have made ~35 fixtures
+  takeable.
+- **Applied by script with a pre-flight assertion**: each target line had to match
+  `^\s*\w+\.add\(new SceneryTrait\(\)\);\s*$` or the script wrote nothing at all — a
+  line-number list is only safe if re-verified against the text it points at. Deletions ran
+  descending per file; where the add stood alone between blank lines, one blank went with
+  it. Diff reviewed line by line afterward: 40 deletions = 34 adds + 5 blanks + 1 import.
+- `maze.ts` lost its last use of `SceneryTrait`, so its now-unused import was dropped —
+  the only other edit.
+- **Behavior spot-checked live**, beyond the transcripts: `--exec` against the real story
+  confirms the large tree (forest.ts), kitchen table and oriental rug (house-interior.ts)
+  all still answer "… is fixed in place". The ADR-189 default is carrying them.
+- **Chain flakiness observed and not mistaken for a regression**: runs came back at 890/5,
+  11121/696, 942, 905, 880/1, then 873/873 clean — the thief-RNG retry-block expansion the
+  project's standing rule describes. The clean run is the proof; the noisy ones are not
+  evidence of a problem.
 
 ## Verification notes carried across phases
 

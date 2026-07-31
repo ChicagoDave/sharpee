@@ -62,7 +62,14 @@ export { createDebugContext, formatEntity, formatLocationChain } from './context
 export { createCommandRegistry, parseGdtInput, parseTestInput } from './commands/registry.js';
 
 // Checkpoint utilities
-export { serializeCheckpoint, deserializeCheckpoint, validateCheckpoint } from './checkpoints/serializer.js';
+export {
+  serializeCheckpoint,
+  deserializeCheckpoint,
+  validateCheckpoint,
+  isSupportedCheckpointVersion,
+  CHECKPOINT_FORMAT_VERSION,
+  SUPPORTED_CHECKPOINT_VERSIONS,
+} from './checkpoints/serializer.js';
 export { createFileStore, createMemoryStore, createLocalStorageStore } from './checkpoints/store.js';
 
 // Annotation utilities (ADR-109)

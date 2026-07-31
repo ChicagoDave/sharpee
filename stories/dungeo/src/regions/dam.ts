@@ -344,7 +344,6 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  yellowButton.add(new SceneryTrait());
   yellowButton.add(new ButtonTrait({ color: 'yellow', label: 'DANGER' }));
   world.moveEntity(yellowButton.id, roomId);
 
@@ -357,7 +356,6 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  brownButton.add(new SceneryTrait());
   brownButton.add(new ButtonTrait({ color: 'brown' }));
   world.moveEntity(brownButton.id, roomId);
 
@@ -370,7 +368,6 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  redButton.add(new SceneryTrait());
   redButton.add(new ButtonTrait({ color: 'red' }));
   world.moveEntity(redButton.id, roomId);
 
@@ -383,7 +380,6 @@ function createMaintenanceRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  blueButton.add(new SceneryTrait());
   blueButton.add(new ButtonTrait({ color: 'blue' }));
   world.moveEntity(blueButton.id, roomId);
 }
@@ -400,7 +396,6 @@ function createDamBolt(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  bolt.add(new SceneryTrait());
   bolt.attributes.turnable = true;
   world.moveEntity(bolt.id, roomId);
 }

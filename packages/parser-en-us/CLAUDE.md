@@ -25,9 +25,11 @@ editable source is `grammar/standard-en-us.story` (a Chord *grammar file*:
 - **Definition order is semantic** (ADR-268): earlier definition wins remaining
   ties. The `## ORDER IS LOAD-BEARING` comments mark the orderings that decide
   real collisions — don't reorder blocks or lines casually.
-- The 12 platform-side exception rules (`?` → help, the `trace …` family →
+- The platform-side exception rules (`?` → help, the `trace …` family →
   `author.trace`) live in `src/platform-grammar.ts` (hand-maintained; ruled
-  exceptions — punctuation Chord can't lex, and author/debug tooling).
+  exceptions — punctuation Chord can't lex, and author/debug tooling). Three
+  patterns covering twelve phrasings; `tests/platform-grammar.test.ts` pins the
+  accepted and rejected language.
 - Patterns in `lang-en-us` action files are for documentation/help, not parsing.
 - Stories can extend grammar for story-specific commands via `extendParser()`.
 

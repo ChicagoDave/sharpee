@@ -253,7 +253,6 @@ function createAltarObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  altar.add(new SceneryTrait());
   world.moveEntity(altar.id, roomId);
 
   // Brass bell - exorcism item
@@ -334,7 +333,6 @@ function createGrailRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'a'
   }));
-  pedestal.add(new SceneryTrait());
   world.moveEntity(pedestal.id, roomId);
 
   // Grail - treasure (2 take + 5 case = 7 total)
@@ -367,7 +365,6 @@ function createMirrorRoomObjects(world: WorldModel, roomId: string): void {
     properName: false,
     article: 'an'
   }));
-  mirror.add(new SceneryTrait());
   world.moveEntity(mirror.id, roomId);
 }
 

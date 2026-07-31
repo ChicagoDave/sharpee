@@ -1,6 +1,6 @@
 # Proposal: Tracker Low-Hanging Fruit
 
-**Status**: PARTIALLY PLANNED — P-1 DONE (2026-07-30); P-2, P-5, P-7, P-8 PLANNED (`docs/work/tracker-low-hanging-fruit/plan.md`); P-3, P-4, P-6 remain PROPOSED, blocked on ADR work
+**Status**: ACCEPTED ITEMS COMPLETE — all five (P-1, P-2, P-5, P-7, P-8) DONE (2026-07-30); P-3, P-4, P-6 remain PROPOSED, blocked on ADR work
 **Origin**: issue set — the small, unblocked, well-understood items from the 36 open GitHub issues, surveyed 2026-07-29 after the full triage pass of session 3ef8b98a
 **Date**: 2026-07-29
 **Session**: 5c4586
@@ -54,7 +54,12 @@ the opposite of the versioned-reader approach used for save formats.
 - **Done when**: `version` is typed `string`; the checkpoint reader validates the
   version at runtime rather than relying on the type; the testing extension's
   tests pass.
-- **Status**: PLANNED — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 2
+- **Status**: DONE — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 2, completed
+  2026-07-30 (session af7835). `version` is `string`; version support moved to the reader
+  (`deserializeCheckpoint` throws naming the version and the readable list);
+  `validateCheckpoint` is now structural only, which is what stops an unreadable
+  checkpoint from reading back as "not found" at the store layer. 17 tests added — the
+  extension's first suite. Platform build clean.
 - **Review note**: no ADR governs the checkpoint format's version field
   (ADR-033/034/049 cover save-restore but not `CheckpointData`). Advisory only —
   worth an ADR if this becomes the pattern for save formats generally.
@@ -117,7 +122,14 @@ patterns for one command with two optional parameters.
   pattern; `trace`, `trace on|off`, and `trace <parser|validation|system|all>
   on|off` all still map to `author.trace` with the same parameters; a parser test
   covers the matrix.
-- **Status**: PLANNED — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 3
+- **Status**: DONE — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 3, completed
+  2026-07-30 (session af7835). **11 → 2 patterns, not 1**: `[x]` marks only the next
+  *word* optional (no optional groups), so a single `trace [category] [state]` would also
+  accept `trace parser` and widen the language. `trace [on|off]` plus
+  `trace parser|validation|system|all on|off` accept exactly what the eleven literals did.
+  Literal alternates, not slots — `TraceAction` reads `parsed.tokens` and binds no slots.
+  `tests/platform-grammar.test.ts` (24 tests) covers the matrix plus seven rejections and
+  was run green against the eleven literals first. No stdlib change.
 
 ### P-6: Fix `@sharpee/helpers` across the bundle/story boundary (#146)
 
@@ -158,7 +170,14 @@ name.
 - **Done when**: a `--browser` build of a story with a `browser/<id>.css`
   override emits that file into `dist/web/<id>/` and links it last in
   `index.html`; the two mirror implementations converge on one path.
-- **Status**: PLANNED — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 4
+- **Status**: DONE — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 4, completed
+  2026-07-30 (session af7835). The copy was only half of it: `templates/browser/index.html`
+  was missing devkit's `<link rel="stylesheet" href="{{STORY_ID}}.css">` line entirely, so
+  the fix adds the link, a two-line `{{STORY_ID}}` substitution (duplicated per ADR-187 R1,
+  devkit's `processTemplate` is private), and the copy — with a placeholder written when a
+  story ships no override, so the unconditional link never 404s. The hand-picked mirror is
+  replaced by `mirrorToWebsite()`; verified real-path on `website/public/web/dungeo/`,
+  which now carries the override CSS, `audio/`, and the sourcemap the enumeration dropped.
 - **Review note**: reinforced by ADR-188 R4 — the author override stylesheet
   must load *after* the engine/`:root` CSS so its `[data-theme]` overrides win.
   In-repo `--browser` builds violate that cascade contract today.
@@ -174,7 +193,15 @@ against ~35 `EntityType.SCENERY` sites. Story-level work — no platform gate.
   `stories/dungeo/src/`, while adds on non-SCENERY types and any add carrying a
   custom can't-take message are preserved; the dungeo walkthrough chain runs
   clean.
-- **Status**: PLANNED — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 5
+- **Status**: DONE — `docs/work/tracker-low-hanging-fruit/plan.md` Phase 5, completed
+  2026-07-30 (session af7835). **34 of 70 adds removed, 36 preserved**: the configured
+  `frame` (AC-3) plus 35 adds on non-SCENERY types (ITEM 17, OBJECT 10, CONTAINER 5,
+  DOOR 1), where the add is the only thing making the entity scenery. Every site was
+  paired with its `createEntity` call by a read-only audit before any edit — all 70
+  resolved, none ambiguous. Walkthrough chain **873/873 clean** (after RNG-noisy runs the
+  standing rule says to re-run); unit transcripts unchanged at 1757 passed / 10 expected
+  failures / 4 skipped; `--exec` spot-check confirms tree, kitchen table, and rug still
+  answer "… is fixed in place".
 
 ---
 
