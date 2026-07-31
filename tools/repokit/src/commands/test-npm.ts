@@ -110,7 +110,7 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
     // 1. Generate the consumer package.json (+ vendor tarballs for local mode).
     const vendor = join(tmp, 'vendor');
     mkdirSync(vendor, { recursive: true });
-    const { closure, haveTranscriptTester } = generateConsumer({
+    const { closure, devClosure, haveTranscriptTester } = generateConsumer({
       mode,
       storyPkgPath,
       stagingDir,
@@ -119,6 +119,12 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
       registryVersion: opts.registryVersion,
     });
     log(`closure (${closure.length}): ${closure.map((n) => n.replace('@sharpee/', '')).join(', ')}`);
+    if (devClosure.length) {
+      log(
+        `dev closure (${devClosure.length}, transcript-tester only): ` +
+          devClosure.map((n) => n.replace('@sharpee/', '')).join(', '),
+      );
+    }
     if (!haveTranscriptTester) {
       throw new Error('@sharpee/transcript-tester missing from staging — cannot run transcripts');
     }
