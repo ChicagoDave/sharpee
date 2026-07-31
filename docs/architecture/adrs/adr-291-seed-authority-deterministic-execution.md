@@ -1,6 +1,14 @@
 # ADR-291: One seed authority, many named streams — deterministic execution as a testable property
 
-## Status: ACCEPTED (2026-07-31, session b3834b) — drafted from the working tree, interviewed (all six open questions resolved), then `adr-review`ed twice: 9/16 with two BLOCKER and four SMALL findings folded, then 16/16. Accepted by David on the clean review. **Platform change**: `packages/core`, `packages/engine`, `packages/stdlib`, `packages/media`, `packages/extensions/basic-combat`, `packages/transcript-tester`, and id-generation sites across eight further packages — approved in principle by this acceptance; see Implementation touchpoints.
+## Status: ACCEPTED (2026-07-31, session b3834b) — drafted from the working tree, interviewed (all six open questions resolved), then `adr-review`ed twice: 9/16 with two BLOCKER and four SMALL findings folded, then 16/16. Accepted by David on the clean review. **Platform change**: `packages/core`, `packages/engine`, `packages/stdlib`, `packages/media`, `packages/world-model` (the `ActionInterceptor` hook signatures — added by A1, see B1), `packages/extensions/basic-combat`, `packages/transcript-tester`, and id-generation sites across eight further packages. **Story change** (added by A1): `stories/dungeo`, `stories/armoured`, `stories/thealderman`, `stories/cloak-of-darkness`. Approved in principle by this acceptance; see Implementation touchpoints.
+
+**Amended 2026-07-31, session 8a8dd0**, before implementation began, after re-verifying
+the Context claims against the tree and re-reviewing the result. Six findings, four of
+them material: D5 named the wrong singletons for the dungeo flake; the D6 gate's scope
+excluded the very corpus Acceptance 1 and 2 run over; D2a's story-access clause covered
+four different shapes and described none; and D5's dungeo half turned out to depend on a
+world-model interface change no section listed. See **Amendment A1** at the foot of this
+document for the full record of what changed and why.
 
 ## Date: 2026-07-31
 
@@ -23,8 +31,9 @@ and engine (`action-context-factory.ts:134`). The interface is threaded into the
 action context, the NPC context, the plugin turn context, weapon behavior,
 deadly-room behavior, probabilistic death, and the scheduler.
 
-**What is missing is an owner.** There are seven construction sites and no
-authority over them:
+**What is missing is an owner.** There are ten construction sites and no
+authority over them (the count was recorded as seven before Amendment A1; the two
+dungeo sites were missed, and the original count did not match its own table):
 
 | Site | Seeded by caller? | Reachable to seed? |
 | --- | --- | --- |
@@ -36,6 +45,8 @@ authority over them:
 | `stdlib/src/actions/enhanced-context.ts:60` (fallback) | **no** | transient |
 | `extensions/basic-combat/src/basic-combat-interceptor.ts:23` | **no** | **module scope** |
 | `extensions/basic-combat/src/basic-npc-resolver.ts:22` | **no** | **module scope** |
+| `stories/dungeo/src/interceptors/melee-interceptor.ts:47` | **no** | **module scope** |
+| `stories/dungeo/src/combat/melee-npc-attack.ts:45` | **no** | **module scope** |
 
 An unseeded `createSeededRandom()` falls through to `currentSeed = seed ?? Date.now()`.
 So the engine's two streams are time-seeded on every construction, and **nothing
@@ -44,14 +55,35 @@ in the system can set them** — not an engine option, not `StoryConfig`
 a CLI flag. `packages/transcript-tester/src` contains zero occurrences of the
 string "seed".
 
-**The two module-scope singletons are the worst case and the likely flake.**
-`combatRandom` and `npcCombatRandom` are constructed at *import* time, seeded
-from `Date.now()`, and expose no instance to reach. They drive PC→NPC and NPC→NPC
-combat resolution — which is the dungeo thief. The walkthrough chain's observed
-behavior is consistent with exactly this: a total test count that swings
-892 → 982 → 11533 between runs of an identical bundle is a retry loop whose
-branch count varies per run, not a fixed suite. That flake has been re-run and
-re-attributed across several sessions; it has a named cause here.
+**The four module-scope singletons are the worst case, and two of them are the
+flake.** Each is constructed at *import* time, seeded from `Date.now()`, and
+exposes no instance to reach:
+
+| Singleton | Package | Drives |
+| --- | --- | --- |
+| `combatRandom` (`basic-combat-interceptor.ts:23`) | `extensions/basic-combat` | PC→NPC combat for stories that load the extension |
+| `npcCombatRandom` (`basic-npc-resolver.ts:22`) | `extensions/basic-combat` | NPC→NPC combat, same |
+| `meleeRandom` (`melee-interceptor.ts:47`) | `stories/dungeo` | PC→NPC melee — **the dungeo thief and troll** |
+| `npcMeleeRandom` (`melee-npc-attack.ts:45`) | `stories/dungeo` | NPC→NPC melee, same |
+
+**The dungeo pair, not the `basic-combat` pair, is what the walkthrough chain
+exercises** (corrected by Amendment A1; the original draft attributed the flake to
+`basic-combat`). Verified 2026-07-31: `stories/dungeo` contains no reference to
+`basic-combat` in source or `package.json` — it reaches the extension through
+neither `story-loader`'s `extension-registry.ts` nor a direct import. Dungeo ships
+its own combat entirely. `basic-combat` is real and its singletons are equally
+unreachable, but a change confined to it would leave the dungeo chain exactly as
+nondeterministic as it is today, and Acceptance 2 would still fail.
+
+Both dungeo singletons carry a header comment stating they exist *specifically* to
+avoid identical rolls when several attacks resolve inside one `Date.now()`
+millisecond — a workaround that documents the absence of a seed authority in as
+many words, and that a per-stream authority makes unnecessary.
+
+The walkthrough chain's observed behavior is consistent with exactly this: a total
+test count that swings 892 → 982 → 11533 between runs of an identical bundle is a
+retry loop whose branch count varies per run, not a fixed suite. That flake has
+been re-run and re-attributed across several sessions; it has a named cause here.
 
 **Persistence is asymmetric.** `save-restore-service.ts:230` persists exactly one
 stream — `actionRngSeed: provider.getActionRandom().getSeed()` — and `:299`
@@ -61,13 +93,48 @@ the deadly-room transformer (`game-engine.ts:349`) and the NPC context
 (`game-engine.ts:1150`, `random: this.random`). So a restored save continues
 action rolls exactly and silently re-randomizes NPC behavior and hazard rolls.
 
-**Randomness also leaks outside the seam.** `media/src/audio/audio-registry.ts`
-calls raw `Math.random()` three times (`:206` pool source selection, `:211`
-volume jitter, `:212` pitch jitter). Separately, ~35 sites generate event ids as
-`` `evt_${Date.now()}_${Math.random()...}` `` — including
-`core/src/events/event-system.ts:77`, which mixes a counter with
-`Math.floor(Math.random() * 1000)`. Whether any id or timestamp reaches rendered
-text is **not established**; it is assumed not to, which is not the same thing.
+**Randomness also leaks outside the seam.** Counted 2026-07-31 over `src`
+directories only, excluding tests, `dist`, and commented-out code (Amendment A1
+replaces the draft's "~35 sites"; the true shape is 35 in platform source *plus* a
+story-level population the draft did not count at all):
+
+| Where | Live `Math.random()` | Kind |
+| --- | --- | --- |
+| `packages/**/src`, excluding the audio registry | 32 | event/entity id generation |
+| `packages/media/src/audio/audio-registry.ts` | 3 | gameplay — pool pick (`:206`), volume jitter (`:211`), pitch jitter (`:212`) |
+| `stories/**/src` | 2 | id generation (dungeo) |
+| `stories/**/src` | 7 | **gameplay** — see below |
+
+(35 in `packages/**/src` and 9 in `stories/**/src`; the first two rows partition the
+platform total rather than nesting, which the draft of this table left ambiguous.)
+
+The id population's largest single cluster is
+`parser-en-us/src/english-parser.ts` at 9 sites; `world-model`'s
+`roomBehavior.ts` and `switchableBehavior.ts` carry 3 each as
+`` `${Date.now()}-${Math.random()}` ``; and `core/src/events/event-system.ts:77`
+mixes a counter with `Math.floor(Math.random() * 1000)`.
+
+**Stories roll gameplay dice outside the seam** (found by Amendment A1). These are
+not ids — they decide what happens:
+
+| Site | Decides |
+| --- | --- |
+| `stories/dungeo/src/handlers/bat-handler.ts:75` | which room the bat drops you in |
+| `stories/dungeo/src/handlers/carousel-handler.ts:42` | machine room vs. tea room |
+| `stories/dungeo/src/handlers/round-room-handler.ts:62` | which exit the round room takes |
+| `stories/dungeo/src/npcs/dungeon-master/dungeon-master-trivia.ts:115` | which trivia question opens |
+| `stories/armoured/src/combat/combat-utils.ts:83` | a d20 combat roll |
+| `stories/thealderman/src/randomization.ts:43` | a generic array pick |
+| `stories/cloak-of-darkness/src/index.ts:524` | which characters of the scuffed message survive |
+
+This matters because **the acceptance corpus is dungeo**. Acceptance 1 (byte-identical
+output across two processes at one seed) and Acceptance 2 (a stable chain at a pinned
+seed) are both evaluated against a story that flips four gameplay coins per run outside
+any stream. Retiring every construction site in `packages/` would leave both criteria
+failing, for reasons entirely inside `stories/`. D6's scope is amended accordingly.
+
+Whether any id or timestamp reaches rendered text is **not established**; it is
+assumed not to, which is not the same thing.
 
 **The downstream cost is already being paid.** ADR-277 D5's capture default is
 `[OK: any]` — presence-only — and its header says why in as many words: it
@@ -150,12 +217,33 @@ that told every consumer to "ask the authority" would instruct world-model to
 import the engine. So:
 
 - **Ask the authority directly**: engine, stdlib, extensions, story-loader, and
-  stories. These may already reach the engine.
+  story *setup* code — anything holding an engine reference at wiring time.
 - **Receive a stream as a parameter**: world-model behaviors, unchanged from
   ADR-231 D6's precedent. The caller resolves the stream and passes it in.
 
 `packages/core` gains the interface only — no instance, no registry state — so
 nothing about the dependency direction changes.
+
+**How story code reaches a stream** (added by Amendment A1, finding B2). "Stories
+ask the authority" was one clause covering four materially different situations.
+Surveyed in the tree 2026-07-31, dungeo's randomness arrives four ways, and three of
+them already have a route:
+
+| Shape | Example | Contract |
+| --- | --- | --- |
+| Already receives a `SeededRandom` parameter and discards it | `melee-npc-attack.ts:110` takes `_random`, then overrides it with the module singleton at `:116` | **Use the parameter.** The seam exists; the code opted out of it |
+| Runs inside a scheduler daemon or fuse | `bat-handler.ts`, `carousel-handler.ts`, `round-room-handler.ts` — `SchedulerContext` already carries `random: SeededRandom` (`plugin-scheduler/src/types.ts:25`) | **Use `context.random`.** The scheduler's stream is authority-minted under D2 |
+| Runs inside an action interceptor | `melee-interceptor.ts:348`, in `postExecute` | **Receive it as a parameter** — requires the world-model hook change in B1 |
+| A pure helper with no context at all | `dungeon-master-trivia.ts:115`, `startTrivia(state)` | **Take a `SeededRandom` parameter**; the caller, which does have a context, supplies it |
+
+The rule underneath all four: **story code never calls `authority.stream()` at play
+time.** It either receives a stream or reads one off a context it was already given.
+Only story *setup* — the `register…Handler` wiring that runs once with the engine in
+hand — may acquire a stream by name, and only to hand it downward.
+
+This keeps a story on the same footing as world-model without needing D2a's
+engine-free rule to extend to it: nothing in a story's per-turn path acquires
+randomness, so nothing in it can mint an unowned stream, which is what D2 withdraws.
 
 **Interface shape** (the contract, not the implementation):
 
@@ -211,11 +299,32 @@ reader maps it onto the `actions` stream and reseeds the rest from the root
 seed. The standing preference after the v3→v4 hard break is that save-format
 changes add a reader rather than another break-and-delete.
 
-### D5. Module-scope RNG singletons are retired
+### D5. Module-scope RNG singletons are retired — all four, extensions and stories alike
+
+**Amended by A1**: the draft named only `basic-combat`'s pair. There are four.
 
 `basic-combat`'s `combatRandom` and `npcCombatRandom` become streams acquired
-from the authority when the extension registers. No module-scope randomness
-survives anywhere in the tree.
+from the authority when the extension registers, under D2's `ext:basic-combat/`
+namespace.
+
+`stories/dungeo`'s `meleeRandom` (`melee-interceptor.ts:47`) and `npcMeleeRandom`
+(`melee-npc-attack.ts:45`) become streams acquired under D2's `story:dungeo/`
+namespace. D2 already opened registration to stories and already gave them a
+prefix, so this needs no new mechanism — only the recognition that dungeo is where
+the flake actually lives.
+
+Both pairs are non-negotiable for Acceptance 2, and the *dungeo* pair is the one
+that criterion actually measures. Retiring the extension's pair alone would produce
+a change that is correct, ships green on its own tests, and moves the chain flake
+not at all.
+
+A story acquiring a stream is not a story seeding one — the root seed still governs
+it (D2), so ADR-231 D6's "never seed/disable story randomness" is untouched. What
+dungeo gains is reachability: an authority that can reseed the melee stream on
+restore, and a `--seed` that reaches it.
+
+No module-scope randomness survives anywhere in the tree — `packages/` or
+`stories/`.
 
 ### D6. Randomness outside the authority is a build-visible defect
 
@@ -228,19 +337,58 @@ playback; it bakes the random values into an event payload:
 `createTypedEvent('audio.sfx', { src, volume, rate, duck })`. Audio rides
 channels, so those numbers enter the event source, serialize into saves, and are
 assertable content anywhere the IDE observes channel packets. Exempting them
-would contradict Acceptance 6a outright.
+would contradict Acceptance 7 outright — two runs at one seed could not produce
+byte-identical saves while three unseeded floats ride into the event source every
+time a sound plays. (The draft cited "Acceptance 6a", which does not exist; the
+criteria are 1–13 with no sub-items. Corrected by Amendment A1.)
 
 Determinism here does not flatten anything: a stream's successive draws still
 differ, so footsteps still vary shot to shot. The same *seed* simply replays the
 same sequence of variations.
 
-A gate fails the build when `Math.random()` appears in platform source. **The
+A gate fails the build when `Math.random()` appears in gated source. **The
 allowlist is empty** (ruled by David, 2026-07-31): event-id generation becomes
 deterministic rather than carve-out territory.
 
-The ~35 sites building ids as `` `evt_${Date.now()}_${Math.random()...}` `` —
-plus `core/src/events/event-system.ts:77`, which already mixes a counter with a
-random — move to a monotonic per-session counter with no clock and no randomness.
+**Gate scope, stated once so a linter's default does not decide it** (Amendment
+A1, resolving the first "Deferred, not decided" item and extending it to stories):
+
+**Exclusions win over inclusions** — the rows below overlap, and the precedence is
+stated here rather than left to the linter (Amendment A1, finding S3). It is not
+hypothetical: dungeo keeps test files *inside* `src/`
+(`src/combat/melee-npc-attack.test.ts`, `src/handlers/grue-handler.test.ts`), so a
+path can match a gated root and an excluded pattern at once.
+
+| Path | Gated? | Why |
+| --- | --- | --- |
+| `packages/**/src` | **yes** | platform source; the original scope |
+| `stories/**/src` | **yes** | the acceptance corpus lives here (see Context) |
+| `**/*.test.ts`, `**/tests/**` — **anywhere, including inside a gated `src`** | no | a test may construct a generator directly; that is what pins a seed |
+| `tools/**` | no | author tooling, not execution — `vscode-ext/src/new-story-wizard.ts` generates a scaffold id at authoring time, never during play |
+| `**/dist`, `**/dist-esm`, `node_modules` | no | build output |
+
+Two clarifications the scope needs:
+
+- **The gate bans `Math.random()`, not `Date.now()`.** `--vary` (D9) reads the
+  clock to *choose* a root seed, which is seed entry, not randomness during
+  execution. `packages/transcript-tester` is gated like any other platform package
+  and stays compliant, because choosing a seed from the clock uses no
+  `Math.random()` call. The draft deferred this question on the assumption the two
+  were entangled; they are not.
+- **`Date.now()` in an id is still removed** — not by this gate, but by D6's
+  substantive rule, which replaces the whole `` `${Date.now()}_${Math.random()}` ``
+  form with a counter. The gate catches the random half; Acceptance 7
+  (byte-identical saves) catches the clock half.
+
+An in-repo story is gated but a *published* story is not: the gate is a build step
+in this repository, and D1 leaves authors free to write whatever randomness they
+like. Nothing here reaches an author's own project.
+
+The 32 platform sites building ids as `` `evt_${Date.now()}_${Math.random()...}` ``
+— including `core/src/events/event-system.ts:77`, which already mixes a counter with
+a random — plus the 2 in `stories/dungeo`, move to a monotonic per-session counter
+with no clock and no randomness. (Amendment A1.3 replaces the draft's "~35"; that
+figure counted the 3 audio calls, which are gameplay, not ids.)
 
 Two reasons this is worth the mechanical churn. A gate with no exceptions cannot
 erode, while a gate with one always does — and the single carve-out would sit
@@ -386,11 +534,49 @@ as of 2026-07-31.
 - No behavior acquires a stream directly. `traits/room/roomBehavior.ts:91,121,164`,
   `traits/switchable/switchableBehavior.ts:151,167,197`,
   `world/WorldEventSystem.ts:281`, `world/WorldModel.ts:612` change only for ids (D6)
+- `capabilities/action-interceptor.ts:345,371,393,436,473` — **added by Amendment A1,
+  finding B1.** The five `ActionInterceptor` hooks (`preValidate`, `postValidate`,
+  `postExecute`, `postReport`, `onBlocked`) each take
+  `(entity, world, actorId, sharedData)` and no `SeededRandom`. They gain an optional
+  `random?: SeededRandom` parameter, supplied by the engine-side interceptor registry
+  (ADR-208, engine-owned per world). Parameter injection per D2a — world-model still
+  acquires nothing and imports nothing new.
+
+  This is the **only interface change D5's dungeo half requires**, and it is a
+  world-model edit, so it lands *before* the story edit rather than alongside it.
+  Without it `melee-interceptor.ts:348` has no route to a stream and D5 cannot be
+  completed for the site that Acceptance 2 actually measures. The draft named neither
+  the file nor the dependency; A1's first pass added the story site without it.
 
 **Extensions**
 - `extensions/basic-combat/src/basic-combat-interceptor.ts:23` and
   `basic-npc-resolver.ts:22` — module singletons retired (D5)
 - `extensions/testing/src/annotations/store.ts:13` — ids (D6)
+
+**Stories — added by Amendment A1; the draft listed none**
+
+Sized per D2a's story-access table. **Four of the six dungeo edits are one-liners** —
+the seam is already plumbed and the code opted out of it:
+
+| Site | D5/D6 | Work |
+| --- | --- | --- |
+| `combat/melee-npc-attack.ts:45,116` | D5 | **one line** — delete the singleton, use the `_random` parameter the function already receives at `:110` |
+| `handlers/bat-handler.ts:75` | D6 | **one line** — pass `context.random` into `getRandomDropLocation` |
+| `handlers/carousel-handler.ts:42` | D6 | **one line** — same, into `getRandomDestination` |
+| `handlers/round-room-handler.ts:62` | D6 | **one line** — same, into `getRandomExit` |
+| `interceptors/melee-interceptor.ts:47,348` | D5 | **blocked on the world-model hook change above (B1)**; then use the new parameter |
+| `npcs/dungeon-master/dungeon-master-trivia.ts:115` | D6 | `startTrivia(state)` gains a `SeededRandom` parameter; its caller supplies it |
+
+- The two D5 sites retire onto `story:dungeo/melee` and `story:dungeo/npc-melee`.
+  **This is the Acceptance 2 change**; the `basic-combat` pair above does not touch
+  the dungeo chain
+- `stories/dungeo/src/combat/melee-npc-attack.ts:49`,
+  `actions/gdt/gdt-input-handler.ts:27` — ids (D6)
+- `stories/armoured/src/combat/combat-utils.ts:83` (a d20 roll),
+  `stories/thealderman/src/randomization.ts:43`,
+  `stories/cloak-of-darkness/src/index.ts:524` — gameplay `Math.random()` onto
+  story streams (D6). Not on the acceptance path, but inside the gate's scope,
+  so they land in the same phase as the gate or the gate cannot be switched on
 
 **Media**
 - `media/src/audio/audio-registry.ts:205-215` — `resolvePool` takes the `audio`
@@ -428,8 +614,11 @@ as of 2026-07-31.
 5. A pre-ADR save (carrying `actionRngSeed` alone) restores without error, with
    its action stream continuing exactly and the remaining streams reseeded from
    the root.
-6. The build fails when `Math.random()` is introduced anywhere in platform
-   source — the gate carries no allowlist.
+6. The build fails when `Math.random()` is introduced anywhere in gated source —
+   `packages/**/src` **or** `stories/**/src` — and the gate carries no allowlist.
+   Asserted by introducing a call in each of the two roots and observing two
+   failures, and by confirming the gate stays green over `tests`, `tools`, and
+   `dist` (Amendment A1: the second root and the negative cases are new).
 7. Two runs at the same seed produce **byte-identical save files**, which
    requires event ids to be free of both clock and randomness.
 8. No RNG-derived or `Date.now()`-derived token appears in rendered output,
@@ -466,6 +655,13 @@ as of 2026-07-31.
   is a surfacing, not a regression, and it should be expected to produce work.
 - **`basic-combat`'s internals change shape** — module singletons become
   injected streams. The extension's public surface is otherwise untouched.
+- **`ActionInterceptor` gains a parameter** (A1, B1). Its five hooks take an optional
+  `random?: SeededRandom`. Optional, so existing interceptors compile unchanged; but
+  it is a world-model public-surface change and the first this ADR makes, so it
+  belongs in the same release note as the save format.
+- **Dungeo's combat and hazard code changes** — four one-line edits plus the
+  interceptor, none of them behavioural at a fixed seed. What changes is that the
+  chain stops varying run to run, which is Acceptance 2 and the point of the exercise.
 - **Save format changes** (D4), with a reader rather than a break.
 - **The seed derivation joins the save format as a versioned compatibility
   surface** (D2). Two constants now gate upgrades rather than one, and a
@@ -488,24 +684,109 @@ as of 2026-07-31.
 
 ## Deferred, not decided
 
-Two points the second `adr-review` surfaced and acceptance did not resolve.
-Recorded so they are not mistaken for oversights by whoever implements this.
+Points the second `adr-review` surfaced and acceptance did not resolve. Recorded so
+they are not mistaken for oversights by whoever implements this.
 
-- **The D6 gate's scope.** `--vary` seeds from the clock, and D6 bans
-  `Math.random()` in "platform source" without saying whether
-  `packages/transcript-tester` is platform source. The runner's own clock read is
-  legitimate — seeding *from* a clock is not randomness *during* execution — but
-  the gate needs one sentence scoping itself so the question does not get
-  answered by whichever pattern the linter happens to use.
+- ~~**The D6 gate's scope.**~~ **Resolved by Amendment A1**, which writes the scope
+  table into D6 and separates the `Math.random()` ban from `Date.now()` seed entry.
+  `packages/transcript-tester` is gated and stays compliant, because `--vary` reads
+  a clock rather than calling `Math.random()`. The two were assumed entangled; they
+  are not.
 - **IDE seed entry has no touchpoint.** D1 permits the IDE to set a root seed and
   D10 requires the Play pane to display one, but Implementation lists only the
-  display. The entry surface is unspecified.
+  display. The entry surface is unspecified. **Still open** — A1 did not touch it.
+- **Story stream naming is unspecified below the prefix** (new, A1). D2 fixes the
+  `story:<id>/` prefix and D5 now puts four dungeo streams behind it, but nothing
+  says whether a story declares its streams somewhere discoverable or mints them at
+  the point of use. It matters only for D4's save map, where a renamed stream reseeds
+  from root — an already-covered case, which is why this is deferred rather than
+  blocking.
 
 ## Tracked work
 
 No issues are filed for this ADR yet. The walkthrough-chain flake has been
 recorded in several session summaries as an unattributed RNG symptom; if it is
-filed, it should cite D5 as the cause and Acceptance 2 as the gate.
+filed, it should cite D5 as the cause and Acceptance 2 as the gate — and name
+`stories/dungeo/src/interceptors/melee-interceptor.ts:47` and
+`combat/melee-npc-attack.ts:45` specifically, **not** the `basic-combat` pair the
+ADR originally pointed at (Amendment A1).
+
+## Amendment A1 — 2026-07-31, session 8a8dd0
+
+Made **before any implementation**, from a re-verification of the Context section
+against the tree, then an `adr-review` pass over the result. The draft's Context was
+written from a grep of `packages/`; A1 extends that sweep to `stories/` and re-checks
+the flake attribution (A1.1–A1.3), and the review that followed found two missing
+contracts on the story side (A1.4–A1.5) plus the sizing correction (A1.6).
+
+The common root: every one of these is a place where the draft reasoned about
+`stories/` from inside `packages/`.
+
+**A1.1 — D5 named the wrong singletons (material).** The draft attributed the
+walkthrough-chain flake to `basic-combat`'s `combatRandom` and `npcCombatRandom`,
+reasoning that they "drive PC→NPC and NPC→NPC combat resolution — which is the
+dungeo thief." Verified false: `stories/dungeo` contains no reference to
+`basic-combat` in source or `package.json`. Dungeo ships its own combat with its
+own pair of module-scope, clock-seeded singletons at `melee-interceptor.ts:47` and
+`melee-npc-attack.ts:45`. D5 now covers all four. Without this, D5 could have been
+implemented to the letter, passed its own tests, and left Acceptance 2 failing for
+the original reason.
+
+**A1.2 — the D6 gate excluded its own acceptance corpus (material).** The gate was
+scoped to "platform source" while Acceptances 1 and 2 evaluate the dungeo chain,
+which flips four gameplay coins per run at `bat-handler.ts:75`,
+`carousel-handler.ts:42`, `round-room-handler.ts:62`, and
+`dungeon-master-trivia.ts:115`. Three more in-repo stories do the same. D6 now
+carries a scope table covering `packages/**/src` and `stories/**/src`, and
+Acceptance 6 asserts both roots plus the exclusions.
+
+**A1.3 — counts corrected (bookkeeping).** "Seven construction sites" listed eight;
+the true figure is ten with dungeo included. "~35 sites generate event ids" was 32
+ids plus the 3 audio calls in `packages/**/src`, with 9 more in `stories/**/src`
+the draft did not count. `event-processor/.../observation-handlers.ts:27` is a
+commented-out line and is no work at all.
+
+**A1.4 — the story→authority boundary was one clause covering four shapes
+(`adr-review` finding B2).** D2a's "stories ask the authority directly" implied a
+mechanism no story site uses. Surveying dungeo found four distinct access shapes,
+three already plumbed. D2a now carries the table and the rule underneath it: story
+code never calls `authority.stream()` at play time — only story *setup* does, and
+only to hand a stream downward.
+
+**A1.5 — D5's dungeo half depends on a world-model interface change
+(`adr-review` finding B1).** `melee-interceptor.ts:348` reads its singleton inside
+`postExecute`, and `ActionInterceptor`'s five hooks
+(`action-interceptor.ts:345,371,393,436,473`) take no `SeededRandom`. Since D2a
+forbids world-model from asking the authority, the stream must arrive as a parameter
+— a world-model edit that neither the draft nor A1's first pass listed. Added to
+Implementation, and sequenced *before* the story edit. This is the finding that would
+have surfaced mid-implementation as "D5 cannot be finished," at the one site
+Acceptance 2 measures.
+
+**A1.6 — story work is smaller than A1 first made it look.** Four of the six dungeo
+edits are one line each: `melee-npc-attack.ts` already *receives* a `SeededRandom` at
+`:110` and discards it at `:116`, and the bat, carousel, and round-room daemons all
+run with `SchedulerContext.random` in hand (`plugin-scheduler/src/types.ts:25`). The
+gameplay `Math.random()` calls in dungeo are not missing plumbing; they are code that
+had a stream available and did not use it.
+
+**Also resolved.** The first "Deferred, not decided" item (the gate's scope versus
+`--vary`'s clock read) closes as part of A1.2: the gate bans `Math.random()`, and
+seeding from `Date.now()` is neither that call nor randomness during execution. One
+new deferral opens in its place (story stream naming below the `story:<id>/`
+prefix), and the IDE seed-entry deferral is untouched.
+
+**Review record.** A1 was `adr-review`ed once at 14/16 — two BLOCKERs (B1, B2) and
+four SMALL findings (the stale "~35" in D6, an ambiguous Context table, the gate
+table's missing exclusion precedence, and a Status line that predated the amendment),
+all folded above. No decision was reversed by the review either; both BLOCKERs were
+missing contracts, not wrong ones.
+
+**Not changed.** No decision was reversed. D1–D4, D7–D10, the `SeedAuthority`
+interface, the refusal table, and the derivation ruling all stand as accepted. A1
+widens D5's and D6's scope, adds the story-access contract to D2a, adds one
+world-model interface change to Implementation, and corrects the Context all of them
+rest on.
 
 ## Session
 
