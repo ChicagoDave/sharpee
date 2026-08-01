@@ -44,7 +44,12 @@ import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom, deriveStreamSeed } from '@sharpee/core';
+import {
+  ACTION_STREAM_POINT_NAME,
+  EngineRandomService,
+  TURN_STREAM_POINT_NAME
+} from './engine-random-service.js';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
 import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
@@ -182,6 +187,19 @@ export class GameEngine {
    * via `setSoundDispatcher` in tests).
    */
   private soundDispatcher: SoundDispatcher = new SoundDispatcher();
+  /**
+   * Master seed for the session (ADR-293 D1). Resolved once in the
+   * constructor — `config.seed` when injected, else the clock, read
+   * exactly once. Every engine stream derives from it.
+   */
+  private masterSeed: number;
+  /**
+   * Per-point stream owner (ADR-293 D5/D7) — the engine's sole
+   * `RandomService` instance. Exposed through the save provider so the
+   * `{ pointName → streamState }` map rides every save. Draw surfaces
+   * move onto it across ADR-293 Phase A.
+   */
+  private randomService: EngineRandomService;
   private random: SeededRandom;
   /**
    * Dedicated action RNG stream (ADR-231 D6), exposed to actions as
@@ -303,10 +321,20 @@ export class GameEngine {
 
     this.pluginRegistry = new PluginRegistry();
     this.pluginRegistry.register(new SceneEvaluationPlugin());
-    this.random = createSeededRandom();
-    // ADR-231 D6: dedicated action stream — unseeded construction gives a
-    // time-based initial seed (same pattern as `random` above)
-    this.actionRandom = createSeededRandom();
+    // ADR-293 D1: one master seed governs the session. The clock is read
+    // exactly once, and only when no seed was injected.
+    this.masterSeed = this.config.seed ?? Date.now();
+    this.randomService = new EngineRandomService(this.masterSeed);
+    // ADR-293 Phase A interim (re-cut Phase 3): both legacy streams stay
+    // SeededRandom-typed until their surfaces move onto points in the
+    // Phase 4–6 arc, but seed by derivation from the master seed so
+    // turn-plugin, deadly-room, and action draws are seed-reproducible now.
+    this.random = createSeededRandom(
+      deriveStreamSeed(this.masterSeed, TURN_STREAM_POINT_NAME)
+    );
+    this.actionRandom = createSeededRandom(
+      deriveStreamSeed(this.masterSeed, ACTION_STREAM_POINT_NAME)
+    );
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
     // Initialize extracted services (Phase 4 remediation)
@@ -712,6 +740,18 @@ export class GameEngine {
     //     invariant from §11.
     this.refreshStoryInfoCapability();
     this.clientCapabilities = options?.capabilities ?? DEFAULT_TEXT_CAPABILITIES;
+
+    // ADR-293 (re-cut Phase 3): hand every plugin its session seed before
+    // the first turn. Each plugin gets its own name-derived seed, so plugin
+    // streams are independent of each other and of the engine streams.
+    // Story-registered plugins (scheduler, NPC, state-machine) are all in
+    // the registry by now — stories register during setStory().
+    for (const plugin of this.pluginRegistry.getAll()) {
+      plugin.onSessionSeed?.(
+        deriveStreamSeed(this.masterSeed, `plugin.${plugin.id}`)
+      );
+    }
+
     this.story?.registerChannels?.(channelRegistry);
     this.channelService = new ChannelService(channelRegistry, this.clientCapabilities);
     this.emit('channel:manifest', this.channelService.buildManifest());
@@ -1776,6 +1816,25 @@ export class GameEngine {
    */
   getActionRandom(): SeededRandom {
     return this.actionRandom;
+  }
+
+  /**
+   * The session's master seed (ADR-293 D1/D14). Every run reports it —
+   * test output, `--play` startup, failure reports — so one number plus
+   * a command list reproduces the session.
+   */
+  getMasterSeed(): number {
+    return this.masterSeed;
+  }
+
+  /**
+   * The engine's per-point stream owner (ADR-293 D5). Part of the
+   * ISaveRestoreStateProvider contract — the save service persists its
+   * `{ pointName → streamState }` map and restores it through the
+   * version reader.
+   */
+  getRandomService(): EngineRandomService {
+    return this.randomService;
   }
 
   /**

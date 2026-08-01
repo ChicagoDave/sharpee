@@ -12,6 +12,8 @@ import { EnglishParser } from '@sharpee/parser-en-us';
 export interface TestEngineOptions {
   includeCapabilities?: boolean;
   includeObjects?: boolean;
+  /** Optional EngineConfig forwarded to the GameEngine constructor (e.g. `seed`). */
+  config?: import('../../src/types').EngineConfig;
 }
 
 /**
@@ -25,7 +27,7 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
   languageProvider: EnglishLanguageProvider;
   parser: EnglishParser;
 } {
-  const { includeCapabilities = true, includeObjects = false } = options;
+  const { includeCapabilities = true, includeObjects = false, config } = options;
 
   // Create world model
   const world = new WorldModel();
@@ -61,6 +63,7 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
     player,
     parser,
     language: languageProvider,
+    ...(config ? { config } : {}),
   });
 
   return { engine, world, player, languageProvider, parser };

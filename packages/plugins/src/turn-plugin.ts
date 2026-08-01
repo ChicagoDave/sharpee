@@ -25,4 +25,13 @@ export interface TurnPlugin {
   getState?(): unknown;
   /** Optional: restore previously-saved state when the game is loaded. */
   setState?(state: unknown): void;
+  /**
+   * Optional: receive the session seed before the first turn (ADR-293).
+   * The engine calls this once at `start()` with a seed derived from the
+   * session's master seed and this plugin's id, so a plugin that owns its
+   * own RNG (e.g. the scheduler) becomes seed-reproducible without
+   * coupling to engine internals. Plugins without internal randomness
+   * simply omit it.
+   */
+  onSessionSeed?(seed: number): void;
 }

@@ -172,6 +172,34 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       continue;
     }
 
+    // [SEED: N] — ADR-293 D14: pins the session's master seed. File-level
+    // metadata rather than an item; at most one per transcript. The CLI
+    // enforces the chain rule (only the first chain member's seed counts).
+    const seedMatch = /^\[SEED:\s*(.+?)\s*\]$/i.exec(trimmed);
+    if (seedMatch) {
+      if (currentCommand) {
+        finalizeCommand(currentCommand, parseErrors);
+        transcript.commands.push(currentCommand);
+        transcript.items!.push({ type: 'command', command: currentCommand });
+        currentCommand = null;
+      }
+      if (transcript.seed !== undefined) {
+        parseErrors.push({
+          lineNumber,
+          message: `Duplicate [SEED:] — the seed is already pinned to ${transcript.seed} (a transcript declares at most one)`
+        });
+      } else if (!/^\d+$/.test(seedMatch[1])) {
+        parseErrors.push({
+          lineNumber,
+          message: `Invalid [SEED:] value "${seedMatch[1]}" — must be a non-negative integer`
+        });
+      } else {
+        transcript.seed = Number(seedMatch[1]);
+        transcript.seedLineNumber = lineNumber;
+      }
+      continue;
+    }
+
     // Directive or assertion tags (both use [ ])
     if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
       // ADR-287 D1: a block attaches only on the IMMEDIATELY following line —

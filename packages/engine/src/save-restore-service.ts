@@ -37,7 +37,8 @@ import {
   ISerializedParserState,
   ISemanticEventSource,
   SeededRandom,
-  createSemanticEventSource
+  createSemanticEventSource,
+  deriveStreamSeed
 } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types.js';
@@ -332,8 +333,18 @@ export class SaveRestoreService {
     // crashing (matches unseeded-construction behavior).
     const actionRandom = provider.getActionRandom();
     const savedActionSeed = saveData.engineState.actionRngSeed;
+    const randomServiceForFallback = provider.getRandomService?.();
     if (typeof savedActionSeed === 'number') {
       actionRandom.setSeed(savedActionSeed);
+    } else if (randomServiceForFallback) {
+      // ADR-293 D7: restore fallbacks never read the clock when a master
+      // seed is set — reseed the action stream by derivation instead.
+      actionRandom.setSeed(
+        deriveStreamSeed(
+          randomServiceForFallback.getMasterSeed(),
+          ACTION_STREAM_POINT_NAME
+        )
+      );
     } else {
       actionRandom.setSeed(Date.now());
     }
@@ -344,7 +355,7 @@ export class SaveRestoreService {
     // every other point reseeds from the master seed (which lazy derivation
     // does without ever reading the clock). A 3.0.0 save reads the map
     // directly.
-    const randomService = provider.getRandomService?.();
+    const randomService = randomServiceForFallback;
     if (randomService) {
       if (saveData.version === LEGACY_SAVE_FORMAT_VERSION) {
         randomService.restoreStreamStates(

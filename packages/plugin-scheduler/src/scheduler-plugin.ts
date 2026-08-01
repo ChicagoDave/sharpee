@@ -31,6 +31,16 @@ export class SchedulerPlugin implements TurnPlugin {
     this.service.setState(state as SchedulerState);
   }
 
+  /**
+   * Reseed the scheduler's internal stream from the session seed
+   * (ADR-293). Called by the engine before the first turn, which makes
+   * daemon draws seed-reproducible; a later `setState` (save restore)
+   * still wins, since it runs after and carries the saved stream state.
+   */
+  onSessionSeed(seed: number): void {
+    this.service.getRandom().setSeed(seed);
+  }
+
   /** Public access for stories that need daemon/fuse registration */
   getScheduler(): ISchedulerService {
     return this.service;

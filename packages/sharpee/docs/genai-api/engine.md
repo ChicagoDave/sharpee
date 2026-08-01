@@ -228,6 +228,14 @@ export interface EngineConfig {
      * Set to 0 to disable undo
      */
     maxUndoSnapshots?: number;
+    /**
+     * Master seed for the session (ADR-293 D1). One seed governs every
+     * stream: given the same seed and command sequence, a story produces
+     * the same rendered output. Precedence: `(--seed N | --vary)` →
+     * `[SEED: N]` → this field → the clock (read exactly once). Absent,
+     * play is as varied as before.
+     */
+    seed?: number;
 }
 /**
  * Summary of a registered action, suitable for JSON serialization.
@@ -1154,6 +1162,7 @@ import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@s
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock } from '@sharpee/text-blocks';
 import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource, SeededRandom } from '@sharpee/core';
+import { EngineRandomService } from './engine-random-service.js';
 import { PluginRegistry } from '@sharpee/plugins';
 import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types.js';
 import { Story } from './story.js';
@@ -1239,6 +1248,19 @@ export declare class GameEngine {
      * via `setSoundDispatcher` in tests).
      */
     private soundDispatcher;
+    /**
+     * Master seed for the session (ADR-293 D1). Resolved once in the
+     * constructor — `config.seed` when injected, else the clock, read
+     * exactly once. Every engine stream derives from it.
+     */
+    private masterSeed;
+    /**
+     * Per-point stream owner (ADR-293 D5/D7) — the engine's sole
+     * `RandomService` instance. Exposed through the save provider so the
+     * `{ pointName → streamState }` map rides every save. Draw surfaces
+     * move onto it across ADR-293 Phase A.
+     */
+    private randomService;
     private random;
     /**
      * Dedicated action RNG stream (ADR-231 D6), exposed to actions as
@@ -1467,6 +1489,19 @@ export declare class GameEngine {
      * stream's seed and the restore path re-seeds it.
      */
     getActionRandom(): SeededRandom;
+    /**
+     * The session's master seed (ADR-293 D1/D14). Every run reports it —
+     * test output, `--play` startup, failure reports — so one number plus
+     * a command list reproduces the session.
+     */
+    getMasterSeed(): number;
+    /**
+     * The engine's per-point stream owner (ADR-293 D5). Part of the
+     * ISaveRestoreStateProvider contract — the save service persists its
+     * `{ pointName → streamState }` map and restores it through the
+     * version reader.
+     */
+    getRandomService(): EngineRandomService;
     /**
      * Get event processor for handler registration (ADR-075)
      */
@@ -1930,6 +1965,14 @@ import { ChoicePoint, RandomService, SeededRandom } from '@sharpee/core';
  * (ADR-293 Phase A, stdlib flip).
  */
 export declare const ACTION_STREAM_POINT_NAME = "engine.action";
+/**
+ * Point name the engine's turn-plugin stream (`GameEngine.random`) derives its
+ * interim seed from (ADR-293 Phase A, re-cut Phase 3). The stream stays
+ * `SeededRandom`-typed until the turn-plugin surface moves onto points in the
+ * Phase 4–6 arc; deriving its seed from (masterSeed, this name) makes
+ * turn-plugin and deadly-room draws seed-reproducible in the meantime.
+ */
+export declare const TURN_STREAM_POINT_NAME = "engine.turn";
 /**
  * Per-point stream owner. One instance per engine per session; all stream state
  * lives here (never at module scope — D6) and rides the save as

@@ -259,6 +259,15 @@ export interface EngineConfig {
    * Set to 0 to disable undo
    */
   maxUndoSnapshots?: number;
+
+  /**
+   * Master seed for the session (ADR-293 D1). One seed governs every
+   * stream: given the same seed and command sequence, a story produces
+   * the same rendered output. Precedence: `(--seed N | --vary)` →
+   * `[SEED: N]` → this field → the clock (read exactly once). Absent,
+   * play is as varied as before.
+   */
+  seed?: number;
 }
 
 // ---------------------------------------------------------------------------

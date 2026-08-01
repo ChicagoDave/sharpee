@@ -34,6 +34,15 @@ import {
 export const ACTION_STREAM_POINT_NAME = 'engine.action';
 
 /**
+ * Point name the engine's turn-plugin stream (`GameEngine.random`) derives its
+ * interim seed from (ADR-293 Phase A, re-cut Phase 3). The stream stays
+ * `SeededRandom`-typed until the turn-plugin surface moves onto points in the
+ * Phase 4–6 arc; deriving its seed from (masterSeed, this name) makes
+ * turn-plugin and deadly-room draws seed-reproducible in the meantime.
+ */
+export const TURN_STREAM_POINT_NAME = 'engine.turn';
+
+/**
  * Per-point stream owner. One instance per engine per session; all stream state
  * lives here (never at module scope — D6) and rides the save as
  * `{ pointName → streamState }` (D7).

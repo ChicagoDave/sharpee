@@ -530,6 +530,15 @@ export interface Transcript {
      * transcript's AST is byte-identical to its pre-block parse (ADR-287 D2).
      */
     parseErrors?: ParseError[];
+    /**
+     * Master seed pinned by a `[SEED: N]` directive (ADR-293 D14). At most
+     * one per transcript (a duplicate is a parse error). In a chain, only
+     * the first transcript's seed is honored — the CLI rejects a `[SEED:]`
+     * on a later chain member as a loud error.
+     */
+    seed?: number;
+    /** Line the `[SEED:]` directive appeared on, for chain-rule error reporting. */
+    seedLineNumber?: number;
 }
 /**
  * Snapshot of an entity's traits at the time of event capture.

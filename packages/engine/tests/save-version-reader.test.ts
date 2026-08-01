@@ -184,6 +184,20 @@ describe('version reader: 2.0.0 saves are read, not refused (AC-5 groundwork)', 
     );
   });
 
+  it('reseeds the action stream by derivation, never the clock, when the seed is absent and a RandomService is wired (D7)', () => {
+    const service = new SaveRestoreService();
+    const randomService = new EngineRandomService(MASTER_SEED);
+    const provider = buildProvider(randomService);
+    const legacy = buildLegacySave(1);
+    delete legacy.engineState.actionRngSeed;
+
+    service.loadSaveData(legacy, provider);
+
+    expect(provider.getActionRandom().getSeed()).toBe(
+      deriveStreamSeed(MASTER_SEED, ACTION_STREAM_POINT_NAME)
+    );
+  });
+
   it('reads a 3.0.0 save that omits streamStates: the service resets to empty', () => {
     const service = new SaveRestoreService();
     const randomService = new EngineRandomService(MASTER_SEED);

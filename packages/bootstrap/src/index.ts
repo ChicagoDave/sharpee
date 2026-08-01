@@ -123,7 +123,19 @@ export function moduleFreshStory(location: string, modulePath: string): () => an
  * runners. Without a `freshStory` provider, a confirmed restart surfaces an
  * honest error in the command output instead of rebooting.
  */
-export function assembleGame(story: any, opts?: { freshStory?: () => any }): LoadedGame {
+export function assembleGame(
+  story: any,
+  opts?: {
+    freshStory?: () => any;
+    /**
+     * Master seed for the session (ADR-293 D1), forwarded to
+     * `EngineConfig.seed`. A restart reboot reuses it, so a pinned run
+     * is deterministic across in-transcript RESTART. Absent → the engine
+     * reads the clock once.
+     */
+    seed?: number;
+  }
+): LoadedGame {
   let engine!: GameEngine;
   let world!: WorldModel;
   let outputBuffer: string[] = [];
@@ -146,7 +158,14 @@ export function assembleGame(story: any, opts?: { freshStory?: () => any }): Loa
 
     const perceptionService = new PerceptionService();
 
-    engine = new GameEngine({ world, player, parser, language, perceptionService });
+    engine = new GameEngine({
+      world,
+      player,
+      parser,
+      language,
+      perceptionService,
+      ...(opts?.seed !== undefined ? { config: { seed: opts.seed } } : {})
+    });
     engine.setStory(s);
 
     // ADR-248: auto-confirm restart (the harness has no player to ask) and

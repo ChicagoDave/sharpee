@@ -127,6 +127,11 @@ if (require.main === module) {
       // wins; otherwise the story is inferred from the transcript paths'
       // stories/<name>/ prefix (resolveStoryPath); play/exec require --story.
       storyPath: null,
+      // ADR-293 D1/D14 seed injection: --seed pins the master seed, --vary
+      // mints one fresh seed to run a pinned suite off-baseline. Mutually
+      // exclusive — validated in main().
+      seed: null,
+      vary: false,
       help: false
     };
 
@@ -170,6 +175,15 @@ if (require.main === module) {
         if (i < args.length) {
           options.storyPath = args[i];
         }
+      } else if (arg.startsWith('--seed=')) {
+        options.seed = arg.split('=')[1];
+      } else if (arg === '--seed') {
+        i++;
+        if (i < args.length) {
+          options.seed = args[i];
+        }
+      } else if (arg === '--vary') {
+        options.vary = true;
       } else if (arg === '--help' || arg === '-h') {
         options.help = true;
       } else if (!arg.startsWith('-')) {
@@ -206,6 +220,10 @@ Options:
   --story <path>       Story directory, or a Chord .story file (default: inferred
                        from the transcript paths' stories/<name>/ prefix; required
                        for --play/--exec)
+  --seed <N>           Pin the session's master seed (ADR-293). Wins over a
+                       transcript's [SEED:] directive.
+  --vary               Run a [SEED:]-pinned suite off its pin with one fresh
+                       seed (reported). Mutually exclusive with --seed.
   --help, -h           Show this help message
 
 Examples:
@@ -272,19 +290,23 @@ Examples:
   // channel-packet assembly now lives once in bootstrap.assembleGame.
   // A path ending in `.story` is compiled + interpreted instead of required
   // (`entry` applies only to module stories and is ignored for `.story` files).
-  function loadStoryAndCreateGame(storyPath, entry) {
+  function loadStoryAndCreateGame(storyPath, entry, seed) {
+    // ADR-293: forward the resolved master seed to EngineConfig.seed; a
+    // restart reboot reuses it, so pinned runs survive in-transcript RESTART.
+    const seedOption = seed !== undefined ? { seed } : {};
     if (storyPath.endsWith('.story')) {
       // ADR-248: freshStory recompiles from source, so an in-transcript
       // RESTART reboots onto a fully fresh ChordStory.
       return bootstrap.assembleGame(loadChordStory(storyPath), {
         freshStory: () => loadChordStory(storyPath),
+        ...seedOption,
       });
     }
     const modulePath = bootstrap.resolveStoryModulePath(storyPath, entry);
     // ADR-248: bootstrap's one purge+re-require+createStory() implementation
     // serves both the initial load and every in-process restart reboot.
     const freshStory = bootstrap.moduleFreshStory(storyPath, modulePath);
-    return bootstrap.assembleGame(freshStory(), { freshStory });
+    return bootstrap.assembleGame(freshStory(), { freshStory, ...seedOption });
   }
 
   async function runInteractiveMode(game) {
@@ -470,10 +492,42 @@ Examples:
       process.exit(0);
     }
 
+    // ADR-293 D1: --seed and --vary are two explicit, contradictory
+    // instructions — passing both is a hard error, not an ordered win.
+    if (options.seed !== null && options.vary) {
+      console.error('--seed and --vary are mutually exclusive (ADR-293 D1)');
+      process.exit(2);
+    }
+    if (options.seed !== null) {
+      const parsedSeed = Number(options.seed);
+      if (!Number.isInteger(parsedSeed) || parsedSeed < 0) {
+        console.error(`Invalid --seed value "${options.seed}" — must be a non-negative integer`);
+        process.exit(2);
+      }
+      options.seed = parsedSeed;
+    }
+
+    // ADR-293 D1/D14 precedence: (--seed | --vary) → [SEED:] → the clock
+    // (engine-internal, read once). --vary mints ONE fresh seed for the
+    // whole invocation and must win over a transcript's pin — that is its
+    // entire job: running a pinned suite off-baseline, reported.
+    const varySeed = options.vary ? (Date.now() >>> 0) : null;
+    function resolveSeed(transcriptSeed) {
+      if (options.seed !== null) return { seed: options.seed, source: '--seed' };
+      if (varySeed !== null) return { seed: varySeed, source: '--vary' };
+      if (transcriptSeed !== undefined) return { seed: transcriptSeed, source: '[SEED:]' };
+      return { seed: undefined, source: 'clock' };
+    }
+
     options.storyPath = resolveStoryPath(options);
 
     if (options.exec) {
-      const game = loadStoryAndCreateGame(options.storyPath);
+      const game = loadStoryAndCreateGame(
+        options.storyPath,
+        undefined,
+        resolveSeed(undefined).seed
+      );
+      console.log(`Seed: ${game.engine.getMasterSeed()}`);
 
       if (options.restore) {
         const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
@@ -650,7 +704,14 @@ Examples:
 
     if (options.play) {
       console.log(`Loading story from: ${options.storyPath}`);
-      const game = loadStoryAndCreateGame(options.storyPath);
+      const game = loadStoryAndCreateGame(
+        options.storyPath,
+        undefined,
+        resolveSeed(undefined).seed
+      );
+      // ADR-293 D14: author surfaces show the seed automatically — one
+      // number plus a command list reproduces the session.
+      console.log(`Seed: ${game.engine.getMasterSeed()}`);
 
       if (options.restore) {
         const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
@@ -694,16 +755,45 @@ Examples:
         console.log(`Chain mode: Game state will persist between transcripts`);
       }
 
+      // Parse every transcript up front: the chain's seed comes from the
+      // FIRST member's [SEED:] (ADR-293 D14), so parsing must precede the
+      // chain game's construction.
+      const parsedTranscripts = options.transcriptPaths.map((transcriptPath) => ({
+        transcriptPath,
+        transcript: transcriptTester.parseTranscriptFile(transcriptPath)
+      }));
+
+      // ADR-293 D14 chain rule: the chain is one session — only the first
+      // transcript's [SEED:] is honored, and a pin on a later member is a
+      // loud error, never silently ignored.
+      if (options.chain) {
+        for (let memberIndex = 1; memberIndex < parsedTranscripts.length; memberIndex++) {
+          const later = parsedTranscripts[memberIndex];
+          if (later.transcript.seed !== undefined) {
+            console.error(
+              `${later.transcriptPath}:${later.transcript.seedLineNumber}: ` +
+              `[SEED:] on a chain member after the first — the chain is one ` +
+              `session and its seed comes from the first transcript (ADR-293 D14)`
+            );
+            process.exit(1);
+          }
+        }
+      }
+
       // Chain mode shares one game instance across all transcripts, so load it
       // up front. In per-transcript mode the loop loads a fresh game for each
       // transcript (honoring its `entry:` header) — an eager load here would be
       // discarded unused (ADR-207 AC-7: no side-effecting pre-load).
-      let game = options.chain ? loadStoryAndCreateGame(options.storyPath) : undefined;
+      let game;
+      if (options.chain) {
+        const resolved = resolveSeed(parsedTranscripts[0] && parsedTranscripts[0].transcript.seed);
+        game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed);
+        // ADR-293 D14: every run reports the seed it used, clock-derived included.
+        console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
+      }
       const results = [];
 
-      for (const transcriptPath of options.transcriptPaths) {
-        const transcript = transcriptTester.parseTranscriptFile(transcriptPath);
-
+      for (const { transcriptPath, transcript } of parsedTranscripts) {
         const errors = transcriptTester.validateTranscript(transcript);
         if (errors.length > 0) {
           console.error(`\nErrors in ${transcriptPath}:`);
@@ -714,7 +804,9 @@ Examples:
         }
 
         if (!options.chain) {
-          game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry);
+          const resolved = resolveSeed(transcript.seed);
+          game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed);
+          console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
         }
 
         const savesDirectory = path.join(storyDirOf(options.storyPath), 'saves');

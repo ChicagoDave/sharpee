@@ -35,6 +35,15 @@ export interface TurnPlugin {
     getState?(): unknown;
     /** Optional: restore previously-saved state when the game is loaded. */
     setState?(state: unknown): void;
+    /**
+     * Optional: receive the session seed before the first turn (ADR-293).
+     * The engine calls this once at `start()` with a seed derived from the
+     * session's master seed and this plugin's id, so a plugin that owns its
+     * own RNG (e.g. the scheduler) becomes seed-reproducible without
+     * coupling to engine internals. Plugins without internal randomness
+     * simply omit it.
+     */
+    onSessionSeed?(seed: number): void;
 }
 ```
 
@@ -558,6 +567,13 @@ export declare class SchedulerPlugin implements TurnPlugin {
     onAfterAction(ctx: TurnPluginContext): ISemanticEvent[];
     getState(): unknown;
     setState(state: unknown): void;
+    /**
+     * Reseed the scheduler's internal stream from the session seed
+     * (ADR-293). Called by the engine before the first turn, which makes
+     * daemon draws seed-reproducible; a later `setState` (save restore)
+     * still wins, since it runs after and carries the saved stream state.
+     */
+    onSessionSeed(seed: number): void;
     /** Public access for stories that need daemon/fuse registration */
     getScheduler(): ISchedulerService;
 }
