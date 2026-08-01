@@ -25,6 +25,13 @@ import {
 import { createHelpers } from '@sharpee/helpers';
 import type { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
 import type { RoomIds } from './zoo-map.js';
+import { definePoint } from '@sharpee/core';
+
+// Declared choice points (ADR-293): naming a draw is what makes it
+// forceable, traceable, and visible in coverage. Both parrot behaviors
+// share the squawk point — same decision, different phrase tables.
+const PARROT_SQUAWK_POINT = definePoint('family-zoo.parrot.squawk', { classes: ['yes', 'no'] });
+const PARROT_PHRASE_POINT = definePoint('family-zoo.parrot.phrase');
 
 
 // ============================================================================
@@ -73,8 +80,8 @@ export const parrotBehavior: NpcBehavior = {
   name: 'Parrot Behavior',
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
-    if (context.random.chance(0.5)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASES) } }];
+    if (context.random.chance(PARROT_SQUAWK_POINT, 0.5)) {
+      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASE_POINT, PARROT_PHRASES) } }];
     }
     return [];
   },
@@ -106,8 +113,8 @@ export const parrotAfterHoursBehavior: NpcBehavior = {
   name: 'Parrot After-Hours Behavior',
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
-    if (context.random.chance(0.6)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_AFTER_HOURS_PHRASES) } }];
+    if (context.random.chance(PARROT_SQUAWK_POINT, 0.6)) {
+      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASE_POINT, PARROT_AFTER_HOURS_PHRASES) } }];
     }
     return [];
   },

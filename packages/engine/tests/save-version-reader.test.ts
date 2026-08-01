@@ -45,7 +45,6 @@ function buildProvider(randomService?: EngineRandomService): ISaveRestoreStatePr
     history: [],
     metadata: { started: new Date(0), lastPlayed: new Date(0) }
   };
-  const actionRandom = createSeededRandom(1111);
   return {
     getWorld: () => world,
     getContext: () => context,
@@ -53,7 +52,6 @@ function buildProvider(randomService?: EngineRandomService): ISaveRestoreStatePr
     getEventSource: () => createSemanticEventSource(),
     getPluginRegistry: () => new PluginRegistry(),
     getParser: () => undefined,
-    getActionRandom: () => actionRandom,
     ...(randomService ? { getRandomService: () => randomService } : {})
   };
 }
@@ -128,7 +126,7 @@ describe('version reader: 2.0.0 saves are read, not refused (AC-5 groundwork)', 
     return { ...saved, version: '2.0.0' };
   }
 
-  it('restores without error and re-applies actionRngSeed to the action stream', () => {
+  it('restores without error (AC-5: a pre-ADR save is read, not refused)', () => {
     const service = new SaveRestoreService();
     const provider = buildProvider();
     const legacy = buildLegacySave(555777);
@@ -136,7 +134,6 @@ describe('version reader: 2.0.0 saves are read, not refused (AC-5 groundwork)', 
     const result = service.loadSaveData(legacy, provider);
 
     expect(result.currentTurn).toBe(legacy.metadata.turnCount + 1);
-    expect(provider.getActionRandom().getSeed()).toBe(555777);
   });
 
   it('maps actionRngSeed onto the legacy action point in the RandomService', () => {
@@ -181,20 +178,6 @@ describe('version reader: 2.0.0 saves are read, not refused (AC-5 groundwork)', 
       createSeededRandom(
         deriveStreamSeed(MASTER_SEED, ACTION_STREAM_POINT_NAME)
       ).int(0, 1000000)
-    );
-  });
-
-  it('reseeds the action stream by derivation, never the clock, when the seed is absent and a RandomService is wired (D7)', () => {
-    const service = new SaveRestoreService();
-    const randomService = new EngineRandomService(MASTER_SEED);
-    const provider = buildProvider(randomService);
-    const legacy = buildLegacySave(1);
-    delete legacy.engineState.actionRngSeed;
-
-    service.loadSaveData(legacy, provider);
-
-    expect(provider.getActionRandom().getSeed()).toBe(
-      deriveStreamSeed(MASTER_SEED, ACTION_STREAM_POINT_NAME)
     );
   });
 

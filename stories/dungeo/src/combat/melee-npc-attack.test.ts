@@ -22,7 +22,7 @@ import {
   HealthTrait,
   TraitType,
 } from '@sharpee/world-model';
-import { createSeededRandom } from '@sharpee/core';
+import { createFixtureRandomService } from '../test-support/fixture-random-service';
 import { PLAYER_DIED_EVENT } from '@sharpee/stdlib';
 import { meleeNpcResolver } from './melee-npc-attack';
 import { setGDTFlags, getGDTFlags } from '../actions/gdt/gdt-context';
@@ -58,7 +58,7 @@ describe('meleeNpcResolver GDT immortality guard', () => {
     // many times over — every one of them must be suppressed.
     const { world, player, troll } = buildArena(true);
     for (let i = 0; i < SWEEPS; i++) {
-      const events = meleeNpcResolver(troll, player, world, createSeededRandom(i));
+      const events = meleeNpcResolver(troll, player, world, createFixtureRandomService(i));
       const died = events.filter((e) => e.type === PLAYER_DIED_EVENT);
       expect(died).toEqual([]);
     }
@@ -72,7 +72,7 @@ describe('meleeNpcResolver GDT immortality guard', () => {
     const { world, player, troll } = buildArena(false);
     let sawDeath = false;
     for (let i = 0; i < SWEEPS && !sawDeath; i++) {
-      const events = meleeNpcResolver(troll, player, world, createSeededRandom(i));
+      const events = meleeNpcResolver(troll, player, world, createFixtureRandomService(i));
       if (events.some((e) => e.type === PLAYER_DIED_EVENT)) {
         sawDeath = true;
       }

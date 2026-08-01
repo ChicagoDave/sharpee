@@ -696,6 +696,20 @@ interface GameEngine {
     };
     /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
     reviveEngine?(): void;
+    /**
+     * The underlying platform engine. $save/$restore go through its real
+     * save format (version, turn counter, RNG stream states — ADR-293 D7)
+     * rather than a hand-rolled world snapshot; the tester owns only WHERE
+     * the file lives, never WHAT is in it.
+     */
+    engine?: {
+        registerSaveRestoreHooks(hooks: {
+            onSaveRequested(data: unknown): Promise<void>;
+            onRestoreRequested(): Promise<unknown | null>;
+        }): void;
+        save(): Promise<boolean>;
+        restore(): Promise<boolean>;
+    };
 }
 /**
  * Minimal interface for world model state queries

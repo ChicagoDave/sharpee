@@ -15,7 +15,18 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, definePoint } from '@sharpee/core';
+
+// Choice points (ADR-293 D2): every throwing draw goes through a declared
+// point on its own stream. Grouping ruled at implementation time: the three
+// fragile-break rolls are ONE point (same outcome class — "did it break" —
+// with the branch context supplying the message), the two hit rolls stay
+// split (hitting an actor and hitting a stationary target are distinct
+// coverage rows an author play-tests separately).
+const HIT_ACTOR_POINT = definePoint('stdlib.throwing.hit-actor', { classes: ['yes', 'no'] });
+const CATCH_POINT = definePoint('stdlib.throwing.catch', { classes: ['yes', 'no'] });
+const HIT_STATIONARY_POINT = definePoint('stdlib.throwing.hit-stationary', { classes: ['yes', 'no'] });
+const BREAKS_POINT = definePoint('stdlib.throwing.breaks', { classes: ['yes', 'no'] });
 import {
   TraitType,
   IdentityTrait,
@@ -340,7 +351,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       // Calculate hit/miss
       let hitTarget = false;
       if (target.has(TraitType.ACTOR)) {
-        hitTarget = context.random.chance(0.7); // 70% chance to hit
+        hitTarget = context.random.chance(HIT_ACTOR_POINT, 0.7); // 70% chance to hit
 
         const agility = ActorBehavior.getCustomProperty(target, 'agility');
         const canCatch = ActorBehavior.getCustomProperty(target, 'canCatch');
@@ -348,14 +359,14 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         if (!hitTarget && agility > 5) {
           sharedData.targetDucked = true;
           sharedData.messageId = 'target_ducks';
-        } else if (canCatch && context.random.chance(0.3)) {
+        } else if (canCatch && context.random.chance(CATCH_POINT, 0.3)) {
           sharedData.targetCaught = true;
           hitTarget = false;
           finalLocation = target.id;
           sharedData.messageId = 'target_catches';
         }
       } else {
-        hitTarget = context.random.chance(0.9); // 90% chance to hit stationary objects
+        hitTarget = context.random.chance(HIT_STATIONARY_POINT, 0.9); // 90% chance to hit stationary objects
       }
 
       sharedData.hit = hitTarget;
@@ -365,7 +376,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         sharedData.targetAngry = target.has(TraitType.ACTOR);
 
         if (sharedData.isFragile) {
-          sharedData.willBreak = context.random.chance(0.8);
+          sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.8);
           if (sharedData.willBreak) {
             sharedData.messageId = 'breaks_against';
           }
@@ -404,7 +415,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           sharedData.messageId = 'sails_through';
 
           if (sharedData.isFragile) {
-            sharedData.willBreak = context.random.chance(0.5);
+            sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.5);
             if (sharedData.willBreak) {
               sharedData.messageId = 'breaks_on_impact';
             }
@@ -416,7 +427,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     } else {
       // General throw
       if (sharedData.isFragile) {
-        sharedData.willBreak = context.random.chance(0.3);
+        sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.3);
         if (sharedData.willBreak) {
           sharedData.messageId = 'fragile_breaks';
         } else {

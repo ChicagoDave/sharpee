@@ -11,7 +11,7 @@
 
 import type { GameEngine } from '@sharpee/engine';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
-import type { SeededRandom } from '@sharpee/core';
+import type { RandomService } from '@sharpee/core';
 
 // GDT transformers
 import { isGDTActive, GDT_ACTION_ID, GDT_COMMAND_ACTION_ID } from '../actions/gdt';
@@ -41,7 +41,7 @@ export interface TransformerConfig {
    * Seeded RNG for probabilistic transformers (grue). Scheduler-owned so its
    * seed is persisted across save/restore (ADR-227 AC-2: no Math.random()).
    */
-  rng: SeededRandom;
+  rng: RandomService;
 }
 
 /**

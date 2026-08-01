@@ -5,7 +5,7 @@
  * Used by npc-service.ts executeAttack() when registered.
  */
 
-import { ISemanticEvent, SeededRandom, createSeededRandom } from '@sharpee/core';
+import { ISemanticEvent, RandomService, definePoint } from '@sharpee/core';
 import {
   IFEntity,
   WorldModel,
@@ -14,12 +14,16 @@ import {
 import { findWieldedWeapon, nounPhraseFor, killPlayer } from '@sharpee/stdlib';
 import type { NpcCombatResolver } from '@sharpee/stdlib';
 import { CombatService, applyCombatResult } from './combat-service.js';
+import { combatResultClass } from './basic-combat-interceptor.js';
 import { CombatMessages } from './combat-messages.js';
 
 /**
- * Module-level random instance for NPC combat rolls.
+ * NPC→target blow point (ADR-293 D2/D10). Split from the hero point — the
+ * same class carries asymmetric consequences (KILLED here can end the game).
  */
-const npcCombatRandom: SeededRandom = createSeededRandom();
+const VILLAIN_BLOW_POINT = definePoint('basic-combat.blow.villain', {
+  classes: ['missed', 'hit', 'knocked_out', 'killed'],
+});
 
 let eventCounter = 0;
 
@@ -52,7 +56,7 @@ export const basicNpcResolver: NpcCombatResolver = (
   npc: IFEntity,
   target: IFEntity,
   world: WorldModel,
-  random: SeededRandom
+  random: RandomService
 ): ISemanticEvent[] => {
   const events: ISemanticEvent[] = [];
 
@@ -76,13 +80,26 @@ export const basicNpcResolver: NpcCombatResolver = (
   const weapon = findWieldedWeapon(npc, world) ||
     npcInventory.find(item => item.has(TraitType.WEAPON));
 
-  const combatResult = combatService.resolveAttack({
-    attacker: npc,
-    target,
-    weapon: weapon || undefined,
-    world,
-    random,
-  });
+  // The skill roll draws on the villain blow point's own stream (ADR-293
+  // D8); mutations (killPlayer / applyCombatResult below) stay outside.
+  const { value: combatResult } = random.resolve(
+    VILLAIN_BLOW_POINT,
+    (draw) => {
+      const sampled = combatService.resolveAttack({
+        attacker: npc,
+        target,
+        weapon: weapon || undefined,
+        world,
+        random: draw,
+      });
+      return { cls: combatResultClass(sampled), value: sampled };
+    },
+    (forced) => {
+      throw new Error(
+        `basic-combat.blow.villain: forcing '${forced}' is not implemented until ADR-293 Phase C`
+      );
+    }
+  );
 
   // ADR-227 Decision 5 / AC-5: a player killed by an NPC routes through the
   // canonical sink (killPlayer → if.event.player.died → engine game-over), not

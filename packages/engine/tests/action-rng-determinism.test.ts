@@ -1,21 +1,21 @@
 /**
- * ADR-231 D6 — post-restore action-roll determinism (REAL-PATH test).
+ * ADR-293 — post-restore action-roll determinism (REAL-PATH test).
  *
- * Behavior Statement — dedicated persisted action RNG stream
- *   DOES: `createSaveData` captures the action stream's live LCG state
- *         into `IEngineState.actionRngSeed`; `loadSaveData` re-seeds the
- *         engine's dedicated `actionRandom` from it; `createActionContext`
- *         exposes that stream as `context.random`, from which the
- *         throwing action draws its fragile-break rolls.
+ * Behavior Statement — per-point stream persistence through the real factory
+ *   DOES: `createSaveData` captures every drawn point's stream state into
+ *         `IEngineState.streamStates`; `loadSaveData` restores the map into
+ *         the engine's `RandomService`; `createActionContext` exposes that
+ *         service as `context.random`, from which the throwing action draws
+ *         its hit/fragile-break points.
  *   WHEN: a host saves mid-game through the REAL SaveRestoreService,
  *         restores the blob into a fresh engine, and replays the same
  *         command sequence.
- *   BECAUSE: ADR-231 D6 — post-restore action outcomes must be
- *            deterministic with an unbroken run. Sharing the turn-plugin
- *            stream was rejected (interleaved draws would shift rolls).
+ *   BECAUSE: ADR-293 D7/AC-4 — save → restore → continue must match an
+ *            unbroken run for every point that has drawn.
  *   REJECTS WHEN: nothing new — version/story-mismatch rejections are
- *            unchanged. An ABSENT `actionRngSeed` (pre-D6 save blob) must
- *            NOT reject: restore succeeds with a time-based reseed.
+ *            unchanged. A 2.0.0-shaped save with NO `actionRngSeed` must
+ *            NOT reject (AC-5): restore succeeds and every point reseeds
+ *            from the master seed.
  *
  * Integration Reality: this drives the real engine -> parser ->
  * CommandExecutor -> throwing action -> SaveRestoreService pipeline. No
@@ -172,22 +172,25 @@ describe('ADR-231 D6 — dedicated persisted action RNG stream', () => {
     await throwAndObserve(source.engine, 'throw jar at statue');
 
     const saved = (source.engine as unknown as EnginePrivate).createSaveData();
-    expect(typeof saved.engineState.actionRngSeed).toBe('number');
+    // The throwing draws landed on declared points and ride the unified map.
+    expect(Object.keys(saved.engineState.streamStates ?? {})).toEqual(
+      expect.arrayContaining(['stdlib.throwing.hit-stationary', 'stdlib.throwing.breaks']),
+    );
 
     const unbrokenOutcomes: ThrowOutcome[] = [];
     for (const command of REPLAY_COMMANDS) {
       unbrokenOutcomes.push(await throwAndObserve(source.engine, command));
     }
-    const unbrokenEndSeed = source.engine.getActionRandom().getSeed();
+    const unbrokenEndStates = source.engine.getRandomService().serializeStreamStates();
     source.engine.stop();
 
     // Restored run: fresh engine, real restore, same commands.
     const target = bootFresh();
     (target.engine as unknown as EnginePrivate).loadSaveData(saved);
 
-    // The restored stream must sit exactly where the save captured it.
-    expect(target.engine.getActionRandom().getSeed()).toBe(
-      saved.engineState.actionRngSeed,
+    // The restored map must be exactly what the save captured.
+    expect(target.engine.getRandomService().serializeStreamStates()).toEqual(
+      saved.engineState.streamStates,
     );
 
     target.engine.start();
@@ -198,21 +201,25 @@ describe('ADR-231 D6 — dedicated persisted action RNG stream', () => {
 
     // Roll outcomes identical to the unbroken run...
     expect(restoredOutcomes).toEqual(unbrokenOutcomes);
-    // ...and the stream state itself converges (exact-state assertion —
-    // immune to coincidental outcome collisions).
-    expect(target.engine.getActionRandom().getSeed()).toBe(unbrokenEndSeed);
+    // ...and the per-point stream states themselves converge (exact-state
+    // assertion — immune to coincidental outcome collisions).
+    expect(target.engine.getRandomService().serializeStreamStates()).toEqual(
+      unbrokenEndStates,
+    );
 
     target.engine.stop();
   });
 
-  it('restores a pre-D6 save blob (no actionRngSeed field) without crashing, reseeding time-based', async () => {
+  it('restores a 2.0.0 save with no actionRngSeed (AC-5) without crashing, reseeding by derivation', async () => {
     const source = bootFresh();
     source.engine.start();
     await source.engine.executeTurn('look');
     const saved = (source.engine as unknown as EnginePrivate).createSaveData();
     source.engine.stop();
 
-    // Simulate an old save written before the field existed.
+    // Simulate the oldest readable save: 2.0.0 shape with no RNG state at all.
+    saved.version = '2.0.0';
+    delete saved.engineState.streamStates;
     delete saved.engineState.actionRngSeed;
 
     const target = bootFresh();

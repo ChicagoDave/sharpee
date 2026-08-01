@@ -34,6 +34,7 @@ import {
 import { ISound } from '@sharpee/if-domain';
 
 import { createActionContext } from '../../src/action-context-factory';
+import { EngineRandomService } from '../../src/engine-random-service';
 import { GameContext } from '../../src/types';
 
 // =============================================================================
@@ -114,6 +115,7 @@ describe('ActionContext.emitSound (ADR-172 Phase 6 Step 6.1)', () => {
       fakeAction,
       scopeResolver,
       buffer,
+      new EngineRandomService(12345),
     );
 
     ctx.emitSound({ kind: 'speech', volumeTier: 'normal' });
@@ -135,6 +137,7 @@ describe('ActionContext.emitSound (ADR-172 Phase 6 Step 6.1)', () => {
       fakeAction,
       scopeResolver,
       buffer,
+      new EngineRandomService(12345),
     );
 
     ctx.emitSound({
@@ -160,6 +163,7 @@ describe('ActionContext.emitSound (ADR-172 Phase 6 Step 6.1)', () => {
       fakeAction,
       scopeResolver,
       buffer,
+      new EngineRandomService(12345),
     );
 
     ctx.emitSound({ kind: 'speech', volumeTier: 'whisper' });
@@ -174,7 +178,7 @@ describe('ActionContext.emitSound (ADR-172 Phase 6 Step 6.1)', () => {
   it('is a silent no-op when the factory was given no sound buffer', () => {
     const { world, fakeAction, fakeCommand, gameContext, scopeResolver } = buildFixture();
 
-    // No sixth argument — production path for legacy callers (and the
+    // No sound buffer — production path for legacy callers (and the
     // recursive implicit-take chain when the parent had no buffer).
     const ctx = createActionContext(
       world,
@@ -182,6 +186,8 @@ describe('ActionContext.emitSound (ADR-172 Phase 6 Step 6.1)', () => {
       fakeCommand,
       fakeAction,
       scopeResolver,
+      undefined,
+      new EngineRandomService(12345),
     );
 
     expect(() => ctx.emitSound({ kind: 'speech', volumeTier: 'normal' })).not.toThrow();
@@ -208,6 +214,7 @@ describe('ActionContext.emitSound (ADR-172 Phase 6 Step 6.1)', () => {
       fakeAction,
       scopeResolver,
       buffer,
+      new EngineRandomService(12345),
     );
 
     expect(() => ctx.emitSound({ kind: 'speech', volumeTier: 'normal' })).not.toThrow();

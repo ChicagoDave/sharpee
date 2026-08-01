@@ -29,7 +29,11 @@ export interface CombatContext {
     weapon?: IFEntity;
     /** The world model */
     world: WorldModel;
-    /** Seeded random number generator */
+    /**
+     * Bare stream, supplied by the caller's `resolve()` sample callback on a
+     * blow point (ADR-293 D6/D8) — this service is a parameter taker and
+     * never constructs randomness.
+     */
     random: SeededRandom;
 }
 /**
@@ -181,6 +185,9 @@ export declare function getHealthStatusMessageId(status: HealthStatus): CombatMe
  * Registered on CombatantTrait for if.action.attacking.
  */
 import { ActionInterceptor } from '@sharpee/world-model';
+import { CombatResult } from './combat-service.js';
+/** Outcome class of a CombatService result (shared with the villain point). */
+export declare function combatResultClass(result: CombatResult): 'missed' | 'hit' | 'knocked_out' | 'killed';
 /**
  * ActionInterceptor that uses CombatService for PC→NPC combat resolution.
  *

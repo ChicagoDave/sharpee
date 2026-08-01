@@ -3049,7 +3049,7 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  *   createInfluencePhase, CharacterPhaseConfig.
  * Owner context: @sharpee/character
  */
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { PropagationProfile, AlreadyToldRecord } from './propagation/index.js';
 import { GoalDef, MovementProfile, GoalManager } from './goals/index.js';
@@ -3058,7 +3058,8 @@ import { InfluenceDef, ResistanceDef, InfluenceTracker } from './influence/index
 interface TickContext {
     world: WorldModel;
     turn: number;
-    random: unknown;
+    /** The session's per-point stream owner (ADR-293) */
+    random: RandomService;
     playerLocation: EntityId;
     playerId: EntityId;
 }

@@ -16,7 +16,11 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, definePoint } from '@sharpee/core';
+
+// Plain draw (ADR-293 D4): a message-variant pick — seeded and traced, no
+// outcome classes, no coverage row.
+const EMPTY_VARIANT_POINT = definePoint('stdlib.inventory.empty-variant');
 import { TraitType, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -122,9 +126,9 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   
   if (totalItems === 0) {
     messageId = 'inventory_empty';
-    // Vary the empty message (drawn from the action RNG stream — ADR-231 D6)
+    // Vary the empty message (plain draw on its own point — ADR-293 D4)
     const emptyMessages = ['inventory_empty', 'nothing_at_all', 'hands_empty', 'pockets_empty'];
-    messageId = context.random.pick(emptyMessages);
+    messageId = context.random.pick(EMPTY_VARIANT_POINT, emptyMessages);
   } else if (holding.length > 0 && worn.length > 0) {
     messageId = 'carrying_and_wearing';
     params.holdingCount = holding.length;

@@ -178,7 +178,6 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       context.player,
       puttingAction,
       modifiedCommand,
-      undefined,
       context.random
     );
 
@@ -215,7 +214,6 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
         context.player,
         puttingAction,
         modifiedCommand,
-        undefined,
         context.random
       );
     }

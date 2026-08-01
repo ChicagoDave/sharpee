@@ -50,7 +50,7 @@ export interface TurnPlugin {
 ### turn-plugin-context
 
 ```typescript
-import { EntityId, SeededRandom, ISemanticEvent } from '@sharpee/core';
+import { EntityId, RandomService, ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 /** Summary of the player action that just completed, passed to each plugin. */
 export interface TurnPluginActionResult {
@@ -82,10 +82,12 @@ export interface TurnPluginContext {
     /** The player's current location id. */
     playerLocation: EntityId;
     /**
-     * The engine's seeded RNG. Use this instead of `Math.random` so turns stay
-     * deterministic and replayable.
+     * The session's per-point stream owner (ADR-293). Plugins draw through
+     * declared `ChoicePoint` handles — never `Math.random`, never a
+     * hand-built stream — so turns stay deterministic and replayable and
+     * every drawn point's state rides the save.
      */
-    random: SeededRandom;
+    random: RandomService;
     /** The action that just completed this turn. */
     actionResult?: TurnPluginActionResult;
     /** The semantic events the action emitted this turn. */
@@ -331,9 +333,9 @@ export declare class NpcPlugin implements TurnPlugin {
  * Daemons: Processes that run every turn
  * Fuses: Countdown timers that trigger after N turns
  */
-import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-export { SeededRandom } from '@sharpee/core';
+export { RandomService, ChoicePoint } from '@sharpee/core';
 /**
  * Context passed to daemon and fuse handlers
  */
@@ -342,8 +344,8 @@ export interface SchedulerContext {
     world: WorldModel;
     /** Current turn number */
     turn: number;
-    /** Seeded random number generator */
-    random: SeededRandom;
+    /** The session's per-point stream owner (ADR-293) — daemons draw through declared points */
+    random: RandomService;
     /** Player's current location */
     playerLocation: EntityId;
     /** Player entity ID */
@@ -459,8 +461,6 @@ export interface SchedulerState {
     daemons: DaemonState[];
     /** Fuse states */
     fuses: FuseState[];
-    /** Random seed */
-    randomSeed: number;
 }
 /**
  * Scheduler event types for lifecycle events
@@ -482,7 +482,7 @@ export type SchedulerEventType = 'daemon.registered' | 'daemon.removed' | 'daemo
  */
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { Daemon, Fuse, DaemonInfo, FuseInfo, SchedulerResult, SchedulerState, SeededRandom } from './types.js';
+import { Daemon, Fuse, DaemonInfo, FuseInfo, SchedulerResult, SchedulerState, RandomService } from './types.js';
 /**
  * SchedulerService interface
  */
@@ -499,13 +499,12 @@ export interface ISchedulerService {
     pauseFuse(id: string): void;
     resumeFuse(id: string): void;
     hasFuse(id: string): boolean;
-    tick(world: WorldModel, turn: number, playerId: EntityId): SchedulerResult;
+    tick(world: WorldModel, turn: number, playerId: EntityId, random: RandomService): SchedulerResult;
     getActiveDaemons(): DaemonInfo[];
     getActiveFuses(): FuseInfo[];
     getState(): SchedulerState;
     setState(state: SchedulerState): void;
     cleanupEntity(entityId: EntityId): ISemanticEvent[];
-    getRandom(): SeededRandom;
 }
 /**
  * SchedulerService implementation
@@ -515,9 +514,7 @@ export declare class SchedulerService implements ISchedulerService {
     private daemonStates;
     private fuses;
     private fuseStates;
-    private random;
     private currentTurn;
-    constructor(seed?: number);
     registerDaemon(daemon: Daemon): void;
     removeDaemon(id: string): void;
     pauseDaemon(id: string): void;
@@ -530,21 +527,22 @@ export declare class SchedulerService implements ISchedulerService {
     pauseFuse(id: string): void;
     resumeFuse(id: string): void;
     hasFuse(id: string): boolean;
-    tick(world: WorldModel, turn: number, playerId: EntityId): SchedulerResult;
+    tick(world: WorldModel, turn: number, playerId: EntityId, random: RandomService): SchedulerResult;
     getActiveDaemons(): DaemonInfo[];
     getActiveFuses(): FuseInfo[];
     getState(): SchedulerState;
     setState(state: SchedulerState): void;
     cleanupEntity(entityId: EntityId): ISemanticEvent[];
-    getRandom(): SeededRandom;
     private createContext;
     private getSortedDaemons;
     private getSortedFuses;
 }
 /**
- * Create a new SchedulerService instance
+ * Create a new SchedulerService instance. The scheduler owns no stream of
+ * its own (ADR-293): daemons draw through declared points on the
+ * RandomService threaded into `tick()`.
  */
-export declare function createSchedulerService(seed?: number): ISchedulerService;
+export declare function createSchedulerService(): ISchedulerService;
 ```
 
 ### scheduler-plugin
@@ -563,17 +561,10 @@ export declare class SchedulerPlugin implements TurnPlugin {
     id: string;
     priority: number;
     private service;
-    constructor(seed?: number);
+    constructor();
     onAfterAction(ctx: TurnPluginContext): ISemanticEvent[];
     getState(): unknown;
     setState(state: unknown): void;
-    /**
-     * Reseed the scheduler's internal stream from the session seed
-     * (ADR-293). Called by the engine before the first turn, which makes
-     * daemon draws seed-reproducible; a later `setState` (save restore)
-     * still wins, since it runs after and carries the saved stream state.
-     */
-    onSessionSeed(seed: number): void;
     /** Public access for stories that need daemon/fuse registration */
     getScheduler(): ISchedulerService;
 }

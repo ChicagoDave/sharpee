@@ -211,7 +211,7 @@ export function runPreValidate(
   for (const c of state.consultations) {
     if (!c.interceptor.preValidate) continue;
     const veto = vetoOf(
-      c.interceptor.preValidate(c.entity, context.world, context.player.id, c.data)
+      c.interceptor.preValidate(c.entity, context.world, context.player.id, c.data, context.random)
     );
     if (veto) return veto;
   }
@@ -234,7 +234,7 @@ export function runPostValidate(
   for (const c of state.consultations) {
     if (!c.interceptor.postValidate) continue;
     const veto = vetoOf(
-      c.interceptor.postValidate(c.entity, context.world, context.player.id, c.data)
+      c.interceptor.postValidate(c.entity, context.world, context.player.id, c.data, context.random)
     );
     if (veto) return veto;
   }
@@ -254,7 +254,7 @@ export function runPostValidate(
  */
 export function runPostExecute(context: ActionContext, state: LifecycleState): void {
   for (const c of state.consultations) {
-    c.interceptor.postExecute?.(c.entity, context.world, context.player.id, c.data);
+    c.interceptor.postExecute?.(c.entity, context.world, context.player.id, c.data, context.random);
   }
 }
 
@@ -284,7 +284,7 @@ export function runPostReport(
   let overrideSeen = false;
   for (const c of state.consultations) {
     if (!c.interceptor.postReport) continue;
-    const result = c.interceptor.postReport(c.entity, context.world, context.player.id, c.data);
+    const result = c.interceptor.postReport(c.entity, context.world, context.player.id, c.data, context.random);
     if (!result) continue;
     if (result.override) {
       if (overrideSeen) {
@@ -330,7 +330,7 @@ export function runOnBlocked(
   let overrideSeen = false;
   for (const c of state.consultations) {
     if (!c.interceptor.onBlocked) continue;
-    const result = c.interceptor.onBlocked(c.entity, context.world, context.player.id, error, c.data);
+    const result = c.interceptor.onBlocked(c.entity, context.world, context.player.id, error, c.data, context.random);
     if (!result) continue;
     if (result.override) {
       if (overrideSeen) {

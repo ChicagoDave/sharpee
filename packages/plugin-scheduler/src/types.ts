@@ -5,11 +5,11 @@
  * Fuses: Countdown timers that trigger after N turns
  */
 
-import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 
-// Re-export SeededRandom from core for convenience
-export { SeededRandom } from '@sharpee/core';
+// Re-export the draw types from core for convenience
+export { RandomService, ChoicePoint } from '@sharpee/core';
 
 /**
  * Context passed to daemon and fuse handlers
@@ -21,8 +21,8 @@ export interface SchedulerContext {
   /** Current turn number */
   turn: number;
 
-  /** Seeded random number generator */
-  random: SeededRandom;
+  /** The session's per-point stream owner (ADR-293) — daemons draw through declared points */
+  random: RandomService;
 
   /** Player's current location */
   playerLocation: EntityId;
@@ -168,9 +168,6 @@ export interface SchedulerState {
 
   /** Fuse states */
   fuses: FuseState[];
-
-  /** Random seed */
-  randomSeed: number;
 }
 
 /**

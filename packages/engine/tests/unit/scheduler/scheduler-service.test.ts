@@ -11,6 +11,7 @@ import {
   SchedulerContext,
 } from '@sharpee/plugin-scheduler';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { EngineRandomService } from '../../../src/engine-random-service';
 
 // Mock WorldModel
 function createMockWorld(): WorldModel {
@@ -26,9 +27,11 @@ function createMockWorld(): WorldModel {
 describe('SchedulerService', () => {
   let scheduler: SchedulerService;
   let mockWorld: WorldModel;
+  let testRandom: EngineRandomService;
 
   beforeEach(() => {
-    scheduler = new SchedulerService(12345); // Fixed seed for determinism
+    scheduler = new SchedulerService();
+    testRandom = new EngineRandomService(12345); // Fixed master seed for determinism
     mockWorld = createMockWorld();
     vi.clearAllMocks();
   });
@@ -79,17 +82,17 @@ describe('SchedulerService', () => {
       scheduler.registerDaemon(daemon);
 
       // Run once
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
       expect(runFn).toHaveBeenCalledTimes(1);
 
       // Pause and run again
       scheduler.pauseDaemon('test-daemon');
-      scheduler.tick(mockWorld, 2, 'player');
+      scheduler.tick(mockWorld, 2, 'player', testRandom);
       expect(runFn).toHaveBeenCalledTimes(1); // Still 1, didn't run
 
       // Resume and run again
       scheduler.resumeDaemon('test-daemon');
-      scheduler.tick(mockWorld, 3, 'player');
+      scheduler.tick(mockWorld, 3, 'player', testRandom);
       expect(runFn).toHaveBeenCalledTimes(2);
     });
 
@@ -126,7 +129,7 @@ describe('SchedulerService', () => {
         },
       });
 
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
 
       expect(order).toEqual(['high', 'medium', 'low']);
     });
@@ -142,11 +145,11 @@ describe('SchedulerService', () => {
         run: runFn,
       });
 
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
       expect(runFn).not.toHaveBeenCalled();
 
       shouldRun = true;
-      scheduler.tick(mockWorld, 2, 'player');
+      scheduler.tick(mockWorld, 2, 'player', testRandom);
       expect(runFn).toHaveBeenCalledTimes(1);
     });
 
@@ -160,7 +163,7 @@ describe('SchedulerService', () => {
         run: runFn,
       });
 
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
       expect(runFn).toHaveBeenCalledTimes(1);
       expect(scheduler.hasDaemon('once')).toBe(false);
     });
@@ -191,22 +194,22 @@ describe('SchedulerService', () => {
       });
 
       // Turn 1: skipped (skipNextTick — fuse doesn't count the turn it was set)
-      let result = scheduler.tick(mockWorld, 1, 'player');
+      let result = scheduler.tick(mockWorld, 1, 'player', testRandom);
       expect(scheduler.getFuseRemaining('countdown')).toBe(3);
       expect(triggerFn).not.toHaveBeenCalled();
 
       // Turn 2: 3 -> 2
-      result = scheduler.tick(mockWorld, 2, 'player');
+      result = scheduler.tick(mockWorld, 2, 'player', testRandom);
       expect(scheduler.getFuseRemaining('countdown')).toBe(2);
       expect(triggerFn).not.toHaveBeenCalled();
 
       // Turn 3: 2 -> 1
-      result = scheduler.tick(mockWorld, 3, 'player');
+      result = scheduler.tick(mockWorld, 3, 'player', testRandom);
       expect(scheduler.getFuseRemaining('countdown')).toBe(1);
       expect(triggerFn).not.toHaveBeenCalled();
 
       // Turn 4: 1 -> 0 (triggers)
-      result = scheduler.tick(mockWorld, 4, 'player');
+      result = scheduler.tick(mockWorld, 4, 'player', testRandom);
       expect(triggerFn).toHaveBeenCalledTimes(1);
       expect(result.fusesTriggered).toContain('countdown');
       expect(scheduler.hasFuse('countdown')).toBe(false); // Removed after trigger
@@ -259,21 +262,21 @@ describe('SchedulerService', () => {
       });
 
       // Tick 1: skipped (skipNextTick)
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
       expect(scheduler.getFuseRemaining('pausable')).toBe(2);
 
       // Tick 2: 2 -> 1
-      scheduler.tick(mockWorld, 2, 'player');
+      scheduler.tick(mockWorld, 2, 'player', testRandom);
       expect(scheduler.getFuseRemaining('pausable')).toBe(1);
 
       // Pause and tick
       scheduler.pauseFuse('pausable');
-      scheduler.tick(mockWorld, 3, 'player');
+      scheduler.tick(mockWorld, 3, 'player', testRandom);
       expect(scheduler.getFuseRemaining('pausable')).toBe(1); // Didn't decrement
 
       // Resume and tick — 1 -> 0 (triggers)
       scheduler.resumeFuse('pausable');
-      scheduler.tick(mockWorld, 4, 'player');
+      scheduler.tick(mockWorld, 4, 'player', testRandom);
       expect(triggerFn).toHaveBeenCalled();
     });
 
@@ -290,12 +293,12 @@ describe('SchedulerService', () => {
       });
 
       // Condition false - doesn't tick
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
       expect(scheduler.getFuseRemaining('conditional')).toBe(2);
 
       // Condition true - ticks
       shouldTick = true;
-      scheduler.tick(mockWorld, 2, 'player');
+      scheduler.tick(mockWorld, 2, 'player', testRandom);
       expect(scheduler.getFuseRemaining('conditional')).toBe(1);
     });
 
@@ -311,17 +314,17 @@ describe('SchedulerService', () => {
       });
 
       // Tick 1: skipped (skipNextTick)
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
       // Ticks 2-3: countdown 2 -> 1 -> 0 (triggers)
-      scheduler.tick(mockWorld, 2, 'player');
-      scheduler.tick(mockWorld, 3, 'player');
+      scheduler.tick(mockWorld, 2, 'player', testRandom);
+      scheduler.tick(mockWorld, 3, 'player', testRandom);
       expect(triggerFn).toHaveBeenCalledTimes(1);
       expect(scheduler.hasFuse('repeating')).toBe(true);
       expect(scheduler.getFuseRemaining('repeating')).toBe(2); // Reset
 
       // Second cycle (no skipNextTick on repeat reset)
-      scheduler.tick(mockWorld, 4, 'player');
-      scheduler.tick(mockWorld, 5, 'player');
+      scheduler.tick(mockWorld, 4, 'player', testRandom);
+      scheduler.tick(mockWorld, 5, 'player', testRandom);
       expect(triggerFn).toHaveBeenCalledTimes(2);
     });
   });
@@ -370,8 +373,8 @@ describe('SchedulerService', () => {
       });
 
       // Tick a few times
-      scheduler.tick(mockWorld, 1, 'player');
-      scheduler.tick(mockWorld, 2, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
+      scheduler.tick(mockWorld, 2, 'player', testRandom);
 
       // Save state
       const state = scheduler.getState();
@@ -404,59 +407,6 @@ describe('SchedulerService', () => {
     });
   });
 
-  describe('seeded random', () => {
-    it('should provide deterministic random', () => {
-      const random = scheduler.getRandom();
-
-      // With fixed seed, should get same sequence
-      const values: number[] = [];
-      for (let i = 0; i < 5; i++) {
-        values.push(random.int(1, 100));
-      }
-
-      // Reset seed and verify same sequence
-      random.setSeed(12345);
-      for (let i = 0; i < 5; i++) {
-        expect(random.int(1, 100)).toBe(values[i]);
-      }
-    });
-
-    it('should provide chance function', () => {
-      const random = scheduler.getRandom();
-      random.setSeed(12345);
-
-      // With probability 1, always true
-      expect(random.chance(1)).toBe(true);
-
-      // With probability 0, always false
-      expect(random.chance(0)).toBe(false);
-    });
-
-    it('should pick from array', () => {
-      const random = scheduler.getRandom();
-      random.setSeed(12345);
-
-      const items = ['a', 'b', 'c', 'd', 'e'];
-      const picked = random.pick(items);
-
-      expect(items).toContain(picked);
-    });
-
-    it('should shuffle array', () => {
-      const random = scheduler.getRandom();
-      random.setSeed(12345);
-
-      const items = [1, 2, 3, 4, 5];
-      const shuffled = random.shuffle(items);
-
-      // Same elements
-      expect(shuffled.sort()).toEqual(items.sort());
-
-      // Different order (statistically very likely)
-      // We just verify it returns the right length
-      expect(shuffled.length).toBe(items.length);
-    });
-  });
 
   describe('introspection', () => {
     it('should return active daemons info', () => {
@@ -503,7 +453,7 @@ describe('SchedulerService', () => {
         trigger: () => [],
       });
 
-      scheduler.tick(mockWorld, 1, 'player');
+      scheduler.tick(mockWorld, 1, 'player', testRandom);
 
       const infos = scheduler.getActiveFuses();
 
@@ -524,14 +474,21 @@ describe('createSchedulerService', () => {
     expect(scheduler.setFuse).toBeDefined();
   });
 
-  it('should accept optional seed', () => {
-    const scheduler1 = createSchedulerService(12345);
-    const scheduler2 = createSchedulerService(12345);
+  it('owns no stream of its own (ADR-293) — the tick context carries the passed RandomService', () => {
+    const service = createSchedulerService();
+    const passed = new EngineRandomService(777);
+    let seen: unknown = null;
 
-    const random1 = scheduler1.getRandom();
-    const random2 = scheduler2.getRandom();
+    service.registerDaemon({
+      id: 'capture-random',
+      name: 'Capture Random',
+      run: (ctx) => {
+        seen = ctx.random;
+        return [];
+      },
+    });
+    service.tick(createMockWorld(), 1, 'player', passed);
 
-    // Same seed should produce same sequence
-    expect(random1.next()).toBe(random2.next());
+    expect(seen).toBe(passed);
   });
 });

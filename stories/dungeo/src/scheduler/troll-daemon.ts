@@ -17,6 +17,11 @@ import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, CombatantTrait, HealthTrait, HealthBehavior, IdentityTrait, RoomBehavior, Direction } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
+import { definePoint } from '@sharpee/core';
+
+// ADR-293 D2: the troll's growing-probability revival roll (plain draw —
+// the 1..100 roll compares against the accumulator, no static class set).
+const TROLL_RECOVERY_POINT = definePoint('dungeo.troll.recovery');
 
 // Daemon ID
 const TROLL_RECOVERY_DAEMON = 'dungeo.troll.recovery';
@@ -93,7 +98,7 @@ function createTrollRecoveryDaemon(trollRoomId: string): Daemon {
       // growing-probability revival. Each unconscious turn the accumulator grows by 10
       // (turn 1 cannot revive); revive when a seeded roll (1..100) <= accumulator. The
       // port hardcodes LUCKY=T, so the good-luck branch prob = acc% is canon here.
-      if (recoveryAcc > 0 && ctx.random.int(1, 100) <= recoveryAcc) {
+      if (recoveryAcc > 0 && ctx.random.int(TROLL_RECOVERY_POINT, 1, 100) <= recoveryAcc) {
         recoveryAcc = 0;
 
         // Revive WEAK: heal just above the unconsciousness threshold (health 3 for the

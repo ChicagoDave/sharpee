@@ -118,7 +118,7 @@ export function initializeOrchestration(
   // Intercept and modify parsed commands before execution
   const transformerConfig: TransformerConfig = {
     aragainFallsId: config.frigidRiverIds.aragainFalls,
-    rng: schedulerPlugin.getScheduler().getRandom()
+    rng: engine.getRandomService()
   };
   registerCommandTransformers(engine, world, transformerConfig);
 

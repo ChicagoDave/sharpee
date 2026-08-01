@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { deriveStreamSeed } from '@sharpee/core';
+import { createSeededRandom, definePoint, deriveStreamSeed } from '@sharpee/core';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 import { MinimalTestStory } from './stories/minimal-test-story';
 import {
@@ -25,27 +25,29 @@ describe('EngineConfig.seed (D1)', () => {
     expect(engine.getRandomService().getMasterSeed()).toBe(SEED);
   });
 
-  it('seeds both legacy engine streams by derivation from the master seed', () => {
+  it('point draws through the engine service derive from the master seed (Phase 4: no legacy streams remain)', () => {
     const { engine } = setupTestEngine({ config: { seed: SEED } });
+    const point = definePoint('test-engine-master-seed.derivation');
 
-    // The seed IS the LCG state: before any draw, each stream sits exactly
-    // on its derived seed.
-    expect(engine.getActionRandom().getSeed()).toBe(
-      deriveStreamSeed(SEED, ACTION_STREAM_POINT_NAME)
+    expect(engine.getRandomService().int(point, 0, 1000000)).toBe(
+      createSeededRandom(
+        deriveStreamSeed(SEED, 'test-engine-master-seed.derivation')
+      ).int(0, 1000000)
     );
   });
 
-  it('two engines with the same seed produce identical action draws', () => {
+  it('two engines with the same seed produce identical point draws', () => {
     const first = setupTestEngine({ config: { seed: SEED } });
     const second = setupTestEngine({ config: { seed: SEED } });
+    const point = definePoint('test-engine-master-seed.identical-draws');
 
     const firstDraws = [
-      first.engine.getActionRandom().int(0, 1000000),
-      first.engine.getActionRandom().int(0, 1000000)
+      first.engine.getRandomService().int(point, 0, 1000000),
+      first.engine.getRandomService().int(point, 0, 1000000)
     ];
     const secondDraws = [
-      second.engine.getActionRandom().int(0, 1000000),
-      second.engine.getActionRandom().int(0, 1000000)
+      second.engine.getRandomService().int(point, 0, 1000000),
+      second.engine.getRandomService().int(point, 0, 1000000)
     ];
 
     expect(firstDraws).toEqual(secondDraws);

@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { basicNpcResolver } from '../src';
-import { createSeededRandom } from '@sharpee/core';
+import { createFixtureRandomService } from './fixture-random-service';
 import {
   IFEntity,
   WorldModel,
@@ -32,7 +32,7 @@ describe('basicNpcResolver — death event routing (ADR-227 AC-5)', () => {
 
   /** Attack `target` repeatedly (fixed seed) until a killing blow lands. */
   const attackUntilKilled = (target: IFEntity, maxRounds = 50) => {
-    const random = createSeededRandom(12345);
+    const random = createFixtureRandomService(12345);
     for (let i = 0; i < maxRounds; i++) {
       const events = basicNpcResolver(npc, target, world, random);
       const health = target.get(TraitType.HEALTH) as HealthTrait;

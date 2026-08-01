@@ -8,8 +8,18 @@
  * - Room traversal
  */
 
+import { definePoint } from '@sharpee/core';
 import { IFEntity, WorldModel, NpcTrait, IdentityTrait } from '@sharpee/world-model';
 import { NpcContext } from '@sharpee/stdlib';
+
+/**
+ * The thief's WINNING? decision point (ADR-293) — `isVillainWinning` is a
+ * two-draw parameter taker (attack roll + stay roll), so it resolves as one
+ * classed point per A1 ruling 5.
+ */
+const THIEF_COMBAT_DECISION_POINT = definePoint('dungeo.thief.combat-decision', {
+  classes: ['attacks', 'stays', 'leaves'],
+});
 import { ThiefCustomProperties, ThiefState } from './thief-entity';
 import { TreasureTrait } from '../../traits';
 import { fightStrength, isVillainWinning, VILLAIN_OSTRENGTH } from '../../combat/melee';
@@ -207,11 +217,23 @@ export function getThiefCombatDecision(context: NpcContext): { shouldAttack: boo
   const vs = getThiefOstrength(context.npc);
   const heroStr = getHeroFightStrength(context.world);
 
-  return isVillainWinning({
-    villainStrength: vs,
-    heroFightStrength: heroStr,
-    random: context.random,
-  });
+  return context.random.resolve(
+    THIEF_COMBAT_DECISION_POINT,
+    (draw) => {
+      const value = isVillainWinning({
+        villainStrength: vs,
+        heroFightStrength: heroStr,
+        random: draw,
+      });
+      const cls = value.shouldAttack ? 'attacks' : value.shouldStay ? 'stays' : 'leaves';
+      return { cls: cls as 'attacks' | 'stays' | 'leaves', value };
+    },
+    (forced) => {
+      throw new Error(
+        `dungeo.thief.combat-decision: forcing '${forced}' is not implemented until ADR-293 Phase C`
+      );
+    }
+  ).value;
 }
 
 /**

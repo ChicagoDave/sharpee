@@ -36,9 +36,7 @@ import {
   ISerializedTurn,
   ISerializedParserState,
   ISemanticEventSource,
-  SeededRandom,
-  createSemanticEventSource,
-  deriveStreamSeed
+  createSemanticEventSource
 } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types.js';
@@ -119,15 +117,6 @@ export interface ISaveRestoreStateProvider {
   getEventSource(): ISemanticEventSource;
   getPluginRegistry(): PluginRegistry;
   getParser(): unknown | undefined;
-  /**
-   * The engine's dedicated action RNG stream (ADR-231 D6,
-   * `ActionContext.random`). Its current seed is captured into
-   * `IEngineState.actionRngSeed` on save and re-applied on restore.
-   * Folds into the per-point map when `ActionContext.random` moves onto
-   * the `RandomService` (ADR-293 Phase A, stdlib flip).
-   */
-  getActionRandom(): SeededRandom;
-
   /**
    * The engine's per-point stream owner (ADR-293 D7), if wired. When
    * present, its `{ pointName → streamState }` map rides the save and is
@@ -253,12 +242,10 @@ export class SaveRestoreService {
       turnHistory: this.serializeTurnHistory(context.history),
       parserState: this.serializeParserState(parser),
       pluginStates: pluginRegistry.getStates(),
-      // ADR-231 D6: the seed IS the LCG stream state — capturing it here
-      // makes post-restore action rolls continue exactly where they left off.
-      // Folds into `streamStates` when ActionContext moves onto the
-      // RandomService (ADR-293 Phase A, stdlib flip).
-      actionRngSeed: provider.getActionRandom().getSeed(),
       // ADR-293 D7: the unified per-point map — only points that have drawn.
+      // `actionRngSeed` is no longer written: the action surface draws
+      // through declared points, so its state lives in this map. The field
+      // survives on IEngineState purely for the 2.0.0 reader.
       ...(randomService
         ? { streamStates: randomService.serializeStreamStates() }
         : {})
@@ -331,31 +318,14 @@ export class SaveRestoreService {
     // Restore the dedicated action RNG stream (ADR-231 D6). Saves that
     // predate the field restore fine — reseed time-based instead of
     // crashing (matches unseeded-construction behavior).
-    const actionRandom = provider.getActionRandom();
-    const savedActionSeed = saveData.engineState.actionRngSeed;
-    const randomServiceForFallback = provider.getRandomService?.();
-    if (typeof savedActionSeed === 'number') {
-      actionRandom.setSeed(savedActionSeed);
-    } else if (randomServiceForFallback) {
-      // ADR-293 D7: restore fallbacks never read the clock when a master
-      // seed is set — reseed the action stream by derivation instead.
-      actionRandom.setSeed(
-        deriveStreamSeed(
-          randomServiceForFallback.getMasterSeed(),
-          ACTION_STREAM_POINT_NAME
-        )
-      );
-    } else {
-      actionRandom.setSeed(Date.now());
-    }
-
     // Restore per-point stream states (ADR-293 D7), when the host wires a
     // RandomService. The version-reader branch (A1 ruling 4): a 2.0.0 save
     // has no map — its `actionRngSeed` maps onto the legacy action point and
     // every other point reseeds from the master seed (which lazy derivation
     // does without ever reading the clock). A 3.0.0 save reads the map
     // directly.
-    const randomService = randomServiceForFallback;
+    const savedActionSeed = saveData.engineState.actionRngSeed;
+    const randomService = provider.getRandomService?.();
     if (randomService) {
       if (saveData.version === LEGACY_SAVE_FORMAT_VERSION) {
         randomService.restoreStreamStates(

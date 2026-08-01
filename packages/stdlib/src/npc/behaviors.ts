@@ -6,8 +6,15 @@
  * Game-specific behaviors (thief, cyclops, etc.) should be defined in the story.
  */
 
+import { definePoint } from '@sharpee/core';
 import { NpcBehavior, NpcContext, NpcAction } from './types.js';
 import { NpcMessages } from './npc-messages.js';
+
+// ADR-293 D2: the wanderer's two draws. Moving is a forceable yes/no choice
+// point; the exit pick is a plain draw (the class set — available exits — is
+// dynamic, so it carries no static coverage classes, D4).
+const NPC_MOVE_POINT = definePoint('stdlib.npc.move', { classes: ['yes', 'no'] });
+const NPC_EXIT_POINT = definePoint('stdlib.npc.exit');
 import { TraitType, CombatantTrait, HealthTrait, HealthBehavior } from '@sharpee/world-model';
 import { nounPhraseFor } from '../utils/index.js';
 
@@ -97,10 +104,10 @@ export function createWandererBehavior(options: {
       const actions: NpcAction[] = [];
 
       // Chance to move
-      if (context.random.chance(moveChance)) {
+      if (context.random.chance(NPC_MOVE_POINT, moveChance)) {
         const exits = context.getAvailableExits();
         if (exits.length > 0) {
-          const exit = context.random.pick(exits);
+          const exit = context.random.pick(NPC_EXIT_POINT, exits);
           actions.push({ type: 'move', direction: exit.direction });
 
           // If we're about to enter player's room, announce

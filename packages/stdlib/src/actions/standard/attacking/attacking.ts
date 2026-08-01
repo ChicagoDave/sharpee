@@ -14,7 +14,15 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, definePoint } from '@sharpee/core';
+
+// ADR-293 D2/D8: object attacks resolve through one declared point.
+// `AttackBehavior.attack` is a multi-draw parameter taker (damage roll +
+// crit check inside `WeaponBehavior.calculateDamage`), so the draw goes
+// through `resolve()` — the one sanctioned route to a bare stream.
+const ATTACK_OUTCOME_POINT = definePoint('stdlib.attacking.outcome', {
+  classes: ['broke', 'damaged', 'destroyed', 'killed', 'hit', 'ineffective']
+});
 import {
   TraitType,
   AttackBehavior,
@@ -293,8 +301,22 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         if (state) runPostExecute(context, state);
       }
     } else {
-      // Use AttackBehavior for object destruction
-      const result: IAttackResult = AttackBehavior.attack(target, weapon, context.world, context.random);
+      // Use AttackBehavior for object destruction. resolve() hands the
+      // sample callback this point's own stream (ADR-293 D8); the
+      // materialize path is unreachable until forcing lands (Phase C), so
+      // it throws loudly rather than fabricating a representative outcome.
+      const { value: result } = context.random.resolve<IAttackResult['type'], IAttackResult>(
+        ATTACK_OUTCOME_POINT,
+        (draw) => {
+          const sampled = AttackBehavior.attack(target, weapon, context.world, draw);
+          return { cls: sampled.type, value: sampled };
+        },
+        (forced) => {
+          throw new Error(
+            `stdlib.attacking.outcome: forcing '${forced}' is not implemented until ADR-293 Phase C`
+          );
+        }
+      );
 
       // Convert to our AttackResult type for consistency
       const attackResult: AttackResult = {

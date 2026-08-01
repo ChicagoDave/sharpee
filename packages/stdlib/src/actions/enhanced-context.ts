@@ -5,7 +5,7 @@
  * formatted events while maintaining the event-driven architecture.
  */
 
-import { createEvent as coreCreateEvent, createSeededRandom, ISemanticEvent, SeededRandom } from '@sharpee/core';
+import { createEvent as coreCreateEvent, ISemanticEvent, RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
 import {
   ActionContext,
@@ -38,13 +38,12 @@ class InternalActionContext implements ActionContext {
   public sharedData: Record<string, any> = {};
 
   /**
-   * Action RNG stream (ADR-231 D6). Production execution flows through
-   * the engine's `createActionContext` factory, which threads the
-   * engine-owned persisted stream; this stdlib factory (interceptor
-   * binding, unit tests) falls back to a fresh time-seeded stream when
-   * none is provided.
+   * The session's per-point stream owner (ADR-293). Required — there is
+   * no fallback stream: D6 gates randomness construction to the engine's
+   * implementation and test fixtures, so every context carries the
+   * service it was created with.
    */
-  public readonly random: SeededRandom;
+  public readonly random: RandomService;
 
   constructor(
     public readonly world: WorldModel,
@@ -52,12 +51,12 @@ class InternalActionContext implements ActionContext {
     public readonly currentLocation: IFEntity,
     public readonly action: Action,
     public readonly command: ValidatedCommand,
-    scopeResolver?: ScopeResolver,
-    random?: SeededRandom
+    random: RandomService,
+    scopeResolver?: ScopeResolver
   ) {
     // Use provided scope resolver or create a standard one
     this.scopeResolver = scopeResolver || new StandardScopeResolver(world);
-    this.random = random ?? createSeededRandom();
+    this.random = random;
   }
   
   // World querying methods
@@ -204,8 +203,8 @@ class InternalActionContext implements ActionContext {
       this.currentLocation,
       takingAction,
       takeCommand,
-      this.scopeResolver,
-      this.random
+      this.random,
+      this.scopeResolver
     );
 
     // Run the taking action's validate phase
@@ -417,7 +416,7 @@ class InternalActionContext implements ActionContext {
    * Helper to create context for another action (used in composite actions)
    */
   createSubContext(action: Action): ActionContext {
-    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.scopeResolver, this.random);
+    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.random, this.scopeResolver);
     // Share the same data store with sub-context
     subContext.sharedData = this.sharedData;
     return subContext;
@@ -434,8 +433,8 @@ export function createActionContext(
   player: IFEntity,
   action: Action,
   command: ValidatedCommand,
-  scopeResolver?: ScopeResolver,
-  random?: SeededRandom
+  random: RandomService,
+  scopeResolver?: ScopeResolver
 ): ActionContext {
   // Get immediate location (container/supporter/room that player is in)
   const locationId = world.getLocation(player.id);
@@ -443,7 +442,7 @@ export function createActionContext(
   if (!currentLocation) {
     throw new Error('Player has no valid location');
   }
-  return new InternalActionContext(world, player, currentLocation, action, command, scopeResolver, random);
+  return new InternalActionContext(world, player, currentLocation, action, command, random, scopeResolver);
 }
 
 /**
@@ -453,6 +452,7 @@ export function createMockActionContext(
   world: WorldModel,
   player: IFEntity,
   action: Action,
+  random: RandomService,
   command?: Partial<ValidatedCommand>,
   scopeResolver?: ScopeResolver
 ): ActionContext {
@@ -479,5 +479,5 @@ export function createMockActionContext(
     ...command
   };
   
-  return createActionContext(world, player, action, validatedCommand, scopeResolver);
+  return createActionContext(world, player, action, validatedCommand, random, scopeResolver);
 }

@@ -38,6 +38,17 @@ import {
   getTreasureValue
 } from './thief-helpers';
 
+import { definePoint } from '@sharpee/core';
+
+// ADR-293 D2: the thief's declared draw points. Steal/move/notice/gloat are
+// forceable yes/no choice points; the exit pick is a plain draw (dynamic
+// class set, D4) shared by every wander/flee site.
+const THIEF_NOTICE_POINT = definePoint('dungeo.thief.notice-valuables', { classes: ['yes', 'no'] });
+const THIEF_MOVE_POINT = definePoint('dungeo.thief.move', { classes: ['yes', 'no'] });
+const THIEF_STEAL_POINT = definePoint('dungeo.thief.steal', { classes: ['yes', 'no'] });
+const THIEF_GLOAT_POINT = definePoint('dungeo.thief.gloat', { classes: ['yes', 'no'] });
+const THIEF_EXIT_POINT = definePoint('dungeo.thief.exit');
+
 // Constants
 const MOVE_CHANCE = 0.33;           // 33% chance to move each turn
 const STEAL_CHANCE = 0.4;           // 40% chance to steal when opportunity arises
@@ -135,7 +146,7 @@ export const thiefBehavior: NpcBehavior = {
 
     // Check if player has valuables - thief notices
     const playerTreasures = findPlayerTreasures(context);
-    if (playerTreasures.length > 0 && context.random.chance(0.5)) {
+    if (playerTreasures.length > 0 && context.random.chance(THIEF_NOTICE_POINT, 0.5)) {
       return [{
         type: 'emote',
         messageId: ThiefMessages.NOTICES_VALUABLES,
@@ -237,10 +248,10 @@ function handleWanderingState(context: NpcContext, props: ThiefCustomProperties)
   }
 
   // Random movement
-  if (context.random.chance(MOVE_CHANCE)) {
+  if (context.random.chance(THIEF_MOVE_POINT, MOVE_CHANCE)) {
     const exits = context.getAvailableExits();
     if (exits.length > 0) {
-      const exit = context.random.pick(exits);
+      const exit = context.random.pick(THIEF_EXIT_POINT, exits);
       actions.push({ type: 'move', direction: exit.direction });
       props.turnsInRoom = 0;
     }
@@ -261,13 +272,13 @@ function handleStalkingState(context: NpcContext, props: ThiefCustomProperties):
 
     // Try to steal if cooldown is up
     const playerTreasures = findPlayerTreasures(context);
-    if (playerTreasures.length > 0 && props.stealCooldown <= 0 && context.random.chance(STEAL_CHANCE)) {
+    if (playerTreasures.length > 0 && props.stealCooldown <= 0 && context.random.chance(THIEF_STEAL_POINT, STEAL_CHANCE)) {
       props.state = 'STEALING';
       return handleStealingState(context, props);
     }
 
     // Otherwise just lurk and maybe gloat
-    if (context.random.chance(0.2)) {
+    if (context.random.chance(THIEF_GLOAT_POINT, 0.2)) {
       return [{
         type: 'emote',
         messageId: ThiefMessages.GLOATS,
@@ -387,7 +398,7 @@ function handleReturningState(context: NpcContext, props: ThiefCustomProperties)
     if (exitToLair) {
       return [{ type: 'move', direction: exitToLair.direction }];
     }
-    const exit = context.random.pick(exits);
+    const exit = context.random.pick(THIEF_EXIT_POINT, exits);
     return [{ type: 'move', direction: exit.direction }];
   }
 
@@ -424,7 +435,7 @@ function handleFightingState(context: NpcContext, props: ThiefCustomProperties):
       if (exits.length > 0) {
         // Try to head toward lair, otherwise pick random exit
         const exitToLair = exits.find(e => e.destination === props.lairRoomId);
-        const exit = exitToLair ?? context.random.pick(exits);
+        const exit = exitToLair ?? context.random.pick(THIEF_EXIT_POINT, exits);
         actions.push({ type: 'move', direction: exit.direction });
       }
 
@@ -496,11 +507,11 @@ function handleFleeingState(context: NpcContext, props: ThiefCustomProperties): 
       // Move away from player if visible
       if (context.playerVisible) {
         // Pick random exit (away from player)
-        const exit = context.random.pick(exits);
+        const exit = context.random.pick(THIEF_EXIT_POINT, exits);
         actions.push({ type: 'move', direction: exit.direction });
       } else {
         // Random wander toward lair
-        const exit = context.random.pick(exits);
+        const exit = context.random.pick(THIEF_EXIT_POINT, exits);
         actions.push({ type: 'move', direction: exit.direction });
       }
     }

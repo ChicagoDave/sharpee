@@ -15,7 +15,13 @@
  * Source: docs/internal/dungeon-81/original_source/melee.137
  */
 
-import { ISemanticEvent, EntityId, SeededRandom, createSeededRandom } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import {
+  VILLAIN_BLOW_POINT,
+  VS_UNCONSCIOUS_BLOW_POINT,
+  VILLAIN_MESSAGE_VARIANT_POINT,
+  meleeOutcomeClass,
+} from './melee-points';
 import {
   IFEntity,
   WorldModel,
@@ -37,12 +43,6 @@ import {
 import { getVillainAttackMessage } from './melee-messages';
 import { MELEE_STATE, getBaseOstrength } from './melee-state';
 
-/**
- * Module-level random instance shared across all NPC melee calls.
- * Same pattern as the melee interceptor — avoids identical rolls
- * when multiple NPCs attack within the same millisecond.
- */
-const npcMeleeRandom: SeededRandom = createSeededRandom();
 
 // ============= Helpers =============
 
@@ -106,14 +106,16 @@ export function meleeNpcResolver(
   npc: IFEntity,
   target: IFEntity,
   world: WorldModel,
-  _random: SeededRandom
+  random: RandomService
 ): ISemanticEvent[] {
   // Guard: Only resolve combat against the player
   if (!target.isPlayer) {
     return [];
   }
 
-  const random = npcMeleeRandom;
+  // ADR-293 (ordering hazard #2): the injected service is USED — the old
+  // module singleton that silently overrode the injected stream here was
+  // the combat flake, and it is gone.
   const villainKey = getVillainKey(npc);
   const events: ISemanticEvent[] = [];
 
@@ -148,7 +150,22 @@ export function meleeNpcResolver(
   const heroUnconscious = target.attributes[MELEE_STATE.STAGGERED] === true;
 
   // --- Resolve the villain's blow against the hero ---
-  const blowResult = resolveBlow(villainStr, heroStr, false, heroUnconscious, random);
+  // ADR-293 D10: a conscious hero draws on the villain blow point (KILLED
+  // here is player death — its own coverage row); an unconscious hero draws
+  // on vsUnconscious, whose outcomes remap to HESITATE/SITTING_DUCK.
+  const blowPoint = heroUnconscious ? VS_UNCONSCIOUS_BLOW_POINT : VILLAIN_BLOW_POINT;
+  const { value: blowResult } = random.resolve(
+    blowPoint,
+    (draw) => {
+      const sampled = resolveBlow(villainStr, heroStr, false, heroUnconscious, draw);
+      return { cls: meleeOutcomeClass(sampled.outcome), value: sampled };
+    },
+    (forced) => {
+      throw new Error(
+        `${blowPoint.name}: forcing '${forced}' is not implemented until ADR-293 Phase C`
+      );
+    }
+  );
 
   // --- Get hero's weapon name for messages (e.g., "lose weapon" text) ---
   const heroWeapon = findWieldedWeapon(target, world);
@@ -218,7 +235,7 @@ export function meleeNpcResolver(
     villainKey,
     blowResult.outcome,
     heroWeaponName,
-    (arr) => random.pick(arr)
+    (arr) => random.pick(VILLAIN_MESSAGE_VARIANT_POINT, arr)
   ) ?? `The ${villainKey} attacks!`;
 
   // Emit the attack message

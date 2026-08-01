@@ -24,7 +24,10 @@ import {
   DirectionType,
   VisibilityBehavior
 } from '@sharpee/world-model';
-import { SeededRandom } from '@sharpee/core';
+import { RandomService, definePoint } from '@sharpee/core';
+
+// ADR-293 D2: the grue survival roll (PROB(25,25)) draws on its own point.
+const GRUE_SURVIVAL_POINT = definePoint('dungeo.grue.survival', { classes: ['yes', 'no'] });
 import { ParsedCommandTransformer } from '@sharpee/engine';
 import { GRUE_DEATH_ACTION_ID } from '../actions/grue-death/types';
 import { getGDTFlags } from '../actions/gdt/gdt-context';
@@ -146,8 +149,8 @@ function isRoomDark(world: WorldModel, roomId: string): boolean {
  * 25% survival roll (FORTRAN PROB(25,25)) - returns true if player survives.
  * Seeded (ADR-227 AC-2/AC-4: no Math.random() in death-related code).
  */
-function survivalRoll(rng: SeededRandom): boolean {
-  return rng.chance(0.25);
+function survivalRoll(random: RandomService): boolean {
+  return random.chance(GRUE_SURVIVAL_POINT, 0.25);
 }
 
 /**
@@ -168,7 +171,7 @@ function isGoingAction(parsed: IParsedCommand): boolean {
  * - 25% chance to skip grue check entirely (safe path)
  * - On grue path: invalid exit, blocked exit, or dark destination = death
  */
-export function createGrueDeathTransformer(rng: SeededRandom): ParsedCommandTransformer {
+export function createGrueDeathTransformer(rng: RandomService): ParsedCommandTransformer {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
     // GDT immortality mode (ND command)
     if (isImmortal(world)) return parsed;

@@ -24,6 +24,7 @@ stdlib.
 
 ```typescript
 import { GameEngine } from '@sharpee/engine';
+import { definePoint } from '@sharpee/core';
 import { NpcTrait } from '@sharpee/world-model';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import {
@@ -128,8 +129,9 @@ walks them in order, finding the exits on its own.
 
 When the built-ins don't fit, implement the `NpcBehavior` interface yourself. Its
 only required hook is `onTurn`, called every turn; the others fire on specific
-events. The parrot squawks a random phrase when the player is present and greets
-them on arrival:
+events. Randomness in a behavior always goes through a named choice point,
+declared once with `definePoint` (imported from `@sharpee/core`). The parrot
+squawks a random phrase when the player is present and greets them on arrival:
 
 ```typescript
 const PARROT_PHRASES = [
@@ -139,6 +141,15 @@ const PARROT_PHRASES = [
   "Who's a good bird? WHO'S A GOOD BIRD?",
   'BAWK! Welcome to the zoo!',
 ];
+
+// Every random draw names a choice point. The name is what lets you force
+// the outcome in a test, see it in a coverage report, and replay a session
+// exactly. The squawk decision has yes/no outcomes; the phrase pick is a
+// plain draw with no outcome classes.
+const PARROT_SQUAWK = definePoint('family-zoo.parrot.squawk', {
+  classes: ['yes', 'no'],
+});
+const PARROT_PHRASE = definePoint('family-zoo.parrot.phrase');
 
 const parrotBehavior: NpcBehavior = {
   id: 'zoo-parrot',
@@ -150,8 +161,8 @@ const parrotBehavior: NpcBehavior = {
     if (!context.playerVisible) return [];
 
     // 50% chance to squawk
-    if (context.random.chance(0.5)) {
-      const phrase = context.random.pick(PARROT_PHRASES);
+    if (context.random.chance(PARROT_SQUAWK, 0.5)) {
+      const phrase = context.random.pick(PARROT_PHRASE, PARROT_PHRASES);
       return [{
         type: 'speak',
         messageId: 'npc.speech',

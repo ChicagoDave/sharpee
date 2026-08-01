@@ -44,12 +44,8 @@ import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, createSeededRandom, SeededRandom, deriveStreamSeed } from '@sharpee/core';
-import {
-  ACTION_STREAM_POINT_NAME,
-  EngineRandomService,
-  TURN_STREAM_POINT_NAME
-} from './engine-random-service.js';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed } from '@sharpee/core';
+import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
 import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
@@ -200,15 +196,6 @@ export class GameEngine {
    * move onto it across ADR-293 Phase A.
    */
   private randomService: EngineRandomService;
-  private random: SeededRandom;
-  /**
-   * Dedicated action RNG stream (ADR-231 D6), exposed to actions as
-   * `ActionContext.random`. A separate instance from `random` (the
-   * turn-plugin stream) so plugin draws can never shift action rolls;
-   * its seed rides the save blob (`IEngineState.actionRngSeed`) so
-   * post-restore action outcomes replay deterministically.
-   */
-  private actionRandom: SeededRandom;
   private narrativeSettings: NarrativeSettings;
 
   // Alternate input mode handlers (ADR-137)
@@ -325,16 +312,6 @@ export class GameEngine {
     // exactly once, and only when no seed was injected.
     this.masterSeed = this.config.seed ?? Date.now();
     this.randomService = new EngineRandomService(this.masterSeed);
-    // ADR-293 Phase A interim (re-cut Phase 3): both legacy streams stay
-    // SeededRandom-typed until their surfaces move onto points in the
-    // Phase 4–6 arc, but seed by derivation from the master seed so
-    // turn-plugin, deadly-room, and action draws are seed-reproducible now.
-    this.random = createSeededRandom(
-      deriveStreamSeed(this.masterSeed, TURN_STREAM_POINT_NAME)
-    );
-    this.actionRandom = createSeededRandom(
-      deriveStreamSeed(this.masterSeed, ACTION_STREAM_POINT_NAME)
-    );
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
     // Initialize extracted services (Phase 4 remediation)
@@ -366,15 +343,16 @@ export class GameEngine {
       this.eventProcessor,
       this.parser,
       this.systemEventSource,
-      this.actionRandom
+      this.randomService
     );
 
     // ADR-224: auto-register the deadly-room death transformer so every story
     // (TS or Chord) gets the deadly-room verb-allowlist / probabilistic hazard for
     // free — no story wiring needed. It early-returns when the player's room has no
-    // DeadlyRoomTrait, and uses the engine's seeded RNG for the `chance` variant.
+    // DeadlyRoomTrait, and draws the `chance` variant on its declared point
+    // (ADR-293).
     this.commandExecutor.registerParsedCommandTransformer(
-      createDeadlyRoomTransformer(this.random),
+      createDeadlyRoomTransformer(this.randomService),
     );
 
     // Query handling is now managed by the platform layer
@@ -1187,7 +1165,7 @@ export class GameEngine {
           turn,
           playerId: this.context.player.id,
           playerLocation: playerLocation || '',
-          random: this.random,
+          random: this.randomService,
           actionResult: {
             actionId: result.actionId || '',
             success: result.success && !actionRefused,
@@ -1405,7 +1383,7 @@ export class GameEngine {
 
       // Create action context for meta-command execution
       const scopeResolver = createScopeResolver(this.world);
-      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver, undefined, this.actionRandom);
+      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver, undefined, this.randomService);
 
       // Run action's four-phase pattern
       const actionValidation = action.validate(actionContext);
@@ -1807,15 +1785,6 @@ export class GameEngine {
    */
   getClientCapabilities(): ClientCapabilities {
     return this.clientCapabilities ?? DEFAULT_TEXT_CAPABILITIES;
-  }
-
-  /**
-   * Get the dedicated action RNG stream (ADR-231 D6). Part of the
-   * ISaveRestoreStateProvider contract — the save service persists this
-   * stream's seed and the restore path re-seeds it.
-   */
-  getActionRandom(): SeededRandom {
-    return this.actionRandom;
   }
 
   /**

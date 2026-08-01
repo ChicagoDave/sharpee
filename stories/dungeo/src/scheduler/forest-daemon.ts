@@ -17,6 +17,12 @@ import { ISemanticEvent } from '@sharpee/core';
 import { WorldModel, RoomTrait } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
+import { definePoint } from '@sharpee/core';
+
+// ADR-293 D2: forest ambience — the fire roll is a choice point, the
+// weighted sound pick a plain draw (D4).
+const FOREST_AMBIENCE_POINT = definePoint('dungeo.forest.ambience', { classes: ['yes', 'no'] });
+const FOREST_SOUND_POINT = definePoint('dungeo.forest.ambience-sound');
 
 // Daemon ID
 const FOREST_AMBIENCE_DAEMON = 'dungeo.forest.ambience';
@@ -38,12 +44,15 @@ const FOREST_SOUNDS = [
  * Pick a random sound based on weights
  */
 function pickRandomSound(ctx: SchedulerContext): string {
+  // ADR-293: `RandomService` has no bare `next()` — the weighted pick draws
+  // one integer in [0, totalWeight) on its own plain point and walks the
+  // integer weights (same distribution as the old fractional walk).
   const totalWeight = FOREST_SOUNDS.reduce((sum, s) => sum + s.weight, 0);
-  let random = ctx.random.next() * totalWeight;
+  let random = ctx.random.int(FOREST_SOUND_POINT, 0, totalWeight - 1);
 
   for (const sound of FOREST_SOUNDS) {
     random -= sound.weight;
-    if (random <= 0) {
+    if (random < 0) {
       return sound.messageId;
     }
   }
@@ -99,7 +108,7 @@ function createForestAmbienceDaemon(forestRoomIds: Set<string>): Daemon {
     // Emit ambient sound with some probability
     run: (ctx: SchedulerContext): ISemanticEvent[] => {
       // Roll for ambience
-      if (!ctx.random.chance(AMBIENCE_PROBABILITY)) {
+      if (!ctx.random.chance(FOREST_AMBIENCE_POINT, AMBIENCE_PROBABILITY)) {
         return [];
       }
 

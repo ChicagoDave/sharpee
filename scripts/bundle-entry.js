@@ -504,6 +504,12 @@ Examples:
         console.error(`Invalid --seed value "${options.seed}" — must be a non-negative integer`);
         process.exit(2);
       }
+      // Above MAX_SAFE_INTEGER the parsed value no longer equals the typed
+      // digits, so the echoed seed would not reproduce the run (AC-12).
+      if (parsedSeed > Number.MAX_SAFE_INTEGER) {
+        console.error(`Invalid --seed value "${options.seed}" — out of range (max ${Number.MAX_SAFE_INTEGER})`);
+        process.exit(2);
+      }
       options.seed = parsedSeed;
     }
 
@@ -521,6 +527,44 @@ Examples:
 
     options.storyPath = resolveStoryPath(options);
 
+    // Restore a named save through the engine's real save format (version
+    // reader, turn counter, RNG stream states — ADR-293 D7). The CLI owns
+    // only the file location; a pre-ADR-293 snapshot is a hard error.
+    async function restoreNamedSave(game, saveName) {
+      const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
+      const savePath = path.join(savesDir, `${saveName}.json`);
+      if (!fs.existsSync(savePath)) {
+        console.error(`Save file not found: ${savePath}`);
+        if (fs.existsSync(savesDir)) {
+          const files = fs.readdirSync(savesDir).filter(f => f.endsWith('.json'));
+          if (files.length > 0) {
+            console.error(`Available saves:`);
+            for (const f of files) {
+              console.error(`  ${f.replace('.json', '')}`);
+            }
+          }
+        } else {
+          console.error(`No saves directory. Run --chain walkthroughs first to generate saves.`);
+        }
+        process.exit(1);
+      }
+      const parsed = JSON.parse(fs.readFileSync(savePath, 'utf-8'));
+      if (parsed.worldState !== undefined || parsed.version === undefined) {
+        console.error(`Save "${saveName}" is a legacy snapshot (no save-format version) — delete it and re-run the chain that creates it`);
+        process.exit(1);
+      }
+      game.engine.registerSaveRestoreHooks({
+        onSaveRequested: async () => {},
+        onRestoreRequested: async () => parsed
+      });
+      const restored = await game.engine.restore();
+      if (!restored) {
+        console.error(`Failed to restore "${saveName}" from ${savePath}`);
+        process.exit(1);
+      }
+      return savePath;
+    }
+
     if (options.exec) {
       const game = loadStoryAndCreateGame(
         options.storyPath,
@@ -530,14 +574,7 @@ Examples:
       console.log(`Seed: ${game.engine.getMasterSeed()}`);
 
       if (options.restore) {
-        const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
-        const savePath = path.join(savesDir, `${options.restore}.json`);
-        if (!fs.existsSync(savePath)) {
-          console.error(`Save file not found: ${savePath}`);
-          process.exit(1);
-        }
-        const worldState = fs.readFileSync(savePath, 'utf-8');
-        game.world.loadJSON(worldState);
+        await restoreNamedSave(game, options.restore);
       }
 
       // Enable parser trace when --debug
@@ -714,28 +751,8 @@ Examples:
       console.log(`Seed: ${game.engine.getMasterSeed()}`);
 
       if (options.restore) {
-        const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
-        const savePath = path.join(savesDir, `${options.restore}.json`);
-        if (!fs.existsSync(savePath)) {
-          console.error(`Save file not found: ${savePath}`);
-          if (fs.existsSync(savesDir)) {
-            const files = fs.readdirSync(savesDir).filter(f => f.endsWith('.json'));
-            if (files.length > 0) {
-              console.error(`Available saves:`);
-              for (const f of files) {
-                console.error(`  ${f.replace('.json', '')}`);
-              }
-            }
-          } else {
-            console.error(`No saves directory. Run --chain walkthroughs first to generate saves.`);
-          }
-          process.exit(1);
-        }
-
-        console.log(`Restoring from: ${savePath}`);
-        const worldState = fs.readFileSync(savePath, 'utf-8');
-        game.world.loadJSON(worldState);
-        console.log(`Restored: ${options.restore}`);
+        const savePath = await restoreNamedSave(game, options.restore);
+        console.log(`Restored: ${options.restore} (${savePath})`);
       }
 
       await runInteractiveMode(game);

@@ -1,4 +1,4 @@
-import { EntityId, SeededRandom, ISemanticEvent } from '@sharpee/core';
+import { EntityId, RandomService, ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 
 /** Summary of the player action that just completed, passed to each plugin. */
@@ -32,10 +32,12 @@ export interface TurnPluginContext {
   /** The player's current location id. */
   playerLocation: EntityId;
   /**
-   * The engine's seeded RNG. Use this instead of `Math.random` so turns stay
-   * deterministic and replayable.
+   * The session's per-point stream owner (ADR-293). Plugins draw through
+   * declared `ChoicePoint` handles — never `Math.random`, never a
+   * hand-built stream — so turns stay deterministic and replayable and
+   * every drawn point's state rides the save.
    */
-  random: SeededRandom;
+  random: RandomService;
   /** The action that just completed this turn. */
   actionResult?: TurnPluginActionResult;
   /** The semantic events the action emitted this turn. */
