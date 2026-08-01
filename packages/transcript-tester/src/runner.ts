@@ -38,6 +38,20 @@ interface GameEngine {
   getPluginRegistry?(): { getStates(): Record<string, unknown>; setStates(states: Record<string, unknown>): void };
   /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
   reviveEngine?(): void;
+  /**
+   * The underlying platform engine. $save/$restore go through its real
+   * save format (version, turn counter, RNG stream states — ADR-293 D7)
+   * rather than a hand-rolled world snapshot; the tester owns only WHERE
+   * the file lives, never WHAT is in it.
+   */
+  engine?: {
+    registerSaveRestoreHooks(hooks: {
+      onSaveRequested(data: unknown): Promise<void>;
+      onRestoreRequested(): Promise<unknown | null>;
+    }): void;
+    save(): Promise<boolean>;
+    restore(): Promise<boolean>;
+  };
 }
 
 /**
@@ -735,6 +749,10 @@ async function handleDirective(
         console.log(`[$save ${directive.saveName}]`);
       }
 
+      if (!engine.engine) {
+        return { nextIndex: currentIndex + 1, error: 'SAVE requires the platform engine (game.engine) — the tester no longer writes world snapshots' };
+      }
+
       try {
         // Get save directory from options or use default
         const savesDir = options.savesDirectory || './saves';
@@ -744,18 +762,19 @@ async function handleDirective(
           fs.mkdirSync(savesDir, { recursive: true });
         }
 
-        // Serialize world state + plugin states in envelope
-        const worldState = world?.toJSON?.();
-        const saveEnvelope: any = { worldState };
-
-        // Save plugin states if engine exposes plugin registry
-        if (engine.getPluginRegistry) {
-          saveEnvelope.pluginStates = engine.getPluginRegistry().getStates();
-        }
-
-        // Write to file
+        // The engine owns the save contents (real format: version, turn
+        // counter, RNG stream states, plugin states); the hook only persists.
         const savePath = path.join(savesDir, `${directive.saveName}.json`);
-        fs.writeFileSync(savePath, JSON.stringify(saveEnvelope), 'utf-8');
+        engine.engine.registerSaveRestoreHooks({
+          onSaveRequested: async (data) => {
+            fs.writeFileSync(savePath, JSON.stringify(data), 'utf-8');
+          },
+          onRestoreRequested: async () => null
+        });
+        const saved = await engine.engine.save();
+        if (!saved) {
+          return { nextIndex: currentIndex + 1, error: `Failed to save "${directive.saveName}"` };
+        }
 
         if (verbose) {
           console.log(`  Saved to: ${savePath}`);
@@ -779,6 +798,10 @@ async function handleDirective(
         console.log(`[$restore ${directive.saveName}]`);
       }
 
+      if (!engine.engine) {
+        return { nextIndex: currentIndex + 1, error: 'RESTORE requires the platform engine (game.engine) — the tester no longer loads world snapshots' };
+      }
+
       try {
         // Get save directory from options or use default
         const savesDir = options.savesDirectory || './saves';
@@ -792,29 +815,26 @@ async function handleDirective(
           };
         }
 
-        // Read save data and detect format
-        const rawData = fs.readFileSync(savePath, 'utf-8');
-        let worldState: string;
-        let pluginStates: Record<string, unknown> | undefined;
-
-        const parsed = JSON.parse(rawData);
-        if (parsed.worldState) {
-          // Envelope format: { worldState, pluginStates }
-          worldState = typeof parsed.worldState === 'string'
-            ? parsed.worldState
-            : JSON.stringify(parsed.worldState);
-          pluginStates = parsed.pluginStates;
-        } else {
-          // Legacy format: raw world JSON
-          worldState = rawData;
+        const parsed = JSON.parse(fs.readFileSync(savePath, 'utf-8'));
+        if (parsed.worldState !== undefined || parsed.version === undefined) {
+          // Pre-ADR-293 tester snapshot ({ worldState, pluginStates }) — no
+          // version, no RNG stream states. Never silently restored: stale
+          // saves would replay with wrong randomness. Chains regenerate.
+          return {
+            nextIndex: currentIndex + 1,
+            error: `Save "${directive.saveName}" is a legacy tester snapshot — delete it and re-run the chain that creates it`
+          };
         }
 
-        // Restore world state
-        world?.loadJSON?.(worldState);
-
-        // Restore plugin states if available
-        if (pluginStates && engine.getPluginRegistry) {
-          engine.getPluginRegistry().setStates(pluginStates);
+        // The engine owns the restore (world, turn counter, RNG stream
+        // states, plugin states — the real version reader runs here).
+        engine.engine.registerSaveRestoreHooks({
+          onSaveRequested: async () => { /* not used by $restore */ },
+          onRestoreRequested: async () => parsed
+        });
+        const restored = await engine.engine.restore();
+        if (!restored) {
+          return { nextIndex: currentIndex + 1, error: `Failed to restore "${directive.saveName}"` };
         }
 
         if (verbose) {
