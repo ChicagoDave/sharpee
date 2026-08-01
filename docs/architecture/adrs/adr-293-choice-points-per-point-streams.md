@@ -1,6 +1,6 @@
 # ADR-293: Choice points and per-point streams — deterministic execution and author-reachable outcomes
 
-## Status: ACCEPTED (2026-08-01, session 9f136f) — written from a fresh-eyes design exchange (`docs/work/rng/`), not from its predecessors. All five Open Questions resolved by interview the same day (Q-1 naming convention, Q-2 blow-point split and class sets, Q-3 occurrence indexing, Q-4 `--vary` kept and `--sweep` dropped, Q-5 trace on `ISystemEvent`), then `adr-review`ed at 14/16 with two BLOCKER and three SMALL findings, all folded. Accepted by David on the folded result. **Supersedes ADR-291 and ADR-292**, both marked SUPERSEDED IN PLACE by this acceptance — see Supersession.
+## Status: ACCEPTED (2026-08-01, session 9f136f) — written from a fresh-eyes design exchange (`docs/work/rng/`), not from its predecessors. All five Open Questions resolved by interview the same day (Q-1 naming convention, Q-2 blow-point split and class sets, Q-3 occurrence indexing, Q-4 `--vary` kept and `--sweep` dropped, Q-5 trace on `ISystemEvent`), then `adr-review`ed at 14/16 with two BLOCKER and three SMALL findings, all folded. Accepted by David on the folded result. **Supersedes ADR-291 and ADR-292**, both marked SUPERSEDED IN PLACE by this acceptance — see Supersession. **Amended A1** (2026-08-01, session 5a55e3): six pre-implementation rulings from the Phase A platform discussion, folded inline and recorded in Amendment A1.
 
 **Platform change, approved in principle by this acceptance; Phase A still requires its own discussion before implementation starts** (project rule: platform changes are discussed first). Packages: `packages/core`, `packages/engine`, `packages/stdlib`, `packages/world-model`, `packages/plugins`, `packages/plugin-scheduler`, `packages/media`, `packages/character`, `packages/extensions/basic-combat`, `packages/transcript-tester`. **Story change**: `stories/dungeo`, `stories/armoured`, `stories/thealderman`, `stories/cloak-of-darkness`.
 
@@ -203,6 +203,16 @@ actual question.
 Declarations are one line at module scope, static, immutable, idempotent, registered as a
 side effect of import, and snapshotted by the engine at story start.
 
+**The catalog is process-global, and that is an invariant, not an accident (amended A1).**
+Module scope is exactly what D6 kills for *streams*, so the distinction is load-bearing:
+catalog entries are immutable, idempotent metadata holding no stream, which is what makes
+import-time registration safe; stream *state* is per-engine, per-session (D3, D5). The
+consequence to preserve: when one process hosts several stories — zifmia — the catalog
+holds the union, so `catalog − fired` must filter by the running story's id plus the
+platform package prefixes. The D2 naming convention gives that filter for free, but only
+because catalog entries retain their prefix; stripping prefixes at registration would
+silently report the other story's points as never-fired.
+
 **The naming convention** (ruled by David, 2026-08-01): **dotted segments, the first of
 which is the story or package id, with every token spelled out and no abbreviations.**
 
@@ -298,10 +308,33 @@ The four module-scope singletons are deleted. The workaround they existed for �
 rolls inside one clock millisecond — disappears once streams derive from a seed rather than
 the clock.
 
-**Enforcement is two greps in `./repokit verify`**: fail on `createSeededRandom(` outside
-`packages/engine/src/`, `packages/core/src/random/`, `packages/story-loader/src/`, and test
-globs; fail on `Math.random` outside the same allowlist. Local guard, no CI, no new
-infrastructure.
+**Enforcement is split by precision (amended A1)** — still greps in `./repokit verify`,
+local guard, no CI, no new infrastructure:
+
+- **`createSeededRandom(` gets the strict pattern gate**: fail outside
+  `packages/engine/src/`, `packages/core/src/random/`, `packages/story-loader/src/`, and
+  test globs. It has eight non-test call sites today and Phase A resolves all of them, so
+  the strict form is satisfiable on day one.
+- **`Math.random` and `crypto.randomUUID` fail against a checked-in allowlist file**,
+  seeded with today's pre-existing sites (one line each: path plus a one-word reason). Any
+  *new* occurrence fails the build; the residual is visible, enumerated, and shrinks with
+  the golden-event-log track instead of blocking Phase A on work D13 defers.
+
+The original single-allowlist form was replaced because it was simultaneously too strict
+and too loose (verified 2026-08-01: `grep -rn "Math\.random" packages stories tools
+--include="*.ts"`, minus tests/dist). Too strict: it failed immediately on ~35 pre-existing
+id sites — the `` `${Date.now()}_${Math.random()}` `` idiom in world-model behaviours (×8),
+parser-en-us (×9), `core/src/events` (×4, inside core but outside `core/src/random/`),
+stdlib (×4), and the rest — every one of them deferred by D13, which promises the bar is
+reachable "without touching" them. Too loose: allowlisting all of `engine/src` waved
+through engine's own three id sites (`turn-event-processor.ts:31`, `game-engine.ts:2170`,
+`action-context-factory.ts:108`).
+
+`crypto.randomUUID` is in the gate because it is entropy the `Math.random` grep cannot
+see. Two platform sites exist: `core/src/ifid/ifid.ts:23` (legitimate — one draw per story
+identity; allowlisted) and `character/src/tick-phases.ts:189` (a per-event id; allowlisted
+as an id site). Neither is a gameplay draw, so neither blocks Phase A — but a gate named
+"randomness is gated" covers the entropy surface, not one function name.
 
 ### D7. Stream states ride the save, behind a versioned reader
 
@@ -312,6 +345,13 @@ separately, Chord in world state.
 Restore reseeds every known point and reseeds unknown or missing names from the master seed.
 **This ships with a version reader, not a hard break**: a pre-ADR save carrying
 `actionRngSeed` alone maps onto the corresponding point and reseeds the rest.
+
+**Concretely (amended A1)**: `SAVE_FORMAT_VERSION` bumps `'2.0.0'` → `'3.0.0'`, and the
+exact-match rejection at `save-restore-service.ts:264` becomes the codebase's first real
+version-reader branch — a `2.0.0` save is read and mapped, not refused. Without this, AC-5
+is unreachable as written. The alternative — adding the point map as an optional field
+while staying at `2.0.0` — was rejected because it works exactly once: the next format
+change in the same spot would have no version to branch on.
 
 Restore fallbacks must never read the clock when a master seed is set.
 
@@ -689,6 +729,19 @@ points; ~22 draw call sites; ~30 declaration lines.
 
 **stories/armoured, thealderman, cloak-of-darkness** — one gameplay `Math.random()` each.
 
+**devkit** (added A1) — `fixtures/basic-story/src/npcs.ts:25,31` moves off bare
+`context.random.chance(0.6)` / `pick` onto a named point. The scaffold is the first API a
+new author sees; it cannot teach a form D2 removes.
+
+**stories/family-zoo-tutorial** (added A1) — `characters.ts:76,77,109,110` onto named
+points (e.g. `family-zoo.parrot.squawk`).
+
+**docs/book** (added A1) — `parts/part-6/20-non-player-characters.md:153-154` and
+`code-snippets/ch20-non-player-characters/04-writing-a-custom-behavior.ts:19-20` rewritten
+to the point-handle API. D2 removes the bare-probability `chance(0.5)` form the finished
+chapter teaches, so the book edit is part of Phase A's definition of done rather than a
+later docs pass — the one Phase A consequence that reaches a shipped artifact.
+
 **transcript-tester** — `--seed`, `[SEED:]`, `[FORCE:]`, `[POINT-SEED:]`, seed reporting in
 all modes, coverage report output.
 
@@ -701,14 +754,22 @@ under no compatibility constraint.
 Each is independently landable and verified against the existing walkthrough chain.
 
 - **Phase A — the substrate.** Kill the four singletons, honour injected RNG, introduce
-  `definePoint`/`RandomService`, per-point streams, unified stream-state persistence,
-  `--seed`, `[SEED:]`, seed echoed in all test output. **The flake dies here or nowhere** —
-  deleting the singletons alone does not fix it, because combat then lands on a stream that
-  is still clock-seeded per run.
+  `definePoint`/`RandomService`, per-point streams, unified stream-state persistence behind
+  the `3.0.0` version reader (D7, A1), `--seed`, `[SEED:]`, seed echoed in all test output.
+  **`resolve()` ships here with real class labels** (ruled A1): it is the only sanctioned
+  route to a bare `SeededRandom`, and multi-draw callers — `weaponBehavior.ts:45,48`,
+  `melee.ts:213,232,449,450` — have nowhere else to get a stream. So D10's class taxonomy
+  lands in Phase A and the ~45
+  call sites change shape exactly once, at the cost of a meaningfully bigger Phase A.
+  Phase A's definition of done also includes the teaching surface: the devkit scaffold, the
+  family-zoo-tutorial call sites, and the book §20 snippet (Touchpoints, A1).
+  **The flake dies here or nowhere** — deleting the singletons alone does not fix it,
+  because combat then lands on a stream that is still clock-seeded per run.
 - **Phase B — story cleanup.** Round room, bat, carousel, trivia, audio, and the three other
   stories onto points. Mechanical once the service exists.
-- **Phase C — classes, coverage, forcing.** `[FORCE:]`, `[POINT-SEED:]`, the coverage report,
-  the trace surface, the search budget.
+- **Phase C — coverage, forcing, search** (re-cut A1: classes moved to Phase A).
+  `[FORCE:]`, `[POINT-SEED:]`, the coverage report, the trace surface, the search budget —
+  almost entirely engine- and tooling-side now that call sites already carry their labels.
 - **Phase D — retire the workarounds.** Navigator retry loop, surplus attack commands, and
   the run-flakey-walkthroughs-twice policy.
 
@@ -724,9 +785,11 @@ Each is independently landable and verified against the existing walkthrough cha
    only the action stream.
 5. A pre-ADR save carrying `actionRngSeed` alone restores without error, its action point
    continuing exactly and the rest reseeding from the master seed.
-6. `./repokit verify` fails when `createSeededRandom(` or `Math.random` is introduced outside
-   the D6 allowlist, asserted by introducing one of each and observing two failures, and by
-   confirming the gate stays green over tests, tools, and dist.
+6. `./repokit verify` fails when `createSeededRandom(` is introduced outside the D6 path
+   allowlist, or when a new `Math.random` or `crypto.randomUUID` appears that is not in the
+   D6 allowlist file — asserted by introducing one of each and observing the failures, and
+   by confirming the gate stays green over the allowlisted residual, tests, tools, and dist
+   (amended A1).
 7. A gameplay draw cannot be written without a declaration — asserted by type, not by
    convention: the draw API accepts no bare `SeededRandom`.
 8. The coverage report over the full walkthrough chain enumerates every declared dungeo point,
@@ -802,6 +865,86 @@ adopting it would mean widening a closed union and repairing stale members as a 
 shipping randomness work, while `ISystemEvent` is already wired and already excluded from the
 save. Either delete the tier or give it a real customer; deciding that is out of scope here
 and should be filed on its own.
+
+## Amendment A1 (2026-08-01, session 5a55e3) — Phase A pre-implementation rulings
+
+The Phase A platform discussion re-checked this ADR's surface against the tree and
+surfaced six items: four rulings (all by David, 2026-08-01) and two corrections. Every
+claim below was re-verified in session 5a55e3 before ruling — none is inherited testimony.
+Each item is folded inline above and marked (A1); this section is the record.
+
+1. **D6's gate is split** (ruling). The accepted single-allowlist gate contradicted D13:
+   run today it fails on ~35 pre-existing id sites that D13 explicitly defers, while
+   waving through engine's own three id sites because all of `engine/src` was allowlisted
+   (`turn-event-processor.ts:31`, `game-engine.ts:2170`, `action-context-factory.ts:108`).
+   `createSeededRandom(` keeps the strict path gate (8 non-test sites, all resolved by
+   Phase A); `Math.random` and `crypto.randomUUID` gate against a checked-in allowlist
+   file seeded with today's sites, so only *new* entropy fails. AC-6 reworded to match.
+   Rejected: cleaning the id sites now (drags the deferred golden-event-log work into
+   Phase A); gating `createSeededRandom` alone (new gameplay `Math.random` would land
+   silently).
+
+2. **The gate covers `crypto.randomUUID`** (correction). Entropy the `Math.random` grep
+   cannot see: `core/src/ifid/ifid.ts:23` (legitimate, per-story identity) and
+   `character/src/tick-phases.ts:189` (per-event id). Neither is a gameplay draw; both are
+   allowlisted; the gate covers the entropy surface, not one function name.
+
+3. **The book edit is inside Phase A's definition of done** (ruling). D2's handle-only
+   draw API removes the bare-probability `context.random.chance(0.5)` form that the
+   finished book teaches (`20-non-player-characters.md:153-154`, snippet
+   `04-writing-a-custom-behavior.ts:19-20`), that the family-zoo-tutorial runs
+   (`characters.ts:76,77,109,110`), and that the devkit scaffold hands every new author
+   (`basic-story/src/npcs.ts:25,31`). Ruled: rewrite the teaching surface to a named point
+   (`family-zoo.parrot.squawk`) alongside Phase A rather than weakening D2 — a named point
+   is better teaching material than an anonymous `0.5` at the reader's first meeting with
+   randomness, and a convenience form would reopen the catalog gap D2 exists to close.
+   Touchpoints gained devkit, family-zoo-tutorial, and docs/book entries.
+
+4. **AC-5 lands via a version bump** (ruling). `SAVE_FORMAT_VERSION = '2.0.0'` throws on
+   any mismatch (`save-restore-service.ts:264-265`), so AC-5 was unreachable as written.
+   Ruled: bump to `'3.0.0'` and write the first real version-reader branch — consistent
+   with D7's "version reader, not a hard break" and with the standing ruling after the
+   v3→v4 save hard-break. The optional-field-at-2.0.0 dodge was rejected: it works exactly
+   once.
+
+5. **`resolve()` ships in Phase A with real class labels** (ruling — the one that moves
+   the A/C boundary). Phase C owned classes, but `resolve(point, sample, materialize)` is
+   the only sanctioned route to a bare `SeededRandom`, and multi-draw callers
+   (`world-model/src/traits/weapon/weaponBehavior.ts:45,48` and dungeo's
+   `melee.ts:213,232,449,450`; `deadlyRoomBehavior.ts:68` and `probabilistic-death.ts:25`
+   as single-draw parameter takers) have nowhere else to get a stream. Ruled: real labels
+   from the start. `materialize` sits unused until Phase C, but the ~45 call sites change
+   shape exactly once, D10's melee taxonomy lands in Phase A, and Phase C becomes almost
+   entirely engine- and tooling-side. Phases re-cut accordingly.
+
+6. **The catalog-global invariant is written down** (correction, folded into D2). The
+   catalog is process-global, immutable, idempotent metadata registered at import — safe
+   at module scope precisely because it holds no stream, where D6 kills module-scope
+   *streams*. Stream state stays per-engine, per-session. Consequence: a multi-story
+   process (zifmia) holds the union catalog, so `catalog − fired` filters by story id plus
+   platform prefixes — which works only because entries retain their D2 prefix.
+
+**A1's own citation correction was withdrawn (2026-08-01, same day).** As first written,
+A1 closed by "correcting" the multi-draw caller list from `trollBehavior.ts:45,48` to
+`stories/dungeo/src/npcs/troll/troll-behavior.ts:75`. The discussion had cited
+`weaponBehavior.ts:45,48`, not troll, and the citation was accurate — the misread dropped
+the cleanest evidence for ruling 5 and asserted that a verified claim was wrong, which is
+the confidence-laundering failure mode this ADR's D13 note exists to guard against, running
+in reverse. The site, re-read in full:
+
+```
+packages/world-model/src/traits/weapon/weaponBehavior.ts
+  :33-35   @param rng the caller's seeded RNG stream … Draws: one damage roll, one crit check.
+  :38      static calculateDamage(weapon: IFEntity, rng: SeededRandom): IWeaponDamageResult
+  :45        const damage = rng.int(weaponTrait.minDamage, weaponTrait.maxDamage);
+  :48        const criticalHit = rng.chance(0.1);
+```
+
+Two draws on one injected stream inside one function, with the file's own header
+documenting the count — the exact caller shape that forces `resolve()` into Phase A, and
+now cited in ruling 5. `troll-behavior.ts:75` is a real site of a different class (a bare
+`context.random.chance(0.75)`, single draw, same family as the teaching surface in ruling
+3) and was never part of the multi-draw list. `melee.ts:213,232,449,450` stands as cited.
 
 ## Session
 
