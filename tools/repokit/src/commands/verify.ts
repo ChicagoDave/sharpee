@@ -13,6 +13,8 @@ import { Command } from './command';
 import { findControlBytes, formatControlByteFailure } from './control-bytes';
 import { checkDocsBlocksModule, checkGrammarModule } from './grammar';
 import { checkManifestModule } from './manifest';
+import { checkRandomGate, formatRandomGateFailure } from './random-gate';
+import { join } from 'node:path';
 
 export class VerifyCommand implements Command {
   readonly name = 'verify';
@@ -57,6 +59,19 @@ export class VerifyCommand implements Command {
     const controlBytes = findControlBytes(root);
     if (controlBytes.length > 0) {
       console.error(formatControlByteFailure(controlBytes));
+      return 1;
+    }
+
+    // ADR-293 D6 (A1 ruling 1): the split entropy gate — strict path check
+    // for createSeededRandom(), checked-in allowlist for Math.random() /
+    // crypto.randomUUID(). Only NEW entropy fails.
+    log('=== repokit verify: ADR-293 D6 entropy gate ===');
+    const randomGateFailures = checkRandomGate(
+      root,
+      join(root, 'tools', 'repokit', 'entropy-allowlist.txt'),
+    );
+    if (randomGateFailures.length > 0) {
+      console.error(formatRandomGateFailure(randomGateFailures));
       return 1;
     }
 

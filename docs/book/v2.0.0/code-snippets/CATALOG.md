@@ -273,12 +273,12 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 | # | File | Section | Lang | Kind | Src line |
 |---|------|---------|------|------|----------|
 | 01 | `01-non-player-characters-actors-that-take-turns.ts` | Non-Player Characters: Actors That Take Turns | typescript | author | 25 |
-| 02 | `02-creating-an-npc-entity.ts` | Creating an NPC entity | typescript | author | 43 |
-| 03 | `03-the-parrot-becomes-an-npc.ts` | The parrot becomes an NPC | typescript | author | 97 |
-| 04 | `04-writing-a-custom-behavior.ts` | Writing a custom behavior | typescript | author | 134 |
-| 05 | `05-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 211 |
-| 06 | `06-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 223 |
-| 07 | `07-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 230 |
+| 02 | `02-creating-an-npc-entity.ts` | Creating an NPC entity | typescript | author | 44 |
+| 03 | `03-the-parrot-becomes-an-npc.ts` | The parrot becomes an NPC | typescript | author | 98 |
+| 04 | `04-writing-a-custom-behavior.ts` | Writing a custom behavior | typescript | author | 136 |
+| 05 | `05-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 222 |
+| 06 | `06-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 234 |
+| 07 | `07-registering-the-plugin-and-behaviors.ts` | Registering the plugin and behaviors | typescript | author | 241 |
 
 ## Scenes: Named Windows of Story Time
 

@@ -6,6 +6,13 @@
  */
 
 import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
+import { definePoint } from '@sharpee/core';
+
+// Declared choice points (ADR-293): every draw names a point the author can
+// force, trace, and see in coverage. The speak roll is a yes/no choice
+// point; the phrase pick is a plain draw (no outcome classes).
+const BOT_SPEAKS_POINT = definePoint('basic-story.patrol-bot.speaks', { classes: ['yes', 'no'] });
+const BOT_PHRASE_POINT = definePoint('basic-story.patrol-bot.phrase');
 
 const BOT_PHRASES = [
   'BEEP. Systems nominal.',
@@ -22,13 +29,13 @@ export const patrolBotBehavior: NpcBehavior = {
   name: 'Patrol Bot',
   onTurn(context: NpcContext): NpcAction[] {
     if (!context.playerVisible) return [];
-    if (context.random.chance(0.6)) {
+    if (context.random.chance(BOT_SPEAKS_POINT, 0.6)) {
       return [
         {
           type: 'speak',
           messageId: 'npc.speech',
           data: {
-            text: context.random.pick(BOT_PHRASES),
+            text: context.random.pick(BOT_PHRASE_POINT, BOT_PHRASES),
           },
         },
       ];

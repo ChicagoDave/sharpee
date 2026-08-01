@@ -1,0 +1,48 @@
+# entropy-allowlist.txt — ADR-293 D6 allowlist gate (A1 ruling 1).
+#
+# Every file below carries pre-ADR-293 `Math.random()` / `crypto.randomUUID()`
+# call sites that D13 explicitly defers (event/entity id generation, per-story
+# identity, non-gameplay tooling). Format: `<count> <repo-relative path>`.
+# `repokit verify` fails on any file NOT listed here, on a count change, and
+# on stale entries — additions and removals are conscious, reviewed edits.
+#
+# Cleanup of the id-generation idiom is tracked by ADR-293 D13 (golden event
+# log work), not by this gate. The four dungeo gameplay handlers (round-room,
+# trivia, bat, carousel) are ADR-293 Phase B conversions.
+#
+# Seeded 2026-08-01 from: grep -rn "Math.random(|crypto.randomUUID(" over
+# packages/stories/tools source (tests and comments excluded).
+
+9 packages/parser-en-us/src/english-parser.ts
+3 packages/world-model/src/traits/switchable/switchableBehavior.ts
+3 packages/world-model/src/traits/room/roomBehavior.ts
+3 packages/media/src/audio/audio-registry.ts
+1 tools/vscode-ext/src/new-story-wizard.ts
+1 stories/thealderman/src/randomization.ts
+1 stories/dungeo/src/npcs/dungeon-master/dungeon-master-trivia.ts
+1 stories/dungeo/src/handlers/round-room-handler.ts
+1 stories/dungeo/src/handlers/carousel-handler.ts
+1 stories/dungeo/src/handlers/bat-handler.ts
+1 stories/dungeo/src/combat/melee-npc-attack.ts
+1 stories/dungeo/src/actions/gdt/gdt-input-handler.ts
+1 stories/cloak-of-darkness/src/index.ts
+1 stories/armoured/src/combat/combat-utils.ts
+1 packages/world-model/src/world/WorldModel.ts
+1 packages/world-model/src/world/WorldEventSystem.ts
+1 packages/stdlib/src/validation/command-validator.ts
+1 packages/stdlib/src/query-handlers/restart-handler.ts
+1 packages/stdlib/src/query-handlers/quit-handler.ts
+1 packages/stdlib/src/npc/npc-service.ts
+1 packages/plugin-scheduler/src/scheduler-service.ts
+1 packages/if-domain/src/grammar/grammar-engine.ts
+1 packages/extensions/testing/src/annotations/store.ts
+1 packages/event-processor/src/effects/effect-processor.ts
+1 packages/engine/src/turn-event-processor.ts
+1 packages/engine/src/game-engine.ts
+1 packages/engine/src/action-context-factory.ts
+1 packages/core/src/query/query-manager.ts
+1 packages/core/src/ifid/ifid.ts
+1 packages/core/src/events/platform-events.ts
+1 packages/core/src/events/game-events.ts
+1 packages/core/src/events/event-system.ts
+1 packages/character/src/tick-phases.ts

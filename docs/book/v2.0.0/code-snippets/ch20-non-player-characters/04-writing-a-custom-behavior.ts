@@ -6,6 +6,15 @@ const PARROT_PHRASES = [
   'BAWK! Welcome to the zoo!',
 ];
 
+// Every random draw names a choice point. The name is what lets you force
+// the outcome in a test, see it in a coverage report, and replay a session
+// exactly. The squawk decision has yes/no outcomes; the phrase pick is a
+// plain draw with no outcome classes.
+const PARROT_SQUAWK = definePoint('family-zoo.parrot.squawk', {
+  classes: ['yes', 'no'],
+});
+const PARROT_PHRASE = definePoint('family-zoo.parrot.phrase');
+
 const parrotBehavior: NpcBehavior = {
   id: 'zoo-parrot',
   name: 'Parrot Behavior',
@@ -16,8 +25,8 @@ const parrotBehavior: NpcBehavior = {
     if (!context.playerVisible) return [];
 
     // 50% chance to squawk
-    if (context.random.chance(0.5)) {
-      const phrase = context.random.pick(PARROT_PHRASES);
+    if (context.random.chance(PARROT_SQUAWK, 0.5)) {
+      const phrase = context.random.pick(PARROT_PHRASE, PARROT_PHRASES);
       return [{
         type: 'speak',
         messageId: 'npc.speech',
