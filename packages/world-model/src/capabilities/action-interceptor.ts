@@ -11,7 +11,7 @@
  * - ActionInterceptor: Hooks into phases, action owns core logic (ENTER, PUT)
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, RandomService } from '@sharpee/core';
 import { IFEntity } from '../entities/index.js';
 import { WorldModel } from '../world/index.js';
 import { CapabilityEffect } from './types.js';
@@ -324,6 +324,12 @@ export function applyInterceptorBlockedResult(
  *   }
  * };
  * ```
+ *
+ * Randomness (ADR-293): every hook receives the session's `RandomService` as
+ * its trailing parameter. Interceptors that draw MUST use it with a declared
+ * `ChoicePoint` — never construct their own stream (D6) and never
+ * `Math.random()`. The parameter is optional only so bare test harnesses can
+ * omit it; the stdlib lifecycle engine always passes it.
  */
 export interface ActionInterceptor {
   /**
@@ -346,7 +352,8 @@ export interface ActionInterceptor {
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
-    sharedData: InterceptorSharedData
+    sharedData: InterceptorSharedData,
+    random?: RandomService
   ): InterceptorResult | null;
 
   /**
@@ -372,7 +379,8 @@ export interface ActionInterceptor {
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
-    sharedData: InterceptorSharedData
+    sharedData: InterceptorSharedData,
+    random?: RandomService
   ): InterceptorResult | null;
 
   /**
@@ -394,7 +402,8 @@ export interface ActionInterceptor {
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
-    sharedData: InterceptorSharedData
+    sharedData: InterceptorSharedData,
+    random?: RandomService
   ): void;
 
   /**
@@ -437,7 +446,8 @@ export interface ActionInterceptor {
     entity: IFEntity,
     world: WorldModel,
     actorId: string,
-    sharedData: InterceptorSharedData
+    sharedData: InterceptorSharedData,
+    random?: RandomService
   ): InterceptorReportResult;
 
   /**
@@ -475,6 +485,7 @@ export interface ActionInterceptor {
     world: WorldModel,
     actorId: string,
     error: string,
-    sharedData: InterceptorSharedData
+    sharedData: InterceptorSharedData,
+    random?: RandomService
   ): InterceptorBlockedResult | null;
 }

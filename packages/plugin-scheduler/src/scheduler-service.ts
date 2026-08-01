@@ -20,9 +20,8 @@ import {
   SchedulerContext,
   SchedulerResult,
   SchedulerState,
-  SeededRandom,
+  RandomService,
 } from './types.js';
-import { createSeededRandom } from './seeded-random.js';
 
 /**
  * SchedulerService interface
@@ -44,8 +43,9 @@ export interface ISchedulerService {
   resumeFuse(id: string): void;
   hasFuse(id: string): boolean;
 
-  // Lifecycle
-  tick(world: WorldModel, turn: number, playerId: EntityId): SchedulerResult;
+  // Lifecycle. `random` is the session's per-point stream owner (ADR-293),
+  // threaded from the turn-plugin context into every daemon/fuse context.
+  tick(world: WorldModel, turn: number, playerId: EntityId, random: RandomService): SchedulerResult;
 
   // Introspection
   getActiveDaemons(): DaemonInfo[];
@@ -57,9 +57,6 @@ export interface ISchedulerService {
 
   // Entity cleanup
   cleanupEntity(entityId: EntityId): ISemanticEvent[];
-
-  // Random access
-  getRandom(): SeededRandom;
 }
 
 /**
@@ -77,12 +74,7 @@ export class SchedulerService implements ISchedulerService {
   private daemonStates: Map<string, DaemonState> = new Map();
   private fuses: Map<string, Fuse> = new Map();
   private fuseStates: Map<string, FuseState> = new Map();
-  private random: SeededRandom;
   private currentTurn: number = 0;
-
-  constructor(seed?: number) {
-    this.random = createSeededRandom(seed);
-  }
 
   // ==================== Daemon Management ====================
 
@@ -152,8 +144,18 @@ export class SchedulerService implements ISchedulerService {
     // Call onCancel if defined
     let events: ISemanticEvent[] = [];
     if (fuse.onCancel) {
-      // Fuse cancellation may not have a world context available
-      const context = this.createContext(undefined as unknown as WorldModel, this.currentTurn, '');
+      // Fuse cancellation runs outside a tick: no world and no RandomService
+      // are available. Drawing in onCancel is a wiring error — the stub
+      // throws loudly instead of minting entropy (ADR-293 D6).
+      const noDrawContext = (): never => {
+        throw new Error('SchedulerService: onCancel has no RandomService — draw in onTrigger instead (ADR-293)');
+      };
+      const context = this.createContext(undefined as unknown as WorldModel, this.currentTurn, '', undefined, {
+        chance: noDrawContext,
+        int: noDrawContext,
+        pick: noDrawContext,
+        resolve: noDrawContext,
+      });
       try {
         events = fuse.onCancel(context);
       } catch (error) {
@@ -198,7 +200,7 @@ export class SchedulerService implements ISchedulerService {
 
   // ==================== Tick (Main Loop) ====================
 
-  tick(world: WorldModel, turn: number, playerId: EntityId): SchedulerResult {
+  tick(world: WorldModel, turn: number, playerId: EntityId, random: RandomService): SchedulerResult {
     this.currentTurn = turn;
 
     const events: ISemanticEvent[] = [];
@@ -209,7 +211,7 @@ export class SchedulerService implements ISchedulerService {
     const playerLocation = world.getLocation(playerId) || '';
 
     // Create context
-    const context = this.createContext(world, turn, playerLocation, playerId);
+    const context = this.createContext(world, turn, playerLocation, playerId, random);
 
     // 1. Run daemons (sorted by priority, highest first)
     const sortedDaemons = this.getSortedDaemons();
@@ -354,13 +356,11 @@ export class SchedulerService implements ISchedulerService {
       turn: this.currentTurn,
       daemons,
       fuses,
-      randomSeed: this.random.getSeed(),
     };
   }
 
   setState(state: SchedulerState): void {
     this.currentTurn = state.turn;
-    this.random.setSeed(state.randomSeed);
 
     // Restore daemon states (daemons must be re-registered at game start)
     for (const daemonState of state.daemons) {
@@ -395,24 +395,19 @@ export class SchedulerService implements ISchedulerService {
     return events;
   }
 
-  // ==================== Random Access ====================
-
-  getRandom(): SeededRandom {
-    return this.random;
-  }
-
   // ==================== Private Helpers ====================
 
   private createContext(
     world: WorldModel,
     turn: number,
     playerLocation: EntityId,
-    playerId?: EntityId
+    playerId: EntityId | undefined,
+    random: RandomService
   ): SchedulerContext {
     return {
       world,
       turn,
-      random: this.random,
+      random,
       playerLocation,
       playerId: playerId || '',
     };
@@ -432,8 +427,10 @@ export class SchedulerService implements ISchedulerService {
 }
 
 /**
- * Create a new SchedulerService instance
+ * Create a new SchedulerService instance. The scheduler owns no stream of
+ * its own (ADR-293): daemons draw through declared points on the
+ * RandomService threaded into `tick()`.
  */
-export function createSchedulerService(seed?: number): ISchedulerService {
-  return new SchedulerService(seed);
+export function createSchedulerService(): ISchedulerService {
+  return new SchedulerService();
 }

@@ -15,12 +15,14 @@ export class SchedulerPlugin implements TurnPlugin {
   priority = 50;
   private service: ISchedulerService;
 
-  constructor(seed?: number) {
-    this.service = createSchedulerService(seed);
+  constructor() {
+    this.service = createSchedulerService();
   }
 
   onAfterAction(ctx: TurnPluginContext): ISemanticEvent[] {
-    return this.service.tick(ctx.world, ctx.turn, ctx.playerId).events;
+    // ADR-293: the scheduler owns no stream — daemons draw through declared
+    // points on the session RandomService threaded from the turn context.
+    return this.service.tick(ctx.world, ctx.turn, ctx.playerId, ctx.random).events;
   }
 
   getState(): unknown {
@@ -29,16 +31,6 @@ export class SchedulerPlugin implements TurnPlugin {
 
   setState(state: unknown): void {
     this.service.setState(state as SchedulerState);
-  }
-
-  /**
-   * Reseed the scheduler's internal stream from the session seed
-   * (ADR-293). Called by the engine before the first turn, which makes
-   * daemon draws seed-reproducible; a later `setState` (save restore)
-   * still wins, since it runs after and carries the saved stream state.
-   */
-  onSessionSeed(seed: number): void {
-    this.service.getRandom().setSeed(seed);
   }
 
   /** Public access for stories that need daemon/fuse registration */

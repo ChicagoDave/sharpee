@@ -4,7 +4,7 @@
  * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
  */
 
-import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, IExitInfo, DirectionType, CharacterModelTrait, getOppositeDirection } from '@sharpee/world-model';
 import type { PerSenseRenderings } from '@sharpee/if-services';
 import {
@@ -35,7 +35,7 @@ export type NpcCombatResolver = (
   npc: IFEntity,
   target: IFEntity,
   world: WorldModel,
-  random: SeededRandom
+  random: RandomService
 ) => ISemanticEvent[];
 
 /**
@@ -73,7 +73,7 @@ export function clearNpcCombatResolver(): void {
 export interface NpcTickContext {
   world: WorldModel;
   turn: number;
-  random: SeededRandom;
+  random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
 }
@@ -101,7 +101,7 @@ export interface INpcService {
   onPlayerEnters(
     world: WorldModel,
     roomId: EntityId,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[];
 
@@ -109,7 +109,7 @@ export interface INpcService {
   onPlayerLeaves(
     world: WorldModel,
     roomId: EntityId,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[];
 
@@ -118,7 +118,7 @@ export interface INpcService {
     world: WorldModel,
     npcId: EntityId,
     words: string,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[];
 
@@ -127,7 +127,7 @@ export interface INpcService {
     world: WorldModel,
     npcId: EntityId,
     attackerId: EntityId,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[];
 }
@@ -240,7 +240,7 @@ export class NpcService implements INpcService {
   onPlayerEnters(
     world: WorldModel,
     roomId: EntityId,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
@@ -280,7 +280,7 @@ export class NpcService implements INpcService {
   onPlayerLeaves(
     world: WorldModel,
     roomId: EntityId,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
@@ -321,7 +321,7 @@ export class NpcService implements INpcService {
     world: WorldModel,
     npcId: EntityId,
     words: string,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[] {
     const npc = world.getEntity(npcId);
@@ -369,7 +369,7 @@ export class NpcService implements INpcService {
     world: WorldModel,
     npcId: EntityId,
     attackerId: EntityId,
-    random: SeededRandom,
+    random: RandomService,
     turn: number
   ): ISemanticEvent[] {
     const npc = world.getEntity(npcId);
@@ -428,7 +428,7 @@ export class NpcService implements INpcService {
   private createNpcContext(
     npc: IFEntity,
     world: WorldModel,
-    random: SeededRandom,
+    random: RandomService,
     turn: number,
     playerLocation: EntityId,
     npcLocation: EntityId
@@ -486,7 +486,7 @@ export class NpcService implements INpcService {
     npc: IFEntity,
     actions: NpcAction[],
     world: WorldModel,
-    random: SeededRandom,
+    random: RandomService,
     playerLocation: EntityId
   ): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
@@ -503,7 +503,7 @@ export class NpcService implements INpcService {
     npc: IFEntity,
     action: NpcAction,
     world: WorldModel,
-    random: SeededRandom,
+    random: RandomService,
     playerLocation: EntityId
   ): ISemanticEvent[] {
     switch (action.type) {
@@ -746,7 +746,7 @@ export class NpcService implements INpcService {
     npc: IFEntity,
     targetId: EntityId,
     world: WorldModel,
-    random: SeededRandom
+    random: RandomService
   ): ISemanticEvent[] {
     const target = world.getEntity(targetId);
     if (!target) return [];

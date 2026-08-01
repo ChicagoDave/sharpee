@@ -18,9 +18,19 @@
  * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
  */
 
-import type { SeededRandom } from '@sharpee/core';
+import { type RandomService, definePoint } from '@sharpee/core';
 import type { IParsedCommand, WorldModel, IFEntity } from '@sharpee/world-model';
 import { TraitType, DeadlyRoomTrait, DeadlyRoomBehavior } from '@sharpee/world-model';
+
+/**
+ * The deadly room's probabilistic-lethality choice point (ADR-293). Only the
+ * `chance` variant draws; safe verbs and always-lethal rooms are
+ * deterministic short-circuits that sit outside the point and draw nothing
+ * (D8).
+ */
+export const DEADLY_ROOM_LETHAL_POINT = definePoint('stdlib.deadly-room.lethal', {
+  classes: ['yes', 'no']
+});
 
 /** The generic platform action a lethal deadly-room verb is redirected to. */
 export const DEADLY_ROOM_DEATH_ACTION_ID = 'if.action.deadly_room_death';
@@ -53,10 +63,10 @@ function resolvePlayerRoom(world: WorldModel, player: IFEntity): IFEntity | unde
  * in which case it redirects to the generic death action, threading the cause and
  * message id through `extras`.
  *
- * @param rng the engine's seeded RNG, used only for the probabilistic (`chance`) variant
+ * @param random the session's per-point stream owner, used only for the probabilistic (`chance`) variant
  */
 export function createDeadlyRoomTransformer(
-  rng?: SeededRandom,
+  random?: RandomService,
 ): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand {
   return (parsed: IParsedCommand, world: WorldModel): IParsedCommand => {
     const player = world.getPlayer();
@@ -66,8 +76,16 @@ export function createDeadlyRoomTransformer(
     const trait = room?.get(TraitType.DEADLY_ROOM) as DeadlyRoomTrait | undefined;
     if (!trait) return parsed;
 
-    const verdict = DeadlyRoomBehavior.checkVerb(trait, parsed.action ?? '', rng);
+    // `checkVerb` without an rng is fail-deadly, so it decides the
+    // deterministic part (safe verb / always-lethal room) and this
+    // transformer owns the one probabilistic draw on its declared point —
+    // world-model keeps its bare-parameter shape unchanged (ADR-293 D6).
+    const verdict = DeadlyRoomBehavior.checkVerb(trait, parsed.action ?? '');
     if (!verdict.lethal) return parsed;
+    if (trait.chance !== undefined && random) {
+      const lethal = random.chance(DEADLY_ROOM_LETHAL_POINT, trait.chance);
+      if (!lethal) return parsed;
+    }
 
     return {
       ...parsed,

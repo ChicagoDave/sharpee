@@ -4,7 +4,7 @@
 
 import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel, ScopeCheckResult, ScopeErrors, ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
-import { ISemanticEvent, createEvent as coreCreateEvent, createSeededRandom, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, createEvent as coreCreateEvent, RandomService } from '@sharpee/core';
 import { ISound } from '@sharpee/if-domain';
 import { GameContext } from './types.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
@@ -62,12 +62,11 @@ function getScopeError(
  *                    passes its turn-scoped buffer here; recursive
  *                    sub-contexts (implicit take) inherit the same buffer
  *                    so a nested action's sounds also reach the dispatcher.
- * @param actionRandom The engine-owned dedicated action RNG stream
- *                    (ADR-231 D6), exposed as `context.random`. Separate
- *                    from the turn-plugin/scheduler/basic-combat streams;
- *                    its seed is persisted across save/restore. When
- *                    absent (bare test harnesses), a fresh time-seeded
- *                    stream is created so `context.random` always exists.
+ * @param randomService The session's per-point stream owner (ADR-293),
+ *                    exposed as `context.random`. Actions draw through
+ *                    declared `ChoicePoint` handles; each drawn point's
+ *                    stream state rides the save. Required — D6 gates
+ *                    randomness construction, so there is no fallback.
  */
 export function createActionContext(
   world: WorldModel,
@@ -76,10 +75,15 @@ export function createActionContext(
   action: Action,
   scopeResolver: ScopeResolver,
   soundBuffer?: ISound[],
-  actionRandom?: SeededRandom
+  randomService?: RandomService
 ): ActionContext {
   const player = gameContext.player;
-  const random = actionRandom ?? createSeededRandom();
+  if (!randomService) {
+    throw new Error(
+      'createActionContext: a RandomService is required — randomness construction is gated (ADR-293 D6)'
+    );
+  }
+  const random = randomService;
   const currentLocation = world.getLocation(player.id)
     ? world.getEntity(world.getLocation(player.id)!)
     : player;

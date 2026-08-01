@@ -10,7 +10,7 @@
  * Owner context: @sharpee/character
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import {
   IFEntity,
   WorldModel,
@@ -54,7 +54,8 @@ import {
 interface TickContext {
   world: WorldModel;
   turn: number;
-  random: unknown;
+  /** The session's per-point stream owner (ADR-293) */
+  random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
 }

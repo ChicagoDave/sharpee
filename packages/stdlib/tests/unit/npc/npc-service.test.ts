@@ -13,7 +13,7 @@ import {
   passiveBehavior,
   createWandererBehavior,
 } from '../../../src/npc';
-import { createSeededRandom } from '@sharpee/core';
+import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
 import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, CombatantTrait, CombatBehavior, RoomTrait, Direction, EntityType } from '@sharpee/world-model';
 
 // Helper to create mock entity
@@ -48,11 +48,11 @@ function createMockWorld(entities: IFEntity[] = []): WorldModel {
 
 describe('NpcService', () => {
   let service: NpcService;
-  let random: ReturnType<typeof createSeededRandom>;
+  let random: ReturnType<typeof createFixtureRandomService>;
 
   beforeEach(() => {
     service = new NpcService();
-    random = createSeededRandom(12345);
+    random = createFixtureRandomService(12345);
     vi.clearAllMocks();
   });
 
@@ -285,7 +285,7 @@ describe('standard behaviors', () => {
       const context = {
         npc: createMockEntity('guard', 'Guard', {}),
         world: createMockWorld(),
-        random: createSeededRandom(12345),
+        random: createFixtureRandomService(12345),
         turnCount: 1,
         playerLocation: 'room-1',
         npcLocation: 'room-1',
@@ -303,7 +303,7 @@ describe('standard behaviors', () => {
       const context = {
         npc: createMockEntity('guard', 'Guard', {}),
         world: createMockWorld(),
-        random: createSeededRandom(12345),
+        random: createFixtureRandomService(12345),
         turnCount: 1,
         playerLocation: 'room-1',
         npcLocation: 'room-1',
@@ -324,7 +324,7 @@ describe('standard behaviors', () => {
       const context = {
         npc: createMockEntity('guard', 'Guard', {}),
         world: createMockWorld(),
-        random: createSeededRandom(12345),
+        random: createFixtureRandomService(12345),
         turnCount: 1,
         playerLocation: 'room-1',
         npcLocation: 'room-1',
@@ -359,7 +359,7 @@ describe('standard behaviors', () => {
       const context = {
         npc: createMockEntity('npc', 'Wanderer', {}),
         world: createMockWorld(),
-        random: createSeededRandom(12345),
+        random: createFixtureRandomService(12345),
         turnCount: 1,
         playerLocation: 'room-2',
         npcLocation: 'room-1',
@@ -379,7 +379,7 @@ describe('standard behaviors', () => {
       const context = {
         npc: createMockEntity('npc', 'Wanderer', {}),
         world: createMockWorld(),
-        random: createSeededRandom(12345),
+        random: createFixtureRandomService(12345),
         turnCount: 1,
         playerLocation: 'room-2',
         npcLocation: 'room-1',
@@ -397,11 +397,11 @@ describe('standard behaviors', () => {
 
 describe('NpcService - movement announcements (#159)', () => {
   let service: NpcService;
-  let random: ReturnType<typeof createSeededRandom>;
+  let random: ReturnType<typeof createFixtureRandomService>;
 
   beforeEach(() => {
     service = new NpcService();
-    random = createSeededRandom(12345);
+    random = createFixtureRandomService(12345);
     vi.clearAllMocks();
   });
 
@@ -572,7 +572,7 @@ describe('createNpcService', () => {
 describe('ADR-226 AC-2: a combat kill removes the NPC from the turn loop', () => {
   it('stops calling onTurn once the NPC is killed via combat (one health source, no sync bug)', () => {
     const service = new NpcService();
-    const random = createSeededRandom(12345);
+    const random = createFixtureRandomService(12345);
     const onTurnFn = vi.fn().mockReturnValue([]);
     service.registerBehavior({ id: 'fighter', onTurn: onTurnFn });
 

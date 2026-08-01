@@ -4,7 +4,7 @@
  * Types for NPC behaviors and actions.
  */
 
-import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel, DirectionType } from '@sharpee/world-model';
 
 /**
@@ -18,7 +18,7 @@ export interface NpcContext {
   world: WorldModel;
 
   /** Seeded random number generator */
-  random: SeededRandom;
+  random: RandomService;
 
   /** Current turn number */
   turnCount: number;

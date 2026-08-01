@@ -6,9 +6,11 @@
  */
 
 import {
-  SemanticEvent,
-  createSeededRandom
+  SemanticEvent
 } from '@sharpee/core';
+import { createFixtureRandomService } from './fixture-random-service';
+
+export { createFixtureRandomService } from './fixture-random-service';
 import {
   WorldModel,
   IFEntity,
@@ -128,10 +130,10 @@ export function createRealTestContext(
     })
   } as ActionContext & { getSharedData?: () => Record<string, unknown> };
 
-  // Fixed-seed action RNG: deterministic tests are harness policy, not
-  // story policy (ADR-231 D6 — the never-seed-story-RNG rule is about
-  // story randomness, which this does not touch).
-  return createActionContext(world, player, action, command, undefined, createSeededRandom(12345));
+  // Fixed-seed per-point RandomService: deterministic tests are harness
+  // policy, not story policy (ADR-293 — fixture construction is D6's
+  // test-fixture exemption).
+  return createActionContext(world, player, action, command, createFixtureRandomService(12345));
 }
 
 /**
@@ -257,7 +259,8 @@ export function createCommand(
 export function forceRandom(context: ActionContext, values: number[]): void {
   let i = 0;
   const next = () => values[Math.min(i++, values.length - 1)];
-  const fake = {
+  // Bare-stream shape handed to resolve()'s sample callback.
+  const fakeStream = {
     next,
     int: (min: number, max: number) => Math.floor(next() * (max - min + 1)) + min,
     chance: (probability: number) => next() < probability,
@@ -265,6 +268,18 @@ export function forceRandom(context: ActionContext, values: number[]): void {
     shuffle: <T,>(array: T[]): T[] => [...array],
     getSeed: () => 0,
     setSeed: (_seed: number) => {}
+  };
+  // RandomService shape (ADR-293): the value sequence is consumed in draw
+  // order regardless of which point draws — tests script outcomes, points
+  // are irrelevant to them.
+  const fake = {
+    chance: (_p: unknown, probability: number) => next() < probability,
+    int: (_p: unknown, min: number, max: number) => Math.floor(next() * (max - min + 1)) + min,
+    pick: <T,>(_p: unknown, items: readonly T[]): T => items[Math.floor(next() * items.length)],
+    resolve: <C extends string, R>(
+      _p: unknown,
+      sample: (draw: typeof fakeStream) => { cls: C; value: R }
+    ) => sample(fakeStream)
   };
   Object.defineProperty(context, 'random', { value: fake, configurable: true });
 }

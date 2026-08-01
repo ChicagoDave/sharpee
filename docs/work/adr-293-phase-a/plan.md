@@ -72,7 +72,7 @@
 - **Exit state**: `packages/stdlib` compiles and its own tests pass against the new type. **The full platform build is expected to be red** at this checkpoint (dungeo, basic-combat, family-zoo-tutorial, and devkit's fixture still reference the old shape) — this is the flagged ordering hazard, not a regression to chase.
 - **Verification**: `pnpm --filter '@sharpee/stdlib' build`; `pnpm --filter '@sharpee/stdlib' test`; a save-format migration unit test restoring a checked-in pre-ADR `2.0.0` save fixture carrying `actionRngSeed` alone and asserting it continues correctly (AC-5, now exercised through the real factory). Do **not** run `./repokit build dungeo` as a pass/fail gate here — it is expected to fail past the stdlib step; confirm the failure is exactly at the next unconverted package (`--skip stdlib` resumes from there) and nowhere earlier.
 - **ACs advanced**: 5 (fully, via the real factory path), partial 1 (action-stream surface), groundwork for 4 and 7.
-- **Status**: CURRENT (arc start — see re-cut note in Phase 3: the three context retypes land here)
+- **Status**: COMPLETE (2026-08-01, session 452cd4, on branch `adr-293-phase-a-arc` — stdlib 1576 / engine 555 / world-model 1432 / transcript-tester 56 all passing; platform build fails exactly at `ext-basic-combat` as the exit state requires. Notes: engine's `random`/`actionRandom` fields deleted along with the Phase 3 interim seeding; `actionRngSeed` no longer written (field survives for the 2.0.0 reader); scheduler's internal stream deleted — tick threads the session RandomService, `SchedulerState.randomSeed` dropped, `SchedulerPlugin.onSessionSeed` impl removed (generic hook remains); stdlib gained `stdlib.attacking.outcome` via `resolve()` (a converted surface the plan missed); throwing grouped as 4 points (hit-actor, catch, hit-stationary, breaks ×3 sites) — grouping decision recorded in the session summary.)
 
 ### Phase 5: Combat — delete the four singletons, wrap melee in `resolve()` with the D10 taxonomy
 - **Tier**: Large
@@ -82,7 +82,7 @@
 - **Exit state**: `stories/dungeo` and `packages/extensions/basic-combat` compile and their tests pass against the new type. Combat is now on real per-point streams — this is where the flake dies. Platform-wide build still not required to be green (family-zoo-tutorial and devkit remain).
 - **Verification**: `pnpm --filter 'stories/dungeo'` build/test if such scripts exist, else `tsc --noEmit` scoped to the story; `pnpm --filter '@sharpee/basic-combat' test`; the walkthrough chain run **twice in a row at the same pinned `[SEED:]`**, diffing output byte-for-byte (directly asserts AC-2 and confirms the flake is gone, not just moved); a two-process bundle spawn+diff at a fixed `--seed` for a combat-heavy scenario (rule 13a real-path — the actual bundle, not a stubbed engine or injected fake `RandomService`).
 - **ACs advanced**: 2 (fully), partial 1 (combat surface — the historically flaky one), groundwork for 7.
-- **Status**: PENDING
+- **Status**: CURRENT (arc middle — also owns the re-cut additions: dungeo `troll-daemon.ts`/`forest-daemon.ts` scheduler-context draws incl. the `.next()` rewrite, and `thief-helpers.ts:213`'s stdlib-typed context)
 
 ### Phase 6: Teaching surface rewrite + `./repokit verify` D6 gate
 - **Tier**: Medium
