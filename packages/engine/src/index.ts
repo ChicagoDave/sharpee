@@ -44,6 +44,7 @@ export { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
 // Extracted services
 export * from './vocabulary-manager.js';
 export * from './save-restore-service.js';
+export * from './engine-random-service.js';
 export * from './turn-event-processor.js';
 export * from './platform-operations.js';
 

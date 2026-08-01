@@ -51,7 +51,7 @@
 - **Exit state**: `@sharpee/engine` builds and tests green with a working, persistence-capable `RandomService` implementation that nothing in `GameEngine` yet calls. Full platform build unaffected.
 - **Verification**: `pnpm --filter '@sharpee/engine' test`; a round-trip unit test restoring a hand-built `2.0.0`-shaped save fixture (with `actionRngSeed`) through the new reader and asserting the mapped point continues correctly; `./repokit build dungeo` (regression check).
 - **ACs advanced**: groundwork for 4, 5 (the reader branch exists and is unit-verified, but not yet exercised by a real game session — full AC-5 confirmation is Phase 4/7).
-- **Status**: CURRENT
+- **Status**: COMPLETE (2026-08-01, session 452cd4 — 547 engine tests passing incl. 21 new, core+engine builds and `./repokit build dungeo` green, mutation-verification clean)
 
 ### Phase 3: Wire `GameEngine.random` — turn-plugin, scheduler, and character injection surfaces + seed CLI
 - **Tier**: Medium
@@ -61,7 +61,7 @@
 - **Exit state**: Full platform build green. Deadly-room and turn-plugin-driven behavior is now seed-reproducible; combat and other action-triggered draws are not yet (still on the pre-existing `actionRandom`/singleton paths).
 - **Verification**: `pnpm --filter '@sharpee/plugins' test`, `pnpm --filter '@sharpee/character' test`, `pnpm --filter '@sharpee/engine' test`; `./repokit build dungeo` (must be green — this phase does not touch the ActionContext type); `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` (must match today's baseline — behavior should be unchanged since only the seeding *mechanism* changed, not outcomes at a fixed clock-derived seed); a manual two-spawn diff of a deadly-room-heavy scenario at a fixed `--seed` value (rule 13a real-path — actual bundle, no stub) to demonstrate reproducibility on this one surface ahead of full AC-1.
 - **ACs advanced**: 12 (seed reporting infra), the `--seed`/`--vary` mutual-exclusion clause of 13, partial 1 (one surface only).
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ### Phase 4: `ActionContext.random` retype — the flip begins (stdlib)
 - **Tier**: Large

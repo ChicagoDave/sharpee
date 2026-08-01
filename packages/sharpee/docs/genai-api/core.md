@@ -307,8 +307,21 @@ export interface IEngineState {
      * message-variant picks) deterministic with an unbroken run. Saves
      * written before this field existed restore fine — the engine reseeds
      * the stream time-based when the field is absent.
+     *
+     * Folds into `streamStates` when `ActionContext.random` moves onto the
+     * per-point RandomService (ADR-293 Phase A).
      */
     actionRngSeed?: number;
+    /**
+     * Optional: unified per-point stream state map (ADR-293 D7), added in
+     * save format `3.0.0`. Keyed by declared point name; values are LCG
+     * stream states (the seed IS the state). Contains only points that
+     * have drawn. On restore, named points continue exactly where they
+     * left off and every other point reseeds from the master seed. Point
+     * names are persistent identifiers — renaming one orphans its saved
+     * stream state (same class of change as a trait schema change).
+     */
+    streamStates?: Record<string, number>;
 }
 /**
  * Serialized scheduler state for save/load

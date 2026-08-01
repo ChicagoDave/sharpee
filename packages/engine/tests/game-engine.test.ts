@@ -256,7 +256,7 @@ describe('GameEngine', () => {
       // Save/load are now private, accessed via saveRestoreService
       const state = (engine as unknown as EnginePrivate).createSaveData();
 
-      expect(state.version).toBe('2.0.0');
+      expect(state.version).toBe('3.0.0');
       expect(state.metadata.turnCount).toBe(1); // 1 turn executed
       expect(state.engineState).toBeDefined();
       expect(state.timestamp).toBeDefined();

@@ -1770,11 +1770,17 @@ export declare function createVocabularyManager(): VocabularyManager;
  * platform-browser, multi-user sandbox) routes saves through this
  * service.
  *
- * Save format v2.0.0 (one-shot cutover from v1.0.0; v1 saves rejected):
- *   - `IEngineState.worldSnapshot` carries the verbatim
+ * Save format v3.0.0 (versioned reader from v2.0.0 — ADR-293 D7/A1):
+ *   - `IEngineState.streamStates` carries the unified
+ *     `{ pointName → streamState }` map for every choice point that has
+ *     drawn (ADR-293 D7). v2.0.0 saves are READ, not refused: their
+ *     `actionRngSeed` maps onto the legacy action point
+ *     ({@link ACTION_STREAM_POINT_NAME}) and every other point reseeds
+ *     from the master seed. v1 saves remain rejected (known-broken).
+ *   - `IEngineState.worldSnapshot` (since v2.0.0) carries the verbatim
  *     `WorldModel.toJSON()` output, gzipped, then base64-encoded for
  *     JSON-safety. Hydration: base64-decode → gunzip → `world.loadJSON()`.
- *   - This replaces v1's partial `spatialIndex` serializer, which
+ *     This replaced v1's partial `spatialIndex` serializer, which
  *     captured only entity traits + room contents and silently dropped
  *     the ScoreLedger, capabilities, world state values, relationships,
  *     ID counters, and sub-container containment.
@@ -1784,6 +1790,7 @@ import { ISaveData, ISerializedTurn, ISemanticEventSource, SeededRandom } from '
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types.js';
 import { Story } from './story.js';
+import { EngineRandomService } from './engine-random-service.js';
 /**
  * Interface for accessing engine state needed for save/restore
  */
@@ -1798,8 +1805,17 @@ export interface ISaveRestoreStateProvider {
      * The engine's dedicated action RNG stream (ADR-231 D6,
      * `ActionContext.random`). Its current seed is captured into
      * `IEngineState.actionRngSeed` on save and re-applied on restore.
+     * Folds into the per-point map when `ActionContext.random` moves onto
+     * the `RandomService` (ADR-293 Phase A, stdlib flip).
      */
     getActionRandom(): SeededRandom;
+    /**
+     * The engine's per-point stream owner (ADR-293 D7), if wired. When
+     * present, its `{ pointName → streamState }` map rides the save and is
+     * restored through the version reader. Optional: hosts that predate the
+     * `GameEngine` wiring save and restore without it.
+     */
+    getRandomService?(): EngineRandomService | undefined;
 }
 /**
  * Configuration for the undo system
@@ -1883,6 +1899,101 @@ export declare class SaveRestoreService {
  * Create a save/restore service instance
  */
 export declare function createSaveRestoreService(config?: UndoConfig): SaveRestoreService;
+```
+
+### engine-random-service
+
+```typescript
+/**
+ * EngineRandomService — the engine's sole `RandomService` implementation (ADR-293 D5).
+ *
+ * Public interface: {@link EngineRandomService} class (`chance`/`int`/`pick`/`resolve`
+ * draw API plus `serializeStreamStates`/`restoreStreamStates` persistence and
+ * `getMasterSeed`), {@link ACTION_STREAM_POINT_NAME}.
+ * Owner context: `@sharpee/engine` runtime. Core owns the interface and catalog;
+ * this class owns stream derivation, the per-point stream cache, and stream-state
+ * persistence (D3, D7). Force-table lookup and trace land in Phase C.
+ *
+ * Invariants:
+ * - A point's stream depends only on (masterSeed, point name) — never on
+ *   registration or draw order (D3).
+ * - No draw leaves this class's streams except through a `ChoicePoint` handle;
+ *   the one bare-`SeededRandom` exit is `resolve()`'s `sample` callback (D2).
+ * - Restore never reads the clock: unknown or missing names reseed by derivation
+ *   from the master seed (D7).
+ */
+import { ChoicePoint, RandomService, SeededRandom } from '@sharpee/core';
+/**
+ * Point name the pre-ADR-293 unified action stream (`IEngineState.actionRngSeed`)
+ * maps onto when a `2.0.0` save is read (D7's version reader). The action surface
+ * itself moves onto this service when `ActionContext.random` is retyped
+ * (ADR-293 Phase A, stdlib flip).
+ */
+export declare const ACTION_STREAM_POINT_NAME = "engine.action";
+/**
+ * Per-point stream owner. One instance per engine per session; all stream state
+ * lives here (never at module scope — D6) and rides the save as
+ * `{ pointName → streamState }` (D7).
+ */
+export declare class EngineRandomService implements RandomService {
+    private readonly masterSeed;
+    /** Streams that have drawn this session, keyed by point name. */
+    private streams;
+    /** Restored stream states not yet re-materialized into a live stream. */
+    private restoredStates;
+    constructor(masterSeed: number);
+    /** The session's master seed, for seed reporting (D14). */
+    getMasterSeed(): number;
+    /**
+     * True with the given probability, drawn on `p`'s own stream.
+     */
+    chance(p: ChoicePoint<'yes' | 'no'>, probability: number): boolean;
+    /**
+     * Integer in [min, max] inclusive, drawn on `p`'s own stream.
+     */
+    int(p: ChoicePoint, min: number, max: number): number;
+    /**
+     * Pick one element, drawn on `p`'s own stream.
+     * `label` participates in trace/coverage (Phase C); it draws nothing.
+     */
+    pick<T>(p: ChoicePoint, items: readonly T[], label?: (t: T) => string): T;
+    /**
+     * Resolve a class-bearing point to a classed outcome (D8).
+     *
+     * Force-table lookup is a pass-through until forcing lands (Phase C): the
+     * real path always runs, so `materialize` is accepted and never called.
+     *
+     * @throws Error if `p` declares no outcome classes (plain draws have no
+     *   classed outcome to resolve), or if `sample` returns a class the point
+     *   does not declare (an undeclared class would corrupt coverage and make
+     *   forcing unsound).
+     */
+    resolve<C extends string, R>(p: ChoicePoint<C>, sample: (draw: SeededRandom) => {
+        cls: C;
+        value: R;
+    }, materialize: (forced: C) => R): {
+        cls: C;
+        value: R;
+    };
+    /**
+     * Current stream state of every point that has drawn — live streams plus
+     * restored states whose points have not redrawn since restore (D7: the save
+     * carries only points that have drawn).
+     */
+    serializeStreamStates(): Record<string, number>;
+    /**
+     * Replace all stream state with a saved `{ pointName → streamState }` map.
+     * Named points continue exactly where the save left them; names absent from
+     * the map reseed lazily by derivation from the master seed — never from the
+     * clock (D7).
+     */
+    restoreStreamStates(states: Record<string, number>): void;
+    /**
+     * The point's live stream: cached, else re-materialized from a restored
+     * state, else derived lazily from (masterSeed, name) per D3.
+     */
+    private streamFor;
+}
 ```
 
 ### turn-event-processor

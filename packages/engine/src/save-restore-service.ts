@@ -9,11 +9,17 @@
  * platform-browser, multi-user sandbox) routes saves through this
  * service.
  *
- * Save format v2.0.0 (one-shot cutover from v1.0.0; v1 saves rejected):
- *   - `IEngineState.worldSnapshot` carries the verbatim
+ * Save format v3.0.0 (versioned reader from v2.0.0 — ADR-293 D7/A1):
+ *   - `IEngineState.streamStates` carries the unified
+ *     `{ pointName → streamState }` map for every choice point that has
+ *     drawn (ADR-293 D7). v2.0.0 saves are READ, not refused: their
+ *     `actionRngSeed` maps onto the legacy action point
+ *     ({@link ACTION_STREAM_POINT_NAME}) and every other point reseeds
+ *     from the master seed. v1 saves remain rejected (known-broken).
+ *   - `IEngineState.worldSnapshot` (since v2.0.0) carries the verbatim
  *     `WorldModel.toJSON()` output, gzipped, then base64-encoded for
  *     JSON-safety. Hydration: base64-decode → gunzip → `world.loadJSON()`.
- *   - This replaces v1's partial `spatialIndex` serializer, which
+ *     This replaced v1's partial `spatialIndex` serializer, which
  *     captured only entity traits + room contents and silently dropped
  *     the ScoreLedger, capabilities, world state values, relationships,
  *     ID counters, and sub-container containment.
@@ -36,15 +42,24 @@ import {
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types.js';
 import { Story } from './story.js';
+import {
+  ACTION_STREAM_POINT_NAME,
+  EngineRandomService
+} from './engine-random-service.js';
 
 /**
- * Save format version. Bumped from `1.0.0` → `2.0.0` when the partial
- * `spatialIndex` serializer was replaced with the full `worldSnapshot`
- * (gzipped `WorldModel.toJSON()`). v1 saves are rejected — they are
- * known-broken (drop score / capabilities / state values / relationships)
- * and the codebase is greenfield, so no migration shim ships.
+ * Save format version. Bumped `2.0.0` → `3.0.0` for ADR-293 D7: the save
+ * gains the unified `{ pointName → streamState }` map (`streamStates`).
+ * v2 saves are read through a version-reader branch (A1 ruling 4), not
+ * refused — the first real version reader, per the standing ruling
+ * against hard breaks. v1 saves are rejected — they are known-broken
+ * (drop score / capabilities / state values / relationships); that
+ * cutover predates the version-reader ruling.
  */
-const SAVE_FORMAT_VERSION = '2.0.0';
+const SAVE_FORMAT_VERSION = '3.0.0';
+
+/** The last hard-cutover format; readable via the version-reader branch. */
+const LEGACY_SAVE_FORMAT_VERSION = '2.0.0';
 
 /** btoa/atob are universal across Node 18+, Deno, and modern browsers. */
 declare const btoa: (s: string) => string;
@@ -107,8 +122,18 @@ export interface ISaveRestoreStateProvider {
    * The engine's dedicated action RNG stream (ADR-231 D6,
    * `ActionContext.random`). Its current seed is captured into
    * `IEngineState.actionRngSeed` on save and re-applied on restore.
+   * Folds into the per-point map when `ActionContext.random` moves onto
+   * the `RandomService` (ADR-293 Phase A, stdlib flip).
    */
   getActionRandom(): SeededRandom;
+
+  /**
+   * The engine's per-point stream owner (ADR-293 D7), if wired. When
+   * present, its `{ pointName → streamState }` map rides the save and is
+   * restored through the version reader. Optional: hosts that predate the
+   * `GameEngine` wiring save and restore without it.
+   */
+  getRandomService?(): EngineRandomService | undefined;
 }
 
 /**
@@ -219,6 +244,8 @@ export class SaveRestoreService {
       description: `Turn ${context.currentTurn - 1}`
     };
 
+    const randomService = provider.getRandomService?.();
+
     const engineState: IEngineState = {
       eventSource: this.serializeEventSource(eventSource),
       worldSnapshot: compressWorldSnapshot(world.toJSON()),
@@ -226,8 +253,14 @@ export class SaveRestoreService {
       parserState: this.serializeParserState(parser),
       pluginStates: pluginRegistry.getStates(),
       // ADR-231 D6: the seed IS the LCG stream state — capturing it here
-      // makes post-restore action rolls continue exactly where they left off
-      actionRngSeed: provider.getActionRandom().getSeed()
+      // makes post-restore action rolls continue exactly where they left off.
+      // Folds into `streamStates` when ActionContext moves onto the
+      // RandomService (ADR-293 Phase A, stdlib flip).
+      actionRngSeed: provider.getActionRandom().getSeed(),
+      // ADR-293 D7: the unified per-point map — only points that have drawn.
+      ...(randomService
+        ? { streamStates: randomService.serializeStreamStates() }
+        : {})
     };
 
     return {
@@ -259,9 +292,13 @@ export class SaveRestoreService {
   } {
     const story = provider.getStory();
 
-    // Validate save compatibility. v1 saves are rejected outright (no
-    // migration shim — see SAVE_FORMAT_VERSION docs above).
-    if (saveData.version !== SAVE_FORMAT_VERSION) {
+    // Validate save compatibility. v3 is current; v2 is read through the
+    // version-reader branch below (ADR-293 D7/A1). v1 saves are rejected
+    // outright (no migration shim — see SAVE_FORMAT_VERSION docs above).
+    if (
+      saveData.version !== SAVE_FORMAT_VERSION &&
+      saveData.version !== LEGACY_SAVE_FORMAT_VERSION
+    ) {
       throw new Error(`Unsupported save version: ${saveData.version}`);
     }
 
@@ -299,6 +336,27 @@ export class SaveRestoreService {
       actionRandom.setSeed(savedActionSeed);
     } else {
       actionRandom.setSeed(Date.now());
+    }
+
+    // Restore per-point stream states (ADR-293 D7), when the host wires a
+    // RandomService. The version-reader branch (A1 ruling 4): a 2.0.0 save
+    // has no map — its `actionRngSeed` maps onto the legacy action point and
+    // every other point reseeds from the master seed (which lazy derivation
+    // does without ever reading the clock). A 3.0.0 save reads the map
+    // directly.
+    const randomService = provider.getRandomService?.();
+    if (randomService) {
+      if (saveData.version === LEGACY_SAVE_FORMAT_VERSION) {
+        randomService.restoreStreamStates(
+          typeof savedActionSeed === 'number'
+            ? { [ACTION_STREAM_POINT_NAME]: savedActionSeed }
+            : {}
+        );
+      } else {
+        randomService.restoreStreamStates(
+          saveData.engineState.streamStates ?? {}
+        );
+      }
     }
 
     // Clear undo snapshots after restore — they were taken against the
