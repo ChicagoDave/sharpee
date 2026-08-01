@@ -2420,3 +2420,156 @@ export interface SeededRandom {
  */
 export declare function createSeededRandom(seed?: number): SeededRandom;
 ```
+
+### random/choice-point
+
+```typescript
+/**
+ * Choice points — declared draw sites and the process-global catalog (ADR-293 D2, D4).
+ *
+ * Public interface: `ChoicePoint<C>`, `definePoint(name, opts?)`, `getRegisteredPoints()`,
+ * `getPoint(name)`.
+ * Owner context: @sharpee/core random substrate. Core holds static metadata only —
+ * no state that draws lives here (D5); stream state is per-engine, per-session.
+ *
+ * The catalog is process-global BY DESIGN (D2, amended A1): entries are immutable,
+ * idempotent metadata holding no stream, which is what makes import-time registration
+ * safe where D6 kills module-scope *streams*. In a multi-story process (zifmia) the
+ * catalog holds the union; consumers filter by story id / package prefix, which works
+ * because entries retain their D2 name prefix.
+ */
+/**
+ * A declared draw site. With `classes` it is a choice point (traced, counted in
+ * coverage, forceable); without, it is a plain draw (seeded and traced only) — D4.
+ */
+export interface ChoicePoint<C extends string = string> {
+    /** Dotted, first segment is the story/package id, no abbreviations (D2): 'dungeo.melee.blow.hero' */
+    readonly name: string;
+    /** Outcome classes; absent ⇒ plain draw (D4) */
+    readonly classes?: readonly C[];
+}
+/**
+ * Declare a choice point (or, with no classes, a plain draw) and register it in the
+ * process-global catalog. The draw API accepts only the returned handle (D2).
+ *
+ * Idempotent: redeclaring the same name with identical classes returns the original
+ * handle. Immutable: redeclaring with different classes throws — the catalog never
+ * mutates an entry.
+ *
+ * @param name - dotted point name; first segment is the story or package id (D2)
+ * @param opts - `classes`: the point's outcome classes; omit for a plain draw (D4)
+ * @returns the frozen, catalog-registered handle
+ * @throws Error if `name` is empty, or already registered with different classes
+ */
+export declare function definePoint<C extends string>(name: string, opts?: {
+    classes: readonly C[];
+}): ChoicePoint<C>;
+/**
+ * Snapshot of every registered point, for engine's story-start snapshot and
+ * `catalog − fired` coverage. Returns a fresh array; the entries themselves are frozen.
+ */
+export declare function getRegisteredPoints(): readonly ChoicePoint[];
+/**
+ * Look up a registered point by name.
+ *
+ * @returns the handle, or undefined if no point with that name is declared
+ */
+export declare function getPoint(name: string): ChoicePoint | undefined;
+```
+
+### random/random-service
+
+```typescript
+/**
+ * RandomService — the handle-only draw interface (ADR-293 D2, D5; API per Implementation).
+ *
+ * Public interface: `RandomService`.
+ * Owner context: @sharpee/core random substrate. Core owns the interface; engine owns
+ * the sole implementation (stream derivation/cache, force lookup, trace, persistence).
+ * Gameplay code draws exclusively through `ChoicePoint` handles — the one sanctioned
+ * route to a bare `SeededRandom` is a point's own `sample` callback inside `resolve()`.
+ */
+import type { ChoicePoint } from './choice-point.js';
+import type { SeededRandom } from './seeded-random.js';
+/**
+ * Draw API over declared points. Every draw is on the named point's own stream,
+ * derived from the master seed and the point name (D3) — no draw exists without
+ * a declaration (D2).
+ */
+export interface RandomService {
+    /**
+     * True with the given probability. One draw on `p`'s stream.
+     * @param p - a yes/no choice point
+     * @param probability - chance of `true`, in [0, 1]
+     */
+    chance(p: ChoicePoint<'yes' | 'no'>, probability: number): boolean;
+    /**
+     * Integer in [min, max] inclusive. One draw on `p`'s stream.
+     */
+    int(p: ChoicePoint, min: number, max: number): number;
+    /**
+     * Pick one element. One draw on `p`'s stream.
+     * @param label - optional class label for the picked item (trace/coverage, Phase C)
+     */
+    pick<T>(p: ChoicePoint, items: readonly T[], label?: (t: T) => string): T;
+    /**
+     * Resolve a multi-draw point to a classed outcome.
+     *
+     * Real path: `sample` receives the point's own stream and performs its N internal
+     * draws (the one sanctioned bare-`SeededRandom` route, D2). Forced path (Phase C):
+     * `materialize` builds the outcome for a forced class with zero draws (D8) —
+     * typed now per A1 ruling 5, unused until forcing lands.
+     *
+     * @param p - a class-bearing choice point
+     * @param sample - draws from the point's stream and returns the classed outcome
+     * @param materialize - builds the outcome for a forced class without drawing
+     */
+    resolve<C extends string, R>(p: ChoicePoint<C>, sample: (draw: SeededRandom) => {
+        cls: C;
+        value: R;
+    }, materialize: (forced: C) => R): {
+        cls: C;
+        value: R;
+    };
+}
+```
+
+### random/seed-derivation
+
+```typescript
+/**
+ * Seed derivation — per-point stream seeds from the master seed (ADR-293 D3).
+ *
+ * Public interface: `SEED_DERIVATION_VERSION`, `deriveStreamSeed(masterSeed, pointName)`.
+ * Owner context: @sharpee/core random substrate; engine's RandomService implementation
+ * is the intended caller.
+ *
+ * This is a COMPATIBILITY SURFACE: saves persist stream states derived through this
+ * function, so its output for a given (masterSeed, pointName) pair must never change
+ * within a `SEED_DERIVATION_VERSION`. A pinned-value test guards it; any algorithm
+ * change requires bumping the version constant.
+ */
+/**
+ * Version of the seed-derivation algorithm. Bump on ANY change to
+ * `deriveStreamSeed`'s output for existing inputs (ADR-293 D3).
+ */
+export declare const SEED_DERIVATION_VERSION = 1;
+/**
+ * Derive a point's stream seed from the master seed and the point's name.
+ *
+ * FNV-1a (32-bit) over the point name's UTF-16 code units, then folded over the
+ * four bytes of the master seed (little-endian byte order). Point names are
+ * dotted ASCII by convention (ADR-293 D2), so code units and bytes coincide.
+ *
+ * Properties (both load-bearing, ADR-293 D3):
+ * - Order-independent: a pure function of (masterSeed, pointName) — never of
+ *   registration or first-draw order.
+ * - Decorrelated: nearby names and nearby master seeds produce unrelated seeds,
+ *   unlike ordinal/additive derivation over the core LCG.
+ *
+ * @param masterSeed - the session's master seed (treated as unsigned 32-bit)
+ * @param pointName - the declared point name, e.g. 'dungeo.melee.blow.hero'
+ * @returns an unsigned 32-bit seed for the point's stream
+ */
+export declare function deriveStreamSeed(masterSeed: number, pointName: string): number;
+```

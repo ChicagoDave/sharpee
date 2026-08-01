@@ -41,7 +41,7 @@
 - **Exit state**: `@sharpee/core` builds and tests green with the new types exported and unused by any consumer. Full platform build unaffected (nothing imports the new surface yet).
 - **Verification**: `pnpm --filter '@sharpee/core' test`; `pnpm --filter '@sharpee/core' build`; `./repokit build dungeo` (regression check — must still pass unchanged).
 - **ACs advanced**: 3 (asserted directly here), groundwork for 7.
-- **Status**: CURRENT
+- **Status**: COMPLETE (2026-08-01, session 452cd4 — 176 core tests passing, core build + `./repokit build dungeo` green)
 
 ### Phase 2: Engine — `RandomService` implementation + unified save persistence (standalone, not yet wired)
 - **Tier**: Medium
@@ -51,7 +51,7 @@
 - **Exit state**: `@sharpee/engine` builds and tests green with a working, persistence-capable `RandomService` implementation that nothing in `GameEngine` yet calls. Full platform build unaffected.
 - **Verification**: `pnpm --filter '@sharpee/engine' test`; a round-trip unit test restoring a hand-built `2.0.0`-shaped save fixture (with `actionRngSeed`) through the new reader and asserting the mapped point continues correctly; `./repokit build dungeo` (regression check).
 - **ACs advanced**: groundwork for 4, 5 (the reader branch exists and is unit-verified, but not yet exercised by a real game session — full AC-5 confirmation is Phase 4/7).
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ### Phase 3: Wire `GameEngine.random` — turn-plugin, scheduler, and character injection surfaces + seed CLI
 - **Tier**: Medium
