@@ -8812,7 +8812,7 @@ export declare function buildEntity(entity: IFEntity): EntityBuilder;
  * - CapabilityBehavior: Full delegation, trait owns ALL logic (LOWER, RAISE)
  * - ActionInterceptor: Hooks into phases, action owns core logic (ENTER, PUT)
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, RandomService } from '@sharpee/core';
 import { IFEntity } from '../entities/index.js';
 import { WorldModel } from '../world/index.js';
 import { CapabilityEffect } from './types.js';
@@ -9047,6 +9047,12 @@ export declare function applyInterceptorBlockedResult(events: ISemanticEvent[], 
  *   }
  * };
  * ```
+ *
+ * Randomness (ADR-293): every hook receives the session's `RandomService` as
+ * its trailing parameter. Interceptors that draw MUST use it with a declared
+ * `ChoicePoint` — never construct their own stream (D6) and never
+ * `Math.random()`. The parameter is optional only so bare test harnesses can
+ * omit it; the stdlib lifecycle engine always passes it.
  */
 export interface ActionInterceptor {
     /**
@@ -9065,7 +9071,7 @@ export interface ActionInterceptor {
      *   return null;
      * }
      */
-    preValidate?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData): InterceptorResult | null;
+    preValidate?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData, random?: RandomService): InterceptorResult | null;
     /**
      * Called AFTER standard validation passes.
      *
@@ -9085,7 +9091,7 @@ export interface ActionInterceptor {
      *   return null; // Still allow entering
      * }
      */
-    postValidate?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData): InterceptorResult | null;
+    postValidate?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData, random?: RandomService): InterceptorResult | null;
     /**
      * Called AFTER standard execution completes.
      *
@@ -9101,7 +9107,7 @@ export interface ActionInterceptor {
      *   openPassage(world, 'glacier-passage');
      * }
      */
-    postExecute?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData): void;
+    postExecute?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData, random?: RandomService): void;
     /**
      * Called AFTER standard report.
      *
@@ -9138,7 +9144,7 @@ export interface ActionInterceptor {
      *   };
      * }
      */
-    postReport?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData): InterceptorReportResult;
+    postReport?(entity: IFEntity, world: WorldModel, actorId: string, sharedData: InterceptorSharedData, random?: RandomService): InterceptorReportResult;
     /**
      * Called when action is blocked (validation failed).
      *
@@ -9169,7 +9175,7 @@ export interface ActionInterceptor {
      *   return { emit: [createEffect(PLAYER_DIED_EVENT, { cause: 'poison', terminal: true })] };
      * }
      */
-    onBlocked?(entity: IFEntity, world: WorldModel, actorId: string, error: string, sharedData: InterceptorSharedData): InterceptorBlockedResult | null;
+    onBlocked?(entity: IFEntity, world: WorldModel, actorId: string, error: string, sharedData: InterceptorSharedData, random?: RandomService): InterceptorBlockedResult | null;
 }
 ```
 

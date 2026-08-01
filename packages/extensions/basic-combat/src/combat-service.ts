@@ -35,7 +35,11 @@ export interface CombatContext {
   /** The world model */
   world: WorldModel;
 
-  /** Seeded random number generator */
+  /**
+   * Bare stream, supplied by the caller's `resolve()` sample callback on a
+   * blow point (ADR-293 D6/D8) — this service is a parameter taker and
+   * never constructs randomness.
+   */
   random: SeededRandom;
 }
 

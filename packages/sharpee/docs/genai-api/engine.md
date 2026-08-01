@@ -691,7 +691,7 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  *
  * All event creation is owned by the action components themselves.
  */
-import { ISystemEvent, IGenericEventSource, Result, SeededRandom } from '@sharpee/core';
+import { ISystemEvent, IGenericEventSource, Result, RandomService } from '@sharpee/core';
 import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
@@ -738,12 +738,13 @@ export declare class CommandExecutor {
     private parsedCommandTransformers;
     private beforeActionListeners;
     /**
-     * Engine-owned dedicated action RNG stream (ADR-231 D6), threaded into
-     * every ActionContext this executor creates. Optional so bare test
-     * harnesses still work; the engine always provides it.
+     * The session's per-point stream owner (ADR-293), threaded into every
+     * ActionContext this executor creates. Optional at construction so bare
+     * harnesses can wire it late, but context creation requires it — the
+     * factory throws without one (D6).
      */
-    private actionRandom?;
-    constructor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, actionRandom?: SeededRandom);
+    private randomService?;
+    constructor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, randomService?: RandomService);
     /**
      * Validate a parsed command against the world model.
      *
@@ -780,7 +781,7 @@ export declare class CommandExecutor {
     private emitBeforeAction;
     execute(input: string, world: WorldModel, context: GameContext, config?: EngineConfig, soundBuffer?: ISound[]): Promise<TurnResult>;
 }
-export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, actionRandom?: SeededRandom): CommandExecutor;
+export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, randomService?: RandomService): CommandExecutor;
 ```
 
 ### capability-dispatch-helper
@@ -1161,7 +1162,7 @@ import { Parser, IPerceptionService } from '@sharpee/stdlib';
 import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock } from '@sharpee/text-blocks';
-import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 import { PluginRegistry } from '@sharpee/plugins';
 import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types.js';
@@ -1261,15 +1262,6 @@ export declare class GameEngine {
      * move onto it across ADR-293 Phase A.
      */
     private randomService;
-    private random;
-    /**
-     * Dedicated action RNG stream (ADR-231 D6), exposed to actions as
-     * `ActionContext.random`. A separate instance from `random` (the
-     * turn-plugin stream) so plugin draws can never shift action rolls;
-     * its seed rides the save blob (`IEngineState.actionRngSeed`) so
-     * post-restore action outcomes replay deterministically.
-     */
-    private actionRandom;
     private narrativeSettings;
     private inputModeHandlers;
     private vocabularyManager;
@@ -1483,12 +1475,6 @@ export declare class GameEngine {
      * `start({ capabilities })` runs or when none were negotiated.
      */
     getClientCapabilities(): ClientCapabilities;
-    /**
-     * Get the dedicated action RNG stream (ADR-231 D6). Part of the
-     * ISaveRestoreStateProvider contract — the save service persists this
-     * stream's seed and the restore path re-seeds it.
-     */
-    getActionRandom(): SeededRandom;
     /**
      * The session's master seed (ADR-293 D1/D14). Every run reports it —
      * test output, `--play` startup, failure reports — so one number plus
@@ -1821,7 +1807,7 @@ export declare function createVocabularyManager(): VocabularyManager;
  *     ID counters, and sub-container containment.
  */
 import { WorldModel } from '@sharpee/world-model';
-import { ISaveData, ISerializedTurn, ISemanticEventSource, SeededRandom } from '@sharpee/core';
+import { ISaveData, ISerializedTurn, ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types.js';
 import { Story } from './story.js';
@@ -1836,14 +1822,6 @@ export interface ISaveRestoreStateProvider {
     getEventSource(): ISemanticEventSource;
     getPluginRegistry(): PluginRegistry;
     getParser(): unknown | undefined;
-    /**
-     * The engine's dedicated action RNG stream (ADR-231 D6,
-     * `ActionContext.random`). Its current seed is captured into
-     * `IEngineState.actionRngSeed` on save and re-applied on restore.
-     * Folds into the per-point map when `ActionContext.random` moves onto
-     * the `RandomService` (ADR-293 Phase A, stdlib flip).
-     */
-    getActionRandom(): SeededRandom;
     /**
      * The engine's per-point stream owner (ADR-293 D7), if wired. When
      * present, its `{ pointName → streamState }` map rides the save and is

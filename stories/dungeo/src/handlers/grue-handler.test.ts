@@ -20,7 +20,8 @@ import {
   OpenableTrait,
   EntityType
 } from '@sharpee/world-model';
-import { SeededRandom, createSeededRandom } from '@sharpee/core';
+import { RandomService } from '@sharpee/core';
+import { createFixtureRandomService } from '../test-support/fixture-random-service';
 import { createGrueDeathTransformer } from './grue-handler';
 import { GRUE_DEATH_ACTION_ID } from '../actions/grue-death/types';
 import { getGDTFlags, setGDTFlags } from '../actions/gdt/gdt-context';
@@ -41,18 +42,17 @@ function goCommand(direction: string): IParsedCommand {
 }
 
 /** RNG stub forcing the grue path (survival roll always fails). */
-const alwaysGruePath: SeededRandom = {
-  next: () => 0.9,
-  int: (min: number) => min,
+const alwaysGruePath: RandomService = {
   chance: () => false,
-  pick: <T>(arr: T[]) => arr[0],
-  shuffle: <T>(arr: T[]) => arr,
-  getSeed: () => 0,
-  setSeed: () => {}
+  int: (_p, min: number) => min,
+  pick: <T>(_p: unknown, arr: readonly T[]) => arr[0],
+  resolve: () => {
+    throw new Error('grue tests draw only via chance');
+  }
 };
 
 /** RNG stub forcing survival (roll always passes). */
-const alwaysSurvive: SeededRandom = { ...alwaysGruePath, chance: () => true };
+const alwaysSurvive: RandomService = { ...alwaysGruePath, chance: () => true };
 
 describe('createGrueDeathTransformer', () => {
   let world: WorldModel;
@@ -93,7 +93,7 @@ describe('createGrueDeathTransformer', () => {
 
   it('is deterministic under a fixed seed: same seed reproduces the same live/die sequence', () => {
     const runSequence = (seed: number): string[] => {
-      const transformer = createGrueDeathTransformer(createSeededRandom(seed));
+      const transformer = createGrueDeathTransformer(createFixtureRandomService(seed));
       const outcomes: string[] = [];
       for (let i = 0; i < 30; i++) {
         outcomes.push(transformer(goCommand('south'), world).action);

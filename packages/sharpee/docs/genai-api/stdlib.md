@@ -14,7 +14,7 @@ All 43 standard actions, validation, scope builders, NPC support, combat, action
  * maintaining the event-driven architecture. Actions return events,
  * but the enhanced context makes it easy to create those events.
  */
-import { ISemanticEvent, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ISound } from '@sharpee/if-domain';
 import { ScopeResolver, ScopeLevel } from '../scope/types.js';
@@ -122,17 +122,18 @@ export interface ActionContext {
     /**
      * Dedicated action RNG stream (ADR-231 D6).
      *
-     * The engine owns a seeded stream reserved for actions — separate from
-     * the turn-plugin, scheduler, and basic-combat streams, so no other
-     * subsystem's draws can shift an action's rolls. Its seed is persisted
-     * across save/restore, making post-restore action outcomes
-     * deterministic with an unbroken run.
+     * The session's per-point stream owner (ADR-293). Every draw names a
+     * declared `ChoicePoint`, and each point owns its own stream derived
+     * from the master seed — no other point's draws can shift its rolls,
+     * and every drawn point's state rides the save.
      *
-     * Contract: actions draw ALL randomness from this stream — never
-     * `Math.random()`. World-model behaviors that need randomness take an
-     * rng parameter and callers pass this stream.
+     * Contract: actions draw ALL randomness through this service with a
+     * declared point — never `Math.random()`, never a hand-built stream
+     * (D6). World-model behaviors that need randomness keep taking a bare
+     * `SeededRandom` parameter; callers reach one only through
+     * `random.resolve(point, sample, materialize)`'s sample callback (D2).
      */
-    readonly random: SeededRandom;
+    readonly random: RandomService;
     /**
      * Check if an entity is visible to the player
      */
@@ -758,7 +759,7 @@ export declare const EventTypes: {
  * Provides helper methods that make it easy to create properly
  * formatted events while maintaining the event-driven architecture.
  */
-import { SeededRandom } from '@sharpee/core';
+import { RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ActionContext, Action } from './enhanced-types.js';
 import { ScopeResolver } from '../scope/types.js';
@@ -768,11 +769,11 @@ import { ValidatedCommand } from '../validation/types.js';
  *
  * Phase 2: Factory pattern implementation
  */
-export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, scopeResolver?: ScopeResolver, random?: SeededRandom): ActionContext;
+export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, random: RandomService, scopeResolver?: ScopeResolver): ActionContext;
 /**
  * Helper to create a mock action context for testing
  */
-export declare function createMockActionContext(world: WorldModel, player: IFEntity, action: Action, command?: Partial<ValidatedCommand>, scopeResolver?: ScopeResolver): ActionContext;
+export declare function createMockActionContext(world: WorldModel, player: IFEntity, action: Action, random: RandomService, command?: Partial<ValidatedCommand>, scopeResolver?: ScopeResolver): ActionContext;
 ```
 
 ### actions/meta-action
@@ -2962,7 +2963,7 @@ export declare class PerceptionService implements IPerceptionService {
  *
  * Types for NPC behaviors and actions.
  */
-import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel, DirectionType } from '@sharpee/world-model';
 /**
  * Context passed to NPC behavior hooks
@@ -2973,7 +2974,7 @@ export interface NpcContext {
     /** The world model */
     world: WorldModel;
     /** Seeded random number generator */
-    random: SeededRandom;
+    random: RandomService;
     /** Current turn number */
     turnCount: number;
     /** Player's current location */
@@ -3214,7 +3215,7 @@ export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof Charact
  *
  * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
  */
-import { ISemanticEvent, EntityId, SeededRandom } from '@sharpee/core';
+import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { NpcBehavior } from './types.js';
 /**
@@ -3229,7 +3230,7 @@ export type NpcTickPhase = (npcs: IFEntity[], context: NpcTickContext) => ISeman
  * Without a resolver, NPC attack actions emit a bare `npc.attacked` event
  * with no combat resolution (no damage, no death).
  */
-export type NpcCombatResolver = (npc: IFEntity, target: IFEntity, world: WorldModel, random: SeededRandom) => ISemanticEvent[];
+export type NpcCombatResolver = (npc: IFEntity, target: IFEntity, world: WorldModel, random: RandomService) => ISemanticEvent[];
 /**
  * Register an NPC combat resolver.
  *
@@ -3249,7 +3250,7 @@ export declare function clearNpcCombatResolver(): void;
 export interface NpcTickContext {
     world: WorldModel;
     turn: number;
-    random: SeededRandom;
+    random: RandomService;
     playerLocation: EntityId;
     playerId: EntityId;
 }
@@ -3268,13 +3269,13 @@ export interface INpcService {
     /** Execute the NPC turn phase */
     tick(context: NpcTickContext): ISemanticEvent[];
     /** Notify NPCs that player entered a room */
-    onPlayerEnters(world: WorldModel, roomId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    onPlayerEnters(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
     /** Notify NPCs that player left a room */
-    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
     /** Handle player speaking to an NPC */
-    onPlayerSpeaks(world: WorldModel, npcId: EntityId, words: string, random: SeededRandom, turn: number): ISemanticEvent[];
+    onPlayerSpeaks(world: WorldModel, npcId: EntityId, words: string, random: RandomService, turn: number): ISemanticEvent[];
     /** Handle player attacking an NPC */
-    onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
 }
 /**
  * NPC Service implementation
@@ -3300,19 +3301,19 @@ export declare class NpcService implements INpcService {
     /**
      * Notify NPCs that player entered a room
      */
-    onPlayerEnters(world: WorldModel, roomId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    onPlayerEnters(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
     /**
      * Notify NPCs that player left a room
      */
-    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
     /**
      * Handle player speaking to an NPC
      */
-    onPlayerSpeaks(world: WorldModel, npcId: EntityId, words: string, random: SeededRandom, turn: number): ISemanticEvent[];
+    onPlayerSpeaks(world: WorldModel, npcId: EntityId, words: string, random: RandomService, turn: number): ISemanticEvent[];
     /**
      * Handle player attacking an NPC
      */
-    onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: SeededRandom, turn: number): ISemanticEvent[];
+    onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
     /**
      * Whether an NPC can take a turn: it is an NPC and — if it carries life-state —
      * is alive and conscious. An NPC with no `HealthTrait` is active by default
@@ -3664,27 +3665,30 @@ export interface IPlayerDiedPayload {
 
 ```typescript
 /**
- * Seeded probabilistic-death helper (ADR-224 Decision 3).
+ * Seeded probabilistic-death helper (ADR-224 Decision 3, ADR-293).
  *
- * A thin, intention-revealing wrapper over the scheduler's seeded RNG so a
- * probabilistic hazard (the grue: a move in the dark is lethal only some of the
- * time) is replay-deterministic under a fixed seed. Centralising the roll here is
- * also the enforcement point for the project RNG policy: probabilistic death uses
- * the seeded RNG exclusively — `Math.random()` is never acceptable (a seeded roll
- * is what makes AC-4 reproducible and what save/restore relies on).
+ * A thin, intention-revealing wrapper so a probabilistic hazard (the grue: a
+ * move in the dark is lethal only some of the time) draws on its own declared
+ * choice point (ADR-293 D2/D3) and is replay-deterministic under a fixed
+ * master seed. Centralising the roll here is also the enforcement point for
+ * the project RNG policy: probabilistic death draws through the point handle
+ * exclusively — `Math.random()` is never acceptable.
  *
- * Public interface: `rollLethal`.
+ * Public interface: `rollLethal`, `PROBABILISTIC_DEATH_POINT`.
  * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
  */
-import type { SeededRandom } from '@sharpee/core';
+import { RandomService } from '@sharpee/core';
+/** The probabilistic-death hazard's choice point (single yes/no draw). */
+export declare const PROBABILISTIC_DEATH_POINT: import("@sharpee/core").ChoicePoint<"yes" | "no">;
 /**
- * Whether a probabilistic hazard is lethal this time.
+ * Whether a probabilistic hazard is lethal this time. One draw on the
+ * `stdlib.probabilistic-death.lethal` point's own stream.
  *
  * @param probability chance of death in `[0, 1]` (e.g. `0.75` = the grue's 75% kill)
- * @param rng the engine's seeded RNG — the sole randomness source (never `Math.random()`)
- * @returns `true` with probability `probability`, deterministically for a given seed/sequence
+ * @param random the session's per-point stream owner — the sole randomness source
+ * @returns `true` with probability `probability`, deterministically for a given master seed
  */
-export declare function rollLethal(probability: number, rng: SeededRandom): boolean;
+export declare function rollLethal(probability: number, random: RandomService): boolean;
 ```
 
 ### death/deadly-room-transformer
@@ -3709,8 +3713,15 @@ export declare function rollLethal(probability: number, rng: SeededRandom): bool
  * `DEADLY_ROOM_CAUSE_KEY`, `DEADLY_ROOM_MESSAGE_KEY`.
  * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
  */
-import type { SeededRandom } from '@sharpee/core';
+import { type RandomService } from '@sharpee/core';
 import type { IParsedCommand, WorldModel } from '@sharpee/world-model';
+/**
+ * The deadly room's probabilistic-lethality choice point (ADR-293). Only the
+ * `chance` variant draws; safe verbs and always-lethal rooms are
+ * deterministic short-circuits that sit outside the point and draw nothing
+ * (D8).
+ */
+export declare const DEADLY_ROOM_LETHAL_POINT: import("@sharpee/core").ChoicePoint<"yes" | "no">;
 /** The generic platform action a lethal deadly-room verb is redirected to. */
 export declare const DEADLY_ROOM_DEATH_ACTION_ID = "if.action.deadly_room_death";
 /** `extras` key carrying the death cause from the transformer to the death action. */
@@ -3723,9 +3734,9 @@ export declare const DEADLY_ROOM_MESSAGE_KEY = "deadlyRoomMessageId";
  * in which case it redirects to the generic death action, threading the cause and
  * message id through `extras`.
  *
- * @param rng the engine's seeded RNG, used only for the probabilistic (`chance`) variant
+ * @param random the session's per-point stream owner, used only for the probabilistic (`chance`) variant
  */
-export declare function createDeadlyRoomTransformer(rng?: SeededRandom): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand;
+export declare function createDeadlyRoomTransformer(random?: RandomService): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand;
 ```
 
 ### chains

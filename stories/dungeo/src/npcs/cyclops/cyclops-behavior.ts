@@ -16,6 +16,10 @@ import { ISemanticEvent } from '@sharpee/core';
 
 import { CyclopsMessages } from './cyclops-messages';
 import { CyclopsCustomProperties, makeCyclopsFlee } from './cyclops-entity';
+import { definePoint } from '@sharpee/core';
+
+// ADR-293 D2: the cyclops's ambient growl roll.
+const CYCLOPS_GROWL_POINT = definePoint('dungeo.cyclops.growl', { classes: ['yes', 'no'] });
 
 /**
  * Get cyclops custom properties from NpcTrait
@@ -52,7 +56,7 @@ export const cyclopsBehavior: NpcBehavior = {
     }
 
     // Occasionally growl if player is visible
-    if (context.playerVisible && context.random.chance(0.15)) {
+    if (context.playerVisible && context.random.chance(CYCLOPS_GROWL_POINT, 0.15)) {
       return [{
         type: 'emote',
         messageId: CyclopsMessages.GROWLS,

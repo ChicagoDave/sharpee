@@ -14,6 +14,10 @@
 import { NpcBehavior, NpcContext, NpcAction, guardBehavior } from '@sharpee/stdlib';
 import { HealthTrait, HealthBehavior, IdentityTrait, TraitType } from '@sharpee/world-model';
 import { TrollMessages } from './troll-messages';
+import { definePoint } from '@sharpee/core';
+
+// ADR-293 D2: the troll's axe-recovery roll draws on its own declared point.
+const TROLL_AXE_RECOVERY_POINT = definePoint('dungeo.troll.axe-recovery', { classes: ['yes', 'no'] });
 
 /**
  * Check if the NPC has any weapon in inventory
@@ -72,7 +76,7 @@ export const trollBehavior: NpcBehavior = {
       // Try to recover axe from room (75% chance)
       const axeId = findAxeInRoom(context);
 
-      if (axeId && context.random.chance(0.75)) {
+      if (axeId && context.random.chance(TROLL_AXE_RECOVERY_POINT, 0.75)) {
         // Troll recovers the axe
         return [
           { type: 'take', target: axeId },

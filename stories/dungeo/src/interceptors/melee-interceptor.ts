@@ -35,16 +35,13 @@ import {
   CapabilityEffect,
   InterceptorBlockedResult,
 } from '@sharpee/world-model';
-import { createSeededRandom, SeededRandom } from '@sharpee/core';
-
-
-/**
- * Module-level random instance shared across all melee calls.
- * Creating a new SeededRandom per attack causes identical rolls when
- * multiple attacks execute within the same Date.now() millisecond
- * (e.g., transcript tester running 30 attacks in rapid succession).
- */
-const meleeRandom: SeededRandom = createSeededRandom();
+import { RandomService } from '@sharpee/core';
+import {
+  HERO_BLOW_POINT,
+  HERO_MESSAGE_VARIANT_POINT,
+  MeleeBlowClass,
+  meleeOutcomeClass,
+} from '../combat/melee-points';
 
 import {
   fightStrength,
@@ -340,12 +337,16 @@ export const MeleeInterceptor: ActionInterceptor = {
     villain: IFEntity,
     world: WorldModel,
     actorId: string,
-    sharedData: InterceptorSharedData
+    sharedData: InterceptorSharedData,
+    random?: RandomService
   ): void {
     const player = world.getEntity(actorId);
     if (!player) return;
-
-    const random = meleeRandom;
+    if (!random) {
+      throw new Error(
+        'MeleeInterceptor: no RandomService was passed to postExecute — combat draws are gated (ADR-293 D6)'
+      );
+    }
     const weaponName = sharedData.weaponName as string | undefined;
     const villainKey = getVillainKey(villain);
     const villainDisplay = getVillainDisplayName(villain);
@@ -373,7 +374,22 @@ export const MeleeInterceptor: ActionInterceptor = {
     // triggers auto-kill (def < 0). villainStrength() clamps to 0 which
     // would cause resolveBlow to return MISSED instead.
     const defForBlow = villainUnconscious ? currentOstrength : villainStr;
-    const blowResult = resolveBlow(heroStr, defForBlow, true, villainUnconscious, random);
+    // ADR-293 D8/D10: the hero's blow resolves on its own point — the table
+    // roll and the conditional stagger→lose-weapon follow-up are ONE point's
+    // internal draws. An unconscious villain auto-kills via the def<0
+    // short-circuit inside resolveBlow (zero draws, KILLED is declared).
+    const { value: blowResult } = random.resolve(
+      HERO_BLOW_POINT,
+      (draw) => {
+        const sampled = resolveBlow(heroStr, defForBlow, true, villainUnconscious, draw);
+        return { cls: meleeOutcomeClass(sampled.outcome) as MeleeBlowClass, value: sampled };
+      },
+      (forced) => {
+        throw new Error(
+          `dungeo.melee.blow.hero: forcing '${forced}' is not implemented until ADR-293 Phase C`
+        );
+      }
+    );
 
     // --- Apply side effects ---
     let targetKilled = false;
@@ -470,7 +486,7 @@ export const MeleeInterceptor: ActionInterceptor = {
       weaponType,
       blowResult.outcome,
       villainDisplay,
-      (arr) => random.pick(arr)
+      (arr) => random.pick(HERO_MESSAGE_VARIANT_POINT, arr)
     ) ?? 'You attack.';
 
     // --- Store results for report phase ---
