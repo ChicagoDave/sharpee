@@ -67,10 +67,20 @@
 ## Approved follow-on: transcript-tester ground-up rebuild
 David approved (this session) designing a ground-up transcript-tester rebuild **after** Phase 7 lands, as its own ADR — golden-transcript (record/bless/diff) regression model unlocked by determinism, thin assertion layer for unit intent, seed-matrix runs; subsumes the deleted parse-baseline guard. Companion to Phase B (the four `Math.random` handlers). Rebuild items observed this pass: directive errors swallowed without `--stop-on-failure` (a failed `$restore` silently continues on a fresh world); `[OK: any]` masks failed commands (watched it pass 18 commands with the player stuck in the Kitchen); `[SEED:]` is only recognized after the `---` separator (header placement silently ignored).
 
+## Completed (continued) — PR, merge, and ADR-294 (same session)
+
+### Arc landed
+- PR #205 (arc → main) created and merged at David's direction ("PR then merge"); merge commit `728d8cdd`; local `main` fast-forwarded. ADR-293 Phase A fully closed.
+
+### ADR-294 — Golden transcripts (tester rebuild) — ACCEPTED same day
+- `docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md`: drafted from this session's Phase 7 evidence, then feature-swept with David ("all possible features"): D1–D20 covering goldens + `--bless`, two tiers, header seeds + versioned provenance, coping-machinery deletion, unconditional failure, normalization contract, `.golden` format, seed matrices, in-place rebuild, migration policy, parse-drift subsumption, the D12 sequencing arc, coverage/"what should I test?" + `[FORCE:]`, watch mode, channel-scoped recordings, verify coverage gate, seeded fuzzing, divergence debugging, localization coverage, and the bounded explorer.
+- Interview resolved all six questions (Q1 `[NAVIGATE TO:]` deleted; Q2 text-only + `events:` opt-in; Q3 walkthroughs golden / unit assertion-tier; Q4 ADR-290 amended separately; Q5 one arc: handler access → Phase B → rebuild; Q6 forcing first, CLI first). `adr-review` 10/15 → 15/15 after three folds (Acceptance AC-1..AC-14, `.golden` format block, status wording). **ACCEPTED by David.**
+- Memory saved: testing intelligence is a Sharpee/Chord product differentiator (David's framing), `project_testing_intelligence_differentiator.md`.
+
 ## Open Items
-- **Merge `adr-293-phase-a-arc` → `main`**: David's call; all Phase 7 evidence is in.
-- **Transcript-tester rebuild ADR/brainstorm**: next up after the arc lands (David-approved).
-- Carried (unchanged): post-293 coverage walkthrough; ADR-290's missing dependency note on ADR-293; `IDebugEvent` dead tier; `ring-action.ts:141` bug unfiled; publish dry-run 4.3.0 state (version bump or accept).
+- **Handler-access platform discussion** (D12 arc step 1): how event handlers reach `RandomService` — blocks ADR-293 Phase B, which blocks the ADR-294 rebuild.
+- **ADR-290 amendment** (independent): retarget output artifact to goldens per ADR-294 Q4; add its overdue ADR-293 dependency note.
+- Carried (unchanged): post-293 coverage walkthrough (partially answered by ADR-294 D11/D13); `IDebugEvent` dead tier; `ring-action.ts:141` bug unfiled; publish dry-run 4.3.0 state (version bump or accept).
 
 ## Files Modified
 **Source (fixups)**:
