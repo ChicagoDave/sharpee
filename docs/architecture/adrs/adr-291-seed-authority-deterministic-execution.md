@@ -1,6 +1,46 @@
 # ADR-291: One seed authority, many named streams — deterministic execution as a testable property
 
-## Status: ACCEPTED (2026-07-31, session b3834b) — drafted from the working tree, interviewed (all six open questions resolved), then `adr-review`ed twice: 9/16 with two BLOCKER and four SMALL findings folded, then 16/16. Accepted by David on the clean review. **Platform change**: `packages/core`, `packages/engine`, `packages/stdlib`, `packages/media`, `packages/world-model` (the `ActionInterceptor` hook signatures — added by A1, see B1), `packages/extensions/basic-combat`, `packages/transcript-tester`, and id-generation sites across eight further packages. **Story change** (added by A1): `stories/dungeo`, `stories/armoured`, `stories/thealderman`, `stories/cloak-of-darkness`. Approved in principle by this acceptance; see Implementation touchpoints.
+## Status: SUPERSEDED IN PLACE by [ADR-293](adr-293-choice-points-per-point-streams.md) (2026-08-01, session 9f136f) — **do not implement.** Nothing here was built. ADR-293 carries forward, in substance: one master seed governing a run (D1), the frozen versioned derivation (D2), stream state riding the save behind a version reader (D4), `--seed` / `[SEED: N]` / always-report-the-seed and the author-visible/player-silent rule (D8–D10), and randomness outside the sanctioned path as a build-visible defect (D6). What it replaces: per-domain named streams, which become per-point streams, and the `SeedAuthority` interface shape. The four amendments below are retained as the record of how this document failed to converge — four review passes oscillating between 12/16 and 14/16 — which is the history ADR-293 was written to end.
+
+## Historical status: ACCEPTED (2026-07-31, session b3834b) — drafted from the working tree, interviewed (all six open questions resolved), then `adr-review`ed twice: 9/16 with two BLOCKER and four SMALL findings folded, then 16/16. Accepted by David on the clean review. **Re-cut to Effort A by Amendment A3** (2026-07-31, session 9f136f). **Platform change**: `packages/core`, `packages/engine`, `packages/stdlib`, `packages/media`, `packages/world-model` (the `ActionInterceptor` hook signatures — added by A1, re-purposed by A2, relocated by A3), `packages/extensions/basic-combat`, `packages/transcript-tester`. **Story change** (added by A1): `stories/dungeo`, `stories/armoured`, `stories/thealderman`, `stories/cloak-of-darkness`. See Implementation touchpoints.
+
+## Scope: Effort A — reproducible execution
+
+**This ADR delivers reproducible execution. It does not deliver byte-identical
+artifacts.** The boundary was ratified by Amendment A3 and is the ADR's most important
+sentence, because every review pass before A3 spent its findings on work that lives on
+the far side of it.
+
+| | In scope (Effort A) | Out of scope (Effort B) |
+| --- | --- | --- |
+| **Property** | the same seed and command sequence reproduce the same *run* | two runs at one seed produce byte-identical *save files* |
+| **Randomness** | all of it — the authority, named streams, the singletons, the gameplay draws, the `Math.random()` ban | — |
+| **The clock** | **no clock-derived value reaches rendered output** — plus seed entry (`--vary`), which is not execution | every remaining clock read: ~49 clock-only ids, the clock half of 32 more, 184 event timestamps, the save's own metadata stamp |
+| **Acceptance** | 1–6 and 8–13 | **7 only** |
+
+**The clock row is a real Effort A obligation, not a formality** (A4). Acceptance 8
+forbids a `Date.now()`-derived token in rendered output and Acceptance 1 proves it by
+diffing two runs. Before the re-cut, ids lost their clocks outright, so this was true
+by construction and cost nothing to claim. It is no longer: ids keep their clocks
+through Effort A, and the Context section says in as many words that whether an id or
+timestamp reaches rendered text is *"**not established**; it is assumed not to, which
+is not the same thing."*
+
+So Effort A carries a narrow version of the clock problem — **rendered output only**,
+not saves — and it is the one place where Effort A can fail for a reason whose fix
+lives in Effort B. **Establish it first, not last**: run Acceptance 1 over the corpus
+as an early spike, before the D5/D6 work, so a clock-bearing id reaching rendered text
+is found while the scope line can still be renegotiated. Discovering it at the end of
+Effort A is the failure mode this note exists to prevent.
+
+Effort B is **deferred, not rejected**, and nothing in ADR-292 needs it (ADR-292
+Consequences). It is not scheduled here and must not be re-litigated inside this ADR;
+if it is taken up, it is its own ADR with its own corpus.
+
+**Amendment A2** (2026-07-31, session 9f136f) folded the two BLOCKERs A1's second review
+left open: B3 (story stream access) and B4 (id determinism). **Amendment A3** (same
+session) re-cut the ADR to the scope above after a three-ADR review found the split
+already decided in ADR-292, and moved naming *resolution* to ADR-292, which owns it.
 
 **Amended 2026-07-31, session 8a8dd0**, before implementation began, after re-verifying
 the Context claims against the tree and re-reviewing the result. Six findings, four of
@@ -233,17 +273,58 @@ them already have a route:
 | --- | --- | --- |
 | Already receives a `SeededRandom` parameter and discards it | `melee-npc-attack.ts:110` takes `_random`, then overrides it with the module singleton at `:116` | **Use the parameter.** The seam exists; the code opted out of it |
 | Runs inside a scheduler daemon or fuse | `bat-handler.ts`, `carousel-handler.ts`, `round-room-handler.ts` — `SchedulerContext` already carries `random: SeededRandom` (`plugin-scheduler/src/types.ts:25`) | **Use `context.random`.** The scheduler's stream is authority-minted under D2 |
-| Runs inside an action interceptor | `melee-interceptor.ts:348`, in `postExecute` | **Receive it as a parameter** — requires the world-model hook change in B1 |
+| Runs inside an action interceptor | `melee-interceptor.ts:348`, in `postExecute` | **Receive it as a parameter**, with the name derived by the registrar from the binding's `(traitType, actionId)` — requires the world-model hook change in B1 |
 | A pure helper with no context at all | `dungeon-master-trivia.ts:115`, `startTrivia(state)` | **Take a `SeededRandom` parameter**; the caller, which does have a context, supplies it |
 
-The rule underneath all four: **story code never calls `authority.stream()` at play
-time.** It either receives a stream or reads one off a context it was already given.
-Only story *setup* — the `register…Handler` wiring that runs once with the engine in
-hand — may acquire a stream by name, and only to hand it downward.
+The rule underneath all four (**restated by A2, scoped by A3**): **story code never
+names a stream.** It receives one, or reads one off a context it was already given.
+
+A1 wrote this rule with a carve-out — "only story *setup* may acquire a stream by
+name, and only to hand it downward." **A2 withdrew the carve-out**, because it was
+expressible in TypeScript and inexpressible in Chord, whose entire randomness surface
+is `one chance in <n>` (`chord/src/parser.ts:4511`), the `randomly` phrase and
+`select` strategies (`parser.ts:121`), and `move-chance` on the wanderer trait
+(`stdlib-manifest.ts:121`). None of the three names an entropy source, and Chord has
+no setup block, lifecycle hook, or factory at all. A rule only a TypeScript story
+could obey would have been one contract on paper and two in practice.
+
+**The runtime rule is stated here; the authoring surface belongs to ADR-292** (A3,
+narrowed by A4). Two different things were being conflated, and A3's first pass handed
+both away, which left this ADR unable to implement Effort A without a DRAFT one:
+
+- **Runtime resolution — this ADR, self-contained.** Every stream name reaching the
+  authority is fully qualified. Whoever hands a stream to story code resolves the name
+  first, and D2a's unnamespaced-name refusal fires on that **resolved** name. Effort A
+  needs nothing beyond this: dungeo is TypeScript, and its two D5 sites are reached by
+  the two mechanisms below.
+- **Authoring surface — ADR-292 D11.** How an author *writes* a name, and how a
+  compiler turns `melee` into `story:dungeo/melee` from the declared `id:`, is ADR-292's
+  decision. It also states there that this ADR's refusal "must fire on the resolved
+  name, never on what the author typed" — consistent with the rule above, which is why
+  no amendment to this ADR is needed when ADR-292 lands.
+
+A2 derived a *second* resolution mechanism from registration identity; A3 withdrew it
+as duplicating ADR-292. What survives is the division above: the runtime invariant is
+this ADR's, the surface that produces names is ADR-292's, and Effort A depends on the
+first only.
+
+The two mechanisms Effort A actually uses:
+
+- **the stream is resolved by the hook's invoker**, never by the registry. The
+  interceptor registry is a private `Map` on `WorldModel`
+  (`world/WorldModel.ts:553`, written at `:782`) — world-model, not engine, despite
+  ADR-208's "engine-owned per world", which governs lifetime rather than location.
+  World-model cannot ask the authority (D2a's own rule), so the component that
+  *dispatches* the hook — stdlib or engine, both permitted — resolves the stream from
+  the binding identity it already holds and passes it in. `WorldModel` stores
+  bindings and knows nothing about streams.
+
+Extensions are platform-side TypeScript with no authoring surface, and keep direct
+acquisition under `ext:<pkg>/` (D2). Stories do not need it.
 
 This keeps a story on the same footing as world-model without needing D2a's
-engine-free rule to extend to it: nothing in a story's per-turn path acquires
-randomness, so nothing in it can mint an unowned stream, which is what D2 withdraws.
+engine-free rule to extend to it: nothing in a story's path acquires randomness,
+so nothing in it can mint an unowned stream, which is what D2 withdraws.
 
 **Interface shape** (the contract, not the implementation):
 
@@ -308,8 +389,10 @@ from the authority when the extension registers, under D2's `ext:basic-combat/`
 namespace.
 
 `stories/dungeo`'s `meleeRandom` (`melee-interceptor.ts:47`) and `npcMeleeRandom`
-(`melee-npc-attack.ts:45`) become streams acquired under D2's `story:dungeo/`
-namespace. D2 already opened registration to stories and already gave them a
+(`melee-npc-attack.ts:45`) become streams **supplied to** those sites under D2's
+`story:dungeo/` namespace — the name derived by the platform from the registration
+identity rather than written by the story (Amendment A2 corrects the draft's
+"acquired"). D2 already opened registration to stories and already gave them a
 prefix, so this needs no new mechanism — only the recognition that dungeo is where
 the flake actually lives.
 
@@ -318,7 +401,7 @@ that criterion actually measures. Retiring the extension's pair alone would prod
 a change that is correct, ships green on its own tests, and moves the chain flake
 not at all.
 
-A story acquiring a stream is not a story seeding one — the root seed still governs
+A story *using* a stream is not a story seeding one — the root seed still governs
 it (D2), so ADR-231 D6's "never seed/disable story randomness" is untouched. What
 dungeo gains is reachability: an authority that can reseed the melee stream on
 restore, and a `--seed` that reaches it.
@@ -336,10 +419,12 @@ This is not a presentation-layer concession — the code settles it.
 playback; it bakes the random values into an event payload:
 `createTypedEvent('audio.sfx', { src, volume, rate, duck })`. Audio rides
 channels, so those numbers enter the event source, serialize into saves, and are
-assertable content anywhere the IDE observes channel packets. Exempting them
-would contradict Acceptance 7 outright — two runs at one seed could not produce
-byte-identical saves while three unseeded floats ride into the event source every
-time a sound plays. (The draft cited "Acceptance 6a", which does not exist; the
+assertable content anywhere the IDE observes channel packets. They are three
+`Math.random()` calls deciding gameplay-visible values, so the gate takes them on
+its own terms (Acceptance 6) and Acceptance 1 would catch any that reached rendered
+output. They would *also* have blocked byte-identical saves, which is how the draft
+argued it — but that is Acceptance 7, now Effort B (A3), and the audio stream does
+not depend on it. (The draft cited "Acceptance 6a", which does not exist; the
 criteria are 1–13 with no sub-items. Corrected by Amendment A1.)
 
 Determinism here does not flatten anything: a stream's successive draws still
@@ -375,20 +460,38 @@ Two clarifications the scope needs:
   and stays compliant, because choosing a seed from the clock uses no
   `Math.random()` call. The draft deferred this question on the assumption the two
   were entangled; they are not.
-- **`Date.now()` in an id is still removed** — not by this gate, but by D6's
-  substantive rule, which replaces the whole `` `${Date.now()}_${Math.random()}` ``
-  form with a counter. The gate catches the random half; Acceptance 7
-  (byte-identical saves) catches the clock half.
+- **`Date.now()` in an id is Effort B, and leaves this ADR** (A3). A2 restated the id
+  rule as a containment invariant — *an event id holds a static prefix and a
+  per-session monotonic counter and nothing else* — which is the right formulation and
+  now belongs to Effort B, whose Acceptance 7 is the only criterion that needs it.
+  **The gate takes the random half; the clock half goes with AC-7.** Splitting the rule
+  this way is what lets the gate switch on inside Effort A: the 32 `Math.random()` id
+  sites lose their random half here, keeping their clock, which is invisible to
+  Acceptance 1 (rendered output) and visible only to Acceptance 7 (save bytes).
 
 An in-repo story is gated but a *published* story is not: the gate is a build step
 in this repository, and D1 leaves authors free to write whatever randomness they
 like. Nothing here reaches an author's own project.
 
-The 32 platform sites building ids as `` `evt_${Date.now()}_${Math.random()...}` ``
-— including `core/src/events/event-system.ts:77`, which already mixes a counter with
-a random — plus the 2 in `stories/dungeo`, move to a monotonic per-session counter
-with no clock and no randomness. (Amendment A1.3 replaces the draft's "~35"; that
-figure counted the 3 audio calls, which are gameplay, not ids.)
+The sites building ids as `` `evt_${Date.now()}_${Math.random()...}` `` — including
+`core/src/events/event-system.ts:77`, which already mixes a counter with a random —
+**lose their `Math.random()` call here**, which is what the gate requires. That form is
+**30 in `packages/**/src` and 2 in `stories/dungeo`, 32 in total.** (A2 corrects A1.3,
+which read the tree-wide 32 as a platform-only figure and then added the 2 dungeo sites
+on top of it. A1.3 had already replaced the draft's "~35", which counted the 3 audio
+calls — gameplay, not ids.)
+
+Replacing the random half with a per-session monotonic counter is sufficient for the
+gate and for Acceptance 6. Removing the **clock** half — in these 32 and in the ~49
+further sites that carry a clock and no randomness at all (roughly 33 in
+`stories/dungeo`, 16 in `packages/**/src`, shaped like
+`` id: `mirror-pole-raised-${Date.now()}` ``) — is **Effort B**, and is enumerated in
+`docs/work/adr-291-seed-authority/determinism-inventory-20260731.md` rather than here.
+
+Worth recording for whoever picks up Effort B, because it is the trap A2 found: an id
+rule phrased as "replace the `` `${Date.now()}_${Math.random()}` `` form" reaches none
+of the ~49, because that enumeration came from grepping for `Math.random()`. Effort B
+must be scoped by the containment invariant, not by a form.
 
 Two reasons this is worth the mechanical churn. A gate with no exceptions cannot
 erode, while a gate with one always does — and the single carve-out would sit
@@ -455,6 +558,15 @@ So: absent a flag, the runner derives the **session's** seed from the session's
 identity — a lone transcript's own path, or for a chain, its **first member's**
 path. Paths are resolved **relative to the story directory**, not the working
 directory, so a run is reproducible from anywhere in the tree.
+
+**That derivation is the same function D2 froze, and carries the same version**
+(added by A3, review finding B-2). The path string is hashed with D2's FNV-1a mix and
+reduced into `[0, 2^31)` so it satisfies D2a's own root-seed refusal, and it is pinned
+by the same hardcoded-expectation test under the same `SEED_DERIVATION_VERSION`. D2
+made stream derivation a compatibility surface for a stated reason — change it and
+every pinned seed silently means something else — and a second, unversioned derivation
+sitting beside it would reintroduce exactly that failure for every default-mode run in
+the repo. One function, one constant, two callers.
 
 Each session is therefore reproducible in isolation while the suite as a whole
 spans many roll sequences. One global constant would make every test in the repo
@@ -538,15 +650,46 @@ as of 2026-07-31.
   finding B1.** The five `ActionInterceptor` hooks (`preValidate`, `postValidate`,
   `postExecute`, `postReport`, `onBlocked`) each take
   `(entity, world, actorId, sharedData)` and no `SeededRandom`. They gain an optional
-  `random?: SeededRandom` parameter, supplied by the engine-side interceptor registry
-  (ADR-208, engine-owned per world). Parameter injection per D2a — world-model still
-  acquires nothing and imports nothing new.
+  `random?: SeededRandom` parameter, supplied by **the component that dispatches the
+  hook** — stdlib or engine, both permitted to ask the authority. Parameter injection
+  per D2a: world-model still acquires nothing and imports nothing new.
+
+  **Corrected by A3 (review finding B-1).** A1 and A2 both said this parameter came
+  from "the engine-side interceptor registry (ADR-208, engine-owned per world)". There
+  is no engine-side registry: bindings live in a private `Map` on `WorldModel`
+  (`:553`), written directly by `registerActionInterceptor` (`:782`). ADR-208's
+  ownership language is about lifetime — per world, garbage-collected with it — not
+  location. Had the ADR been implemented as written, the registry would have had to
+  reach the authority from inside world-model, which D2a forbids.
 
   This is the **only interface change D5's dungeo half requires**, and it is a
   world-model edit, so it lands *before* the story edit rather than alongside it.
   Without it `melee-interceptor.ts:348` has no route to a stream and D5 cannot be
   completed for the site that Acceptance 2 actually measures. The draft named neither
   the file nor the dependency; A1's first pass added the story site without it.
+
+  **Which stream arrives (A2 finding B3, relocated by A3).** The dispatcher resolves
+  it from the binding's `(traitType, actionId)` — the pair `registerActionInterceptor`
+  keys on (`world/WorldModel.ts:316`), both static strings, and registration is
+  idempotent and overwrites on repeat (`:778-780`), so the pair is unique per world and
+  the resolved name is stable across runs. The interceptor does **not** receive the
+  caller's `actions` stream: that would interleave dungeo melee with every other
+  action draw, which is exactly what ADR-231 D6 rejected and D3 preserves. Nor does
+  the story name the stream itself; see D2a, and ADR-292 D11 for how a name resolves.
+
+  A2 considered retiring this interface change instead, by converting
+  `MeleeInterceptor` (`melee-interceptor.ts:291`, an object literal registered at
+  `stories/dungeo/src/index.ts:571`) into a factory closed over a story-acquired
+  stream. That route works in TypeScript — it needs the registration moved from
+  `initializeWorld(world)` (`index.ts:208`, no engine reference) to
+  `onEngineReady(engine)` (`index.ts:825`, which already holds both) — and it is
+  unavailable in Chord. **Keeping the hook change is what makes both languages
+  behave identically**, which is why A2 kept it rather than trading it for a
+  story-local factory. `melee-interceptor.ts` is, as of 2026-07-31, the only
+  `ActionInterceptor` *implementation* in the tree that draws randomness (the other
+  files matching `ActionInterceptor` alongside RNG are the dispatch sites
+  `engine/src/game-engine.ts` and `world/WorldModel.ts`), so the interface change
+  serves one call site today and the contract for every story later.
 
 **Extensions**
 - `extensions/basic-combat/src/basic-combat-interceptor.ts:23` and
@@ -568,10 +711,14 @@ the seam is already plumbed and the code opted out of it:
 | `npcs/dungeon-master/dungeon-master-trivia.ts:115` | D6 | `startTrivia(state)` gains a `SeededRandom` parameter; its caller supplies it |
 
 - The two D5 sites retire onto `story:dungeo/melee` and `story:dungeo/npc-melee`.
+  Both names are **resolved by the platform**, not written in the story (D2a; ADR-292
+  D11 owns resolution); they appear here to name the streams under discussion, not as
+  literals for an author to type.
   **This is the Acceptance 2 change**; the `basic-combat` pair above does not touch
   the dungeo chain
 - `stories/dungeo/src/combat/melee-npc-attack.ts:49`,
-  `actions/gdt/gdt-input-handler.ts:27` — ids (D6)
+  `actions/gdt/gdt-input-handler.ts:27` — the 2 clock-plus-random ids lose their
+  random half (D6). Their clock half is Effort B
 - `stories/armoured/src/combat/combat-utils.ts:83` (a d20 roll),
   `stories/thealderman/src/randomization.ts:43`,
   `stories/cloak-of-darkness/src/index.ts:524` — gameplay `Math.random()` onto
@@ -619,8 +766,12 @@ the seam is already plumbed and the code opted out of it:
    Asserted by introducing a call in each of the two roots and observing two
    failures, and by confirming the gate stays green over `tests`, `tools`, and
    `dist` (Amendment A1: the second root and the negative cases are new).
-7. Two runs at the same seed produce **byte-identical save files**, which
-   requires event ids to be free of both clock and randomness.
+7. **DEFERRED TO EFFORT B — not a criterion of this ADR** (A3). Two runs at the same
+   seed produce **byte-identical save files**, which requires event ids to be free of
+   both clock and randomness, and requires the 184 event `timestamp` fields and the
+   save's own metadata stamp to be settled. Retained here, struck, so the criterion is
+   not silently lost and so a later reader can see where the scope line falls.
+   Nothing in ADR-292 depends on it.
 8. No RNG-derived or `Date.now()`-derived token appears in rendered output,
    asserted over a corpus via criterion 1 rather than argued.
 9. Every run reports the seed it used, in all four D9 modes, and a failing
@@ -695,12 +846,21 @@ they are not mistaken for oversights by whoever implements this.
 - **IDE seed entry has no touchpoint.** D1 permits the IDE to set a root seed and
   D10 requires the Play pane to display one, but Implementation lists only the
   display. The entry surface is unspecified. **Still open** — A1 did not touch it.
-- **Story stream naming is unspecified below the prefix** (new, A1). D2 fixes the
-  `story:<id>/` prefix and D5 now puts four dungeo streams behind it, but nothing
-  says whether a story declares its streams somewhere discoverable or mints them at
-  the point of use. It matters only for D4's save map, where a renamed stream reseeds
-  from root — an already-covered case, which is why this is deferred rather than
-  blocking.
+- ~~**Story stream naming is unspecified below the prefix**~~ (opened by A1).
+  **Resolved by Amendment A2 (B3)**: a story neither declares nor mints stream names.
+  The platform derives them from the identity of the thing being registered, so there
+  is no naming surface left to specify — which is also what makes the rule stateable
+  in Chord, where an author has no way to write a name at all.
+- ~~**The split is undecided**~~ (opened by A2, closed the same session).
+  **Ratified by A3**: this ADR is Effort A. See the Scope section at the head of the
+  document, which is now the authority on what is in and out.
+- **Effort B has no ADR** (new, A3). Deferring it is a decision; leaving it
+  undocumented is not. Its scope — the ~49 clock-only ids, the clock half of 32 more,
+  the 184 event `timestamp` fields (`core/src/events/types.ts:22`), the three clock
+  reads in the save path including the save's own metadata stamp
+  (`save-restore-service.ts:235`) — is enumerated in
+  `docs/work/adr-291-seed-authority/determinism-inventory-20260731.md` §7–§9. If it is
+  taken up it needs its own ADR; the inventory is the input, not the decision.
 
 ## Tracked work
 
@@ -751,7 +911,9 @@ commented-out line and is no work at all.
 mechanism no story site uses. Surveying dungeo found four distinct access shapes,
 three already plumbed. D2a now carries the table and the rule underneath it: story
 code never calls `authority.stream()` at play time — only story *setup* does, and
-only to hand a stream downward.
+only to hand a stream downward. (**The setup carve-out was withdrawn by A2.1**; the
+table survives, its interceptor row rewritten. Retained here as the record of what
+A1 decided.)
 
 **A1.5 — D5's dungeo half depends on a world-model interface change
 (`adr-review` finding B1).** `melee-interceptor.ts:348` reads its singleton inside
@@ -787,6 +949,172 @@ interface, the refusal table, and the derivation ruling all stand as accepted. A
 widens D5's and D6's scope, adds the story-access contract to D2a, adds one
 world-model interface change to Implementation, and corrects the Context all of them
 rest on.
+
+## Amendment A2 — 2026-07-31, session 9f136f
+
+Made **before any implementation**, resolving the two BLOCKERs left unfolded by A1's
+second `adr-review` pass. Both were ruled by David after the findings were re-verified
+against the tree; neither was accepted as the review phrased it.
+
+**A2.1 — B3: the story→stream route was a contradiction, and both candidate
+answers were wrong.** A1 left D5 saying dungeo's combat sites *acquire* a named
+stream while D2a said story code *receives* one, with acquisition allowed only in
+story setup. The review asked which. Applying the elegance requirement — the
+resulting decisions must hold for Sharpee **and** Chord — dissolved the question:
+
+- *Acquire by name* is inexpressible in Chord. Its randomness surface is three
+  constructs (`one chance in <n>`, the `randomly` phrase/`select` strategies,
+  `move-chance`), none of which names an entropy source, and it has no setup block,
+  lifecycle hook, or factory at all.
+- *Receive the caller's stream* means the shared `actions` stream, interleaving
+  dungeo melee with every other action draw — precisely what ADR-231 D6 rejected and
+  what D3 exists to preserve structurally.
+
+**Ruled: the stream is derived from the registration identity and supplied by the
+registrar.** For an interceptor that is the `(traitType, actionId)` pair
+`registerActionInterceptor` already binds on (`world/WorldModel.ts:316`). The author
+names nothing, in either language, and Chord's compiler emits the same registration
+and gets identical treatment for free.
+
+This **simplifies D2a rather than extending it.** Three of its four rows — scheduler
+daemons reading `context.random`, `meleeNpcResolver` receiving a parameter, the trivia
+helper taking one from a caller that has context — were already derive-don't-declare.
+Only the interceptor row and the story-setup carve-out broke the pattern, and both go.
+It also keeps A1.5's world-model hook change in scope, but changes what that change is
+*for*: not a five-hook accommodation serving one call site, but the mechanism that
+makes TypeScript and Chord stories behave the same. See Implementation touchpoints for
+the story-local factory alternative and why it was rejected.
+
+**A2.2 — B4: id determinism was enumerated from the wrong set.** D6's substantive
+rule was phrased as replacing the `` `${Date.now()}_${Math.random()}` `` *form*, an
+enumeration produced by grepping for `Math.random()`. Verified against the tree: ~49
+further id sites carry a clock and **no** randomness (~33 in `stories/dungeo`, ~16 in
+`packages/**/src`), which that phrasing reaches not at all, while Acceptance 7 requires
+every one of them — event ids serialize into the save.
+
+**Ruled: state the rule as a containment invariant** — an event id holds a static
+prefix and a per-session monotonic counter and nothing else — which is closed over
+sites nobody enumerated. This is the same root A1 corrected in the Context: reasoning
+about a population from a grep that could not see it.
+
+B4 is a correctness-of-statement fix, not a scheduling decision. **When** the ~49
+sites are paid down was left open by A2 and **settled by A3**: they are Acceptance 7
+work, so they belong to Effort B and leave this ADR.
+
+**A2.3 — count correction (bookkeeping).** A1.3's "32 platform sites ... plus the 2 in
+`stories/dungeo`" double-counted: 32 is the tree-wide total, comprising 30 in
+`packages/**/src` and 2 in `stories/dungeo`. Third correction in this lineage, and the
+reason A2.2 prefers an invariant to a count.
+
+**Review record.** A2 has **not** been through `adr-review`. A1's second pass (12/16)
+raised B3 and B4; this amendment resolves both, but the amended document has not been
+re-reviewed.
+
+**Not changed.** No decision was reversed. D1–D4, D7–D10, the `SeedAuthority`
+interface, the refusal table, and the derivation ruling all stand. A2 restates D2a's
+underlying rule and withdraws its story-setup carve-out, corrects D5's "acquired",
+restates D6's id rule as an invariant and widens its site population, and re-purposes
+A1.5's world-model change without removing it. The open split question (Effort A
+versus Effort B) is untouched and still open.
+
+## Amendment A3 — 2026-07-31, session 9f136f
+
+Made **before any implementation**, after a three-ADR review (290, 291, 292) run
+because the ADR had stopped converging: 16/16 at acceptance, then 14/16, then 12/16,
+then 12/16 with three fresh BLOCKERs, each pass finding roughly two new ones. A3 is a
+re-cut rather than another fold, because the review found the cause was structural.
+
+**A3.1 — the scope split was already decided, in ADR-292.** A2 recorded the Effort A /
+Effort B split as an open question gating implementation. ADR-292's Consequences
+already stated it as settled: *"ADR-291 Effort A becomes the gating dependency and
+Effort B (byte-identical saves) becomes clearly optional — nothing here needs it."*
+A3 ratifies that, adds the **Scope** section at the head of the document, and defers
+Acceptance 7. Every review pass before this one spent findings on Effort B work sitting
+inside an Effort A ADR, which is most of why the score never converged.
+
+**A3.2 — the gate belongs to Effort A, which the inventory's recommendation had
+wrong.** The inventory put "the gate" in Effort B alongside the clock sweep. That
+cannot be right: ADR-292's T1 is checked by this gate, and ADR-292 depends on Effort A.
+The resolution is that D6's rule splits cleanly along the halves it already named —
+**the `Math.random()` ban is Effort A, the clock removal is Effort B.** The 32 id sites
+lose their random half here and keep their clock, which is invisible to Acceptance 1
+and visible only to Acceptance 7. So Acceptance 6 moves into Effort A and only
+Acceptance 7 leaves.
+
+**A3.3 — naming resolution moves to ADR-292, which already owned it.** A2 derived a
+mechanism for resolving stream names from registration identity. ADR-292 D11 had
+already ruled the same principle a session earlier, by a different mechanism (the Chord
+compiler prefixes `story:<id>/` from the declared `id:`), and had already stated that
+this ADR's unnamespaced-name refusal "must fire on the resolved name, never on what the
+author typed." Two mechanisms for one rule in two ADRs is the drift that made every
+insight get folded backward into the ACCEPTED document instead of forward into the one
+that owns the subject. D2a now states only what Effort A needs at runtime and cites
+ADR-292 for resolution.
+
+**A3.4 — B-1: the interceptor registry is not where two amendments said it was.** A1
+and A2 both had the `SeededRandom` parameter supplied by "the engine-side interceptor
+registry (ADR-208, engine-owned per world)". Verified: bindings are a private `Map` on
+`WorldModel` (`world/WorldModel.ts:553`, written at `:782`); ADR-208's ownership
+language is about lifetime, not location. As written, world-model would have had to
+reach the authority, which D2a forbids. **Ruled: the hook's dispatcher resolves and
+supplies the stream; `WorldModel` stores bindings and knows nothing about streams.**
+
+**A3.5 — B-2: a second, unversioned seed derivation.** D2 froze stream derivation
+behind `SEED_DERIVATION_VERSION` for a stated reason. D9 then introduced a path →
+root-seed derivation with no function, no version, no test, and no guarantee of landing
+inside the `[0, 2^31)` range D2a's own refusal requires. Ruled: one function, one
+constant, two callers.
+
+**Not folded, deliberately.** Three findings from the same review are left for the
+ADRs that own them, rather than fixed here: ADR-290 does not know it depends on this
+ADR (X-1); ADR-292's T5 borrows Acceptance 4, which tests save/restore rather than the
+fork path T5 actually needs (X-4); and the ledger's persistence across the 291/292 seam
+is unowned (X-5). Folding those into this document is the exact mistake A3.3 diagnoses.
+
+**Review record.** The three-ADR review scored this document 12/16 before the re-cut.
+**A3 has not been re-reviewed**, and the re-cut is substantial enough that it should be
+before implementation starts.
+
+**Not changed.** No decision was reversed. D1–D5, D7–D10, the `SeedAuthority`
+interface, the refusal table, and the derivation ruling all stand. A3 narrows scope,
+relocates two rules to the ADRs that own them, and corrects two factual errors about
+where code lives.
+
+## Amendment A4 — 2026-07-31, session 9f136f
+
+Two corrections to A3, from the review re-run over all three ADRs. Both are defects A3
+introduced; neither existed before the re-cut. Recorded as their own amendment rather
+than folded silently into A3, because "the re-cut also broke two things" is exactly the
+kind of fact a later reader needs and a tidy edit would erase.
+
+**A4.1 — Y-1: the re-cut removed what made Acceptance 8 true and left the criterion in
+scope.** Ids keep their clocks under A3's scope line, while Acceptance 8 still forbids a
+`Date.now()`-derived token in rendered output and Acceptance 1 still proves it by diff.
+Before the re-cut this was true by construction, because ids lost their clocks outright;
+after it, the property rests on the Context section's own admission that whether an id
+or timestamp reaches rendered text is "not established". A3's Scope table then described
+Effort A's relationship to the clock as "seed entry only", which was simply wrong.
+**Ruled: Effort A owns a narrow clock obligation — nothing clock-derived reaches
+rendered output — and it is established by an early Acceptance 1 spike rather than
+discovered at the end.** This is the one place Effort A can fail for a reason whose fix
+lives in Effort B, which is why it is checked first.
+
+**A4.2 — Y-2: A3 made an ACCEPTED ADR depend on a DRAFT one.** A3 wrote "who resolves a
+name is ADR-292's decision, not this one," while ADR-292's own Acceptance 1 reads
+"Depends on ADR-291 landing first." The sequencing graph across the three ADRs was
+acyclic before A3 and mutual after it, with the dependency running through an unaccepted
+document carrying unapproved platform changes. The overcorrection was handing away the
+*runtime* rule along with the *authoring* surface. **Ruled: the runtime invariant — every
+name reaching the authority is fully qualified, and the refusal fires on the resolved
+name — is stated here and is self-contained. ADR-292 D11 owns only the surface that
+produces names.** Effort A depends on the runtime half alone and can implement it today.
+
+**Review record.** The re-run scored this document 14/16 before A4, up from 12/16, with
+both remaining failures introduced by A3. **A4 has not been re-reviewed.**
+
+**Not changed.** No decision was reversed. A4 corrects a scope statement and restores
+this ADR's independence. The Effort A/B split, the gate placement, and D1–D10 all stand
+as A3 left them.
 
 ## Session
 
