@@ -1,10 +1,10 @@
 # ADR-290: Test creation is an atomic mode, not a toggle over free play
 
-## Status: DRAFT (2026-07-29, session 47d0be) — open questions unresolved; do not implement
+## Status: DRAFT (2026-07-29, session 47d0be) — open questions unresolved; do not implement. **Amended A1** (2026-08-01, session 06425d, per ADR-294 Q4's resolution): the mode's output artifact is retargeted to ADR-294 golden transcripts, and the previously unrecorded hard dependency on ADR-293 is recorded — see Amendment A1
 
 ## Date: 2026-07-29
 
-## Parent: ADR-282 (play-to-test — the feature this reconsiders; its D1/D2/D3/D4 gestures survive, its *flow* does not), ADR-277 (integrated testing + transcript recording — the machinery underneath), ADR-280 (project model — the folders tests land in), ADR-163/ADR-170 (channels and the framework-free client — why the blessed mark is the client's job), ADR-284 (`sharpee publish` — where the menu option lands).
+## Parent: ADR-282 (play-to-test — the feature this reconsiders; its D1/D2/D3/D4 gestures survive, its *flow* does not), ADR-277 (integrated testing + transcript recording — the machinery underneath), ADR-280 (project model — the folders tests land in), ADR-163/ADR-170 (channels and the framework-free client — why the blessed mark is the client's job), ADR-284 (`sharpee publish` — where the menu option lands), ADR-293 (per-point streams — the determinism a replayable capture requires; dependency recorded by A1), ADR-294 (golden transcripts — the artifact model this mode produces; relationship ruled by 294's Q4).
 
 ## Context — verified, not assumed
 
@@ -196,6 +196,16 @@ fans out to every observer — Tests panel and project tree today.
 - The correctness hole in Context means **transcripts recorded before this
   lands may be silently unreplayable**. Whether existing recordings are
   audited is Q6.
+
+## Amendment A1 (2026-08-01, session 06425d) — output artifact retargeted to goldens; ADR-293 dependency recorded
+
+Ruled by ADR-294 Q4's resolution (David, 2026-08-01): this ADR stays separate — its subject is IDE *flow* (atomic mode, clean-world entry, explicit exit), which ADR-294 does not contradict — but its output artifact changes:
+
+1. **Save Test writes a `.transcript` plus a blessed `.golden`** (ADR-294 D1/D7), not per-turn `[OK]` fragments. The capture *is* the recording: the mode plays the session, and saving blesses the whole rendered output as the golden. Chains (D4's checkpoint case) write one `.golden` per member per ADR-294 D7.
+2. **Per-turn blessing becomes optional assertion-tier annotation.** D5's vouch mark survives as the gesture for adding an assertion-tier annotation to a turn (ADR-282's selection semantics → `[OK: contains "…"]`), layered *on top of* the golden rather than being the test's substance. Open Question 2 (fragment visibility) survives, rescoped to this annotation layer.
+3. **The mode depends on ADR-293, now recorded** (the note this ADR had been missing since ADR-293's Phase A began): a capture is only a replayable test because output at a pinned seed is deterministic. Entering the mode mints a seed, reports it, and writes it into the transcript header (`seed:`, ADR-294 D3). Without a pinned seed the saved artifact would be exactly the non-replayable capture D1 exists to make unrepresentable — D1's clean-world guarantee and the seed pin are the same correctness requirement in two dimensions (state and randomness).
+
+ADR-294 is ACCEPTED; its rebuild is sequenced behind the D12 arc (handler access → ADR-293 Phase B → rebuild), so this mode's implementation follows that arc too. This ADR's own open questions remain unresolved and it stays DRAFT.
 
 ## Open Questions
 
