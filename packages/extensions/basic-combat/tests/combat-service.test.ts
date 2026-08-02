@@ -381,3 +381,99 @@ describe('createCombatService', () => {
     expect(service.getHealthStatus).toBeDefined();
   });
 });
+
+describe('materializeAttack (ADR-293 D8 — forced-class representatives)', () => {
+  const service = new CombatService();
+
+  function combatants(health: number, maxHealth = 10) {
+    const attacker = createMockEntity('npc', 'Guard', {
+      [TraitType.COMBATANT]: new CombatantTrait({ skill: 50, baseDamage: 2 }),
+    });
+    const target = createMockEntity('hero', 'Hero', {
+      [TraitType.COMBATANT]: new CombatantTrait({ skill: 50 }),
+      [TraitType.HEALTH]: new HealthTrait({ health, maxHealth }),
+    });
+    return { attacker, target };
+  }
+
+  it('missed leaves health untouched with zero damage', () => {
+    const { attacker, target } = combatants(10);
+    const result = service.materializeAttack('missed', attacker, target);
+
+    expect(result).toMatchObject({
+      hit: false,
+      damage: 0,
+      targetNewHealth: 10,
+      targetKnockedOut: false,
+      targetKilled: false,
+      messageId: CombatMessages.ATTACK_MISSED,
+    });
+  });
+
+  it('killed zeroes health and consumes exactly the remaining health as damage', () => {
+    const { attacker, target } = combatants(7);
+    const result = service.materializeAttack('killed', attacker, target);
+
+    expect(result).toMatchObject({
+      hit: true,
+      damage: 7,
+      targetNewHealth: 0,
+      targetKilled: true,
+      targetKnockedOut: false,
+      messageId: CombatMessages.ATTACK_KILLED,
+    });
+  });
+
+  it('knocked_out lands alive inside the knock-out band', () => {
+    const { attacker, target } = combatants(10, 10); // band floor = 2
+    const result = service.materializeAttack('knocked_out', attacker, target);
+
+    expect(result.targetKnockedOut).toBe(true);
+    expect(result.targetKilled).toBe(false);
+    expect(result.targetNewHealth).toBe(2);
+    expect(result.damage).toBe(8);
+    expect(result.messageId).toBe(CombatMessages.ATTACK_KNOCKED_OUT);
+  });
+
+  it('hit uses the natural damage formula but never lands in the knock-out band or kills', () => {
+    const { attacker, target } = combatants(4, 10); // natural damage 2 → 2 = band floor; clamp to 3
+    const result = service.materializeAttack('hit', attacker, target);
+
+    expect(result.hit).toBe(true);
+    expect(result.targetKilled).toBe(false);
+    expect(result.targetKnockedOut).toBe(false);
+    expect(result.targetNewHealth).toBe(3); // clamped above floor(10 * 0.2)
+    expect(result.damage).toBe(1);
+  });
+
+  it('hit at lethal natural damage clamps above the band — never kills', () => {
+    const attacker = createMockEntity('npc', 'Ogre', {
+      [TraitType.COMBATANT]: new CombatantTrait({ skill: 50, baseDamage: 8 }),
+    });
+    const target = createMockEntity('hero', 'Hero', {
+      [TraitType.COMBATANT]: new CombatantTrait({ skill: 50 }),
+      [TraitType.HEALTH]: new HealthTrait({ health: 3, maxHealth: 10 }),
+    });
+
+    // Natural damage 8 would take health to -5; the forced 'hit' clamps to
+    // knockOutFloor + 1 = 3 (== current health here → zero-damage degrade).
+    const result = service.materializeAttack('hit', attacker, target);
+
+    expect(result.targetKilled).toBe(false);
+    expect(result.targetKnockedOut).toBe(false);
+    expect(result.targetNewHealth).toBe(3);
+    expect(result.damage).toBe(0);
+  });
+
+  it('degrades gracefully when the target is already at the band: zero-damage representative', () => {
+    const { attacker, target } = combatants(1, 10);
+    const knockedOut = service.materializeAttack('knocked_out', attacker, target);
+    expect(knockedOut.targetNewHealth).toBe(1);
+    expect(knockedOut.damage).toBe(0);
+    expect(knockedOut.targetKilled).toBe(false);
+
+    const hit = service.materializeAttack('hit', attacker, target);
+    expect(hit.targetNewHealth).toBe(1);
+    expect(hit.targetKilled).toBe(false);
+  });
+});

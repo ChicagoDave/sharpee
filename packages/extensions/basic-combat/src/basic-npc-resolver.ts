@@ -94,11 +94,9 @@ export const basicNpcResolver: NpcCombatResolver = (
       });
       return { cls: combatResultClass(sampled), value: sampled };
     },
-    (forced) => {
-      throw new Error(
-        `basic-combat.blow.villain: forcing '${forced}' is not implemented until ADR-293 Phase C`
-      );
-    }
+    // Forced path (ADR-293 D8, Phase C): zero draws; consequences apply
+    // downstream (killPlayer / applyCombatResult) exactly as for a draw.
+    (forced) => combatService.materializeAttack(forced, npc, target, weapon || undefined)
   );
 
   // ADR-227 Decision 5 / AC-5: a player killed by an NPC routes through the

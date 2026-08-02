@@ -218,6 +218,108 @@ export class CombatService implements ICombatService {
   }
 
   /**
+   * Build the representative CombatResult for a FORCED outcome class
+   * (ADR-293 D8, Phase C `materialize`): zero draws, deterministic, and
+   * class-consistent — the only draw in `resolveAttack` is the hit roll, so
+   * damage math mirrors the natural formula, with health clamped so the
+   * forced class's invariants hold (a forced 'hit' never lands in the
+   * knocked-out band or kills; a forced 'knocked_out' stays alive).
+   *
+   * @param cls the forced outcome class
+   * @param attacker attacking entity (message data / damage formula)
+   * @param target defending entity (health read, never mutated here —
+   *   consequences apply downstream exactly as for a drawn result)
+   * @param weapon optional weapon (damage formula)
+   */
+  materializeAttack(
+    cls: 'missed' | 'hit' | 'knocked_out' | 'killed',
+    attacker: IFEntity,
+    target: IFEntity,
+    weapon?: IFEntity
+  ): CombatResult {
+    const attackerCombat = attacker.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+    const targetCombat = target.get(TraitType.COMBATANT) as CombatantTrait | undefined;
+    const targetHealth = target.get(TraitType.HEALTH) as HealthTrait | undefined;
+    const weaponTrait = weapon?.get(TraitType.WEAPON) as WeaponTrait | undefined;
+
+    const messageData: Record<string, unknown> = {
+      attackerName: attacker.name,
+      targetName: target.name,
+      weaponName: weapon?.name,
+      target: nounPhraseFor(target),
+    };
+
+    const currentHealth = targetHealth?.health ?? 10;
+    const maxHealth = targetHealth?.maxHealth ?? 10;
+    const knockOutFloor = Math.floor(maxHealth * 0.2);
+
+    if (cls === 'missed') {
+      return {
+        hit: false,
+        damage: 0,
+        targetNewHealth: currentHealth,
+        targetKnockedOut: false,
+        targetKilled: false,
+        messageId: CombatMessages.ATTACK_MISSED,
+        messageData,
+      };
+    }
+
+    if (cls === 'killed') {
+      messageData.damage = currentHealth;
+      return {
+        hit: true,
+        damage: currentHealth,
+        targetNewHealth: 0,
+        targetKnockedOut: false,
+        targetKilled: true,
+        messageId: CombatMessages.ATTACK_KILLED,
+        messageData,
+      };
+    }
+
+    if (cls === 'knocked_out') {
+      // Alive but in the knock-out band; degrades to zero damage when the
+      // target is already at or below the band.
+      const newHealth = Math.min(currentHealth, Math.max(1, knockOutFloor));
+      const damage = currentHealth - newHealth;
+      messageData.damage = damage;
+      return {
+        hit: true,
+        damage,
+        targetNewHealth: newHealth,
+        targetKnockedOut: true,
+        targetKilled: false,
+        messageId: CombatMessages.ATTACK_KNOCKED_OUT,
+        messageData,
+      };
+    }
+
+    // 'hit': the natural damage formula (deterministic — no draw involved),
+    // clamped above the knock-out band so the forced class stays 'hit'.
+    const baseDamage = attackerCombat?.baseDamage ?? 1;
+    const weaponDamage = weaponTrait?.damage ?? 0;
+    let totalDamage = baseDamage + weaponDamage;
+    if (weaponTrait?.isBlessed && targetCombat?.isUndead) {
+      totalDamage = Math.floor(totalDamage * 1.5);
+    }
+    const armor = targetCombat?.armor ?? 0;
+    const naturalDamage = Math.max(1, totalDamage - armor);
+    const newHealth = Math.max(knockOutFloor + 1, currentHealth - naturalDamage);
+    const damage = Math.max(0, currentHealth - newHealth);
+    messageData.damage = damage;
+    return {
+      hit: true,
+      damage,
+      targetNewHealth: Math.min(currentHealth, newHealth),
+      targetKnockedOut: false,
+      targetKilled: false,
+      messageId: CombatMessages.ATTACK_HIT,
+      messageData,
+    };
+  }
+
+  /**
    * Check if an entity can attack another
    */
   canAttack(attacker: IFEntity, target: IFEntity): CombatValidation {

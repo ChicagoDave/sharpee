@@ -78,11 +78,9 @@ export const BasicCombatInterceptor: ActionInterceptor = {
         });
         return { cls: combatResultClass(sampled), value: sampled };
       },
-      (forced) => {
-        throw new Error(
-          `basic-combat.blow.hero: forcing '${forced}' is not implemented until ADR-293 Phase C`
-        );
-      }
+      // Forced path (ADR-293 D8, Phase C): zero draws; applyCombatResult
+      // below applies the consequence exactly as for a drawn result.
+      (forced) => combatService.materializeAttack(forced, attacker, target, weapon || undefined)
     );
 
     // Apply combat result to target (handles health, death, inventory dropping)

@@ -93,6 +93,21 @@ export declare class CombatService implements ICombatService {
      */
     resolveAttack(context: CombatContext): CombatResult;
     /**
+     * Build the representative CombatResult for a FORCED outcome class
+     * (ADR-293 D8, Phase C `materialize`): zero draws, deterministic, and
+     * class-consistent — the only draw in `resolveAttack` is the hit roll, so
+     * damage math mirrors the natural formula, with health clamped so the
+     * forced class's invariants hold (a forced 'hit' never lands in the
+     * knocked-out band or kills; a forced 'knocked_out' stays alive).
+     *
+     * @param cls the forced outcome class
+     * @param attacker attacking entity (message data / damage formula)
+     * @param target defending entity (health read, never mutated here —
+     *   consequences apply downstream exactly as for a drawn result)
+     * @param weapon optional weapon (damage formula)
+     */
+    materializeAttack(cls: 'missed' | 'hit' | 'knocked_out' | 'killed', attacker: IFEntity, target: IFEntity, weapon?: IFEntity): CombatResult;
+    /**
      * Check if an entity can attack another
      */
     canAttack(attacker: IFEntity, target: IFEntity): CombatValidation;

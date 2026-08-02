@@ -44,7 +44,7 @@ import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed } from '@sharpee/core';
+import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
@@ -1808,6 +1808,27 @@ export class GameEngine {
    */
   getRandomService(): EngineRandomService {
     return this.randomService;
+  }
+
+  /**
+   * Enable or disable the per-draw random trace (ADR-293 D16). While enabled,
+   * every firing — drawn or forced — emits an `ISystemEvent` on the system
+   * event channel (`subsystem: Subsystems.RANDOM`, `type: 'draw'`,
+   * `severity: 'debug'`, data: `IRandomTraceData`). Off by default; opted into
+   * by the transcript runner, `--play`, and the IDE — a published game emits
+   * none (AC-14).
+   */
+  setRandomTraceEnabled(enabled: boolean): void {
+    this.randomService.setTraceSink(
+      enabled
+        ? (record) =>
+            this.systemEventSource.emit(
+              createSystemEvent(Subsystems.RANDOM, 'draw', record, {
+                severity: 'debug'
+              })
+            )
+        : undefined
+    );
   }
 
   /**

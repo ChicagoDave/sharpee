@@ -46,6 +46,8 @@ export type {
   TranscriptStartRecord,
   CommandResultRecord,
   TranscriptEndRecord,
+  CoveragePoint,
+  CoverageRecord,
   RunEndRecord,
   TestResultRecord,
 } from './test-results.js';
@@ -55,6 +57,7 @@ export {
   isTranscriptStartRecord,
   isCommandResultRecord,
   isTranscriptEndRecord,
+  isCoverageRecord,
   isRunEndRecord,
   isTestResultRecord,
 } from './test-results.js';

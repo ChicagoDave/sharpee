@@ -25,6 +25,7 @@ import {
 import { loadStory, findTranscripts, TestableGame } from './story-loader.js';
 import { TranscriptResult, TestRunResult } from './types.js';
 import { aggregateTestRun } from './aggregate.js';
+import { CoverageTracker, formatCoverageSummary, formatCoverageBreakdown } from './coverage.js';
 
 interface CliOptions {
   storyPath: string;
@@ -37,6 +38,7 @@ interface CliOptions {
   outputDir: string | null;
   play: boolean;
   bless: boolean;
+  coverage: boolean;
 }
 
 /**
@@ -53,7 +55,8 @@ function parseArgs(args: string[]): CliOptions {
     chain: false,
     outputDir: null,
     play: false,
-    bless: false
+    bless: false,
+    coverage: false
   };
 
   let i = 0;
@@ -73,6 +76,8 @@ function parseArgs(args: string[]): CliOptions {
       options.chain = true;
     } else if (arg === '--bless') {
       options.bless = true;
+    } else if (arg === '--coverage') {
+      options.coverage = true;
     } else if (arg === '--play' || arg === '-p') {
       options.play = true;
     } else if (arg === '--output-dir' || arg === '-o') {
@@ -117,6 +122,9 @@ Options:
   -a, --all              Run all transcripts in the story's tests/ directory
   -c, --chain            Chain transcripts (don't reset game state between them)
   --bless                Create/overwrite golden recordings (ADR-294 D1)
+  --coverage             Print the full per-point outcome-class coverage
+                         breakdown (ADR-293 D15); the one-line summary always
+                         prints, and --output-dir also writes the report JSON
   -v, --verbose          Show detailed output for each command
   --emit-traits          Show entity traits for objects referenced in events (implies --verbose)
   -s, --stop-on-failure  Stop on first failure
@@ -329,6 +337,9 @@ async function main(): Promise<void> {
   // Run all transcripts
   const results: TranscriptResult[] = [];
 
+  // ADR-293 D15: one tracker per run — a chain is one session, one report.
+  const coverageTracker = new CoverageTracker();
+
   for (const transcriptPath of transcriptPaths) {
     // Parse the transcript
     const transcript = parseTranscriptFile(transcriptPath);
@@ -379,7 +390,8 @@ async function main(): Promise<void> {
       // transcript still reported green. The in-repo bundle has always threaded it
       // (scripts/bundle-entry.js), which is why the divergence only surfaced once
       // `test:npm --local` could reach the install step.
-      testingExtension: game!.testingExtension ?? undefined
+      testingExtension: game!.testingExtension ?? undefined,
+      coverage: coverageTracker
     });
 
     results.push(result);
@@ -404,15 +416,30 @@ async function main(): Promise<void> {
     reportTestRun(runResult, { verbose: options.verbose });
   }
 
+  // ADR-293 D15: the one-line summary always prints; --coverage adds the
+  // full per-point breakdown.
+  const coverageReport = coverageTracker.buildReport();
+  console.log();
+  console.log(formatCoverageSummary(coverageReport));
+  if (options.coverage) {
+    console.log();
+    console.log(formatCoverageBreakdown(coverageReport));
+  }
+
   // Write results to files if output directory specified
   if (options.outputDir) {
     const timestamp = generateTimestamp();
     const jsonPath = writeResultsToJson(runResult, options.outputDir, timestamp);
     const reportPath = writeReportToFile(runResult, options.outputDir, timestamp);
+    // ADR-293 D15: the full per-point breakdown rides --output-dir alongside
+    // the timestamped results.
+    const coveragePath = path.join(options.outputDir, `coverage-${timestamp}.json`);
+    fs.writeFileSync(coveragePath, JSON.stringify(coverageReport, null, 2), 'utf-8');
     console.log();
     console.log(`Results written to:`);
-    console.log(`  JSON:   ${jsonPath}`);
-    console.log(`  Report: ${reportPath}`);
+    console.log(`  JSON:     ${jsonPath}`);
+    console.log(`  Report:   ${reportPath}`);
+    console.log(`  Coverage: ${coveragePath}`);
   }
 
   // Exit with appropriate code

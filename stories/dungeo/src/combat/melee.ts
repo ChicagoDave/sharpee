@@ -236,7 +236,22 @@ export function resolveBlow(
 
   result.outcome = outcome;
 
-  // Apply outcome to defender strength (melee.137:236-254)
+  return applyOutcomeToResult(result, outcome, def, isHeroAttacking);
+}
+
+/**
+ * Apply a blow outcome's defender consequences to a result (melee.137:236-254).
+ *
+ * Shared by the drawn path (resolveBlow's tail) and the forced path
+ * (materializeBlow), so a forced class carries exactly the consequences a
+ * drawn one does — ADR-293 D8's representative-outcome contract.
+ */
+function applyOutcomeToResult(
+  result: BlowResult,
+  outcome: MeleeOutcomeType,
+  def: number,
+  isHeroAttacking: boolean
+): BlowResult {
   switch (outcome) {
     case MeleeOutcome.MISSED:
     case MeleeOutcome.HESITATE:
@@ -286,6 +301,33 @@ export function resolveBlow(
   }
 
   return result;
+}
+
+/**
+ * Build the representative BlowResult for a FORCED outcome (ADR-293 D8):
+ * zero draws, same consequence math as a drawn blow — `applyOutcomeToResult`
+ * is the one shared implementation, so forcing proves the same downstream
+ * path a natural draw exercises.
+ *
+ * @param outcome the forced numeric outcome
+ * @param def defender strength before the blow
+ * @param isHeroAttacking hero-vs-villain asymmetry (D10 — UNCONSCIOUS negates
+ *   defender strength only for hero blows)
+ */
+export function materializeBlow(
+  outcome: MeleeOutcomeType,
+  def: number,
+  isHeroAttacking: boolean
+): BlowResult {
+  const result: BlowResult = {
+    outcome,
+    newDefenderStrength: def,
+    defenderStaggered: false,
+    defenderLostWeapon: false,
+    defenderKilled: false,
+    defenderUnconscious: false,
+  };
+  return applyOutcomeToResult(result, outcome, def, isHeroAttacking);
 }
 
 /**
