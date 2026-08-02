@@ -1,0 +1,157 @@
+# Session Plan: `[OK: any]` default change (ADR-277 D5 / ADR-293 Consequences follow-up)
+
+**Created**: 2026-08-02
+**Status**: APPROVED (2026-08-02, session 1d3b6f) — David ruled the three Open Decisions (1=a `[SKIP]` + comments; 2=leave fernhill entirely to #209, no opportunistic re-record claimed; 3=b new GH issue for the devkit debt) and approved implementation. Execution order: Phase 3 → Phase 2 → Phase 1 (the macOS-gated Swift phase last, so everything verifiable in this environment lands first).
+**Overall scope**: The transcript grammar removal already happened (ADR-294 D2) — `[OK: any]` is a named parse error today. What remains is (1) the Chord Writer (Swift IDE)'s recorder, which still emits the removed form for every untagged play turn, producing transcripts the current parser rejects on save; (2) three ADRs (277 D5, 282 D2, and 293's Consequences line) that still document or reference the removed form as current/open; (3) one currently-failing TypeScript test (`scripts/__tests__/cli-restore.test.ts`) whose fixture uses removed grammar. This plan closes all three. It does **not** touch `packages/transcript-tester` (grammar side is done and out of scope) and does **not** fold in fernhill's broader `contains_any`/DO-UNTIL migration (GH #209) or a newly-discovered sibling debt item in `packages/devkit`'s fixture story (Finding 7) — both are recorded and left to their own tracking.
+**Bounded contexts touched**: N/A — infrastructure/tooling (transcript-testing grammar, an IDE authoring tool, ADR bookkeeping), not domain behavior. No `docs/ddd/notation.yaml` exists and this work introduces no domain concepts, so the plan is framed in plain technical terms per the "DDD does not apply" rule.
+**Key domain language**: N/A (see above). Relevant technical vocabulary — golden tier, assertion tier, bless, untagged turn, checkpoint — comes from ADR-282/294 and is used as-is below.
+
+## References consulted
+- `docs/architecture/adrs/adr-277-ide-integrated-testing.md` — ACCEPTED and IMPLEMENTED. D5's "Capture format" text still documents `[OK: any]` as the current per-turn draft-capture default for untagged recorder turns; D6 scopes the ADR's platform authorization; Acceptance 2 already carries a 2026-08-01 superseded-note (added when ADR-294 D4 removed `[OK: any]`/`[ENSURES]`) that this plan's Phase 2 uses as its annotation-style template — D5 itself was never given the matching note, which is the gap this plan closes.
+- `docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md` — ACCEPTED and IMPLEMENTED (commit `118cd95a`). D2 is the load-bearing decision: "`[OK: any]` is removed — presence-only assertion has no remaining justification once goldens exist, and it demonstrably masks failure. `[SKIP]` survives for commands whose output is deliberately not asserted." D4 lists `[OK: any]` among "the coping machinery ... deleted." D7 defines the `.golden` sibling-file mechanism and the existing `--bless` CLI flag that produces it — relevant to Open Decision 1's option (c). AC-4 pins the parse-error behavior this plan's Findings verify empirically.
+- `docs/architecture/adrs/adr-282-play-to-test-tagging.md` — ACCEPTED. D1 defines the per-turn bless model this plan must not violate: "Tagged means asserted; untagged means the command merely advances state." D2 documents the current (now stale) serialization contract, including the line this plan's Phase 2 amends: "Untagged turn → `> command` + `[OK: any]`, with the captured response preserved as `#` comment lines — ADR-277 D5's existing recorder default." Acceptance 1 and 3 (zero-bless-turns refused) constrain any replacement format: it must still satisfy "every command needs an assertion" without turning untagged turns into de-facto blessed ones.
+- `docs/architecture/adrs/adr-293-choice-points-per-point-streams.md` — names this exact follow-up in its Consequences section: "with outcomes reproducible and selectable, verbatim assertion becomes the natural default... `[OK: any]` can stop being the default (ADR-277 D5)." This plan is that follow-up, explicitly deferred out of ADR-293 Phase D's scope (see next reference).
+- `docs/work/adr-293-phase-d/plan.md` — Phase D's Open Decision 3 considered exactly this question and ruled it **out of scope for Phase D**, recording it as "a live question for a separate ADR-277 ruling" — this plan is that separate ruling. Also the structural/format template this plan follows (References consulted, Open Decisions with recommendations ruled up front, AC mapping, per-phase tier/budget/verification).
+- `docs/context/project-profile.md` — stack/convention constraints (generated 2026-08-02, same day): pnpm workspace + tsf build, `./repokit`/`./sharpee` split (ADR-187); confirms no macOS/Swift CI exists for `tools/ide`.
+- `docs/context/session-20260802-1720-main.md` — this session's own prior scoping note (recorded before this plan was written): grammar removal already happened; recorder is the live defect; ADR-277 D5 text is stale; fernhill's two `[OK: any]` files are recorder output, covered by #209; `cli-restore.test.ts:49` builds a fixture with removed grammar.
+- `CLAUDE.md` (project root) — MAJOR DIRECTIONS bind this plan three ways: (1) "Platform changes require discussion first" for any `packages/` change — verified moot here since no `packages/transcript-tester` change is needed (Finding 1); (2) "Never delete files without confirmation" — no deletions are planned; (3) "Never auto-retry failed builds or tests" — Phase 1's Swift verification failing on David's machine is reported and awaited, not looped on.
+- GH issue #209 (`fernhill: migrate 12 transcripts off removed ADR-294 directives`) — scope boundary reference for Open Decision 2.
+- GH issues #192, #193, #194 (Chord Writer recording bugs: mid-play recording restart, bless discoverability, blessed-turn marking) — reviewed for overlap; see Finding 9. None fold in.
+
+## Findings that shape this plan (verified against the working tree, 2026-08-02)
+
+1. **The grammar removal already happened and is pinned by tests.** `packages/transcript-tester/src/parser.ts:125-126` rejects `[OK: any]` by name: `'[OK: any] was removed (ADR-294 D2) — presence-only assertion masks failure; use a golden recording or [OK: contains "..."], or [SKIP] for deliberately unasserted output'`. Pinned by `packages/transcript-tester/tests/ok-any.test.ts`, `removed-forms.test.ts`, and `golden-runner.test.ts` (the "executes nothing when the transcript has parse errors" case). **No `packages/transcript-tester` change is needed** — confirming the task's assumption.
+
+2. **The live defect is entirely in the Chord Writer's recorder.** `tools/ide/SharpeeIDE/Test/RecordingSession.swift` still implements ADR-277 D5's superseded capture format at four locations: the file header comment (lines 3-16), the `hasAuthorAssertions` doc comment (~247), the `openingTurn` static constant (263-269, literally the string `"[OK: any]"`), and `assertionLines(for:)`'s `.untagged` case (331-344, `return ["[OK: any]"] + ...`). Every transcript the recorder saves with any untagged turn is therefore unparseable by the current runner. `TestPanelView.swift:299` also carries a doc-comment example referencing `[OK: any]` as a non-re-bless-candidate failure kind (cosmetic, no logic depends on it).
+
+3. **Blast radius across Swift tests**: `grep -c "OK: any"` across `tools/ide/SharpeeIDETests/` shows `RecordingSaveAsTestTests.swift` (multiple tests, see Finding 4), `RecordingSessionTests.swift` (8), `RecordingSerializationTests.swift` (5), `RecordingChainTests.swift` (1), `RecordingChainSaveTests.swift` (1), `ReblessTests.swift` (1), `ReblessRealPathTests.swift` (1). All reference the current emission format and need review when it changes; most only need the literal string updated, but real-path tests (rule 13a) need their assertions checked against the new grammar's actual pass/fail semantics.
+
+4. **Empirically proved: a real-path Swift test's own fixture currently fails against the real CLI, contradicting its docstring.** `RecordingSaveAsTestTests.swift:232` (`testAHandWrittenTranscriptStillRunsGreenThroughTheIDEsRunner`) asserts a hand-written transcript containing `[OK: contains "..."]`, `[OK: any]`, and `[ENSURES: ...]` together "must be unaffected by this ADR" and expects `.passed` with 3 commands passed. I reproduced this exact fixture content and ran it through the real `dist/cli/sharpee.js` against `stories/dungeo`:
+   ```
+   ✗ ERROR: Line 8: [OK: any] was removed (ADR-294 D2) ...; Line 9: [ENSURES:] was removed (ADR-294 D4) ...
+   ```
+   This test, if run today on macOS, fails. It was written before ADR-294 removed `[ENSURES:]`/`[OK: any]` and never updated — a second, independent instance of the same doc/reality drift as Finding 2, this time inside a test asserting the *opposite* of current behavior.
+
+5. **No Swift toolchain or CI exists for `tools/ide` in this environment.** `which swift` / `which xcodebuild` return nothing in this Linux container; `.github/workflows/` has zero Swift/macOS/xcodebuild references; `tools/ide/README.md` states plainly: "The IDE's test suite runs locally in Xcode only (no macOS CI job yet." **Any Swift-side phase in this plan cannot be verified in this session** — it requires David to run `xcodegen generate && xcodebuild -project SharpeeIDE.xcodeproj -scheme SharpeeIDE -destination 'platform=macOS' test` locally and report the result. This gates Phase 1's completion.
+
+6. **Empirically proved: `scripts/__tests__/cli-restore.test.ts` is currently failing, not merely stale.** Its fixture-transcript string (line ~49) places `[SEED: 4242]` body-positional (removed per ADR-294 D3 — must be a `seed:` header field) and uses `[OK: any]` (removed per D2). I ran `npx vitest run scripts/__tests__/cli-restore.test.ts`:
+   ```
+   ❯ scripts/__tests__/cli-restore.test.ts (3 tests | 3 skipped) 60ms
+   FAIL  scripts/__tests__/cli-restore.test.ts
+   Error: fixture $save did not produce .../clitest-restore-fixture.json:
+     ✗ ERROR: Line 5: [SEED: N] was removed (ADR-294 D3) ...; Line 8: [OK: any] was removed (ADR-294 D2) ...
+   Test Files  1 failed (1)
+   Tests  3 skipped (3)
+   ```
+   The whole suite fails in `beforeAll`; all three real-path `--restore` tests never run. This is a live, currently-red test in the working tree today — not masked by stale `dist`, not a hypothetical.
+
+7. **New finding, beyond the task's briefing: a sibling debt item in `packages/devkit`'s fixture story, same failure mode, different directive.** 20 files under `packages/devkit/fixtures/basic-story/tests/transcripts/*.transcript` use `[OK: contains_any ...]` (also removed, ADR-294 D2 — replacement is `[OK: contains "..."]`). This fixture is consumed by `tools/repokit/src/commands/test-npm.test.ts`'s gated real-path integration test (`DEVKIT_INTEGRATION=1 && existsSync(DEFAULT_STAGING)` — the ADR-180 npm-consumer parity gate), which asserts `result.failed === 0`. That test is not runnable in this session (it requires a full `tsf build --npm` staging pass, 600s timeout) but by direct inspection it **would fail** whenever `DEVKIT_INTEGRATION=1` actually runs, for the same reason Finding 6 does. **This is `contains_any`, not `[OK: any]`, and a separate corpus (devkit fixture, not fernhill or dungeo) — out of this plan's named scope.** Recommend a new GH issue analogous to #209 rather than folding it in here (see Open Decision 3).
+
+8. **A third authoring surface also documents removed grammar.** `tools/vscode-ext/src/extension.ts` (the VS Code extension — separate from the Chord Writer Swift IDE) ships autocomplete/hover text at lines ~49, 72, 99, 111 presenting `contains_any`, `[ENSURES: condition]`, and `[WHILE: condition]` as live grammar. This teaches authors syntax that errors at parse time. Small (4 string edits), no logic risk, no discussion warranted — folded into Phase 2 rather than raised as an Open Decision.
+
+9. **GH issues #192, #193, #194 reviewed — no overlap.** #192 (recording started mid-play writes an unpassable transcript — `RecordingSession.start()` doesn't reset world state), #193 (Bless is undiscoverable / selection silently changes assertion semantics), #194 (blessed turns aren't marked in the Play panel) are each a distinct Chord Writer defect. None is a duplicate of, or superseded by, this plan's recorder-emission fix. Not folded in.
+
+10. **ADR-282 D2 needs the same amendment as ADR-277 D5.** Its own text (line 88) still states "Untagged turn → `> command` + `[OK: any]` ... ADR-277 D5's existing recorder default" as current.
+
+11. **ADR-277's Acceptance 2 already models the right annotation style.** Its 2026-08-01 superseded-note ("Superseded by ADR-294 D4 ... this criterion now reads: ...") is the pattern this plan's Phase 2 amendments should match — append a dated note, do not rewrite the original text as if it were never true.
+
+12. **Two more stale-text instances surfaced by `plan-review` (folded in before David's ruling, since they're documentation-completeness gaps, not design questions):**
+    - **ADR-282 is already internally inconsistent, independent of this plan.** Its own Consequences section carries a 2026-08-01 note: "Superseded by ADR-294 D4 ... untagged turns can no longer fall back to `[OK: any]`." But **D2** (line 88) and **Acceptance 1** (line 171, "the untagged turn carrying `[OK: any]` + comment lines") were never updated to match and carry no superseded-note of their own — Acceptance 1 in particular has zero annotation. Phase 2 must amend **both** D2 and Acceptance 1, cross-referencing the existing Consequences note rather than treating the drift as newly discovered.
+    - **ADR-277 Acceptance 7 already has a superseded-note, but it covers the wrong supersession.** Its note ("Superseded by ADR-282 Acceptance 3 ... zero-bless saves are refused") addresses only the bless-refusal change; it says nothing about ADR-294 D2 removing the `[OK: any]` grammar itself, so the literal criterion text "(per-turn `[OK: any]` + `#`-comment responses)" still reads as an accurate mechanism description on that axis. Phase 2 must append a **second**, distinct note to Acceptance 7 for the grammar removal, alongside the existing one — not replace it.
+
+13. **Found during Phase 3 implementation (2026-08-02): `[SKIP]`'s runner semantics contradict ADR-294 D2's text — it skips *execution*, not just assertion.** `runner.ts:901-916` returns from `runCommand` before the command executes when a `skip`/`todo` assertion is present. But ADR-294 D2 says "`[SKIP]` survives for commands whose output is deliberately not asserted" (output-not-asserted, not command-not-run), and both in-repo usages (`grue-death-simple.transcript:51`, `grue-mechanics.transcript:127` — "We just verify no crash - skip specific output check") intend execute-without-asserting. Both usages are the *terminal* line of their transcript, so the divergence is currently invisible in the corpus. Empirically proved via the Phase 3 fixture: a `[SKIP]`ed `> north` before `$save` produced a turn-0 save. **Consequence: Decision 1's ruled format (a) is unsound as-is** — a recorder emitting `[SKIP]` for untagged turns would produce replays where untagged commands never run and blessed turns execute against the wrong world state. See Open Decision 4.
+
+---
+
+## Open decision points — for David, before implementation
+
+### 1. What should the recorder emit for an untagged (not-blessed) turn now?
+
+The original justification for presence-only capture — "story text is deliberately RNG-varied ... a verbatim expected-output capture would be brittle on replay" (ADR-277 D5) — is dead: ADR-293/294 made output deterministic at a pinned seed. Three candidates:
+
+- **(a) `[SKIP]` + `#`-comment response.** The parser's own named replacement for "deliberately unasserted output" (parser.ts:126). Untagged turns keep meaning exactly what ADR-282 D1 says they mean — "the command merely advances state" — and `[SKIP]` is the DSL's own word for "asserts nothing on purpose." Response stays captured as `#`-comments for the author's reference, unchanged from today. Mechanical fix: 4 string-literal call sites in `RecordingSession.swift`, no new plumbing, no new CLI invocation from the save flow.
+- **(b) Verbatim capture — `[OK]` + expected-text block from the actual response**, since output is now deterministic. Rejected on inspection: this makes every untagged turn assert as strongly as a blessed one, which directly contradicts ADR-282 D1's designed distinction ("tagged means asserted; untagged means the command merely advances state") — an author who never reviewed or vouched for a response would have it locked into the regression suite anyway, and any unrelated prose edit elsewhere in the room breaks tests nobody meant to write. The dead justification was about *fragility*, not about *whether untagged turns should assert* — killing the fragility argument doesn't resurrect the case for auto-asserting untagged turns.
+- **(c) Golden-tier: the whole saved session gets a `.golden` recording at save time** (the `--bless` CLI flag already does exactly this mechanically — ADR-294 D7), and untagged turns carry no per-turn assertion at all. Rejected as this plan's default: it requires the save flow to shell out to `sharpee test --bless` after writing the `.transcript` (more plumbing than (a)), and it sits in tension with ADR-282 Acceptance 3's "a test with no assertions of the author's is not a test" — a session with one blessed turn and many untagged ones would get *all* of them regression-protected via the whole-session golden, which is a stronger guarantee than the per-turn bless model promises and could mask exactly the kind of unreviewed-content drift D1 is designed to surface. Not ruled out for the future (D294's Consequences note that ADR-290's IDE test-creation mode is expected to move toward goldens generally) — but it's a bigger, separately-discussable design shift, not this plan's minimal fix.
+- **Recommendation: (a)** — smallest change, uses the parser's own suggested replacement, preserves ADR-282 D1's semantics exactly, and matches the "untagged = deliberately unasserted" framing everywhere else in the DSL (`[SKIP]` already exists for this in hand-written assertion-tier transcripts per ADR-294 D2).
+- **Ruled (2026-08-02, David): (a)** — `[SKIP]` + `#`-comment response. **Re-opened same day by Finding 13** (`[SKIP]` skips execution, so (a) as ruled would break replay state for untagged turns) — superseded by Open Decision 4's ruling.
+
+### 4. (Added 2026-08-02, from Finding 13) `[SKIP]` skips execution — fix the runner semantics, or pick a different recorder format?
+
+- **(a) Fix `[SKIP]` to execute-without-asserting** — a `packages/transcript-tester` runner change (platform surface; this decision point is the CLAUDE.md-required discussion). Aligns the runner with ADR-294 D2's own text ("output is deliberately not asserted") and both corpus usages' stated intent ("we just verify no crash"); both are terminal lines, so no existing transcript's behavior changes observably. Keeps Decision 1's ruling (a) sound exactly as ruled. `[TODO]` shares the code path — same treatment (execute, report as skipped/todo, don't assert) keeps the pair consistent.
+- **(b) Keep the runner as-is; re-open Decision 1 for a different format** — verbatim capture and golden-at-save were already rejected on design grounds; the remaining alternative is new grammar (a presence-only form), which ADR-294 D2 explicitly killed. Unattractive.
+- **Recommendation: (a)** — the runner behavior is a defect against the ADR's documented semantics, not a design choice worth preserving; fixing it unblocks the ruled recorder format with no observable corpus change (verified: both in-repo `[SKIP]`s are terminal).
+
+### 2. Should fernhill's two `[OK: any]`-only recorder-output files be re-recorded as this plan's real-path acceptance evidence, or stay entirely with #209?
+
+`stories/fernhill/tests/transcripts/recorded.transcript` and `stories/fernhill/walkthroughs/wt-02-fernhill-my-test.transcript` are both recorder output (Finding 2's defect, not authored by hand) and are 2 of the 12 transcripts GH #209 already tracks. The other 10 use `contains_any`/DO-UNTIL, unrelated to this plan.
+- **(a) Fold a re-recording into this plan** as Phase 1's acceptance evidence — the most authentic proof the fixed recorder produces parseable output, since it exercises the real WebView → turn-events bridge → save flow end to end (rule 13a's actual real path, stronger than the Swift XCTest fixtures which type in synthetic command/response pairs).
+- **(b) Leave both to #209 entirely** — this plan's acceptance evidence is the Xcode test suite (Finding 5's verification gate); #209's own migration pass re-records or hand-fixes all 12 files together, including these two, in one motion.
+- **Recommendation: hybrid — (b) is the plan's formal acceptance gate, but note the re-recording as a cheap manual sanity check David can do once Phase 1 ships** (open the Chord Writer, play the two fernhill scenarios, record, save) — closing those 2 of #209's 12 items as a side effect, not a blocking phase here. This avoids inflating this plan's scope with an interactive macOS GUI step while still capturing the "real path" evidence rule 13a wants, opportunistically.
+- **Ruled (2026-08-02, David): (b)** — leave all 12 files entirely to #209; this plan claims nothing there.
+
+### 3. The devkit fixture-story debt (Finding 7) — fold in, or a new tracked issue?
+
+- **(a) Fold in** — migrate the 20 `contains_any` fixture transcripts as part of this plan's Phase 3.
+- **(b) New GH issue**, analogous to #209, filed but not actioned here.
+- **Recommendation: (b)** — same rationale David already applied to #209: a story/fixture-corpus-wide directive migration is a separate mechanical cleanup with its own acceptance shape (run each, review, bless/rewrite), not part of "fix the recorder's default and the one currently-red TS test." Folding it in risks the same scope-cascade the Phase D plan warned against.
+- **Ruled (2026-08-02, David): (b)** — new GH issue, not folded in.
+
+---
+
+## AC / Consequences Mapping
+
+| Source line | Status entering this plan | Closes in |
+|---|---|---|
+| ADR-293 Consequences: "`[OK: any]` can stop being the default (ADR-277 D5)" | Already true at the parser level (Finding 1); false at the recorder level (Finding 2) | Phase 1 (Decision 1), Phase 2 (ADR record) |
+| ADR-277 D5's capture-format text | Describes removed grammar as current | Phase 2 |
+| ADR-282 D2's "untagged turn → `[OK: any]`" | Describes removed grammar as current | Phase 2 |
+| `scripts/__tests__/cli-restore.test.ts` currently red (Finding 6) | Failing today, unrelated to any design decision | Phase 3 |
+| `packages/devkit` fixture debt (Finding 7) | New, out of scope | Recorded only — new GH issue, not closed by this plan |
+| GH #209 (fernhill migration) | Unchanged scope; 2 of 12 items may close opportunistically per Decision 2 | Not part of this plan's acceptance |
+
+---
+
+## Phases
+
+### Phase 1: Rule the capture-format decision and fix the Chord Writer recorder
+- **Tier**: Medium
+- **Budget**: 200
+- **Domain focus**: N/A (Chord Writer / IDE recording feature, Swift)
+- **Entry state**: Open Decision 1 ruled by David. (Plan overall PENDING-DISCUSSION — this phase cannot start before that ruling, independent of the plan's overall approval.)
+- **Deliverable**: `RecordingSession.swift`'s four `[OK: any]`-emitting/-documenting locations (file header comment, `hasAuthorAssertions` doc comment, `openingTurn` constant, `assertionLines(for:)`'s `.untagged` case) updated to the ruled format (recommended: `[SKIP]`, response still captured as `#`-comments). `TestPanelView.swift:299`'s doc-comment example updated to match. Every Swift test file identified in Finding 3 reviewed and updated: literal-string assertions changed to match the new emission, and each real-path test (`RecordingSaveAsTestTests.swift` in particular — Finding 4's currently-failing fixture) re-verified to actually reflect passing behavior against the real CLI, not merely edited to compile.
+- **Exit state**: The recorder emits no removed grammar for any turn, tagged or untagged; every affected Swift test's assertions describe real, current parser/runner behavior (no test asserts a fixture "passes" that a hand-run against `dist/cli/sharpee.js` shows as a parse error).
+- **Verification**: This session cannot run Swift — no toolchain, no CI (Finding 5). David runs, on macOS: `cd tools/ide && xcodegen generate && xcodebuild -project SharpeeIDE.xcodeproj -scheme SharpeeIDE -destination 'platform=macOS' test`, and reports pass/fail. **This phase is not COMPLETE until that report comes back green** — per CLAUDE.md's "never auto-retry" directive, a red report is reported and waited on, not looped past. Supplementary Linux-side check available now: re-running this plan's Finding 4 reproduction (`node dist/cli/sharpee.js --test <hand-written-fixture-with-new-grammar> --story stories/dungeo`) to confirm the *new* format the Swift code will emit parses and runs clean, before Swift edits are even made.
+
+### Phase 2: ADR bookkeeping — amend ADR-277 D5, ADR-282 D2, and touch up the VS Code extension's grammar docs
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: N/A (ADR documentation + one small doc-string fix)
+- **Entry state**: Phase 1's ruled format is known (does not require Phase 1's Swift edits to be merged first — the decision alone is enough to write accurate ADR text).
+- **Deliverable**:
+  - `docs/architecture/adrs/adr-277-ide-integrated-testing.md` D5: append a dated amendment note (matching Acceptance 2's existing style) recording that ADR-294 D2 removed `[OK: any]` from the grammar, and stating the recorder's current capture format per Decision 1's ruling. **Also Acceptance 7** (Finding 12): append a second, distinct superseded-note for the grammar removal — its existing note only covers ADR-282 Acceptance 3's bless-refusal change, not ADR-294 D2.
+  - `docs/architecture/adrs/adr-282-play-to-test-tagging.md` D2: same treatment for the "untagged turn → `[OK: any]`" line. **Also Acceptance 1** (Finding 12): currently carries *no* superseded-note at all, despite the ADR's own Consequences section already stating "untagged turns can no longer fall back to `[OK: any]`" — cross-reference that existing note rather than treating this as new.
+  - `docs/architecture/adrs/adr-293-choice-points-per-point-streams.md` Consequences: close the "`[OK: any]` can stop being the default" line with a pointer to this plan/session as its resolution.
+  - `tools/vscode-ext/src/extension.ts` (Finding 8): update the four autocomplete/hover strings (`contains_any`, `[ENSURES: condition]`, `[WHILE: condition]`) to stop presenting removed grammar as live, or mark them clearly as unsupported/legacy if a full extension review is out of scope.
+- **Exit state**: No ADR in the repository presents `[OK: any]` as current, unannotated grammar — including both D-sections and Acceptance sections; the VS Code extension's authoring hints do not teach syntax that errors at parse time.
+- **Verification**: `grep -n "OK: any" docs/architecture/adrs/adr-277-*.md docs/architecture/adrs/adr-282-*.md docs/architecture/adrs/adr-293-*.md` reviewed to confirm every hit — D-sections and Acceptance sections alike — sits inside a dated amendment/historical note, never presented as current; `git diff tools/vscode-ext/src/extension.ts` reviewed for accuracy against `packages/transcript-tester/src/parser.ts`'s current grammar table.
+
+### Phase 3: Fix the currently-red `cli-restore.test.ts` fixture; record the devkit fixture debt
+- **Tier**: Small
+- **Budget**: 80
+- **Domain focus**: N/A (test fixture repair + issue filing)
+- **Entry state**: None — independent of Decision 1's outcome (this fixture only needs currently-valid grammar, not the recorder's specific choice). Can run first if David wants an immediate, low-risk fix while Decision 1 is still under discussion, but per this plan's PENDING-DISCUSSION status, still waits for explicit go-ahead like every other phase.
+- **Deliverable**: `scripts/__tests__/cli-restore.test.ts`'s fixture-transcript string (~line 49) rewritten: `[SEED: 4242]` moves to a `seed: 4242` header field (above the `---` separator, alongside `title:`/`story:`), and `[OK: any]` becomes `[SKIP]` (the fixture only needs the `$save` side effect, not a specific assertion). File a new GH issue (sibling to #209, same template) for Finding 7's `packages/devkit` fixture-story `contains_any` debt, per Open Decision 3's ruling — issue only, no migration work here.
+- **Exit state**: `npx vitest run scripts/__tests__/cli-restore.test.ts` shows 0 failed suites, 3 passed, 0 skipped. A new GH issue exists tracking the devkit fixture debt, referenced from this plan.
+- **Verification**: `npx vitest run scripts/__tests__/cli-restore.test.ts` (must show all three `--restore` real-path tests executing and passing, not skipped); `gh issue view <new-number>` to confirm the filed issue.
+- **Status**: COMPLETE (2026-08-02, session 1d3b6f) — 3/3 passing, 0 skipped; devkit debt filed as GH #218. **Deliverable deviation, deliberate**: the fixture's `[OK: any]` became `[OK: contains "North of House"]`, not the planned `[SKIP]` — implementation revealed `[SKIP]` skips *execution* (runner.ts:901-916 returns before the command runs), so a `[SKIP]`ed `> north` never advances state and the `$save` captures turn 0 (empirically observed: restore landed at West of House, turnCount 0). The `contains` assertion executes the turn AND pins the precondition the restore test depends on. This same finding re-opens Open Decision 1 — see Finding 13.
+
+---
+
+## Overall acceptance (tied to ADR-293's Consequences line and this plan's scope)
+
+1. "`[OK: any]` can stop being the default (ADR-277 D5)" — closed for the recorder in Phase 1 (design ruled + Swift fixed, verified by David on macOS); closed for the parser already (Finding 1, pre-existing, unchanged by this plan).
+2. ADR-277 D5 and ADR-282 D2 accurately describe current behavior — closed in Phase 2.
+3. `scripts/__tests__/cli-restore.test.ts` is green, not silently red — closed in Phase 3.
+4. Fernhill's GH #209 migration and the newly-discovered devkit fixture debt (Finding 7) are explicitly **not** claimed as closed by this plan — #209 stays as is (with an optional opportunistic 2-file close per Open Decision 2), and Finding 7 gets a new tracked issue, not a fix, per Open Decision 3.
+
+No phase in this plan touches `packages/` (Finding 1 confirms no `transcript-tester` change is needed), so CLAUDE.md's "platform changes require discussion first" is satisfied by this plan's own PENDING-DISCUSSION gate rather than triggering a separate platform conversation — `tools/ide` (Swift, Phase 1) and `tools/vscode-ext` (Phase 2) are IDE/tooling, not the `packages/` platform surface the directive names, but the Open Decisions above are exactly the "discuss first" this plan exists to satisfy for the recorder's design.
