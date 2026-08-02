@@ -46,6 +46,10 @@ export {
 } from './coverage.js';
 export type { CoverageReport } from './coverage.js';
 
+// First-firing outcome search (ADR-293 D12)
+export { searchOutcome } from './search.js';
+export type { SearchTarget, SearchResult } from './search.js';
+
 // Trait Formatter
 export { formatEntityTraitLines, formatTraitProse } from './trait-formatter.js';
 

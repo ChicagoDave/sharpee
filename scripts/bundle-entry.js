@@ -139,6 +139,10 @@ if (require.main === module) {
       // ADR-293 D15: print the full per-point coverage breakdown (the
       // one-line summary always prints at the end of a --test run).
       coverage: false,
+      // ADR-293 D12: first-firing outcome search — 'point=CLASS' target;
+      // the transcript argument is the command driver.
+      search: null,
+      searchBudget: null,
       help: false
     };
 
@@ -197,6 +201,16 @@ if (require.main === module) {
         options.watch = true;
       } else if (arg === '--coverage') {
         options.coverage = true;
+      } else if (arg === '--search') {
+        i++;
+        if (i < args.length) {
+          options.search = args[i];
+        }
+      } else if (arg === '--search-budget') {
+        i++;
+        if (i < args.length) {
+          options.searchBudget = args[i];
+        }
       } else if (arg === '--help' || arg === '-h') {
         options.help = true;
       } else if (!arg.startsWith('-')) {
@@ -245,6 +259,13 @@ Options:
   --coverage           Print the full per-point outcome-class coverage
                        breakdown (ADR-293 D15); the one-line summary always
                        prints at the end of a --test run
+  --search <pt>=<CLS>  First-firing outcome search (ADR-293 D12): find a
+                       point-seed under which the point's first drawn firing
+                       produces the class, driving the world with the given
+                       transcript's commands. Reports tries-spent and the
+                       point-seed: header line to paste on success
+  --search-budget <N>  Override the search try budget (default: 10 x the
+                       point's declared class count)
   --help, -h           Show this help message
 
 Examples:
@@ -781,6 +802,68 @@ Examples:
 
       await runInteractiveMode(game);
       return;
+    }
+
+    // ADR-293 D12: first-firing outcome search. The transcript is the command
+    // driver; the search forks the real engine save per candidate in-process
+    // (ruled Decision 5(a)) and reports a reproducible (seed, point-seed) pair.
+    if (options.search !== null) {
+      const searchMatch = /^([^#=\s]+)=([^=\s]+)$/.exec(options.search);
+      if (!searchMatch) {
+        console.error(`Invalid --search target "${options.search}" — expected point=CLASS (e.g. dungeo.thief.steal=yes)`);
+        process.exit(2);
+      }
+      if (options.transcriptPaths.length !== 1) {
+        console.error('--search needs exactly one driver transcript (its commands walk the world to the firing)');
+        process.exit(2);
+      }
+      let budget;
+      if (options.searchBudget !== null) {
+        budget = Number(options.searchBudget);
+        if (!Number.isInteger(budget) || budget < 1) {
+          console.error(`Invalid --search-budget value "${options.searchBudget}" — must be a positive integer`);
+          process.exit(2);
+        }
+      }
+
+      const transcriptPath = options.transcriptPaths[0];
+      const transcript = transcriptTester.parseTranscriptFile(transcriptPath);
+      const errors = transcriptTester.validateTranscript(transcript);
+      if (errors.length > 0) {
+        console.error(`Errors in ${transcriptPath}:`);
+        for (const err of errors) console.error(`  - ${err}`);
+        process.exit(1);
+      }
+
+      const resolved = resolveSeed(transcript.seed);
+      const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed);
+      console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
+      console.log(`Searching ${searchMatch[1]}=${searchMatch[2]} over ${path.basename(transcriptPath)}...`);
+
+      const result = await transcriptTester.searchOutcome(
+        transcript,
+        game,
+        { point: searchMatch[1], cls: searchMatch[2] },
+        budget !== undefined ? { budget } : {}
+      );
+
+      if (result.found) {
+        console.log(`✓ found in ${result.tries} of ${result.budget} tries (firing command #${result.firingCommandIndex + 1})`);
+        console.log('Reproduce with these header lines:');
+        console.log(`  seed: ${result.masterSeed}`);
+        if (result.pointSeed !== undefined) {
+          console.log(`  point-seed: ${searchMatch[1]}=${result.pointSeed}`);
+        } else {
+          console.log(`  (no point-seed needed — the class occurs naturally at this seed)`);
+        }
+        process.exit(0);
+      }
+      console.error(
+        result.reason === 'budget-exhausted'
+          ? `✗ budget exhausted after ${result.tries} tries — the class may be rarer than the uniform prior; retry with --search-budget N (ADR-293 D12)`
+          : `✗ search failed: ${result.reason}`
+      );
+      process.exit(1);
     }
 
     if (options.test || options.transcriptPaths.length > 0) {
