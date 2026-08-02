@@ -126,7 +126,8 @@ $restore wt-12
 # Return to Treasure Room for the fight
 > up
 
-# Fight thief with nasty knife. DO/UNTIL loops until thief dies or player dies.
+# Fight thief with nasty knife. Exact seed-42 sequence (pinned-seed
+# counts, not padding — there is no loop or retry).
 # RNG: the thief can disarm us; unarmed attacks are blocked ("Fighting
 # unarmed is suicide.") so recover the knife before each swing.
 # (loop region resolved to its seed-42 sequence — ADR-294 migration)

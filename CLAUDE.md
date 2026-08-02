@@ -196,9 +196,8 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 | `--output-dir <dir>` | `-o` — Write timestamped results to directory            |
 
 **IMPORTANT — Don't modify working transcripts:**
-- If a transcript was passing before, don't add WHILE loops or change commands.
-- Combat randomness is handled by having enough attack commands (6 is usually sufficient).
-- The `[ENSURES: not entity "X" alive]` postcondition works correctly — don't remove it.
+- If a transcript was passing before, don't change its commands. Control-flow directives (`[WHILE:]`, `[RETRY:]`, `[DO]`/`[UNTIL]`, `[IF:]`, `[ENSURES:]`, `[REQUIRES:]`, `[NAVIGATE TO:]`) are removed grammar (ADR-294 D4) — the parser rejects each by name; never add them.
+- Combat sequences are exact pinned-seed counts, not padding. Runs are deterministic at the pinned seed: derive the required command list by probing with `--exec`, or pin a specific outcome with the `forces:`/`point-seed:` header fields (ADR-293 Phase C). Never add surplus attack commands "for safety."
 - Walkthrough transcripts (`wt-*`) must be run with `--chain` flag to preserve game state.
 
 Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
