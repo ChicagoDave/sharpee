@@ -151,6 +151,21 @@ enum MenuBuilder {
         font.submenu = fontMenu
         menu.addItem(font)
 
+        // Appearance override (GH #129 item 3): System / Light / Dark.
+        // Radio state applied in AppDelegate.validateMenuItem.
+        let appearanceMenu = NSMenu(title: "Appearance")
+        for choice in AppearanceChoice.allCases {
+            let item = NSMenuItem(title: choice.displayName,
+                                  action: #selector(AppDelegate.selectAppearance(_:)),
+                                  keyEquivalent: "")
+            item.target = target
+            item.representedObject = choice.rawValue
+            appearanceMenu.addItem(item)
+        }
+        let appearance = NSMenuItem(title: "Appearance", action: nil, keyEquivalent: "")
+        appearance.submenu = appearanceMenu
+        menu.addItem(appearance)
+
         let item = NSMenuItem()
         item.submenu = menu
         return item

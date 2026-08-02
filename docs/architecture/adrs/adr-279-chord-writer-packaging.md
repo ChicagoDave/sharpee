@@ -236,8 +236,27 @@ so updates must reach writers without a manual download ritual.
   now includes publishing an appcast entry to the site, so the release
   script needs a publish path to the VPS.
 
+## Amendment A1 — the window title carries the story title (2026-08-02, session 7dd736)
+
+D1 treated the window title as app identity, and session a68086 (commit
+`9a028c05`) reduced it to the product name alone, removing the per-project
+`"Sharpee — <project>"` retitle on the ruling that the project tree and status
+bar already name the open folder. GH #188 revisits that deliberately: the
+folder-name ruling stands, but a story **title** (`story "The Folly at
+Fernhill" …`) is the work's name, not the folder's, and a document window
+carries the name of the work. Amended behavior: the window opens as the
+product name and switches to the composed story's title once a compose
+reveals one (`WindowTitle.title(for:)` — grammar-header files and blank
+titles keep the product name; project switches reset to the product name
+until the new project's first compose). Centering is NSWindow's standard
+titled-window behavior — no custom titlebar accessory. The title source is
+the compose IR (`meta.title`), so this amendment is unaffected by GH #187's
+positional-literal → `title:` field reshape; only the compiler's extraction
+changes.
+
 ## Session
 
 Drafted 2026-07-27, session 8a8c83, immediately after ADR-277's
 implementation and the 4.2.0 platform bump
 (`docs/context/session-20260727-1640-main.md`).
+Amendment A1: 2026-08-02, session 7dd736.

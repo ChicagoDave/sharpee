@@ -35,9 +35,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         DefaultsMigration.migrateLegacyDomainIfNeeded()
 
         NSApp.setActivationPolicy(.regular)
-        // The IDE follows the system appearance: Theme tokens are dynamic
-        // (dark Mocha-ish / light Latte) and layer-backed surfaces re-resolve
-        // through updateLayer (ThemedPane).
+        // Theme tokens are dynamic (dark Mocha-ish / light Latte) and
+        // layer-backed surfaces re-resolve through updateLayer (ThemedPane).
+        // The IDE follows the system appearance unless the author pinned
+        // Light or Dark via View → Appearance (GH #129 item 3) — applied
+        // here, before the window builds, so launch renders in the chosen
+        // appearance rather than flashing the system one.
+        AppearancePreference.apply()
         NSApp.mainMenu = MenuBuilder.makeMainMenu(target: self)
 
         let controller = MainWindowController()
@@ -476,6 +480,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         FontPreference.scale = scale
     }
 
+    /// View → Appearance → System/Light/Dark. Persists and applies (GH #129).
+    @objc func selectAppearance(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let choice = AppearanceChoice(rawValue: raw) else { return }
+        AppearancePreference.choice = choice
+    }
+
     // MARK: - NSUserInterfaceValidations (menu enable/disable)
 
     /// AppKit calls this when a menu containing one of our actions is about to display.
@@ -516,6 +527,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         case #selector(selectFontScale(_:)):
             let raw = menuItem.representedObject as? String
             menuItem.state = (raw == FontPreference.scale.rawValue) ? .on : .off
+            return true
+        case #selector(selectAppearance(_:)):
+            let raw = menuItem.representedObject as? String
+            menuItem.state = (raw == AppearancePreference.choice.rawValue) ? .on : .off
             return true
         default:
             return true

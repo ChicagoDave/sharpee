@@ -19,9 +19,11 @@ final class MainWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        // The title is the product name alone, set once (ADR-279 D1). The open
-        // project is already named in the project tree and status bar; repeating
-        // it in the title bar just re-brands the window per-project.
+        // Launch title is the product name (ADR-279 D1). Once a compose reveals
+        // a story title, the window carries THAT (D1 Amendment A1, GH #188) —
+        // the folder-name-in-title ruling this replaced was about not repeating
+        // the project directory, not about hiding the work's own name. Updated
+        // in RootViewController.handleComposeOutcome / loadProject.
         window.title = AppIdentity.productName
         window.minSize = NSSize(width: 900, height: 600)
         window.contentViewController = RootViewController()
@@ -371,6 +373,11 @@ private final class RootViewController: NSViewController {
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
         mainSplitViewController.loadProject(project, expandedFolderURLs: expandedFolderURLs)
+        // Back to the product name until this project's first compose reveals
+        // a story title (GH #188) — never carry the previous project's title.
+        // Deliberately NOT read from composedIR here: the compose tree is not
+        // reset on project switch, so it still holds the old project's IR.
+        view.window?.title = AppIdentity.productName
     }
 
     func saveActiveDocument() {
@@ -471,6 +478,10 @@ private final class RootViewController: NSViewController {
         case .failure(let failure):
             bottomPanelViewController.setProblemsStatus(Self.statusMessage(for: failure))
         }
+        // The window carries the story's title once a compose reveals it
+        // (GH #188, ADR-279 D1 Amendment A1). Runs on failure too: the tree
+        // keeps the last populated IR, so the title stays with it.
+        view.window?.title = WindowTitle.title(for: mainSplitViewController.composedIR)
     }
 
     /// One-line Problems status for a compose-pipeline failure.
@@ -617,6 +628,13 @@ private final class MainSplitViewController: NSSplitViewController {
             return (url, ir.grammarFile != nil)
         }
         return (url, false)
+    }
+
+    /// The latest composed IR, for surfaces outside this split (window title,
+    /// GH #188). Nil until a compose has populated the tree.
+    var composedIR: ComposeStoryIR? {
+        if case .populated(let ir, _) = treeState.display { return ir }
+        return nil
     }
 
     /// The current story's built bundle directory (`dist/web/<id>/`, D4), or nil
