@@ -1,12 +1,12 @@
 title: Combat Disengagement
 story: dungeo
 description: Test flee-and-recover cycle - villain heals when player leaves room, player wounds persist
-
+seed: 42
 ---
 
 # GDT ND = immortality: wounds still land and persist (what's under test);
 # only the fatal-blow kill is suppressed, so a score-0 player survives the
-# engagement cycles deterministically.
+# engagement cycles. Deterministic at the pinned seed.
 > gdt
 [OK: contains "GDT"]
 
@@ -55,53 +55,33 @@ description: Test flee-and-recover cycle - villain heals when player leaves room
 [OK: contains "Troll Room"]
 [OK: contains "troll"]
 
-# Attack the troll to engage melee combat.
-# RNG: the troll's swing can disarm us (sword drops) - recover it first.
-[WHILE: not inventory contains "elvish sword"]
-> take sword
-[SKIP]
-[END WHILE]
-
+# Engage melee combat. At seed 42 the first blow knocks the troll out.
 > attack troll with sword
-[SKIP]
-
-# RNG: if we were staggered, the attack was blocked - retry until it lands
-[WHILE: output contains "recovering"]
-> attack troll with sword
-[SKIP]
-[END WHILE]
+[OK: contains "dreamland"]
 
 # Flee combat by going west (back to Cellar)
 > west
 [OK: contains "Cellar"]
 
-# Re-enter troll room: troll should be alive and at full health
+# Re-enter troll room: troll should be conscious and fighting again
 # (disengagement restores villain to base OSTRENGTH)
 > east
 [OK: contains "Troll Room"]
 [OK: contains "troll"]
 
-# Attack again - troll should still be fighting (fully healed)
-[WHILE: not inventory contains "elvish sword"]
-> take sword
-[SKIP]
-[END WHILE]
-
+# Attack again - troll is up and fighting (the blow misses at this seed,
+# proving he is a live combatant again rather than KO'd on the floor)
 > attack troll with sword
-[SKIP]
-
-[WHILE: output contains "recovering"]
-> attack troll with sword
-[SKIP]
-[END WHILE]
+[OK: contains "misses the troll"]
 
 # Flee again
 > west
 [OK: contains "Cellar"]
 
-# Diagnose: should show health status (may or may not have wounds depending on RNG)
+# Diagnose: player wounds persist across disengagement (the axe hit on first
+# entry left a light wound)
 > diagnose
-[OK: contains "You"]
+[OK: contains "light wound"]
 
 # Re-enter once more to verify troll is still alive
 > east

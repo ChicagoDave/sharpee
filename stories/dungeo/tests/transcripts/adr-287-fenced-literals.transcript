@@ -4,9 +4,9 @@ description: Real-path proof that text-block assertions match real story output 
 ---
 
 # The banner rides along with the first command's output, so this one only
-# asserts presence — the block assertions below start from a clean turn.
+# asserts a fragment — the block assertions below start from a clean turn.
 > look
-[OK: any]
+[OK: contains "West of House"]
 
 # The load-bearing case: this response contains a double quote, which the
 # inline form CANNOT express — its payload regex is [^"]+ (parser.ts). Before
@@ -35,17 +35,6 @@ end text
 text
 saying "Welcome to Dungeon!"
 end text
-
-# Block parity (ADR-287 D1's last grammar rule): attachment is at the assertion
-# level, so a block inside [IF] behaves exactly as one at top level. This test
-# proves the inheritance rather than adding machinery for it.
-[IF: location = "West of House"]
-> examine welcome mat
-[OK]
-text
-A rubber mat saying "Welcome to Dungeon!"
-end text
-[END IF]
 
 # The failing direction, pinned in-suite: the block deliberately does not match
 # the real response, so the assertion fails and [FAIL] records that as expected.

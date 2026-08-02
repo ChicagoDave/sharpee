@@ -2,19 +2,14 @@ title: Troll Recovery Daemon
 story: dungeo
 author: Sharpee Team
 description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and MDL growing-probability recovery (ADR-226).
-
+seed: 42
 ---
 
 # From MDL source (act1.254): OUT!/IN! transitions.
 # Recovery is MDL canon growing-probability revival (melee.mud:67-76, restored via
 # ADR-226): each unconscious turn a per-troll accumulator grows +10; revival rolls a
-# seeded probability = accumulator%. The wake turn is therefore variable, so the
-# recovery section below polls with a WHILE loop rather than assuming a fixed count.
-
-# The conscious troll strikes bystanders each turn (MDL melee canon) and can
-# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
-# revives the engine on death (same pattern as debug-combat).
-[RETRY: max=5]
+# seeded probability = accumulator%. At the pinned seed the wake turn is fixed:
+# the daemon fires "stirs" on the third examine after returning to the room.
 
 # Get lantern first (Troll Room is dark); ND = immortality, since the
 # conscious troll's bystander blows can kill a score-0 player outright and
@@ -70,7 +65,6 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 [OK: contains "Returning"]
 
 # Description should change to TROLLOUT (troll is unconscious)
-# Recovery daemon has ticked twice during GDT (KO + EX), so 2 ticks remain
 > examine troll
 [OK: contains "unconscious"]
 [OK: contains "sprawled"]
@@ -85,16 +79,19 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 > west
 [OK: contains "Troll Room"]
 
-# Wait for the troll to recover. Recovery is MDL canon growing-probability revival
-# (melee.mud:67-76): the wake turn is variable (seeded), not a fixed count, so poll by
-# examining until the daemon fires the "stirs" wake message.
-[WHILE: not output contains "stirs"]
+# Wait for the troll to recover. At seed 42 the daemon fires the wake message
+# on the third examine turn after returning.
 > examine troll
-[SKIP]
-[END WHILE]
+[OK: contains "unconscious"]
 
-# The stirring examine confirms the wake ("The troll stirs, quickly resuming a
-# fighting stance"). The troll is now conscious again — description back to TROLLDESC.
+> examine troll
+[OK: contains "unconscious"]
+
+> examine troll
+[OK: contains "unconscious"]
+[OK: contains "stirs"]
+
+# The troll is now conscious again — description back to TROLLDESC.
 > examine troll
 [OK: contains "blocks"]
 [OK: contains "northern passage"]
@@ -102,5 +99,3 @@ description: Tests that the troll wakes up after being knocked out, with descrip
 # Exit should be blocked again
 > north
 [OK: contains "troll blocks"]
-
-[END RETRY]

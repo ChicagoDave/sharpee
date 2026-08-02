@@ -1,7 +1,7 @@
 title: Low Room Carousel (Magnet Room)
 story: dungeo
 description: Tests the Low Room carousel exit randomization and button toggle (MDL act3 MAGNET-ROOM-EXIT)
-
+seed: 42
 ---
 
 # MDL act3.mud: CAROUSEL-FLIP!-FLAG starts FALSE.
@@ -9,6 +9,8 @@ description: Tests the Low Room carousel exit randomization and button toggle (M
 #                no compass message on entry.
 # Flag true (after button push) -> compass spins on entry, all exits randomly
 #                go to Machine Room or Tea Room ("You cannot get your bearings...").
+# The random draw is the dungeo.low-room.exit point on the session RandomService
+# (ADR-293), so at the pinned seed the destination below is fixed: Tea Room.
 
 # Setup - get light source
 > gdt
@@ -78,19 +80,15 @@ description: Tests the Low Room carousel exit randomization and button toggle (M
 [OK: contains "Low Room"]
 [OK: contains "compass starts spinning"]
 
-# Any exit now randomly goes to Machine Room or Tea Room (PROB 50)
+# Exits now randomly go to Machine Room or Tea Room (PROB 50); at seed 42
+# the draw lands in the Tea Room.
+# TODO (GH #207): this turn's output also carries the Machine
+# Room description ahead of the Tea Room one — the redirect appears to render
+# the first-resolved destination before re-resolving. The assertions below
+# pin only the intended behavior.
 > east
 [OK: contains "cannot get your bearings"]
-[OK: contains_any "Machine Room" "Tea Room"]
-
-# Bounce through the Low Room until we land in the Tea Room
-[WHILE: not location = "Tea Room"]
-> southeast
-[SKIP]
-[IF: not location = "Tea Room"]
-[NAVIGATE TO: "Low Room"]
-[END IF]
-[END WHILE]
+[OK: contains "Tea Room"]
 
 # Confirm we escaped to the Tea Room
 > look

@@ -12,40 +12,40 @@ description: |
 [GOAL: AA SCORE sets an exact total and rejects bad input]
 
 > gdt
-[OK: any]
+[OK: contains "GDT"]
 
 # --- happy path: an exact total, from zero ---
 > aa score 493
 [OK: contains "493"]
 > ex
-[OK: any]
+[OK: contains "Returning"]
 > score
 [OK: contains "493 out of 616"]
 
 # --- idempotent: setting again REPLACES the adjustment, never stacks ---
 # A naive implementation that appended a second ledger entry would land on 986.
 > gdt
-[OK: any]
+[OK: contains "GDT"]
 > aa score 493
 [OK: contains "493"]
 > ex
-[OK: any]
+[OK: contains "Returning"]
 > score
 [OK: contains "493 out of 616"]
 
 # --- a different value overwrites cleanly, downward included ---
 > gdt
-[OK: any]
+[OK: contains "GDT"]
 > aa score 25
-[OK: any]
+[OK: contains "25"]
 > ex
-[OK: any]
+[OK: contains "Returning"]
 > score
 [OK: contains "25 out of 616"]
 
 # --- rejections: each names the problem and leaves the score untouched ---
 > gdt
-[OK: any]
+[OK: contains "GDT"]
 
 # no attribute
 > aa
@@ -68,7 +68,7 @@ description: |
 [OK: contains "Not a non-negative integer"]
 
 > ex
-[OK: any]
+[OK: contains "Returning"]
 
 # The rejected calls changed nothing — still the last successful value.
 > score

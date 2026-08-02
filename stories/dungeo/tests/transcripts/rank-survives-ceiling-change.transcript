@@ -23,11 +23,11 @@ description: |
 # value: 493/616 = 80% against 493/650 = 76%, so a percentage ladder would have
 # to re-rank here while an absolute threshold cannot.
 > gdt
-[OK: any]
+[OK: contains "GDT"]
 > aa score 493
 [OK: contains "493"]
 > ex
-[OK: any]
+[OK: contains "Returning"]
 
 # BEFORE the ceiling change. The ledger is the single home for scoring
 # (ADR-260 D1): SCORE reads it and nothing else. "Adventurer" is dungeo's own
@@ -41,11 +41,11 @@ description: |
 # ("No bonus points for killing the thief" — melee-interceptor.ts), so the
 # score is held fixed while the ceiling alone moves.
 > gdt
-[OK: any]
+[OK: contains "GDT"]
 > kl thief
-[OK: any]
+[OK: contains "Killed"]
 > ex
-[OK: any]
+[OK: contains "Returning"]
 
 # AFTER the ceiling change: same score, higher ceiling, SAME RANK.
 # 400 <= 493 < 616 is "Adventurer" under the absolute threshold, and it stays

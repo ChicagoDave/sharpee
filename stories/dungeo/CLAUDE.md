@@ -51,12 +51,13 @@ The single `CAROUSEL-FLIP!-FLAG` drives the two rooms **oppositely** (verified i
   go to Machine Room or Tea Room (`<PROB 50>`).
 - The triangular button (`TRBUT`) toggles the flag to **true**, which **fixes the Round Room
   but randomizes the Low Room**. So after the button push the player must bounce through the
-  Low Room (retry until Tea Room) to get out — see the WHILE loop in `wt-10-tea-room`.
+  Low Room (bouncing until Tea Room) to get out — the bounce sequence in
+  `wt-10-tea-room` is fixed at the chain's pinned seed.
 - The robot starts in this room.
 - (Randomization is replay-deterministic since ADR-293 Phase B: the draw is the
   `dungeo.low-room.exit` point on the session `RandomService` — like the Round Room's
-  `dungeo.round-room.exit`. The WHILE-loop retries in transcripts still work but are
-  no longer load-bearing at a pinned seed; they go away with the ADR-294 rebuild.)
+  `dungeo.round-room.exit`. The old WHILE-loop retries are gone with the ADR-294
+  rebuild; transcripts pin a `seed:` and write the fixed bounce sequence.)
 
 ## Project Structure
 
@@ -114,28 +115,22 @@ Extended via SAY action in `src/actions/say/say-action.ts` - checks room identit
 
 ### Handling Randomized Rooms (Carousel)
 
-Use WHILE loops with NAVIGATE TO for rooms with random exits:
+Randomization is replay-deterministic (ADR-293): room-exit draws are named
+points on the session `RandomService` (`dungeo.round-room.exit`,
+`dungeo.low-room.exit`). Transcripts pin `seed:` in the header (ADR-294), so a
+randomized exit goes to the SAME room on every run — write the fixed sequence
+of moves for that seed and assert the actual destinations. The old
+`[WHILE:]`/`[NAVIGATE TO:]` loop grammar is removed (ADR-294 D4) and now
+raises a parse error.
+
+To discover the sequence at a seed, probe with the bundle:
 
 ```
-# Enter the randomized room first
-> east
-[OK: contains "Round Room"]
-
-# Loop: try an exit, navigate back if wrong room
-[WHILE: not location = "Engravings Cave"]
-> south
-[SKIP]
-[IF: not location = "Engravings Cave"]
-[NAVIGATE TO: "Round Room"]
-[END IF]
-[END WHILE]
+node dist/cli/sharpee.js --exec "cmd1/cmd2/..." --story stories/dungeo --seed 42
 ```
-
-Key points:
-- Commands inside WHILE need `[SKIP]` or `[OK: ...]` assertions (parser rejects bare commands)
-- The carousel picks any random exit — use NAVIGATE TO to return to Round Room on failure
-- The IF guard prevents navigating away from Engravings Cave after successfully arriving
 
 ### Thief RNG
 
-The thief randomly steals items and moves between rooms. Walkthrough failures caused by thief interference are expected — always run the chain twice before blaming a code change.
+The thief's movements and thefts are draws on the same seeded stream, so at a
+pinned seed they are deterministic — a failure at the pinned seed is real, not
+flake. Only unpinned runs (`--vary`, or no `seed:` header) still vary.

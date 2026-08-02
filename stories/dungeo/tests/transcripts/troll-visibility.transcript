@@ -2,12 +2,11 @@ title: Troll Axe Visibility
 story: dungeo
 description: Tests that the axe is held by troll, can't be taken (white-hot), and both vanish on death
 
+seed: 42
 ---
 
-# The conscious troll strikes bystanders each turn (MDL melee canon) and can
-# kill a score-0 player outright. RETRY restores the turn-0 snapshot and
-# revives the engine on death (same pattern as debug-combat).
-[RETRY: max=5]
+# Deterministic at the pinned seed (header): GDT ND immortality below covers
+# hostile RNG en route, and any residual variation is fixed by the seed.
 
 # Get lantern first; ND = immortality (the conscious troll's bystander blows
 # can kill a score-0 player — this tests axe visibility, not mortality)
@@ -68,4 +67,3 @@ description: Tests that the axe is held by troll, can't be taken (white-hot), an
 > examine axe
 [OK: contains "can't see"]
 
-[END RETRY]

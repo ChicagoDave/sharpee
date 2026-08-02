@@ -10,10 +10,15 @@ description: Tests ADR-109 playtester annotation system (all 3 tiers)
 # - Tier 1: # comments with context
 # - Tier 2: $bug, $note, $confusing, $expected, $bookmark
 # - Tier 3: $session start/end, $review, $export
+#
+# NOTE (ADR-294 rewrite): annotation commands are processed out-of-band by the
+# tester (their output goes to the console, stamped with wall-clock times) and
+# are NOT assertable turns — a crash in the annotation path still fails the
+# run, so this file is smoke coverage for the annotation pipeline plus real
+# assertions on the interleaved game commands.
 
 # === TIER 3: Start Session ===
 $session start annotation-test
-[ENSURES: output contains "annotation-test"]
 
 # === Basic game setup ===
 > look
@@ -46,14 +51,8 @@ $bookmark after-leaflet
 
 # === TIER 3: Review ===
 $review
-[ENSURES: output contains "Notes"]
-[ENSURES: output contains "after-leaflet"]
 
 # === TIER 3: End Session and Export ===
 $session end
-[ENSURES: output contains "annotation-test"]
 
 $export
-[ENSURES: output contains "# Play Test Session"]
-[ENSURES: output contains "Bugs"]
-[ENSURES: output contains "mailbox is scenery"]

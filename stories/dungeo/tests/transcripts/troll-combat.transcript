@@ -1,7 +1,8 @@
 title: Troll Combat - Melee Interceptor
 story: dungeo
 author: Sharpee Team
-description: Test killing the troll via melee interceptor with RETRY for combat randomness
+description: Test killing the troll via melee interceptor at the pinned seed
+seed: 42
 ---
 
 # GDT ND = immortality: the troll's counterblows can kill a score-0 player
@@ -58,23 +59,16 @@ description: Test killing the troll via melee interceptor with RETRY for combat 
 [OK: contains "troll"]
 
 # ===== Melee interceptor combat test =====
-# RETRY handles player death from counter-attacks — restores and retries
-# DO/UNTIL loops attack until troll death message or player death
-# RNG: the troll can disarm us (unarmed attacks are blocked as suicide) or
-# knock us out — recover the sword before each swing, and accept the
-# disarm/knockout lines ("sword"/"hands"/"unconscious") as attack-turn output.
-
-[RETRY: max=10]
-[DO]
-[WHILE: not inventory contains "elvish sword"]
-> take sword
-[SKIP]
-[END WHILE]
+# The fight is deterministic at the pinned seed: the first blow knocks the
+# troll out, the second kills him (MDL death canon: black smoke, carcass
+# vanishes, north passage clears).
 > attack troll with sword
-[OK: contains_any "troll" "staggering" "sword" "hands" "unconscious"]
-[UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
-[ENSURES: not entity "troll" alive]
-[END RETRY]
+[OK: contains "dreamland"]
+
+> attack troll with sword
+[OK: contains "removes his head"]
+[OK: contains "black smoke"]
+[OK: contains "passage to the north is now clear"]
 
 # Passage north should be clear after troll dies
 > north
