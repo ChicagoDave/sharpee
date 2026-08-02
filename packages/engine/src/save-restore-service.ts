@@ -23,6 +23,21 @@
  *     captured only entity traits + room contents and silently dropped
  *     the ScoreLedger, capabilities, world state values, relationships,
  *     ID counters, and sub-container containment.
+ *
+ * Still v3.0.0 — additive changes, 2026-08-02 (ADR-296 D1 + D4, no
+ * version bump per the additive-only convention):
+ *   - Events in the event-source stream may now carry two additional
+ *     opaque `data` fields: `_transactionId` (per-source stamp from the
+ *     engine funnels: `txn:{turn}:action` / `txn:{turn}:plugin:{id}`)
+ *     and `_narrativeSlot` (chain/reaction phrase placement). They ride
+ *     `serializeEventSource` like any other data field — no reader
+ *     change required; older saves simply lack them.
+ *   - The event stream itself is reorganized by the D4 partition: a
+ *     phrase-emission `game.message` (messageless trigger, or
+ *     `_chainedFrom` present) now appears as its OWN event in
+ *     `turnEvents`, channel packets, and saves, and its formerly-
+ *     overridden trigger keeps no injected messageId. Channel consumers
+ *     see the same data reorganized.
  */
 
 import { gunzipSync, gzipSync, strFromU8, strToU8 } from 'fflate';

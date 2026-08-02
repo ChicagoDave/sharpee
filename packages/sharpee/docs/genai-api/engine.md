@@ -1609,6 +1609,12 @@ export declare class GameEngine {
     /**
      * Process events from a plugin through the shared pipeline (ADR-120)
      * Enriches, filters, stores, and emits events.
+     *
+     * @param pluginId - Id of the contributing plugin; forms the batch's
+     *   transaction id `txn:{turn}:plugin:{pluginId}` (ADR-296 D1). One batch
+     *   per plugin per turn today — if a plugin ever runs multiple batches in
+     *   one turn, this id shape under-specifies and needs an invocation
+     *   counter (stop and design it; do not improvise).
      */
     private processPluginEvents;
     /**
@@ -1805,6 +1811,21 @@ export declare function createVocabularyManager(): VocabularyManager;
  *     captured only entity traits + room contents and silently dropped
  *     the ScoreLedger, capabilities, world state values, relationships,
  *     ID counters, and sub-container containment.
+ *
+ * Still v3.0.0 — additive changes, 2026-08-02 (ADR-296 D1 + D4, no
+ * version bump per the additive-only convention):
+ *   - Events in the event-source stream may now carry two additional
+ *     opaque `data` fields: `_transactionId` (per-source stamp from the
+ *     engine funnels: `txn:{turn}:action` / `txn:{turn}:plugin:{id}`)
+ *     and `_narrativeSlot` (chain/reaction phrase placement). They ride
+ *     `serializeEventSource` like any other data field — no reader
+ *     change required; older saves simply lack them.
+ *   - The event stream itself is reorganized by the D4 partition: a
+ *     phrase-emission `game.message` (messageless trigger, or
+ *     `_chainedFrom` present) now appears as its OWN event in
+ *     `turnEvents`, channel packets, and saves, and its formerly-
+ *     overridden trigger keeps no injected messageId. Channel consumers
+ *     see the same data reorganized.
  */
 import { WorldModel } from '@sharpee/world-model';
 import { ISaveData, ISerializedTurn, ISemanticEventSource } from '@sharpee/core';
@@ -2051,6 +2072,16 @@ export interface EventProcessingContext {
     turn?: number;
     playerId?: string;
     locationId?: string;
+    /**
+     * Transaction id for this source's events (ADR-296 D1). The funnel that
+     * builds the context decides the id — `txn:{turn}:action` for the player
+     * action, `txn:{turn}:plugin:{plugin.id}` per plugin batch — and the
+     * enrichment pass stamps it as `data._transactionId` when the event does
+     * not already carry one (idempotent over `executeChains` inheritance).
+     * Omitted for unstamped sources (sound dispatch, meta-command output,
+     * platform-op completions) — safe under the sort's never-group rule.
+     */
+    transactionId?: string;
 }
 /**
  * Process an event through normalization and enrichment
@@ -2083,6 +2114,14 @@ export type EventEmitCallback = (event: ISemanticEvent) => void;
 export type EntityHandlerDispatcher = (event: ISemanticEvent) => void;
 /**
  * Service for processing turn events
+ *
+ * @deprecated Unused duplicate of the live funnel path (ADR-296 v2 finding
+ * 12): GameEngine constructs an instance but never calls its methods — the
+ * real funnels are the free `processEvent` calls in `game-engine.ts`
+ * (action funnel and `processPluginEvents`). This class's methods build an
+ * {@link EventProcessingContext} WITHOUT a `transactionId`, so events
+ * routed through it would NOT receive ADR-296 D1 transaction stamps. Do
+ * not wire new callers to it; route through the game-engine funnels.
  */
 export declare class TurnEventProcessor {
     private perceptionService?;
@@ -2883,9 +2922,26 @@ export declare function filterEvents(events: ISemanticEvent[]): ISemanticEvent[]
 
 ```typescript
 /**
- * Event sorting stage — orders events within a turn for correct prose
- * sequence: lifecycle first, then per-transaction implicit-take →
- * room-description → action.* → others, finally by chain depth.
+ * Event placement stage — realizes the ADR-296 D0 authorial ordering
+ * contract for a turn's prose:
+ *
+ *   1. Phrases you emit in your own report render in the order you emit
+ *      them, within your transaction.
+ *   2. Phrases you chain render at your declared slot in the triggering
+ *      transaction's frame (default `afterRoomDescription`), regardless
+ *      of which internal event triggered you.
+ *   3. Sources render in occurrence order: the player action's
+ *      transaction, then each plugin batch in plugin-priority order.
+ *   4. Platform fixtures: the banner renders first in the turn; implicit
+ *      takes render first in their action.
+ *
+ * Mechanism: events are grouped by `data._transactionId` (an ABSENT id
+ * never groups — not even with another absent id; ADR-296 D1 closes GH
+ * #208's defect class structurally). Within a transaction the base order
+ * is the emission stream; `data._narrativeSlot`-stamped phrases are
+ * re-placed at their declared frame boundary (D2/D3); everything else
+ * keeps stream position. The pre-ADR-296 type-based hoists and the
+ * chain-depth comparator are deleted (D5).
  *
  * Public interface: `sortEventsForProse`, `getChainMetadata`. Used
  * internally by the prose pipeline as the second per-turn stage,
@@ -2893,29 +2949,35 @@ export declare function filterEvents(events: ISemanticEvent[]): ISemanticEvent[]
  *
  * Owner context: `@sharpee/engine` — internal prose pipeline.
  *
- * @see ADR-094 Event Chaining (preserved; the sort responsibility
- *   ports from `@sharpee/text-service`)
+ * @see ADR-296 Turn narrative slots (D0 contract, D2 frame/anchor,
+ *   D5 hoist deletion)
+ * @see ADR-094 Event Chaining, Amendment A1 (the authorial promise this
+ *   stage delivers; provenance stamps remain, depth sorting is retired)
  * @see ADR-174 §Engine-internal prose pipeline
  */
 import type { ISemanticEvent } from '@sharpee/core';
 /**
- * Event data with chain metadata (ADR-094).
+ * Event data with chain/placement metadata (ADR-094 provenance stamps,
+ * ADR-296 placement stamps).
  */
 interface ChainMetadata {
     _transactionId?: string;
     _chainDepth?: number;
     _chainedFrom?: string;
     _chainSourceId?: string;
+    _narrativeSlot?: string;
 }
 /**
- * Sort events for correct prose order within transactions.
+ * Order a turn's events for prose per the D0 contract (see module
+ * header): lifecycle first, then transactions in occurrence order, each
+ * internally placed by `placeTransaction`.
  *
- * Stable sort — preserves cross-transaction order while applying
- * within-transaction rules.
+ * Does not mutate the input array. Stable: events with no placement rule
+ * keep their relative order.
  */
 export declare function sortEventsForProse(events: ISemanticEvent[]): ISemanticEvent[];
 /**
- * Extract chain metadata from event data.
+ * Extract chain/placement metadata from event data.
  */
 export declare function getChainMetadata(event: ISemanticEvent): ChainMetadata;
 export {};
