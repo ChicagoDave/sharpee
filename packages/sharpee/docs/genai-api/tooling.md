@@ -344,10 +344,12 @@ export declare function findStoryFile(dir: string): string | null;
  * with `.story` line numbers (ADR-210 AC-3).
  *
  * @param storyFile absolute or cwd-relative path to the `.story` file
+ * @param seed master seed for the chord evaluator's stream (ADR-293 D1);
+ *   omitted, the stream is time-seeded (interactive play with no pin)
  * @returns the constructed story instance (not yet assembled into a game)
  * @throws on gate errors, with every diagnostic in the message
  */
-export declare function loadChordStory(storyFile: string): unknown;
+export declare function loadChordStory(storyFile: string, seed?: number): unknown;
 /**
  * Load an author project (or an explicit `.story` file) into a runnable game.
  *
@@ -359,6 +361,7 @@ export declare function loadChordStory(storyFile: string): unknown;
  */
 export declare function loadAuthorGame(target: string, opts?: {
     entry?: string;
+    seed?: number;
 }): Promise<LoadedGame>;
 ```
 

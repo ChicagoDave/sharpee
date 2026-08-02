@@ -79,14 +79,22 @@ export { buildManifest } from './introspect.js';
  *
  * @param location  path to the story directory
  * @param opts.entry optional story sub-entry to pin (transcript `entry:` header)
+ * @param opts.seed  master seed for the session (ADR-293 D1), forwarded to
+ *   `assembleGame`; absent → the engine reads the clock once
  * @throws if the module can't be resolved/required or exports no createStory()
  */
-export async function loadStory(location: string, opts?: { entry?: string }): Promise<LoadedGame> {
+export async function loadStory(
+  location: string,
+  opts?: { entry?: string; seed?: number },
+): Promise<LoadedGame> {
   const modulePath = resolveStoryModulePath(location, opts?.entry);
   // ADR-248: the same provider serves the initial load and every
   // in-process restart reboot — purge, re-require, call the factory.
   const freshStory = moduleFreshStory(location, modulePath);
-  return assembleGame(freshStory(), { freshStory });
+  return assembleGame(freshStory(), {
+    freshStory,
+    ...(opts?.seed !== undefined ? { seed: opts.seed } : {}),
+  });
 }
 
 /**

@@ -307,7 +307,7 @@ Examples:
 
   // Compile a `.story` file and interpret it via @sharpee/story-loader.
   // Load-time-gate diagnostics abort with `.story` line numbers (AC-3).
-  function loadChordStory(storyFile) {
+  function loadChordStory(storyFile, seed) {
     const source = fs.readFileSync(storyFile, 'utf-8');
     const result = chord.compile(source);
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
@@ -324,7 +324,10 @@ Examples:
         hatchModules[hatch.modulePath] = requireHatchModule(storyDir, hatch.modulePath);
       }
     }
-    return storyLoader.createStory(result.ir, { hatchModules });
+    // ADR-293 D1: the chord evaluator's stream (`one chance in <n>`,
+    // `randomly`) derives from the session's master seed — omitting it here
+    // left chord draws clock-seeded under a pinned --seed/seed: header.
+    return storyLoader.createStory(result.ir, { hatchModules, seed });
   }
 
   // Single loader (ADR-180): resolve the story module (entry-aware) and assemble
@@ -337,11 +340,15 @@ Examples:
     // restart reboot reuses it, so pinned runs survive in-transcript RESTART.
     const seedOption = seed !== undefined ? { seed } : {};
     if (storyPath.endsWith('.story')) {
+      // ADR-293 D1: one master seed governs the engine AND the chord
+      // evaluator. When none was injected, read the clock once HERE so both
+      // get the same value — the reported seed then reproduces chord draws.
+      const masterSeed = seed !== undefined ? seed : Date.now();
       // ADR-248: freshStory recompiles from source, so an in-transcript
-      // RESTART reboots onto a fully fresh ChordStory.
-      return bootstrap.assembleGame(loadChordStory(storyPath), {
-        freshStory: () => loadChordStory(storyPath),
-        ...seedOption,
+      // RESTART reboots onto a fully fresh ChordStory (same master seed).
+      return bootstrap.assembleGame(loadChordStory(storyPath, masterSeed), {
+        freshStory: () => loadChordStory(storyPath, masterSeed),
+        seed: masterSeed,
       });
     }
     const modulePath = bootstrap.resolveStoryModulePath(storyPath, entry);
