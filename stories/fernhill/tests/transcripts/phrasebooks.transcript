@@ -1,5 +1,6 @@
 title: Fernhill phrasebooks — the night changes the voice (ADR-250 E2E)
 story: fernhill
+seed: 42
 description: The unreliable-narrator spine (ADR-250 D9). vane-mood lives
   only in the two books — evening-voice (the default book) speaks until
   the turn-14 midnight flip, then midnight-voice wins arbitration.
@@ -27,10 +28,37 @@ description: The unreliable-narrator spine (ADR-250 D9). vane-mood lives
 [OK: contains "keeps its own counsel"]
 
 # Cross the turn-14 midnight transition (the long night sequence).
-[DO]
+# Cross the midnight transition (loop region unrolled to its seed-42
+# sequence — ADR-294 migration; the last-light beat lands on the 10th wait)
 > wait
-[OK: contains_any "Time passes" "last light"]
-[UNTIL "the last light goes out of the sky"]
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "the last light goes out of the sky"]
 
 # Midnight: midnight-voice wins arbitration — and starts at ITS OWN
 # first variant (per-(book, key) counters, ADR-250 D5).

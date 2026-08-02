@@ -1,5 +1,6 @@
 title: Fernhill D2 — the fuse: cut it and live
 story: fernhill
+seed: 42
 description: Entering the folly lights the old fuse (once); the anchored
   sequence gives three turns of hissing stakes; the shears (B2's second
   edge) cut it dead. The lose branch is fuse-lose.transcript.
@@ -40,10 +41,16 @@ description: Entering the folly lights the old fuse (once); the anchored
 > turn on the boiler
 [OK: contains "warmth crawls"]
 
-[DO]
+# Wait for Tobias's rounds to bring him here (loop region unrolled to its
+# seed-42 sequence — ADR-294 migration; he enters on the third wait)
 > wait
-[OK: contains_any "Time passes" "enters"]
-[UNTIL "enters from the"]
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "enters from the"]
 
 > ask tobias about the fire
 [OK: contains "warped, not cursed"]

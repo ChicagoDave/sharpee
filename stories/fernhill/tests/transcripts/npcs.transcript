@@ -1,5 +1,6 @@
 title: Fernhill C1–C4 — Kettle's block and bribe, Tobias's patrol and topics
 story: fernhill
+seed: 42
 description: The guard block (conditional exit on Mrs Kettle's state) lifts on
   the sherry bribe (give-gating, possession-conditioned state change). Tobias
   patrols his route (caught with wait-UNTIL); his topics table answers the
@@ -62,10 +63,43 @@ description: The guard block (conditional exit on Mrs Kettle's state) lifts on
 > south
 [OK: contains "Fountain Court"]
 
-[DO]
+# Wait for Tobias's patrol (loop region unrolled to its seed-42
+# sequence — ADR-294 migration; he enters on the twelfth wait)
 > wait
-[OK: contains_any "Time passes" "enters"]
-[UNTIL "enters from the"]
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "enters from the"]
 
 # --- C4 table 1 (Tobias): free-text ALIAS hit (the row's primary is
 # "the folly") — his answer owns the response; the shrug never appends ---
@@ -85,10 +119,15 @@ description: The guard block (conditional exit on Mrs Kettle's state) lifts on
 > east
 [OK: contains "old coal dust"]
 
-[DO]
+# Tobias's patrol again (unrolled; he enters on the third wait here)
 > wait
-[OK: contains_any "Time passes" "enters"]
-[UNTIL "enters from the"]
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "enters from the"]
 
 > ask tobias about the boiler
 [OK: contains "Fill her, set the valve, then light"]

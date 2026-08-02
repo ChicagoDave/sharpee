@@ -1,5 +1,6 @@
 title: Fernhill G4/G5 — media and channel beats degrade legibly in text
 story: fernhill
+seed: 42
 description: The browser-presentation layer (ambient wind, boiler thump,
   folly photograph, clock channel) is gated on `client has` flags that all
   read FALSE in the text client. Every media beat's turn must show its
@@ -44,10 +45,29 @@ description: The browser-presentation layer (ambient wind, boiler thump,
 > wind the clock
 [OK: contains "begins to walk again"]
 
-[DO]
+# The chime is chance-gated (one in 8 per ticking turn); at seed 42 it
+# first lands on the seventh wait (loop region unrolled to its seed-42
+# sequence — ADR-294 migration)
 > wait
-[OK: contains_any "Time passes" "counts the quarter"]
-[UNTIL "counts the quarter"]
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "counts the quarter"]
 
 > wait
 [OK: not contains "estate-clock"]
@@ -56,7 +76,7 @@ description: The browser-presentation layer (ambient wind, boiler thump,
 # --- Re-entering the Grounds (play ambient again, gated): the cold line
 # still speaks ---
 > south
-[OK: contains_any "The cold finds you" "The cold again"]
+[OK: contains "The cold finds you"]
 [OK: not contains "audio/"]
 
 # --- G4 sound (play sound boiler-thump when the machine lights): the

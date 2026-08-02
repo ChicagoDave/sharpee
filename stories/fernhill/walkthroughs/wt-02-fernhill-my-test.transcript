@@ -2,29 +2,29 @@ title: Recorded: fernhill-my-test - part 1 of 1
 ---
 
 > look
-[OK: any]
+[SKIP]
 # The play session's own opening turn, replayed so the story banner
 # lands here. A fresh run prints it with the first command, and it
 # would otherwise be prepended to the first blessed response below.
 
 > look
-[OK: any]
+[SKIP]
 # Iron Gates
 # Wrought-iron gates stand open on one hinge apiece, rust freckling the scrollwork. The gravel drive runs north toward the dark shape of the house.
 # Far off in the village, the church bell counts another quarter hour gone.
 
 > n
-[OK: any]
+[SKIP]
 # Gravel Drive
 # The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.
 # You can see Tobias here.
 
 > talk to tobias
-[OK: any]
+[SKIP]
 # Tobias doesn't respond.
 
 > n
-[OK: any]
+[SKIP]
 # Fountain Court
 # A paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenhouse glimmers palely to the west; a squat brick shed hunches to the east; the front door of the house is north.
 
@@ -36,9 +36,9 @@ The heart of the house: a cold marble floor, a dead fireplace under a wide mante
 
 You can see a grey overcoat and Mrs Kettle here.
 
-Mrs Kettle blocks your way!
-
 You step out of the wind, and your ears sing in the sudden quiet.
 
 The house holds its old hush — mothballs, cold ash, and wax.
+
+Mrs Kettle blocks your way!
 end text

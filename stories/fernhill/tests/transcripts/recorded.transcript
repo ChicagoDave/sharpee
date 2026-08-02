@@ -1,32 +1,30 @@
 title: Recorded: recorded
+story: fernhill
+seed: 42
 ---
 
 > look
-[OK: any]
+[SKIP]
 # The play session's own opening turn, replayed so the story banner
 # lands here. A fresh run prints it with the first command, and it
 # would otherwise be prepended to the first blessed response below.
 
 > lok
-[OK: any]
+[SKIP]
 # I don't understand that.
 
 > look
 [OK]
 text
-Entrance Hall
-The heart of the house: a cold marble floor, a dead fireplace under a wide mantel, and a tall case clock standing silent against the stairs. Doors lead west to the study and east to the kitchen; a colder passage runs north.
-
-You can see a grey overcoat and Mrs Kettle here.
-
-On the mantel you see a framed photograph.
+Iron Gates
+Wrought-iron gates stand open on one hinge apiece, rust freckling the scrollwork. The gravel drive runs north toward the dark shape of the house.
 end text
 
 > n
 [OK]
 text
-Cellar Stairs
-A bare landing at the top of the cellar steps. An oil lamp sits in a wall niche, left where a careful hand could always find it.
+Gravel Drive
+The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.
 
-You can see an oil lamp here.
+You can see Tobias here.
 end text

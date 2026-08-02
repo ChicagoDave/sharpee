@@ -1,5 +1,6 @@
 title: Fernhill — the long night, start to deed (WIN)
 story: fernhill
+seed: 42
 description: The full estate arc: key from the mat, the coat and the clock,
   the sherry toll, the diary and the mantel's gated hint, the cellar and
   the crowbar, the boiler's three stages, Tobias's truth, the vine and the
@@ -133,11 +134,8 @@ description: The full estate arc: key from the mat, the coat and the clock,
 [OK: contains "scored 25 out of 50"]
 
 # Tobias's truth (+5 = 30)
-[DO]
-> wait
-[OK: contains_any "Time passes" "enters"]
-[UNTIL "enters from the"]
-
+# At seed 42 Tobias's patrol has already brought him here (loop region
+# resolved to its seed-42 sequence: zero waits — ADR-294 migration)
 > ask tobias about the fire
 [OK: contains "warped, not cursed"]
 

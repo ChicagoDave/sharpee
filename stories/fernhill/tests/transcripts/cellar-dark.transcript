@@ -1,5 +1,6 @@
 title: Fernhill A4 — the dark cellar and the oil lamp
 story: fernhill
+seed: 42
 description: The cellar is dark; without light the vaults cannot be seen.
   The oil lamp (light-source, switchable) on the stairs lights the way.
 ---
@@ -49,13 +50,15 @@ description: The cellar is dark; without light the vaults cannot be seen.
 [OK: contains "Brick vaults"]
 [OK: contains "skitters away from your lamplight"]
 
-# D3: the drip keeps its own time (presence-gated, cycling)…
+# D3: the drip keeps its own time (presence-gated, cycling — first firing
+# is "its own time", second "a drop falls"; ADR-294 migration off
+# contains_any, pinned at seed 42)
 > wait
-[OK: contains_any "a drop falls" "its own time"]
+[OK: contains "its own time"]
 
 # …and the startle was `, once` — it never repeats
 > wait
-[OK: contains_any "a drop falls" "its own time"]
+[OK: contains "a drop falls"]
 [OK: not contains "skitters"]
 
 > turn off the oil lamp
