@@ -80,6 +80,17 @@ The original justification for presence-only capture — "story text is delibera
 - **(a) Fix `[SKIP]` to execute-without-asserting** — a `packages/transcript-tester` runner change (platform surface; this decision point is the CLAUDE.md-required discussion). Aligns the runner with ADR-294 D2's own text ("output is deliberately not asserted") and both corpus usages' stated intent ("we just verify no crash"); both are terminal lines, so no existing transcript's behavior changes observably. Keeps Decision 1's ruling (a) sound exactly as ruled. `[TODO]` shares the code path — same treatment (execute, report as skipped/todo, don't assert) keeps the pair consistent.
 - **(b) Keep the runner as-is; re-open Decision 1 for a different format** — verbatim capture and golden-at-save were already rejected on design grounds; the remaining alternative is new grammar (a presence-only form), which ADR-294 D2 explicitly killed. Unattractive.
 - **Recommendation: (a)** — the runner behavior is a defect against the ADR's documented semantics, not a design choice worth preserving; fixing it unblocks the ruled recorder format with no observable corpus change (verified: both in-repo `[SKIP]`s are terminal).
+- **Ruled (2026-08-02, David): (a)** — fix the runner; `[TODO]` gets the same treatment. This ruling is the CLAUDE.md-required platform discussion for the `packages/transcript-tester` change; implemented as Phase 4 (executed before Phase 1).
+
+### Phase 4 (added by Decision 4's ruling; executed before Phase 1): `[SKIP]`/`[TODO]` execute without asserting
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: N/A (transcript-tester runner)
+- **Entry state**: Decision 4 ruled (a). Platform change authorized by that ruling.
+- **Deliverable**: `runner.ts`'s `runCommand` executes the command before returning the skipped result (`skipped: true`, no assertion evaluated, actual output/events captured in the result for reporting); `[TODO]` same path, same treatment. Tests derived from a Behavior Statement pin: state advances through a `[SKIP]`ed turn (the Finding 13 reproduction — `[SKIP]`ed `> north` then `$save` yields a turn-1 save, not turn-0), output is not asserted, and a `[SKIP]`ed command that crashes the engine still fails the transcript.
+- **Exit state**: `[SKIP]` means what ADR-294 D2 says it means; the Finding 13 reproduction now saves post-move state.
+- **Verification**: tester suite green (with new tests); `./repokit build dungeo`; the two grue transcripts still green; full dungeo corpus + walkthrough chain green; `npx vitest run scripts/__tests__/cli-restore.test.ts` still green.
+- **Status**: COMPLETE (2026-08-02, session 1d3b6f) — skip check moved after execution in `runCommand`; skipped turns capture output/events, evaluate no assertion, and fail on engine error; `[TODO]` same path. New `tests/skip-executes.test.ts` (4 tests: cross-turn state advance, output-captured-not-asserted, `[TODO]` parity, engine-error rejection); stale aggregate test name corrected. Tester 211 green, bundle rebuilt, grue transcripts green, dungeo corpus green, chain 952/952, cli-restore 3/3.
 
 ### 2. Should fernhill's two `[OK: any]`-only recorder-output files be re-recorded as this plan's real-path acceptance evidence, or stay entirely with #209?
 

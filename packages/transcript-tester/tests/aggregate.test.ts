@@ -161,7 +161,7 @@ describe('transcriptRecords', () => {
     expect(JSON.parse(ndjsonLine(command))).not.toHaveProperty('actualOutput');
   });
 
-  it('a SKIPPED command omits it too — a skip reports passed, and ran nothing', () => {
+  it('a SKIPPED command omits it too — a skip reports passed with nothing asserted', () => {
     const skippedResult: TranscriptResult = {
       ...passed,
       commands: [
