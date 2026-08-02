@@ -296,7 +296,7 @@ final class TestPanelView: NSView {
     ///
     /// Only a FAILED command that carries captured text and owns a verbatim
     /// bless has an old-vs-new to show. Anything else — a passing row, a
-    /// transcript row, an `[OK: any]` failure — leaves the pane closed rather
+    /// transcript row, a `[SKIP]`-draft failure — leaves the pane closed rather
     /// than showing an empty comparison the author cannot act on.
     ///
     /// - Parameter command: the selected command row, or nil for no selection.

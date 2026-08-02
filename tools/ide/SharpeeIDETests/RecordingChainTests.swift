@@ -153,7 +153,7 @@ final class RecordingChainTests: XCTestCase {
 
         let sources = session.serializeChain(title: "Chain")
 
-        XCTAssertTrue(sources[0].contains("[OK: any]"), "the untagged turn keeps the draft assertion")
+        XCTAssertTrue(sources[0].contains("[SKIP]"), "the untagged turn keeps the draft [SKIP] line")
         XCTAssertFalse(sources[0].contains("\n[OK]"))
         XCTAssertTrue(sources[1].contains("[OK]"), "the blessed turn asserts its response")
         XCTAssertTrue(sources[1].contains("end text"))
