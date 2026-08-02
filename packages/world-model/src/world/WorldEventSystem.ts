@@ -39,6 +39,27 @@ export type EventChainHandler = (
 ) => ISemanticEvent | ISemanticEvent[] | null | undefined | void;
 
 /**
+ * Narrative slot a chain may declare for its produced phrases (ADR-296 D3).
+ * Slots place phrases within the triggering transaction's frame; the sort's
+ * insertion pass (engine prose pipeline) realizes them. The two remaining
+ * frame positions (`beforeEverything`, `roomDescription`) are not declarable:
+ * the former is platform-lifecycle-only, the latter is identified by event type.
+ */
+export type ChainNarrativeSlot =
+  | 'beforeRoomDescription'
+  | 'afterRoomDescription'
+  | 'afterEverything';
+
+/**
+ * Phrase carriers (ADR-296 Vocabulary): the event types that carry a
+ * messageId+params narration primitive. Only these receive a
+ * `_narrativeSlot` stamp at chain dispatch — typed non-phrase events a
+ * chain produces (`if.event.revealed`, `zoo.event.*`) keep their stream
+ * position and are never re-placed.
+ */
+const PHRASE_EVENT_TYPES = new Set(['game.message', 'chord.phrase']);
+
+/**
  * Options for chain registration.
  */
 export interface ChainEventOptions {
@@ -60,6 +81,14 @@ export interface ChainEventOptions {
    * Default: 100
    */
   priority?: number;
+
+  /**
+   * Narrative slot for phrase events this chain produces (ADR-296 D3).
+   * Stamped as `data._narrativeSlot` on produced phrase events
+   * (`game.message` / `chord.phrase`) at dispatch time.
+   * Default: 'afterRoomDescription'.
+   */
+  slot?: ChainNarrativeSlot;
 }
 
 /**
@@ -69,6 +98,8 @@ interface ChainRegistration {
   handler: EventChainHandler;
   key?: string;
   priority: number;
+  /** Declared narrative slot for produced phrase events (ADR-296 D3). */
+  slot: ChainNarrativeSlot;
 }
 
 /**
@@ -210,8 +241,8 @@ export class WorldEventSystem {
     handler: EventChainHandler,
     options: ChainEventOptions = {}
   ): void {
-    const { mode = 'cascade', key, priority = 100 } = options;
-    const registration: ChainRegistration = { handler, key, priority };
+    const { mode = 'cascade', key, priority = 100, slot = 'afterRoomDescription' } = options;
+    const registration: ChainRegistration = { handler, key, priority, slot };
 
     if (!this.eventChains.has(triggerType)) {
       this.eventChains.set(triggerType, []);
@@ -277,6 +308,9 @@ export class WorldEventSystem {
           }
 
           const existingData = (chainedEvent.data || {}) as Record<string, unknown>;
+          // ADR-296 D3: the registration's slot is stamped onto phrase events
+          // only — non-phrase events keep stream position and get no stamp.
+          const isPhraseEvent = PHRASE_EVENT_TYPES.has(chainedEvent.type);
           const enrichedEvent: ISemanticEvent = {
             id: chainedEvent.id || `chain-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             type: chainedEvent.type,
@@ -287,7 +321,8 @@ export class WorldEventSystem {
               _chainedFrom: event.type,
               _chainSourceId: event.id,
               _chainDepth: newDepth,
-              ...(transactionId ? { _transactionId: transactionId } : {})
+              ...(transactionId ? { _transactionId: transactionId } : {}),
+              ...(isPhraseEvent ? { _narrativeSlot: chain.slot } : {})
             }
           };
 

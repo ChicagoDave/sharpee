@@ -587,3 +587,13 @@ them; reordering against emitters' intent) are removed. The chain-provenance sta
 remain. The metadata layer was not needless; it was unfinished, and the finishing
 changed its shape. If ADR-296 is not accepted, this amendment still stands as the
 accurate record of what was and was not implemented.
+
+**Further (2026-08-02, ADR-296 ACCEPTED and implemented):** the promise is
+delivered via slots. The engine's two funnels now stamp real per-source
+`_transactionId`s (`txn:{turn}:action`, `txn:{turn}:plugin:{id}`), chains
+declare a narrative slot (`ChainEventOptions.slot`, stamped as
+`_narrativeSlot` on produced phrase events), and the prose sort places
+slot-stamped phrases at their transaction's frame boundary. The depth-sort
+mechanism is retired — the chain-depth comparator and the type-based hoists
+are deleted from `sort.ts` — and the provenance stamps
+(`_chainedFrom`/`_chainSourceId`/`_chainDepth`) remain.

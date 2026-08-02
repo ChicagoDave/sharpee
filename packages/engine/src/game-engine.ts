@@ -1072,9 +1072,13 @@ export class GameEngine {
       const enrichmentContext = {
         turn,
         playerId: this.context.player.id,
-        locationId: playerLocation
+        locationId: playerLocation,
+        // ADR-296 D1: the player action is one transaction; every event in
+        // this batch is stamped with the same id (when not already carrying
+        // one inherited via executeChains — the funnel stamp is idempotent).
+        transactionId: `txn:${turn}:action`
       };
-      
+
       // Store events for this turn (process through enrichment pipeline)
       let semanticEvents = result.events.map(e => processEvent(e, enrichmentContext));
 
@@ -1176,7 +1180,7 @@ export class GameEngine {
         for (const plugin of this.pluginRegistry.getAll()) {
           const pluginEvents = plugin.onAfterAction(pluginContext);
           if (pluginEvents.length > 0) {
-            this.processPluginEvents(pluginEvents, turn, playerLocation);
+            this.processPluginEvents(pluginEvents, turn, playerLocation, plugin.id);
           }
         }
       }
@@ -2069,16 +2073,25 @@ export class GameEngine {
   /**
    * Process events from a plugin through the shared pipeline (ADR-120)
    * Enriches, filters, stores, and emits events.
+   *
+   * @param pluginId - Id of the contributing plugin; forms the batch's
+   *   transaction id `txn:{turn}:plugin:{pluginId}` (ADR-296 D1). One batch
+   *   per plugin per turn today — if a plugin ever runs multiple batches in
+   *   one turn, this id shape under-specifies and needs an invocation
+   *   counter (stop and design it; do not improvise).
    */
   private processPluginEvents(
     events: ISemanticEvent[],
     turn: number,
-    playerLocation: string | null | undefined
+    playerLocation: string | null | undefined,
+    pluginId: string
   ): void {
     const enrichmentContext = {
       turn,
       playerId: this.context.player.id,
-      locationId: playerLocation ?? undefined
+      locationId: playerLocation ?? undefined,
+      // ADR-296 D1: each plugin batch is its own transaction.
+      transactionId: `txn:${turn}:plugin:${pluginId}`
     };
 
     let processed = events.map(e => processEvent(e, enrichmentContext));
