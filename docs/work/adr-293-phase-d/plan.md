@@ -96,7 +96,7 @@ ADR-293's Consequences section observes that "with outcomes reproducible and sel
 - **Deliverable**: Direct re-verification of ADR-294's stability claim ("`wt-13-thief-fight` is now a stable 80/80/80 across runs") by running the full `wt-*` chain three consecutive times at the same default/pinned seed and diffing output byte-for-byte — this is the closing evidence for ADR-293 Acceptance 2 and the Consequences line naming this policy directly. Add explicit anti-superstition guidance to root `CLAUDE.md`'s Testing Commands section stating that chain runs are byte-deterministic at a pinned seed and a single run is sufficient — this is the concrete artifact that stops the observed habit (Finding 5: nothing else encodes or enforces it, so nothing else needs to change).
 - **Exit state**: Three consecutive chain runs at the same seed are byte-identical (recorded as evidence); root `CLAUDE.md` explicitly states single-run sufficiency; the policy is retired as a documented practice, not merely as a root cause (closing the gap Finding 5 identified between ADR-294's claim and observed same-day session behavior).
 - **Verification**: `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` ×3 at the same seed, diffed; `git diff CLAUDE.md`.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-08-02, session 1d3b6f) — three consecutive chain runs identical (1084 output lines each, 952/952 passed, identical coverage report; the only variance is per-transcript wall-clock timing, normalized before diffing). Root `CLAUDE.md` now states single-run sufficiency explicitly, citing this verification. ADR-293 Acceptance 2 evidence closed.
 
 ---
 

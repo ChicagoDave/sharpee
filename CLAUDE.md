@@ -199,6 +199,7 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 - If a transcript was passing before, don't change its commands. Control-flow directives (`[WHILE:]`, `[RETRY:]`, `[DO]`/`[UNTIL]`, `[IF:]`, `[ENSURES:]`, `[REQUIRES:]`, `[NAVIGATE TO:]`) are removed grammar (ADR-294 D4) — the parser rejects each by name; never add them.
 - Combat sequences are exact pinned-seed counts, not padding. Runs are deterministic at the pinned seed: derive the required command list by probing with `--exec`, or pin a specific outcome with the `forces:`/`point-seed:` header fields (ADR-293 Phase C). Never add surplus attack commands "for safety."
 - Walkthrough transcripts (`wt-*`) must be run with `--chain` flag to preserve game state.
+- Chain runs are deterministic at the pinned seed: results are identical run-to-run (only wall-clock timings vary). **A single run is sufficient** — never re-run the chain to "check for flakiness"; the run-twice habit is retired (ADR-293 Phase D, verified 3× byte-identical 2026-08-02).
 
 Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
 
