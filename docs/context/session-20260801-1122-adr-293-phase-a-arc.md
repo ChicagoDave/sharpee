@@ -77,9 +77,22 @@ David approved (this session) designing a ground-up transcript-tester rebuild **
 - Interview resolved all six questions (Q1 `[NAVIGATE TO:]` deleted; Q2 text-only + `events:` opt-in; Q3 walkthroughs golden / unit assertion-tier; Q4 ADR-290 amended separately; Q5 one arc: handler access → Phase B → rebuild; Q6 forcing first, CLI first). `adr-review` 10/15 → 15/15 after three folds (Acceptance AC-1..AC-14, `.golden` format block, status wording). **ACCEPTED by David.**
 - Memory saved: testing intelligence is a Sharpee/Chord product differentiator (David's framing), `project_testing_intelligence_differentiator.md`.
 
+## Completed (continued) — ADR-290 A1 + ADR-293 Phase B (same session)
+
+### ADR-290 Amendment A1 (commit `2eb640db`)
+- Output artifact retargeted to ADR-294 goldens per 294 Q4; per-turn bless rescoped to optional assertion-tier annotation; overdue ADR-293 dependency recorded (seed pin = clean-world guarantee in the randomness dimension). Stays DRAFT.
+
+### Handler-access discussion — dissolved (no platform gap)
+Phase A's "event handlers with no route to RandomService" was a misclassification, verified in source: round-room, bat, and low-room/carousel are scheduler **daemons** (`SchedulerContext.random` exists — plugin-scheduler `types.ts:25`, threaded in Phase 4); trivia's draw is called from the **knock action** (`ActionContext.random`). No platform change needed; Phase B is pure story work.
+
+### ADR-293 Phase B — the four draws converted (story-level, autonomous per project rules)
+- `round-room-handler.ts` → `dungeo.round-room.exit` (plain, `pick` over live exits); `bat-handler.ts` → `dungeo.bat.drop-room` (plain, `pick` over valid rooms); `carousel-handler.ts` → `dungeo.low-room.exit` (plain, `pick` over the two room ids — MDL `<PROB 50>` preserved); `dungeon-master-trivia.ts` `startTrivia(state, random)` → `dungeo.trivia.first-question` (`int` 0–7) threaded from `knock-action.ts`. Distributions unchanged. Four entries removed from `tools/repokit/entropy-allowlist.txt` (44 lines remain).
+- `stories/dungeo/CLAUDE.md` Low Room note updated (replay-deterministic; WHILE loops no longer load-bearing).
+- **Phase B gate (evidence inline, 2026-08-01 ~16:20 CDT)**: three full wt-* chains at `--seed 42` — **944 passed, 0 failures each, byte-identical across all three runs** (diff excluding timing lines: 0 lines, both pairs). Full AC-2 byte-identity, unreachable all morning, now closes.
+- **Regression (evidence inline, ~14:55 CDT)**: dungeo unit suite **31 passing** (`pnpm exec vitest run`; note: `pnpm --filter … test` alone starts vitest WATCH mode — it never exits); full `./repokit build dungeo` green (bundle 3466729 bytes); `./repokit verify` green through the entropy gate (trimmed allowlist accepted) and `tsf build --npm`; only the known pre-existing publish-over-4.3.0 dry-run state fails.
+- **Status**: ADR-293 Phase B COMPLETE. The ADR-294 rebuild is now unblocked (D12 arc steps 1–2 done).
+
 ## Open Items
-- **Handler-access platform discussion** (D12 arc step 1): how event handlers reach `RandomService` — blocks ADR-293 Phase B, which blocks the ADR-294 rebuild.
-- **ADR-290 amendment** (independent): retarget output artifact to goldens per ADR-294 Q4; add its overdue ADR-293 dependency note.
 - Carried (unchanged): post-293 coverage walkthrough (partially answered by ADR-294 D11/D13); `IDebugEvent` dead tier; `ring-action.ts:141` bug unfiled; publish dry-run 4.3.0 state (version bump or accept).
 
 ## Files Modified

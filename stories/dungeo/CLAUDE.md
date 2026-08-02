@@ -53,8 +53,10 @@ The single `CAROUSEL-FLIP!-FLAG` drives the two rooms **oppositely** (verified i
   but randomizes the Low Room**. So after the button push the player must bounce through the
   Low Room (retry until Tea Room) to get out — see the WHILE loop in `wt-10-tea-room`.
 - The robot starts in this room.
-- (Randomization uses `Math.random()` in `carousel-handler.ts` — like the Round Room; not yet
-  replay-deterministic. Transcripts cope via WHILE-loop retry, not a fixed seed.)
+- (Randomization is replay-deterministic since ADR-293 Phase B: the draw is the
+  `dungeo.low-room.exit` point on the session `RandomService` — like the Round Room's
+  `dungeo.round-room.exit`. The WHILE-loop retries in transcripts still work but are
+  no longer load-bearing at a pinned seed; they go away with the ADR-294 rebuild.)
 
 ## Project Structure
 

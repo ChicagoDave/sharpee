@@ -19,10 +19,6 @@
 3 packages/media/src/audio/audio-registry.ts
 1 tools/vscode-ext/src/new-story-wizard.ts
 1 stories/thealderman/src/randomization.ts
-1 stories/dungeo/src/npcs/dungeon-master/dungeon-master-trivia.ts
-1 stories/dungeo/src/handlers/round-room-handler.ts
-1 stories/dungeo/src/handlers/carousel-handler.ts
-1 stories/dungeo/src/handlers/bat-handler.ts
 1 stories/dungeo/src/combat/melee-npc-attack.ts
 1 stories/dungeo/src/actions/gdt/gdt-input-handler.ts
 1 stories/cloak-of-darkness/src/index.ts

@@ -8,9 +8,12 @@
  * MDL source: act3.199:167-191 (MAGNET-ROOM + MAGNET-ROOM-EXIT)
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, RandomService, definePoint } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+
+// Plain draw (ADR-293 D4): 50/50 over two live room ids (MDL <PROB 50>).
+const LOW_ROOM_EXIT_POINT = definePoint('dungeo.low-room.exit');
 
 export const CarouselMessages = {
   COMPASS_SPINNING: 'dungeo.carousel.compass_spinning',
@@ -38,8 +41,8 @@ function isCarouselActive(world: WorldModel): boolean {
 /**
  * Pick a random destination: Machine Room or Tea Room (50/50)
  */
-function getRandomDestination(machineRoomId: string, teaRoomId: string): string {
-  return Math.random() < 0.5 ? machineRoomId : teaRoomId;
+function getRandomDestination(machineRoomId: string, teaRoomId: string, random: RandomService): string {
+  return random.pick(LOW_ROOM_EXIT_POINT, [machineRoomId, teaRoomId]);
 }
 
 /**
@@ -75,7 +78,7 @@ export function registerCarouselHandler(
       const events: ISemanticEvent[] = [];
 
       // Pick random destination (may be the same as where they ended up)
-      const randomDest = getRandomDestination(machineRoomId, teaRoomId);
+      const randomDest = getRandomDestination(machineRoomId, teaRoomId, context.random);
 
       // Emit "cannot get your bearings" message
       events.push({

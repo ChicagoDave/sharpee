@@ -9,7 +9,11 @@
  * Question answers extracted from dungeon-messages.txt
  */
 
+import { RandomService, definePoint } from '@sharpee/core';
 import { DungeonMasterMessages } from './dungeon-master-messages';
+
+// Plain draw (ADR-293 D4): uniform starting question index, 0..7.
+const TRIVIA_FIRST_QUESTION_POINT = definePoint('dungeo.trivia.first-question');
 
 export interface TriviaQuestion {
   id: number;
@@ -110,9 +114,9 @@ export function initializeTriviaState(): TriviaState {
 /**
  * Start the trivia - select random first question
  */
-export function startTrivia(state: TriviaState): TriviaState {
+export function startTrivia(state: TriviaState, random: RandomService): TriviaState {
   // Random starting question (0-7)
-  const firstQuestion = Math.floor(Math.random() * 8);
+  const firstQuestion = random.int(TRIVIA_FIRST_QUESTION_POINT, 0, 7);
   return {
     ...state,
     currentQuestion: firstQuestion,

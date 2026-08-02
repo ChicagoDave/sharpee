@@ -8,10 +8,13 @@
  * The room is "fixed" when the robot pushes the button (not yet implemented).
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, RandomService, definePoint } from '@sharpee/core';
 import { WorldModel, RoomTrait, IdentityTrait, Direction, DirectionType } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { RoundRoomTrait } from '../traits';
+
+// Plain draw (ADR-293 D4): the destination set is the room's live exit list.
+const ROUND_ROOM_EXIT_POINT = definePoint('dungeo.round-room.exit');
 
 export const RoundRoomMessages = {
   COMPASS_SPINNING: 'dungeo.round_room.compass_spinning',
@@ -51,7 +54,7 @@ function getValidExits(world: WorldModel, roundRoomId: string): string[] {
 /**
  * Pick a random exit destination from the Round Room
  */
-function getRandomExit(world: WorldModel, roundRoomId: string): string | null {
+function getRandomExit(world: WorldModel, roundRoomId: string, random: RandomService): string | null {
   const exits = getValidExits(world, roundRoomId);
 
   if (exits.length === 0) return null;
@@ -59,8 +62,7 @@ function getRandomExit(world: WorldModel, roundRoomId: string): string | null {
   // MDL CAROUSEL-OUT picks any of the 8 compass exits at random, without
   // excluding the intended destination. With NORTH and SOUTH both pointing
   // to Engravings Cave, there is a 2/8 chance of reaching it per attempt.
-  const randomIndex = Math.floor(Math.random() * exits.length);
-  return exits[randomIndex];
+  return random.pick(ROUND_ROOM_EXIT_POINT, exits);
 }
 
 /**
@@ -106,7 +108,7 @@ export function registerRoundRoomHandler(
       }
 
       // Room is spinning! Randomize the destination
-      const randomDestination = getRandomExit(world, roundRoomId);
+      const randomDestination = getRandomExit(world, roundRoomId, context.random);
 
       if (!randomDestination || randomDestination === playerLocation) {
         // No valid destination, or randomly picked the same room we're already in

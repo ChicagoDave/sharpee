@@ -110,7 +110,7 @@ export const knockAction: Action = {
     }
 
     // Start the trivia! DM appears and asks first question
-    const newState = startTrivia(triviaState);
+    const newState = startTrivia(triviaState, context.random);
     setTriviaState(context, newState);
     sharedData.newTriviaState = newState;
     sharedData.resultMessage = KnockMessages.DM_APPEARS;

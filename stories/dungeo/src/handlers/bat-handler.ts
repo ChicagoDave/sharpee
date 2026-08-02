@@ -7,9 +7,12 @@
  * - If player doesn't have garlic: bat carries player to a random underground room
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { ISemanticEvent, RandomService, definePoint } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
 import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+
+// Plain draw (ADR-293 D4): the destination set is the live underground room list.
+const BAT_DROP_ROOM_POINT = definePoint('dungeo.bat.drop-room');
 
 export const BatMessages = {
   ATTACKS: 'dungeo.bat.attacks',
@@ -61,7 +64,8 @@ function playerHasGarlic(world: WorldModel, playerId: string): boolean {
  */
 function getRandomDropLocation(
   undergroundRoomIds: string[],
-  batRoomId: string
+  batRoomId: string,
+  random: RandomService
 ): string {
   // Filter out the bat room itself
   const validRooms = undergroundRoomIds.filter(id => id !== batRoomId);
@@ -71,9 +75,7 @@ function getRandomDropLocation(
     return batRoomId;
   }
 
-  // Pick a random room
-  const randomIndex = Math.floor(Math.random() * validRooms.length);
-  return validRooms[randomIndex];
+  return random.pick(BAT_DROP_ROOM_POINT, validRooms);
 }
 
 /**
@@ -140,7 +142,7 @@ export function registerBatHandler(
         });
 
         // Pick a random destination
-        const destination = getRandomDropLocation(undergroundRoomIds, batRoomId);
+        const destination = getRandomDropLocation(undergroundRoomIds, batRoomId, context.random);
 
         events.push({
           id: generateEventId(),
