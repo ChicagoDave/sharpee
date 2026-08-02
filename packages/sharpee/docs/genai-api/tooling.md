@@ -372,6 +372,7 @@ export declare function loadAuthorGame(target: string, opts?: {
  *
  * Defines the structure of parsed transcripts and test results.
  */
+import type { RandomForceSpec } from '@sharpee/core';
 /**
  * Directive kinds surviving ADR-294 D4. The control-flow/condition layer
  * (IF, WHILE, RETRY, DO/UNTIL, REQUIRES, ENSURES, NAVIGATE) is removed
@@ -447,10 +448,31 @@ export interface TranscriptRunConfig {
     /** Locale the recording is bound to (D19). Absent = the story's primary. */
     locale?: string;
     /**
-     * Declared outcome forces (D13 hook). Parsed but not yet acted on — forcing
-     * ships with ADR-293 Phase C's `materialize`. Empty today.
+     * Declared outcome forces (ADR-293 D8/D9, surfaced per ADR-294 D13), as
+     * canonical `point[#occurrence]=CLASS` strings — the provenance form.
+     * Parsed and validated by the parser; the structured specs live in
+     * `forceSpecs`.
      */
     forces: string[];
+    /**
+     * Structured force specs the runner loads into the engine (ADR-293 D8/D9).
+     * Transcript forces are always mode `once` (D9's transcript default).
+     * Present only when the transcript declares forces, so a force-less
+     * transcript's config stays byte-identical to its pre-Phase-C parse.
+     */
+    forceSpecs?: RandomForceSpec[];
+    /** Line the `forces:` header field appeared on, for load-error reporting. */
+    forcesLineNumber?: number;
+    /**
+     * Per-point starting-seed overrides (ADR-293 D11), from the `point-seed:`
+     * header field. Present only when the transcript declares overrides.
+     */
+    pointSeeds?: Array<{
+        point: string;
+        seed: number;
+    }>;
+    /** Line the `point-seed:` header field appeared on, for error reporting. */
+    pointSeedsLineNumber?: number;
 }
 /**
  * Provenance header of a `.golden` recording (ADR-294 D3/D7).
@@ -477,6 +499,13 @@ export interface GoldenProvenance {
     locale: string;
     /** Forces the recording was made under (D13). Serialized as `(none)` when empty. */
     forces: string[];
+    /**
+     * Point-seed overrides the recording was made under (ADR-293 D11), as
+     * `point=seed` strings. OPTIONAL in the format: the `point-seeds:` line is
+     * written only when non-empty, so pre-Phase-C recordings stay valid, and
+     * absence parses as empty.
+     */
+    pointSeeds?: string[];
 }
 /**
  * One recorded event line (`• type {json}`) inside a golden turn.
@@ -834,6 +863,7 @@ export declare function parseGoldenFile(filePath: string): GoldenRecording;
  * Public interface: `runTranscript`, `goldenPathFor`. Owner context:
  * transcript-tester (testing tooling).
  */
+import { RandomForceSpec, RandomForceStatus } from '@sharpee/core';
 import { Transcript, TranscriptResult, RunnerOptions } from './types.js';
 /**
  * Interface for the game engine wrapper the CLIs hand the runner.
@@ -861,7 +891,21 @@ interface GameEngine {
         save(): Promise<boolean>;
         restore(): Promise<boolean>;
         getMasterSeed?(): number;
+        /** ADR-293 Phase C: the per-point stream owner (forces, point-seed overrides). */
+        getRandomService?(): PlatformRandomService;
+        /** ADR-293 D16: per-draw trace onto the system-event channel; the runner opts in. */
+        setRandomTraceEnabled?(enabled: boolean): void;
     };
+}
+/**
+ * The slice of `EngineRandomService` the runner drives (ADR-293 D8/D9/D11).
+ * Structural so the tester never imports the engine class itself.
+ */
+interface PlatformRandomService {
+    loadForces(specs: readonly RandomForceSpec[]): void;
+    clearForces(): void;
+    getForceReport(): RandomForceStatus[];
+    setPointSeedOverrides(overrides: Readonly<Record<string, number>>): void;
 }
 /**
  * Minimal interface for world model state queries ([STATE:] assertions).

@@ -1,0 +1,21 @@
+title: Forced Forest Ambience (ADR-293 Phase C)
+story: dungeo
+description: Occurrence-indexed forces on dungeo.forest.ambience — firing #1 forced yes, #2 forced no, #3 draws naturally at the pinned seed (the AC-9 shape). The golden recording is the assertion; its provenance carries the forces.
+seed: 4242
+forces: dungeo.forest.ambience#1=yes, dungeo.forest.ambience#2=no
+---
+# West of House → North of House → Forest Path. The ambience daemon draws
+# once per turn while the player is in a forest room (its condition gates
+# the draw, so occurrences count forest turns only — ADR-293 D8's
+# short-circuit-outside-the-point rule).
+
+> north
+
+# Firing #1 (entry turn) forced yes: an ambient sound line must appear.
+> north
+
+# Firing #2 forced no: no ambient line on this turn.
+> look
+
+# Firing #3 draws naturally at seed 4242 — whatever the recording captured.
+> look

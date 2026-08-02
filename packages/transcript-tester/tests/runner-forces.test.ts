@@ -1,0 +1,342 @@
+/**
+ * runner-forces.test.ts — ADR-293 Phase C session instruments in the runner:
+ * `forces:` loading and the unfired-`once` hard failure (D8/D9), `point-seed:`
+ * overrides (D11), trace opt-in (D16), chain instrument hygiene, and the
+ * `point-seeds` golden-provenance round trip.
+ *
+ * Derived from the Behavior Statement. The random service here is the REAL
+ * `EngineRandomService` (the owned dependency under test runs its real path);
+ * only the story-output layer is a stub, because the unit under test is the
+ * runner's instrument wiring, not prose generation. The full-bundle real-path
+ * proof is the dungeo fixture transcript (Phase 2 exit evidence).
+ *
+ * Owner context: transcript-tester test suite (tooling).
+ */
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { definePoint, createSeededRandom, deriveStreamSeed } from '@sharpee/core';
+import { EngineRandomService } from '@sharpee/engine';
+import { parseTranscript } from '../src/parser.js';
+import { runTranscript, goldenPathFor } from '../src/runner.js';
+import { parseGoldenFile } from '../src/golden.js';
+
+let dir: string;
+
+beforeEach(() => {
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tt-forces-'));
+});
+
+afterEach(() => {
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// Real catalog points, unique to this file (the catalog is process-global).
+const STEAL = definePoint('tt-forces.steal', { classes: ['yes', 'no'] as const });
+const PLAIN = definePoint('tt-forces.plain');
+
+function fixture(source: string, name = 'fixture.transcript') {
+  return parseTranscript(source, path.join(dir, name));
+}
+
+/**
+ * Stub story layer over a REAL EngineRandomService. `> steal` draws the
+ * STEAL point at probability 0 (so an unforced draw is always "no") and
+ * prints the outcome; `> walk` draws nothing.
+ */
+function forcingEngine(seed = 42) {
+  const service = new EngineRandomService(seed);
+  const traceCalls: boolean[] = [];
+  return {
+    traceCalls,
+    service,
+    executeCommand: (cmd: string) => {
+      if (cmd === 'steal') {
+        return service.chance(STEAL, 0) ? 'The thief steals it.' : 'The thief hesitates.';
+      }
+      if (cmd === 'roll') {
+        return `You roll ${service.int(PLAIN, 0, 1000000)}.`;
+      }
+      return `You ${cmd}.`;
+    },
+    world: {},
+    engine: {
+      registerSaveRestoreHooks() { /* unused */ },
+      async save() { return true; },
+      async restore() { return true; },
+      getMasterSeed: () => seed,
+      getRandomService: () => service,
+      setRandomTraceEnabled: (enabled: boolean) => { traceCalls.push(enabled); }
+    }
+  };
+}
+
+describe('forces: loading and firing (D8/D9)', () => {
+  it('loads the header forces and a matching draw fires the forced class', async () => {
+    const transcript = fixture(
+      'title: T\nforces: tt-forces.steal=yes\n---\n> steal\n[OK: contains "steals"]\n'
+    );
+    const engine = forcingEngine();
+
+    const result = await runTranscript(transcript, engine as never, {});
+
+    // Probability 0 would always print "hesitates" — the force flipped it,
+    // and the transcript passes including the fired-force end check.
+    expect(result.status).toBe('passed');
+    expect(engine.service.getForceReport()).toEqual([
+      { spec: { point: 'tt-forces.steal', cls: 'yes', mode: 'once' }, fireCount: 1 }
+    ]);
+  });
+
+  it('an unfired once force fails an otherwise-passing run with a named error (AC-9)', async () => {
+    const transcript = fixture(
+      'title: T\nforces: tt-forces.steal=yes\n---\n> walk\n[OK: contains "walk"]\n'
+    );
+
+    const result = await runTranscript(transcript, forcingEngine() as never, {});
+
+    expect(result.status).toBe('failed');
+    const failure = result.commands.find((c) => !c.passed);
+    expect(failure?.error).toMatch(/unfired once force\(s\): tt-forces\.steal=yes/);
+    expect(failure?.error).toMatch(/ADR-293 D9/);
+  });
+
+  it('an unfired force blocks a bless — no recording is written', async () => {
+    const transcript = fixture(
+      'title: T\nstory: s\nseed: 42\nforces: tt-forces.steal=yes\n---\n> walk\n'
+    );
+
+    const result = await runTranscript(transcript, forcingEngine() as never, { bless: true });
+
+    expect(result.status).toBe('failed');
+    expect(result.blessed).toBe(false);
+    expect(fs.existsSync(goldenPathFor(transcript.filePath))).toBe(false);
+  });
+
+  it('a force naming an unknown point is a named error-status result with file:line', async () => {
+    const transcript = fixture(
+      'title: T\nforces: tt-forces.never-declared=yes\n---\n> walk\n[OK: contains "walk"]\n'
+    );
+
+    const result = await runTranscript(transcript, forcingEngine() as never, {});
+
+    expect(result.status).toBe('error');
+    expect(result.errorMessage).toMatch(/fixture\.transcript:2:.*unknown point 'tt-forces\.never-declared'/);
+  });
+
+  it('a force naming an undeclared class is a named error-status result', async () => {
+    const transcript = fixture(
+      'title: T\nforces: tt-forces.steal=KILLED\n---\n> walk\n[OK: contains "walk"]\n'
+    );
+
+    const result = await runTranscript(transcript, forcingEngine() as never, {});
+
+    expect(result.status).toBe('error');
+    expect(result.errorMessage).toMatch(/undeclared class 'KILLED'/);
+  });
+
+  it('instruments declared without a platform random service is a named error', async () => {
+    const transcript = fixture(
+      'title: T\nforces: tt-forces.steal=yes\n---\n> walk\n[OK: contains "walk"]\n'
+    );
+    const engine = forcingEngine() as { engine: Record<string, unknown> };
+    delete engine.engine.getRandomService;
+
+    const result = await runTranscript(transcript as never, engine as never, {});
+
+    expect(result.status).toBe('error');
+    expect(result.errorMessage).toMatch(/need the platform engine/);
+  });
+});
+
+describe('chain instrument hygiene (D9 — session state scoped to the declaring transcript)', () => {
+  it('a later chain member without point-seed clears the previous member\'s overrides', async () => {
+    const engine = forcingEngine();
+    // Member 1 declares an override but never draws the point — the stream
+    // stays unmaterialized, so member 2's draw shows which map applies.
+    const first = fixture(
+      'title: A\npoint-seed: tt-forces.plain=777001\n---\n> walk\n[OK: contains "walk"]\n',
+      'a.transcript'
+    );
+    const second = fixture('title: B\n---\n> roll\n[OK: contains "roll"]\n', 'b.transcript');
+
+    await runTranscript(first, engine as never, { chain: true });
+    const secondResult = await runTranscript(second, engine as never, { chain: true });
+
+    // The reset applied: member 2 derives from the master seed, not the
+    // stale override.
+    expect(secondResult.commands[0].actualOutput).toBe(
+      `You roll ${createSeededRandom(deriveStreamSeed(42, 'tt-forces.plain')).int(0, 1000000)}.`
+    );
+  });
+
+  it('a later chain member without forces clears the previous member\'s table', async () => {
+    const engine = forcingEngine();
+    const first = fixture(
+      'title: A\nforces: tt-forces.steal=yes\n---\n> steal\n[OK: contains "steals"]\n', 'a.transcript'
+    );
+    const second = fixture(
+      'title: B\n---\n> steal\n[OK: contains "hesitates"]\n', 'b.transcript'
+    );
+
+    const firstResult = await runTranscript(first, engine as never, { chain: true });
+    const secondResult = await runTranscript(second, engine as never, { chain: true });
+
+    expect(firstResult.status).toBe('passed');
+    // The second member draws naturally (probability 0 → "hesitates"):
+    // the first member's force table did not leak.
+    expect(secondResult.status).toBe('passed');
+    expect(engine.service.getForceReport()).toEqual([]);
+  });
+});
+
+describe('an earlier failure suppresses the unfired-force check (both tiers)', () => {
+  it('golden tier: a divergence before the force fires reports the divergence, not an unfired force', async () => {
+    const source =
+      'title: T\nstory: s\nseed: 42\nforces: tt-forces.steal=yes\n---\n> walk\n\n> steal\n';
+    const blessed = await runTranscript(fixture(source), forcingEngine() as never, { bless: true });
+    expect(blessed.status).toBe('passed');
+
+    // Replay with a story whose "walk" output changed: turn 1 diverges and
+    // the run breaks before the force's firing point ("steal") is reached.
+    const diverging = forcingEngine() as unknown as { executeCommand(cmd: string): string };
+    const original = diverging.executeCommand.bind(diverging);
+    diverging.executeCommand = (cmd: string) =>
+      cmd === 'walk' ? 'You wander off.' : original(cmd);
+
+    const replayed = await runTranscript(fixture(source), diverging as never, {});
+
+    expect(replayed.status).toBe('failed');
+    const failures = replayed.commands.filter((c) => !c.passed);
+    expect(failures).toHaveLength(1);
+    expect(failures[0].error).toMatch(/output diverged from the recording/);
+    expect(failures[0].error).not.toMatch(/unfired/);
+  });
+
+  it('assertion tier: a failed assertion before the force fires reports that failure alone', async () => {
+    const transcript = fixture(
+      'title: T\nforces: tt-forces.steal=yes\n---\n> walk\n[OK: contains "xyzzy"]\n'
+    );
+
+    const result = await runTranscript(transcript, forcingEngine() as never, {});
+
+    expect(result.status).toBe('failed');
+    const failures = result.commands.filter((c) => !c.passed && !c.skipped);
+    expect(failures).toHaveLength(1);
+    expect(failures[0].command.input).toBe('walk');
+    expect(result.commands.some((c) => c.error?.includes('unfired'))).toBe(false);
+  });
+});
+
+describe('point-seed: overrides (D11)', () => {
+  it('moves the named point\'s stream start; the draw is real', async () => {
+    const OVERRIDE = 777001;
+    const transcript = fixture(
+      `title: T\npoint-seed: tt-forces.plain=${OVERRIDE}\n---\n> roll\n[OK: contains "roll"]\n`
+    );
+    const engine = forcingEngine();
+
+    const result = await runTranscript(transcript, engine as never, {});
+
+    expect(result.status).toBe('passed');
+    const rolled = result.commands[0].actualOutput;
+    expect(rolled).toBe(`You roll ${createSeededRandom(OVERRIDE).int(0, 1000000)}.`);
+    // And NOT the master-seed derivation — the override genuinely moved it.
+    expect(rolled).not.toBe(
+      `You roll ${createSeededRandom(deriveStreamSeed(42, 'tt-forces.plain')).int(0, 1000000)}.`
+    );
+  });
+
+  it('a point-seed naming an unknown point is a named error (D2 typo trap)', async () => {
+    const transcript = fixture(
+      'title: T\npoint-seed: tt-forces.never-declared=1\n---\n> walk\n[OK: contains "walk"]\n'
+    );
+
+    const result = await runTranscript(transcript, forcingEngine() as never, {});
+
+    expect(result.status).toBe('error');
+    expect(result.errorMessage).toMatch(/point-seed: names unknown point 'tt-forces\.never-declared'/);
+  });
+});
+
+describe('trace opt-in (D16)', () => {
+  it('the runner enables trace on every run', async () => {
+    const transcript = fixture('title: T\n---\n> walk\n[OK: contains "walk"]\n');
+    const engine = forcingEngine();
+
+    await runTranscript(transcript, engine as never, {});
+
+    expect(engine.traceCalls).toEqual([true]);
+  });
+});
+
+describe('point-seeds golden provenance (D11 — optional key)', () => {
+  it('bless records the overrides; replay at the same header is green; a changed override is a named stale error', async () => {
+    const source =
+      'title: T\nstory: s\nseed: 42\npoint-seed: tt-forces.plain=777001\n---\n> roll\n';
+    const transcript = fixture(source);
+    const engine = () => forcingEngine();
+
+    const blessed = await runTranscript(transcript, engine() as never, { bless: true });
+    expect(blessed.status).toBe('passed');
+
+    const recording = parseGoldenFile(goldenPathFor(transcript.filePath));
+    expect(recording.provenance.pointSeeds).toEqual(['tt-forces.plain=777001']);
+
+    // Deterministic replay under the same overrides.
+    const replayed = await runTranscript(fixture(source), engine() as never, {});
+    expect(replayed.status).toBe('passed');
+
+    // A changed override is staleness by name, never a content diff.
+    const changed = await runTranscript(
+      fixture(source.replace('777001', '777002')),
+      engine() as never,
+      {}
+    );
+    expect(changed.status).toBe('error');
+    expect(changed.errorMessage).toMatch(/stale recording — re-bless/);
+    expect(changed.errorMessage).toMatch(/point-seeds recorded tt-forces\.plain=777001, runtime tt-forces\.plain=777002/);
+  });
+
+  it('a recording made without overrides carries no point-seeds line (pre-Phase-C byte compatibility)', async () => {
+    const transcript = fixture('title: T\nstory: s\nseed: 42\n---\n> walk\n');
+
+    const blessed = await runTranscript(transcript, forcingEngine() as never, { bless: true });
+    expect(blessed.status).toBe('passed');
+
+    const raw = fs.readFileSync(goldenPathFor(transcript.filePath), 'utf-8');
+    expect(raw).not.toContain('point-seeds:');
+    expect(parseGoldenFile(goldenPathFor(transcript.filePath)).provenance.pointSeeds).toBeUndefined();
+  });
+
+  it('adding a point-seed: header after bless is a named stale error (recorded (none), runtime declares)', async () => {
+    const withoutOverride = 'title: T\nstory: s\nseed: 42\n---\n> walk\n';
+    const blessed = await runTranscript(fixture(withoutOverride), forcingEngine() as never, { bless: true });
+    expect(blessed.status).toBe('passed');
+
+    const withOverride =
+      'title: T\nstory: s\nseed: 42\npoint-seed: tt-forces.plain=777001\n---\n> walk\n';
+    const replayed = await runTranscript(fixture(withOverride), forcingEngine() as never, {});
+
+    expect(replayed.status).toBe('error');
+    expect(replayed.errorMessage).toMatch(
+      /point-seeds recorded \(none\), runtime tt-forces\.plain=777001/
+    );
+  });
+
+  it('removing the point-seed: header after bless is a named stale error (recorded has, runtime (none))', async () => {
+    const withOverride =
+      'title: T\nstory: s\nseed: 42\npoint-seed: tt-forces.plain=777001\n---\n> walk\n';
+    const blessed = await runTranscript(fixture(withOverride), forcingEngine() as never, { bless: true });
+    expect(blessed.status).toBe('passed');
+
+    const withoutOverride = 'title: T\nstory: s\nseed: 42\n---\n> walk\n';
+    const replayed = await runTranscript(fixture(withoutOverride), forcingEngine() as never, {});
+
+    expect(replayed.status).toBe('error');
+    expect(replayed.errorMessage).toMatch(
+      /point-seeds recorded tt-forces\.plain=777001, runtime \(none\)/
+    );
+  });
+});

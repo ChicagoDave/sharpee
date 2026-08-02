@@ -1,0 +1,44 @@
+# sharpee golden v1
+transcript: force-forest-ambience.transcript
+story: dungeo
+seed: 4242
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: dungeo.forest.ambience#1=yes, dungeo.forest.ambience#2=no
+---
+> north
+DUNGEON
+
+Story v4.3.0 (built 2026-08-02)
+
+Sharpee v4.3.0
+
+A port of Mainframe Zork (1981)
+
+By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling
+
+Ported by David Cornelson
+
+Type HELP for instructions, ABOUT for credits.
+
+North of House
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+> north
+Forest Path
+This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.
+
+A songbird chirps in the distance.
+
+> look
+Forest Path
+This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.
+
+> look
+Forest Path
+This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.
+
+A songbird chirps in the distance.
