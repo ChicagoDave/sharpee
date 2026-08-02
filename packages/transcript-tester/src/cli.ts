@@ -321,8 +321,17 @@ async function main(): Promise<void> {
   // discarded unused (ADR-207 AC-7: no side-effecting pre-load).
   let game: TestableGame | undefined;
   if (options.chain) {
+    // ADR-293 D14: a chain is one session governed by the FIRST member's
+    // pinned seed — pre-read it, since the engine is seeded at assembly.
+    // A parse error is swallowed here: the main loop reports it properly.
+    let chainSeed: number | undefined;
     try {
-      game = await loadStory(options.storyPath);
+      chainSeed = parseTranscriptFile(options.transcriptPaths[0]).config?.seeds?.[0];
+    } catch {
+      chainSeed = undefined;
+    }
+    try {
+      game = await loadStory(options.storyPath, undefined, chainSeed);
     } catch (error) {
       console.error(`Error loading story: ${error}`);
       process.exit(3);
@@ -366,10 +375,11 @@ async function main(): Promise<void> {
     }
 
     // Load a fresh story for each transcript to reset state (unless chaining).
-    // Honor the transcript's optional `entry:` header (ADR-180).
+    // Honor the transcript's optional `entry:` header (ADR-180) and its
+    // pinned `seed:` (ADR-294 D3 — the engine is seeded at assembly).
     if (!options.chain) {
       try {
-        game = await loadStory(options.storyPath, transcript.header.entry);
+        game = await loadStory(options.storyPath, transcript.header.entry, transcript.config?.seeds?.[0]);
       } catch (error) {
         console.error(`Error loading story: ${error}`);
         process.exit(3);

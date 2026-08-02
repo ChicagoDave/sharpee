@@ -24,9 +24,12 @@ export type TestableGame = LoadedGame;
  *
  * @param storyPath story directory (resolved against cwd if relative)
  * @param entry     optional story sub-entry from the transcript `entry:` header
+ * @param seed      optional master seed from the transcript `seed:` header
+ *   (ADR-293 D1) — the runner verifies the session seed against the pin, it
+ *   never sets it, so the host must seed the engine at assembly
  */
-export async function loadStory(storyPath: string, entry?: string): Promise<TestableGame> {
-  return bootstrapLoadStory(storyPath, { entry });
+export async function loadStory(storyPath: string, entry?: string, seed?: number): Promise<TestableGame> {
+  return bootstrapLoadStory(storyPath, { entry, seed });
 }
 
 /**
