@@ -266,48 +266,65 @@ export class EventProcessor {
       }
     }
 
-    // 4. Process game.message overrides
-    // When entity handlers return game.message, it overrides the original event's message
-    // rather than being rendered as a separate event (ADR-106 domain events)
-    const gameMessages = legacyReactions.filter(r => r.type === 'game.message');
+    // 4. Partition game.message reactions (ADR-296 D4, narrowing ADR-106):
+    // overrides require something to override.
+    //   - Trigger has NO messageId → phrase emission: promoted to a standalone
+    //     event, slot-placed by the prose sort (you cannot override a message
+    //     that does not exist).
+    //   - Trigger HAS a messageId → ADR-106 override, unchanged: the message
+    //     replaces the trigger's messageId/text/params and is consumed.
+    //   - _chainedFrom present → always a phrase emission, regardless of the
+    //     trigger's messageId (chains are reactions with placement; replacement
+    //     semantics live on the lifecycle engine's explicit override surface).
+    const triggerHasMessageId =
+      (event.data as Record<string, unknown> | undefined)?.messageId !== undefined;
+
+    const overrides: ISemanticEvent[] = [];
+    for (const reaction of legacyReactions) {
+      if (reaction.type !== 'game.message') continue;
+      const reactionData = (reaction.data ?? {}) as Record<string, unknown>;
+      const isChained = reactionData._chainedFrom !== undefined;
+      if (isChained || !triggerHasMessageId) {
+        // Phrase emission: stays in the reaction stream as its own event.
+        // Chain dispatch already stamped _narrativeSlot on chain-produced
+        // phrases; handler-produced (registerHandler) phrases get the
+        // default stamp here.
+        if (reactionData._narrativeSlot === undefined) {
+          reaction.data = { ...reactionData, _narrativeSlot: 'afterRoomDescription' };
+        }
+      } else {
+        overrides.push(reaction);
+      }
+    }
+
+    // The multiple-message error branch counts only the override partition —
+    // phrase emissions left the consumption set above (ADR-296 D4).
     let filteredReactions = legacyReactions;
 
-    if (gameMessages.length > 1) {
-      // Error: multiple game.message reactions - this should never happen
+    if (overrides.length > 1) {
+      // Error: multiple override messages for one trigger - this should never happen
       console.error(
-        `Multiple game.message reactions for ${event.type} on ${event.entities?.target}:`,
-        gameMessages.map(m => (m.data as Record<string, unknown>)?.messageId)
+        `Multiple game.message overrides for ${event.type} on ${event.entities?.target}:`,
+        overrides.map(m => (m.data as Record<string, unknown>)?.messageId)
       );
       filteredReactions.push({
         id: generateEventId(),
         type: 'if.event.error',
         entities: event.entities,
         data: {
-          message: `Multiple game.message reactions returned for ${event.type}`,
+          message: `Multiple game.message overrides returned for ${event.type}`,
           sourceEvent: event.type,
           targetId: event.entities?.target,
-          count: gameMessages.length,
-          messageIds: gameMessages.map(m => (m.data as Record<string, unknown>)?.messageId)
+          count: overrides.length,
+          messageIds: overrides.map(m => (m.data as Record<string, unknown>)?.messageId)
         },
         timestamp: Date.now()
       });
-      // Filter out the game.message events - use first one as override
-      const firstOverride = gameMessages[0];
-      const overrideData = firstOverride.data as { messageId?: string; text?: string; params?: Record<string, unknown> };
-      const eventData = event.data as Record<string, unknown>;
-      if (overrideData.messageId) {
-        eventData.messageId = overrideData.messageId;
-      }
-      if (overrideData.text) {
-        eventData.text = overrideData.text;
-      }
-      if (overrideData.params) {
-        eventData.params = overrideData.params;
-      }
-      filteredReactions = legacyReactions.filter(r => r.type !== 'game.message');
-    } else if (gameMessages.length === 1) {
-      // Normal case: single game.message overrides original event's message
-      const override = gameMessages[0];
+    }
+
+    if (overrides.length >= 1) {
+      // Apply the (first) override to the trigger's message (ADR-106).
+      const override = overrides[0];
       const overrideData = override.data as { messageId?: string; text?: string; params?: Record<string, unknown> };
       const eventData = event.data as Record<string, unknown>;
 
@@ -321,11 +338,11 @@ export class EventProcessor {
         eventData.params = overrideData.params;
       }
 
-      // Filter out game.message - it's been consumed as an override
-      filteredReactions = legacyReactions.filter(r => r.type !== 'game.message');
+      // Consume the override messages; phrase emissions remain.
+      filteredReactions = filteredReactions.filter(r => !overrides.includes(r));
     }
 
-    // Return filtered reactions (game.message consumed as override)
+    // Return reactions (overrides consumed; phrase emissions kept as events)
     return filteredReactions;
   }
 

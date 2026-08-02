@@ -495,6 +495,85 @@ describe('Event Chaining (ADR-094)', () => {
     });
   });
 
+  describe('narrative slot stamping (ADR-296 D3)', () => {
+    it('stamps _narrativeSlot with the declared slot on produced game.message events', () => {
+      world.chainEvent('if.event.actor_moved', () => ({
+        type: 'game.message',
+        data: { messageId: 'story.trap.snaps' }
+      }), { key: 'story.trap', slot: 'afterEverything' });
+
+      world.connectEventProcessor(mockWiring);
+
+      const chainedEvents = invokeHandlers(
+        'if.event.actor_moved',
+        createTestEvent('if.event.actor_moved', {})
+      );
+
+      expect(chainedEvents).toHaveLength(1);
+      expect((chainedEvents[0].data as Record<string, unknown>)._narrativeSlot).toBe('afterEverything');
+    });
+
+    it('defaults _narrativeSlot to afterRoomDescription when the slot option is omitted', () => {
+      world.chainEvent('if.event.actor_moved', () => ({
+        type: 'game.message',
+        data: { messageId: 'story.entry.message' }
+      }));
+
+      world.connectEventProcessor(mockWiring);
+
+      const chainedEvents = invokeHandlers(
+        'if.event.actor_moved',
+        createTestEvent('if.event.actor_moved', {})
+      );
+
+      expect(chainedEvents).toHaveLength(1);
+      expect((chainedEvents[0].data as Record<string, unknown>)._narrativeSlot).toBe('afterRoomDescription');
+    });
+
+    it('stamps chord.phrase events (the typed phrase carrier) the same way', () => {
+      world.chainEvent('if.event.opened', () => ({
+        type: 'chord.phrase',
+        data: { messageId: 'story.chest.creak' }
+      }), { slot: 'beforeRoomDescription' });
+
+      world.connectEventProcessor(mockWiring);
+
+      const chainedEvents = invokeHandlers(
+        'if.event.opened',
+        createTestEvent('if.event.opened', {})
+      );
+
+      expect(chainedEvents).toHaveLength(1);
+      expect((chainedEvents[0].data as Record<string, unknown>)._narrativeSlot).toBe('beforeRoomDescription');
+    });
+
+    it('does NOT stamp typed non-phrase events and keeps their stream position', () => {
+      // A chain producing a bookkeeping event plus a phrase: only the phrase
+      // is stamped; the non-phrase event keeps its emission position.
+      world.chainEvent('if.event.opened', () => [
+        { type: 'if.event.revealed', data: { itemId: 'item-1' } },
+        { type: 'game.message', data: { messageId: 'story.reveal.flourish' } }
+      ], { slot: 'afterRoomDescription' });
+
+      world.connectEventProcessor(mockWiring);
+
+      const chainedEvents = invokeHandlers(
+        'if.event.opened',
+        createTestEvent('if.event.opened', {})
+      );
+
+      expect(chainedEvents).toHaveLength(2);
+      // Stream position preserved: revealed first, as emitted.
+      expect(chainedEvents[0].type).toBe('if.event.revealed');
+      expect((chainedEvents[0].data as Record<string, unknown>)._narrativeSlot).toBeUndefined();
+      // Provenance stamps still present on the non-phrase event.
+      expect((chainedEvents[0].data as Record<string, unknown>)._chainedFrom).toBe('if.event.opened');
+      // The phrase carries the stamp.
+      expect(chainedEvents[1].type).toBe('game.message');
+      expect((chainedEvents[1].data as Record<string, unknown>)._narrativeSlot).toBe('afterRoomDescription');
+    });
+  });
+
   describe('access to world state', () => {
     it('should provide world access in chain handler', () => {
       const room = world.createEntity('Test Room', 'room');

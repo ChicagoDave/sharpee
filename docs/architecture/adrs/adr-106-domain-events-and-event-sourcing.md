@@ -3,6 +3,15 @@
 ## Status
 Accepted (January 2026)
 
+> **Pointer note (2026-08-02, ADR-296 D4)**: the `game.message` override
+> path is narrowed. An override now requires the trigger event to already
+> carry a `messageId` — genuine replacement keeps working unchanged
+> (dungeo's mirror-room rumble is the living example). A `game.message`
+> targeting a **messageless** trigger, and any chain-produced message
+> (`_chainedFrom` present), is a *phrase emission*: promoted to a
+> standalone event and slot-placed by the prose sort (ADR-296 D3/D4).
+> The multiple-message error branch counts only the override partition.
+
 ## Context
 
 There has been persistent confusion about the nature of `if.event.*` events in Sharpee. The terminology "event" led to assumptions that these were traditional pub/sub events meant to be "fired and handled" - a pattern common in UI frameworks and message queues.
