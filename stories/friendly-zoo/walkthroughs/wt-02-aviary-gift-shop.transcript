@@ -26,22 +26,28 @@ $save parrot-mid
 [OK: contains "theatrical disdain"]
 [OK: contains "Two hours until closing"]
 
-# Restore: the world (and its textState counter) goes back to 2.
+# Restore: the FULL session rewinds to the save — world, scheduler
+# sequence pointers, engine turn counter, and RNG stream cursors alike
+# (ADR-293 Acceptance 4: restore-then-continue matches an unbroken run).
 $restore parrot-mid
 
-# Resumes at variant 2 — the counter persisted in the save (AC-8).
-# The engine turn marches on through a restore while the world's
-# sequence pointers rewind, so the replayed two-hour PA and the first
-# feeding call both ride this turn.
+# Resumes at variant 2 — the counter persisted in the save (AC-8) — and
+# this turn is a byte-identical replay of the pre-save turn: the same
+# two-hour PA rides it again. (Pre-ADR-293, the engine turn marched on
+# through a restore while only the world rewound; that split no longer
+# exists.)
 > examine parrot
 [OK: contains "theatrical disdain"]
 [OK: not contains "whistles a jaunty tune"]
-[OK: contains "FEEDING TIME"]
+[OK: contains "Two hours until closing"]
 
-# West to the gift shop (visit score).
+# West to the gift shop (visit score). The first feeding call (sequence
+# turn 11) rides this turn — one command later than pre-ADR-293, since
+# the restore rewound the turn counter by one.
 > west
 [OK: contains "Gift Shop"]
 [OK: contains "disposable camera"]
+[OK: contains "FEEDING TIME"]
 
 > take camera
 [OK: contains "Taken"]
