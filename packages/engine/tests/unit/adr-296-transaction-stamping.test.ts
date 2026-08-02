@@ -63,6 +63,20 @@ describe('processEvent transaction stamping (ADR-296 D1)', () => {
     expect((processed.data as Record<string, unknown>)._transactionId).toBe('txn:2:action');
   });
 
+  it('leaves an event with primitive (non-object) data alone', () => {
+    const event: ISemanticEvent = {
+      id: 'test-primitive',
+      type: 'some.event',
+      entities: {},
+      data: 'a-string-payload' as unknown as Record<string, unknown>,
+      timestamp: Date.now()
+    };
+    const processed = processEvent(event, context);
+
+    // Cannot carry a stamp; data is returned unchanged, not coerced.
+    expect(processed.data).toBe('a-string-payload');
+  });
+
   it('does not stamp when the context carries no transactionId', () => {
     const processed = processEvent(
       makeEvent('sound.audibility.heard', { soundId: 's1' }),
