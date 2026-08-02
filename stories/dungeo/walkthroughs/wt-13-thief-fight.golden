@@ -1,0 +1,386 @@
+# sharpee golden v1
+transcript: wt-13-thief-fight.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> drop blue cake
+Dropped.
+
+> drop eat-me cake
+Dropped.
+
+> drop sack
+Dropped.
+
+> inventory
+You are carrying:
+
+a glass bottle, brass lantern, ivory torch
+
+> east
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+> up
+Attic
+This is the attic. The only exit is stairs that lead down. A large table occupies the middle of the room.
+
+You can see a nasty knife, a brick, and a shiny shiny wire here.
+
+> take nasty knife
+Taken.
+
+> take brick
+Taken.
+
+> take shiny wire
+Taken.
+
+> down
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+> west
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a trunk, a brass bell, a black book, a burned-out candles, a sharp stick, a blue blue cake, an eat-me eat-me cake, and an elongated brown sack here.
+
+> drop brick
+Dropped.
+
+> drop shiny wire
+Dropped.
+
+> open trophy case
+The trophy case is already open.
+
+> take egg
+Taken.
+
+> turn on lantern
+The brass lantern switches on, banishing the darkness.
+
+> open trap door
+The trap trap door is already open.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> west
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> up
+Maze
+You are in a maze of twisty little passages, all alike.
+
+You can see a rusty knife here.
+
+> southwest
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+> up
+Treasure Room
+This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.
+
+You hear a scream of anguish as you violate the robber's hideaway. Using passages unknown to you, he rushes to its defense.
+
+The thief grins smugly at you.
+
+The thief's eyes gleam as he notices your possessions.
+
+> give egg to thief
+You give the jewel-encrusted egg to the seedy-looking thief.
+
+> down
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The thief, badly wounded, stumbles away into the darkness.
+
+> up
+Treasure Room
+This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.
+
+You can see a seedy-looking thief here.
+
+The thief's eyes gleam as he notices your possessions.
+
+> attack thief with knife
+The thief is disarmed by a subtle feint past his guard.
+
+"My, what a lovely ivory torch!" The thief snatches it away.
+
+> take stiletto
+Taken.
+
+> attack thief with stiletto
+The thief is disarmed by a subtle feint past his guard.
+
+> attack thief with stiletto
+The thief is slashed on the arm; blood begins to trickle down.
+
+> attack thief with stiletto
+Slash! Your stroke connects! The thief could be in serious trouble!
+
+> attack thief with stiletto
+The thief drops to his knees, staggered.
+
+> attack thief with stiletto
+Your stroke lands, but it was only the flat of the blade.
+
+> attack thief with stiletto
+Your attack has no effect on the nasty stiletto.
+
+> attack thief with stiletto
+The thief takes a final blow and slumps to the floor dead.
+
+The thief's ill-gotten gains scatter across the floor.
+
+Almost as soon as the thief breathes his last breath, a cloud of sinister black fog envelops him, and when the fog lifts, the carcass has disappeared.
+
+> drop knife
+Dropped.
+
+> take canary
+Taken.
+
+> take egg
+Taken.
+
+> take chalice
+Taken.
+
+> take torch
+Taken.
+
+> take grail
+Taken.
+
+> take bag of coins
+Taken.
+
+> break frame
+The frame shatters! Among the debris, you find a carved piece bearing strange symbols: "Only devotion can reveal my location."
+
+> take frame piece
+Taken.
+
+> down
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+> north
+Strange Passage
+This is a long passage. To the south is one entrance. On the east there is an old wooden door, with a large hole in it (about cyclops sized).
+
+> east
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a trunk, a brass bell, a black book, a burned-out candles, a sharp stick, a blue blue cake, an eat-me eat-me cake, an elongated brown sack, a brick, and a shiny shiny wire here.
+
+> east
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+> east
+Behind House
+You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
+
+> north
+North of House
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+> north
+Forest Path
+This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.
+
+Leaves rustle in the undergrowth.
+
+> wind canary
+The canary begins to sing. From somewhere nearby, an answering song is heard. Suddenly, a shiny brass bauble drops at your feet!
+
+> take bauble
+Taken.
+
+> south
+North of House
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+> east
+Behind House
+You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
+
+> west
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+> west
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a trunk, a brass bell, a black book, a burned-out candles, a sharp stick, a blue blue cake, an eat-me eat-me cake, an elongated brown sack, a brick, and a shiny shiny wire here.
+
+> open trophy case
+The trophy case is already open.
+
+> put canary in trophy case
+You put the golden clockwork canary in the trophy case.
+
+> put bauble in trophy case
+You put the brass bauble in the trophy case.
+
+> put chalice in trophy case
+You put the silver chalice in the trophy case.
+
+> put grail in trophy case
+You put the grail in the trophy case.
+
+> put bag of coins in trophy case
+You put the leather bag of coins in the trophy case.
+
+> put egg in trophy case
+You put the jewel-encrusted egg in the trophy case.
+
+> open trap door
+The trap trap door is already open.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> west
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> up
+Maze
+You are in a maze of twisty little passages, all alike.
+
+You can see a rusty knife here.
+
+> southwest
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+> up
+Treasure Room
+This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.
+
+You can see a nasty knife here.
+
+> down
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+> north
+Strange Passage
+This is a long passage. To the south is one entrance. On the east there is an old wooden door, with a large hole in it (about cyclops sized).
+
+> east
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a trunk, a brass bell, a black book, a burned-out candles, a sharp stick, a blue blue cake, an eat-me eat-me cake, an elongated brown sack, a brick, and a shiny shiny wire here.
+
+> open trophy case
+The trophy case is already open.
+
+> drop frame piece
+Dropped.
+
+> inventory
+You are carrying:
+
+a glass bottle, brass lantern, ivory torch
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an elongated brown sack, a brick, a shiny shiny wire, a guidebook, a matchbook, a wrench, a trunk, a sharp stick, a brass bell, a black book, a burned-out candles, an eat-me eat-me cake, a blue blue cake, a skeleton key, an incense, a large brochure, and a frame piece here.
+
+In the elongated brown sack you see a lunch and a clove of garlic.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, a gold coffin, a large emerald, a beautiful statue, a pot of gold, a pearl necklace, a tin of spices, a white white crystal sphere, a huge diamond, a sapphire bracelet, a violin, a crystal trident, a blue blue crystal sphere, a jade figurine, a red red crystal sphere, a golden clockwork canary, a brass bauble, a silver chalice, a grail, a leather bag of coins, and a jewel-encrusted egg.
+
+> turn off lantern
+You switch off the brass lantern, plunging the area into darkness.

@@ -1,6 +1,7 @@
 title: Get Torch Early (Save Lantern Battery)
 story: dungeo
 description: Priority path - get the torch ASAP to minimize lantern usage. Torch is unlimited, lantern has 330 turns.
+seed: 42
 ---
 
 # ============================================================================
@@ -9,47 +10,32 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 # ============================================================================
 
 [GOAL: Collect essential items from house]
-[ENSURES: inventory contains "rope"]
-[ENSURES: inventory contains "lantern"]
-[ENSURES: inventory contains "sword"]
 
 # Start at West of House
 > look
-[OK: contains "West of House"]
 
 # Enter house via back window
 > north
-[OK: contains "North"]
 
 > east
-[OK: contains "Behind House"]
 
 > open window
-[OK: contains "open"]
 
 > west
-[OK: contains "Kitchen"]
 
 > west
-[OK: contains "Living Room"]
 
 > take lantern
-[OK: contains "Taken"]
 
 > take sword
-[OK: contains "Taken"]
 
 > turn on lantern
-[OK: contains "on"]
 
 > east
-[OK: contains "Kitchen"]
 
 > up
-[OK: contains "Attic"]
 
 > take rope
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -58,26 +44,18 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 # ============================================================================
 
 [GOAL: Enter cellar and defeat troll]
-[REQUIRES: inventory contains "lantern"]
-[REQUIRES: inventory contains "sword"]
 
 > down
-[OK: contains "Kitchen"]
 
 > west
-[OK: contains "Living Room"]
 
 > move rug
-[OK: contains "trap door"]
 
 > open trapdoor
-[OK: contains "open"]
 
 > down
-[OK: contains "Cellar"]
 
 > east
-[OK: contains "Troll Room"]
 
 # Kill troll - melee combat with DO/UNTIL loop
 # Loops attack until troll dies or player dies (retry handles player death)
@@ -85,17 +63,10 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 # unarmed is suicide.") so recover the sword before each swing. The disarm
 # line ("knocked out of your hands") mentions neither troll nor staggering,
 # so "sword"/"hands" are valid attack-turn outputs too.
-[RETRY: max=5]
-[DO]
-[WHILE: not inventory contains "elvish sword"]
-> take sword
-[SKIP]
-[END WHILE]
+# (loop region resolved to its seed-42 sequence — ADR-294 migration)
 > attack troll with sword
-[OK: contains_any "troll" "staggering" "sword" "hands"]
-[UNTIL "slumps to the floor dead" OR "removes his head" OR "He dies" OR "You are dead"]
-[ENSURES: not entity "troll" alive]
-[END RETRY]
+> attack troll with sword
+> attack troll with sword
 
 [END GOAL]
 
@@ -106,16 +77,12 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 [GOAL: Get to Dome Room]
 
 > north
-[OK: contains "East-West Passage"]
 
 > north
-[OK: contains "Deep Ravine"]
 
 > west
-[OK: contains "Rocky Crawl"]
 
 > east
-[OK: contains "Dome Room"]
 
 [END GOAL]
 
@@ -124,17 +91,12 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 # ============================================================================
 
 [GOAL: Get the torch]
-[REQUIRES: inventory contains "rope"]
-[ENSURES: inventory contains "torch"]
 
 > tie rope to railing
-[OK: contains "rope"]
 
 > down
-[OK: contains "Torch Room"]
 
 > take torch
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -146,25 +108,19 @@ description: Priority path - get the torch ASAP to minimize lantern usage. Torch
 
 # Torch is always lit (perpetual flame) - no need to switch on
 > turn on torch
-[OK: contains "switch"]
 
 > turn off lantern
-[OK: contains "off"]
 
 # Verify we still have light
 > look
-[OK: contains "Torch Room"]
 
 # Down to underground
 > down
-[OK: contains "North/South Crawlway"]
 
 # South and Northwest to Gallery
 > south
-[OK: contains "Studio"]
 
 > northwest
-[OK: contains "Gallery"]
 
 # We'll get the painting on the way out of the bank
 

@@ -15,8 +15,15 @@ export * from './types.js';
 // Parser
 export { parseTranscript, parseTranscriptFile, validateTranscript } from './parser.js';
 
+// Golden recordings (ADR-294 D7)
+export { serializeGolden, parseGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
+
 // Runner
-export { runTranscript } from './runner.js';
+export { runTranscript, goldenPathFor, divergencePathFor } from './runner.js';
+
+// Watch mode (ADR-294 D14)
+export { classifyChange, BlessPolicy, runCycle, startWatch } from './watch.js';
+export type { ChangeTarget, WatchRunIO, WatchConfig } from './watch.js';
 
 // Reporter
 export { reportTranscript, reportTestRun, getExitCode } from './reporter.js';

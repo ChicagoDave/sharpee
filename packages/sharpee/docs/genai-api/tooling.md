@@ -373,60 +373,31 @@ export declare function loadAuthorGame(target: string, opts?: {
  * Defines the structure of parsed transcripts and test results.
  */
 /**
- * Types of control flow directives
+ * Directive kinds surviving ADR-294 D4. The control-flow/condition layer
+ * (IF, WHILE, RETRY, DO/UNTIL, REQUIRES, ENSURES, NAVIGATE) is removed
+ * grammar — the parser rejects those forms as named errors. GOAL survives
+ * as pure structural annotation (a section label; nothing is evaluated).
  */
-export type DirectiveType = 'goal' | 'end_goal' | 'requires' | 'ensures' | 'if' | 'end_if' | 'while' | 'end_while' | 'retry' | 'end_retry' | 'do' | 'until' | 'navigate' | 'save' | 'restore' | 'test-command';
+export type DirectiveType = 'goal' | 'end_goal' | 'save' | 'restore' | 'test-command';
 /**
- * A control flow directive in the transcript
+ * A directive in the transcript
  */
 export interface Directive {
     type: DirectiveType;
     lineNumber: number;
-    condition?: string;
-    target?: string;
     goalName?: string;
     saveName?: string;
     testCommand?: string;
-    maxRetries?: number;
-    untilTexts?: string[];
 }
 /**
- * A goal segment with its preconditions, postconditions, and content
+ * A goal segment — a named section of the transcript (structural only;
+ * ADR-294 D4 removed the REQUIRES/ENSURES condition layer).
  */
 export interface GoalDefinition {
     name: string;
     lineNumber: number;
-    requires: string[];
-    ensures: string[];
     startIndex: number;
     endIndex: number;
-}
-/**
- * Result of executing a goal
- */
-export interface GoalResult {
-    name: string;
-    success: boolean;
-    requiresResults: ConditionResult[];
-    ensuresResults: ConditionResult[];
-    commandsExecuted: number;
-    error?: string;
-}
-/**
- * Result of evaluating a condition
- */
-export interface ConditionResult {
-    met: boolean;
-    reason: string;
-}
-/**
- * Result of executing a NAVIGATE directive
- */
-export interface NavigateResult {
-    success: boolean;
-    path: string[];
-    commands: string[];
-    error?: string;
 }
 /**
  * A comment annotation from the transcript (# lines)
@@ -457,13 +428,92 @@ export interface TranscriptHeader {
     [key: string]: string | undefined;
 }
 /**
- * A single assertion about command output, events, or state
+ * Parsed, validated run configuration from the transcript header (ADR-294 D3).
+ *
+ * The parser always attaches one to the transcript with defaults applied, so
+ * consumers never re-derive defaults from the raw header map.
+ */
+export interface TranscriptRunConfig {
+    /**
+     * Pinned seeds: one entry from `seed: N`, several from `seeds: A, B` (D8 —
+     * each seed gets its own recording). Empty when the transcript pins nothing
+     * (legal in the assertion tier; a golden transcript must pin at least one).
+     */
+    seeds: number[];
+    /** Channels the recording scopes to (D15). Default: `['main']`. */
+    channels: string[];
+    /** Record the event stream alongside prose (D6). Default: `false`. */
+    events: boolean;
+    /** Locale the recording is bound to (D19). Absent = the story's primary. */
+    locale?: string;
+    /**
+     * Declared outcome forces (D13 hook). Parsed but not yet acted on — forcing
+     * ships with ADR-293 Phase C's `materialize`. Empty today.
+     */
+    forces: string[];
+}
+/**
+ * Provenance header of a `.golden` recording (ADR-294 D3/D7).
+ *
+ * A replay whose runtime disagrees with any of these fails with the named
+ * "stale recording — re-bless" error, never a raw content diff.
+ */
+export interface GoldenProvenance {
+    /** Source transcript filename the recording was made from. */
+    transcript: string;
+    /** Story name the recording was made against. */
+    story: string;
+    /** The seed the session was pinned to. One recording per seed (D8). */
+    seed: number;
+    /** `SEED_DERIVATION_VERSION` at record time (ADR-293). */
+    derivation: number;
+    /** Save-format version at record time (e.g. `3.0.0`). */
+    saveFormat: string;
+    /** Channels captured by this recording (D15). */
+    channels: string[];
+    /** Whether the recording includes event lines (D6). */
+    events: boolean;
+    /** Locale the recorded prose is bound to (D19). */
+    locale: string;
+    /** Forces the recording was made under (D13). Serialized as `(none)` when empty. */
+    forces: string[];
+}
+/**
+ * One recorded event line (`• type {json}`) inside a golden turn.
+ *
+ * The JSON payload is kept as its raw string so a parse → serialize round
+ * trip is byte-faithful (re-stringifying could reorder keys or reformat
+ * numbers, which would show up as phantom recording diffs).
+ */
+export interface GoldenEvent {
+    type: string;
+    json: string;
+}
+/** One recorded turn: the command and its output, verbatim (ADR-294 D7). */
+export interface GoldenTurn {
+    /** The command as typed, without the `> ` prefix. */
+    command: string;
+    /** Recorded output lines, verbatim — blank lines and indentation preserved. */
+    output: string[];
+    /** Present only when the recording's provenance says `events: true`. */
+    events?: GoldenEvent[];
+}
+/** A parsed `.golden` recording: provenance plus the recorded turns. */
+export interface GoldenRecording {
+    provenance: GoldenProvenance;
+    turns: GoldenTurn[];
+}
+/**
+ * A single assertion about command output, events, or state.
+ *
+ * The retained assertion-tier DSL (ADR-294 D2): exact match, contains,
+ * not-contains, expected failure, skip/todo, and the event/state pins.
+ * The fuzzy forms (`ok-any`, `contains_any`, `matches`) are removed
+ * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-    type: 'ok' | 'ok-any' | 'ok-contains' | 'ok-contains-any' | 'ok-matches' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert';
+    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert';
     value?: string;
-    values?: string[];
-    pattern?: RegExp;
     reason?: string;
     eventCount?: number;
     assertTrue?: boolean;
@@ -531,14 +581,22 @@ export interface Transcript {
      */
     parseErrors?: ParseError[];
     /**
-     * Master seed pinned by a `[SEED: N]` directive (ADR-293 D14). At most
-     * one per transcript (a duplicate is a parse error). In a chain, only
-     * the first transcript's seed is honored — the CLI rejects a `[SEED:]`
-     * on a later chain member as a loud error.
+     * Master seed pinned by the `seed:` header field (ADR-293 D14 as amended by
+     * ADR-294 D3 — the body-positional `[SEED:]` directive is a parse error).
+     * Set only by the singular `seed:` form; a `seeds:` matrix (D8) lives in
+     * `config.seeds` and is threaded per-recording by the runner. In a chain,
+     * only the first transcript's seed is honored — the CLI rejects a pin on a
+     * later chain member as a loud error.
      */
     seed?: number;
-    /** Line the `[SEED:]` directive appeared on, for chain-rule error reporting. */
+    /** Line the `seed:` header field appeared on, for chain-rule error reporting. */
     seedLineNumber?: number;
+    /**
+     * Validated run configuration from the header (ADR-294 D3), defaults
+     * applied. Always set by the parser; optional only so hand-built
+     * transcript literals in older tests keep compiling.
+     */
+    config?: TranscriptRunConfig;
 }
 /**
  * Snapshot of an entity's traits at the time of event capture.
@@ -569,6 +627,15 @@ export interface CommandResult {
     skipped: boolean;
     assertionResults: AssertionResult[];
     error?: string;
+    /**
+     * Golden replay divergence (ADR-294 D1): the recorded output and the
+     * actual output for this turn, verbatim. Present exactly when a golden
+     * diff failed this command; the reporter renders the line diff.
+     */
+    diff?: {
+        recorded: string[];
+        actual: string[];
+    };
 }
 /**
  * Result of a single assertion check
@@ -597,6 +664,22 @@ export interface TranscriptResult {
     duration: number;
     /** Present exactly when `status` is `'error'`: why the transcript never ran. */
     errorMessage?: string;
+    /**
+     * Which tier ran (ADR-294 D2): `golden` when a recording exists (or was
+     * being created), `assertion` otherwise. Absent on `error` results that
+     * never reached tier selection.
+     */
+    tier?: 'golden' | 'assertion';
+    /** Path of the `.golden` recording this run diffed against or created. */
+    goldenPath?: string;
+    /** True when this run created or overwrote the recording (`--bless`). */
+    blessed?: boolean;
+    /**
+     * Path of the divergence save written on a failed golden replay (ADR-294
+     * D18): a real save (world, turn counter, RNG stream states) captured at
+     * the last matching turn. Working artifact, never committed.
+     */
+    divergenceSavePath?: string;
 }
 /**
  * Result of running multiple transcripts
@@ -631,11 +714,24 @@ export interface TestingExtensionInterface {
 export interface RunnerOptions {
     verbose?: boolean;
     emitTraits?: boolean;
+    /** Continue the RUN after a failed transcript. Never suppresses a failure (ADR-294 D5). */
     stopOnFailure?: boolean;
-    updateExpected?: boolean;
-    filter?: string;
     savesDirectory?: string;
     testingExtension?: TestingExtensionInterface;
+    /** Create/overwrite the recording instead of diffing against it (ADR-294 D1). */
+    bless?: boolean;
+    /** Recording path override; defaults to the transcript's `.golden` sibling (D7). */
+    goldenPath?: string;
+    /**
+     * This transcript runs as a chain member (one session across transcripts).
+     * Later members legally pin no seed; their recordings carry the session
+     * seed, and replaying one standalone is refused (D7).
+     */
+    chain?: boolean;
+    /** Story name for recording provenance; falls back to the `story:` header. */
+    storyName?: string;
+    /** Locale for recording provenance when the transcript declares none (D19). */
+    locale?: string;
 }
 /**
  * Story loader function type
@@ -669,17 +765,78 @@ export declare function parseTranscript(content: string, filePath?: string): Tra
 export declare function validateTranscript(transcript: Transcript): string[];
 ```
 
+### golden
+
+```typescript
+/**
+ * `.golden` recording format — reader/writer (ADR-294 D3/D7).
+ *
+ * A golden recording is the committed regression baseline for one transcript
+ * at one seed: a provenance header (`key: value` lines), a `---` separator,
+ * then the recorded turns verbatim. This module owns (de)serialization only —
+ * recording, diffing, and blessing live in the runner.
+ *
+ * Sibling naming (D7/D8): a single-seed transcript records to
+ * `<name>.golden`; a `seeds:` matrix records one file per seed as
+ * `<name>.<seed>.golden` (e.g. `combat.42.golden`, `combat.777.golden`) —
+ * each replay diffs only against its own seed's recording.
+ *
+ * Public interface: `serializeGolden`, `parseGolden`, `parseGoldenFile`,
+ * `GoldenFormatError`. Owner context: transcript-tester (testing tooling).
+ */
+import { GoldenRecording } from './types.js';
+/**
+ * A malformed `.golden` file. Recordings are machine-written, so any shape
+ * error means corruption or a hand edit — a single hard error (with the line
+ * it occurred on) rather than the transcript parser's collected-errors style.
+ */
+export declare class GoldenFormatError extends Error {
+    readonly filePath: string;
+    readonly lineNumber?: number | undefined;
+    constructor(message: string, filePath: string, lineNumber?: number | undefined);
+}
+/**
+ * Serialize a recording to `.golden` text.
+ *
+ * Turns are separated by exactly one blank line; `parseGolden` strips exactly
+ * one trailing blank line per non-final turn, so output that itself ends in
+ * blank lines round-trips losslessly.
+ */
+export declare function serializeGolden(recording: GoldenRecording): string;
+/**
+ * Parse `.golden` content.
+ *
+ * @param content the file's text
+ * @param filePath used in error messages only
+ * @returns the parsed recording
+ * @throws GoldenFormatError on any structural problem — a recording either
+ *   parses completely or is rejected; there is no partial result
+ */
+export declare function parseGolden(content: string, filePath?: string): GoldenRecording;
+/** Read and parse a `.golden` file from disk. */
+export declare function parseGoldenFile(filePath: string): GoldenRecording;
+```
+
 ### runner
 
 ```typescript
 /**
- * Transcript Runner
+ * Transcript Runner — golden replay/record and assertion-tier execution
+ * (ADR-294).
  *
- * Executes transcript commands against a loaded story and checks results.
+ * Two tiers, one source grammar (D2): a transcript with a `.golden` sibling
+ * replays against the recording (the recording IS the assertion); `--bless`
+ * creates or overwrites the recording; a transcript with no recording runs
+ * the retained per-command assertion DSL. Any failed directive fails the
+ * transcript unconditionally (D5) — `--stop-on-failure` only ever controls
+ * whether the RUN continues to other transcripts.
+ *
+ * Public interface: `runTranscript`, `goldenPathFor`. Owner context:
+ * transcript-tester (testing tooling).
  */
 import { Transcript, TranscriptResult, RunnerOptions } from './types.js';
 /**
- * Interface for the game engine
+ * Interface for the game engine wrapper the CLIs hand the runner.
  */
 interface GameEngine {
     executeCommand(input: string): Promise<string> | string;
@@ -689,18 +846,12 @@ interface GameEngine {
         data?: any;
     }>;
     world?: WorldModel;
-    /** Plugin registry for save/restore of plugin state (state machines, scheduler) */
-    getPluginRegistry?(): {
-        getStates(): Record<string, unknown>;
-        setStates(states: Record<string, unknown>): void;
-    };
-    /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
-    reviveEngine?(): void;
     /**
      * The underlying platform engine. $save/$restore go through its real
      * save format (version, turn counter, RNG stream states — ADR-293 D7)
      * rather than a hand-rolled world snapshot; the tester owns only WHERE
-     * the file lives, never WHAT is in it.
+     * the file lives, never WHAT is in it. Golden provenance reads the
+     * session's master seed from here (ADR-294 D3).
      */
     engine?: {
         registerSaveRestoreHooks(hooks: {
@@ -709,10 +860,11 @@ interface GameEngine {
         }): void;
         save(): Promise<boolean>;
         restore(): Promise<boolean>;
+        getMasterSeed?(): number;
     };
 }
 /**
- * Minimal interface for world model state queries
+ * Minimal interface for world model state queries ([STATE:] assertions).
  */
 interface WorldModel {
     getEntityById?(id: string): any;
@@ -721,33 +873,103 @@ interface WorldModel {
     getAllEntities?(): any[];
     getLocation?(entityId: string): string | undefined;
     getContents?(containerId: string): any[];
-    findWhere?(predicate: (entity: any) => boolean): any[];
-    findByTrait?(traitType: string): any[];
-    findPath?(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer?(): any;
-    toJSON?(): string;
-    loadJSON?(json: string): void;
 }
 /**
- * Minimal subset of WorldModel needed by the condition evaluator and navigator.
+ * Recording path for a transcript (D7/D8). A single-seed transcript records
+ * to its `.golden` sibling; a `seeds:` matrix records one file per seed as
+ * `<name>.<seed>.golden` — each replay diffs only against its own seed's
+ * recording.
  */
-export interface WorldModelLike {
-    getLocation(entityId: string): string | null | undefined;
-    getContents(containerId: string): any[];
-    getEntity(entityId: string): any | null | undefined;
-    findWhere(predicate: (entity: any) => boolean): any[];
-    getAllEntities(): any[];
-    findByTrait(traitType: string): any[];
-    findPath(fromRoomId: string, toRoomId: string): string[] | null;
-}
+export declare function goldenPathFor(transcriptPath: string, matrixSeed?: number): string;
+/** Divergence-save path for a transcript (D18). Working artifact, never committed. */
+export declare function divergencePathFor(transcriptPath: string): string;
 /**
- * Run a single transcript against an engine
+ * Run a single transcript against an engine.
  *
- * If transcript has items (with directives), use the smart runner.
- * Otherwise, fall back to legacy command-only execution.
+ * Tier selection (D2): `--bless` records; an existing recording replays;
+ * otherwise the assertion tier runs. Parse errors never execute (AC-4).
  */
 export declare function runTranscript(transcript: Transcript, engine: GameEngine, options?: RunnerOptions): Promise<TranscriptResult>;
 export {};
+```
+
+### watch
+
+```typescript
+/**
+ * Watch mode (ADR-294 D14) — targeted reruns with an inline bless affordance.
+ *
+ * A change to a watched transcript (or one of its recordings) reruns that one
+ * test; a change to the story's files reruns every watched transcript. Golden
+ * failures offer `bless? [y/n/all]` when a prompt is available; an unattended
+ * watch (no prompt wired) never blesses anything — it only reports.
+ *
+ * Public interface: `classifyChange`, `BlessPolicy`, `runCycle`, `startWatch`.
+ * The host CLI supplies the run/prompt/log callbacks; this module owns only
+ * the watch/decision logic, so both are testable without a real terminal.
+ * Owner context: transcript-tester (testing tooling).
+ */
+import { TranscriptResult } from './types.js';
+/** Where a filesystem change points: one transcript, the whole story, or noise. */
+export type ChangeTarget = {
+    kind: 'transcript';
+    transcriptPath: string;
+} | {
+    kind: 'story';
+} | {
+    kind: 'ignored';
+};
+/**
+ * Classify one changed path against the watch set.
+ *
+ * Order matters: a watched transcript's own artifacts map to that transcript;
+ * OTHER transcript artifacts are noise even inside a story dir (an unwatched
+ * suite's files must not retrigger this one); save churn from our own runs is
+ * noise; anything else under a story dir is a story change (rerun all).
+ */
+export declare function classifyChange(changedPath: string, watchedTranscripts: string[], storyDirs: string[]): ChangeTarget;
+/**
+ * The bless decision state machine (D14). With no prompt wired (headless,
+ * no TTY), `decide` is always false — an unattended watch never blesses.
+ * An explicit `all` answer is sticky for the rest of the watch session.
+ */
+export declare class BlessPolicy {
+    private readonly promptBless?;
+    private blessAll;
+    constructor(promptBless?: ((transcriptPath: string) => Promise<"y" | "n" | "all">) | undefined);
+    decide(transcriptPath: string): Promise<boolean>;
+}
+/** Host-supplied callbacks: run one transcript (all its matrix seeds), log. */
+export interface WatchRunIO {
+    /** Run one transcript file fresh; returns one result per matrix seed. */
+    run(transcriptPath: string, bless: boolean): Promise<TranscriptResult[]>;
+    log(message: string): void;
+}
+/**
+ * Run one watch cycle over the affected transcripts. A golden-tier non-pass
+ * offers bless via the policy; assertion-tier failures only report (bless is
+ * a golden affordance). Returns the golden paths this cycle wrote, so the
+ * watcher can suppress its own write events.
+ */
+export declare function runCycle(transcriptPaths: string[], io: WatchRunIO, policy: BlessPolicy, onBlessed?: (goldenPath: string) => void): Promise<{
+    blessedGoldens: string[];
+}>;
+export interface WatchConfig {
+    /** The transcript files this watch session runs. */
+    transcripts: string[];
+    /** Directories whose non-artifact changes rerun every transcript. */
+    storyDirs: string[];
+    /** Debounce window for coalescing change events (ms). */
+    debounceMs?: number;
+}
+/**
+ * Start watching. Never resolves on its own — the returned handle's `close`
+ * stops the watchers (tests and Ctrl+C both go through it).
+ */
+export declare function startWatch(config: WatchConfig, io: WatchRunIO, policy: BlessPolicy): {
+    close(): void;
+};
 ```
 
 ### reporter

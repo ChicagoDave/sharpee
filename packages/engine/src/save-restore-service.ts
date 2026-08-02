@@ -54,8 +54,12 @@ import {
  * against hard breaks. v1 saves are rejected — they are known-broken
  * (drop score / capabilities / state values / relationships); that
  * cutover predates the version-reader ruling.
+ *
+ * Exported for ADR-294 D3: golden-recording provenance stamps the
+ * save-format version it was recorded under, and the transcript tester
+ * must read the same constant the save path writes.
  */
-const SAVE_FORMAT_VERSION = '3.0.0';
+export const SAVE_FORMAT_VERSION = '3.0.0';
 
 /** The last hard-cutover format; readable via the version-reader branch. */
 const LEGACY_SAVE_FORMAT_VERSION = '2.0.0';

@@ -1,0 +1,199 @@
+# sharpee golden v1
+transcript: wt-17-endgame.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> turn on lantern
+The brass lantern switches on, banishing the darkness.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> southeast
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> east
+Mirror Room
+You are in a large room with a great mirror on the wall. Passages lead northeast and west.
+
+> rub mirror
+There is a rumble from deep within the earth, and the room shakes.
+
+> east
+Cave
+This is a tiny cave with entrances west and north, and a dark, forbidding staircase leading down.
+
+> down
+Entrance to Hades
+You are at the entrance to Hades, the land of the dead. An eerie mist swirls around you. A passage leads east into darkness, and a corridor leads north.
+
+> east
+Land of the Dead
+You have entered the Land of the Dead. The air is cold and still. Ghostly shapes drift silently in the darkness. This is not a place for the living. A faint glow emanates from the north.
+
+> east
+Tomb of the Unknown Implementer
+This is the Tomb of the Unknown Implementer. A hollow voice says, "That's not a bug, it's a feature!" In the north wall of the room is the Crypt of the Implementers. It is made of the finest marble and is apparently large enough for four headless corpses. Above the entrance is the cryptic inscription: "Feel Free". To the south is a small opening, apparently of recent origin.
+
+> turn off lantern
+You switch off the brass lantern, plunging the area into darkness.
+
+> wait
+Time passes...
+
+The darkness seems to press in around you. You sense a presence watching from the shadows...
+
+> wait
+Time passes...
+
+> wait
+Top of Stairs
+This is a room with an exit on the west side, and a staircase leading up.
+
+Time passes...
+
+A cloaked figure appears from the shadows! "So, you have discovered the secret. Your quest is nearly at an end, but the final challenge awaits." The figure gestures, and reality dissolves around you...
+
+When your vision clears, you find yourself in a completely different place.
+
+The endgame has begun. Your score is now 15 out of a possible 100.
+
+> west
+Stone Room
+This is a small stone room with passages leading north and south. Set into one wall is a stone button.
+
+> push stone button
+You push the stone button.
+
+You push the button, but nothing happens.
+
+> south
+Small Room
+This is a small room, with narrow passages exiting to the north and south. A narrow red beam of light crosses the room at the north end, inches above the floor.
+
+> south
+Hallway
+This is part of the long hallway. The east and west walls are dressed stone. In the center of the hall is a shallow stone channel. In the center of the room the channel widens into a large hole around which is engraved a compass rose. Sitting in the center of the room is a strange wooden structure.
+
+Identical stone statues face each other from pedestals on opposite sides of the corridor. The statues represent Guardians of Zork, a military order of ancient lineage. They are portrayed as heavily armored warriors standing at ease, hands clasped around formidable bludgeons.
+
+> in
+Inside Mirror
+You are inside a rectangular box of wood whose structure is rather complicated. Four sides and the roof are filled in, and the floor is open.
+
+As you face the side opposite the entrance, two short sides of carved and polished wood are to your left and right. The left panel is mahogany, the right pine. The wall you face is red on its left half and black on its right. On the entrance side, the wall is white opposite the red part of the wall it faces, and yellow opposite the black section. The painted walls are at least twice the length of the unpainted ones. The ceiling is painted blue.
+
+In the floor is a stone channel about six inches wide and a foot deep. The channel is oriented in a north-south direction. In the exact center of the room the channel widens into a circular depression perhaps two feet wide. Incised in the stone around this area is a compass rose.
+
+Running from one short wall to the other at about waist height is a wooden bar, carefully carved and drilled. This bar is pierced in two places. Through each hole runs a wooden pole.
+
+> out
+Hallway
+This is part of the long hallway. The east and west walls are dressed stone. In the center of the hall is a shallow stone channel. In the center of the room the channel widens into a large hole around which is engraved a compass rose. Sitting in the center of the room is a strange wooden structure.
+
+Identical stone statues face each other from pedestals on opposite sides of the corridor. The statues represent Guardians of Zork, a military order of ancient lineage. They are portrayed as heavily armored warriors standing at ease, hands clasped around formidable bludgeons.
+
+> south
+Dungeon Entrance
+This is a north-south hallway which ends in a large wooden door. The wooden door has a barred panel in it at about head height.
+
+You can see Dungeon Master here.
+
+> knock
+The barred panel in the door slides open, revealing a strange old man with a long, flowing beard. He speaks: "I am the Dungeon Master. To prove yourself worthy of entry, you must answer my questions correctly. Three correct answers will grant you passage; five wrong answers will seal your fate."
+
+"What is a useful thing to do with the mirror?"
+
+> answer rub
+The old man nods approvingly. "Correct."
+
+"Is the phrase 'hello sailor' useful anywhere in the game?"
+
+> answer no
+The old man nods approvingly. "Correct."
+
+"What is the minimum total value of the zorkmid treasures in the game?"
+
+> answer 30003
+The old man smiles warmly. "You have proven your knowledge. Enter, friend, and face the final challenge."
+
+The wooden door swings open with a creak.
+
+> north
+Narrow Corridor
+This is a narrow north-south corridor. At the south end is a door and at the north end is an east-west corridor.
+
+The Dungeon Master follows you.
+
+> north
+East-West Corridor
+This is a large east-west corridor which opens out to a northern parapet at its center. You can see flames and smoke as you peer towards the parapet. The corridor turns south at its east and west ends, and due south is a massive wooden door. In the door is a small window barred with iron.
+
+The Dungeon Master follows you.
+
+> north
+Parapet
+You are standing behind a stone retaining wall which rims a large parapet overlooking a fiery pit. It is difficult to see through the smoke and flame which fills the pit, but it seems to be more or less bottomless. It also extends upwards out of sight. The pit itself is of roughly dressed stone and is circular in shape. It is about two hundred feet in diameter. The flames generate considerable heat, so it is rather uncomfortable standing here.
+
+There is an object here which looks like a sundial. On it are an indicator arrow and (in the center) a large button. On the face of the dial are numbers "one" through "eight".
+
+The Dungeon Master follows you.
+
+> set dial to 4
+You turn the dial to 4.
+
+> push dial button
+You push the button in the center of the dial.
+
+You hear grinding machinery somewhere below, as the cells around the pit rotate.
+
+> down
+Prison Cell
+This is a featureless prison cell. You can see only the flames and smoke of the pit out of the small window in a closed wooden door in front of you.
+
+The Dungeon Master follows you.
+
+> open bronze door
+You open the bronze door.
+
+> south
+Treasury of Zork
+This is the Treasury of Zork. You have reached the end of your journey! Untold riches surround you - gold, gems, and artifacts beyond measure.
+
+The Dungeon Master follows you.
+
+You have entered the Treasury of Zork!
+
+Congratulations, brave adventurer! You have completed the greatest of all treasure hunts and discovered the legendary Treasury of Zork. The riches of the Great Underground Empire are yours!
+
+Your final score is 100 points out of a possible 750 (650 main game + 100 endgame).
+Endgame score: 100/100
+Main game score: 0/650
+
+You have achieved the rank of MASTER ADVENTURER.
+
+*** THE END ***

@@ -13,11 +13,8 @@ $restore wt-06
 [GOAL: Verify starting state]
 
 > look
-[OK: contains "Living Room"]
 
 > inventory
-[OK: contains "torch"]
-[OK: contains "lantern"]
 
 [END GOAL]
 
@@ -29,16 +26,12 @@ $restore wt-06
 [GOAL: Navigate to Round Room]
 
 > down
-[OK: contains "Cellar"]
 
 > east
-[OK: contains "Troll Room"]
 
 > north
-[OK: contains "East-West Passage"]
 
 > east
-[OK: contains "Round Room"]
 
 [END GOAL]
 
@@ -52,34 +45,24 @@ $restore wt-06
 
 [GOAL: Get to Grail Room via carousel]
 
-[WHILE: not location = "Grail Room"]
-  > south
-  [OK: contains_any "Engravings Cave" "Grail Room" "North/South Passage" "Winding Passage" "Deep Canyon" "Maze" "East/West Passage"]
-  [IF: location = "East-West Passage"]
-    > east
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Deep Canyon"]
-    > southeast
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "North/South Passage"]
-    > southwest
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Winding Passage"]
-    > northwest
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Engravings Cave"]
-    > north
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Maze"]
-    > northeast
-    [OK: contains "Round Room"]
-  [END IF]
-[END WHILE]
+# (loop region resolved to its seed-42 sequence — ADR-294 migration)
+> south
+> northeast
+> south
+> northwest
+> south
+> northwest
+> south
+> southwest
+> south
+> east
+> south
+> northeast
+> south
+> northwest
+> south
+> northeast
+> south
 
 [END GOAL]
 
@@ -89,24 +72,16 @@ $restore wt-06
 # ============================================================================
 
 [GOAL: Get exorcism items]
-[ENSURES: inventory contains "bell"]
-[ENSURES: inventory contains "book"]
-[ENSURES: inventory contains "candles"]
 
 > up
-[OK: contains "Temple"]
 
 > east
-[OK: contains "Altar"]
 
 > take bell
-[OK: contains "Taken"]
 
 > take book
-[OK: contains "Taken"]
 
 > take candles
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -119,22 +94,16 @@ $restore wt-06
 [GOAL: Get to Entrance to Hades]
 
 > west
-[OK: contains "Temple"]
 
 > down
-[OK: contains "Grail Room"]
 
 > east
-[OK: contains "Narrow Crawlway"]
 
 > southwest
-[OK: contains "Mirror Room"]
 
 > east
-[OK: contains "Cave"]
 
 > down
-[OK: contains "Entrance to Hades"]
 
 [END GOAL]
 
@@ -148,19 +117,15 @@ $restore wt-06
 
 # Step 1: Ring the bell
 > ring bell
-[OK: contains "resonant"]
 
 # Step 2: Read the black book
 > read book
-[OK: contains "exorcism"]
 
 # Step 3: Light the candles
 > turn on candles
-[OK: contains "on"]
 
 # Wait a turn for the exorcism daemon to complete the ritual
 > wait
-[OK: contains "Time passes"]
 
 [END GOAL]
 
@@ -171,7 +136,6 @@ $restore wt-06
 [GOAL: Verify exorcism success]
 
 > east
-[OK: contains "Land of the Dead"]
 
 [END GOAL]
 
@@ -187,64 +151,104 @@ $restore wt-06
 
 # Back through Hades to Cave
 > west
-[OK: contains "Entrance to Hades"]
 
 > up
-[OK: contains "Cave"]
 
 # Cave -> Mirror Room -> Narrow Crawlway -> Grail Room
 > west
-[OK: contains "Mirror Room"]
 
 > northeast
-[OK: contains "Narrow Crawlway"]
 
 > west
-[OK: contains "Grail Room"]
 
 # Enter Round Room (carousel is still spinning)
 > west
-[OK: contains "Round Room"]
 
 # Traverse carousel to reach Maze (Maze-01 has WEST -> Troll Room)
-[WHILE: not location = "Maze"]
-  > south
-  [OK: contains_any "Engravings Cave" "Grail Room" "North/South Passage" "Winding Passage" "Deep Canyon" "Maze" "East/West Passage"]
-  [IF: location = "East-West Passage"]
-    > east
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Deep Canyon"]
-    > southeast
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "North/South Passage"]
-    > southwest
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Winding Passage"]
-    > northwest
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Engravings Cave"]
-    > north
-    [OK: contains "Round Room"]
-  [END IF]
-  [IF: location = "Grail Room"]
-    > west
-    [OK: contains "Round Room"]
-  [END IF]
-[END WHILE]
+# (loop region resolved to its seed-42 sequence — ADR-294 migration)
+> south
+> east
+> south
+> north
+> south
+> southwest
+> south
+> north
+> south
+> northwest
+> south
+> southwest
+> south
+> north
+> south
+> northwest
+> south
+> northwest
+> south
+> southeast
+> south
+> north
+> south
+> northwest
+> south
+> southeast
+> south
+> north
+> south
+> southeast
+> south
+> east
+> south
+> southeast
+> south
+> southeast
+> south
+> west
+> south
+> west
+# The thief camps the Round Room here at seed 42; one wait and he
+# stumbles off (already badly wounded) instead of finishing us.
+> wait
+> south
+> northwest
+> south
+> west
+> south
+> west
+> south
+> northwest
+> south
+> northwest
+> south
+> southeast
+> south
+> north
+> south
+> southwest
+> south
+> southeast
+> south
+> southeast
+> south
+> east
+> south
+> northwest
+> south
+> southwest
+> south
+> north
+> south
+> east
+> south
+> southwest
+> south
 
 # Maze-01 -> Troll Room -> Cellar -> Living Room
 > west
-[OK: contains "Troll Room"]
 
 > west
-[OK: contains "Cellar"]
 
 > up
-[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -255,11 +259,8 @@ $restore wt-06
 [GOAL: Verify inventory for next segment]
 
 > inventory
-[OK: contains "torch"]
-[OK: contains "lantern"]
 
 > look
-[OK: contains "Living Room"]
 
 [END GOAL]
 

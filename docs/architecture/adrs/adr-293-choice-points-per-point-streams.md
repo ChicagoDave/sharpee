@@ -548,6 +548,11 @@ shape the format already uses for `[OK:]` and `[ENSURES:]`; `EngineConfig.seed`.
 only the first transcript's `[SEED:]` is honoured — the chain is one session — and a
 `[SEED:]` on a later member is a loud parse error.
 
+> **Superseded in part by ADR-294 D3 (2026-08-01):** the *transcript-directive* shape
+> `[SEED: N]` is replaced by the `seed:` header field; the body-positional form becomes a
+> parse error naming its replacement. D14's CLI flag (`--seed`), `EngineConfig.seed`,
+> seed reporting, and the pin/`--vary` pairing all still stand unchanged.
+
 **Every run reports the seed it used, including when it came from the clock**, and every
 failure carries the seed that produced it. A variation run that finds a defect it cannot name
 the seed for has produced noise rather than a finding.

@@ -1,0 +1,130 @@
+# sharpee golden v1
+transcript: wt-03-maze-cyclops-goal.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> take painting
+Taken.
+
+> south
+Studio
+This is what appears to have been an artist's studio. The walls and floors are splattered with paints of 69 different colors. Strangely enough, nothing of value is hanging here. At the north and northwest of the room are open doors (also covered with paint). An extremely dark and narrow chimney leads up from a fireplace; although you might be able to get up it, it seems unlikely you could get back down.
+
+> north
+North/South Crawlway
+This is a north-south crawlway; a passage also goes to the east. There is a hole above, but it provides no opportunities for climbing.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+> drop sword
+Dropped.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> west
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> up
+Maze
+You are in a maze of twisty little passages, all alike.
+
+You can see a leather bag of coins, a skeleton key, a rusty knife, and an incense here.
+
+> take incense
+Taken.
+
+> take key
+Taken.
+
+> southwest
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+You can see a seedy-looking thief here.
+
+The thief lunges at you with his stiletto!
+
+The thief strikes like a snake! The resulting wound is serious.
+
+A seedy-looking gentleman sidles into view.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+A huge cyclops stands before you, blocking the northern passage!
+
+> say odysseus
+The cyclops, hearing that dreaded name, panics!
+
+The cyclops runs away in terror, revealing a hidden passage!
+
+A passage north to the Strange Passage is now clear.
+
+> north
+Strange Passage
+This is a long passage. To the south is one entrance. On the east there is an old wooden door, with a large hole in it (about cyclops sized).
+
+> east
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+> inventory
+You are carrying:
+
+a brass lantern, ivory torch, portrait, stack of zorkmid bills, painting, incense, skeleton key
+
+> open trophy case
+You open the trophy case, which is empty.
+
+> put portrait in trophy case
+You put the portrait in the trophy case.
+
+> put painting in trophy case
+You put the painting in the trophy case.
+
+> put zorkmid bills in trophy case
+You put the stack of zorkmid bills in the trophy case.
+
+> drop lantern
+Dropped.
+
+> drop incense
+Dropped.
+
+> drop key
+Dropped.
+
+> inventory
+You are carrying:
+
+an ivory torch

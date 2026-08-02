@@ -1,0 +1,269 @@
+# sharpee golden v1
+transcript: wt-11-coal-mine.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> take lantern
+Taken.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> southeast
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> east
+Mirror Room
+You are in a large room with a great mirror on the wall. Passages lead northeast and west.
+
+> rub mirror
+There is a rumble from deep within the earth, and the room shakes.
+
+> west
+Cold Passage
+You are in a cold, damp passage. The air here is noticeably colder than elsewhere in the underground. Passages lead in several directions.
+
+> west
+Slide Room
+You are in a room with a steep slide leading down into darkness. The slide appears to be one-way - once you go down, there may be no coming back up. Passages lead north and east.
+
+> north
+Mine Entrance
+You are at the entrance to an old coal mine. Wooden support beams frame the entrance, and you can see passages leading in several directions. The air smells of dust and old coal.
+
+> northeast
+Shaft Room
+This is a small room near the top of a deep shaft. A rusty iron basket hangs from a chain here, suspended over the darkness below. An opening leads west.
+
+> north
+Wooden Tunnel
+You are in a tunnel reinforced with wooden beams and supports. The timbers creak ominously as you pass through.
+
+> west
+Smelly Room
+You are in a room with a strong, unpleasant odor. The smell of natural gas is unmistakable. A hole in the floor leads down.
+
+> drop torch
+Dropped.
+
+> turn on lantern
+The brass lantern switches on, banishing the darkness.
+
+> down
+Gas Room
+This room has a strong, unpleasant smell. The air feels heavy and slightly nauseating. It would be very dangerous to bring an open flame here. Passages lead north and east.
+
+You can see a sapphire bracelet here.
+
+> take bracelet
+Taken.
+
+> up
+Smelly Room
+You are in a room with a strong, unpleasant odor. The smell of natural gas is unmistakable. A hole in the floor leads down.
+
+You can see an ivory torch here.
+
+> take torch
+Taken.
+
+> turn off lantern
+You switch off the brass lantern, plunging the area into darkness.
+
+> east
+Wooden Tunnel
+You are in a tunnel reinforced with wooden beams and supports. The timbers creak ominously as you pass through.
+
+> northeast
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> north
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northwest
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> down
+Ladder Top
+You are at the top of a rickety wooden ladder that descends into darkness. A passage leads north.
+
+> down
+Ladder Bottom
+You are at the bottom of a rickety wooden ladder. A passage leads south into an area with a strange smell. You can climb up the ladder.
+
+> northeast
+Dead End
+You have reached a dead end in the coal mine. The passage ends abruptly here.
+
+You can see a pile of coal here.
+
+> take coal
+Taken.
+
+> south
+Ladder Bottom
+You are at the bottom of a rickety wooden ladder. A passage leads south into an area with a strange smell. You can climb up the ladder.
+
+> south
+Timber Room
+This room is supported by massive wooden beams that creak ominously. The timber looks old but sturdy. Passages lead north, west, and south.
+
+You can see a wooden timber here.
+
+> southwest
+Bottom of Shaft
+You are at the bottom of a deep shaft. The walls rise up into darkness above you. Passages lead east and northeast.
+
+> east
+Machine Room
+This is a large room full of old mining equipment. In the center stands a massive coal-powered machine with a prominent slot. The walls are blackened with soot. A passage leads west.
+
+> put coal in machine
+You put the pile of coal in the machine.
+
+> turn switch
+The machine comes to life with a deafening roar! The lid slams shut, and the sounds of immense pressure fill the room. After a moment, the lid opens to reveal that the coal has been transformed into a huge diamond!
+
+> take diamond
+Taken.
+
+> northwest
+Bottom of Shaft
+You are at the bottom of a deep shaft. The walls rise up into darkness above you. Passages lead east and northeast.
+
+> northeast
+Timber Room
+This room is supported by massive wooden beams that creak ominously. The timber looks old but sturdy. Passages lead north, west, and south.
+
+You can see a wooden timber here.
+
+> north
+Ladder Bottom
+You are at the bottom of a rickety wooden ladder. A passage leads south into an area with a strange smell. You can climb up the ladder.
+
+> up
+Ladder Top
+You are at the top of a rickety wooden ladder that descends into darkness. A passage leads north.
+
+> up
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Wooden Tunnel
+You are in a tunnel reinforced with wooden beams and supports. The timbers creak ominously as you pass through.
+
+> south
+Shaft Room
+This is a small room near the top of a deep shaft. A rusty iron basket hangs from a chain here, suspended over the darkness below. An opening leads west.
+
+> west
+Mine Entrance
+You are at the entrance to an old coal mine. Wooden support beams frame the entrance, and you can see passages leading in several directions. The air smells of dust and old coal.
+
+> south
+Slide Room
+You are in a room with a steep slide leading down into darkness. The slide appears to be one-way - once you go down, there may be no coming back up. Passages lead north and east.
+
+> east
+Cold Passage
+You are in a cold, damp passage. The air here is noticeably colder than elsewhere in the underground. Passages lead in several directions.
+
+> east
+Mirror Room
+You are in a large room with a great mirror on the wall. Passages lead northeast and west.
+
+> rub mirror
+There is a rumble from deep within the earth, and the room shakes.
+
+> west
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> west
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> west
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> west
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> up
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a screwdriver, a trunk, a brass bell, a black book, a burned-out candles, and a sharp stick here.
+
+> inventory
+You are carrying:
+
+a glass bottle, blue cake, eat-me cake, brass lantern, sapphire bracelet, ivory torch, huge diamond
+
+> open trophy case
+The trophy case is already open.
+
+> put diamond in trophy case
+You put the huge diamond in the trophy case.
+
+> put bracelet in trophy case
+You put the sapphire bracelet in the trophy case.
+
+> inventory
+You are carrying:
+
+a glass bottle, blue cake, eat-me cake, brass lantern, ivory torch
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see a guidebook, a matchbook, a wrench, a screwdriver, a trunk, a sharp stick, a brass bell, a black book, a burned-out candles, a skeleton key, an incense, and a large brochure here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, a gold coffin, a large emerald, a beautiful statue, a pot of gold, a jewel-encrusted egg, a pearl necklace, a tin of spices, a white white crystal sphere, a huge diamond, and a sapphire bracelet.

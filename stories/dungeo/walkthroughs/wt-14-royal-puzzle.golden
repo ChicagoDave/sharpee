@@ -1,0 +1,323 @@
+# sharpee golden v1
+transcript: wt-14-royal-puzzle.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> open trap door
+The trap trap door is already open.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> west
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> up
+Maze
+You are in a maze of twisty little passages, all alike.
+
+You can see a rusty knife here.
+
+> southwest
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> east
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> south
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+> up
+Treasure Room
+This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.
+
+You can see a nasty knife here.
+
+> east
+Square Room
+This is a small square room, with passages leading west and down.
+
+> down
+Puzzle Room
+This is a small room with a hole in the floor. Through the hole, you can see a sandstone room below.
+
+You can see a warning note here.
+
+> down
+Room in a Puzzle
+You are in a maze of sandstone walls.
+
+You can see a gold card here.
+
+You squeeze through the narrow hole and find yourself in a confusing maze of sandstone walls.
+
+You are in a maze of sandstone walls. Above you is a hole in the ceiling, but there is no way to reach it.
+
+> push east wall
+The sandstone wall slides into the space beyond. You step into the vacated space.
+
+You are in a maze of sandstone walls. Passages lead south and west.
+
+> south
+You are in a maze of sandstone walls. Passages lead north, south, northwest, southeast, and southwest.
+
+> southwest
+You are in a maze of sandstone walls. Passages lead east, northeast, and southeast.
+
+> push south wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, east, northeast, and southeast.
+
+> east
+You are in a maze of sandstone walls. Passages lead north, south, east, west, northeast, and northwest.
+
+> east
+You are in a maze of sandstone walls. Passages lead north, west, northeast, northwest, and southwest.
+
+> push south wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, east, west, northwest, and southeast.
+
+> north
+You are in a maze of sandstone walls. Passages lead north, south, west, northeast, northwest, southeast, and southwest.
+
+> north
+You are in a maze of sandstone walls. Passages lead south, east, west, northeast, northwest, and southwest.
+
+> east
+You are in a maze of sandstone walls. Passages lead north, west, and southwest.
+
+> push south wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, west, northwest, and southwest. The center of the floor here is noticeably depressed. Nestled in the depression is an engraved gold card.
+
+> take card
+You carefully extract the gold card from the depression in the floor.
+
+> push south wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, east, west, northwest, and southeast.
+
+> east
+You are in a maze of sandstone walls. Passages lead south, east, west, northeast, and northwest.
+
+> northeast
+You are in a maze of sandstone walls. Passages lead north, south, and southwest.
+
+> push west wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead south, east, northeast, southeast, and southwest.
+
+> push west wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, south, east, northwest, southeast, and southwest. The center of the floor here is noticeably depressed.
+
+> push west wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, south, east, northeast, northwest, southeast, and southwest.
+
+> push west wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, south, east, northeast, northwest, and southeast.
+
+> northeast
+You are in a maze of sandstone walls. Passages lead south, east, west, northeast, northwest, southeast, and southwest.
+
+> northeast
+You are in a maze of sandstone walls. Passages lead north, south, and southwest. One of the sandstone walls has a wooden ladder attached to it.
+
+> north
+You are in a maze of sandstone walls. Passages lead south.
+
+> push east wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead west and southwest. One of the sandstone walls has a wooden ladder attached to it.
+
+> southwest
+You are in a maze of sandstone walls. Passages lead north, south, northeast, and southwest. One of the sandstone walls has a wooden ladder attached to it.
+
+> south
+You are in a maze of sandstone walls. Passages lead north, south, west, southeast, and southwest.
+
+> southeast
+You are in a maze of sandstone walls. Passages lead south, east, west, northeast, northwest, southeast, and southwest.
+
+> northeast
+You are in a maze of sandstone walls. Passages lead north, south, and southwest.
+
+> north
+You are in a maze of sandstone walls. Passages lead south. One of the sandstone walls has a wooden ladder attached to it.
+
+> push west wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, east, northwest, and southeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> northwest
+You are in a maze of sandstone walls. Passages lead east and southeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> push south wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, east, and northeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> push south wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, west, northeast, and southwest. One of the sandstone walls has a wooden ladder attached to it.
+
+> west
+You are in a maze of sandstone walls. Passages lead south, east, west, northeast, northwest, and southwest.
+
+> northwest
+You are in a maze of sandstone walls. Passages lead north, south, northwest, southeast, and southwest.
+
+> northwest
+You are in a maze of sandstone walls. Passages lead east and southeast. Above you is a hole in the ceiling, but there is no way to reach it.
+
+> push south wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, east, northeast, and southeast.
+
+> southeast
+You are in a maze of sandstone walls. Passages lead north, south, east, northwest, and southeast.
+
+> southeast
+You are in a maze of sandstone walls. Passages lead north, south, west, northeast, northwest, southeast, and southwest. One of the sandstone walls has a wooden ladder attached to it.
+
+> southeast
+You are in a maze of sandstone walls. Passages lead east, west, northeast, northwest, and southeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> northeast
+You are in a maze of sandstone walls. Passages lead south, east, northeast, southeast, and southwest. One of the sandstone walls has a wooden ladder attached to it.
+
+> push west wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, south, east, northwest, southeast, and southwest. One of the sandstone walls has a wooden ladder attached to it. The center of the floor here is noticeably depressed.
+
+> push west wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead north, south, east, northeast, northwest, southeast, and southwest. One of the sandstone walls has a wooden ladder attached to it.
+
+> southwest
+You are in a maze of sandstone walls. Passages lead east and northeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> push north wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead south, east, northeast, and southeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> push north wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead south, east, and southeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> push north wall
+The sandstone wall slides into the space beyond.
+
+You are in a maze of sandstone walls. Passages lead south, west, northwest, and southeast. One of the sandstone walls has a wooden ladder attached to it.
+
+> northwest
+You are in a maze of sandstone walls. Passages lead south, southeast, and up. Above you is a hole in the ceiling. A wooden ladder on the eastern wall reaches up to it.
+
+> up
+Puzzle Room
+This is a small room with a hole in the floor. Through the hole, you can see a sandstone room below.
+
+You climb the ladder and squeeze back through the hole in the ceiling.
+
+> look
+Puzzle Room
+This is a small room with a hole in the floor. Through the hole, you can see a sandstone room below.
+
+You can see a warning note here.
+
+> up
+Square Room
+This is a small square room, with passages leading west and down.
+
+> west
+Treasure Room
+This is a large room, whose north wall is solid marble. A doorway leads south, and a narrow chimney leads up.
+
+You can see a nasty knife here.
+
+> down
+Cyclops Room
+This room has an exit on the northwest, and a staircase leading up.
+
+You can see a huge cyclops here.
+
+> north
+Strange Passage
+This is a long passage. To the south is one entrance. On the east there is an old wooden door, with a large hole in it (about cyclops sized).
+
+> east
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a trunk, a brass bell, a black book, a burned-out candles, a sharp stick, a blue blue cake, an eat-me eat-me cake, an elongated brown sack, a brick, a shiny shiny wire, and a frame piece here.
+
+> open trophy case
+The trophy case is already open.
+
+> put gold card in trophy case
+You put the gold card in the trophy case.
+
+> inventory
+You are carrying:
+
+a glass bottle, brass lantern, ivory torch
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an elongated brown sack, a brick, a shiny shiny wire, a guidebook, a matchbook, a wrench, a trunk, a sharp stick, a brass bell, a black book, a burned-out candles, an eat-me eat-me cake, a blue blue cake, a skeleton key, an incense, a large brochure, and a frame piece here.
+
+In the elongated brown sack you see a lunch and a clove of garlic.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, a gold coffin, a large emerald, a beautiful statue, a pot of gold, a pearl necklace, a tin of spices, a white white crystal sphere, a huge diamond, a sapphire bracelet, a violin, a crystal trident, a blue blue crystal sphere, a jade figurine, a red red crystal sphere, a golden clockwork canary, a brass bauble, a silver chalice, a grail, a leather bag of coins, a jewel-encrusted egg, and a gold card.

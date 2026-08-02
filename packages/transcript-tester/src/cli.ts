@@ -36,6 +36,7 @@ interface CliOptions {
   chain: boolean;
   outputDir: string | null;
   play: boolean;
+  bless: boolean;
 }
 
 /**
@@ -51,7 +52,8 @@ function parseArgs(args: string[]): CliOptions {
     all: false,
     chain: false,
     outputDir: null,
-    play: false
+    play: false,
+    bless: false
   };
 
   let i = 0;
@@ -69,6 +71,8 @@ function parseArgs(args: string[]): CliOptions {
       options.all = true;
     } else if (arg === '--chain' || arg === '-c') {
       options.chain = true;
+    } else if (arg === '--bless') {
+      options.bless = true;
     } else if (arg === '--play' || arg === '-p') {
       options.play = true;
     } else if (arg === '--output-dir' || arg === '-o') {
@@ -112,6 +116,7 @@ Options:
   -p, --play             Interactive play mode (REPL)
   -a, --all              Run all transcripts in the story's tests/ directory
   -c, --chain            Chain transcripts (don't reset game state between them)
+  --bless                Create/overwrite golden recordings (ADR-294 D1)
   -v, --verbose          Show detailed output for each command
   --emit-traits          Show entity traits for objects referenced in events (implies --verbose)
   -s, --stop-on-failure  Stop on first failure
@@ -328,13 +333,24 @@ async function main(): Promise<void> {
     // Parse the transcript
     const transcript = parseTranscriptFile(transcriptPath);
 
-    // Validate
+    // Validate. Errors are recorded as an error-status result, never dropped
+    // (ADR-294 AC-4: nothing executes, and the run fails).
     const errors = validateTranscript(transcript);
     if (errors.length > 0) {
-      console.error(`\nErrors in ${transcriptPath}:`);
-      for (const err of errors) {
-        console.error(`  - ${err}`);
-      }
+      const result: TranscriptResult = {
+        transcript,
+        commands: [],
+        status: 'error',
+        passed: 0,
+        failed: 0,
+        expectedFailures: 0,
+        skipped: 0,
+        duration: 0,
+        errorMessage: errors.join('; ')
+      };
+      results.push(result);
+      reportTranscript(result, { verbose: options.verbose });
+      if (options.chain) break;  // one session — later members need this state
       continue;
     }
 
@@ -354,6 +370,9 @@ async function main(): Promise<void> {
       verbose: options.verbose,
       emitTraits: options.emitTraits,
       stopOnFailure: options.stopOnFailure,
+      bless: options.bless,
+      chain: options.chain,
+      storyName: path.basename(path.resolve(options.storyPath)),
       // `assembleGame` builds the ext-testing extension and hangs it off LoadedGame,
       // but this bin used to drop it — so every `$teleport`/`$restore`/`$take` run
       // through the published `transcript-test` was silently skipped while the
@@ -368,8 +387,11 @@ async function main(): Promise<void> {
     // Report individual transcript results
     reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
 
-    // Stop if requested and there was a failure
-    if (options.stopOnFailure && result.failed > 0) {
+    // A chain is one session: any non-passing member leaves the world in the
+    // wrong state for every member after it, so the chain always stops there
+    // (recording past it would enshrine a broken session). Independent runs
+    // stop only under --stop-on-failure (ADR-294 D5 — run-level control).
+    if (result.status !== 'passed' && (options.chain || options.stopOnFailure)) {
       break;
     }
   }

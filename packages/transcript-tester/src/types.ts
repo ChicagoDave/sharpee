@@ -5,85 +5,42 @@
  */
 
 // ============================================================================
-// Directive Types (ADR-092: Smart Transcript Directives)
+// Directive Types
 // ============================================================================
 
 /**
- * Types of control flow directives
+ * Directive kinds surviving ADR-294 D4. The control-flow/condition layer
+ * (IF, WHILE, RETRY, DO/UNTIL, REQUIRES, ENSURES, NAVIGATE) is removed
+ * grammar — the parser rejects those forms as named errors. GOAL survives
+ * as pure structural annotation (a section label; nothing is evaluated).
  */
 export type DirectiveType =
-  | 'goal'        // [GOAL: name]
+  | 'goal'        // [GOAL: name] — structural label only
   | 'end_goal'    // [END GOAL]
-  | 'requires'    // [REQUIRES: condition]
-  | 'ensures'     // [ENSURES: condition]
-  | 'if'          // [IF: condition]
-  | 'end_if'      // [END IF]
-  | 'while'       // [WHILE: condition]
-  | 'end_while'   // [END WHILE]
-  | 'retry'       // [RETRY: max=N]
-  | 'end_retry'   // [END RETRY]
-  | 'do'          // [DO]
-  | 'until'       // [UNTIL "text"]
-  | 'navigate'    // [NAVIGATE TO: "Room Name"]
   | 'save'        // $save <name>
   | 'restore'     // $restore <name>
   | 'test-command'; // $teleport, $take, $kill, etc. (ext-testing)
 
 /**
- * A control flow directive in the transcript
+ * A directive in the transcript
  */
 export interface Directive {
   type: DirectiveType;
   lineNumber: number;
-  condition?: string;   // For IF/WHILE/REQUIRES/ENSURES: the condition expression
-  target?: string;      // For NAVIGATE: the target room name
   goalName?: string;    // For GOAL: the goal name
   saveName?: string;    // For SAVE/RESTORE: the checkpoint name
   testCommand?: string; // For test-command: the full $command input (e.g., "$teleport kitchen")
-  maxRetries?: number;  // For RETRY: maximum retry attempts
-  untilTexts?: string[];  // For UNTIL: text(s) to match in command output (contains, OR logic)
 }
 
 /**
- * A goal segment with its preconditions, postconditions, and content
+ * A goal segment — a named section of the transcript (structural only;
+ * ADR-294 D4 removed the REQUIRES/ENSURES condition layer).
  */
 export interface GoalDefinition {
   name: string;
   lineNumber: number;
-  requires: string[];   // Precondition expressions
-  ensures: string[];    // Postcondition expressions
   startIndex: number;   // Index in items array where goal content starts
   endIndex: number;     // Index in items array where goal ends
-}
-
-/**
- * Result of executing a goal
- */
-export interface GoalResult {
-  name: string;
-  success: boolean;
-  requiresResults: ConditionResult[];
-  ensuresResults: ConditionResult[];
-  commandsExecuted: number;
-  error?: string;
-}
-
-/**
- * Result of evaluating a condition
- */
-export interface ConditionResult {
-  met: boolean;
-  reason: string;  // Human-readable explanation
-}
-
-/**
- * Result of executing a NAVIGATE directive
- */
-export interface NavigateResult {
-  success: boolean;
-  path: string[];       // Room names traversed
-  commands: string[];   // GO commands executed
-  error?: string;
 }
 
 /**
@@ -121,16 +78,104 @@ export interface TranscriptHeader {
   [key: string]: string | undefined;
 }
 
+// ============================================================================
+// Run configuration and golden recordings (ADR-294)
+// ============================================================================
+
 /**
- * A single assertion about command output, events, or state
+ * Parsed, validated run configuration from the transcript header (ADR-294 D3).
+ *
+ * The parser always attaches one to the transcript with defaults applied, so
+ * consumers never re-derive defaults from the raw header map.
+ */
+export interface TranscriptRunConfig {
+  /**
+   * Pinned seeds: one entry from `seed: N`, several from `seeds: A, B` (D8 —
+   * each seed gets its own recording). Empty when the transcript pins nothing
+   * (legal in the assertion tier; a golden transcript must pin at least one).
+   */
+  seeds: number[];
+  /** Channels the recording scopes to (D15). Default: `['main']`. */
+  channels: string[];
+  /** Record the event stream alongside prose (D6). Default: `false`. */
+  events: boolean;
+  /** Locale the recording is bound to (D19). Absent = the story's primary. */
+  locale?: string;
+  /**
+   * Declared outcome forces (D13 hook). Parsed but not yet acted on — forcing
+   * ships with ADR-293 Phase C's `materialize`. Empty today.
+   */
+  forces: string[];
+}
+
+/**
+ * Provenance header of a `.golden` recording (ADR-294 D3/D7).
+ *
+ * A replay whose runtime disagrees with any of these fails with the named
+ * "stale recording — re-bless" error, never a raw content diff.
+ */
+export interface GoldenProvenance {
+  /** Source transcript filename the recording was made from. */
+  transcript: string;
+  /** Story name the recording was made against. */
+  story: string;
+  /** The seed the session was pinned to. One recording per seed (D8). */
+  seed: number;
+  /** `SEED_DERIVATION_VERSION` at record time (ADR-293). */
+  derivation: number;
+  /** Save-format version at record time (e.g. `3.0.0`). */
+  saveFormat: string;
+  /** Channels captured by this recording (D15). */
+  channels: string[];
+  /** Whether the recording includes event lines (D6). */
+  events: boolean;
+  /** Locale the recorded prose is bound to (D19). */
+  locale: string;
+  /** Forces the recording was made under (D13). Serialized as `(none)` when empty. */
+  forces: string[];
+}
+
+/**
+ * One recorded event line (`• type {json}`) inside a golden turn.
+ *
+ * The JSON payload is kept as its raw string so a parse → serialize round
+ * trip is byte-faithful (re-stringifying could reorder keys or reformat
+ * numbers, which would show up as phantom recording diffs).
+ */
+export interface GoldenEvent {
+  type: string;
+  json: string;
+}
+
+/** One recorded turn: the command and its output, verbatim (ADR-294 D7). */
+export interface GoldenTurn {
+  /** The command as typed, without the `> ` prefix. */
+  command: string;
+  /** Recorded output lines, verbatim — blank lines and indentation preserved. */
+  output: string[];
+  /** Present only when the recording's provenance says `events: true`. */
+  events?: GoldenEvent[];
+}
+
+/** A parsed `.golden` recording: provenance plus the recorded turns. */
+export interface GoldenRecording {
+  provenance: GoldenProvenance;
+  turns: GoldenTurn[];
+}
+
+/**
+ * A single assertion about command output, events, or state.
+ *
+ * The retained assertion-tier DSL (ADR-294 D2): exact match, contains,
+ * not-contains, expected failure, skip/todo, and the event/state pins.
+ * The fuzzy forms (`ok-any`, `contains_any`, `matches`) are removed
+ * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-  type: 'ok' | 'ok-any' | 'ok-contains' | 'ok-contains-any' | 'ok-matches' | 'ok-not-contains'
+  type: 'ok' | 'ok-contains' | 'ok-not-contains'
       | 'fail' | 'skip' | 'todo'
       | 'event-count' | 'event-assert' | 'state-assert';
-  value?: string;      // For contains/matches
-  values?: string[];   // For contains_any: match any of these
-  pattern?: RegExp;    // For regex matches
+  value?: string;      // For contains/not-contains
   reason?: string;     // For fail/todo
 
   // Event assertions
@@ -209,14 +254,23 @@ export interface Transcript {
   parseErrors?: ParseError[];
 
   /**
-   * Master seed pinned by a `[SEED: N]` directive (ADR-293 D14). At most
-   * one per transcript (a duplicate is a parse error). In a chain, only
-   * the first transcript's seed is honored — the CLI rejects a `[SEED:]`
-   * on a later chain member as a loud error.
+   * Master seed pinned by the `seed:` header field (ADR-293 D14 as amended by
+   * ADR-294 D3 — the body-positional `[SEED:]` directive is a parse error).
+   * Set only by the singular `seed:` form; a `seeds:` matrix (D8) lives in
+   * `config.seeds` and is threaded per-recording by the runner. In a chain,
+   * only the first transcript's seed is honored — the CLI rejects a pin on a
+   * later chain member as a loud error.
    */
   seed?: number;
-  /** Line the `[SEED:]` directive appeared on, for chain-rule error reporting. */
+  /** Line the `seed:` header field appeared on, for chain-rule error reporting. */
   seedLineNumber?: number;
+
+  /**
+   * Validated run configuration from the header (ADR-294 D3), defaults
+   * applied. Always set by the parser; optional only so hand-built
+   * transcript literals in older tests keep compiling.
+   */
+  config?: TranscriptRunConfig;
 }
 
 /**
@@ -250,6 +304,13 @@ export interface CommandResult {
   skipped: boolean;          // Was marked [SKIP] or [TODO]
   assertionResults: AssertionResult[];
   error?: string;
+
+  /**
+   * Golden replay divergence (ADR-294 D1): the recorded output and the
+   * actual output for this turn, verbatim. Present exactly when a golden
+   * diff failed this command; the reporter renders the line diff.
+   */
+  diff?: { recorded: string[]; actual: string[] };
 }
 
 /**
@@ -280,6 +341,23 @@ export interface TranscriptResult {
   duration: number;  // milliseconds
   /** Present exactly when `status` is `'error'`: why the transcript never ran. */
   errorMessage?: string;
+
+  /**
+   * Which tier ran (ADR-294 D2): `golden` when a recording exists (or was
+   * being created), `assertion` otherwise. Absent on `error` results that
+   * never reached tier selection.
+   */
+  tier?: 'golden' | 'assertion';
+  /** Path of the `.golden` recording this run diffed against or created. */
+  goldenPath?: string;
+  /** True when this run created or overwrote the recording (`--bless`). */
+  blessed?: boolean;
+  /**
+   * Path of the divergence save written on a failed golden replay (ADR-294
+   * D18): a real save (world, turn counter, RNG stream states) captured at
+   * the last matching turn. Working artifact, never committed.
+   */
+  divergenceSavePath?: string;
 }
 
 /**
@@ -313,11 +391,25 @@ export interface TestingExtensionInterface {
 export interface RunnerOptions {
   verbose?: boolean;
   emitTraits?: boolean;  // Include trait snapshots for entities referenced in events
+  /** Continue the RUN after a failed transcript. Never suppresses a failure (ADR-294 D5). */
   stopOnFailure?: boolean;
-  updateExpected?: boolean;
-  filter?: string;  // Only run commands matching this pattern
   savesDirectory?: string;  // Directory for $save/$restore checkpoints
   testingExtension?: TestingExtensionInterface;  // Optional ext-testing integration
+
+  /** Create/overwrite the recording instead of diffing against it (ADR-294 D1). */
+  bless?: boolean;
+  /** Recording path override; defaults to the transcript's `.golden` sibling (D7). */
+  goldenPath?: string;
+  /**
+   * This transcript runs as a chain member (one session across transcripts).
+   * Later members legally pin no seed; their recordings carry the session
+   * seed, and replaying one standalone is refused (D7).
+   */
+  chain?: boolean;
+  /** Story name for recording provenance; falls back to the `story:` header. */
+  storyName?: string;
+  /** Locale for recording provenance when the transcript declares none (D19). */
+  locale?: string;
 }
 
 /**

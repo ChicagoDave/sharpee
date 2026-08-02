@@ -132,6 +132,10 @@ if (require.main === module) {
       // exclusive — validated in main().
       seed: null,
       vary: false,
+      // ADR-294 D1: create/overwrite golden recordings instead of diffing.
+      bless: false,
+      // ADR-294 D14: watch mode — targeted reruns with inline bless.
+      watch: false,
       help: false
     };
 
@@ -184,6 +188,10 @@ if (require.main === module) {
         }
       } else if (arg === '--vary') {
         options.vary = true;
+      } else if (arg === '--bless') {
+        options.bless = true;
+      } else if (arg === '--watch') {
+        options.watch = true;
       } else if (arg === '--help' || arg === '-h') {
         options.help = true;
       } else if (!arg.startsWith('-')) {
@@ -221,9 +229,14 @@ Options:
                        from the transcript paths' stories/<name>/ prefix; required
                        for --play/--exec)
   --seed <N>           Pin the session's master seed (ADR-293). Wins over a
-                       transcript's [SEED:] directive.
-  --vary               Run a [SEED:]-pinned suite off its pin with one fresh
+                       transcript's seed: header field.
+  --vary               Run a seed-pinned suite off its pin with one fresh
                        seed (reported). Mutually exclusive with --seed.
+  --bless              Create/overwrite golden recordings (ADR-294) — run the
+                       transcripts and record their output as .golden siblings
+  --watch              Watch mode (ADR-294): rerun affected transcripts on
+                       change; golden failures offer bless? [y/n/all] at a TTY
+                       (an unattended watch never blesses)
   --help, -h           Show this help message
 
 Examples:
@@ -521,7 +534,7 @@ Examples:
     function resolveSeed(transcriptSeed) {
       if (options.seed !== null) return { seed: options.seed, source: '--seed' };
       if (varySeed !== null) return { seed: varySeed, source: '--vary' };
-      if (transcriptSeed !== undefined) return { seed: transcriptSeed, source: '[SEED:]' };
+      if (transcriptSeed !== undefined) return { seed: transcriptSeed, source: 'seed:' };
       return { seed: undefined, source: 'clock' };
     }
 
@@ -532,7 +545,10 @@ Examples:
     // only the file location; a pre-ADR-293 snapshot is a hard error.
     async function restoreNamedSave(game, saveName) {
       const savesDir = path.join(storyDirOf(options.storyPath), 'saves');
-      const savePath = path.join(savesDir, `${saveName}.json`);
+      // A bare name resolves in the story's saves/ directory; a path (ADR-294
+      // D18 divergence saves report one) is used as-is.
+      const isPath = saveName.endsWith('.json') || saveName.includes(path.sep);
+      const savePath = isPath ? saveName : path.join(savesDir, `${saveName}.json`);
       if (!fs.existsSync(savePath)) {
         console.error(`Save file not found: ${savePath}`);
         if (fs.existsSync(savesDir)) {
@@ -773,23 +789,32 @@ Examples:
       }
 
       // Parse every transcript up front: the chain's seed comes from the
-      // FIRST member's [SEED:] (ADR-293 D14), so parsing must precede the
-      // chain game's construction.
+      // FIRST member's seed: header field (ADR-293 D14 / ADR-294 D3), so
+      // parsing must precede the chain game's construction.
       const parsedTranscripts = options.transcriptPaths.map((transcriptPath) => ({
         transcriptPath,
         transcript: transcriptTester.parseTranscriptFile(transcriptPath)
       }));
 
       // ADR-293 D14 chain rule: the chain is one session — only the first
-      // transcript's [SEED:] is honored, and a pin on a later member is a
+      // transcript's seed pin is honored, and a pin on a later member is a
       // loud error, never silently ignored.
       if (options.chain) {
-        for (let memberIndex = 1; memberIndex < parsedTranscripts.length; memberIndex++) {
-          const later = parsedTranscripts[memberIndex];
-          if (later.transcript.seed !== undefined) {
+        for (let memberIndex = 0; memberIndex < parsedTranscripts.length; memberIndex++) {
+          const member = parsedTranscripts[memberIndex];
+          // A chain is one session at one seed — a seeds: matrix cannot ride it.
+          const memberSeeds = member.transcript.config && member.transcript.config.seeds;
+          if (memberSeeds && memberSeeds.length > 1) {
             console.error(
-              `${later.transcriptPath}:${later.transcript.seedLineNumber}: ` +
-              `[SEED:] on a chain member after the first — the chain is one ` +
+              `${member.transcriptPath}: seeds: matrix on a chain member — a chain is one ` +
+              `session at one seed; matrices run per-transcript (ADR-294 D8)`
+            );
+            process.exit(1);
+          }
+          if (memberIndex > 0 && member.transcript.seed !== undefined) {
+            console.error(
+              `${member.transcriptPath}:${member.transcript.seedLineNumber}: ` +
+              `seed: on a chain member after the first — the chain is one ` +
               `session and its seed comes from the first transcript (ADR-293 D14)`
             );
             process.exit(1);
@@ -801,62 +826,158 @@ Examples:
       // up front. In per-transcript mode the loop loads a fresh game for each
       // transcript (honoring its `entry:` header) — an eager load here would be
       // discarded unused (ADR-207 AC-7: no side-effecting pre-load).
-      let game;
-      if (options.chain) {
-        const resolved = resolveSeed(parsedTranscripts[0] && parsedTranscripts[0].transcript.seed);
-        game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed);
-        // ADR-293 D14: every run reports the seed it used, clock-derived included.
-        console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
+      // ADR-294 D14: watch reruns are per-transcript; a chain is one session
+      // and cannot be partially rerun. Chain watch lands with the corpus
+      // migration, not silently wrong before it.
+      if (options.watch && options.chain) {
+        console.error('--watch does not support --chain yet — chain reruns land with the corpus migration (ADR-294 D14)');
+        process.exit(1);
       }
-      const results = [];
 
-      for (const { transcriptPath, transcript } of parsedTranscripts) {
+      /** An error-status record for a transcript that failed validation. */
+      function validationErrorRecord(transcript, errors) {
+        const errorRecord = {
+          transcript,
+          commands: [],
+          status: 'error',
+          passed: 0,
+          failed: 0,
+          expectedFailures: 0,
+          skipped: 0,
+          duration: 0,
+          errorMessage: errors.join('; ')
+        };
+        transcriptTester.reportTranscript(errorRecord, { verbose: options.verbose });
+        return errorRecord;
+      }
+
+      /**
+       * Run one transcript file fresh (non-chain): re-parse (watch reruns
+       * follow edits), validate, and run once per matrix seed (ADR-294 D8 —
+       * a --seed/--vary override collapses the matrix; the runner enforces
+       * membership). Returns one result per run.
+       */
+      async function runTranscriptFileFresh(transcriptPath, bless) {
+        const transcript = transcriptTester.parseTranscriptFile(transcriptPath);
+        // Validation errors are recorded as an error-status result, never
+        // dropped (ADR-294 AC-4: nothing executes, and the run fails).
         const errors = transcriptTester.validateTranscript(transcript);
         if (errors.length > 0) {
-          console.error(`\nErrors in ${transcriptPath}:`);
-          for (const err of errors) {
-            console.error(`  - ${err}`);
-          }
-          continue;
+          return [validationErrorRecord(transcript, errors)];
         }
 
-        if (!options.chain) {
-          const resolved = resolveSeed(transcript.seed);
-          game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed);
+        const declaredSeeds = transcript.config && transcript.config.seeds;
+        const matrixSeeds =
+          options.seed === null && !options.vary && declaredSeeds && declaredSeeds.length > 1
+            ? declaredSeeds
+            : [null];
+
+        const out = [];
+        for (const matrixSeed of matrixSeeds) {
+          const resolved = matrixSeed !== null
+            ? { seed: matrixSeed, source: 'seeds:' }
+            : resolveSeed(transcript.seed);
+          const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed);
+          // ADR-293 D14: every run reports the seed it used, clock-derived included.
           console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
+
+          const result = await transcriptTester.runTranscript(transcript, game, {
+            verbose: options.verbose,
+            emitTraits: options.emitTraits,
+            stopOnFailure: options.stopOnFailure,
+            savesDirectory: path.join(storyDirOf(options.storyPath), 'saves'),
+            bless,
+            storyName: path.basename(storyDirOf(options.storyPath)),
+            testingExtension: game.testingExtension
+          });
+
+          out.push(result);
+          transcriptTester.reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
+          if (result.status !== 'passed' && options.stopOnFailure) break;
         }
+        return out;
+      }
 
-        const savesDirectory = path.join(storyDirOf(options.storyPath), 'saves');
-        const result = await transcriptTester.runTranscript(transcript, game, {
-          verbose: options.verbose,
-          emitTraits: options.emitTraits,
-          stopOnFailure: options.stopOnFailure,
-          savesDirectory,
-          testingExtension: game.testingExtension
-        });
+      const results = [];
 
-        results.push(result);
-        transcriptTester.reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
+      if (options.chain) {
+        const resolved = resolveSeed(parsedTranscripts[0] && parsedTranscripts[0].transcript.seed);
+        const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed);
+        // ADR-293 D14: every run reports the seed it used, clock-derived included.
+        console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
 
-        if (options.stopOnFailure && result.failed > 0) {
-          break;
+        for (const { transcript } of parsedTranscripts) {
+          const errors = transcriptTester.validateTranscript(transcript);
+          if (errors.length > 0) {
+            results.push(validationErrorRecord(transcript, errors));
+            break;  // one session — later members need this state
+          }
+
+          const result = await transcriptTester.runTranscript(transcript, game, {
+            verbose: options.verbose,
+            emitTraits: options.emitTraits,
+            stopOnFailure: options.stopOnFailure,
+            savesDirectory: path.join(storyDirOf(options.storyPath), 'saves'),
+            bless: options.bless,
+            chain: true,
+            storyName: path.basename(storyDirOf(options.storyPath)),
+            testingExtension: game.testingExtension
+          });
+
+          results.push(result);
+          transcriptTester.reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
+
+          // A chain is one session: any non-passing member leaves the world
+          // in the wrong state for every member after it, so the chain always
+          // stops there (blessing past it would enshrine a broken session).
+          if (result.status !== 'passed') break;
+        }
+      } else {
+        for (const { transcriptPath } of parsedTranscripts) {
+          const out = await runTranscriptFileFresh(transcriptPath, options.bless);
+          results.push(...out);
+          if (out.some((r) => r.status !== 'passed') && options.stopOnFailure) break;
         }
       }
 
-      const runResult = {
-        transcripts: results,
-        totalPassed: results.reduce((sum, r) => sum + r.passed, 0),
-        totalFailed: results.reduce((sum, r) => sum + r.failed, 0),
-        totalExpectedFailures: results.reduce((sum, r) => sum + r.expectedFailures, 0),
-        totalSkipped: results.reduce((sum, r) => sum + r.skipped, 0),
-        totalDuration: results.reduce((sum, r) => sum + r.duration, 0)
-      };
+      // The one shared reduce (ADR-277 D1) — includes totalErrors, which the
+      // exit code must reflect (ADR-294 AC-4/AC-5).
+      const runResult = transcriptTester.aggregateTestRun(results);
 
       if (results.length > 1) {
         transcriptTester.reportTestRun(runResult, { verbose: options.verbose });
       }
 
-      process.exit(transcriptTester.getExitCode(runResult));
+      if (!options.watch) {
+        process.exit(transcriptTester.getExitCode(runResult));
+      }
+
+      // ADR-294 D14: stay resident and rerun what changes. The bless prompt
+      // exists only at a TTY — an unattended watch never blesses anything.
+      const promptBless = process.stdin.isTTY
+        ? (transcriptPath) =>
+            new Promise((resolve) => {
+              const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+              rl.question(`bless ${path.basename(transcriptPath)}? [y/n/all] `, (answer) => {
+                rl.close();
+                const a = answer.trim().toLowerCase();
+                resolve(a === 'y' ? 'y' : a === 'all' ? 'all' : 'n');
+              });
+            })
+        : undefined;
+
+      transcriptTester.startWatch(
+        {
+          transcripts: options.transcriptPaths,
+          storyDirs: [storyDirOf(options.storyPath)]
+        },
+        {
+          run: (transcriptPath, bless) => runTranscriptFileFresh(transcriptPath, bless),
+          log: (message) => console.log(message)
+        },
+        new transcriptTester.BlessPolicy(promptBless)
+      );
+      console.log(`\nwatching ${options.transcriptPaths.length} transcript(s) and ${storyDirOf(options.storyPath)} — Ctrl+C to stop`);
     }
   }
 

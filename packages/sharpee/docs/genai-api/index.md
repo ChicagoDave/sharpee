@@ -29,7 +29,7 @@ Generated for Sharpee 4.3.0
 | [core.md](core.md) | @sharpee/core | Base types, query system, platform events, entity interfaces, debug utilities. (28 files, ~2589 lines) |
 | [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (23 files, ~3470 lines) |
 | [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (119 files, ~9359 lines) |
-| [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (39 files, ~3463 lines) |
+| [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (39 files, ~3477 lines) |
 | [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (47 files, ~4471 lines) |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~438 lines) |
 | [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (17 files, ~2677 lines) |
@@ -41,4 +41,4 @@ Generated for Sharpee 4.3.0
 | [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (31 files, ~3135 lines) |
 | [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~792 lines) |
 | [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (25 files, ~2448 lines) |
-| [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (12 files, ~922 lines) |
+| [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (14 files, ~1144 lines) |

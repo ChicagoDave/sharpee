@@ -14,20 +14,13 @@ $restore wt-07
 [GOAL: Prepare for river journey]
 
 > drop lantern
-[OK: contains "Dropped"]
 > drop bell
-[OK: contains "Dropped"]
 > drop book
-[OK: contains "Dropped"]
 > drop candles
-[OK: contains "Dropped"]
 
 > take pump
-[OK: contains "Taken"]
 
 > inventory
-[OK: contains "torch"]
-[OK: contains "pump"]
 
 [END GOAL]
 
@@ -40,34 +33,24 @@ $restore wt-07
 [GOAL: Navigate to Dam Base]
 
 > down
-[OK: contains "Cellar"]
 
 > east
-[OK: contains "Troll Room"]
 
 > north
-[OK: contains "East-West Passage"]
 
 > north
-[OK: contains "Deep Ravine"]
 
 > east
-[OK: contains "Chasm"]
 
 > east
-[OK: contains "North/South Passage"]
 
 > northeast
-[OK: contains "Loud Room"]
 
 > up
-[OK: contains "Damp Cave"]
 
 > east
-[OK: contains "Dam"]
 
 > down
-[OK: contains "Dam Base"]
 
 [END GOAL]
 
@@ -80,22 +63,17 @@ $restore wt-07
 [GOAL: Prepare boat and launch]
 
 > inflate boat with pump
-[OK: contains "inflate"]
 
 > drop pump
-[OK: contains "Dropped"]
 
 # Now take the stick from inside the boat - bypasses puncture check
 > put stick in boat
-[OK: contains "stick"]
 
 # Board boat
 > board boat
-[OK: contains "magic boat"]
 
 # Launch into the river
 > launch
-[OK: contains "river"]
 
 [END GOAL]
 
@@ -104,28 +82,21 @@ $restore wt-07
 # ============================================================================
 
 [GOAL: Get emerald from buoy]
-[ENSURES: inventory contains "emerald"]
 
 # FR-1 -> FR-2
 > down
-[OK: contains "impossible to see the dam"]
 
 # Buoy is floating at FR-2
 > take buoy
-[OK: contains "Taken"]
 
 > open buoy
-[OK: contains "open"]
 
 > take emerald
-[OK: contains "Taken"]
 
 > drop buoy
-[OK: contains "drop the red buoy"]
 
 # DEBUG: Verify we're still at FR-2 before navigating
 > look
-[OK: contains "impossible to see the dam"]
 
 [END GOAL]
 
@@ -138,32 +109,24 @@ $restore wt-07
 
 # FR-2 -> FR-3
 > down
-[OK: contains "Frigid River"]
 
 # Land at Rocky Shore (west of FR-3)
 > west
-[OK: contains "Rocky Shore"]
 
 > disembark
-[OK: contains "get out"]
 
 # Walk to Small Cave
 > northwest
-[OK: contains "Small Cave"]
 
 > take shovel
-[OK: contains "Taken"]
 
 # Return to Rocky Shore and re-board
 > south
-[OK: contains "Rocky Shore"]
 
 > board boat
-[OK: contains "get into"]
 
 # Launch back onto the river
 > launch
-[OK: contains "on the river"]
 
 [END GOAL]
 
@@ -172,41 +135,30 @@ $restore wt-07
 # ============================================================================
 
 [GOAL: Dig up statue at Sandy Beach]
-[ENSURES: inventory contains "statue"]
 
 # FR-3 -> FR-4
 > down
-[OK: contains "river"]
 
 # Land at Sandy Beach from FR-4
 > west
-[OK: contains "Sandy Beach"]
 
 # Exit the boat and take stick for later
 > disembark
-[OK: contains "get out"]
 
 > take stick
-[OK: contains "Taken"]
 
 # Dig 4 times to uncover the statue (need shovel in inventory)
 > dig
-[OK: contains "sand"]
 
 > dig
-[OK: contains "sand"]
 
 > dig
-[OK: contains "sand"]
 
 > dig
-[OK: contains "statue"]
 
 > take statue
-[OK: contains "Taken"]
 
 > drop shovel
-[OK: contains "Dropped"]
 
 [END GOAL]
 
@@ -218,14 +170,11 @@ $restore wt-07
 [GOAL: Wave sceptre at Aragain Falls]
 
 > south
-[OK: contains "Shore"]
 
 > south
-[OK: contains "Falls"]
 
 # Wave the sharp stick (sceptre) to make the rainbow solid
 > wave stick
-[OK: contains "rainbow"]
 
 [END GOAL]
 
@@ -234,16 +183,12 @@ $restore wt-07
 # ============================================================================
 
 [GOAL: Get pot of gold]
-[ENSURES: inventory contains "pot"]
 
 > east
-[OK: contains "Rainbow"]
 
 > east
-[OK: contains "End of Rainbow"]
 
 > take pot
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -257,37 +202,26 @@ $restore wt-07
 [GOAL: Return to Living Room]
 
 > southeast
-[OK: contains "Canyon"]
 
 > up
-[OK: contains "Rocky Ledge"]
 
 > up
-[OK: contains "Canyon View"]
 
 > west
-[OK: contains "Forest"]
 
 > west
-[OK: contains "Forest"]
 
 > west
-[OK: contains "Clearing"]
 
 > south
-[OK: contains "Forest"]
 
 > south
-[OK: contains "North of House"]
 
 > east
-[OK: contains "Behind House"]
 
 > west
-[OK: contains "Kitchen"]
 
 > west
-[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -298,19 +232,14 @@ $restore wt-07
 [GOAL: Store treasures]
 
 > open trophy case
-[OK: contains "open"]
 
 > put emerald in trophy case
-[OK: contains "put"]
 
 > put statue in trophy case
-[OK: contains "put"]
 
 > put pot in trophy case
-[OK: contains "put"]
 
 > drop stick
-[OK: contains "Dropped"]
 
 [END GOAL]
 
@@ -321,11 +250,8 @@ $restore wt-07
 [GOAL: Verify state for next segment]
 
 > inventory
-[OK: contains "torch"]
 
 > look
-[OK: contains "Living Room"]
-[OK: contains "trophy case"]
 
 [END GOAL]
 

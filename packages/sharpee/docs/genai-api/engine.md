@@ -1813,6 +1813,20 @@ import { TurnResult, GameContext } from './types.js';
 import { Story } from './story.js';
 import { EngineRandomService } from './engine-random-service.js';
 /**
+ * Save format version. Bumped `2.0.0` → `3.0.0` for ADR-293 D7: the save
+ * gains the unified `{ pointName → streamState }` map (`streamStates`).
+ * v2 saves are read through a version-reader branch (A1 ruling 4), not
+ * refused — the first real version reader, per the standing ruling
+ * against hard breaks. v1 saves are rejected — they are known-broken
+ * (drop score / capabilities / state values / relationships); that
+ * cutover predates the version-reader ruling.
+ *
+ * Exported for ADR-294 D3: golden-recording provenance stamps the
+ * save-format version it was recorded under, and the transcript tester
+ * must read the same constant the save path writes.
+ */
+export declare const SAVE_FORMAT_VERSION = "3.0.0";
+/**
  * Interface for accessing engine state needed for save/restore
  */
 export interface ISaveRestoreStateProvider {

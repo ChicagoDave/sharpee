@@ -1,0 +1,299 @@
+# sharpee golden v1
+transcript: wt-08-river-rainbow.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> drop lantern
+Dropped.
+
+> drop bell
+Dropped.
+
+> drop book
+Dropped.
+
+> drop candles
+Dropped.
+
+> take pump
+Taken.
+
+> inventory
+You are carrying:
+
+an ivory torch, hand pump
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> north
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> east
+Chasm
+A chasm runs southwest to northeast. You are on the east edge.
+
+> east
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> northeast
+Loud Room
+This is a large room with a ceiling which cannot be detected from the ground. A narrow passage leads east; a stairway leads up. The room is extremely noisy.
+
+> up
+Damp Cave
+This cave is extremely damp. A stairway leads down.
+
+> east
+Flood Control Dam #3
+You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. From here, a wide passage leads north and south. There is a control panel here. There is a large metal bolt on the panel. Above the bolt is a small green plastic bubble.
+
+> down
+Dam Base
+You are at the base of the dam. A stairway leads up.
+
+You can see a pile of plastic and a sharp stick here.
+
+> inflate boat with pump
+The boat inflates and rises to its full size.
+
+> drop pump
+Dropped.
+
+> put stick in boat
+(first taking the sharp stick)
+
+Taken.
+
+You put the sharp stick in the magic boat.
+
+> board boat
+You get into the magic boat.
+
+> launch
+You are now on the river.
+
+> down
+Frigid River
+The river turns a corner here making it impossible to see the dam. The White Cliffs loom on the east bank, and large rocks prevent landing on the west.
+
+You can see a red buoy and a magic boat here.
+
+> take buoy
+Taken.
+
+> open buoy
+You open the red buoy.
+
+Inside the red buoy you see large emerald.
+
+> take emerald
+Taken.
+
+> drop buoy
+You drop the red buoy in the magic boat.
+
+> look
+Frigid River
+The river turns a corner here making it impossible to see the dam. The White Cliffs loom on the east bank, and large rocks prevent landing on the west.
+
+You can see a magic boat here.
+
+In the magic boat you see a tan label, a sharp stick, yourself, and a red buoy.
+
+> down
+Frigid River
+The river descends here into a valley. There is a narrow beach on the east below the cliffs, and there is some shore on the west which may be suitable. In the distance a faint rumbling can be heard.
+
+You can see a magic boat here.
+
+> west
+Rocky Shore
+This is the west shore of the river. An entrance to a cave is to the northwest. The shore is very rocky here.
+
+You can see a magic boat here.
+
+> disembark
+You get out of the magic boat.
+
+> northwest
+Small Cave
+This is a small cave whose exits are on the south and northwest.
+
+You can see a shovel and a guano here.
+
+> take shovel
+Taken.
+
+> south
+Rocky Shore
+This is the west shore of the river. An entrance to a cave is to the northwest. The shore is very rocky here.
+
+You can see a magic boat here.
+
+> board boat
+You get into the magic boat.
+
+> launch
+You are now on the river.
+
+> down
+Frigid River
+The river is running faster here, and the sound ahead appears to be that of rushing water. On the west shore is a sandy beach. A small area of beach can also be seen below the cliffs.
+
+You can see a magic boat here.
+
+> west
+Sandy Beach
+This is a large sandy beach at the shore of the river, which is flowing quickly by. A path runs beside the river to the south here.
+
+You can see a magic boat here.
+
+> disembark
+You get out of the magic boat.
+
+> take stick
+Taken.
+
+> dig
+You dig some sand away. You could swear the sand looks a bit different here.
+
+> dig
+You dig some sand away. You could swear the sand looks a bit different here.
+
+> dig
+You dig some sand away. You could swear the sand looks a bit different here.
+
+> dig
+Your shovel strikes something solid! Digging more carefully, you uncover a beautiful statue.
+
+> take statue
+Taken.
+
+> drop shovel
+Dropped.
+
+> south
+Shore
+This is the shore of the river. The river here seems somewhat treacherous. A path travels from north to south here, the south end quickly turning around a sharp corner.
+
+> south
+Aragain Falls
+You are at the top of Aragain Falls, an enormous waterfall with a drop of about 450 feet. The only path here is on the north end. A beautiful rainbow can be seen over the falls to the east.
+
+You can see a barrel here.
+
+> wave stick
+Suddenly, the rainbow appears to become solid and, I venture, walkable (I think the giveaway was the stairs and bannister).
+
+> east
+On the Rainbow
+You are on top of a rainbow (I bet you never thought you would walk on a rainbow), with a magnificent view of the falls. The rainbow travels east-west here.
+
+> east
+End of Rainbow
+You are on a small, rocky beach on the continuation of the Frigid River past the falls. The beach is narrow due to the presence of the White Cliffs. The river canyon opens here, and sunlight shines in from above. A rainbow crosses over the falls to the west, and a narrow path continues to the southeast.
+
+You can see a pot of gold here.
+
+> take pot
+Taken.
+
+> southeast
+Canyon Bottom
+You are beneath the walls of the river canyon which may be climbed here. The canyon runs north-south along the river. You can see the massive walls of the White Cliffs rising to the east.
+
+A songbird chirps in the distance.
+
+> up
+Rocky Ledge
+You are on a ledge about halfway up the wall of the river canyon. You can see from here that the path continues from the bottom of the canyon up to the cliff above. There is a small path going down.
+
+> up
+Canyon View
+You are at the top of the Great Canyon, on its west wall. From here there is a marvelous view of the canyon and parts of the Frigid River upstream. Across the canyon, the walls of the White Cliffs join the mighty ramparts of the Flathead Mountains to the east. Following the Canyon, you can see a small path at the bottom of the canyon. There is a path here which goes west into the forest.
+
+> west
+Forest Path
+The forest thins out, and the path becomes clearer.
+
+> west
+Forest
+This is a dimly lit forest, with large trees all around.
+
+> west
+Clearing
+You are in a clearing, with a forest surrounding you on all sides. A path leads south. On the ground is a pile of leaves.
+
+> south
+Forest Path
+This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the side of the path.
+
+A songbird chirps in the distance.
+
+> south
+North of House
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+> east
+Behind House
+You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
+
+> west
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+You can see an elongated brown sack and a glass bottle here.
+
+> west
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a screwdriver, a trunk, a brass lantern, a brass bell, a black book, and a burned-out candles here.
+
+> open trophy case
+The trophy case is already open.
+
+> put emerald in trophy case
+You put the large emerald in the trophy case.
+
+> put statue in trophy case
+You put the beautiful statue in the trophy case.
+
+> put pot in trophy case
+You put the pot of gold in the trophy case.
+
+> drop stick
+Dropped.
+
+> inventory
+You are carrying:
+
+an ivory torch
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see a brass lantern, a guidebook, a matchbook, a wrench, a screwdriver, a trunk, a sharp stick, a brass bell, a black book, a burned-out candles, a skeleton key, an incense, and a large brochure here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, a gold coffin, a large emerald, a beautiful statue, and a pot of gold.

@@ -13,13 +13,10 @@ $restore wt-09
 [GOAL: Get water bottle]
 
 > east
-[OK: contains "Kitchen"]
 
 > take bottle
-[OK: contains "Taken"]
 
 > west
-[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -31,48 +28,31 @@ $restore wt-09
 
 # Navigate to Round Room (carousel is spinning — exits are randomized)
 > open trap door
-[OK: contains "open"]
 
 > down
-[OK: contains "Cellar"]
 
 > east
-[OK: contains "Troll Room"]
 
 > north
-[OK: contains "East-West Passage"]
 
 > east
-[OK: contains "Round Room"]
 
 # Carousel randomizes exits — 2/8 chance of Engravings Cave per attempt
-[WHILE: not location = "Engravings Cave"]
+# (loop region resolved to its seed-42 sequence — ADR-294 migration)
 > south
-[SKIP]
-[IF: not location = "Engravings Cave"]
-[NAVIGATE TO: "Round Room"]
-[END IF]
-[END WHILE]
 
 > look
-[OK: contains "Engravings Cave"]
 
 # Go down to Riddle Room
 > southeast
-[OK: contains "Riddle Room"]
-[OK: contains "riddle"]
 
 # Solve the riddle
 > answer "a well"
-[OK: contains "stone door"]
 
 # Enter Pearl Room (Broom Closet)
 > east
-[OK: contains "Broom Closet"]
-[OK: contains "pearl necklace"]
 
 > take necklace
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -83,20 +63,15 @@ $restore wt-09
 [GOAL: Ride bucket to Top of Well]
 
 > east
-[OK: contains "Well Bottom"]
 
 > enter bucket
-[OK: contains "bucket"]
 
 > pour water
-[OK: contains "rises"]
 
 # Should now be at Top of Well
 > look
-[OK: contains "Top of Well"]
 
 > exit bucket
-[OK: contains "bucket"]
 
 [END GOAL]
 
@@ -108,46 +83,33 @@ $restore wt-09
 
 # Go east to Tea Room
 > east
-[OK: contains "Tea Room"]
-[OK: contains "cake"]
 
 # Take the cakes we need before eating eat-me cake
 > take blue cake
-[OK: contains "Taken"]
 
 > take red cake
-[OK: contains "Taken"]
 
 # Eat eat-me cake to shrink and teleport to Posts Room
 > eat eat-me cake
-[OK: contains "shrunk"]
 
 > look
-[OK: contains "Posts Room"]
 
 # Go east to Pool Room
 > east
-[OK: contains "Pool Room"]
-[OK: contains "goop"]
 
 # Throw red cake at pool to dissolve it and reveal spices
 > throw red cake at pool
-[OK: contains "dissolve"]
 
 # Take the revealed spices
 > take spices
-[OK: contains "Taken"]
 
 # Go back to Posts Room
 > west
-[OK: contains "Posts Room"]
 
 # Eat blue cake to grow and return to Tea Room
 > eat blue cake
-[OK: contains "normal size"]
 
 > look
-[OK: contains "Tea Room"]
 
 [END GOAL]
 
@@ -159,50 +121,32 @@ $restore wt-09
 
 # Go northwest to Low Room (carousel is active - compass spinning)
 > northwest
-[OK: contains "Low Room"]
-[OK: contains "robot"]
 
 # Send robot to Machine Room
 > tell robot to go east
-[OK: contains "Whirr"]
 
 # Follow robot east to Machine Room (exits are deterministic before button push)
 > east
-[OK: contains "Machine Room"]
-[OK: contains "robot"]
 
 # Have robot push the triangular button to fix carousel
 > tell robot to push button
-[OK: contains "Whirr"]
-[OK: contains "pushes"]
 
 # Send robot south to Dingy Closet for cage puzzle
 > tell robot to go south
-[OK: contains "Whirr"]
 
 # Follow to Dingy Closet
 > south
-[OK: contains "Dingy Closet"]
-[OK: contains "robot"]
-[OK: contains "sphere"]
 
 # Take sphere - triggers cage trap
 > take sphere
-[OK: contains "steel cage falls"]
 
 # Tell robot to raise cage
 > tell robot to raise cage
-[OK: contains "cage shakes"]
-[OK: contains "hurled across"]
 
 # Now take sphere successfully
 > take sphere
-[OK: contains "Taken"]
 
 > inventory
-[OK: contains "necklace"]
-[OK: contains "spices"]
-[OK: contains "sphere"]
 
 [END GOAL]
 
@@ -221,66 +165,43 @@ $restore wt-09
 # Dingy Closet → Machine Room → Low Room → (bounce) → Tea Room → Top of Well → bucket
 # down → Well Bottom → Pearl Room → Riddle Room → Engravings Cave → Round Room → Living Room
 > north
-[OK: contains "Machine Room"]
 
 > west
-[OK: contains "Low Room"]
 
-[WHILE: not location = "Tea Room"]
+# (loop region resolved to its seed-42 sequence — ADR-294 migration)
 > southeast
-[SKIP]
-[IF: not location = "Tea Room"]
-[NAVIGATE TO: "Low Room"]
-[END IF]
-[END WHILE]
 
 > west
-[OK: contains "Top of Well"]
 
 > enter bucket
-[OK: contains "bucket"]
 
 > fill bottle
-[OK: contains "descend"]
 
 > exit bucket
-[OK: contains "bucket"]
 
 > west
-[OK: contains "Broom Closet"]
 
 > west
-[OK: contains "Riddle Room"]
 
 > up
-[OK: contains "Engravings Cave"]
 
 > north
-[OK: contains "Round Room"]
 
 > west
-[OK: contains "East-West Passage"]
 
 > west
-[OK: contains "Troll Room"]
 
 > west
-[OK: contains "Cellar"]
 
 > up
-[OK: contains "Living Room"]
 
 > open trophy case
-[OK: contains "open"]
 
 > put necklace in trophy case
-[OK: contains "put"]
 
 > put spices in trophy case
-[OK: contains "put"]
 
 > put sphere in trophy case
-[OK: contains "put"]
 
 [END GOAL]
 
@@ -291,11 +212,8 @@ $restore wt-09
 [GOAL: Verify state for next segment]
 
 > inventory
-[OK: contains "torch"]
 
 > look
-[OK: contains "Living Room"]
-[OK: contains "trophy case"]
 
 [END GOAL]
 

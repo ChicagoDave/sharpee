@@ -8,7 +8,6 @@ $restore wt-02
 
 # Get the painting
 > take painting
-[OK: contains "Taken"]
 
 # ============================================================================
 # GOAL: Navigate to Troll Room for maze
@@ -17,18 +16,14 @@ $restore wt-02
 [GOAL: Get to Troll Room]
 
 > south
-[OK: contains "Studio"]
 
 > north
-[OK: contains "North/South Crawlway"]
 
 > east
-[OK: contains "Troll Room"]
 
 # Drop sword to make room for skeleton key (weight limit is 100)
 # Sword weighs 10, key weighs 25 - we need to free up space
 > drop sword
-[OK: contains "Dropped"]
 
 [END GOAL]
 
@@ -39,32 +34,24 @@ $restore wt-02
 # ============================================================================
 
 [GOAL: Get skeleton key and incense from maze]
-[ENSURES: inventory contains "key"]
-[ENSURES: inventory contains "incense"]
 
 # South to Maze-1
 > south
-[OK: contains "Maze"]
 
 # East to Maze-4
 > east
-[OK: contains "Maze"]
 
 # West to Maze-3
 > west
-[OK: contains "Maze"]
 
 # Up to Maze-5 (where skeleton, coins, key, knife are per 1981 MDL)
 > up
-[OK: contains "Maze"]
 
 # Get the incense first (thief doesn't care about it)
 > take incense
-[OK: contains "Taken"]
 
 # Get the skeleton key
 > take key
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -77,19 +64,15 @@ $restore wt-02
 
 # Southwest to Maze-6
 > southwest
-[OK: contains "Maze"]
 
 # East to Maze-7
 > east
-[OK: contains "Maze"]
 
 # South to Maze-15
 > south
-[OK: contains "Maze"]
 
 # Northeast to Cyclops Room
 > northeast
-[OK: contains "Cyclops Room"]
 
 [END GOAL]
 
@@ -102,13 +85,10 @@ $restore wt-02
 
 # Solve the cyclops puzzle - say the name of his nemesis
 > say odysseus
-[OK: contains "cyclops"]
 
 # Go north to Strange Passage, then east to Living Room
 > north
-[OK: contains "Strange Passage"]
 > east
-[OK: contains "Living Room"]
 
 [END GOAL]
 
@@ -120,17 +100,9 @@ $restore wt-02
 
 # Verify we're in Living Room
 > look
-[OK: contains "Living Room"]
 
 # Verify we have all treasures from walkthrough so far
 > inventory
-[OK: contains "torch"]
-[OK: contains "lantern"]
-[OK: contains "portrait"]
-[OK: contains "zorkmid"]
-[OK: contains "painting"]
-[OK: contains "key"]
-[OK: contains "incense"]
 
 [END GOAL]
 
@@ -141,33 +113,25 @@ $restore wt-02
 [GOAL: Store treasures in trophy case]
 
 > open trophy case
-[OK: contains "open"]
 
 > put portrait in trophy case
-[OK: contains "put"]
 
 > put painting in trophy case
-[OK: contains "put"]
 
 > put zorkmid bills in trophy case
-[OK: contains "put"]
 
 [END GOAL]
 
 [GOAL: Drop items for next segment - keep only torch]
 
 > drop lantern
-[OK: contains "Dropped"]
 
 > drop incense
-[OK: contains "Dropped"]
 
 > drop key
-[OK: contains "Dropped"]
 
 # Verify we only have torch
 > inventory
-[OK: contains "torch"]
 
 [END GOAL]
 

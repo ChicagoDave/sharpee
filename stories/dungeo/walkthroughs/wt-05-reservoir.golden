@@ -1,0 +1,149 @@
+# sharpee golden v1
+transcript: wt-05-reservoir.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> north
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> east
+Chasm
+A chasm runs southwest to northeast. You are on the east edge.
+
+> east
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> northeast
+Loud Room
+This is a large room with a ceiling which cannot be detected from the ground. A narrow passage leads east; a stairway leads up. The room is extremely noisy.
+
+> up
+Damp Cave
+This cave is extremely damp. A stairway leads down.
+
+> east
+Flood Control Dam #3
+You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. From here, a wide passage leads north and south. There is a control panel here. There is a large metal bolt on the panel. Above the bolt is a small green plastic bubble.
+
+> south
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> northwest
+Reservoir South
+You are on the southern edge of what was once a reservoir. The water has drained away, leaving a muddy expanse stretching north. A path leads south.
+
+> north
+Reservoir
+You are on the muddy bottom of a drained reservoir. The exposed lake bed stretches in all directions. Various objects that were once submerged are now visible.
+
+You can see a trunk here.
+
+> take trunk
+Taken.
+
+> north
+Reservoir North
+You are at the north end of a drained reservoir. The muddy bottom extends to the south, and a dark passage leads north.
+
+You can see a hand pump here.
+
+> take pump
+Taken.
+
+> south
+Reservoir
+You are on the muddy bottom of a drained reservoir. The exposed lake bed stretches in all directions. Various objects that were once submerged are now visible.
+
+> south
+Reservoir South
+You are on the southern edge of what was once a reservoir. The water has drained away, leaving a muddy expanse stretching north. A path leads south.
+
+> up
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> east
+Flood Control Dam #3
+You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. From here, a wide passage leads north and south. There is a control panel here. There is a large metal bolt on the panel. Above the bolt is a small green plastic bubble.
+
+> east
+Damp Cave
+This cave is extremely damp. A stairway leads down.
+
+> south
+Loud Room
+This is a large room with a ceiling which cannot be detected from the ground. A narrow passage leads east; a stairway leads up. The room is extremely noisy.
+
+> west
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> north
+Chasm
+A chasm runs southwest to northeast. You are on the east edge.
+
+> south
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> south
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> west
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> west
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> up
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, and a screwdriver here.
+
+> drop trunk
+Dropped.
+
+> drop pump
+Dropped.
+
+> inventory
+You are carrying:
+
+an ivory torch, brass lantern
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see a guidebook, a matchbook, a wrench, a screwdriver, a trunk, a hand pump, a skeleton key, an incense, and a large brochure here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, and a Don Woods stamp.

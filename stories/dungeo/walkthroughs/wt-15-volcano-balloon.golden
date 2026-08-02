@@ -1,0 +1,471 @@
+# sharpee golden v1
+transcript: wt-15-volcano-balloon.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> take guidebook
+Taken.
+
+> take matchbook
+Taken.
+
+> take brick
+Taken.
+
+> take shiny wire
+Taken.
+
+> inventory
+You are carrying:
+
+a glass bottle, brass lantern, ivory torch, guidebook, matchbook, brick, shiny wire
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> north
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> west
+Rocky Crawl
+This is a crawlway with a low ceiling. A passage goes to the east, and a narrow opening leads west.
+
+> northwest
+Egyptian Room
+This is a room which looks like an Egyptian tomb. There is an ascending staircase in the room as well as doors, east and south.
+
+> turn on lantern
+The brass lantern switches on, banishing the darkness.
+
+> up
+Glacier Room
+You are in a large room, with a passage to the north and a dark, forbidding staircase leading down to the east. On the west is a small passageway which opens up quickly to the south.
+
+> throw torch at glacier
+The torch hits the glacier and explodes into a great ball of flame, devouring the glacier. The water from the melting glacier rushes downstream, carrying the torch with it. In the place of the glacier, there is a passageway leading west.
+
+> west
+Ruby Room
+This is a small chamber behind the remains of the Great Glacier. To the south and west are small passageways.
+
+You can see a ruby here.
+
+> take ruby
+Taken.
+
+> west
+Lava Room
+This is a small room, whose walls are formed by an old lava flow. There are exits here to the west and the south.
+
+> south
+Volcano Bottom
+You are at the bottom of a large dormant volcano. High above you light may be seen entering from the cone of the volcano. The only exit here is to the north.
+
+You can see a balloon here.
+
+> enter balloon
+You get into the balloon.
+
+> open receptacle
+You open the receptacle, which is empty.
+
+> burn guidebook
+You burn the guidebook.
+
+> put guidebook in receptacle
+You put the guidebook in the receptacle.
+
+Hot air fills the balloon and it begins to rise.
+
+The balloon rises slowly.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The balloon rises slowly.
+
+You can see a hook on the rock face here.
+
+> tie braided wire to hook
+The balloon is now anchored.
+
+> exit
+You carefully climb out of the balloon onto the Narrow Ledge.
+
+> take coin
+Taken.
+
+> south
+Library
+This is a room which must have been a large library, probably for the royal family. All of the shelves appear to have been gnawed to pieces by unfriendly gnomes. To the north is an exit.
+
+You can see a purple book here.
+
+> take book
+Taken.
+
+> take stamp
+Taken.
+
+> north
+Narrow Ledge
+You are on a narrow ledge overlooking the inside of an old dormant volcano. This ledge appears to be about in the middle between the floor below and the rim above. There is an exit here to the south.
+
+You can see a balloon here.
+
+> enter balloon
+You get into the balloon.
+
+> untie braided wire from hook
+You untie the rope.
+
+The balloon rises slowly.
+
+You can see a hook on the rock face here.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The balloon rises slowly.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The balloon rises too high and hits the jagged ceiling of the volcano! The bag is torn apart and the balloon plunges to the ground far below.
+
+You can see a hook on the rock face here.
+
+> tie braided wire to hook
+The balloon is now anchored.
+
+> exit
+You carefully climb out of the balloon onto the Wide Ledge.
+
+> south
+Dusty Room
+This is a dusty room that appears to have been abandoned long ago.
+
+> put brick in hole
+You put the brick in the hole.
+
+> burn wire
+The wire starts to burn.
+
+> north
+Wide Ledge
+You are on a wide ledge overlooking the volcano interior.
+
+You can see a balloon here.
+
+> wait
+Time passes...
+
+You hear a distant explosion.
+
+> south
+Dusty Room
+This is a dusty room that appears to have been abandoned long ago.
+
+> take crown
+Taken.
+
+> north
+Wide Ledge
+You are on a wide ledge overlooking the volcano interior.
+
+You can see a balloon here.
+
+> enter balloon
+You get into the balloon.
+
+> close receptacle
+You close the receptacle.
+
+> untie wire
+You untie the rope.
+
+The balloon rises too high and hits the jagged ceiling of the volcano! The bag is torn apart and the balloon plunges to the ground far below.
+
+You can see a hook on the rock face here.
+
+You may recall that recent explosion. Well, probably as a result of that, you hear an ominous rumbling, as if one of the rooms in the dungeon had collapsed.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The balloon sinks slowly.
+
+The ledge collapses, giving you a narrow escape.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The balloon sinks slowly.
+
+You can see a hook on the rock face here.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The balloon sinks slowly.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+The balloon settles to the ground.
+
+> exit
+You carefully climb out of the balloon onto the Volcano Bottom.
+
+> north
+Lava Room
+This is a small room, whose walls are formed by an old lava flow. There are exits here to the west and the south.
+
+> west
+Ruby Room
+This is a small chamber behind the remains of the Great Glacier. To the south and west are small passageways.
+
+> south
+Glacier Room
+You are in a large room, with a passage to the north and a dark, forbidding staircase leading down to the east. On the west is a small passageway which opens up quickly to the south.
+
+> north
+Stream View
+You are standing at a point where a stream emerges from underground.
+
+You can see a dead torch here.
+
+> take torch
+Taken.
+
+> north
+Glacier Room
+You are in a large room, with a passage to the north and a dark, forbidding staircase leading down to the east. On the west is a small passageway which opens up quickly to the south.
+
+> east
+Egyptian Room
+This is a room which looks like an Egyptian tomb. There is an ascending staircase in the room as well as doors, east and south.
+
+> east
+Rocky Crawl
+This is a crawlway with a low ceiling. A passage goes to the east, and a narrow opening leads west.
+
+> west
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> south
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> west
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> west
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> up
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a large brochure, a wrench, a trunk, a brass bell, a black book, a burned-out candles, a sharp stick, a blue blue cake, an eat-me eat-me cake, an elongated brown sack, and a frame piece here.
+
+> open trophy case
+The trophy case is already open.
+
+> put ruby in trophy case
+You put the ruby in the trophy case.
+
+> put coin in trophy case
+You put the zorkmid coin in the trophy case.
+
+> put stamp in trophy case
+You put the stamp in the trophy case.
+
+> put crown in trophy case
+You put the crown in the trophy case.
+
+> put trunk in trophy case
+(first taking the trunk)
+
+Taken.
+
+You put the trunk in the trophy case.
+
+> put torch in trophy case
+You put the dead torch in the trophy case.
+
+> inventory
+You are carrying:
+
+a glass bottle, brass lantern, matchbook, shiny wire, purple book
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an elongated brown sack, a wrench, a sharp stick, a brass bell, a black book, a burned-out candles, an eat-me eat-me cake, a blue blue cake, a skeleton key, an incense, a large brochure, and a frame piece here.
+
+In the elongated brown sack you see a lunch and a clove of garlic.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, a gold coffin, a large emerald, a beautiful statue, a pot of gold, a pearl necklace, a tin of spices, a white white crystal sphere, a huge diamond, a sapphire bracelet, a violin, a crystal trident, a blue blue crystal sphere, a jade figurine, a red red crystal sphere, a golden clockwork canary, a brass bauble, a silver chalice, a grail, a leather bag of coins, a jewel-encrusted egg, a gold card, a ruby, a zorkmid coin, a stamp, a crown, a trunk, and a dead torch.
+
+> score
+You have scored 616 out of 650, earning you the rank of a Master Adventurer.
+
+> gdt
+A BOOMING VOICE CALLS OUT, "WHO SUMMONS THE GAME DEBUGGING TOOL?"
+
+GDT ready. Type HE for help, EX to exit.
+
+> ds ledger
+=== SCORE LEDGER ===
+
+TROPHY (231 pts):
+  trophy:i1j = +15 - Placed the stack of zorkmid bills in the trophy case
+  trophy:i29 = +13 - Placed the beautiful statue in the trophy case
+  trophy:i1h = +12 - Placed the zorkmid coin in the trophy case
+  trophy:i0v = +11 - Placed the crystal trident in the trophy case
+  trophy:i01 = +10 - Placed the gold card in the trophy case
+  trophy:i17 = +10 - Placed the platinum bar in the trophy case
+  trophy:i1a = +10 - Placed the crown in the trophy case
+  trophy:i1e = +10 - Placed the stamp in the trophy case
+  trophy:i26 = +10 - Placed the pot of gold in the trophy case
+  trophy:i28 = +10 - Placed the large emerald in the trophy case
+  trophy:i2k = +10 - Placed the silver chalice in the trophy case
+  trophy:i2m = +10 - Placed the violin in the trophy case
+  trophy:i0p = +8 - Placed the trunk in the trophy case
+  trophy:i1c = +8 - Placed the ruby in the trophy case
+  trophy:i0g = +7 - Placed the painting in the trophy case
+  trophy:i18 = +7 - Placed the gold coffin in the trophy case
+  trophy:i0h = +6 - Placed the dead torch in the trophy case
+  trophy:i25 = +6 - Placed the white crystal sphere in the trophy case
+  trophy:i2p = +6 - Placed the huge diamond in the trophy case
+  trophy:c06 = +5 - Placed the jewel-encrusted egg in the trophy case
+  trophy:c09 = +5 - Placed the leather bag of coins in the trophy case
+  trophy:i0j = +5 - Placed the blue crystal sphere in the trophy case
+  trophy:i0x = +5 - Placed the jade figurine in the trophy case
+  trophy:i0z = +5 - Placed the red crystal sphere in the trophy case
+  trophy:i14 = +5 - Placed the grail in the trophy case
+  trophy:i1i = +5 - Placed the portrait in the trophy case
+  trophy:i1t = +5 - Placed the pearl necklace in the trophy case
+  trophy:i22 = +5 - Placed the tin of spices in the trophy case
+  trophy:i0y = +3 - Placed the sapphire bracelet in the trophy case
+  trophy:i0e = +2 - Placed the golden clockwork canary in the trophy case
+  trophy:i2o = +1 - Placed the Don Woods stamp in the trophy case
+  trophy:i2r = +1 - Placed the brass bauble in the trophy case
+
+ROOM (115 pts):
+  room:r4t = +30 - Visited room
+  room:r0h = +25 - Visited room
+  room:r4d = +25 - Visited room
+  room:r05 = +10 - Visited room
+  room:r35 = +10 - Visited room
+  room:r4c = +10 - Visited room
+  room:r0m = +5 - Visited room
+
+BONUS (270 pts):
+  i01 = +15 - gold card
+  i0p = +15 - trunk
+  i1a = +15 - crown
+  i1c = +15 - ruby
+  i0h = +14 - ivory torch
+  i17 = +12 - platinum bar
+  c09 = +10 - leather bag of coins
+  i0j = +10 - blue crystal sphere
+  i0z = +10 - red crystal sphere
+  i1h = +10 - zorkmid coin
+  i1i = +10 - portrait
+  i1j = +10 - stack of zorkmid bills
+  i26 = +10 - pot of gold
+  i29 = +10 - beautiful statue
+  i2k = +10 - silver chalice
+  i2m = +10 - violin
+  i2p = +10 - huge diamond
+  light-shaft = +10 - LIGHT-SHAFT achievement
+  i1t = +9 - pearl necklace
+  i0e = +6 - golden clockwork canary
+  i25 = +6 - white crystal sphere
+  c06 = +5 - jewel-encrusted egg
+  i0x = +5 - jade figurine
+  i0y = +5 - sapphire bracelet
+  i22 = +5 - tin of spices
+  i28 = +5 - large emerald
+  i0g = +4 - painting
+  i0v = +4 - crystal trident
+  i1e = +4 - stamp
+  i18 = +3 - gold coffin
+  i14 = +2 - grail
+  i2r = +1 - brass bauble
+
+Total: 616/650 (71 entries)
+
+> ex
+Returning to game.
+
+> turn off lantern
+You switch off the brass lantern, plunging the area into darkness.

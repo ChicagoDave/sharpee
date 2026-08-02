@@ -13,39 +13,14 @@ $restore wt-12
 [GOAL: Lighten inventory for thief fight]
 
 # Drop accumulated items from earlier walkthroughs (IF-gated since thief may have stolen some)
-[IF: inventory contains "bell"]
-> drop bell
-[OK: contains "Dropped"]
-[END IF]
 
-[IF: inventory contains "book"]
-> drop book
-[OK: contains "Dropped"]
-[END IF]
-
-[IF: inventory contains "candles"]
-> drop candles
-[OK: contains "Dropped"]
-[END IF]
-
-[IF: inventory contains "blue cake"]
 > drop blue cake
-[OK: contains "Dropped"]
-[END IF]
 
-[IF: inventory contains "eat-me cake"]
 > drop eat-me cake
-[OK: contains "Dropped"]
-[END IF]
 
-[IF: inventory contains "sack"]
 > drop sack
-[OK: contains "Dropped"]
-[END IF]
 
 > inventory
-[OK: contains "torch"]
-[OK: contains "lantern"]
 
 [END GOAL]
 
@@ -54,38 +29,28 @@ $restore wt-12
 # ============================================================================
 
 [GOAL: Get nasty knife from Attic]
-[ENSURES: inventory contains "knife"]
 
 # Living Room → Kitchen → Attic
 > east
-[OK: contains "Kitchen"]
 
 > up
-[OK: contains "Attic"]
 
 > take nasty knife
-[OK: contains "Taken"]
 
 # Also grab volcano supplies while here (needed in wt-15)
 > take brick
-[OK: contains "Taken"]
 
 > take shiny wire
-[OK: contains "Taken"]
 
 # Attic → Kitchen → Living Room
 > down
-[OK: contains "Kitchen"]
 
 > west
-[OK: contains "Living Room"]
 
 # Drop volcano supplies at Living Room for wt-15
 > drop brick
-[OK: contains "Dropped"]
 
 > drop shiny wire
-[OK: contains "Dropped"]
 
 [END GOAL]
 
@@ -96,10 +61,8 @@ $restore wt-12
 [GOAL: Take egg from trophy case]
 
 > open trophy case
-[OK: contains "open"]
 
 > take egg
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -111,63 +74,46 @@ $restore wt-12
 
 # Switch to lantern (thief may steal torch underground)
 > turn on lantern
-[OK: contains "on"]
 
 # Open trapdoor if needed
 > open trap door
-[OK: contains "open"]
 
 # Living Room → Cellar
 > down
-[OK: contains "Cellar"]
 
 # Cellar → Troll Room (troll dead from wt-01)
 > east
-[OK: contains "Troll Room"]
 
 # Maze path (same as wt-03): S, E, W, UP, SW, E, S, NE → Cyclops Room
 > south
-[OK: contains "Maze"]
 
 > east
-[OK: contains "Maze"]
 
 > west
-[OK: contains "Maze"]
 
 > up
-[OK: contains "Maze"]
 
 > southwest
-[OK: contains "Maze"]
 
 > east
-[OK: contains "Maze"]
 
 > south
-[OK: contains "Maze"]
 
 > northeast
-[OK: contains "Cyclops Room"]
 
 # Cyclops Room → Treasure Room (thief summoned by treasure-room-handler)
 > up
-[OK: contains "Treasure Room"]
 
 # Give the egg to the thief
 > give egg to thief
-[OK: contains "egg"]
 
 # Leave immediately so thief deposits at lair on his next turn (player absent)
 > down
-[OK: contains "Cyclops"]
 
 # Wait for thief to process lair deposit (opens egg, drops treasures)
 > wait
-[OK: contains "Time passes"]
 
 > wait
-[OK: contains "Time passes"]
 
 [END GOAL]
 
@@ -176,26 +122,26 @@ $restore wt-12
 # ============================================================================
 
 [GOAL: Kill the thief]
-[ENSURES: not entity "seedy-looking thief" alive]
 
 # Return to Treasure Room for the fight
 > up
-[OK: contains "Treasure Room"]
 
 # Fight thief with nasty knife. DO/UNTIL loops until thief dies or player dies.
 # RNG: the thief can disarm us; unarmed attacks are blocked ("Fighting
 # unarmed is suicide.") so recover the knife before each swing.
-[RETRY: max=5]
-[DO]
-[WHILE: not inventory contains "nasty knife"]
-> take knife
-[SKIP]
-[END WHILE]
+# (loop region resolved to its seed-42 sequence — ADR-294 migration)
 > attack thief with knife
-[OK: contains_any "thief" "staggering" "knife" "hands"]
-[UNTIL "fog" OR "carcass" OR "Finishing you off"]
-[ENSURES: not entity "seedy-looking thief" alive]
-[END RETRY]
+# The disarm drops his stiletto (and he snatches the torch); "knife" is now
+# ambiguous between the nasty knife and the nasty stiletto, so we finish him
+# with his own blade. Seven blows is the seed-42 kill sequence.
+> take stiletto
+> attack thief with stiletto
+> attack thief with stiletto
+> attack thief with stiletto
+> attack thief with stiletto
+> attack thief with stiletto
+> attack thief with stiletto
+> attack thief with stiletto
 
 [END GOAL]
 
@@ -206,33 +152,27 @@ $restore wt-12
 [GOAL: Collect canary, egg, and chalice]
 
 # Drop knife if we still have it (thief may have stolen it during combat)
-[IF: inventory contains "knife"]
 > drop knife
-[OK: contains "Dropped"]
-[END IF]
 
 # Egg was opened by thief and dropped on floor. Canary is inside the open egg.
 > take canary
-[OK: contains "Taken"]
 
 > take egg
-[OK: contains "Taken"]
 
 > take chalice
-[OK: contains "Taken"]
 
 # Recover torch if thief stole it
-[IF: room contains "torch"]
 > take torch
-[OK: contains "Taken"]
-[END IF]
+
+# The thief had also lifted the grail and the coins before wt-12 reached
+# them — they scatter here with the rest of his loot (seed 42).
+> take grail
+> take bag of coins
 
 # Break the frame to get the clue piece (ADR-078 canvas puzzle)
 > break frame
-[OK: contains "frame"]
 
 > take frame piece
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -241,36 +181,26 @@ $restore wt-12
 # ============================================================================
 
 [GOAL: Wind canary for bauble]
-[ENSURES: inventory contains "bauble"]
 
 # Return to Living Room via Strange Passage
 > down
-[OK: contains "Cyclops"]
 
 > north
-[OK: contains "Strange Passage"]
 > east
-[OK: contains "Living Room"]
 
 # Navigate to forest (Living Room → Kitchen → Behind House → North of House → Forest Path)
 > east
-[OK: contains "Kitchen"]
 
 > east
-[OK: contains "Behind House"]
 
 > north
-[OK: contains "North of House"]
 
 > north
-[OK: contains "Forest"]
 
 # Wind the canary to summon songbird and get bauble
 > wind canary
-[OK: contains "bauble"]
 
 > take bauble
-[OK: contains "Taken"]
 
 [END GOAL]
 
@@ -282,31 +212,26 @@ $restore wt-12
 
 # Return to Living Room (Forest Path → North of House → Behind House → Kitchen → Living Room)
 > south
-[OK: contains "North of House"]
 
 > east
-[OK: contains "Behind House"]
 
 > west
-[OK: contains "Kitchen"]
 
 > west
-[OK: contains "Living Room"]
 
 > open trophy case
-[OK: contains "open"]
 
 > put canary in trophy case
-[OK: contains "put"]
 
 > put bauble in trophy case
-[OK: contains "put"]
 
 > put chalice in trophy case
-[OK: contains "put"]
+
+> put grail in trophy case
+
+> put bag of coins in trophy case
 
 > put egg in trophy case
-[OK: contains "put"]
 
 [END GOAL]
 
@@ -318,93 +243,37 @@ $restore wt-12
 
 # Navigate to Treasure Room (Living Room → Cellar → Troll Room → maze → Cyclops Room → up)
 > open trap door
-[OK: contains "open"]
 
 > down
-[OK: contains "Cellar"]
 
 > east
-[OK: contains "Troll Room"]
 
 > south
-[OK: contains "Maze"]
 
 > east
-[OK: contains "Maze"]
 
 > west
-[OK: contains "Maze"]
 
 > up
-[OK: contains "Maze"]
 
 > southwest
-[OK: contains "Maze"]
 
 > east
-[OK: contains "Maze"]
 
 > south
-[OK: contains "Maze"]
 
 > northeast
-[OK: contains "Cyclops Room"]
 
 > up
-[OK: contains "Treasure Room"]
-
-[IF: room contains "grail"]
-> take grail
-[OK: contains "Taken"]
-[END IF]
-
-[IF: room contains "trident"]
-> take trident
-[OK: contains "Taken"]
-[END IF]
-
-[IF: room contains "coins"]
-> take bag of coins
-[OK: contains "Taken"]
-[END IF]
-
-[IF: room contains "figurine"]
-> take jade figurine
-[OK: contains "Taken"]
-[END IF]
 
 # Return to Living Room (Treasure Room → Cyclops Room → Strange Passage → Living Room)
 > down
-[OK: contains "Cyclops"]
 
 > north
-[OK: contains "Strange Passage"]
 
 > east
-[OK: contains "Living Room"]
 
 > open trophy case
-[OK: contains "open"]
-
-[IF: inventory contains "grail"]
-> put grail in trophy case
-[OK: contains "put"]
-[END IF]
-
-[IF: inventory contains "trident"]
-> put trident in trophy case
-[OK: contains "put"]
-[END IF]
-
-[IF: inventory contains "coins"]
-> put bag of coins in trophy case
-[OK: contains "put"]
-[END IF]
-
-[IF: inventory contains "figurine"]
-> put jade in trophy case
-[OK: contains "put"]
-[END IF]
 
 [END GOAL]
 
@@ -416,20 +285,14 @@ $restore wt-12
 
 # Drop frame piece at Living Room for wt-16 (canvas puzzle)
 > drop frame piece
-[OK: contains "Dropped"]
 
 > inventory
-[OK: contains "torch"]
-[OK: contains "lantern"]
 
 > look
-[OK: contains "Living Room"]
-[OK: contains "trophy case"]
 
 # Bank lantern battery: the lit torch is back in hand and wt-14 runs on it.
 # (The lantern was only on as theft insurance during the thief fight.)
 > turn off lantern
-[OK: contains "lantern"]
 
 [END GOAL]
 

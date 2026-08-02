@@ -1,0 +1,254 @@
+# sharpee golden v1
+transcript: wt-04-dam-reservoir.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> take lantern
+Taken.
+
+> open trap door
+You open the trap trap door.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> north
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> east
+Chasm
+A chasm runs southwest to northeast. You are on the east edge.
+
+> east
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> northeast
+Loud Room
+This is a large room with a ceiling which cannot be detected from the ground. A narrow passage leads east; a stairway leads up. The room is extremely noisy.
+
+You can see a platinum bar here.
+
+> echo
+The platinum bar seems to absorb the sound, preventing dangerous reverberations. The acoustics of the room cause your voice to echo: "echo...echo...echo..."
+
+> take bar
+Taken.
+
+> up
+Damp Cave
+This cave is extremely damp. A stairway leads down.
+
+> east
+Flood Control Dam #3
+You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. From here, a wide passage leads north and south. There is a control panel here. There is a large metal bolt on the panel. Above the bolt is a small green plastic bubble.
+
+> north
+Dam Lobby
+This is a large, echoing hall. A passage leads south, and doors lead north and east.
+
+You can see a guidebook and a matchbook here.
+
+> take guidebook
+Taken.
+
+> take matchbook
+Taken.
+
+> north
+Maintenance Room
+This is a small maintenance room. Various tools line the walls. On one wall is a control panel with a group of buttons labelled in EBCDIC, in different colors: a blue button, a yellow button, a brown button, and a red button.
+
+You can see a wrench and a screwdriver here.
+
+> press yellow button
+Click.
+
+> take wrench
+Taken.
+
+> take screwdriver
+Taken.
+
+> south
+Dam Lobby
+This is a large, echoing hall. A passage leads south, and doors lead north and east.
+
+> south
+Flood Control Dam #3
+You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. From here, a wide passage leads north and south. There is a control panel here. There is a large metal bolt on the panel. Above the bolt is a small green plastic bubble.
+
+> turn bolt
+The sluice gates open and water pours through the dam.
+
+> east
+Damp Cave
+This cave is extremely damp. A stairway leads down.
+
+> south
+Loud Room
+This is a large room with a ceiling which cannot be detected from the ground. A narrow passage leads east; a stairway leads up. The room is extremely noisy.
+
+> west
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> north
+Chasm
+A chasm runs southwest to northeast. You are on the east edge.
+
+> south
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> south
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> west
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> west
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> up
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense and a skeleton key here.
+
+> read matchbook
+The matchbook reads:
+   *** MIT TECH CORRESPONDENCE SCHOOL ***
+
+"My income soared after I received my degree!" - Mr. TAA of Muddle, Mass.
+
+"I got a great job in paper shuffling!" - Mr. MARC of Boston
+
+Straddling the cutting edge of nothing! Earn your MDL degree at home!
+
+       *** SEND FOR OUR FREE BROCHURE TODAY! ***
+
+> send for brochure
+Ok, but you know the postal service...
+
+> east
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+You can see an elongated brown sack and a glass bottle here.
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+> wait
+Time passes...
+
+There is a knocking sound from the front of the house.
+
+> east
+Behind House
+You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
+
+> south
+South of House
+You are facing the south side of a white house. There is no door here, and all the windows are barred.
+
+> west
+West of House
+This is an open field west of a white house with a boarded front door. There is a small mailbox here.
+
+You can see a welcome mat here.
+
+> open mailbox
+You open the small mailbox.
+
+Inside the small mailbox you see leaflet, large brochure.
+
+> take brochure
+Taken.
+
+> take stamp
+Taken.
+
+> north
+North of House
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+> east
+Behind House
+You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
+
+> west
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+You can see an elongated brown sack and a glass bottle here.
+
+> west
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense and a skeleton key here.
+
+> open trophy case
+The trophy case is already open.
+
+> put bar in trophy case
+You put the platinum bar in the trophy case.
+
+> put stamp in trophy case
+You put the Don Woods stamp in the trophy case.
+
+> drop guidebook
+Dropped.
+
+> drop matchbook
+Dropped.
+
+> drop brochure
+Dropped.
+
+> drop wrench
+Dropped.
+
+> drop screwdriver
+Dropped.
+
+> inventory
+You are carrying:
+
+an ivory torch, brass lantern
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see a guidebook, a matchbook, a wrench, a screwdriver, a skeleton key, an incense, and a large brochure here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, and a Don Woods stamp.

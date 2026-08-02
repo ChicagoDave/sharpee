@@ -11,11 +11,120 @@ import {
   TranscriptHeader,
   TranscriptCommand,
   TranscriptItem,
+  TranscriptRunConfig,
   Directive,
   GoalDefinition,
   Assertion,
   ParseError
 } from './types.js';
+
+/**
+ * Above this bound the parsed value no longer equals the typed digits, so the
+ * echoed seed would not reproduce the run (ADR-293 AC-12 — same bound the CLI
+ * enforces for `--seed`).
+ */
+const MAX_SEED = Number.MAX_SAFE_INTEGER;
+
+/**
+ * Header keys that carry run configuration (ADR-294 D3/D6/D8/D15/D19/D13),
+ * recognized case-insensitively. Everything else in the header stays a raw
+ * string in `transcript.header`.
+ */
+const CONFIG_KEYS = ['seed', 'seeds', 'channels', 'events', 'locale', 'forces'];
+
+/**
+ * Grammar forms removed by ADR-294. Each is a parse error naming the form and
+ * its replacement (AC-4) — never silently ignored, never executed. Checked
+ * before header parsing so the old trap (`[SEED:]` above the `---` separator
+ * being swallowed as a header key) errors loudly too.
+ */
+const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> = [
+  {
+    pattern: /^\[SEED\s*:/i,
+    form: '[SEED: N]',
+    message: '[SEED: N] was removed (ADR-294 D3) — declare the seed in the header instead: seed: N above the --- separator'
+  },
+  {
+    pattern: /^\[WHILE\s*:/i,
+    form: '[WHILE:]',
+    message: '[WHILE:] was removed (ADR-294 D4) — output is deterministic at a pinned seed; write the fixed command list the loop produced'
+  },
+  {
+    pattern: /^\[END\s+WHILE\s*\]$/i,
+    form: '[END WHILE]',
+    message: '[END WHILE] was removed (ADR-294 D4) — output is deterministic at a pinned seed; write the fixed command list the loop produced'
+  },
+  {
+    pattern: /^\[RETRY\s*:/i,
+    form: '[RETRY:]',
+    message: '[RETRY:] was removed (ADR-294 D4) — output is deterministic at a pinned seed; write the fixed command list the retries produced'
+  },
+  {
+    pattern: /^\[END\s+RETRY\s*\]$/i,
+    form: '[END RETRY]',
+    message: '[END RETRY] was removed (ADR-294 D4) — output is deterministic at a pinned seed; write the fixed command list the retries produced'
+  },
+  {
+    pattern: /^\[DO\s*\]$/i,
+    form: '[DO]',
+    message: '[DO] was removed (ADR-294 D4) — output is deterministic at a pinned seed; write the fixed command list the loop produced'
+  },
+  {
+    pattern: /^\[UNTIL\s/i,
+    form: '[UNTIL]',
+    message: '[UNTIL] was removed (ADR-294 D4) — output is deterministic at a pinned seed; write the fixed command list the loop produced'
+  },
+  {
+    pattern: /^\[ENSURES\s*:/i,
+    form: '[ENSURES:]',
+    message: '[ENSURES:] was removed (ADR-294 D4) — durable regression protection is a golden recording; for unit intent use [OK: contains "..."] or [STATE:]'
+  },
+  {
+    pattern: /^\[REQUIRES\s*:/i,
+    form: '[REQUIRES:]',
+    message: '[REQUIRES:] was removed (ADR-294 D4) — state is deterministic at a pinned seed; a precondition either always holds or the transcript is wrong'
+  },
+  {
+    pattern: /^\[IF\s*:/i,
+    form: '[IF:]',
+    message: '[IF:] was removed (ADR-294 D4) — state is deterministic at a pinned seed, so a condition never varies; write the branch that actually happens'
+  },
+  {
+    pattern: /^\[END\s+IF\s*\]$/i,
+    form: '[END IF]',
+    message: '[END IF] was removed (ADR-294 D4) — state is deterministic at a pinned seed, so a condition never varies; write the branch that actually happens'
+  },
+  {
+    pattern: /^\[OK\s*:\s*contains_any\s/i,
+    form: '[OK: contains_any]',
+    message: '[OK: contains_any] was removed (ADR-294 D2) — output is deterministic at a pinned seed; use [OK: contains "..."] with the text that actually occurs'
+  },
+  {
+    pattern: /^\[OK\s*:\s*matches\s/i,
+    form: '[OK: matches]',
+    message: '[OK: matches] was removed (ADR-294 D2) — output is deterministic at a pinned seed; use [OK: contains "..."] or a golden recording'
+  },
+  {
+    pattern: /^\[NAVIGATE\s+TO\s*:/i,
+    form: '[NAVIGATE TO:]',
+    message: '[NAVIGATE TO:] was removed (ADR-294 D4) — write the literal movement commands; the runner never pathfinds'
+  },
+  {
+    pattern: /^\[OK\s*:\s*any\s*\]$/i,
+    form: '[OK: any]',
+    message: '[OK: any] was removed (ADR-294 D2) — presence-only assertion masks failure; use a golden recording or [OK: contains "..."], or [SKIP] for deliberately unasserted output'
+  }
+];
+
+/** Match a removed grammar form, or null when the line is not one. */
+function detectRemovedForm(trimmed: string): { form: string; message: string } | null {
+  for (const removed of REMOVED_FORMS) {
+    if (removed.pattern.test(trimmed)) {
+      return removed;
+    }
+  }
+  return null;
+}
 
 /**
  * A literal text block opens with `text` and closes with `end text`, each on
@@ -87,12 +196,17 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
     commands: [],
     items: [],
     goals: [],
-    comments: []
+    comments: [],
+    // Defaults per ADR-294: unseeded, main channel only, prose-pure, primary
+    // locale, no forces. Header fields overwrite these during parsing.
+    config: { seeds: [], channels: ['main'], events: false, forces: [] }
   };
 
   let inHeader = true;
   let currentCommand: TranscriptCommand | null = null;
   const parseErrors: ParseError[] = [];
+  /** Config keys already seen, for duplicate detection (key → line number). */
+  const seenConfigKeys = new Map<string, number>();
 
   // Indexed rather than for-of: a block consumes the lines that follow its
   // opening delimiter, so the loop has to be able to skip ahead (ADR-287 D1).
@@ -128,6 +242,17 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       continue;
     }
 
+    // Removed grammar forms (ADR-294) — before the header branch, so a
+    // bracket directive above the --- separator (the old silent-placement
+    // trap) gets the loud error instead of being swallowed as a header key.
+    if (trimmed.startsWith('[')) {
+      const removed = detectRemovedForm(trimmed);
+      if (removed) {
+        parseErrors.push({ lineNumber, message: removed.message });
+        continue;
+      }
+    }
+
     // $ directives ($save, $restore) - these are standalone directives
     if (trimmed.startsWith('$')) {
       // Save any pending command first
@@ -151,6 +276,9 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       const key = trimmed.slice(0, colonIndex).trim().toLowerCase();
       const value = trimmed.slice(colonIndex + 1).trim();
       transcript.header[key] = value;
+      if (CONFIG_KEYS.includes(key)) {
+        parseConfigField(transcript, key, value, lineNumber, parseErrors, seenConfigKeys);
+      }
       continue;
     }
 
@@ -169,34 +297,6 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
         expectedOutput: [],
         assertions: []
       };
-      continue;
-    }
-
-    // [SEED: N] — ADR-293 D14: pins the session's master seed. File-level
-    // metadata rather than an item; at most one per transcript. The CLI
-    // enforces the chain rule (only the first chain member's seed counts).
-    const seedMatch = /^\[SEED:\s*(.+?)\s*\]$/i.exec(trimmed);
-    if (seedMatch) {
-      if (currentCommand) {
-        finalizeCommand(currentCommand, parseErrors);
-        transcript.commands.push(currentCommand);
-        transcript.items!.push({ type: 'command', command: currentCommand });
-        currentCommand = null;
-      }
-      if (transcript.seed !== undefined) {
-        parseErrors.push({
-          lineNumber,
-          message: `Duplicate [SEED:] — the seed is already pinned to ${transcript.seed} (a transcript declares at most one)`
-        });
-      } else if (!/^\d+$/.test(seedMatch[1])) {
-        parseErrors.push({
-          lineNumber,
-          message: `Invalid [SEED:] value "${seedMatch[1]}" — must be a non-negative integer`
-        });
-      } else {
-        transcript.seed = Number(seedMatch[1]);
-        transcript.seedLineNumber = lineNumber;
-      }
       continue;
     }
 
@@ -274,6 +374,19 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
     // Expected output lines
     if (currentCommand) {
       currentCommand.expectedOutput.push(line);  // Preserve original indentation
+      continue;
+    }
+
+    // A config field below the --- separator with no command to attach to is
+    // the header-placement trap in reverse — error loudly (ADR-294 D3) rather
+    // than dropping the line. Output lines under a command are untouched, so
+    // story prose containing "seed:" still records verbatim.
+    const strayConfig = /^([A-Za-z-]+)\s*:/.exec(trimmed);
+    if (strayConfig && CONFIG_KEYS.includes(strayConfig[1].toLowerCase())) {
+      parseErrors.push({
+        lineNumber,
+        message: `Header field "${strayConfig[1]}:" appears after the --- separator — header fields must be declared above it (ADR-294 D3)`
+      });
     }
   }
 
@@ -295,6 +408,161 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
   }
 
   return transcript;
+}
+
+/**
+ * Parse and validate one header config field (ADR-294 D3) into
+ * `transcript.config`, recording parse errors for invalid or conflicting
+ * values. `key` is already lowercased and known to be a config key.
+ */
+function parseConfigField(
+  transcript: Transcript,
+  key: string,
+  value: string,
+  lineNumber: number,
+  parseErrors: ParseError[],
+  seenConfigKeys: Map<string, number>
+): void {
+  const config: TranscriptRunConfig = transcript.config!;
+
+  const previousLine = seenConfigKeys.get(key);
+  if (previousLine !== undefined) {
+    parseErrors.push({
+      lineNumber,
+      message: `Duplicate header field "${key}:" — already declared on line ${previousLine}`
+    });
+    return;
+  }
+  seenConfigKeys.set(key, lineNumber);
+
+  /** Parse one seed value, recording an error and returning null when invalid. */
+  const parseSeedValue = (raw: string): number | null => {
+    if (!/^\d+$/.test(raw)) {
+      parseErrors.push({
+        lineNumber,
+        message: `Invalid ${key}: value "${raw}" — must be a non-negative integer`
+      });
+      return null;
+    }
+    const parsed = Number(raw);
+    if (parsed > MAX_SEED) {
+      parseErrors.push({
+        lineNumber,
+        message: `Invalid ${key}: value "${raw}" — out of range (max ${MAX_SEED})`
+      });
+      return null;
+    }
+    return parsed;
+  };
+
+  /** Split a comma-separated value into trimmed, non-empty entries. */
+  const splitList = (raw: string): string[] =>
+    raw.split(',').map((entry) => entry.trim()).filter((entry) => entry !== '');
+
+  switch (key) {
+    case 'seed': {
+      if (seenConfigKeys.has('seeds')) {
+        parseErrors.push({
+          lineNumber,
+          message: 'seed: and seeds: are mutually exclusive — use seed: N for one pin or seeds: A, B for a matrix (ADR-294 D8)'
+        });
+        return;
+      }
+      const seed = parseSeedValue(value);
+      if (seed !== null) {
+        transcript.seed = seed;
+        transcript.seedLineNumber = lineNumber;
+        config.seeds = [seed];
+      }
+      return;
+    }
+
+    case 'seeds': {
+      if (seenConfigKeys.has('seed')) {
+        parseErrors.push({
+          lineNumber,
+          message: 'seed: and seeds: are mutually exclusive — use seed: N for one pin or seeds: A, B for a matrix (ADR-294 D8)'
+        });
+        return;
+      }
+      const entries = splitList(value);
+      if (entries.length === 0) {
+        parseErrors.push({
+          lineNumber,
+          message: 'seeds: declares no values — expected a comma-separated list (seeds: 42, 777)'
+        });
+        return;
+      }
+      const seeds: number[] = [];
+      for (const entry of entries) {
+        const seed = parseSeedValue(entry);
+        if (seed === null) return;
+        if (seeds.includes(seed)) {
+          parseErrors.push({
+            lineNumber,
+            message: `Duplicate seed ${seed} in seeds: — each seed gets its own recording, so each may appear once (ADR-294 D8)`
+          });
+          return;
+        }
+        seeds.push(seed);
+      }
+      config.seeds = seeds;
+      return;
+    }
+
+    case 'channels': {
+      const channels = splitList(value);
+      if (channels.length === 0) {
+        parseErrors.push({
+          lineNumber,
+          message: 'channels: declares no values — expected a comma-separated list (channels: main, status)'
+        });
+        return;
+      }
+      const duplicate = channels.find((channel, i) => channels.indexOf(channel) !== i);
+      if (duplicate !== undefined) {
+        parseErrors.push({
+          lineNumber,
+          message: `Duplicate channel "${duplicate}" in channels: — each channel may appear once`
+        });
+        return;
+      }
+      config.channels = channels;
+      return;
+    }
+
+    case 'events': {
+      const normalized = value.toLowerCase();
+      if (normalized !== 'true' && normalized !== 'false') {
+        parseErrors.push({
+          lineNumber,
+          message: `Invalid events: value "${value}" — must be true or false (ADR-294 D6)`
+        });
+        return;
+      }
+      config.events = normalized === 'true';
+      return;
+    }
+
+    case 'locale': {
+      if (value === '') {
+        parseErrors.push({
+          lineNumber,
+          message: 'locale: declares no value — expected a locale tag (locale: en-US) or omit the field for the story\'s primary'
+        });
+        return;
+      }
+      config.locale = value;
+      return;
+    }
+
+    case 'forces': {
+      // D13 hook: parsed but not yet acted on. `(none)` is the explicit
+      // empty form the .golden provenance uses.
+      config.forces = value === '(none)' || value === '' ? [] : splitList(value);
+      return;
+    }
+  }
 }
 
 /**
@@ -334,74 +602,10 @@ function parseDirective(tag: string, lineNumber: number): Directive | null {
     return { type: 'end_goal', lineNumber };
   }
 
-  // [REQUIRES: condition]
-  const requiresMatch = inner.match(/^REQUIRES:\s*(.+)$/i);
-  if (requiresMatch) {
-    return { type: 'requires', lineNumber, condition: requiresMatch[1].trim() };
-  }
-
-  // [ENSURES: condition]
-  const ensuresMatch = inner.match(/^ENSURES:\s*(.+)$/i);
-  if (ensuresMatch) {
-    return { type: 'ensures', lineNumber, condition: ensuresMatch[1].trim() };
-  }
-
-  // [IF: condition]
-  const ifMatch = inner.match(/^IF:\s*(.+)$/i);
-  if (ifMatch) {
-    return { type: 'if', lineNumber, condition: ifMatch[1].trim() };
-  }
-
-  // [END IF]
-  if (inner.toUpperCase() === 'END IF') {
-    return { type: 'end_if', lineNumber };
-  }
-
-  // [WHILE: condition]
-  const whileMatch = inner.match(/^WHILE:\s*(.+)$/i);
-  if (whileMatch) {
-    return { type: 'while', lineNumber, condition: whileMatch[1].trim() };
-  }
-
-  // [END WHILE]
-  if (inner.toUpperCase() === 'END WHILE') {
-    return { type: 'end_while', lineNumber };
-  }
-
-  // [RETRY: max=N]
-  const retryMatch = inner.match(/^RETRY:\s*max\s*=\s*(\d+)$/i);
-  if (retryMatch) {
-    return { type: 'retry', lineNumber, maxRetries: parseInt(retryMatch[1], 10) };
-  }
-
-  // [END RETRY]
-  if (inner.toUpperCase() === 'END RETRY') {
-    return { type: 'end_retry', lineNumber };
-  }
-
-  // [DO]
-  if (inner.toUpperCase() === 'DO') {
-    return { type: 'do', lineNumber };
-  }
-
-  // [UNTIL "text"] or [UNTIL "text1" OR "text2" OR ...]
-  if (inner.toUpperCase().startsWith('UNTIL ')) {
-    const texts: string[] = [];
-    const textRegex = /"([^"]+)"/g;
-    let m;
-    while ((m = textRegex.exec(inner)) !== null) {
-      texts.push(m[1]);
-    }
-    if (texts.length > 0) {
-      return { type: 'until', lineNumber, untilTexts: texts };
-    }
-  }
-
-  // [NAVIGATE TO: "Room Name"]
-  const navigateMatch = inner.match(/^NAVIGATE\s+TO:\s*"([^"]+)"$/i);
-  if (navigateMatch) {
-    return { type: 'navigate', lineNumber, target: navigateMatch[1] };
-  }
+  // The control-flow/condition forms ([IF:], [WHILE:], [RETRY:], [DO]/[UNTIL],
+  // [NAVIGATE TO:], [REQUIRES:], [ENSURES:]) are removed grammar (ADR-294 D4) —
+  // the parse loop intercepts them as named errors before this function is
+  // reached. GOAL survives above as a structural label only.
 
   // Not a directive
   return null;
@@ -436,12 +640,12 @@ function parseDollarDirective(line: string, lineNumber: number): Directive | nul
 }
 
 /**
- * Parse goal segments from items array
+ * Parse goal segments from items array. Goals are structural labels only
+ * (ADR-294 D4 removed the REQUIRES/ENSURES condition layer).
  */
 function parseGoals(items: TranscriptItem[]): GoalDefinition[] {
   const goals: GoalDefinition[] = [];
   let currentGoal: Partial<GoalDefinition> | null = null;
-  let goalStartIndex = -1;
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -453,39 +657,18 @@ function parseGoals(items: TranscriptItem[]): GoalDefinition[] {
       case 'goal':
         if (currentGoal) {
           console.warn(`Line ${directive.lineNumber}: Nested goals not allowed. Closing previous goal.`);
-          goals.push({
-            ...currentGoal,
-            endIndex: i - 1
-          } as GoalDefinition);
+          goals.push({ ...currentGoal, endIndex: i - 1 } as GoalDefinition);
         }
         currentGoal = {
           name: directive.goalName!,
           lineNumber: directive.lineNumber,
-          requires: [],
-          ensures: [],
           startIndex: i + 1
         };
-        goalStartIndex = i;
-        break;
-
-      case 'requires':
-        if (currentGoal && directive.condition) {
-          currentGoal.requires!.push(directive.condition);
-        }
-        break;
-
-      case 'ensures':
-        if (currentGoal && directive.condition) {
-          currentGoal.ensures!.push(directive.condition);
-        }
         break;
 
       case 'end_goal':
         if (currentGoal) {
-          goals.push({
-            ...currentGoal,
-            endIndex: i
-          } as GoalDefinition);
+          goals.push({ ...currentGoal, endIndex: i } as GoalDefinition);
           currentGoal = null;
         }
         break;
@@ -495,10 +678,7 @@ function parseGoals(items: TranscriptItem[]): GoalDefinition[] {
   // Handle unclosed goal
   if (currentGoal) {
     console.warn(`Unclosed goal: ${currentGoal.name}`);
-    goals.push({
-      ...currentGoal,
-      endIndex: items.length - 1
-    } as GoalDefinition);
+    goals.push({ ...currentGoal, endIndex: items.length - 1 } as GoalDefinition);
   }
 
   return goals;
@@ -520,11 +700,8 @@ function parseAssertion(tag: string): Assertion | null {
     return { type: 'skip' };
   }
 
-  // [OK: any] — presence-only (ADR-277 D5): passes when the command produced
-  // any output; asserts nothing about the text. The recorder's default.
-  if (/^OK:\s*any$/i.test(inner)) {
-    return { type: 'ok-any' };
-  }
+  // [OK: any] is removed grammar (ADR-294 D2) — intercepted as a named parse
+  // error before this function is reached.
 
   // [OK: contains] — payload-less; the fragment is the text block on the next
   // line (ADR-287 D1). Without a block this is a validation error, raised by the
@@ -545,33 +722,8 @@ function parseAssertion(tag: string): Assertion | null {
     return { type: 'ok-not-contains', value: notContainsMatch[1] };
   }
 
-  // [OK: contains_any "text1" "text2" "text3"]
-  const containsAnyMatch = inner.match(/^OK:\s*contains_any\s+(.+)$/i);
-  if (containsAnyMatch) {
-    const values: string[] = [];
-    const valueRegex = /"([^"]+)"/g;
-    let m;
-    while ((m = valueRegex.exec(containsAnyMatch[1])) !== null) {
-      values.push(m[1]);
-    }
-    if (values.length > 0) {
-      return { type: 'ok-contains-any', values };
-    }
-  }
-
-  // [OK: matches /regex/flags]
-  const matchesMatch = inner.match(/^OK:\s*matches\s+\/(.+)\/([gimsuy]*)$/i);
-  if (matchesMatch) {
-    try {
-      return {
-        type: 'ok-matches',
-        pattern: new RegExp(matchesMatch[1], matchesMatch[2])
-      };
-    } catch (e) {
-      console.error(`Invalid regex in assertion: ${tag}`);
-      return null;
-    }
-  }
+  // [OK: contains_any] and [OK: matches] are removed grammar (ADR-294 D2) —
+  // intercepted as named parse errors before this function is reached.
 
   // [FAIL: reason]
   const failMatch = inner.match(/^FAIL(?::\s*(.+))?$/i);
@@ -717,9 +869,10 @@ export function validateTranscript(transcript: Transcript): string[] {
     if (!cmd.input) {
       errors.push(`Line ${cmd.lineNumber}: Empty command`);
     }
-    if (cmd.assertions.length === 0) {
-      errors.push(`Line ${cmd.lineNumber}: Command "${cmd.input}" has no assertion — every command requires [OK: ...], [SKIP], or similar`);
-    }
+    // No per-command assertion requirement here: a bare command list is the
+    // golden tier's legal shape (ADR-294 D1 — the recording is the assertion).
+    // The runner enforces the boundary instead: an assertion-less command in a
+    // transcript with NO recording fails with a named error.
   }
 
   return errors;

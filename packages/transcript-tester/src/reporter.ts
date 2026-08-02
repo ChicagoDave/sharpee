@@ -58,6 +58,11 @@ export function reportTranscript(
 
   // Summary line
   console.log();
+  if (result.blessed) {
+    console.log(chalk.green(`  ✓ blessed → ${result.goldenPath} (${result.commands.length} turns)`));
+  } else if (result.tier === 'golden' && result.status === 'passed') {
+    console.log(chalk.green(`  ✓ matched recording ${result.goldenPath}`));
+  }
   reportTranscriptSummary(result);
 }
 
@@ -84,6 +89,13 @@ function reportCommand(result: CommandResult, verbose: boolean, emitTraits: bool
 
   // Compact format
   console.log(`  ${inputDisplay.padEnd(50)} ${status}`);
+
+  // Golden divergence (ADR-294 D1): the diff IS the failure report.
+  if (result.diff) {
+    console.log(chalk.red(`    Error: ${error}`));
+    reportGoldenDiff(result.diff);
+    return;
+  }
 
   // Verbose output
   if (verbose || (!passed && !skipped && !expectedFailure)) {
@@ -165,6 +177,32 @@ function reportCommand(result: CommandResult, verbose: boolean, emitTraits: bool
 }
 
 /**
+ * Render a golden divergence as a line diff: matching context in gray,
+ * recorded lines as `-` (red), actual lines as `+` (green). Line-count
+ * mismatches print both tails.
+ */
+function reportGoldenDiff(diff: { recorded: string[]; actual: string[] }): void {
+  const { recorded, actual } = diff;
+  console.log(chalk.gray('    ─── Diff (recorded vs actual) ───'));
+  const shared = Math.min(recorded.length, actual.length);
+  for (let i = 0; i < shared; i++) {
+    if (recorded[i] === actual[i]) {
+      console.log(chalk.gray(`      ${recorded[i]}`));
+    } else {
+      console.log(chalk.red(`    - ${recorded[i]}`));
+      console.log(chalk.green(`    + ${actual[i]}`));
+    }
+  }
+  for (let i = shared; i < recorded.length; i++) {
+    console.log(chalk.red(`    - ${recorded[i]}`));
+  }
+  for (let i = shared; i < actual.length; i++) {
+    console.log(chalk.green(`    + ${actual[i]}`));
+  }
+  console.log(chalk.gray('    ─────────────'));
+}
+
+/**
  * Format an assertion result for display
  */
 function formatAssertion(result: AssertionResult): string {
@@ -178,8 +216,6 @@ function formatAssertion(result: AssertionResult): string {
       return message || (assertion.block ? "Contains the text block fragment" : `Contains "${assertion.value}"`);
     case 'ok-not-contains':
       return message || `Does not contain "${assertion.value}"`;
-    case 'ok-matches':
-      return message || `Matches ${assertion.pattern}`;
     case 'fail':
       return `Expected failure: ${assertion.reason}`;
     case 'skip':
@@ -425,8 +461,6 @@ function formatAssertionPlain(assertion: any): string {
       return `Contains "${assertion.value}"`;
     case 'ok-not-contains':
       return `Does not contain "${assertion.value}"`;
-    case 'ok-matches':
-      return `Matches ${assertion.pattern}`;
     case 'fail':
       return `Expected failure: ${assertion.reason}`;
     case 'skip':

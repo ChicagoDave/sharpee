@@ -1,0 +1,756 @@
+# sharpee golden v1
+transcript: wt-07-exorcism.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see a guidebook, a matchbook, a wrench, a screwdriver, a trunk, a hand pump, a skeleton key, an incense, and a large brochure here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, and a gold coffin.
+
+> inventory
+You are carrying:
+
+an ivory torch, brass lantern
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> southwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> northeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Grail Room
+You are in a small chamber with walls of granite. A narrow passage exits to the west.
+
+> up
+Temple
+This is the interior of a large temple of ancient construction. Flickering torches cast shadows on the walls. A stairway leads down.
+
+> east
+Altar
+This is the altar room of the temple. A large stone altar dominates the room.
+
+You can see a brass bell, a black book, and a pair of candles here.
+
+> take bell
+Taken.
+
+> take book
+Taken.
+
+> take candles
+Taken.
+
+> west
+Temple
+This is the interior of a large temple of ancient construction. Flickering torches cast shadows on the walls. A stairway leads down.
+
+> down
+Grail Room
+You are in a small chamber with walls of granite. A narrow passage exits to the west.
+
+You can see a grail here.
+
+> east
+Narrow Crawlway
+This is a narrow crawlway. Passages lead north, south, and southwest.
+
+> southwest
+Mirror Room
+You are in a large room with a great mirror on the wall. Passages lead northeast and west.
+
+> east
+Cave
+This is a tiny cave with entrances west and north, and a dark, forbidding staircase leading down.
+
+> down
+Entrance to Hades
+You are at the entrance to Hades, the land of the dead. An eerie mist swirls around you. Ghostly figures seem to hover in the air, blocking passage to the east. A corridor leads north.
+
+> ring bell
+The bell produces a clear, resonant tone.
+
+> read book
+The black book reads:
+The book is written in a strange language, but one passage stands out:
+
+"To banish the spirits of the dead, one must perform the Ritual of Exorcism:
+Ring the bell, read the book aloud, light the candles with a flame.
+Only then shall the gates of Hades be opened to the living."
+
+> turn on candles
+The pair of candles switches on, banishing the darkness.
+
+The spirits shriek in terror and vanish in a blinding flash of light!
+
+The way to the south is now clear.
+
+> wait
+Time passes...
+
+> east
+Land of the Dead
+You have entered the Land of the Dead. The air is cold and still. Ghostly shapes drift silently in the darkness. This is not a place for the living. A faint glow emanates from the north.
+
+> west
+Entrance to Hades
+You are at the entrance to Hades, the land of the dead. An eerie mist swirls around you. A passage leads east into darkness, and a corridor leads north.
+
+> up
+Cave
+This is a tiny cave with entrances west and north, and a dark, forbidding staircase leading down.
+
+> west
+Mirror Room
+You are in a large room with a great mirror on the wall. Passages lead northeast and west.
+
+> northeast
+Narrow Crawlway
+This is a narrow crawlway. Passages lead north, south, and southwest.
+
+> west
+Grail Room
+You are in a small chamber with walls of granite. A narrow passage exits to the west.
+
+You can see a grail here.
+
+> west
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> southwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> southwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+The candles are burning low.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+The candles flicker.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Grail Room
+You are in a small chamber with walls of granite. A narrow passage exits to the west.
+
+> west
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+The thief's eyes gleam as he notices your possessions.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Grail Room
+You are in a small chamber with walls of granite. A narrow passage exits to the west.
+
+> west
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box and a seedy-looking thief here.
+
+The thief lunges at you with his stiletto!
+
+The thief slowly approaches, strikes like a snake, and leaves you wounded.
+
+The thief's eyes gleam as he notices your possessions.
+
+> wait
+Time passes...
+
+The thief, badly wounded, stumbles away into the darkness.
+
+The candles sputter and go out.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Grail Room
+You are in a small chamber with walls of granite. A narrow passage exits to the west.
+
+> west
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+A seedy-looking gentleman sidles into view.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Grail Room
+You are in a small chamber with walls of granite. A narrow passage exits to the west.
+
+> west
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> southwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Deep Canyon
+You are in a deep canyon with sheer walls rising on all sides. A narrow path leads north.
+
+> southeast
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Winding Passage
+This is a winding passage through the rock. It leads northwest and east.
+
+> northwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> southwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+North/South Passage
+This is a wide passage running north and south. The walls are damp and cold.
+
+> southwest
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+Maze
+You are in a maze of twisty little passages, all alike.
+
+> west
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> west
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> up
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a screwdriver, a trunk, and a hand pump here.
+
+> inventory
+You are carrying:
+
+an ivory torch, brass lantern, brass bell, black book, burned-out candles
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see a guidebook, a matchbook, a wrench, a screwdriver, a trunk, a hand pump, a skeleton key, an incense, and a large brochure here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, and a gold coffin.

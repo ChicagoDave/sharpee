@@ -179,9 +179,9 @@ describe('ADR-287 D1 — rejections are loud and line-numbered (AC4)', () => {
     expect(errors[0]).toBe('Line 6: Empty text block — a block must contain at least one line');
   });
 
-  it('rejects a block after [OK: any]', () => {
-    const errors = errorsFor('title: T\n---\n\n> look\n[OK: any]\ntext\nA den.\nend text\n');
-    expect(errors[0]).toMatch(/^Line 6: A text block cannot follow "\[OK: any\]"/);
+  it('rejects a block after a non-block assertion', () => {
+    const errors = errorsFor('title: T\n---\n\n> look\n[SKIP]\ntext\nA den.\nend text\n');
+    expect(errors[0]).toMatch(/^Line 6: A text block cannot follow "\[SKIP\]"/);
   });
 
   it('rejects a block after an inline-payload assertion', () => {
@@ -190,8 +190,8 @@ describe('ADR-287 D1 — rejections are loud and line-numbered (AC4)', () => {
   });
 
   it('rejects a block after a directive', () => {
-    const errors = errorsFor('title: T\n---\n\n> look\n[OK: any]\n\n[ENSURES: player.alive]\ntext\nA den.\nend text\n');
-    expect(errors[0]).toMatch(/^Line 8: A text block cannot follow the directive "\[ENSURES: player\.alive\]"/);
+    const errors = errorsFor('title: T\n---\n\n> look\n[SKIP]\n\n[GOAL: read the sign]\ntext\nA den.\nend text\n');
+    expect(errors[0]).toMatch(/^Line 8: A text block cannot follow the directive "\[GOAL: read the sign\]"/);
   });
 
   it('rejects payload-less [OK: contains] with no block', () => {
@@ -210,7 +210,7 @@ describe('ADR-287 D1 — rejections are loud and line-numbered (AC4)', () => {
   it('swallows an illegally-placed block so its content cannot cascade into a second error', () => {
     // The literal `> take lamp` inside would otherwise parse as a real command.
     const transcript = parseTranscript(
-      'title: T\n---\n\n> look\n[OK: any]\ntext\n> take lamp\nend text\n',
+      'title: T\n---\n\n> look\n[SKIP]\ntext\n> take lamp\nend text\n',
       't.transcript',
     );
     expect(transcript.parseErrors).toHaveLength(1);
@@ -220,14 +220,14 @@ describe('ADR-287 D1 — rejections are loud and line-numbered (AC4)', () => {
 });
 
 describe('ADR-287 D1 — blocks inside blocks and chains', () => {
-  it('behaves identically inside an [IF] block — attachment is at the assertion level', () => {
+  it('behaves identically inside a [GOAL] block — attachment is at the assertion level', () => {
     const transcript = parseClean(
-      'title: T\n---\n\n[IF: player.alive]\n> read sign\n[OK]\ntext\n[Notice] Dusk.\nend text\n[END IF]\n',
+      'title: T\n---\n\n[GOAL: read the sign]\n> read sign\n[OK]\ntext\n[Notice] Dusk.\nend text\n[END GOAL]\n',
     );
     const command = transcript.commands.find((c) => c.input === 'read sign');
     expect(command?.assertions[0].block).toEqual(['[Notice] Dusk.']);
     // The block structure survives — the text block consumed nothing it shouldn't.
     const directives = transcript.items!.filter((i) => i.type === 'directive');
-    expect(directives.map((d) => d.directive!.type)).toEqual(['if', 'end_if']);
+    expect(directives.map((d) => d.directive!.type)).toEqual(['goal', 'end_goal']);
   });
 });

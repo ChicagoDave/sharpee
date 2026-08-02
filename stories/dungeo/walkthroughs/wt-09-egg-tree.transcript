@@ -14,30 +14,21 @@ $restore wt-08
 
 # Navigate to the forest tree (Living Room → Kitchen → Behind House → North of House → Forest Path → Up a Tree)
 > east
-[OK: contains "Kitchen"]
 
 > east
-[OK: contains "Behind House"]
 
 > north
-[OK: contains "North of House"]
 
 > north
-[OK: contains "Forest"]
 
 > up
-[OK: contains "Up a Tree"]
-[OK: contains "nest"]
 
 # Take the egg from the nest
 > take egg
-[OK: contains "Taken."]
 
 > inventory
-[OK: contains "egg"]
 
 > examine egg
-[OK: contains "egg"]
 
 [END GOAL]
 
@@ -49,25 +40,18 @@ $restore wt-08
 
 # Navigate back to Living Room (Up a Tree → Forest Path → North of House → Behind House → Kitchen → Living Room)
 > down
-[OK: contains "Forest"]
 
 > south
-[OK: contains "North of House"]
 
 > east
-[OK: contains "Behind House"]
 
 > west
-[OK: contains "Kitchen"]
 
 > west
-[OK: contains "Living Room"]
 
 > open trophy case
-[OK: contains "open"]
 
 > put egg in trophy case
-[OK: contains "put"]
 
 [END GOAL]
 
@@ -78,11 +62,8 @@ $restore wt-08
 [GOAL: Verify state for next segment]
 
 > inventory
-[OK: contains "torch"]
 
 > look
-[OK: contains "Living Room"]
-[OK: contains "trophy case"]
 
 [END GOAL]
 

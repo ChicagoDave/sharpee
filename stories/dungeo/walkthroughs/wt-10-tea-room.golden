@@ -1,0 +1,309 @@
+# sharpee golden v1
+transcript: wt-10-tea-room.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> east
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+You can see an elongated brown sack and a glass bottle here.
+
+> take bottle
+Taken.
+
+> west
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a screwdriver, a trunk, a brass lantern, a brass bell, a black book, a burned-out candles, and a sharp stick here.
+
+> open trap door
+The trap trap door is already open.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> east
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> south
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> look
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> southeast
+Riddle Room
+This is a room which is bare on all sides. There is an exit down. To the east is a great door made of stone. Above the stone, the following words are written: 'No man shall enter this room without solving this riddle:
+
+What is tall as a house,
+round as a cup,
+and all the king's horses can't draw it up?'
+
+(Reply via 'ANSWER "answer"')
+
+> answer "a well"
+There is a loud rumble as the stone door swings open, revealing a passage to the east!
+
+> east
+Broom Closet
+This is a former broom closet. The exits are to the east and west.
+
+You can see a pearl necklace here.
+
+> take necklace
+Taken.
+
+> east
+Well Bottom
+You are at the bottom of a well. The walls are too smooth to climb.
+
+You can see a bucket here.
+
+> enter bucket
+You get into the bucket.
+
+> pour water
+The bucket becomes heavy with water and slowly rises to the top of the well, carrying you with it!
+
+> look
+Top of Well
+You are at the top of a well. A bucket hangs from a rope here.
+
+You can see a bucket here.
+
+In the bucket you see yourself and a quantity of water.
+
+> exit bucket
+You get out of the bucket.
+
+> east
+Tea Room
+This is a small room with a table. On the table are cakes of various sorts. Passages lead to the west, northwest, and east.
+
+You can see a piece of paper, an eat-me eat-me cake, a blue blue cake, a red red cake, and an orange orange cake here.
+
+> take blue cake
+Taken.
+
+> take red cake
+Taken.
+
+> eat eat-me cake
+(first taking the eat-me cake)
+
+Taken.
+
+You eat the eat-me eat-me cake. It's quite tasty.
+
+Suddenly the room seems to be getting much larger. Or maybe you are getting much smaller... In fact, you seem to have shrunk to the size of a mouse!
+
+> look
+Posts Room
+This is a room with very large and very tall wooden posts in each corner. The room is otherwise featureless.
+
+You can see a piece of paper and an orange orange cake here.
+
+> east
+Pool Room
+This is a large room, one half of which is depressed. There is a large leak in the ceiling through which brown colored goop is falling. The only exit is to the west.
+
+> throw red cake at pool
+You throw the red red cake at the pool of goop. It hits!
+
+The red cake sails through the air and lands with a splash in the pool of goop. As it dissolves, the pool begins to evaporate! In a few moments, the pool is gone, revealing something on the floor.
+
+> take spices
+Taken.
+
+> west
+Posts Room
+This is a room with very large and very tall wooden posts in each corner. The room is otherwise featureless.
+
+You can see a piece of paper and an orange orange cake here.
+
+> eat blue cake
+You eat the blue blue cake. It's quite tasty.
+
+Suddenly, the room around you seems to be getting much smaller. Or maybe you are getting much bigger... In fact, you seem to have grown back to your normal size!
+
+> look
+Tea Room
+This is a small room with a table. On the table are cakes of various sorts. Passages lead to the west, northwest, and east.
+
+You can see a piece of paper and an orange orange cake here.
+
+> northwest
+Low Room
+This is a low room with passages leading in several directions.
+
+You can see a robot here.
+
+> tell robot to go east
+"Whirr, buzz, click!"
+
+> east
+Machine Room
+This is a large room filled with strange machinery. A small triangular button is set into the wall. A passage leads west.
+
+You can see a robot here.
+
+> tell robot to push button
+"Whirr, buzz, click!"
+
+The robot extends a thin metal finger and pushes the triangular button.
+
+You hear a grinding noise from somewhere nearby. The carousel mechanism has stopped spinning!
+
+> tell robot to go south
+"Whirr, buzz, click!"
+
+> south
+Dingy Closet
+This is a small, dingy closet. A door leads north. A strange metal cage sits in the middle of the room.
+
+You can see a white white crystal sphere and a robot here.
+
+> take sphere
+As you reach for the sphere, a steel cage falls from the ceiling to entrap you. To make matters worse, poisonous gas starts coming into the room.
+
+As you reach for the sphere, a steel cage falls from the ceiling to entrap you. To make matters worse, poisonous gas starts coming into the room.
+
+> tell robot to raise cage
+The cage shakes and is hurled across the room.
+
+> take sphere
+Taken.
+
+> inventory
+You are carrying:
+
+an ivory torch, glass bottle, pearl necklace, blue cake, eat-me cake, tin of spices, white crystal sphere
+
+> north
+Machine Room
+This is a large room filled with strange machinery. A small triangular button is set into the wall. A passage leads west.
+
+> west
+Low Room
+This is a low room with passages leading in several directions.
+
+As you enter, your compass starts spinning wildly.
+
+> southeast
+Tea Room
+This is a small room with a table. On the table are cakes of various sorts. Passages lead to the west, northwest, and east.
+
+Tea Room
+This is a small room with a table. On the table are cakes of various sorts. Passages lead to the west, northwest, and east.
+
+You can see a piece of paper and an orange orange cake here.
+
+You cannot get your bearings...
+
+> west
+Top of Well
+You are at the top of a well. A bucket hangs from a rope here.
+
+You can see a bucket here.
+
+> enter bucket
+You get into the bucket.
+
+> fill bottle
+As the water leaves the bucket, it becomes lighter and slowly descends to the bottom of the well, carrying you with it!
+
+> exit bucket
+You get out of the bucket.
+
+> west
+Broom Closet
+This is a former broom closet. The exits are to the east and west.
+
+> west
+Riddle Room
+This is a room which is bare on all sides. There is an exit down. To the east is a great door made of stone. Above the stone, the following words are written: 'No man shall enter this room without solving this riddle:
+
+What is tall as a house,
+round as a cup,
+and all the king's horses can't draw it up?'
+
+(Reply via 'ANSWER "answer"')
+
+> up
+Engravings Cave
+You are in a cave with strange engravings on the walls. A passage leads north, and stairs lead down.
+
+> north
+Round Room
+You are in a circular room with passages off in eight directions.
+
+You can see a steel box here.
+
+> west
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> west
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see an elvish sword here.
+
+> west
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+> up
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a screwdriver, a trunk, a brass lantern, a brass bell, a black book, a burned-out candles, and a sharp stick here.
+
+> open trophy case
+The trophy case is already open.
+
+> put necklace in trophy case
+You put the pearl necklace in the trophy case.
+
+> put spices in trophy case
+You put the tin of spices in the trophy case.
+
+> put sphere in trophy case
+You put the white white crystal sphere in the trophy case.
+
+> inventory
+You are carrying:
+
+an ivory torch, glass bottle, blue cake, eat-me cake
+
+> look
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
+
+You can see a brass lantern, a guidebook, a matchbook, a wrench, a screwdriver, a trunk, a sharp stick, a brass bell, a black book, a burned-out candles, a skeleton key, an incense, and a large brochure here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, a gold coffin, a large emerald, a beautiful statue, a pot of gold, a jewel-encrusted egg, a pearl necklace, a tin of spices, and a white white crystal sphere.

@@ -1,0 +1,95 @@
+# sharpee golden v1
+transcript: wt-02-bank-puzzle.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> west
+Bank Entrance
+You are in the grand entrance hall of the Bank of Zork. Marble columns rise to a vaulted ceiling decorated with gold leaf. A brass plaque on the wall reads "BANK OF ZORK - Securing Your Treasures Since 668 GUE". The main lobby lies to the south.
+
+> northeast
+East Teller
+You are behind the eastern teller window. This area is much like the western side, with a dusty counter and abandoned paperwork. A passage leads west, and a door to the south leads to the back offices.
+
+> south
+Chairman's Office
+You are in the opulent office of the Bank's former chairman. A massive mahogany desk dominates the room, and the walls are lined with bookshelves containing leather-bound volumes. A painting hangs on the north wall. Doors lead north and east.
+
+You can see a portrait here.
+
+> take portrait
+Taken.
+
+> north
+East Teller
+You are behind the eastern teller window. This area is much like the western side, with a dusty counter and abandoned paperwork. A passage leads west, and a door to the south leads to the back offices.
+
+> west
+West Teller's Room
+This is a small square room, which was used by a bank officer whose job it was to retrieve safety deposit boxes for the customer. On the north side of the room is a sign which reads "Viewing Room". On the west side of the room, above an open door, is a sign reading
+
+            BANK PERSONNEL ONLY
+
+> west
+Safety Depository
+This is a large rectangular room. The east and west walls here were used for storing safety deposit boxes. As might be expected, all have been carefully removed by evil persons. To the east, west, and south of the room are large doorways. The northern "wall" of the room is a shimmering curtain of light. In the center of the room is a large stone cube, about 10 feet on a side. Engraved on the side of the cube is some lettering.
+
+> walk through curtain
+Small Room
+This is a small bare room with no distinguishing features. There are no exits from this room.
+
+You feel somewhat disoriented as you pass through...
+
+> walk through south wall
+Safety Depository
+This is a large rectangular room. The east and west walls here were used for storing safety deposit boxes. As might be expected, all have been carefully removed by evil persons. To the east, west, and south of the room are large doorways. The northern "wall" of the room is a shimmering curtain of light. In the center of the room is a large stone cube, about 10 feet on a side. Engraved on the side of the cube is some lettering.
+
+You feel somewhat disoriented as you pass through...
+
+> walk through north wall
+Vault
+This is the Vault of the Bank of Zork, in which there are no doors.
+
+You feel somewhat disoriented as you pass through...
+
+> take zorkmid bills
+Taken.
+
+> walk through north wall
+Safety Depository
+This is a large rectangular room. The east and west walls here were used for storing safety deposit boxes. As might be expected, all have been carefully removed by evil persons. To the east, west, and south of the room are large doorways. The northern "wall" of the room is a shimmering curtain of light. In the center of the room is a large stone cube, about 10 feet on a side. Engraved on the side of the cube is some lettering.
+
+You feel somewhat disoriented as you pass through...
+
+> walk through curtain
+Viewing Room
+This is a room used by holders of safety deposit boxes to view their contents. On the north side of the room is a sign which says
+
+REMAIN HERE WHILE THE BANK OFFICER RETRIEVES YOUR DEPOSIT BOX
+WHEN YOU ARE FINISHED, LEAVE THE BOX, AND EXIT TO THE SOUTH
+AN ADVANCED PROTECTIVE DEVICE PREVENTS ALL CUSTOMERS FROM
+REMOVING ANY SAFETY DEPOSIT BOX FROM THIS VIEWING AREA!
+Thank you for banking at the Zork!
+
+You feel somewhat disoriented as you pass through...
+
+> south
+Bank Entrance
+You are in the grand entrance hall of the Bank of Zork. Marble columns rise to a vaulted ceiling decorated with gold leaf. A brass plaque on the wall reads "BANK OF ZORK - Securing Your Treasures Since 668 GUE". The main lobby lies to the south.
+
+> east
+Gallery
+This is an art gallery. Most of the paintings have been stolen by vandals with exceptional taste. The vandals left through either the north or west exits.
+
+You can see a painting here.
+
+> inventory
+You are carrying:
+
+a brass lantern, elvish sword, ivory torch, portrait, stack of zorkmid bills

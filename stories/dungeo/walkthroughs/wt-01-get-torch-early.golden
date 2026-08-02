@@ -1,0 +1,180 @@
+# sharpee golden v1
+transcript: wt-01-get-torch-early.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> look
+DUNGEON
+
+Story v4.3.0 (built 2026-08-02)
+
+Sharpee v4.3.0
+
+A port of Mainframe Zork (1981)
+
+By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling
+
+Ported by David Cornelson
+
+Type HELP for instructions, ABOUT for credits.
+
+West of House
+This is an open field west of a white house with a boarded front door. There is a small mailbox here.
+
+You can see a welcome mat here.
+
+> north
+North of House
+You are facing the north side of a white house. There is no door here, and all the windows are barred.
+
+> east
+Behind House
+You are behind the white house. In one corner of the house there is a small window which is slightly ajar.
+
+> open window
+You open the window.
+
+> west
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+You can see an elongated brown sack and a glass bottle here.
+
+> west
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies in the center of the room.
+
+You can see an elvish sword and a brass lantern here.
+
+> take lantern
+Taken.
+
+> take sword
+Taken.
+
+> turn on lantern
+The brass lantern switches on, banishing the darkness.
+
+> east
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+You can see an elongated brown sack and a glass bottle here.
+
+> up
+Attic
+This is the attic. The only exit is stairs that lead down. A large table occupies the middle of the room.
+
+You can see a large coil of rope, a nasty knife, a brick, and a shiny shiny wire here.
+
+> take rope
+Taken.
+
+> down
+Kitchen
+This is the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west, and a dark staircase can be seen leading upward. To the east is a small window which is open.
+
+You can see an elongated brown sack and a glass bottle here.
+
+> west
+Living Room
+This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies in the center of the room.
+
+> move rug
+Moving the rug reveals a trap door.
+
+> open trapdoor
+You open the trap trap door.
+
+> down
+Cellar
+This is a dark and damp cellar with a narrow passageway leading east, and a crawlway to the south. To the west is the bottom of a steep metal ramp which is unclimbable.
+
+The door crashes shut, and you hear someone barring it.
+
+Your sword is glowing with a faint blue glow.
+
+> east
+Troll Room
+This is a small room with passages off in all directions. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.
+
+You can see a nasty-looking troll here.
+
+The axe gets you right in the side. Ouch!
+
+The nasty-looking troll growls menacingly, blocking your way.
+
+Your sword has begun to glow very brightly.
+
+> attack troll with sword
+Your sword crashes down, knocking the troll into dreamland.
+
+> attack troll with sword
+It's curtains for the troll as your sword removes his head.
+
+Almost as soon as the troll breathes his last, a cloud of sinister black smoke envelops him, and when the fog lifts, the carcass has disappeared.
+
+With the troll dispatched, the passage to the north is now clear.
+
+Your sword is no longer glowing.
+
+> attack troll with sword
+You can't see any such thing.
+
+> north
+East-West Passage
+This is a narrow east-west passageway. There is a narrow stairway leading down at the north end of the room.
+
+> north
+Deep Ravine
+You are in a deep ravine at a point where a crack opens to the east. A passage leads south, and a steep trail leads down.
+
+> west
+Rocky Crawl
+This is a crawlway with a low ceiling. A passage goes to the east, and a narrow opening leads west.
+
+> east
+Dome Room
+This is the periphery of a large dome, which forms the ceiling of another room below. Protecting you from a precipitous drop is a wooden railing which circles the dome.
+
+> tie rope to railing
+The rope is now securely fastened to the railing, dangling down into the darkness below.
+
+> down
+Torch Room
+This is a large room with a prominent doorway leading to a down staircase. To the west is a narrow twisting tunnel, covered with a thin layer of dust. Above you is a large dome painted with scenes depicting elfin hacking rites. Up around the edge of the dome (20 feet up) is a wooden railing. In the center of the room there is a white marble pedestal.
+
+You can see an ivory torch here.
+
+> take torch
+Taken.
+
+> turn on torch
+The ivory torch isn't something you can switch on.
+
+> turn off lantern
+You switch off the brass lantern, plunging the area into darkness.
+
+> look
+Torch Room
+This is a large room with a prominent doorway leading to a down staircase. To the west is a narrow twisting tunnel, covered with a thin layer of dust. Above you is a large dome painted with scenes depicting elfin hacking rites. Up around the edge of the dome (20 feet up) is a wooden railing. In the center of the room there is a white marble pedestal.
+
+> down
+North/South Crawlway
+This is a north-south crawlway; a passage also goes to the east. There is a hole above, but it provides no opportunities for climbing.
+
+> south
+Studio
+This is what appears to have been an artist's studio. The walls and floors are splattered with paints of 69 different colors. Strangely enough, nothing of value is hanging here. At the north and northwest of the room are open doors (also covered with paint). An extremely dark and narrow chimney leads up from a fireplace; although you might be able to get up it, it seems unlikely you could get back down.
+
+> northwest
+Gallery
+This is an art gallery. Most of the paintings have been stolen by vandals with exceptional taste. The vandals left through either the north or west exits.
+
+You can see a painting here.

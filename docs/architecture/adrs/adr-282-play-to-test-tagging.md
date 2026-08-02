@@ -171,7 +171,11 @@ against its Q-2.)
    the untagged turn carrying `[OK: any]` + comment lines.
 2. A hand-written transcript with `[OK]`/`[OK: any]`/`[ENSURES]` opens and
    runs in the IDE test panel with results identical to `sharpee test`
-   (D3 pinned by a test).
+   (D3 pinned by a test). *Superseded by ADR-294 D4 (2026-08-01):
+   `[OK: any]` and `[ENSURES]` are removed from the grammar (parse
+   errors naming their replacement), so this criterion now reads: a
+   hand-written transcript with `[OK]`/`[OK: contains]` and ADR-287
+   literal blocks opens and runs identically in both surfaces.*
 3. Saving a session with zero blessed turns is refused with a message (a
    test with no assertions of the author's is not a test). *This
    supersedes ADR-277 Acceptance 7's unconditional all-`[OK: any]` save;
@@ -190,8 +194,11 @@ against its Q-2.)
 - The IDE's play surface gains a bless affordance per turn; the recorded
   session gains a save-as-test flow targeting ADR-280's folders.
 - Blessed `[OK]` assertions are only as stable as the story's output;
-  prose edits will break them (accepted — same trade Inform made, and
-  `[ENSURES]` remains available for durable state assertions by hand).
+  prose edits will break them (accepted — same trade Inform made).
+  *Superseded by ADR-294 D4 (2026-08-01): `[ENSURES]` is removed, not
+  merely de-defaulted — durable regression protection comes from
+  golden-tier recordings instead; untagged turns can no longer fall
+  back to `[OK: any]`.*
 - Wrong responses observed during play leave no artifact — the author
   fixes the story. Bug tracking stays outside the test system (GitHub
   issues, per standing practice).

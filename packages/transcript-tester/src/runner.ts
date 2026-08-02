@@ -1,48 +1,54 @@
 /**
- * Transcript Runner
+ * Transcript Runner — golden replay/record and assertion-tier execution
+ * (ADR-294).
  *
- * Executes transcript commands against a loaded story and checks results.
+ * Two tiers, one source grammar (D2): a transcript with a `.golden` sibling
+ * replays against the recording (the recording IS the assertion); `--bless`
+ * creates or overwrites the recording; a transcript with no recording runs
+ * the retained per-command assertion DSL. Any failed directive fails the
+ * transcript unconditionally (D5) — `--stop-on-failure` only ever controls
+ * whether the RUN continues to other transcripts.
+ *
+ * Public interface: `runTranscript`, `goldenPathFor`. Owner context:
+ * transcript-tester (testing tooling).
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { SEED_DERIVATION_VERSION } from '@sharpee/core';
+import { SAVE_FORMAT_VERSION } from '@sharpee/engine';
 import {
   Transcript,
   TranscriptCommand,
-  TranscriptItem,
   Directive,
-  GoalDefinition,
-  GoalResult,
-  ConditionResult,
-  NavigateResult,
   Assertion,
   CommandResult,
   AssertionResult,
   TranscriptResult,
+  TranscriptRunConfig,
   RunnerOptions,
   TestEventInfo,
-  EntityTraitSnapshot
+  EntityTraitSnapshot,
+  GoldenRecording,
+  GoldenTurn,
+  GoldenEvent
 } from './types.js';
-import { evaluateCondition } from './condition-evaluator.js';
-import { executeNavigate } from './navigator.js';
+import { serializeGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
 
 /**
- * Interface for the game engine
+ * Interface for the game engine wrapper the CLIs hand the runner.
  */
 interface GameEngine {
   executeCommand(input: string): Promise<string> | string;
   getOutput?(): string;
   lastEvents?: Array<{ type: string; data?: any }>;
   world?: WorldModel;
-  /** Plugin registry for save/restore of plugin state (state machines, scheduler) */
-  getPluginRegistry?(): { getStates(): Record<string, unknown>; setStates(states: Record<string, unknown>): void };
-  /** Resume a game-over-stopped engine after a world snapshot restore (RETRY death recovery). */
-  reviveEngine?(): void;
   /**
    * The underlying platform engine. $save/$restore go through its real
    * save format (version, turn counter, RNG stream states — ADR-293 D7)
    * rather than a hand-rolled world snapshot; the tester owns only WHERE
-   * the file lives, never WHAT is in it.
+   * the file lives, never WHAT is in it. Golden provenance reads the
+   * session's master seed from here (ADR-294 D3).
    */
   engine?: {
     registerSaveRestoreHooks(hooks: {
@@ -51,11 +57,12 @@ interface GameEngine {
     }): void;
     save(): Promise<boolean>;
     restore(): Promise<boolean>;
+    getMasterSeed?(): number;
   };
 }
 
 /**
- * Minimal interface for world model state queries
+ * Minimal interface for world model state queries ([STATE:] assertions).
  */
 interface WorldModel {
   getEntityById?(id: string): any;
@@ -64,75 +71,453 @@ interface WorldModel {
   getAllEntities?(): any[];
   getLocation?(entityId: string): string | undefined;
   getContents?(containerId: string): any[];
-  findWhere?(predicate: (entity: any) => boolean): any[];
-  findByTrait?(traitType: string): any[];
-  findPath?(fromRoomId: string, toRoomId: string): string[] | null;
   getPlayer?(): any;
-  toJSON?(): string;
-  loadJSON?(json: string): void;
 }
 
+/** Locale stamped into provenance when neither transcript nor caller declares one (D19). */
+const DEFAULT_LOCALE = 'en-US';
+
 /**
- * Minimal subset of WorldModel needed by the condition evaluator and navigator.
+ * The one story-output line excluded from golden diffs (ADR-294 D6): the
+ * banner's build-date line. Both sides are masked before comparison — the
+ * recording keeps the real line, so nothing else is normalized. Growing
+ * this exclusion requires amending ADR-294.
  */
-export interface WorldModelLike {
-  getLocation(entityId: string): string | null | undefined;
-  getContents(containerId: string): any[];
-  getEntity(entityId: string): any | null | undefined;
-  findWhere(predicate: (entity: any) => boolean): any[];
-  getAllEntities(): any[];
-  findByTrait(traitType: string): any[];
-  findPath(fromRoomId: string, toRoomId: string): string[] | null;
-}
-
-// Constants for directive execution
-const MAX_WHILE_ITERATIONS = 100;
-const MAX_BLOCK_DEPTH = 10;
+const BUILD_DATE_LINE = /^Story v\S+ \(built [^)]+\)$/;
 
 /**
- * Block state for control flow
+ * Recording path for a transcript (D7/D8). A single-seed transcript records
+ * to its `.golden` sibling; a `seeds:` matrix records one file per seed as
+ * `<name>.<seed>.golden` — each replay diffs only against its own seed's
+ * recording.
  */
-interface BlockState {
-  type: 'if' | 'while' | 'goal' | 'retry' | 'do';
-  condition?: string;
-  startIndex: number;    // For WHILE/DO loop-back
-  active: boolean;       // Whether to execute commands
-  iterations: number;    // For WHILE/DO loop safety
-  goalName?: string;     // For GOAL blocks
-  ensures?: string[];    // For GOAL blocks
-  maxRetries?: number;       // For RETRY blocks
-  retryCount?: number;       // For RETRY: current attempt number
-  savedState?: string;       // For RETRY: serialized world snapshot
-  resultsStartIndex?: number; // For RETRY: index in results[] at block entry
-  iterationOutputs?: string[];  // For DO blocks: accumulated outputs this iteration
+export function goldenPathFor(transcriptPath: string, matrixSeed?: number): string {
+  const suffix = matrixSeed === undefined ? '.golden' : `.${matrixSeed}.golden`;
+  return transcriptPath.replace(/\.transcript$/, suffix);
+}
+
+/** Divergence-save path for a transcript (D18). Working artifact, never committed. */
+export function divergencePathFor(transcriptPath: string): string {
+  return transcriptPath.replace(/\.transcript$/, '.divergence.json');
 }
 
 /**
- * Run a single transcript against an engine
+ * Run a single transcript against an engine.
  *
- * If transcript has items (with directives), use the smart runner.
- * Otherwise, fall back to legacy command-only execution.
+ * Tier selection (D2): `--bless` records; an existing recording replays;
+ * otherwise the assertion tier runs. Parse errors never execute (AC-4).
  */
 export async function runTranscript(
   transcript: Transcript,
   engine: GameEngine,
   options: RunnerOptions = {}
 ): Promise<TranscriptResult> {
-  // Use smart runner if we have items with directives
-  if (transcript.items && transcript.items.length > 0) {
-    const hasDirectives = transcript.items.some(i => i.type === 'directive');
-    if (hasDirectives) {
-      return runSmartTranscript(transcript, engine, options);
+  const startTime = Date.now();
+
+  // AC-4: a transcript with parse errors executes nothing. The CLIs validate
+  // up front too; this is the runner's own guarantee.
+  if (transcript.parseErrors && transcript.parseErrors.length > 0) {
+    const first = transcript.parseErrors[0];
+    return errorResult(
+      transcript,
+      startTime,
+      `${transcript.parseErrors.length} parse error(s) — first: line ${first.lineNumber}: ${first.message}`
+    );
+  }
+
+  // A seeds: matrix records per-seed siblings (D8); the session's live seed
+  // selects which recording this run belongs to.
+  const seeds = transcript.config?.seeds ?? [];
+  const matrixSeed = seeds.length > 1 ? engine.engine?.getMasterSeed?.() : undefined;
+  const goldenPath = options.goldenPath ?? goldenPathFor(transcript.filePath, matrixSeed);
+
+  if (options.bless) {
+    return runGolden(transcript, engine, options, goldenPath, 'record', startTime);
+  }
+  if (fs.existsSync(goldenPath)) {
+    return runGolden(transcript, engine, options, goldenPath, 'replay', startTime);
+  }
+  return runAssertion(transcript, engine, options, startTime);
+}
+
+// ============================================================================
+// Golden tier (D1/D3/D6/D7)
+// ============================================================================
+
+async function runGolden(
+  transcript: Transcript,
+  engine: GameEngine,
+  options: RunnerOptions,
+  goldenPath: string,
+  mode: 'record' | 'replay',
+  startTime: number
+): Promise<TranscriptResult> {
+  const config: TranscriptRunConfig =
+    transcript.config ?? { seeds: [], channels: ['main'], events: false, forces: [] };
+
+  // Capability guards — named failures, never silent degradation.
+  if (config.channels.length !== 1 || config.channels[0] !== 'main') {
+    return errorResult(transcript, startTime,
+      'channel-scoped recordings (channels:) are not yet supported by the runner (ADR-294 D15)', 'golden', goldenPath);
+  }
+
+  // A golden transcript must pin a seed (D3). The exception is a chain
+  // member after the first: the chain is one session and its recording
+  // carries the session seed — which is also why replaying one standalone
+  // is refused (D7).
+  if (config.seeds.length === 0 && !options.chain) {
+    return errorResult(transcript, startTime,
+      mode === 'record'
+        ? 'a golden transcript must pin a seed — declare seed: N in the header (ADR-294 D3)'
+        : `${path.basename(goldenPath)} is a chain-member recording (its transcript pins no seed) — replay it with --chain (ADR-294 D7)`,
+      'golden', goldenPath);
+  }
+
+  const sessionSeed = engine.engine?.getMasterSeed?.();
+  if (sessionSeed === undefined) {
+    return errorResult(transcript, startTime,
+      'golden runs need the platform engine (engine.getMasterSeed) to stamp and verify the seed (ADR-294 D3)',
+      'golden', goldenPath);
+  }
+  if (config.seeds.length === 1 && sessionSeed !== config.seeds[0]) {
+    return errorResult(transcript, startTime,
+      `session seed ${sessionSeed} disagrees with the transcript's pin ${config.seeds[0]} — ` +
+      `run at the pinned seed (drop --seed/--vary)`, 'golden', goldenPath);
+  }
+  if (config.seeds.length > 1 && !config.seeds.includes(sessionSeed)) {
+    return errorResult(transcript, startTime,
+      `session seed ${sessionSeed} is not in the transcript's seeds: matrix (${config.seeds.join(', ')}) — ` +
+      `run at one of the declared seeds (ADR-294 D8)`, 'golden', goldenPath);
+  }
+
+  const storyName = transcript.header.story ?? options.storyName;
+  const locale = config.locale ?? options.locale ?? DEFAULT_LOCALE;
+
+  let recording: GoldenRecording | null = null;
+  if (mode === 'replay') {
+    try {
+      recording = parseGoldenFile(goldenPath);
+    } catch (e) {
+      if (e instanceof GoldenFormatError) {
+        return errorResult(transcript, startTime, e.message, 'golden', goldenPath);
+      }
+      throw e;
+    }
+
+    // Provenance staleness (D3): every mismatch is named; a stale recording
+    // NEVER presents as a content diff.
+    const stale = staleProvenanceFields(recording, transcript, config, sessionSeed, storyName, locale);
+    if (stale.length > 0) {
+      return errorResult(transcript, startTime,
+        `stale recording — re-bless (${goldenPath}): ${stale.join('; ')}`, 'golden', goldenPath);
+    }
+
+    // Command-list drift is the same stale class: the SOURCE changed since
+    // the bless. Checked statically before anything executes.
+    const drift = commandListDrift(transcript, recording);
+    if (drift) {
+      return errorResult(transcript, startTime,
+        `stale recording — re-bless (${goldenPath}): ${drift}`, 'golden', goldenPath);
     }
   }
 
-  // Legacy: command-only execution
-  const startTime = Date.now();
+  const results: CommandResult[] = [];
+  const turns: GoldenTurn[] = [];
+  let turnIndex = 0;
+  let failed = false;
+  let divergenceSavePath: string | undefined;
+
+  for (const item of transcript.items ?? []) {
+    if (item.type === 'comment') continue;
+
+    if (item.type === 'directive') {
+      const error = await executeDirective(item.directive!, engine, options);
+      if (error) {
+        // D5: a failed directive fails the transcript, unconditionally.
+        // In record mode no .golden is written — a recording made past a
+        // failed directive would enshrine a broken session.
+        results.push(directiveFailResult(item.directive!, error));
+        failed = true;
+        break;
+      }
+      continue;
+    }
+
+    const command = item.command!;
+
+    // D18: capture a real save BEFORE the command runs, so a divergence can
+    // drop the author at the last matching turn with RNG streams positioned
+    // faithfully. In-memory until a divergence actually happens.
+    const preTurnSave = mode === 'replay' ? await captureEngineSave(engine) : null;
+
+    const { output, events } = await executeForGolden(command, engine, config.events);
+    const actualLines = output.split('\n');
+
+    if (mode === 'record') {
+      const turn: GoldenTurn = { command: command.input, output: actualLines };
+      if (config.events && events.length > 0) turn.events = events;
+      turns.push(turn);
+      results.push(goldenPassResult(command, output));
+    } else {
+      const turn = recording!.turns[turnIndex];
+      const divergence = diffTurn(turn, actualLines, events, config.events);
+      if (divergence) {
+        let error = `output diverged from the recording (${path.basename(goldenPath)})`;
+        if (preTurnSave !== null) {
+          divergenceSavePath = divergencePathFor(transcript.filePath);
+          fs.writeFileSync(divergenceSavePath, JSON.stringify(preTurnSave), 'utf-8');
+          error +=
+            `; divergence save written: ${divergenceSavePath} — ` +
+            `restore one command before the divergence with --restore ${divergenceSavePath} --seed ${sessionSeed}, ` +
+            `then replay: ${command.input}`;
+        }
+        results.push({
+          command,
+          actualOutput: output,
+          actualEvents: [],
+          passed: false,
+          expectedFailure: false,
+          skipped: false,
+          assertionResults: [],
+          error,
+          diff: divergence
+        });
+        failed = true;
+        break;
+      }
+      results.push(goldenPassResult(command, output));
+    }
+    turnIndex++;
+  }
+
+  // A green replay clears any divergence save a previous failing run left
+  // behind — it describes a divergence that no longer exists.
+  if (mode === 'replay' && !failed) {
+    fs.rmSync(divergencePathFor(transcript.filePath), { force: true });
+  }
+
+  if (mode === 'record' && !failed) {
+    const recording: GoldenRecording = {
+      provenance: {
+        transcript: path.basename(transcript.filePath),
+        story: storyName ?? 'unknown',
+        seed: sessionSeed,
+        derivation: SEED_DERIVATION_VERSION,
+        saveFormat: SAVE_FORMAT_VERSION,
+        channels: config.channels,
+        events: config.events,
+        locale,
+        forces: config.forces
+      },
+      turns
+    };
+    fs.writeFileSync(goldenPath, serializeGolden(recording), 'utf-8');
+  }
+
+  const passed = results.filter(r => r.passed).length;
+  const failedCount = results.filter(r => !r.passed).length;
+  return {
+    transcript,
+    commands: results,
+    status: failedCount > 0 ? 'failed' : 'passed',
+    passed,
+    failed: failedCount,
+    expectedFailures: 0,
+    skipped: 0,
+    duration: Date.now() - startTime,
+    tier: 'golden',
+    goldenPath,
+    blessed: mode === 'record' && !failed,
+    ...(divergenceSavePath !== undefined ? { divergenceSavePath } : {})
+  };
+}
+
+/**
+ * Capture the engine's current save payload in memory (D18). Returns null
+ * when the platform engine is unavailable or the save fails — divergence
+ * saves degrade to absent, never to a run failure.
+ */
+async function captureEngineSave(engine: GameEngine): Promise<unknown | null> {
+  const platform = engine.engine;
+  if (!platform) return null;
+  try {
+    let captured: unknown = null;
+    platform.registerSaveRestoreHooks({
+      onSaveRequested: async (data) => { captured = data; },
+      onRestoreRequested: async () => null
+    });
+    const saved = await platform.save();
+    return saved ? captured : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Execute one command for the golden tier, capturing verbatim output and events. */
+async function executeForGolden(
+  command: TranscriptCommand,
+  engine: GameEngine,
+  captureEvents: boolean
+): Promise<{ output: string; events: GoldenEvent[] }> {
+  let output: string;
+  try {
+    const result = await engine.executeCommand(command.input);
+    output = typeof result === 'string' ? result : (engine.getOutput?.() || '');
+  } catch (e) {
+    // A throw still produces a turn — its "output" is the error text, which
+    // will never match a recording and shows up in the diff.
+    output = `Error: ${e instanceof Error ? e.message : String(e)}`;
+  }
+
+  const events: GoldenEvent[] = [];
+  if (captureEvents && engine.lastEvents) {
+    for (const event of engine.lastEvents) {
+      if (event.type.startsWith('system.')) continue;
+      events.push({ type: event.type, json: JSON.stringify(event.data ?? {}) });
+    }
+  }
+  return { output, events };
+}
+
+/** A passing golden-tier command result. */
+function goldenPassResult(command: TranscriptCommand, output: string): CommandResult {
+  return {
+    command,
+    actualOutput: output,
+    actualEvents: [],
+    passed: true,
+    expectedFailure: false,
+    skipped: false,
+    assertionResults: []
+  };
+}
+
+/** List every provenance field that disagrees with the runtime (D3). */
+function staleProvenanceFields(
+  recording: GoldenRecording,
+  transcript: Transcript,
+  config: TranscriptRunConfig,
+  sessionSeed: number,
+  storyName: string | undefined,
+  locale: string
+): string[] {
+  const p = recording.provenance;
+  const stale: string[] = [];
+  const check = (field: string, recorded: string, runtime: string) => {
+    if (recorded !== runtime) stale.push(`${field} recorded ${recorded}, runtime ${runtime}`);
+  };
+
+  check('transcript', p.transcript, path.basename(transcript.filePath));
+  if (storyName !== undefined) check('story', p.story, storyName);
+  check('seed', String(p.seed), String(sessionSeed));
+  check('derivation', String(p.derivation), String(SEED_DERIVATION_VERSION));
+  check('save-format', p.saveFormat, SAVE_FORMAT_VERSION);
+  check('channels', p.channels.join(', '), config.channels.join(', '));
+  check('events', String(p.events), String(config.events));
+  check('locale', p.locale, locale);
+  check('forces', p.forces.join(', ') || '(none)', config.forces.join(', ') || '(none)');
+  return stale;
+}
+
+/** Compare the transcript's command list against the recording's turns. */
+function commandListDrift(transcript: Transcript, recording: GoldenRecording): string | null {
+  const commands = transcript.commands;
+  const turns = recording.turns;
+  const shared = Math.min(commands.length, turns.length);
+  for (let i = 0; i < shared; i++) {
+    if (commands[i].input !== turns[i].command) {
+      return `command ${i + 1} is "${commands[i].input}" in the transcript but "${turns[i].command}" in the recording`;
+    }
+  }
+  if (commands.length !== turns.length) {
+    return `the transcript has ${commands.length} command(s) but the recording has ${turns.length} turn(s)`;
+  }
+  return null;
+}
+
+/**
+ * Diff one replayed turn against its recording. Returns the divergence, or
+ * null when they match. The build-date banner line is masked on both sides
+ * (D6); nothing else is normalized.
+ */
+function diffTurn(
+  turn: GoldenTurn,
+  actualLines: string[],
+  actualEvents: GoldenEvent[],
+  compareEvents: boolean
+): { recorded: string[]; actual: string[] } | null {
+  const recordedFull = compareEvents
+    ? [...turn.output, ...(turn.events ?? []).map(e => `• ${e.type} ${e.json}`)]
+    : turn.output;
+  const actualFull = compareEvents
+    ? [...actualLines, ...actualEvents.map(e => `• ${e.type} ${e.json}`)]
+    : actualLines;
+
+  const mask = (line: string) => (BUILD_DATE_LINE.test(line) ? '<build-date>' : line);
+  const same =
+    recordedFull.length === actualFull.length &&
+    recordedFull.every((line, i) => mask(line) === mask(actualFull[i]));
+
+  return same ? null : { recorded: recordedFull, actual: actualFull };
+}
+
+// ============================================================================
+// Assertion tier (D2)
+// ============================================================================
+
+async function runAssertion(
+  transcript: Transcript,
+  engine: GameEngine,
+  options: RunnerOptions,
+  startTime: number
+): Promise<TranscriptResult> {
   const results: CommandResult[] = [];
 
-  for (const command of transcript.commands) {
+  for (const item of transcript.items ?? []) {
+    if (item.type === 'comment') {
+      if (options.testingExtension?.addAnnotation && item.comment) {
+        options.testingExtension.addAnnotation('comment', item.comment.text, engine.world);
+      }
+      continue;
+    }
+
+    if (item.type === 'directive') {
+      const error = await executeDirective(item.directive!, engine, options);
+      if (error) {
+        // D5: a failed directive fails the transcript unconditionally and
+        // stops it — everything after runs against the wrong world.
+        results.push(directiveFailResult(item.directive!, error));
+        break;
+      }
+      continue;
+    }
+
+    const command = item.command!;
+
+    // The tier boundary (D2): with no recording, a command must assert
+    // something — a bare command list is bless material, not a passing test.
+    if (command.assertions.length === 0) {
+      results.push({
+        command,
+        actualOutput: '',
+        actualEvents: [],
+        passed: false,
+        expectedFailure: false,
+        skipped: false,
+        assertionResults: [],
+        error:
+          `command "${command.input}" has no assertion and no recording exists — ` +
+          `record the transcript with --bless or add an assertion (ADR-294 D2)`
+      });
+      break;
+    }
+
     const result = await runCommand(command, engine, options);
     results.push(result);
+
+    if (options.testingExtension?.setCommandContext) {
+      options.testingExtension.setCommandContext(result.command.input, result.actualOutput);
+    }
 
     if (options.stopOnFailure && !result.passed && !result.expectedFailure && !result.skipped) {
       break;
@@ -147,621 +532,46 @@ export async function runTranscript(
   return {
     transcript,
     commands: results,
-    status: failed > 0 ? 'failed' as const : 'passed' as const,
+    status: failed > 0 ? 'failed' : 'passed',
     passed,
     failed,
     expectedFailures,
     skipped,
-    duration: Date.now() - startTime
+    duration: Date.now() - startTime,
+    tier: 'assertion'
   };
 }
 
-/**
- * Run a transcript with smart directives (IF/WHILE/NAVIGATE/GOAL)
- */
-async function runSmartTranscript(
-  transcript: Transcript,
-  engine: GameEngine,
-  options: RunnerOptions = {}
-): Promise<TranscriptResult> {
-  const startTime = Date.now();
-  const results: CommandResult[] = [];
-  const items = transcript.items!;
-
-  // Get player ID for condition evaluation. Re-resolved after every command
-  // because an in-transcript RESTART reboots the world (ADR-248) and the
-  // fresh player must not be found by a stale id.
-  let playerId = getPlayerId(engine);
-
-  // Block state stack for control flow
-  const blockStack: BlockState[] = [];
-
-  // Track last command output for "output contains" conditions
-  let lastOutput = '';
-
-  // Main execution loop
-  let i = 0;
-  while (i < items.length) {
-    const item = items[i];
-
-    // Check if we should skip this item due to inactive block
-    if (blockStack.length > 0 && !blockStack[blockStack.length - 1].active) {
-      // Skip this item, but process END directives to close blocks
-      if (item.type === 'directive') {
-        const handled = await handleEndDirective(item.directive!, blockStack, i, items, engine, playerId, options);
-        if (handled.consumed) {
-          i = handled.nextIndex;
-          continue;
-        }
-      }
-      i++;
-      continue;
-    }
-
-    if (item.type === 'command') {
-      // For commands inside DO or WHILE blocks, override auto-SKIP so the command
-      // actually executes (needed for loops that rely on side effects like movement)
-      let command = item.command!;
-      const doBlock = findDoBlock(blockStack);
-      const whileBlock = findWhileBlock(blockStack);
-      if ((doBlock || whileBlock) && command.assertions.length === 1 && command.assertions[0].type === 'skip') {
-        command = { ...command, assertions: [] };
-      }
-
-      const result = await runCommand(command, engine, options);
-      results.push(result);
-      lastOutput = result.actualOutput;
-      // A RESTART command reboots the world (ADR-248) — re-resolve the player.
-      playerId = getPlayerId(engine);
-
-      // Capture output for DO-UNTIL blocks
-      if (doBlock?.iterationOutputs) {
-        doBlock.iterationOutputs.push(result.actualOutput);
-      }
-
-      // Update annotation context for ext-testing
-      if (options.testingExtension?.setCommandContext) {
-        options.testingExtension.setCommandContext(result.command.input, result.actualOutput);
-      }
-
-      // Check for RETRY block failure recovery
-      if (!result.passed && !result.expectedFailure && !result.skipped) {
-        const retryBlock = findRetryBlock(blockStack);
-        if (retryBlock) {
-          retryBlock.retryCount = (retryBlock.retryCount ?? 0) + 1;
-          if (retryBlock.retryCount <= retryBlock.maxRetries!) {
-            if (options.verbose) {
-              console.log(`  [RETRY] Attempt ${retryBlock.retryCount}/${retryBlock.maxRetries} failed, restoring state...`);
-            }
-            // Restore world state; revive the engine if the failure was a
-            // game-over (player death stops the engine — the restored
-            // snapshot has a live player, so turn execution must resume).
-            if (retryBlock.savedState && engine.world?.loadJSON) {
-              engine.world.loadJSON(retryBlock.savedState);
-              engine.reviveEngine?.();
-            }
-            // Remove all results from this retry attempt
-            results.splice(retryBlock.resultsStartIndex!);
-            // Unwind block stack to just above the retry block (remove nested WHILE etc.)
-            while (blockStack.length > 0 && blockStack[blockStack.length - 1] !== retryBlock) {
-              blockStack.pop();
-            }
-            // Record new results start for next attempt
-            retryBlock.resultsStartIndex = results.length;
-            // Jump back to start of retry block
-            i = retryBlock.startIndex + 1;
-            continue;
-          }
-          // Retries exhausted — fall through to normal failure handling
-        }
-
-        if (options.stopOnFailure) {
-          break;
-        }
-      }
-      i++;
-    } else if (item.type === 'comment') {
-      // Handle comment annotation for ext-testing
-      if (options.testingExtension?.addAnnotation && item.comment) {
-        options.testingExtension.addAnnotation('comment', item.comment.text, engine.world);
-      }
-      i++;
-    } else if (item.type === 'directive') {
-      const directive = item.directive!;
-
-      // Handle ENSURES failure inside RETRY block
-      if (directive.type === 'ensures') {
-        const retryBlock = findRetryBlock(blockStack);
-        if (retryBlock && engine.world && directive.condition) {
-          const condResult = evaluateCondition(directive.condition, engine.world as WorldModelLike, playerId, lastOutput);
-          if (!condResult.met) {
-            retryBlock.retryCount = (retryBlock.retryCount ?? 0) + 1;
-            if (retryBlock.retryCount <= retryBlock.maxRetries!) {
-              if (options.verbose) {
-                console.log(`  [RETRY] ENSURES failed (attempt ${retryBlock.retryCount}/${retryBlock.maxRetries}): ${directive.condition}`);
-              }
-              if (retryBlock.savedState && engine.world?.loadJSON) {
-                engine.world.loadJSON(retryBlock.savedState);
-                engine.reviveEngine?.();
-              }
-              results.splice(retryBlock.resultsStartIndex!);
-              while (blockStack.length > 0 && blockStack[blockStack.length - 1] !== retryBlock) {
-                blockStack.pop();
-              }
-              retryBlock.resultsStartIndex = results.length;
-              i = retryBlock.startIndex + 1;
-              continue;
-            }
-          }
-        }
-      }
-
-      const directiveResult = await handleDirective(
-        directive, blockStack, i, items, engine, playerId, options, lastOutput
-      );
-
-      if (directiveResult.error && options.stopOnFailure) {
-        // Create a synthetic failed result for the directive
-        results.push(createDirectiveFailResult(directive, directiveResult.error));
-        break;
-      }
-
-      // Add any command results from directive execution (e.g., NAVIGATE)
-      if (directiveResult.commandResults) {
-        results.push(...directiveResult.commandResults);
-      }
-
-      // After entering a RETRY block, record current results length
-      if (directive.type === 'retry' && blockStack.length > 0) {
-        const topBlock = blockStack[blockStack.length - 1];
-        if (topBlock.type === 'retry') {
-          topBlock.resultsStartIndex = results.length;
-        }
-      }
-
-      i = directiveResult.nextIndex;
-    } else {
-      i++;
-    }
-  }
-
-  const passed = results.filter(r => r.passed && !r.skipped).length;
-  const failed = results.filter(r => !r.passed && !r.expectedFailure && !r.skipped).length;
-  const expectedFailures = results.filter(r => r.expectedFailure).length;
-  const skipped = results.filter(r => r.skipped).length;
-
-  return {
-    transcript,
-    commands: results,
-    status: failed > 0 ? 'failed' as const : 'passed' as const,
-    passed,
-    failed,
-    expectedFailures,
-    skipped,
-    duration: Date.now() - startTime
-  };
-}
+// ============================================================================
+// Directives ($save / $restore / ext-testing) — shared by both tiers
+// ============================================================================
 
 /**
- * Get player entity ID from engine
+ * Execute one directive. Returns an error message on failure, null on
+ * success. GOAL markers are structural and always succeed.
  */
-function getPlayerId(engine: GameEngine): string {
-  if (engine.world?.getPlayer) {
-    const player = engine.world.getPlayer();
-    return player?.id || 'player';
-  }
-  return 'player';
-}
-
-/**
- * Find the innermost RETRY block on the stack (if any)
- */
-function findRetryBlock(blockStack: BlockState[]): BlockState | undefined {
-  for (let i = blockStack.length - 1; i >= 0; i--) {
-    if (blockStack[i].type === 'retry') {
-      return blockStack[i];
-    }
-  }
-  return undefined;
-}
-
-/**
- * Find the innermost DO block on the stack (if any)
- */
-function findDoBlock(blockStack: BlockState[]): BlockState | undefined {
-  for (let i = blockStack.length - 1; i >= 0; i--) {
-    if (blockStack[i].type === 'do') {
-      return blockStack[i];
-    }
-  }
-  return undefined;
-}
-
-/**
- * Find the innermost WHILE block on the stack (if any)
- */
-function findWhileBlock(blockStack: BlockState[]): BlockState | undefined {
-  for (let i = blockStack.length - 1; i >= 0; i--) {
-    if (blockStack[i].type === 'while') {
-      return blockStack[i];
-    }
-  }
-  return undefined;
-}
-
-/**
- * Handle a directive (control flow, navigation, goals)
- */
-async function handleDirective(
+async function executeDirective(
   directive: Directive,
-  blockStack: BlockState[],
-  currentIndex: number,
-  items: TranscriptItem[],
   engine: GameEngine,
-  playerId: string,
-  options: RunnerOptions,
-  lastOutput?: string
-): Promise<{ nextIndex: number; error?: string; commandResults?: CommandResult[] }> {
-  const world = engine.world;
-  const verbose = options.verbose || false;
-
+  options: RunnerOptions
+): Promise<string | null> {
   switch (directive.type) {
-    case 'goal': {
-      // Start a goal block
-      if (blockStack.length >= MAX_BLOCK_DEPTH) {
-        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
-      }
-
-      // Find REQUIRES and ENSURES for this goal
-      const requires: string[] = [];
-      const ensures: string[] = [];
-      let j = currentIndex + 1;
-      while (j < items.length) {
-        const nextItem = items[j];
-        if (nextItem.type !== 'directive') break;
-        const nextDir = nextItem.directive!;
-        if (nextDir.type === 'requires' && nextDir.condition) {
-          requires.push(nextDir.condition);
-          j++;
-        } else if (nextDir.type === 'ensures' && nextDir.condition) {
-          ensures.push(nextDir.condition);
-          j++;
-        } else {
-          break;
-        }
-      }
-
-      // Check REQUIRES preconditions
-      let allRequiresMet = true;
-      if (world) {
-        for (const req of requires) {
-          const result = evaluateCondition(req, world as WorldModelLike, playerId, lastOutput);
-          if (verbose) {
-            console.log(`  [GOAL "${directive.goalName}"] REQUIRES: ${req} -> ${result.met ? 'OK' : 'FAILED'}`);
-          }
-          if (!result.met) {
-            allRequiresMet = false;
-            break;
-          }
-        }
-      }
-
-      if (!allRequiresMet) {
-        return {
-          nextIndex: currentIndex + 1,
-          error: `Goal "${directive.goalName}" preconditions not met`
-        };
-      }
-
-      if (verbose) {
-        console.log(`[GOAL: ${directive.goalName}]`);
-      }
-
-      blockStack.push({
-        type: 'goal',
-        startIndex: j,  // Skip past REQUIRES/ENSURES
-        active: true,
-        iterations: 0,
-        goalName: directive.goalName,
-        ensures
-      });
-
-      return { nextIndex: j };
-    }
-
-    case 'end_goal': {
-      // End goal block and check ENSURES
-      const block = blockStack.pop();
-      if (!block || block.type !== 'goal') {
-        return { nextIndex: currentIndex + 1, error: 'END GOAL without matching GOAL' };
-      }
-
-      // Check ENSURES postconditions
-      if (world && block.ensures) {
-        for (const ens of block.ensures) {
-          const result = evaluateCondition(ens, world as WorldModelLike, playerId, lastOutput);
-          if (verbose) {
-            console.log(`  [END GOAL "${block.goalName}"] ENSURES: ${ens} -> ${result.met ? 'OK' : 'FAILED'}`);
-          }
-          if (!result.met) {
-            return {
-              nextIndex: currentIndex + 1,
-              error: `Goal "${block.goalName}" postcondition failed: ${ens}`
-            };
-          }
-        }
-      }
-
-      if (verbose) {
-        console.log(`[END GOAL: ${block.goalName}] - Success`);
-      }
-
-      return { nextIndex: currentIndex + 1 };
-    }
-
-    case 'requires':
-    case 'ensures':
-      // These are handled as part of GOAL processing
-      return { nextIndex: currentIndex + 1 };
-
-    case 'if': {
-      if (blockStack.length >= MAX_BLOCK_DEPTH) {
-        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
-      }
-
-      let conditionMet = true;
-      if (world && directive.condition) {
-        const result = evaluateCondition(directive.condition, world as WorldModelLike, playerId, lastOutput);
-        conditionMet = result.met;
-        if (verbose) {
-          console.log(`  [IF: ${directive.condition}] -> ${conditionMet ? 'TRUE' : 'FALSE'} (${result.reason})`);
-        }
-      }
-
-      blockStack.push({
-        type: 'if',
-        condition: directive.condition,
-        startIndex: currentIndex,
-        active: conditionMet,
-        iterations: 0
-      });
-
-      return { nextIndex: currentIndex + 1 };
-    }
-
-    case 'end_if': {
-      const block = blockStack.pop();
-      if (!block || block.type !== 'if') {
-        return { nextIndex: currentIndex + 1, error: 'END IF without matching IF' };
-      }
-      return { nextIndex: currentIndex + 1 };
-    }
-
-    case 'while': {
-      if (blockStack.length >= MAX_BLOCK_DEPTH) {
-        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
-      }
-
-      let conditionMet = true;
-      if (world && directive.condition) {
-        const result = evaluateCondition(directive.condition, world as WorldModelLike, playerId, lastOutput);
-        conditionMet = result.met;
-        if (verbose) {
-          console.log(`  [WHILE: ${directive.condition}] -> ${conditionMet ? 'TRUE (entering loop)' : 'FALSE (skipping loop)'}`);
-        }
-      }
-
-      blockStack.push({
-        type: 'while',
-        condition: directive.condition,
-        startIndex: currentIndex,
-        active: conditionMet,
-        iterations: 0
-      });
-
-      return { nextIndex: currentIndex + 1 };
-    }
-
-    case 'end_while': {
-      const block = blockStack[blockStack.length - 1];
-      if (!block || block.type !== 'while') {
-        blockStack.pop();
-        return { nextIndex: currentIndex + 1, error: 'END WHILE without matching WHILE' };
-      }
-
-      block.iterations++;
-      if (block.iterations >= MAX_WHILE_ITERATIONS) {
-        blockStack.pop();
-        return { nextIndex: currentIndex + 1, error: `WHILE loop exceeded ${MAX_WHILE_ITERATIONS} iterations` };
-      }
-
-      // Re-evaluate condition
-      let conditionMet = false;
-      if (world && block.condition) {
-        const result = evaluateCondition(block.condition, world as WorldModelLike, playerId, lastOutput);
-        conditionMet = result.met;
-        if (verbose) {
-          console.log(`  [END WHILE iteration ${block.iterations}] ${block.condition} -> ${conditionMet ? 'TRUE (continue)' : 'FALSE (exit loop)'}`);
-        }
-      }
-
-      if (conditionMet) {
-        // Loop back to after WHILE directive
-        return { nextIndex: block.startIndex + 1 };
-      } else {
-        // Exit loop
-        blockStack.pop();
-        return { nextIndex: currentIndex + 1 };
-      }
-    }
-
-    case 'retry': {
-      if (blockStack.length >= MAX_BLOCK_DEPTH) {
-        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
-      }
-
-      const maxRetries = directive.maxRetries ?? 3;
-
-      // Snapshot world state in memory
-      let savedState: string | undefined;
-      if (world?.toJSON) {
-        savedState = world.toJSON();
-      }
-
-      if (verbose) {
-        console.log(`  [RETRY: max=${maxRetries}] Saved state, entering retry block`);
-      }
-
-      blockStack.push({
-        type: 'retry',
-        startIndex: currentIndex,
-        active: true,
-        iterations: 0,
-        maxRetries,
-        retryCount: 0,
-        savedState,
-      });
-
-      return { nextIndex: currentIndex + 1 };
-    }
-
-    case 'end_retry': {
-      const block = blockStack[blockStack.length - 1];
-      if (!block || block.type !== 'retry') {
-        blockStack.pop();
-        return { nextIndex: currentIndex + 1, error: 'END RETRY without matching RETRY' };
-      }
-
-      // Success — all commands in the block passed
-      if (verbose && block.retryCount! > 0) {
-        console.log(`  [END RETRY] Passed after ${block.retryCount} retry(s)`);
-      }
-      blockStack.pop();
-      return { nextIndex: currentIndex + 1 };
-    }
-
-    case 'do': {
-      if (blockStack.length >= MAX_BLOCK_DEPTH) {
-        return { nextIndex: currentIndex + 1, error: 'Max block depth exceeded' };
-      }
-
-      if (verbose) {
-        console.log(`  [DO] Entering do-until loop`);
-      }
-
-      blockStack.push({
-        type: 'do',
-        startIndex: currentIndex,
-        active: true,
-        iterations: 0,
-        iterationOutputs: []
-      });
-
-      return { nextIndex: currentIndex + 1 };
-    }
-
-    case 'until': {
-      const block = blockStack[blockStack.length - 1];
-      if (!block || block.type !== 'do') {
-        return { nextIndex: currentIndex + 1, error: 'UNTIL without matching DO' };
-      }
-
-      block.iterations++;
-      if (block.iterations >= MAX_WHILE_ITERATIONS) {
-        blockStack.pop();
-        return { nextIndex: currentIndex + 1, error: `DO-UNTIL loop exceeded ${MAX_WHILE_ITERATIONS} iterations` };
-      }
-
-      // Check if any output in this iteration contained any of the until texts
-      const untilTexts = directive.untilTexts || [];
-      const matched = block.iterationOutputs?.some(
-        output => {
-          const lower = output.toLowerCase();
-          return untilTexts.some(text => lower.includes(text.toLowerCase()));
-        }
-      ) ?? false;
-
-      if (verbose) {
-        const label = untilTexts.map(t => `"${t}"`).join(' OR ');
-        console.log(`  [UNTIL ${label} iteration ${block.iterations}] -> ${matched ? 'MATCHED (exit loop)' : 'not matched (continue loop)'}`);
-      }
-
-      if (matched) {
-        // Exit loop
-        blockStack.pop();
-        return { nextIndex: currentIndex + 1 };
-      } else {
-        // Clear outputs for next iteration and loop back
-        block.iterationOutputs = [];
-        return { nextIndex: block.startIndex + 1 };
-      }
-    }
-
-    case 'navigate': {
-      if (!world || !directive.target) {
-        return { nextIndex: currentIndex + 1, error: 'NAVIGATE requires world model and target' };
-      }
-
-      if (verbose) {
-        console.log(`[NAVIGATE TO: "${directive.target}"]`);
-      }
-
-      const navResult = await executeNavigate(
-        directive.target,
-        world as WorldModelLike,
-        engine,
-        playerId,
-        verbose
-      );
-
-      if (!navResult.success) {
-        return {
-          nextIndex: currentIndex + 1,
-          error: navResult.error || `Navigation to "${directive.target}" failed`
-        };
-      }
-
-      // Create synthetic command results for the navigation commands
-      const commandResults: CommandResult[] = navResult.commands.map((cmd, idx) => ({
-        command: {
-          lineNumber: directive.lineNumber,
-          input: cmd,
-          expectedOutput: [],
-          assertions: []
-        },
-        actualOutput: `(navigated: ${navResult.path[idx] || '?'} -> ${navResult.path[idx + 1] || directive.target})`,
-        actualEvents: [],
-        passed: true,
-        expectedFailure: false,
-        skipped: false,
-        assertionResults: []
-      }));
-
-      return { nextIndex: currentIndex + 1, commandResults };
-    }
+    case 'goal':
+    case 'end_goal':
+      return null;
 
     case 'save': {
-      if (!world || !directive.saveName) {
-        return { nextIndex: currentIndex + 1, error: 'SAVE requires world model and save name' };
+      if (!engine.world || !directive.saveName) {
+        return 'SAVE requires world model and save name';
       }
-
-      if (verbose) {
-        console.log(`[$save ${directive.saveName}]`);
-      }
-
       if (!engine.engine) {
-        return { nextIndex: currentIndex + 1, error: 'SAVE requires the platform engine (game.engine) — the tester no longer writes world snapshots' };
+        return 'SAVE requires the platform engine (game.engine) — the tester no longer writes world snapshots';
       }
-
       try {
-        // Get save directory from options or use default
         const savesDir = options.savesDirectory || './saves';
-
-        // Ensure directory exists
         if (!fs.existsSync(savesDir)) {
           fs.mkdirSync(savesDir, { recursive: true });
         }
-
         // The engine owns the save contents (real format: version, turn
         // counter, RNG stream states, plugin states); the hook only persists.
         const savePath = path.join(savesDir, `${directive.saveName}.json`);
@@ -773,59 +583,35 @@ async function handleDirective(
         });
         const saved = await engine.engine.save();
         if (!saved) {
-          return { nextIndex: currentIndex + 1, error: `Failed to save "${directive.saveName}"` };
+          return `Failed to save "${directive.saveName}"`;
         }
-
-        if (verbose) {
-          console.log(`  Saved to: ${savePath}`);
-        }
+        if (options.verbose) console.log(`[$save ${directive.saveName}] → ${savePath}`);
       } catch (e) {
-        return {
-          nextIndex: currentIndex + 1,
-          error: `Failed to save "${directive.saveName}": ${e instanceof Error ? e.message : String(e)}`
-        };
+        return `Failed to save "${directive.saveName}": ${e instanceof Error ? e.message : String(e)}`;
       }
-
-      return { nextIndex: currentIndex + 1 };
+      return null;
     }
 
     case 'restore': {
-      if (!world || !directive.saveName) {
-        return { nextIndex: currentIndex + 1, error: 'RESTORE requires world model and save name' };
+      if (!engine.world || !directive.saveName) {
+        return 'RESTORE requires world model and save name';
       }
-
-      if (verbose) {
-        console.log(`[$restore ${directive.saveName}]`);
-      }
-
       if (!engine.engine) {
-        return { nextIndex: currentIndex + 1, error: 'RESTORE requires the platform engine (game.engine) — the tester no longer loads world snapshots' };
+        return 'RESTORE requires the platform engine (game.engine) — the tester no longer loads world snapshots';
       }
-
       try {
-        // Get save directory from options or use default
         const savesDir = options.savesDirectory || './saves';
         const savePath = path.join(savesDir, `${directive.saveName}.json`);
-
-        // Check file exists
         if (!fs.existsSync(savePath)) {
-          return {
-            nextIndex: currentIndex + 1,
-            error: `Save file not found: ${savePath}`
-          };
+          return `Save file not found: ${savePath}`;
         }
-
         const parsed = JSON.parse(fs.readFileSync(savePath, 'utf-8'));
         if (parsed.worldState !== undefined || parsed.version === undefined) {
           // Pre-ADR-293 tester snapshot ({ worldState, pluginStates }) — no
           // version, no RNG stream states. Never silently restored: stale
           // saves would replay with wrong randomness. Chains regenerate.
-          return {
-            nextIndex: currentIndex + 1,
-            error: `Save "${directive.saveName}" is a legacy tester snapshot — delete it and re-run the chain that creates it`
-          };
+          return `Save "${directive.saveName}" is a legacy tester snapshot — delete it and re-run the chain that creates it`;
         }
-
         // The engine owns the restore (world, turn counter, RNG stream
         // states, plugin states — the real version reader runs here).
         engine.engine.registerSaveRestoreHooks({
@@ -834,158 +620,56 @@ async function handleDirective(
         });
         const restored = await engine.engine.restore();
         if (!restored) {
-          return { nextIndex: currentIndex + 1, error: `Failed to restore "${directive.saveName}"` };
+          return `Failed to restore "${directive.saveName}"`;
         }
-
-        if (verbose) {
-          console.log(`  Restored from: ${savePath}`);
-        }
+        if (options.verbose) console.log(`[$restore ${directive.saveName}] ← ${savePath}`);
       } catch (e) {
-        return {
-          nextIndex: currentIndex + 1,
-          error: `Failed to restore "${directive.saveName}": ${e instanceof Error ? e.message : String(e)}`
-        };
+        return `Failed to restore "${directive.saveName}": ${e instanceof Error ? e.message : String(e)}`;
       }
-
-      return { nextIndex: currentIndex + 1 };
+      return null;
     }
 
     case 'test-command': {
-      // Execute ext-testing command ($teleport, $take, $kill, etc.)
       if (!directive.testCommand) {
-        return { nextIndex: currentIndex + 1, error: 'Test command missing' };
+        return 'Test command missing';
       }
-
       if (!options.testingExtension) {
-        // Skipping silently reports a green transcript whose setup never ran — the
-        // failure mode that hid the unwired `transcript-test` bin for four weeks.
-        // Surface it the same way the adjacent missing-world case does.
-        return {
-          nextIndex: currentIndex + 1,
-          error:
-            `Test command "${directive.testCommand}" needs ext-testing, ` +
-            `but no testing extension was supplied to the runner`
-        };
+        // Skipping silently reports a green transcript whose setup never ran.
+        return (
+          `Test command "${directive.testCommand}" needs ext-testing, ` +
+          `but no testing extension was supplied to the runner`
+        );
       }
-
-      if (!world) {
-        return { nextIndex: currentIndex + 1, error: 'World model not available for test command' };
+      if (!engine.world) {
+        return 'World model not available for test command';
       }
-
-      if (verbose) {
-        console.log(`[${directive.testCommand}]`);
-      }
-
       try {
-        const result = options.testingExtension.executeTestCommand(directive.testCommand, world);
-
-        if (verbose) {
-          if (result.output.length > 0) {
-            for (const line of result.output) {
-              console.log(`  ${line}`);
-            }
-          }
-          if (result.error) {
-            console.log(`  ERROR: ${result.error}`);
-          }
+        const result = options.testingExtension.executeTestCommand(directive.testCommand, engine.world);
+        if (options.verbose) {
+          for (const line of result.output) console.log(`  ${line}`);
         }
-
         if (!result.success) {
-          return {
-            nextIndex: currentIndex + 1,
-            error: result.error || `Test command failed: ${directive.testCommand}`
-          };
+          return result.error || `Test command failed: ${directive.testCommand}`;
         }
       } catch (e) {
-        return {
-          nextIndex: currentIndex + 1,
-          error: `Test command error: ${e instanceof Error ? e.message : String(e)}`
-        };
+        return `Test command error: ${e instanceof Error ? e.message : String(e)}`;
       }
-
-      return { nextIndex: currentIndex + 1 };
+      return null;
     }
-
-    default:
-      return { nextIndex: currentIndex + 1 };
   }
 }
 
-/**
- * Handle END directives when in inactive block (for proper nesting)
- */
-async function handleEndDirective(
-  directive: Directive,
-  blockStack: BlockState[],
-  currentIndex: number,
-  items: TranscriptItem[],
-  engine: GameEngine,
-  playerId: string,
-  options: RunnerOptions
-): Promise<{ consumed: boolean; nextIndex: number }> {
-  switch (directive.type) {
-    case 'end_if':
-      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'if') {
-        blockStack.pop();
-        return { consumed: true, nextIndex: currentIndex + 1 };
-      }
-      break;
-
-    case 'end_while':
-      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'while') {
-        blockStack.pop();
-        return { consumed: true, nextIndex: currentIndex + 1 };
-      }
-      break;
-
-    case 'end_goal':
-      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'goal') {
-        blockStack.pop();
-        return { consumed: true, nextIndex: currentIndex + 1 };
-      }
-      break;
-
-    case 'end_retry':
-      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'retry') {
-        blockStack.pop();
-        return { consumed: true, nextIndex: currentIndex + 1 };
-      }
-      break;
-
-    case 'until':
-      if (blockStack.length > 0 && blockStack[blockStack.length - 1].type === 'do') {
-        blockStack.pop();
-        return { consumed: true, nextIndex: currentIndex + 1 };
-      }
-      break;
-
-    // Handle nested block starts within inactive blocks
-    case 'if':
-    case 'while':
-    case 'goal':
-    case 'retry':
-    case 'do':
-      // Push inactive block to maintain proper nesting
-      blockStack.push({
-        type: directive.type as BlockState['type'],
-        startIndex: currentIndex,
-        active: false,
-        iterations: 0
-      });
-      return { consumed: true, nextIndex: currentIndex + 1 };
-  }
-
-  return { consumed: false, nextIndex: currentIndex + 1 };
-}
-
-/**
- * Create a synthetic failed result for a directive error
- */
-function createDirectiveFailResult(directive: Directive, error: string): CommandResult {
+/** A failed synthetic result for a directive (D5 — recorded, never swallowed). */
+function directiveFailResult(directive: Directive, error: string): CommandResult {
+  const label =
+    directive.type === 'save' ? `$save ${directive.saveName}` :
+    directive.type === 'restore' ? `$restore ${directive.saveName}` :
+    directive.type === 'test-command' ? directive.testCommand! :
+    `[${directive.type.toUpperCase()}]`;
   return {
     command: {
       lineNumber: directive.lineNumber,
-      input: `[${directive.type.toUpperCase()}${directive.condition ? ': ' + directive.condition : ''}${directive.target ? ': "' + directive.target + '"' : ''}]`,
+      input: label,
       expectedOutput: [],
       assertions: []
     },
@@ -999,56 +683,32 @@ function createDirectiveFailResult(directive: Directive, error: string): Command
   };
 }
 
-/**
- * Recursively collect all string values from a data structure.
- */
-function collectStrings(value: unknown, out: string[]): void {
-  if (typeof value === 'string') {
-    out.push(value);
-  } else if (Array.isArray(value)) {
-    for (const item of value) collectStrings(item, out);
-  } else if (value && typeof value === 'object') {
-    for (const v of Object.values(value)) collectStrings(v, out);
-  }
+/** An error-status result: the transcript never (fully) ran. */
+function errorResult(
+  transcript: Transcript,
+  startTime: number,
+  message: string,
+  tier?: 'golden' | 'assertion',
+  goldenPath?: string
+): TranscriptResult {
+  return {
+    transcript,
+    commands: [],
+    status: 'error',
+    passed: 0,
+    failed: 0,
+    expectedFailures: 0,
+    skipped: 0,
+    duration: Date.now() - startTime,
+    errorMessage: message,
+    tier,
+    goldenPath
+  };
 }
 
-/**
- * Extract entity IDs from event data values and capture their trait snapshots.
- * Recursively searches all strings in the data (including arrays and nested objects).
- */
-function captureEntityTraits(data: Record<string, any>, world: WorldModel): EntityTraitSnapshot[] {
-  const candidates: string[] = [];
-  collectStrings(data, candidates);
-
-  const seen = new Set<string>();
-  const snapshots: EntityTraitSnapshot[] = [];
-
-  for (const value of candidates) {
-    if (seen.has(value)) continue;
-    seen.add(value);
-
-    const entity = world.getEntity?.(value) ?? world.getEntityById?.(value);
-    if (!entity) continue;
-
-    const traits: Record<string, Record<string, any>> = {};
-
-    const entityTraits = entity.getTraits?.() ?? (entity.traits instanceof Map ? Array.from(entity.traits.values()) : []);
-    for (const trait of entityTraits) {
-      const traitData: Record<string, any> = {};
-      for (const [key, val] of Object.entries(trait)) {
-        if (key === 'type') continue;
-        traitData[key] = val;
-      }
-      traits[trait.type] = traitData;
-    }
-
-    if (Object.keys(traits).length > 0) {
-      snapshots.push({ entityId: value, traits });
-    }
-  }
-
-  return snapshots;
-}
+// ============================================================================
+// Assertion-tier command execution
+// ============================================================================
 
 /**
  * Run a single command and check assertions
@@ -1087,9 +747,6 @@ async function runCommand(
 
     // A stopped engine (player death ended the game) surfaces as this exact
     // captured output rather than a throw (the bootstrap layer catches it).
-    // Mark it as a command error so assertion-less commands (SKIP-overridden
-    // loop bodies) fail immediately instead of spinning to the iteration cap,
-    // and so RETRY blocks trigger their restore-and-revive recovery.
     if (actualOutput === 'Error: Engine is not running') {
       error = 'Engine is not running';
     }
@@ -1103,15 +760,12 @@ async function runCommand(
             type: e.type,
             data: e.data || {}
           };
-
-          // Capture trait snapshots for entities referenced in event data
           if (options.emitTraits && engine.world) {
             const snapshots = captureEntityTraits(e.data || {}, engine.world);
             if (snapshots.length > 0) {
               eventInfo.entityTraits = snapshots;
             }
           }
-
           return eventInfo;
         });
     }
@@ -1198,10 +852,7 @@ function checkAssertion(
     case 'ok': {
       // Exact match (after normalization). ADR-287 D1: when a text block is present
       // it supplies the expected text in place of the classic expected-output
-      // block — the parser guarantees a command never carries both. The block is
-      // normalized through the SAME normalizeOutput the classic path already
-      // used, so a blessed verbatim test cannot flap on whitespace differences
-      // between the play pane's rendered text and headless channel output.
+      // block — the parser guarantees a command never carries both.
       const expected = assertion.block
         ? normalizeOutput(assertion.block.join("\n"))
         : expectedOutput;
@@ -1213,22 +864,9 @@ function checkAssertion(
       };
     }
 
-    case 'ok-any': {
-      // Presence-only (ADR-277 D5): the command produced SOME output.
-      const hasOutput = actualOutput.trim().length > 0;
-      return {
-        assertion,
-        passed: hasOutput,
-        message: hasOutput ? undefined : 'No output produced'
-      };
-    }
-
     case 'ok-contains': {
       // ADR-287 D1: a block fragment may span lines, so it is normalized the
-      // same way the actual output is — otherwise its line breaks and
-      // indentation could never match. The INLINE form is deliberately left
-      // alone: it matches against its raw value exactly as it always has, and
-      // pinning that divergence is part of this ADR's test surface.
+      // same way the actual output is. The INLINE form matches its raw value.
       const fragment = assertion.block
         ? normalizeOutput(assertion.block.join("\n"))
         : assertion.value!;
@@ -1244,31 +882,14 @@ function checkAssertion(
       };
     }
 
-    case 'ok-not-contains':
+    case 'ok-not-contains': {
       const notContains = !actualOutput.toLowerCase().includes(assertion.value!.toLowerCase());
       return {
         assertion,
         passed: notContains,
         message: notContains ? undefined : `Output should not contain "${assertion.value}"`
       };
-
-    case 'ok-contains-any': {
-      const lowerOutput = actualOutput.toLowerCase();
-      const anyMatch = assertion.values!.some(v => lowerOutput.includes(v.toLowerCase()));
-      return {
-        assertion,
-        passed: anyMatch,
-        message: anyMatch ? undefined : `Output does not contain any of: ${assertion.values!.map(v => `"${v}"`).join(', ')}`
-      };
     }
-
-    case 'ok-matches':
-      const regexMatches = assertion.pattern!.test(actualOutput);
-      return {
-        assertion,
-        passed: regexMatches,
-        message: regexMatches ? undefined : `Output does not match pattern ${assertion.pattern}`
-      };
 
     case 'fail':
       // This is handled at the command level
@@ -1309,7 +930,7 @@ function checkAssertion(
       return {
         assertion,
         passed: false,
-        message: `Unknown assertion type: ${assertion.type}`
+        message: `Unknown assertion type: ${(assertion as Assertion).type}`
       };
   }
 }
@@ -1320,7 +941,6 @@ function checkAssertion(
 function checkEventAssertion(assertion: Assertion, events: TestEventInfo[]): AssertionResult {
   const { assertTrue, eventPosition, eventType, eventData } = assertion;
 
-  // Helper to check if an event matches
   const eventMatches = (event: TestEventInfo): boolean => {
     if (event.type !== eventType) return false;
     if (eventData) {
@@ -1332,29 +952,22 @@ function checkEventAssertion(assertion: Assertion, events: TestEventInfo[]): Ass
   };
 
   let found = false;
-  let actualEvent: TestEventInfo | undefined;
 
   if (eventPosition !== undefined) {
     // Check specific position (1-based)
     const index = eventPosition - 1;
     if (index >= 0 && index < events.length) {
-      actualEvent = events[index];
-      found = eventMatches(actualEvent);
+      found = eventMatches(events[index]);
     }
   } else {
-    // Check any position
-    actualEvent = events.find(eventMatches);
-    found = actualEvent !== undefined;
+    found = events.some(eventMatches);
   }
 
-  // Apply assertTrue/assertFalse logic
   const passed = assertTrue ? found : !found;
 
-  // Build message
   let message: string | undefined;
   if (!passed) {
     if (assertTrue) {
-      // Expected to find but didn't
       if (eventPosition !== undefined) {
         const actualAtPos = events[eventPosition - 1];
         if (actualAtPos) {
@@ -1373,7 +986,6 @@ function checkEventAssertion(assertion: Assertion, events: TestEventInfo[]): Ass
         message += `. Events: ${events.map(e => e.type).join(', ')}`;
       }
     } else {
-      // Expected NOT to find but did
       message = `Event ${eventType} should not exist but was found`;
       if (eventData) {
         message += ` with matching data ${JSON.stringify(eventData)}`;
@@ -1443,13 +1055,11 @@ function evaluateStateExpression(
   if (equalityMatch) {
     const [, entityName, property, operator, expectedValue] = equalityMatch;
 
-    // Find entity by name
     const entity = findEntity(entityName, world);
     if (!entity) {
       return { matches: false, details: `Entity "${entityName}" not found` };
     }
 
-    // Get property value
     const actualValue = getEntityProperty(entity, property, world);
     const expectedResolved = resolveValue(expectedValue.trim(), world);
 
@@ -1503,10 +1113,9 @@ function evaluateStateExpression(
  * Find an entity by name in the world model.
  *
  * `player` is a reserved word that always resolves to the player entity via
- * `world.getPlayer()`, regardless of what the story named it — so
- * `[STATE: true, player.inventory contains …]` works even when the player
- * entity is called "yourself". Otherwise entities match by name, by id, by
- * their IdentityTrait name, or by any of their IdentityTrait aliases.
+ * `world.getPlayer()`, regardless of what the story named it. Otherwise
+ * entities match by name, by id, by their IdentityTrait name, or by any of
+ * their IdentityTrait aliases.
  */
 function findEntity(name: string, world: WorldModel): any {
   // Reserved word: the player, whatever the story named it.
@@ -1515,13 +1124,11 @@ function findEntity(name: string, world: WorldModel): any {
     if (player) return player;
   }
 
-  // Try findEntityByName first
   if (world.findEntityByName) {
     const entity = world.findEntityByName(name);
     if (entity) return entity;
   }
 
-  // Try getEntity/getEntityById
   if (world.getEntity) {
     const entity = world.getEntity(name);
     if (entity) return entity;
@@ -1531,14 +1138,10 @@ function findEntity(name: string, world: WorldModel): any {
     if (entity) return entity;
   }
 
-  // Search all entities by name/alias
   if (world.getAllEntities) {
     const entities = world.getAllEntities();
     for (const entity of entities) {
       if (entity.name === name || entity.id === name) return entity;
-      // Check the identity trait for its name and aliases. The trait key is
-      // TraitType.IDENTITY = 'identity'; traits may live on a Map or be
-      // reachable through entity.get().
       const identity =
         entity.get?.('identity') ?? entity.traits?.get?.('identity') ?? entity.traits?.identity;
       if (identity) {
@@ -1555,7 +1158,6 @@ function findEntity(name: string, world: WorldModel): any {
  * Get a property from an entity (world needed for spatial queries)
  */
 function getEntityProperty(entity: any, property: string, world?: WorldModel): any {
-  // Special handling for location - use world.getLocation()
   if (property === 'location') {
     if (world?.getLocation) {
       return world.getLocation(entity.id);
@@ -1563,7 +1165,6 @@ function getEntityProperty(entity: any, property: string, world?: WorldModel): a
     return entity.location || entity.containerId;
   }
 
-  // Special handling for contents - use world.getContents()
   if (property === 'contents' || property === 'inventory') {
     if (world?.getContents) {
       return world.getContents(entity.id);
@@ -1571,12 +1172,10 @@ function getEntityProperty(entity: any, property: string, world?: WorldModel): a
     return entity.contents || entity.inventory || [];
   }
 
-  // Direct property access
   if (property in entity) {
     return entity[property];
   }
 
-  // Check traits
   if (entity.traits && property in entity.traits) {
     return entity.traits[property];
   }
@@ -1588,28 +1187,74 @@ function getEntityProperty(entity: any, property: string, world?: WorldModel): a
  * Resolve a value (could be entity name, literal, etc.)
  */
 function resolveValue(value: string, world: WorldModel): any {
-  // Check if it's an entity reference
   const entity = findEntity(value, world);
   if (entity) {
     return entity.id;
   }
 
-  // Check for special values
   if (value === 'null' || value === 'undefined' || value === 'nowhere') {
     return undefined;
   }
   if (value === 'true') return true;
   if (value === 'false') return false;
 
-  // Return as string
   return value;
 }
 
 /**
- * Normalize output for comparison
+ * Recursively collect all string values from a data structure.
+ */
+function collectStrings(value: unknown, out: string[]): void {
+  if (typeof value === 'string') {
+    out.push(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectStrings(item, out);
+  } else if (value && typeof value === 'object') {
+    for (const v of Object.values(value)) collectStrings(v, out);
+  }
+}
+
+/**
+ * Extract entity IDs from event data values and capture their trait snapshots.
+ */
+function captureEntityTraits(data: Record<string, any>, world: WorldModel): EntityTraitSnapshot[] {
+  const candidates: string[] = [];
+  collectStrings(data, candidates);
+
+  const seen = new Set<string>();
+  const snapshots: EntityTraitSnapshot[] = [];
+
+  for (const value of candidates) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+
+    const entity = world.getEntity?.(value) ?? world.getEntityById?.(value);
+    if (!entity) continue;
+
+    const traits: Record<string, Record<string, any>> = {};
+
+    const entityTraits = entity.getTraits?.() ?? (entity.traits instanceof Map ? Array.from(entity.traits.values()) : []);
+    for (const trait of entityTraits) {
+      const traitData: Record<string, any> = {};
+      for (const [key, val] of Object.entries(trait)) {
+        if (key === 'type') continue;
+        traitData[key] = val;
+      }
+      traits[trait.type] = traitData;
+    }
+
+    if (Object.keys(traits).length > 0) {
+      snapshots.push({ entityId: value, traits });
+    }
+  }
+
+  return snapshots;
+}
+
+/**
+ * Normalize output for assertion-tier comparison
  * - Trim whitespace
  * - Normalize line endings
- * - Collapse multiple spaces
  */
 function normalizeOutput(output: string): string {
   return output
