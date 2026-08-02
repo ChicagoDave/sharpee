@@ -373,6 +373,7 @@ export declare function loadAuthorGame(target: string, opts?: {
  * Defines the structure of parsed transcripts and test results.
  */
 import type { RandomForceSpec } from '@sharpee/core';
+import type { CoverageTracker } from './coverage.js';
 /**
  * Directive kinds surviving ADR-294 D4. The control-flow/condition layer
  * (IF, WHILE, RETRY, DO/UNTIL, REQUIRES, ENSURES, NAVIGATE) is removed
@@ -761,6 +762,12 @@ export interface RunnerOptions {
     storyName?: string;
     /** Locale for recording provenance when the transcript declares none (D19). */
     locale?: string;
+    /**
+     * Run-scoped coverage accumulator (ADR-293 D15). One tracker per run —
+     * the CLI owns it so a chain's members fold into one report; the runner
+     * feeds it each command's `system.draw` trace events.
+     */
+    coverage?: CoverageTracker;
 }
 /**
  * Story loader function type
@@ -1088,8 +1095,9 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  *   Chord Story IR wholesale, and this package must not gain a runtime edge
  *   to it; builders construct plain literals shaped by the imported types.
  */
-import type { RunEndRecord, RunStartRecord, TestResultRecord } from '@sharpee/ide-protocol';
+import type { CoverageRecord, RunEndRecord, RunStartRecord, TestResultRecord } from '@sharpee/ide-protocol';
 import type { TestRunResult, TranscriptResult } from './types.js';
+import type { CoverageReport } from './coverage.js';
 /**
  * Aggregate per-transcript results into a run result — the one shared
  * reduce (ADR-277 D1 Consequences).
@@ -1119,6 +1127,14 @@ export declare function runStartRecord(mode: 'tests' | 'chain', transcriptCount:
  */
 export declare function transcriptRecords(result: TranscriptResult, index: number): TestResultRecord[];
 /**
+ * Build the run's coverage record (ADR-293 D15 / ADR-294 D13). Emitted once
+ * per run, before `run-end`, only when the caller opted in (`--coverage`) —
+ * coverage aggregates across a chain, never per transcript.
+ *
+ * @param report The tracker's report (`CoverageTracker.buildReport`).
+ */
+export declare function coverageRecord(report: CoverageReport): CoverageRecord;
+/**
  * Build the stream's closing record.
  *
  * @param run The aggregated run result.
@@ -1127,6 +1143,83 @@ export declare function transcriptRecords(result: TranscriptResult, index: numbe
 export declare function runEndRecord(run: TestRunResult, exitCode: number): RunEndRecord;
 /** Serialize one record as an NDJSON line (single line, trailing newline). */
 export declare function ndjsonLine(record: TestResultRecord): string;
+```
+
+### coverage
+
+```typescript
+/**
+ * coverage.ts — outcome-class coverage over the trace stream (ADR-293 D15).
+ *
+ * Purpose: accumulate per-point firings from the engine's `system.draw` trace
+ *   events across one run (a `--chain` run is ONE session and produces ONE
+ *   report — D15's aggregation ruling), then cross the process-global catalog
+ *   (`getRegisteredPoints()`) against what fired: `catalog − fired` needs no
+ *   static scan because declaration is the capability to draw (D2).
+ * Public interface: `CoverageTracker`, `CoverageReport` (re-exported
+ *   ide-protocol shapes), `formatCoverageSummary`, `formatCoverageBreakdown`.
+ * Owner context: @sharpee/transcript-tester. The ide-protocol import is
+ *   TYPE-ONLY (ADR-277 D1's standing rule for this package).
+ */
+import type { CoveragePoint } from '@sharpee/ide-protocol';
+/** The report payload — the {@link CoverageRecord} minus its wire framing. */
+export interface CoverageReport {
+    /** Every declared point in scope, sorted by name. */
+    points: CoveragePoint[];
+    /** Count of points with `fired > 0`. */
+    pointsFired: number;
+    /** Count of points never fired (`catalog − fired`, D2). */
+    pointsNeverFired: number;
+    /** Total declared classes never observed, across all points. */
+    classesUnobserved: number;
+}
+/** The slice of a trace record coverage consumes (core's `IRandomTraceData`). */
+interface TraceLike {
+    point: string;
+    cls?: string;
+}
+/**
+ * Accumulates firings across a run. One tracker per run — the CLI creates it
+ * before the transcript loop and reads the report after, so a chain's members
+ * all land in one report (D15).
+ */
+export declare class CoverageTracker {
+    private firings;
+    /** Record one firing (drawn or forced — D8 reports class coverage). */
+    record(trace: TraceLike): void;
+    /**
+     * Collect every `system.draw` trace event from a command's event batch —
+     * the shape the engine re-emits trace records in (`type: 'system.draw'`,
+     * `data: IRandomTraceData`). Non-trace events are ignored.
+     */
+    collectFrom(events?: Array<{
+        type: string;
+        data?: unknown;
+    }>): void;
+    /**
+     * Cross the catalog against the accumulated firings (D15): every declared
+     * point in scope, its firing count, and — for choice points — observed and
+     * unobserved classes.
+     *
+     * @param prefixes - keep only points whose first dotted segment is listed
+     *   (the D2/A1 multi-story filter; also what isolates a report from other
+     *   test files' catalog entries, since the catalog is process-global).
+     *   Omit to report the whole catalog — correct in a single-story CLI run.
+     */
+    buildReport(prefixes?: readonly string[]): CoverageReport;
+}
+/**
+ * The one-line end-of-run summary D15 rules always prints — the never-fired
+ * count is worthless if it has to be asked for.
+ */
+export declare function formatCoverageSummary(report: CoverageReport): string;
+/**
+ * The full per-point breakdown (D15's `--output-dir` / `--coverage` surface):
+ * one line per point — firing count, then unobserved classes for choice
+ * points or a plain-draw marker.
+ */
+export declare function formatCoverageBreakdown(report: CoverageReport): string;
+export {};
 ```
 
 ### trait-formatter

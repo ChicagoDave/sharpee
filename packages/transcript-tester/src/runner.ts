@@ -282,6 +282,7 @@ async function runGolden(
     const preTurnSave = mode === 'replay' ? await captureEngineSave(engine) : null;
 
     const { output, events } = await executeForGolden(command, engine, config.events);
+    options.coverage?.collectFrom(engine.lastEvents);
     const actualLines = output.split('\n');
 
     if (mode === 'record') {
@@ -680,6 +681,7 @@ async function runAssertion(
     }
 
     const result = await runCommand(command, engine, options);
+    options.coverage?.collectFrom(engine.lastEvents);
     results.push(result);
 
     if (options.testingExtension?.setCommandContext) {

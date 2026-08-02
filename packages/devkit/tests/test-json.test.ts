@@ -53,11 +53,14 @@ const PASSING_TRANSCRIPT = `title: Mini smoke
 [OK: contains "gleams dully"]
 `;
 
-// `> look` with no assertion and no expected output → validateTranscript error.
+// A removed grammar form (ADR-294 D4) → validateTranscript error. The
+// pre-ADR-294 shape (`> look` with no assertion) is no longer a validation
+// error — the runner fails it at the D2 tier boundary instead.
 const BROKEN_TRANSCRIPT = `title: Mini broken
 ---
 
 > look
+[ENSURES: player in Den]
 `;
 
 // NOTE: bare [OK] is exact-match-vs-expected-output (empty here → always
@@ -169,14 +172,14 @@ describe('sharpee test --json (real story, real runner)', () => {
   });
 
   it('a malformed ADR-287 fence is an error record carrying its line number', async () => {
-    // ADR-287 D3 parity: the fence grammar lands once in transcript-tester, and
+    // ADR-287 D3 parity: the block grammar lands once in transcript-tester, and
     // BOTH consumers inherit it. The bundle's reporter is the other one; this
     // pins the consumer the IDE test panel actually reads (ADR-277 D1/AC2), so
     // AC4's "never silently dropped" is proven where an author would see it.
-    // Inheritance is by construction — parse errors ride validateTranscript's
-    // return — but nothing asserted it until here.
+    // (Updated 2026-08-02: the ``` fence delimiter became `text`/`end text` in
+    // ADR-287's recut — same intent, current grammar.)
     const fenced = join(projectDir, 'tests', 'transcripts', 'c-bad-fence.transcript');
-    writeFileSync(fenced, 'title: Bad fence\n---\n\n> look\n[OK]\n```\nA small square den.\n');
+    writeFileSync(fenced, 'title: Bad block\n---\n\n> look\n[OK]\ntext\nA small square den.\n');
     try {
       const { code, records } = await run(['--json', projectDir]);
       expect(code).toBe(1);
@@ -184,10 +187,28 @@ describe('sharpee test --json (real story, real runner)', () => {
         (e) => e.file === fenced,
       );
       expect(errorEnd?.status).toBe('error');
-      expect(errorEnd!.errorMessage).toContain('Line 6: Unclosed fenced block');
+      expect(errorEnd!.errorMessage).toContain('Line 6: Unclosed text block');
     } finally {
       rmSync(fenced);
     }
+  });
+
+  it('--coverage emits one guard-valid coverage record immediately before run-end (ADR-293 D15)', async () => {
+    const { code, records } = await run(['--json', '--coverage', projectDir]);
+    expect(code).toBe(0);
+    // Every line was already guard-validated by run(); pin type and position.
+    const coverageIndexes = records
+      .map((r, i) => (r.type === 'coverage' ? i : -1))
+      .filter((i) => i >= 0);
+    expect(coverageIndexes).toHaveLength(1);
+    expect(records[coverageIndexes[0] + 1].type).toBe('run-end');
+    const coverage = records[coverageIndexes[0]] as Extract<TestResultRecord, { type: 'coverage' }>;
+    expect(coverage.pointsFired + coverage.pointsNeverFired).toBe(coverage.points.length);
+  });
+
+  it('without --coverage no coverage record is emitted', async () => {
+    const { records } = await run(['--json', projectDir]);
+    expect(records.some((r) => r.type === 'coverage')).toBe(false);
   });
 
   it('accepts a .story FILE argument, resolving the containing folder (D1)', async () => {

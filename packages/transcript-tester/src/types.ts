@@ -5,6 +5,7 @@
  */
 
 import type { RandomForceSpec } from '@sharpee/core';
+import type { CoverageTracker } from './coverage.js';
 
 // ============================================================================
 // Directive Types
@@ -437,6 +438,12 @@ export interface RunnerOptions {
   storyName?: string;
   /** Locale for recording provenance when the transcript declares none (D19). */
   locale?: string;
+  /**
+   * Run-scoped coverage accumulator (ADR-293 D15). One tracker per run —
+   * the CLI owns it so a chain's members fold into one report; the runner
+   * feeds it each command's `system.draw` trace events.
+   */
+  coverage?: CoverageTracker;
 }
 
 /**

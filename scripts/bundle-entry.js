@@ -136,6 +136,9 @@ if (require.main === module) {
       bless: false,
       // ADR-294 D14: watch mode — targeted reruns with inline bless.
       watch: false,
+      // ADR-293 D15: print the full per-point coverage breakdown (the
+      // one-line summary always prints at the end of a --test run).
+      coverage: false,
       help: false
     };
 
@@ -192,6 +195,8 @@ if (require.main === module) {
         options.bless = true;
       } else if (arg === '--watch') {
         options.watch = true;
+      } else if (arg === '--coverage') {
+        options.coverage = true;
       } else if (arg === '--help' || arg === '-h') {
         options.help = true;
       } else if (!arg.startsWith('-')) {
@@ -237,6 +242,9 @@ Options:
   --watch              Watch mode (ADR-294): rerun affected transcripts on
                        change; golden failures offer bless? [y/n/all] at a TTY
                        (an unattended watch never blesses)
+  --coverage           Print the full per-point outcome-class coverage
+                       breakdown (ADR-293 D15); the one-line summary always
+                       prints at the end of a --test run
   --help, -h           Show this help message
 
 Examples:
@@ -888,7 +896,8 @@ Examples:
             savesDirectory: path.join(storyDirOf(options.storyPath), 'saves'),
             bless,
             storyName: path.basename(storyDirOf(options.storyPath)),
-            testingExtension: game.testingExtension
+            testingExtension: game.testingExtension,
+            coverage: coverageTracker
           });
 
           out.push(result);
@@ -899,6 +908,11 @@ Examples:
       }
 
       const results = [];
+
+      // ADR-293 D15: one tracker per run — a chain is one session with one
+      // report, and a multi-transcript run is one suite. The runner feeds it
+      // from each command's system.draw trace events.
+      const coverageTracker = new transcriptTester.CoverageTracker();
 
       if (options.chain) {
         const resolved = resolveSeed(parsedTranscripts[0] && parsedTranscripts[0].transcript.seed);
@@ -921,7 +935,8 @@ Examples:
             bless: options.bless,
             chain: true,
             storyName: path.basename(storyDirOf(options.storyPath)),
-            testingExtension: game.testingExtension
+            testingExtension: game.testingExtension,
+            coverage: coverageTracker
           });
 
           results.push(result);
@@ -946,6 +961,17 @@ Examples:
 
       if (results.length > 1) {
         transcriptTester.reportTestRun(runResult, { verbose: options.verbose });
+      }
+
+      // ADR-293 D15: the one-line summary always prints — the never-fired
+      // count is worthless if it has to be asked for. --coverage adds the
+      // full per-point breakdown.
+      const coverageReport = coverageTracker.buildReport();
+      console.log();
+      console.log(transcriptTester.formatCoverageSummary(coverageReport));
+      if (options.coverage) {
+        console.log();
+        console.log(transcriptTester.formatCoverageBreakdown(coverageReport));
       }
 
       if (!options.watch) {

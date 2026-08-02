@@ -27,7 +27,7 @@ import { loadAuthorGame } from '../standalone/author-game.js';
 import { lookupStory } from '../registry.js';
 
 const USAGE =
-  'usage: sharpee test [name|dir|file.story] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v] [--json]';
+  'usage: sharpee test [name|dir|file.story] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage]';
 
 /**
  * Run `sharpee test`.
@@ -47,7 +47,11 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   // Lazy require (compose.ts pattern): pull the harness only when testing.
   const {
     aggregateTestRun,
+    coverageRecord,
+    CoverageTracker,
     findTranscripts,
+    formatCoverageBreakdown,
+    formatCoverageSummary,
     getExitCode,
     ndjsonLine,
     parseTranscriptFile,
@@ -64,6 +68,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   let stopOnFailure = false;
   let verbose = false;
   let json = false;
+  let coverage = false;
   let projectDir: string | undefined;
   const transcriptPaths: string[] = [];
 
@@ -72,6 +77,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     else if (arg === '--stop-on-failure' || arg === '-s') stopOnFailure = true;
     else if (arg === '--verbose' || arg === '-v') verbose = true;
     else if (arg === '--json') json = true;
+    else if (arg === '--coverage') coverage = true;
     else if (arg.startsWith('-')) {
       console.error(`test: unknown flag '${arg}'\n${USAGE}`);
       return 2;
@@ -183,6 +189,8 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   if (chain) info('Chain mode: Game state will persist between transcripts');
 
   const results: TranscriptResult[] = [];
+  // ADR-293 D15: one tracker per run — a chain is one session, one report.
+  const coverageTracker = new CoverageTracker();
   let loadError = false;
   for (let index = 0; index < transcripts.length; index++) {
     const transcriptPath = transcripts[index];
@@ -229,7 +237,11 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       }
     }
 
-    const result = await runTranscript(transcript, game!, { verbose, stopOnFailure });
+    const result = await runTranscript(transcript, game!, {
+      verbose,
+      stopOnFailure,
+      coverage: coverageTracker,
+    });
     results.push(result);
     emitTranscript(result, index);
     if (!json) reportTranscript(result, { verbose });
@@ -238,6 +250,22 @@ export async function runTestCommand(rest: string[]): Promise<number> {
 
   const runResult = aggregateTestRun(results);
   if (!json && results.length > 1) reportTestRun(runResult, { verbose });
+
+  // ADR-293 D15: the one-line summary always prints (human mode); --coverage
+  // adds the full breakdown, or — in --json mode — the coverage record on
+  // the wire, before run-end.
+  const report = coverageTracker.buildReport();
+  if (json) {
+    if (coverage) process.stdout.write(ndjsonLine(coverageRecord(report)));
+  } else {
+    info('');
+    info(formatCoverageSummary(report));
+    if (coverage) {
+      info('');
+      info(formatCoverageBreakdown(report));
+    }
+  }
+
   const code = loadError ? 3 : getExitCode(runResult);
   if (json) process.stdout.write(ndjsonLine(runEndRecord(runResult, code)));
   return code;
