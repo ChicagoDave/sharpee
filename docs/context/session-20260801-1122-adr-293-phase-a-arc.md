@@ -111,9 +111,9 @@ Phase A's "event handlers with no route to RandomService" was a misclassificatio
 **Incidental (build artifacts)**: `stories/dungeo/src/version.ts` (auto-stamped BUILD_DATE), `packages/sharpee/docs/genai-api/{index,tooling}.md` (regenerated, line-count delta from runner.ts)
 
 ## Session Metadata
-- **Status**: COMPLETE — all Phase-A-gated ACs pass with evidence; Phase A plan fully COMPLETE (7/7 phases).
+- **Status**: COMPLETE — ADR-293 Phase A closed (7/7 phases, PR #205 merged to main); ADR-294 drafted → feature-swept → interviewed → reviewed → **ACCEPTED**; ADR-290 amended (A1); **ADR-293 Phase B complete** (walkthrough chain byte-identical at pinned seed, commit `1bc77944`). Next arc: the ADR-294 rebuild, planned against its ACs 1–9 in a fresh session.
 - **Blocker**: N/A
-- **Rollback Safety**: fixups are additive-behavior (save surfaces gain state they silently dropped); reverting restores the silent-drop behavior, nothing else depends on the new format yet.
+- **Rollback Safety**: Phase 7 fixups are additive-behavior (save surfaces gain state they silently dropped); Phase B conversions preserve distributions exactly; ADR changes are documentation.
 
 ## Mutation Audit
 - `mutation-verification` ran on the fixup (rule 15): mutations confirmed real (hook-driven file write; engine-owned state replacement); **no RED**; two YELLOW coverage gaps (legacy rejection, CLI `--restore`) closed same-session with the 10 new tests above, all green.
