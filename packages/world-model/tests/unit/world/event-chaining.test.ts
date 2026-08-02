@@ -547,6 +547,23 @@ describe('Event Chaining (ADR-094)', () => {
       expect((chainedEvents[0].data as Record<string, unknown>)._narrativeSlot).toBe('beforeRoomDescription');
     });
 
+    it('registration slot wins over a handler-set _narrativeSlot (per-event override is deferred, ADR-296 D3)', () => {
+      world.chainEvent('if.event.opened', () => ({
+        type: 'game.message',
+        data: { messageId: 'story.sneaky', _narrativeSlot: 'beforeRoomDescription' }
+      }), { slot: 'afterEverything' });
+
+      world.connectEventProcessor(mockWiring);
+
+      const chainedEvents = invokeHandlers(
+        'if.event.opened',
+        createTestEvent('if.event.opened', {})
+      );
+
+      expect(chainedEvents).toHaveLength(1);
+      expect((chainedEvents[0].data as Record<string, unknown>)._narrativeSlot).toBe('afterEverything');
+    });
+
     it('does NOT stamp typed non-phrase events and keeps their stream position', () => {
       // A chain producing a bookkeeping event plus a phrase: only the phrase
       // is stamped; the non-phrase event keeps its emission position.

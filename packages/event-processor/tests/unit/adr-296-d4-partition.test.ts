@@ -68,7 +68,11 @@ describe('EventProcessor - D4 partition (ADR-296)', () => {
   });
 
   it('still applies the ADR-106 override when the trigger has a messageId', () => {
-    const message = gameMessage({ messageId: 'dungeo.mirror.rumble' });
+    const message = gameMessage({
+      messageId: 'dungeo.mirror.rumble',
+      text: 'The mirror rumbles ominously.',
+      params: { intensity: 'ominous' }
+    });
     processor.registerHandler('if.event.touched', () => {
       return [{ type: 'emit', event: message } as Effect];
     });
@@ -76,8 +80,11 @@ describe('EventProcessor - D4 partition (ADR-296)', () => {
     const trigger = makeEvent('if.event.touched', { messageId: 'if.touched.default' });
     const result = processor.processEvents([trigger]);
 
-    // The trigger's messageId is REPLACED (not appended)...
-    expect((trigger.data as Record<string, unknown>).messageId).toBe('dungeo.mirror.rumble');
+    // The trigger's messageId/text/params are REPLACED (not appended)...
+    const triggerData = trigger.data as Record<string, unknown>;
+    expect(triggerData.messageId).toBe('dungeo.mirror.rumble');
+    expect(triggerData.text).toBe('The mirror rumbles ominously.');
+    expect(triggerData.params).toEqual({ intensity: 'ominous' });
     // ...and the override is consumed, not rendered standalone.
     expect(result.reactions.filter(r => r.type === 'game.message')).toHaveLength(0);
   });
@@ -167,7 +174,11 @@ describe('EventProcessor - D4 partition (ADR-296)', () => {
       // Error event appended, carrying the override count.
       const errors = result.reactions.filter(r => r.type === 'if.event.error');
       expect(errors).toHaveLength(1);
-      expect((errors[0].data as Record<string, unknown>).count).toBe(2);
+      const errorData = errors[0].data as Record<string, unknown>;
+      expect(errorData.count).toBe(2);
+      expect(errorData.sourceEvent).toBe('if.event.touched');
+      expect(errorData.targetId).toBe('thing1');
+      expect(errorData.messageIds).toEqual(['story.first', 'story.second']);
       // First override still applied to the trigger.
       expect((trigger.data as Record<string, unknown>).messageId).toBe('story.first');
       // Both overrides consumed — neither renders standalone.
