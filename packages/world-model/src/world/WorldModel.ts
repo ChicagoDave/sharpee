@@ -45,6 +45,7 @@ import type {
   InterceptorLookupResult
 } from '../capabilities/interceptor-binding.js';
 import { interceptorBindingKey } from '../capabilities/interceptor-binding.js';
+import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
 import {
   WorldState,
   WorldConfig,
@@ -356,6 +357,36 @@ export interface IWorldModel {
    */
   getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
 
+  // Exit-Resolver Binding Management (ADR-295 computed exits — the
+  // traversal-time half; declarations are trait data, traits/room/.)
+  /**
+   * Register an exit resolver for a trait type on this world (ADR-295 D4).
+   *
+   * Idempotent: re-registering the same trait type overwrites the previous
+   * binding (last-registration-wins). Scoped to this `WorldModel` instance;
+   * never serialized — re-register on every story load.
+   *
+   * @param traitType - The declaring trait's type identifier
+   * @param resolver - The resolver called once per traversal of a governed direction
+   */
+  registerExitResolver(traitType: string, resolver: ExitResolver): void;
+  /**
+   * Look up the exit resolver bound to a trait type on this world.
+   *
+   * @param traitType - The trait type identifier
+   * @returns The resolver, or `undefined` if none is registered on this world
+   */
+  getExitResolver(traitType: string): ExitResolver | undefined;
+  /**
+   * Enumerate every exit-resolver binding on this world, keyed by trait type.
+   *
+   * Read-only introspection surface — register through
+   * `registerExitResolver`, never by mutating the returned map.
+   *
+   * @returns The world's resolver map as a read-only view
+   */
+  getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
+
   // Entity Management
   createEntity(displayName: string, type?: string, opts?: { defaultTraits?: boolean }): IFEntity;
   getEntity(id: string): IFEntity | undefined;
@@ -551,6 +582,13 @@ export class WorldModel implements IWorldModel {
   // wiring re-established by story init, not save-game state). Distinct
   // from both maps above despite the shared "wiring" flavor.
   private interceptorBindings: Map<string, TraitInterceptorBinding> = new Map();
+
+  /**
+   * ADR-295: per-world exit-resolver bindings, keyed by trait type. Same
+   * ownership model as the maps above — created with the world, never
+   * serialized, re-registered on story load.
+   */
+  private exitResolvers: Map<string, ExitResolver> = new Map();
 
   /**
    * ADR-240: the per-world evaluator registry — named world-evaluators
@@ -835,6 +873,23 @@ export class WorldModel implements IWorldModel {
 
   getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
     return this.interceptorBindings;
+  }
+
+  // Exit-Resolver Binding Management (ADR-295 computed exits)
+  //
+  // Same ownership model as the binding maps above: per-world, idempotent
+  // last-wins, never serialized (registrars re-register on every load).
+
+  registerExitResolver(traitType: string, resolver: ExitResolver): void {
+    this.exitResolvers.set(traitType, resolver);
+  }
+
+  getExitResolver(traitType: string): ExitResolver | undefined {
+    return this.exitResolvers.get(traitType);
+  }
+
+  getAllExitResolvers(): ReadonlyMap<string, ExitResolver> {
+    return this.exitResolvers;
   }
 
   // ID Generation

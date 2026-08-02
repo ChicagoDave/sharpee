@@ -21,11 +21,10 @@ import { setPressButtonScheduler } from '../actions/press-button';
 // Handler registrations
 import { registerBatHandler } from '../handlers/bat-handler';
 import { registerExorcismHandler } from '../handlers/exorcism-handler';
-import { registerRoundRoomHandler } from '../handlers/round-room-handler';
+import { registerCarouselExits } from '../handlers/carousel-exit-resolver';
 
 import { registerRoyalPuzzleHandler } from '../handlers/royal-puzzle';
 import { registerCakeInterceptors } from '../handlers/cake-handler';
-import { registerCarouselHandler } from '../handlers/carousel-handler';
 
 
 import { registerEndgameTriggerHandler } from '../handlers/endgame-trigger-handler';
@@ -148,8 +147,15 @@ export function registerSchedulerEvents(
     config.endgameIds.landOfDead
   );
 
-  // Round Room randomization handler (carousel room)
-  registerRoundRoomHandler(scheduler, config.roundRoomIds.roundRoom);
+  // Carousel rooms (ADR-295 computed exits): Round Room + Low Room traits,
+  // shared resolver, and the Low Room entry-message chain — replaces the
+  // retired post-hoc exit daemons (GH #207).
+  registerCarouselExits(world, {
+    roundRoom: config.roundRoomIds.roundRoom,
+    lowRoom: config.wellRoomIds.lowRoom,
+    machineRoom: config.wellRoomIds.machineRoom,
+    teaRoom: config.wellRoomIds.teaRoom,
+  });
 
   // Trapdoor: migrated to state machine (ADR-119)
 
@@ -162,14 +168,6 @@ export function registerSchedulerEvents(
 
   // Cage poison daemon (sphere puzzle in Dingy Closet)
   registerCagePoisonDaemon(scheduler, world, config.wellRoomIds.dingyCloset);
-
-  // Low Room carousel handler (magnet room exit randomization)
-  registerCarouselHandler(
-    scheduler,
-    config.wellRoomIds.lowRoom,
-    config.wellRoomIds.machineRoom,
-    config.wellRoomIds.teaRoom
-  );
 
   // Ghost Ritual now handled by GhostRitualDroppingInterceptor (ADR-118)
 

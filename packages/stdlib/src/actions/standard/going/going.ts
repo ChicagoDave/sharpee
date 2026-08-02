@@ -27,6 +27,7 @@ import {
   canActorWalkInVehicle,
   RegionCrossings,
 } from '@sharpee/world-model';
+import type { ExitResolution } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
@@ -66,6 +67,12 @@ export interface GoingSharedData {
   vehicleId?: string;         // If player is in a walkable vehicle, the vehicle ID
   /** Region boundary crossings computed during execute (ADR-149) */
   regionCrossings?: RegionCrossings;
+  /**
+   * ADR-295 D5: the single traversal resolution for this command, drawn once
+   * in execute. Report reads it for narration events and the blocked path;
+   * the data builders never re-derive the destination from static topology.
+   */
+  exitResolution?: ExitResolution;
 }
 
 export function getGoingSharedData(context: ActionContext): GoingSharedData {
@@ -146,9 +153,15 @@ function resolveExitEntities(context: ActionContext): { door?: IFEntity; destina
   // A blocked-only direction has no traversable exit (Chord `north is blocked:`)
   if (isExitBlockedLive(context, sourceRoom, direction)) return {};
   const exitConfig = RoomBehavior.getExit(sourceRoom, direction);
-  if (!exitConfig) return {};
-  const door = exitConfig.via ? (context.world.getEntity(exitConfig.via) ?? undefined) : undefined;
-  const destination = context.world.getEntity(exitConfig.destination) ?? undefined;
+  const computedExit = RoomBehavior.getComputedExitDeclaration(sourceRoom, direction);
+  if (!exitConfig && !computedExit) return {};
+  const door = exitConfig?.via ? (context.world.getEntity(exitConfig.via) ?? undefined) : undefined;
+  // ADR-295 D7: a computed direction's true destination is unknown until the
+  // execute-phase resolution — the destination slot resolves to no entity, so
+  // entering_room interceptors are not consulted for that traversal.
+  const destination = computedExit || !exitConfig
+    ? undefined
+    : context.world.getEntity(exitConfig.destination) ?? undefined;
   return { door, destination };
 }
 
@@ -284,9 +297,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Use RoomBehavior to get exit information
+    // Existence (ADR-295 D3): a static exit OR a computed-exit declaration.
+    // The declaration is pure trait data — no resolver code runs and no draw
+    // happens here; which candidate the actor reaches is decided in execute.
     const exitConfig = RoomBehavior.getExit(currentRoom, direction);
-    if (!exitConfig) {
+    const computedExit = RoomBehavior.getComputedExitDeclaration(currentRoom, direction);
+    if (!exitConfig && !computedExit) {
       // Check if we have exits at all
       const allExits = RoomBehavior.getAllExits(currentRoom);
       if (allExits.size === 0) {
@@ -303,7 +319,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Check if there's a door/portal
-    if (exitConfig.via) {
+    if (exitConfig?.via) {
       const door = context.world.getEntity(exitConfig.via);
       if (door) {
         // Use behaviors to check door state
@@ -333,17 +349,21 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Get destination
-    const destinationId = exitConfig.destination;
-    const destination = context.world.getEntity(destinationId);
+    // Get destination — static exits only. A computed direction's destination
+    // is unknown until the execute-phase resolution (ADR-295 D5); its
+    // candidates were declared as data and are not re-validated here.
+    if (!computedExit) {
+      const destinationId = exitConfig!.destination;
+      const destination = context.world.getEntity(destinationId);
 
-    if (!destination) {
-      // Destination doesn't exist
-      return {
-        valid: false,
-        error: GoingMessages.DESTINATION_NOT_FOUND,
-        params: { direction: direction }
-      };
+      if (!destination) {
+        // Destination doesn't exist
+        return {
+          valid: false,
+          error: GoingMessages.DESTINATION_NOT_FOUND,
+          params: { direction: direction }
+        };
+      }
     }
 
     // Note: We allow entry to dark rooms - you just can't see.
@@ -386,18 +406,55 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Get exit info and destination using behaviors
-    const exitConfig = RoomBehavior.getExit(sourceRoom, direction)!;
-    const destination = context.world.getEntity(exitConfig.destination)!;
+    // Resolve the traversal EXACTLY ONCE (ADR-295 D5). The resolver may draw
+    // on the session random service, so this call must not repeat; every
+    // later consumer (report, data builders) reads sharedData instead.
+    const exitConfig = RoomBehavior.getExit(sourceRoom, direction);
+    const resolution = RoomBehavior.resolveExit(sourceRoom, direction, {
+      world: context.world,
+      actorId: actor.id,
+      random: context.random
+    });
+    sharedData.exitResolution = resolution;
+    sharedData.previousLocation = sourceRoom.id;
+    sharedData.direction = direction;
+
+    if (resolution?.kind === 'blocked') {
+      // The traversal does not happen: the actor stays put (ADR-295 D5;
+      // Acceptance 5 asserts on the unchanged location).
+      sharedData.currentLocation = sourceRoom.id;
+      const state = getLifecycleState(context);
+      if (state) runPostExecute(context, state);
+      return;
+    }
+
+    if (!resolution && !exitConfig) {
+      // A computed-only direction whose resolver deferred or is unregistered
+      // (already warned by resolveExit), with no static exit to fall back to:
+      // standard can't-go refusal through the blocked-resolution report path
+      // (ADR-295 Acceptance 7 — never a crash).
+      sharedData.exitResolution = {
+        kind: 'blocked',
+        messageId: `${context.action.id}.no_exit_that_way`,
+        params: { direction }
+      };
+      sharedData.currentLocation = sourceRoom.id;
+      const state = getLifecycleState(context);
+      if (state) runPostExecute(context, state);
+      return;
+    }
+
+    const destinationId = resolution?.kind === 'exit'
+      ? resolution.destination
+      : exitConfig!.destination;
+    const destination = context.world.getEntity(destinationId)!;
 
     // Check if this is the first time entering the destination
     const isFirstVisit = !RoomBehavior.hasBeenVisited(destination);
 
     // Store locations and state for report phase
     sharedData.isFirstVisit = isFirstVisit;
-    sharedData.previousLocation = sourceRoom.id;
     sharedData.currentLocation = destination.id;
-    sharedData.direction = direction;
 
     // Move to destination - if in a vehicle, move the vehicle (player stays inside)
     if (sharedData.vehicleId) {
@@ -424,6 +481,24 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
    */
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = getGoingSharedData(context);
+    const resolution = sharedData.exitResolution;
+
+    // Blocked at resolution time (ADR-295 D5): no movement happened, so no
+    // movement events are emitted — mirror the too_dark post-validate shape.
+    if (resolution?.kind === 'blocked') {
+      const events: ISemanticEvent[] = [
+        context.event('if.event.went', {
+          messageId: resolution.messageId,
+          params: resolution.params ?? {},
+          actorId: context.player.id,
+          direction: sharedData.direction,
+          blocked: true
+        })
+      ];
+      const state = getLifecycleState(context);
+      if (state) runPostReport(context, state, events, 'if.event.went');
+      return events;
+    }
 
     // Get the actual destination room (not the stale context.currentLocation)
     const destinationRoom = context.world.getEntity(sharedData.currentLocation!)!;
@@ -459,6 +534,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           fromRegionId: crossings.exited[0],
         }));
       }
+    }
+
+    // Resolver narration (ADR-295 D4/D5): forwarded verbatim, ahead of the
+    // arrival description. Rendered order is subject to GH #208.
+    if (resolution?.kind === 'exit' && resolution.events?.length) {
+      events.push(...resolution.events);
     }
 
     // Check if destination is dark (no usable light source)

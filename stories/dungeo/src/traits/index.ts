@@ -155,6 +155,12 @@ export {
   RoundRoomTraitConstructor
 } from './round-room-trait';
 
+// Carousel exits (ADR-295 computed exits — Round Room + Low Room scramble)
+export {
+  CarouselExitTrait,
+  CarouselExitConfig
+} from './carousel-exit-trait';
+
 // Rope State (dome room rope attachment)
 export {
   RopeStateTrait,

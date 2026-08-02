@@ -2838,9 +2838,12 @@ export declare class RoomTrait implements ITrait, IRoomData {
 ```typescript
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
+import { ITrait } from '../trait.js';
 import { IExitInfo } from './roomTrait.js';
+import { IComputedExitDeclaration } from './computedExitContract.js';
 import { ISemanticEvent } from '@sharpee/core';
 import { DirectionType } from '../../constants/directions.js';
+import type { ExitResolution, ExitResolverContext } from '../../capabilities/exit-resolver-binding.js';
 /**
  * Behavior for room entities.
  *
@@ -2898,6 +2901,43 @@ export declare class RoomBehavior extends Behavior {
      */
     static getAvailableExits(room: IFEntity): Map<DirectionType, IExitInfo>;
     /**
+     * Find the computed-exit declaration governing a direction, if any (ADR-295 D3).
+     *
+     * Pure data consultation — no resolver code runs, no draw happens, and the
+     * resolver registry is NOT consulted (existence is declaration alone).
+     * Callable any number of times.
+     *
+     * Per-direction declarations (`computedExits`) contribute existence for
+     * their declared directions. The overlay form (`computedExitsAll`) governs
+     * only directions the room exposes statically — it adds no existence.
+     *
+     * @param room - The room to consult
+     * @param direction - The direction of travel
+     * @returns The declaring trait and its declaration, or null when the
+     *   direction is not governed by a computed exit
+     */
+    static getComputedExitDeclaration(room: IFEntity, direction: DirectionType): {
+        trait: ITrait;
+        declaration: IComputedExitDeclaration;
+    } | null;
+    /**
+     * Resolve a computed exit for one traversal (ADR-295 D2/D4).
+     *
+     * The effectful half of the topology/traversal split: called EXACTLY ONCE
+     * per traversal (the resolver may draw on `ctx.random`). Looks up the
+     * direction's computed-exit declaration, dispatches to the resolver
+     * registered on `ctx.world` for the declaring trait's type, and enforces
+     * the D3 candidate posture (off-candidate returns are warned and honored).
+     *
+     * @param room - The room being exited
+     * @param direction - The direction of travel
+     * @param ctx - Live world, actor, and injected random service
+     * @returns The resolver's `ExitResolution`; `undefined` means static
+     *   topology governs (no declaration, no registered resolver — warned as a
+     *   story wiring defect, ADR-295 D3 — or the resolver deferred)
+     */
+    static resolveExit(room: IFEntity, direction: DirectionType, ctx: ExitResolverContext): ExitResolution;
+    /**
      * Check if room is outdoors
      */
     static isOutdoors(room: IFEntity): boolean;
@@ -2922,6 +2962,58 @@ export declare class RoomBehavior extends Behavior {
      */
     static removeTag(room: IFEntity, tag: string): void;
 }
+```
+
+### traits/room/computedExitContract
+
+```typescript
+/**
+ * Computed-exit declaration contract (ADR-295 D3).
+ *
+ * A story trait fulfills this contract to declare that some (or all) of a
+ * room's directions are computed exits: existence and the candidate
+ * destination set are pure serialized trait data, consultable at validate
+ * time with no code execution and no draw. The traversal-time half — which
+ * candidate the actor actually reaches — is a registered `ExitResolver`
+ * (capabilities/exit-resolver-binding.ts).
+ *
+ * Public interface: `IComputedExitDeclaration`, `IComputedExitCarrier`,
+ * `isComputedExitCarrier`.
+ * Owner: world-model (room domain, ADR-295 D3).
+ */
+import type { DirectionType } from '../../constants/directions.js';
+import type { ITrait } from '../trait.js';
+/**
+ * The declared outcome space of one computed exit (ADR-295 D3).
+ *
+ * Candidates are what make the outcome space finite and enumerable
+ * (ADR-293 D4): topology tools show the set honestly, and a resolver
+ * returning a destination outside it is warned and honored.
+ */
+export interface IComputedExitDeclaration {
+    /** Room entity ids the resolver may return for this direction. */
+    candidates: string[];
+}
+/**
+ * The data shape a computed-exit-declaring trait carries (ADR-295 D3).
+ *
+ * Exactly one of the two fields is expected:
+ * - `computedExits` — per-direction declarations; each declared direction
+ *   EXISTS as an exit (in addition to any static exits).
+ * - `computedExitsAll` — one declaration overlaying every direction the room
+ *   exposes statically; contributes no existence beyond the static map.
+ */
+export interface IComputedExitCarrier {
+    computedExits?: Partial<Record<DirectionType, IComputedExitDeclaration>>;
+    computedExitsAll?: IComputedExitDeclaration;
+}
+/**
+ * Duck-type check: does this trait declare computed exits?
+ *
+ * @param trait - Any trait instance on a room
+ * @returns true when the trait carries either declaration field
+ */
+export declare function isComputedExitCarrier(trait: ITrait): trait is ITrait & IComputedExitCarrier;
 ```
 
 ### traits/openable/openableTrait
@@ -6771,6 +6863,7 @@ import type { CapabilityBehavior } from '../capabilities/capability-behavior.js'
 import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
+import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
 import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { IScopeRule } from '../scope/scope-rule.js';
@@ -7016,6 +7109,33 @@ export interface IWorldModel {
      * @returns The world's binding map as a read-only view
      */
     getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
+    /**
+     * Register an exit resolver for a trait type on this world (ADR-295 D4).
+     *
+     * Idempotent: re-registering the same trait type overwrites the previous
+     * binding (last-registration-wins). Scoped to this `WorldModel` instance;
+     * never serialized — re-register on every story load.
+     *
+     * @param traitType - The declaring trait's type identifier
+     * @param resolver - The resolver called once per traversal of a governed direction
+     */
+    registerExitResolver(traitType: string, resolver: ExitResolver): void;
+    /**
+     * Look up the exit resolver bound to a trait type on this world.
+     *
+     * @param traitType - The trait type identifier
+     * @returns The resolver, or `undefined` if none is registered on this world
+     */
+    getExitResolver(traitType: string): ExitResolver | undefined;
+    /**
+     * Enumerate every exit-resolver binding on this world, keyed by trait type.
+     *
+     * Read-only introspection surface — register through
+     * `registerExitResolver`, never by mutating the returned map.
+     *
+     * @returns The world's resolver map as a read-only view
+     */
+    getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
     }): IFEntity;
@@ -7148,6 +7268,12 @@ export declare class WorldModel implements IWorldModel {
     private capabilityBindings;
     private interceptorBindings;
     /**
+     * ADR-295: per-world exit-resolver bindings, keyed by trait type. Same
+     * ownership model as the maps above — created with the world, never
+     * serialized, re-registered on story load.
+     */
+    private exitResolvers;
+    /**
      * ADR-240: the per-world evaluator registry — named world-evaluators
      * consulted at point of use (live derived state; no cached derivations).
      * Lives and dies with this WorldModel instance, like the binding maps.
@@ -7180,6 +7306,9 @@ export declare class WorldModel implements IWorldModel {
     }, actionId: string): InterceptorLookupResult | undefined;
     getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
     getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
+    registerExitResolver(traitType: string, resolver: ExitResolver): void;
+    getExitResolver(traitType: string): ExitResolver | undefined;
+    getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
     private generateId;
     createEntity(displayName: string, type?: string, opts?: {
         defaultTraits?: boolean;
@@ -7762,6 +7891,7 @@ import type { CapabilityBehavior } from '../capabilities/capability-behavior.js'
 import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
+import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
 import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel.js';
 import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -7904,6 +8034,9 @@ export declare class AuthorModel implements IWorldModel {
     }, actionId: string): InterceptorLookupResult | undefined;
     getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
     getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
+    registerExitResolver(traitType: string, resolver: ExitResolver): void;
+    getExitResolver(traitType: string): ExitResolver | undefined;
+    getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
     awardScore(id: string, points: number, description: string): boolean;
     revokeScore(id: string): boolean;
     hasScore(id: string): boolean;
@@ -9238,6 +9371,82 @@ export interface InterceptorLookupResult {
  * stays in one place.
  */
 export declare function interceptorBindingKey(traitType: string, actionId: string): string;
+```
+
+### capabilities/exit-resolver-binding
+
+```typescript
+/**
+ * Exit-resolver binding types (ADR-295 computed exits).
+ *
+ * An exit resolver is the traversal-time half of a computed exit: the
+ * declaration (which directions exist, with what candidate destinations)
+ * is serialized trait data (`IComputedExitDeclaration`, traits/room/), while
+ * the resolver is code bound per-world through this registry. Same ownership
+ * model as capability behaviors (ADR-207) and action interceptors (ADR-208):
+ * scoped to one running `WorldModel`, idempotent last-wins, never
+ * serialized — registrars re-register on every story load.
+ *
+ * Public interface: `ExitResolver`, `ExitResolution`, `ExitResolverContext`.
+ * Owner: world-model (computed-exit storage, ADR-295 D4).
+ */
+import type { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import type { IFEntity } from '../entities/if-entity.js';
+import type { ITrait } from '../traits/trait.js';
+import type { WorldModel } from '../world/WorldModel.js';
+import type { DirectionType } from '../constants/directions.js';
+import type { IExitInfo } from '../traits/room/roomTrait.js';
+/**
+ * Context handed to an exit resolver at traversal time (ADR-295 D4).
+ *
+ * The `RandomService` is injected by the caller (the going action's
+ * `context.random`); world-model never constructs randomness (ADR-293 D6).
+ */
+export interface ExitResolverContext {
+    /** The live world the traversal is happening in. */
+    world: WorldModel;
+    /** The actor performing the traversal. */
+    actorId: EntityId;
+    /** The session random service — resolvers draw on their named points. */
+    random: RandomService;
+}
+/**
+ * A resolver's answer for one traversal (ADR-295 D4 — the CEXIT-shaped union).
+ *
+ * - `kind: 'exit'` — traverse to `destination`; optional narration `events`
+ *   (messageId-bearing, forwarded verbatim by the going action ahead of the
+ *   arrival description).
+ * - `kind: 'blocked'` — the traversal does not happen; scoped to conditions
+ *   knowable only at resolution time. Pure, pre-known blocking belongs on
+ *   the existing blocked-exit surfaces instead.
+ * - `undefined` — defer to static topology.
+ */
+export type ExitResolution = {
+    kind: 'exit';
+    destination: string;
+    via?: string;
+    events?: ISemanticEvent[];
+} | {
+    kind: 'blocked';
+    messageId: string;
+    params?: Record<string, unknown>;
+} | undefined;
+/**
+ * Traversal-time destination resolution for a computed exit (ADR-295 D4).
+ *
+ * Called exactly once per traversal by `RoomBehavior.resolveExit`. May draw
+ * on `ctx.random`; a `kind: 'exit'` destination is expected to come from the
+ * declaring trait's candidate set (off-candidate returns are warned and
+ * honored, D3).
+ *
+ * @param room - The room being exited
+ * @param trait - The declaring trait instance (its data parameterizes the resolver)
+ * @param direction - The direction of travel
+ * @param staticExit - The static exit for this direction, if any
+ * @param ctx - Live world, actor, and injected random service
+ * @returns The resolution, or `undefined` to defer to static topology
+ */
+export type ExitResolver = (room: IFEntity, trait: ITrait, direction: DirectionType, staticExit: IExitInfo | null, ctx: ExitResolverContext) => ExitResolution;
 ```
 
 ### capabilities/interceptor-helpers

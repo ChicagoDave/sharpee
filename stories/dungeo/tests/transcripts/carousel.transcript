@@ -81,14 +81,12 @@ seed: 42
 [OK: contains "compass starts spinning"]
 
 # Exits now randomly go to Machine Room or Tea Room (PROB 50); at seed 42
-# the draw lands in the Tea Room.
-# TODO (GH #207): this turn's output also carries the Machine
-# Room description ahead of the Tea Room one — the redirect appears to render
-# the first-resolved destination before re-resolving. The assertions below
-# pin only the intended behavior.
+# the draw lands in the Tea Room. One traversal, one arrival (ADR-295 fixed
+# GH #207): the static Machine Room destination must NOT render.
 > east
 [OK: contains "cannot get your bearings"]
 [OK: contains "Tea Room"]
+[OK: not contains "Machine Room"]
 
 # Confirm we escaped to the Tea Room
 > look

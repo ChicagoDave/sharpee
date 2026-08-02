@@ -30,7 +30,7 @@ import { GhostRitualMessages } from '../traits';
 import { MirrorRoomMessages } from '../handlers/mirror-room-handler';
 import { PuzzleHandlerMessages } from '../handlers/royal-puzzle';
 import { BankPuzzleMessages } from '../actions';
-import { CarouselMessages } from '../handlers/carousel-handler';
+import { CarouselMessages } from '../handlers/carousel-exit-resolver';
 
 /**
  * Register all puzzle-related messages with the language provider

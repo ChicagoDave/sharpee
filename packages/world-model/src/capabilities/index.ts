@@ -84,6 +84,16 @@ export {
   InterceptorLookupResult
 } from './interceptor-binding.js';
 
+// Exit-resolver types (ADR-295 computed exits). The binding map is per-world —
+// it lives on WorldModel (registerExitResolver / getExitResolver /
+// getAllExitResolvers). Declarations are trait data (traits/room/
+// computedExitContract.ts); these are the traversal-time code shapes.
+export type {
+  ExitResolver,
+  ExitResolution,
+  ExitResolverContext
+} from './exit-resolver-binding.js';
+
 // Interceptor helpers
 export {
   findTraitWithInterceptor,

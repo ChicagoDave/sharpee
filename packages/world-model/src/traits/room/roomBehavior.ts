@@ -2,12 +2,15 @@
 
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
+import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
 import { RoomTrait, IExitInfo } from './roomTrait.js';
+import { IComputedExitDeclaration, isComputedExitCarrier } from './computedExitContract.js';
 import { ISemanticEvent, EntityId } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
 import { Direction, DirectionType, getOppositeDirection } from '../../constants/directions.js';
 import { IWorldQuery } from '../container/containerBehavior.js';
+import type { ExitResolution, ExitResolverContext } from '../../capabilities/exit-resolver-binding.js';
 
 /**
  * Behavior for room entities.
@@ -214,6 +217,93 @@ export class RoomBehavior extends Behavior {
     return available;
   }
   
+  /**
+   * Find the computed-exit declaration governing a direction, if any (ADR-295 D3).
+   *
+   * Pure data consultation — no resolver code runs, no draw happens, and the
+   * resolver registry is NOT consulted (existence is declaration alone).
+   * Callable any number of times.
+   *
+   * Per-direction declarations (`computedExits`) contribute existence for
+   * their declared directions. The overlay form (`computedExitsAll`) governs
+   * only directions the room exposes statically — it adds no existence.
+   *
+   * @param room - The room to consult
+   * @param direction - The direction of travel
+   * @returns The declaring trait and its declaration, or null when the
+   *   direction is not governed by a computed exit
+   */
+  static getComputedExitDeclaration(
+    room: IFEntity,
+    direction: DirectionType
+  ): { trait: ITrait; declaration: IComputedExitDeclaration } | null {
+    for (const trait of room.traits.values()) {
+      if (!isComputedExitCarrier(trait)) continue;
+
+      const perDirection = trait.computedExits?.[direction];
+      if (perDirection) {
+        return { trait, declaration: perDirection };
+      }
+
+      if (trait.computedExitsAll && this.getExit(room, direction) !== null) {
+        return { trait, declaration: trait.computedExitsAll };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Resolve a computed exit for one traversal (ADR-295 D2/D4).
+   *
+   * The effectful half of the topology/traversal split: called EXACTLY ONCE
+   * per traversal (the resolver may draw on `ctx.random`). Looks up the
+   * direction's computed-exit declaration, dispatches to the resolver
+   * registered on `ctx.world` for the declaring trait's type, and enforces
+   * the D3 candidate posture (off-candidate returns are warned and honored).
+   *
+   * @param room - The room being exited
+   * @param direction - The direction of travel
+   * @param ctx - Live world, actor, and injected random service
+   * @returns The resolver's `ExitResolution`; `undefined` means static
+   *   topology governs (no declaration, no registered resolver — warned as a
+   *   story wiring defect, ADR-295 D3 — or the resolver deferred)
+   */
+  static resolveExit(
+    room: IFEntity,
+    direction: DirectionType,
+    ctx: ExitResolverContext
+  ): ExitResolution {
+    const found = this.getComputedExitDeclaration(room, direction);
+    if (!found) {
+      return undefined;
+    }
+
+    const resolver = ctx.world.getExitResolver(found.trait.type);
+    if (!resolver) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[computed-exit] room "${room.id}" declares a computed exit ${direction} on trait ` +
+          `"${found.trait.type}" but no resolver is registered on this world — ` +
+          `falling back to static topology (ADR-295 D3: wiring defect, not a crash).`
+      );
+      return undefined;
+    }
+
+    const staticExit = this.getExit(room, direction);
+    const resolution = resolver(room, found.trait, direction, staticExit, ctx);
+
+    if (resolution?.kind === 'exit' && !found.declaration.candidates.includes(resolution.destination)) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[computed-exit] resolver for trait "${found.trait.type}" returned destination ` +
+          `"${resolution.destination}" outside the declared candidate set for ${direction} ` +
+          `on room "${room.id}" — honored (ADR-295 D3 warn-and-honor).`
+      );
+    }
+
+    return resolution;
+  }
+
   /**
    * Check if room is outdoors
    */

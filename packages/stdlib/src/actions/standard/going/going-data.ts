@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
 import { ActionContext } from '../../enhanced-types.js';
-import { WorldModel, TraitType, IFEntity, RoomBehavior, Direction, DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
+import { WorldModel, IFEntity, RoomBehavior, DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils.js';
 import { GoingSharedData, getGoingSharedData } from './going.js';
 
@@ -20,27 +20,31 @@ interface SourceRoomResult {
 }
 
 /**
- * Find the source room (where we came from) and the exit configuration used
- * Since we've already moved, we need to find which room has an exit to our current location
+ * The room the actor actually departed, from sharedData (ADR-295).
+ *
+ * Execute stores `previousLocation` before moving, so no topology scan is
+ * needed — and the old reverse scan ("which room has an exit in this
+ * direction leading to where I now stand") is unanswerable after a
+ * computed-exit redirect. The mapHint comes from the source room's static
+ * exit when one exists (ADR-113 positioning is a topology concern).
  */
 function findSourceRoomAndExit(
+  context: ActionContext,
   currentRoom: IFEntity,
-  direction: DirectionType,
-  world: WorldModel
+  direction: DirectionType
 ): SourceRoomResult {
-  const allEntities = world.getAllEntities();
-  const allRooms = allEntities.filter(e => e.has(TraitType.ROOM));
+  const sharedData = getGoingSharedData(context);
+  const sourceRoom = sharedData.previousLocation
+    ? context.world.getEntity(sharedData.previousLocation)
+    : undefined;
 
-  // Find the room that has an exit leading to our current location
-  for (const room of allRooms) {
-    const exitConfig = RoomBehavior.getExit(room, direction);
-    if (exitConfig && exitConfig.destination === currentRoom.id) {
-      return { room, mapHint: exitConfig.mapHint };
-    }
+  if (!sourceRoom) {
+    // No execute phase ran (defensive) — fall back to the current room.
+    return { room: currentRoom };
   }
 
-  // If we can't find source room, use the current room as a fallback
-  return { room: currentRoom };
+  const exitConfig = RoomBehavior.getExit(sourceRoom, direction);
+  return { room: sourceRoom, mapHint: exitConfig?.mapHint };
 }
 
 /**
@@ -72,7 +76,7 @@ export const buildActorMovedData: ActionDataBuilder<Record<string, unknown>> = (
   const currentRoom = context.world.getEntity(currentLocationId!)!;
 
   // Find source room and exit configuration (includes mapHint)
-  const { room: sourceRoom, mapHint } = findSourceRoomAndExit(currentRoom, direction, context.world);
+  const { room: sourceRoom, mapHint } = findSourceRoomAndExit(context, currentRoom, direction);
 
   // Capture room snapshots for atomic events
   const sourceSnapshot = captureRoomSnapshot(sourceRoom, context.world, false);
@@ -167,7 +171,7 @@ export const buildActorEnteredData: ActionDataBuilder<Record<string, unknown>> =
   const currentRoom = context.world.getEntity(currentLocationId!)!;
   
   // Find source room
-  const { room: sourceRoom } = findSourceRoomAndExit(currentRoom, direction, context.world);
+  const { room: sourceRoom } = findSourceRoomAndExit(context, currentRoom, direction);
   
   return {
     actorId: actor.id,

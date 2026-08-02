@@ -6,7 +6,7 @@
 
 export * from './bat-handler';
 export * from './exorcism-handler';
-export * from './round-room-handler';
+export * from './carousel-exit-resolver';
 export * from './royal-puzzle';
 export * from './reality-altered-handler';
 export * from './endgame-trigger-handler';
@@ -23,4 +23,3 @@ export * from './trapdoor-handler';
 export * from './chimney-handler';
 export * from './grue-handler';
 export * from './cake-handler';
-export * from './carousel-handler';

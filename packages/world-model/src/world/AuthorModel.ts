@@ -28,6 +28,7 @@ import type {
   InterceptorRegistrationOptions,
   InterceptorLookupResult
 } from '../capabilities/interceptor-binding.js';
+import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
 import type {
   IWorldModel,
   EntityRemovalObserver,
@@ -445,6 +446,20 @@ export class AuthorModel implements IWorldModel {
 
   getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
     return this.worldModel.getAllActionInterceptors();
+  }
+
+  // Exit-Resolver Binding Management (ADR-295 computed exits)
+  // — delegates to the underlying WorldModel, which owns the per-world map.
+  registerExitResolver(traitType: string, resolver: ExitResolver): void {
+    this.worldModel.registerExitResolver(traitType, resolver);
+  }
+
+  getExitResolver(traitType: string): ExitResolver | undefined {
+    return this.worldModel.getExitResolver(traitType);
+  }
+
+  getAllExitResolvers(): ReadonlyMap<string, ExitResolver> {
+    return this.worldModel.getAllExitResolvers();
   }
 
   // Score Ledger
