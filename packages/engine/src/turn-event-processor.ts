@@ -22,6 +22,16 @@ export interface EventProcessingContext {
   turn?: number;
   playerId?: string;
   locationId?: string;
+  /**
+   * Transaction id for this source's events (ADR-296 D1). The funnel that
+   * builds the context decides the id — `txn:{turn}:action` for the player
+   * action, `txn:{turn}:plugin:{plugin.id}` per plugin batch — and the
+   * enrichment pass stamps it as `data._transactionId` when the event does
+   * not already carry one (idempotent over `executeChains` inheritance).
+   * Omitted for unstamped sources (sound dispatch, meta-command output,
+   * platform-op completions) — safe under the sort's never-group rule.
+   */
+  transactionId?: string;
 }
 
 /**
@@ -60,6 +70,22 @@ function enrichEvent(
   if (context) {
     if (context.turn !== undefined && enriched.data && typeof enriched.data === 'object') {
       enriched.data = { ...enriched.data, turn: context.turn };
+    }
+    // Transaction stamp (ADR-296 D1): stamped when absent — the funnel
+    // stamp is authoritative and idempotent over executeChains' inherited
+    // value. Unlike the turn stamp above, this CREATES the data object for
+    // data-less events (the old guard silently skipped them; v2 finding 5).
+    // Events whose data is a non-object primitive cannot carry a stamp and
+    // are left alone — they render nothing the sort would place.
+    if (context.transactionId !== undefined) {
+      if (enriched.data === undefined || enriched.data === null) {
+        enriched.data = { _transactionId: context.transactionId };
+      } else if (
+        typeof enriched.data === 'object' &&
+        (enriched.data as Record<string, unknown>)._transactionId === undefined
+      ) {
+        enriched.data = { ...enriched.data, _transactionId: context.transactionId };
+      }
     }
     if (context.playerId && !enriched.entities.actor) {
       enriched.entities = { ...enriched.entities, actor: context.playerId };
@@ -124,6 +150,14 @@ export type EntityHandlerDispatcher = (event: ISemanticEvent) => void;
 
 /**
  * Service for processing turn events
+ *
+ * @deprecated Unused duplicate of the live funnel path (ADR-296 v2 finding
+ * 12): GameEngine constructs an instance but never calls its methods — the
+ * real funnels are the free `processEvent` calls in `game-engine.ts`
+ * (action funnel and `processPluginEvents`). This class's methods build an
+ * {@link EventProcessingContext} WITHOUT a `transactionId`, so events
+ * routed through it would NOT receive ADR-296 D1 transaction stamps. Do
+ * not wire new callers to it; route through the game-engine funnels.
  */
 export class TurnEventProcessor {
   constructor(
