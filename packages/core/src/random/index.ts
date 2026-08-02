@@ -6,3 +6,14 @@ export { SeededRandom, createSeededRandom } from './seeded-random.js';
 export { ChoicePoint, definePoint, getRegisteredPoints, getPoint } from './choice-point.js';
 export { RandomService } from './random-service.js';
 export { SEED_DERIVATION_VERSION, deriveStreamSeed } from './seed-derivation.js';
+export {
+  RandomForceMode,
+  RandomForceSpec,
+  RandomForceStatus,
+  forceKey,
+  RandomForceLoadError,
+  DuplicateForceKeyError,
+  UnknownForcePointError,
+  UndeclaredForceClassError
+} from './force.js';
+export { IRandomTraceData, RandomTraceSink } from './trace.js';
