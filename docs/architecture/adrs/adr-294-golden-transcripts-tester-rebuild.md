@@ -1,6 +1,6 @@
 # ADR-294: Golden transcripts — the transcript tester rebuilt on determinism
 
-## Status: ACCEPTED (2026-08-01, session 06425d) — drafted, feature-swept, interviewed (six questions resolved), and `adr-review`ed the same day (10/15 → 15/15 after three folds: Acceptance section, `.golden` format block, status wording). Accepted by David on the folded result. **Implementation is sequenced behind the D12 arc** (handler-access platform discussion → ADR-293 Phase B → this rebuild) and remains a platform change requiring its own discussion before implementation starts
+## Status: ACCEPTED (2026-08-01, session 06425d) and IMPLEMENTED (2026-08-01, commit `118cd95a` — the D12 arc completed as sequenced: handler-access discussion → ADR-293 Phase B → this rebuild). Drafted, feature-swept, interviewed (six questions resolved), and `adr-review`ed the same day (10/15 → 15/15 after three folds: Acceptance section, `.golden` format block, status wording); accepted by David on the folded result. Status-line updated 2026-08-02 (session 1d3b6f, ADR-293 Phase D plan-review fixup) — the previous wording still described implementation as not yet started.
 
 **Platform change; requires its own discussion before implementation starts.** Packages: `packages/transcript-tester` (rebuilt), `scripts/bundle-entry.js` (CLI flags), `tools/repokit` (test command surface). **Story change**: every story's transcript corpus migrates (`stories/dungeo` 17 walkthroughs + ~100 unit transcripts, plus `cloak-of-darkness`, `friendly-zoo`, `family-zoo-tutorial`, `fernhill`).
 
