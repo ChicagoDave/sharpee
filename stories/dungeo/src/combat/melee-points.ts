@@ -67,3 +67,19 @@ const OUTCOME_LABELS: Record<MeleeOutcomeType, MeleeBlowClass | VsUnconsciousCla
 export function meleeOutcomeClass(outcome: MeleeOutcomeType): MeleeBlowClass | VsUnconsciousClass {
   return OUTCOME_LABELS[outcome];
 }
+
+const CLASS_OUTCOMES = Object.fromEntries(
+  (Object.entries(OUTCOME_LABELS) as Array<[string, MeleeBlowClass | VsUnconsciousClass]>).map(
+    ([outcome, cls]) => [cls, Number(outcome) as MeleeOutcomeType]
+  )
+) as Record<MeleeBlowClass | VsUnconsciousClass, MeleeOutcomeType>;
+
+/**
+ * Numeric melee outcome for a class label — the forced-path inverse of
+ * `meleeOutcomeClass` (ADR-293 D8, Phase C `materialize`).
+ *
+ * @param cls a declared blow class
+ */
+export function meleeOutcomeFromClass(cls: MeleeBlowClass | VsUnconsciousClass): MeleeOutcomeType {
+  return CLASS_OUTCOMES[cls];
+}

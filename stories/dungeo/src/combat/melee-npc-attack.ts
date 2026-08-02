@@ -21,6 +21,7 @@ import {
   VS_UNCONSCIOUS_BLOW_POINT,
   VILLAIN_MESSAGE_VARIANT_POINT,
   meleeOutcomeClass,
+  meleeOutcomeFromClass,
 } from './melee-points';
 import {
   IFEntity,
@@ -36,6 +37,7 @@ import {
   villainStrength,
   getBestWeaponPenalty,
   resolveBlow,
+  materializeBlow,
   applyVillainBlowToHero,
   isHeroDeadFromWounds,
   MeleeOutcome,
@@ -160,11 +162,9 @@ export function meleeNpcResolver(
       const sampled = resolveBlow(villainStr, heroStr, false, heroUnconscious, draw);
       return { cls: meleeOutcomeClass(sampled.outcome), value: sampled };
     },
-    (forced) => {
-      throw new Error(
-        `${blowPoint.name}: forcing '${forced}' is not implemented until ADR-293 Phase C`
-      );
-    }
+    // Forced path (ADR-293 D8, Phase C): zero draws, same consequence math
+    // as a drawn blow — the switch below applies wounds/death identically.
+    (forced) => materializeBlow(meleeOutcomeFromClass(forced), heroStr, false)
   );
 
   // --- Get hero's weapon name for messages (e.g., "lose weapon" text) ---

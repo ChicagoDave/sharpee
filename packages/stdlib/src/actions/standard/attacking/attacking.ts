@@ -302,9 +302,11 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       }
     } else {
       // Use AttackBehavior for object destruction. resolve() hands the
-      // sample callback this point's own stream (ADR-293 D8); the
-      // materialize path is unreachable until forcing lands (Phase C), so
-      // it throws loudly rather than fabricating a representative outcome.
+      // sample callback this point's own stream (ADR-293 D8). Forcing this
+      // point needs a draw/apply split first: AttackBehavior.attack MUTATES
+      // the world inside the sample, so a materialize here could fabricate
+      // the value but not the consequence — it throws loudly instead of
+      // lying (Phase C follow-up; the melee points show the split shape).
       const { value: result } = context.random.resolve<IAttackResult['type'], IAttackResult>(
         ATTACK_OUTCOME_POINT,
         (draw) => {
@@ -313,7 +315,8 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
         },
         (forced) => {
           throw new Error(
-            `stdlib.attacking.outcome: forcing '${forced}' is not implemented until ADR-293 Phase C`
+            `stdlib.attacking.outcome: forcing '${forced}' requires the draw/apply split ` +
+              `(AttackBehavior.attack mutates during sample) — not yet implemented`
           );
         }
       );
