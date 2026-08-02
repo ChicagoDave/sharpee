@@ -8,7 +8,7 @@ description: Verify 2nd person narrative perspective — output uses "You"
 # The default perspective is 2nd person
 # Verify that output addresses the player as "You"
 > look
-[OK: contains_any "You" "you"]
+[OK: contains "You"]
 
 # Take an item — should say "Taken" or "You take..."
 > take clipboard

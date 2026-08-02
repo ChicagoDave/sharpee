@@ -29,7 +29,6 @@ import {
   WearableTrait,
   NpcTrait,
   EdibleTrait,
-  ClothingTrait,
   PushableTrait,
   PullableTrait,
   ButtonTrait,
@@ -77,7 +76,7 @@ export function setupWorld(world: WorldModel): void {
   // ---- ROOMS ----
 
   const controlRoom = world.createEntity('Control Room', EntityType.ROOM);
-  controlRoom.add(new RoomTrait({ exits: {}, isDark: false }));
+  controlRoom.add(new RoomTrait({ exits: {}, requiresLight: false }));
   controlRoom.add(
     new IdentityTrait({
       name: 'Control Room',
@@ -91,7 +90,7 @@ export function setupWorld(world: WorldModel): void {
   roomIds.controlRoom = controlRoom.id;
 
   const serverRoom = world.createEntity('Server Room', EntityType.ROOM);
-  serverRoom.add(new RoomTrait({ exits: {}, isDark: false }));
+  serverRoom.add(new RoomTrait({ exits: {}, requiresLight: false }));
   serverRoom.add(
     new IdentityTrait({
       name: 'Server Room',
@@ -105,7 +104,7 @@ export function setupWorld(world: WorldModel): void {
   roomIds.serverRoom = serverRoom.id;
 
   const supplyCloset = world.createEntity('Supply Closet', EntityType.ROOM);
-  supplyCloset.add(new RoomTrait({ exits: {}, isDark: true }));
+  supplyCloset.add(new RoomTrait({ exits: {}, requiresLight: true }));
   supplyCloset.add(
     new IdentityTrait({
       name: 'Supply Closet',
@@ -119,7 +118,7 @@ export function setupWorld(world: WorldModel): void {
   roomIds.supplyCloset = supplyCloset.id;
 
   const rooftop = world.createEntity('Rooftop', EntityType.ROOM);
-  rooftop.add(new RoomTrait({ exits: {}, isDark: false }));
+  rooftop.add(new RoomTrait({ exits: {}, requiresLight: false }));
   rooftop.add(
     new IdentityTrait({
       name: 'Rooftop',
@@ -349,7 +348,7 @@ export function setupWorld(world: WorldModel): void {
       article: 'a',
     }),
   );
-  labCoat.add(new ClothingTrait({ slot: 'torso', layer: 2, material: 'cotton', style: 'professional' }));
+  labCoat.add(new WearableTrait({ slot: 'torso', layer: 2 }));
   world.moveEntity(labCoat.id, serverRoom.id);
 
   // ---- PUSHABLE (heavy crate) ----
@@ -455,7 +454,7 @@ export function setupWorld(world: WorldModel): void {
   // ---- UTILITY ROOM (behind a door from Rooftop) ----
 
   const utilityRoom = world.createEntity('Utility Room', EntityType.ROOM);
-  utilityRoom.add(new RoomTrait({ exits: {}, isDark: false }));
+  utilityRoom.add(new RoomTrait({ exits: {}, requiresLight: false }));
   utilityRoom.add(
     new IdentityTrait({
       name: 'Utility Room',

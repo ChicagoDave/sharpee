@@ -18,4 +18,4 @@ description: Verify ButtonTrait + PushableTrait — pushing a wall button
 
 # Push the button
 > push button
-[OK: contains_any "push" "press" "click" "button"]
+[OK: contains "push"]

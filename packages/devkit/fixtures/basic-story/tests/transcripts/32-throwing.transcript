@@ -11,4 +11,4 @@ description: Verify throwing action — throw an item at a target
 
 # Throw it at the monitors (grammar: throw :item at :target)
 > throw clipboard at monitors
-[OK: contains_any "throw" "toss" "hurl" "drop" "Dropped" "clipboard" "monitors"]
+[OK: contains "throw"]

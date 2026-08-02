@@ -18,8 +18,8 @@ description: Verify VehicleTrait + EnterableTrait — enter and exit a utility c
 
 # Enter the cart
 > enter cart
-[OK: contains_any "enter" "get in" "cart" "inside"]
+[OK: contains "get in"]
 
 # Exit the cart
 > exit cart
-[OK: contains_any "exit" "get out" "leave" "cart" "Rooftop"]
+[OK: contains "get out"]

@@ -8,6 +8,7 @@
     "@sharpee/core": "latest",
     "@sharpee/engine": "latest",
     "@sharpee/ext-basic-combat": "latest",
+    "@sharpee/ext-scoring": "latest",
     "@sharpee/lang-en-us": "latest",
     "@sharpee/parser-en-us": "latest",
     "@sharpee/plugin-npc": "latest",

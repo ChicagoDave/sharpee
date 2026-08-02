@@ -20,13 +20,10 @@ description: Verify daemon and fuse both fire during gameplay
 [OK: not contains "don't understand"]
 
 > wait
-[OK: contains_any "FACILITY STATUS" "Time passes"]
+[OK: contains "Time passes"]
 
 > wait
-[OK: contains_any "FACILITY STATUS" "Time passes"]
-
-> wait
-[OK: not contains "don't understand"]
+[OK: contains "Time passes"]
 
 > wait
 [OK: not contains "don't understand"]
@@ -38,7 +35,10 @@ description: Verify daemon and fuse both fire during gameplay
 [OK: not contains "don't understand"]
 
 > wait
-[OK: contains_any "WARNING" "Time passes"]
+[OK: not contains "don't understand"]
 
 > wait
-[OK: contains_any "WARNING" "Time passes"]
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]

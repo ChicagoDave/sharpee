@@ -18,4 +18,4 @@ description: Verify ClimbableTrait — climbing a ladder
 
 # Climb the ladder
 > climb ladder
-[OK: contains_any "climb" "up" "top" "can't" "blocked"]
+[OK: contains "would get you nowhere"]

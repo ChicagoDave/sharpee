@@ -39,6 +39,7 @@ import { Story, StoryConfig, GameEngine, CustomVocabulary } from '@sharpee/engin
 import { WorldModel, IFEntity, EntityType, IWorldModel } from '@sharpee/world-model';
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { ISemanticEvent } from '@sharpee/core';
+import { registerScoring } from '@sharpee/ext-scoring';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
@@ -100,6 +101,11 @@ class RegressionStory implements Story {
    */
   initializeWorld(world: WorldModel): void {
     setupWorld(world);
+
+    // --- Scoring (for 15-scoring test) ---
+    // ADR-260 D5/D7: registration is mandatory — without it, SCORE answers
+    // no_scoring ("This isn't that kind of game") and awardScore is inert.
+    registerScoring(world);
 
     // --- Custom state (for 38-custom-state test) ---
     world.setStateValue('facility.status', 'operational');

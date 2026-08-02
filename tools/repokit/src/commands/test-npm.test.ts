@@ -31,7 +31,9 @@ const integration = process.env.DEVKIT_INTEGRATION === '1' && existsSync(DEFAULT
 
 describe.skipIf(!integration)('runTestNpm real-path (fixture, local staging)', () => {
   it('compiles and runs the fixture transcripts against the local build', () => {
-    const fixture = join(__dirname, '..', '..', 'fixtures', 'basic-story');
+    // The fixture lives in devkit (moved from npm-test/, see its package.json
+    // description) — repo-rooted so this test survives directory shuffles.
+    const fixture = join(__dirname, '..', '..', '..', '..', 'packages', 'devkit', 'fixtures', 'basic-story');
     const result = runTestNpm({ location: fixture, mode: 'local' });
     expect(result.ran).toBe(true);
     expect(result.failed).toBe(0);

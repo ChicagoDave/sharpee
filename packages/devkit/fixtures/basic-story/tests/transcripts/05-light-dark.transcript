@@ -34,7 +34,11 @@ description: Verify dark room blocks vision, flashlight provides light
 # Now the closet should be lit
 > south
 [OK: contains "Supply Closet"]
-[OK: contains "toolbox"]
+
+# ...and its contents visible (the toolbox is scenery, so it is never in
+# the contents list — examining it proves visibility under light)
+> examine toolbox
+[OK: contains "red metal toolbox"]
 
 # Turn off flashlight — dark again
 > switch off flashlight
