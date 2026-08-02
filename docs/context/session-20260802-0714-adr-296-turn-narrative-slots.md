@@ -29,6 +29,12 @@
 - Save-format changelog: convention located — the version-history block in `save-restore-service.ts`'s header (no separate file). ADR-296 entry appended there: additive `_transactionId`/`_narrativeSlot` fields, D4 stream reorganization, NO version bump (additive-only convention).
 - Golden landscape confirmed: exactly 17 `.golden` files, all dungeo walkthroughs; none elsewhere (matches ADR Acceptance-3). Tester has `--bless`.
 
+## Phase 5 notes (in progress)
+- Unit corpus: 1725 passed / 114 transcripts, no new assertion-tier failures.
+- Bless run: assertion tier 952/952 green; **git diff shows exactly the 4 predicted goldens changed** (wt-02 5× disoriented above description; wt-10 bearings above ONLY; wt-14 climb line above; wt-17 daemon block unscrambled). Both bound non-changes verified (wt-10 carousel entry message below description at line 214; wt-13 byte-identical).
+- Post-bless chain green TWICE at pinned seeds (952/952 each).
+- Non-dungeo sweep: counter-demo/hunger-demo/nautical/grammar-alterations/concealment-test/channel-service-test green. Pre-existing (NOT ADR-296): fernhill 12 transcripts use removed `[OK: contains_any]` syntax (ADR-294 D2, never migrated); cloak bar-darkness needs a golden that was never committed ("no assertion and no recording exists").
+- friendly-zoo wt-02 4th `examine parrot`: expects "FEEDING TIME", gets previous announcement again — building a main-baseline worktree to decide pre-existing vs regression BEFORE committing the re-bless.
+
 ## Next Phase
-- Phase 4 remainder: `./repokit build dungeo` (running), `tsf build --npm`, full sweep.
-- Phase 5: gated dungeo golden re-bless (wt-02/10/14/17 only; abort on any unmapped diff).
+- Await friendly-zoo baseline verdict → commit re-bless or abort per Acceptance-2.
