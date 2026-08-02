@@ -1,6 +1,6 @@
 # ADR-094: Event Chaining
 
-## Status: Accepted
+## Status: Accepted — **Amended A1** (2026-08-02, session f081ec): implementation reality recorded fourteen months on — the chaining mechanism and its positional ordering rule are load-bearing and unchanged; the metadata-based *re-ordering* layer (§Event Metadata's `transactionId` grouping and the prose-side `chainDepth` sort) was never completed and never carried the ordering, and its retirement is proposed by ADR-296 (DRAFT). See Amendment A1 at the end of this document.
 
 ## Context
 
@@ -521,3 +521,69 @@ With proper event structure:
 - ADR-052: Event Handlers for Custom Logic
 - ADR-086: EventProcessor Integration
 - Current EventProcessor implementation in `packages/engine/src/`
+
+## Amendment A1 (2026-08-02, session f081ec) — what this ADR built, what carried the load, and what did not
+
+Recorded during the GH #208 investigation (ADR-296 DRAFT). This amendment changes no
+decision retroactively; it records which parts of this ADR proved load-bearing so that
+ADR-296's proposed retirement of the remainder is legible against the original intent.
+
+### The chaining mechanism was needed, is used, and is untouched
+
+The core of this ADR — `world.chainEvent()`, `executeChains` dispatch through the
+event processor, the depth limit, cascade/override/key registration — is load-bearing
+platform surface today:
+
+- The **Chord story-loader** wires every declarative author reaction through
+  `chainEvent` (`story-loader/src/loader.ts:382`, `runtime.ts:523`) — chaining is the
+  runtime substrate for Chord's event responses, far beyond this ADR's original examples.
+- Story TS code uses it directly: family-zoo-tutorial (six chains — scoring and
+  dynamic text), dungeo (carousel entry message, ADR-295).
+
+Nothing in ADR-296 alters registration, dispatch, the depth limit, or handler shape.
+
+### The ordering guarantee that carried the load is POSITIONAL, and it was specified here
+
+This ADR's processing rule — "chained events are processed AFTER the triggering event
+completes" — is what actually guarantees cause-before-consequence: `executeChains`
+returns the chained events as processor emissions at the moment the trigger is
+processed, so they enter the turn stream after their trigger, by construction. That
+guarantee has carried consequence ordering for the entire life of this feature.
+
+One property of it is worth stating explicitly, because the old prose-sort sometimes
+masked it: a chained event's stream position is **relative to its trigger**, not to the
+end of the action's narration. Narration chained off an early event (e.g.
+`if.event.actor_moved`, which the going action emits before its room description)
+renders before the room description. That is frequently the wanted order (ADR-295's
+carousel entry message; MDL prints travel narration before arrivals); an author who
+wants consequence prose after the description chains off a later event. The retired
+room-description hoist reordered some of these cases as a side effect, but it was
+never a principled "consequences last" mechanism — it also reordered cases the wrong
+way (ADR-296 Context, probe evidence).
+
+### The metadata re-ordering layer never carried anything
+
+§Event Metadata specified `transactionId` grouping ("Engine assigns transactionId at
+the start of each player action") plus prose-side sorting by `chainDepth`. What
+actually shipped: chain dispatch stamps `_chainDepth`/`_chainedFrom`/`_chainSourceId`
+and *inherits* `_transactionId` (`WorldEventSystem.executeChains`), but **no origin
+ever stamps the field** — the engine half was never built. The prose sort's
+within-transaction rules therefore compared `undefined === undefined` and applied
+turn-globally (GH #208), while the positional rule above silently provided the real
+ordering. Fourteen months and two hundred ADRs passed without anyone noticing the
+metadata layer was inert — which is the strongest evidence that the positional
+guarantee, not the metadata, is the invariant.
+
+ADR-296 (DRAFT v3 at this writing; design source
+`docs/work/prose-order/design-20260802-turn-narrative-slots.md`) proposes delivering
+this ADR's authorial promise by a better mechanism than the one specified here: the
+engine gains the missing origin stamping (one transaction per player action, one per
+plugin batch), and chained narration gets a **declared narrative slot** (default
+`afterRoomDescription`) placing it within its transaction's frame — while the
+depth-sort mechanism this ADR specified for the same purpose is retired (slot
+declaration is what depth sorting was groping at, stated in author terms), and the
+prose sort's room-description and `action.*` hoists (no authorial contract behind
+them; reordering against emitters' intent) are removed. The chain-provenance stamps
+remain. The metadata layer was not needless; it was unfinished, and the finishing
+changed its shape. If ADR-296 is not accepted, this amendment still stands as the
+accurate record of what was and was not implemented.
