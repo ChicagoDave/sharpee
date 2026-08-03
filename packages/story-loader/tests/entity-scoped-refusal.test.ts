@@ -33,9 +33,11 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
 
 // The iron-ring doc example: an entity-local refusal key with an
 // entity-local phrase override.
-const RING_STORY = `story "Ring" by "T"
+const RING_STORY = `story
+  title: Ring
+  authors: T
   id: ring
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Vault
   a room

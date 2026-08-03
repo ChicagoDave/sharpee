@@ -18,9 +18,11 @@ import { ChordStory, createStory, LoadError } from '../src';
 
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
 
-const STORY = `story "Region Crossings" by "Test"
+const STORY = `story
+  title: Region Crossings
+  authors: Test
   id: region-crossings
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, stormy
 
 create the Underground

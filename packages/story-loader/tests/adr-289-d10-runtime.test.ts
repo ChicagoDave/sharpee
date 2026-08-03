@@ -15,9 +15,11 @@ import { compile } from '@sharpee/chord';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, CHORD_STATE_PREFIX, createStory, Evaluator } from '../src';
 
-const SOURCE = `story "Feeding Time" by "N"
+const SOURCE = `story
+  title: Feeding Time
+  authors: N
   id: d10
-  version: 0.0.1
+  story-version: 0.0.1
 
 define condition hungry-one: it is hungry
 

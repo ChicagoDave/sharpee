@@ -19,7 +19,7 @@ import { Story } from '../../src/story';
 /** A minimal story that drops the player into a room so `look` succeeds. */
 function deathTestStory(): Story {
   return {
-    config: { id: 'death-test', title: 'Death Test', author: 'Test', version: '1.0.0' },
+    config: { id: 'death-test', title: 'Death Test', authors: ['Test'], version: '1.0.0' },
     createPlayer: (world: WorldModel) => world.createEntity('You', EntityType.ACTOR),
     initializeWorld: (world: WorldModel) => {
       const room = world.createEntity('Hazard Room', EntityType.ROOM);

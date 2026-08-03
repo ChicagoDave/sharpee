@@ -40,9 +40,11 @@ function compileSource(source: string): StoryIR {
   return result.ir;
 }
 
-const STORY = `story "Door Actions" by "T"
+const STORY = `story
+  title: Door Actions
+  authors: T
   id: door-actions
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Kitchen
   a room

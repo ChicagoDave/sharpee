@@ -29,7 +29,7 @@ async function start(): Promise<void> {
   // Fresh story instance per boot (ADR-248); config is read off the instance.
   const story = createStory();
   const config = story.config;
-  const author = config.author;
+  const author = config.authors.join(', ');
 
   // Create browser client with story configuration (first boot only)
   if (!client) {

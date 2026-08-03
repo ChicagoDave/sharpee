@@ -29,7 +29,9 @@ export interface InfoChannelRendererOptions {
  *
  * Fields handled:
  *  - `title` → `document.title` and `data-title`
- *  - `author` → `data-author`
+ *  - `authors` → `data-authors` (wire array joined ", " for display —
+ *    the client owns formatting per ADR-298's data-only-wire rule)
+ *  - `testers` → `data-testers` (joined ", ")
  *  - `version` → `data-version`
  *  - `description` → `data-description`
  *  - `buildDate` → `data-build-date`
@@ -50,7 +52,8 @@ export function createInfoChannelRenderer(
       if (!value || typeof value !== 'object') return;
       const data = value as {
         title?: string;
-        author?: string;
+        authors?: string[];
+        testers?: string[];
         version?: string;
         description?: string;
         buildDate?: string;
@@ -61,8 +64,11 @@ export function createInfoChannelRenderer(
         doc.title = data.title;
         slot.setAttribute('data-title', data.title);
       }
-      if (typeof data.author === 'string') {
-        slot.setAttribute('data-author', data.author);
+      if (Array.isArray(data.authors) && data.authors.length > 0) {
+        slot.setAttribute('data-authors', data.authors.join(', '));
+      }
+      if (Array.isArray(data.testers) && data.testers.length > 0) {
+        slot.setAttribute('data-testers', data.testers.join(', '));
       }
       if (typeof data.version === 'string') {
         slot.setAttribute('data-version', data.version);
@@ -93,6 +99,30 @@ export function createIfidChannelRenderer(slot: HTMLElement): ChannelRenderer {
     onValue(value: unknown): void {
       if (typeof value !== 'string') return;
       slot.setAttribute('data-ifid', value);
+    },
+  };
+}
+
+/**
+ * `prologue` channel — replace, text. Pre-banner prologue prose
+ * (ADR-298 D3). Renders the resolved text into the slot as one
+ * paragraph per blank-line-separated chunk. The slot is expected to
+ * sit before the banner/main region in the platform's default layout
+ * (ADR-298's default rendering order); authors restyle or relocate it
+ * per the customizable-client architecture.
+ */
+export function createPrologueChannelRenderer(slot: HTMLElement): ChannelRenderer {
+  return {
+    onValue(value: unknown): void {
+      if (typeof value !== 'string' || value.length === 0) return;
+      const doc = slot.ownerDocument;
+      slot.textContent = '';
+      for (const para of value.split(/\n{2,}/)) {
+        const p = doc.createElement('p');
+        p.className = 'sharpee-prologue';
+        p.textContent = para;
+        slot.appendChild(p);
+      }
     },
   };
 }

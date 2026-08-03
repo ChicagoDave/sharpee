@@ -14,9 +14,11 @@ import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 
-const SOURCE = `story "Chime" by "Test"
+const SOURCE = `story
+  title: Chime
+  authors: Test
   id: chime
-  version: 0.0.1
+  story-version: 0.0.1
   use state-machines
 
 create the Hall

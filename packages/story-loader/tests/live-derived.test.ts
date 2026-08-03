@@ -13,9 +13,11 @@ import { exitBlockedKey, exitMessageKey } from '@sharpee/stdlib';
 import { Direction, TraitType, VisibilityBehavior, WorldModel, darkKey } from '@sharpee/world-model';
 import { createStory } from '../src';
 
-const SOURCE = `story "Nightfall" by "T"
+const SOURCE = `story
+  title: Nightfall
+  authors: T
   id: nightfall
-  version: 0.0.1
+  story-version: 0.0.1
   states: day, night
 
 create the Terrace
@@ -54,7 +56,7 @@ end phrase
 
 function load() {
   const result = compile(SOURCE);
-  expect(result.diagnostics).toEqual([]);
+  expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   const story = createStory(result.ir);
   const world = new WorldModel();
   story.initializeWorld(world);

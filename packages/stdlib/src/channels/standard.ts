@@ -78,20 +78,25 @@ export const STANDARD_CHANNEL_EVENTS = {
  * specific fields after start.
  *
  * Field provenance:
- *  - title / author / version — `StoryConfig` (fallback to
- *    `StoryInfoTrait` if config omits)
+ *  - title / authors / testers / version — `StoryConfig` (title falls
+ *    back to `StoryInfoTrait` if config omits; authors/testers are
+ *    arrays per ADR-298 — the wire stays data-only, consumers join)
  *  - ifid — `StoryConfig.ifid`
  *  - description — `StoryConfig.description` or `StoryInfoTrait.description`
+ *  - prologue — `StoryConfig.prologue`, resolved to text by the engine
+ *    at story start (phrase references included, ADR-298 D3)
  *  - buildDate — `StoryConfig.buildDate` or `StoryInfoTrait.buildDate`
  *  - engineVersion / clientVersion — `StoryInfoTrait` (set by build
  *    pipelines)
  */
 interface StoryInfoData {
   title?: string;
-  author?: string;
+  authors?: string[];
+  testers?: string[];
   version?: string;
   ifid?: string;
   description?: string;
+  prologue?: string;
   buildDate?: string;
   engineVersion?: string;
   clientVersion?: string;
@@ -234,7 +239,8 @@ export const turnChannel: IOChannel<number> = {
  */
 export interface StoryInfoPayload {
   title?: string;
-  author?: string;
+  authors?: string[];
+  testers?: string[];
   version?: string;
   description?: string;
   buildDate?: string;
@@ -259,7 +265,8 @@ export const infoChannel: IOChannel<StoryInfoPayload> = {
     if (!cap) return undefined;
     const payload: StoryInfoPayload = {};
     if (cap.title) payload.title = cap.title;
-    if (cap.author) payload.author = cap.author;
+    if (cap.authors?.length) payload.authors = cap.authors;
+    if (cap.testers?.length) payload.testers = cap.testers;
     if (cap.version) payload.version = cap.version;
     if (cap.description) payload.description = cap.description;
     if (cap.buildDate) payload.buildDate = cap.buildDate;
@@ -286,6 +293,30 @@ export const ifidChannel: IOChannel<string> = {
       return undefined;
     }
     return cap.ifid;
+  },
+};
+
+/**
+ * `prologue` — replace-mode pre-banner prologue text (ADR-298 D3).
+ * Closure reads `storyInfo.prologue` — resolved text the engine wrote
+ * at story start (phrase references already resolved through the
+ * phrase machinery) — and skips emission when absent or empty
+ * (sparse-suppress, same pattern as `ifidChannel`). Emitted once in
+ * practice: the value is set before the first packet and replace-mode
+ * carries it unchanged. The platform's default client rendering order
+ * places it before the banner.
+ */
+export const prologueChannel: IOChannel<string> = {
+  id: 'prologue',
+  contentType: 'text',
+  mode: 'replace',
+  emit: 'always',
+  produce: (ctx) => {
+    const cap = readCapability<StoryInfoData>(ctx, 'storyInfo');
+    if (!cap || typeof cap.prologue !== 'string' || cap.prologue.length === 0) {
+      return undefined;
+    }
+    return cap.prologue;
   },
 };
 
@@ -442,7 +473,7 @@ export const lifecycleChannel: IOChannel<LifecyclePayload> = {
 };
 
 /**
- * The ten platform-standard channels in iteration order. Order is
+ * The platform-standard channels in iteration order. Order is
  * preserved for stable diffing in tests and manifests; the
  * `ChannelService` itself does not depend on ordering.
  */
@@ -454,6 +485,7 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   turnChannel,
   infoChannel,
   ifidChannel,
+  prologueChannel,
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
@@ -472,6 +504,7 @@ export const STANDARD_CHANNEL_IDS = {
   TURN: 'turn',
   INFO: 'info',
   IFID: 'ifid',
+  PROLOGUE: 'prologue',
   DEATH: 'death',
   ENDGAME: 'endgame',
   SCORE_NOTIFY: 'score_notify',

@@ -52,7 +52,7 @@ class ThrowRngTestStory implements Story {
   config: StoryConfig = {
     id: 'throw-rng-test',
     title: 'Throw RNG Test Story',
-    author: 'Test Suite',
+    authors: ['Test Suite'],
     version: '1.0.0',
     description: 'Fixture for ADR-231 D6 restore-determinism',
   };

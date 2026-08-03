@@ -25,7 +25,11 @@ import {
   createScoreChannelRenderer,
   createTurnChannelRenderer,
 } from './status.js';
-import { createInfoChannelRenderer, createIfidChannelRenderer } from './info.js';
+import {
+  createInfoChannelRenderer,
+  createIfidChannelRenderer,
+  createPrologueChannelRenderer,
+} from './info.js';
 import {
   createDeathChannelRenderer,
   createEndgameChannelRenderer,
@@ -63,6 +67,7 @@ export {
   createTurnChannelRenderer,
   createInfoChannelRenderer,
   createIfidChannelRenderer,
+  createPrologueChannelRenderer,
   createDeathChannelRenderer,
   createEndgameChannelRenderer,
   createScoreNotifyChannelRenderer,
@@ -174,6 +179,8 @@ export function registerDefaultBrowserRenderers(
   renderer.registerRenderer('turn', createTurnChannelRenderer(layout.statusTurn));
   renderer.registerRenderer('info', createInfoChannelRenderer(layout.meta));
   renderer.registerRenderer('ifid', createIfidChannelRenderer(layout.meta));
+  renderer.registerSlot('prologue', layout.prologue);
+  renderer.registerRenderer('prologue', createPrologueChannelRenderer(layout.prologue));
   renderer.registerRenderer('death', createDeathChannelRenderer(layout.notify));
   renderer.registerRenderer('endgame', createEndgameChannelRenderer(layout.notify));
   renderer.registerRenderer('score_notify', createScoreNotifyChannelRenderer(layout.notify));

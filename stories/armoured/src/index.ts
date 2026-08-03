@@ -55,7 +55,7 @@ export class ArmouredStory implements Story {
     id: 'armoured',
     version: '0.1.0',
     title: 'Armoured',
-    author: 'Sharpee Examples',
+    authors: ['Sharpee Examples'],
     description: 'A sample story demonstrating trait composition for equipment systems.',
     ifid: 'ARMOURED-SAMPLE-2026',
   };

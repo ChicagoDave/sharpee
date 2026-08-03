@@ -32,7 +32,7 @@ const FIXTURE = readFileSync(
 describe('locked-door-and-key vignette (ADR-234 elegance parity)', () => {
   it('take key → unlock → open → walk through, all real actions on the loaded world', () => {
     const result = compile(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const story: ChordStory = createStory(result.ir as StoryIR);
     const world = new WorldModel();
     story.initializeWorld(world);

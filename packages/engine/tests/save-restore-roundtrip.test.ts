@@ -285,7 +285,7 @@ describe('SaveRestoreService round-trip', () => {
           id: 'minimal-test',
           version: '1.0.0',
           title: 'Minimal Test Story',
-          author: 'Test Suite',
+          authors: ['Test Suite'],
         },
       };
       expect(() =>

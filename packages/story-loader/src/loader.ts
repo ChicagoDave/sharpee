@@ -33,7 +33,7 @@ import {
   SCOPE_REQUIREMENT_PREDICATES,
   StoryIR,
 } from '@sharpee/chord';
-import type { IRActionPattern, IRPatternPart, ScopeRequirementWord } from '@sharpee/chord';
+import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
 import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
@@ -172,6 +172,24 @@ export interface StoryLoaderOptions {
 }
 
 /**
+ * Project a `description:` value to `StoryConfig.description` (ADR-298 D3:
+ * description is metadata with a single build-time value). A literal is
+ * itself; a phrase reference takes the phrase's first variant text —
+ * strategy variance (cycling/randomly) is an emission-time concept and
+ * does not apply to static metadata. Falls back to the phrase key for a
+ * ref satisfied only by phrasebook coverage (not in `ir.phrases`).
+ * @param prose the typed header value, or undefined when absent
+ * @param ir the story IR (phrase table lookup for references)
+ * @returns the resolved description text, or undefined when absent
+ */
+function descriptionText(prose: IRProseValue | undefined, ir: StoryIR): string | undefined {
+  if (!prose) return undefined;
+  if (prose.kind === 'literal') return prose.value;
+  const table = ir.phrases.locales[ir.phrases.defaultLocale] ?? {};
+  return table[prose.value]?.variants[0]?.text ?? prose.value;
+}
+
+/**
  * Build a `Story` from compiled IR.
  * @param ir a gate-clean Story IR (`compile().ok` was true)
  * @param options hatch modules and host wiring
@@ -259,9 +277,12 @@ export class ChordStory implements Story {
     this.config = {
       id: ir.meta.fields.id ?? ir.meta.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       title: ir.meta.title,
-      author: ir.meta.author,
-      version: ir.meta.fields.version ?? '0.0.0',
-      description: ir.meta.fields.blurb,
+      authors: ir.meta.fields.authors,
+      testers: ir.meta.fields.testers,
+      version: ir.meta.fields.storyVersion ?? '0.0.0',
+      ifid: ir.meta.fields.ifid,
+      description: descriptionText(ir.meta.fields.description, ir),
+      prologue: ir.meta.fields.prologue,
     };
     this.bindHatches(options);
     this.evaluator = new Evaluator(ir, this, options.seed);

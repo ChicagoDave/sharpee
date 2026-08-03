@@ -31,9 +31,11 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
   return { story, world, player };
 }
 
-const storyWith = (body: string) => `story "Cut" by "T"
+const storyWith = (body: string) => `story
+  title: Cut
+  authors: T
   id: cut
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Shed
   a room
@@ -122,9 +124,11 @@ end phrase`);
   });
 
   it('diggable rides the same machinery, and `carries` lands start inventory (ADR-230 Phase 6)', () => {
-    const source = `story "Dig" by "T"
+    const source = `story
+  title: Dig
+  authors: T
   id: dig
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Beach
   a room

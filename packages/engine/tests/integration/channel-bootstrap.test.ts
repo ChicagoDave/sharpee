@@ -251,7 +251,7 @@ describe('GameEngine — channel:packet emission', () => {
     // fields (engineVersion / clientVersion / buildDate) stay absent.
     expect(infoPayload).toEqual({
       title: 'Minimal Test Story',
-      author: 'Test Suite',
+      authors: ['Test Suite'],
       version: '1.0.0',
       description: 'A minimal story for testing basic engine functionality',
     });
@@ -272,6 +272,71 @@ describe('GameEngine — bootstrap order (AC-11)', () => {
 
     expect(order[0]).toBe('manifest');
     expect(order.slice(1).every((e) => e === 'packet')).toBe(true);
+  });
+});
+
+describe('prologue resolution and emission (ADR-298 D3)', () => {
+  it('a literal prologue lands on the storyInfo capability and the prologue channel', async () => {
+    const { engine, world } = setupTestEngine();
+    const story = new MinimalTestStory();
+    story.config = { ...story.config, prologue: 'Long ago, in the Great Underground Empire…' };
+    engine.setStory(story);
+    const packets = capturePackets(engine);
+    engine.start({ capabilities: FULL_CAPABILITIES });
+
+    const cap = world.getCapability('storyInfo') as { prologue?: string };
+    expect(cap.prologue).toBe('Long ago, in the Great Underground Empire…');
+
+    await engine.executeTurn('look');
+    expect(packets[0].packet.payload['prologue']).toBe(
+      'Long ago, in the Great Underground Empire…',
+    );
+  });
+
+  it('a phrase-ref prologue resolves through the phrase machinery at start', async () => {
+    const { engine, world, languageProvider } = setupTestEngine();
+    languageProvider.addMessage('opening-crawl', 'A cold night falls over Fernhill.');
+    const story = new MinimalTestStory();
+    story.config = {
+      ...story.config,
+      prologue: { kind: 'phrase-ref', value: 'opening-crawl' },
+    };
+    engine.setStory(story);
+    engine.start({ capabilities: FULL_CAPABILITIES });
+
+    const cap = world.getCapability('storyInfo') as { prologue?: string };
+    expect(cap.prologue).toBe('A cold night falls over Fernhill.');
+  });
+
+  it('an unresolvable phrase-ref writes nothing — capability stays empty, channel silent', async () => {
+    const { engine, world } = setupTestEngine();
+    const story = new MinimalTestStory();
+    story.config = {
+      ...story.config,
+      prologue: { kind: 'phrase-ref', value: 'never-registered-phrase' },
+    };
+    engine.setStory(story);
+    const packets = capturePackets(engine);
+    engine.start({ capabilities: FULL_CAPABILITIES });
+
+    const cap = world.getCapability('storyInfo') as { prologue?: string };
+    expect(cap.prologue ?? '').toBe('');
+
+    await engine.executeTurn('look');
+    expect(packets[0].packet.payload['prologue']).toBeUndefined();
+  });
+
+  it('no prologue → capability default stays empty and the channel stays silent', async () => {
+    const { engine, world } = setupTestEngine();
+    engine.setStory(new MinimalTestStory());
+    const packets = capturePackets(engine);
+    engine.start({ capabilities: FULL_CAPABILITIES });
+
+    const cap = world.getCapability('storyInfo') as { prologue?: string };
+    expect(cap.prologue ?? '').toBe('');
+
+    await engine.executeTurn('look');
+    expect(packets[0].packet.payload['prologue']).toBeUndefined();
   });
 });
 

@@ -16,9 +16,11 @@ import { StdlibChannelRegistry } from '@sharpee/stdlib';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, SchedulerDaemon } from '../src';
 
-const SOURCE = `story "Beds" by "T"
+const SOURCE = `story
+  title: Beds
+  authors: T
   id: beds
-  version: 0.0.1
+  story-version: 0.0.1
 
   on every turn
     play ambient rain in wind

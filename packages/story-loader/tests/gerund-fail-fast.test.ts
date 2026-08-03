@@ -38,9 +38,11 @@ const PRODDING_ACTION = `define action prodding
       Best not.
 `;
 
-const storyWith = (body: string) => `story "Gate" by "T"
+const storyWith = (body: string) => `story
+  title: Gate
+  authors: T
   id: gate
-  version: 0.0.1
+  story-version: 0.0.1
 
 define phrase nope
   Not a chance.

@@ -17,6 +17,7 @@ import {
   turnChannel,
   infoChannel,
   ifidChannel,
+  prologueChannel,
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
@@ -53,7 +54,14 @@ function makeEvent(type: string, data: Record<string, unknown> = {}) {
 function makeWorldStub(opts: {
   /** ADR-260 D1: score comes from the LEDGER; there is no scoring capability. */
   ledger?: { score: number; maxScore?: number };
-  storyInfo?: { title?: string; author?: string; version?: string; ifid?: string };
+  storyInfo?: {
+    title?: string;
+    authors?: string[];
+    testers?: string[];
+    version?: string;
+    ifid?: string;
+    prologue?: string;
+  };
   player?: { id: string };
   room?: { id: string; name: string };
 } = {}) {
@@ -243,19 +251,61 @@ describe('turnChannel.produce', () => {
 // ────────────────────────────────────────────────────────────────────
 
 describe('infoChannel.produce', () => {
-  it('returns title/author/version from the storyInfo capability', () => {
+  it('returns title/authors/testers/version from the storyInfo capability', () => {
     const world = makeWorldStub({
-      storyInfo: { title: 'Cloak', author: 'RP', version: '1.0' },
+      storyInfo: {
+        title: 'Cloak',
+        authors: ['Roger Firth', 'Sharpee Team'],
+        testers: ['Joe Mason'],
+        version: '1.0',
+      },
     });
     expect(infoChannel.produce(makeCtx({ world }))).toEqual({
       title: 'Cloak',
-      author: 'RP',
+      authors: ['Roger Firth', 'Sharpee Team'],
+      testers: ['Joe Mason'],
       version: '1.0',
     });
   });
 
+  it('carries authors as an array, never a joined string (ADR-298 data-only wire)', () => {
+    const world = makeWorldStub({
+      storyInfo: { authors: ['A One', 'B Two'] },
+    });
+    const payload = infoChannel.produce(makeCtx({ world })) as { authors?: unknown };
+    expect(Array.isArray(payload.authors)).toBe(true);
+    expect(payload.authors).toEqual(['A One', 'B Two']);
+  });
+
+  it('suppresses empty authors/testers arrays', () => {
+    const world = makeWorldStub({
+      storyInfo: { title: 'Sparse', authors: [], testers: [] },
+    });
+    expect(infoChannel.produce(makeCtx({ world }))).toEqual({ title: 'Sparse' });
+  });
+
   it('returns undefined when storyInfo is absent', () => {
     expect(infoChannel.produce(makeCtx({ world: makeWorldStub() }))).toBeUndefined();
+  });
+});
+
+describe('prologueChannel.produce', () => {
+  it('returns the resolved prologue text from storyInfo', () => {
+    const world = makeWorldStub({
+      storyInfo: { prologue: 'A cold night falls over Fernhill.' },
+    });
+    expect(prologueChannel.produce(makeCtx({ world }))).toBe(
+      'A cold night falls over Fernhill.',
+    );
+  });
+
+  it('suppresses emission when the prologue is absent or empty', () => {
+    expect(
+      prologueChannel.produce(makeCtx({ world: makeWorldStub({ storyInfo: { title: 'T' } }) })),
+    ).toBeUndefined();
+    expect(
+      prologueChannel.produce(makeCtx({ world: makeWorldStub({ storyInfo: { prologue: '' } }) })),
+    ).toBeUndefined();
   });
 });
 

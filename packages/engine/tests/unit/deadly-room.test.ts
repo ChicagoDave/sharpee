@@ -17,7 +17,7 @@ import { Story } from '../../src/story';
 /** A story whose one room is a deadly room (falls-style: only LOOK/EXAMINE are safe). */
 function deadlyRoomStory(): Story {
   return {
-    config: { id: 'deadly-room-test', title: 'Deadly Room', author: 'Test', version: '1.0.0' },
+    config: { id: 'deadly-room-test', title: 'Deadly Room', authors: ['Test'], version: '1.0.0' },
     createPlayer: (world: WorldModel) => world.createEntity('You', EntityType.ACTOR),
     initializeWorld: (world: WorldModel) => {
       const room = world.createEntity('Aragain Falls', EntityType.ROOM);

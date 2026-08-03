@@ -44,9 +44,11 @@ function loadStory(source: string): { story: ChordStory; world: WorldModel; play
   return { story, world, player };
 }
 
-const storyWith = (body: string) => `story "Quickwin" by "T"
+const storyWith = (body: string) => `story
+  title: Quickwin
+  authors: T
   id: quickwin
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Shed
   a room

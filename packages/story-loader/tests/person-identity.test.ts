@@ -23,9 +23,11 @@ function compileSource(source: string): StoryIR {
   return result.ir;
 }
 
-const STORY = `story "Estate" by "T"
+const STORY = `story
+  title: Estate
+  authors: T
   id: estate
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room

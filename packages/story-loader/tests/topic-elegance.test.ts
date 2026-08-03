@@ -26,7 +26,7 @@ const FIXTURE = readFileSync(
 describe('gamekeeper interrogation vignette (ADR-239 elegance parity)', () => {
   it('locket → the old fire → her ladyship → a miss, all real asks on the loaded world', () => {
     const result = compile(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const story: ChordStory = createStory(result.ir as StoryIR);
     const world = new WorldModel();
     story.initializeWorld(world);

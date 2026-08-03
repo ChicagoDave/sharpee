@@ -35,7 +35,7 @@ export class ConcealmentTestStory implements Story {
   config: StoryConfig = {
     id: 'concealment-test',
     title: 'Concealment Test',
-    author: 'ADR-148 Test Suite',
+    authors: ['ADR-148 Test Suite'],
     version: '1.0.0',
     description: 'Minimal story for testing concealment actions',
   };

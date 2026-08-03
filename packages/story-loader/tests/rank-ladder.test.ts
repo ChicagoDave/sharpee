@@ -14,9 +14,11 @@ import { createSeededRandom } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory } from '../src';
 
-const source = (headerBody: string, phrases = '') => `story "The Folly" by "T"
+const source = (headerBody: string, phrases = '') => `story
+  title: The Folly
+  authors: T
   id: folly
-  version: 0.0.1
+  story-version: 0.0.1
 ${headerBody}
 create the Lawn
   a room
@@ -98,7 +100,7 @@ describe('the ladder lowers onto setRanks (ADR-261 D5)', () => {
   });
 
   it('a story without `use scoring` installs neither flag nor ladder (D3)', () => {
-    const { world } = load(source('  version: 0.0.2\n'));
+    const { world } = load(source('  story-version: 0.0.2\n'));
 
     expect(world.isScoringEnabled()).toBe(false);
     expect(world.getRanks()).toEqual([]);
@@ -138,7 +140,7 @@ describe('the rogue-IR backstop (ADR-261 D4)', () => {
   });
 
   it('a story with neither loads fine', () => {
-    const ir = compileSource(source('  version: 0.0.2\n'));
+    const ir = compileSource(source('  story-version: 0.0.2\n'));
 
     expect(() => createStory(ir).initializeWorld(new WorldModel())).not.toThrow();
   });
@@ -152,7 +154,7 @@ describe('registerPlugin reaches the registry (ADR-260 acceptance #6)', () => {
   });
 
   it('a story without `use scoring` registers no watcher', () => {
-    const { plugins } = load(source('  version: 0.0.2\n'));
+    const { plugins } = load(source('  story-version: 0.0.2\n'));
 
     expect(plugins.map((p) => p.id)).not.toContain('sharpee.ext.scoring.rank-watcher');
   });

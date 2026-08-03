@@ -20,9 +20,11 @@ import {
   CHORD_SELECT_PREFIX,
 } from '../src';
 
-const SOURCE = `story "Select Ids" by "Sharpee Platform"
+const SOURCE = `story
+  title: Select Ids
+  authors: Sharpee Platform
   id: select-ids
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Lab
   a room

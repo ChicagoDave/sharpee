@@ -8,9 +8,11 @@ import { describe, expect, it, vi } from 'vitest';
 import { compile, CHORD_LANGUAGE_VERSION } from '@sharpee/chord';
 import { createStory } from '../src';
 
-const STORY = `story "T" by "T"
+const STORY = `story
+  title: T
+  authors: T
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room

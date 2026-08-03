@@ -411,9 +411,7 @@ export class GameEngine {
 
     // Update metadata
     this.context.metadata.title = story.config.title;
-    this.context.metadata.author = Array.isArray(story.config.author)
-      ? story.config.author.join(', ')
-      : story.config.author;
+    this.context.metadata.author = story.config.authors.join(', ');
     this.context.metadata.version = story.config.version;
 
     // Ensure a StoryInfo entity exists — the standard ABOUT action resolves
@@ -445,11 +443,15 @@ export class GameEngine {
     // Config values win on conflict; trait values fill in the gaps.
     const storyInfoEntities = this.world.findByTrait(TraitType.STORY_INFO);
     const trait = storyInfoEntities[0]?.get<StoryInfoTrait>(TraitType.STORY_INFO);
-    const initialStoryInfo: Record<string, string> = {
+    // ADR-298: the wire is data-only — `authors`/`testers` ride as arrays
+    // (consumers join for display). The engine-internal joined string lives
+    // on `context.metadata.author` (banner/save projections), never here.
+    const initialStoryInfo: Record<string, unknown> = {
       title: story.config.title,
-      author: this.context.metadata.author,
+      authors: story.config.authors,
       version: story.config.version,
     };
+    if (story.config.testers?.length) initialStoryInfo.testers = story.config.testers;
     if (story.config.ifid) initialStoryInfo.ifid = story.config.ifid;
     if (story.config.description) initialStoryInfo.description = story.config.description;
     if (story.config.buildDate) initialStoryInfo.buildDate = story.config.buildDate;
@@ -465,10 +467,12 @@ export class GameEngine {
     this.world.registerCapability('storyInfo', {
       schema: {
         title: { type: 'string', default: '' },
-        author: { type: 'string', default: '' },
+        authors: { type: 'array', default: [] },
+        testers: { type: 'array', default: [] },
         version: { type: 'string', default: '' },
         ifid: { type: 'string', default: '' },
         description: { type: 'string', default: '' },
+        prologue: { type: 'string', default: '' },
         buildDate: { type: 'string', default: '' },
         engineVersion: { type: 'string', default: '' },
         clientVersion: { type: 'string', default: '' },
@@ -717,6 +721,7 @@ export class GameEngine {
     //  4. Manifest fires before the first turn — bootstrap-order
     //     invariant from §11.
     this.refreshStoryInfoCapability();
+    this.resolvePrologue();
     this.clientCapabilities = options?.capabilities ?? DEFAULT_TEXT_CAPABILITIES;
 
     // ADR-293 (re-cut Phase 3): hand every plugin its session seed before
@@ -801,6 +806,29 @@ export class GameEngine {
     if (trait.description) update.description = trait.description;
     if (Object.keys(update).length > 0) {
       this.world.updateCapability('storyInfo', update);
+    }
+  }
+
+  /**
+   * Resolve `StoryConfig.prologue` (ADR-298 D3) into the `storyInfo`
+   * capability, once at story start, before the `ChannelService` is
+   * constructed — stdlib's `prologueChannel` projects the resolved text.
+   * A literal (or plain string) is itself; a `phrase-ref` renders through
+   * the prose pipeline's phrase machinery, so variants (cycling, randomly,
+   * first-time) resolve per their normal semantics. Absent or unresolvable
+   * values write nothing (sparse-suppress — the channel skips emission).
+   */
+  private resolvePrologue(): void {
+    const prologue = this.story?.config.prologue;
+    if (!prologue) return;
+    const text =
+      typeof prologue === 'string'
+        ? prologue
+        : prologue.kind === 'literal'
+          ? prologue.value
+          : (this.textService?.renderPhraseText?.(prologue.value) ?? '');
+    if (text) {
+      this.world.updateCapability('storyInfo', { prologue: text });
     }
   }
 

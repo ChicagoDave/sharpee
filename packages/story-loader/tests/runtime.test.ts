@@ -166,9 +166,11 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
 });
 
 describe('§5.4 phase routing: decisions snapshot before mutations', () => {
-  const BOX_STORY = `story "Box" by "Nobody"
+  const BOX_STORY = `story
+  title: Box
+  authors: Nobody
   id: box
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Room
   a room
@@ -291,9 +293,11 @@ describe('AC-5 groundwork: seeded determinism', () => {
 
 describe('select stopping (occurrence-ordered alternatives, sticks on last — Z5 rename of `ordered`)', () => {
   it('advances through alternatives per firing and sticks on the last', () => {
-    const ir = compileSource(`story "Ordered" by "Nobody"
+    const ir = compileSource(`story
+  title: Ordered
+  authors: Nobody
   id: ordered
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room
@@ -345,9 +349,11 @@ define phrases en-US
 
 describe('compile-time rejections', () => {
   it('refuse inside an `after` clause is a parse error (reactions cannot refuse, D3)', () => {
-    const result = compile(`story "Bad" by "Nobody"
+    const result = compile(`story
+  title: Bad
+  authors: Nobody
   id: bad
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Room
   a room

@@ -19,7 +19,7 @@ describe('Query Event Emission', () => {
       config: {
         id: 'test-story',
         title: 'Test Story',
-        author: 'Test Author',
+        authors: ['Test Author'],
         version: '1.0.0'
       },
       

@@ -14,7 +14,7 @@ import { scope } from '@sharpee/if-domain';
 import { createStory } from '../src';
 import { captureGrammarRules } from './helpers/grammar-harness';
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 const WORLD = `create the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n`;
 

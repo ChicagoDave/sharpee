@@ -43,9 +43,11 @@ function boot(ir: StoryIR): Booted {
 
 /** The lab story, parameterized on the phrase header's `while` gate. */
 function labSource(gate: string): string {
-  return `story "Z2" by "N"
+  return `story
+  title: Z2
+  authors: N
   id: z2
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Lab
   a room
@@ -154,9 +156,11 @@ describe('Z2 loader: marker rewrite + snippet-map population', () => {
   });
 
   it('`nothing` compiles to the explicit empty variant, and both room texts share one entry (Z1/Q6)', () => {
-    const source = `story "Z2" by "N"
+    const source = `story
+  title: Z2
+  authors: N
   id: z2
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Lab
   a room
@@ -187,9 +191,11 @@ end phrase
   });
 
   it('a single-variant plain phrase compiles to a plain string entry, never a Choice', () => {
-    const source = `story "Z2" by "N"
+    const source = `story
+  title: Z2
+  authors: N
   id: z2
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Lab
   a room

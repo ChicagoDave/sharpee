@@ -1,6 +1,8 @@
-story "Hatch Bind Fixture" by "Sharpee Platform"
+story
+  title: Hatch Bind Fixture
+  authors: Sharpee Platform
   id: hatch-bind
-  version: 0.0.1
+  story-version: 0.0.1
 
 define text flavor from "./extras.ts"
 

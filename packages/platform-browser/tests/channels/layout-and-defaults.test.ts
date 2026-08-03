@@ -68,6 +68,16 @@ describe('mountDefaultLayout', () => {
     expect(document.getElementById('sharpee-media')).not.toBeNull();
     expect(document.getElementById('sharpee-notify')).not.toBeNull();
     expect(document.getElementById('sharpee-meta')).not.toBeNull();
+    expect(document.getElementById('sharpee-prologue')).not.toBeNull();
+  });
+
+  it('places the prologue slot before the main region (ADR-298 D3 default order)', () => {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+    const layout = mountDefaultLayout(root);
+    const position = layout.prologue.compareDocumentPosition(layout.main);
+    // main FOLLOWS prologue in document order
+    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('is idempotent — calling twice does not duplicate slots', () => {

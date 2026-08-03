@@ -12,9 +12,11 @@ import { OPENED_REVEALED_CHAIN_KEY } from '@sharpee/stdlib';
 import { createStory } from '../src';
 import { CHORD_CHAIN_MAP, resolveChain } from '../src/chain-map';
 
-const CHAIN_STORY = `story "T" by "T"
+const CHAIN_STORY = `story
+  title: T
+  authors: T
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room

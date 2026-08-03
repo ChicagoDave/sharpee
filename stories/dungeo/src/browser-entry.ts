@@ -34,7 +34,7 @@ ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 const config = createStory().config;
 const GAME_TITLE = config.title;
 const GAME_DESCRIPTION = config.description || '';
-const GAME_AUTHORS = Array.isArray(config.author) ? config.author.join(', ') : config.author;
+const GAME_AUTHORS = config.authors.join(', ');
 const PORTED_BY = config.custom?.portedBy || '';
 
 // Create browser client with story configuration

@@ -279,9 +279,7 @@ export class SaveRestoreService {
         id: story?.config.id || 'unknown',
         version: story?.config.version || '0.0.0',
         title: story?.config.title || 'Unknown',
-        author: Array.isArray(story?.config.author)
-          ? story.config.author.join(', ')
-          : (story?.config.author || 'Unknown')
+        author: story?.config.authors?.join(', ') || 'Unknown'
       }
     };
   }

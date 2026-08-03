@@ -15,9 +15,11 @@ function compileSource(source: string): StoryIR {
   return result.ir;
 }
 
-const FMT_STORY = `story "Format" by "Nobody"
+const FMT_STORY = `story
+  title: Format
+  authors: Nobody
   id: format
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room

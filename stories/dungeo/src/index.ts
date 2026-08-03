@@ -159,7 +159,7 @@ import { initializeOrchestration } from './orchestration';
 const config: StoryConfig = {
   id: "dungeon",
   title: "DUNGEON",
-  author: "Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
+  authors: ["Tim Anderson", "Marc Blank", "Bruce Daniels", "Dave Lebling"],
   credits: [
     "By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling",
     "Ported by David Cornelson",
@@ -212,7 +212,7 @@ export class DungeoStory implements Story {
     const storyInfoEntity = world.createEntity('story-info', EntityType.OBJECT);
     storyInfoEntity.add(new StoryInfoTrait({
       title: config.title,
-      author: Array.isArray(config.author) ? config.author.join(', ') : config.author,
+      author: config.authors.join(', '),
       credits: config.credits,
       version: config.version,
       description: config.description,

@@ -40,7 +40,7 @@ export class ChannelServiceTestStory implements Story {
   config: StoryConfig = {
     id: 'channel-service-test',
     title: 'Channel Service Test Story',
-    author: 'Sharpee Platform',
+    authors: ['Sharpee Platform'],
     version: '0.0.2',
     description:
       'AC-15 fixture for ADR-163 channel-I/O parity. One room, one beacon, one debug-stats channel.',

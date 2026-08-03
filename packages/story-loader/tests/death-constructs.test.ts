@@ -199,9 +199,11 @@ describe('`kill the player` statement', () => {
   });
 
   it('`when <condition>` gates the kill (no death while the condition is false)', () => {
-    const ir = compileSource(`story "Kill When" by "Fixture"
+    const ir = compileSource(`story
+  title: Kill When
+  authors: Fixture
   id: kill-when
-  version: 1.0.0
+  story-version: 1.0.0
 
 create the amulet
   in the Crypt

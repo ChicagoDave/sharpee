@@ -1,4 +1,6 @@
-story "Composite Acceptance" by "Test"
+story
+  title: Composite Acceptance
+  authors: Test
   id: composite-acceptance
   use combat
 

@@ -15,7 +15,7 @@ import { Story } from '../../src/story';
 
 function minimalStory(): Story {
   return {
-    config: { id: 'resume-test', title: 'Resume Test', author: 'Test', version: '1.0.0' },
+    config: { id: 'resume-test', title: 'Resume Test', authors: ['Test'], version: '1.0.0' },
     createPlayer: (world: WorldModel) => world.createEntity('You', EntityType.ACTOR),
     initializeWorld: (world: WorldModel) => {
       const room = world.createEntity('Quiet Room', EntityType.ROOM);

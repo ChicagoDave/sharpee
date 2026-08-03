@@ -43,6 +43,7 @@ export {
   turnChannel,
   infoChannel,
   ifidChannel,
+  prologueChannel,
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,

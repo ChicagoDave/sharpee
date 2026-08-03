@@ -61,7 +61,7 @@ describe('cloak.story loads into a playable world', () => {
     expect(story.config).toMatchObject({
       id: 'cloak-of-darkness',
       title: 'Cloak of Darkness',
-      author: 'Roger Firth (Sharpee implementation)',
+      authors: ['Roger Firth (Sharpee implementation)'],
       version: '1.0.0',
     });
   });
@@ -206,9 +206,11 @@ describe('coverage: container config, plural, non-wearable wears', () => {
   };
 
   it('applies max items / max weight config to a container kind', () => {
-    const ir = compileSource(`story "Coverage" by "Nobody"
+    const ir = compileSource(`story
+  title: Coverage
+  authors: Nobody
   id: coverage
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Pantry
   a room
@@ -250,9 +252,11 @@ create the player
   it('backstop: rejects rogue IR wearing a non-wearable (ADR-276 census 12 — the compiler gates this as analysis.worn-not-wearable)', () => {
     // Gate-clean source (the anvil IS wearable), then strip the trait from
     // the IR directly — the loader's defensive backstop must still throw.
-    const ir = compileSource(`story "Coverage" by "Nobody"
+    const ir = compileSource(`story
+  title: Coverage
+  authors: Nobody
   id: coverage-2
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Pantry
   a room

@@ -12,9 +12,11 @@ import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engin
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, PHRASEBOOK_DATA } from '../src';
 
-const SOURCE = `story "Voices" by "T"
+const SOURCE = `story
+  title: Voices
+  authors: T
   id: voices
-  version: 0.0.1
+  story-version: 0.0.1
   states: evening, midnight
 
 create the Parlour

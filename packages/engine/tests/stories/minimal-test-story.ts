@@ -13,7 +13,7 @@ export class MinimalTestStory implements Story {
   config: StoryConfig = {
     id: 'minimal-test',
     title: 'Minimal Test Story',
-    author: 'Test Suite',
+    authors: ['Test Suite'],
     version: '1.0.0',
     description: 'A minimal story for testing basic engine functionality'
   };

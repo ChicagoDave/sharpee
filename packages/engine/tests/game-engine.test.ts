@@ -123,7 +123,7 @@ describe('GameEngine', () => {
 
       const trait = infoEntities[0].get<StoryInfoTrait>(TraitType.STORY_INFO);
       expect(trait?.title).toBe(story.config.title);
-      expect(trait?.author).toBe(story.config.author);
+      expect(trait?.author).toBe(story.config.authors.join(', '));
       expect(trait?.version).toBe(story.config.version);
     });
   });
@@ -305,7 +305,7 @@ describe('GameEngine', () => {
           id: 'test',
           version: '1.0.0',
           title: 'Test',
-          author: 'Test'
+          authors: ['Test']
         }
       };
 

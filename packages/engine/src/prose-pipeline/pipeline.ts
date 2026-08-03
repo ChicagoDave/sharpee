@@ -37,6 +37,11 @@ import {
 } from './render-context.js';
 
 import type { HandlerContext } from './handlers/types.js';
+import {
+  phraseAvailable,
+  renderViaPhrase,
+  flattenBlocks,
+} from './phrase-render.js';
 import { handleRoomDescription } from './handlers/room.js';
 import { handleRevealed } from './handlers/revealed.js';
 import {
@@ -181,10 +186,13 @@ export class ProsePipeline implements IProsePipeline {
     }
   }
 
-  processTurn(events: ISemanticEvent[]): ITextBlock[] {
-    const filtered = filterEvents(events);
-    const sorted = sortEventsForProse(filtered);
-
+  /**
+   * Build the handler context a render pass needs: the language provider,
+   * the world, and (when a world exists) the phrase-pipeline render-context
+   * factory backed by the world's persistent text state (ADR-192 W2,
+   * ADR-196). Shared by `processTurn` and `renderPhraseText`.
+   */
+  private buildHandlerContext(): HandlerContext {
     const makeRenderContext = this.world
       ? createRenderContextFactory(
           createRenderWorld(this.world),
@@ -199,11 +207,35 @@ export class ProsePipeline implements IProsePipeline {
         )
       : undefined;
 
-    const context: HandlerContext = {
+    return {
       languageProvider: this.languageProvider,
       world: this.world,
       makeRenderContext,
     };
+  }
+
+  /**
+   * Render a single registered phrase / message id to plain text, outside
+   * the per-turn event flow — the ADR-298 prologue read point.
+   *
+   * @param messageId the phrase key / message id to render
+   * @returns the flattened text, or null when the phrase machinery is
+   *   unavailable or no template/phrasebook covers the id
+   */
+  renderPhraseText(messageId: string): string | null {
+    const context = this.buildHandlerContext();
+    if (!phraseAvailable(context)) return null;
+    const blocks = renderViaPhrase(context, messageId, {}, messageId);
+    if (!blocks || blocks.length === 0) return null;
+    return flattenBlocks(blocks);
+  }
+
+  processTurn(events: ISemanticEvent[]): ITextBlock[] {
+    const filtered = filterEvents(events);
+    const sorted = sortEventsForProse(filtered);
+
+    const context: HandlerContext = this.buildHandlerContext();
+    const makeRenderContext = context.makeRenderContext;
 
     // ADR-195 §3: stage realize-time slot contributions BEFORE any message
     // realizes. Declarative slot entries (ADR-212) stage first — platform

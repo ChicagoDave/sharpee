@@ -41,9 +41,11 @@ const messageIdsOf = (events: ISemanticEvent[]) =>
 // Every gated clause carries a leading refusal that HOLDS (its target is
 // tame) — under the pre-D8 lowering the refusal leaked through the false
 // gate on the entity route and fired unconditionally on both trait routes.
-const GATES_STORY = `story "Gates" by "T"
+const GATES_STORY = `story
+  title: Gates
+  authors: T
   id: gates
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm-day, wild-day
 
 define phrase taboo

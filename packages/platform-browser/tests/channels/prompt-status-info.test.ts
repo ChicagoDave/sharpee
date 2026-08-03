@@ -9,6 +9,7 @@ import {
 import {
   createInfoChannelRenderer,
   createIfidChannelRenderer,
+  createPrologueChannelRenderer,
 } from '../../src/channels/info';
 
 const replaceJson: ChannelDefinition = { id: 'x', contentType: 'json', mode: 'replace' };
@@ -101,10 +102,14 @@ describe('info / ifid renderers', () => {
 
   it('info sets document.title and data attributes', () => {
     const r = createInfoChannelRenderer(meta);
-    r.onValue({ title: 'Cloak', author: 'RP', version: '1.0' }, replaceJson);
+    r.onValue(
+      { title: 'Cloak', authors: ['RP', 'ST'], testers: ['JM'], version: '1.0' },
+      replaceJson,
+    );
     expect(document.title).toBe('Cloak');
     expect(meta.getAttribute('data-title')).toBe('Cloak');
-    expect(meta.getAttribute('data-author')).toBe('RP');
+    expect(meta.getAttribute('data-authors')).toBe('RP, ST');
+    expect(meta.getAttribute('data-testers')).toBe('JM');
     expect(meta.getAttribute('data-version')).toBe('1.0');
   });
 
@@ -112,5 +117,21 @@ describe('info / ifid renderers', () => {
     const r = createIfidChannelRenderer(meta);
     r.onValue('ABCD-1234', replaceText);
     expect(meta.getAttribute('data-ifid')).toBe('ABCD-1234');
+  });
+
+  it('prologue renders one sharpee-prologue paragraph per blank-line chunk', () => {
+    const r = createPrologueChannelRenderer(meta);
+    r.onValue('Long ago.\n\nFar away.', replaceText);
+    const paras = meta.querySelectorAll('p.sharpee-prologue');
+    expect(paras.length).toBe(2);
+    expect(paras[0].textContent).toBe('Long ago.');
+    expect(paras[1].textContent).toBe('Far away.');
+  });
+
+  it('prologue ignores empty and non-string values', () => {
+    const r = createPrologueChannelRenderer(meta);
+    r.onValue('', replaceText);
+    r.onValue(undefined, replaceText);
+    expect(meta.querySelectorAll('p').length).toBe(0);
   });
 });

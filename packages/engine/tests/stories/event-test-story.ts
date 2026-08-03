@@ -23,7 +23,7 @@ export class EventTestStory implements Story {
   config: StoryConfig = {
     id: 'event-test',
     title: 'Event Test Story',
-    author: 'Test Suite',
+    authors: ['Test Suite'],
     version: '1.0.0',
     language: 'en-us',
     description: 'A story for testing event generation and handling'

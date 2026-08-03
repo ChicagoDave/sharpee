@@ -27,9 +27,11 @@ function compileSource(source: string): StoryIR {
   return result.ir;
 }
 
-const STORY = `story "Starts" by "T"
+const STORY = `story
+  title: Starts
+  authors: T
   id: starts
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Vault
   a room

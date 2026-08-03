@@ -16,9 +16,11 @@ import { ChordStory, createStory, SchedulerDaemon } from '../src';
 
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
 
-const STORY = `story "Clockwork" by "Test"
+const STORY = `story
+  title: Clockwork
+  authors: Test
   id: clockwork
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, stormy
 
   on every turn

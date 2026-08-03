@@ -461,6 +461,14 @@ export class BrowserClient implements BrowserClientInterface {
     if (!media.style.position) media.style.position = 'relative';
     const notify = ensureHidden('sharpee-notify', mainWindow);
     const meta = ensureHidden('sharpee-meta', mainWindow);
+    // ADR-298 D3: prologue precedes the main region on host pages too —
+    // visible (not ensureHidden) and inserted before `main` in the DOM.
+    let prologue = doc.getElementById('sharpee-prologue');
+    if (!prologue) {
+      prologue = doc.createElement('div');
+      prologue.id = 'sharpee-prologue';
+      main.parentElement?.insertBefore(prologue, main);
+    }
 
     return {
       root,
@@ -468,6 +476,7 @@ export class BrowserClient implements BrowserClientInterface {
       statusLocation,
       statusScore,
       statusTurn,
+      prologue,
       main,
       sidebar,
       input,

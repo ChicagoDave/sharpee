@@ -13,7 +13,7 @@ export class ComplexWorldTestStory implements Story {
   config: StoryConfig = {
     id: 'complex-world-test',
     title: 'Complex World Test Story',
-    author: 'Test Suite',
+    authors: ['Test Suite'],
     version: '1.0.0',
     language: 'en-us',
     description: 'A story with complex world structure for testing'

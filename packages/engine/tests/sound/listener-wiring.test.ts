@@ -55,7 +55,7 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
       config: StoryConfig = {
         id: 'story-with-listener',
         title: 'Story With Listener',
-        author: 'Test',
+        authors: ['Test'],
         version: '1.0.0',
       };
 

@@ -11,9 +11,11 @@ import { compile } from '@sharpee/chord';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory } from '../src';
 
-const SOURCE = `story "Closed Box" by "T"
+const SOURCE = `story
+  title: Closed Box
+  authors: T
   id: closed-box
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Attic
   a room
@@ -41,7 +43,7 @@ create the player
 describe('load-time contents of a closed container', () => {
   it('places the letter INSIDE the closed strongbox (AuthorModel construction path)', () => {
     const result = compile(SOURCE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const story = createStory(result.ir);
     const world = new WorldModel();
     story.initializeWorld(world);

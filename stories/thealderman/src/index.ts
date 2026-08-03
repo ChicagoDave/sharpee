@@ -35,7 +35,7 @@ import { STORY_VERSION } from './version';
 const config: StoryConfig = {
   id: 'thealderman',
   title: 'The Alderman',
-  author: 'David Cornelson',
+  authors: ['David Cornelson'],
   version: STORY_VERSION,
   description: 'A murder mystery in a grand 1870s Chicago hotel.',
 };

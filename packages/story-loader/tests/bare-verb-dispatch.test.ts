@@ -61,9 +61,11 @@ describe('bare-verb grammar for every define-action (Phase 8 #13)', () => {
 });
 
 describe("the 'cant' default renders a real refusal (Phase 8 #13)", () => {
-  const SOURCE = `story "Waves" by "T"
+  const SOURCE = `story
+  title: Waves
+  authors: T
   id: waves
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Beach
   a room

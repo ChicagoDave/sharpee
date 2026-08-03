@@ -39,7 +39,7 @@ export class CloakOfDarknessStory implements Story {
   config: StoryConfig = {
     id: "cloak-of-darkness",
     title: "Cloak of Darkness",
-    author: "Roger Firth (Sharpee implementation)",
+    authors: ["Roger Firth (Sharpee implementation)"],
     version: "1.0.0",
     description: "A basic IF demonstration - hang up your cloak!"
   };

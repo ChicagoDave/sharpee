@@ -12,7 +12,7 @@ describe('Story', () => {
       const config: StoryConfig = {
         id: 'test-story',
         title: 'Test Story',
-        author: 'Test Author',
+        authors: ['Test Author'],
         version: '1.0.0',
         description: 'A test story'
       };
@@ -20,11 +20,11 @@ describe('Story', () => {
       expect(() => validateStoryConfig(config)).not.toThrow();
     });
 
-    it('should accept author as array', () => {
+    it('should accept multiple authors', () => {
       const config: StoryConfig = {
         id: 'test-story',
         title: 'Test Story',
-        author: ['Author 1', 'Author 2'],
+        authors: ['Author 1', 'Author 2'],
         version: '1.0.0'
       };
       
@@ -38,7 +38,7 @@ describe('Story', () => {
         const config: StoryConfig = {
           id: 'test',
           title: 'Test',
-          author: 'Test',
+          authors: ['Test'],
           version
         };
         expect(() => validateStoryConfig(config)).not.toThrow();
@@ -52,7 +52,7 @@ describe('Story', () => {
         const config: StoryConfig = {
           id: 'test',
           title: 'Test',
-          author: 'Test',
+          authors: ['Test'],
           version
         };
         expect(() => validateStoryConfig(config)).toThrow('Invalid version format');
@@ -66,7 +66,7 @@ describe('Story', () => {
         const config: StoryConfig = {
           id: 'test',
           title: 'Test',
-          author: 'Test',
+          authors: ['Test'],
           version
         };
         expect(() => validateStoryConfig(config)).not.toThrow();
@@ -74,13 +74,13 @@ describe('Story', () => {
     });
 
     it('should require all mandatory fields', () => {
-      const requiredFields = ['id', 'title', 'author', 'version'];
+      const requiredFields = ['id', 'title', 'authors', 'version'];
       
       requiredFields.forEach(field => {
         const config: any = {
           id: 'test',
           title: 'Test',
-          author: 'Test',
+          authors: ['Test'],
           version: '1.0.0'
         };
         
@@ -95,7 +95,7 @@ describe('Story', () => {
       config: StoryConfig = {
         id: 'lifecycle-test',
         title: 'Lifecycle Test',
-        author: 'Test',
+        authors: ['Test'],
         version: '1.0.0'
       };
 

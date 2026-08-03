@@ -25,9 +25,16 @@ export interface StoryConfig {
   title: string;
   
   /**
-   * Story author(s)
+   * Story authors (ADR-298). Always an array — single-author stories
+   * use a one-element array. Kept as data; consumers join for display.
    */
-  author: string | string[];
+  authors: string[];
+
+  /**
+   * Story testers (ADR-298). Credited on the info channel beside
+   * `authors`; never joined into the byline.
+   */
+  testers?: string[];
 
   /**
    * Credit lines for the opening banner's `author-list` section. Each
@@ -36,9 +43,17 @@ export interface StoryConfig {
    * line plus a "Ported by …" line, or multiple separate roles).
    *
    * When omitted, the engine falls back to a single `author-list`
-   * entry built from `author` (joined with ", " if it's an array).
+   * entry built from `authors` (joined with ", ").
    */
   credits?: string[];
+
+  /**
+   * Pre-banner prologue text (ADR-298 D3), emitted once at story start
+   * on the dedicated prologue channel. A plain string is literal prose;
+   * the object form carries Chord's typed value, where a `phrase-ref`
+   * is resolved through the story's phrase machinery at emission time.
+   */
+  prologue?: string | { kind: 'literal' | 'phrase-ref'; value: string };
   
   /**
    * Story version (semantic version, e.g., "1.0.0" or "1.0.0-beta")
@@ -326,7 +341,7 @@ export class StoryWithEvents implements Story {
  * Validate story configuration
  */
 export function validateStoryConfig(config: StoryConfig): void {
-  if (!config.id || !config.title || !config.author || !config.version) {
+  if (!config.id || !config.title || !config.authors?.length || !config.version) {
     throw new Error('Missing required story configuration fields');
   }
 

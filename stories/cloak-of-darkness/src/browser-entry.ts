@@ -63,7 +63,7 @@ async function start(): Promise<void> {
   const config = story.config;
   const gameTitle = config.title;
   const gameDescription = config.description || '';
-  const gameAuthors = Array.isArray(config.author) ? config.author.join(', ') : config.author;
+  const gameAuthors = config.authors.join(', ');
 
   const getAboutText = (): string => [
     gameTitle,

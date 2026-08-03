@@ -20,9 +20,11 @@
 ## step, and the browser side compiles the exact same bytes the way
 ## devkit's `chord-browser-entry.ts.template` does at boot.
 
-story "Capture Parity" by "Sharpee Tests"
+story
+  title: Capture Parity
+  authors: Sharpee Tests
   id: capture-parity
-  version: 1.0.0
+  story-version: 1.0.0
 
 create the Proving Room
   a room

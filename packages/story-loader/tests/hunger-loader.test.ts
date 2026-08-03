@@ -13,9 +13,11 @@ import { WorldModel } from '@sharpee/world-model';
 import { getHungerSeverity, setHungerSeverity } from '@sharpee/ext-hunger';
 import { createStory } from '../src';
 
-const source = (headerBody: string, phrases = '') => `story "Survive" by "T"
+const source = (headerBody: string, phrases = '') => `story
+  title: Survive
+  authors: T
   id: survive
-  version: 0.0.1
+  story-version: 0.0.1
 ${headerBody}
 create the Camp
   a room

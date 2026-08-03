@@ -13,9 +13,11 @@ import type { GrammarBuilder } from '@sharpee/if-domain';
 import { createStory, LoadError } from '../src';
 import { captureGrammarEngine } from './helpers/grammar-harness';
 
-const STORY_HEAD = `story "Alterations" by "T"
+const STORY_HEAD = `story
+  title: Alterations
+  authors: T
   id: alterations
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Barn
   a room

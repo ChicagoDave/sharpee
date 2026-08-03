@@ -52,7 +52,7 @@ create the Kitchen
   A kitchen.
 `;
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 const locationName = (l: Loaded, id: string) => {
   const room = l.world.getEntity(l.world.getLocation(id)!);

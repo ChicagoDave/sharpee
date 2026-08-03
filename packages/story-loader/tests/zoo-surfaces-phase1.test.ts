@@ -51,9 +51,11 @@ describe('Z5: STRATEGY_SELECTOR maps all five adverbs 1:1 (ADR-211 Decision 4)',
     ['sticky', 'sticky'],
     ['first-time', 'firstTime'],
   ] as const)('`define phrase mood, %s` emits a Choice with selector `%s`', (adverb, selector) => {
-    const { story, world, playerId } = boot(`story "P1" by "N"
+    const { story, world, playerId } = boot(`story
+  title: P1
+  authors: N
   id: p1
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room
@@ -92,9 +94,11 @@ end phrase
 
 describe('Z5: `select sticky` persists its pick (stored = index + 1) and replays it', () => {
   it('the first firing draws and persists; later firings replay the same alternative', () => {
-    const { story, world, playerId } = boot(`story "P1" by "N"
+    const { story, world, playerId } = boot(`story
+  title: P1
+  authors: N
   id: p1
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room
@@ -139,9 +143,11 @@ create the player
 });
 
 describe('Z4: `while <entity> is here` gates a rule site (every-turn daemon)', () => {
-  const SOURCE = `story "P1" by "N"
+  const SOURCE = `story
+  title: P1
+  authors: N
   id: p1
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Lab
   a room
@@ -213,9 +219,11 @@ create the bell
 
 describe('Z1: `first time` prose binds RoomTrait.initialDescription', () => {
   it('the room carries both descriptions in their platform fields', () => {
-    const { story, world } = boot(`story "P1" by "N"
+    const { story, world } = boot(`story
+  title: P1
+  authors: N
   id: p1
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Zoo Entrance
   a room
@@ -241,9 +249,11 @@ create the player
   });
 
   it('a room without `first time` has no initialDescription (field absent, not empty)', () => {
-    const { story, world } = boot(`story "P1" by "N"
+    const { story, world } = boot(`story
+  title: P1
+  authors: N
   id: p1
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room

@@ -19,7 +19,7 @@ export class GameStateTestStory implements Story {
   config: StoryConfig = {
     id: 'game-state-test',
     title: 'Game State Test Story',
-    author: 'Test Suite',
+    authors: ['Test Suite'],
     version: '1.0.0',
     language: 'en-us',
     description: 'A story for testing game state management'

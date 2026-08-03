@@ -52,9 +52,11 @@ function enterRoom(story: ChordStory, world: WorldModel, playerId: string, roomI
 
 // --------------------------------------------------------- forward-march
 
-const MARCH_STORY = `story "March" by "T"
+const MARCH_STORY = `story
+  title: March
+  authors: T
   id: march
-  version: 0.0.1
+  story-version: 0.0.1
   states: dawn, noon, dusk
 
 define trait ripenable
@@ -120,9 +122,11 @@ describe('D4 forward-march at runtime (non-reversible sets)', () => {
   });
 });
 
-const REVERSIBLE_STORY = `story "Tide" by "T"
+const REVERSIBLE_STORY = `story
+  title: Tide
+  authors: T
   id: tide
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Shore
   a room
@@ -155,9 +159,11 @@ describe('D4 reversible sets', () => {
 
 // -------------------------------- named-entity change from sequence scope
 
-const SEQUENCE_CHANGE_STORY = `story "Ripening" by "T"
+const SEQUENCE_CHANGE_STORY = `story
+  title: Ripening
+  authors: T
   id: ripening
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Orchard
   a room
@@ -200,9 +206,11 @@ describe('named-entity `change` from sequence-step scope (CP6)', () => {
 
 // --------------------------------------------------------- presence gate
 
-const PRESENCE_STORY = `story "Presence" by "T"
+const PRESENCE_STORY = `story
+  title: Presence
+  authors: T
   id: presence
-  version: 0.0.1
+  story-version: 0.0.1
 
 define trait jumpy
   phrases en-US
@@ -317,9 +325,11 @@ describe('decision-10 presence gate (performances need an audience)', () => {
 
 // ------------------------------------------- must / when suffix (Finding 8)
 
-const MUSTS_STORY = `story "Musts" by "T"
+const MUSTS_STORY = `story
+  title: Musts
+  authors: T
   id: musts
-  version: 0.0.1
+  story-version: 0.0.1
 
 define action poking
   grammar
@@ -463,9 +473,11 @@ describe('body-level `must` and statement `when` suffix (Finding 8)', () => {
 
 // -------------------------------------------------- state adjectives (D1)
 
-const GATE_STORY = `story "Gatehouse" by "T"
+const GATE_STORY = `story
+  title: Gatehouse
+  authors: T
   id: gatehouse
-  version: 0.0.1
+  story-version: 0.0.1
 
 define phrase gate-open
   The gate stands open.

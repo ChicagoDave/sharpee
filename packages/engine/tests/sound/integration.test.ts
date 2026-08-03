@@ -108,7 +108,7 @@ class TapestryStory implements Story {
   config: StoryConfig = {
     id: 'tapestry-test',
     title: 'Tapestry Test',
-    author: 'test',
+    authors: ['test'],
     version: '1.0.0',
   };
 

@@ -51,9 +51,7 @@ async function start(): Promise<void> {
     storyInfo: {
       title: config.title,
       description: config.description ?? '',
-      authors: Array.isArray(config.author)
-        ? config.author.join(', ')
-        : config.author,
+      authors: config.authors.join(', '),
       version: config.version,
       // Engine + build date come from the build pipeline in real
       // bundles; armoured doesn't generate a version.ts so we leave

@@ -14,7 +14,7 @@ export class ActionTestStory implements Story {
   config: StoryConfig = {
     id: 'action-test',
     title: 'Action Test Story',
-    author: 'Test Suite',
+    authors: ['Test Suite'],
     version: '1.0.0',
     language: 'en-us',
     description: 'A story for testing custom actions and command execution'

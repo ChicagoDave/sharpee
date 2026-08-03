@@ -70,7 +70,7 @@ class ShoutTestStory implements Story {
   config: StoryConfig = {
     id: 'shout-test',
     title: 'Shout Test',
-    author: 'test',
+    authors: ['test'],
     version: '1.0.0',
   };
 

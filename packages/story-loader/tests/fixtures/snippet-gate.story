@@ -1,7 +1,9 @@
-story "Snippet Gate Fixture" by "Sharpee Tests"
+story
+  title: Snippet Gate Fixture
+  authors: Sharpee Tests
   id: snippet-gate
-  version: 0.0.1
-  blurb: Z2 end-to-end fixture - gated {key} markers through the full platform.
+  story-version: 0.0.1
+  description: Z2 end-to-end fixture - gated {key} markers through the full platform.
 
 create the Lab
   a room

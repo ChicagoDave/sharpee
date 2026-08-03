@@ -23,9 +23,11 @@ function compileClean(source: string): StoryIR {
   return result.ir;
 }
 
-const BASE = `story "Backstop" by "T"
+const BASE = `story
+  title: Backstop
+  authors: T
   id: backstop
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Vault
   a room

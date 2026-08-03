@@ -19,9 +19,11 @@ import { ChordStory, createStory, SchedulerDaemon } from '../src';
 /** The story object's phase key (D2) — not exported via the package index. */
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
 
-const STORY = `story "Region Daemons" by "Test"
+const STORY = `story
+  title: Region Daemons
+  authors: Test
   id: region-daemons
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, stormy
 
 create the Underground

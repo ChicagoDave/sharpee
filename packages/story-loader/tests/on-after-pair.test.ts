@@ -12,9 +12,11 @@ import { compile } from '@sharpee/chord';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
 
-const SOURCE = `story "Pairs" by "T"
+const SOURCE = `story
+  title: Pairs
+  authors: T
   id: pairs
-  version: 0.0.1
+  story-version: 0.0.1
   use scoring
 
 create the Shrine
@@ -76,7 +78,7 @@ const TRAIT_SOURCE = SOURCE.replace(`create the bell
 
 function load(source: string) {
   const result = compile(source);
-  expect(result.diagnostics).toEqual([]);
+  expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   const story = createStory(result.ir);
   const world = new WorldModel();
   story.initializeWorld(world);
@@ -151,7 +153,7 @@ define trait chimed
   scenery, chimed
   in the Shrine`);
     const result = compile(source);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const story = createStory(result.ir);
     let err: unknown;
     try {

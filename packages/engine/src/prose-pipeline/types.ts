@@ -127,4 +127,16 @@ export interface IProsePipeline {
    * @param entry the slot entry to register (or replace).
    */
   registerSlotEntry(entry: SlotEntry): void;
+
+  /**
+   * Render a single registered phrase / message id to plain text, outside
+   * the per-turn event flow — the ADR-298 prologue read point. Uses the
+   * same render-context construction as a turn, so phrase variants
+   * (cycling, randomly, first-time) resolve per their normal semantics.
+   *
+   * @param messageId the phrase key / message id to render
+   * @returns the flattened text, or null when no template or phrasebook
+   *   covers the id (callers degrade gracefully)
+   */
+  renderPhraseText?(messageId: string): string | null;
 }

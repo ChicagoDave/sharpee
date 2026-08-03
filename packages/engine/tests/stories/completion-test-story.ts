@@ -20,7 +20,7 @@ export class CompletionTestStory implements Story {
   config: StoryConfig = {
     id: 'completion-test',
     title: 'Completion Test Story',
-    author: 'Test Suite',
+    authors: ['Test Suite'],
     version: '1.0.0',
     language: 'en-us',
     description: 'A story for testing game completion conditions'

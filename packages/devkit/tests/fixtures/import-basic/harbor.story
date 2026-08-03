@@ -1,6 +1,8 @@
-story "Harbor" by "Test"
+story
+  title: Harbor
+  authors: Test
   id: harbor
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Lighthouse
   a room

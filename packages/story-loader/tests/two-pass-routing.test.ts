@@ -34,9 +34,11 @@ import { WorldModel } from '@sharpee/world-model';
 import { createStory } from '../src';
 import { counterKey } from '../src/state-keys';
 
-const SOURCE = `story "Two-Pass Routing Harness" by "Sharpee Platform"
+const SOURCE = `story
+  title: Two-Pass Routing Harness
+  authors: Sharpee Platform
   id: two-pass-routing
-  version: 0.0.1
+  story-version: 0.0.1
 
 define condition loose-crate: it is a container and it is in the Lab
 

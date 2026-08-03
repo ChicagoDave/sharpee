@@ -20,9 +20,11 @@ function load(text: string) {
   return { world };
 }
 
-const STORY = `story "Survive" by "T"
+const STORY = `story
+  title: Survive
+  authors: T
   id: survive
-  version: 0.0.1
+  story-version: 0.0.1
 
 define counter madness starts 5 between 0 and 100
 
@@ -79,9 +81,11 @@ describe('counter loader lowering (ADR-264 P1)', () => {
   });
 });
 
-const DAEMON_STORY = (clause: string, decl: string) => `story "Tick" by "T"
+const DAEMON_STORY = (clause: string, decl: string) => `story
+  title: Tick
+  authors: T
   id: tick
-  version: 0.0.1
+  story-version: 0.0.1
 ${clause}
 
 ${decl}

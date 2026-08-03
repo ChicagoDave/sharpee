@@ -30,6 +30,8 @@ export interface BrowserDefaultLayout {
   readonly statusLocation: HTMLElement;
   readonly statusScore: HTMLElement;
   readonly statusTurn: HTMLElement;
+  /** Pre-banner prologue region (ADR-298 D3) — sits before `main`. */
+  readonly prologue: HTMLElement;
   readonly main: HTMLElement;
   readonly sidebar: HTMLElement;
   readonly input: HTMLInputElement;
@@ -67,6 +69,9 @@ export function mountDefaultLayout(
   // Position media so layered images stack via z-index.
   if (!media.style.position) media.style.position = 'relative';
 
+  // ADR-298 D3: the prologue region precedes the main log — the
+  // platform's default before-the-banner rendering order.
+  const prologue = ensureChild(doc, root, 'div', 'sharpee-prologue');
   const main = ensureChild(doc, root, 'div', 'sharpee-main', { role: 'log' });
   const sidebar = ensureChild(doc, root, 'aside', 'sharpee-sidebar');
 
@@ -97,6 +102,7 @@ export function mountDefaultLayout(
     statusLocation,
     statusScore,
     statusTurn,
+    prologue,
     main,
     sidebar,
     input,

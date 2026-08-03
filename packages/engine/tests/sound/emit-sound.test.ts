@@ -86,7 +86,7 @@ function buildFixture() {
     history: [],
     metadata: {
       title: 'Emit Sound Test',
-      author: 'test',
+      authors: ['test'],
       version: '0.0.0',
       started: now,
       lastPlayed: now,

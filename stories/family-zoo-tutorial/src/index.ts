@@ -99,7 +99,7 @@ import { registerDynamicText } from './dynamic-text.js';
 const config: StoryConfig = {
   id: 'friendly-zoo',
   title: 'Friendly Zoo',
-  author: 'Sharpee Team',
+  authors: ['Sharpee Team'],
   version: '0.0.1',
   description: 'A small family zoo — a workspace testing target for the v2 platform.',
 };
