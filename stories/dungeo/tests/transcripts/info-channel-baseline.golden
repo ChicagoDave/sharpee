@@ -1,0 +1,35 @@
+# sharpee golden v1
+transcript: info-channel-baseline.transcript
+story: dungeo
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main, info
+events: false
+locale: en-US
+forces: (none)
+---
+> look
+DUNGEON
+
+Story v4.3.0 (built 2026-08-03)
+
+Sharpee v4.3.0
+
+A port of Mainframe Zork (1981)
+
+By Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling
+
+Ported by David Cornelson
+
+Type HELP for instructions, ABOUT for credits.
+
+West of House
+This is an open field west of a white house with a boarded front door. There is a small mailbox here.
+
+You can see a welcome mat here.
+◦ info {"author":"Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling","buildDate":"2026-08-03T04:00:07Z","description":"A port of Mainframe Zork (1981)","engineVersion":"4.3.0","title":"DUNGEON","version":"4.3.0"}
+
+> inventory
+Your hands are empty.
+◦ info {"author":"Tim Anderson, Marc Blank, Bruce Daniels, and Dave Lebling","buildDate":"2026-08-03T04:00:07Z","description":"A port of Mainframe Zork (1981)","engineVersion":"4.3.0","title":"DUNGEON","version":"4.3.0"}

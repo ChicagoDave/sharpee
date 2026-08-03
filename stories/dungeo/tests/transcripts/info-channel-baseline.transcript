@@ -1,0 +1,13 @@
+title: Info Channel Baseline
+story: dungeo
+description: ADR-298 baseline — channel-scoped golden of the info channel's pre-cutover shape (singular author, no testers/prologue)
+seed: 42
+channels: main, info
+
+---
+
+> look
+[OK: contains "West"]
+
+> inventory
+[OK: contains "empty-handed"]
