@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { createSeededRandom } from '@sharpee/core';
+import { EngineRandomService } from '@sharpee/engine';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { CombatantTrait, HealthTrait, IFEntity, NpcTrait, TraitType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
@@ -36,7 +36,9 @@ describe('core NPC behaviors through the real loader (ADR-215 AC-4)', () => {
   let player: IFEntity;
   let npcPlugin: NpcPlugin;
   let turn: number;
-  const random = createSeededRandom(7);
+  // Real RandomService (ADR-293 D6): NPC combat/behavior draws are gated
+  // through per-point streams — a bare SeededRandom no longer satisfies the seam.
+  const random = new EngineRandomService(7);
 
   const tick = () => {
     turn += 1;

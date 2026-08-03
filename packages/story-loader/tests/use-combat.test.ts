@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
+import { EngineRandomService } from '@sharpee/engine';
 import { attackingAction } from '@sharpee/stdlib';
 import { CombatantTrait, HealthTrait, IFEntity, TraitType, WeaponTrait, WorldModel } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
@@ -72,10 +73,17 @@ describe('use combat through the real loader (ADR-215 AC-1/AC-3)', () => {
     world.moveEntity(sword.id, player.id);
     const initial = (troll.get(TraitType.HEALTH) as HealthTrait).health;
 
+    // Real RandomService (ADR-293 D6): the lifecycle engine hands
+    // context.random to BasicCombatInterceptor.postExecute, which refuses to
+    // draw without one. One instance across swings so the hero-blow stream
+    // advances between attacks.
+    const random = new EngineRandomService(7);
+
     const attackOnce = (): ISemanticEvent[] => {
       const context: any = {
         world,
         player,
+        random,
         action: attackingAction,
         currentLocation: world.getContainingRoom(player.id),
         command: {
