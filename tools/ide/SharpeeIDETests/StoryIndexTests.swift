@@ -26,10 +26,12 @@ final class StoryIndexTests: XCTestCase {
                     phrases: ComposeStoryIR.PhraseBook? = nil,
                     hatches: [ComposeStoryIR.Hatch]? = nil,
                     title: String = "The Folly at Fernhill",
-                    fields: [String: String] = ["id": "fernhill", "version": "0.3.0"])
+                    fields: ComposeStoryIR.Fields = .init(id: "fernhill",
+                                                          storyVersion: "0.3.0",
+                                                          authors: ["The Sharpee Project"]))
         -> ComposeStoryIR {
-        ComposeStoryIR(format: "story language 1", languageVersion: "2.1.0",
-                       meta: .init(title: title, author: "The Sharpee Project", fields: fields),
+        ComposeStoryIR(format: "story language 2", languageVersion: "3.0.0",
+                       meta: .init(title: title, fields: fields),
                        grammarFile: nil, entities: entities, actions: actions,
                        phrases: phrases, hatches: hatches)
     }

@@ -33,9 +33,12 @@ final class RecordingSaveAsTestTests: XCTestCase {
     /// wording in it — so a platform message change cannot make these tests
     /// flap, and a failure here means the serializer really broke.
     private static let story = """
-    story "Bless Probe" by "Tests"
+    story
+      title: Bless Probe
+      authors: Tests
       id: bless-probe
-      version: 1.0.0
+      story-version: 1.0.0
+      ifid: BE6F80BB-5071-4293-CEDF-405162738E9F
 
     create the Den
       a room

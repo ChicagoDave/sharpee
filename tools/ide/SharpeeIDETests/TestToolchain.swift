@@ -142,9 +142,12 @@ enum TestToolchain {
 
     /// A minimal story that composes clean (verified against the live CLI).
     static let cleanStory = """
-    story "Probe" by "Tests"
+    story
+      title: Probe
+      authors: Tests
       id: probe
-      version: 1.0.0
+      story-version: 1.0.0
+      ifid: 5A2E4B77-1C3D-4E5F-8A9B-0C1D2E3F4A5B
 
     create the Lab
       a room
@@ -166,9 +169,12 @@ enum TestToolchain {
     /// A story declaring a hatch module; pair with a module file whose source
     /// carries a quoted `chord.*` literal for a `hatch.chord-namespace` finding.
     static let hatchStory = """
-    story "HatchProbe" by "Tests"
+    story
+      title: HatchProbe
+      authors: Tests
       id: hatch-probe
-      version: 1.0.0
+      story-version: 1.0.0
+      ifid: 7B3F5C88-2D4E-4F60-9BAC-1D2E3F405B6C
 
     create the Lab
       a room

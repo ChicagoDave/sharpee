@@ -1,6 +1,6 @@
 # ADR-282: Play-to-test — blessing good turns while playing becomes transcript tests
 
-## Status: ACCEPTED (2026-07-27, session fda0f0) — drafted, interviewed (4 questions resolved), and twice re-reviewed the same day; accepted after the ADR-287 grammar (backtick fences then, literal text blocks now) and review-fix folds
+## Status: SUPERSEDED — interaction model only (2026-08-03, session 83abc1) by [ADR-299](adr-299-play-skein-bless.md) (play–skein–bless: the skein replaces per-turn record/bless). The serialization and grammar work (literal text blocks, transcript emission, `[OK:]` defaulting) is retained and carried forward by ADR-299 D7. Historical: ACCEPTED (2026-07-27, session fda0f0) — drafted, interviewed (4 questions resolved), and twice re-reviewed the same day; accepted after the ADR-287 grammar (backtick fences then, literal text blocks now) and review-fix folds
 
 ## Date: 2026-07-27
 

@@ -73,10 +73,19 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
 
     struct Meta: Codable, Equatable, Sendable {
         let title: String
-        let author: String
-        /// Raw header fields (`id`, `version`, `blurb`, ...). `fields["id"]` names
-        /// the `dist/web/<id>/` bundle directory (D4).
-        let fields: [String: String]
+        /// Typed header fields (ADR-298 D4: the story block's closed schema —
+        /// `IRStoryFields` in @sharpee/chord). Only the keys the IDE reads are
+        /// decoded; the wire carries more (ignore-unknown-fields, as above).
+        let fields: Fields
+    }
+
+    /// The subset of `IRStoryFields` the IDE consumes. `id` names the
+    /// `dist/web/<id>/` bundle directory (D4); `storyVersion` and `authors`
+    /// feed the build report's byline.
+    struct Fields: Codable, Equatable, Sendable {
+        let id: String?
+        let storyVersion: String?
+        let authors: [String]
     }
 
     struct GrammarFile: Codable, Equatable, Sendable {
@@ -170,7 +179,8 @@ struct ComposeJsonPayload: Codable, Equatable, Sendable {
     /// The schema version this Swift mirror is written against — mirrors
     /// `COMPOSE_JSON_SCHEMA_VERSION` in @sharpee/ide-protocol. Distinct from
     /// `ProjectManifest.currentSchemaVersion` (separate contracts version separately).
-    static let currentSchemaVersion = 1
+    /// 2 (ADR-298, 2026-08-03): `meta` reshaped to `{title, fields: IRStoryFields}`.
+    static let currentSchemaVersion = 2
 
     let schemaVersion: Int
     /// The one diagnostics stream: compile diagnostics first, then hatch records.

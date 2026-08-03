@@ -60,6 +60,10 @@ describe('isComposeJsonPayload', () => {
     expect(isComposeJsonPayload({ diagnostics: [] })).toBe(false);
   });
 
+  it('rejects the retired version-1 payload (ADR-298 meta reshape bumped to 2)', () => {
+    expect(isComposeJsonPayload({ schemaVersion: 1, diagnostics: [] })).toBe(false);
+  });
+
   it('rejects a malformed record in the stream and a non-object ir', () => {
     expect(
       isComposeJsonPayload({ schemaVersion: COMPOSE_JSON_SCHEMA_VERSION, diagnostics: [{ code: 'x' }] })

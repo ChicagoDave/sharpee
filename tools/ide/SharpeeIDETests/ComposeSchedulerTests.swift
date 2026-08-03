@@ -41,7 +41,7 @@ final class ComposeSchedulerTests: XCTestCase {
         return url
     }
 
-    private static let emptyPayload = ComposeJsonPayload(schemaVersion: 1, diagnostics: [], ir: nil)
+    private static let emptyPayload = ComposeJsonPayload(schemaVersion: 2, diagnostics: [], ir: nil)
 
     func testRapidEditsCoalesceIntoOneComposeWithNewestContent() throws {
         let story = try writeStory("on disk")
@@ -93,7 +93,7 @@ final class ComposeSchedulerTests: XCTestCase {
             let record = ComposeDiagnosticRecord(severity: .error, code: "analysis.unknown-entity",
                                                  message: "test", file: url.path, line: 1,
                                                  span: DiagnosticSpan(line: 1, column: 1, endLine: 1, endColumn: 2))
-            completion(.success(ComposeJsonPayload(schemaVersion: 1, diagnostics: [record], ir: nil)))
+            completion(.success(ComposeJsonPayload(schemaVersion: 2, diagnostics: [record], ir: nil)))
         }
 
         var captured: ComposeScheduler.Outcome?

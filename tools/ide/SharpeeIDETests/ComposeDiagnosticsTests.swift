@@ -12,7 +12,7 @@ final class ComposeDiagnosticsTests: XCTestCase {
 
     func testDecodesCompileRecordWithFullSpan() throws {
         let payload = try ComposeJsonPayload.decode(from: data("""
-        {"schemaVersion":1,"diagnostics":[{"severity":"error","code":"analysis.unknown-entity",
+        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"analysis.unknown-entity",
          "message":"No entity named `Attic`.","file":"/tmp/probe.story","line":11,
          "span":{"line":11,"column":13,"endLine":11,"endColumn":22}}]}
         """))
@@ -26,7 +26,7 @@ final class ComposeDiagnosticsTests: XCTestCase {
 
     func testDecodesHatchRecordWithoutSpan() throws {
         let payload = try ComposeJsonPayload.decode(from: data("""
-        {"schemaVersion":1,"diagnostics":[{"severity":"error","code":"hatch.chord-namespace",
+        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"hatch.chord-namespace",
          "message":"loader-private","file":"/tmp/mod.ts","line":1}]}
         """))
         XCTAssertEqual(payload.diagnostics[0].code, "hatch.chord-namespace")
@@ -35,9 +35,10 @@ final class ComposeDiagnosticsTests: XCTestCase {
 
     func testDecodesIRSubsetWhenPresent() throws {
         let payload = try ComposeJsonPayload.decode(from: data("""
-        {"schemaVersion":1,"diagnostics":[],
-         "ir":{"format":"story language 1","languageVersion":"2.1.0",
-               "meta":{"title":"Probe","author":"Tests","fields":{"id":"probe","version":"1.0.0"}},
+        {"schemaVersion":2,"diagnostics":[],
+         "ir":{"format":"story language 2","languageVersion":"3.0.0",
+               "meta":{"title":"Probe","fields":{"id":"probe","storyVersion":"1.0.0",
+                                                 "authors":["Tests"],"testers":[],"themes":[]}},
                "entities":[{"id":"lab","name":"Lab","article":"the","isPlayer":false,
                             "kinds":[{"name":"room","config":[],"condition":null,
                                       "span":{"line":6,"column":3,"endLine":6,"endColumn":9}}],
@@ -53,8 +54,10 @@ final class ComposeDiagnosticsTests: XCTestCase {
                "unknownFutureField":42}}
         """))
         let ir = try XCTUnwrap(payload.ir)
-        XCTAssertEqual(ir.languageVersion, "2.1.0")
-        XCTAssertEqual(ir.meta.fields["id"], "probe")
+        XCTAssertEqual(ir.languageVersion, "3.0.0")
+        XCTAssertEqual(ir.meta.fields.id, "probe")
+        XCTAssertEqual(ir.meta.fields.storyVersion, "1.0.0")
+        XCTAssertEqual(ir.meta.fields.authors, ["Tests"])
         XCTAssertNil(ir.grammarFile)
 
         let names = try XCTUnwrap(ir.phrases?.defaultLocaleNames)
@@ -81,9 +84,9 @@ final class ComposeDiagnosticsTests: XCTestCase {
 
     func testDecodesGrammarFileMarker() throws {
         let payload = try ComposeJsonPayload.decode(from: data("""
-        {"schemaVersion":1,"diagnostics":[],
-         "ir":{"format":"story language 1","languageVersion":"2.1.0",
-               "meta":{"title":"Std","author":"Platform","fields":{}},
+        {"schemaVersion":2,"diagnostics":[],
+         "ir":{"format":"story language 2","languageVersion":"3.0.0",
+               "meta":{"title":"Std","fields":{"authors":[],"testers":[],"themes":[]}},
                "grammarFile":{"name":"standard-en-us"}}}
         """))
         XCTAssertEqual(payload.ir?.grammarFile?.name, "standard-en-us")
@@ -94,7 +97,7 @@ final class ComposeDiagnosticsTests: XCTestCase {
         {"schemaVersion":999,"diagnostics":[]}
         """))) { error in
             XCTAssertEqual(error as? ComposeJsonPayload.DecodeError,
-                           .schemaVersionMismatch(found: 999, expected: 1))
+                           .schemaVersionMismatch(found: 999, expected: 2))
         }
     }
 
@@ -102,10 +105,10 @@ final class ComposeDiagnosticsTests: XCTestCase {
     /// version mismatch — the gate runs before shape decoding (no partial decode).
     func testVersionGateWinsOverShapeMismatch() {
         XCTAssertThrowsError(try ComposeJsonPayload.decode(from: data("""
-        {"schemaVersion":2,"problems":{"totally":"different"}}
+        {"schemaVersion":3,"problems":{"totally":"different"}}
         """))) { error in
             XCTAssertEqual(error as? ComposeJsonPayload.DecodeError,
-                           .schemaVersionMismatch(found: 2, expected: 1))
+                           .schemaVersionMismatch(found: 3, expected: 2))
         }
     }
 

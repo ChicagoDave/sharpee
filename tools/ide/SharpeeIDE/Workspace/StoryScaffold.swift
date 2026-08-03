@@ -78,6 +78,9 @@ enum StoryScaffold {
             .replacingOccurrences(of: "{{STORY_ID}}", with: id)
             .replacingOccurrences(of: "{{STORY_TITLE}}", with: info.title)
             .replacingOccurrences(of: "{{AUTHOR}}", with: info.author)
+            // ADR-298 D5: the IFID is minted once, at scaffold time (mirrors
+            // devkit init). Uppercase UUID is the IFID format (@sharpee/core).
+            .replacingOccurrences(of: "{{IFID}}", with: UUID().uuidString)
             .replacingOccurrences(of: "{{DESCRIPTION}}", with: info.description)
     }
 }

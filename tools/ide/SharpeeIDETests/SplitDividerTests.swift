@@ -45,7 +45,8 @@ final class SplitDividerTests: XCTestCase {
         }
         return ComposeStoryIR(
             format: "story language 1", languageVersion: "2.1.0",
-            meta: .init(title: "A Very Long Story Title Indeed", author: "Someone", fields: [:]),
+            meta: .init(title: "A Very Long Story Title Indeed",
+                        fields: .init(id: nil, storyVersion: nil, authors: ["Someone"])),
             grammarFile: nil,
             entities: (1...30).map { entity($0, kinds: [$0 % 3 == 0 ? "room" : ($0 % 3 == 1 ? "person" : "portable")]) },
             actions: (1...9).map { ComposeStoryIR.ActionDef(name: "action-\($0)",

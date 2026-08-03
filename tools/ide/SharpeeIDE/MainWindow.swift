@@ -642,7 +642,7 @@ private final class MainSplitViewController: NSSplitViewController {
     private func bundleDirectory() -> URL? {
         guard let storyURL = treeState.storyURL,
               case .populated(let ir, _) = treeState.display,
-              let id = ir.meta.fields["id"] else { return nil }
+              let id = ir.meta.fields.id else { return nil }
         return WebBundle.directory(projectRoot: storyURL.deletingLastPathComponent(), storyId: id)
     }
 

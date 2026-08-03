@@ -94,8 +94,8 @@ enum StoryIndex {
     static func buildReport(for ir: ComposeStoryIR) -> String {
         let stats = stats(of: ir)
         let title = ir.meta.title
-        let version = ir.meta.fields["version"].map { " \($0)" } ?? ""
-        let id = ir.meta.fields["id"] ?? "story"
+        let version = ir.meta.fields.storyVersion.map { " \($0)" } ?? ""
+        let id = ir.meta.fields.id ?? "story"
 
         var counts: [String] = []
         func add(_ n: Int, _ singular: String, _ plural: String? = nil) {
@@ -111,9 +111,15 @@ enum StoryIndex {
         add(stats.hatches, "hatch module")
 
         let rule = String(repeating: "─", count: 46)
+        // ADR-298: the wire is data-only (`authors: [String]`); the client
+        // formats the byline. No authors → no "by" segment.
+        let authors = ir.meta.fields.authors
+        let byline = authors.isEmpty
+            ? "  \(id)\(version)"
+            : "  by \(authors.joined(separator: ", ")) · \(id)\(version)"
         var lines = [rule,
                      "  \(title)",
-                     "  by \(ir.meta.author) · \(id)\(version)"]
+                     byline]
         if !counts.isEmpty {
             lines.append("")
             // Two rows of numbers read better than one long one.

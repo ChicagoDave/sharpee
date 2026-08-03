@@ -42,6 +42,25 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     })();
     """
 
+    /// The IDE's play-surface chrome, injected at document start on every boot:
+    /// 1. Clears the play origin's storage BEFORE the client script runs, so the
+    ///    client's autosave restore-on-start can never replay a stale world —
+    ///    every load (build, restart, session restore) is a fresh boot of what
+    ///    ⌘B just built (David's ruling). Deep-state testing is what
+    ///    checkpoints/chains are for.
+    /// 2. Hides the client's menu bar (`#menu-bar`) — save/restore/settings are
+    ///    a published-story surface; in the IDE the Play header owns the
+    ///    controls. The built bundle is untouched: authors publish it with the
+    ///    menu intact.
+    private static let playSurfaceScript = """
+    (function () {
+      try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+      var style = document.createElement('style');
+      style.textContent = '#menu-bar { display: none !important; }';
+      document.documentElement.appendChild(style);
+    })();
+    """
+
     private let schemeHandler = PlayURLSchemeHandler()
     private var webView: WKWebView!
     private let header = PlayHeaderView()
@@ -101,6 +120,9 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: PlayURLSchemeHandler.scheme)
         let contentController = configuration.userContentController
         contentController.addUserScript(WKUserScript(source: Self.consoleHookScript,
+                                                     injectionTime: .atDocumentStart,
+                                                     forMainFrameOnly: true))
+        contentController.addUserScript(WKUserScript(source: Self.playSurfaceScript,
                                                      injectionTime: .atDocumentStart,
                                                      forMainFrameOnly: true))
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
@@ -178,18 +200,13 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     /// A source edit invalidated the running surface (David's ruling: the play
     /// surface renders a PARTICULAR build; diverged source clears it whole).
-    /// Clears the play origin's localStorage first — the client's autosave
-    /// restore-on-start would otherwise replay the stale world over the next
-    /// boot (the playground-autosave failure mode) — then unloads to an
-    /// explicit "build to play" state. No-op when nothing is loaded.
+    /// Unloads to an explicit "build to play" state — a merely hidden page
+    /// would keep running its turn timers. Stale autosave state is harmless
+    /// here: every boot clears the origin's storage first (playSurfaceScript).
+    /// No-op when nothing is loaded.
     func invalidateForSourceChange() {
         guard isLoaded else { return }
-        // Clear storage FIRST (on the still-loaded origin), then tear the page
-        // down — navigating immediately could cancel the script, and a merely
-        // hidden page would keep running its turn timers.
-        webView.evaluateJavaScript("try { localStorage.clear() } catch (e) {}") { [weak self] _, _ in
-            self?.webView.load(URLRequest(url: URL(string: "about:blank")!))
-        }
+        webView.load(URLRequest(url: URL(string: "about:blank")!))
         loaded = nil
         isAwaitingRebuild = true
         showPlaceholder("Source changed — build to play")
@@ -204,8 +221,8 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         load(bundleDirectory: bundleDirectory)
     }
 
-    /// Restarts the running story by reloading from origin. (If the client later adds
-    /// autosave-resume on load, this should call its restart hook instead.)
+    /// Restarts the running story by reloading from origin — a fresh boot, since
+    /// playSurfaceScript clears the origin's storage before the client runs.
     func restart() {
         guard loaded != nil else { return }
         webView.reloadFromOrigin()

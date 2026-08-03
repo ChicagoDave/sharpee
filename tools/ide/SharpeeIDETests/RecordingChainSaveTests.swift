@@ -29,9 +29,12 @@ final class RecordingChainSaveTests: XCTestCase {
     /// One room and one takeable thing whose description is entirely author
     /// prose — so a platform message rewording cannot make these tests flap.
     private static let story = """
-    story "Chain Probe" by "Tests"
+    story
+      title: Chain Probe
+      authors: Tests
       id: chain-probe
-      version: 1.0.0
+      story-version: 1.0.0
+      ifid: AD5E7FAA-4F60-4182-BDCE-3F4051627D8E
 
     create the Den
       a room

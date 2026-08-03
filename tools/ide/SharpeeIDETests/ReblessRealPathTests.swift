@@ -44,9 +44,12 @@ final class ReblessRealPathTests: XCTestCase {
 
     private static func story(notice: String) -> String {
         """
-        story "Drift Probe" by "Tests"
+        story
+          title: Drift Probe
+          authors: Tests
           id: drift-probe
-          version: 1.0.0
+          story-version: 1.0.0
+          ifid: 9C4D6E99-3E5F-4071-ACBD-2E3F40516C7D
 
         create the Den
           a room

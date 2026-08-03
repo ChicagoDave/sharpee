@@ -21,10 +21,13 @@ final class StoryScaffoldTests: XCTestCase {
         templateDir = tmp.appendingPathComponent("template", isDirectory: true)
         try FileManager.default.createDirectory(at: templateDir, withIntermediateDirectories: true)
         try Self.write("story.story.template", """
-        story "{{STORY_TITLE}}" by "{{AUTHOR}}"
+        story
+          title: {{STORY_TITLE}}
+          authors: {{AUTHOR}}
           id: {{STORY_ID}}
-          version: 0.1.0
-          blurb: {{DESCRIPTION}}
+          story-version: 0.1.0
+          ifid: {{IFID}}
+          description: {{DESCRIPTION}}
         """, into: templateDir)
         // A sibling package.json.template exists in the real devkit template dir —
         // the IDE scaffold must IGNORE it (D2: never create a package.json).
@@ -59,9 +62,13 @@ final class StoryScaffoldTests: XCTestCase {
 
         let story = try String(contentsOf: dir.appendingPathComponent("the-lost-key.story"),
                                encoding: .utf8)
-        XCTAssertTrue(story.contains("story \"The Lost Key\" by \"Ada\""))
+        XCTAssertTrue(story.contains("title: The Lost Key"))
+        XCTAssertTrue(story.contains("authors: Ada"))
         XCTAssertTrue(story.contains("id: the-lost-key"))
-        XCTAssertTrue(story.contains("blurb: An adventure"))
+        XCTAssertTrue(story.contains("description: An adventure"))
+        XCTAssertNotNil(story.range(of: #"ifid: [0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}"#,
+                                    options: .regularExpression),
+                        "the IFID is minted at scaffold time (ADR-298 D5), uppercase UUID")
         XCTAssertFalse(story.contains("{{"), "no unsubstituted placeholders")
 
         let fm = FileManager.default
@@ -83,6 +90,14 @@ final class StoryScaffoldTests: XCTestCase {
         let story = dir.appendingPathComponent("fresh-adventure.story")
         XCTAssertTrue(FileManager.default.fileExists(atPath: story.path))
 
+        // The rendered file carries a real minted IFID — compose cannot catch a
+        // leaked literal `{{IFID}}` (any non-empty ifid passes the analyzer).
+        let rendered = try String(contentsOf: story, encoding: .utf8)
+        XCTAssertNotNil(rendered.range(of: #"ifid: [0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}"#,
+                                       options: .regularExpression),
+                        "the IFID is minted at scaffold time (ADR-298 D5), uppercase UUID")
+        XCTAssertFalse(rendered.contains("{{"), "no unsubstituted placeholders")
+
         let runner = ComposeRunner()
         let done = expectation(description: "compose completes")
         var captured: Result<ComposeJsonPayload, ComposeRunner.Failure>!
@@ -97,7 +112,7 @@ final class StoryScaffoldTests: XCTestCase {
         }
         XCTAssertTrue(payload.diagnostics.isEmpty,
                       "the scaffold template must compose clean: \(payload.diagnostics)")
-        XCTAssertEqual(payload.ir?.meta.fields["id"], "fresh-adventure")
+        XCTAssertEqual(payload.ir?.meta.fields.id, "fresh-adventure")
     }
 
     func testRejectsNonEmptyDirectory() throws {

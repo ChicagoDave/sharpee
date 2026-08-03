@@ -120,7 +120,7 @@ final class ComposeRunnerTests: XCTestCase {
         }
         XCTAssertTrue(payload.diagnostics.isEmpty)
         let ir = try XCTUnwrap(payload.ir, "clean compile must carry the IR (D6)")
-        XCTAssertEqual(ir.meta.fields["id"], "probe")
+        XCTAssertEqual(ir.meta.fields.id, "probe")
         XCTAssertFalse(ir.languageVersion.isEmpty, "IR carries the Chord language version (D9)")
     }
 
@@ -139,7 +139,7 @@ final class ComposeRunnerTests: XCTestCase {
         XCTAssertEqual(record.code, "analysis.unknown-entity")
         XCTAssertEqual(record.file, story.path, "compile site is the story file as passed")
         let span = try XCTUnwrap(record.span, "compile diagnostics carry the full span")
-        XCTAssertEqual(span.line, 11)
+        XCTAssertEqual(span.line, 14)
         XCTAssertGreaterThan(span.endColumn, span.column, "a real underline range, not a point")
     }
 
@@ -259,14 +259,14 @@ final class ComposeRunnerTests: XCTestCase {
     // MARK: - Failure shapes (fixture scripts)
 
     func testBumpedSchemaVersionRejectsLoudly() throws {
-        let script = try makeScript(#"echo '{"schemaVersion":2,"diagnostics":[]}'"#)
+        let script = try makeScript(#"echo '{"schemaVersion":3,"diagnostics":[]}'"#)
         let result = runScript(script)
 
         guard case .failure(.decode(let error)) = result else {
             return XCTFail("expected decode failure, got \(String(describing: result))")
         }
         XCTAssertEqual(error as? ComposeJsonPayload.DecodeError,
-                       .schemaVersionMismatch(found: 2, expected: 1))
+                       .schemaVersionMismatch(found: 3, expected: 2))
     }
 
     func testUsageExitReportsNonZeroExitWithStderr() throws {
@@ -291,8 +291,8 @@ final class ComposeRunnerTests: XCTestCase {
 
     /// A new run supersedes an in-flight one: the stale completion never fires.
     func testNewRunSupersedesInFlightRun() throws {
-        let slow = try makeScript("sleep 30\necho '{\"schemaVersion\":1,\"diagnostics\":[]}'")
-        let fast = try makeScript("echo '{\"schemaVersion\":1,\"diagnostics\":[]}'")
+        let slow = try makeScript("sleep 30\necho '{\"schemaVersion\":2,\"diagnostics\":[]}'")
+        let fast = try makeScript("echo '{\"schemaVersion\":2,\"diagnostics\":[]}'")
 
         var staleFired = false
         runner.run(executable: slow, arguments: [], workingDirectory: tempDir) { _ in

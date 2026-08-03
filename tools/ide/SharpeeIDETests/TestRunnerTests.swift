@@ -20,9 +20,12 @@ final class TestRunnerTests: XCTestCase {
     /// A story with a takeable object so the chain fixture can persist state
     /// across files (take in wt-01, inventory in wt-02).
     private static let story = """
-    story "Mini" by "T"
+    story
+      title: Mini
+      authors: T
       id: mini
-      version: 0.0.1
+      story-version: 0.0.1
+      ifid: CF7091CC-6182-43A4-8FE0-516273849FA0
 
     create the Den
       a room

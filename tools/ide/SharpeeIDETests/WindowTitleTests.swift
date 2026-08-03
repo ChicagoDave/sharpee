@@ -9,12 +9,12 @@ import XCTest
 final class WindowTitleTests: XCTestCase {
 
     private func ir(title: String,
-                    author: String = "A. Author",
                     grammar: Bool = false) -> ComposeStoryIR {
         ComposeStoryIR(
-            format: "compose/1",
-            languageVersion: "2.2.0",
-            meta: .init(title: title, author: author, fields: [:]),
+            format: "story language 2",
+            languageVersion: "3.0.0",
+            meta: .init(title: title,
+                        fields: .init(id: nil, storyVersion: nil, authors: ["A. Author"])),
             grammarFile: grammar ? .init(name: "standard") : nil,
             entities: nil, actions: nil, phrases: nil, hatches: nil)
     }

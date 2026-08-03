@@ -27,7 +27,13 @@ enum ChordVersionCheck {
     /// `grammar-surface.story`, the Swift port matches the golden exactly, and
     /// `testGoldenDecodesWithFullTokenKindCoverage` confirms no new TokenKind —
     /// so the language surfaces needed no change, only this constant.
-    static let supportedLanguageVersion = "2.2.0"
+    ///
+    /// 3.0.0 (ADR-298, 2026-08-03): the fielded story block. The golden corpus
+    /// was migrated to the new surface in the same ADR (commit 12cf92c3), so
+    /// `ChordLexerGoldenTests` green against it satisfies the honesty condition
+    /// above; the frozen platform constant is `CHORD_LANGUAGE_VERSION = '3.0.0'`
+    /// (packages/chord/src/version.ts).
+    static let supportedLanguageVersion = "3.0.0"
 
     /// Extracts the Chord version from `sharpee --version` output
     /// ("Sharpee 4.1.1 · Chord 2.1.0" → "2.1.0"). Nil when the shape is foreign.

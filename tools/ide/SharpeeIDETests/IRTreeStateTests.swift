@@ -15,22 +15,23 @@ final class IRTreeStateTests: XCTestCase {
     private let storyB = URL(fileURLWithPath: "/tmp/b.story")
 
     private func okIR(title: String) -> ComposeStoryIR {
-        ComposeStoryIR(format: "story language 1", languageVersion: "2.1.0",
-                       meta: .init(title: title, author: "T", fields: [:]),
+        ComposeStoryIR(format: "story language 2", languageVersion: "3.0.0",
+                       meta: .init(title: title,
+                                   fields: .init(id: nil, storyVersion: nil, authors: ["T"])),
                        grammarFile: nil, entities: [], actions: [],
                        phrases: nil, hatches: nil)
     }
 
     private func okOutcome(_ url: URL, title: String = "OK") -> ComposeScheduler.Outcome {
         .init(storyURL: url,
-              result: .success(ComposeJsonPayload(schemaVersion: 1, diagnostics: [],
+              result: .success(ComposeJsonPayload(schemaVersion: 2, diagnostics: [],
                                                   ir: okIR(title: title))))
     }
 
     /// A gate-failing compile: valid payload, diagnostics, NO ir (atomic load).
     private func failedCompileOutcome(_ url: URL) -> ComposeScheduler.Outcome {
         .init(storyURL: url,
-              result: .success(ComposeJsonPayload(schemaVersion: 1, diagnostics: [
+              result: .success(ComposeJsonPayload(schemaVersion: 2, diagnostics: [
                   ComposeDiagnosticRecord(severity: .error, code: "analysis.unknown-entity",
                                           message: "boom", file: url.path, line: 1,
                                           span: DiagnosticSpan(line: 1, column: 1, endLine: 1, endColumn: 2)),

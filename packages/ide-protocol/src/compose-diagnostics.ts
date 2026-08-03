@@ -19,8 +19,13 @@ import type { DiagnosticSeverity, Span, StoryIR } from '@sharpee/chord';
  * Version of the `compose --json` payload shape. Distinct from the ADR-184
  * `ProjectManifest` `SCHEMA_VERSION` — separate contracts version separately.
  * Bump on any breaking shape change.
+ *
+ * 2 (ADR-298, 2026-08-03): `ir.meta` became `{ title, fields: IRStoryFields }`
+ * (typed closed schema; `author` retired for `authors: string[]`). The shape
+ * shipped without this bump, so the Swift D5 gate never fired and the IDE
+ * failed with an opaque decode error — this is the backfill.
  */
-export const COMPOSE_JSON_SCHEMA_VERSION = 1 as const;
+export const COMPOSE_JSON_SCHEMA_VERSION = 2 as const;
 
 /**
  * One record in the payload's unified diagnostics stream (ADR-276 D4).
