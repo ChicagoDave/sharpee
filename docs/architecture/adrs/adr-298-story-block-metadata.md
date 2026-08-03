@@ -182,7 +182,9 @@ language doc rewrite) so the docs are written once, against the post-298 block.
 - **AC-5 (IFID policy)**: a story block with no `ifid:` compiles with a
   warning and plays with `ifidChannel` suppressed; `sharpee publish`
   hard-errors without one; `sharpee init` output contains a minted `ifid:`
-  line.
+  line. *(Amended 2026-08-03: no `sharpee publish` command exists yet — the
+  publish-time hard-error is recorded as a day-one requirement in ADR-284;
+  this ADR's implementation ships the compile warning and the init minting.)*
 - **AC-6 (language version + snapshots)**: languageVersion bumps to 3.0.0;
   the 7 IR snapshot files regenerate; channel-scoped golden recordings that
   capture the info channel are re-blessed for the `author` → `authors` shape

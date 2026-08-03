@@ -4,6 +4,15 @@
 **Date:** 2025-12-27
 **References:** [Treaty of Babel](https://babel.ifarchive.org/babel.html)
 
+> **Supersession note (2026-08-03, ADR-298 D5)**: for Chord-authored stories,
+> the build-time hard-fail specified under Validation below is superseded — a
+> missing IFID is now a **compile warning**, with hard enforcement moved to
+> publish time (recorded as a day-one requirement of ADR-284's
+> implementation). The live `validateStoryConfig`
+> (`packages/engine/src/story.ts:328`) never implemented this ADR's IFID
+> check — it validates `id`/`title`/`author`/`version` only. The
+> package.json `sharpee.ifid` path for TS-authored stories is unaffected.
+
 ## Context
 
 The Interactive Fiction community has established a standard for uniquely identifying IF works called IFID (Interactive Fiction Identifier), defined in the Treaty of Babel. IFIDs enable:

@@ -6,6 +6,13 @@
 
 ## Parent: ADR-279 (the shipped app), ADR-280 (project model — Assets and Web Template feed the publish build), ADR-252/devkit browser build (the mechanical engine).
 
+> **Inbound requirement (2026-08-03, ADR-298 D5)**: Publish MUST hard-error
+> on a story with no IFID. A missing `ifid:` is a compile-time warning only
+> (ADR-298); publication is where Treaty of Babel compliance (ADR-074)
+> becomes mandatory. This is a day-one requirement of this ADR's
+> implementation, recorded here because no publish command existed when
+> ADR-298 was accepted.
+
 ## Context — verified, not assumed
 
 - **The mechanical core exists**: the devkit browser build
