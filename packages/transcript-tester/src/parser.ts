@@ -30,7 +30,18 @@ const MAX_SEED = Number.MAX_SAFE_INTEGER;
  * recognized case-insensitively. Everything else in the header stays a raw
  * string in `transcript.header`.
  */
-const CONFIG_KEYS = ['seed', 'seeds', 'channels', 'events', 'locale', 'forces'];
+const CONFIG_KEYS = ['seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed'];
+
+/**
+ * One `forces:` entry: `point[#occurrence]=CLASS` (ADR-293 D8/D9 via the
+ * ruled header-field form). The point name is dotted per D2; `#N` targets one
+ * 1-based firing; the class is a declared outcome class. Whitespace-free by
+ * construction — entries are comma-separated.
+ */
+const FORCE_ENTRY = /^([^#=\s]+)\s*(?:#\s*(\d+))?\s*=\s*([^=\s]+)$/;
+
+/** One `point-seed:` entry: `point=seed` (ADR-293 D11). */
+const POINT_SEED_ENTRY = /^([^#=\s]+)\s*=\s*(\d+)$/;
 
 /**
  * Grammar forms removed by ADR-294. Each is a parse error naming the form and
@@ -557,9 +568,105 @@ function parseConfigField(
     }
 
     case 'forces': {
-      // D13 hook: parsed but not yet acted on. `(none)` is the explicit
-      // empty form the .golden provenance uses.
-      config.forces = value === '(none)' || value === '' ? [] : splitList(value);
+      // ADR-293 D8/D9 (Phase C): each entry is `point[#occurrence]=CLASS`,
+      // parsed to a structured spec at transcript-default mode `once`.
+      // `(none)` is the explicit empty form the .golden provenance uses.
+      if (value === '(none)' || value === '') {
+        config.forces = [];
+        return;
+      }
+      const entries = splitList(value);
+      const canonical: string[] = [];
+      const specs: NonNullable<TranscriptRunConfig['forceSpecs']> = [];
+      const seenKeys = new Map<string, string>();
+      for (const entry of entries) {
+        const match = FORCE_ENTRY.exec(entry);
+        if (!match) {
+          parseErrors.push({
+            lineNumber,
+            message: `Invalid forces: entry "${entry}" — expected point[#occurrence]=CLASS (e.g. dungeo.thief.steal=yes or dungeo.melee.blow.villain#2=SERIOUS_WOUND)`
+          });
+          return;
+        }
+        const [, point, occurrenceDigits, cls] = match;
+        const occurrence = occurrenceDigits === undefined ? undefined : Number(occurrenceDigits);
+        if (occurrence !== undefined && (occurrence < 1 || occurrence > Number.MAX_SAFE_INTEGER)) {
+          parseErrors.push({
+            lineNumber,
+            message: `Invalid forces: entry "${entry}" — occurrence index must be a positive integer (ADR-293 D9)`
+          });
+          return;
+        }
+        const key = occurrence === undefined ? point : `${point}#${occurrence}`;
+        const previous = seenKeys.get(key);
+        if (previous !== undefined) {
+          parseErrors.push({
+            lineNumber,
+            message: `Duplicate force key "${key}" in forces: — duplicate keys are a load error, not last-wins (ADR-293 D9)`
+          });
+          return;
+        }
+        seenKeys.set(key, entry);
+        canonical.push(`${key}=${cls}`);
+        specs.push(
+          occurrence === undefined
+            ? { point, cls, mode: 'once' }
+            : { point, occurrence, cls, mode: 'once' }
+        );
+      }
+      if (specs.length === 0) {
+        parseErrors.push({
+          lineNumber,
+          message: 'forces: declares no entries — expected a comma-separated list, or (none)'
+        });
+        return;
+      }
+      config.forces = canonical;
+      config.forceSpecs = specs;
+      config.forcesLineNumber = lineNumber;
+      return;
+    }
+
+    case 'point-seed': {
+      // ADR-293 D11: per-point starting-seed overrides — `point=seed` pairs.
+      const entries = splitList(value);
+      if (entries.length === 0) {
+        parseErrors.push({
+          lineNumber,
+          message: 'point-seed: declares no entries — expected a comma-separated list (point-seed: dungeo.thief.steal=1234)'
+        });
+        return;
+      }
+      const pointSeeds: NonNullable<TranscriptRunConfig['pointSeeds']> = [];
+      for (const entry of entries) {
+        const match = POINT_SEED_ENTRY.exec(entry);
+        if (!match) {
+          parseErrors.push({
+            lineNumber,
+            message: `Invalid point-seed: entry "${entry}" — expected point=seed with a non-negative integer seed (ADR-293 D11)`
+          });
+          return;
+        }
+        const [, point, seedDigits] = match;
+        const seed = Number(seedDigits);
+        if (seed > MAX_SEED) {
+          parseErrors.push({
+            lineNumber,
+            message: `Invalid point-seed: entry "${entry}" — seed out of range (max ${MAX_SEED})`
+          });
+          return;
+        }
+        if (pointSeeds.some((existing) => existing.point === point)) {
+          parseErrors.push({
+            lineNumber,
+            message: `Duplicate point "${point}" in point-seed: — each point may be overridden once (ADR-293 D11)`
+          });
+          return;
+        }
+        pointSeeds.push({ point, seed });
+      }
+      config.pointSeeds = pointSeeds;
+      config.pointSeedsLineNumber = lineNumber;
       return;
     }
   }

@@ -18,6 +18,7 @@
  */
 import type {
   CommandResultRecord,
+  CoverageRecord,
   RunEndRecord,
   RunStartRecord,
   TestResultRecord,
@@ -25,6 +26,7 @@ import type {
   TranscriptStartRecord,
 } from '@sharpee/ide-protocol';
 import type { TestRunResult, TranscriptResult } from './types.js';
+import type { CoverageReport } from './coverage.js';
 
 /**
  * Mirrors ide-protocol's TEST_RESULTS_SCHEMA_VERSION. A value import would
@@ -109,6 +111,24 @@ export function transcriptRecords(result: TranscriptResult, index: number): Test
     ...(result.errorMessage !== undefined ? { errorMessage: result.errorMessage } : {}),
   };
   return [start, ...commands, end];
+}
+
+/**
+ * Build the run's coverage record (ADR-293 D15 / ADR-294 D13). Emitted once
+ * per run, before `run-end`, only when the caller opted in (`--coverage`) —
+ * coverage aggregates across a chain, never per transcript.
+ *
+ * @param report The tracker's report (`CoverageTracker.buildReport`).
+ */
+export function coverageRecord(report: CoverageReport): CoverageRecord {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    type: 'coverage',
+    points: report.points,
+    pointsFired: report.pointsFired,
+    pointsNeverFired: report.pointsNeverFired,
+    classesUnobserved: report.classesUnobserved,
+  };
 }
 
 /**

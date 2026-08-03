@@ -372,6 +372,8 @@ export declare function loadAuthorGame(target: string, opts?: {
  *
  * Defines the structure of parsed transcripts and test results.
  */
+import type { RandomForceSpec } from '@sharpee/core';
+import type { CoverageTracker } from './coverage.js';
 /**
  * Directive kinds surviving ADR-294 D4. The control-flow/condition layer
  * (IF, WHILE, RETRY, DO/UNTIL, REQUIRES, ENSURES, NAVIGATE) is removed
@@ -447,10 +449,31 @@ export interface TranscriptRunConfig {
     /** Locale the recording is bound to (D19). Absent = the story's primary. */
     locale?: string;
     /**
-     * Declared outcome forces (D13 hook). Parsed but not yet acted on — forcing
-     * ships with ADR-293 Phase C's `materialize`. Empty today.
+     * Declared outcome forces (ADR-293 D8/D9, surfaced per ADR-294 D13), as
+     * canonical `point[#occurrence]=CLASS` strings — the provenance form.
+     * Parsed and validated by the parser; the structured specs live in
+     * `forceSpecs`.
      */
     forces: string[];
+    /**
+     * Structured force specs the runner loads into the engine (ADR-293 D8/D9).
+     * Transcript forces are always mode `once` (D9's transcript default).
+     * Present only when the transcript declares forces, so a force-less
+     * transcript's config stays byte-identical to its pre-Phase-C parse.
+     */
+    forceSpecs?: RandomForceSpec[];
+    /** Line the `forces:` header field appeared on, for load-error reporting. */
+    forcesLineNumber?: number;
+    /**
+     * Per-point starting-seed overrides (ADR-293 D11), from the `point-seed:`
+     * header field. Present only when the transcript declares overrides.
+     */
+    pointSeeds?: Array<{
+        point: string;
+        seed: number;
+    }>;
+    /** Line the `point-seed:` header field appeared on, for error reporting. */
+    pointSeedsLineNumber?: number;
 }
 /**
  * Provenance header of a `.golden` recording (ADR-294 D3/D7).
@@ -477,6 +500,13 @@ export interface GoldenProvenance {
     locale: string;
     /** Forces the recording was made under (D13). Serialized as `(none)` when empty. */
     forces: string[];
+    /**
+     * Point-seed overrides the recording was made under (ADR-293 D11), as
+     * `point=seed` strings. OPTIONAL in the format: the `point-seeds:` line is
+     * written only when non-empty, so pre-Phase-C recordings stay valid, and
+     * absence parses as empty.
+     */
+    pointSeeds?: string[];
 }
 /**
  * One recorded event line (`• type {json}`) inside a golden turn.
@@ -732,6 +762,12 @@ export interface RunnerOptions {
     storyName?: string;
     /** Locale for recording provenance when the transcript declares none (D19). */
     locale?: string;
+    /**
+     * Run-scoped coverage accumulator (ADR-293 D15). One tracker per run —
+     * the CLI owns it so a chain's members fold into one report; the runner
+     * feeds it each command's `system.draw` trace events.
+     */
+    coverage?: CoverageTracker;
 }
 /**
  * Story loader function type
@@ -834,6 +870,7 @@ export declare function parseGoldenFile(filePath: string): GoldenRecording;
  * Public interface: `runTranscript`, `goldenPathFor`. Owner context:
  * transcript-tester (testing tooling).
  */
+import { RandomForceSpec, RandomForceStatus } from '@sharpee/core';
 import { Transcript, TranscriptResult, RunnerOptions } from './types.js';
 /**
  * Interface for the game engine wrapper the CLIs hand the runner.
@@ -861,7 +898,21 @@ interface GameEngine {
         save(): Promise<boolean>;
         restore(): Promise<boolean>;
         getMasterSeed?(): number;
+        /** ADR-293 Phase C: the per-point stream owner (forces, point-seed overrides). */
+        getRandomService?(): PlatformRandomService;
+        /** ADR-293 D16: per-draw trace onto the system-event channel; the runner opts in. */
+        setRandomTraceEnabled?(enabled: boolean): void;
     };
+}
+/**
+ * The slice of `EngineRandomService` the runner drives (ADR-293 D8/D9/D11).
+ * Structural so the tester never imports the engine class itself.
+ */
+interface PlatformRandomService {
+    loadForces(specs: readonly RandomForceSpec[]): void;
+    clearForces(): void;
+    getForceReport(): RandomForceStatus[];
+    setPointSeedOverrides(overrides: Readonly<Record<string, number>>): void;
 }
 /**
  * Minimal interface for world model state queries ([STATE:] assertions).
@@ -1044,8 +1095,9 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  *   Chord Story IR wholesale, and this package must not gain a runtime edge
  *   to it; builders construct plain literals shaped by the imported types.
  */
-import type { RunEndRecord, RunStartRecord, TestResultRecord } from '@sharpee/ide-protocol';
+import type { CoverageRecord, RunEndRecord, RunStartRecord, TestResultRecord } from '@sharpee/ide-protocol';
 import type { TestRunResult, TranscriptResult } from './types.js';
+import type { CoverageReport } from './coverage.js';
 /**
  * Aggregate per-transcript results into a run result — the one shared
  * reduce (ADR-277 D1 Consequences).
@@ -1075,6 +1127,14 @@ export declare function runStartRecord(mode: 'tests' | 'chain', transcriptCount:
  */
 export declare function transcriptRecords(result: TranscriptResult, index: number): TestResultRecord[];
 /**
+ * Build the run's coverage record (ADR-293 D15 / ADR-294 D13). Emitted once
+ * per run, before `run-end`, only when the caller opted in (`--coverage`) —
+ * coverage aggregates across a chain, never per transcript.
+ *
+ * @param report The tracker's report (`CoverageTracker.buildReport`).
+ */
+export declare function coverageRecord(report: CoverageReport): CoverageRecord;
+/**
  * Build the stream's closing record.
  *
  * @param run The aggregated run result.
@@ -1083,6 +1143,183 @@ export declare function transcriptRecords(result: TranscriptResult, index: numbe
 export declare function runEndRecord(run: TestRunResult, exitCode: number): RunEndRecord;
 /** Serialize one record as an NDJSON line (single line, trailing newline). */
 export declare function ndjsonLine(record: TestResultRecord): string;
+```
+
+### coverage
+
+```typescript
+/**
+ * coverage.ts — outcome-class coverage over the trace stream (ADR-293 D15).
+ *
+ * Purpose: accumulate per-point firings from the engine's `system.draw` trace
+ *   events across one run (a `--chain` run is ONE session and produces ONE
+ *   report — D15's aggregation ruling), then cross the process-global catalog
+ *   (`getRegisteredPoints()`) against what fired: `catalog − fired` needs no
+ *   static scan because declaration is the capability to draw (D2).
+ * Public interface: `CoverageTracker`, `CoverageReport` (re-exported
+ *   ide-protocol shapes), `formatCoverageSummary`, `formatCoverageBreakdown`.
+ * Owner context: @sharpee/transcript-tester. The ide-protocol import is
+ *   TYPE-ONLY (ADR-277 D1's standing rule for this package).
+ */
+import type { CoveragePoint } from '@sharpee/ide-protocol';
+/** The report payload — the {@link CoverageRecord} minus its wire framing. */
+export interface CoverageReport {
+    /** Every declared point in scope, sorted by name. */
+    points: CoveragePoint[];
+    /** Count of points with `fired > 0`. */
+    pointsFired: number;
+    /** Count of points never fired (`catalog − fired`, D2). */
+    pointsNeverFired: number;
+    /** Total declared classes never observed, across all points. */
+    classesUnobserved: number;
+}
+/** The slice of a trace record coverage consumes (core's `IRandomTraceData`). */
+interface TraceLike {
+    point: string;
+    cls?: string;
+}
+/**
+ * Accumulates firings across a run. One tracker per run — the CLI creates it
+ * before the transcript loop and reads the report after, so a chain's members
+ * all land in one report (D15).
+ */
+export declare class CoverageTracker {
+    private firings;
+    /** Record one firing (drawn or forced — D8 reports class coverage). */
+    record(trace: TraceLike): void;
+    /**
+     * Collect every `system.draw` trace event from a command's event batch —
+     * the shape the engine re-emits trace records in (`type: 'system.draw'`,
+     * `data: IRandomTraceData`). Non-trace events are ignored.
+     */
+    collectFrom(events?: Array<{
+        type: string;
+        data?: unknown;
+    }>): void;
+    /**
+     * Cross the catalog against the accumulated firings (D15): every declared
+     * point in scope, its firing count, and — for choice points — observed and
+     * unobserved classes.
+     *
+     * @param prefixes - keep only points whose first dotted segment is listed
+     *   (the D2/A1 multi-story filter; also what isolates a report from other
+     *   test files' catalog entries, since the catalog is process-global).
+     *   Omit to report the whole catalog — correct in a single-story CLI run.
+     */
+    buildReport(prefixes?: readonly string[]): CoverageReport;
+}
+/**
+ * The one-line end-of-run summary D15 rules always prints — the never-fired
+ * count is worthless if it has to be asked for.
+ */
+export declare function formatCoverageSummary(report: CoverageReport): string;
+/**
+ * The full per-point breakdown (D15's `--output-dir` / `--coverage` surface):
+ * one line per point — firing count, then unobserved classes for choice
+ * points or a plain-draw marker.
+ */
+export declare function formatCoverageBreakdown(report: CoverageReport): string;
+export {};
+```
+
+### search
+
+```typescript
+/**
+ * search.ts — first-firing outcome search with a measured budget (ADR-293 D12).
+ *
+ * Purpose: find a point-seed override (D11) under which a target point's first
+ *   *drawn* firing produces a desired class, by forking the engine's real save
+ *   state per candidate — never a subprocess (ruled Decision 5(a)), never a
+ *   model of the engine (D12: "search executes the real engine").
+ * Mechanics: the tool varies the TARGET POINT'S OWN STREAM, not the master
+ *   seed — master-seed variation changes every stream and with it the firing
+ *   schedule, which is exactly the degradation D12 warns about. A base pass
+ *   replays the driver transcript's commands to locate the first drawn firing
+ *   and capture the engine save just before its turn; each try restores that
+ *   save, applies the candidate override, re-executes the one firing turn,
+ *   and reads the trace. Force-prefix composition (D12) falls out of
+ *   zero-draw forcing: a forced prefix never materializes the target stream,
+ *   so the candidate override governs the first drawn firing. Limitation: a
+ *   force prefix must complete in turns BEFORE the searched firing's turn —
+ *   occurrence counters are session state and are not rolled back by restore.
+ * Budget: 10 × declared class count by default (uniform prior — D12's ~10×
+ *   inverse probability with p ≈ 1/classCount), caller-overridable per use;
+ *   measured per use, never declared on the point.
+ * Public interface: `searchOutcome`, `SearchTarget`, `SearchResult`.
+ * Owner context: @sharpee/transcript-tester (testing tooling).
+ */
+import { RandomForceSpec } from '@sharpee/core';
+import type { Transcript } from './types.js';
+/** The searched-for outcome: a declared point and one of its declared classes. */
+export interface SearchTarget {
+    point: string;
+    cls: string;
+}
+/** Outcome of one search run (D12: tries-spent on success, named exhaustion on failure). */
+export interface SearchResult {
+    found: boolean;
+    /** Attempts consumed, including the base pass as try 1. */
+    tries: number;
+    /** The budget the search ran under. */
+    budget: number;
+    /** The session's master seed — half of the reproducible artifact. */
+    masterSeed: number;
+    /**
+     * On success: the `point-seed:` override that reproduces the outcome —
+     * absent when the base pass already drew the target class naturally (the
+     * natural derivation needs no override).
+     */
+    pointSeed?: number;
+    /** 0-based index of the driver command whose turn fires the point. */
+    firingCommandIndex?: number;
+    /** On failure: why — 'budget-exhausted', 'never-fires', or a validation message. */
+    reason?: string;
+}
+/** The engine-wrapper slice the search drives (same shape the runner uses). */
+interface SearchEngine {
+    executeCommand(input: string): Promise<string> | string;
+    lastEvents?: Array<{
+        type: string;
+        data?: unknown;
+    }>;
+    engine?: {
+        registerSaveRestoreHooks(hooks: {
+            onSaveRequested(data: unknown): Promise<void>;
+            onRestoreRequested(): Promise<unknown | null>;
+        }): void;
+        save(): Promise<boolean>;
+        restore(): Promise<boolean>;
+        getMasterSeed?(): number;
+        getRandomService?(): {
+            loadForces(specs: readonly RandomForceSpec[]): void;
+            clearForces(): void;
+            setPointSeedOverrides(overrides: Readonly<Record<string, number>>): void;
+        };
+        setRandomTraceEnabled?(enabled: boolean): void;
+    };
+}
+/**
+ * Search the target point's stream for a candidate start under which its
+ * first drawn firing produces `target.cls`, driving the world with the
+ * transcript's commands.
+ *
+ * The driver transcript's own `forces:`/`point-seed:` instruments are
+ * honored (D12's force-prefix-then-search-last composition); the candidate
+ * override wins over a transcript `point-seed:` on the target itself.
+ *
+ * @param transcript - the parsed driver transcript (its commands walk the
+ *   world to the firing; assertions and goldens are ignored)
+ * @param engine - the loaded game (the REAL engine — D12)
+ * @param target - point name and desired declared class
+ * @param options - `budget` overrides the 10 × class-count default
+ * @returns the search result; validation problems return `found: false` with
+ *   a named `reason`, never a throw
+ */
+export declare function searchOutcome(transcript: Transcript, engine: SearchEngine, target: SearchTarget, options?: {
+    budget?: number;
+}): Promise<SearchResult>;
+export {};
 ```
 
 ### trait-formatter

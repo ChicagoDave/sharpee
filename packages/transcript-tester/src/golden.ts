@@ -43,6 +43,13 @@ const PROVENANCE_KEYS = [
   'forces'
 ] as const;
 
+/**
+ * Optional provenance keys (ADR-293 Phase C): accepted when present, never
+ * required. `point-seeds` (D11) is written only when the recording was made
+ * under overrides, so every pre-Phase-C recording stays valid.
+ */
+const OPTIONAL_PROVENANCE_KEYS = ['point-seeds'] as const;
+
 /** An event line is `• type {json}` — bullet, one space, type token, payload. */
 const EVENT_LINE = /^• (\S+) (\{.*\})$/;
 
@@ -86,6 +93,11 @@ export function serializeGolden(recording: GoldenRecording): string {
     `events: ${p.events}`,
     `locale: ${p.locale}`,
     `forces: ${p.forces.length === 0 ? '(none)' : p.forces.join(', ')}`,
+    // Optional key (ADR-293 D11): written only when non-empty so pre-Phase-C
+    // recordings and override-free recordings stay byte-identical.
+    ...(p.pointSeeds && p.pointSeeds.length > 0
+      ? [`point-seeds: ${p.pointSeeds.join(', ')}`]
+      : []),
     '---'
   ];
 
@@ -166,7 +178,10 @@ function parseProvenance(
     }
     const key = line.slice(0, colonIndex).trim();
     const value = line.slice(colonIndex + 1).trim();
-    if (!(PROVENANCE_KEYS as readonly string[]).includes(key)) {
+    if (
+      !(PROVENANCE_KEYS as readonly string[]).includes(key) &&
+      !(OPTIONAL_PROVENANCE_KEYS as readonly string[]).includes(key)
+    ) {
       throw new GoldenFormatError(`Unknown provenance key "${key}"`, filePath, i + 1);
     }
     if (raw.has(key)) {
@@ -215,6 +230,7 @@ function parseProvenance(
     value.split(',').map((entry) => entry.trim()).filter((entry) => entry !== '');
 
   const forcesValue = raw.get('forces')!;
+  const pointSeedsValue = raw.get('point-seeds');
 
   const provenance: GoldenProvenance = {
     transcript: raw.get('transcript')!,
@@ -225,7 +241,11 @@ function parseProvenance(
     channels: splitList(raw.get('channels')!),
     events: eventsValue === 'true',
     locale: raw.get('locale')!,
-    forces: forcesValue === '(none)' ? [] : splitList(forcesValue)
+    forces: forcesValue === '(none)' ? [] : splitList(forcesValue),
+    // Absent line (pre-Phase-C recording) and empty both parse as no overrides.
+    ...(pointSeedsValue !== undefined && pointSeedsValue !== '(none)'
+      ? { pointSeeds: splitList(pointSeedsValue) }
+      : {})
   };
 
   return { provenance, bodyStart: separatorIndex + 1 };

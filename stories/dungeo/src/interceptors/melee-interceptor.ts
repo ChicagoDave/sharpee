@@ -41,6 +41,7 @@ import {
   HERO_MESSAGE_VARIANT_POINT,
   MeleeBlowClass,
   meleeOutcomeClass,
+  meleeOutcomeFromClass,
 } from '../combat/melee-points';
 
 import {
@@ -48,6 +49,7 @@ import {
   villainStrength,
   getBestWeaponPenalty,
   resolveBlow,
+  materializeBlow,
   applyVillainBlowToHero,
   isHeroDeadFromWounds,
   MeleeOutcome,
@@ -384,11 +386,9 @@ export const MeleeInterceptor: ActionInterceptor = {
         const sampled = resolveBlow(heroStr, defForBlow, true, villainUnconscious, draw);
         return { cls: meleeOutcomeClass(sampled.outcome) as MeleeBlowClass, value: sampled };
       },
-      (forced) => {
-        throw new Error(
-          `dungeo.melee.blow.hero: forcing '${forced}' is not implemented until ADR-293 Phase C`
-        );
-      }
+      // Forced path (ADR-293 D8, Phase C): zero draws, same consequence math
+      // as a drawn blow (isHeroAttacking = true — D10's UNCONSCIOUS asymmetry).
+      (forced) => materializeBlow(meleeOutcomeFromClass(forced), defForBlow, true)
     );
 
     // --- Apply side effects ---

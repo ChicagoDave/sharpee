@@ -1489,6 +1489,15 @@ export declare class GameEngine {
      */
     getRandomService(): EngineRandomService;
     /**
+     * Enable or disable the per-draw random trace (ADR-293 D16). While enabled,
+     * every firing — drawn or forced — emits an `ISystemEvent` on the system
+     * event channel (`subsystem: Subsystems.RANDOM`, `type: 'draw'`,
+     * `severity: 'debug'`, data: `IRandomTraceData`). Off by default; opted into
+     * by the transcript runner, `--play`, and the IDE — a published game emits
+     * none (AC-14).
+     */
+    setRandomTraceEnabled(enabled: boolean): void;
+    /**
      * Get event processor for handler registration (ADR-075)
      */
     getEventProcessor(): EventProcessor;
@@ -1956,21 +1965,30 @@ export declare function createSaveRestoreService(config?: UndoConfig): SaveResto
  * EngineRandomService — the engine's sole `RandomService` implementation (ADR-293 D5).
  *
  * Public interface: {@link EngineRandomService} class (`chance`/`int`/`pick`/`resolve`
- * draw API plus `serializeStreamStates`/`restoreStreamStates` persistence and
- * `getMasterSeed`), {@link ACTION_STREAM_POINT_NAME}.
- * Owner context: `@sharpee/engine` runtime. Core owns the interface and catalog;
- * this class owns stream derivation, the per-point stream cache, and stream-state
- * persistence (D3, D7). Force-table lookup and trace land in Phase C.
+ * draw API; `loadForces`/`clearForces`/`getForceReport` forcing surface;
+ * `setPointSeedOverrides` (D11); `setTraceSink` (D16);
+ * `serializeStreamStates`/`restoreStreamStates` persistence; `getMasterSeed`),
+ * {@link ACTION_STREAM_POINT_NAME}, {@link TURN_STREAM_POINT_NAME}.
+ * Owner context: `@sharpee/engine` runtime. Core owns the interface, catalog, and
+ * force/trace types; this class owns stream derivation, the per-point stream cache,
+ * the force table, occurrence counters, trace emission, and stream-state
+ * persistence (D3, D7, D8, D9, D16).
  *
  * Invariants:
  * - A point's stream depends only on (masterSeed, point name) — never on
- *   registration or draw order (D3).
+ *   registration or draw order (D3). A point-seed override (D11) replaces where
+ *   that one name's stream starts; every other derivation is untouched.
  * - No draw leaves this class's streams except through a `ChoicePoint` handle;
  *   the one bare-`SeededRandom` exit is `resolve()`'s `sample` callback (D2).
+ * - A forced firing consumes zero draws: it never touches the point's stream (D8).
+ * - Forces and occurrence counters are session state, never save state (D9):
+ *   `serializeStreamStates` carries stream states only.
  * - Restore never reads the clock: unknown or missing names reseed by derivation
  *   from the master seed (D7).
+ * - No trace record is built unless a sink is installed (D16: off by default,
+ *   silent in a published game).
  */
-import { ChoicePoint, RandomService, SeededRandom } from '@sharpee/core';
+import { ChoicePoint, RandomService, SeededRandom, RandomForceSpec, RandomForceStatus, RandomTraceSink } from '@sharpee/core';
 /**
  * Point name the pre-ADR-293 unified action stream (`IEngineState.actionRngSeed`)
  * maps onto when a `2.0.0` save is read (D7's version reader). The action surface
@@ -1989,7 +2007,8 @@ export declare const TURN_STREAM_POINT_NAME = "engine.turn";
 /**
  * Per-point stream owner. One instance per engine per session; all stream state
  * lives here (never at module scope — D6) and rides the save as
- * `{ pointName → streamState }` (D7).
+ * `{ pointName → streamState }` (D7). Forces, point-seed overrides, occurrence
+ * counters, and the trace sink are session-scoped and never serialized (D9).
  */
 export declare class EngineRandomService implements RandomService {
     private readonly masterSeed;
@@ -1997,27 +2016,80 @@ export declare class EngineRandomService implements RandomService {
     private streams;
     /** Restored stream states not yet re-materialized into a live stream. */
     private restoredStates;
-    constructor(masterSeed: number);
+    /** Loaded forces, keyed by `forceKey(spec)` (D9's key identity). */
+    private forceTable;
+    /** 1-based firing count per point this session (D9's occurrence index). */
+    private occurrences;
+    /** Per-point starting-seed overrides (D11); consulted only at stream derivation. */
+    private pointSeedOverrides;
+    /** Trace receiver (D16); records are built only while one is installed. */
+    private traceSink;
+    constructor(masterSeed: number, options?: {
+        pointSeedOverrides?: Readonly<Record<string, number>>;
+        traceSink?: RandomTraceSink;
+    });
     /** The session's master seed, for seed reporting (D14). */
     getMasterSeed(): number;
     /**
-     * True with the given probability, drawn on `p`'s own stream.
+     * Load forces into the session's force table, validating each against the
+     * catalog (D8, D9). Additive across calls; duplicate detection spans all
+     * loaded forces.
+     *
+     * @param specs - forces to load
+     * @throws UnknownForcePointError if a spec names an undeclared point (D2)
+     * @throws UndeclaredForceClassError if a spec names a class its point does
+     *   not declare, or targets a plain draw (D4)
+     * @throws DuplicateForceKeyError if a `point[#occurrence]` key is already
+     *   loaded (D9: a load error, not last-wins)
+     * @throws Error if a spec's occurrence index is not a positive integer
+     */
+    loadForces(specs: readonly RandomForceSpec[]): void;
+    /** Drop every loaded force and its fire counts (session-state reset). */
+    clearForces(): void;
+    /**
+     * Session status of every loaded force, as data for the consumer's report
+     * (D9): an unfired `once` force has `fireCount` 0 — a hard error in
+     * transcript runs, a report line in play; `sticky` counts are informational.
+     */
+    getForceReport(): RandomForceStatus[];
+    /**
+     * Replace the per-point starting-seed override map (D11). An override wins
+     * over master-seed derivation for that name only, and only when the point's
+     * stream has not yet materialized (a live or restored stream keeps its state).
+     */
+    setPointSeedOverrides(overrides: Readonly<Record<string, number>>): void;
+    /**
+     * Install or remove the trace receiver (D16). While absent — the default —
+     * no trace record is built at all, which is what keeps a published game
+     * silent (AC-14).
+     */
+    setTraceSink(sink: RandomTraceSink | undefined): void;
+    /**
+     * True with the given probability, drawn on `p`'s own stream — unless a
+     * matching force substitutes the outcome via the fixed yes/no ⟷ boolean
+     * bijection, consuming zero draws (D8).
      */
     chance(p: ChoicePoint<'yes' | 'no'>, probability: number): boolean;
     /**
-     * Integer in [min, max] inclusive, drawn on `p`'s own stream.
+     * Integer in [min, max] inclusive, drawn on `p`'s own stream. Class-less
+     * draw: never consults the force table (Phase C ruling 2(a) — a forceable
+     * outcome space is expressed via `resolve()`).
      */
     int(p: ChoicePoint, min: number, max: number): number;
     /**
-     * Pick one element, drawn on `p`'s own stream.
-     * `label` participates in trace/coverage (Phase C); it draws nothing.
+     * Pick one element, drawn on `p`'s own stream. Class-less draw: never
+     * consults the force table (ruling 2(a)). `label` names the picked item in
+     * trace; it draws nothing.
      */
     pick<T>(p: ChoicePoint, items: readonly T[], label?: (t: T) => string): T;
     /**
      * Resolve a class-bearing point to a classed outcome (D8).
      *
-     * Force-table lookup is a pass-through until forcing lands (Phase C): the
-     * real path always runs, so `materialize` is accepted and never called.
+     * Forced path: a matching force substitutes the declared class and builds
+     * its value via `materialize`, consuming zero draws — the point's stream is
+     * never touched, so cross-point desynchronization is impossible (D3, D8).
+     * Real path: `sample` runs against the point's own stream (any number of
+     * internal draws).
      *
      * @throws Error if `p` declares no outcome classes (plain draws have no
      *   classed outcome to resolve), or if `sample` returns a class the point
@@ -2034,21 +2106,38 @@ export declare class EngineRandomService implements RandomService {
     /**
      * Current stream state of every point that has drawn — live streams plus
      * restored states whose points have not redrawn since restore (D7: the save
-     * carries only points that have drawn).
+     * carries only points that have drawn). Forces and occurrence counters are
+     * deliberately absent — session state, never save state (D9).
      */
     serializeStreamStates(): Record<string, number>;
     /**
      * Replace all stream state with a saved `{ pointName → streamState }` map.
      * Named points continue exactly where the save left them; names absent from
-     * the map reseed lazily by derivation from the master seed — never from the
-     * clock (D7).
+     * the map reseed lazily — from a point-seed override if one is active (D11
+     * is session state and survives a within-session restore), else by
+     * derivation from the master seed — never from the clock (D7). The session's
+     * force table is kept: a restore within a live session keeps session
+     * instruments (D9).
      */
     restoreStreamStates(states: Record<string, number>): void;
     /**
      * The point's live stream: cached, else re-materialized from a restored
-     * state, else derived lazily from (masterSeed, name) per D3.
+     * state, else started from a point-seed override (D11), else derived lazily
+     * from (masterSeed, name) per D3.
      */
     private streamFor;
+    /** Increment and return the point's 1-based firing index (D9's occurrence). */
+    private nextOccurrence;
+    /**
+     * The force applying to this firing, if any: an occurrence-indexed key
+     * (`point#N`) wins over the unindexed key; a `once` force is eligible only
+     * while unfired (D9). Matching increments the entry's fire count.
+     */
+    private matchForce;
+    private eligible;
+    private eligibleUnindexed;
+    /** Build and emit a trace record — only while a sink is installed (D16). */
+    private emitTrace;
 }
 ```
 

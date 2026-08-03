@@ -788,6 +788,8 @@ export declare const Subsystems: {
     readonly TEXT_SERVICE: "text-service";
     readonly EVENT_PROCESSOR: "event-processor";
     readonly RULE_ENGINE: "rule-engine";
+    /** The randomness subsystem — per-draw trace records (ADR-293 D16, Phase C). */
+    readonly RANDOM: "random";
 };
 export type SubsystemType = typeof Subsystems[keyof typeof Subsystems];
 /**
@@ -2585,4 +2587,129 @@ export declare const SEED_DERIVATION_VERSION = 1;
  * @returns an unsigned 32-bit seed for the point's stream
  */
 export declare function deriveStreamSeed(masterSeed: number, pointName: string): number;
+```
+
+### random/force
+
+```typescript
+/**
+ * Force types — outcome forcing over declared classes (ADR-293 D8, D9).
+ *
+ * Public interface: `RandomForceMode`, `RandomForceSpec`, `RandomForceStatus`,
+ * `forceKey`, and the typed load errors (`RandomForceLoadError` base;
+ * `DuplicateForceKeyError`, `UnknownForcePointError`,
+ * `UndeclaredForceClassError`).
+ * Owner context: @sharpee/core random substrate. Core owns the types (D5);
+ * engine's `RandomService` implementation owns the force table itself. Forces
+ * are session state, never save state (D9). The load errors are typed so the
+ * transcript-tester layer can catch and report them with file/line context
+ * (AC-13's three FORCE-specific rejection clauses).
+ */
+/**
+ * How a force applies across a session (D9): `once` must fire exactly once
+ * (transcript default — zero firings by end of run is an error the consumer
+ * enforces from `RandomForceStatus`); `sticky` applies on every reach,
+ * zero-to-many firings, count reported (play default).
+ */
+export type RandomForceMode = 'once' | 'sticky';
+/**
+ * One force: replace a point's outcome with a declared class (D8 rule 1 —
+ * classes, never draw indices or seeds). Keyed by point name plus optional
+ * 1-based occurrence index (D9): an indexed force applies only at that firing;
+ * an unindexed force applies per its mode.
+ */
+export interface RandomForceSpec {
+    /** The point's dotted name (D2). */
+    readonly point: string;
+    /** 1-based firing index this force targets; absent ⇒ applies per mode. */
+    readonly occurrence?: number;
+    /** The declared outcome class to substitute. */
+    readonly cls: string;
+    /** How the force applies across the session (D9). */
+    readonly mode: RandomForceMode;
+}
+/**
+ * End-of-session status of one loaded force, surfaced as data for the
+ * consumer's report (D9: unfired `once` forces are a hard error in
+ * transcripts and a report line in play; `sticky` counts are reported).
+ */
+export interface RandomForceStatus {
+    readonly spec: RandomForceSpec;
+    /** Number of firings this force replaced. */
+    readonly fireCount: number;
+}
+/**
+ * Canonical table-key identity for a force: `point` or `point#occurrence`.
+ * Duplicate keys within one load are a load error, not last-wins (D9).
+ */
+export declare function forceKey(spec: Pick<RandomForceSpec, 'point' | 'occurrence'>): string;
+/**
+ * Base class for force-table load rejections (AC-13) — catchable as one
+ * family by the transcript-tester layer.
+ */
+export declare class RandomForceLoadError extends Error {
+    constructor(message: string);
+}
+/** The same `point[#occurrence]` key declared twice in one load (D9: a load error, not last-wins). */
+export declare class DuplicateForceKeyError extends RandomForceLoadError {
+    readonly key: string;
+    constructor(key: string);
+}
+/** A force naming a point that is not in the catalog — a name is either a declared point or it does not exist (D2). */
+export declare class UnknownForcePointError extends RandomForceLoadError {
+    readonly point: string;
+    constructor(point: string);
+}
+/** A force naming a class the point does not declare (or a plain draw, which declares none — D4). */
+export declare class UndeclaredForceClassError extends RandomForceLoadError {
+    readonly point: string;
+    readonly cls: string;
+    readonly declared: readonly string[];
+    constructor(point: string, cls: string, declared: readonly string[]);
+}
+```
+
+### random/trace
+
+```typescript
+/**
+ * Random trace types — the per-firing trace record and sink (ADR-293 D16).
+ *
+ * Public interface: `IRandomTraceData`, `RandomTraceSink`.
+ * Owner context: @sharpee/core random substrate. Core owns the trace/coverage
+ * types (D5); engine's `RandomService` implementation produces the records and
+ * emits them as `ISystemEvent`s (`subsystem: Subsystems.RANDOM`, severity
+ * 'debug') when a sink is installed. Emission is off by default and a published
+ * game emits none (D16).
+ */
+import type { RandomForceMode } from './force.js';
+/**
+ * One firing of a declared point — drawn or forced (D16's logical record:
+ * point, class, value, provenance, draws-consumed, plus the occurrence index
+ * and, for forced firings, the matched force's mode and key index).
+ */
+export interface IRandomTraceData {
+    /** The point's dotted name (D2). */
+    readonly point: string;
+    /** 1-based firing index of this point within the session (D9's occurrence). */
+    readonly occurrence: number;
+    /** Outcome class — present for classed firings (`chance`/`resolve`), absent for class-less draws (`int`/`pick`). */
+    readonly cls?: string;
+    /** The produced value: the drawn/materialized result, or the pick's label when one was declared. */
+    readonly value: unknown;
+    /** Whether the outcome was drawn on the point's stream or substituted by a force (D8). */
+    readonly provenance: 'drawn' | 'forced';
+    /** Stream draws consumed by this firing — always 0 when forced (D8 rule 2). */
+    readonly drawsConsumed: number;
+    /** Mode of the matched force; present only when `provenance` is 'forced'. */
+    readonly forceMode?: RandomForceMode;
+    /** Occurrence index the matched force key carried, if it was indexed (`point#N`). */
+    readonly forceOccurrence?: number;
+}
+/**
+ * Receiver for trace records. Installed on the engine's `RandomService`
+ * implementation by opted-in surfaces (transcript runner, `--play`, IDE);
+ * absent by default, in which case no record is built at all.
+ */
+export type RandomTraceSink = (record: IRandomTraceData) => void;
 ```

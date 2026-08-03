@@ -54,6 +54,8 @@ export const Subsystems = {
   TEXT_SERVICE: 'text-service',
   EVENT_PROCESSOR: 'event-processor',
   RULE_ENGINE: 'rule-engine',
+  /** The randomness subsystem — per-draw trace records (ADR-293 D16, Phase C). */
+  RANDOM: 'random',
 } as const;
 
 export type SubsystemType = typeof Subsystems[keyof typeof Subsystems];

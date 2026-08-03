@@ -148,17 +148,118 @@ describe('header run configuration (ADR-294 D3)', () => {
     });
   });
 
-  describe('forces: (D13 hook — parsed, not acted on)', () => {
+  describe('forces: (ADR-293 D8/D9 — Phase C header directive)', () => {
     it('treats (none) and empty as no forces', () => {
       expect(parseTranscript(`title: T\nforces: (none)\n${BODY}`).config!.forces).toEqual([]);
       expect(parseTranscript(`title: T\n${BODY}`).config!.forces).toEqual([]);
     });
 
-    it('parses declared forces as raw strings', () => {
+    it('parses point[#occurrence]=CLASS entries into canonical strings and once-mode specs', () => {
       const transcript = parseTranscript(
-        `title: T\nforces: dungeo.melee.blow.hero = DISARM\n${BODY}`
+        `title: T\nforces: dungeo.melee.blow.hero = DISARM, dungeo.melee.blow.villain#2=SERIOUS_WOUND\n${BODY}`
       );
-      expect(transcript.config!.forces).toEqual(['dungeo.melee.blow.hero = DISARM']);
+
+      expect(transcript.parseErrors).toBeUndefined();
+      expect(transcript.config!.forces).toEqual([
+        'dungeo.melee.blow.hero=DISARM',
+        'dungeo.melee.blow.villain#2=SERIOUS_WOUND'
+      ]);
+      expect(transcript.config!.forceSpecs).toEqual([
+        { point: 'dungeo.melee.blow.hero', cls: 'DISARM', mode: 'once' },
+        { point: 'dungeo.melee.blow.villain', occurrence: 2, cls: 'SERIOUS_WOUND', mode: 'once' }
+      ]);
+      expect(transcript.config!.forcesLineNumber).toBe(2);
+    });
+
+    it('rejects a malformed entry as a parse error', () => {
+      const transcript = parseTranscript(`title: T\nforces: dungeo.thief.steal\n${BODY}`);
+
+      expect(validateTranscript(transcript)).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Invalid forces: entry "dungeo.thief.steal"/)])
+      );
+      expect(transcript.config!.forceSpecs).toBeUndefined();
+      expect(transcript.config!.forces).toEqual([]);
+    });
+
+    it('rejects duplicate force keys — a load error, not last-wins (D9)', () => {
+      const transcript = parseTranscript(
+        `title: T\nforces: dungeo.thief.steal=yes, dungeo.thief.steal=no\n${BODY}`
+      );
+
+      expect(validateTranscript(transcript)).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Duplicate force key "dungeo.thief.steal"/)])
+      );
+      // Entry 1 validated before entry 2 errored — the config must stay
+      // exactly empty, never partially populated.
+      expect(transcript.config!.forces).toEqual([]);
+      expect(transcript.config!.forceSpecs).toBeUndefined();
+    });
+
+    it('treats indexed and unindexed keys on one point as distinct', () => {
+      const transcript = parseTranscript(
+        `title: T\nforces: dungeo.thief.steal=yes, dungeo.thief.steal#3=no\n${BODY}`
+      );
+
+      expect(transcript.parseErrors).toBeUndefined();
+      expect(transcript.config!.forces).toEqual([
+        'dungeo.thief.steal=yes',
+        'dungeo.thief.steal#3=no'
+      ]);
+    });
+
+    it('rejects a zero occurrence index', () => {
+      const transcript = parseTranscript(`title: T\nforces: dungeo.thief.steal#0=yes\n${BODY}`);
+
+      expect(validateTranscript(transcript)).toEqual(
+        expect.arrayContaining([expect.stringMatching(/occurrence index must be a positive integer/)])
+      );
+      expect(transcript.config!.forces).toEqual([]);
+      expect(transcript.config!.forceSpecs).toBeUndefined();
+    });
+  });
+
+  describe('point-seed: (ADR-293 D11 — per-point stream override)', () => {
+    it('parses point=seed entries', () => {
+      const transcript = parseTranscript(
+        `title: T\npoint-seed: dungeo.thief.steal=1234, dungeo.forest.ambience = 42\n${BODY}`
+      );
+
+      expect(transcript.parseErrors).toBeUndefined();
+      expect(transcript.config!.pointSeeds).toEqual([
+        { point: 'dungeo.thief.steal', seed: 1234 },
+        { point: 'dungeo.forest.ambience', seed: 42 }
+      ]);
+      expect(transcript.config!.pointSeedsLineNumber).toBe(2);
+    });
+
+    it('is absent from the config when not declared', () => {
+      expect(parseTranscript(`title: T\n${BODY}`).config!.pointSeeds).toBeUndefined();
+    });
+
+    it('rejects a non-integer seed as a parse error', () => {
+      const transcript = parseTranscript(`title: T\npoint-seed: dungeo.thief.steal=abc\n${BODY}`);
+
+      expect(validateTranscript(transcript)).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Invalid point-seed: entry/)])
+      );
+    });
+
+    it('rejects a duplicate point', () => {
+      const transcript = parseTranscript(
+        `title: T\npoint-seed: dungeo.thief.steal=1, dungeo.thief.steal=2\n${BODY}`
+      );
+
+      expect(validateTranscript(transcript)).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Duplicate point "dungeo.thief.steal"/)])
+      );
+    });
+
+    it('rejects an empty list', () => {
+      const transcript = parseTranscript(`title: T\npoint-seed:\n${BODY}`);
+
+      expect(validateTranscript(transcript)).toEqual(
+        expect.arrayContaining([expect.stringMatching(/point-seed: declares no entries/)])
+      );
     });
   });
 

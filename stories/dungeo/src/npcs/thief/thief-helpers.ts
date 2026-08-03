@@ -228,11 +228,14 @@ export function getThiefCombatDecision(context: NpcContext): { shouldAttack: boo
       const cls = value.shouldAttack ? 'attacks' : value.shouldStay ? 'stays' : 'leaves';
       return { cls: cls as 'attacks' | 'stays' | 'leaves', value };
     },
-    (forced) => {
-      throw new Error(
-        `dungeo.thief.combat-decision: forcing '${forced}' is not implemented until ADR-293 Phase C`
-      );
-    }
+    // Forced path (ADR-293 D8, Phase C): the class IS the decision — build
+    // the representative value directly, zero draws.
+    (forced) =>
+      forced === 'attacks'
+        ? { shouldAttack: true, shouldStay: true }
+        : forced === 'stays'
+          ? { shouldAttack: false, shouldStay: true }
+          : { shouldAttack: false, shouldStay: false }
   ).value;
 }
 

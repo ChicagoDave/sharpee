@@ -15,7 +15,14 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { SEED_DERIVATION_VERSION } from '@sharpee/core';
+import {
+  SEED_DERIVATION_VERSION,
+  getPoint,
+  forceKey,
+  RandomForceSpec,
+  RandomForceStatus,
+  RandomForceLoadError
+} from '@sharpee/core';
 import { SAVE_FORMAT_VERSION } from '@sharpee/engine';
 import {
   Transcript,
@@ -58,7 +65,22 @@ interface GameEngine {
     save(): Promise<boolean>;
     restore(): Promise<boolean>;
     getMasterSeed?(): number;
+    /** ADR-293 Phase C: the per-point stream owner (forces, point-seed overrides). */
+    getRandomService?(): PlatformRandomService;
+    /** ADR-293 D16: per-draw trace onto the system-event channel; the runner opts in. */
+    setRandomTraceEnabled?(enabled: boolean): void;
   };
+}
+
+/**
+ * The slice of `EngineRandomService` the runner drives (ADR-293 D8/D9/D11).
+ * Structural so the tester never imports the engine class itself.
+ */
+interface PlatformRandomService {
+  loadForces(specs: readonly RandomForceSpec[]): void;
+  clearForces(): void;
+  getForceReport(): RandomForceStatus[];
+  setPointSeedOverrides(overrides: Readonly<Record<string, number>>): void;
 }
 
 /**
@@ -123,6 +145,15 @@ export async function runTranscript(
       startTime,
       `${transcript.parseErrors.length} parse error(s) — first: line ${first.lineNumber}: ${first.message}`
     );
+  }
+
+  // ADR-293 Phase C session instruments: load forces, apply point-seed
+  // overrides, enable trace. Per transcript — a chain member resets the
+  // previous member's instruments (forces are session state scoped to the
+  // transcript that declares them, D9).
+  const instrumentError = configureRandomInstruments(transcript, engine);
+  if (instrumentError) {
+    return errorResult(transcript, startTime, instrumentError);
   }
 
   // A seeds: matrix records per-seed siblings (D8); the session's live seed
@@ -251,6 +282,7 @@ async function runGolden(
     const preTurnSave = mode === 'replay' ? await captureEngineSave(engine) : null;
 
     const { output, events } = await executeForGolden(command, engine, config.events);
+    options.coverage?.collectFrom(engine.lastEvents);
     const actualLines = output.split('\n');
 
     if (mode === 'record') {
@@ -290,6 +322,19 @@ async function runGolden(
     turnIndex++;
   }
 
+  // An unfired `once` force is a hard failure of the same severity as any
+  // other failed run (ADR-293 D9 / AC-9) — checked only when the run
+  // otherwise passed, since an early failure legitimately leaves later
+  // forces unreached. In record mode this also blocks the bless: a recording
+  // made under a force that never fired would enshrine a lie.
+  if (!failed) {
+    const unfired = unfiredForceError(transcript, engine);
+    if (unfired) {
+      results.push(forcesFailResult(transcript, unfired));
+      failed = true;
+    }
+  }
+
   // A green replay clears any divergence save a previous failing run left
   // behind — it describes a divergence that no longer exists.
   if (mode === 'replay' && !failed) {
@@ -307,7 +352,10 @@ async function runGolden(
         channels: config.channels,
         events: config.events,
         locale,
-        forces: config.forces
+        forces: config.forces,
+        ...(config.pointSeeds && config.pointSeeds.length > 0
+          ? { pointSeeds: config.pointSeeds.map((p) => `${p.point}=${p.seed}`) }
+          : {})
       },
       turns
     };
@@ -416,7 +464,127 @@ function staleProvenanceFields(
   check('events', String(p.events), String(config.events));
   check('locale', p.locale, locale);
   check('forces', p.forces.join(', ') || '(none)', config.forces.join(', ') || '(none)');
+  check(
+    'point-seeds',
+    (p.pointSeeds ?? []).join(', ') || '(none)',
+    (config.pointSeeds ?? []).map((entry) => `${entry.point}=${entry.seed}`).join(', ') || '(none)'
+  );
   return stale;
+}
+
+// ============================================================================
+// ADR-293 Phase C session instruments (forces / point-seed / trace)
+// ============================================================================
+
+/**
+ * Configure the engine's session instruments from the transcript header:
+ * reset then load forces (D8/D9), apply point-seed overrides (D11), and
+ * enable trace — the runner is an opted-in surface (D16). Returns an error
+ * message on failure, null on success. Always resets instruments even for a
+ * transcript declaring none, so a chain member never inherits the previous
+ * member's forces.
+ */
+function configureRandomInstruments(
+  transcript: Transcript,
+  engine: GameEngine
+): string | null {
+  const config = transcript.config;
+  const forceSpecs = config?.forceSpecs ?? [];
+  const pointSeeds = config?.pointSeeds ?? [];
+  const platform = engine.engine;
+  const service = platform?.getRandomService?.();
+  const file = path.basename(transcript.filePath);
+
+  platform?.setRandomTraceEnabled?.(true);
+
+  if (forceSpecs.length === 0 && pointSeeds.length === 0) {
+    service?.clearForces();
+    service?.setPointSeedOverrides({});
+    return null;
+  }
+
+  if (!service) {
+    return (
+      `${file}: forces:/point-seed: need the platform engine ` +
+      `(engine.getRandomService) to load session instruments (ADR-293 Phase C)`
+    );
+  }
+
+  // A point-seed naming an undeclared point would be silently inert — the
+  // typo trap D2's "a name is either a declared point or it does not exist"
+  // exists to close. Same named-rejection class as an unknown force point.
+  for (const { point } of pointSeeds) {
+    if (!getPoint(point)) {
+      return (
+        `${file}:${config?.pointSeedsLineNumber ?? '?'}: point-seed: names unknown point ` +
+        `'${point}' — no such point is declared (ADR-293 D2)`
+      );
+    }
+  }
+
+  service.clearForces();
+  try {
+    service.loadForces(forceSpecs);
+  } catch (e) {
+    // Name-based fallback: a dual-loaded copy of core (CJS+ESM) would break
+    // instanceof — the same hazard the catalog's Symbol.for anchor guards.
+    const isLoadError =
+      e instanceof RandomForceLoadError ||
+      (e instanceof Error &&
+        ['DuplicateForceKeyError', 'UnknownForcePointError', 'UndeclaredForceClassError'].includes(e.name));
+    if (isLoadError) {
+      return `${file}:${config?.forcesLineNumber ?? '?'}: ${(e as Error).message}`;
+    }
+    throw e;
+  }
+  service.setPointSeedOverrides(
+    Object.fromEntries(pointSeeds.map((entry) => [entry.point, entry.seed]))
+  );
+  return null;
+}
+
+/**
+ * The unfired-`once`-force check (D9 / AC-9): every transcript force is mode
+ * `once` and must have fired by end of run. Returns the error message naming
+ * each unfired force, or null when all fired (or none were declared).
+ */
+function unfiredForceError(transcript: Transcript, engine: GameEngine): string | null {
+  const forceSpecs = transcript.config?.forceSpecs ?? [];
+  if (forceSpecs.length === 0) return null;
+  const service = engine.engine?.getRandomService?.();
+  if (!service) return null;
+
+  const unfired = service
+    .getForceReport()
+    .filter((status) => status.spec.mode === 'once' && status.fireCount === 0);
+  if (unfired.length === 0) return null;
+
+  const names = unfired
+    .map((status) => `${forceKey(status.spec)}=${status.spec.cls}`)
+    .join(', ');
+  return (
+    `unfired once force(s): ${names} — a force that has not fired by the end of the ` +
+    `run is a hard error (ADR-293 D9)`
+  );
+}
+
+/** A failed synthetic result for the unfired-force check (D9). */
+function forcesFailResult(transcript: Transcript, error: string): CommandResult {
+  return {
+    command: {
+      lineNumber: transcript.config?.forcesLineNumber ?? 0,
+      input: 'forces:',
+      expectedOutput: [],
+      assertions: []
+    },
+    actualOutput: '',
+    actualEvents: [],
+    passed: false,
+    expectedFailure: false,
+    skipped: false,
+    assertionResults: [],
+    error
+  };
 }
 
 /** Compare the transcript's command list against the recording's turns. */
@@ -513,6 +681,7 @@ async function runAssertion(
     }
 
     const result = await runCommand(command, engine, options);
+    options.coverage?.collectFrom(engine.lastEvents);
     results.push(result);
 
     if (options.testingExtension?.setCommandContext) {
@@ -521,6 +690,16 @@ async function runAssertion(
 
     if (options.stopOnFailure && !result.passed && !result.expectedFailure && !result.skipped) {
       break;
+    }
+  }
+
+  // Unfired `once` forces fail the run (D9 / AC-9) — checked only when the
+  // transcript otherwise passed; an early failure legitimately leaves later
+  // forces unreached.
+  if (!results.some(r => !r.passed && !r.expectedFailure && !r.skipped)) {
+    const unfired = unfiredForceError(transcript, engine);
+    if (unfired) {
+      results.push(forcesFailResult(transcript, unfired));
     }
   }
 

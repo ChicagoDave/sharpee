@@ -90,6 +90,41 @@ export interface TranscriptEndRecord {
   errorMessage?: string;
 }
 
+/** One declared point's coverage row (ADR-293 D15) inside a {@link CoverageRecord}. */
+export interface CoveragePoint {
+  /** The point's dotted name (ADR-293 D2). */
+  name: string;
+  /** Declared outcome classes. Absent = plain draw (no coverage classes, D4). */
+  classes?: string[];
+  /** Firing count over the run/chain — 0 = never fired. */
+  fired: number;
+  /** Classes observed at least once (drawn or forced — D8 reports class coverage). */
+  observed?: string[];
+  /** Declared classes never observed — the report's actionable column. */
+  unobserved?: string[];
+}
+
+/**
+ * The run's coverage report (ADR-293 D15 / ADR-294 D13): every declared
+ * point, `catalog − fired`, and unobserved classes per point. One record per
+ * run — coverage aggregates across a chain, never per transcript (D15).
+ * Emitted only when the caller opts in (`--coverage`), so a pre-Phase-C
+ * decoder never meets it unrequested; the schema version stays 1 by the same
+ * additive reasoning as `actualOutput`.
+ */
+export interface CoverageRecord {
+  schemaVersion: typeof TEST_RESULTS_SCHEMA_VERSION;
+  type: 'coverage';
+  /** Every declared point in scope, sorted by name. */
+  points: CoveragePoint[];
+  /** Count of points with `fired > 0`. */
+  pointsFired: number;
+  /** Count of points never fired (`catalog − fired`, D2). */
+  pointsNeverFired: number;
+  /** Total declared classes never observed, across all points. */
+  classesUnobserved: number;
+}
+
 /** Last record of every run: the aggregate and the process exit code. */
 export interface RunEndRecord {
   schemaVersion: typeof TEST_RESULTS_SCHEMA_VERSION;
@@ -111,6 +146,7 @@ export type TestResultRecord =
   | TranscriptStartRecord
   | CommandResultRecord
   | TranscriptEndRecord
+  | CoverageRecord
   | RunEndRecord;
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -174,6 +210,33 @@ export function isTranscriptEndRecord(value: unknown): value is TranscriptEndRec
   );
 }
 
+/** Narrow a value to a valid {@link CoveragePoint}. */
+function isCoveragePoint(value: unknown): value is CoveragePoint {
+  if (!isObject(value)) return false;
+  const stringArray = (v: unknown): boolean =>
+    Array.isArray(v) && v.every((entry) => typeof entry === 'string');
+  return (
+    typeof value.name === 'string' &&
+    typeof value.fired === 'number' &&
+    (value.classes === undefined || stringArray(value.classes)) &&
+    (value.observed === undefined || stringArray(value.observed)) &&
+    (value.unobserved === undefined || stringArray(value.unobserved))
+  );
+}
+
+/** Narrow a value to a valid {@link CoverageRecord}. */
+export function isCoverageRecord(value: unknown): value is CoverageRecord {
+  if (!isObject(value)) return false;
+  return (
+    hasVersionAndType(value, 'coverage') &&
+    Array.isArray(value.points) &&
+    value.points.every(isCoveragePoint) &&
+    typeof value.pointsFired === 'number' &&
+    typeof value.pointsNeverFired === 'number' &&
+    typeof value.classesUnobserved === 'number'
+  );
+}
+
 /** Narrow a value to a valid {@link RunEndRecord}. */
 export function isRunEndRecord(value: unknown): value is RunEndRecord {
   if (!isObject(value)) return false;
@@ -200,6 +263,7 @@ export function isTestResultRecord(value: unknown): value is TestResultRecord {
     isTranscriptStartRecord(value) ||
     isCommandResultRecord(value) ||
     isTranscriptEndRecord(value) ||
+    isCoverageRecord(value) ||
     isRunEndRecord(value)
   );
 }

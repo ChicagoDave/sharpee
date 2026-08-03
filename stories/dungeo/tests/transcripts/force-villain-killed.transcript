@@ -1,0 +1,37 @@
+title: Villain KILLED via wound spiral (ADR-293 AC-9)
+story: dungeo
+description: The AC-9 motivating case — an occurrence-indexed force (villain blow #1 = LIGHT_WOUND) drives the hero's fight strength from base 2 into the DEF1 window, and firing #2 draws KILLED naturally at the searched point-seed (found by --search, ADR-293 D12's force-prefix-then-search-last). Player death by troll — the coverage row the whole walkthrough suite never fills.
+seed: 4242
+point-seed: dungeo.melee.blow.villain=530372153
+forces: dungeo.melee.blow.villain#1=LIGHT_WOUND
+---
+# Route to the Troll Room (wt-01's path, attic detour skipped).
+
+> north
+
+> east
+
+> open window
+
+> west
+
+> west
+
+> take lantern
+
+> take sword
+
+> turn on lantern
+
+> move rug
+
+> open trapdoor
+
+> down
+
+# Entering the Troll Room: the troll's blow #1 is forced LIGHT_WOUND
+# (hero strength 2 → 1, the DEF1 window).
+> east
+
+# The troll's blow #2 draws naturally on the point-seeded stream: KILLED.
+> wait
