@@ -320,18 +320,25 @@ async function main(): Promise<void> {
   // transcript (honoring its `entry:` header) — an eager load here would be
   // discarded unused (ADR-207 AC-7: no side-effecting pre-load).
   let game: TestableGame | undefined;
+  // ADR-294 D15: the channels a session's game was assembled with — threaded
+  // to the runner so a mismatched member fails by name, never silently.
+  let assembledChannels: string[] = ['main'];
   if (options.chain) {
     // ADR-293 D14: a chain is one session governed by the FIRST member's
     // pinned seed — pre-read it, since the engine is seeded at assembly.
+    // Same for its channels: declaration (ADR-294 D15): one session, one
+    // capability profile and capture set.
     // A parse error is swallowed here: the main loop reports it properly.
     let chainSeed: number | undefined;
     try {
-      chainSeed = parseTranscriptFile(options.transcriptPaths[0]).config?.seeds?.[0];
+      const firstConfig = parseTranscriptFile(options.transcriptPaths[0]).config;
+      chainSeed = firstConfig?.seeds?.[0];
+      assembledChannels = firstConfig?.channels ?? ['main'];
     } catch {
       chainSeed = undefined;
     }
     try {
-      game = await loadStory(options.storyPath, undefined, chainSeed);
+      game = await loadStory(options.storyPath, undefined, chainSeed, assembledChannels);
     } catch (error) {
       console.error(`Error loading story: ${error}`);
       process.exit(3);
@@ -379,7 +386,9 @@ async function main(): Promise<void> {
     // pinned `seed:` (ADR-294 D3 — the engine is seeded at assembly).
     if (!options.chain) {
       try {
-        game = await loadStory(options.storyPath, transcript.header.entry, transcript.config?.seeds?.[0]);
+        assembledChannels = transcript.config?.channels ?? ['main'];
+        game = await loadStory(options.storyPath, transcript.header.entry,
+          transcript.config?.seeds?.[0], assembledChannels);
       } catch (error) {
         console.error(`Error loading story: ${error}`);
         process.exit(3);
@@ -393,6 +402,7 @@ async function main(): Promise<void> {
       stopOnFailure: options.stopOnFailure,
       bless: options.bless,
       chain: options.chain,
+      assembledChannels,
       storyName: path.basename(path.resolve(options.storyPath)),
       // `assembleGame` builds the ext-testing extension and hangs it off LoadedGame,
       // but this bin used to drop it — so every `$teleport`/`$restore`/`$take` run

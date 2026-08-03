@@ -52,6 +52,12 @@ const OPTIONAL_PROVENANCE_KEYS = ['point-seeds'] as const;
 
 /** An event line is `• type {json}` — bullet, one space, type token, payload. */
 const EVENT_LINE = /^• (\S+) (\{.*\})$/;
+/**
+ * ADR-294 D15 channel-capture line: `◦ <channel-id> <payload>`, payload
+ * optional (an empty captured line serializes without the trailing space).
+ * Only consulted when the provenance declares channels beyond `main`.
+ */
+const CHANNEL_LINE = /^◦ (\S+)(?: (.*))?$/;
 
 /**
  * A malformed `.golden` file. Recordings are machine-written, so any shape
@@ -107,6 +113,16 @@ export function serializeGolden(recording: GoldenRecording): string {
     for (const event of turn.events ?? []) {
       lines.push(`• ${event.type} ${event.json}`);
     }
+    // ADR-294 D15: declared non-main channel captures, grouped per channel
+    // in provenance declaration order — last in the turn, after events. An
+    // empty captured line serializes without the trailing space so files
+    // stay free of trailing whitespace.
+    for (const id of p.channels) {
+      if (id === 'main') continue;
+      for (const line of turn.channels?.[id] ?? []) {
+        lines.push(line === '' ? `◦ ${id}` : `◦ ${id} ${line}`);
+      }
+    }
     if (index < recording.turns.length - 1) {
       lines.push('');
     }
@@ -140,7 +156,11 @@ export function parseGolden(content: string, filePath: string = '<inline>'): Gol
   }
 
   const { provenance, bodyStart } = parseProvenance(lines, filePath);
-  const turns = parseTurns(lines, bodyStart, provenance.events, filePath);
+  // ADR-294 D15: `◦` lines are channel captures ONLY when the provenance
+  // declares channels beyond main — the exact `events:` gating precedent, so
+  // main-only recordings parse byte-identically to before.
+  const channelIds = provenance.channels.filter((id) => id !== 'main');
+  const turns = parseTurns(lines, bodyStart, provenance.events, channelIds, filePath);
 
   if (turns.length === 0) {
     throw new GoldenFormatError('Recording has no turns', filePath, bodyStart + 1);
@@ -265,6 +285,7 @@ function parseTurns(
   lines: string[],
   bodyStart: number,
   events: boolean,
+  channelIds: string[],
   filePath: string
 ): GoldenTurn[] {
   const turns: GoldenTurn[] = [];
@@ -280,7 +301,7 @@ function parseTurns(
     if (!isFinal && turnLines.length > 0 && turnLines[turnLines.length - 1].text === '') {
       turnLines.pop();
     }
-    classifyTurnLines(current.turn, turnLines, events, filePath);
+    classifyTurnLines(current.turn, turnLines, events, channelIds, filePath);
     turns.push(current.turn);
     current = null;
     turnLines = [];
@@ -316,12 +337,37 @@ function classifyTurnLines(
   turn: GoldenTurn,
   turnLines: Array<{ text: string; lineNumber: number }>,
   events: boolean,
+  channelIds: string[],
   filePath: string
 ): void {
   const parsedEvents: GoldenEvent[] = [];
+  const parsedChannels: Record<string, string[]> = {};
   let inEvents = false;
+  let inChannels = false;
 
   for (const { text, lineNumber } of turnLines) {
+    // ADR-294 D15: channel lines close the turn — nothing follows them.
+    const channelMatch = channelIds.length > 0 ? CHANNEL_LINE.exec(text) : null;
+    if (channelMatch) {
+      const id = channelMatch[1];
+      if (!channelIds.includes(id)) {
+        throw new GoldenFormatError(
+          `Channel line for undeclared channel '${id}' — provenance declares: ${channelIds.join(', ')}`,
+          filePath,
+          lineNumber
+        );
+      }
+      inChannels = true;
+      (parsedChannels[id] ??= []).push(channelMatch[2] ?? '');
+      continue;
+    }
+    if (inChannels) {
+      throw new GoldenFormatError(
+        `Line after channel lines within a turn — channel captures must come last: "${text}"`,
+        filePath,
+        lineNumber
+      );
+    }
     const eventMatch = events ? EVENT_LINE.exec(text) : null;
     if (eventMatch && isJsonObject(eventMatch[2])) {
       inEvents = true;
@@ -340,6 +386,9 @@ function classifyTurnLines(
 
   if (parsedEvents.length > 0) {
     turn.events = parsedEvents;
+  }
+  if (Object.keys(parsedChannels).length > 0) {
+    turn.channels = parsedChannels;
   }
 }
 

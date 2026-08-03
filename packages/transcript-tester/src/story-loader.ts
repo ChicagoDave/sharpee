@@ -28,8 +28,13 @@ export type TestableGame = LoadedGame;
  *   (ADR-293 D1) — the runner verifies the session seed against the pin, it
  *   never sets it, so the host must seed the engine at assembly
  */
-export async function loadStory(storyPath: string, entry?: string, seed?: number): Promise<TestableGame> {
-  return bootstrapLoadStory(storyPath, { entry, seed });
+export async function loadStory(
+  storyPath: string,
+  entry?: string,
+  seed?: number,
+  channels?: string[]
+): Promise<TestableGame> {
+  return bootstrapLoadStory(storyPath, { entry, seed, channels });
 }
 
 /**

@@ -183,6 +183,13 @@ export interface GoldenTurn {
   output: string[];
   /** Present only when the recording's provenance says `events: true`. */
   events?: GoldenEvent[];
+  /**
+   * Declared non-`main` channel captures (ADR-294 D15): flattened lines per
+   * channel id, in emission order. Present only when the provenance declares
+   * channels beyond `main` AND the channel emitted this turn — a declared
+   * channel that emitted nothing has no key (sparse; absence is diffed).
+   */
+  channels?: Record<string, string[]>;
 }
 
 /** A parsed `.golden` recording: provenance plus the recorded turns. */
@@ -434,6 +441,13 @@ export interface RunnerOptions {
    * seed, and replaying one standalone is refused (D7).
    */
   chain?: boolean;
+  /**
+   * The channels the session's game was assembled with (ADR-294 D15) — the
+   * capability profile and capture set are fixed at assembly, so a
+   * transcript declaring a different channels: set is a named failure.
+   * Absent (unit stubs, legacy callers) → the check is skipped.
+   */
+  assembledChannels?: string[];
   /** Story name for recording provenance; falls back to the `story:` header. */
   storyName?: string;
   /** Locale for recording provenance when the transcript declares none (D19). */

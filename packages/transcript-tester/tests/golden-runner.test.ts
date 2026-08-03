@@ -128,13 +128,17 @@ describe('bless (record mode, D1/D3/D7)', () => {
     expect(engine.calls).toEqual(['look']);
   });
 
-  it('rejects non-main channels as a named not-yet-supported error', async () => {
-    // Seed matrices are supported (D8 — see golden-dimensions.test.ts);
-    // channel scoping remains guarded pending the D15 platform surface.
+  it('rejects a channels: declaration that disagrees with the assembled session (D15)', async () => {
+    // Channel scoping shipped (D15 — see golden-channels.test.ts); the guard
+    // that remains is assembly consistency: the capability profile and
+    // capture set are fixed when the game is built, so a transcript declaring
+    // a different set is a named failure, never a silent partial capture.
     const channels = fixture('title: T\nseed: 42\nchannels: main, status\n---\n> look\n');
-    const channelsResult = await runTranscript(channels, stubEngine() as never, { bless: true });
+    const channelsResult = await runTranscript(channels, stubEngine() as never, {
+      bless: true, assembledChannels: ['main']
+    });
     expect(channelsResult.status).toBe('error');
-    expect(channelsResult.errorMessage).toMatch(/channel-scoped recordings.*not yet supported.*D15/);
+    expect(channelsResult.errorMessage).toMatch(/assembled with channels: main —.*identical channels.*D15/);
   });
 });
 
@@ -162,7 +166,9 @@ describe('replay (D1/D6)', () => {
     expect(result.commands).toHaveLength(1);
     expect(result.commands[0].diff).toEqual({
       recorded: ['You look.', 'Nothing happens.'],
-      actual: ['You look.', 'Something CHANGED.']
+      actual: ['You look.', 'Something CHANGED.'],
+      // D15: the diff names the diverged surface; prose is 'main'.
+      channel: 'main'
     });
     // Divergence stops the replay — 'north' never ran.
     expect(engine.calls).toEqual(['look']);

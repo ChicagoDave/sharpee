@@ -58,7 +58,24 @@
   - AC-5: a `$restore` of a missing save fails the transcript with a named error and nonzero exit, without `--stop-on-failure`.
   - `pnpm --filter '@sharpee/transcript-tester' test` green; `./repokit build dungeo` green (confirms `scripts/bundle-entry.js` wiring compiles into the bundle).
 
-### Phase 3: Diff dimensions — seed matrices, channel scoping, divergence debugging **[COMPLETE (D8+D18) — 2026-08-01, session e30007; D15 PAUSED on a platform decision]**
+### Phase 3: Diff dimensions — seed matrices, channel scoping, divergence debugging **[COMPLETE (D8+D18) — 2026-08-01, session e30007; D15 CLOSED 2026-08-03, session 7dd736 — see closure addendum below]**
+
+> **D15 closure (2026-08-03, session 7dd736)**: David approved the recorded proposal
+> (design refined in-session: `◦ <id> <line>` capture lines in the golden, gated on
+> provenance `channels:` exactly like the `events:` precedent; capability profile
+> derived from each declared channel's `IOChannel.gatedBy` — the mapping already
+> existed, no table needed; structured payloads as key-sorted single-line JSON;
+> absence diffed; assembly/declaration mismatch is a named failure). Implemented in
+> `packages/bootstrap` (`channels` option, `lastChannels` capture, gatedBy flip,
+> unknown-channel rejection), `packages/transcript-tester` (serializer/parser,
+> runner capture + channel-naming diff, `assembledChannels` guard), and
+> `scripts/bundle-entry.js` (both test paths thread channels). Evidence: bootstrap
+> 39 passing incl. real-engine gated-channel capture; tester 219 passing; **AC-8
+> real-path through the bundle** — `channels: main, score` transcript blessed,
+> replayed green, tampered `◦ score` line failed naming `channel 'score' diverged`
+> with the D18 divergence save written; dungeo chain + unit corpus green at seed 42
+> with **zero golden churn** (main-only recordings byte-identical by construction);
+> `tsf build --npm` green. ADR-294's core (ACs 1–9) is now fully closed.
 - **Evidence**: suite 145 passing; typecheck clean; `./repokit build dungeo` green (bundle 3458437); `tsf build --npm` green (all publishables staged). AC-7 through the bundle vs dungeo: `seeds: 42, 777` blessed `ac7.42.golden` + `ac7.777.golden` (one run per seed, `Seed: N (seeds:)`); tampering 777's recording failed only 777's replay — 42 stayed green. AC-6: tampered `read leaflet` turn → divergence at that turn, `ac.divergence.json` written; `--exec "read leaflet" --restore <path> --seed 42` landed one command before the divergence (leaflet in hand) and reproduced the turn **1114 bytes identical**. Green replays clear stale divergence saves; `*.divergence.json` gitignored; `--restore` accepts paths. **D15 (channel scoping) paused per this plan's flag rule**: capturing non-main channels needs a platform surface — the CLI capability profile disables `statusBar` etc. (bootstrap `CLI_CAPABILITIES`), so those channels never produce packets in test mode, and `LoadedGame` exposes no per-channel capture. Proposal for David: (1) `LoadedGame` gains per-turn `lastChannels` (flattened per channel id from the `channel:packet` payload); (2) golden runs assemble the game with a capability profile derived from the transcript's `channels:` declaration. Runner keeps its named "not yet supported (D15)" guard until then; AC-8 waits on this.
 - **Tier**: Large
 - **Budget**: 400

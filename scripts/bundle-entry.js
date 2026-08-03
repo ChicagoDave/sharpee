@@ -335,10 +335,13 @@ Examples:
   // channel-packet assembly now lives once in bootstrap.assembleGame.
   // A path ending in `.story` is compiled + interpreted instead of required
   // (`entry` applies only to module stories and is ignored for `.story` files).
-  function loadStoryAndCreateGame(storyPath, entry, seed) {
+  function loadStoryAndCreateGame(storyPath, entry, seed, channels) {
     // ADR-293: forward the resolved master seed to EngineConfig.seed; a
     // restart reboot reuses it, so pinned runs survive in-transcript RESTART.
     const seedOption = seed !== undefined ? { seed } : {};
+    // ADR-294 D15: declared capture channels flow to assembly — the
+    // capability profile and per-command channel capture are fixed there.
+    const channelsOption = channels !== undefined ? { channels } : {};
     if (storyPath.endsWith('.story')) {
       // ADR-293 D1: one master seed governs the engine AND the chord
       // evaluator. When none was injected, read the clock once HERE so both
@@ -349,13 +352,14 @@ Examples:
       return bootstrap.assembleGame(loadChordStory(storyPath, masterSeed), {
         freshStory: () => loadChordStory(storyPath, masterSeed),
         seed: masterSeed,
+        ...channelsOption,
       });
     }
     const modulePath = bootstrap.resolveStoryModulePath(storyPath, entry);
     // ADR-248: bootstrap's one purge+re-require+createStory() implementation
     // serves both the initial load and every in-process restart reboot.
     const freshStory = bootstrap.moduleFreshStory(storyPath, modulePath);
-    return bootstrap.assembleGame(freshStory(), { freshStory, ...seedOption });
+    return bootstrap.assembleGame(freshStory(), { freshStory, ...seedOption, ...channelsOption });
   }
 
   async function runInteractiveMode(game) {
@@ -975,7 +979,9 @@ Examples:
           const resolved = matrixSeed !== null
             ? { seed: matrixSeed, source: 'seeds:' }
             : resolveSeed(transcript.seed);
-          const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed);
+          // ADR-294 D15: assemble with the transcript's declared channels.
+          const declaredChannels = (transcript.config && transcript.config.channels) || ['main'];
+          const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed, declaredChannels);
           // ADR-293 D14: every run reports the seed it used, clock-derived included.
           console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
 
@@ -985,6 +991,7 @@ Examples:
             stopOnFailure: options.stopOnFailure,
             savesDirectory: path.join(storyDirOf(options.storyPath), 'saves'),
             bless,
+            assembledChannels: declaredChannels,
             storyName: path.basename(storyDirOf(options.storyPath)),
             testingExtension: game.testingExtension,
             coverage: coverageTracker
@@ -1006,7 +1013,12 @@ Examples:
 
       if (options.chain) {
         const resolved = resolveSeed(parsedTranscripts[0] && parsedTranscripts[0].transcript.seed);
-        const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed);
+        // ADR-294 D15: one session, one profile — the FIRST member's channels
+        // govern assembly; the runner rejects a member that disagrees.
+        const chainChannels =
+          (parsedTranscripts[0] && parsedTranscripts[0].transcript.config &&
+            parsedTranscripts[0].transcript.config.channels) || ['main'];
+        const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed, chainChannels);
         // ADR-293 D14: every run reports the seed it used, clock-derived included.
         console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
 
@@ -1024,6 +1036,7 @@ Examples:
             savesDirectory: path.join(storyDirOf(options.storyPath), 'saves'),
             bless: options.bless,
             chain: true,
+            assembledChannels: chainChannels,
             storyName: path.basename(storyDirOf(options.storyPath)),
             testingExtension: game.testingExtension,
             coverage: coverageTracker

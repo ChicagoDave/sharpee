@@ -49,6 +49,12 @@ interface GameEngine {
   executeCommand(input: string): Promise<string> | string;
   getOutput?(): string;
   lastEvents?: Array<{ type: string; data?: any }>;
+  /**
+   * Declared non-main channel captures for the last command (ADR-294 D15):
+   * flattened lines per channel id. Populated by bootstrap's assembleGame
+   * when the session was assembled with channels beyond `main`.
+   */
+  lastChannels?: Record<string, string[]>;
   world?: WorldModel;
   /**
    * The underlying platform engine. $save/$restore go through its real
@@ -186,11 +192,21 @@ async function runGolden(
   const config: TranscriptRunConfig =
     transcript.config ?? { seeds: [], channels: ['main'], events: false, forces: [] };
 
-  // Capability guards — named failures, never silent degradation.
-  if (config.channels.length !== 1 || config.channels[0] !== 'main') {
+  // ADR-294 D15: the capability profile and capture set are fixed at game
+  // assembly, so a transcript whose channels: disagrees with the session it
+  // runs in is a named failure, never a silent partial capture. Bites chains
+  // whose members declare different channels (one session, one profile).
+  if (
+    options.assembledChannels &&
+    (options.assembledChannels.length !== config.channels.length ||
+      !options.assembledChannels.every((id, i) => id === config.channels[i]))
+  ) {
     return errorResult(transcript, startTime,
-      'channel-scoped recordings (channels:) are not yet supported by the runner (ADR-294 D15)', 'golden', goldenPath);
+      `transcript declares channels: ${config.channels.join(', ')} but the session was assembled with ` +
+      `channels: ${options.assembledChannels.join(', ')} — chain members must declare identical channels (ADR-294 D15)`,
+      'golden', goldenPath);
   }
+  const capturedChannelIds = config.channels.filter((id) => id !== 'main');
 
   // A golden transcript must pin a seed (D3). The exception is a chain
   // member after the first: the chain is one session and its recording
@@ -281,20 +297,26 @@ async function runGolden(
     // faithfully. In-memory until a divergence actually happens.
     const preTurnSave = mode === 'replay' ? await captureEngineSave(engine) : null;
 
-    const { output, events } = await executeForGolden(command, engine, config.events);
+    const { output, events, channels } = await executeForGolden(
+      command, engine, config.events, capturedChannelIds);
     options.coverage?.collectFrom(engine.lastEvents);
     const actualLines = output.split('\n');
 
     if (mode === 'record') {
       const turn: GoldenTurn = { command: command.input, output: actualLines };
       if (config.events && events.length > 0) turn.events = events;
+      if (channels && Object.keys(channels).length > 0) turn.channels = channels;
       turns.push(turn);
       results.push(goldenPassResult(command, output));
     } else {
       const turn = recording!.turns[turnIndex];
-      const divergence = diffTurn(turn, actualLines, events, config.events);
+      const divergence = diffTurn(turn, actualLines, events, config.events,
+        capturedChannelIds, channels);
       if (divergence) {
-        let error = `output diverged from the recording (${path.basename(goldenPath)})`;
+        // D15: name the surface that moved — 'main' prose or a channel.
+        let error = divergence.channel && divergence.channel !== 'main'
+          ? `channel '${divergence.channel}' diverged from the recording (${path.basename(goldenPath)})`
+          : `output diverged from the recording (${path.basename(goldenPath)})`;
         if (preTurnSave !== null) {
           divergenceSavePath = divergencePathFor(transcript.filePath);
           fs.writeFileSync(divergenceSavePath, JSON.stringify(preTurnSave), 'utf-8');
@@ -405,8 +427,9 @@ async function captureEngineSave(engine: GameEngine): Promise<unknown | null> {
 async function executeForGolden(
   command: TranscriptCommand,
   engine: GameEngine,
-  captureEvents: boolean
-): Promise<{ output: string; events: GoldenEvent[] }> {
+  captureEvents: boolean,
+  capturedChannelIds: string[] = []
+): Promise<{ output: string; events: GoldenEvent[]; channels?: Record<string, string[]> }> {
   let output: string;
   try {
     const result = await engine.executeCommand(command.input);
@@ -424,7 +447,20 @@ async function executeForGolden(
       events.push({ type: event.type, json: JSON.stringify(event.data ?? {}) });
     }
   }
-  return { output, events };
+
+  // ADR-294 D15: pull the declared channels' captures for this command.
+  // Filtered to the declared set so a stub or over-eager capture can never
+  // smuggle an undeclared channel into a recording.
+  let channels: Record<string, string[]> | undefined;
+  if (capturedChannelIds.length > 0 && engine.lastChannels) {
+    for (const id of capturedChannelIds) {
+      const lines = engine.lastChannels[id];
+      if (lines && lines.length > 0) {
+        (channels ??= {})[id] = [...lines];
+      }
+    }
+  }
+  return { output, events, channels };
 }
 
 /** A passing golden-tier command result. */
@@ -606,27 +642,58 @@ function commandListDrift(transcript: Transcript, recording: GoldenRecording): s
 /**
  * Diff one replayed turn against its recording. Returns the divergence, or
  * null when they match. The build-date banner line is masked on both sides
- * (D6); nothing else is normalized.
+ * (D6); nothing else is normalized. Declared non-main channels (ADR-294 D15)
+ * are compared in their serialized `◦ <id> <line>` form, appended after
+ * output/events in declaration order — absence is meaningful (a cue that
+ * stops firing diverges). The returned `channel` names the surface the first
+ * mismatch lies in ('main' for prose/events).
  */
 function diffTurn(
   turn: GoldenTurn,
   actualLines: string[],
   actualEvents: GoldenEvent[],
-  compareEvents: boolean
-): { recorded: string[]; actual: string[] } | null {
-  const recordedFull = compareEvents
-    ? [...turn.output, ...(turn.events ?? []).map(e => `• ${e.type} ${e.json}`)]
-    : turn.output;
-  const actualFull = compareEvents
-    ? [...actualLines, ...actualEvents.map(e => `• ${e.type} ${e.json}`)]
-    : actualLines;
+  compareEvents: boolean,
+  capturedChannelIds: string[] = [],
+  actualChannels?: Record<string, string[]>
+): { recorded: string[]; actual: string[]; channel?: string } | null {
+  const channelLines = (source?: Record<string, string[]>) =>
+    capturedChannelIds.flatMap((id) =>
+      (source?.[id] ?? []).map((line) => (line === '' ? `◦ ${id}` : `◦ ${id} ${line}`)));
+
+  const recordedFull = [
+    ...(compareEvents
+      ? [...turn.output, ...(turn.events ?? []).map(e => `• ${e.type} ${e.json}`)]
+      : turn.output),
+    ...channelLines(turn.channels)
+  ];
+  const actualFull = [
+    ...(compareEvents
+      ? [...actualLines, ...actualEvents.map(e => `• ${e.type} ${e.json}`)]
+      : actualLines),
+    ...channelLines(actualChannels)
+  ];
 
   const mask = (line: string) => (BUILD_DATE_LINE.test(line) ? '<build-date>' : line);
   const same =
     recordedFull.length === actualFull.length &&
     recordedFull.every((line, i) => mask(line) === mask(actualFull[i]));
+  if (same) return null;
 
-  return same ? null : { recorded: recordedFull, actual: actualFull };
+  // Name the first mismatched surface: walk to the first differing index and
+  // classify whichever side has a line there (length mismatches included).
+  let channel: string | undefined;
+  const limit = Math.max(recordedFull.length, actualFull.length);
+  for (let i = 0; i < limit; i++) {
+    const a = recordedFull[i];
+    const b = actualFull[i];
+    if (a !== undefined && b !== undefined && mask(a) === mask(b)) continue;
+    const line = a ?? b ?? '';
+    const m = /^◦ (\S+)/.exec(line);
+    channel = m ? m[1] : 'main';
+    break;
+  }
+
+  return { recorded: recordedFull, actual: actualFull, channel };
 }
 
 // ============================================================================

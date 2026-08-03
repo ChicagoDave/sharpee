@@ -18,7 +18,7 @@ import { ISemanticEvent } from '@sharpee/core';
 import { joinMainEntries } from '@sharpee/channel-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
-import { PerceptionService } from '@sharpee/stdlib';
+import { PerceptionService, channelRegistry } from '@sharpee/stdlib';
 // @ts-ignore — lang-en-us ships without bundled .d.ts in some build modes
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { TestingExtension } from '@sharpee/ext-testing';
@@ -55,6 +55,13 @@ export interface LoadedGame {
   lastOutput: string;
   lastEvents: ISemanticEvent[];
   lastTurnResult: TurnResult | null;
+  /**
+   * Per-command capture of declared non-`main` channels (ADR-294 D15):
+   * flattened lines per channel id, in emission order. Empty unless the game
+   * was assembled with `channels` beyond `main`. `main` stays in
+   * `lastOutput` — it is never duplicated here.
+   */
+  lastChannels: Record<string, string[]>;
   /** Proxy for runner save/restore plugin state. */
   getPluginRegistry(): {
     getStates(): Record<string, unknown>;
@@ -81,11 +88,13 @@ export { buildManifest } from './introspect.js';
  * @param opts.entry optional story sub-entry to pin (transcript `entry:` header)
  * @param opts.seed  master seed for the session (ADR-293 D1), forwarded to
  *   `assembleGame`; absent → the engine reads the clock once
+ * @param opts.channels declared capture channels (ADR-294 D15), forwarded to
+ *   `assembleGame`; absent → `['main']` (today's behavior)
  * @throws if the module can't be resolved/required or exports no createStory()
  */
 export async function loadStory(
   location: string,
-  opts?: { entry?: string; seed?: number },
+  opts?: { entry?: string; seed?: number; channels?: string[] },
 ): Promise<LoadedGame> {
   const modulePath = resolveStoryModulePath(location, opts?.entry);
   // ADR-248: the same provider serves the initial load and every
@@ -94,6 +103,7 @@ export async function loadStory(
   return assembleGame(freshStory(), {
     freshStory,
     ...(opts?.seed !== undefined ? { seed: opts.seed } : {}),
+    ...(opts?.channels !== undefined ? { channels: opts.channels } : {}),
   });
 }
 
@@ -142,13 +152,39 @@ export function assembleGame(
      * reads the clock once.
      */
     seed?: number;
+    /**
+     * Declared capture channels (ADR-294 D15). `main` rides `lastOutput`
+     * as always; each additional id is captured per command into
+     * `lastChannels`, and its `gatedBy` capability (if any) is enabled on
+     * top of CLI_CAPABILITIES so the story emits it in test mode.
+     * Absent / `['main']` → byte-identical to today's behavior.
+     */
+    channels?: string[];
   }
 ): LoadedGame {
   let engine!: GameEngine;
   let world!: WorldModel;
   let outputBuffer: string[] = [];
   let eventBuffer: ISemanticEvent[] = [];
+  let channelBuffers: Record<string, string[]> = {};
   let pendingReboot = false;
+
+  // ADR-294 D15: the story's channels must be registered BEFORE capability
+  // derivation — a story-registered gated channel declared in `channels`
+  // needs its `gatedBy` looked up now. Registration is last-wins, so the
+  // engine's own registration during start() is a harmless re-register.
+  story?.registerChannels?.(channelRegistry);
+  const capturedChannels = (opts?.channels ?? ['main']).filter((id) => id !== 'main');
+  const capabilities: Record<string, boolean> = { ...CLI_CAPABILITIES };
+  for (const id of capturedChannels) {
+    const channel = channelRegistry.get(id);
+    if (!channel) {
+      throw new Error(
+        `unknown channel '${id}' declared (channels:) — not in the channel registry after story registration (ADR-294 D15)`
+      );
+    }
+    if (channel.gatedBy !== undefined) capabilities[channel.gatedBy] = true;
+  }
 
   const testingExtension = TestingExtension ? new TestingExtension() : null;
 
@@ -187,7 +223,10 @@ export function assembleGame(
 
     // Start the channel-I/O pipeline (ADR-163). The engine builds its
     // ChannelService internally from these capabilities during start().
-    engine.start({ capabilities: CLI_CAPABILITIES } as any);
+    // The profile is CLI_CAPABILITIES plus any gatedBy flags the declared
+    // capture channels require (ADR-294 D15) — identical to
+    // CLI_CAPABILITIES when no extra channels were declared.
+    engine.start({ capabilities } as any);
 
     // engine.start() created the real player via story.createPlayer() and re-pointed
     // world.setPlayer() at it; the placeholder above (needed only for the GameEngine
@@ -208,6 +247,14 @@ export function assembleGame(
     engine.on('channel:packet', (packet: any) => {
       const out = joinMainEntries(packet?.payload?.main);
       if (out) outputBuffer.push(out);
+      // ADR-294 D15: capture each declared non-main channel's payload as
+      // deterministic lines. Absent payload = the channel emitted nothing
+      // this turn (sparse) — meaningful, recorded as absence.
+      for (const id of capturedChannels) {
+        const value = packet?.payload?.[id];
+        if (value === undefined) continue;
+        (channelBuffers[id] ??= []).push(...flattenChannelValue(value));
+      }
     });
 
     engine.on('event', (event: ISemanticEvent) => {
@@ -230,6 +277,7 @@ export function assembleGame(
     lastOutput: '',
     lastEvents: [],
     lastTurnResult: null,
+    lastChannels: {},
 
     getPluginRegistry() {
       return (engine as any).getPluginRegistry() as {
@@ -245,6 +293,7 @@ export function assembleGame(
     async executeCommand(input: string): Promise<string> {
       outputBuffer = [];
       eventBuffer = [];
+      channelBuffers = {};
       let lastTurnResult: TurnResult | null = null;
 
       try {
@@ -274,9 +323,42 @@ export function assembleGame(
       game.lastOutput = outputBuffer.join('\n');
       game.lastEvents = eventBuffer;
       game.lastTurnResult = lastTurnResult;
+      game.lastChannels = channelBuffers;
       return game.lastOutput;
     },
   };
 
   return game;
+}
+
+/**
+ * Flatten one channel payload value into deterministic golden lines
+ * (ADR-294 D15): strings split on newline; arrays flatten entry-by-entry;
+ * everything else (objects, numbers, booleans, null) serializes as
+ * key-sorted single-line JSON so recordings are byte-stable regardless of
+ * property insertion order.
+ */
+export function flattenChannelValue(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((entry) => flattenChannelValue(entry));
+  }
+  if (typeof value === 'string') {
+    return value.split('\n');
+  }
+  return [stableJson(value)];
+}
+
+/** JSON.stringify with recursively sorted object keys — one line, byte-stable. */
+function stableJson(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => stableJson(v)).join(',')}]`;
+  }
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  const body = keys
+    .map((k) => `${JSON.stringify(k)}:${stableJson((value as Record<string, unknown>)[k])}`)
+    .join(',');
+  return `{${body}}`;
 }
