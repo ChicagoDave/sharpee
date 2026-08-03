@@ -65,8 +65,11 @@ describe('lintHatchSources', () => {
 /** The lint-case story used by the compose-hosted tests below. */
 function lintCaseStory(extraLines: string[] = []): string {
   return [
-    'story "Lint Case" by "Test"',
+    'story',
+    '  title: Lint Case',
+    '  authors: Test',
     '  id: lint-case',
+    '  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC',
     '',
     'create the Lab',
     '  a room',

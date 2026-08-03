@@ -27,7 +27,6 @@ export {
   escapeHtml,
   readBrowserMeta,
   readClientConfig,
-  KNOWN_HEADER_KEYS,
 } from './standalone/browser-core.js';
 export type {
   BrowserBuildEnv,

@@ -538,7 +538,12 @@ export interface StoryMetadata {
     ifid: string;
     /** Story title */
     title: string;
-    /** Author name(s) */
+    /**
+     * Author name(s), joined into one string. Intentionally singular
+     * (diverges from `StoryConfig.authors: string[]`, ADR-298): this type
+     * mirrors the Treaty of Babel iFiction record, whose `<author>` is a
+     * single string by external spec — the join happens at record generation.
+     */
     author: string;
     /** Year of first publication (e.g., "2025") */
     firstPublished?: string;
@@ -565,7 +570,11 @@ export interface SharpeeConfig {
     ifid: string;
     /** Story title */
     title: string;
-    /** Author name(s) */
+    /**
+     * Author name(s), joined into one string. Intentionally singular — an
+     * external-spec adapter like `StoryMetadata.author` (Treaty of Babel),
+     * not the in-repo plural `StoryConfig.authors` (ADR-298).
+     */
     author: string;
     /** Year of first publication */
     firstPublished?: string;

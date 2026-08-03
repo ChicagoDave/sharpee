@@ -12,9 +12,11 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { runTestCommand } from './test.js';
 import { findStoryFile, loadAuthorGame } from '../standalone/author-game.js';
 
-const STORY = `story "Mini" by "T"
+const STORY = `story
+  title: Mini
+  authors: T
   id: mini
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Den
   a room

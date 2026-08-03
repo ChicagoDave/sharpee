@@ -1,7 +1,10 @@
-story "{{STORY_TITLE}}" by "{{AUTHOR}}"
+story
+  title: {{STORY_TITLE}}
+  authors: {{AUTHOR}}
   id: {{STORY_ID}}
-  version: 0.1.0
-  blurb: {{DESCRIPTION}}
+  story-version: 0.1.0
+  ifid: {{IFID}}
+  description: {{DESCRIPTION}}
 
 create the Landing
   a room

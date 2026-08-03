@@ -135,7 +135,13 @@ export interface IRProseValue {
   value: string;
 }
 
-/** Typed story-block metadata (ADR-298 — closed schema, unknown keys never reach the IR). */
+/**
+ * Typed story-block metadata (ADR-298 — closed schema, unknown keys never
+ * reach the IR). The client-config fields (`client`/`theme`/`template`/
+ * `themes`/`defaultTheme`/`storagePrefix`) are ADR-252 D3's browser-build
+ * keys, folded into the closed set by the ADR-298 amendment (GH #221,
+ * 2026-08-03) — consumed by devkit's browser build, inert elsewhere.
+ */
 export interface IRStoryFields {
   id?: string;
   storyVersion?: string;
@@ -144,6 +150,12 @@ export interface IRStoryFields {
   testers: string[];
   prologue?: IRProseValue;
   description?: IRProseValue;
+  client?: string;
+  theme?: string;
+  template?: string;
+  themes: string[];
+  defaultTheme?: string;
+  storagePrefix?: string;
 }
 
 export interface IRMeta {

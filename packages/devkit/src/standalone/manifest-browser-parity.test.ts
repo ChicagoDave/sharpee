@@ -128,7 +128,7 @@ describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pi
     );
     const result = chord.compile(source);
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.map((d) => d.code)).toEqual([
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid').map((d) => d.code)).toEqual([
       'analysis.trait-not-declared', // unknown direction word — census 16 is parser-gated (Phase 6)
       'analysis.setting-not-boolean',
       'analysis.removal-target',

@@ -10,6 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
+import { generateIfid } from '@sharpee/core';
 import { runInitBrowserCommand } from './init-browser.js';
 
 // Template directories relative to this file.
@@ -25,6 +26,8 @@ interface StoryOptions {
   storyTitle: string;
   author: string;
   description: string;
+  /** IFID minted once at init (ADR-298 D5); immutable thereafter by convention. */
+  ifid: string;
   /** Injected `@sharpee/sharpee` dependency range. */
   sharpeeRange: string;
   /** Injected `@sharpee/devkit` dependency range. */
@@ -100,6 +103,7 @@ function processTemplate(templatePath: string, options: StoryOptions): string {
     .replace(/\{\{STORY_TITLE\}\}/g, options.storyTitle)
     .replace(/\{\{AUTHOR\}\}/g, options.author)
     .replace(/\{\{DESCRIPTION\}\}/g, options.description)
+    .replace(/\{\{IFID\}\}/g, options.ifid)
     .replace(/\{\{SHARPEE_VERSION\}\}/g, options.sharpeeRange)
     .replace(/\{\{DEVKIT_VERSION\}\}/g, options.devkitRange)
     // Browser-entry client config (ADR-252 D3): the scaffold's concrete defaults.
@@ -157,6 +161,9 @@ export async function runInitCommand(args: string[]): Promise<void> {
     storyTitle,
     author,
     description,
+    // ADR-298 D5: mint the IFID at init time — the one moment a story gets
+    // its Treaty of Babel identity. Immutable afterwards by convention.
+    ifid: generateIfid(),
     sharpeeRange,
     devkitRange,
   };

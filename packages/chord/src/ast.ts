@@ -68,6 +68,18 @@ export interface StoryFields {
   prologue?: HeaderProseValue;
   /** `description:` — build-time metadata, never emitted in play (D3). */
   description?: HeaderProseValue;
+  /** `client:` — the client target (ADR-252 D3; defaults to `browser`). */
+  client?: string;
+  /** `theme:` — the theme PACKAGE the story uses (ADR-252 D3 / ADR-188). */
+  theme?: string;
+  /** `template:` — the template/layout package (ADR-252 D3 amendment). */
+  template?: string;
+  /** `themes:` — comma list of bundled theme names (ADR-252 D3). */
+  themes: string[];
+  /** `default-theme:` — falls back to `theme:`, then `classic` (ADR-252 D3). */
+  defaultTheme?: string;
+  /** `storage-prefix:` — browser storage namespace; defaults to `id` (ADR-252 D3). */
+  storagePrefix?: string;
 }
 
 /** `story` plus its indented fielded metadata (ADR-298 — positional form removed). */

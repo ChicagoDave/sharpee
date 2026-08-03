@@ -54,6 +54,7 @@ describe('fielded story block (AC-1)', () => {
       ifid: '12345678-ABCD-ABCD-ABCD-123456789ABC',
       authors: ['Ada Lovelace', 'Charles Babbage'],
       testers: ['Joe Mason'],
+      themes: [],
       description: { kind: 'literal', value: 'One cold winter night to find the deed.' },
     });
   });
@@ -62,6 +63,52 @@ describe('fielded story block (AC-1)', () => {
     const result = parse('story\n  title: T\n  authors: Solo Author\n');
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ast.header?.fields.authors).toEqual(['Solo Author']);
+  });
+});
+
+describe('client-config keys (ADR-252 D3 × ADR-298 amendment, GH #221)', () => {
+  const CONFIGURED = [
+    'story',
+    '  title: T',
+    '  authors: N',
+    '  id: fernhill',
+    '  client: browser',
+    '  theme: parchment',
+    '  template: two-pane',
+    '  themes: parchment, paper',
+    '  default-theme: parchment',
+    '  storage-prefix: fernhill-demo',
+    '',
+  ].join('\n');
+
+  it('parses all six keys into the typed fields', () => {
+    const result = parse(CONFIGURED);
+    expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
+    const f = result.ast.header?.fields;
+    expect(f?.client).toBe('browser');
+    expect(f?.theme).toBe('parchment');
+    expect(f?.template).toBe('two-pane');
+    expect(f?.themes).toEqual(['parchment', 'paper']);
+    expect(f?.defaultTheme).toBe('parchment');
+    expect(f?.storagePrefix).toBe('fernhill-demo');
+  });
+
+  it('projects them into IRMeta.fields', () => {
+    const { ir } = compile(CONFIGURED);
+    expect(ir?.meta.fields).toMatchObject({
+      client: 'browser',
+      theme: 'parchment',
+      template: 'two-pane',
+      themes: ['parchment', 'paper'],
+      defaultTheme: 'parchment',
+      storagePrefix: 'fernhill-demo',
+    });
+  });
+
+  it('omitted client-config keys stay absent (themes empty)', () => {
+    const { ir } = compile('story\n  title: T\n  authors: N\n');
+    expect(ir?.meta.fields.client).toBeUndefined();
+    expect(ir?.meta.fields.themes).toEqual([]);
   });
 });
 

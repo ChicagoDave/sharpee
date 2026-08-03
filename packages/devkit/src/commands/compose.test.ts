@@ -22,7 +22,7 @@ describe('sharpee compose', () => {
 
     // The mutation under test: the file exists and holds the versioned IR.
     const ir = JSON.parse(readFileSync(out, 'utf8'));
-    expect(ir.format).toBe('story language 1');
+    expect(ir.format).toBe('story language 2');
     expect(Array.isArray(ir.entities)).toBe(true);
     expect(ir.entities.length).toBeGreaterThan(0);
   });

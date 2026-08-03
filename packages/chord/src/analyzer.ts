@@ -792,7 +792,7 @@ class Analyzer {
    */
   private buildMetaFields(): IRStoryFields {
     const f = this.ast.header?.fields;
-    if (!f) return { authors: [], testers: [] };
+    if (!f) return { authors: [], testers: [], themes: [] };
     return {
       ...(f.id !== undefined ? { id: f.id } : {}),
       ...(f.storyVersion !== undefined ? { storyVersion: f.storyVersion } : {}),
@@ -801,6 +801,13 @@ class Analyzer {
       testers: f.testers,
       ...(f.prologue ? { prologue: { kind: f.prologue.kind, value: f.prologue.value } } : {}),
       ...(f.description ? { description: { kind: f.description.kind, value: f.description.value } } : {}),
+      // ADR-252 D3 client-config keys (ADR-298 amendment, GH #221).
+      ...(f.client !== undefined ? { client: f.client } : {}),
+      ...(f.theme !== undefined ? { theme: f.theme } : {}),
+      ...(f.template !== undefined ? { template: f.template } : {}),
+      themes: f.themes,
+      ...(f.defaultTheme !== undefined ? { defaultTheme: f.defaultTheme } : {}),
+      ...(f.storagePrefix !== undefined ? { storagePrefix: f.storagePrefix } : {}),
     };
   }
 

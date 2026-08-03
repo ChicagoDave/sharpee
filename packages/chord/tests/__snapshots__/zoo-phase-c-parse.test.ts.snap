@@ -4194,7 +4194,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       },
     },
   ],
-  "languageVersion": "3.0.0",
+  "languageVersion": "3.1.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
@@ -4212,6 +4212,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "id": "friendly-zoo",
       "storyVersion": "0.0.2-phase-c-sketch",
       "testers": [],
+      "themes": [],
     },
     "title": "Friendly Zoo",
   },

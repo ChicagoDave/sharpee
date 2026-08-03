@@ -425,9 +425,15 @@ export interface StoryConfig {
      */
     title: string;
     /**
-     * Story author(s)
+     * Story authors (ADR-298). Always an array — single-author stories
+     * use a one-element array. Kept as data; consumers join for display.
      */
-    author: string | string[];
+    authors: string[];
+    /**
+     * Story testers (ADR-298). Credited on the info channel beside
+     * `authors`; never joined into the byline.
+     */
+    testers?: string[];
     /**
      * Credit lines for the opening banner's `author-list` section. Each
      * string becomes one `author-list`-classed paragraph. Use this when
@@ -435,9 +441,19 @@ export interface StoryConfig {
      * line plus a "Ported by …" line, or multiple separate roles).
      *
      * When omitted, the engine falls back to a single `author-list`
-     * entry built from `author` (joined with ", " if it's an array).
+     * entry built from `authors` (joined with ", ").
      */
     credits?: string[];
+    /**
+     * Pre-banner prologue text (ADR-298 D3), emitted once at story start
+     * on the dedicated prologue channel. A plain string is literal prose;
+     * the object form carries Chord's typed value, where a `phrase-ref`
+     * is resolved through the story's phrase machinery at emission time.
+     */
+    prologue?: string | {
+        kind: 'literal' | 'phrase-ref';
+        value: string;
+    };
     /**
      * Story version (semantic version, e.g., "1.0.0" or "1.0.0-beta")
      */
@@ -1337,6 +1353,16 @@ export declare class GameEngine {
      * the initial `setStory()` registration).
      */
     private refreshStoryInfoCapability;
+    /**
+     * Resolve `StoryConfig.prologue` (ADR-298 D3) into the `storyInfo`
+     * capability, once at story start, before the `ChannelService` is
+     * constructed — stdlib's `prologueChannel` projects the resolved text.
+     * A literal (or plain string) is itself; a `phrase-ref` renders through
+     * the prose pipeline's phrase machinery, so variants (cycling, randomly,
+     * first-time) resolve per their normal semantics. Absent or unresolvable
+     * values write nothing (sparse-suppress — the channel skips emission).
+     */
+    private resolvePrologue;
     /**
      * Build and emit a `channel:packet` for the turn just processed.
      * Co-fires with `text:output` at every block-emission site so
@@ -2596,6 +2622,22 @@ export declare class ProsePipeline implements IProsePipeline {
      * @param staging this turn's shared staging render context.
      */
     private stageSlotEntries;
+    /**
+     * Build the handler context a render pass needs: the language provider,
+     * the world, and (when a world exists) the phrase-pipeline render-context
+     * factory backed by the world's persistent text state (ADR-192 W2,
+     * ADR-196). Shared by `processTurn` and `renderPhraseText`.
+     */
+    private buildHandlerContext;
+    /**
+     * Render a single registered phrase / message id to plain text, outside
+     * the per-turn event flow — the ADR-298 prologue read point.
+     *
+     * @param messageId the phrase key / message id to render
+     * @returns the flattened text, or null when the phrase machinery is
+     *   unavailable or no template/phrasebook covers the id
+     */
+    renderPhraseText(messageId: string): string | null;
     processTurn(events: ISemanticEvent[]): ITextBlock[];
     /**
      * Route an event to its handler family.
@@ -2744,6 +2786,17 @@ export interface IProsePipeline {
      * @param entry the slot entry to register (or replace).
      */
     registerSlotEntry(entry: SlotEntry): void;
+    /**
+     * Render a single registered phrase / message id to plain text, outside
+     * the per-turn event flow — the ADR-298 prologue read point. Uses the
+     * same render-context construction as a turn, so phrase variants
+     * (cycling, randomly, first-time) resolve per their normal semantics.
+     *
+     * @param messageId the phrase key / message id to render
+     * @returns the flattened text, or null when no template or phrasebook
+     *   covers the id (callers degrade gracefully)
+     */
+    renderPhraseText?(messageId: string): string | null;
 }
 ```
 

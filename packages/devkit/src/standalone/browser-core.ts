@@ -35,12 +35,12 @@ export interface BrowserMeta {
   storyId: string;
   /** `meta.title`. */
   storyTitle: string;
-  /** `meta.author`. */
+  /** `meta.fields.authors`, joined ", " — display string (ADR-298). */
   author: string;
-  /** `meta.fields.version`. */
+  /** `meta.fields.storyVersion` (ADR-298 rename of `version:`). */
   version: string;
-  /** `meta.fields.blurb`. */
-  blurb: string;
+  /** `meta.fields.description` (ADR-298 rename of `blurb:`). */
+  description: string;
 }
 
 /** Browser-client config — from `story`-header `key:` lines in `meta.fields` (D3). */
@@ -60,25 +60,6 @@ export interface BrowserClientConfig {
 }
 
 /**
- * Header `key:` lines the build understands (D3). Any `meta.fields` key outside
- * this set is an author typo or a stray field — the build keeps it (the parser
- * captures every `key:` line) but warns, so `tempate:` is visible, not dropped.
- * `states`/`score` header lines are special-cased by the parser and never land
- * in `meta.fields`, so they never appear here.
- */
-export const KNOWN_HEADER_KEYS: ReadonlySet<string> = new Set([
-  'id',
-  'version',
-  'blurb',
-  'client',
-  'theme',
-  'template',
-  'themes',
-  'default-theme',
-  'storage-prefix',
-]);
-
-/**
  * Derive the browser-app metadata from the compiled Story IR (D2). All identity
  * comes from the `.story` header — never package.json / src/index.ts.
  * @throws if the story declares no `id:` (the output slug + storage prefix key).
@@ -90,51 +71,45 @@ export function readBrowserMeta(meta: IRMeta): BrowserMeta {
       'the story header declares no `id:` — a browser build needs one (it is the output slug and storage-prefix default).',
     );
   }
+  // `description:` may be a phrase reference (ADR-298 D4); the build's static
+  // metadata takes the raw value either way — runtime resolution is the
+  // loader's concern, and a build-time meta line is not a play surface.
   return {
     storyId: id,
     storyTitle: meta.title,
-    author: meta.author,
-    version: (meta.fields.version ?? '').trim(),
-    blurb: (meta.fields.blurb ?? '').trim(),
+    author: meta.fields.authors.join(', '),
+    version: (meta.fields.storyVersion ?? '').trim(),
+    description: (meta.fields.description?.value ?? '').trim(),
   };
 }
 
 /**
- * Derive the browser-client config from `meta.fields` (D3), applying every
- * documented default. Returns the config plus a warning per unrecognized header
- * key (D3 rejection case) — the caller surfaces them, so a typo is not silent.
+ * Derive the browser-client config from the typed header fields (ADR-252 D3
+ * via the ADR-298 amendment, GH #221), applying every documented default.
+ * `warnings` is retained for the caller contract but is always empty now —
+ * the closed header schema (ADR-298 D4) makes an unknown key a compile-time
+ * parse error, so a typo like `tempate:` never reaches this function.
  */
 export function readClientConfig(meta: IRMeta): {
   config: BrowserClientConfig;
   warnings: string[];
 } {
   const f = meta.fields;
-  const warnings: string[] = [];
-  for (const key of Object.keys(f)) {
-    if (!KNOWN_HEADER_KEYS.has(key)) {
-      warnings.push(`unrecognized header field '${key}' — ignored`);
-    }
-  }
-
-  const themes = (f.themes ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
   const theme = f.theme?.trim() || null;
   const template = f.template?.trim() || null;
   // default-theme → declared theme → classic (D3 amendment).
-  const defaultTheme = f['default-theme']?.trim() || theme || 'classic';
+  const defaultTheme = f.defaultTheme?.trim() || theme || 'classic';
 
   return {
     config: {
       client: f.client?.trim() || 'browser',
       theme,
       template,
-      themes,
+      themes: f.themes,
       defaultTheme,
-      storagePrefix: f['storage-prefix']?.trim() || (f.id ?? '').trim(),
+      storagePrefix: f.storagePrefix?.trim() || (f.id ?? '').trim(),
     },
-    warnings,
+    warnings: [],
   };
 }
 
@@ -800,7 +775,7 @@ const PLAYGROUND_META: BrowserMeta = {
   storyTitle: 'Sharpee Playground',
   author: 'The Sharpee Project',
   version: '', // filled from the platform version at build time
-  blurb: 'Paste a Chord story and play it in the browser.',
+  description: 'Paste a Chord story and play it in the browser.',
 };
 const PLAYGROUND_STORAGE_PREFIX = 'sharpee-playground';
 const PLAYGROUND_DEFAULT_THEME = 'classic';

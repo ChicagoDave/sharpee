@@ -83,13 +83,13 @@ describe('browser build: ships the source + the compiler (ruling 2)', () => {
     // The compiler is IN the bundle: chord's IR format stamp only exists in
     // @sharpee/chord source — its presence proves compile() shipped.
     const game = readFileSync(join(outDir, 'game.js'), 'utf-8');
-    expect(game).toContain('story language 1');
+    expect(game).toContain('story language 2');
     expect(statSync(join(outDir, 'game.js')).size).toBeGreaterThan(100_000);
 
     // IR artifact for the IDE/tooling surface (David, 2026-07-18): dist/,
     // beside (not inside) the shipped page.
     const ir = JSON.parse(readFileSync(join(projectDir, 'dist', 'first-light.ir.json'), 'utf-8'));
-    expect(ir.format).toBe('story language 1');
+    expect(ir.format).toBe('story language 2');
     expect(ir.entities.length).toBeGreaterThan(0);
   }, 120_000);
 

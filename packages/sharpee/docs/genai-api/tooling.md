@@ -137,12 +137,12 @@ export interface BrowserMeta {
     storyId: string;
     /** `meta.title`. */
     storyTitle: string;
-    /** `meta.author`. */
+    /** `meta.fields.authors`, joined ", " — display string (ADR-298). */
     author: string;
-    /** `meta.fields.version`. */
+    /** `meta.fields.storyVersion` (ADR-298 rename of `version:`). */
     version: string;
-    /** `meta.fields.blurb`. */
-    blurb: string;
+    /** `meta.fields.description` (ADR-298 rename of `blurb:`). */
+    description: string;
 }
 /** Browser-client config — from `story`-header `key:` lines in `meta.fields` (D3). */
 export interface BrowserClientConfig {
@@ -160,23 +160,17 @@ export interface BrowserClientConfig {
     storagePrefix: string;
 }
 /**
- * Header `key:` lines the build understands (D3). Any `meta.fields` key outside
- * this set is an author typo or a stray field — the build keeps it (the parser
- * captures every `key:` line) but warns, so `tempate:` is visible, not dropped.
- * `states`/`score` header lines are special-cased by the parser and never land
- * in `meta.fields`, so they never appear here.
- */
-export declare const KNOWN_HEADER_KEYS: ReadonlySet<string>;
-/**
  * Derive the browser-app metadata from the compiled Story IR (D2). All identity
  * comes from the `.story` header — never package.json / src/index.ts.
  * @throws if the story declares no `id:` (the output slug + storage prefix key).
  */
 export declare function readBrowserMeta(meta: IRMeta): BrowserMeta;
 /**
- * Derive the browser-client config from `meta.fields` (D3), applying every
- * documented default. Returns the config plus a warning per unrecognized header
- * key (D3 rejection case) — the caller surfaces them, so a typo is not silent.
+ * Derive the browser-client config from the typed header fields (ADR-252 D3
+ * via the ADR-298 amendment, GH #221), applying every documented default.
+ * `warnings` is retained for the caller contract but is always empty now —
+ * the closed header schema (ADR-298 D4) makes an unknown key a compile-time
+ * parse error, so a typo like `tempate:` never reaches this function.
  */
 export declare function readClientConfig(meta: IRMeta): {
     config: BrowserClientConfig;

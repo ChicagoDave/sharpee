@@ -157,6 +157,25 @@ matching `ifidChannel`'s existing sparse-suppression on empty — and
 compliance is enforced exactly where it matters (publication); test fixtures
 and casual/learning stories stay IFID-free with no escape hatch needed.
 
+### D4-A1 — Amendment: ADR-252 D3's client-config keys join the closed set (GH #221, 2026-08-03)
+
+Implementation surfaced a collision this ADR had not reconciled: ADR-252 D3
+(ACCEPTED 2026-07-22) deliberately carries the browser build's client config
+as story-header `key:` lines — `client:`, `theme:`, `template:`, `themes:`,
+`default-theme:`, `storage-prefix:` — read off the then-open `meta.fields`
+map, precisely because `.story` projects are package.json-free. D4's closed
+schema made all six parse errors and broke devkit's compile.
+
+**Ruling (David, GH #221, 2026-08-03)**: extend the known set. The closed
+schema gains ADR-252 D3's six keys as typed fields on `IRStoryFields`
+(`themes` parses as a comma list, the rest as scalars). Both ADRs hold:
+`.story` stays package.json-free (ADR-252), and typo protection now covers
+the client keys too (a misspelled `tempate:` is a compile error naming the
+known set, replacing devkit's old build-time warning). Additive grammar —
+Chord 3.0.0 → 3.1.0 per ADR-257 D2. devkit's `KNOWN_HEADER_KEYS` set and its
+unrecognized-key warning loop are retired; `readClientConfig` reads the typed
+fields.
+
 ### D6 — Sequencing
 
 This ADR lands before GH #200's launch block (it decides where `prologue`
@@ -226,4 +245,6 @@ language doc rewrite) so the docs are written once, against the post-298 block.
 
 Drafted 2026-08-02, session 7dd736, from GH #187's thread (David's rulings 1–5
 recorded there 2026-07-29). All seven open questions resolved via
-`/devarch:adr-interview`, 2026-08-02, session 201a5d.
+`/devarch:adr-interview`, 2026-08-02, session 201a5d. Amendment D4-A1
+(client-config keys, GH #221) ruled by David and folded 2026-08-03, session
+e3b2eb, during implementation.

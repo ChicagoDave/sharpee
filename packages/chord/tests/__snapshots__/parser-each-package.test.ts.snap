@@ -1453,6 +1453,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "id": "each-package-parse",
       "storyVersion": "0.0.1",
       "testers": [],
+      "themes": [],
     },
     "kind": "story-header",
     "onClauses": [],

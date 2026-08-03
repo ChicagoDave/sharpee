@@ -430,7 +430,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
   "format": "story language 2",
   "hasHatches": false,
   "hatches": [],
-  "languageVersion": "3.0.0",
+  "languageVersion": "3.1.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
@@ -448,6 +448,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "id": "zoo-actions",
       "storyVersion": "0.0.1",
       "testers": [],
+      "themes": [],
     },
     "title": "Zoo Actions Fixture",
   },

@@ -23,9 +23,11 @@ import {
 } from '@sharpee/ide-protocol';
 import { runTestCommand } from '../src/commands/test.js';
 
-const STORY = `story "Mini" by "T"
+const STORY = `story
+  title: Mini
+  authors: T
   id: mini
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Den
   a room

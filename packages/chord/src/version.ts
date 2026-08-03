@@ -147,7 +147,10 @@
  * never public versions. The public line is `1.x` → `2.0.0` → `2.1.0` →
  * `2.2.0` → `3.0.0` (ADR-298 — the interim landing `3.0.0` is history, the
  * public `3.0.0` is the fielded story block; ADR-278's reservation of the
- * number was released 2026-08-03). **`5.0.0` remains reserved** (ADR-278
- * lockstep pairing — renumbered when Relations actually lands).
+ * number was released 2026-08-03) → `3.1.0` (ADR-298 amendment, GH #221,
+ * 2026-08-03: ADR-252 D3's six client-config keys folded into the closed
+ * header schema — additive, a MINOR by ADR-257 D2). **`5.0.0` remains
+ * reserved** (ADR-278 lockstep pairing — renumbered when Relations actually
+ * lands).
  */
-export const CHORD_LANGUAGE_VERSION = '3.0.0';
+export const CHORD_LANGUAGE_VERSION = '3.1.0';

@@ -19,18 +19,22 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 3.0.0 — ADR-298 (2026-08-03): the fielded story block. Breaking header
-  // grammar (positional `story "Title" by "Author"` removed; closed per-field
-  // schema; bare phrase references in prologue:/description:) — a MAJOR by
-  // ADR-257 D2's ordinary rule. ADR-278's reservation of 3.0.0 released by
-  // owner ruling the same day (see the note in that ADR).
+  // 3.1.0 — ADR-298 amendment (GH #221, 2026-08-03): ADR-252 D3's six
+  // client-config keys (client/theme/template/themes/default-theme/
+  // storage-prefix) folded into the closed header schema — additive, a
+  // MINOR by ADR-257 D2.
+  // (3.0.0 — ADR-298, 2026-08-03: the fielded story block. Breaking header
+  //  grammar (positional `story "Title" by "Author"` removed; closed
+  //  per-field schema; bare phrase references in prologue:/description:) —
+  //  a MAJOR by ADR-257 D2's ordinary rule. ADR-278's reservation of 3.0.0
+  //  released by owner ruling the same day.)
   // (2.2.0 — owner ruling, 2026-07-29: ADR-289's four breaking compile
   //  gates shipped as a minor, EBNF hash unchanged — fourth departure.)
   // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
-  languageVersion: '3.0.0',
-  ebnfSha256: 'b3f4e5a5ca3d73c0a3c6c58223bde7f4a7b6971c6c1efca367ed1518677e2540',
+  languageVersion: '3.1.0',
+  ebnfSha256: 'f7cb7a2ac03c2441ad38d2e134ade5db83b3b6435b475b624b3618e0af5f7505',
 };
 
 const EBNF_PATH = join(__dirname, '..', '..', '..', 'docs', 'reference', 'chord.ebnf');

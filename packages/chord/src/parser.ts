@@ -503,7 +503,7 @@ class Parser {
       while (!c.atEnd()) c.next();
     }
 
-    const fields: StoryFields = { authors: [], testers: [] };
+    const fields: StoryFields = { authors: [], testers: [], themes: [] };
     const states: StateName[] = [];
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
@@ -676,6 +676,29 @@ class Parser {
         case 'story-version':
           fields.storyVersion = rest;
           break;
+        // ADR-252 D3 client-config keys, folded into the closed set by the
+        // ADR-298 amendment (GH #221): scalars, except `themes:` (comma list).
+        case 'client':
+          fields.client = rest;
+          break;
+        case 'theme':
+          fields.theme = rest;
+          break;
+        case 'template':
+          fields.template = rest;
+          break;
+        case 'default-theme':
+          fields.defaultTheme = rest;
+          break;
+        case 'storage-prefix':
+          fields.storagePrefix = rest;
+          break;
+        case 'themes':
+          fields.themes = rest
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0);
+          break;
         case 'authors':
         case 'testers': {
           const entries: string[] = [];
@@ -739,7 +762,7 @@ class Parser {
         default:
           this.diagnostics.error(
             'parse.header-unknown-field',
-            `Unknown story-header field \`${key}:\` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description (plus states/score/use/on lines).`,
+            `Unknown story-header field \`${key}:\` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description, client, theme, template, themes, default-theme, storage-prefix (plus states/score/use/on lines).`,
             lineSpan(fieldLine),
           );
       }

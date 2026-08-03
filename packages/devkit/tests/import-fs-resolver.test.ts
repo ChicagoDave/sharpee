@@ -38,7 +38,7 @@ describe('fs importResolver (ADR-251 Phase 2)', () => {
   });
 
   it('a missing fragment resolves to null → analysis.import-unresolved', () => {
-    const src = 'story "X" by "Y"\n  id: x\n  version: 0.0.1\n\nimport "does-not-exist"\n\ncreate the player\n  a room\n\n  You.\n';
+    const src = 'story\n  title: X\n  authors: Y\n  id: x\n  story-version: 0.0.1\n\nimport "does-not-exist"\n\ncreate the player\n  a room\n\n  You.\n';
     const result = compile(src, { importResolver: makeFsImportResolver(FIXTURES) });
     expect(result.diagnostics.filter((d) => d.severity === 'error').map((d) => d.code)).toContain('analysis.import-unresolved');
   });

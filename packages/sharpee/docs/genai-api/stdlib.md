@@ -4087,7 +4087,8 @@ export declare const turnChannel: IOChannel<number>;
  */
 export interface StoryInfoPayload {
     title?: string;
-    author?: string;
+    authors?: string[];
+    testers?: string[];
     version?: string;
     description?: string;
     buildDate?: string;
@@ -4109,6 +4110,17 @@ export declare const infoChannel: IOChannel<StoryInfoPayload>;
  * channel state.
  */
 export declare const ifidChannel: IOChannel<string>;
+/**
+ * `prologue` — replace-mode pre-banner prologue text (ADR-298 D3).
+ * Closure reads `storyInfo.prologue` — resolved text the engine wrote
+ * at story start (phrase references already resolved through the
+ * phrase machinery) — and skips emission when absent or empty
+ * (sparse-suppress, same pattern as `ifidChannel`). Emitted once in
+ * practice: the value is set before the first packet and replace-mode
+ * carries it unchanged. The platform's default client rendering order
+ * places it before the banner.
+ */
+export declare const prologueChannel: IOChannel<string>;
 /**
  * `death` — event-mode death notification. Closure looks for the
  * canonical `if.event.player.died` event (ADR-224) in this turn's events
@@ -4168,7 +4180,7 @@ export interface LifecyclePayload {
  */
 export declare const lifecycleChannel: IOChannel<LifecyclePayload>;
 /**
- * The ten platform-standard channels in iteration order. Order is
+ * The platform-standard channels in iteration order. Order is
  * preserved for stable diffing in tests and manifests; the
  * `ChannelService` itself does not depend on ordering.
  */
@@ -4185,6 +4197,7 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly TURN: "turn";
     readonly INFO: "info";
     readonly IFID: "ifid";
+    readonly PROLOGUE: "prologue";
     readonly DEATH: "death";
     readonly ENDGAME: "endgame";
     readonly SCORE_NOTIFY: "score_notify";

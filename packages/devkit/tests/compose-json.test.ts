@@ -30,7 +30,9 @@ afterAll(() => rmSync(DIR, { recursive: true, force: true }));
 /** Minimal clean story; `extraLines` appends declarations. */
 function storySource(extraLines: string[] = []): string {
   return [
-    'story "Json Case" by "Test"',
+    'story',
+    '  title: Json Case',
+    '  authors: Test',
     '  id: json-case',
     '',
     'create the Lab',
@@ -101,7 +103,7 @@ describe('compose --json — clean story (gates + IR)', () => {
     expect(stderr).toEqual([]);
     const payload = payloadOf(stdout);
     expect(payload.schemaVersion).toBe(COMPOSE_JSON_SCHEMA_VERSION);
-    expect(payload.diagnostics).toEqual([]);
+    expect(payload.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(payload.ir).toBeDefined();
     expect(payload.ir!.languageVersion).toBe(CHORD_LANGUAGE_VERSION); // D9
     expect(payload.ir!.entities.map((e) => e.name)).toContain('Lab'); // D6: tree source rides the run
@@ -184,7 +186,7 @@ describe('compose --json — NO load-proof (the D5 core claim)', () => {
     const { code, stdout } = await run([file, '--json']);
     expect(code).toBe(0);
     const payload = payloadOf(stdout);
-    expect(payload.diagnostics).toEqual([]);
+    expect(payload.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(payload.ir).toBeDefined();
 
     // The same story through the default (load-proof) mode fails — proving
@@ -214,7 +216,7 @@ describe('compose --json — piped stdout integrity (the real IDE transport)', (
       'Hazel', 'Iris', 'Jasper', 'Kestrel', 'Larch', 'Maple', 'Nettle', 'Onyx', 'Pine'];
     const second = ['Hall', 'Gallery', 'Cellar', 'Attic', 'Study', 'Parlor', 'Vault',
       'Landing', 'Passage', 'Alcove', 'Rotunda', 'Annex', 'Loggia', 'Solar', 'Undercroft', 'Gatehouse'];
-    const lines = ['story "Big Pipe" by "Test"', '  id: big-pipe', ''];
+    const lines = ['story', '  title: Big Pipe', '  authors: Test', '  id: big-pipe', ''];
     for (const a of first) {
       for (const b of second) {
         lines.push(`create the ${a} ${b}`, '  a room', '',

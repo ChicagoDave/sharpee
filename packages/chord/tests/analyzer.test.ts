@@ -36,6 +36,7 @@ describe('cloak.story IR', () => {
         storyVersion: '1.0.0',
         authors: ['Roger Firth (Sharpee implementation)'],
         testers: [],
+        themes: [],
         description: { kind: 'literal', value: 'A basic IF demonstration - hang up your cloak!' },
       },
     });

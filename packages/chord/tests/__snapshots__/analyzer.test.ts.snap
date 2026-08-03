@@ -720,7 +720,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
     },
   ],
-  "languageVersion": "3.0.0",
+  "languageVersion": "3.1.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
@@ -738,6 +738,7 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "id": "cloak-of-darkness",
       "storyVersion": "1.0.0",
       "testers": [],
+      "themes": [],
     },
     "title": "Cloak of Darkness",
   },
