@@ -1,9 +1,9 @@
 # ADR-298: Story Block Metadata — Fielded Title/Authors, IFID Restored, Prologue
 
-**Status**: DRAFT (2026-08-02, session 7dd736) — consolidates GH #187's issue
-thread: David's rulings 1–5 (2026-07-29) plus the verified analysis recorded
-there. Open Questions below must resolve before ACCEPTED. Closes GH #187 when
-implemented.
+**Status**: ACCEPTED (2026-08-02, session 201a5d) — consolidates GH #187's
+issue thread: David's rulings 1–5 (2026-07-29) plus the verified analysis
+recorded there. All seven open questions resolved via `/devarch:adr-interview`
+and review findings folded, 2026-08-02. Closes GH #187 when implemented.
 
 **Parent**: ADR-074 (IFID requirements — the regression this repairs), ADR-133
 (info channel), ADR-166 (ifid channel), ADR-257 (language versioning), ADR-284
@@ -52,16 +52,26 @@ story
   id: fernhill
   story-version: 0.3.0
   prologue: <text or phrase — emitted before the banner>
-  blurb: One cold winter night to find the deed that keeps Fernhill in the family.
+  description: One cold winter night to find the deed that keeps Fernhill in the family.
 ```
 
 `title:` replaces the positional quoted title; `authors:` (indented list)
 replaces `by "…"`; `testers:` is new (indented list); `story-version:` renames
-`version:`. Per the standing no-backward-compatibility rule this is a one-shot
+`version:`; `description:` is the field's one spelling (interview 2026-08-02:
+the working name `blurb` is dropped — no reason to differentiate from
+Sharpee's `StoryConfig.description`).
+
+Per the standing no-backward-compatibility rule this is a one-shot
 cutover: the positional form becomes a removed-form parse error with a fix-it
 naming the fielded shape, following the `parse.removed-define-verb` /
 `parse.removed-slot-spelling` precedent. This is a breaking header change — a
 major language version bump (2.2.0 → 3.0.0, ADR-257 discipline).
+
+**`testers:` consumption (resolved 2026-08-02 interview)**: `testers` travels
+the full path — IR → `StoryConfig` → `StoryInfoData.testers: string[]` on the
+info channel, beside the widened `authors` list (Consequences below) and
+plumbed in the same commit. Clients choose whether/where to show credits
+(About/info surfaces); the wire carries the names, data-only.
 
 ### D2 — Generated metadata stays out of the story block (ruling 1)
 
@@ -75,39 +85,109 @@ every build and destroy the byte-stability that ADR-289 Phase 6's
 "diff is exactly four `languageVersion` lines" check depends on. Source-side
 version fields would also be author-writable lies the compiler must police.
 
-### D3 — `blurb` is metadata; `prologue` is the one new emission field (rulings 2–3)
+### D3 — `description` is metadata; `prologue` is the one new emission field (rulings 2–3)
 
-`blurb` and `description` are the same thing — one metadata field, mapped to
-`StoryConfig.description` (which `story-loader/src/loader.ts:264` already
-does), never emitted in play. `prologue:` names the text emitted **before the
+`description:` is one metadata field, mapped to `StoryConfig.description`
+(which `story-loader/src/loader.ts:264` already does for the old spelling),
+never emitted in play. `prologue:` names the text emitted **before the
 banner** (the Infocom pre-banner text; a channel in fyrevm/channel-io
 heritage). Any other start-of-story text is authored with normal story
 mechanisms, not header fields. This split is also what keeps GH #200 clean:
-`blurb` has a single build-time value (published page, archive entry);
+`description` has a single build-time value (published page, archive entry);
 `prologue` is what a launch selection would vary.
 
-### D4 — Block values: `blurb` and `prologue` accept text or a phrase (rulings 4–5)
+**Emission mechanics (resolved 2026-08-02 interview)**: the prologue is
+emitted on a **dedicated prologue channel** (fyrevm/channel-io heritage),
+once at story start, sparse-suppressed when the field is absent — the same
+pattern as `ifidChannel`. Placement before the banner is the platform's
+default client rendering order; authors can restyle per the customizable-
+client architecture. ADR-296's slot machinery is not involved:
+`beforeEverything` stays platform-only, and turn-narration slots are not
+stretched to cover a one-time story-start emission.
+
+The channel is `prologueChannel`, defined beside `ifidChannel` in
+`stdlib/src/channels/standard.ts` and fed from the `storyInfo` capability the
+engine seeds at startup (`game-engine.ts:426-465`) — the same producer path
+as the existing info/ifid channels. When `prologue:` is a phrase reference
+(D4), the engine resolves the phrase at emission time, so phrase variants
+(cycling, randomly, first-time) behave per their normal semantics.
+
+### D4 — Block values: `description` and `prologue` accept text or a phrase (rulings 4–5)
 
 The header grammar gains block-valued fields: `key:` followed by an indented
-body (`authors:`/`testers:` as lists of atoms; `prologue:`/`blurb:` as prose).
-Both `prologue` and `blurb` may take literal text or a reference to a
-`define phrase`. The reference form MUST be syntactically distinguished (the
-thread's analysis stands: resolve-if-a-phrase-exists would let an unrelated
-later phrase silently convert existing literal text into a reference — the
-same defect class ruling 2 avoided). The chosen sigil/keyword is Open
-Question 2.
+body (`authors:`/`testers:` as lists of atoms; `prologue:`/`description:` as
+prose). Both `prologue` and `description` may take literal text or a
+reference to a `define phrase`.
+
+**Reference form (resolved 2026-08-02 interview)**: a phrase reference is the
+bare phrase name — `prologue: story-prologue` — no sigil, no keyword,
+matching the existing blocked-exit idiom where the key after the colon names
+a phrase (§2.5 of the language doc). Disambiguation is structural, not
+resolve-if-exists: a value that is a single kebab atom is **always** a phrase
+reference and MUST resolve to a defined phrase (compile error otherwise); any
+other value is literal prose. This keeps ruling 2's defect class closed — an
+unrelated later phrase can never silently capture existing literal text,
+because prose is never a lone atom and a lone atom is never prose.
+
+**Value model (resolved 2026-08-02 interview)**: the parser owns a per-field
+schema — `authors:`/`testers:` parse as lists of atoms,
+`prologue:`/`description:` as prose blocks, the rest as scalars. The open map
+is removed: the schema is closed, so an unknown key is a parse error naming
+the known field set — closing the typo'd-key hole where `titel:` would
+silently yield a title-less story (the same silent-metadata-loss class D5
+repairs for IFID). AST/IR `fields` widens to a typed per-field shape, not
+`Record<string, string[]>`.
 
 ### D5 — IFID restored to the language
 
 `ifid:` becomes a story-block field carried through AST → IR → `StoryConfig.ifid`
-→ `ifidChannel`, repairing the ADR-074 regression. Generation/validation
-policy is Open Questions 3–4.
+→ `ifidChannel`, repairing the ADR-074 regression.
+
+**Provenance (resolved 2026-08-02 interview)**: `sharpee init` mints the UUID
+and writes the `ifid:` line into the new story block; the field is thereafter
+immutable — authors don't touch it. Stories that predate init (or lost the
+line) use the existing `sharpee ifid` tool to mint one. No registry or
+compiler-side duplicate tracking; immutability is a convention the toolchain
+establishes at creation, per Treaty of Babel semantics (ADR-074).
+
+**Missing-IFID policy (resolved 2026-08-02 interview)**: a story block with
+no `ifid:` compiles with a **warning** — the story still builds and plays,
+matching `ifidChannel`'s existing sparse-suppression on empty — and
+`sharpee publish` (ADR-284) **hard-errors** without one. Treaty of Babel
+compliance is enforced exactly where it matters (publication); test fixtures
+and casual/learning stories stay IFID-free with no escape hatch needed.
 
 ### D6 — Sequencing
 
 This ADR lands before GH #200's launch block (it decides where `prologue`
 lives), and its implementation should coordinate with GH #213 T2 (the Chord
 language doc rewrite) so the docs are written once, against the post-298 block.
+
+## Acceptance Criteria
+
+- **AC-1 (end-to-end)**: the D1 example block compiles clean; IR meta carries
+  the typed fields (title, authors ×2, testers ×2, ifid, id, story-version,
+  prologue, description); at runtime `StoryInfoData` carries
+  title/authors/testers/version/ifid/description and `prologueChannel` emits
+  the prologue before the banner in the platform default rendering order.
+- **AC-2 (removed form)**: positional `story "…" by "…"` produces the
+  removed-form parse error with a fix-it naming the fielded shape.
+- **AC-3 (closed schema)**: an unknown header key produces a parse error
+  naming the known field set.
+- **AC-4 (phrase reference)**: a lone-kebab-atom `prologue:`/`description:`
+  value resolving to a defined phrase renders that phrase's text; a lone atom
+  with no matching phrase is a compile error; a multi-word value stays
+  literal. Phrase variants (cycling, randomly, first-time) behave per their
+  normal semantics at prologue emission.
+- **AC-5 (IFID policy)**: a story block with no `ifid:` compiles with a
+  warning and plays with `ifidChannel` suppressed; `sharpee publish`
+  hard-errors without one; `sharpee init` output contains a minted `ifid:`
+  line.
+- **AC-6 (language version + snapshots)**: languageVersion bumps to 3.0.0;
+  the 7 IR snapshot files regenerate; channel-scoped golden recordings that
+  capture the info channel are re-blessed for the `author` → `authors` shape
+  change — expected churn enumerated in the implementation plan, any diff
+  outside it is a stop.
 
 ## Consequences
 
@@ -120,39 +200,28 @@ language doc rewrite) so the docs are written once, against the post-298 block.
 - **Typed-IR change**: `fields: Record<string, string>` widens to carry
   list/block values (`ast.ts:47`, `ir.ts:132`); consumers assuming strings
   break — e.g. `devkit/src/standalone/browser-core.ts:98`'s
-  `(meta.fields.blurb ?? '').trim()`. Shape is Open Question 1.
-- **Channel-contract touch**: `StoryInfoData.author` is singular
-  (`standard.ts:91`); an `authors:` list must either join into it or widen the
-  channel shape (a wire change with its own consumers). Open Question 5.
+  `(meta.fields.blurb ?? '').trim()`. Shape: typed per-field schema (D4);
+  unknown keys are a parse error, so no open-extras passthrough survives in
+  the IR. The `blurb` → `description` rename (D1) hits the same consumers.
+- **Channel-contract touch (resolved 2026-08-02 interview)**:
+  `StoryInfoData.author` (`standard.ts:91`) is replaced by
+  `authors: string[]` — a one-shot wire cutover per the no-backward-
+  compatibility rule; no joined convenience copy. The wire stays data-only:
+  consumers (browser client, IDE, zifmia) join/format the names for display
+  in their own locale and layout, and every co-located consumer updates in
+  the same commit per the shared wire-type discipline.
+- **Golden-recording churn (ADR-294 D15)**: channel-scoped golden recordings
+  that capture the info channel record the flattened `StoryInfoData` — the
+  `author` → `authors` (and new `testers`) shape change diffs those goldens.
+  This is expected, bounded churn: the implementation plan enumerates the
+  affected recordings and re-blesses exactly that set (AC-6).
 - The IDE's window title (ADR-279 Amendment A1, GH #188) reads `meta.title`
   from the IR and is unaffected — only the compiler's extraction changes.
 - `docs/reference/chord-language.md` §1 and the grammar docs change again;
   fold into the GH #213 T2 rewrite rather than patching twice.
 
-## Open Questions
-
-1. **Header value model**: per-field schema (parser knows `authors` is a list,
-   `prologue` is prose — a real departure from today's open map, and forces an
-   answer for unknown keys with indented bodies), or the uniform open-map
-   alternative from the thread (every block value is `string[]`; list-vs-prose
-   is the consumer's reading — parser stays schema-free)?
-2. **Phrase-reference syntax** for `prologue:`/`blurb:`: explicit keyword
-   (`prologue: phrase opening-blurb`), a sigil, or something else?
-3. **IFID provenance**: author-written, or generated at `sharpee init` and
-   thereafter immutable?
-4. **Missing IFID**: compile error, warning, or silent generation? (Evidence:
-   `ifidChannel` already skips emission on empty — a warning has no downstream
-   breakage; a hard error is stricter than the channel layer assumes. Does
-   `sharpee publish` (ADR-284) require one?)
-5. **`StoryInfoData.author`**: join the `authors:` list into the existing
-   singular string, or widen the channel shape to a list?
-6. **`testers:` consumption**: metadata-only (About/info channel?), or carried
-   somewhere specific? (Field is ruled in; its consumer is not yet named.)
-7. **Prologue emission mechanics**: its own channel (fyrevm heritage) or a
-   pre-banner slot in the existing text flow — and does ADR-296's
-   `beforeEverything` (platform-only) slot bear on it?
-
 ## Session
 
 Drafted 2026-08-02, session 7dd736, from GH #187's thread (David's rulings 1–5
-recorded there 2026-07-29). Not yet interviewed.
+recorded there 2026-07-29). All seven open questions resolved via
+`/devarch:adr-interview`, 2026-08-02, session 201a5d.
