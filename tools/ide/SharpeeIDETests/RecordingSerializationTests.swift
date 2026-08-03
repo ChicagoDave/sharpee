@@ -25,13 +25,13 @@ final class RecordingSerializationTests: XCTestCase {
         RecordingSession.assertionLines(for: session.turns[0])
     }
 
-    // MARK: - Untagged (ADR-277 D5, unchanged)
+    // MARK: - Untagged (ADR-277 D5 as superseded by ADR-294 D2: [SKIP] draft)
 
     func testAnUntaggedTurnStillSerializesAsTheDraftCapture() {
         let session = session(command: "look", response: "A den.\nA lamp glints.")
 
-        XCTAssertEqual(lines(session), ["[OK: any]", "# A den.", "# A lamp glints."],
-                       "Phase 2 must not regress the recorder ADR-277 already shipped")
+        XCTAssertEqual(lines(session), ["[SKIP]", "# A den.", "# A lamp glints."],
+                       "the untagged draft is [SKIP] + comments — [OK: any] is removed grammar")
     }
 
     func testAnUntaggedEmptyResponseCarriesNoCommentLines() {
@@ -40,7 +40,7 @@ final class RecordingSerializationTests: XCTestCase {
         // No dead branch for the empty case: an empty response cannot be
         // blessed, so it can only arrive here, and it simply has nothing to
         // comment.
-        XCTAssertEqual(lines(session), ["[OK: any]"])
+        XCTAssertEqual(lines(session), ["[SKIP]"])
     }
 
     // MARK: - Verbatim bless → [OK] + text block
@@ -183,13 +183,13 @@ final class RecordingSerializationTests: XCTestCase {
         ---
 
         > look
-        [OK: any]
+        [SKIP]
         # The play session's own opening turn, replayed so the story banner
         # lands here. A fresh run prints it with the first command, and it
         # would otherwise be prepended to the first blessed response below.
 
         > look
-        [OK: any]
+        [SKIP]
         # A den.
 
         > take lamp
@@ -211,9 +211,9 @@ final class RecordingSerializationTests: XCTestCase {
         let commands = lines.filter { $0.hasPrefix("> ") }
         XCTAssertEqual(commands, ["> look", "> x lamp"],
                        "the client's opening look is replayed ahead of the captured turns")
-        XCTAssertEqual(lines.firstIndex(of: "[OK: any]").map { $0 < lines.firstIndex(of: "[OK]")! },
+        XCTAssertEqual(lines.firstIndex(of: "[SKIP]").map { $0 < lines.firstIndex(of: "[OK]")! },
                        true,
-                       "the opening turn asserts presence only")
+                       "the opening turn carries the unasserted [SKIP] draft")
         XCTAssertEqual(session.blessedTurns.count, 1,
                        "the opening turn is not a captured turn and cannot be blessed")
     }

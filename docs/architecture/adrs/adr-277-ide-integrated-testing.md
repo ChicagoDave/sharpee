@@ -14,7 +14,8 @@ real devkit CLI); Phase 3 (`TranscriptHighlighter` line classifier +
 per-extension dispatch); Phase 4 (D5: `emitTurnEvent` DOM-level capture in
 `BrowserClient.executeCommand`, `turnEvents` WK channel, Play-header
 Record/Stop, `RecordingSession` + save flow; **`[OK: any]` grammar addition
-per the amended Q4b** — real-path proof that a recorded transcript re-runs
+per the amended Q4b** (later removed by ADR-294 D2 — see the D5 note) —
+real-path proof that a recorded transcript re-runs
 green through the real CLI). Final suites: IDE 236/236, platform-browser
 96/96, transcript-tester 13/13, devkit 107/107, ide-protocol 23/23;
 `./repokit build` clean. As-built deviations recorded per phase in the plan.
@@ -195,6 +196,15 @@ form to the transcript grammar (transcript-tester parser + runner — a small
 authorized addition under this D5); bare `[OK]`'s semantics are untouched
 (no in-repo transcript uses a bare `[OK]` line).
 
+*Superseded by ADR-294 D2 (2026-08-01; note added 2026-08-02, session
+1d3b6f): `[OK: any]` was removed from the grammar — presence-only assertion
+masks failure, and ADR-293's determinism killed this section's RNG-varied
+rationale ("randomness is never seeded or disabled" is no longer standing
+policy). The recorder's untagged-turn capture format is now `> command` +
+`[SKIP]` + `#`-comment response; `[SKIP]` executes the turn and asserts
+nothing (runner semantics aligned with ADR-294 D2's text by
+`docs/work/ok-any-default/plan.md`, Decision 4, ruled 2026-08-02).*
+
 ### D6 — Scope guard
 
 This ADR authorizes the platform-side changes it names (ide-protocol test
@@ -226,6 +236,9 @@ against a real fixture story, not a stand-in.
    *Superseded by ADR-282 Acceptance 3 (2026-07-27): zero-bless saves are
    refused once play-to-test lands; the shipped real-path test for this
    criterion is updated accordingly.*
+   *Also superseded by ADR-294 D2 (2026-08-01; note added 2026-08-02): the
+   per-turn draft assertion is `[SKIP]`, not `[OK: any]` — the latter is
+   removed grammar the parser rejects by name (see the D5 note above).*
 
 ## Consequences
 

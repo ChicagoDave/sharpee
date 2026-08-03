@@ -46,7 +46,7 @@ beforeAll(() => {
   const transcript = join(dir, 'save-maker.transcript');
   writeFileSync(
     transcript,
-    'title: CLI Restore Fixture Maker\nstory: dungeo\n---\n\n[SEED: 4242]\n\n> north\n[OK: any]\n\n$save ' +
+    'title: CLI Restore Fixture Maker\nstory: dungeo\nseed: 4242\n---\n\n> north\n[OK: contains "North of House"]\n\n$save ' +
       FIXTURE_SAVE +
       '\n',
     'utf-8'

@@ -132,7 +132,7 @@ final class RecordingSaveAsTestTests: XCTestCase {
 
         let source = try String(contentsOf: saved, encoding: .utf8)
         XCTAssertTrue(source.contains("[OK]"), "the blessed turn asserts its response")
-        XCTAssertTrue(source.contains("[OK: any]"), "the untagged turn keeps the draft assertion")
+        XCTAssertTrue(source.contains("[SKIP]"), "the untagged turn keeps the draft [SKIP] line")
 
         let run = runSavedTests()
         XCTAssertEqual(run.result?.state, .passed,
@@ -154,7 +154,8 @@ final class RecordingSaveAsTestTests: XCTestCase {
 
         // The ADR's words: "the saved block content is identical to the
         // captured response". Pull the block back out and compare, rather than
-        // trusting that a passing run implies it — `[OK: any]` would also pass.
+        // trusting that a passing run implies it — a `[SKIP]` draft would also
+        // let the run pass.
         let block = try XCTUnwrap(Self.blockContent(in: source),
                                   "no text block found in:\n\(source)")
         XCTAssertEqual(block, responses[0], "the block must carry the response verbatim")
@@ -232,7 +233,11 @@ final class RecordingSaveAsTestTests: XCTestCase {
     func testAHandWrittenTranscriptStillRunsGreenThroughTheIDEsRunner() throws {
         // D3's round-trip invariant cuts both ways: this ADR added a way to
         // WRITE transcripts, and must not have changed how hand-written ones
-        // READ. All three forms an author reaches for, in one file.
+        // READ. All three post-ADR-294 forms an author reaches for, in one
+        // file: [OK: contains], [SKIP] (executes, asserts nothing), and bare
+        // [OK] + an ADR-287 text block. (The original fixture's [OK: any] and
+        // [ENSURES:] are removed grammar the parser rejects by name — this
+        // fixture was re-verified against the real CLI: 2 passed, 1 skipped.)
         let handWritten = """
         title: Hand-written
         ---
@@ -241,8 +246,7 @@ final class RecordingSaveAsTestTests: XCTestCase {
         [OK: contains "the lamp gutters"]
 
         > take notice
-        [OK: any]
-        [ENSURES: inventory contains "notice"]
+        [SKIP]
 
         > x notice
         [OK]
@@ -260,9 +264,11 @@ final class RecordingSaveAsTestTests: XCTestCase {
 
         let run = runSavedTests()
         XCTAssertEqual(run.result?.state, .passed,
-                       "hand-written [OK] / [OK: any] / [ENSURES] must be unaffected by this ADR")
+                       "hand-written [OK: contains] / [SKIP] / [OK]+text must run green")
         XCTAssertEqual(run.ends.map(\.status), [.passed])
-        XCTAssertEqual(run.ends.first?.passed, 3)
+        XCTAssertEqual(run.ends.first?.passed, 2)
+        XCTAssertEqual(run.ends.first?.skipped, 1,
+                       "the [SKIP] turn executes but reports as skipped, not passed")
     }
 
     // MARK: - Helpers

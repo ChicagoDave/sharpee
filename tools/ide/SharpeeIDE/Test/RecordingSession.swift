@@ -1,19 +1,19 @@
 // RecordingSession.swift
 // Accumulates play turns while the Play pane's Record toggle is active and
-// serializes them into a draft `.transcript` (ADR-277 D5, capture format as
-// amended): each turn is `> command` + `[OK: any]` (presence-only — replays
-// green despite RNG-varied story text) + the rendered response as `#` comment
-// lines for the author's reference, never asserted. Pure state + string
-// building; no AppKit, so tests drive it directly.
+// serializes them into a draft `.transcript` (ADR-277 D5 as superseded by
+// ADR-294 D2): each untagged turn is `> command` + `[SKIP]` (the turn
+// executes and advances state, asserting nothing) + the rendered response as
+// `#` comment lines for the author's reference, never asserted. Pure state +
+// string building; no AppKit, so tests drive it directly.
 //
 // ADR-282 adds the author's marks on top of that capture: a per-turn bless
 // verdict (carrying the optional selected fragment) and checkpoint marks that
 // split a saved session into a walkthrough chain. `serialize` encodes the
 // bless verdicts per D2 — `[OK]` + an ADR-287 `text` block for a verbatim bless,
-// `[OK: contains …]` for a selection — while untagged turns keep ADR-277 D5's
-// `[OK: any]` draft unchanged. `segments` / `serializeChain(title:)` act on the
-// checkpoint marks, splitting the session into the sequential transcripts D4
-// names.
+// `[OK: contains …]` for a selection — while untagged turns carry the `[SKIP]`
+// draft (`[OK: any]` is removed grammar, ADR-294 D2). `segments` /
+// `serializeChain(title:)` act on the checkpoint marks, splitting the session
+// into the sequential transcripts D4 names.
 //
 // Public interface: isRecording, turns, blessedTurns, latestTurnIndex,
 // canBlessLatestTurn, canCheckpointLatestTurn, hasCheckpoints,
@@ -244,8 +244,8 @@ final class RecordingSession {
     /// Whether this session may be saved as a test (ADR-282 Acceptance 3).
     ///
     /// A recording nobody vouched for asserts nothing an author meant — every
-    /// turn would carry `[OK: any]`, which only re-states that the story
-    /// printed something. The save flow refuses rather than writing a file that
+    /// turn would carry `[SKIP]`, which deliberately asserts nothing at all.
+    /// The save flow refuses rather than writing a file that
     /// looks like a test and tests nothing.
     var hasAuthorAssertions: Bool { !blessedTurns.isEmpty }
 
@@ -260,11 +260,11 @@ final class RecordingSession {
     /// session's first turn compares banner-plus-response against response and
     /// fails every time, which is not a class of bug an author could diagnose.
     ///
-    /// `[OK: any]` rather than a blessed assertion: this turn is scaffolding
+    /// `[SKIP]` rather than a blessed assertion: this turn is scaffolding
     /// for state, and the author never vouched for it.
     private static let openingTurn = [
         "> look",
-        "[OK: any]",
+        "[SKIP]",
         "# The play session's own opening turn, replayed so the story banner",
         "# lands here. A fresh run prints it with the first command, and it",
         "# would otherwise be prepended to the first blessed response below.",
@@ -328,9 +328,10 @@ final class RecordingSession {
     /// - blessed with any other selection → `[OK: contains]` + the fragment
     ///   in a block, which is why **nothing is unencodable**: the block path has no
     ///   character the inline form chokes on;
-    /// - untagged → `[OK: any]` + the response as `#` comments, ADR-277 D5's
-    ///   unchanged draft (the validator requires every command to assert
-    ///   something, and a turn that merely advances state asserts presence).
+    /// - untagged → `[SKIP]` + the response as `#` comments (ADR-294 D2's
+    ///   replacement for the removed `[OK: any]`: the validator requires every
+    ///   command to carry an assertion line, and `[SKIP]` executes the turn
+    ///   while deliberately asserting nothing).
     ///
     /// An empty response has no case here on purpose rather than as an
     /// oversight: `isBlessable` is false for one, so it can only ever be
@@ -338,7 +339,7 @@ final class RecordingSession {
     static func assertionLines(for turn: RecordedTurn) -> [String] {
         switch turn.verdict {
         case .untagged:
-            return ["[OK: any]"]
+            return ["[SKIP]"]
                 + turn.response
                     .split(separator: "\n", omittingEmptySubsequences: true)
                     .map { "# \($0)" }

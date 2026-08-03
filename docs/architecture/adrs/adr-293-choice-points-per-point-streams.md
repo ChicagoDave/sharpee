@@ -823,6 +823,10 @@ Each is independently landable and verified against the existing walkthrough cha
 - **The walkthrough flake gets a named cause and a fix**, and the run-twice policy retires.
 - **`[OK: any]` can stop being the default** (ADR-277 D5). With outcomes reproducible and
   selectable, verbatim assertion becomes the natural default.
+  *Resolved (2026-08-02, session 1d3b6f, `docs/work/ok-any-default/plan.md`): ADR-294 D2
+  removed `[OK: any]` from the grammar outright; the recorder's untagged-turn default is
+  `[SKIP]` (which executes the turn and asserts nothing — runner semantics aligned with
+  ADR-294 D2's text under the same plan). ADR-277 D5 and ADR-282 D2 carry matching notes.*
 - **The navigator's 50-attempt retry loop becomes dead weight** and surplus attack commands
   come out of walkthroughs.
 - **Every gameplay draw call site changes shape** — ~45 of them. This is the widest mechanical

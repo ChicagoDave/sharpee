@@ -256,7 +256,7 @@ final class ReblessTests: XCTestCase {
         ---
 
         > take lamp
-        [OK: any]
+        [SKIP]
         # Taken.
 
         > x lamp

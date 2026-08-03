@@ -89,6 +89,14 @@ A tagged play session **is** a `.transcript`:
   preserved as `#` comment lines — ADR-277 D5's existing recorder default,
   which also satisfies the validator's every-command-needs-an-assertion
   rule (a bare command would fail validation).
+  *Superseded by ADR-294 D2 (2026-08-01; note added 2026-08-02, session
+  1d3b6f): `[OK: any]` is removed grammar. The untagged-turn serialization
+  is now `> command` + `[SKIP]` + `#`-comment response — `[SKIP]` executes
+  the turn and asserts nothing (runner semantics pinned by
+  `docs/work/ok-any-default/plan.md` Decision 4), preserving D1's
+  tagged/untagged distinction and still satisfying
+  every-command-needs-an-assertion. See this ADR's Consequences note of
+  2026-08-01, which already recorded the fallback's removal.*
 - **Opening turn** (amendment 2026-07-28, session 2f31b0) → every saved
   transcript begins with `> look` + `[OK: any]` and a `#` comment saying
   why, ahead of the captured turns. This is not a turn the author typed:
@@ -101,6 +109,9 @@ A tagged play session **is** a `.transcript`:
   Found in implementation, not in review: Acceptance 1 and 5 both failed
   on their first real run for exactly this reason. `[OK: any]` rather than
   a blessed assertion, because the author never vouched for it.
+  *Superseded by ADR-294 D2 (2026-08-01; note added 2026-08-02): the
+  opening turn carries `[SKIP]` for the same never-vouched-for reason —
+  see the untagged-turn note above.*
 
   **In a chain (D4), only the first segment carries it.** `--chain` runs
   one game across the files, so segments 2..N are not fresh runs and have
@@ -169,6 +180,10 @@ against its Q-2.)
    as test: the produced `.transcript` passes under `sharpee test`
    (headless, no IDE), with the blessed turn asserting the response and
    the untagged turn carrying `[OK: any]` + comment lines.
+   *Superseded by ADR-294 D2 (2026-08-01; note added 2026-08-02): the
+   untagged turn carries `[SKIP]` + comment lines — `[OK: any]` is removed
+   grammar (see the D2 serialization note above and this ADR's 2026-08-01
+   Consequences note).*
 2. A hand-written transcript with `[OK]`/`[OK: any]`/`[ENSURES]` opens and
    runs in the IDE test panel with results identical to `sharpee test`
    (D3 pinned by a test). *Superseded by ADR-294 D4 (2026-08-01):

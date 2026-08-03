@@ -1,11 +1,12 @@
 // RecordingSessionTests.swift
-// Covers Play-session recording (ADR-277 D5): session state (capture only
-// while recording), the draft capture format for UNTAGGED turns (per turn
-// `> command` + `[OK: any]` + `#`-comment response, never asserted output), and
-// the WKScriptMessage decode path into the session.
+// Covers Play-session recording (ADR-277 D5 as superseded by ADR-294 D2):
+// session state (capture only while recording), the draft capture format for
+// UNTAGGED turns (per turn `> command` + `[SKIP]` + `#`-comment response —
+// the turn executes and advances state, asserting nothing), and the
+// WKScriptMessage decode path into the session.
 //
 // ADR-282 Acceptance 3 SUPERSEDES this file's original closing test, which
-// proved an unconditional all-`[OK: any]` save re-ran green through the real
+// proved an unconditional all-draft save re-ran green through the real
 // CLI. That save is now refused — a recording nobody vouched for asserts
 // nothing an author meant — so the real-path test below pins the REFUSAL
 // instead. The "a saved recording re-runs green" proof did not disappear: it
@@ -45,7 +46,7 @@ final class RecordingSessionTests: XCTestCase {
 
     // MARK: - Capture format (D5 as amended)
 
-    func testSerializeWritesOkAnyWithCommentedResponse() {
+    func testSerializeWritesSkipWithCommentedResponse() {
         let session = RecordingSession()
         session.start()
         session.record(command: "take the brass lamp", response: "Taken.")
@@ -58,17 +59,17 @@ final class RecordingSessionTests: XCTestCase {
         ---
 
         > look
-        [OK: any]
+        [SKIP]
         # The play session's own opening turn, replayed so the story banner
         # lands here. A fresh run prints it with the first command, and it
         # would otherwise be prepended to the first blessed response below.
 
         > take the brass lamp
-        [OK: any]
+        [SKIP]
         # Taken.
 
         > look
-        [OK: any]
+        [SKIP]
         # A small square den.
         # A lamp glints here.
 
@@ -122,7 +123,7 @@ final class RecordingSessionTests: XCTestCase {
         XCTAssertEqual(announced, url)
         let written = try String(contentsOf: url, encoding: .utf8)
         XCTAssertTrue(written.hasPrefix("title: Recorded: smoke\n---\n"))
-        XCTAssertTrue(written.contains("> look\n[OK: any]\n# A room.\n"))
+        XCTAssertTrue(written.contains("> look\n[SKIP]\n# A room.\n"))
         XCTAssertTrue(written.contains("> wait\n[OK]\ntext\nTime passes.\nend text\n"))
     }
 
@@ -151,21 +152,22 @@ final class RecordingSessionTests: XCTestCase {
         XCTAssertNil(announced, "nothing was written, so the Tests panel must not be told to re-scan")
     }
 
-    /// An untagged turn still replays on presence alone — the property ADR-277
-    /// D5 chose `[OK: any]` for, and the reason a mixed save's untagged turns
-    /// survive story rewording. Pinned on the serialized text here; that the
-    /// whole file really passes the CLI is RecordingSaveAsTestTests' job.
-    func testAnUntaggedTurnAssertsPresenceNotItsRecordedText() {
+    /// An untagged turn replays without asserting its text — the property the
+    /// `[SKIP]` draft carries (ADR-294 D2: the turn executes, nothing is
+    /// asserted), and the reason a mixed save's untagged turns survive story
+    /// rewording. Pinned on the serialized text here; that the whole file
+    /// really passes the CLI is RecordingSaveAsTestTests' job.
+    func testAnUntaggedTurnAssertsNothingNotItsRecordedText() {
         let session = RecordingSession()
         session.start()
         session.record(command: "take the brass lamp",
-                       response: "RNG text that will differ on replay")
+                       response: "Text the author never vouched for")
         session.bless(turnAt: 0)
         session.record(command: "look", response: "Also never matched")
         session.stop()
 
         let source = session.serialize(title: "Recorded: smoke")
-        XCTAssertTrue(source.contains("> look\n[OK: any]\n# Also never matched"),
+        XCTAssertTrue(source.contains("> look\n[SKIP]\n# Also never matched"),
                       "the untagged turn's recorded text stays a comment, never an assertion")
         XCTAssertFalse(source.contains("[OK]\ntext\nAlso never matched"),
                        "an untagged turn must not acquire an assertion it was never given")

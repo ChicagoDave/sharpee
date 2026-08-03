@@ -46,8 +46,10 @@ const ASSERTION_DOCS: Record<string, string> = {
     'Matchers:',
     '- `contains "text"` — output includes the text',
     '- `not contains "text"` — output does NOT include the text',
-    '- `contains_any "a" "b"` — output includes at least one of the strings',
-    '- `matches /regex/` — output matches the regular expression',
+    '- bare `[OK]` + expected text block — exact match (ADR-287 literal blocks)',
+    '',
+    '`contains_any` and `matches /regex/` were removed (ADR-294 D2) — output is',
+    'deterministic at a pinned seed; use `contains` or a golden recording.',
   ].join('\n'),
 
   'EVENT': [
@@ -69,76 +71,71 @@ const ASSERTION_DOCS: Record<string, string> = {
   ].join('\n'),
 
   'ENSURES': [
-    '**[ENSURES: condition]** — Postcondition that must hold after the enclosing GOAL.',
+    '**[ENSURES:]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'Conditions:',
-    '- `location = "Room Name"` — player is in the named room',
-    '- `not location = "Room Name"` — player is NOT in the named room',
-    '- `inventory contains "item"` — player has the item',
-    '- `not inventory contains "item"` — player does NOT have the item',
-    '- `not entity "name" alive` — the named entity is dead',
-    '- `output contains "text"` — last output includes the text',
+    'Durable regression protection is a golden recording; for unit intent use',
+    '`[OK: contains "..."]` or `[STATE:]`.',
   ].join('\n'),
 
   'REQUIRES': [
-    '**[REQUIRES: condition]** — Precondition that must hold before the enclosing block executes.',
+    '**[REQUIRES:]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'Same condition syntax as ENSURES.',
+    'State is deterministic at a pinned seed — a precondition either always',
+    'holds or the transcript is wrong.',
   ].join('\n'),
 
   'FAIL': '**[FAIL]** — Marks the preceding command as expected to fail. The test passes if the command produces an error.',
-  'SKIP': '**[SKIP]** — Skips assertion checking for the preceding command. Useful inside loops where output varies.',
-  'TODO': '**[TODO]** — Marks an assertion as not yet implemented. The test runner reports it but does not fail.',
+  'SKIP': '**[SKIP]** — Runs the preceding command without asserting its output. The command still executes and advances state (ADR-294 D2).',
+  'TODO': '**[TODO]** — Marks an assertion as not yet implemented. The command still executes; the runner reports it but does not fail.',
 };
 
 /** Directive syntax documentation shown in hover tooltips. */
 const DIRECTIVE_DOCS: Record<string, string> = {
   'GOAL': [
-    '**[GOAL: label]** — Named test section with optional postconditions.',
+    '**[GOAL: label]** — Named test section.',
     '',
-    'Use `[ENSURES: condition]` after the GOAL line to set postconditions.',
     'Close with `[END GOAL]`.',
   ].join('\n'),
 
   'IF': [
-    '**[IF: condition]** — Conditional block. Commands inside only execute if the condition is true.',
+    '**[IF:]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'Conditions: `location = "Room"`, `inventory contains "item"`, `room contains "item"`',
-    'Close with `[END IF]`.',
+    'State is deterministic at a pinned seed, so a condition never varies —',
+    'write the branch that actually happens.',
   ].join('\n'),
 
   'WHILE': [
-    '**[WHILE: condition]** — Loop block. Repeats commands until the condition becomes false.',
+    '**[WHILE:]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'Same condition syntax as IF.',
-    'Close with `[END WHILE]`.',
+    'Output is deterministic at a pinned seed — write the fixed command list',
+    'the loop produced.',
   ].join('\n'),
 
   'RETRY': [
-    '**[RETRY: max=N]** — Retry block for non-deterministic actions (e.g., combat).',
+    '**[RETRY:]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'Wraps a `[DO]...[UNTIL]` loop. If the UNTIL condition is not met after N attempts,',
-    'the game state is restored and the block retries from the beginning.',
-    'Close with `[END RETRY]`.',
+    'Output is deterministic at a pinned seed — write the fixed command list',
+    'the retries produced.',
   ].join('\n'),
 
   'DO': [
-    '**[DO]** — Marks the start of a do/until loop inside a RETRY block.',
+    '**[DO]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'Commands between `[DO]` and `[UNTIL]` repeat until the UNTIL condition matches.',
+    'Output is deterministic at a pinned seed — write the fixed command list',
+    'the loop produced.',
   ].join('\n'),
 
   'UNTIL': [
-    '**[UNTIL "text" OR "text"]** — End of a do/until loop.',
+    '**[UNTIL]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'The loop ends when the command output contains any of the quoted strings.',
+    'Output is deterministic at a pinned seed — write the fixed command list',
+    'the loop produced.',
   ].join('\n'),
 
   'NAVIGATE TO': [
-    '**[NAVIGATE TO: "Room Name"]** — Automatically navigate to the named room.',
+    '**[NAVIGATE TO:]** — REMOVED (ADR-294 D4). The parser rejects it by name.',
     '',
-    'The test runner uses pathfinding to issue movement commands.',
-    'Fails if the room is unreachable from the current location.',
+    'Write the literal compass commands; the runner never pathfinds.',
   ].join('\n'),
 };
 

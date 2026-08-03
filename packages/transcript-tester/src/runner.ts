@@ -897,23 +897,10 @@ async function runCommand(
   engine: GameEngine,
   options: RunnerOptions
 ): Promise<CommandResult> {
-  // Check for skip/todo first
+  // [SKIP]/[TODO] commands still execute below — they advance world state
+  // (ADR-294 D2: "output is deliberately not asserted", not "command is not
+  // run"); only assertion evaluation is bypassed, after execution.
   const skipAssertion = command.assertions.find(a => a.type === 'skip' || a.type === 'todo');
-  if (skipAssertion) {
-    return {
-      command,
-      actualOutput: '',
-      actualEvents: [],
-      passed: true,
-      expectedFailure: false,
-      skipped: true,
-      assertionResults: [{
-        assertion: skipAssertion,
-        passed: true,
-        message: skipAssertion.reason || 'Skipped'
-      }]
-    };
-  }
 
   // Execute the command
   let actualOutput: string;
@@ -951,6 +938,40 @@ async function runCommand(
   } catch (e) {
     actualOutput = '';
     error = e instanceof Error ? e.message : String(e);
+  }
+
+  // [SKIP]/[TODO]: the command has executed and advanced state; no assertion
+  // is evaluated. An engine error during the skipped turn still fails.
+  if (skipAssertion) {
+    if (error) {
+      return {
+        command,
+        actualOutput,
+        actualEvents,
+        passed: false,
+        expectedFailure: false,
+        skipped: false,
+        assertionResults: [{
+          assertion: skipAssertion,
+          passed: false,
+          message: `Engine error during skipped command: ${error}`
+        }],
+        error
+      };
+    }
+    return {
+      command,
+      actualOutput,
+      actualEvents,
+      passed: true,
+      expectedFailure: false,
+      skipped: true,
+      assertionResults: [{
+        assertion: skipAssertion,
+        passed: true,
+        message: skipAssertion.reason || 'Skipped'
+      }]
+    };
   }
 
   // Normalize output for comparison

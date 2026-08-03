@@ -147,7 +147,7 @@ final class RecordingChainSaveTests: XCTestCase {
         ---
 
         > look
-        [OK: any]
+        [SKIP]
 
         """.write(to: walkthroughsDir.appendingPathComponent(name),
                   atomically: true, encoding: .utf8)

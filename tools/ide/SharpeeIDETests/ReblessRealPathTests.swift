@@ -317,7 +317,7 @@ final class ReblessRealPathTests: XCTestCase {
     }
 
     func testAnUntaggedTurnIsNotOfferedRebless() throws {
-        // `[OK: any]` never carried a bless, so there is nothing to reaffirm.
+        // A `[SKIP]` draft never carried a bless, so there is nothing to reaffirm.
         let responses = try TestToolchain.captureResponses(storyFile: storyFile,
                                                            commands: ["x notice"])
         let play = PlayViewController()
