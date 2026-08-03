@@ -127,7 +127,10 @@ final class TestRunnerTests: XCTestCase {
     }
 
     /// A broken transcript is an error ROW, not a vanished file (Acceptance 2's
-    /// Swift-visible proof), and fails the run.
+    /// Swift-visible proof), and fails the run. "Broken" means a real parse
+    /// error — a removed form (ADR-294 D2). An assertion-less command is NOT
+    /// broken post-rebuild: it is a golden-tier candidate that fails at runtime
+    /// with "no recording exists" (transcript status `failed`, not `error`).
     func testValidationBrokenTranscriptArrivesAsErrorRecord() throws {
         try writeFixture("mini.story", Self.story)
         try writeFixture("tests/broken.transcript", """
@@ -135,6 +138,7 @@ final class TestRunnerTests: XCTestCase {
         ---
 
         > look
+        [OK: any]
         """)
         runReal(arguments: [tempDir.path])
 
