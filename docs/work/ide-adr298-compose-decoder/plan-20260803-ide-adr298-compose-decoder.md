@@ -90,7 +90,8 @@ DevArch's DDD-applicability check.
   version 2, so any Swift decoder still pinned to version 1 will reject the
   payload loudly instead of throwing an opaque decode error — this is the
   gate Phase 3 verifies from the other side.
-- **Status**: CURRENT
+- **Status**: COMPLETE (2026-08-03 — ide-protocol 25 passing, 0 failures;
+  devkit compose-json 7 passing, 0 failures)
 
 ### Phase 2: Update the Swift decoder, its two consumers, and the stale Chord-version-check constant
 - **Tier**: Small
@@ -149,7 +150,8 @@ DevArch's DDD-applicability check.
   wire shape; `xcodegen generate && xcodebuild ... build` (Debug) succeeds.
   Do not run the test suite yet — its fixtures still pin the old shape
   (Phase 3).
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-08-03 — Debug build exit 0; no stale `.fields[`
+  or `.meta.author` in production sources; ChordVersionCheck → "3.0.0")
 
 ### Phase 3: Conformance — fix pinned Xcode fixtures, run the real suite, verify live against fernhill
 - **Tier**: Small
@@ -202,4 +204,6 @@ DevArch's DDD-applicability check.
   surface — e.g. whether `testers`/`ifid` should join the Swift `Fields`
   struct for a later Index enhancement) are noted but not implemented here
   — out of this fix's scope per the diagnosis.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-08-03 — fixtures migrated; suite 432 → 435
+  passing, 0 failures after Play-surface additions. Step 3's live-IDE check
+  is David-side carryover per session-20260803-1506-main.md)
