@@ -1,6 +1,8 @@
-story "Forest Weather" by "Test"
+story
+  title: Forest Weather
+  authors: Test
   id: region-forest
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Forest
   a region

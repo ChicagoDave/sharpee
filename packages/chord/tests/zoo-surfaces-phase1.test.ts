@@ -17,7 +17,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile, CreateDecl, parse } from '../src';
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 function errorsOf(source: string) {
   return compile(source).diagnostics.filter((d) => d.severity === 'error');
@@ -140,7 +140,7 @@ create the player
 
   it('parses: first-time prose and the standard description stay separate', () => {
     const result = parse(`${HEADER}${FIRST_TIME_ROOM}`);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const room = result.ast.declarations.find((d): d is CreateDecl => d.kind === 'create')!;
     expect(room.initialDescription?.text).toBe('Your family piles out of the car.');
     expect(room.description?.text).toBe('You stand before the wrought-iron gates.');

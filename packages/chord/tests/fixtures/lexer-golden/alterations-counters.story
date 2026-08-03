@@ -2,9 +2,11 @@
 ## comparisons (ADR-264): `extend action` / `remove from action`, symbolic
 ## and word comparisons, list brackets. Edit only alongside the golden file.
 
-story "Alterations And Counters" by "Lexer Golden"
+story
+  title: Alterations And Counters
+  authors: Lexer Golden
   id: lexer-golden-alterations
-  version: 1.0.0
+  story-version: 1.0.0
   use combat
 
   on every turn

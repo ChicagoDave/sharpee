@@ -1,6 +1,8 @@
-story "The Locked Study" by "Test"
+story
+  title: The Locked Study
+  authors: Test
   id: locked-study
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Landing
   a room

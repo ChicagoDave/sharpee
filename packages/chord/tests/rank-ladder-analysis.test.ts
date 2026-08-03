@@ -11,9 +11,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile, EXTENSION_MANIFESTS } from '../src';
 
-const story = (headerBody: string) => `story "The Folly" by "T"
+const story = (headerBody: string) => `story
+  title: The Folly
+  authors: T
   id: folly
-  version: 0.0.1
+  story-version: 0.0.1
 ${headerBody}
 create the Lawn
   a room
@@ -51,7 +53,7 @@ describe('rank ladder → IR (ADR-261 acceptance #1)', () => {
       '    rank "Master of the Folly" at 120\n'
     ));
 
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.uses).toContain('scoring');
   });
 
@@ -108,13 +110,13 @@ describe('rank ladder → IR (ADR-261 acceptance #1)', () => {
   it('`use scoring` with no ladder yields an empty ranks array (D3)', () => {
     const result = compile(story('  use scoring\n'));
 
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.uses).toContain('scoring');
     expect(result.ir.ranks).toEqual([]);
   });
 
   it('a story with no `use scoring` has no ranks and does not name the extension', () => {
-    const result = compile(story('  version: 0.0.2\n'));
+    const result = compile(story('  story-version: 0.0.2\n'));
 
     expect(result.ir.uses).not.toContain('scoring');
     expect(result.ir.ranks).toEqual([]);
@@ -132,7 +134,7 @@ describe('ladder diagnostics (ADR-261 acceptance #6)', () => {
 
     expect(found.map((d) => d.code)).toEqual(['analysis.duplicate-rank-threshold']);
     // The span points at the SECOND rung — the one that could be moved.
-    expect(found[0].span.line).toBe(7);
+    expect(found[0].span.line).toBe(9);
   });
 
   it('duplicate kebab id → analysis.duplicate-rank-id with the span', () => {
@@ -144,7 +146,7 @@ describe('ladder diagnostics (ADR-261 acceptance #6)', () => {
     ));
 
     expect(found.map((d) => d.code)).toEqual(['analysis.duplicate-rank-id']);
-    expect(found[0].span.line).toBe(7);
+    expect(found[0].span.line).toBe(9);
   });
 
   it('a rung above the declared ceiling → analysis.rank-above-max', () => {
@@ -166,7 +168,7 @@ describe('ladder diagnostics (ADR-261 acceptance #6)', () => {
       '    rank "Master of the Folly" at 100\n'
     ));
 
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 
   it('sums every declared score when computing the ceiling', () => {
@@ -177,7 +179,7 @@ describe('ladder diagnostics (ADR-261 acceptance #6)', () => {
       '    rank "Master of the Folly" at 120\n'
     ));
 
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 
   it('a ladder with no declared scores skips the ceiling check', () => {

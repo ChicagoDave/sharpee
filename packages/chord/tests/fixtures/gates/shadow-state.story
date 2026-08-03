@@ -1,6 +1,8 @@
-story "Gate: shadow state" by "Nobody"
+story
+  title: Gate: shadow state
+  authors: Nobody
   id: gate-shadow-state
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the vault door
   scenery

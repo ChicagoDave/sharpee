@@ -1,6 +1,8 @@
-story "Gate 1" by "Nobody"
+story
+  title: Gate 1
+  authors: Nobody
   id: gate-1
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Foyer
   a room

@@ -1,6 +1,8 @@
-story "Nautical" by "Sharpee Tests"
+story
+  title: Nautical
+  authors: Sharpee Tests
   id: nautical
-  version: 0.0.1
+  story-version: 0.0.1
 
 ## ADR-267 acceptance 8 / ADR-275 D3 fixture: a sailing action with a
 ## nautical directions block — expansion, per-rule direction defaults, and

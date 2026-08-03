@@ -17,9 +17,11 @@ const FIXTURE = readFileSync(join(__dirname, 'fixtures', 'drawbridge.story'), 'u
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (machine: string, header = '  use state-machines\n') => `story "Bridge" by "T"
+const story = (machine: string, header = '  use state-machines\n') => `story
+  title: Bridge
+  authors: T
   id: bridge
-  version: 0.0.1
+  story-version: 0.0.1
 ${header}
 create the Gatehouse
   a room
@@ -41,7 +43,7 @@ ${machine}`;
 describe('define machine (ADR-215 state-machines depth, spelling A)', () => {
   it('compiles the drawbridge fixture to the full IR shape', () => {
     const result = compile(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.uses).toEqual(['state-machines']);
     const machine = result.ir.machines[0];
     expect(machine.name).toBe('drawbridge');
@@ -73,7 +75,7 @@ describe('define machine (ADR-215 state-machines depth, spelling A)', () => {
 end machine
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const idle = result.ir.machines[0].states.find((s) => s.name === 'idle')!;
     expect(idle.transitions[0].trigger).toMatchObject({ kind: 'action', action: 'waiting', target: null });
   });
@@ -90,7 +92,7 @@ end machine
 end machine
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const transition = result.ir.machines[0].states[0].transitions[0];
     expect(transition.trigger).toMatchObject({ kind: 'event', event: 'gate-opened' });
     expect(transition.condition).not.toBeNull();

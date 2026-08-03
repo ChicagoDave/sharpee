@@ -1,7 +1,9 @@
-story "Zoo Timeline Fixture" by "Sharpee Platform"
+story
+  title: Zoo Timeline Fixture
+  authors: Sharpee Platform
   id: zoo-timeline
-  version: 0.0.1
-  blurb: design.md 3.3 + ownership package - story states, sequences, anchors, once clauses.
+  story-version: 0.0.1
+  description: design.md 3.3 + ownership package - story states, sequences, anchors, once clauses.
   states: open, after-hours
 
 create the Aviary

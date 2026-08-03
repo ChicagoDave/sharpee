@@ -22,9 +22,9 @@ const byCode = (src: string, resolver?: Resolver) =>
 /** Minimal valid main story with `importLine` fixed at line 5. */
 const mainWith = (importLine: string) =>
   [
-    'story "X" by "Y"', //   1
+    'story', //              1
     '  id: x', //            2
-    '  version: 0.0.1', //   3
+    '  title: X', //         3
     '', //                   4
     importLine, //          5
     '', //                   6
@@ -38,9 +38,9 @@ const mainWith = (importLine: string) =>
 describe('ADR-251 Acceptance — worked example', () => {
   it('splices a multi-declaration fragment and resolves a cross-file reference (D4)', () => {
     const main = [
-      'story "Harbor" by "T"',
+      'story',
       '  id: harbor',
-      '  version: 0.0.1',
+      '  title: Harbor',
       '',
       'create the Lighthouse',
       '  a room',
@@ -90,7 +90,7 @@ describe('ADR-251 Acceptance — D6 rejection cases with span attribution', () =
   });
 
   it('fragment story header → analysis.import-fragment-story at the fragment span', () => {
-    const frag = 'story "Nope" by "Z"\n  id: nope\n';
+    const frag = 'story\n  title: Nope\n  authors: Z\n  id: nope\n';
     const d = byCode(mainWith('import "frag"'), (n) => (n === 'frag.chord' ? frag : null))['analysis.import-fragment-story'];
     expect(d).toBeDefined();
     expect(d.message).toContain('[frag.chord]');

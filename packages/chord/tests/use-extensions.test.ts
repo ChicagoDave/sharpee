@@ -16,9 +16,11 @@ const FIXTURE = readFileSync(join(__dirname, 'fixtures', 'use-combat.story'), 'u
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (header: string, body: string) => `story "Arena" by "T"
+const story = (header: string, body: string) => `story
+  title: Arena
+  authors: T
   id: arena
-  version: 0.0.1
+  story-version: 0.0.1
 ${header}
 create the Arena
   a room
@@ -38,7 +40,7 @@ describe('`use <extension>` (ADR-215)', () => {
 
   it('compiles the use-combat fixture clean, uses on the IR, hasHatches false (AC-3 pure IR)', () => {
     const result = compile(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.uses).toEqual(['combat']);
     expect(result.ir.hasHatches).toBe(false);
     const troll = result.ir.entities.find((e) => e.id === 'troll')!;
@@ -56,9 +58,11 @@ describe('`use <extension>` (ADR-215)', () => {
   });
 
   it('`use` at the top level → parse.use-top-level with a header fix-it', () => {
-    const result = compile(`story "Arena" by "T"
+    const result = compile(`story
+  title: Arena
+  authors: T
   id: arena
-  version: 0.0.1
+  story-version: 0.0.1
 
 use combat
 
@@ -142,7 +146,7 @@ describe('CORE npc vocabulary (ADR-215 Q4)', () => {
 
   it('behavior adjectives compile with NO use line, route list resolved on the IR', () => {
     const result = compile(story('', NPC_BODY));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const keeper = result.ir.entities.find((e) => e.id === 'keeper')!;
     const patrol = keeper.traits.find((t) => t.name === 'patrol')!;
     expect(patrol.config).toMatchObject([{ key: 'route', valueKind: 'list', values: ['arena'] }]);
@@ -190,7 +194,7 @@ describe('player-block composition gates (Gap-2 ruling, 2026-07-18)', () => {
       ),
     ).toContain('analysis.player-kind');
     const ok = compile(story('', '').replace('create the player', 'create the player\n  a person'));
-    expect(ok.diagnostics).toEqual([]);
+    expect(ok.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 
   it('an NPC behavior adjective on the player → analysis.player-behavior', () => {

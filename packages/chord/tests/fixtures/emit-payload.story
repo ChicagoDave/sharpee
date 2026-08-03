@@ -1,6 +1,8 @@
-story "Chimes" by "Test"
+story
+  title: Chimes
+  authors: Test
   id: emit-payload
-  version: 0.0.1
+  story-version: 0.0.1
 
   on every turn
     emit media-sound-play with src "chime.ogg" and channel "sfx"

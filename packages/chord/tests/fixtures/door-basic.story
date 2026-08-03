@@ -1,6 +1,8 @@
-story "Door Basic" by "Test"
+story
+  title: Door Basic
+  authors: Test
   id: door-basic
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Kitchen
   a room

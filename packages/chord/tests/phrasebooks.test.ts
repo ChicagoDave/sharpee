@@ -13,12 +13,14 @@ import type { IRPhrasebook } from '../src';
 const errorCodes = (source: string, options?: Parameters<typeof compile>[1]) =>
   compile(source, options).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 const warningCodes = (source: string) =>
-  compile(source).diagnostics.filter((d) => d.severity === 'warning').map((d) => d.code);
+  compile(source).diagnostics.filter((d) => d.severity === 'warning' && d.code !== 'analysis.missing-ifid').map((d) => d.code);
 
 /** Minimal valid story; `header` splices into the story header body, `mid` between the creates. */
-const story = (mid: string, header = '') => `story "T" by "A"
+const story = (mid: string, header = '') => `story
+  title: T
+  authors: A
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
   states: evening, midnight
 ${header}
 create the Cave
@@ -250,7 +252,7 @@ describe('import "<file>" (ADR-251)', () => {
   });
 
   it('a fragment with a story header raises analysis.import-fragment-story', () => {
-    const bad = 'story "Nope" by "X"\n  id: nope\n';
+    const bad = 'story\n  title: Nope\n  authors: X\n  id: nope\n';
     expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-story');
   });
 

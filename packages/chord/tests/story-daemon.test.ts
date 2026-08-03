@@ -13,9 +13,11 @@ import { compile } from '../src';
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (headerBody: string) => `story "Clockwork" by "T"
+const story = (headerBody: string) => `story
+  title: Clockwork
+  authors: T
   id: clockwork
-  version: 0.0.1
+  story-version: 0.0.1
 ${headerBody}
 create the Hall
   a room
@@ -41,7 +43,7 @@ describe('story-owned `on every turn` (ADR-236 D7, ratchet R4)', () => {
   end on
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.story.onClauses).toHaveLength(1);
     const clause = result.ir.story.onClauses[0];
     expect(clause.binding).toBe('every-turn');
@@ -59,7 +61,7 @@ describe('story-owned `on every turn` (ADR-236 D7, ratchet R4)', () => {
   end on
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const clause = result.ir.story.onClauses[0];
     expect(clause.once).toBe(true);
     expect(clause.condition).toEqual({ kind: 'story-state', state: 'stormy' });

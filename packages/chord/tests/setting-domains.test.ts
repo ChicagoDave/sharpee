@@ -11,7 +11,9 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const story = (body: string, header = '') => `story "Domains" by "T"${header}
+const story = (body: string, header = '') => `story
+  title: Domains
+  authors: T${header}
 
 create the Vault
   a room

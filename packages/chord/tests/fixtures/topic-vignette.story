@@ -1,6 +1,8 @@
-story "The Gamekeeper" by "Test"
+story
+  title: The Gamekeeper
+  authors: Test
   id: gamekeeper
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Gate
   a room

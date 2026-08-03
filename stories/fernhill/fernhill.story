@@ -2,10 +2,12 @@
 ## File-header comment (ADR-249): `##` lines are legal between
 ## top-level constructs and contribute nothing to the compile.
 
-story "The Folly at Fernhill" by "The Sharpee Project"
+story
+  title: The Folly at Fernhill
+  authors: The Sharpee Project
   id: fernhill
-  version: 0.3.0
-  blurb: One cold winter night to find the deed that keeps Fernhill in the family.
+  story-version: 0.3.0
+  description: One cold winter night to find the deed that keeps Fernhill in the family.
   states: evening, midnight
   use state-machines
   use scoring

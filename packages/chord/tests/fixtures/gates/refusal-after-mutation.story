@@ -1,6 +1,8 @@
-story "Gate 5" by "Nobody"
+story
+  title: Gate 5
+  authors: Nobody
   id: gate-5
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the box
   states: shut, open

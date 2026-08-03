@@ -15,9 +15,11 @@ const FIXTURE = readFileSync(join(__dirname, 'fixtures', 'region-nesting.story')
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (body: string) => `story "Regions" by "T"
+const story = (body: string) => `story
+  title: Regions
+  authors: T
   id: regions
-  version: 0.0.1
+  story-version: 0.0.1
 
 ${body}
 create the player
@@ -32,7 +34,7 @@ describe('region kind noun (ADR-236 D1, ratchet R1)', () => {
 
   it('parses `a region` as a kind composition with aka and description intact', () => {
     const result = parse(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const underground = result.ast.declarations.find(
       (d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'Underground',
     )!;
@@ -45,7 +47,7 @@ describe('region kind noun (ADR-236 D1, ratchet R1)', () => {
 describe('containing membership + nesting (ADR-236 D2/D3, ratchet R2)', () => {
   it('lowers resolved member ids onto IREntity.containing (AC-1 IR half)', () => {
     const result = compile(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ok).toBe(true);
     const underground = result.ir.entities.find((e) => e.id === 'underground')!;
     expect(underground.kinds.map((k) => k.name)).toEqual(['region']);
@@ -69,7 +71,7 @@ create the House
 
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const house = result.ir.entities.find((e) => e.id === 'house')!;
     expect(house.containing.map((m) => m.id)).toEqual(['attic', 'cellar']);
   });
@@ -88,7 +90,7 @@ create the House
 
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const house = result.ir.entities.find((e) => e.id === 'house')!;
     expect(house.containing.map((m) => m.id)).toEqual(['attic', 'cellar']);
   });

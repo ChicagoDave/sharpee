@@ -1,6 +1,8 @@
-story "Arena" by "Test"
+story
+  title: Arena
+  authors: Test
   id: use-combat
-  version: 0.0.1
+  story-version: 0.0.1
   use combat
 
 create the Arena

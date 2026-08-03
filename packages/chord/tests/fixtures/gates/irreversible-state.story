@@ -1,6 +1,8 @@
-story "Gate: irreversible state" by "Nobody"
+story
+  title: Gate: irreversible state
+  authors: Nobody
   id: gate-irreversible-state
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the vase
   scenery

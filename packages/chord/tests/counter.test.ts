@@ -6,9 +6,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const story = (body: string) => `story "Survive" by "T"
+const story = (body: string) => `story
+  title: Survive
+  authors: T
   id: survive
-  version: 0.0.1
+  story-version: 0.0.1
 
 ${body}
 
@@ -61,9 +63,11 @@ describe('define counter — story-global (ADR-264 D1)', () => {
 });
 
 const withClause = (clause: string, decls = 'define counter madness between 0 and 100') =>
-  `story "S" by "T"
+  `story
+  title: S
+  authors: T
   id: s
-  version: 0.0.1
+  story-version: 0.0.1
 ${clause}
 
 ${decls}

@@ -9,9 +9,11 @@ import { compile } from '../src';
 import type { IRDataChannelDef } from '../src/ir';
 
 /** A story whose case clock emits `estate-clock` with an `hour` field, plus `extra`. */
-const story = (channelBody: string) => `story "T" by "T"
+const story = (channelBody: string) => `story
+  title: T
+  authors: T
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room

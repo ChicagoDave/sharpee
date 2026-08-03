@@ -8,9 +8,11 @@ import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 import { STDLIB_CHAIN_NAMES } from '../src/catalog';
 
-const story = (tail: string) => `story "T" by "T"
+const story = (tail: string) => `story
+  title: T
+  authors: T
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room

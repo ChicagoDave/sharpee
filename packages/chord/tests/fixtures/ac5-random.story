@@ -1,7 +1,9 @@
-story "Determinism Fixture" by "Sharpee Platform"
+story
+  title: Determinism Fixture
+  authors: Sharpee Platform
   id: ac5-random
-  version: 1.0.0
-  blurb: AC-5 gate fixture - both random forms, no other nondeterminism.
+  story-version: 1.0.0
+  description: AC-5 gate fixture - both random forms, no other nondeterminism.
 
 create the East Room
   a room

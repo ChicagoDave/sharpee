@@ -18,7 +18,7 @@ function fixture(name: string): string {
 
 const findCreate = (source: string, name: string): CreateDecl => {
   const result = parse(source);
-  expect(result.diagnostics).toEqual([]);
+  expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   const decl = result.ast.declarations.find(
     (d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ').toLowerCase().includes(name),
   );
@@ -31,7 +31,7 @@ describe('death.story fixture (ADR-227 constructs)', () => {
 
   it('parses with zero diagnostics', () => {
     const result = parse(source);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ok).toBe(true);
   });
 
@@ -71,9 +71,11 @@ describe('death.story fixture (ADR-227 constructs)', () => {
 });
 
 describe('kill-statement grammar', () => {
-  const wrap = (stmt: string) => `story "T" by "T"
+  const wrap = (stmt: string) => `story
+  title: T
+  authors: T
   id: t
-  version: 1.0.0
+  story-version: 1.0.0
 
 create the Crypt
   a room
@@ -89,10 +91,10 @@ define phrases en-US
 
   it('parses the bare form and the when-suffixed form', () => {
     const bare = parse(wrap('kill the player curse'));
-    expect(bare.diagnostics).toEqual([]);
+    expect(bare.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
 
     const gated = parse(wrap('kill the player curse when the player has the Crypt'));
-    expect(gated.diagnostics).toEqual([]);
+    expect(gated.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const crypt = gated.ast.declarations.find((d): d is CreateDecl => d.kind === 'create')!;
     const kill = crypt.onClauses[0].body.find((s): s is KillStmt => s.kind === 'kill')!;
     expect(kill.phraseKey).toBe('curse');
@@ -111,9 +113,11 @@ define phrases en-US
 });
 
 describe('deadly-exit and deadly-room grammar errors', () => {
-  const room = (lines: string) => `story "T" by "T"
+  const room = (lines: string) => `story
+  title: T
+  authors: T
   id: t
-  version: 1.0.0
+  story-version: 1.0.0
 
 create the Ledge
   a room
@@ -146,7 +150,7 @@ define phrases en-US
 
   it('parses `is deadly while <cond>:` (condition carried on the AST)', () => {
     const result = parse(room('south is deadly while the player has the Ledge: doom'));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const ledge = result.ast.declarations.find((d): d is CreateDecl => d.kind === 'create')!;
     expect(ledge.deadlyExits[0].condition).not.toBeNull();
   });

@@ -1,6 +1,8 @@
-story "Broken After" by "Nobody"
+story
+  title: Broken After
+  authors: Nobody
   id: broken-after
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the East Room
   a room

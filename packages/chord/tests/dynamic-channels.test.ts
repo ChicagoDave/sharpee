@@ -11,9 +11,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile, IRStatement } from '../src';
 
-const story = (body: string, defines: string) => `story "Estate" by "T"
+const story = (body: string, defines: string) => `story
+  title: Estate
+  authors: T
   id: estate
-  version: 0.0.1
+  story-version: 0.0.1
 
   on every turn
 ${body}  end on
@@ -30,7 +32,7 @@ const IMAGE = 'define image map from "img/map.png"\n';
 
 const emits = (source: string) => {
   const result = compile(source);
-  expect(result.diagnostics).toEqual([]);
+  expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   return {
     ir: result.ir,
     body: result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[],
@@ -83,7 +85,7 @@ describe('ambient channel words (ADR-241 D3)', () => {
 
   it('an undeclared bed on the stop form gates identically', () => {
     const result = compile(story('    stop ambient in wind\n', SOUND));
-    expect(result.diagnostics.map((d) => d.code)).toEqual(['analysis.unknown-channel']);
+    expect(result.diagnostics.filter((d) => d.severity === 'error').map((d) => d.code)).toEqual(['analysis.unknown-channel']);
   });
 });
 
@@ -114,7 +116,7 @@ describe('image layer words (ADR-241 D3)', () => {
 describe('family channel declarations (ADR-241 D2)', () => {
   it('duplicate declarations in one family gate; the same word across families is legal', () => {
     const dup = compile(story('    play ambient rain in wind\n', `${SOUND}define ambient wind\ndefine ambient wind\n`));
-    expect(dup.diagnostics.map((d) => d.code)).toEqual(['analysis.duplicate-channel']);
+    expect(dup.diagnostics.filter((d) => d.severity === 'error').map((d) => d.code)).toEqual(['analysis.duplicate-channel']);
 
     const cross = compile(
       story(
@@ -122,7 +124,7 @@ describe('family channel declarations (ADR-241 D2)', () => {
         `${SOUND}${IMAGE}define ambient wind\ndefine layer wind\n`,
       ),
     );
-    expect(cross.diagnostics).toEqual([]);
+    expect(cross.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(cross.ir.channels).toEqual([
       { name: 'wind', family: 'ambient', span: expect.anything() },
       { name: 'wind', family: 'layer', span: expect.anything() },
@@ -140,7 +142,7 @@ end channel
 `,
       ),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.channels).toMatchObject([
       { name: 'wind', family: 'ambient' },
       { name: 'wind', family: 'data', mode: 'replace', fromEvent: 'estate-weather', returns: { kind: 'field', field: 'strength' } },
@@ -148,10 +150,10 @@ end channel
   });
 
   it('the one-liner parses strictly: missing name and trailing text are parse.channel-name', () => {
-    expect(compile(story('    play ambient rain\n', `${SOUND}define ambient\n`)).diagnostics.map((d) => d.code))
+    expect(compile(story('    play ambient rain\n', `${SOUND}define ambient\n`)).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code))
       .toContain('parse.channel-name');
     expect(
-      compile(story('    play ambient rain\n', `${SOUND}define layer floor plan\n`)).diagnostics.map((d) => d.code),
+      compile(story('    play ambient rain\n', `${SOUND}define layer floor plan\n`)).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code),
     ).toContain('parse.channel-name');
   });
 

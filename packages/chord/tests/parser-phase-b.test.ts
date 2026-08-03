@@ -228,33 +228,33 @@ describe('malformed Phase B fixtures — one mistake, one diagnostic', () => {
   it('sequence with a bad step header', () => {
     const result = parse(fixture('malformed/sequence-bad-step.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'parse.sequence-step' && e.span.line === 9)).toBe(true);
+    expect(errors.some((e) => e.code === 'parse.sequence-step' && e.span.line === 11)).toBe(true);
   });
 
   it('top-level every rule: removal diagnostic (ownership package)', () => {
     const result = parse(fixture('malformed/every-bad-header.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'parse.removed-every' && e.span.line === 5)).toBe(true);
+    expect(errors.some((e) => e.code === 'parse.removed-every' && e.span.line === 7)).toBe(true);
     expect(errors.some((e) => e.message.includes('define sequence'))).toBe(true);
   });
 
   it('action refusal missing its colon', () => {
     const result = parse(fixture('malformed/action-bad-refusal.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'parse.action-refusal' && e.span.line === 8)).toBe(true);
+    expect(errors.some((e) => e.code === 'parse.action-refusal' && e.span.line === 10)).toBe(true);
   });
 });
 
 describe('trait data-field trailing tokens (zoo-chain finding, 2026-07-12)', () => {
   it('an uncomma\'d `starts` tail is a parse error, not a silently dropped initial', () => {
-    const src = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\ndefine trait shiny\n  data\n    shine: number starts 1\nend trait\n';
+    const src = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\ndefine trait shiny\n  data\n    shine: number starts 1\nend trait\n';
     const result = parse(src);
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors.some((d) => d.code === 'parse.trait-field-trailing')).toBe(true);
   });
 
   it('the comma form still parses with the initial captured', () => {
-    const src = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\ndefine trait shiny\n  data\n    shine: number, starts 1\nend trait\n';
+    const src = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\ndefine trait shiny\n  data\n    shine: number, starts 1\nend trait\n';
     const result = parse(src);
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const trait = result.ast.declarations.find((d) => d.kind === 'define-trait') as { data: Array<{ initial: string | null }> };

@@ -24,9 +24,11 @@ const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
 describe('plain mirror of a door exit (#6, analysis.door-plain-mirror)', () => {
-  const base = `story "Doors" by "T"
+  const base = `story
+  title: Doors
+  authors: T
   id: doors
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Kitchen
   a room
@@ -91,9 +93,11 @@ create the Hall
 
 describe('inline phrase prose in every body context (#14)', () => {
   it('accepts inline prose in a story-header `on every turn` clause body', () => {
-    const source = `story "Wind" by "T"
+    const source = `story
+  title: Wind
+  authors: T
   id: wind
-  version: 0.0.1
+  story-version: 0.0.1
   on every turn
     phrase wind-howls
       The wind howls through the gate.
@@ -113,9 +117,11 @@ create the player
   });
 
   it('accepts inline prose in `define machine` state bodies', () => {
-    const source = `story "Bridge" by "T"
+    const source = `story
+  title: Bridge
+  authors: T
   id: bridge
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, stormy
   use state-machines
 
@@ -160,9 +166,11 @@ end machine
 });
 
 describe('misordered refuse (#15c, parse.refuse-order)', () => {
-  const withAction = (refusalLine: string) => `story "Pets" by "T"
+  const withAction = (refusalLine: string) => `story
+  title: Pets
+  authors: T
   id: pets
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, raining
 
 create the Hall
@@ -209,9 +217,11 @@ end phrase
 });
 
 describe('conditional deadly exit (#15d, analysis.deadly-while-unsupported)', () => {
-  const withDeadly = (line: string) => `story "Cliff" by "T"
+  const withDeadly = (line: string) => `story
+  title: Cliff
+  authors: T
   id: cliff
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, stormy
 
 create the Ledge

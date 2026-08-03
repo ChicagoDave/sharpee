@@ -1,7 +1,9 @@
-story "Each Package Parse Fixture" by "Sharpee Platform"
+story
+  title: Each Package Parse Fixture
+  authors: Sharpee Platform
   id: each-package-parse
-  version: 0.0.1
-  blurb: E1 any / E2 no / E3 each + the match binder (ratchet 2026-07-12) in every approved host position.
+  story-version: 0.0.1
+  description: E1 any / E2 no / E3 each + the match binder (ratchet 2026-07-12) in every approved host position.
 
 define condition hungry-neighbor: it is hungry
 define condition stray-treasure: it is a treasure and it is not in the Trophy Barn

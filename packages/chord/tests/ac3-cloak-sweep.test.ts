@@ -22,7 +22,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(CLOAK.replace('north is blocked: cant-leave', 'north is blocked: cant-flee'));
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.missing-phrase');
-    expect(errors[0].span.line).toBe(13);
+    expect(errors[0].span.line).toBe(15);
   });
 
   it('unknown predicate value, with suggestion (named condition)', () => {
@@ -32,7 +32,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(CLOAK.replace("the player's location is dark", "the player's location is darkk"));
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.unknown-value');
-    expect(errors[0].span.line).toBe(6);
+    expect(errors[0].span.line).toBe(8);
     expect(errors[0].message).toContain('did you mean `dark`?');
   });
 
@@ -42,7 +42,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(CLOAK.replace('change the message to trampled', 'change the message to smashed'));
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.undeclared-state');
-    expect(errors[0].span.line).toBe(37);
+    expect(errors[0].span.line).toBe(39);
     expect(errors[0].message).toContain('smashed');
   });
 
@@ -55,7 +55,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     const errors = errorsOf(mutated);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.ambiguous-reference');
-    expect(errors[0].span.line).toBe(44);
+    expect(errors[0].span.line).toBe(46);
     expect(errors[0].message).toContain('velvet cloak');
     expect(errors[0].message).toContain('opera cloak');
   });
@@ -76,7 +76,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-misplaced');
     expect(errors[0].message).toContain('select');
-    expect(errors[0].span.line).toBe(76);
+    expect(errors[0].span.line).toBe(78);
   });
 
   it('unbound marker in a phrase', () => {
@@ -87,6 +87,6 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     expect(errors[0].code).toBe('analysis.unbound-marker');
     // 94: the define-verb → extend-action migration (ADR-270 D7) added two
     // lines above this site in the cloak-shaped source.
-    expect(errors[0].span.line).toBe(94);
+    expect(errors[0].span.line).toBe(96);
   });
 });

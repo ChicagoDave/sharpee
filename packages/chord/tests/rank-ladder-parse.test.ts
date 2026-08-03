@@ -10,9 +10,11 @@ import { describe, expect, it } from 'vitest';
 import { parse } from '../src';
 import type { StoryHeader } from '../src/ast';
 
-const story = (headerBody: string) => `story "The Folly" by "T"
+const story = (headerBody: string) => `story
+  title: The Folly
+  authors: T
   id: folly
-  version: 0.0.1
+  story-version: 0.0.1
 ${headerBody}
 create the Lawn
   a room
@@ -66,11 +68,11 @@ describe('`use scoring` rank ladder (ADR-261 D2)', () => {
 
   it('the body does not swallow the following header field', () => {
     const h = header(
-      'story "The Folly" by "T"\n' +
+      'story\n  title: The Folly\n  authors: T\n' +
       '  use scoring\n' +
       '    rank "Curious Visitor" at 0\n' +
       '  id: folly\n' +
-      '  version: 0.0.1\n' +
+      '  story-version: 0.0.1\n' +
       '\n' +
       'create the Lawn\n' +
       '  a room\n' +
@@ -85,7 +87,7 @@ describe('`use scoring` rank ladder (ADR-261 D2)', () => {
 
     expect(h.ranks).toHaveLength(1);
     expect(h.fields.id).toBe('folly');
-    expect(h.fields.version).toBe('0.0.1');
+    expect(h.fields.storyVersion).toBe('0.0.1');
   });
 
   it('a ladder rides alongside other header content', () => {
@@ -131,7 +133,7 @@ describe('rung placement and shape errors', () => {
 
   it('a rung at the top level → parse.rank-outside-scoring with a header fix-it', () => {
     const codes = errorCodes(
-      'story "The Folly" by "T"\n' +
+      'story\n  title: The Folly\n  authors: T\n' +
       '  id: folly\n' +
       '\n' +
       'rank "Stray" at 40\n'

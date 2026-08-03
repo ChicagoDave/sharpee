@@ -1,7 +1,9 @@
-story "Friendly Zoo" by "Sharpee Team"
+story
+  title: Friendly Zoo
+  authors: Sharpee Team
   id: friendly-zoo
-  version: 0.0.2
-  blurb: A small family zoo — a testing target for the v2 platform.
+  story-version: 0.0.2
+  description: A small family zoo — a testing target for the v2 platform.
   states: open, after-hours
   use scoring
 

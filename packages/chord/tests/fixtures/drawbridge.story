@@ -1,6 +1,8 @@
-story "Bridge" by "Test"
+story
+  title: Bridge
+  authors: Test
   id: drawbridge
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, stormy
   use state-machines
 

@@ -1,6 +1,8 @@
-story "Gate: boolean state" by "Nobody"
+story
+  title: Gate: boolean state
+  authors: Nobody
   id: gate-boolean-state
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the switch panel
   scenery

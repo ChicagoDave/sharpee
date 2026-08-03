@@ -31,9 +31,11 @@ const stripSpans = (value: unknown): unknown => {
 };
 
 /** Minimal valid story with `mid` spliced between the two create blocks. */
-const story = (mid: string) => `story "T" by "A"
+const story = (mid: string) => `story
+  title: T
+  authors: A
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Cave
   a room

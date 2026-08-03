@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 const WORLD = 'create the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n';
 
 const action = (lines: string) =>

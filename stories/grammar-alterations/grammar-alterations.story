@@ -2,9 +2,11 @@
 ## standard verb, adds a synonym to a standard action, and flips which of two
 ## competing rules wins, each observably changing what parses.
 
-story "Grammar Alterations" by "Sharpee"
+story
+  title: Grammar Alterations
+  authors: Sharpee
   id: grammar-alterations
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Study
   a room

@@ -1,6 +1,8 @@
-story "Bad Sequence" by "Nobody"
+story
+  title: Bad Sequence
+  authors: Nobody
   id: bad-seq
-  version: 0.0.1
+  story-version: 0.0.1
 
 define sequence countdown
   at turn 2

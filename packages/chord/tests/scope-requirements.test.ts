@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile, SCOPE_REQUIREMENT_PREDICATES } from '../src';
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 /** A minimal story whose one action carries the given constraint line. */
 const storyWith = (constraintLine: string) =>
@@ -33,7 +33,7 @@ describe('scope-constraint requirement words (ADR-271 D1)', () => {
     expect(err, errors.map((e) => `${e.code} ${e.message}`).join(' | ')).toBeDefined();
     expect(err!.message).toContain('purple');
     expect(err!.message).toContain('reachable, visible, held');
-    expect(err!.span.line).toBe(8); // the constraint line, not the action head
+    expect(err!.span.line).toBe(10); // the constraint line, not the action head
   });
 
   it('suggests the nearest supported word on a near-miss', () => {

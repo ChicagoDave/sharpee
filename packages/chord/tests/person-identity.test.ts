@@ -11,9 +11,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const story = (body: string) => `story "Estate" by "T"
+const story = (body: string) => `story
+  title: Estate
+  authors: T
   id: estate
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room
@@ -33,7 +35,7 @@ end pronouns
 
 const compiled = (body: string) => {
   const result = compile(story(body));
-  expect(result.diagnostics).toEqual([]);
+  expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   return result.ir;
 };
 

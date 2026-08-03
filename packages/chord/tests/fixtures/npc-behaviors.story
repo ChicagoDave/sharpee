@@ -1,6 +1,8 @@
-story "Zoo Watch" by "Test"
+story
+  title: Zoo Watch
+  authors: Test
   id: npc-behaviors
-  version: 0.0.1
+  story-version: 0.0.1
   use combat
 
 create the Gate

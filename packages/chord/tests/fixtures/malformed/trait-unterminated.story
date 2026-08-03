@@ -1,6 +1,8 @@
-story "Bad Trait" by "Nobody"
+story
+  title: Bad Trait
+  authors: Nobody
   id: bad-trait
-  version: 0.0.1
+  story-version: 0.0.1
 
 define trait sticky
   data

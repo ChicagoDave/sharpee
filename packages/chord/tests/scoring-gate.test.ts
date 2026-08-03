@@ -11,9 +11,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const story = (headerBody: string, body = '') => `story "The Folly" by "T"
+const story = (headerBody: string, body = '') => `story
+  title: The Folly
+  authors: T
   id: folly
-  version: 0.0.1
+  story-version: 0.0.1
 ${headerBody}
 create the Lawn
   a room
@@ -34,7 +36,7 @@ describe('the `use scoring` gate (ADR-261 D4)', () => {
     const found = errors(story('  score lamp worth 20\n'));
 
     expect(found.map((d) => d.code)).toEqual(['analysis.scoring-needs-use']);
-    expect(found[0].span.line).toBe(4);
+    expect(found[0].span.line).toBe(6);
   });
 
   it('a bare `award` → analysis.scoring-needs-use with its span', () => {
@@ -77,16 +79,16 @@ describe('the `use scoring` gate (ADR-261 D4)', () => {
       '\n  after entering it\n    award lamp\n  end after\n'
     ));
 
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 
   it('a story that declares no scoring at all compiles clean without the line (D3)', () => {
     // The Chord spelling of "this isn't that kind of game" is the ABSENCE of
     // a line — it costs the author nothing.
-    expect(compile(story('  blurb: A quiet garden.\n')).diagnostics).toEqual([]);
+    expect(compile(story('  description: A quiet garden.\n')).diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
 
   it('`use scoring` with no scores and no ladder is legal', () => {
-    expect(compile(story('  use scoring\n')).diagnostics).toEqual([]);
+    expect(compile(story('  use scoring\n')).diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 });

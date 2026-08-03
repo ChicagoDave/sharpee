@@ -1,6 +1,8 @@
-story "Topic Basic" by "T"
+story
+  title: Topic Basic
+  authors: T
   id: topic-basic
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Lodge
   a room

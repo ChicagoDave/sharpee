@@ -1,6 +1,8 @@
-story "Gate: negated requirement" by "Nobody"
+story
+  title: Gate: negated requirement
+  authors: Nobody
   id: gate-negated-requirement
-  version: 0.0.1
+  story-version: 0.0.1
 
 define trait tethered
   phrases en-US

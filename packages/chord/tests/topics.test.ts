@@ -13,9 +13,11 @@ const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
 /** A person (with states + aka), a room, a thing (with aka), phrase keys. */
-const story = (body: string) => `story "Topics" by "T"
+const story = (body: string) => `story
+  title: Topics
+  authors: T
   id: topics
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the player
 
@@ -60,7 +62,7 @@ end topics
 describe('`define topics` table block (ADR-239 D3 as amended / D4)', () => {
   it('lowers both tiers onto IREntity.topics — entity id, primary+aliases, one-line and body-form rows', () => {
     const result = compile(story(FULL_TABLE));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ok).toBe(true);
 
     const porter = result.ir.entities.find((e) => e.id === 'porter')!;
@@ -92,7 +94,7 @@ describe('`define topics` table block (ADR-239 D3 as amended / D4)', () => {
     They brought it here before my time, you know.
 end topics
 `));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const porter = result.ir.entities.find((e) => e.id === 'porter')!;
     expect(porter.topics[0].body).toMatchObject([{ kind: 'phrase', phraseKey: 'gate-story' }]);
     expect(result.ir.phrases.locales['en-US']['porter.gate-story'].variants[0].text)
@@ -200,7 +202,7 @@ end topics
   about "sword": phrase sword-reply
 end topics
 `));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const porter = result.ir.entities.find((e) => e.id === 'porter')!;
     expect(porter.topics[0].filter).toEqual({ kind: 'text', primary: 'sword', aliases: [] });
   });

@@ -3,9 +3,11 @@
 ## apostrophes, a lone quote (prose punctuation, design.md §3.3), phrase
 ## markers, comments, hatch declaration. Edit only alongside the golden file.
 
-story "Story Core" by "Lexer Golden"
+story
+  title: Story Core
+  authors: Lexer Golden
   id: lexer-golden-core
-  version: 2.0.0
+  story-version: 2.0.0
 
 create the Lighthouse
   a room

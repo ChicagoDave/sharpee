@@ -1,6 +1,8 @@
-story "Gate 4" by "Nobody"
+story
+  title: Gate 4
+  authors: Nobody
   id: gate-4
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Closet
   a room

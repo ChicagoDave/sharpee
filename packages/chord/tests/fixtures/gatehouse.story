@@ -1,6 +1,8 @@
-story "The Gatehouse" by "Test"
+story
+  title: The Gatehouse
+  authors: Test
   id: gatehouse
-  version: 0.0.1
+  story-version: 0.0.1
   use combat
   use state-machines
 

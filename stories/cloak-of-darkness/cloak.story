@@ -1,7 +1,9 @@
-story "Cloak of Darkness" by "Roger Firth (Sharpee implementation)"
+story
+  title: Cloak of Darkness
+  authors: Roger Firth (Sharpee implementation)
   id: cloak-of-darkness
-  version: 1.0.0
-  blurb: A basic IF demonstration - hang up your cloak!
+  story-version: 1.0.0
+  description: A basic IF demonstration - hang up your cloak!
 
 define condition in-darkness: the player's location is dark
 

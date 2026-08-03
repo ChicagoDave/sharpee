@@ -520,7 +520,7 @@
     {
       "lineNo": 5,
       "indent": 0,
-      "raw": "story \"Alterations And Counters\" by \"Lexer Golden\"",
+      "raw": "story",
       "tokens": [
         {
           "kind": "word",
@@ -531,36 +531,6 @@
             "endLine": 5,
             "endColumn": 6
           }
-        },
-        {
-          "kind": "string",
-          "text": "Alterations And Counters",
-          "span": {
-            "line": 5,
-            "column": 7,
-            "endLine": 5,
-            "endColumn": 33
-          }
-        },
-        {
-          "kind": "word",
-          "text": "by",
-          "span": {
-            "line": 5,
-            "column": 34,
-            "endLine": 5,
-            "endColumn": 36
-          }
-        },
-        {
-          "kind": "string",
-          "text": "Lexer Golden",
-          "span": {
-            "line": 5,
-            "column": 37,
-            "endLine": 5,
-            "endColumn": 51
-          }
         }
       ],
       "afterBlank": true,
@@ -569,16 +539,16 @@
     {
       "lineNo": 6,
       "indent": 2,
-      "raw": "  id: lexer-golden-alterations",
+      "raw": "  title: Alterations And Counters",
       "tokens": [
         {
           "kind": "word",
-          "text": "id",
+          "text": "title",
           "span": {
             "line": 6,
             "column": 3,
             "endLine": 6,
-            "endColumn": 5
+            "endColumn": 8
           }
         },
         {
@@ -586,19 +556,39 @@
           "text": ":",
           "span": {
             "line": 6,
-            "column": 5,
+            "column": 8,
             "endLine": 6,
-            "endColumn": 6
+            "endColumn": 9
           }
         },
         {
           "kind": "word",
-          "text": "lexer-golden-alterations",
+          "text": "Alterations",
           "span": {
             "line": 6,
-            "column": 7,
+            "column": 10,
             "endLine": 6,
-            "endColumn": 31
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "And",
+          "span": {
+            "line": 6,
+            "column": 22,
+            "endLine": 6,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Counters",
+          "span": {
+            "line": 6,
+            "column": 26,
+            "endLine": 6,
+            "endColumn": 34
           }
         }
       ],
@@ -608,11 +598,11 @@
     {
       "lineNo": 7,
       "indent": 2,
-      "raw": "  version: 1.0.0",
+      "raw": "  authors: Lexer Golden",
       "tokens": [
         {
           "kind": "word",
-          "text": "version",
+          "text": "authors",
           "span": {
             "line": 7,
             "column": 3,
@@ -631,13 +621,23 @@
           }
         },
         {
-          "kind": "number",
-          "text": "1.0.0",
+          "kind": "word",
+          "text": "Lexer",
           "span": {
             "line": 7,
             "column": 12,
             "endLine": 7,
             "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Golden",
+          "span": {
+            "line": 7,
+            "column": 18,
+            "endLine": 7,
+            "endColumn": 24
           }
         }
       ],
@@ -647,26 +647,75 @@
     {
       "lineNo": 8,
       "indent": 2,
-      "raw": "  use combat",
+      "raw": "  id: lexer-golden-alterations",
       "tokens": [
         {
           "kind": "word",
-          "text": "use",
+          "text": "id",
           "span": {
             "line": 8,
             "column": 3,
+            "endLine": 8,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 8,
+            "column": 5,
             "endLine": 8,
             "endColumn": 6
           }
         },
         {
           "kind": "word",
-          "text": "combat",
+          "text": "lexer-golden-alterations",
           "span": {
             "line": 8,
             "column": 7,
             "endLine": 8,
-            "endColumn": 13
+            "endColumn": 31
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 9,
+      "indent": 2,
+      "raw": "  story-version: 1.0.0",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "story-version",
+          "span": {
+            "line": 9,
+            "column": 3,
+            "endLine": 9,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 9,
+            "column": 16,
+            "endLine": 9,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "number",
+          "text": "1.0.0",
+          "span": {
+            "line": 9,
+            "column": 18,
+            "endLine": 9,
+            "endColumn": 23
           }
         }
       ],
@@ -676,85 +725,26 @@
     {
       "lineNo": 10,
       "indent": 2,
-      "raw": "  on every turn",
+      "raw": "  use combat",
       "tokens": [
         {
           "kind": "word",
-          "text": "on",
+          "text": "use",
           "span": {
             "line": 10,
             "column": 3,
             "endLine": 10,
-            "endColumn": 5
+            "endColumn": 6
           }
         },
         {
           "kind": "word",
-          "text": "every",
+          "text": "combat",
           "span": {
             "line": 10,
-            "column": 6,
+            "column": 7,
             "endLine": 10,
-            "endColumn": 11
-          }
-        },
-        {
-          "kind": "word",
-          "text": "turn",
-          "span": {
-            "line": 10,
-            "column": 12,
-            "endLine": 10,
-            "endColumn": 16
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 11,
-      "indent": 4,
-      "raw": "    raise dread by 20",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "raise",
-          "span": {
-            "line": 11,
-            "column": 5,
-            "endLine": 11,
-            "endColumn": 10
-          }
-        },
-        {
-          "kind": "word",
-          "text": "dread",
-          "span": {
-            "line": 11,
-            "column": 11,
-            "endLine": 11,
-            "endColumn": 16
-          }
-        },
-        {
-          "kind": "word",
-          "text": "by",
-          "span": {
-            "line": 11,
-            "column": 17,
-            "endLine": 11,
-            "endColumn": 19
-          }
-        },
-        {
-          "kind": "number",
-          "text": "20",
-          "span": {
-            "line": 11,
-            "column": 20,
-            "endLine": 11,
-            "endColumn": 22
+            "endColumn": 13
           }
         }
       ],
@@ -763,77 +753,86 @@
     },
     {
       "lineNo": 12,
-      "indent": 4,
-      "raw": "    kill the player when dread >= 100",
+      "indent": 2,
+      "raw": "  on every turn",
       "tokens": [
         {
           "kind": "word",
-          "text": "kill",
+          "text": "on",
           "span": {
             "line": 12,
+            "column": 3,
+            "endLine": 12,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "every",
+          "span": {
+            "line": 12,
+            "column": 6,
+            "endLine": 12,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "turn",
+          "span": {
+            "line": 12,
+            "column": 12,
+            "endLine": 12,
+            "endColumn": 16
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 13,
+      "indent": 4,
+      "raw": "    raise dread by 20",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "raise",
+          "span": {
+            "line": 13,
             "column": 5,
-            "endLine": 12,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 12,
-            "column": 10,
-            "endLine": 12,
-            "endColumn": 13
-          }
-        },
-        {
-          "kind": "word",
-          "text": "player",
-          "span": {
-            "line": 12,
-            "column": 14,
-            "endLine": 12,
-            "endColumn": 20
-          }
-        },
-        {
-          "kind": "word",
-          "text": "when",
-          "span": {
-            "line": 12,
-            "column": 21,
-            "endLine": 12,
-            "endColumn": 25
+            "endLine": 13,
+            "endColumn": 10
           }
         },
         {
           "kind": "word",
           "text": "dread",
           "span": {
-            "line": 12,
-            "column": 26,
-            "endLine": 12,
-            "endColumn": 31
+            "line": 13,
+            "column": 11,
+            "endLine": 13,
+            "endColumn": 16
           }
         },
         {
-          "kind": "compare",
-          "text": ">=",
+          "kind": "word",
+          "text": "by",
           "span": {
-            "line": 12,
-            "column": 32,
-            "endLine": 12,
-            "endColumn": 34
+            "line": 13,
+            "column": 17,
+            "endLine": 13,
+            "endColumn": 19
           }
         },
         {
           "kind": "number",
-          "text": "100",
+          "text": "20",
           "span": {
-            "line": 12,
-            "column": 35,
-            "endLine": 12,
-            "endColumn": 38
+            "line": 13,
+            "column": 20,
+            "endLine": 13,
+            "endColumn": 22
           }
         }
       ],
@@ -841,28 +840,78 @@
       "comment": false
     },
     {
-      "lineNo": 13,
-      "indent": 2,
-      "raw": "  end on",
+      "lineNo": 14,
+      "indent": 4,
+      "raw": "    kill the player when dread >= 100",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "kill",
           "span": {
-            "line": 13,
-            "column": 3,
-            "endLine": 13,
-            "endColumn": 6
+            "line": 14,
+            "column": 5,
+            "endLine": 14,
+            "endColumn": 9
           }
         },
         {
           "kind": "word",
-          "text": "on",
+          "text": "the",
           "span": {
-            "line": 13,
-            "column": 7,
-            "endLine": 13,
-            "endColumn": 9
+            "line": 14,
+            "column": 10,
+            "endLine": 14,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "player",
+          "span": {
+            "line": 14,
+            "column": 14,
+            "endLine": 14,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "when",
+          "span": {
+            "line": 14,
+            "column": 21,
+            "endLine": 14,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "dread",
+          "span": {
+            "line": 14,
+            "column": 26,
+            "endLine": 14,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "compare",
+          "text": ">=",
+          "span": {
+            "line": 14,
+            "column": 32,
+            "endLine": 14,
+            "endColumn": 34
+          }
+        },
+        {
+          "kind": "number",
+          "text": "100",
+          "span": {
+            "line": 14,
+            "column": 35,
+            "endLine": 14,
+            "endColumn": 38
           }
         }
       ],
@@ -871,164 +920,26 @@
     },
     {
       "lineNo": 15,
-      "indent": 0,
-      "raw": "define counter dread starts 0 between 0 and 100",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "define",
-          "span": {
-            "line": 15,
-            "column": 1,
-            "endLine": 15,
-            "endColumn": 7
-          }
-        },
-        {
-          "kind": "word",
-          "text": "counter",
-          "span": {
-            "line": 15,
-            "column": 8,
-            "endLine": 15,
-            "endColumn": 15
-          }
-        },
-        {
-          "kind": "word",
-          "text": "dread",
-          "span": {
-            "line": 15,
-            "column": 16,
-            "endLine": 15,
-            "endColumn": 21
-          }
-        },
-        {
-          "kind": "word",
-          "text": "starts",
-          "span": {
-            "line": 15,
-            "column": 22,
-            "endLine": 15,
-            "endColumn": 28
-          }
-        },
-        {
-          "kind": "number",
-          "text": "0",
-          "span": {
-            "line": 15,
-            "column": 29,
-            "endLine": 15,
-            "endColumn": 30
-          }
-        },
-        {
-          "kind": "word",
-          "text": "between",
-          "span": {
-            "line": 15,
-            "column": 31,
-            "endLine": 15,
-            "endColumn": 38
-          }
-        },
-        {
-          "kind": "number",
-          "text": "0",
-          "span": {
-            "line": 15,
-            "column": 39,
-            "endLine": 15,
-            "endColumn": 40
-          }
-        },
-        {
-          "kind": "word",
-          "text": "and",
-          "span": {
-            "line": 15,
-            "column": 41,
-            "endLine": 15,
-            "endColumn": 44
-          }
-        },
-        {
-          "kind": "number",
-          "text": "100",
-          "span": {
-            "line": 15,
-            "column": 45,
-            "endLine": 15,
-            "endColumn": 48
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 17,
-      "indent": 0,
-      "raw": "create the Vault",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "create",
-          "span": {
-            "line": 17,
-            "column": 1,
-            "endLine": 17,
-            "endColumn": 7
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 17,
-            "column": 8,
-            "endLine": 17,
-            "endColumn": 11
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Vault",
-          "span": {
-            "line": 17,
-            "column": 12,
-            "endLine": 17,
-            "endColumn": 17
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 18,
       "indent": 2,
-      "raw": "  a room",
+      "raw": "  end on",
       "tokens": [
         {
           "kind": "word",
-          "text": "a",
+          "text": "end",
           "span": {
-            "line": 18,
+            "line": 15,
             "column": 3,
-            "endLine": 18,
-            "endColumn": 4
+            "endLine": 15,
+            "endColumn": 6
           }
         },
         {
           "kind": "word",
-          "text": "room",
+          "text": "on",
           "span": {
-            "line": 18,
-            "column": 5,
-            "endLine": 18,
+            "line": 15,
+            "column": 7,
+            "endLine": 15,
             "endColumn": 9
           }
         }
@@ -1037,13 +948,151 @@
       "comment": false
     },
     {
-      "lineNo": 20,
-      "indent": 2,
-      "raw": "  A vault. The counter reads: nothing yet.",
+      "lineNo": 17,
+      "indent": 0,
+      "raw": "define counter dread starts 0 between 0 and 100",
       "tokens": [
         {
           "kind": "word",
-          "text": "A",
+          "text": "define",
+          "span": {
+            "line": 17,
+            "column": 1,
+            "endLine": 17,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "counter",
+          "span": {
+            "line": 17,
+            "column": 8,
+            "endLine": 17,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "dread",
+          "span": {
+            "line": 17,
+            "column": 16,
+            "endLine": 17,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "starts",
+          "span": {
+            "line": 17,
+            "column": 22,
+            "endLine": 17,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "number",
+          "text": "0",
+          "span": {
+            "line": 17,
+            "column": 29,
+            "endLine": 17,
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "word",
+          "text": "between",
+          "span": {
+            "line": 17,
+            "column": 31,
+            "endLine": 17,
+            "endColumn": 38
+          }
+        },
+        {
+          "kind": "number",
+          "text": "0",
+          "span": {
+            "line": 17,
+            "column": 39,
+            "endLine": 17,
+            "endColumn": 40
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 17,
+            "column": 41,
+            "endLine": 17,
+            "endColumn": 44
+          }
+        },
+        {
+          "kind": "number",
+          "text": "100",
+          "span": {
+            "line": 17,
+            "column": 45,
+            "endLine": 17,
+            "endColumn": 48
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 19,
+      "indent": 0,
+      "raw": "create the Vault",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "create",
+          "span": {
+            "line": 19,
+            "column": 1,
+            "endLine": 19,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 19,
+            "column": 8,
+            "endLine": 19,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Vault",
+          "span": {
+            "line": 19,
+            "column": 12,
+            "endLine": 19,
+            "endColumn": 17
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 20,
+      "indent": 2,
+      "raw": "  a room",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
           "span": {
             "line": 20,
             "column": 3,
@@ -1053,11 +1102,40 @@
         },
         {
           "kind": "word",
-          "text": "vault",
+          "text": "room",
           "span": {
             "line": 20,
             "column": 5,
             "endLine": 20,
+            "endColumn": 9
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 22,
+      "indent": 2,
+      "raw": "  A vault. The counter reads: nothing yet.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 22,
+            "column": 3,
+            "endLine": 22,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "vault",
+          "span": {
+            "line": 22,
+            "column": 5,
+            "endLine": 22,
             "endColumn": 10
           }
         },
@@ -1065,9 +1143,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 10,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 11
           }
         },
@@ -1075,9 +1153,9 @@
           "kind": "word",
           "text": "The",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 12,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 15
           }
         },
@@ -1085,9 +1163,9 @@
           "kind": "word",
           "text": "counter",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 16,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 23
           }
         },
@@ -1095,9 +1173,9 @@
           "kind": "word",
           "text": "reads",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 24,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 29
           }
         },
@@ -1105,9 +1183,9 @@
           "kind": "colon",
           "text": ":",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 29,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 30
           }
         },
@@ -1115,9 +1193,9 @@
           "kind": "word",
           "text": "nothing",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 31,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 38
           }
         },
@@ -1125,9 +1203,9 @@
           "kind": "word",
           "text": "yet",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 39,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 42
           }
         },
@@ -1135,9 +1213,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 42,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 43
           }
         }
@@ -1146,7 +1224,7 @@
       "comment": false
     },
     {
-      "lineNo": 22,
+      "lineNo": 24,
       "indent": 2,
       "raw": "  on entering it",
       "tokens": [
@@ -1154,9 +1232,9 @@
           "kind": "word",
           "text": "on",
           "span": {
-            "line": 22,
+            "line": 24,
             "column": 3,
-            "endLine": 22,
+            "endLine": 24,
             "endColumn": 5
           }
         },
@@ -1164,9 +1242,9 @@
           "kind": "word",
           "text": "entering",
           "span": {
-            "line": 22,
+            "line": 24,
             "column": 6,
-            "endLine": 22,
+            "endLine": 24,
             "endColumn": 14
           }
         },
@@ -1174,9 +1252,9 @@
           "kind": "word",
           "text": "it",
           "span": {
-            "line": 22,
+            "line": 24,
             "column": 15,
-            "endLine": 22,
+            "endLine": 24,
             "endColumn": 17
           }
         }
@@ -1185,7 +1263,7 @@
       "comment": false
     },
     {
-      "lineNo": 23,
+      "lineNo": 25,
       "indent": 4,
       "raw": "    raise dread by 5 when dread < 40",
       "tokens": [
@@ -1193,9 +1271,9 @@
           "kind": "word",
           "text": "raise",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 5,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 10
           }
         },
@@ -1203,9 +1281,9 @@
           "kind": "word",
           "text": "dread",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 11,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 16
           }
         },
@@ -1213,9 +1291,9 @@
           "kind": "word",
           "text": "by",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 17,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 19
           }
         },
@@ -1223,9 +1301,9 @@
           "kind": "number",
           "text": "5",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 20,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 21
           }
         },
@@ -1233,9 +1311,9 @@
           "kind": "word",
           "text": "when",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 22,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 26
           }
         },
@@ -1243,9 +1321,9 @@
           "kind": "word",
           "text": "dread",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 27,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 32
           }
         },
@@ -1253,9 +1331,9 @@
           "kind": "compare",
           "text": "<",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 33,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 34
           }
         },
@@ -1263,9 +1341,9 @@
           "kind": "number",
           "text": "40",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 35,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 37
           }
         }
@@ -1274,7 +1352,7 @@
       "comment": false
     },
     {
-      "lineNo": 24,
+      "lineNo": 26,
       "indent": 4,
       "raw": "    phrase vault-hum when dread <= 60",
       "tokens": [
@@ -1282,9 +1360,9 @@
           "kind": "word",
           "text": "phrase",
           "span": {
-            "line": 24,
+            "line": 26,
             "column": 5,
-            "endLine": 24,
+            "endLine": 26,
             "endColumn": 11
           }
         },
@@ -1292,9 +1370,9 @@
           "kind": "word",
           "text": "vault-hum",
           "span": {
-            "line": 24,
+            "line": 26,
             "column": 12,
-            "endLine": 24,
+            "endLine": 26,
             "endColumn": 21
           }
         },
@@ -1302,9 +1380,9 @@
           "kind": "word",
           "text": "when",
           "span": {
-            "line": 24,
+            "line": 26,
             "column": 22,
-            "endLine": 24,
+            "endLine": 26,
             "endColumn": 26
           }
         },
@@ -1312,9 +1390,9 @@
           "kind": "word",
           "text": "dread",
           "span": {
-            "line": 24,
+            "line": 26,
             "column": 27,
-            "endLine": 24,
+            "endLine": 26,
             "endColumn": 32
           }
         },
@@ -1322,9 +1400,9 @@
           "kind": "compare",
           "text": "<=",
           "span": {
-            "line": 24,
+            "line": 26,
             "column": 33,
-            "endLine": 24,
+            "endLine": 26,
             "endColumn": 35
           }
         },
@@ -1332,9 +1410,9 @@
           "kind": "number",
           "text": "60",
           "span": {
-            "line": 24,
+            "line": 26,
             "column": 36,
-            "endLine": 24,
+            "endLine": 26,
             "endColumn": 38
           }
         }
@@ -1343,7 +1421,7 @@
       "comment": false
     },
     {
-      "lineNo": 25,
+      "lineNo": 27,
       "indent": 4,
       "raw": "    phrase vault-roar when dread is at least 80",
       "tokens": [
@@ -1351,9 +1429,9 @@
           "kind": "word",
           "text": "phrase",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 5,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 11
           }
         },
@@ -1361,9 +1439,9 @@
           "kind": "word",
           "text": "vault-roar",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 12,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 22
           }
         },
@@ -1371,9 +1449,9 @@
           "kind": "word",
           "text": "when",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 23,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 27
           }
         },
@@ -1381,9 +1459,9 @@
           "kind": "word",
           "text": "dread",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 28,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 33
           }
         },
@@ -1391,9 +1469,9 @@
           "kind": "word",
           "text": "is",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 34,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 36
           }
         },
@@ -1401,9 +1479,9 @@
           "kind": "word",
           "text": "at",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 37,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 39
           }
         },
@@ -1411,9 +1489,9 @@
           "kind": "word",
           "text": "least",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 40,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 45
           }
         },
@@ -1421,9 +1499,9 @@
           "kind": "number",
           "text": "80",
           "span": {
-            "line": 25,
+            "line": 27,
             "column": 46,
-            "endLine": 25,
+            "endLine": 27,
             "endColumn": 48
           }
         }
@@ -1432,7 +1510,7 @@
       "comment": false
     },
     {
-      "lineNo": 26,
+      "lineNo": 28,
       "indent": 2,
       "raw": "  end on",
       "tokens": [
@@ -1440,9 +1518,9 @@
           "kind": "word",
           "text": "end",
           "span": {
-            "line": 26,
+            "line": 28,
             "column": 3,
-            "endLine": 26,
+            "endLine": 28,
             "endColumn": 6
           }
         },
@@ -1450,158 +1528,10 @@
           "kind": "word",
           "text": "on",
           "span": {
-            "line": 26,
+            "line": 28,
             "column": 7,
-            "endLine": 26,
+            "endLine": 28,
             "endColumn": 9
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 28,
-      "indent": 0,
-      "raw": "create the orc",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "create",
-          "span": {
-            "line": 28,
-            "column": 1,
-            "endLine": 28,
-            "endColumn": 7
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 28,
-            "column": 8,
-            "endLine": 28,
-            "endColumn": 11
-          }
-        },
-        {
-          "kind": "word",
-          "text": "orc",
-          "span": {
-            "line": 28,
-            "column": 12,
-            "endLine": 28,
-            "endColumn": 15
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 29,
-      "indent": 2,
-      "raw": "  a person, combatant with skill 7 and hostile true",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "a",
-          "span": {
-            "line": 29,
-            "column": 3,
-            "endLine": 29,
-            "endColumn": 4
-          }
-        },
-        {
-          "kind": "word",
-          "text": "person",
-          "span": {
-            "line": 29,
-            "column": 5,
-            "endLine": 29,
-            "endColumn": 11
-          }
-        },
-        {
-          "kind": "comma",
-          "text": ",",
-          "span": {
-            "line": 29,
-            "column": 11,
-            "endLine": 29,
-            "endColumn": 12
-          }
-        },
-        {
-          "kind": "word",
-          "text": "combatant",
-          "span": {
-            "line": 29,
-            "column": 13,
-            "endLine": 29,
-            "endColumn": 22
-          }
-        },
-        {
-          "kind": "word",
-          "text": "with",
-          "span": {
-            "line": 29,
-            "column": 23,
-            "endLine": 29,
-            "endColumn": 27
-          }
-        },
-        {
-          "kind": "word",
-          "text": "skill",
-          "span": {
-            "line": 29,
-            "column": 28,
-            "endLine": 29,
-            "endColumn": 33
-          }
-        },
-        {
-          "kind": "number",
-          "text": "7",
-          "span": {
-            "line": 29,
-            "column": 34,
-            "endLine": 29,
-            "endColumn": 35
-          }
-        },
-        {
-          "kind": "word",
-          "text": "and",
-          "span": {
-            "line": 29,
-            "column": 36,
-            "endLine": 29,
-            "endColumn": 39
-          }
-        },
-        {
-          "kind": "word",
-          "text": "hostile",
-          "span": {
-            "line": 29,
-            "column": 40,
-            "endLine": 29,
-            "endColumn": 47
-          }
-        },
-        {
-          "kind": "word",
-          "text": "true",
-          "span": {
-            "line": 29,
-            "column": 48,
-            "endLine": 29,
-            "endColumn": 52
           }
         }
       ],
@@ -1610,17 +1540,17 @@
     },
     {
       "lineNo": 30,
-      "indent": 2,
-      "raw": "  in the Vault",
+      "indent": 0,
+      "raw": "create the orc",
       "tokens": [
         {
           "kind": "word",
-          "text": "in",
+          "text": "create",
           "span": {
             "line": 30,
-            "column": 3,
+            "column": 1,
             "endLine": 30,
-            "endColumn": 5
+            "endColumn": 7
           }
         },
         {
@@ -1628,19 +1558,128 @@
           "text": "the",
           "span": {
             "line": 30,
-            "column": 6,
+            "column": 8,
             "endLine": 30,
-            "endColumn": 9
+            "endColumn": 11
           }
         },
         {
           "kind": "word",
-          "text": "Vault",
+          "text": "orc",
           "span": {
             "line": 30,
-            "column": 10,
+            "column": 12,
             "endLine": 30,
             "endColumn": 15
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 31,
+      "indent": 2,
+      "raw": "  a person, combatant with skill 7 and hostile true",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 31,
+            "column": 3,
+            "endLine": 31,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "person",
+          "span": {
+            "line": 31,
+            "column": 5,
+            "endLine": 31,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 31,
+            "column": 11,
+            "endLine": 31,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "combatant",
+          "span": {
+            "line": 31,
+            "column": 13,
+            "endLine": 31,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "word",
+          "text": "with",
+          "span": {
+            "line": 31,
+            "column": 23,
+            "endLine": 31,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "skill",
+          "span": {
+            "line": 31,
+            "column": 28,
+            "endLine": 31,
+            "endColumn": 33
+          }
+        },
+        {
+          "kind": "number",
+          "text": "7",
+          "span": {
+            "line": 31,
+            "column": 34,
+            "endLine": 31,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 31,
+            "column": 36,
+            "endLine": 31,
+            "endColumn": 39
+          }
+        },
+        {
+          "kind": "word",
+          "text": "hostile",
+          "span": {
+            "line": 31,
+            "column": 40,
+            "endLine": 31,
+            "endColumn": 47
+          }
+        },
+        {
+          "kind": "word",
+          "text": "true",
+          "span": {
+            "line": 31,
+            "column": 48,
+            "endLine": 31,
+            "endColumn": 52
           }
         }
       ],
@@ -1650,11 +1689,11 @@
     {
       "lineNo": 32,
       "indent": 2,
-      "raw": "  An orc with a ledger.",
+      "raw": "  in the Vault",
       "tokens": [
         {
           "kind": "word",
-          "text": "An",
+          "text": "in",
           "span": {
             "line": 32,
             "column": 3,
@@ -1664,7 +1703,7 @@
         },
         {
           "kind": "word",
-          "text": "orc",
+          "text": "the",
           "span": {
             "line": 32,
             "column": 6,
@@ -1674,11 +1713,50 @@
         },
         {
           "kind": "word",
-          "text": "with",
+          "text": "Vault",
           "span": {
             "line": 32,
             "column": 10,
             "endLine": 32,
+            "endColumn": 15
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 34,
+      "indent": 2,
+      "raw": "  An orc with a ledger.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "An",
+          "span": {
+            "line": 34,
+            "column": 3,
+            "endLine": 34,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "orc",
+          "span": {
+            "line": 34,
+            "column": 6,
+            "endLine": 34,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "with",
+          "span": {
+            "line": 34,
+            "column": 10,
+            "endLine": 34,
             "endColumn": 14
           }
         },
@@ -1686,9 +1764,9 @@
           "kind": "word",
           "text": "a",
           "span": {
-            "line": 32,
+            "line": 34,
             "column": 15,
-            "endLine": 32,
+            "endLine": 34,
             "endColumn": 16
           }
         },
@@ -1696,9 +1774,9 @@
           "kind": "word",
           "text": "ledger",
           "span": {
-            "line": 32,
+            "line": 34,
             "column": 17,
-            "endLine": 32,
+            "endLine": 34,
             "endColumn": 23
           }
         },
@@ -1706,9 +1784,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 32,
+            "line": 34,
             "column": 23,
-            "endLine": 32,
+            "endLine": 34,
             "endColumn": 24
           }
         }
@@ -1717,7 +1795,7 @@
       "comment": false
     },
     {
-      "lineNo": 34,
+      "lineNo": 36,
       "indent": 0,
       "raw": "create the keeper",
       "tokens": [
@@ -1725,9 +1803,9 @@
           "kind": "word",
           "text": "create",
           "span": {
-            "line": 34,
+            "line": 36,
             "column": 1,
-            "endLine": 34,
+            "endLine": 36,
             "endColumn": 7
           }
         },
@@ -1735,9 +1813,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 34,
+            "line": 36,
             "column": 8,
-            "endLine": 34,
+            "endLine": 36,
             "endColumn": 11
           }
         },
@@ -1745,9 +1823,9 @@
           "kind": "word",
           "text": "keeper",
           "span": {
-            "line": 34,
+            "line": 36,
             "column": 12,
-            "endLine": 34,
+            "endLine": 36,
             "endColumn": 18
           }
         }
@@ -1756,7 +1834,7 @@
       "comment": false
     },
     {
-      "lineNo": 35,
+      "lineNo": 37,
       "indent": 2,
       "raw": "  a person, patrol with route [the Vault] and can-move true",
       "tokens": [
@@ -1764,9 +1842,9 @@
           "kind": "word",
           "text": "a",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 3,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 4
           }
         },
@@ -1774,9 +1852,9 @@
           "kind": "word",
           "text": "person",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 5,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 11
           }
         },
@@ -1784,9 +1862,9 @@
           "kind": "comma",
           "text": ",",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 11,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 12
           }
         },
@@ -1794,9 +1872,9 @@
           "kind": "word",
           "text": "patrol",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 13,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 19
           }
         },
@@ -1804,9 +1882,9 @@
           "kind": "word",
           "text": "with",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 20,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 24
           }
         },
@@ -1814,9 +1892,9 @@
           "kind": "word",
           "text": "route",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 25,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 30
           }
         },
@@ -1824,9 +1902,9 @@
           "kind": "lbracket",
           "text": "[",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 31,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 32
           }
         },
@@ -1834,9 +1912,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 32,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 35
           }
         },
@@ -1844,9 +1922,9 @@
           "kind": "word",
           "text": "Vault",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 36,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 41
           }
         },
@@ -1854,9 +1932,9 @@
           "kind": "rbracket",
           "text": "]",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 41,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 42
           }
         },
@@ -1864,9 +1942,9 @@
           "kind": "word",
           "text": "and",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 43,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 46
           }
         },
@@ -1874,9 +1952,9 @@
           "kind": "word",
           "text": "can-move",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 47,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 55
           }
         },
@@ -1884,49 +1962,10 @@
           "kind": "word",
           "text": "true",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 56,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 60
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 36,
-      "indent": 2,
-      "raw": "  in the Vault",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "in",
-          "span": {
-            "line": 36,
-            "column": 3,
-            "endLine": 36,
-            "endColumn": 5
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 36,
-            "column": 6,
-            "endLine": 36,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Vault",
-          "span": {
-            "line": 36,
-            "column": 10,
-            "endLine": 36,
-            "endColumn": 15
           }
         }
       ],
@@ -1936,36 +1975,16 @@
     {
       "lineNo": 38,
       "indent": 2,
-      "raw": "  The keeper walks the route.",
+      "raw": "  in the Vault",
       "tokens": [
         {
           "kind": "word",
-          "text": "The",
+          "text": "in",
           "span": {
             "line": 38,
             "column": 3,
             "endLine": 38,
-            "endColumn": 6
-          }
-        },
-        {
-          "kind": "word",
-          "text": "keeper",
-          "span": {
-            "line": 38,
-            "column": 7,
-            "endLine": 38,
-            "endColumn": 13
-          }
-        },
-        {
-          "kind": "word",
-          "text": "walks",
-          "span": {
-            "line": 38,
-            "column": 14,
-            "endLine": 38,
-            "endColumn": 19
+            "endColumn": 5
           }
         },
         {
@@ -1973,8 +1992,67 @@
           "text": "the",
           "span": {
             "line": 38,
-            "column": 20,
+            "column": 6,
             "endLine": 38,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Vault",
+          "span": {
+            "line": 38,
+            "column": 10,
+            "endLine": 38,
+            "endColumn": 15
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 40,
+      "indent": 2,
+      "raw": "  The keeper walks the route.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "The",
+          "span": {
+            "line": 40,
+            "column": 3,
+            "endLine": 40,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "keeper",
+          "span": {
+            "line": 40,
+            "column": 7,
+            "endLine": 40,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "walks",
+          "span": {
+            "line": 40,
+            "column": 14,
+            "endLine": 40,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 40,
+            "column": 20,
+            "endLine": 40,
             "endColumn": 23
           }
         },
@@ -1982,9 +2060,9 @@
           "kind": "word",
           "text": "route",
           "span": {
-            "line": 38,
+            "line": 40,
             "column": 24,
-            "endLine": 38,
+            "endLine": 40,
             "endColumn": 29
           }
         },
@@ -1992,9 +2070,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 38,
+            "line": 40,
             "column": 29,
-            "endLine": 38,
+            "endLine": 40,
             "endColumn": 30
           }
         }
@@ -2003,7 +2081,7 @@
       "comment": false
     },
     {
-      "lineNo": 40,
+      "lineNo": 42,
       "indent": 0,
       "raw": "create the player",
       "tokens": [
@@ -2011,9 +2089,9 @@
           "kind": "word",
           "text": "create",
           "span": {
-            "line": 40,
+            "line": 42,
             "column": 1,
-            "endLine": 40,
+            "endLine": 42,
             "endColumn": 7
           }
         },
@@ -2021,9 +2099,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 40,
+            "line": 42,
             "column": 8,
-            "endLine": 40,
+            "endLine": 42,
             "endColumn": 11
           }
         },
@@ -2031,9 +2109,9 @@
           "kind": "word",
           "text": "player",
           "span": {
-            "line": 40,
+            "line": 42,
             "column": 12,
-            "endLine": 40,
+            "endLine": 42,
             "endColumn": 18
           }
         }
@@ -2042,7 +2120,7 @@
       "comment": false
     },
     {
-      "lineNo": 41,
+      "lineNo": 43,
       "indent": 2,
       "raw": "  starts in the Vault",
       "tokens": [
@@ -2050,9 +2128,9 @@
           "kind": "word",
           "text": "starts",
           "span": {
-            "line": 41,
+            "line": 43,
             "column": 3,
-            "endLine": 41,
+            "endLine": 43,
             "endColumn": 9
           }
         },
@@ -2060,9 +2138,9 @@
           "kind": "word",
           "text": "in",
           "span": {
-            "line": 41,
+            "line": 43,
             "column": 10,
-            "endLine": 41,
+            "endLine": 43,
             "endColumn": 12
           }
         },
@@ -2070,9 +2148,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 41,
+            "line": 43,
             "column": 13,
-            "endLine": 41,
+            "endLine": 43,
             "endColumn": 16
           }
         },
@@ -2080,9 +2158,9 @@
           "kind": "word",
           "text": "Vault",
           "span": {
-            "line": 41,
+            "line": 43,
             "column": 17,
-            "endLine": 41,
+            "endLine": 43,
             "endColumn": 22
           }
         }
@@ -2091,7 +2169,7 @@
       "comment": false
     },
     {
-      "lineNo": 43,
+      "lineNo": 45,
       "indent": 2,
       "raw": "  You.",
       "tokens": [
@@ -2099,9 +2177,9 @@
           "kind": "word",
           "text": "You",
           "span": {
-            "line": 43,
+            "line": 45,
             "column": 3,
-            "endLine": 43,
+            "endLine": 45,
             "endColumn": 6
           }
         },
@@ -2109,9 +2187,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 43,
+            "line": 45,
             "column": 6,
-            "endLine": 43,
+            "endLine": 45,
             "endColumn": 7
           }
         }
@@ -2120,7 +2198,7 @@
       "comment": false
     },
     {
-      "lineNo": 45,
+      "lineNo": 47,
       "indent": 0,
       "raw": "define phrases en-US",
       "tokens": [
@@ -2128,9 +2206,9 @@
           "kind": "word",
           "text": "define",
           "span": {
-            "line": 45,
+            "line": 47,
             "column": 1,
-            "endLine": 45,
+            "endLine": 47,
             "endColumn": 7
           }
         },
@@ -2138,9 +2216,9 @@
           "kind": "word",
           "text": "phrases",
           "span": {
-            "line": 45,
+            "line": 47,
             "column": 8,
-            "endLine": 45,
+            "endLine": 47,
             "endColumn": 15
           }
         },
@@ -2148,9 +2226,9 @@
           "kind": "word",
           "text": "en-US",
           "span": {
-            "line": 45,
+            "line": 47,
             "column": 16,
-            "endLine": 45,
+            "endLine": 47,
             "endColumn": 21
           }
         }
@@ -2159,7 +2237,7 @@
       "comment": false
     },
     {
-      "lineNo": 46,
+      "lineNo": 48,
       "indent": 2,
       "raw": "  vault-hum:",
       "tokens": [
@@ -2167,9 +2245,9 @@
           "kind": "word",
           "text": "vault-hum",
           "span": {
-            "line": 46,
+            "line": 48,
             "column": 3,
-            "endLine": 46,
+            "endLine": 48,
             "endColumn": 12
           }
         },
@@ -2177,158 +2255,10 @@
           "kind": "colon",
           "text": ":",
           "span": {
-            "line": 46,
+            "line": 48,
             "column": 12,
-            "endLine": 46,
-            "endColumn": 13
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 47,
-      "indent": 4,
-      "raw": "    The walls hum ({dread} and climbing).",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "The",
-          "span": {
-            "line": 47,
-            "column": 5,
-            "endLine": 47,
-            "endColumn": 8
-          }
-        },
-        {
-          "kind": "word",
-          "text": "walls",
-          "span": {
-            "line": 47,
-            "column": 9,
-            "endLine": 47,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "hum",
-          "span": {
-            "line": 47,
-            "column": 15,
-            "endLine": 47,
-            "endColumn": 18
-          }
-        },
-        {
-          "kind": "lparen",
-          "text": "(",
-          "span": {
-            "line": 47,
-            "column": 19,
-            "endLine": 47,
-            "endColumn": 20
-          }
-        },
-        {
-          "kind": "lbrace",
-          "text": "{",
-          "span": {
-            "line": 47,
-            "column": 20,
-            "endLine": 47,
-            "endColumn": 21
-          }
-        },
-        {
-          "kind": "word",
-          "text": "dread",
-          "span": {
-            "line": 47,
-            "column": 21,
-            "endLine": 47,
-            "endColumn": 26
-          }
-        },
-        {
-          "kind": "rbrace",
-          "text": "}",
-          "span": {
-            "line": 47,
-            "column": 26,
-            "endLine": 47,
-            "endColumn": 27
-          }
-        },
-        {
-          "kind": "word",
-          "text": "and",
-          "span": {
-            "line": 47,
-            "column": 28,
-            "endLine": 47,
-            "endColumn": 31
-          }
-        },
-        {
-          "kind": "word",
-          "text": "climbing",
-          "span": {
-            "line": 47,
-            "column": 32,
-            "endLine": 47,
-            "endColumn": 40
-          }
-        },
-        {
-          "kind": "rparen",
-          "text": ")",
-          "span": {
-            "line": 47,
-            "column": 40,
-            "endLine": 47,
-            "endColumn": 41
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 47,
-            "column": 41,
-            "endLine": 47,
-            "endColumn": 42
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 48,
-      "indent": 2,
-      "raw": "  vault-roar:",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "vault-roar",
-          "span": {
-            "line": 48,
-            "column": 3,
             "endLine": 48,
             "endColumn": 13
-          }
-        },
-        {
-          "kind": "colon",
-          "text": ":",
-          "span": {
-            "line": 48,
-            "column": 13,
-            "endLine": 48,
-            "endColumn": 14
           }
         }
       ],
@@ -2338,7 +2268,7 @@
     {
       "lineNo": 49,
       "indent": 4,
-      "raw": "    The vault roars.",
+      "raw": "    The walls hum ({dread} and climbing).",
       "tokens": [
         {
           "kind": "word",
@@ -2352,7 +2282,7 @@
         },
         {
           "kind": "word",
-          "text": "vault",
+          "text": "walls",
           "span": {
             "line": 49,
             "column": 9,
@@ -2362,12 +2292,82 @@
         },
         {
           "kind": "word",
-          "text": "roars",
+          "text": "hum",
           "span": {
             "line": 49,
             "column": 15,
             "endLine": 49,
+            "endColumn": 18
+          }
+        },
+        {
+          "kind": "lparen",
+          "text": "(",
+          "span": {
+            "line": 49,
+            "column": 19,
+            "endLine": 49,
             "endColumn": 20
+          }
+        },
+        {
+          "kind": "lbrace",
+          "text": "{",
+          "span": {
+            "line": 49,
+            "column": 20,
+            "endLine": 49,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "dread",
+          "span": {
+            "line": 49,
+            "column": 21,
+            "endLine": 49,
+            "endColumn": 26
+          }
+        },
+        {
+          "kind": "rbrace",
+          "text": "}",
+          "span": {
+            "line": 49,
+            "column": 26,
+            "endLine": 49,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 49,
+            "column": 28,
+            "endLine": 49,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "word",
+          "text": "climbing",
+          "span": {
+            "line": 49,
+            "column": 32,
+            "endLine": 49,
+            "endColumn": 40
+          }
+        },
+        {
+          "kind": "rparen",
+          "text": ")",
+          "span": {
+            "line": 49,
+            "column": 40,
+            "endLine": 49,
+            "endColumn": 41
           }
         },
         {
@@ -2375,9 +2375,38 @@
           "text": ".",
           "span": {
             "line": 49,
-            "column": 20,
+            "column": 41,
             "endLine": 49,
-            "endColumn": 21
+            "endColumn": 42
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 50,
+      "indent": 2,
+      "raw": "  vault-roar:",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "vault-roar",
+          "span": {
+            "line": 50,
+            "column": 3,
+            "endLine": 50,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 50,
+            "column": 13,
+            "endLine": 50,
+            "endColumn": 14
           }
         }
       ],
@@ -2386,56 +2415,47 @@
     },
     {
       "lineNo": 51,
-      "indent": 0,
-      "raw": "extend action taking",
+      "indent": 4,
+      "raw": "    The vault roars.",
       "tokens": [
         {
           "kind": "word",
-          "text": "extend",
+          "text": "The",
           "span": {
             "line": 51,
-            "column": 1,
+            "column": 5,
             "endLine": 51,
-            "endColumn": 7
+            "endColumn": 8
           }
         },
         {
           "kind": "word",
-          "text": "action",
+          "text": "vault",
           "span": {
             "line": 51,
-            "column": 8,
+            "column": 9,
             "endLine": 51,
             "endColumn": 14
           }
         },
         {
           "kind": "word",
-          "text": "taking",
+          "text": "roars",
           "span": {
             "line": 51,
             "column": 15,
             "endLine": 51,
-            "endColumn": 21
+            "endColumn": 20
           }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 52,
-      "indent": 2,
-      "raw": "  grammar",
-      "tokens": [
+        },
         {
-          "kind": "word",
-          "text": "grammar",
+          "kind": "punct",
+          "text": ".",
           "span": {
-            "line": 52,
-            "column": 3,
-            "endLine": 52,
-            "endColumn": 10
+            "line": 51,
+            "column": 20,
+            "endLine": 51,
+            "endColumn": 21
           }
         }
       ],
@@ -2444,6 +2464,64 @@
     },
     {
       "lineNo": 53,
+      "indent": 0,
+      "raw": "extend action taking",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "extend",
+          "span": {
+            "line": 53,
+            "column": 1,
+            "endLine": 53,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "action",
+          "span": {
+            "line": 53,
+            "column": 8,
+            "endLine": 53,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "taking",
+          "span": {
+            "line": 53,
+            "column": 15,
+            "endLine": 53,
+            "endColumn": 21
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 54,
+      "indent": 2,
+      "raw": "  grammar",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "grammar",
+          "span": {
+            "line": 54,
+            "column": 3,
+            "endLine": 54,
+            "endColumn": 10
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 55,
       "indent": 4,
       "raw": "    snag the item",
       "tokens": [
@@ -2451,9 +2529,9 @@
           "kind": "word",
           "text": "snag",
           "span": {
-            "line": 53,
+            "line": 55,
             "column": 5,
-            "endLine": 53,
+            "endLine": 55,
             "endColumn": 9
           }
         },
@@ -2461,9 +2539,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 53,
+            "line": 55,
             "column": 10,
-            "endLine": 53,
+            "endLine": 55,
             "endColumn": 13
           }
         },
@@ -2471,9 +2549,9 @@
           "kind": "word",
           "text": "item",
           "span": {
-            "line": 53,
+            "line": 55,
             "column": 14,
-            "endLine": 53,
+            "endLine": 55,
             "endColumn": 18
           }
         }
@@ -2482,7 +2560,7 @@
       "comment": false
     },
     {
-      "lineNo": 54,
+      "lineNo": 56,
       "indent": 4,
       "raw": "    yoink the item",
       "tokens": [
@@ -2490,9 +2568,9 @@
           "kind": "word",
           "text": "yoink",
           "span": {
-            "line": 54,
+            "line": 56,
             "column": 5,
-            "endLine": 54,
+            "endLine": 56,
             "endColumn": 10
           }
         },
@@ -2500,9 +2578,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 54,
+            "line": 56,
             "column": 11,
-            "endLine": 54,
+            "endLine": 56,
             "endColumn": 14
           }
         },
@@ -2510,9 +2588,9 @@
           "kind": "word",
           "text": "item",
           "span": {
-            "line": 54,
+            "line": 56,
             "column": 15,
-            "endLine": 54,
+            "endLine": 56,
             "endColumn": 19
           }
         }
@@ -2521,7 +2599,7 @@
       "comment": false
     },
     {
-      "lineNo": 56,
+      "lineNo": 58,
       "indent": 0,
       "raw": "remove from action taking",
       "tokens": [
@@ -2529,9 +2607,9 @@
           "kind": "word",
           "text": "remove",
           "span": {
-            "line": 56,
+            "line": 58,
             "column": 1,
-            "endLine": 56,
+            "endLine": 58,
             "endColumn": 7
           }
         },
@@ -2539,9 +2617,9 @@
           "kind": "word",
           "text": "from",
           "span": {
-            "line": 56,
+            "line": 58,
             "column": 8,
-            "endLine": 56,
+            "endLine": 58,
             "endColumn": 12
           }
         },
@@ -2549,9 +2627,9 @@
           "kind": "word",
           "text": "action",
           "span": {
-            "line": 56,
+            "line": 58,
             "column": 13,
-            "endLine": 56,
+            "endLine": 58,
             "endColumn": 19
           }
         },
@@ -2559,9 +2637,9 @@
           "kind": "word",
           "text": "taking",
           "span": {
-            "line": 56,
+            "line": 58,
             "column": 20,
-            "endLine": 56,
+            "endLine": 58,
             "endColumn": 26
           }
         }
@@ -2570,7 +2648,7 @@
       "comment": false
     },
     {
-      "lineNo": 57,
+      "lineNo": 59,
       "indent": 2,
       "raw": "  take inventory",
       "tokens": [
@@ -2578,9 +2656,9 @@
           "kind": "word",
           "text": "take",
           "span": {
-            "line": 57,
+            "line": 59,
             "column": 3,
-            "endLine": 57,
+            "endLine": 59,
             "endColumn": 7
           }
         },
@@ -2588,9 +2666,9 @@
           "kind": "word",
           "text": "inventory",
           "span": {
-            "line": 57,
+            "line": 59,
             "column": 8,
-            "endLine": 57,
+            "endLine": 59,
             "endColumn": 17
           }
         }
@@ -2599,7 +2677,7 @@
       "comment": false
     },
     {
-      "lineNo": 59,
+      "lineNo": 61,
       "indent": 0,
       "raw": "remove from action examining",
       "tokens": [
@@ -2607,9 +2685,9 @@
           "kind": "word",
           "text": "remove",
           "span": {
-            "line": 59,
+            "line": 61,
             "column": 1,
-            "endLine": 59,
+            "endLine": 61,
             "endColumn": 7
           }
         },
@@ -2617,9 +2695,9 @@
           "kind": "word",
           "text": "from",
           "span": {
-            "line": 59,
+            "line": 61,
             "column": 8,
-            "endLine": 59,
+            "endLine": 61,
             "endColumn": 12
           }
         },
@@ -2627,9 +2705,9 @@
           "kind": "word",
           "text": "action",
           "span": {
-            "line": 59,
+            "line": 61,
             "column": 13,
-            "endLine": 59,
+            "endLine": 61,
             "endColumn": 19
           }
         },
@@ -2637,9 +2715,9 @@
           "kind": "word",
           "text": "examining",
           "span": {
-            "line": 59,
+            "line": 61,
             "column": 20,
-            "endLine": 59,
+            "endLine": 61,
             "endColumn": 29
           }
         }
@@ -2648,7 +2726,7 @@
       "comment": false
     },
     {
-      "lineNo": 60,
+      "lineNo": 62,
       "indent": 2,
       "raw": "  x the target",
       "tokens": [
@@ -2656,9 +2734,9 @@
           "kind": "word",
           "text": "x",
           "span": {
-            "line": 60,
+            "line": 62,
             "column": 3,
-            "endLine": 60,
+            "endLine": 62,
             "endColumn": 4
           }
         },
@@ -2666,9 +2744,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 60,
+            "line": 62,
             "column": 5,
-            "endLine": 60,
+            "endLine": 62,
             "endColumn": 8
           }
         },
@@ -2676,9 +2754,9 @@
           "kind": "word",
           "text": "target",
           "span": {
-            "line": 60,
+            "line": 62,
             "column": 9,
-            "endLine": 60,
+            "endLine": 62,
             "endColumn": 15
           }
         }
@@ -6087,7 +6165,7 @@
     {
       "lineNo": 6,
       "indent": 0,
-      "raw": "story \"Story Core\" by \"Lexer Golden\"",
+      "raw": "story",
       "tokens": [
         {
           "kind": "word",
@@ -6098,36 +6176,6 @@
             "endLine": 6,
             "endColumn": 6
           }
-        },
-        {
-          "kind": "string",
-          "text": "Story Core",
-          "span": {
-            "line": 6,
-            "column": 7,
-            "endLine": 6,
-            "endColumn": 19
-          }
-        },
-        {
-          "kind": "word",
-          "text": "by",
-          "span": {
-            "line": 6,
-            "column": 20,
-            "endLine": 6,
-            "endColumn": 22
-          }
-        },
-        {
-          "kind": "string",
-          "text": "Lexer Golden",
-          "span": {
-            "line": 6,
-            "column": 23,
-            "endLine": 6,
-            "endColumn": 37
-          }
         }
       ],
       "afterBlank": true,
@@ -6136,16 +6184,16 @@
     {
       "lineNo": 7,
       "indent": 2,
-      "raw": "  id: lexer-golden-core",
+      "raw": "  title: Story Core",
       "tokens": [
         {
           "kind": "word",
-          "text": "id",
+          "text": "title",
           "span": {
             "line": 7,
             "column": 3,
             "endLine": 7,
-            "endColumn": 5
+            "endColumn": 8
           }
         },
         {
@@ -6153,19 +6201,29 @@
           "text": ":",
           "span": {
             "line": 7,
-            "column": 5,
+            "column": 8,
             "endLine": 7,
-            "endColumn": 6
+            "endColumn": 9
           }
         },
         {
           "kind": "word",
-          "text": "lexer-golden-core",
+          "text": "Story",
           "span": {
             "line": 7,
-            "column": 7,
+            "column": 10,
             "endLine": 7,
-            "endColumn": 24
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Core",
+          "span": {
+            "line": 7,
+            "column": 16,
+            "endLine": 7,
+            "endColumn": 20
           }
         }
       ],
@@ -6175,11 +6233,11 @@
     {
       "lineNo": 8,
       "indent": 2,
-      "raw": "  version: 2.0.0",
+      "raw": "  authors: Lexer Golden",
       "tokens": [
         {
           "kind": "word",
-          "text": "version",
+          "text": "authors",
           "span": {
             "line": 8,
             "column": 3,
@@ -6198,13 +6256,62 @@
           }
         },
         {
-          "kind": "number",
-          "text": "2.0.0",
+          "kind": "word",
+          "text": "Lexer",
           "span": {
             "line": 8,
             "column": 12,
             "endLine": 8,
             "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Golden",
+          "span": {
+            "line": 8,
+            "column": 18,
+            "endLine": 8,
+            "endColumn": 24
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 9,
+      "indent": 2,
+      "raw": "  id: lexer-golden-core",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "id",
+          "span": {
+            "line": 9,
+            "column": 3,
+            "endLine": 9,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 9,
+            "column": 5,
+            "endLine": 9,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "lexer-golden-core",
+          "span": {
+            "line": 9,
+            "column": 7,
+            "endLine": 9,
+            "endColumn": 24
           }
         }
       ],
@@ -6213,6 +6320,45 @@
     },
     {
       "lineNo": 10,
+      "indent": 2,
+      "raw": "  story-version: 2.0.0",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "story-version",
+          "span": {
+            "line": 10,
+            "column": 3,
+            "endLine": 10,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "colon",
+          "text": ":",
+          "span": {
+            "line": 10,
+            "column": 16,
+            "endLine": 10,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "number",
+          "text": "2.0.0",
+          "span": {
+            "line": 10,
+            "column": 18,
+            "endLine": 10,
+            "endColumn": 23
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 12,
       "indent": 0,
       "raw": "create the Lighthouse",
       "tokens": [
@@ -6220,9 +6366,9 @@
           "kind": "word",
           "text": "create",
           "span": {
-            "line": 10,
+            "line": 12,
             "column": 1,
-            "endLine": 10,
+            "endLine": 12,
             "endColumn": 7
           }
         },
@@ -6230,9 +6376,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 10,
+            "line": 12,
             "column": 8,
-            "endLine": 10,
+            "endLine": 12,
             "endColumn": 11
           }
         },
@@ -6240,9 +6386,9 @@
           "kind": "word",
           "text": "Lighthouse",
           "span": {
-            "line": 10,
+            "line": 12,
             "column": 12,
-            "endLine": 10,
+            "endLine": 12,
             "endColumn": 22
           }
         }
@@ -6251,7 +6397,7 @@
       "comment": false
     },
     {
-      "lineNo": 11,
+      "lineNo": 13,
       "indent": 2,
       "raw": "  a room",
       "tokens": [
@@ -6259,9 +6405,9 @@
           "kind": "word",
           "text": "a",
           "span": {
-            "line": 11,
+            "line": 13,
             "column": 3,
-            "endLine": 11,
+            "endLine": 13,
             "endColumn": 4
           }
         },
@@ -6269,9 +6415,9 @@
           "kind": "word",
           "text": "room",
           "span": {
-            "line": 11,
+            "line": 13,
             "column": 5,
-            "endLine": 11,
+            "endLine": 13,
             "endColumn": 9
           }
         }
@@ -6280,7 +6426,7 @@
       "comment": false
     },
     {
-      "lineNo": 13,
+      "lineNo": 15,
       "indent": 2,
       "raw": "  The lamp's brass housing throws warped reflections. A sign reads:",
       "tokens": [
@@ -6288,9 +6434,9 @@
           "kind": "word",
           "text": "The",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 3,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 6
           }
         },
@@ -6298,9 +6444,9 @@
           "kind": "word",
           "text": "lamp's",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 7,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 13
           }
         },
@@ -6308,9 +6454,9 @@
           "kind": "word",
           "text": "brass",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 14,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 19
           }
         },
@@ -6318,9 +6464,9 @@
           "kind": "word",
           "text": "housing",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 20,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 27
           }
         },
@@ -6328,9 +6474,9 @@
           "kind": "word",
           "text": "throws",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 28,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 34
           }
         },
@@ -6338,9 +6484,9 @@
           "kind": "word",
           "text": "warped",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 35,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 41
           }
         },
@@ -6348,9 +6494,9 @@
           "kind": "word",
           "text": "reflections",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 42,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 53
           }
         },
@@ -6358,9 +6504,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 53,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 54
           }
         },
@@ -6368,9 +6514,9 @@
           "kind": "word",
           "text": "A",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 55,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 56
           }
         },
@@ -6378,9 +6524,9 @@
           "kind": "word",
           "text": "sign",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 57,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 61
           }
         },
@@ -6388,9 +6534,9 @@
           "kind": "word",
           "text": "reads",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 62,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 67
           }
         },
@@ -6398,9 +6544,9 @@
           "kind": "colon",
           "text": ":",
           "span": {
-            "line": 13,
+            "line": 15,
             "column": 67,
-            "endLine": 13,
+            "endLine": 15,
             "endColumn": 68
           }
         }
@@ -6409,7 +6555,7 @@
       "comment": false
     },
     {
-      "lineNo": 14,
+      "lineNo": 16,
       "indent": 2,
       "raw": "  \"KEEP THE LIGHT — whatever else fails.",
       "tokens": [
@@ -6417,9 +6563,9 @@
           "kind": "punct",
           "text": "\"",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 3,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 4
           }
         },
@@ -6427,9 +6573,9 @@
           "kind": "word",
           "text": "KEEP",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 4,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 8
           }
         },
@@ -6437,9 +6583,9 @@
           "kind": "word",
           "text": "THE",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 9,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 12
           }
         },
@@ -6447,9 +6593,9 @@
           "kind": "word",
           "text": "LIGHT",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 13,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 18
           }
         },
@@ -6457,9 +6603,9 @@
           "kind": "punct",
           "text": "—",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 19,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 20
           }
         },
@@ -6467,9 +6613,9 @@
           "kind": "word",
           "text": "whatever",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 21,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 29
           }
         },
@@ -6477,9 +6623,9 @@
           "kind": "word",
           "text": "else",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 30,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 34
           }
         },
@@ -6487,9 +6633,9 @@
           "kind": "word",
           "text": "fails",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 35,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 40
           }
         },
@@ -6497,9 +6643,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 14,
+            "line": 16,
             "column": 40,
-            "endLine": 14,
+            "endLine": 16,
             "endColumn": 41
           }
         }
@@ -6508,7 +6654,7 @@
       "comment": false
     },
     {
-      "lineNo": 16,
+      "lineNo": 18,
       "indent": 0,
       "raw": "create the logbook",
       "tokens": [
@@ -6516,9 +6662,9 @@
           "kind": "word",
           "text": "create",
           "span": {
-            "line": 16,
+            "line": 18,
             "column": 1,
-            "endLine": 16,
+            "endLine": 18,
             "endColumn": 7
           }
         },
@@ -6526,9 +6672,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 16,
+            "line": 18,
             "column": 8,
-            "endLine": 16,
+            "endLine": 18,
             "endColumn": 11
           }
         },
@@ -6536,9 +6682,9 @@
           "kind": "word",
           "text": "logbook",
           "span": {
-            "line": 16,
+            "line": 18,
             "column": 12,
-            "endLine": 16,
+            "endLine": 18,
             "endColumn": 19
           }
         }
@@ -6547,7 +6693,7 @@
       "comment": false
     },
     {
-      "lineNo": 17,
+      "lineNo": 19,
       "indent": 2,
       "raw": "  readable, portable",
       "tokens": [
@@ -6555,9 +6701,9 @@
           "kind": "word",
           "text": "readable",
           "span": {
-            "line": 17,
+            "line": 19,
             "column": 3,
-            "endLine": 17,
+            "endLine": 19,
             "endColumn": 11
           }
         },
@@ -6565,9 +6711,9 @@
           "kind": "comma",
           "text": ",",
           "span": {
-            "line": 17,
+            "line": 19,
             "column": 11,
-            "endLine": 17,
+            "endLine": 19,
             "endColumn": 12
           }
         },
@@ -6575,49 +6721,10 @@
           "kind": "word",
           "text": "portable",
           "span": {
-            "line": 17,
+            "line": 19,
             "column": 13,
-            "endLine": 17,
+            "endLine": 19,
             "endColumn": 21
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 18,
-      "indent": 2,
-      "raw": "  in the Lighthouse",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "in",
-          "span": {
-            "line": 18,
-            "column": 3,
-            "endLine": 18,
-            "endColumn": 5
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 18,
-            "column": 6,
-            "endLine": 18,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Lighthouse",
-          "span": {
-            "line": 18,
-            "column": 10,
-            "endLine": 18,
-            "endColumn": 20
           }
         }
       ],
@@ -6627,96 +6734,16 @@
     {
       "lineNo": 20,
       "indent": 2,
-      "raw": "  Salt-swollen pages; someone's tidy hand goes ragged near the end.",
+      "raw": "  in the Lighthouse",
       "tokens": [
         {
           "kind": "word",
-          "text": "Salt-swollen",
+          "text": "in",
           "span": {
             "line": 20,
             "column": 3,
             "endLine": 20,
-            "endColumn": 15
-          }
-        },
-        {
-          "kind": "word",
-          "text": "pages",
-          "span": {
-            "line": 20,
-            "column": 16,
-            "endLine": 20,
-            "endColumn": 21
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ";",
-          "span": {
-            "line": 20,
-            "column": 21,
-            "endLine": 20,
-            "endColumn": 22
-          }
-        },
-        {
-          "kind": "word",
-          "text": "someone's",
-          "span": {
-            "line": 20,
-            "column": 23,
-            "endLine": 20,
-            "endColumn": 32
-          }
-        },
-        {
-          "kind": "word",
-          "text": "tidy",
-          "span": {
-            "line": 20,
-            "column": 33,
-            "endLine": 20,
-            "endColumn": 37
-          }
-        },
-        {
-          "kind": "word",
-          "text": "hand",
-          "span": {
-            "line": 20,
-            "column": 38,
-            "endLine": 20,
-            "endColumn": 42
-          }
-        },
-        {
-          "kind": "word",
-          "text": "goes",
-          "span": {
-            "line": 20,
-            "column": 43,
-            "endLine": 20,
-            "endColumn": 47
-          }
-        },
-        {
-          "kind": "word",
-          "text": "ragged",
-          "span": {
-            "line": 20,
-            "column": 48,
-            "endLine": 20,
-            "endColumn": 54
-          }
-        },
-        {
-          "kind": "word",
-          "text": "near",
-          "span": {
-            "line": 20,
-            "column": 55,
-            "endLine": 20,
-            "endColumn": 59
+            "endColumn": 5
           }
         },
         {
@@ -6724,8 +6751,127 @@
           "text": "the",
           "span": {
             "line": 20,
-            "column": 60,
+            "column": 6,
             "endLine": 20,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Lighthouse",
+          "span": {
+            "line": 20,
+            "column": 10,
+            "endLine": 20,
+            "endColumn": 20
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 22,
+      "indent": 2,
+      "raw": "  Salt-swollen pages; someone's tidy hand goes ragged near the end.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Salt-swollen",
+          "span": {
+            "line": 22,
+            "column": 3,
+            "endLine": 22,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "pages",
+          "span": {
+            "line": 22,
+            "column": 16,
+            "endLine": 22,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ";",
+          "span": {
+            "line": 22,
+            "column": 21,
+            "endLine": 22,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "word",
+          "text": "someone's",
+          "span": {
+            "line": 22,
+            "column": 23,
+            "endLine": 22,
+            "endColumn": 32
+          }
+        },
+        {
+          "kind": "word",
+          "text": "tidy",
+          "span": {
+            "line": 22,
+            "column": 33,
+            "endLine": 22,
+            "endColumn": 37
+          }
+        },
+        {
+          "kind": "word",
+          "text": "hand",
+          "span": {
+            "line": 22,
+            "column": 38,
+            "endLine": 22,
+            "endColumn": 42
+          }
+        },
+        {
+          "kind": "word",
+          "text": "goes",
+          "span": {
+            "line": 22,
+            "column": 43,
+            "endLine": 22,
+            "endColumn": 47
+          }
+        },
+        {
+          "kind": "word",
+          "text": "ragged",
+          "span": {
+            "line": 22,
+            "column": 48,
+            "endLine": 22,
+            "endColumn": 54
+          }
+        },
+        {
+          "kind": "word",
+          "text": "near",
+          "span": {
+            "line": 22,
+            "column": 55,
+            "endLine": 22,
+            "endColumn": 59
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 22,
+            "column": 60,
+            "endLine": 22,
             "endColumn": 63
           }
         },
@@ -6733,9 +6879,9 @@
           "kind": "word",
           "text": "end",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 64,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 67
           }
         },
@@ -6743,9 +6889,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 20,
+            "line": 22,
             "column": 67,
-            "endLine": 20,
+            "endLine": 22,
             "endColumn": 68
           }
         }
@@ -6754,7 +6900,7 @@
       "comment": false
     },
     {
-      "lineNo": 22,
+      "lineNo": 24,
       "indent": 2,
       "raw": "  on reading it",
       "tokens": [
@@ -6762,9 +6908,9 @@
           "kind": "word",
           "text": "on",
           "span": {
-            "line": 22,
+            "line": 24,
             "column": 3,
-            "endLine": 22,
+            "endLine": 24,
             "endColumn": 5
           }
         },
@@ -6772,9 +6918,9 @@
           "kind": "word",
           "text": "reading",
           "span": {
-            "line": 22,
+            "line": 24,
             "column": 6,
-            "endLine": 22,
+            "endLine": 24,
             "endColumn": 13
           }
         },
@@ -6782,9 +6928,9 @@
           "kind": "word",
           "text": "it",
           "span": {
-            "line": 22,
+            "line": 24,
             "column": 14,
-            "endLine": 22,
+            "endLine": 24,
             "endColumn": 16
           }
         }
@@ -6793,7 +6939,7 @@
       "comment": false
     },
     {
-      "lineNo": 23,
+      "lineNo": 25,
       "indent": 4,
       "raw": "    phrase log-entry",
       "tokens": [
@@ -6801,9 +6947,9 @@
           "kind": "word",
           "text": "phrase",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 5,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 11
           }
         },
@@ -6811,39 +6957,10 @@
           "kind": "word",
           "text": "log-entry",
           "span": {
-            "line": 23,
+            "line": 25,
             "column": 12,
-            "endLine": 23,
+            "endLine": 25,
             "endColumn": 21
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 24,
-      "indent": 2,
-      "raw": "  end on",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "end",
-          "span": {
-            "line": 24,
-            "column": 3,
-            "endLine": 24,
-            "endColumn": 6
-          }
-        },
-        {
-          "kind": "word",
-          "text": "on",
-          "span": {
-            "line": 24,
-            "column": 7,
-            "endLine": 24,
-            "endColumn": 9
           }
         }
       ],
@@ -6852,6 +6969,35 @@
     },
     {
       "lineNo": 26,
+      "indent": 2,
+      "raw": "  end on",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "end",
+          "span": {
+            "line": 26,
+            "column": 3,
+            "endLine": 26,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "on",
+          "span": {
+            "line": 26,
+            "column": 7,
+            "endLine": 26,
+            "endColumn": 9
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 28,
       "indent": 0,
       "raw": "create the player",
       "tokens": [
@@ -6859,9 +7005,9 @@
           "kind": "word",
           "text": "create",
           "span": {
-            "line": 26,
+            "line": 28,
             "column": 1,
-            "endLine": 26,
+            "endLine": 28,
             "endColumn": 7
           }
         },
@@ -6869,9 +7015,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 26,
+            "line": 28,
             "column": 8,
-            "endLine": 26,
+            "endLine": 28,
             "endColumn": 11
           }
         },
@@ -6879,9 +7025,9 @@
           "kind": "word",
           "text": "player",
           "span": {
-            "line": 26,
+            "line": 28,
             "column": 12,
-            "endLine": 26,
+            "endLine": 28,
             "endColumn": 18
           }
         }
@@ -6890,7 +7036,7 @@
       "comment": false
     },
     {
-      "lineNo": 27,
+      "lineNo": 29,
       "indent": 2,
       "raw": "  starts in the Lighthouse",
       "tokens": [
@@ -6898,9 +7044,9 @@
           "kind": "word",
           "text": "starts",
           "span": {
-            "line": 27,
+            "line": 29,
             "column": 3,
-            "endLine": 27,
+            "endLine": 29,
             "endColumn": 9
           }
         },
@@ -6908,9 +7054,9 @@
           "kind": "word",
           "text": "in",
           "span": {
-            "line": 27,
+            "line": 29,
             "column": 10,
-            "endLine": 27,
+            "endLine": 29,
             "endColumn": 12
           }
         },
@@ -6918,9 +7064,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 27,
+            "line": 29,
             "column": 13,
-            "endLine": 27,
+            "endLine": 29,
             "endColumn": 16
           }
         },
@@ -6928,9 +7074,9 @@
           "kind": "word",
           "text": "Lighthouse",
           "span": {
-            "line": 27,
+            "line": 29,
             "column": 17,
-            "endLine": 27,
+            "endLine": 29,
             "endColumn": 27
           }
         }
@@ -6939,7 +7085,7 @@
       "comment": false
     },
     {
-      "lineNo": 29,
+      "lineNo": 31,
       "indent": 2,
       "raw": "  You. Keeper, for now.",
       "tokens": [
@@ -6947,9 +7093,9 @@
           "kind": "word",
           "text": "You",
           "span": {
-            "line": 29,
+            "line": 31,
             "column": 3,
-            "endLine": 29,
+            "endLine": 31,
             "endColumn": 6
           }
         },
@@ -6957,9 +7103,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 29,
+            "line": 31,
             "column": 6,
-            "endLine": 29,
+            "endLine": 31,
             "endColumn": 7
           }
         },
@@ -6967,9 +7113,9 @@
           "kind": "word",
           "text": "Keeper",
           "span": {
-            "line": 29,
+            "line": 31,
             "column": 8,
-            "endLine": 29,
+            "endLine": 31,
             "endColumn": 14
           }
         },
@@ -6977,9 +7123,9 @@
           "kind": "comma",
           "text": ",",
           "span": {
-            "line": 29,
+            "line": 31,
             "column": 14,
-            "endLine": 29,
+            "endLine": 31,
             "endColumn": 15
           }
         },
@@ -6987,9 +7133,9 @@
           "kind": "word",
           "text": "for",
           "span": {
-            "line": 29,
+            "line": 31,
             "column": 16,
-            "endLine": 29,
+            "endLine": 31,
             "endColumn": 19
           }
         },
@@ -6997,9 +7143,9 @@
           "kind": "word",
           "text": "now",
           "span": {
-            "line": 29,
+            "line": 31,
             "column": 20,
-            "endLine": 29,
+            "endLine": 31,
             "endColumn": 23
           }
         },
@@ -7007,9 +7153,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 29,
+            "line": 31,
             "column": 23,
-            "endLine": 29,
+            "endLine": 31,
             "endColumn": 24
           }
         }
@@ -7018,7 +7164,7 @@
       "comment": false
     },
     {
-      "lineNo": 31,
+      "lineNo": 33,
       "indent": 0,
       "raw": "define phrases en-US",
       "tokens": [
@@ -7026,9 +7172,9 @@
           "kind": "word",
           "text": "define",
           "span": {
-            "line": 31,
+            "line": 33,
             "column": 1,
-            "endLine": 31,
+            "endLine": 33,
             "endColumn": 7
           }
         },
@@ -7036,9 +7182,9 @@
           "kind": "word",
           "text": "phrases",
           "span": {
-            "line": 31,
+            "line": 33,
             "column": 8,
-            "endLine": 31,
+            "endLine": 33,
             "endColumn": 15
           }
         },
@@ -7046,9 +7192,9 @@
           "kind": "word",
           "text": "en-US",
           "span": {
-            "line": 31,
+            "line": 33,
             "column": 16,
-            "endLine": 31,
+            "endLine": 33,
             "endColumn": 21
           }
         }
@@ -7057,7 +7203,7 @@
       "comment": false
     },
     {
-      "lineNo": 32,
+      "lineNo": 34,
       "indent": 2,
       "raw": "  log-entry:",
       "tokens": [
@@ -7065,9 +7211,9 @@
           "kind": "word",
           "text": "log-entry",
           "span": {
-            "line": 32,
+            "line": 34,
             "column": 3,
-            "endLine": 32,
+            "endLine": 34,
             "endColumn": 12
           }
         },
@@ -7075,9 +7221,9 @@
           "kind": "colon",
           "text": ":",
           "span": {
-            "line": 32,
+            "line": 34,
             "column": 12,
-            "endLine": 32,
+            "endLine": 34,
             "endColumn": 13
           }
         }
@@ -7086,7 +7232,7 @@
       "comment": false
     },
     {
-      "lineNo": 33,
+      "lineNo": 35,
       "indent": 4,
       "raw": "    Day 40: {weather-note} The oil is low; the nights aren't.",
       "tokens": [
@@ -7094,9 +7240,9 @@
           "kind": "word",
           "text": "Day",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 5,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 8
           }
         },
@@ -7104,9 +7250,9 @@
           "kind": "number",
           "text": "40",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 9,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 11
           }
         },
@@ -7114,9 +7260,9 @@
           "kind": "colon",
           "text": ":",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 11,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 12
           }
         },
@@ -7124,9 +7270,9 @@
           "kind": "lbrace",
           "text": "{",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 13,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 14
           }
         },
@@ -7134,9 +7280,9 @@
           "kind": "word",
           "text": "weather-note",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 14,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 26
           }
         },
@@ -7144,9 +7290,9 @@
           "kind": "rbrace",
           "text": "}",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 26,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 27
           }
         },
@@ -7154,9 +7300,9 @@
           "kind": "word",
           "text": "The",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 28,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 31
           }
         },
@@ -7164,9 +7310,9 @@
           "kind": "word",
           "text": "oil",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 32,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 35
           }
         },
@@ -7174,9 +7320,9 @@
           "kind": "word",
           "text": "is",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 36,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 38
           }
         },
@@ -7184,9 +7330,9 @@
           "kind": "word",
           "text": "low",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 39,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 42
           }
         },
@@ -7194,9 +7340,9 @@
           "kind": "punct",
           "text": ";",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 42,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 43
           }
         },
@@ -7204,9 +7350,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 44,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 47
           }
         },
@@ -7214,9 +7360,9 @@
           "kind": "word",
           "text": "nights",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 48,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 54
           }
         },
@@ -7224,9 +7370,9 @@
           "kind": "word",
           "text": "aren't",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 55,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 61
           }
         },
@@ -7234,9 +7380,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 33,
+            "line": 35,
             "column": 61,
-            "endLine": 33,
+            "endLine": 35,
             "endColumn": 62
           }
         }
@@ -7245,7 +7391,7 @@
       "comment": false
     },
     {
-      "lineNo": 35,
+      "lineNo": 37,
       "indent": 0,
       "raw": "define text weather-note from \"./weather.ts\"",
       "tokens": [
@@ -7253,9 +7399,9 @@
           "kind": "word",
           "text": "define",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 1,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 7
           }
         },
@@ -7263,9 +7409,9 @@
           "kind": "word",
           "text": "text",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 8,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 12
           }
         },
@@ -7273,9 +7419,9 @@
           "kind": "word",
           "text": "weather-note",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 13,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 25
           }
         },
@@ -7283,9 +7429,9 @@
           "kind": "word",
           "text": "from",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 26,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 30
           }
         },
@@ -7293,9 +7439,9 @@
           "kind": "string",
           "text": "./weather.ts",
           "span": {
-            "line": 35,
+            "line": 37,
             "column": 31,
-            "endLine": 35,
+            "endLine": 37,
             "endColumn": 45
           }
         }

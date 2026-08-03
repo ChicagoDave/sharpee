@@ -1,6 +1,8 @@
-story "Orchestra" by "Test"
+story
+  title: Orchestra
+  authors: Test
   id: media-sugar
-  version: 0.0.1
+  story-version: 0.0.1
 
   on every turn
     play sound chime

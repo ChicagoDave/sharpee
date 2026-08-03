@@ -16,9 +16,11 @@ const REDUNDANT = readFileSync(join(__dirname, 'fixtures', 'door-redundant.story
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (body: string) => `story "Doors" by "T"
+const story = (body: string) => `story
+  title: Doors
+  authors: T
   id: doors
-  version: 0.0.1
+  story-version: 0.0.1
 
 ${body}
 create the player
@@ -41,7 +43,7 @@ create the oak door
 describe('`through` exit-line tail (ADR-234 D1/D2, ratchet R2)', () => {
   it('lowers the one-line form to IRExit.via with the door as a plain entity (AC-1 IR half)', () => {
     const result = compile(BASIC);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ok).toBe(true);
     const kitchen = result.ir.entities.find((e) => e.id === 'kitchen')!;
     expect(kitchen.exits).toMatchObject([{ direction: 'north', to: 'hall', via: 'oak-door' }]);
@@ -54,7 +56,7 @@ describe('`through` exit-line tail (ADR-234 D1/D2, ratchet R2)', () => {
 
   it('accepts the mirrored two-line agreement (redundant, D3)', () => {
     const result = compile(REDUNDANT);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const kitchen = result.ir.entities.find((e) => e.id === 'kitchen')!;
     const hall = result.ir.entities.find((e) => e.id === 'hall')!;
     expect(kitchen.exits).toMatchObject([{ direction: 'north', to: 'hall', via: 'oak-door' }]);
@@ -72,7 +74,7 @@ create the Cellar
 
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const attic = result.ir.entities.find((e) => e.id === 'attic')!;
     expect(attic.exits).toMatchObject([{ direction: 'down', to: 'cellar', via: null }]);
   });
@@ -132,7 +134,7 @@ create the brass key
 
   it('the keyless form parses: empty key, name value', () => {
     const result = compile(LOCK_STORY('lockable with the brass key'));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const strongbox = result.ir.entities.find((e) => e.id === 'strongbox')!;
     const lockable = strongbox.traits.find((t) => t.name === 'lockable')!;
     expect(lockable.config).toEqual([{ key: '', value: 'brass key', valueKind: 'name' }]);

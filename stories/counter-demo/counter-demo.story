@@ -1,6 +1,8 @@
-story "The Vigil" by "DevArch"
+story
+  title: The Vigil
+  authors: DevArch
   id: counter-demo
-  version: 1.0.0
+  story-version: 1.0.0
 
   on every turn
     raise dread by 20

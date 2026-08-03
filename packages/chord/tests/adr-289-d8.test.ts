@@ -14,7 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 const WORLD = `create the Hall
   a room
@@ -42,7 +42,7 @@ describe('L1 — error recovery stops at `extend` and `remove`', () => {
   // the fix `extend`/`remove` were not in that set, so recovery ran past the
   // whole alteration block and its grammar lines vanished — silently, since
   // the story still compiled carrying only the unrelated header error.
-  const SECOND_HEADER = 'story "Second" by "N"\n  id: t2\n  version: 0.0.1\n\n';
+  const SECOND_HEADER = 'story\n  title: Second\n  authors: N\n  id: t2\n  story-version: 0.0.1\n\n';
 
   it('an `extend action` block after a parse error still reaches the IR', () => {
     const result = compile(`${HEADER}${WORLD}\n${SECOND_HEADER}${EXTENSION}`);
@@ -82,7 +82,7 @@ describe('L2 — a lone quote is prose punctuation, not an unterminated string',
 
 describe('L7 — hunger band gates', () => {
   const hunger = (body: string) =>
-    `story "T" by "N"\n  id: t\n  version: 0.0.1\n  use hunger\n${body}\n\n${WORLD}`;
+    `story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n  use hunger\n${body}\n\n${WORLD}`;
 
   it('two bands sharing an id are an error — the band identity would be ambiguous', () => {
     const errors = errorsOf(hunger('    grows 1 each turn\n    peckish at 10\n    peckish at 40\n    fatal at 100'));

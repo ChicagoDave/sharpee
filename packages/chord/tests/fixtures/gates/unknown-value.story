@@ -1,6 +1,8 @@
-story "Gate 2" by "Nobody"
+story
+  title: Gate 2
+  authors: Nobody
   id: gate-2
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the message
   scenery

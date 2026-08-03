@@ -1,6 +1,8 @@
-story "Bad Action" by "Nobody"
+story
+  title: Bad Action
+  authors: Nobody
   id: bad-action
-  version: 0.0.1
+  story-version: 0.0.1
 
 define action waving
   grammar

@@ -1,6 +1,8 @@
-story "Quantifier Closed-Condition Gate" by "Sharpee Platform"
+story
+  title: Quantifier Closed-Condition Gate
+  authors: Sharpee Platform
   id: quantifier-closed
-  version: 0.0.1
+  story-version: 0.0.1
 
 define condition sweep-time: the player is in the Barn
 

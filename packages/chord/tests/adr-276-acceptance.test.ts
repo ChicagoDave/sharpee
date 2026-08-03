@@ -22,7 +22,9 @@ import { compile } from '../src/index.js';
 
 /** The ADR Acceptance composite: all four named violations in one story. */
 export const COMPOSITE_ACCEPTANCE_SOURCE = [
-  'story "Composite Acceptance" by "Test"',
+  'story',
+  '  title: Composite Acceptance',
+  '  authors: Test',
   '  id: composite-acceptance',
   '  use combat',
   '',
@@ -67,22 +69,25 @@ export const COMPOSITE_ACCEPTANCE_CODES = [
 describe('ADR-276 Acceptance item 1 — the composite four-violation story', () => {
   it('surfaces all four diagnostics, each with a span, from a single compile', () => {
     const result = compile(COMPOSITE_ACCEPTANCE_SOURCE);
+    const diagnostics = result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid');
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.map((d) => d.code)).toEqual([...COMPOSITE_ACCEPTANCE_CODES]);
-    for (const d of result.diagnostics) {
+    expect(diagnostics.map((d) => d.code)).toEqual([...COMPOSITE_ACCEPTANCE_CODES]);
+    for (const d of diagnostics) {
       expect(d.severity).toBe('error');
       expect(d.span.line).toBeGreaterThan(0);
       expect(d.span.column).toBeGreaterThan(0);
     }
     // Four distinct sites — collected, not one-per-attempt.
-    expect(new Set(result.diagnostics.map((d) => d.span.line)).size).toBe(4);
+    expect(new Set(diagnostics.map((d) => d.span.line)).size).toBe(4);
   });
 });
 
 describe('ADR-276 Acceptance item 7 — alteration errors are collected', () => {
   it('a story with three alteration errors (census 1, 2, 3) surfaces all three in one compile', () => {
     const source = [
-      'story "Alterations" by "Test"',
+      'story',
+      '  title: Alterations',
+      '  authors: Test',
       '  id: alterations',
       '',
       'create the Lab',
@@ -108,7 +113,7 @@ describe('ADR-276 Acceptance item 7 — alteration errors are collected', () => 
     ].join('\n');
     const result = compile(source);
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.map((d) => d.code)).toEqual([
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid').map((d) => d.code)).toEqual([
       'analysis.extend-target',
       'analysis.removal-target',
       'analysis.unmatched-removal-pattern',

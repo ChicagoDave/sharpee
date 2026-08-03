@@ -1,7 +1,9 @@
-story "Each Package Compile Fixture" by "Sharpee Platform"
+story
+  title: Each Package Compile Fixture
+  authors: Sharpee Platform
   id: each-package-compile
-  version: 0.0.1
-  blurb: E1 any / E2 no / E3 each + the match + must-be-any compiling to IR (each package P3).
+  story-version: 0.0.1
+  description: E1 any / E2 no / E3 each + the match + must-be-any compiling to IR (each package P3).
 
 define condition stray-treasure: it is a treasure and it is not in the Trophy Barn
 define condition alarm-trigger: it is a treasure and the player holds it

@@ -1,6 +1,8 @@
-story "Match Outside Each Gate" by "Sharpee Platform"
+story
+  title: Match Outside Each Gate
+  authors: Sharpee Platform
   id: match-outside-each
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Barn
   a room

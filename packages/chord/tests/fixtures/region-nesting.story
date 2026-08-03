@@ -1,6 +1,8 @@
-story "Region Nesting" by "Test"
+story
+  title: Region Nesting
+  authors: Test
   id: region-nesting
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Underground
   a region

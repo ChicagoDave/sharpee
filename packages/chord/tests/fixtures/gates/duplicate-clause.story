@@ -1,6 +1,8 @@
-story "Gate: duplicate clause" by "Nobody"
+story
+  title: Gate: duplicate clause
+  authors: Nobody
   id: gate-duplicate-clause
-  version: 0.0.1
+  story-version: 0.0.1
 
 define trait guarded
   phrases en-US

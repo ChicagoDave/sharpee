@@ -1,6 +1,8 @@
-story "Gate: state collision" by "Nobody"
+story
+  title: Gate: state collision
+  authors: Nobody
   id: gate-state-collision
-  version: 0.0.1
+  story-version: 0.0.1
 
 define trait feedable
   states, reversible: hungry, content

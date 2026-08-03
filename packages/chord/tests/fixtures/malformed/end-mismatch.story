@@ -1,6 +1,8 @@
-story "Broken" by "Nobody"
+story
+  title: Broken
+  authors: Nobody
   id: broken-3
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the message
   scenery

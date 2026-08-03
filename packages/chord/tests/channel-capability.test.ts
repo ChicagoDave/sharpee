@@ -15,9 +15,11 @@ const FIXTURE = readFileSync(join(__dirname, 'fixtures', 'compass.story'), 'utf8
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (extra: string) => `story "T" by "T"
+const story = (extra: string) => `story
+  title: T
+  authors: T
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Hall
   a room
@@ -29,7 +31,7 @@ ${extra}`;
 describe('define channel (ADR-216, spelling A)', () => {
   it('compiles the compass fixture: mode, camelCase gate, source event, return (ADR-253)', () => {
     const result = compile(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.channels).toEqual([
       {
         name: 'compass',
@@ -94,7 +96,7 @@ define phrase wide
 end phrase
 `),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const lamp = result.ir.entities.find((e) => e.id === 'lamp')!;
     const stmt = lamp.onClauses[0].body[0] as { stmtWhen?: unknown };
     expect(stmt.stmtWhen).toEqual({ kind: 'client-has', capability: 'splitPane' });

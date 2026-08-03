@@ -1,6 +1,8 @@
-story "The Long Cold" by "DevArch"
+story
+  title: The Long Cold
+  authors: DevArch
   id: hunger-demo
-  version: 1.0.0
+  story-version: 1.0.0
   use hunger
     grows 3 each turn
     peckish at 3 says feeling-peckish

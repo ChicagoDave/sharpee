@@ -1,6 +1,8 @@
-story "Door Redundant" by "Test"
+story
+  title: Door Redundant
+  authors: Test
   id: door-redundant
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Kitchen
   a room

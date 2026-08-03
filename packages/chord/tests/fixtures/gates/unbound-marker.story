@@ -1,6 +1,8 @@
-story "Gate 6" by "Nobody"
+story
+  title: Gate 6
+  authors: Nobody
   id: gate-6
-  version: 0.0.1
+  story-version: 0.0.1
 
 define text garbled from "./extras.ts"
 

@@ -1,6 +1,8 @@
-story "Removed Every" by "Nobody"
+story
+  title: Removed Every
+  authors: Nobody
   id: removed-every
-  version: 0.0.1
+  story-version: 0.0.1
 
 every 3 turns
   phrase hum

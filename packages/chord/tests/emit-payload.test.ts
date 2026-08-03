@@ -18,7 +18,7 @@ describe('payloaded emit (ADR-216)', () => {
   const body = () => result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
 
   it('compiles the fixture clean with dotted event types intact', () => {
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(body().map((s) => s.event)).toEqual([
       'media-sound-play',
       'media-image-show',
@@ -55,9 +55,11 @@ describe('payloaded emit (ADR-216)', () => {
   });
 
   it('`when` still rides after a payload; an emit without `with` has no payload field', () => {
-    const gated = compile(`story "T" by "T"
+    const gated = compile(`story
+  title: T
+  authors: T
   id: t
-  version: 0.0.1
+  story-version: 0.0.1
   states: calm, stormy
 
   on every turn
@@ -70,7 +72,7 @@ create the Hall
 
   A hall.
 `);
-    expect(gated.diagnostics).toEqual([]);
+    expect(gated.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const statements = gated.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
     expect(statements[0].stmtWhen).toEqual({ kind: 'story-state', state: 'stormy' });
     expect(statements[0].payload).toEqual([

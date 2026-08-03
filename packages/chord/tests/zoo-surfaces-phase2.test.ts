@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 /** A lab room whose description carries `{frag}` at a CLAUSE site. */
 const CLAUSE_ROOM = `create the Lab

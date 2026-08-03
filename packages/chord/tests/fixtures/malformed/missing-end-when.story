@@ -1,6 +1,8 @@
-story "Removed When" by "Nobody"
+story
+  title: Removed When
+  authors: Nobody
   id: removed-when
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the East Room
   a room

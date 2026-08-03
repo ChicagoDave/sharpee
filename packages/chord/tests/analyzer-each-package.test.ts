@@ -26,7 +26,7 @@ function gateErrors(name: string) {
   return compile(fixture(join('gates', name))).diagnostics.filter((d) => d.severity === 'error');
 }
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 function errorsOf(source: string) {
   return compile(source).diagnostics.filter((d) => d.severity === 'error');
@@ -142,9 +142,9 @@ describe('never-guess gates (each package P3)', () => {
       'analysis.closed-condition-selection',
       'analysis.closed-condition-selection',
     ]);
-    expect(errors[0].span.line).toBe(16); // on … while any sweep-time
-    expect(errors[1].span.line).toBe(20); // after … while no sweep-time
-    expect(errors[2].span.line).toBe(21); // each sweep-time
+    expect(errors[0].span.line).toBe(18); // on … while any sweep-time
+    expect(errors[1].span.line).toBe(22); // after … while no sweep-time
+    expect(errors[2].span.line).toBe(23); // each sweep-time
     for (const e of errors) {
       expect(e.message).toContain('closed condition');
       expect(e.message).toContain('Reference `it` in the condition');
@@ -154,14 +154,14 @@ describe('never-guess gates (each package P3)', () => {
   it('`the match` outside an each body errors in NameRef and value positions', () => {
     const errors = gateErrors('match-outside-each.story');
     expect(errors.map((e) => e.code)).toEqual(['analysis.match-outside-each', 'analysis.match-outside-each']);
-    expect(errors[0].span.line).toBe(16); // change the match to content
-    expect(errors[1].span.line).toBe(17); // with animal = the match
+    expect(errors[0].span.line).toBe(18); // change the match to content
+    expect(errors[1].span.line).toBe(19); // with animal = the match
     expect(errors[0].message).toContain('`each`-block binder');
   });
 
   it('a quantifier over a story state is a load error naming the story-state distinction', () => {
     const errors = errorsOf(
-      'story "T" by "N"\n  id: t\n  version: 0.0.1\n  states: open-hours, closing-hush\n\n' +
+      'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n  states: open-hours, closing-hush\n\n' +
         'create the goat\n\n  on prodding it while any closing-hush\n    phrase nope\n  end on\n\n' +
         'define phrases en-US\n  nope:\n    Nope.\n',
     );

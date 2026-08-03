@@ -28,8 +28,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 60,
-        "endLine": 6,
-        "line": 6,
+        "endLine": 8,
+        "line": 8,
       },
     },
   ],
@@ -50,8 +50,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 31,
-            "endLine": 13,
-            "line": 13,
+            "endLine": 15,
+            "line": 15,
           },
         },
       ],
@@ -67,8 +67,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 24,
-            "endLine": 11,
-            "line": 11,
+            "endLine": 13,
+            "line": 13,
           },
           "to": "cloakroom",
           "via": null,
@@ -78,8 +78,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 12,
-            "line": 12,
+            "endLine": 14,
+            "line": 14,
           },
           "to": "foyer-bar",
           "via": null,
@@ -96,8 +96,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 9,
-            "line": 9,
+            "endLine": 11,
+            "line": 11,
           },
         },
       ],
@@ -107,8 +107,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 71,
-        "endLine": 15,
-        "line": 8,
+        "endLine": 17,
+        "line": 10,
       },
       "startsStates": [],
       "states": [],
@@ -141,8 +141,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 20,
-            "line": 20,
+            "endLine": 22,
+            "line": 22,
           },
         },
       ],
@@ -152,8 +152,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 67,
-        "endLine": 23,
-        "line": 19,
+        "endLine": 25,
+        "line": 21,
       },
       "startsStates": [],
       "states": [],
@@ -186,8 +186,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 27,
-            "line": 27,
+            "endLine": 29,
+            "line": 29,
           },
         },
       ],
@@ -204,8 +204,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 19,
-                "endLine": 35,
-                "line": 35,
+                "endLine": 37,
+                "line": 37,
               },
               "stmtWhen": null,
             },
@@ -220,8 +220,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 37,
-                    "endLine": 37,
-                    "line": 37,
+                    "endLine": 39,
+                    "line": 39,
                   },
                   "state": "trampled",
                   "stmtWhen": null,
@@ -232,8 +232,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 37,
-                "endLine": 37,
-                "line": 36,
+                "endLine": 39,
+                "line": 38,
               },
             },
             {
@@ -247,8 +247,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 40,
-                    "endLine": 39,
-                    "line": 39,
+                    "endLine": 41,
+                    "line": 41,
                   },
                   "state": "obliterated",
                   "stmtWhen": null,
@@ -259,8 +259,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 40,
-                "endLine": 39,
-                "line": 38,
+                "endLine": 41,
+                "line": 40,
               },
             },
           ],
@@ -277,8 +277,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 40,
-            "line": 34,
+            "endLine": 42,
+            "line": 36,
           },
         },
       ],
@@ -286,8 +286,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 38,
-        "endLine": 34,
-        "line": 26,
+        "endLine": 36,
+        "line": 28,
       },
       "startsStates": [],
       "states": [],
@@ -312,8 +312,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 11,
             "endColumn": 53,
-            "endLine": 27,
-            "line": 27,
+            "endLine": 29,
+            "line": 29,
           },
         },
       ],
@@ -342,15 +342,15 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 41,
-          "endLine": 43,
-          "line": 43,
+          "endLine": 45,
+          "line": 45,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 27,
-        "endLine": 46,
-        "line": 42,
+        "endLine": 48,
+        "line": 44,
       },
       "startsStates": [],
       "states": [],
@@ -384,8 +384,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 63,
-        "endLine": 52,
-        "line": 48,
+        "endLine": 54,
+        "line": 50,
       },
       "startsStates": [],
       "states": [],
@@ -399,8 +399,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 50,
-            "line": 50,
+            "endLine": 52,
+            "line": 52,
           },
         },
       ],
@@ -437,8 +437,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 12,
             "endColumn": 39,
-            "endLine": 58,
-            "line": 58,
+            "endLine": 60,
+            "line": 60,
           },
         },
       ],
@@ -450,15 +450,15 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 59,
-          "line": 59,
+          "endLine": 61,
+          "line": 61,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 53,
-        "endLine": 61,
-        "line": 56,
+        "endLine": 63,
+        "line": 58,
       },
       "startsStates": [],
       "states": [],
@@ -472,8 +472,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 58,
-            "line": 58,
+            "endLine": 60,
+            "line": 60,
           },
         },
       ],
@@ -516,8 +516,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 30,
-                        "endLine": 72,
-                        "line": 72,
+                        "endLine": 74,
+                        "line": 74,
                       },
                       "stmtWhen": null,
                     },
@@ -527,8 +527,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 12,
-                        "endLine": 73,
-                        "line": 73,
+                        "endLine": 75,
+                        "line": 75,
                       },
                       "stmtWhen": null,
                     },
@@ -536,8 +536,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 18,
-                    "endLine": 71,
-                    "line": 71,
+                    "endLine": 73,
+                    "line": 73,
                   },
                   "value": "intact",
                 },
@@ -550,8 +550,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 32,
-                        "endLine": 75,
-                        "line": 75,
+                        "endLine": 77,
+                        "line": 77,
                       },
                       "stmtWhen": null,
                     },
@@ -559,8 +559,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 20,
-                    "endLine": 74,
-                    "line": 74,
+                    "endLine": 76,
+                    "line": 76,
                   },
                   "value": "trampled",
                 },
@@ -573,8 +573,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 35,
-                        "endLine": 77,
-                        "line": 77,
+                        "endLine": 79,
+                        "line": 79,
                       },
                       "stmtWhen": null,
                     },
@@ -584,8 +584,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                       "span": {
                         "column": 9,
                         "endColumn": 13,
-                        "endLine": 78,
-                        "line": 78,
+                        "endLine": 80,
+                        "line": 80,
                       },
                       "stmtWhen": null,
                     },
@@ -593,8 +593,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
                   "span": {
                     "column": 7,
                     "endColumn": 23,
-                    "endLine": 76,
-                    "line": 76,
+                    "endLine": 78,
+                    "line": 78,
                   },
                   "value": "obliterated",
                 },
@@ -603,8 +603,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 79,
-                "line": 70,
+                "endLine": 81,
+                "line": 72,
               },
               "subject": {
                 "base": {
@@ -625,8 +625,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 80,
-            "line": 69,
+            "endLine": 82,
+            "line": 71,
           },
         },
       ],
@@ -636,15 +636,15 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 66,
-          "line": 66,
+          "endLine": 68,
+          "line": 68,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 69,
-        "line": 63,
+        "endLine": 71,
+        "line": 65,
       },
       "startsStates": [],
       "states": [
@@ -662,8 +662,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 65,
-            "line": 65,
+            "endLine": 67,
+            "line": 67,
           },
         },
       ],
@@ -701,8 +701,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 83,
-        "line": 82,
+        "endLine": 85,
+        "line": 84,
       },
     },
   ],
@@ -715,23 +715,29 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "span": {
         "column": 1,
         "endColumn": 39,
-        "endLine": 99,
-        "line": 99,
+        "endLine": 101,
+        "line": 101,
       },
     },
   ],
-  "languageVersion": "2.2.0",
+  "languageVersion": "3.0.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
     "locales": {},
   },
   "meta": {
-    "author": "Roger Firth (Sharpee implementation)",
     "fields": {
-      "blurb": "A basic IF demonstration - hang up your cloak!",
+      "authors": [
+        "Roger Firth (Sharpee implementation)",
+      ],
+      "description": {
+        "kind": "literal",
+        "value": "A basic IF demonstration - hang up your cloak!",
+      },
       "id": "cloak-of-darkness",
-      "version": "1.0.0",
+      "storyVersion": "1.0.0",
+      "testers": [],
     },
     "title": "Cloak of Darkness",
   },
@@ -744,8 +750,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 53,
-            "endLine": 61,
-            "line": 61,
+            "endLine": 63,
+            "line": 63,
           },
           "strategy": null,
           "variants": [
@@ -759,8 +765,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 89,
-            "line": 87,
+            "endLine": 91,
+            "line": 89,
           },
           "strategy": null,
           "variants": [
@@ -774,8 +780,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 63,
-            "endLine": 24,
-            "line": 23,
+            "endLine": 26,
+            "line": 25,
           },
           "strategy": null,
           "variants": [
@@ -789,8 +795,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 32,
-            "line": 30,
+            "endLine": 34,
+            "line": 32,
           },
           "strategy": null,
           "variants": [
@@ -804,8 +810,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 65,
-            "endLine": 17,
-            "line": 15,
+            "endLine": 19,
+            "line": 17,
           },
           "strategy": null,
           "variants": [
@@ -819,8 +825,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 70,
-            "endLine": 93,
-            "line": 92,
+            "endLine": 95,
+            "line": 94,
           },
           "strategy": null,
           "variants": [
@@ -834,8 +840,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 69,
-            "endLine": 97,
-            "line": 96,
+            "endLine": 99,
+            "line": 98,
           },
           "strategy": null,
           "variants": [
@@ -849,8 +855,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 37,
-            "endLine": 95,
-            "line": 94,
+            "endLine": 97,
+            "line": 96,
           },
           "strategy": null,
           "variants": [
@@ -866,8 +872,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 46,
-            "line": 46,
+            "endLine": 48,
+            "line": 48,
           },
           "strategy": null,
           "variants": [
@@ -881,8 +887,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 53,
-            "endLine": 91,
-            "line": 90,
+            "endLine": 93,
+            "line": 92,
           },
           "strategy": null,
           "variants": [
@@ -896,8 +902,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
           "span": {
             "column": 3,
             "endColumn": 37,
-            "endLine": 54,
-            "line": 52,
+            "endLine": 56,
+            "line": 54,
           },
           "strategy": null,
           "variants": [

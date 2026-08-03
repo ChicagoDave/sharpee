@@ -16,7 +16,7 @@ function gateErrors(name: string) {
   return compile(fixture(join('gates', name))).diagnostics.filter((d) => d.severity === 'error');
 }
 
-const HEADER = 'story "T" by "N"\n  id: t\n  version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n\n';
 
 function errorsOf(source: string) {
   return compile(source).diagnostics.filter((d) => d.severity === 'error');
@@ -27,7 +27,7 @@ describe('three-ring boolean-state gate (D9)', () => {
     const errors = gateErrors('boolean-state.story');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.boolean-state');
-    expect(errors[0].span.line).toBe(7);
+    expect(errors[0].span.line).toBe(9);
     expect(errors[0].message).toContain('given 8');
   });
 
@@ -35,7 +35,7 @@ describe('three-ring boolean-state gate (D9)', () => {
     const errors = gateErrors('shadow-state.story');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.shadow-state');
-    expect(errors[0].span.line).toBe(7);
+    expect(errors[0].span.line).toBe(9);
     expect(errors[0].message).toContain('compose `openable`');
   });
 
@@ -43,13 +43,13 @@ describe('three-ring boolean-state gate (D9)', () => {
     const errors = gateErrors('negated-state.story');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.negated-state');
-    expect(errors[0].span.line).toBe(7);
+    expect(errors[0].span.line).toBe(9);
     expect(errors[0].message).toContain('names the absence of `fed`');
     expect(errors[0].message).toContain('never the absence of another state');
   });
 
   it('ring 3 catches shared-stem pairs (active/inactive) on the story set', () => {
-    const errors = errorsOf('story "T" by "N"\n  id: t\n  version: 0.0.1\n  states: active, inactive\n');
+    const errors = errorsOf('story\n  title: T\n  authors: N\n  id: t\n  story-version: 0.0.1\n  states: active, inactive\n');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.negated-state');
   });
@@ -67,7 +67,7 @@ describe('refuse-when polarity gate (D6)', () => {
     const errors = gateErrors('negated-requirement.story');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.negated-requirement');
-    expect(errors[0].span.line).toBe(11);
+    expect(errors[0].span.line).toBe(13);
     expect(errors[0].message).toContain('must');
   });
 });
@@ -76,17 +76,17 @@ describe('duplicate-clause gate (Phase C P3)', () => {
   const errors = gateErrors('duplicate-clause.story');
 
   it('flags a second same-action clause on one trait even when condition-differentiated', () => {
-    const traitError = errors.find((e) => e.span.line === 16)!;
+    const traitError = errors.find((e) => e.span.line === 18)!;
     expect(traitError.code).toBe('analysis.duplicate-clause');
     expect(traitError.message).toContain('trait `guarded`');
-    expect(traitError.message).toContain('line 12');
+    expect(traitError.message).toContain('line 14');
   });
 
   it('flags identically-conditioned event clauses on one entity', () => {
-    const entityError = errors.find((e) => e.span.line === 34)!;
+    const entityError = errors.find((e) => e.span.line === 36)!;
     expect(entityError.code).toBe('analysis.duplicate-clause');
     expect(entityError.message).toContain('foyer');
-    expect(entityError.message).toContain('line 29');
+    expect(entityError.message).toContain('line 31');
   });
 
   it('reports exactly the two masks', () => {
@@ -109,7 +109,7 @@ describe('trait states: cross-trait resolution and the D8 collision gate', () =>
     const errors = gateErrors('state-collision.story');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.state-collision');
-    expect(errors[0].span.line).toBe(16);
+    expect(errors[0].span.line).toBe(18);
     expect(errors[0].message).toContain('`content`');
     expect(errors[0].message).toContain('rename');
   });
@@ -130,7 +130,7 @@ describe('change legality (D4)', () => {
     const errors = gateErrors('irreversible-state.story');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.irreversible-state');
-    expect(errors[0].span.line).toBe(15);
+    expect(errors[0].span.line).toBe(17);
     expect(errors[0].message).toContain('reversible');
   });
 

@@ -12,9 +12,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile, parse, CreateDecl } from '../src';
 
-const story = (safeLines: string, extra = '') => `story "Starts" by "T"
+const story = (safeLines: string, extra = '') => `story
+  title: Starts
+  authors: T
   id: starts
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Vault
   a room
@@ -45,7 +47,7 @@ describe('starts <state> parses through composition (ADR-231 D5a)', () => {
 
   it('parses the flagship composition line into AST startsStates', () => {
     const result = parse(source);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const safe = result.ast.declarations.find(
       (d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'safe',
     )!;
@@ -56,7 +58,7 @@ describe('starts <state> parses through composition (ADR-231 D5a)', () => {
 
   it('lowers to IREntity.startsStates through the real compile pipeline', () => {
     const result = compile(source);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ok).toBe(true);
     const safe = result.ir.entities.find((e) => e.id === 'safe')!;
     expect(safe.startsStates).toEqual(['locked']);
@@ -65,14 +67,14 @@ describe('starts <state> parses through composition (ADR-231 D5a)', () => {
 
   it('accepts several initializers across composition lines', () => {
     const result = compile(story('  a container, openable, starts closed\n  switchable, starts on'));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const safe = result.ir.entities.find((e) => e.id === 'safe')!;
     expect(safe.startsStates).toEqual(['closed', 'on']);
   });
 
   it('leaves `starts in <place>` placement untouched', () => {
     const result = compile(story('  a container'));
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const player = result.ir.entities.find((e) => e.id === 'player')!;
     expect(player.placement).toMatchObject({ relation: 'starts-in', place: 'vault' });
     expect(player.startsStates).toEqual([]);
@@ -104,7 +106,7 @@ describe('analysis.starts-state-pairing (THE ADR-named rejection gate)', () => {
     expect(bad.ok).toBe(false);
     expect(bad.diagnostics.map((d) => d.code)).toContain('analysis.starts-state-pairing');
     const good = compile(story('  a container, openable, lockable with the brass key, starts unlocked'));
-    expect(good.diagnostics).toEqual([]);
+    expect(good.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(good.ir.entities.find((e) => e.id === 'safe')!.startsStates).toEqual(['unlocked']);
   });
 });

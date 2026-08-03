@@ -50,8 +50,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 34,
-            "endLine": 494,
-            "line": 494,
+            "endLine": 496,
+            "line": 496,
           },
         },
       ],
@@ -59,8 +59,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 497,
-        "line": 489,
+        "endLine": 499,
+        "line": 491,
       },
     },
     {
@@ -97,8 +97,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 39,
-            "endLine": 505,
-            "line": 505,
+            "endLine": 507,
+            "line": 507,
           },
         },
       ],
@@ -106,8 +106,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 508,
-        "line": 501,
+        "endLine": 510,
+        "line": 503,
       },
     },
     {
@@ -121,8 +121,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 17,
-            "endLine": 519,
-            "line": 519,
+            "endLine": 521,
+            "line": 521,
           },
           "stmtWhen": null,
         },
@@ -133,8 +133,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 20,
-            "endLine": 520,
-            "line": 520,
+            "endLine": 522,
+            "line": 522,
           },
           "stmtWhen": null,
         },
@@ -158,8 +158,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 518,
-            "line": 518,
+            "endLine": 520,
+            "line": 520,
           },
         },
       ],
@@ -213,8 +213,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 517,
-            "line": 517,
+            "endLine": 519,
+            "line": 519,
           },
           "worth": 5,
         },
@@ -222,8 +222,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 522,
-        "line": 512,
+        "endLine": 524,
+        "line": 514,
       },
     },
   ],
@@ -252,8 +252,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 11,
-            "line": 11,
+            "endLine": 13,
+            "line": 13,
           },
           "to": "main-path",
           "via": null,
@@ -270,8 +270,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 9,
-            "line": 9,
+            "endLine": 11,
+            "line": 11,
           },
         },
       ],
@@ -281,8 +281,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 75,
-        "endLine": 13,
-        "line": 8,
+        "endLine": 15,
+        "line": 10,
       },
       "startsStates": [],
       "states": [],
@@ -317,8 +317,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 70,
-            "endLine": 24,
-            "line": 24,
+            "endLine": 26,
+            "line": 26,
           },
         },
       ],
@@ -334,8 +334,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 26,
-            "endLine": 21,
-            "line": 21,
+            "endLine": 23,
+            "line": 23,
           },
           "to": "petting-zoo",
           "via": null,
@@ -345,8 +345,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 21,
-            "endLine": 22,
-            "line": 22,
+            "endLine": 24,
+            "line": 24,
           },
           "to": "aviary",
           "via": null,
@@ -356,8 +356,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 23,
-            "line": 23,
+            "endLine": 25,
+            "line": 25,
           },
           "to": "supply-room",
           "via": null,
@@ -374,8 +374,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 19,
-            "line": 19,
+            "endLine": 21,
+            "line": 21,
           },
         },
       ],
@@ -385,8 +385,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 76,
-        "endLine": 26,
-        "line": 18,
+        "endLine": 28,
+        "line": 20,
       },
       "startsStates": [],
       "states": [],
@@ -420,8 +420,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 32,
-            "line": 32,
+            "endLine": 34,
+            "line": 34,
           },
         },
       ],
@@ -440,8 +440,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 41,
-                "line": 41,
+                "endLine": 43,
+                "line": 43,
               },
               "stmtWhen": null,
             },
@@ -456,8 +456,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 42,
-            "line": 40,
+            "endLine": 44,
+            "line": 42,
           },
         },
       ],
@@ -465,8 +465,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 20,
-        "endLine": 40,
-        "line": 31,
+        "endLine": 42,
+        "line": 33,
       },
       "startsStates": [],
       "states": [],
@@ -494,8 +494,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 24,
-            "endLine": 47,
-            "line": 47,
+            "endLine": 49,
+            "line": 49,
           },
           "to": "gift-shop",
           "via": null,
@@ -512,8 +512,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 45,
-            "line": 45,
+            "endLine": 47,
+            "line": 47,
           },
         },
       ],
@@ -532,8 +532,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 57,
-                "line": 57,
+                "endLine": 59,
+                "line": 59,
               },
               "stmtWhen": null,
             },
@@ -548,8 +548,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 58,
-            "line": 56,
+            "endLine": 60,
+            "line": 58,
           },
         },
         {
@@ -563,8 +563,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 66,
-                "endLine": 62,
-                "line": 61,
+                "endLine": 64,
+                "line": 63,
               },
               "stmtWhen": null,
             },
@@ -585,8 +585,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 63,
-            "line": 60,
+            "endLine": 65,
+            "line": 62,
           },
         },
         {
@@ -600,8 +600,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 27,
-                "endLine": 68,
-                "line": 66,
+                "endLine": 70,
+                "line": 68,
               },
               "stmtWhen": null,
             },
@@ -619,8 +619,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 69,
-            "line": 65,
+            "endLine": 71,
+            "line": 67,
           },
         },
       ],
@@ -628,8 +628,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 38,
-        "endLine": 65,
-        "line": 44,
+        "endLine": 67,
+        "line": 46,
       },
       "startsStates": [],
       "states": [],
@@ -664,8 +664,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 70,
-            "endLine": 75,
-            "line": 75,
+            "endLine": 77,
+            "line": 77,
           },
         },
       ],
@@ -681,8 +681,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 41,
-            "endLine": 74,
-            "line": 74,
+            "endLine": 76,
+            "line": 76,
           },
           "to": "nocturnal-animals-exhibit",
           "via": null,
@@ -699,8 +699,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 72,
-            "line": 72,
+            "endLine": 74,
+            "line": 74,
           },
         },
       ],
@@ -719,8 +719,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 84,
-                "line": 84,
+                "endLine": 86,
+                "line": 86,
               },
               "stmtWhen": null,
             },
@@ -735,8 +735,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 85,
-            "line": 83,
+            "endLine": 87,
+            "line": 85,
           },
         },
       ],
@@ -744,8 +744,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 20,
-        "endLine": 83,
-        "line": 71,
+        "endLine": 85,
+        "line": 73,
       },
       "startsStates": [],
       "states": [],
@@ -780,8 +780,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 88,
-            "line": 88,
+            "endLine": 90,
+            "line": 90,
           },
         },
       ],
@@ -800,8 +800,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 98,
-                "line": 98,
+                "endLine": 100,
+                "line": 100,
               },
               "stmtWhen": null,
             },
@@ -816,8 +816,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 99,
-            "line": 97,
+            "endLine": 101,
+            "line": 99,
           },
         },
       ],
@@ -825,8 +825,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 20,
-        "endLine": 97,
-        "line": 87,
+        "endLine": 99,
+        "line": 89,
       },
       "startsStates": [],
       "states": [],
@@ -840,8 +840,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 11,
             "endColumn": 15,
-            "endLine": 88,
-            "line": 88,
+            "endLine": 90,
+            "line": 90,
           },
         },
       ],
@@ -872,8 +872,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 102,
-            "line": 102,
+            "endLine": 104,
+            "line": 104,
           },
         },
       ],
@@ -892,8 +892,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 111,
-                "line": 111,
+                "endLine": 113,
+                "line": 113,
               },
               "stmtWhen": null,
             },
@@ -908,8 +908,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 112,
-            "line": 110,
+            "endLine": 114,
+            "line": 112,
           },
         },
       ],
@@ -917,8 +917,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 20,
-        "endLine": 110,
-        "line": 101,
+        "endLine": 112,
+        "line": 103,
       },
       "startsStates": [],
       "states": [],
@@ -949,8 +949,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 115,
-            "line": 115,
+            "endLine": 117,
+            "line": 117,
           },
         },
       ],
@@ -960,8 +960,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 74,
-        "endLine": 117,
-        "line": 114,
+        "endLine": 119,
+        "line": 116,
       },
       "startsStates": [],
       "states": [],
@@ -993,15 +993,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 29,
-          "endLine": 120,
-          "line": 120,
+          "endLine": 122,
+          "line": 122,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 39,
-        "endLine": 122,
-        "line": 119,
+        "endLine": 124,
+        "line": 121,
       },
       "startsStates": [],
       "states": [],
@@ -1038,15 +1038,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 126,
-          "line": 126,
+          "endLine": 128,
+          "line": 128,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 73,
-        "endLine": 128,
-        "line": 124,
+        "endLine": 130,
+        "line": 126,
       },
       "startsStates": [],
       "states": [],
@@ -1087,8 +1087,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 20,
-                "endLine": 142,
-                "line": 139,
+                "endLine": 144,
+                "line": 141,
               },
               "stmtWhen": null,
             },
@@ -1103,8 +1103,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 143,
-            "line": 138,
+            "endLine": 145,
+            "line": 140,
           },
         },
       ],
@@ -1114,15 +1114,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 134,
-          "line": 134,
+          "endLine": 136,
+          "line": 136,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 18,
-        "endLine": 138,
-        "line": 131,
+        "endLine": 140,
+        "line": 133,
       },
       "startsStates": [],
       "states": [],
@@ -1136,8 +1136,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 133,
-            "line": 133,
+            "endLine": 135,
+            "line": 135,
           },
         },
         {
@@ -1147,8 +1147,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 20,
-            "endLine": 133,
-            "line": 133,
+            "endLine": 135,
+            "line": 135,
           },
         },
         {
@@ -1164,8 +1164,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 22,
             "endColumn": 53,
-            "endLine": 133,
-            "line": 133,
+            "endLine": 135,
+            "line": 135,
           },
         },
       ],
@@ -1196,15 +1196,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 148,
-          "line": 148,
+          "endLine": 150,
+          "line": 150,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 77,
-        "endLine": 150,
-        "line": 145,
+        "endLine": 152,
+        "line": 147,
       },
       "startsStates": [],
       "states": [],
@@ -1218,8 +1218,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 147,
-            "line": 147,
+            "endLine": 149,
+            "line": 149,
           },
         },
       ],
@@ -1250,15 +1250,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 155,
-          "line": 155,
+          "endLine": 157,
+          "line": 157,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 56,
-        "endLine": 157,
-        "line": 152,
+        "endLine": 159,
+        "line": 154,
       },
       "startsStates": [],
       "states": [],
@@ -1272,8 +1272,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 154,
-            "line": 154,
+            "endLine": 156,
+            "line": 156,
           },
         },
       ],
@@ -1305,15 +1305,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 162,
-          "line": 162,
+          "endLine": 164,
+          "line": 164,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 53,
-        "endLine": 164,
-        "line": 159,
+        "endLine": 166,
+        "line": 161,
       },
       "startsStates": [],
       "states": [],
@@ -1327,8 +1327,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 161,
-            "line": 161,
+            "endLine": 163,
+            "line": 163,
           },
         },
       ],
@@ -1360,15 +1360,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 169,
-          "line": 169,
+          "endLine": 171,
+          "line": 171,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 64,
-        "endLine": 171,
-        "line": 166,
+        "endLine": 173,
+        "line": 168,
       },
       "startsStates": [],
       "states": [],
@@ -1382,8 +1382,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 168,
-            "line": 168,
+            "endLine": 170,
+            "line": 170,
           },
         },
         {
@@ -1393,8 +1393,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 168,
-            "line": 168,
+            "endLine": 170,
+            "line": 170,
           },
         },
       ],
@@ -1425,15 +1425,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 176,
-          "line": 176,
+          "endLine": 178,
+          "line": 178,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 39,
-        "endLine": 178,
-        "line": 173,
+        "endLine": 180,
+        "line": 175,
       },
       "startsStates": [],
       "states": [],
@@ -1447,8 +1447,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 175,
-            "line": 175,
+            "endLine": 177,
+            "line": 177,
           },
         },
         {
@@ -1458,8 +1458,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 175,
-            "line": 175,
+            "endLine": 177,
+            "line": 177,
           },
         },
       ],
@@ -1491,15 +1491,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 183,
-          "line": 183,
+          "endLine": 185,
+          "line": 185,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 36,
-        "endLine": 185,
-        "line": 180,
+        "endLine": 187,
+        "line": 182,
       },
       "startsStates": [],
       "states": [],
@@ -1513,8 +1513,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 182,
-            "line": 182,
+            "endLine": 184,
+            "line": 184,
           },
         },
       ],
@@ -1545,15 +1545,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 16,
-          "endLine": 190,
-          "line": 190,
+          "endLine": 192,
+          "line": 192,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 56,
-        "endLine": 192,
-        "line": 187,
+        "endLine": 194,
+        "line": 189,
       },
       "startsStates": [],
       "states": [],
@@ -1567,8 +1567,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 189,
-            "line": 189,
+            "endLine": 191,
+            "line": 191,
           },
         },
       ],
@@ -1600,15 +1600,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 16,
-          "endLine": 197,
-          "line": 197,
+          "endLine": 199,
+          "line": 199,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 62,
-        "endLine": 199,
-        "line": 194,
+        "endLine": 201,
+        "line": 196,
       },
       "startsStates": [],
       "states": [],
@@ -1622,8 +1622,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 196,
-            "line": 196,
+            "endLine": 198,
+            "line": 198,
           },
         },
       ],
@@ -1655,15 +1655,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 16,
-          "endLine": 204,
-          "line": 204,
+          "endLine": 206,
+          "line": 206,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 49,
-        "endLine": 206,
-        "line": 201,
+        "endLine": 208,
+        "line": 203,
       },
       "startsStates": [],
       "states": [],
@@ -1677,8 +1677,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 203,
-            "line": 203,
+            "endLine": 205,
+            "line": 205,
           },
         },
         {
@@ -1688,8 +1688,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 203,
-            "line": 203,
+            "endLine": 205,
+            "line": 205,
           },
         },
       ],
@@ -1721,15 +1721,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 211,
-          "line": 211,
+          "endLine": 213,
+          "line": 213,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 57,
-        "endLine": 213,
-        "line": 208,
+        "endLine": 215,
+        "line": 210,
       },
       "startsStates": [],
       "states": [],
@@ -1743,8 +1743,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 210,
-            "line": 210,
+            "endLine": 212,
+            "line": 212,
           },
         },
         {
@@ -1754,8 +1754,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 210,
-            "line": 210,
+            "endLine": 212,
+            "line": 212,
           },
         },
       ],
@@ -1786,15 +1786,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 35,
-          "endLine": 218,
-          "line": 218,
+          "endLine": 220,
+          "line": 220,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 58,
-        "endLine": 220,
-        "line": 215,
+        "endLine": 222,
+        "line": 217,
       },
       "startsStates": [],
       "states": [],
@@ -1808,8 +1808,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 217,
-            "line": 217,
+            "endLine": 219,
+            "line": 219,
           },
         },
         {
@@ -1819,8 +1819,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 217,
-            "line": 217,
+            "endLine": 219,
+            "line": 219,
           },
         },
       ],
@@ -1851,15 +1851,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 35,
-          "endLine": 225,
-          "line": 225,
+          "endLine": 227,
+          "line": 227,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 52,
-        "endLine": 227,
-        "line": 222,
+        "endLine": 229,
+        "line": 224,
       },
       "startsStates": [],
       "states": [],
@@ -1873,8 +1873,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 224,
-            "line": 224,
+            "endLine": 226,
+            "line": 226,
           },
         },
         {
@@ -1884,8 +1884,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 224,
-            "line": 224,
+            "endLine": 226,
+            "line": 226,
           },
         },
       ],
@@ -1916,15 +1916,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 35,
-          "endLine": 232,
-          "line": 232,
+          "endLine": 234,
+          "line": 234,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 55,
-        "endLine": 234,
-        "line": 229,
+        "endLine": 236,
+        "line": 231,
       },
       "startsStates": [],
       "states": [],
@@ -1938,8 +1938,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 231,
-            "line": 231,
+            "endLine": 233,
+            "line": 233,
           },
         },
       ],
@@ -1978,8 +1978,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 21,
-                "endLine": 246,
-                "line": 246,
+                "endLine": 248,
+                "line": 248,
               },
               "stmtWhen": null,
             },
@@ -1990,8 +1990,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 14,
-                "endLine": 252,
-                "line": 247,
+                "endLine": 254,
+                "line": 249,
               },
               "stmtWhen": null,
             },
@@ -2009,8 +2009,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 253,
-            "line": 245,
+            "endLine": 255,
+            "line": 247,
           },
         },
       ],
@@ -2020,15 +2020,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 35,
-          "endLine": 239,
-          "line": 239,
+          "endLine": 241,
+          "line": 241,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 40,
-        "endLine": 245,
-        "line": 236,
+        "endLine": 247,
+        "line": 238,
       },
       "startsStates": [],
       "states": [],
@@ -2042,8 +2042,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 238,
-            "line": 238,
+            "endLine": 240,
+            "line": 240,
           },
         },
       ],
@@ -2075,15 +2075,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 258,
-          "line": 258,
+          "endLine": 260,
+          "line": 260,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 49,
-        "endLine": 260,
-        "line": 255,
+        "endLine": 262,
+        "line": 257,
       },
       "startsStates": [],
       "states": [],
@@ -2097,8 +2097,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 257,
-            "line": 257,
+            "endLine": 259,
+            "line": 259,
           },
         },
         {
@@ -2108,8 +2108,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 257,
-            "line": 257,
+            "endLine": 259,
+            "line": 259,
           },
         },
       ],
@@ -2141,15 +2141,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 265,
-          "line": 265,
+          "endLine": 267,
+          "line": 267,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 64,
-        "endLine": 267,
-        "line": 262,
+        "endLine": 269,
+        "line": 264,
       },
       "startsStates": [],
       "states": [],
@@ -2163,8 +2163,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 264,
-            "line": 264,
+            "endLine": 266,
+            "line": 266,
           },
         },
         {
@@ -2174,8 +2174,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 264,
-            "line": 264,
+            "endLine": 266,
+            "line": 266,
           },
         },
       ],
@@ -2209,15 +2209,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 272,
-          "line": 272,
+          "endLine": 274,
+          "line": 274,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 74,
-        "endLine": 274,
-        "line": 269,
+        "endLine": 276,
+        "line": 271,
       },
       "startsStates": [],
       "states": [],
@@ -2231,8 +2231,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 271,
-            "line": 271,
+            "endLine": 273,
+            "line": 273,
           },
         },
         {
@@ -2242,8 +2242,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 271,
-            "line": 271,
+            "endLine": 273,
+            "line": 273,
           },
         },
       ],
@@ -2275,15 +2275,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 280,
-          "line": 280,
+          "endLine": 282,
+          "line": 282,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 74,
-        "endLine": 282,
-        "line": 277,
+        "endLine": 284,
+        "line": 279,
       },
       "startsStates": [],
       "states": [],
@@ -2297,8 +2297,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 279,
-            "line": 279,
+            "endLine": 281,
+            "line": 281,
           },
         },
       ],
@@ -2335,8 +2335,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 41,
-                "endLine": 298,
-                "line": 293,
+                "endLine": 300,
+                "line": 295,
               },
               "stmtWhen": null,
             },
@@ -2351,8 +2351,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 299,
-            "line": 292,
+            "endLine": 301,
+            "line": 294,
           },
         },
       ],
@@ -2362,15 +2362,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 288,
-          "line": 288,
+          "endLine": 290,
+          "line": 290,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 292,
-        "line": 285,
+        "endLine": 294,
+        "line": 287,
       },
       "startsStates": [],
       "states": [],
@@ -2384,8 +2384,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 287,
-            "line": 287,
+            "endLine": 289,
+            "line": 289,
           },
         },
         {
@@ -2395,8 +2395,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 20,
-            "endLine": 287,
-            "line": 287,
+            "endLine": 289,
+            "line": 289,
           },
         },
       ],
@@ -2432,8 +2432,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 74,
-                "endLine": 314,
-                "line": 309,
+                "endLine": 316,
+                "line": 311,
               },
               "stmtWhen": null,
             },
@@ -2448,8 +2448,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 315,
-            "line": 308,
+            "endLine": 317,
+            "line": 310,
           },
         },
       ],
@@ -2459,15 +2459,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 16,
-          "endLine": 304,
-          "line": 304,
+          "endLine": 306,
+          "line": 306,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 308,
-        "line": 301,
+        "endLine": 310,
+        "line": 303,
       },
       "startsStates": [],
       "states": [],
@@ -2481,8 +2481,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 303,
-            "line": 303,
+            "endLine": 305,
+            "line": 305,
           },
         },
         {
@@ -2492,8 +2492,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 20,
-            "endLine": 303,
-            "line": 303,
+            "endLine": 305,
+            "line": 305,
           },
         },
       ],
@@ -2530,8 +2530,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 25,
-                "endLine": 328,
-                "line": 325,
+                "endLine": 330,
+                "line": 327,
               },
               "stmtWhen": null,
             },
@@ -2546,8 +2546,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 329,
-            "line": 324,
+            "endLine": 331,
+            "line": 326,
           },
         },
       ],
@@ -2557,15 +2557,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 320,
-          "line": 320,
+          "endLine": 322,
+          "line": 322,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 324,
-        "line": 317,
+        "endLine": 326,
+        "line": 319,
       },
       "startsStates": [],
       "states": [],
@@ -2579,8 +2579,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 319,
-            "line": 319,
+            "endLine": 321,
+            "line": 321,
           },
         },
         {
@@ -2590,8 +2590,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 20,
-            "endLine": 319,
-            "line": 319,
+            "endLine": 321,
+            "line": 321,
           },
         },
       ],
@@ -2631,8 +2631,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 340,
-                "line": 340,
+                "endLine": 342,
+                "line": 342,
               },
               "stmtWhen": null,
             },
@@ -2643,8 +2643,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 25,
-                "endLine": 341,
-                "line": 341,
+                "endLine": 343,
+                "line": 343,
               },
               "stmtWhen": null,
             },
@@ -2659,8 +2659,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 342,
-            "line": 339,
+            "endLine": 344,
+            "line": 341,
           },
         },
       ],
@@ -2670,15 +2670,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 334,
-          "line": 334,
+          "endLine": 336,
+          "line": 336,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 16,
-        "endLine": 339,
-        "line": 331,
+        "endLine": 341,
+        "line": 333,
       },
       "startsStates": [],
       "states": [],
@@ -2692,8 +2692,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 333,
-            "line": 333,
+            "endLine": 335,
+            "line": 335,
           },
         },
       ],
@@ -2732,8 +2732,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 20,
-                "endLine": 352,
-                "line": 352,
+                "endLine": 354,
+                "line": 354,
               },
               "stmtWhen": null,
             },
@@ -2748,8 +2748,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 353,
-            "line": 351,
+            "endLine": 355,
+            "line": 353,
           },
         },
       ],
@@ -2759,15 +2759,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 346,
-          "line": 346,
+          "endLine": 348,
+          "line": 348,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 18,
-        "endLine": 351,
-        "line": 344,
+        "endLine": 353,
+        "line": 346,
       },
       "startsStates": [],
       "states": [],
@@ -2801,8 +2801,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 14,
-            "endLine": 357,
-            "line": 357,
+            "endLine": 359,
+            "line": 359,
           },
         },
       ],
@@ -2814,15 +2814,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 358,
-          "line": 358,
+          "endLine": 360,
+          "line": 360,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 31,
-        "endLine": 360,
-        "line": 355,
+        "endLine": 362,
+        "line": 357,
       },
       "startsStates": [],
       "states": [],
@@ -2859,15 +2859,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 364,
-          "line": 364,
+          "endLine": 366,
+          "line": 366,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 62,
-        "endLine": 366,
-        "line": 362,
+        "endLine": 368,
+        "line": 364,
       },
       "startsStates": [],
       "states": [],
@@ -2902,15 +2902,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 370,
-          "line": 370,
+          "endLine": 372,
+          "line": 372,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 24,
-        "endLine": 372,
-        "line": 368,
+        "endLine": 374,
+        "line": 370,
       },
       "startsStates": [],
       "states": [],
@@ -2951,8 +2951,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 39,
-            "endLine": 376,
-            "line": 376,
+            "endLine": 378,
+            "line": 378,
           },
         },
       ],
@@ -2964,15 +2964,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 377,
-          "line": 377,
+          "endLine": 379,
+          "line": 379,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 44,
-        "endLine": 379,
-        "line": 374,
+        "endLine": 381,
+        "line": 376,
       },
       "startsStates": [],
       "states": [],
@@ -2986,8 +2986,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 376,
-            "line": 376,
+            "endLine": 378,
+            "line": 378,
           },
         },
       ],
@@ -3018,8 +3018,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 14,
-            "endLine": 383,
-            "line": 383,
+            "endLine": 385,
+            "line": 385,
           },
         },
       ],
@@ -3031,15 +3031,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 384,
-          "line": 384,
+          "endLine": 386,
+          "line": 386,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 62,
-        "endLine": 386,
-        "line": 381,
+        "endLine": 388,
+        "line": 383,
       },
       "startsStates": [],
       "states": [],
@@ -3053,8 +3053,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 16,
             "endColumn": 24,
-            "endLine": 383,
-            "line": 383,
+            "endLine": 385,
+            "line": 385,
           },
         },
       ],
@@ -3086,15 +3086,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 18,
-          "endLine": 390,
-          "line": 390,
+          "endLine": 392,
+          "line": 392,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 56,
-        "endLine": 392,
-        "line": 388,
+        "endLine": 394,
+        "line": 390,
       },
       "startsStates": [],
       "states": [],
@@ -3127,8 +3127,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 14,
-            "endLine": 396,
-            "line": 396,
+            "endLine": 398,
+            "line": 398,
           },
         },
       ],
@@ -3140,15 +3140,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 397,
-          "line": 397,
+          "endLine": 399,
+          "line": 399,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 73,
-        "endLine": 399,
-        "line": 394,
+        "endLine": 401,
+        "line": 396,
       },
       "startsStates": [],
       "states": [],
@@ -3162,8 +3162,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 16,
             "endColumn": 24,
-            "endLine": 396,
-            "line": 396,
+            "endLine": 398,
+            "line": 398,
           },
         },
         {
@@ -3173,8 +3173,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 26,
             "endColumn": 33,
-            "endLine": 396,
-            "line": 396,
+            "endLine": 398,
+            "line": 398,
           },
         },
       ],
@@ -3206,8 +3206,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 14,
-            "endLine": 404,
-            "line": 404,
+            "endLine": 406,
+            "line": 406,
           },
         },
       ],
@@ -3219,15 +3219,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 405,
-          "line": 405,
+          "endLine": 407,
+          "line": 407,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 75,
-        "endLine": 407,
-        "line": 402,
+        "endLine": 409,
+        "line": 404,
       },
       "startsStates": [],
       "states": [],
@@ -3241,8 +3241,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 16,
             "endColumn": 23,
-            "endLine": 404,
-            "line": 404,
+            "endLine": 406,
+            "line": 406,
           },
         },
       ],
@@ -3275,15 +3275,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 414,
-          "line": 414,
+          "endLine": 416,
+          "line": 416,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 34,
-        "endLine": 416,
-        "line": 411,
+        "endLine": 418,
+        "line": 413,
       },
       "startsStates": [],
       "states": [],
@@ -3297,8 +3297,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 15,
-            "endLine": 413,
-            "line": 413,
+            "endLine": 415,
+            "line": 415,
           },
         },
         {
@@ -3308,8 +3308,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 17,
             "endColumn": 27,
-            "endLine": 413,
-            "line": 413,
+            "endLine": 415,
+            "line": 415,
           },
         },
       ],
@@ -3340,15 +3340,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 421,
-          "line": 421,
+          "endLine": 423,
+          "line": 423,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 73,
-        "endLine": 423,
-        "line": 418,
+        "endLine": 425,
+        "line": 420,
       },
       "startsStates": [],
       "states": [],
@@ -3362,8 +3362,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 420,
-            "line": 420,
+            "endLine": 422,
+            "line": 422,
           },
         },
         {
@@ -3373,8 +3373,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 22,
-            "endLine": 420,
-            "line": 420,
+            "endLine": 422,
+            "line": 422,
           },
         },
       ],
@@ -3405,15 +3405,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 429,
-          "line": 429,
+          "endLine": 431,
+          "line": 431,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 76,
-        "endLine": 431,
-        "line": 427,
+        "endLine": 433,
+        "line": 429,
       },
       "startsStates": [],
       "states": [],
@@ -3447,8 +3447,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 530,
-            "line": 530,
+            "endLine": 532,
+            "line": 532,
           },
         },
       ],
@@ -3467,8 +3467,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 19,
-                "endLine": 541,
-                "line": 541,
+                "endLine": 543,
+                "line": 543,
               },
               "stmtWhen": null,
             },
@@ -3479,8 +3479,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 547,
-                "line": 542,
+                "endLine": 549,
+                "line": 544,
               },
               "stmtWhen": null,
             },
@@ -3496,8 +3496,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 37,
-                "endLine": 548,
-                "line": 548,
+                "endLine": 550,
+                "line": 550,
               },
               "stmtWhen": null,
             },
@@ -3515,8 +3515,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 549,
-            "line": 540,
+            "endLine": 551,
+            "line": 542,
           },
         },
       ],
@@ -3526,15 +3526,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 532,
-          "line": 532,
+          "endLine": 534,
+          "line": 534,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 40,
-        "endLine": 540,
-        "line": 529,
+        "endLine": 542,
+        "line": 531,
       },
       "startsStates": [],
       "states": [],
@@ -3568,8 +3568,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 552,
-            "line": 552,
+            "endLine": 554,
+            "line": 554,
           },
         },
       ],
@@ -3586,8 +3586,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 22,
-                "endLine": 574,
-                "line": 570,
+                "endLine": 576,
+                "line": 572,
               },
               "stmtWhen": null,
             },
@@ -3602,8 +3602,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 575,
-            "line": 569,
+            "endLine": 577,
+            "line": 571,
           },
         },
         {
@@ -3619,8 +3619,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 21,
-                "endLine": 578,
-                "line": 578,
+                "endLine": 580,
+                "line": 580,
               },
               "stmtWhen": null,
             },
@@ -3631,8 +3631,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 25,
-                "endLine": 584,
-                "line": 579,
+                "endLine": 586,
+                "line": 581,
               },
               "stmtWhen": null,
             },
@@ -3650,8 +3650,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 585,
-            "line": 577,
+            "endLine": 587,
+            "line": 579,
           },
         },
       ],
@@ -3661,15 +3661,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 16,
-          "endLine": 554,
-          "line": 554,
+          "endLine": 556,
+          "line": 556,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 40,
-        "endLine": 577,
-        "line": 551,
+        "endLine": 579,
+        "line": 553,
       },
       "startsStates": [],
       "states": [],
@@ -3683,8 +3683,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 555,
-            "line": 555,
+            "endLine": 557,
+            "line": 557,
           },
         },
         {
@@ -3700,8 +3700,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 31,
-            "endLine": 556,
-            "line": 556,
+            "endLine": 558,
+            "line": 558,
           },
         },
         {
@@ -3714,8 +3714,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 557,
-            "line": 557,
+            "endLine": 559,
+            "line": 559,
           },
         },
       ],
@@ -3754,8 +3754,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 14,
-                "endLine": 610,
-                "line": 610,
+                "endLine": 612,
+                "line": 612,
               },
               "stmtWhen": null,
             },
@@ -3770,8 +3770,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 611,
-            "line": 609,
+            "endLine": 613,
+            "line": 611,
           },
         },
         {
@@ -3787,8 +3787,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 21,
-                "endLine": 614,
-                "line": 614,
+                "endLine": 616,
+                "line": 616,
               },
               "stmtWhen": null,
             },
@@ -3799,8 +3799,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 56,
-                "endLine": 619,
-                "line": 615,
+                "endLine": 621,
+                "line": 617,
               },
               "stmtWhen": null,
             },
@@ -3818,8 +3818,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 620,
-            "line": 613,
+            "endLine": 622,
+            "line": 615,
           },
         },
       ],
@@ -3829,15 +3829,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 590,
-          "line": 590,
+          "endLine": 592,
+          "line": 592,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 40,
-        "endLine": 613,
-        "line": 587,
+        "endLine": 615,
+        "line": 589,
       },
       "startsStates": [],
       "states": [
@@ -3854,8 +3854,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 589,
-            "line": 589,
+            "endLine": 591,
+            "line": 591,
           },
         },
         {
@@ -3865,8 +3865,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 589,
-            "line": 589,
+            "endLine": 591,
+            "line": 591,
           },
         },
         {
@@ -3876,8 +3876,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 591,
-            "line": 591,
+            "endLine": 593,
+            "line": 593,
           },
         },
         {
@@ -3893,8 +3893,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 592,
-            "line": 592,
+            "endLine": 594,
+            "line": 594,
           },
         },
         {
@@ -3904,8 +3904,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 593,
-            "line": 593,
+            "endLine": 595,
+            "line": 595,
           },
         },
       ],
@@ -3944,8 +3944,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 14,
-                "endLine": 643,
-                "line": 643,
+                "endLine": 645,
+                "line": 645,
               },
               "stmtWhen": null,
             },
@@ -3960,8 +3960,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 644,
-            "line": 642,
+            "endLine": 646,
+            "line": 644,
           },
         },
         {
@@ -3977,8 +3977,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 21,
-                "endLine": 647,
-                "line": 647,
+                "endLine": 649,
+                "line": 649,
               },
               "stmtWhen": null,
             },
@@ -3989,8 +3989,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
               "span": {
                 "column": 5,
                 "endColumn": 21,
-                "endLine": 653,
-                "line": 648,
+                "endLine": 655,
+                "line": 650,
               },
               "stmtWhen": null,
             },
@@ -4008,8 +4008,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 654,
-            "line": 646,
+            "endLine": 656,
+            "line": 648,
           },
         },
       ],
@@ -4019,15 +4019,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 625,
-          "line": 625,
+          "endLine": 627,
+          "line": 627,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 40,
-        "endLine": 646,
-        "line": 622,
+        "endLine": 648,
+        "line": 624,
       },
       "startsStates": [],
       "states": [
@@ -4044,8 +4044,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 624,
-            "line": 624,
+            "endLine": 626,
+            "line": 626,
           },
         },
         {
@@ -4055,8 +4055,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 624,
-            "line": 624,
+            "endLine": 626,
+            "line": 626,
           },
         },
         {
@@ -4066,8 +4066,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 626,
-            "line": 626,
+            "endLine": 628,
+            "line": 628,
           },
         },
         {
@@ -4083,8 +4083,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 627,
-            "line": 627,
+            "endLine": 629,
+            "line": 629,
           },
         },
       ],
@@ -4116,15 +4116,15 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         "span": {
           "column": 3,
           "endColumn": 16,
-          "endLine": 659,
-          "line": 659,
+          "endLine": 661,
+          "line": 661,
         },
       },
       "span": {
         "column": 1,
         "endColumn": 62,
-        "endLine": 661,
-        "line": 656,
+        "endLine": 663,
+        "line": 658,
       },
       "startsStates": [],
       "states": [],
@@ -4138,8 +4138,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 658,
-            "line": 658,
+            "endLine": 660,
+            "line": 660,
           },
         },
         {
@@ -4149,8 +4149,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 12,
             "endColumn": 18,
-            "endLine": 658,
-            "line": 658,
+            "endLine": 660,
+            "line": 660,
           },
         },
       ],
@@ -4167,8 +4167,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 44,
-        "endLine": 753,
-        "line": 753,
+        "endLine": 755,
+        "line": 755,
       },
     },
     {
@@ -4178,8 +4178,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 43,
-        "endLine": 754,
-        "line": 754,
+        "endLine": 756,
+        "line": 756,
       },
     },
     {
@@ -4189,23 +4189,29 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "span": {
         "column": 1,
         "endColumn": 49,
-        "endLine": 755,
-        "line": 755,
+        "endLine": 757,
+        "line": 757,
       },
     },
   ],
-  "languageVersion": "2.2.0",
+  "languageVersion": "3.0.0",
   "machines": [],
   "messageOverrides": {
     "defaultLocale": "en-US",
     "locales": {},
   },
   "meta": {
-    "author": "Sharpee Team",
     "fields": {
-      "blurb": "PHASE C SKETCH (givens 8+9 ownership package) — review artifact, does not compile under Phase B grammar.",
+      "authors": [
+        "Sharpee Team",
+      ],
+      "description": {
+        "kind": "literal",
+        "value": "PHASE C SKETCH (givens 8+9 ownership package) — review artifact, does not compile under Phase B grammar.",
+      },
       "id": "friendly-zoo",
-      "version": "0.0.2-phase-c-sketch",
+      "storyVersion": "0.0.2-phase-c-sketch",
+      "testers": [],
     },
     "title": "Friendly Zoo",
   },
@@ -4218,8 +4224,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 5,
             "endColumn": 59,
-            "endLine": 453,
-            "line": 452,
+            "endLine": 455,
+            "line": 454,
           },
           "strategy": null,
           "variants": [
@@ -4233,8 +4239,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 3,
             "endColumn": 57,
-            "endLine": 306,
-            "line": 306,
+            "endLine": 308,
+            "line": 308,
           },
           "strategy": null,
           "variants": [
@@ -4248,8 +4254,8 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
           "span": {
             "column": 7,
             "endColumn": 74,
-            "endLine": 314,
-            "line": 310,
+            "endLine": 316,
+            "line": 312,
           },
           "strategy": null,
           "variants": [
@@ -4267,8 +4273,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 3,
             "endColumn": 8,
-            "endLine": 54,
-            "line": 50,
+            "endLine": 56,
+            "line": 52,
           },
           "strategy": null,
           "variants": [
@@ -4282,8 +4288,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 7,
             "endColumn": 27,
-            "endLine": 68,
-            "line": 67,
+            "endLine": 70,
+            "line": 69,
           },
           "strategy": null,
           "variants": [
@@ -4297,8 +4303,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 7,
             "endColumn": 66,
-            "endLine": 62,
-            "line": 62,
+            "endLine": 64,
+            "line": 64,
           },
           "strategy": null,
           "variants": [
@@ -4312,8 +4318,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 3,
             "endColumn": 31,
-            "endLine": 360,
-            "line": 360,
+            "endLine": 362,
+            "line": 362,
           },
           "strategy": null,
           "variants": [
@@ -4327,8 +4333,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 3,
             "endColumn": 62,
-            "endLine": 366,
-            "line": 366,
+            "endLine": 368,
+            "line": 368,
           },
           "strategy": null,
           "variants": [
@@ -4342,8 +4348,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 3,
             "endColumn": 55,
-            "endLine": 234,
-            "line": 234,
+            "endLine": 236,
+            "line": 236,
           },
           "strategy": null,
           "variants": [
@@ -4357,8 +4363,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 5,
             "endColumn": 19,
-            "endLine": 482,
-            "line": 480,
+            "endLine": 484,
+            "line": 482,
           },
           "strategy": null,
           "variants": [
@@ -4372,8 +4378,8 @@ SCARLET MACAW — Can live over 75 years. Our oldest, Captain, is 42.",
           "span": {
             "column": 1,
             "endColumn": 11,
-            "endLine": 740,
-            "line": 730,
+            "endLine": 742,
+            "line": 732,
           },
           "strategy": null,
           "variants": [
@@ -4396,8 +4402,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 52,
-            "endLine": 227,
-            "line": 227,
+            "endLine": 229,
+            "line": 229,
           },
           "strategy": null,
           "variants": [
@@ -4411,8 +4417,8 @@ EXHIBITS:
           "span": {
             "column": 5,
             "endColumn": 26,
-            "endLine": 499,
-            "line": 498,
+            "endLine": 501,
+            "line": 500,
           },
           "strategy": null,
           "variants": [
@@ -4426,8 +4432,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 48,
-            "endLine": 283,
-            "line": 282,
+            "endLine": 285,
+            "line": 284,
           },
           "strategy": null,
           "variants": [
@@ -4441,8 +4447,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 64,
-            "endLine": 171,
-            "line": 171,
+            "endLine": 173,
+            "line": 173,
           },
           "strategy": null,
           "variants": [
@@ -4456,8 +4462,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 76,
-            "endLine": 431,
-            "line": 431,
+            "endLine": 433,
+            "line": 433,
           },
           "strategy": null,
           "variants": [
@@ -4471,8 +4477,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 47,
-            "endLine": 275,
-            "line": 274,
+            "endLine": 277,
+            "line": 276,
           },
           "strategy": null,
           "variants": [
@@ -4486,8 +4492,8 @@ EXHIBITS:
           "span": {
             "column": 5,
             "endColumn": 58,
-            "endLine": 455,
-            "line": 454,
+            "endLine": 457,
+            "line": 456,
           },
           "strategy": null,
           "variants": [
@@ -4501,8 +4507,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 14,
-            "endLine": 400,
-            "line": 399,
+            "endLine": 402,
+            "line": 401,
           },
           "strategy": null,
           "variants": [
@@ -4516,8 +4522,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 34,
-            "endLine": 416,
-            "line": 416,
+            "endLine": 418,
+            "line": 418,
           },
           "strategy": null,
           "variants": [
@@ -4531,8 +4537,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 39,
-            "endLine": 178,
-            "line": 178,
+            "endLine": 180,
+            "line": 180,
           },
           "strategy": null,
           "variants": [
@@ -4546,8 +4552,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 55,
-            "endLine": 108,
-            "line": 106,
+            "endLine": 110,
+            "line": 108,
           },
           "strategy": null,
           "variants": [
@@ -4561,8 +4567,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 36,
-            "endLine": 185,
-            "line": 185,
+            "endLine": 187,
+            "line": 187,
           },
           "strategy": null,
           "variants": [
@@ -4576,8 +4582,8 @@ EXHIBITS:
           "span": {
             "column": 3,
             "endColumn": 69,
-            "endLine": 290,
-            "line": 290,
+            "endLine": 292,
+            "line": 292,
           },
           "strategy": null,
           "variants": [
@@ -4591,8 +4597,8 @@ EXHIBITS:
           "span": {
             "column": 7,
             "endColumn": 41,
-            "endLine": 298,
-            "line": 294,
+            "endLine": 300,
+            "line": 296,
           },
           "strategy": null,
           "variants": [
@@ -4608,8 +4614,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 53,
-            "endLine": 164,
-            "line": 164,
+            "endLine": 166,
+            "line": 166,
           },
           "strategy": null,
           "variants": [
@@ -4623,8 +4629,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 392,
-            "line": 392,
+            "endLine": 394,
+            "line": 394,
           },
           "strategy": null,
           "variants": [
@@ -4638,8 +4644,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 62,
-            "endLine": 386,
-            "line": 386,
+            "endLine": 388,
+            "line": 388,
           },
           "strategy": null,
           "variants": [
@@ -4653,8 +4659,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 29,
-            "line": 26,
+            "endLine": 31,
+            "line": 28,
           },
           "strategy": null,
           "variants": [
@@ -4668,8 +4674,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 57,
-            "endLine": 213,
-            "line": 213,
+            "endLine": 215,
+            "line": 215,
           },
           "strategy": null,
           "variants": [
@@ -4683,8 +4689,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 5,
             "endColumn": 61,
-            "endLine": 524,
-            "line": 523,
+            "endLine": 526,
+            "line": 525,
           },
           "strategy": null,
           "variants": [
@@ -4698,8 +4704,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 5,
             "endColumn": 38,
-            "endLine": 451,
-            "line": 450,
+            "endLine": 453,
+            "line": 452,
           },
           "strategy": null,
           "variants": [
@@ -4713,8 +4719,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 95,
-            "line": 92,
+            "endLine": 97,
+            "line": 94,
           },
           "strategy": null,
           "variants": [
@@ -4728,8 +4734,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 5,
             "endColumn": 41,
-            "endLine": 510,
-            "line": 509,
+            "endLine": 512,
+            "line": 511,
           },
           "strategy": null,
           "variants": [
@@ -4743,8 +4749,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 379,
-            "line": 379,
+            "endLine": 381,
+            "line": 381,
           },
           "strategy": null,
           "variants": [
@@ -4758,8 +4764,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 1,
             "endColumn": 11,
-            "endLine": 728,
-            "line": 713,
+            "endLine": 730,
+            "line": 715,
           },
           "strategy": "randomly",
           "variants": [
@@ -4789,8 +4795,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 1,
             "endColumn": 11,
-            "endLine": 711,
-            "line": 701,
+            "endLine": 713,
+            "line": 703,
           },
           "strategy": "randomly",
           "variants": [
@@ -4820,8 +4826,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 25,
-            "endLine": 584,
-            "line": 580,
+            "endLine": 586,
+            "line": 582,
           },
           "strategy": null,
           "variants": [
@@ -4835,8 +4841,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 35,
-            "endLine": 561,
-            "line": 560,
+            "endLine": 563,
+            "line": 562,
           },
           "strategy": null,
           "variants": [
@@ -4850,8 +4856,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 22,
-            "endLine": 574,
-            "line": 571,
+            "endLine": 576,
+            "line": 573,
           },
           "strategy": null,
           "variants": [
@@ -4870,8 +4876,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 43,
-            "endLine": 565,
-            "line": 563,
+            "endLine": 567,
+            "line": 565,
           },
           "strategy": null,
           "variants": [
@@ -4885,8 +4891,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 62,
-            "endLine": 567,
-            "line": 566,
+            "endLine": 569,
+            "line": 568,
           },
           "strategy": null,
           "variants": [
@@ -4900,8 +4906,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 62,
-            "endLine": 661,
-            "line": 661,
+            "endLine": 663,
+            "line": 663,
           },
           "strategy": null,
           "variants": [
@@ -4915,8 +4921,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 5,
             "endColumn": 44,
-            "endLine": 436,
-            "line": 435,
+            "endLine": 438,
+            "line": 437,
           },
           "strategy": null,
           "variants": [
@@ -4930,8 +4936,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 37,
-            "endLine": 38,
-            "line": 36,
+            "endLine": 40,
+            "line": 38,
           },
           "strategy": null,
           "variants": [
@@ -4945,8 +4951,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 39,
-            "endLine": 122,
-            "line": 122,
+            "endLine": 124,
+            "line": 124,
           },
           "strategy": null,
           "variants": [
@@ -4960,8 +4966,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 64,
-            "endLine": 267,
-            "line": 267,
+            "endLine": 269,
+            "line": 269,
           },
           "strategy": null,
           "variants": [
@@ -4975,8 +4981,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 56,
-            "endLine": 619,
-            "line": 616,
+            "endLine": 621,
+            "line": 618,
           },
           "strategy": null,
           "variants": [
@@ -4990,8 +4996,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 42,
-            "endLine": 597,
-            "line": 597,
+            "endLine": 599,
+            "line": 599,
           },
           "strategy": null,
           "variants": [
@@ -5005,8 +5011,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 605,
-            "line": 602,
+            "endLine": 607,
+            "line": 604,
           },
           "strategy": null,
           "variants": [
@@ -5020,8 +5026,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 72,
-            "endLine": 601,
-            "line": 599,
+            "endLine": 603,
+            "line": 601,
           },
           "strategy": null,
           "variants": [
@@ -5035,8 +5041,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 76,
-            "endLine": 607,
-            "line": 606,
+            "endLine": 609,
+            "line": 608,
           },
           "strategy": null,
           "variants": [
@@ -5050,8 +5056,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 21,
-            "endLine": 653,
-            "line": 649,
+            "endLine": 655,
+            "line": 651,
           },
           "strategy": null,
           "variants": [
@@ -5065,8 +5071,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 50,
-            "endLine": 631,
-            "line": 631,
+            "endLine": 633,
+            "line": 633,
           },
           "strategy": null,
           "variants": [
@@ -5080,8 +5086,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 46,
-            "endLine": 638,
-            "line": 636,
+            "endLine": 640,
+            "line": 638,
           },
           "strategy": null,
           "variants": [
@@ -5095,8 +5101,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 42,
-            "endLine": 635,
-            "line": 633,
+            "endLine": 637,
+            "line": 635,
           },
           "strategy": null,
           "variants": [
@@ -5110,8 +5116,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 75,
-            "endLine": 640,
-            "line": 639,
+            "endLine": 642,
+            "line": 641,
           },
           "strategy": null,
           "variants": [
@@ -5125,8 +5131,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 26,
-            "endLine": 425,
-            "line": 423,
+            "endLine": 427,
+            "line": 425,
           },
           "strategy": null,
           "variants": [
@@ -5140,8 +5146,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 49,
-            "endLine": 206,
-            "line": 206,
+            "endLine": 208,
+            "line": 208,
           },
           "strategy": null,
           "variants": [
@@ -5155,8 +5161,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 14,
-            "endLine": 252,
-            "line": 248,
+            "endLine": 254,
+            "line": 250,
           },
           "strategy": null,
           "variants": [
@@ -5170,8 +5176,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 13,
-            "endLine": 243,
-            "line": 242,
+            "endLine": 245,
+            "line": 244,
           },
           "strategy": null,
           "variants": [
@@ -5185,8 +5191,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 24,
-            "endLine": 372,
-            "line": 372,
+            "endLine": 374,
+            "line": 374,
           },
           "strategy": null,
           "variants": [
@@ -5200,8 +5206,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 52,
-            "endLine": 409,
-            "line": 407,
+            "endLine": 411,
+            "line": 409,
           },
           "strategy": null,
           "variants": [
@@ -5215,8 +5221,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 30,
-            "endLine": 744,
-            "line": 743,
+            "endLine": 746,
+            "line": 745,
           },
           "strategy": null,
           "variants": [
@@ -5230,8 +5236,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 48,
-            "endLine": 136,
-            "line": 136,
+            "endLine": 138,
+            "line": 138,
           },
           "strategy": null,
           "variants": [
@@ -5245,8 +5251,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 20,
-            "endLine": 142,
-            "line": 140,
+            "endLine": 144,
+            "line": 142,
           },
           "strategy": null,
           "variants": [
@@ -5264,8 +5270,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 8,
-            "endLine": 129,
-            "line": 128,
+            "endLine": 131,
+            "line": 130,
           },
           "strategy": null,
           "variants": [
@@ -5279,8 +5285,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 74,
-            "endLine": 117,
-            "line": 117,
+            "endLine": 119,
+            "line": 119,
           },
           "strategy": null,
           "variants": [
@@ -5294,8 +5300,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 49,
-            "endLine": 260,
-            "line": 260,
+            "endLine": 262,
+            "line": 262,
           },
           "strategy": null,
           "variants": [
@@ -5309,8 +5315,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 58,
-            "endLine": 220,
-            "line": 220,
+            "endLine": 222,
+            "line": 222,
           },
           "strategy": null,
           "variants": [
@@ -5324,8 +5330,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 81,
-            "line": 78,
+            "endLine": 83,
+            "line": 80,
           },
           "strategy": null,
           "variants": [
@@ -5339,8 +5345,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 157,
-            "line": 157,
+            "endLine": 159,
+            "line": 159,
           },
           "strategy": null,
           "variants": [
@@ -5354,8 +5360,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 5,
             "endColumn": 14,
-            "endLine": 527,
-            "line": 525,
+            "endLine": 529,
+            "line": 527,
           },
           "strategy": null,
           "variants": [
@@ -5371,8 +5377,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 192,
-            "line": 192,
+            "endLine": 194,
+            "line": 194,
           },
           "strategy": null,
           "variants": [
@@ -5386,8 +5392,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 751,
-            "line": 745,
+            "endLine": 753,
+            "line": 747,
           },
           "strategy": null,
           "variants": [
@@ -5403,8 +5409,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 61,
-            "endLine": 322,
-            "line": 322,
+            "endLine": 324,
+            "line": 324,
           },
           "strategy": null,
           "variants": [
@@ -5418,8 +5424,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 25,
-            "endLine": 328,
-            "line": 326,
+            "endLine": 330,
+            "line": 328,
           },
           "strategy": null,
           "variants": [
@@ -5433,8 +5439,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 62,
-            "endLine": 199,
-            "line": 199,
+            "endLine": 201,
+            "line": 201,
           },
           "strategy": null,
           "variants": [
@@ -5448,8 +5454,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 77,
-            "endLine": 150,
-            "line": 150,
+            "endLine": 152,
+            "line": 152,
           },
           "strategy": null,
           "variants": [
@@ -5463,8 +5469,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 73,
-            "endLine": 337,
-            "line": 337,
+            "endLine": 339,
+            "line": 339,
           },
           "strategy": null,
           "variants": [
@@ -5478,8 +5484,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 50,
-            "endLine": 16,
-            "line": 13,
+            "endLine": 18,
+            "line": 15,
           },
           "strategy": null,
           "variants": [
@@ -5493,8 +5499,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 54,
-            "endLine": 689,
-            "line": 688,
+            "endLine": 691,
+            "line": 690,
           },
           "strategy": null,
           "variants": [
@@ -5508,8 +5514,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 349,
-            "line": 349,
+            "endLine": 351,
+            "line": 351,
           },
           "strategy": null,
           "variants": [
@@ -5523,8 +5529,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 48,
-            "endLine": 680,
-            "line": 679,
+            "endLine": 682,
+            "line": 681,
           },
           "strategy": null,
           "variants": [
@@ -5538,8 +5544,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 40,
-            "endLine": 676,
-            "line": 675,
+            "endLine": 678,
+            "line": 677,
           },
           "strategy": null,
           "variants": [
@@ -5553,8 +5559,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 47,
-            "endLine": 672,
-            "line": 671,
+            "endLine": 674,
+            "line": 673,
           },
           "strategy": null,
           "variants": [
@@ -5568,8 +5574,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 21,
-            "endLine": 668,
-            "line": 666,
+            "endLine": 670,
+            "line": 668,
           },
           "strategy": null,
           "variants": [
@@ -5583,8 +5589,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 7,
             "endColumn": 16,
-            "endLine": 547,
-            "line": 543,
+            "endLine": 549,
+            "line": 545,
           },
           "strategy": null,
           "variants": [
@@ -5598,8 +5604,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 66,
-            "endLine": 535,
-            "line": 535,
+            "endLine": 537,
+            "line": 537,
           },
           "strategy": null,
           "variants": [
@@ -5613,8 +5619,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 56,
-            "endLine": 538,
-            "line": 537,
+            "endLine": 540,
+            "line": 539,
           },
           "strategy": null,
           "variants": [
@@ -5635,8 +5641,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 22,
-        "endLine": 34,
-        "line": 34,
+        "endLine": 36,
+        "line": 36,
       },
       "worth": 5,
     },
@@ -5645,8 +5651,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 22,
-        "endLine": 48,
-        "line": 48,
+        "endLine": 50,
+        "line": 50,
       },
       "worth": 5,
     },
@@ -5655,8 +5661,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 22,
-        "endLine": 76,
-        "line": 76,
+        "endLine": 78,
+        "line": 78,
       },
       "worth": 5,
     },
@@ -5665,8 +5671,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 22,
-        "endLine": 90,
-        "line": 90,
+        "endLine": 92,
+        "line": 92,
       },
       "worth": 5,
     },
@@ -5675,8 +5681,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 22,
-        "endLine": 104,
-        "line": 104,
+        "endLine": 106,
+        "line": 106,
       },
       "worth": 5,
     },
@@ -5685,8 +5691,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 27,
-        "endLine": 240,
-        "line": 240,
+        "endLine": 242,
+        "line": 242,
       },
       "worth": 5,
     },
@@ -5695,8 +5701,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 21,
-        "endLine": 335,
-        "line": 335,
+        "endLine": 337,
+        "line": 337,
       },
       "worth": 5,
     },
@@ -5705,8 +5711,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 26,
-        "endLine": 347,
-        "line": 347,
+        "endLine": 349,
+        "line": 349,
       },
       "worth": 5,
     },
@@ -5715,8 +5721,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 25,
-        "endLine": 517,
-        "line": 517,
+        "endLine": 519,
+        "line": 519,
       },
       "worth": 5,
     },
@@ -5725,8 +5731,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 25,
-        "endLine": 533,
-        "line": 533,
+        "endLine": 535,
+        "line": 535,
       },
       "worth": 5,
     },
@@ -5735,8 +5741,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 27,
-        "endLine": 558,
-        "line": 558,
+        "endLine": 560,
+        "line": 560,
       },
       "worth": 5,
     },
@@ -5745,8 +5751,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 21,
-        "endLine": 594,
-        "line": 594,
+        "endLine": 596,
+        "line": 596,
       },
       "worth": 10,
     },
@@ -5755,8 +5761,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 27,
-        "endLine": 595,
-        "line": 595,
+        "endLine": 597,
+        "line": 597,
       },
       "worth": 5,
     },
@@ -5765,8 +5771,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 21,
-        "endLine": 628,
-        "line": 628,
+        "endLine": 630,
+        "line": 630,
       },
       "worth": 10,
     },
@@ -5775,8 +5781,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 3,
         "endColumn": 27,
-        "endLine": 629,
-        "line": 629,
+        "endLine": 631,
+        "line": 631,
       },
       "worth": 5,
     },
@@ -5788,8 +5794,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 1,
         "endColumn": 13,
-        "endLine": 682,
-        "line": 663,
+        "endLine": 684,
+        "line": 665,
       },
       "steps": [
         {
@@ -5802,8 +5808,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 21,
-                "endLine": 668,
-                "line": 665,
+                "endLine": 670,
+                "line": 667,
               },
               "stmtWhen": null,
             },
@@ -5811,8 +5817,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 12,
-            "endLine": 664,
-            "line": 664,
+            "endLine": 666,
+            "line": 666,
           },
           "timing": "at-turn",
           "turns": 5,
@@ -5827,8 +5833,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 47,
-                "endLine": 672,
-                "line": 670,
+                "endLine": 674,
+                "line": 672,
               },
               "stmtWhen": null,
             },
@@ -5836,8 +5842,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 16,
-            "endLine": 669,
-            "line": 669,
+            "endLine": 671,
+            "line": 671,
           },
           "timing": "later",
           "turns": 5,
@@ -5852,8 +5858,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 40,
-                "endLine": 676,
-                "line": 674,
+                "endLine": 678,
+                "line": 676,
               },
               "stmtWhen": null,
             },
@@ -5861,8 +5867,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 16,
-            "endLine": 673,
-            "line": 673,
+            "endLine": 675,
+            "line": 675,
           },
           "timing": "later",
           "turns": 5,
@@ -5877,8 +5883,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 48,
-                "endLine": 680,
-                "line": 678,
+                "endLine": 682,
+                "line": 680,
               },
               "stmtWhen": null,
             },
@@ -5890,8 +5896,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 36,
-                "endLine": 681,
-                "line": 681,
+                "endLine": 683,
+                "line": 683,
               },
               "state": "after-hours",
               "stmtWhen": null,
@@ -5900,8 +5906,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 16,
-            "endLine": 677,
-            "line": 677,
+            "endLine": 679,
+            "line": 679,
           },
           "timing": "later",
           "turns": 5,
@@ -5914,8 +5920,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 1,
         "endColumn": 13,
-        "endLine": 699,
-        "line": 684,
+        "endLine": 701,
+        "line": 686,
       },
       "steps": [
         {
@@ -5930,8 +5936,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 37,
-                "endLine": 686,
-                "line": 686,
+                "endLine": 688,
+                "line": 688,
               },
               "state": "hungry",
               "stmtWhen": null,
@@ -5943,8 +5949,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 54,
-                "endLine": 689,
-                "line": 687,
+                "endLine": 691,
+                "line": 689,
               },
               "stmtWhen": null,
             },
@@ -5952,8 +5958,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 13,
-            "endLine": 685,
-            "line": 685,
+            "endLine": 687,
+            "line": 687,
           },
           "timing": "at-turn",
           "turns": 11,
@@ -5970,8 +5976,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 37,
-                "endLine": 691,
-                "line": 691,
+                "endLine": 693,
+                "line": 693,
               },
               "state": "hungry",
               "stmtWhen": null,
@@ -5983,57 +5989,17 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 38,
-                "endLine": 692,
-                "line": 692,
-              },
-              "stmtWhen": null,
-            },
-          ],
-          "span": {
-            "column": 3,
-            "endColumn": 16,
-            "endLine": 690,
-            "line": 690,
-          },
-          "timing": "later",
-          "turns": 8,
-        },
-        {
-          "anchor": null,
-          "body": [
-            {
-              "entity": {
-                "id": "pygmy-goats",
-                "kind": "entity",
-              },
-              "kind": "change",
-              "span": {
-                "column": 5,
-                "endColumn": 37,
                 "endLine": 694,
                 "line": 694,
               },
-              "state": "hungry",
-              "stmtWhen": null,
-            },
-            {
-              "kind": "phrase",
-              "params": [],
-              "phraseKey": "zoo-feeding-time-announced",
-              "span": {
-                "column": 5,
-                "endColumn": 38,
-                "endLine": 695,
-                "line": 695,
-              },
               "stmtWhen": null,
             },
           ],
           "span": {
             "column": 3,
             "endColumn": 16,
-            "endLine": 693,
-            "line": 693,
+            "endLine": 692,
+            "line": 692,
           },
           "timing": "later",
           "turns": 8,
@@ -6050,8 +6016,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 37,
-                "endLine": 697,
-                "line": 697,
+                "endLine": 696,
+                "line": 696,
               },
               "state": "hungry",
               "stmtWhen": null,
@@ -6063,8 +6029,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 38,
-                "endLine": 698,
-                "line": 698,
+                "endLine": 697,
+                "line": 697,
               },
               "stmtWhen": null,
             },
@@ -6072,8 +6038,48 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 16,
-            "endLine": 696,
-            "line": 696,
+            "endLine": 695,
+            "line": 695,
+          },
+          "timing": "later",
+          "turns": 8,
+        },
+        {
+          "anchor": null,
+          "body": [
+            {
+              "entity": {
+                "id": "pygmy-goats",
+                "kind": "entity",
+              },
+              "kind": "change",
+              "span": {
+                "column": 5,
+                "endColumn": 37,
+                "endLine": 699,
+                "line": 699,
+              },
+              "state": "hungry",
+              "stmtWhen": null,
+            },
+            {
+              "kind": "phrase",
+              "params": [],
+              "phraseKey": "zoo-feeding-time-announced",
+              "span": {
+                "column": 5,
+                "endColumn": 38,
+                "endLine": 700,
+                "line": 700,
+              },
+              "stmtWhen": null,
+            },
+          ],
+          "span": {
+            "column": 3,
+            "endColumn": 16,
+            "endLine": 698,
+            "line": 698,
           },
           "timing": "later",
           "turns": 8,
@@ -6104,8 +6110,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 16,
-                "endLine": 439,
-                "line": 439,
+                "endLine": 441,
+                "line": 441,
               },
               "stmtWhen": null,
             },
@@ -6116,8 +6122,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 18,
-                "endLine": 440,
-                "line": 440,
+                "endLine": 442,
+                "line": 442,
               },
               "stmtWhen": null,
             },
@@ -6132,8 +6138,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 441,
-            "line": 438,
+            "endLine": 443,
+            "line": 440,
           },
         },
       ],
@@ -6141,8 +6147,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 442,
-        "line": 433,
+        "endLine": 444,
+        "line": 435,
       },
       "states": [],
       "statesReversible": false,
@@ -6185,8 +6191,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 42,
-                "endLine": 458,
-                "line": 458,
+                "endLine": 460,
+                "line": 460,
               },
             },
             {
@@ -6207,8 +6213,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 35,
-                "endLine": 459,
-                "line": 459,
+                "endLine": 461,
+                "line": 461,
               },
             },
             {
@@ -6219,8 +6225,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 25,
-                "endLine": 460,
-                "line": 460,
+                "endLine": 462,
+                "line": 462,
               },
               "state": "content",
               "stmtWhen": null,
@@ -6231,8 +6237,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 13,
-                "endLine": 461,
-                "line": 461,
+                "endLine": 463,
+                "line": 463,
               },
               "stmtWhen": null,
             },
@@ -6243,8 +6249,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 462,
-                "line": 462,
+                "endLine": 464,
+                "line": 464,
               },
               "stmtWhen": null,
             },
@@ -6259,8 +6265,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 463,
-            "line": 457,
+            "endLine": 465,
+            "line": 459,
           },
         },
       ],
@@ -6268,8 +6274,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 464,
-        "line": 444,
+        "endLine": 466,
+        "line": 446,
       },
       "states": [
         "hungry",
@@ -6292,8 +6298,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 26,
-                "endLine": 468,
-                "line": 468,
+                "endLine": 470,
+                "line": 470,
               },
               "stmtWhen": null,
             },
@@ -6311,8 +6317,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 469,
-            "line": 467,
+            "endLine": 471,
+            "line": 469,
           },
         },
       ],
@@ -6320,8 +6326,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 470,
-        "line": 466,
+        "endLine": 472,
+        "line": 468,
       },
       "states": [],
       "statesReversible": false,
@@ -6341,8 +6347,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 25,
-                "endLine": 474,
-                "line": 474,
+                "endLine": 476,
+                "line": 476,
               },
               "stmtWhen": null,
             },
@@ -6360,8 +6366,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 475,
-            "line": 473,
+            "endLine": 477,
+            "line": 475,
           },
         },
       ],
@@ -6369,8 +6375,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 476,
-        "line": 472,
+        "endLine": 478,
+        "line": 474,
       },
       "states": [],
       "statesReversible": false,
@@ -6390,8 +6396,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
               "span": {
                 "column": 5,
                 "endColumn": 20,
-                "endLine": 485,
-                "line": 485,
+                "endLine": 487,
+                "line": 487,
               },
               "stmtWhen": null,
             },
@@ -6417,8 +6423,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 486,
-            "line": 484,
+            "endLine": 488,
+            "line": 486,
           },
         },
       ],
@@ -6426,8 +6432,8 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 487,
-        "line": 478,
+        "endLine": 489,
+        "line": 480,
       },
       "states": [],
       "statesReversible": false,

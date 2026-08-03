@@ -15,9 +15,11 @@ const FIXTURE = readFileSync(join(__dirname, 'fixtures', 'media-sugar.story'), '
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (body: string, defines: string) => `story "Orchestra" by "T"
+const story = (body: string, defines: string) => `story
+  title: Orchestra
+  authors: T
   id: orchestra
-  version: 0.0.1
+  story-version: 0.0.1
 
   on every turn
 ${body}  end on
@@ -32,7 +34,7 @@ ${defines}`;
 describe('media sugar + declared assets (ADR-216 AC-2)', () => {
   it('lowers every sugar form onto payloaded media.* emits with resolved src paths', () => {
     const result = compile(FIXTURE);
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.hasHatches).toBe(false); // assets are DATA, never hatches
     const body = result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
     expect(body.map((s) => [s.event, s.payload])).toEqual([
@@ -75,9 +77,9 @@ describe('media sugar + declared assets (ADR-216 AC-2)', () => {
     clear when stormy
 `,
         '',
-      ).replace('  version: 0.0.1\n', '  version: 0.0.1\n  states: calm, stormy\n'),
+      ).replace('  story-version: 0.0.1\n', '  story-version: 0.0.1\n  states: calm, stormy\n'),
     );
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     const body = result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
     expect(body.map((s) => s.event)).toEqual(['media-music-stop', 'media-image-hide', 'media-ambient-stop', 'media-clear']);
     expect(body[3].stmtWhen).toEqual({ kind: 'story-state', state: 'stormy' });

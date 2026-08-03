@@ -19,7 +19,7 @@ describe('cloak.story IR', () => {
   const ir = result.ir;
 
   it('compiles with zero diagnostics', () => {
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ok).toBe(true);
   });
 
@@ -31,11 +31,12 @@ describe('cloak.story IR', () => {
   it('carries the story metadata and an empty story state machine', () => {
     expect(ir.meta).toEqual({
       title: 'Cloak of Darkness',
-      author: 'Roger Firth (Sharpee implementation)',
       fields: {
         id: 'cloak-of-darkness',
-        version: '1.0.0',
-        blurb: 'A basic IF demonstration - hang up your cloak!',
+        storyVersion: '1.0.0',
+        authors: ['Roger Firth (Sharpee implementation)'],
+        testers: [],
+        description: { kind: 'literal', value: 'A basic IF demonstration - hang up your cloak!' },
       },
     });
     expect(ir.story).toEqual({ states: [], reversible: false, onClauses: [] });
@@ -174,7 +175,7 @@ describe('ac5-random.story IR', () => {
   const result = compileFixture('ac5-random.story');
 
   it('compiles with zero diagnostics', () => {
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 
   it('keeps the randomly strategy and the chance clause condition', () => {
@@ -194,7 +195,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.missing-phrase');
-    expect(errors[0].span.line).toBe(11);
+    expect(errors[0].span.line).toBe(13);
     expect(errors[0].message).toContain('nonexistent-key');
     expect(result.ok).toBe(false);
   });
@@ -204,7 +205,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.unknown-value');
-    expect(errors[0].span.line).toBe(10);
+    expect(errors[0].span.line).toBe(12);
     expect(errors[0].message).toContain('did you mean `intact`?');
   });
 
@@ -213,7 +214,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.undeclared-state');
-    expect(errors[0].span.line).toBe(11);
+    expect(errors[0].span.line).toBe(13);
     expect(errors[0].message).toContain('smashed');
     expect(errors[0].message).toContain('message');
   });
@@ -223,7 +224,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.ambiguous-reference');
-    expect(errors[0].span.line).toBe(11);
+    expect(errors[0].span.line).toBe(13);
     expect(errors[0].message).toContain('brass hook');
     expect(errors[0].message).toContain('iron hook');
     expect(errors[0].message).toContain('rename');
@@ -234,7 +235,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-after-mutation');
-    expect(errors[0].span.line).toBe(10);
+    expect(errors[0].span.line).toBe(12);
     expect(errors[0].message).toContain('move the check above');
   });
 

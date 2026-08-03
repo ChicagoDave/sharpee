@@ -1,7 +1,9 @@
-story "Death Constructs" by "ADR-227 parity fixture"
+story
+  title: Death Constructs
+  authors: ADR-227 parity fixture
   id: death-constructs
-  version: 1.0.0
-  blurb: Exercises kill the player, the deadly exit, and the deadly room.
+  story-version: 1.0.0
+  description: Exercises kill the player, the deadly exit, and the deadly room.
 
 create the Meadow
   a room

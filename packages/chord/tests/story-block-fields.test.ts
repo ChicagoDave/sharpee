@@ -28,7 +28,7 @@ describe('fielded story block (AC-1)', () => {
   const result = parse(FIELDED);
 
   it('parses with zero diagnostics', () => {
-    expect(result.diagnostics).toEqual([]);
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 
   it('carries the typed fields', () => {

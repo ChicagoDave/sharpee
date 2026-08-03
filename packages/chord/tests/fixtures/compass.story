@@ -1,6 +1,8 @@
-story "Compass" by "Test"
+story
+  title: Compass
+  authors: Test
   id: compass
-  version: 0.0.1
+  story-version: 0.0.1
 
   on every turn
     emit chord-compass-updated with heading "north" and target the well and windspeed 12

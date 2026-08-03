@@ -7,9 +7,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const story = (headerBody: string) => `story "The Folly" by "T"
+const story = (headerBody: string) => `story
+  title: The Folly
+  authors: T
   id: folly
-  version: 0.0.1
+  story-version: 0.0.1
 ${headerBody}
 create the Lawn
   a room

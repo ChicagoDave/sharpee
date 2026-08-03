@@ -11,9 +11,11 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../src';
 
-const story = (body: string) => `story "Legality" by "T"
+const story = (body: string) => `story
+  title: Legality
+  authors: T
   id: legality
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Vault
   a room
@@ -57,9 +59,11 @@ describe('census 11 — dark applies to rooms only (analysis.dark-rooms-only)', 
 });
 
 describe('census 12 — worn items must be wearable (analysis.worn-not-wearable)', () => {
-  const wornStory = (cloakTraits: string) => `story "Worn" by "T"
+  const wornStory = (cloakTraits: string) => `story
+  title: Worn
+  authors: T
   id: worn
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the Vault
   a room
@@ -129,9 +133,11 @@ describe('census 14 — conditional composition legality (analysis.conditional-c
   });
 
   it('accepts conditional dark on a room', () => {
-    const src = `story "Cond" by "T"
+    const src = `story
+  title: Cond
+  authors: T
   id: cond
-  version: 0.0.1
+  story-version: 0.0.1
 
 create the cloak
   wearable
