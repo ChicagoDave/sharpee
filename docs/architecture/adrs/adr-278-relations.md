@@ -134,6 +134,14 @@ to that layer's blank-text rules.
   > (2.0.0 → 2.1.0 → 2.2.0); the interim landing history in
   > `chord/src/version.ts` also spends a `3.0.0`, which is history and not a
   > claim on this reservation.
+  >
+  > **Reservation released (2026-08-03, David, ADR-298 implementation).**
+  > ADR-298's fielded story block is a *breaking* grammar change — a major
+  > by ADR-257's ordinary rule, not a naming decision — and takes **Chord
+  > 3.0.0**. An accepted, shipping breaking change outranks this exploratory
+  > reservation. Relations, if pursued, anchors whatever major pair is next
+  > when it actually happens (Sharpee N+1 / Chord 4.0.0 by today's line);
+  > the lockstep principle is unchanged, only the numbers move.
 - Umbrella discipline: child ADRs (E1-E4 are the candidates) carry all
   decisions; this ADR only indexes them once they exist.
 - The existing ad-hoc pair state (wall `between`, conversation participants,

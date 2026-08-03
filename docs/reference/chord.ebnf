@@ -76,10 +76,39 @@ grammar-file   = [ comment-run ] grammar-header
 grammar-header = "grammar" STRING NL ;            (* no `by`, no indented body
                                                      (parse.grammar-header-body) *)
 
-story-header = "story" STRING [ "by" STRING ] NL
+story-header = "story" NL                         (* ADR-298: positional
+                                                     `story STRING ["by" STRING]`
+                                                     removed
+                                                     (parse.removed-story-header) *)
                >>> { states-line | score-line | story-on-clause | use-line
                    | use-phrasebook-line
-                   | WORD ":" rest-of-line NL } ;
+                   | meta-field } ;
+meta-field   = "title" ":" rest-of-line NL        (* required (parse.story-title) *)
+             | "id" ":" rest-of-line NL
+             | "story-version" ":" rest-of-line NL
+             | "ifid" ":" rest-of-line NL         (* absent → analysis.missing-ifid
+                                                     warning; publish hard-errors
+                                                     (ADR-284) *)
+             | name-list-field | prose-field ;
+                                                  (* Closed schema (ADR-298 D4):
+                                                     any other key is
+                                                     parse.header-unknown-field;
+                                                     `version:` / `blurb:` / `by:`
+                                                     are removed spellings with
+                                                     fix-its (story-version /
+                                                     description / authors). *)
+name-list-field = ( "authors" | "testers" ) ":" [ rest-of-line ] NL
+                  { >>> rest-of-line NL } ;       (* one name per indented line,
+                                                     or a single inline name;
+                                                     empty list is
+                                                     parse.header-list-empty *)
+prose-field  = ( "prologue" | "description" ) ":" [ rest-of-line ] NL
+               { >>> rest-of-line NL } ;          (* value is literal prose UNLESS
+                                                     it is exactly one kebab atom —
+                                                     then it is a phrase reference
+                                                     (analysis.missing-phrase if
+                                                     undeclared). Never
+                                                     resolve-if-exists. *)
 use-line     = use-scoring-line | use-hunger-line | use-plain-line ;
 use-plain-line = "use" WORD [ announce-suffix ] NL ;       (* ADR-215: one trusted
                                                               platform extension per

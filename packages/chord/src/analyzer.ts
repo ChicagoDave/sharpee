@@ -86,6 +86,7 @@ import {
   IRTopicRow,
   IRTraitDef,
   IRValue,
+  IRStoryFields,
   StoryIR,
 } from './ir.js';
 import { Span } from './span.js';
@@ -594,8 +595,7 @@ class Analyzer {
 
       meta: {
         title: this.ast.header?.title ?? '',
-        author: this.ast.header?.author ?? '',
-        fields: this.ast.header?.fields ?? {},
+        fields: this.buildMetaFields(),
       },
       // ADR-269 D8: mark grammar files so consumers (the standard-grammar
       // build step) can switch on grammar-file handling; spread in only when
@@ -781,8 +781,50 @@ class Analyzer {
     this.checkAlterationTargets(ir);
     this.checkMarkers();
     this.checkDescriptionMarkers();
+    this.checkHeaderFields(); // ADR-298: header phrase-refs resolve; missing IFID warns
     this.checkChannelReturns(ir.channels); // ADR-253 D1: return-field cross-check (all emits collected)
     return ir;
+  }
+
+  /**
+   * ADR-298: project the header's typed fields into the IR. Spans are
+   * dropped — the IR is snapshot-stable and carries no source positions here.
+   */
+  private buildMetaFields(): IRStoryFields {
+    const f = this.ast.header?.fields;
+    if (!f) return { authors: [], testers: [] };
+    return {
+      ...(f.id !== undefined ? { id: f.id } : {}),
+      ...(f.storyVersion !== undefined ? { storyVersion: f.storyVersion } : {}),
+      ...(f.ifid !== undefined ? { ifid: f.ifid } : {}),
+      authors: f.authors,
+      testers: f.testers,
+      ...(f.prologue ? { prologue: { kind: f.prologue.kind, value: f.prologue.value } } : {}),
+      ...(f.description ? { description: { kind: f.description.kind, value: f.description.value } } : {}),
+    };
+  }
+
+  /**
+   * ADR-298 header gates. A `prologue:`/`description:` phrase reference must
+   * resolve to a declared phrase (D4 — a lone kebab atom is always a
+   * reference, so an unresolved one is an error, never silent literal text).
+   * A story with no `ifid:` compiles with a warning (D5 — hard enforcement
+   * moves to publish time, ADR-284). Grammar files carry no story header and
+   * are exempt from both.
+   */
+  private checkHeaderFields(): void {
+    const header = this.ast.header;
+    if (!header) return;
+    for (const prose of [header.fields.prologue, header.fields.description]) {
+      if (prose?.kind === 'phrase-ref') this.requirePhrase(prose.value, prose.span, null);
+    }
+    if (header.fields.ifid === undefined || header.fields.ifid.length === 0) {
+      this.diagnostics.warning(
+        'analysis.missing-ifid',
+        'The story has no `ifid:` — mint one with `sharpee ifid` (Treaty of Babel, ADR-074). Publishing requires one (ADR-284).',
+        header.span,
+      );
+    }
   }
 
   /**

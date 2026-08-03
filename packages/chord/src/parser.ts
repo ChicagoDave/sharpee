@@ -94,6 +94,7 @@ import {
   TraitField,
   ImportDecl,
   StoryFile,
+  StoryFields,
   StoryHeader,
   GrammarHeader,
   TopicRow,
@@ -112,6 +113,9 @@ import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 const ARTICLES = new Set(['the', 'a', 'an']);
+// ADR-298 D4: the structural test for a header prose value being a phrase
+// reference — a single kebab atom, nothing else on the value.
+const KEBAB_ATOM = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const DIRECTIONS = new Set([
   'north', 'south', 'east', 'west',
   'northeast', 'northwest', 'southeast', 'southwest',
@@ -487,26 +491,19 @@ class Parser {
     const line = this.lines[this.pos++];
     const c = new Cursor(line.tokens, line);
     c.matchWord('story');
-    const titleTok = c.peek();
     let title = '';
-    if (titleTok && titleTok.kind === 'string') {
-      title = titleTok.text;
-      c.next();
-    } else {
-      this.diagnostics.error('parse.story-title', 'Expected a quoted story title after `story`.', c.restSpan());
-    }
-    let author = '';
-    if (c.matchWord('by')) {
-      const authorTok = c.peek();
-      if (authorTok && authorTok.kind === 'string') {
-        author = authorTok.text;
-        c.next();
-      } else {
-        this.diagnostics.error('parse.story-author', 'Expected a quoted author after `by`.', c.restSpan());
-      }
+    // ADR-298 D1: the positional `story "Title" by "Author"` form is removed —
+    // anything after the bare `story` word is the removed form.
+    if (!c.atEnd()) {
+      this.diagnostics.error(
+        'parse.removed-story-header',
+        '`story "Title" by "Author"` was removed (ADR-298) — use the fielded form: a bare `story` line, then indented `title: <title>` and an `authors:` list (one name per indented line).',
+        c.restSpan(),
+      );
+      while (!c.atEnd()) c.next();
     }
 
-    const fields: Record<string, string> = {};
+    const fields: StoryFields = { authors: [], testers: [] };
     const states: StateName[] = [];
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
@@ -663,10 +660,96 @@ class Parser {
         continue;
       }
       const colonAt = fieldLine.raw.indexOf(':');
-      fields[key] = fieldLine.raw.slice(colonAt + 1).trim();
+      const rest = fieldLine.raw.slice(colonAt + 1).trim();
+      // ADR-298 D4: closed per-field schema — the parser knows every key;
+      // an unknown key is a parse error, never a silent passthrough.
+      switch (key) {
+        case 'title':
+          title = rest;
+          break;
+        case 'id':
+          fields.id = rest;
+          break;
+        case 'ifid':
+          fields.ifid = rest;
+          break;
+        case 'story-version':
+          fields.storyVersion = rest;
+          break;
+        case 'authors':
+        case 'testers': {
+          const entries: string[] = [];
+          if (rest.length > 0) entries.push(rest);
+          while (this.pos < this.lines.length && this.lines[this.pos].indent > fieldLine.indent) {
+            const entryLine = this.lines[this.pos++];
+            span = mergeSpans(span, lineSpan(entryLine));
+            const name = entryLine.raw.trim();
+            if (name.length > 0) entries.push(name);
+          }
+          if (entries.length === 0) {
+            this.diagnostics.error(
+              'parse.header-list-empty',
+              `\`${key}:\` declares no names — list one name per indented line (or one name inline).`,
+              lineSpan(fieldLine),
+            );
+          }
+          if (key === 'authors') fields.authors = entries;
+          else fields.testers = entries;
+          break;
+        }
+        case 'prologue':
+        case 'description': {
+          let valueSpan = lineSpan(fieldLine);
+          const parts: string[] = rest.length > 0 ? [rest] : [];
+          while (this.pos < this.lines.length && this.lines[this.pos].indent > fieldLine.indent) {
+            const bodyLine = this.lines[this.pos++];
+            span = mergeSpans(span, lineSpan(bodyLine));
+            valueSpan = mergeSpans(valueSpan, lineSpan(bodyLine));
+            const text = bodyLine.raw.trim();
+            if (text.length > 0) parts.push(text);
+          }
+          const value = parts.join('\n');
+          if (value.length === 0) {
+            this.diagnostics.error(
+              'parse.header-field',
+              `\`${key}:\` has no value — give literal text or a phrase name.`,
+              lineSpan(fieldLine),
+            );
+            break;
+          }
+          // Structural classification (ADR-298 D4): a lone kebab atom is
+          // ALWAYS a phrase reference (the analyzer errors if it doesn't
+          // resolve); anything else is literal prose. Never resolve-if-exists.
+          const prose = { kind: KEBAB_ATOM.test(value) ? ('phrase-ref' as const) : ('literal' as const), value, span: valueSpan };
+          if (key === 'prologue') fields.prologue = prose;
+          else fields.description = prose;
+          break;
+        }
+        case 'version':
+        case 'blurb':
+        case 'by': {
+          const replacement = key === 'version' ? 'story-version' : key === 'blurb' ? 'description' : 'authors';
+          this.diagnostics.error(
+            'parse.header-unknown-field',
+            `\`${key}:\` was removed from the story header (ADR-298) — use \`${replacement}:\` instead.`,
+            lineSpan(fieldLine),
+          );
+          break;
+        }
+        default:
+          this.diagnostics.error(
+            'parse.header-unknown-field',
+            `Unknown story-header field \`${key}:\` — the header takes exactly: title, authors, testers, ifid, id, story-version, prologue, description (plus states/score/use/on lines).`,
+            lineSpan(fieldLine),
+          );
+      }
     }
 
-    return { kind: 'story-header', title, author, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
+    if (title.length === 0) {
+      this.diagnostics.error('parse.story-title', 'The story block requires a `title:` field.', lineSpan(line));
+    }
+
+    return { kind: 'story-header', title, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
   }
 
   /**

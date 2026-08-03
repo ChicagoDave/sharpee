@@ -38,13 +38,45 @@ export interface GrammarHeader {
   span: Span;
 }
 
-/** `story "Title" by "Author"` plus its indented `key: value` fields. */
+/**
+ * A prose-valued header field (ADR-298 D4): either literal text or a bare
+ * phrase reference. Classification is structural — a value that is a single
+ * kebab atom is ALWAYS a phrase reference (the analyzer errors if no such
+ * phrase exists); anything else is literal prose. Never resolve-if-exists.
+ */
+export interface HeaderProseValue {
+  kind: 'literal' | 'phrase-ref';
+  value: string;
+  span: Span;
+}
+
+/**
+ * Typed story-block metadata (ADR-298 D1/D4). The schema is closed: the
+ * parser rejects unknown keys, so this shape is exhaustive by construction.
+ */
+export interface StoryFields {
+  id?: string;
+  /** `story-version:` — the author's own story version (renames `version:`). */
+  storyVersion?: string;
+  /** `ifid:` — Treaty of Babel identifier (ADR-074); minted by `sharpee init`. */
+  ifid?: string;
+  /** `authors:` — one name per indented line (or a single inline name). */
+  authors: string[];
+  /** `testers:` — same shape as `authors:`. */
+  testers: string[];
+  /** `prologue:` — emitted before the banner on the prologue channel (D3). */
+  prologue?: HeaderProseValue;
+  /** `description:` — build-time metadata, never emitted in play (D3). */
+  description?: HeaderProseValue;
+}
+
+/** `story` plus its indented fielded metadata (ADR-298 — positional form removed). */
 export interface StoryHeader {
   kind: 'story-header';
+  /** From the `title:` field; stays top-level (the IDE reads `IRMeta.title`). */
   title: string;
-  author: string;
-  /** Raw field values by key (id, version, blurb, ...), trimmed. */
-  fields: Record<string, string>;
+  /** Typed, closed-schema metadata fields (ADR-298 D4). */
+  fields: StoryFields;
   /**
    * `states: a, b` — the story's phases (ownership package D2). The story
    * starts in the first declared state; bare state names are condition refs.

@@ -114,6 +114,20 @@
  * ship as a minor. **Fourth recorded departure from D2's letter** (after
  * 1.1.0, the 2.0.0 consolidation, and 2.1.0) — cross-noted at ADR-257 D2.
  *
+ * **3.0.0 (ADR-298, 2026-08-03)** — the fielded story block. A breaking
+ * header-grammar change, a MAJOR by D2's ordinary rule:
+ *   - positional `story "Title" by "Author"` removed (`parse.removed-story-header`);
+ *   - closed per-field schema — `title:`/`authors:`/`testers:`/`ifid:`/`id:`/
+ *     `story-version:`/`prologue:`/`description:`; unknown keys are a parse
+ *     error (`parse.header-unknown-field`); `version:`/`blurb:`/`by:` are
+ *     removed spellings with fix-its;
+ *   - `prologue:`/`description:` take literal prose or a bare phrase
+ *     reference (a lone kebab atom is always a reference);
+ *   - missing `ifid:` warns at compile (`analysis.missing-ifid`), hard-errors
+ *     at publish (ADR-284).
+ * ADR-278's 3.0.0 reservation was released by owner ruling (2026-08-03) —
+ * see the note in that ADR; Relations anchors the next major if pursued.
+ *
  * ---
  *
  * ## Landing history → public versions (ADR-289 D8 §3.5)
@@ -130,10 +144,10 @@
  * | `2.2.0` | ADR-267 D11 typed slots (landing group 3)  | ADR-289's four breaking compile gates (2026-07-29 ruling) |
  *
  * `2.3.0`–`2.5.0` and the interim `3.0.0` are landing history only; they were
- * never public versions and no public version has reused them yet. The public
- * line is therefore `1.x` → `2.0.0` → `2.1.0` → `2.2.0`, and the entries above
- * record what actually shipped when. **`3.0.0` and `5.0.0` remain reserved**
- * (ADR-278) — reserving them is why the public line does not simply continue
- * the landing numbers.
+ * never public versions. The public line is `1.x` → `2.0.0` → `2.1.0` →
+ * `2.2.0` → `3.0.0` (ADR-298 — the interim landing `3.0.0` is history, the
+ * public `3.0.0` is the fielded story block; ADR-278's reservation of the
+ * number was released 2026-08-03). **`5.0.0` remains reserved** (ADR-278
+ * lockstep pairing — renumbered when Relations actually lands).
  */
-export const CHORD_LANGUAGE_VERSION = '2.2.0';
+export const CHORD_LANGUAGE_VERSION = '3.0.0';

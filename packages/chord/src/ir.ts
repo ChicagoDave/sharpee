@@ -125,11 +125,32 @@ export interface StoryIR {
   hasHatches: boolean;
 }
 
+/**
+ * A prose-valued meta field (ADR-298 D4): literal text, or a phrase
+ * reference the engine resolves at emission time (variants keep their
+ * normal semantics). No spans — IR is snapshot-stable.
+ */
+export interface IRProseValue {
+  kind: 'literal' | 'phrase-ref';
+  value: string;
+}
+
+/** Typed story-block metadata (ADR-298 — closed schema, unknown keys never reach the IR). */
+export interface IRStoryFields {
+  id?: string;
+  storyVersion?: string;
+  ifid?: string;
+  authors: string[];
+  testers: string[];
+  prologue?: IRProseValue;
+  description?: IRProseValue;
+}
+
 export interface IRMeta {
+  /** Top-level by contract — the IDE's window title reads this directly (ADR-279 A1). */
   title: string;
-  author: string;
-  /** Raw header fields (id, version, blurb, ...). */
-  fields: Record<string, string>;
+  /** Typed header fields (ADR-298 D4). */
+  fields: IRStoryFields;
 }
 
 // --------------------------------------------------------------------------

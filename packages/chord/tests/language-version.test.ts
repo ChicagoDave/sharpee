@@ -19,17 +19,18 @@ import { CHORD_LANGUAGE_VERSION } from '../src/version';
 //   1. raise CHORD_LANGUAGE_VERSION (src/version.ts) per ADR-257 D2 (minor/major),
 //   2. re-record EBNF_SHA256 below to the new hash.
 const PINNED = {
-  // 2.2.0 — owner ruling (2026-07-29, src/version.ts): ships alongside
-  // Sharpee 4.3.0, naming ADR-289's four breaking compile gates (D3, D5, D6,
-  // and D2's required select id). Four breaking gates would be a major by
-  // ADR-257 D2's letter; shipped as a minor — the fourth recorded departure.
-  // The EBNF hash is unchanged: the gates refuse constructs the grammar still
-  // describes, so the grammar surface did not move.
+  // 3.0.0 — ADR-298 (2026-08-03): the fielded story block. Breaking header
+  // grammar (positional `story "Title" by "Author"` removed; closed per-field
+  // schema; bare phrase references in prologue:/description:) — a MAJOR by
+  // ADR-257 D2's ordinary rule. ADR-278's reservation of 3.0.0 released by
+  // owner ruling the same day (see the note in that ADR).
+  // (2.2.0 — owner ruling, 2026-07-29: ADR-289's four breaking compile
+  //  gates shipped as a minor, EBNF hash unchanged — fourth departure.)
   // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
-  languageVersion: '2.2.0',
-  ebnfSha256: '8ef9ae470e1ab133a0460927d1f29105efd961e5b138212926151dadf2b17a04',
+  languageVersion: '3.0.0',
+  ebnfSha256: 'b3f4e5a5ca3d73c0a3c6c58223bde7f4a7b6971c6c1efca367ed1518677e2540',
 };
 
 const EBNF_PATH = join(__dirname, '..', '..', '..', 'docs', 'reference', 'chord.ebnf');
