@@ -172,9 +172,13 @@ schema gains ADR-252 D3's six keys as typed fields on `IRStoryFields`
 `.story` stays package.json-free (ADR-252), and typo protection now covers
 the client keys too (a misspelled `tempate:` is a compile error naming the
 known set, replacing devkit's old build-time warning). Additive grammar —
-Chord 3.0.0 → 3.1.0 per ADR-257 D2. devkit's `KNOWN_HEADER_KEYS` set and its
-unrecognized-key warning loop are retired; `readClientConfig` reads the typed
-fields.
+landed as Chord 3.0.0 → 3.1.0 per ADR-257 D2, then **folded back into 3.0.0
+by owner ruling later the same day** (2026-08-03, session f382ed): nothing at
+3.x had been published, so the six keys ship inside the 3.0.0 major and the
+interim 3.1.0 number is retired — the language is frozen at 3.0.0. (Package
+versions are a separate lockstep track: 4.3.0 today, next npm publish 4.4.0,
+5.0.0 at the release cut.) devkit's `KNOWN_HEADER_KEYS` set and its unrecognized-key
+warning loop are retired; `readClientConfig` reads the typed fields.
 
 ### D6 — Sequencing
 

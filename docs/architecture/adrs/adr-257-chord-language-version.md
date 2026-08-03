@@ -84,6 +84,16 @@ Compiler bug fixes, IR-shape refactors, and platform releases do **not** bump it
 > would experience a new language*. If a fifth arises, the question to put is whether D2 should be
 > amended to say that, rather than overridden again.
 
+> **Recorded exception (2026-08-03, session f382ed — freeze at 3.0.0).** ADR-298's D4-A1 amendment
+> (GH #221) landed the six ADR-252 D3 client-config keys as **3.1.0**, an ordinary D2 minor. The
+> owner ruled the same day that nothing at 3.x has been published, so the interim 3.1.0 is
+> **folded back into 3.0.0** (the same consolidation species as the 2.0.0 ruling) and the language
+> is **frozen at 3.0.0**. The `@sharpee/*` packages are a separate lockstep track: 4.3.0 today,
+> next npm publish 4.4.0 (the 4.x line continues through the IDE work), 5.0.0 when the owner cuts
+> the release. Fifth departure from D2's letter — of the unpublished-consolidation kind,
+> not the majors-as-minors kind the paragraph above flags, so the amend-vs-override question it
+> poses remains open rather than triggered.
+
 ### D3 — "Breaking change" quantified: two independent axes; the loader gates only on the wire
 
 A "breaking change" in Chord is **two distinct events on independent axes**, and

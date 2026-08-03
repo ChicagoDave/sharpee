@@ -142,6 +142,13 @@ to that layer's blank-text rules.
   > reservation. Relations, if pursued, anchors whatever major pair is next
   > when it actually happens (Sharpee N+1 / Chord 4.0.0 by today's line);
   > the lockstep principle is unchanged, only the numbers move.
+  >
+  > **Sharpee 5.0.0 also spent (2026-08-03, David, session f382ed).** The
+  > `@sharpee/*` packages (lockstep, 4.3.0 today; next npm publish 4.4.0,
+  > continuing the 4.x line through the IDE work) move to **5.0.0** when
+  > David cuts the release; the Chord language is frozen at 3.0.0. So
+  > neither half of the original 5.0.0/3.0.0 pair remains reserved for
+  > relations — it anchors whatever pair is current when it lands.
 - Umbrella discipline: child ADRs (E1-E4 are the candidates) carry all
   decisions; this ADR only indexes them once they exist.
 - The existing ad-hoc pair state (wall `between`, conversation participants,

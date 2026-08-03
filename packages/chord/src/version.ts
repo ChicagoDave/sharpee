@@ -118,9 +118,12 @@
  * header-grammar change, a MAJOR by D2's ordinary rule:
  *   - positional `story "Title" by "Author"` removed (`parse.removed-story-header`);
  *   - closed per-field schema — `title:`/`authors:`/`testers:`/`ifid:`/`id:`/
- *     `story-version:`/`prologue:`/`description:`; unknown keys are a parse
- *     error (`parse.header-unknown-field`); `version:`/`blurb:`/`by:` are
- *     removed spellings with fix-its;
+ *     `story-version:`/`prologue:`/`description:`, plus ADR-252 D3's six
+ *     client-config keys `client:`/`theme:`/`template:`/`themes:`/
+ *     `default-theme:`/`storage-prefix:` (D4-A1 amendment, GH #221 — landed
+ *     as an interim 3.1.0 minor, folded into 3.0.0 by the freeze ruling
+ *     below); unknown keys are a parse error (`parse.header-unknown-field`);
+ *     `version:`/`blurb:`/`by:` are removed spellings with fix-its;
  *   - `prologue:`/`description:` take literal prose or a bare phrase
  *     reference (a lone kebab atom is always a reference);
  *   - missing `ifid:` warns at compile (`analysis.missing-ifid`), hard-errors
@@ -146,11 +149,19 @@
  * `2.3.0`–`2.5.0` and the interim `3.0.0` are landing history only; they were
  * never public versions. The public line is `1.x` → `2.0.0` → `2.1.0` →
  * `2.2.0` → `3.0.0` (ADR-298 — the interim landing `3.0.0` is history, the
- * public `3.0.0` is the fielded story block; ADR-278's reservation of the
- * number was released 2026-08-03) → `3.1.0` (ADR-298 amendment, GH #221,
- * 2026-08-03: ADR-252 D3's six client-config keys folded into the closed
- * header schema — additive, a MINOR by ADR-257 D2). **`5.0.0` remains
- * reserved** (ADR-278 lockstep pairing — renumbered when Relations actually
- * lands).
+ * public `3.0.0` is the fielded story block incl. the D4-A1 client-config
+ * keys; ADR-278's reservation of the number was released 2026-08-03).
+ *
+ * **3.0.0 freeze (owner ruling, 2026-08-03, session f382ed)** — the interim
+ * `3.1.0` (D4-A1's client-config keys, briefly public earlier the same day)
+ * is folded back into `3.0.0`: nothing at 3.x has been published, so the
+ * additive keys ship inside the major rather than as a separate minor —
+ * the same consolidation species as the 2.0.0 ruling. The language is
+ * **frozen at 3.0.0**. Package versioning is a separate track: the
+ * `@sharpee/*` packages version in lockstep (currently 4.3.0; the next npm
+ * publish is 4.4.0, continuing the 4.x line through the IDE work) and move
+ * to **5.0.0** when the owner cuts the release — `5.0.0` is no longer
+ * Relations-reserved (Relations renumbers when it lands; ADR-278 note).
+ * Cross-noted at ADR-257 D2.
  */
-export const CHORD_LANGUAGE_VERSION = '3.1.0';
+export const CHORD_LANGUAGE_VERSION = '3.0.0';
