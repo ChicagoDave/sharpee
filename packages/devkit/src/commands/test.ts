@@ -169,8 +169,18 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   // fresh below (honoring each transcript's optional `entry:` header).
   let game: TestableGame | undefined;
   if (chain) {
+    // ADR-293 D14: a chain is one session governed by the FIRST member's
+    // pinned seed. Pre-read it here — the game must be seeded at assembly
+    // (the runner verifies the session seed, it never sets it). A parse
+    // error is swallowed: the main loop below reports it properly.
+    let chainSeed: number | undefined;
     try {
-      game = await loadAuthorGame(dir);
+      chainSeed = parseTranscriptFile(transcripts[0]).config?.seeds?.[0];
+    } catch {
+      chainSeed = undefined;
+    }
+    try {
+      game = await loadAuthorGame(dir, { seed: chainSeed });
     } catch (error) {
       const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
       console.error(message);
@@ -221,7 +231,13 @@ export async function runTestCommand(rest: string[]): Promise<number> {
 
     if (!chain) {
       try {
-        game = await loadAuthorGame(dir, { entry: transcript.header.entry });
+        // ADR-294 D3: a pinned transcript runs at its declared seed — the
+        // runner verifies the session seed against the pin, so the game
+        // must be seeded here at assembly.
+        game = await loadAuthorGame(dir, {
+          entry: transcript.header.entry,
+          seed: transcript.config?.seeds?.[0],
+        });
       } catch (error) {
         const message = `Error loading story: ${error instanceof Error ? error.message : error}`;
         console.error(message);

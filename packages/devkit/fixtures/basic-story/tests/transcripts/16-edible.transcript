@@ -19,4 +19,4 @@ description: Verify EdibleTrait — eating an item consumes it
 
 # Try to eat it again — should be gone
 > eat energy bar
-[OK: contains_any "not" "don't see" "can't"]
+[OK: contains "not"]

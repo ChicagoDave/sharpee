@@ -15,4 +15,4 @@ description: Verify showing action — show an item to an NPC
 
 # Show the clipboard to the bot
 > show clipboard to bot
-[OK: contains_any "show" "bot" "not interested" "unimpressed" "doesn't"]
+[OK: contains "show"]

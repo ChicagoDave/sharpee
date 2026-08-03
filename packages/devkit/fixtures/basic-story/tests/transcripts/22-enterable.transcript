@@ -11,8 +11,8 @@ description: Verify EnterableTrait — enter and exit a maintenance booth
 
 # Enter the booth
 > enter booth
-[OK: contains_any "enter" "get in" "booth" "inside"]
+[OK: contains "get in"]
 
 # Exit the booth
 > exit booth
-[OK: contains_any "exit" "get out" "leave" "booth" "Control Room"]
+[OK: contains "get out"]

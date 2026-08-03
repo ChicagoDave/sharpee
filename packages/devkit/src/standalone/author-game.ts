@@ -77,10 +77,12 @@ export function findStoryFile(dir: string): string | null {
  * with `.story` line numbers (ADR-210 AC-3).
  *
  * @param storyFile absolute or cwd-relative path to the `.story` file
+ * @param seed master seed for the chord evaluator's stream (ADR-293 D1);
+ *   omitted, the stream is time-seeded (interactive play with no pin)
  * @returns the constructed story instance (not yet assembled into a game)
  * @throws on gate errors, with every diagnostic in the message
  */
-export function loadChordStory(storyFile: string): unknown {
+export function loadChordStory(storyFile: string, seed?: number): unknown {
   // Lazy requires (compose.ts pattern): pull the compiler/loader only when needed.
   const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
   const storyDir = path.dirname(path.resolve(storyFile));
@@ -103,7 +105,10 @@ export function loadChordStory(storyFile: string): unknown {
   }
 
   const { createStory } = require('@sharpee/story-loader') as typeof import('@sharpee/story-loader');
-  return createStory(result.ir, { hatchModules });
+  // ADR-293 D1: the chord evaluator's stream (`one chance in <n>`,
+  // `randomly`) derives from the session's master seed — omitting it left
+  // chord draws clock-seeded under a pinned seed.
+  return createStory(result.ir, { hatchModules, seed });
 }
 
 /**
@@ -115,19 +120,25 @@ export function loadChordStory(storyFile: string): unknown {
  * @returns the assembled game (engine + channel packet plumbing)
  * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
  */
-export async function loadAuthorGame(target: string, opts?: { entry?: string }): Promise<LoadedGame> {
+export async function loadAuthorGame(
+  target: string,
+  opts?: { entry?: string; seed?: number },
+): Promise<LoadedGame> {
   const bootstrap = require('@sharpee/bootstrap') as typeof import('@sharpee/bootstrap');
-  if (target.endsWith('.story')) {
-    // ADR-248: freshStory recompiles so an in-process RESTART reboots fresh.
-    return bootstrap.assembleGame(loadChordStory(target), {
-      freshStory: () => loadChordStory(target),
+  const chordGame = (storyFile: string): LoadedGame => {
+    // ADR-293 D1: one master seed governs the engine AND the chord
+    // evaluator. When none was injected, read the clock once HERE so both
+    // get the same value — the reported seed then reproduces chord draws.
+    // ADR-248: freshStory recompiles so an in-process RESTART reboots fresh
+    // (same master seed).
+    const masterSeed = opts?.seed ?? Date.now();
+    return bootstrap.assembleGame(loadChordStory(storyFile, masterSeed), {
+      freshStory: () => loadChordStory(storyFile, masterSeed),
+      seed: masterSeed,
     });
-  }
+  };
+  if (target.endsWith('.story')) return chordGame(target);
   const storyFile = findStoryFile(target);
-  if (storyFile) {
-    return bootstrap.assembleGame(loadChordStory(storyFile), {
-      freshStory: () => loadChordStory(storyFile),
-    });
-  }
-  return bootstrap.loadStory(target, { entry: opts?.entry });
+  if (storyFile) return chordGame(storyFile);
+  return bootstrap.loadStory(target, { entry: opts?.entry, seed: opts?.seed });
 }

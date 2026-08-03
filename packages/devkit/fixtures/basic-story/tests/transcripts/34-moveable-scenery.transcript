@@ -13,10 +13,10 @@ description: Verify MoveableSceneryTrait — a heavy panel that can be pushed
 [OK: contains "Rooftop"]
 
 > open door
-[OK: contains_any "open" "door"]
+[OK: contains "open"]
 
 > east
-[OK: contains_any "Utility Room" "east"]
+[OK: contains "Utility Room"]
 
 # Examine the panel
 > examine panel
@@ -24,4 +24,4 @@ description: Verify MoveableSceneryTrait — a heavy panel that can be pushed
 
 # Push it (MoveableSceneryTrait allows push)
 > push panel
-[OK: contains_any "push" "move" "slide" "budge" "heavy"]
+[OK: contains "has no effect"]

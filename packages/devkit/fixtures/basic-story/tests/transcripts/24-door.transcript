@@ -18,8 +18,8 @@ description: Verify DoorTrait + OpenableTrait — open a door and go through it
 
 # Open the door
 > open door
-[OK: contains_any "open" "door"]
+[OK: contains "open"]
 
 # Go through the door to the Utility Room
 > east
-[OK: contains_any "Utility Room" "east"]
+[OK: contains "Utility Room"]

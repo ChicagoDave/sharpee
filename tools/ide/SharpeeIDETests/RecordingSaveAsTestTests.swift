@@ -138,7 +138,11 @@ final class RecordingSaveAsTestTests: XCTestCase {
         XCTAssertEqual(run.result?.state, .passed,
                        "a saved recording must pass under the real CLI with no IDE")
         XCTAssertEqual(run.ends.map(\.status), [.passed])
-        XCTAssertEqual(run.ends.first?.passed, 3, "the opening turn plus both captured turns passed")
+        // Empirical CLI numbers (macOS gate run, 2026-08-02): the one blessed
+        // turn passes; the opening turn and the untagged turn are [SKIP] —
+        // they execute but report as skipped, not passed (ADR-294 D2).
+        XCTAssertEqual(run.ends.first?.passed, 1, "only the blessed turn counts as passed")
+        XCTAssertEqual(run.ends.first?.skipped, 2, "the opening turn and the untagged turn report as skipped")
     }
 
     // MARK: - Acceptance 5 — lossless round-trip of the hard content
@@ -166,7 +170,8 @@ final class RecordingSaveAsTestTests: XCTestCase {
         let run = runSavedTests()
         XCTAssertEqual(run.result?.state, .passed,
                        "a bracket/quote/multi-paragraph bless must pass headless")
-        XCTAssertEqual(run.ends.first?.passed, 3)
+        XCTAssertEqual(run.ends.first?.passed, 1)
+        XCTAssertEqual(run.ends.first?.skipped, 2)
     }
 
     func testASelectionCarryingAQuoteTakesTheFenceAndStillPasses() throws {
@@ -184,7 +189,8 @@ final class RecordingSaveAsTestTests: XCTestCase {
 
         let run = runSavedTests()
         XCTAssertEqual(run.result?.state, .passed)
-        XCTAssertEqual(run.ends.first?.passed, 3)
+        XCTAssertEqual(run.ends.first?.passed, 1)
+        XCTAssertEqual(run.ends.first?.skipped, 2)
     }
 
     func testAPlainSelectionRidesTheInlineFormAndStillPasses() throws {

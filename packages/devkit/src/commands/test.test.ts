@@ -143,4 +143,21 @@ describe('author-game story resolution', () => {
     const output = await game.executeCommand('examine the brass lamp');
     expect(output).toContain('gleams dully');
   });
+
+  it('loadAuthorGame threads the seed to the engine AND the chord evaluator (ADR-293 D1)', async () => {
+    // The engine half: the session's master seed is the injected one.
+    const game = await loadAuthorGame(projectDir, { seed: 4242 });
+    expect(
+      (game.engine as { getMasterSeed?: () => number }).getMasterSeed?.(),
+    ).toBe(4242);
+
+    // The chord half: two same-seed sessions produce identical outputs for
+    // the same commands — a clock-seeded evaluator stream would diverge on
+    // chance-gated prose. (Asserted on real executeCommand output, not on
+    // internals, so the pin survives loader refactors.)
+    const twin = await loadAuthorGame(projectDir, { seed: 4242 });
+    for (const cmd of ['wait', 'wait', 'wait', 'look']) {
+      expect(await twin.executeCommand(cmd)).toBe(await game.executeCommand(cmd));
+    }
+  });
 });

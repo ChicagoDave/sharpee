@@ -1,0 +1,51 @@
+# sharpee golden v1
+transcript: bar-darkness.transcript
+story: cloak-of-darkness
+seed: 42
+derivation: 1
+save-format: 3.0.0
+channels: main
+events: false
+locale: en-US
+forces: (none)
+---
+> south
+Cloak of Darkness
+
+Story v1.0.0
+
+A basic IF demonstration - hang up your cloak!
+
+By Roger Firth (Sharpee implementation)
+
+It is pitch dark. You are likely to be eaten by a grue.
+
+Blundering around in the dark isn't a good idea!
+
+> look
+It's pitch dark, and you can't see a thing.
+
+> read message
+You can't see any such thing.
+
+> north
+Foyer of the Opera House
+You are standing in a spacious hall, splendidly decorated in red and gold, with glittering chandeliers overhead. The entrance from the street is to the north, and there are doorways south and west.
+
+> west
+Cloakroom
+The walls of this small room were clearly once lined with hooks, though now only one remains. The exit is a door to the east.
+
+> remove cloak
+You take off the velvet cloak.
+
+> hang cloak on hook
+You put the velvet cloak on the brass hook.
+
+> east
+Foyer of the Opera House
+You are standing in a spacious hall, splendidly decorated in red and gold, with glittering chandeliers overhead. The entrance from the street is to the north, and there are doorways south and west.
+
+> south
+Foyer Bar
+The bar, much rougher than you'd have guessed after the opulence of the foyer to the north, is completely empty. There seems to be some sort of message scrawled in the sawdust on the floor.

@@ -13,10 +13,10 @@ description: Verify AttachedTrait — an attached cable that cannot be taken
 [OK: contains "Rooftop"]
 
 > open door
-[OK: contains_any "open" "door"]
+[OK: contains "open"]
 
 > east
-[OK: contains_any "Utility Room" "east"]
+[OK: contains "Utility Room"]
 
 # Examine the cable
 > examine cable
@@ -24,4 +24,4 @@ description: Verify AttachedTrait — an attached cable that cannot be taken
 
 # Try to take the cable (attached — should fail)
 > take cable
-[OK: contains_any "can't" "fixed" "attached" "stuck"]
+[OK: contains "fixed"]

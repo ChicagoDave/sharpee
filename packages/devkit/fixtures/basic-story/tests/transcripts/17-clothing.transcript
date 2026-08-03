@@ -15,8 +15,8 @@ description: Verify ClothingTrait — wear and remove a lab coat
 
 # Wear it
 > wear coat
-[OK: contains_any "wear" "put on" "Worn" "wearing"]
+[OK: contains "put on"]
 
 # Remove it — engine may report "not wearing" due to ClothingTrait integration
 > remove coat
-[OK: contains_any "remove" "take off" "Removed" "wearing"]
+[OK: contains "take off"]

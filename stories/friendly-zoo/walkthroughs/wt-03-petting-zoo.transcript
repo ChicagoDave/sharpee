@@ -17,15 +17,17 @@ description: Chained full-playthrough, chapter 3 of 5. Feeding both animals, clo
 > take feed
 [OK: contains "Taken"]
 
-# Feeding awards `fed` (goats) through the feedable capability path —
-# and the second feeding call re-hungers them the same turn.
+# Feeding awards `fed` (goats) through the feedable capability path.
 > feed goats
 [OK: contains "You offer some feed"]
 [OK: contains "devour the corn and pellets"]
-[OK: contains "FEEDING TIME"]
 
+# The second feeding call rides this turn — one command later than
+# pre-ADR-293 (wt-02's restore rewound the turn counter by one) — and
+# re-hungers the goats the same turn.
 > feed rabbits
 [OK: contains "Biscuit and Marmalade"]
+[OK: contains "FEEDING TIME"]
 [OK: contains "bleating loudly"]
 
 # Turn 20: the zoo CLOSES mid-pet. The goats' and rabbits' confessions

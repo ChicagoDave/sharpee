@@ -1,5 +1,6 @@
 title: Fernhill D2 — the fuse: fail to cut it and die
 story: fernhill
+seed: 42
 description: The failure branch, not skipped — enter the folly without the
   shears' mercy, let the anchored countdown run, and the cache goes up
   (kill the player through the ADR-227 death sink).
@@ -23,10 +24,31 @@ description: The failure branch, not skipped — enter the folly without the
 > turn on the boiler
 [OK: contains "warmth crawls"]
 
-[DO]
+# Wait for Tobias's rounds to bring him here (loop region unrolled to its
+# seed-42 sequence — ADR-294 migration; he enters on the eighth wait)
 > wait
-[OK: contains_any "Time passes" "enters"]
-[UNTIL "enters from the"]
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "Time passes"]
+
+> wait
+[OK: contains "enters from the"]
 
 > ask tobias about the fire
 [OK: contains "warped, not cursed"]
@@ -46,12 +68,14 @@ description: The failure branch, not skipped — enter the folly without the
 > north
 [OK: contains "wakes a thread of sparks"]
 
-# The hiss marks the stakes each turn…
+# The hiss marks the stakes each turn (cycling; at this point in the
+# seed-42 run the cycle lands "closer now" first, then "hisses on" —
+# ADR-294 migration off contains_any)…
 > wait
-[OK: contains_any "hisses on" "closer now"]
+[OK: contains "closer now"]
 
 > wait
-[OK: contains_any "hisses on" "closer now"]
+[OK: contains "hisses on"]
 
 # …and the third turn is the last
 > wait

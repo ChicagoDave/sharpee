@@ -7,7 +7,7 @@ description: Verify searching action — search a container or supporter
 
 # Search the workbench (supporter in Control Room)
 > search workbench
-[OK: contains_any "search" "find" "nothing" "empty" "workbench"]
+[OK: contains "find"]
 
 # Search the toolbox (container in Supply Closet, need light)
 > take flashlight
@@ -20,4 +20,4 @@ description: Verify searching action — search a container or supporter
 [OK: contains "Supply Closet"]
 
 > search toolbox
-[OK: contains_any "search" "find" "locked" "closed" "toolbox"]
+[OK: contains "closed"]

@@ -1,5 +1,6 @@
 title: 35 — Combat
 story: regression
+seed: 42
 author: Sharpee Regression Suite
 description: Verify WeaponTrait + CombatantTrait + registerBasicCombat — attack a training dummy
 
@@ -15,4 +16,4 @@ description: Verify WeaponTrait + CombatantTrait + registerBasicCombat — attac
 
 # Attack the dummy (bare-handed)
 > attack dummy
-[OK: contains_any "attack" "hit" "strike" "miss" "dummy" "swing"]
+[OK: contains "hit"]

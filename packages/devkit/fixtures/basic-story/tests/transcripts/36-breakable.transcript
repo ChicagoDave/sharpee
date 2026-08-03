@@ -18,4 +18,4 @@ description: Verify BreakableTrait — a breakable glass panel
 
 # Attack the glass
 > attack glass
-[OK: contains_any "attack" "hit" "break" "shatter" "glass" "swing"]
+[OK: contains "break"]

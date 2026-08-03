@@ -1,5 +1,6 @@
 title: Cloak golden gate — darkness in the bar
 story: cloak-of-darkness
+seed: 42
 description: The Foyer Bar is dark while the player has the cloak
   (`a room, dark while the player has the velvet cloak`), the stumble
   rule fires on dark entry, the message is out of scope in the dark, and
