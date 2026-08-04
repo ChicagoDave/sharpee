@@ -1,9 +1,12 @@
 // PlayHeaderView.swift
-// The Play pane's header bar: a status dot (green when a story is loaded), Restart
-// and Record buttons, the per-turn Bless gesture (ADR-282 D1) and Checkpoint mark
-// (D4), and a "Play after build" toggle. Pure view — the controller owns behaviour.
-// Public interface: onRestart / onRecordToggle / onBless / onCheckpoint /
-// onPlayAfterBuildToggle callbacks; setLoaded(_:), setRecording(_:),
+// The Play pane's header bar: a status dot (green when a story is loaded), the
+// New Thread button (ADR-299 D8 — a restart is a new skein thread from the
+// root), the per-turn Bless gesture (ADR-282 D1, retiring into the Transcript
+// view per ADR-299) and Checkpoint mark (D4), and a "Play after build" toggle.
+// There is no Record toggle: playing always grows the skein (D1). Pure view —
+// the controller owns behaviour.
+// Public interface: onRestart / onBless / onCheckpoint /
+// onPlayAfterBuildToggle callbacks; setLoaded(_:),
 // setBless(available:isBlessed:), setCheckpoint(available:isCheckpoint:),
 // setPlayAfterBuild(_:).
 // Owner context: tools/ide — Play.
@@ -16,7 +19,6 @@ final class PlayHeaderView: NSView {
 
     var onRestart: (() -> Void)?
     var onPlayAfterBuildToggle: ((Bool) -> Void)?
-    var onRecordToggle: (() -> Void)?
     /// The per-turn bless gesture (ADR-282 D1) — vouch for the response on
     /// screen, or take the vouch back.
     var onBless: (() -> Void)?
@@ -26,7 +28,6 @@ final class PlayHeaderView: NSView {
 
     private let dot = NSView()
     private let restartButton = NSButton()
-    private let recordButton = NSButton()
     private let blessButton = NSButton()
     private let checkpointButton = NSButton()
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
@@ -36,7 +37,6 @@ final class PlayHeaderView: NSView {
         // Header controls never dictate the pane's width (divider stays free);
         // they clip before they resist.
         restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        recordButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         blessButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         checkpointButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -51,19 +51,15 @@ final class PlayHeaderView: NSView {
         dot.layer?.cornerRadius = 4
         dot.translatesAutoresizingMaskIntoConstraints = false
 
-        restartButton.title = "Restart"
+        // D8: a restart IS a new skein thread from the root — the button says
+        // what it grows, not what it discards.
+        restartButton.title = "New Thread"
         restartButton.bezelStyle = .rounded
         restartButton.controlSize = .small
         restartButton.target = self
         restartButton.action = #selector(restartClicked)
+        restartButton.toolTip = "Restart from the story's beginning — a new thread from the skein root"
         restartButton.translatesAutoresizingMaskIntoConstraints = false
-
-        recordButton.title = "Record"
-        recordButton.bezelStyle = .rounded
-        recordButton.controlSize = .small
-        recordButton.target = self
-        recordButton.action = #selector(recordClicked)
-        recordButton.translatesAutoresizingMaskIntoConstraints = false
 
         blessButton.title = Self.blessTitle
         blessButton.bezelStyle = .rounded
@@ -96,7 +92,6 @@ final class PlayHeaderView: NSView {
 
         addSubview(dot)
         addSubview(restartButton)
-        addSubview(recordButton)
         addSubview(blessButton)
         addSubview(checkpointButton)
         addSubview(playAfterBuildCheckbox)
@@ -110,10 +105,7 @@ final class PlayHeaderView: NSView {
             restartButton.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 10),
             restartButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
-            recordButton.leadingAnchor.constraint(equalTo: restartButton.trailingAnchor, constant: 6),
-            recordButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-
-            blessButton.leadingAnchor.constraint(equalTo: recordButton.trailingAnchor, constant: 6),
+            blessButton.leadingAnchor.constraint(equalTo: restartButton.trailingAnchor, constant: 6),
             blessButton.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             checkpointButton.leadingAnchor.constraint(equalTo: blessButton.trailingAnchor, constant: 6),
@@ -137,23 +129,16 @@ final class PlayHeaderView: NSView {
         fatalError("PlayHeaderView is not Storyboard-instantiable")
     }
 
-    /// Green dot + enabled Restart/Record when a story is loaded; dim + disabled otherwise.
+    /// Green dot + enabled New Thread when a story is loaded; dim + disabled otherwise.
     func setLoaded(_ loaded: Bool) {
         dot.layer?.backgroundColor = (loaded ? NSColor.systemGreen : Theme.foregroundFaint).cgColor
         restartButton.isEnabled = loaded
-        recordButton.isEnabled = loaded
         // Nothing on screen to vouch for or mark. The controller re-enables
         // these as soon as a turn arrives.
         if !loaded {
             setBless(available: false, isBlessed: false)
             setCheckpoint(available: false, isCheckpoint: false)
         }
-    }
-
-    /// Reflects recording state: red "Stop Recording" while capturing.
-    func setRecording(_ recording: Bool) {
-        recordButton.title = recording ? "Stop Recording" : "Record"
-        recordButton.contentTintColor = recording ? .systemRed : nil
     }
 
     /// Reflects the bless state of the turn on screen (ADR-282 D1).
@@ -190,10 +175,6 @@ final class PlayHeaderView: NSView {
 
     @objc private func restartClicked() {
         onRestart?()
-    }
-
-    @objc private func recordClicked() {
-        onRecordToggle?()
     }
 
     @objc private func blessClicked() {

@@ -141,6 +141,36 @@ final class ProjectArtifactsTests: XCTestCase {
                        "every real file must land in exactly one group — missing: \(onDisk.subtracting(grouped))")
     }
 
+    // MARK: - Play Testing (ADR-299 D7)
+
+    func testSkeinFilesGroupIntoPlayTestingBesideTheTestGroups() throws {
+        try buildFullFixture()
+        try file("play-testing/the-lost-key.skein", "{}")
+
+        XCTAssertEqual(memberNames(.playTesting), ["the-lost-key.skein"])
+        // D7 places the group beside Walkthroughs and Transcript Tests.
+        XCTAssertEqual(groups().map(\.kind),
+                       [.story, .walkthroughs, .transcriptTests, .playTesting,
+                        .assets, .webTemplate])
+        XCTAssertEqual(group(.playTesting)?.directoryURL?.lastPathComponent, "play-testing")
+    }
+
+    func testNonSkeinContentInPlayTestingIsSurfacedNotSwallowed() throws {
+        try file("the-lost-key.story", "story \"The Lost Key\"")
+        try file("play-testing/the-lost-key.skein", "{}")
+        try file("play-testing/notes.md")
+
+        XCTAssertEqual(memberNames(.playTesting), ["the-lost-key.skein"])
+        XCTAssertEqual(memberNames(.other), ["notes.md"])
+    }
+
+    func testAnEmptyPlayTestingFolderYieldsNoGroup() throws {
+        try file("the-lost-key.story", "story \"The Lost Key\"")
+        try directory("play-testing")
+
+        XCTAssertEqual(groups().map(\.kind), [.story])
+    }
+
     // MARK: - Absent artifact types
 
     func testAnArtifactTypeWithNothingOnDiskYieldsNoGroup() throws {

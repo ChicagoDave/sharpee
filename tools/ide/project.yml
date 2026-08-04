@@ -89,8 +89,14 @@ targets:
         # toolchain behind it. macOS 26 is the last release supporting
         # Intel Macs, and the deployment target is already 26.0.
         ARCHS: arm64
+        # Dev builds sign with the Apple Development cert (not ad-hoc "-"):
+        # TCC ties folder-access grants to the signing identity, and an ad-hoc
+        # signature changes every rebuild, so macOS re-prompts for Documents/
+        # Desktop access on each ⌘R. Release packaging (package.sh) still
+        # re-signs with Developer ID.
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: 54CCCRZJ3X
+        CODE_SIGN_IDENTITY: "Apple Development"
         ENABLE_HARDENED_RUNTIME: YES
         COMBINE_HIDPI_IMAGES: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -109,7 +115,8 @@ targets:
         BUNDLE_LOADER: "$(TEST_HOST)"
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Chord Writer.app/Contents/MacOS/Chord Writer"
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: 54CCCRZJ3X
+        CODE_SIGN_IDENTITY: "Apple Development"
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:

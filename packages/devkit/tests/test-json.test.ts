@@ -213,6 +213,37 @@ describe('sharpee test --json (real story, real runner)', () => {
     expect(records.some((r) => r.type === 'coverage')).toBe(false);
   });
 
+  // ADR-299 replay capture: the skein replay shape — a [SKIP]-only transcript
+  // at a pinned seed, every command's actual output exposed on the stream.
+  it('--capture-output carries actualOutput on every executed command, passing and skipped', async () => {
+    const replay = join(projectDir, 'replay-thread.transcript');
+    writeFileSync(replay, 'title: Replay thread\nseed: 42\n---\n\n> look\n[SKIP]\n\n> examine the brass lamp\n[OK: contains "gleams dully"]\n');
+    try {
+      const { code, records } = await run(['--json', '--capture-output', projectDir, replay]);
+      expect(code).toBe(0);
+      const commands = ofType<CommandResultRecord>(records, 'command-result');
+      expect(commands.map((c) => c.input)).toEqual(['look', 'examine the brass lamp']);
+      // The [SKIP]'d command (skipped, passed) carries real story prose...
+      expect(commands[0].skipped).toBe(true);
+      expect(commands[0].actualOutput).toContain('A small square den');
+      // ...and so does the asserted-and-passing one.
+      expect(commands[1].passed).toBe(true);
+      expect(commands[1].actualOutput).toContain('gleams dully');
+    } finally {
+      rmSync(replay);
+    }
+  });
+
+  it('without --capture-output passing commands still omit actualOutput', async () => {
+    const { records } = await run(['--json', projectDir]);
+    const commands = ofType<CommandResultRecord>(records, 'command-result');
+    expect(commands.length).toBeGreaterThan(0);
+    for (const command of commands) {
+      expect(command.passed).toBe(true);
+      expect('actualOutput' in command).toBe(false);
+    }
+  });
+
   it('accepts a .story FILE argument, resolving the containing folder (D1)', async () => {
     const viaFile = await run(['--json', join(projectDir, 'mini.story')]);
     const viaDir = await run(['--json', projectDir]);

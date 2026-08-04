@@ -1,12 +1,13 @@
 // ProjectArtifacts.swift
 // Classifies an open project's contents into the typed artifact groups the
-// sidebar presents (ADR-280 D1): Story, Walkthroughs, Transcript Tests, Assets,
-// Web Template, Other. Groups are typed LENSES over the real folder, not folder
-// mirrors — Web Template draws from two different on-disk locations (the
-// `<storyId>.templates` file beside the story, and the `browser/` escape
-// hatches), and Transcript Tests reaches through `tests/` to `tests/transcripts/`.
-// The view is open, not strict: anything matching no type lands in Other, never
-// hidden and never dropped.
+// sidebar presents (ADR-280 D1, extended by ADR-299 D7): Story, Walkthroughs,
+// Transcript Tests, Play Testing, Assets, Web Template, Other. Groups are typed
+// LENSES over the real folder, not folder mirrors — Web Template draws from two
+// different on-disk locations (the `<storyId>.templates` file beside the story,
+// and the `browser/` escape hatches), Transcript Tests reaches through `tests/`
+// to `tests/transcripts/`, and Play Testing draws the `.skein` files from
+// `play-testing/`. The view is open, not strict: anything matching no type
+// lands in Other, never hidden and never dropped.
 // Public interface: ProjectArtifacts.groups(for:), ArtifactGroup, ArtifactGroup.Kind.
 // Owner context: tools/ide — Project model. UI-free; safe to unit-test.
 
@@ -18,11 +19,14 @@ import Foundation
 /// expansion state and selection would not survive a value type.
 final class ArtifactGroup {
 
-    /// The artifact types ADR-280 D1 names, in the order the sidebar shows them.
+    /// The artifact types ADR-280 D1 names — plus ADR-299 D7's Play Testing,
+    /// placed beside the two test groups it exports into — in the order the
+    /// sidebar shows them.
     enum Kind: CaseIterable {
         case story
         case walkthroughs
         case transcriptTests
+        case playTesting
         case assets
         case webTemplate
         case other
@@ -32,6 +36,7 @@ final class ArtifactGroup {
             case .story: return "Story"
             case .walkthroughs: return "Walkthroughs"
             case .transcriptTests: return "Transcript Tests"
+            case .playTesting: return "Play Testing"
             case .assets: return "Assets"
             case .webTemplate: return "Web Template"
             case .other: return "Other"
@@ -44,6 +49,7 @@ final class ArtifactGroup {
             case .story: return "book.closed"
             case .walkthroughs: return "figure.walk"
             case .transcriptTests: return "checkmark.circle"
+            case .playTesting: return "arrow.triangle.branch"
             case .assets: return "photo"
             case .webTemplate: return "rectangle.3.group"
             case .other: return "folder"
@@ -76,6 +82,10 @@ enum ProjectArtifacts {
     private static let walkthroughsDirectory = "walkthroughs"
     private static let testsDirectory = "tests"
     private static let transcriptsDirectory = "transcripts"
+    // The folder and extension are owned by SkeinStore (ADR-299 D7) — the
+    // classifier and the store must agree on what a skein is.
+    private static let playTestingDirectory = SkeinStore.playTestingDirectory
+    private static let skeinExtension = SkeinStore.fileExtension
     private static let assetsDirectory = "assets"
     private static let browserDirectory = "browser"
     private static let templatesExtension = "templates"
@@ -98,12 +108,14 @@ enum ProjectArtifacts {
         var story: [FileNode] = []
         var walkthroughs: [FileNode] = []
         var transcriptTests: [FileNode] = []
+        var playTesting: [FileNode] = []
         var assets: [FileNode] = []
         var webTemplate: [FileNode] = []
         var other: [FileNode] = []
 
         var walkthroughsURL: URL?
         var transcriptTestsURL: URL?
+        var playTestingURL: URL?
         var assetsURL: URL?
 
         for node in project.rootNode.children {
@@ -130,6 +142,18 @@ enum ProjectArtifacts {
                         other.append(child)
                     }
                 }
+            case .playTesting:
+                // The group is the story's skeins (ADR-299 D7); anything else
+                // an author has parked in play-testing/ is unclassified rather
+                // than hidden.
+                for child in node.children {
+                    if !child.isDirectory && child.url.pathExtension == skeinExtension {
+                        playTesting.append(child)
+                    } else {
+                        other.append(child)
+                    }
+                }
+                playTestingURL = node.url
             case .browser:
                 // The styling and raw-page escapes are Web Template; anything
                 // else an author has parked in browser/ is unclassified.
@@ -149,6 +173,7 @@ enum ProjectArtifacts {
             (.story, story, nil),
             (.walkthroughs, walkthroughs, walkthroughsURL),
             (.transcriptTests, transcriptTests, transcriptTestsURL),
+            (.playTesting, playTesting, playTestingURL),
             (.assets, assets, assetsURL),
             (.webTemplate, webTemplate, nil),
             (.other, other, nil),
@@ -163,6 +188,7 @@ enum ProjectArtifacts {
     private enum TopLevelKind {
         case story
         case walkthroughs
+        case playTesting
         case assets
         case webTemplate
         case tests
@@ -174,6 +200,7 @@ enum ProjectArtifacts {
         if node.isDirectory {
             switch node.name {
             case walkthroughsDirectory: return .walkthroughs
+            case playTestingDirectory: return .playTesting
             case assetsDirectory: return .assets
             case testsDirectory: return .tests
             case browserDirectory: return .browser

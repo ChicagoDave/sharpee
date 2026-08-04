@@ -27,7 +27,7 @@ import { loadAuthorGame } from '../standalone/author-game.js';
 import { lookupStory } from '../registry.js';
 
 const USAGE =
-  'usage: sharpee test [name|dir|file.story] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage]';
+  'usage: sharpee test [name|dir|file.story] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output]';
 
 /**
  * Run `sharpee test`.
@@ -37,7 +37,9 @@ const USAGE =
  *   files, and flags `--chain` (one game instance across all transcripts;
  *   with no explicit files it runs the `walkthroughs/` chain),
  *   `--stop-on-failure`, `--verbose`, `--json` (NDJSON record stream on
- *   stdout — ADR-277 D1).
+ *   stdout — ADR-277 D1), `--capture-output` (ADR-299 replay capture: with
+ *   `--json`, every executed command-result carries `actualOutput`, not
+ *   only failures; without `--json` it is inert).
  * @returns process exit code — 0 all passed, 1 failures or transcript
  *   errors, 2 usage error, 3 story load error (transcript-tester's
  *   convention). Never calls `process.exit()` — a piped `--json` stream
@@ -69,6 +71,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   let verbose = false;
   let json = false;
   let coverage = false;
+  let captureOutput = false;
   let projectDir: string | undefined;
   const transcriptPaths: string[] = [];
 
@@ -78,6 +81,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     else if (arg === '--verbose' || arg === '-v') verbose = true;
     else if (arg === '--json') json = true;
     else if (arg === '--coverage') coverage = true;
+    else if (arg === '--capture-output') captureOutput = true;
     else if (arg.startsWith('-')) {
       console.error(`test: unknown flag '${arg}'\n${USAGE}`);
       return 2;
@@ -146,7 +150,9 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   };
   const emitTranscript = (result: TranscriptResult, index: number): void => {
     if (!json) return;
-    for (const record of transcriptRecords(result, index)) process.stdout.write(ndjsonLine(record));
+    for (const record of transcriptRecords(result, index, { captureOutput })) {
+      process.stdout.write(ndjsonLine(record));
+    }
   };
 
   /** An error-status result for a transcript that never ran (ADR-277 D1). */

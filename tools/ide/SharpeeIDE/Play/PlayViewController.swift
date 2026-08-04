@@ -1,12 +1,16 @@
 // PlayViewController.swift
-// The Play pane: a header (status / Restart / Record / Bless / Checkpoint / "Play
+// The Play pane: a header (status / New Thread / Bless / Checkpoint / "Play
 // after build") over a WKWebView that embeds the story's self-contained browser
 // client (dist/web/<story>/, served via a custom scheme), or a placeholder when no
-// bundle is built.
+// bundle is built. Playing always grows the story's skein (ADR-299 D1): every
+// turn arriving over the turn-events bridge walks or branches the committed
+// `play-testing/<id>.skein`, and the whole surface boots at the skein's one
+// pinned seed (D5), injected as `window.__SHARPEE_PLAY_SEED__` before any
+// client script runs.
 // Public interface: load(projectRoot:), reloadAfterBuild(projectRoot:), restart(),
-// playAfterBuild, onPlayAfterBuildChanged, storyDirectory, canBlessLatestTurn,
-// blessLatestTurn(), canCheckpointLatestTurn, checkpointLatestTurn(),
-// writeRecording(to:), writeChain(to:name:mode:).
+// playAfterBuild, onPlayAfterBuildChanged, storyDirectory, skein,
+// canBlessLatestTurn, blessLatestTurn(), canCheckpointLatestTurn,
+// checkpointLatestTurn(), writeRecording(to:), writeChain(to:name:mode:).
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -87,8 +91,16 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// against the bundle's source map into a navigable error.
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
-    /// Captures turns while the header's Record toggle is active (ADR-277 D5).
+    /// The bless/checkpoint capture the skein supersedes (ADR-282, retiring
+    /// per ADR-299). The header's Record toggle is gone — nothing starts a
+    /// recording in production — but the live bless flow still reads it until
+    /// Phase 7 moves blessing into the Transcript view (Phase 9 sweeps it).
     let recording = RecordingSession()
+
+    /// The story's live skein session (ADR-299 D1): opened per bundle load,
+    /// grown on every turn. Nil when no bundle is loaded or the open project
+    /// has no story directory to keep a skein in.
+    private(set) var skein: SkeinSession?
 
     /// The open story's own directory, set by the project-load path. Recorded
     /// tests land in the two folders ADR-280's classifier looks for beneath it
@@ -119,21 +131,15 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         let configuration = WKWebViewConfiguration()
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: PlayURLSchemeHandler.scheme)
         let contentController = configuration.userContentController
-        contentController.addUserScript(WKUserScript(source: Self.consoleHookScript,
-                                                     injectionTime: .atDocumentStart,
-                                                     forMainFrameOnly: true))
-        contentController.addUserScript(WKUserScript(source: Self.playSurfaceScript,
-                                                     injectionTime: .atDocumentStart,
-                                                     forMainFrameOnly: true))
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
         contentController.add(WeakScriptMessageHandler(self), name: Self.turnEventsHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true // right-click → Inspect Element to debug the running story
         webView.translatesAutoresizingMaskIntoConstraints = false
+        installUserScripts()
 
         header.translatesAutoresizingMaskIntoConstraints = false
         header.onRestart = { [weak self] in self?.restart() }
-        header.onRecordToggle = { [weak self] in self?.toggleRecording() }
         header.onBless = { [weak self] in Task { await self?.blessLatestTurn() } }
         header.onCheckpoint = { [weak self] in self?.checkpointLatestTurn() }
         header.onPlayAfterBuildToggle = { [weak self] on in
@@ -173,14 +179,29 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// Loads a story's web bundle directory (`dist/web/<id>/`, resolved by the
     /// caller from the IR header per ADR-258 D4) if its index.html exists,
     /// otherwise shows the placeholder. Passing nil shows the placeholder.
+    ///
+    /// Loading opens the story's skein (ADR-299): an existing
+    /// `play-testing/<id>.skein` that cannot be read blocks the surface with
+    /// its reason (AC-7's loud rejection) — playing without growing the skein
+    /// would silently drop turns the author expects recorded.
     func load(bundleDirectory: URL?) {
         guard let bundleDirectory,
               FileManager.default.fileExists(
                   atPath: bundleDirectory.appendingPathComponent("index.html").path) else {
             loaded = nil
+            skein = nil
             showPlaceholder(Self.notBuiltPlaceholder)
             return
         }
+        do {
+            try openSkein(storyId: bundleDirectory.lastPathComponent)
+        } catch {
+            loaded = nil
+            skein = nil
+            showPlaceholder("Cannot read the story's skein — \(error.localizedDescription)")
+            return
+        }
+        installUserScripts() // seed the new boot (the skein may have changed)
         loaded = bundleDirectory
         PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
         schemeHandler.rootDirectory = bundleDirectory
@@ -189,6 +210,37 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         header.setLoaded(true)
         let url = URL(string: "\(PlayURLSchemeHandler.scheme)://\(PlayURLSchemeHandler.host)/index.html")!
         webView.load(URLRequest(url: url))
+    }
+
+    /// Opens (or begins) the skein for `storyId` beneath the open story's
+    /// directory. Without a story directory there is nowhere to keep one —
+    /// the pane still plays, it just has no skein to grow (the fixture-page
+    /// case in tests; a real project load always configures the directory).
+    private func openSkein(storyId: String) throws {
+        guard let storyDirectory else {
+            skein = nil
+            return
+        }
+        skein = try SkeinSession(
+            storeURL: SkeinStore.url(forStoryId: storyId, projectRoot: storyDirectory))
+    }
+
+    /// (Re)installs the pane's document-start scripts: the console hook, the
+    /// surface chrome, and — when a skein is open — its pinned seed (D5) as
+    /// `window.__SHARPEE_PLAY_SEED__`, which the built bundle's entry passes
+    /// into the engine. Rebuilt per load because the seed rides the script.
+    private func installUserScripts() {
+        let contentController = webView.configuration.userContentController
+        contentController.removeAllUserScripts()
+        var sources = [Self.consoleHookScript, Self.playSurfaceScript]
+        if let skein {
+            sources.append("window.__SHARPEE_PLAY_SEED__ = \(skein.seed);")
+        }
+        for source in sources {
+            contentController.addUserScript(WKUserScript(source: source,
+                                                         injectionTime: .atDocumentStart,
+                                                         forMainFrameOnly: true))
+        }
     }
 
     /// Shows an explicit "cannot play" state (e.g. a grammar-header file — not a
@@ -223,8 +275,11 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     /// Restarts the running story by reloading from origin — a fresh boot, since
     /// playSurfaceScript clears the origin's storage before the client runs.
+    /// In skein terms this is D8's "new thread from root": play returns to the
+    /// story start, and the next diverging command branches there.
     func restart() {
         guard loaded != nil else { return }
+        skein?.beginThread()
         webView.reloadFromOrigin()
     }
 
@@ -241,23 +296,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         webView.isHidden = true
         placeholder.isHidden = false
         header.setLoaded(false)
-    }
-
-    // MARK: - Recording (ADR-277 D5)
-
-    /// Record ⇄ Stop. Stopping with captured turns offers the save panel;
-    /// stopping an empty capture just resets the toggle.
-    private func toggleRecording() {
-        if recording.isRecording {
-            recording.stop()
-            header.setRecording(false)
-            updateTurnAffordances()
-            if !recording.turns.isEmpty { saveRecording() }
-        } else {
-            recording.start()
-            header.setRecording(true)
-            updateTurnAffordances()
-        }
     }
 
     // MARK: - Bless (ADR-282 D1)
@@ -504,6 +542,18 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
             guard let body = message.body as? String,
                   let data = body.data(using: .utf8),
                   let turn = try? JSONDecoder().decode(TurnEventBody.self, from: data) else { return }
+            // Playing always grows the skein (ADR-299 D1) — every turn, no
+            // toggle. A persist failure is surfaced on the pane's error path;
+            // the in-memory session keeps the turn either way.
+            do {
+                try skein?.recordTurn(command: turn.command, output: turn.response)
+            } catch {
+                let message = "skein not saved: \(error.localizedDescription)"
+                onConsoleError?(PlayConsoleError(
+                    message: message,
+                    frames: [],
+                    translation: SharpeeErrorTranslator.translate(message: message)))
+            }
             recording.record(command: turn.command, response: turn.response)
             // The affordance belongs to the response as it appears (D1) — a new
             // turn resets it to untagged, and a blank one offers nothing.

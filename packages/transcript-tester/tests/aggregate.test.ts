@@ -182,6 +182,42 @@ describe('transcriptRecords', () => {
     expect('actualOutput' in command).toBe(false);
   });
 
+  // ADR-299 replay capture: the transcript interpreter exposing what every
+  // command printed, pass/fail irrelevant.
+  it('captureOutput carries actualOutput on PASSING and SKIPPED commands too', () => {
+    const skippedResult: TranscriptResult = {
+      ...passed,
+      commands: [
+        passed.commands[0],
+        {
+          command: { lineNumber: 6, input: 'open hatch', expectedOutput: [], assertions: [] },
+          actualOutput: 'The hatch creaks open.',
+          actualEvents: [],
+          passed: true,
+          expectedFailure: false,
+          skipped: true,
+          assertionResults: [],
+        },
+      ],
+    };
+    const records = transcriptRecords(skippedResult, 0, { captureOutput: true });
+    const [passing, skipping] = [records[1], records[2]];
+    if (passing.type !== 'command-result' || skipping.type !== 'command-result') {
+      throw new Error('unreachable');
+    }
+    expect(passing.actualOutput).toBe('A small square den.');
+    expect(skipping.actualOutput).toBe('The hatch creaks open.');
+    expect(isTestResultRecord(passing)).toBe(true);
+    expect(isTestResultRecord(skipping)).toBe(true);
+  });
+
+  it('without captureOutput the default shape is unchanged — failures only', () => {
+    const records = transcriptRecords(passed, 0, {});
+    const command = records[1];
+    if (command.type !== 'command-result') throw new Error('unreachable');
+    expect('actualOutput' in command).toBe(false);
+  });
+
   it('survives the NDJSON round trip with multi-paragraph, bracketed text', () => {
     // The content shape ADR-282 Acceptance 5 names — if the wire mangled a
     // paragraph boundary, the failure view would show a difference that is not

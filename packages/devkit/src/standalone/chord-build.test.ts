@@ -85,6 +85,9 @@ describe('browser build: ships the source + the compiler (ruling 2)', () => {
     const game = readFileSync(join(outDir, 'game.js'), 'utf-8');
     expect(game).toContain('story language 2');
     expect(statSync(join(outDir, 'game.js')).size).toBeGreaterThan(100_000);
+    // ADR-299 D5: the shipped entry honors a pre-set pinned play seed — the
+    // IDE's skein surface depends on this hook being in every built bundle.
+    expect(game).toContain('__SHARPEE_PLAY_SEED__');
 
     // IR artifact for the IDE/tooling surface (David, 2026-07-18): dist/,
     // beside (not inside) the shipped page.

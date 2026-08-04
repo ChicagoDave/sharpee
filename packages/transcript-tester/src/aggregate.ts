@@ -75,11 +75,21 @@ export function runStartRecord(mode: 'tests' | 'chain', transcriptCount: number)
  * command result also carries `actualOutput` — what the story really printed
  * (ADR-282 D2), which the IDE's failure view shows against the blessed text.
  *
+ * With `captureOutput` (ADR-299's replay capture — `--capture-output`),
+ * `actualOutput` rides EVERY executed command result instead: the transcript
+ * interpreter exposing what each command printed, pass/fail irrelevant. The
+ * default stays failures-only so a green chain run's stream stays small.
+ *
  * @param result The transcript's result — including error-status results
  *   that never ran (zero commands).
  * @param index 0-based position in the run order.
+ * @param options `captureOutput` — carry `actualOutput` on every command.
  */
-export function transcriptRecords(result: TranscriptResult, index: number): TestResultRecord[] {
+export function transcriptRecords(
+  result: TranscriptResult,
+  index: number,
+  options?: { captureOutput?: boolean },
+): TestResultRecord[] {
   const file = result.transcript.filePath;
   const start: TranscriptStartRecord = { schemaVersion: SCHEMA_VERSION, type: 'transcript-start', file, index };
   const commands: CommandResultRecord[] = result.commands.map((c) => ({
@@ -96,7 +106,8 @@ export function transcriptRecords(result: TranscriptResult, index: number): Test
     // on failures ONLY. A green chain run's stream stays exactly as small as it
     // was — and a passing command has nothing to compare against anyway.
     // `skipped` results report `passed: true`, so they are excluded here too.
-    ...(c.passed ? {} : { actualOutput: c.actualOutput }),
+    // ADR-299: `captureOutput` overrides — every executed command carries it.
+    ...(options?.captureOutput || !c.passed ? { actualOutput: c.actualOutput } : {}),
   }));
   const end: TranscriptEndRecord = {
     schemaVersion: SCHEMA_VERSION,

@@ -58,14 +58,18 @@ export interface CommandResultRecord {
   /** Runtime error text when the command threw rather than merely failing. */
   error?: string;
   /**
-   * What the story actually printed, present exactly on FAILED command results
+   * What the story actually printed. Present on FAILED command results
    * (ADR-282 D2) — the "new" side of the test panel's old-vs-new failure view,
-   * which feeds re-bless. Absent on passing and skipped results: only a failure
-   * has anything to compare against, and carrying it everywhere would inflate a
-   * green chain run by every transcript's full text.
+   * which feeds re-bless. Under `sharpee test --json --capture-output`
+   * (ADR-299 replay capture) it is instead present on EVERY executed command
+   * result, pass/fail irrelevant — the transcript interpreter exposing what
+   * each command printed for the IDE's skein replay. The default stream stays
+   * failures-only so a green chain run is not inflated by every transcript's
+   * full text.
    *
    * Additive and optional, so `TEST_RESULTS_SCHEMA_VERSION` stays 1 — both
-   * sides' guards accept a version-1 line with the key present or absent.
+   * sides' guards accept a version-1 line with the key present or absent,
+   * whichever emission mode produced it.
    */
   actualOutput?: string;
 }

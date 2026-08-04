@@ -76,7 +76,15 @@ async function start(): Promise<void> {
   if (typedStory.extendLanguage) typedStory.extendLanguage(language);
 
   const perceptionService = new PerceptionService();
-  const engine = new GameEngine({ world, player, parser, language, perceptionService });
+  // Pinned play seed (ADR-299 D5): the Sharpee IDE's play surface sets this
+  // global before any client script runs, so every boot — including restart
+  // reboots, which re-run start() — executes at the skein's one pinned seed.
+  // A published page never defines it and boots at the clock as before.
+  const playSeed = (globalThis as { __SHARPEE_PLAY_SEED__?: unknown }).__SHARPEE_PLAY_SEED__;
+  const engine = new GameEngine({
+    world, player, parser, language, perceptionService,
+    ...(typeof playSeed === 'number' ? { seed: playSeed } : {}),
+  });
 
   client.connectEngine(engine, world);
   engine.setStory(story);
