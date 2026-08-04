@@ -81,10 +81,32 @@ async function start(): Promise<void> {
   // reboots, which re-run start() — executes at the skein's one pinned seed.
   // A published page never defines it and boots at the clock as before.
   const playSeed = (globalThis as { __SHARPEE_PLAY_SEED__?: unknown }).__SHARPEE_PLAY_SEED__;
+  // The seed rides EngineConfig (options.config.seed) — a top-level `seed`
+  // on the options object is silently ignored by the GameEngine constructor.
   const engine = new GameEngine({
     world, player, parser, language, perceptionService,
-    ...(typeof playSeed === 'number' ? { seed: playSeed } : {}),
+    ...(typeof playSeed === 'number' ? { config: { seed: playSeed } } : {}),
   });
+  // Outcome forcings for this boot (ADR-299 D5), set by the IDE when replaying
+  // a forced branch of the skein so the live story reproduces the
+  // counterfactual rather than what the pinned seed would have drawn. The host
+  // passes ALREADY-STRUCTURED specs (`RandomForceSpec`), never the
+  // `point[#occurrence]=CLASS` header text — parsing that grammar belongs to
+  // transcript-tester, and a second copy shipped in every page would drift.
+  // Forces are session state, never save state (ADR-293 D9), so they load per
+  // boot. A published page never defines the global.
+  const playForces = (globalThis as { __SHARPEE_PLAY_FORCES__?: unknown }).__SHARPEE_PLAY_FORCES__;
+  if (Array.isArray(playForces) && playForces.length > 0) {
+    try {
+      const random = engine.getRandomService();
+      random.clearForces();
+      random.loadForces(playForces as Parameters<typeof random.loadForces>[0]);
+    } catch (error) {
+      // Surface it rather than blanking the page: an authoring surface running
+      // unforced-but-visible beats a dead boot.
+      console.error('[sharpee] could not apply the IDE play forcings:', error);
+    }
+  }
 
   client.connectEngine(engine, world);
   engine.setStory(story);

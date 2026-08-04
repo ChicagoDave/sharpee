@@ -34,6 +34,54 @@ async function fetchImports(): Promise<Record<string, string>> {
   return (await response.json()) as Record<string, string>;
 }
 
+/**
+ * The IDE's pinned play seed (ADR-299 D5), or undefined on a published page.
+ * Read per call, not cached: restart reboots re-run the boot path and must
+ * see whatever the embedding surface set for this load.
+ */
+function pinnedPlaySeed(): number | undefined {
+  const seed = (globalThis as { __SHARPEE_PLAY_SEED__?: unknown }).__SHARPEE_PLAY_SEED__;
+  return typeof seed === 'number' ? seed : undefined;
+}
+
+/**
+ * Outcome forcings for this boot (ADR-299 D5), or undefined on a published
+ * page. The Sharpee IDE sets this global when replaying a forced branch of the
+ * skein, so the live story reproduces the counterfactual the author asked for
+ * rather than whatever the pinned seed would have drawn.
+ *
+ * The host passes ALREADY-STRUCTURED specs (`RandomForceSpec`), not the
+ * `point[#occurrence]=CLASS` header text: parsing that grammar is
+ * transcript-tester's job, and a second copy of it shipped inside every built
+ * page is a copy that drifts. Read per call — a restart reboot re-runs the
+ * boot path and must see whatever the surface set for this load.
+ */
+function pinnedPlayForces(): unknown[] {
+  const forces = (globalThis as { __SHARPEE_PLAY_FORCES__?: unknown }).__SHARPEE_PLAY_FORCES__;
+  return Array.isArray(forces) ? forces : [];
+}
+
+/**
+ * Applies the IDE's forcings to a freshly built engine.
+ *
+ * Forces are session state, never save state (ADR-293 D9), so they are loaded
+ * per boot rather than restored. A malformed or unknown force is the engine's
+ * typed load error; it surfaces on the page's console rather than killing the
+ * boot, because a published page can never reach this path and an authoring
+ * surface is better off running unforced-but-visible than blank.
+ */
+function applyPinnedPlayForces(engine: GameEngine): void {
+  const specs = pinnedPlayForces();
+  if (specs.length === 0) return;
+  try {
+    const random = engine.getRandomService();
+    random.clearForces();
+    random.loadForces(specs as Parameters<typeof random.loadForces>[0]);
+  } catch (error) {
+    console.error('[sharpee] could not apply the IDE play forcings:', error);
+  }
+}
+
 /** Compile the shipped .story source; surface diagnostics on the page. */
 async function loadStory(): Promise<Story> {
   const response = await fetch('./story.story');
@@ -49,10 +97,18 @@ async function loadStory(): Promise<Story> {
     const lines = errors.map((d) => `story.story:${d.span.line}:${d.span.column} [${d.code}] ${d.message}`);
     throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
   }
+  const playSeed = pinnedPlaySeed();
   // A pure-IR story gets an empty map and is unaffected; a hatched story
   // gets its author-written modules, bound by the loader against the same
   // paths the `.story` declares (ADR-259 D2).
-  return createStory(result.ir, { hatchModules }) as unknown as Story;
+  // The chord evaluator's stream (`one chance in <n>`, `randomly`) derives
+  // from the session seed (ADR-293 D1) — omitting it leaves chord draws
+  // clock-seeded even when the engine runs pinned (the author-game.ts
+  // precedent, re-learned here in ADR-299 Phase 5).
+  return createStory(result.ir, {
+    hatchModules,
+    ...(playSeed !== undefined ? { seed: playSeed } : {}),
+  }) as unknown as Story;
 }
 
 /**
@@ -129,11 +185,16 @@ async function start(): Promise<void> {
   // global before any client script runs, so every boot — including restart
   // reboots, which re-run start() — executes at the skein's one pinned seed.
   // A published page never defines it and boots at the clock as before.
-  const playSeed = (globalThis as { __SHARPEE_PLAY_SEED__?: unknown }).__SHARPEE_PLAY_SEED__;
+  const playSeed = pinnedPlaySeed();
+  // The seed rides EngineConfig (options.config.seed) — a top-level `seed`
+  // on the options object is silently ignored by the GameEngine constructor.
   const engine = new GameEngine({
     world, player, parser, language, perceptionService,
-    ...(typeof playSeed === 'number' ? { seed: playSeed } : {}),
+    ...(playSeed !== undefined ? { config: { seed: playSeed } } : {}),
   });
+  // Before any turn runs — including the client's own boot `look`, which may
+  // itself reach a forced point.
+  applyPinnedPlayForces(engine);
 
   client.connectEngine(engine, world);
   engine.setStory(story);

@@ -96,6 +96,20 @@ describe('browser scaffold (real path)', () => {
     expect(existsSync(gameJs)).toBe(true);
     expect(statSync(gameJs).size).toBeGreaterThan(10_000); // a real bundle, not an empty file
 
+    // ADR-299 D5: the TS entry honors a pre-set pinned play seed, and it must
+    // land in EngineConfig (`options.config.seed`) — a top-level `seed` on the
+    // GameEngine options object is silently ignored by the constructor, which
+    // is exactly how this shipped dead once (Phase 5 finding, 2026-08-03).
+    // The chord entry carries the same guard in chord-build.test.ts; this path
+    // had none, so the identical regression could ship here unseen.
+    const bundle = readFileSync(gameJs, 'utf-8');
+    expect(bundle).toContain('__SHARPEE_PLAY_SEED__');
+    expect(bundle).toMatch(/config:\s*\{\s*seed:/);
+    // ADR-299 D5: the same page must be able to run a forced branch — the
+    // global alone proves nothing without the loadForces call behind it.
+    expect(bundle).toContain('__SHARPEE_PLAY_FORCES__');
+    expect(bundle).toMatch(/loadForces\(/);
+
     // version.ts was stamped (browser-entry imports it).
     const version = readFileSync(join(projectDir, 'src', 'version.ts'), 'utf-8');
     expect(version).toContain('export const STORY_VERSION');

@@ -88,6 +88,26 @@ describe('browser build: ships the source + the compiler (ruling 2)', () => {
     // ADR-299 D5: the shipped entry honors a pre-set pinned play seed — the
     // IDE's skein surface depends on this hook being in every built bundle.
     expect(game).toContain('__SHARPEE_PLAY_SEED__');
+    // Presence alone proves nothing: the seed has TWO distinct sinks, and
+    // ADR-299 Phase 5 (2026-08-03) found both shipped dead. Assert each.
+    //
+    // 1. The engine's master seed must land in EngineConfig
+    //    (`options.config.seed`) — a top-level `seed` on the GameEngine
+    //    options object is silently ignored by the constructor.
+    expect(game).toMatch(/config:\s*\{\s*seed:/);
+    // 2. The chord evaluator's own stream (`one chance in <n>`, `randomly`)
+    //    derives from `createStory`'s `options.seed` (ADR-293 D1) — a
+    //    SEPARATE sink beside `hatchModules`. Without it, story-level draws
+    //    stay clock-seeded even while the engine runs pinned, which reads as
+    //    a flaky replay rather than a missing argument. Matched
+    //    structurally (no minified identifier names).
+    expect(game).toMatch(/hatchModules:[^}]*\{\s*seed:/);
+    // ADR-299 D5 forced branches: the IDE replays a counterfactual by handing
+    // the page structured force specs, which only work if the built entry
+    // actually loads them into the engine's random service. Presence of the
+    // global alone would not prove that — assert the call too.
+    expect(game).toContain('__SHARPEE_PLAY_FORCES__');
+    expect(game).toMatch(/loadForces\(/);
 
     // IR artifact for the IDE/tooling surface (David, 2026-07-18): dist/,
     // beside (not inside) the shipped page.

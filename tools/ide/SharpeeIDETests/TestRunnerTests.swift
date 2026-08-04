@@ -274,8 +274,16 @@ final class TestRunnerTests: XCTestCase {
         wait(for: [sawRecord], timeout: 10)
         runner.cancel()
 
-        // SIGTERM kills the script promptly; the 2s SIGKILL escalation is a backstop.
-        wait(for: [exited], timeout: 5)
+        // SIGTERM kills the script promptly; the 2s SIGKILL escalation is a
+        // backstop — and that escalation is a main-runloop Timer, so a suite
+        // busy on the main actor can delay it well past its nominal 2s. At the
+        // original 5s this failed intermittently in full-suite runs while
+        // passing targeted in 0.109s (VM 2026-08-03; host 2026-08-03, twice in
+        // one session after ADR-299 Phase 5 added four subprocess-spawning
+        // tests). David's standing ruling: targeted rerun once, then bump on
+        // recurrence — this is the recurrence. 30s never delays a passing run;
+        // it only bounds a genuinely stuck one.
+        wait(for: [exited], timeout: 30)
         XCTAssertEqual(delegate.result?.state, .cancelled)
         XCTAssertEqual(runner.state, .cancelled)
         XCTAssertEqual(delegate.records.count, 1, "records up to the cancel point are kept")

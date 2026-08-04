@@ -1,0 +1,65 @@
+{
+  "root" : {
+    "children" : [
+      {
+        "children" : [
+          {
+            "children" : [
+              {
+                "children" : [
+
+                ],
+                "command" : "look at tobias",
+                "forcings" : [
+
+                ],
+                "id" : "2B9C0FB4-8C84-47B0-92F4-03620FE8C380",
+                "locked" : false,
+                "origin" : "author",
+                "output" : "The groundskeeper, out in all weathers on his rounds, a storm lantern swinging at his knee. Weathered, watchful, in no hurry to help.",
+                "tags" : [
+
+                ]
+              }
+            ],
+            "command" : "north",
+            "forcings" : [
+
+            ],
+            "id" : "615FFE55-FA36-42C9-BABA-8AB251F4175A",
+            "locked" : false,
+            "origin" : "author",
+            "output" : "Gravel Drive\nThe drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.\n\nYou can see Tobias here.",
+            "tags" : [
+
+            ]
+          }
+        ],
+        "command" : "look",
+        "forcings" : [
+
+        ],
+        "id" : "07FDCC3D-C0B7-4CF5-B10C-525F17304CD8",
+        "locked" : false,
+        "origin" : "author",
+        "output" : "Iron Gates\nWrought-iron gates stand open on one hinge apiece, rust freckling the scrollwork. The gravel drive runs north toward the dark shape of the house.",
+        "tags" : [
+
+        ]
+      }
+    ],
+    "command" : "",
+    "forcings" : [
+
+    ],
+    "id" : "0F8596AE-C12A-4BD4-A3D8-09C51C3DC280",
+    "locked" : false,
+    "origin" : "author",
+    "output" : "",
+    "tags" : [
+
+    ]
+  },
+  "schemaVersion" : 1,
+  "seed" : 1931254352
+}

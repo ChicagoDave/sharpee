@@ -21,7 +21,8 @@
 // bless(turnAt:selection:), unbless(turnAt:),
 // toggleBlessOnLatestTurn(rawSelection:), setCheckpoint(_:turnAt:),
 // toggleCheckpointOnLatestTurn(), serialize(title:), serializeChain(title:),
-// assertionLines(for:), inlinePayload(_:).
+// serialize(_:title:openingTurn:headerFields:) (the shared emitter ReplayDriver
+// and the exporter synthesize through), assertionLines(for:), inlinePayload(_:).
 // Owner context: tools/ide — Test (recording).
 
 import Foundation
@@ -301,15 +302,25 @@ final class RecordingSession {
 
     /// One transcript's source.
     ///
+    /// Internal (not private) because it is the ONE home of the ADR-282
+    /// serialization grammar: the skein's `ReplayDriver` (ADR-299 D6) and
+    /// Phase 9's exporter synthesize their transcripts through this exact
+    /// function rather than growing a second emitter that could drift.
+    ///
     /// - Parameters:
     ///   - turns: the turns to encode, in play order.
     ///   - title: the `title:` header's value.
     ///   - openingTurn: whether to replay the client's own `look` at the head
     ///     (true for a single file and a chain's first segment only).
-    private static func serialize(_ turns: [RecordedTurn],
-                                  title: String,
-                                  openingTurn: Bool) -> String {
-        var lines: [String] = ["title: \(title)", "---", ""]
+    ///   - headerFields: extra header lines (e.g. `seed: 42`, `forces: …`)
+    ///     emitted verbatim between `title:` and the `---` separator — the
+    ///     ADR-294 header block the replay/export transcripts pin their run
+    ///     configuration in. Empty for a plain recording.
+    static func serialize(_ turns: [RecordedTurn],
+                          title: String,
+                          openingTurn: Bool,
+                          headerFields: [String] = []) -> String {
+        var lines: [String] = ["title: \(title)"] + headerFields + ["---", ""]
         if openingTurn { lines.append(contentsOf: Self.openingTurn) }
         for turn in turns {
             lines.append("> \(turn.command)")

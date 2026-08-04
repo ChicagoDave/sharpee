@@ -6,7 +6,8 @@
 // on every change. A fresh boot (build, restart) returns to the root: the same
 // commands then walk the existing thread rather than duplicating it.
 // Public interface: SkeinSession(storeURL:), document, seed, currentNodeId,
-// beginThread(), recordTurn(command:output:).
+// beginThread(), recordTurn(command:output:), moveTo(nodeId:),
+// setTags(_:forNodeId:), growForcedSibling(of:forcings:).
 // Owner context: tools/ide — Skein (live growth). UI-free; safe to unit-test.
 
 import Foundation
@@ -74,5 +75,45 @@ final class SkeinSession {
         currentNodeId = node.id
         try SkeinStore.write(document, to: storeURL)
         return node
+    }
+
+    /// Moves play's position to `nodeId` without touching the tree — the
+    /// bookkeeping half of a replay (D6), applied once the surface has
+    /// actually been driven there.
+    ///
+    /// - Returns: true when the node exists; false leaves the position alone.
+    @discardableResult
+    func moveTo(nodeId: String) -> Bool {
+        guard document.node(withId: nodeId) != nil else { return false }
+        currentNodeId = nodeId
+        return true
+    }
+
+    /// Names the thread ending at `nodeId` (D2): free text the author chose,
+    /// stored on the node and persisted.
+    ///
+    /// - Returns: true when applied; false when no such node exists (nothing
+    ///   is written).
+    /// - Throws: the store's write error; the in-memory document keeps the
+    ///   change either way.
+    @discardableResult
+    func setTags(_ tags: [String], forNodeId nodeId: String) throws -> Bool {
+        guard document.updateNode(withId: nodeId, { $0.tags = tags }) else { return false }
+        try SkeinStore.write(document, to: storeURL)
+        return true
+    }
+
+    /// Grows a forced sibling beside `nodeId` (D5) and persists it.
+    ///
+    /// - Returns: the new branch's node, or nil when the model refused it
+    ///   (unknown id, the root, or no forcings) — nothing is written then.
+    /// - Throws: the store's write error.
+    @discardableResult
+    func growForcedSibling(of nodeId: String, forcings: [String]) throws -> SkeinNode? {
+        guard let sibling = document.forcedSibling(of: nodeId, forcings: forcings) else {
+            return nil
+        }
+        try SkeinStore.write(document, to: storeURL)
+        return sibling
     }
 }

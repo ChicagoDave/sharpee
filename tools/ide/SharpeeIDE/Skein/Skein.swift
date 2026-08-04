@@ -178,6 +178,59 @@ struct SkeinDocument: Codable, Equatable {
         return SkeinThread(nodes: nodes)
     }
 
+    /// Applies `transform` to the node carrying `id`, in place.
+    ///
+    /// The one mutation door for per-node authored judgment — tags (D2),
+    /// blessings (D3/D4), annotations and the lock flag (D9) — so a caller
+    /// never rebuilds the tree by hand to change one field.
+    ///
+    /// - Returns: true when the node was found and transformed; false leaves
+    ///   the tree untouched (a stale id must not silently edit the wrong node).
+    @discardableResult
+    mutating func updateNode(withId id: String,
+                             _ transform: (inout SkeinNode) -> Void) -> Bool {
+        func apply(to node: inout SkeinNode) -> Bool {
+            if node.id == id {
+                transform(&node)
+                return true
+            }
+            for index in node.children.indices where apply(to: &node.children[index]) {
+                return true
+            }
+            return false
+        }
+        return apply(to: &root)
+    }
+
+    /// Grows a forced sibling branch beside the node carrying `nodeId` (D5):
+    /// a new child of the same parent with the SAME command but the given
+    /// forcing annotations, so the counterfactual outcome of that turn's
+    /// choice points is a first-class thread — replayed, tagged, and blessed
+    /// like any other. The new node's output is empty until a replay fills it
+    /// in; its forcings ride every subsequent replay's `forces:` header.
+    ///
+    /// - Parameters:
+    ///   - nodeId: the choice-point node to branch beside.
+    ///   - forcings: ADR-293 `forces:` segment annotations
+    ///     (`point[#occurrence]=CLASS`) for the new branch. Must be non-empty —
+    ///     an unforced sibling with the same command would replay identically
+    ///     to the node it shadows, which is a duplicate, not a branch.
+    /// - Returns: the new sibling node, or nil when `nodeId` is unknown, is
+    ///   the root (the story start has no sibling position), or `forcings` is
+    ///   empty — the tree is untouched in every nil case.
+    mutating func forcedSibling(of nodeId: String, forcings: [String]) -> SkeinNode? {
+        guard !forcings.isEmpty,
+              let thread = thread(to: nodeId),
+              thread.nodes.count >= 2 else { return nil }
+        let target = thread.nodes[thread.nodes.count - 1]
+        let parent = thread.nodes[thread.nodes.count - 2]
+        let sibling = SkeinNode(command: target.command,
+                                output: "",
+                                forcings: forcings)
+        guard appendChild(sibling, to: parent.id) else { return nil }
+        return sibling
+    }
+
     /// Appends `child` under the node carrying `parentId` (D1 branching).
     ///
     /// - Returns: true when the parent was found and the child attached; false
