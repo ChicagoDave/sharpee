@@ -1,12 +1,25 @@
 # ADR-299: Play–Skein–Bless — the IDE's Testing Paradigm Adopts the Inform 7 Skein
 
-**Status**: ACCEPTED (2026-08-03, session 83abc1) — drafted, fully
+**Status**: **SUPERSEDED** (2026-08-04, session c42886) by **ADR-300**, which
+retires the `.skein` artifact and the second verification engine. What is
+superseded is the *artifact and verification* model — `.skein`, blessing scopes,
+all-paths invariance, `SkeinVerifier`, findings, locks, trims, and the exporter.
+What carries forward, named in ADR-300 D2, is the interaction design: play
+authors the transcript (by promotion from a session log rather than this ADR's
+append-to-an-open-artifact mechanism), replay to a point, branch columns
+re-pointed one-per-file, and the card-per-turn reading surface. Phases 3, 4, 7,
+8 and 9 are substantially retracted; Phases 1–2 and 5–6 survive as that carried
+interaction. The evidence is ADR-300's: `SkeinExporter` reaches only `[OK]` and
+`[SKIP]`, 0.16 % and 0.13 % of the assertions authors write, while the
+`contains` family is 92.6 % and unreachable from a skein.
+
+*Prior status*: ACCEPTED (2026-08-03, session 83abc1) — drafted, fully
 interviewed (seven questions resolved into D2–D10), adr-review findings
 folded, and accepted by David the same day. Supersedes ADR-282's
 interaction model (per-turn record/bless in the Play pane); ADR-282's
 serialization and grammar work (literal text blocks, transcript emission)
 carries forward unchanged. ADR-282's Status flipped in the same edit, per
-the ownership clause below. Not yet implemented.
+the ownership clause below. Never implemented beyond session dd4189's UX work.
 
 **Parent**: ADR-282 (play-to-test tagging — superseded interaction, retained
 serialization), ADR-293 (choice points, per-point streams, forcing — the

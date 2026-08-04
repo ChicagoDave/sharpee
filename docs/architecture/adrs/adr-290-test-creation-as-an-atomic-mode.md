@@ -1,6 +1,10 @@
 # ADR-290: Test creation is an atomic mode, not a toggle over free play
 
-## Status: DRAFT (2026-07-29, session 47d0be) — open questions unresolved; do not implement. **Amended A1** (2026-08-01, session 06425d, per ADR-294 Q4's resolution): the mode's output artifact is retargeted to ADR-294 golden transcripts, and the previously unrecorded hard dependency on ADR-293 is recorded — see Amendment A1
+## Status: SUPERSEDED-IN-PART (2026-08-04, session c42886) by **ADR-300 D12** — **D1–D4 are superseded**; **D5–D8 stand and still apply**
+
+ADR-300 D12 addresses the same defect D1 names — "a transcript replays from turn zero, so a capture that does not begin at turn zero is not a test" — and preserves that invariant by the opposite mechanism: promotion from a session log carries the prefix from turn 1, which makes the mid-play-start capture unrepresentable without constraining play at all. The atomic mode (D1), its clean-world entry (D2), its restart semantics (D3) and its save-or-discard exits (D4) are therefore unnecessary and retired. **D5** (the client renders the blessed mark on instruction), **D6** (the menu option is optional at build/publish time), **D7** (one owner for "who else observes this") and **D8** (the save location is inferred, never asked) are untouched — D8 in particular is still where a promoted file's destination is decided. Open question 2 (how the author sees whether a bless asserts a fragment or the whole response) is answered by ADR-300 D4; the remaining open questions apply only to the surviving decisions.
+
+*Prior status*: DRAFT (2026-07-29, session 47d0be) — open questions unresolved; do not implement. **Amended A1** (2026-08-01, session 06425d, per ADR-294 Q4's resolution): the mode's output artifact is retargeted to ADR-294 golden transcripts, and the previously unrecorded hard dependency on ADR-293 is recorded — see Amendment A1
 
 ## Date: 2026-07-29
 
