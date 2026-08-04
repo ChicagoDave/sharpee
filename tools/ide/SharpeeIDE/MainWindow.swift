@@ -119,28 +119,6 @@ final class MainWindowController: NSWindowController {
         rootViewController?.refreshProjectTree()
     }
 
-    /// Whether Test → Bless Last Turn should be enabled (ADR-282 D1).
-    var canBlessLatestPlayTurn: Bool {
-        rootViewController?.canBlessLatestPlayTurn ?? false
-    }
-
-    /// Test → Bless Last Turn (⇧⌘B). Toggles the author's vouch on the turn
-    /// showing in the Play pane.
-    func blessLatestPlayTurn() {
-        rootViewController?.blessLatestPlayTurn()
-    }
-
-    /// Whether Test → Checkpoint Here should be enabled (ADR-282 D4).
-    var canCheckpointLatestPlayTurn: Bool {
-        rootViewController?.canCheckpointLatestPlayTurn ?? false
-    }
-
-    /// Test → Checkpoint Here (⇧⌘K). Toggles the chain-segment mark on the turn
-    /// showing in the Play pane.
-    func checkpointLatestPlayTurn() {
-        rootViewController?.checkpointLatestPlayTurn()
-    }
-
     /// The editor's focused document (Run Current Test File target), or nil.
     var activeDocumentURL: URL? {
         rootViewController?.activeDocumentURL
@@ -430,20 +408,6 @@ private final class RootViewController: NSViewController {
     /// Re-reads the open project from disk, preserving expansion state.
     func refreshProjectTree() {
         mainSplitViewController.refreshProjectTree()
-    }
-
-    /// Whether the live bless gesture is available (ADR-282 D1).
-    var canBlessLatestPlayTurn: Bool { mainSplitViewController.canBlessLatestPlayTurn }
-
-    func blessLatestPlayTurn() {
-        mainSplitViewController.blessLatestPlayTurn()
-    }
-
-    /// Whether the live checkpoint gesture is available (ADR-282 D4).
-    var canCheckpointLatestPlayTurn: Bool { mainSplitViewController.canCheckpointLatestPlayTurn }
-
-    func checkpointLatestPlayTurn() {
-        mainSplitViewController.checkpointLatestPlayTurn()
     }
 
     /// The editor's focused document (Run Current Test File enablement/target).
@@ -784,27 +748,11 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Tests-panel plumbing — the Test tab lives in the right panel (ADR-277 D2).
     fileprivate var testPanel: TestPanelView { rightPanelViewController.testPanel }
 
-    /// Points Play recording at the open story (save-panel default dir +
-    /// re-discovery hook for the Tests panel) — ADR-277 D5.
+    /// Points the skein exporter at the open story (save-panel default dir +
+    /// re-discovery hook for the Tests panel) — ADR-299 D7.
     fileprivate func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
         playViewController.storyDirectory = storyDirectory
         playViewController.onTranscriptRecorded = onRecorded
-    }
-
-    /// The live bless gesture, reached from the Test menu (ADR-282 D1). The
-    /// header button drives the same path directly.
-    fileprivate var canBlessLatestPlayTurn: Bool { playViewController.canBlessLatestTurn }
-
-    fileprivate func blessLatestPlayTurn() {
-        Task { await playViewController.blessLatestTurn() }
-    }
-
-    /// The live checkpoint gesture, reached from the Test menu (ADR-282 D4).
-    /// The header button drives the same path directly.
-    fileprivate var canCheckpointLatestPlayTurn: Bool { playViewController.canCheckpointLatestTurn }
-
-    fileprivate func checkpointLatestPlayTurn() {
-        playViewController.checkpointLatestTurn()
     }
 
     fileprivate func showTestTab() {

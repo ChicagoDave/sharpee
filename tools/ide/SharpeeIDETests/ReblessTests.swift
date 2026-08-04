@@ -18,15 +18,11 @@ final class ReblessTests: XCTestCase {
 
     /// A two-turn transcript as the IDE really writes it: turn 1 blessed
     /// verbatim, turn 2 untagged.
-    private func serializedSession(blessed: String,
-                                   selection: String? = nil) -> String {
-        let session = RecordingSession()
-        session.start()
-        session.record(command: "x notice", response: blessed)
-        session.record(command: "take notice", response: "Taken.")
-        session.bless(turnAt: 0, selection: selection)
-        session.stop()
-        return session.serialize(title: "probe")
+    private func serializedSession(blessed: String) -> String {
+        RecordingSession.serialize([
+            RecordedTurn(command: "x notice", response: blessed, verdict: .blessed),
+            RecordedTurn(command: "take notice", response: "Taken."),
+        ], title: "probe", openingTurn: true)
     }
 
     /// The 1-based source line of `> command` in `source`.
@@ -104,14 +100,10 @@ final class ReblessTests: XCTestCase {
     }
 
     func testTheRightCommandIsRewrittenInAMultiBlessTranscript() throws {
-        let session = RecordingSession()
-        session.start()
-        session.record(command: "x lamp", response: "A lamp.")
-        session.record(command: "x rug", response: "A rug.")
-        session.bless(turnAt: 0)
-        session.bless(turnAt: 1)
-        session.stop()
-        let source = session.serialize(title: "two")
+        let source = RecordingSession.serialize([
+            RecordedTurn(command: "x lamp", response: "A lamp.", verdict: .blessed),
+            RecordedTurn(command: "x rug", response: "A rug.", verdict: .blessed),
+        ], title: "two", openingTurn: true)
 
         let rewritten = try Rebless.rewrite(source: source,
                                             commandLine: try line(of: "x rug", in: source),
@@ -137,8 +129,27 @@ final class ReblessTests: XCTestCase {
         // `[OK: contains]` + block — a fragment the author chose. Replacing it
         // with the whole new response would convert a narrow claim into a broad
         // one without the author saying so.
-        let source = serializedSession(blessed: "She said \"take it\" and left.",
-                                       selection: "She said \"take it\"")
+        //
+        // Hand-written rather than emitted: ADR-299 Phase 9 retired the IDE's
+        // selection-bless gesture, so nothing here EMITS this form any more.
+        // Rebless must still refuse it — authors write `[OK: contains]` by hand,
+        // and a rewrite that widened one would be the silent weakening this
+        // refusal exists to prevent.
+        let source = """
+        title: probe
+        ---
+
+        > x notice
+        [OK: contains]
+        text
+        She said "take it"
+        end text
+
+        > take notice
+        [SKIP]
+        # Taken.
+
+        """
         XCTAssertTrue(source.contains("[OK: contains]"), "fixture must take the block path:\n\(source)")
 
         XCTAssertThrowsError(try Rebless.rewrite(source: source,

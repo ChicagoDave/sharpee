@@ -112,4 +112,78 @@ final class SkeinSessionTests: XCTestCase {
         // The authored file is untouched — refusal, not replacement.
         XCTAssertEqual(try Data(contentsOf: storeURL), Data(#"{"schemaVersion": 99}"#.utf8))
     }
+
+    // MARK: - A replay records the node it is REPLAYING, not the one that matches
+
+    /// A forced sibling shares its shadowed node's command (D5), so walking by
+    /// command alone lands every replayed turn on whichever child came first.
+    /// The replay knows better and says so.
+    func testReplayingAForcedSiblingRecordsAgainstTheBranchNotTheNodeItShadows() throws {
+        let session = try SkeinSession(storeURL: storeURL)
+        try session.recordTurn(command: "throw bottle at anvil", output: "It hits!")
+        let played = session.currentNodeId
+        let forced = try XCTUnwrap(try session.growForcedSibling(
+            of: played, forcings: ["stdlib.throwing.breaks#1=yes"]))
+
+        let thread = try XCTUnwrap(session.document.thread(to: forced.id))
+        session.beginReplay(along: thread)
+        try session.recordTurn(command: "throw bottle at anvil", output: "It smashes!")
+        session.endReplay()
+
+        XCTAssertEqual(session.currentNodeId, forced.id,
+                       "the replay must land on the branch it was replaying")
+        XCTAssertEqual(session.observedOutputs[forced.id], "It smashes!")
+        XCTAssertNil(session.observedOutputs[played],
+                     "the shadowed node was not replayed and must not be reported on")
+        XCTAssertEqual(session.document.node(withId: played)?.output, "It hits!",
+                       "the shadowed node keeps its own played output")
+    }
+
+    /// A forced sibling is grown with empty output precisely so a replay fills
+    /// it in (D5) — a branch with no capture can never be read, blessed, or
+    /// exported.
+    func testAReplayEstablishesTheFirstCaptureOfABranchThatHadNone() throws {
+        let session = try SkeinSession(storeURL: storeURL)
+        try session.recordTurn(command: "throw bottle at anvil", output: "It hits!")
+        let forced = try XCTUnwrap(try session.growForcedSibling(
+            of: session.currentNodeId, forcings: ["stdlib.throwing.breaks#1=yes"]))
+        XCTAssertEqual(forced.output, "", "precondition: the branch has no capture yet")
+
+        session.beginReplay(along: try XCTUnwrap(session.document.thread(to: forced.id)))
+        try session.recordTurn(command: "throw bottle at anvil", output: "It smashes!")
+        session.endReplay()
+
+        XCTAssertEqual(try SkeinStore.read(from: storeURL).node(withId: forced.id)?.output,
+                       "It smashes!",
+                       "establishing a first capture is making a record, not overwriting one")
+    }
+
+    func testAReplayNeverOverwritesACaptureThatAlreadyExists() throws {
+        let session = try SkeinSession(storeURL: storeURL)
+        try session.recordTurn(command: "take lamp", output: "Taken.")
+        let node = session.currentNodeId
+
+        session.beginReplay(along: try XCTUnwrap(session.document.thread(to: node)))
+        try session.recordTurn(command: "take lamp", output: "Taken, and it is warm.")
+        session.endReplay()
+
+        XCTAssertEqual(session.document.node(withId: node)?.output, "Taken.",
+                       "the stored capture is the record (D1) — the change is a finding, not a save")
+        XCTAssertEqual(session.observedOutputs[node], "Taken, and it is warm.")
+    }
+
+    func testATurnThatDivergesFromTheReplayFallsBackToOrdinaryWalking() throws {
+        let session = try SkeinSession(storeURL: storeURL)
+        try session.recordTurn(command: "take lamp", output: "Taken.")
+        let lamp = session.currentNodeId
+
+        session.beginReplay(along: try XCTUnwrap(session.document.thread(to: lamp)))
+        // Not the command the replay expected — the story no longer accepts it,
+        // or the page wedged. Recording against a node the replay merely hoped
+        // for would be worse than branching where the command actually leads.
+        try session.recordTurn(command: "go north", output: "The cellar.")
+
+        XCTAssertNotEqual(session.currentNodeId, lamp)
+        XCTAssertEqual(session.document.root.children.map(\.command), ["take lamp", "go north"])
+    }
 }

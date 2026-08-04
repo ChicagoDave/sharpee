@@ -1,14 +1,16 @@
 // SkeinView.swift
 // The right panel's "Skein" tab — the tree half of ADR-299 D8: the story's
-// thread tree, click-to-replay (D6), and the tag (D2) and force (D5)
-// affordances. Rows render one node each: its command, the author's tag, and
-// badges for blessed / forced / where play currently sits. Double-click (or
-// Return) replays root→node and leaves the story live there; the Tag and Force
-// actions apply to the selection and round-trip through SkeinStore to disk.
+// thread tree, click-to-replay (D6), the tag (D2) and force (D5) affordances,
+// and D9's refinements (annotate, lock, trim). Rows render one node each: its
+// command, the author's marks, and badges for blessed / forced / changed
+// output / where play currently sits. Double-click (or Return) replays
+// root→node and leaves the story live there; every action applies to the
+// selection and round-trips through SkeinStore to disk.
 // Blessing is deliberately absent — it belongs to the Transcript view, where
 // the output being vouched for is readable (D8).
 // Public interface: setSession(_:), reload(), selectedNodeId, onReplay, onTag,
-// onForce, setStatus(_:), setBusy(_:).
+// onForce, onAnnotate, onLock, onTrim, onSelectNode, setStatus(_:),
+// setBusy(_:).
 // Owner context: tools/ide — Skein (tree surface).
 
 import AppKit
@@ -22,10 +24,24 @@ final class SkeinView: NSView {
     var onTag: ((String) -> Void)?
     /// The author asked to grow a forced sibling beside this node (D5).
     var onForce: ((String) -> Void)?
+    /// The selection moved (nil when cleared). The Transcript view follows it —
+    /// the tree picks the thread, the transcript reads it (D8).
+    var onSelectNode: ((String?) -> Void)?
+    /// The author asked to note something on this node (D9) — freeform, and
+    /// not a thread tag.
+    var onAnnotate: ((String) -> Void)?
+    /// The author asked to guard (or release) this subtree from trimming (D9).
+    var onLock: ((String, Bool) -> Void)?
+    /// The author asked to prune this subtree (D9) — always their act, never
+    /// the tool's.
+    var onTrim: ((String) -> Void)?
 
     private let replayButton = NSButton(title: "Replay to Node", target: nil, action: nil)
     private let tagButton = NSButton(title: "Tag…", target: nil, action: nil)
     private let forceButton = NSButton(title: "Force…", target: nil, action: nil)
+    private let annotateButton = NSButton(title: "Note…", target: nil, action: nil)
+    private let lockButton = NSButton(title: "Lock", target: nil, action: nil)
+    private let trimButton = NSButton(title: "Trim", target: nil, action: nil)
     private let statusLabel = NSTextField(labelWithString: "")
     private let scrollView = NSScrollView()
     private let outlineView = NSOutlineView()
@@ -49,11 +65,17 @@ final class SkeinView: NSView {
     private var childIds: [String: [String]] = [:]
     private var rootIds: [String] = []
 
+    /// The whole skein's findings (D4), grouped by node — what the rows'
+    /// changed-output badges read (D9). Recomputed on every reload, because a
+    /// bless, a replay, or a grown turn all change them.
+    private var findingsByNodeId: [String: [SkeinFinding]] = [:]
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
 
-        for button in [replayButton, tagButton, forceButton] {
+        for button in [replayButton, tagButton, forceButton,
+                       annotateButton, lockButton, trimButton] {
             button.bezelStyle = .accessoryBarAction
             button.font = NSFont.systemFont(ofSize: 11)
             button.target = self
@@ -63,6 +85,9 @@ final class SkeinView: NSView {
         replayButton.action = #selector(replayClicked)
         tagButton.action = #selector(tagClicked)
         forceButton.action = #selector(forceClicked)
+        annotateButton.action = #selector(annotateClicked)
+        lockButton.action = #selector(lockClicked)
+        trimButton.action = #selector(trimClicked)
 
         statusLabel.font = NSFont.systemFont(ofSize: 11)
         statusLabel.textColor = Theme.foregroundDim
@@ -96,6 +121,9 @@ final class SkeinView: NSView {
         addSubview(replayButton)
         addSubview(tagButton)
         addSubview(forceButton)
+        addSubview(annotateButton)
+        addSubview(lockButton)
+        addSubview(trimButton)
         addSubview(statusLabel)
         addSubview(scrollView)
         addSubview(emptyLabel)
@@ -108,7 +136,16 @@ final class SkeinView: NSView {
             forceButton.centerYAnchor.constraint(equalTo: replayButton.centerYAnchor),
             forceButton.leadingAnchor.constraint(equalTo: tagButton.trailingAnchor, constant: 6),
 
-            statusLabel.topAnchor.constraint(equalTo: replayButton.bottomAnchor, constant: 6),
+            // D9's refinements sit on their own row: the panel is narrow, and
+            // six buttons across would truncate the titles the author reads.
+            annotateButton.topAnchor.constraint(equalTo: replayButton.bottomAnchor, constant: 4),
+            annotateButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            lockButton.centerYAnchor.constraint(equalTo: annotateButton.centerYAnchor),
+            lockButton.leadingAnchor.constraint(equalTo: annotateButton.trailingAnchor, constant: 6),
+            trimButton.centerYAnchor.constraint(equalTo: annotateButton.centerYAnchor),
+            trimButton.leadingAnchor.constraint(equalTo: lockButton.trailingAnchor, constant: 6),
+
+            statusLabel.topAnchor.constraint(equalTo: annotateButton.bottomAnchor, constant: 6),
             statusLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             statusLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
 
@@ -142,6 +179,7 @@ final class SkeinView: NSView {
         let expanded = expandedNodeIds()
         let selected = selectedNodeId
 
+        findingsByNodeId = Dictionary(grouping: session?.findings() ?? [], by: \.nodeId)
         rebuildItems()
         outlineView.reloadData()
 
@@ -216,10 +254,14 @@ final class SkeinView: NSView {
     private var isBusy = false
 
     private func updateActionAvailability() {
-        let hasSelection = selectedNodeId != nil
-        replayButton.isEnabled = hasSelection && !isBusy
-        tagButton.isEnabled = hasSelection && !isBusy
-        forceButton.isEnabled = hasSelection && !isBusy
+        let selectedNode = selectedNodeId.flatMap { session?.document.node(withId: $0) }
+        let hasSelection = selectedNode != nil
+        for button in [replayButton, tagButton, forceButton, annotateButton, lockButton, trimButton] {
+            button.isEnabled = hasSelection && !isBusy
+        }
+        // The lock action says what it will DO, so the author never has to
+        // infer the current state from a pressed-looking button.
+        lockButton.title = (selectedNode?.isLocked ?? false) ? "Unlock" : "Lock"
     }
 
     // MARK: - Actions
@@ -242,6 +284,21 @@ final class SkeinView: NSView {
     @objc private func forceClicked() {
         guard let id = selectedNodeId else { return }
         onForce?(id)
+    }
+
+    @objc private func annotateClicked() {
+        guard let id = selectedNodeId else { return }
+        onAnnotate?(id)
+    }
+
+    @objc private func lockClicked() {
+        guard let id = selectedNodeId, let node = session?.document.node(withId: id) else { return }
+        onLock?(id, !node.isLocked)
+    }
+
+    @objc private func trimClicked() {
+        guard let id = selectedNodeId else { return }
+        onTrim?(id)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -285,7 +342,9 @@ extension SkeinView: NSOutlineViewDelegate {
         guard let item = item as? NodeItem,
               let node = session?.document.node(withId: item.id) else { return nil }
         let field = NSTextField(labelWithAttributedString:
-            Self.nodeLine(node, isCurrent: item.id == session?.currentNodeId))
+            Self.nodeLine(node,
+                          isCurrent: item.id == session?.currentNodeId,
+                          findings: findingsByNodeId[item.id] ?? []))
         field.drawsBackground = false
         field.lineBreakMode = .byTruncatingTail
         field.maximumNumberOfLines = 1
@@ -297,13 +356,25 @@ extension SkeinView: NSOutlineViewDelegate {
 
     func outlineViewSelectionDidChange(_ notification: Notification) {
         updateActionAvailability()
+        onSelectNode?(selectedNodeId)
     }
 
-    /// One node's row: where play sits, the command, then the author's marks.
+    /// One node's row: where play sits, the command, then the author's marks
+    /// and the skein's objections.
     ///
     /// Badges are text rather than colour alone — the row has to survive a
     /// screenshot in a bug report, and colour-only state does not.
-    static func nodeLine(_ node: SkeinNode, isCurrent: Bool) -> NSAttributedString {
+    ///
+    /// - Parameters:
+    ///   - node: the node to render.
+    ///   - isCurrent: whether play sits here.
+    ///   - findings: verification's objections to this node (D4), badged here
+    ///     as D9's changed-output marker. The detail lives in the Transcript
+    ///     view, where the two texts are readable — a tree row says only that
+    ///     there is something to read.
+    static func nodeLine(_ node: SkeinNode,
+                         isCurrent: Bool,
+                         findings: [SkeinFinding] = []) -> NSAttributedString {
         let line = NSMutableAttributedString(
             string: isCurrent ? "▶ " : "  ",
             attributes: [.foregroundColor: isCurrent ? NSColor.systemBlue : Theme.foregroundFaint,
@@ -317,6 +388,17 @@ extension SkeinView: NSOutlineViewDelegate {
             line.append(NSAttributedString(
                 string: mark,
                 attributes: [.foregroundColor: NSColor.systemGreen, .font: bodyFont]))
+        }
+        // An objection outranks the approval it contradicts, so it is drawn
+        // right after it rather than at the end of the marks.
+        if !findings.isEmpty {
+            let violatesClaim = findings.contains {
+                if case .invarianceViolated = $0.kind { return true }
+                return false
+            }
+            line.append(NSAttributedString(
+                string: violatesClaim ? "  ⚠ all-paths" : "  ⚠ changed",
+                attributes: [.foregroundColor: NSColor.systemRed, .font: bodyFont]))
         }
         if !node.forcings.isEmpty {
             line.append(NSAttributedString(
@@ -332,6 +414,14 @@ extension SkeinView: NSOutlineViewDelegate {
             line.append(NSAttributedString(
                 string: "  🔒",
                 attributes: [.font: bodyFont]))
+        }
+        // The origin slot D10 reserves. Nothing sets `.explorer` until
+        // `@sharpee/skein` ships, so this never draws today — the slot exists
+        // so an adopted thread needs no row change, NOT as adoption UI.
+        if node.origin == .explorer {
+            line.append(NSAttributedString(
+                string: "  ⟐ explorer",
+                attributes: [.foregroundColor: Theme.foregroundDim, .font: bodyFont]))
         }
         if let annotation = node.annotation, !annotation.isEmpty {
             line.append(NSAttributedString(

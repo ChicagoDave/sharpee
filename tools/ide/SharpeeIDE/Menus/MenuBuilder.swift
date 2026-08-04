@@ -220,26 +220,10 @@ enum MenuBuilder {
         runFile.target = target
         menu.addItem(runFile)
 
-        menu.addItem(NSMenuItem.separator())
-
-        // ADR-282 D1. A key equivalent rather than only the header button: the
-        // gesture is play-and-bless in one motion, and while playing the
-        // author's focus is in the story's own input field. A menu shortcut
-        // fires from there; a button click would not.
-        let bless = NSMenuItem(title: "Bless Last Turn",
-                               action: #selector(AppDelegate.blessLastTurn(_:)),
-                               keyEquivalent: "b")
-        bless.keyEquivalentModifierMask = [.command, .shift]
-        bless.target = target
-        menu.addItem(bless)
-
-        // ADR-282 D4, and a key equivalent for the same reason as Bless above.
-        let checkpoint = NSMenuItem(title: "Checkpoint Here",
-                                    action: #selector(AppDelegate.checkpointHere(_:)),
-                                    keyEquivalent: "k")
-        checkpoint.keyEquivalentModifierMask = [.command, .shift]
-        checkpoint.target = target
-        menu.addItem(checkpoint)
+        // No Bless / Checkpoint items: ADR-299 D8 moved blessing into the
+        // Transcript view, where the output being vouched for is readable, and
+        // export lives beside it. A menu command acting on "the thread shown in
+        // a tab you may not be looking at" would be worse than the button.
 
         menu.addItem(NSMenuItem.separator())
 

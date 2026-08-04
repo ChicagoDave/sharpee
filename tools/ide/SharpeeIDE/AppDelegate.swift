@@ -441,21 +441,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         testController?.runFile(transcript)
     }
 
-    /// Test → Bless Last Turn (⇧⌘B). Vouches for the response now on screen in
-    /// the Play pane, or takes the vouch back (ADR-282 D1). Reachable by
-    /// keyboard while the author is typing into the running story, which the
-    /// header button alone is not.
-    @objc func blessLastTurn(_ sender: Any?) {
-        mainWindowController?.blessLatestPlayTurn()
-    }
-
-    /// Test → Checkpoint Here (⇧⌘K). Ends a walkthrough-chain segment at the
-    /// turn now on screen, or takes the mark back (ADR-282 D4). Keyboard-
-    /// reachable for the same reason Bless is: the gesture happens mid-play.
-    @objc func checkpointHere(_ sender: Any?) {
-        mainWindowController?.checkpointLatestPlayTurn()
-    }
-
     /// Test → Cancel Test Run. SIGTERM, then SIGKILL; decoded results stay.
     @objc func cancelTestRun(_ sender: Any?) {
         testController?.cancel()
@@ -509,14 +494,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(testController?.isTesting ?? false)
         case #selector(cancelTestRun(_:)):
             return testController?.isTesting ?? false
-        case #selector(blessLastTurn(_:)):
-            // Only while a recording holds a blessable turn — an empty response
-            // carries no affordance (ADR-282 D2).
-            return mainWindowController?.canBlessLatestPlayTurn ?? false
-        case #selector(checkpointHere(_:)):
-            // Only while a recording holds a turn to mark (ADR-282 D4). A blank
-            // response is no objection here — see canCheckpointLatestTurn.
-            return mainWindowController?.canCheckpointLatestPlayTurn ?? false
         case #selector(toggleWordWrap(_:)):
             menuItem.state = WordWrapPreference.isEnabled ? .on : .off
             return true

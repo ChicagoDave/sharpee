@@ -97,19 +97,40 @@ final class ReblessRealPathTests: XCTestCase {
 
     // MARK: - Harness
 
+    /// A transcript asserting a FRAGMENT of the notice's text.
+    ///
+    /// Hand-written: ADR-299 Phase 9 retired the IDE's selection-bless gesture,
+    /// so nothing emits `[OK: contains]` any more. The refusal it drives is
+    /// still production behaviour — authors write this form by hand, and a
+    /// re-bless that widened one would be exactly the silent weakening the
+    /// refusal exists to prevent.
+    private static func fragmentTranscript(fragment: String) -> String {
+        """
+        title: fragment
+        ---
+
+        > look
+        [SKIP]
+
+        > x notice
+        [OK: contains]
+        text
+        \(fragment)
+        end text
+
+        """
+    }
+
     /// Bless the story's REAL response to `x notice` and save it as a test.
     @discardableResult
     private func blessAndSave() throws -> URL {
         let responses = try TestToolchain.captureResponses(storyFile: storyFile,
                                                            commands: ["x notice"])
-        let play = PlayViewController()
-        play.recording.start()
-        play.recording.record(command: "x notice", response: responses[0])
-        play.recording.bless(turnAt: 0)
-        play.recording.stop()
-
         let saved = transcriptsDir.appendingPathComponent("drift.transcript")
-        try play.writeRecording(to: saved)
+        try RecordingSession.serialize(
+            [RecordedTurn(command: "x notice", response: responses[0], verdict: .blessed)],
+            title: "drift", openingTurn: true)
+            .write(to: saved, atomically: true, encoding: .utf8)
         return saved
     }
 
@@ -296,13 +317,12 @@ final class ReblessRealPathTests: XCTestCase {
         // purpose — so the pane shows the reason instead of the button.
         let responses = try TestToolchain.captureResponses(storyFile: storyFile,
                                                            commands: ["x notice"])
-        let play = PlayViewController()
-        play.recording.start()
-        play.recording.record(command: "x notice", response: responses[0])
-        play.recording.bless(turnAt: 0, selection: "She said \"take it\" and would not look at you.")
-        play.recording.stop()
+        let fragment = "She said \"take it\" and would not look at you."
+        XCTAssertTrue(responses[0].contains(fragment),
+                      "precondition: the fragment must really be part of the story's response")
         let saved = transcriptsDir.appendingPathComponent("fragment.transcript")
-        try play.writeRecording(to: saved)
+        try Self.fragmentTranscript(fragment: fragment)
+            .write(to: saved, atomically: true, encoding: .utf8)
 
         try rewordTheStory()
         let run = runTests()
@@ -323,13 +343,12 @@ final class ReblessRealPathTests: XCTestCase {
         // A `[SKIP]` draft never carried a bless, so there is nothing to reaffirm.
         let responses = try TestToolchain.captureResponses(storyFile: storyFile,
                                                            commands: ["x notice"])
-        let play = PlayViewController()
-        play.recording.start()
-        play.recording.record(command: "x notice", response: responses[0])
-        play.recording.bless(turnAt: 0)
-        play.recording.record(command: "take notice", response: "Taken.")
-        play.recording.stop()
-        try play.writeRecording(to: transcriptsDir.appendingPathComponent("mixed.transcript"))
+        try RecordingSession.serialize([
+            RecordedTurn(command: "x notice", response: responses[0], verdict: .blessed),
+            RecordedTurn(command: "take notice", response: "Taken."),
+        ], title: "mixed", openingTurn: true)
+            .write(to: transcriptsDir.appendingPathComponent("mixed.transcript"),
+                   atomically: true, encoding: .utf8)
 
         let run = runTests()
         XCTAssertEqual(run.result?.state, .passed, "the untagged turn asserts only presence")

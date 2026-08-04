@@ -83,7 +83,38 @@
 - **Entry state**: Phase 6's Skein view exists (a node must be selectable to linearize its thread). Phase 1's model already has a `blessing` field with `.thisThread`/`.allPaths` scope.
 - **Deliverable**: A Transcript view linearizing the currently-selected thread as prose, actual vs. blessed per node; bless/unbless affordance with an explicit scope choice at bless time (D4 — "plain bless" vs. "bless-for-all-paths"); an invariance verifier that, on any thread's replay, checks every node against every all-paths blessing declared at that story position across all threads and surfaces a first-class finding (not a silent diff) when they disagree.
 - **Exit state**: **Real-path test required (rule 13a)** for the invariance-checking half — this is a genuine integration behavior (cross-thread state-leak detection), not decoration. AC-3 pinned end-to-end: an all-paths blessing at a position, plus a second thread whose replayed output at that position differs (a seeded state leak reproduced against the real engine), produces a first-class finding on that thread's replay — not noise on the blessing thread, not a silent diff.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-08-04, session 0b1b98)
+  Shipped: `Invariance.swift` (`SkeinFinding`, `SkeinVerifier` — pure, UI-free), `TranscriptView.swift` (the
+  **Transcript** tab: the selected thread as prose, one block per node, bless/bless-for-all-paths/unbless),
+  `SkeinSession` gaining the observed-output channel (`observedOutputs`, `actualOutput(forNodeId:)`) plus
+  `bless(nodeId:scope:)` / `unbless(nodeId:)` / `findings(forThreadTo:)`, `SkeinDocument.allNodes`,
+  `SkeinView.onSelectNode`, and the right panel's wiring (transcript follows the tree's selection, else where
+  play sits; a replay that produces findings lands the author on Transcript instead of Play).
+  **The one modeling decision the ADR left open — what "the same story position" IS.** ADR-299 deliberately
+  does not model convergence ("the figure eight was a metaphor… not a modeling requirement"), so the tree
+  carries no notion of sameness beyond commands and outputs, and the only mechanically derivable position key
+  is **the command** (trimmed and case-folded, as a parser reads it). An all-paths blessing therefore asserts:
+  *every node in this skein carrying this command prints this output*. The bless flow states the claim back in
+  exactly those words, so an author who blesses `look` for all paths learns it from a finding they can
+  downgrade rather than from a check that silently never fires. A plain blessing constrains only its own node;
+  two disagreeing all-paths blessings are reported from both sides rather than picking a winner.
+  Also produced here: **changed-output finding data** (a node that no longer prints what its own blessing
+  vouched for), which is what Phase 8's D9 badges display.
+  Tests: `InvarianceTests` (11 unit — position normalization, grouping, violation, self-exclusion, agreement,
+  plain-scope containment, contradiction symmetry, observed-over-stored, whole-skein sweep),
+  `SkeinBlessTests` (10 unit — bless persists scope + the text the story PRINTED, re-bless replaces, refusals
+  write nothing, observations cleared per boot, walking never overwrites the stored capture),
+  `TranscriptViewTests` (14 unit — header counts, block composition, the view over a live session),
+  `SkeinInvarianceRealPathTests` (2 real-path, rule 13a): AC-2's fixture pattern with a real devkit-built
+  bundle in a real WKWebView — `look` clean vs `look` carrying the bottle is a real engine-produced state
+  leak; blessing the first for-all-paths and replaying the second yields exactly one
+  `invarianceViolated` finding carrying the REPLAY's text, surfaced by a real `TranscriptView`; replaying the
+  blessing's own thread is silent and reproduces the blessed text byte-for-byte.
+  **Falsified before acceptance**: disabling the invariance loop in `SkeinVerifier` fails the AC-3 real-path
+  test (`[]` vs the expected finding). Two `TranscriptViewTests` were caught vacuous during the run — the view
+  holds its session weakly (the Play pane owns it), so a locally-created session deallocated before `show`
+  and every row count read 0; they now hold the session and assert the precondition.
+  Gate: **full IDE suite 527 tests, 0 failures** (23:57).
 
 ### Phase 8: Skein View refinements (D9)
 - **Tier**: Medium
@@ -92,7 +123,33 @@
 - **Entry state**: Phases 6–7 done (tree + transcript views exist; blessing/verification produces the diff data badges display).
 - **Deliverable**: Explicit trim (removes an unlocked subtree from file and view, always an author act, never automatic); lock (guards a subtree from trim, refuses the trim action with a message when locked); freeform per-node annotations distinct from D2's thread tags; changed-output badges wired to Phase 7's diff/finding data; an origin badge slot reserved but inert (D10's machine-grown threads don't exist until the explorer ships — do not build adoption UI).
 - **Exit state**: AC-6 pinned: trimming an unlocked subtree removes it from file and view; trimming a locked subtree is refused with a message; annotations and tags round-trip through save/load (extends Phase 1's round-trip tests).
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-08-04, session 0b1b98)
+  Shipped: `SkeinNode.subtree` (the unit trimming removes and locking guards; `SkeinDocument.allNodes` now
+  derives from it), `SkeinDocument.TrimOutcome` + `trimRefusal(for:)` + `trim(nodeId:)`,
+  `SkeinSession.setAnnotation(_:forNodeId:)` / `setLocked(_:forNodeId:)` / `trim(nodeId:)` / `findings()`,
+  a second button row in `SkeinView` (Note… / Lock / Trim — six across would truncate the titles in a narrow
+  panel), changed-output badges on rows fed by a whole-skein sweep, and the right panel's sheets.
+  **Design points worth keeping**:
+  - **A lock anywhere INSIDE a subtree refuses the whole trim.** Locking a node guards it; destroying it
+    because an ancestor happened to be selected would make the guard worthless. Falsified: narrowing the
+    check to the target node's own lock fails 5 tests.
+  - **The refusal is knowable without mutating** (`trimRefusal(for:)`), so a locked branch is refused BEFORE
+    the confirmation sheet. Asking someone to confirm destroying something and then telling them it was never
+    going to happen teaches them to click through the sheet. One rule, two callers — `trim` is implemented in
+    terms of it.
+  - **Trim is confirmed, never silent, never automatic**, and names the node count and what goes with it
+    (blessings, tags). A refusal names the lock that stopped it by command, not "something in there".
+  - **Play's position falls back to the story start when the node it sat on was trimmed**, and the removed
+    nodes' observations go with them — a `currentNodeId` pointing into deleted tree would grow the next turn
+    nowhere.
+  - **Origin badge slot reserved and genuinely inert**: `⟐ explorer` renders only for `origin == .explorer`,
+    which nothing sets until `@sharpee/skein` ships. No adoption UI, no findings list (D10 stays deferred).
+  Tests: `SkeinRefinementTests` (22 unit — trim/lock semantics incl. the deep-lock guard, refusals writing
+  nothing, play-position fallback, annotation+tag+lock round-trip through a reopened session, the trimmed
+  branch leaving the VIEW as well as the file, changed-output vs violated-all-paths badges, and the reserved
+  origin slot). Falsified before acceptance: removing the subtree lock scan fails the deep-lock tests;
+  removing the post-trim store write fails the file-removal test.
+  Gate: **full IDE suite 549 tests, 0 failures** (00:25).
 
 ### Phase 9: Exporter + retirement sweep
 - **Tier**: Medium
@@ -101,7 +158,69 @@
 - **Entry state**: Phases 1–8 done — a blessed thread exists with scope, tags, and (optionally) forced branches.
 - **Deliverable**: "Save thread as test" writes an ADR-294 golden transcript (`seed:`/`forces:` headers) into the project's existing `tests/transcripts/` or `walkthroughs/` groups, reusing ADR-282's retained literal-block serialization verbatim — no new serialization code. A retirement sweep confirms: `PlayHeaderView`'s Record toggle and per-turn bless flow are fully gone (Phase 2 should have removed the toggle; verify no dead code remains), `RecordingSession` is either deleted or reduced to exactly what Phase 2 left it as (no orphaned bless/checkpoint API nothing calls), and the project tree's Walkthroughs/Transcript Tests groups correctly receive exported files alongside the new Play Testing group (Phase 1).
 - **Exit state**: **Real-path test required (rule 13a)** — export a blessed thread (including one with a `forces:` branch from Phase 5) to a real `.transcript` file and run it through the real `dist/cli/sharpee.js --test`; it passes (AC-5, and AC-4's export half). AC-7 re-verified end-to-end (an exported skein round-trips through a fresh IDE launch). Full IDE suite green; explicit confirmation no ADR-282 dead code remains.
-- **Status**: PENDING
+- **Status**: COMPLETE (2026-08-04, session 0b1b98) — exporter shipped and the retirement sweep done, deletions
+  approved by David.
+  Shipped: `SkeinExporter.swift` (the one door out of the skein: a blessed node becomes a verbatim `[OK]` +
+  literal text block of the text the AUTHOR approved, an unblessed one keeps the `[SKIP]` draft, and the
+  document's pinned seed plus the thread's joined forcings ride the ADR-294 header block — emitted through
+  `RecordingSession.serialize`, never a second grammar, and joined through `ReplayDriver.forcings(along:)`),
+  the "Save Thread as Test…" affordance on the Transcript view (disabled, with the reason, when the thread
+  carries no blessing), and the right panel's save-panel flow defaulting into `tests/transcripts/` and
+  announcing through the Tests panel's existing channel (`PlayViewController.announceTranscript`).
+  **Bug found while building the export test, fixed here**: replaying a forced sibling recorded its output
+  against the node it SHADOWS. `SkeinSession.recordTurn` identified the walked-onto node by matching the typed
+  command against the current node's children — exact until two children share a command, which is precisely
+  what a forced sibling is (D5). The forced branch therefore never captured anything, so it could not be read,
+  blessed, or exported, and the unforced node's observation was the forced text. Fixed with
+  `beginReplay(along:)`/`endReplay()`: a replay hands the session the exact node ids the coming turns belong
+  to; a turn that diverges abandons the path and falls back to the ordinary walk. Paired with `observe`,
+  which establishes a FIRST capture for a node that has none (the model always said "empty until a replay
+  fills it in") while still never overwriting an existing one. Falsified: removing the node targeting makes
+  the exported forced transcript FAIL under the real runner.
+  Tests: `SkeinExporterTests` (17 unit — header/seed, opening `look`, blessed→`[OK]`+block asserting the
+  BLESSED text not the drifted capture, unblessed→`[SKIP]`, forces join in node order, duplicate-forcing
+  refusal, no-blessings refusal writing no file, `canExport`, offered filename from the tag else the command),
+  `SkeinSessionTests` +4 (replay node targeting, first-capture establishment, no overwrite of an existing
+  capture, divergence fallback), `SkeinExportRealPathTests` (2 real-path): a real WKWebView session of a real
+  devkit-built bundle, a forced branch replayed live and blessed, both threads exported and PASSING under the
+  real `sharpee test`; and the refusal + AC-7 round trip (a relaunched `SkeinSession` reads the same skein and
+  exports byte-identically). Falsified twice: emitting blessed turns as untagged fails the run's
+  assertion count; removing the forced-branch node targeting fails the run outright.
+  **Deviation, deliberate**: the real-path run drives `sharpee test <story> <transcripts> --json` (the devkit
+  CLI — what the IDE's own TestRunner spawns, ADR-187) rather than `dist/cli/sharpee.js --test`, whose story
+  inference needs a `stories/<name>/` path prefix a temp fixture cannot have. Files are named explicitly
+  rather than handing over the project directory: the fixture carries a `node_modules` symlink into the
+  monorepo and a directory scan walks into it and never returns (this cost one 300s timeout).
+  **Retirement sweep (David approved the deletions, 2026-08-04)**: the whole ADR-282 live flow was already
+  unreachable — `RecordingSession.start()` had no caller, so the header's Bless/Checkpoint and the Test menu's
+  two items were permanently disabled, and `saveRecording()` had no caller at all.
+  - `PlayViewController` lost `recording`, the bless/checkpoint gestures, `updateTurnAffordances`, all four
+    save flows (`saveRecording`/`saveSingleTranscript`/`saveChain`/`presentSaveFailure`), `writeRecording`,
+    `writeChain`, `defaultChainName`, and `walkthroughsSaveDirectory` — 236 lines.
+  - `PlayHeaderView` is now status dot + New Thread + "Play after build", exactly what D8 says it should be.
+  - `MenuBuilder`/`AppDelegate`/`MainWindow` lost "Bless Last Turn" (⇧⌘B) and "Checkpoint Here" (⇧⌘K) and
+    their forwarding. **No replacement menu item**: D8 puts the gesture where the node context is, and a menu
+    command acting on "the thread shown in a tab you may not be looking at" would be worse than the button.
+  - `RecordingSession` is now a `@MainActor enum` — a pure emitter (`serialize`, `assertionLines`, the block
+    writer) plus `RecordedTurn`. Its `Verdict` collapsed to `untagged`/`blessed`: the `[OK: contains …]`
+    selection form went with the gesture that produced it (a skein blessing always approves the whole
+    output), taking `inlinePayload` and `fragment(selected:)` with it. **`Rebless` still REFUSES a
+    `[OK: contains]` bless** — authors write that form by hand — and its tests now build that fixture by hand,
+    labelled as such, since nothing emits it any more.
+  - Deleted: `Test/WalkthroughChain.swift` (+`ChainSaveMode`), `WalkthroughChainTests`, `RecordingSessionTests`,
+    `RecordingSessionBlessTests`, `RecordingChainTests`, `RecordingChainSaveTests`, `RecordingSaveAsTestTests`,
+    `PlayBlessAffordanceTests`, `PlaySelectionCaptureTests`. The `walkthroughs/` directory concept survives
+    independently in `TestPanelModel`/`TestRunner` — only the chain-WRITING helper went.
+  - `RecordingSerializationTests` rewritten against the static emitter (14→12: the two selection-encoding
+    tests went with the encoding; two header-block tests added). `ReblessTests`/`ReblessRealPathTests`
+    fixtures ported off the retired capture API.
+  Gate: **full IDE suite 486 tests, 0 failures** (01:07 and 01:09, two captured runs). The count reconciles
+  exactly: 572 − 70 (deleted Recording/Play tests) − 14 (WalkthroughChainTests) − 2 (retired selection
+  encoding) = 486; no test was silently lost.
+  **Open item**: the first full-suite run after the sweep reported 3 failures and the three runs after it were
+  clean. That run's output was not captured, so the failures were never identified — flagged rather than
+  dismissed. Most likely the known main-actor contention class (the same one that took `TestRunnerTests`'
+  cancel timeout 5s→30s last session); the suite now runs ~47s with several WKWebView real-path tests.
 
 ## Deferred (not planned)
 - **D10 (explorer-proposes/author-adopts)**: binds to `@sharpee/skein`, which does not exist yet (ADR-294: planned, not shipped). AC-8 is explicitly deferred in the ADR itself. No phase above builds the findings list, budget-report display, or adoption flow — this plan stops at v1's boundary per the ADR's own scoping.

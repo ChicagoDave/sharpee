@@ -92,6 +92,12 @@ struct SkeinNode: Codable, Equatable {
         case forcings, origin, children
     }
 
+    /// This node and everything below it, self first, depth-first in child
+    /// order — the unit trimming removes and locking guards (D9).
+    var subtree: [SkeinNode] {
+        [self] + children.flatMap(\.subtree)
+    }
+
     init(id: String = UUID().uuidString,
          command: String,
          output: String,
@@ -165,6 +171,11 @@ struct SkeinDocument: Codable, Equatable {
         thread(to: id)?.terminal
     }
 
+    /// Every node in the skein, root first, depth-first in child order — what a
+    /// whole-skein sweep (verification, D4) walks. The root is included: the
+    /// story-start output is blessable like any other (I7 blesses it too).
+    var allNodes: [SkeinNode] { root.subtree }
+
     /// The root→node path for `id`, or nil when no node carries it.
     func thread(to id: String) -> SkeinThread? {
         func path(to id: String, from node: SkeinNode) -> [SkeinNode]? {
@@ -229,6 +240,58 @@ struct SkeinDocument: Codable, Equatable {
                                 forcings: forcings)
         guard appendChild(sibling, to: parent.id) else { return nil }
         return sibling
+    }
+
+    /// What a trim did, or why it did nothing (D9).
+    ///
+    /// Typed rather than a Bool: trimming is destructive and always an author
+    /// act, so a refusal has to be able to say WHICH lock stopped it — "refused
+    /// because something in there is locked" that cannot point at the lock is
+    /// not a message the author can act on.
+    enum TrimOutcome: Equatable {
+        /// The subtree is gone. Carries every id removed, so a caller holding
+        /// positions or observations can drop the ones that no longer exist.
+        case trimmed(removedIds: [String])
+        /// No node carries that id.
+        case unknownNode
+        /// The story start is not a branch and cannot be pruned away.
+        case cannotTrimRoot
+        /// A lock inside the subtree refused it (D9) — the guarded node's id.
+        case locked(nodeId: String)
+    }
+
+    /// Why trimming `nodeId` would be refused, or nil when it would go ahead —
+    /// asked before a confirmation sheet, so a locked subtree is refused
+    /// BEFORE the author is made to confirm destroying it.
+    ///
+    /// A lock anywhere INSIDE the subtree refuses the whole trim: locking a
+    /// node guards it, and quietly destroying it because an ancestor was
+    /// selected would make the guard worthless.
+    func trimRefusal(for nodeId: String) -> TrimOutcome? {
+        guard nodeId != root.id else { return .cannotTrimRoot }
+        guard let thread = thread(to: nodeId) else { return .unknownNode }
+        if let locked = thread.terminal.subtree.first(where: \.isLocked) {
+            return .locked(nodeId: locked.id)
+        }
+        return nil
+    }
+
+    /// Removes the subtree rooted at `nodeId` (D9).
+    ///
+    /// Nothing in this file ever trims automatically: a skein you cannot prune
+    /// becomes a junk drawer, but one that prunes itself loses work silently.
+    ///
+    /// - Returns: the outcome; the tree is untouched in every non-`trimmed`
+    ///   case.
+    @discardableResult
+    mutating func trim(nodeId: String) -> TrimOutcome {
+        if let refusal = trimRefusal(for: nodeId) { return refusal }
+        guard let thread = thread(to: nodeId),
+              thread.nodes.count >= 2 else { return .unknownNode }
+        let parent = thread.nodes[thread.nodes.count - 2]
+        let removed = thread.terminal.subtree.map(\.id)
+        updateNode(withId: parent.id) { $0.children.removeAll { $0.id == nodeId } }
+        return .trimmed(removedIds: removed)
     }
 
     /// Appends `child` under the node carrying `parentId` (D1 branching).
