@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock 3 — Files, turns, and the running game</title>
+<link rel="stylesheet" href="mock-shared.css">
+</head>
+<body>
+
+<div class="note">
+  <span class="tag">Mock 3 of 5 · the merged tab</span>
+  <h1>Files, turns, and the running game</h1>
+  <p class="sub">ADR-300 D9 — the <code>Testing</code> and <code>Test</code> tabs merge into one. This is what that actually looks like.</p>
+  <p>Left: the story's transcripts, which is what <code>TestPanelModel</code> already discovers under <code>tests/transcripts/</code> and <code>walkthroughs/</code>. Middle: the open file as turns. Right: the live game, recording into it (D2).</p>
+  <p><b>The point:</b> the tab that runs tests and the tab that writes them stop being two tabs. The dot beside each file is the last run; opening a failure lands you on the turn that failed.</p>
+</div>
+
+<div class="window">
+  <div class="tabstrip">
+    <div class="tab">Build</div>
+    <div class="tab">Play</div>
+    <div class="tab on">Testing</div>
+    <div class="tab">Index</div>
+    <div class="tab">Diagnosis</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary">Run</button>
+    <button class="btn">Run All</button>
+    <button class="btn">Replay to Turn</button>
+    <button class="btn">Stop</button>
+    <span class="status">18 files · 16 pass, 1 fail, 1 stale recording · last run 02:41</span>
+  </div>
+
+  <div class="body">
+    <div class="pane" style="width:216px; flex:none">
+      <h3>Transcripts</h3>
+      <ul class="filelist">
+        <li><span class="dot pass"></span>compass</li>
+        <li><span class="dot pass"></span>concealment</li>
+        <li><span class="dot pass"></span>containers</li>
+        <li class="on"><span class="dot fail"></span>cellar-dark</li>
+        <li><span class="dot pass"></span>dawn-lose</li>
+        <li><span class="dot pass"></span>doors</li>
+        <li><span class="dot stale"></span>frost-seal</li>
+        <li><span class="dot pass"></span>fuse</li>
+        <li><span class="dot none"></span>e-group</li>
+      </ul>
+      <h3>Walkthroughs</h3>
+      <ul class="filelist">
+        <li><span class="dot pass"></span>wt-01-gates</li>
+        <li><span class="dot pass"></span>wt-02-hall</li>
+        <li><span class="dot pass"></span>wt-03-cellar</li>
+      </ul>
+      <h3>Proposed</h3>
+      <ul class="filelist">
+        <li><span class="dot none"></span>explorer-fuse-b</li>
+        <li><span class="dot none"></span>explorer-kettle-c</li>
+      </ul>
+    </div>
+
+    <div class="turns" style="flex:1.4">
+      <div class="goal">Goal · reach the cellar</div>
+
+      <div class="card pass">
+        <div class="cmd">&gt; north</div>
+        <div class="out"><mark>Gravel Drive</mark>
+The drive curves between bare lime trees, gravel crunching underfoot.</div>
+        <div class="assert"><span class="chip">contains</span> "Gravel Drive"</div>
+      </div>
+
+      <div class="card pass">
+        <div class="cmd">&gt; unlock the cellar door with the tarnished key</div>
+        <div class="out">You <mark>unlock</mark> the cellar door.</div>
+        <div class="assert"><span class="chip">contains</span> "unlock"</div>
+        <div class="assert"><span class="chip">event</span> true · type="if.event.unlocked"</div>
+      </div>
+
+      <div class="goal">Goal · the dark cellar</div>
+
+      <div class="card fail sel">
+        <div class="cmd">&gt; down</div>
+        <div class="out">Brick vaults recede into the dark, and a draught moves along them.</div>
+        <div class="assert bad"><span class="chip">not contains</span> "Brick vaults" — <b>failed</b>, the text is present</div>
+        <div class="assert" style="color:var(--dim)">
+          <button class="btn">Re-bless…</button>
+          <button class="btn">Replay to here</button>
+          <button class="btn">Open in editor</button>
+        </div>
+      </div>
+
+      <div class="hint">The cellar should be dark. The assertion is right and the story is wrong — which is a bug found, not a test to update. "Open in editor" jumps to the source line.</div>
+    </div>
+
+    <div class="pane" style="width:280px; flex:none; background:var(--play); display:flex; flex-direction:column">
+      <h3>Play — recording into cellar-dark</h3>
+      <div style="flex:1; padding:8px 10px; font-family:var(--mono); font-size:11px; color:var(--dim); line-height:1.6; white-space:pre-wrap">Cellar Stairs
+Steps go down into the dark. The
+cellar door stands open.
+
+&gt; down
+
+Brick vaults recede into the dark,
+and a draught moves along them.
+
+&gt; <span style="color:var(--accent)">▌</span></div>
+      <div style="padding:8px 10px; border-top:1px solid var(--border)">
+        <button class="btn" style="width:100%">Stop recording</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>Q2 lives here:</b> the right pane says "recording into cellar-dark" because a file is open. What it says when nothing is open is an unresolved question — a scratch file, an explicit target chosen first, or a disabled Play. Appending to the last-opened file is the one answer that is clearly wrong.
+  <b>D10 lives here too:</b> the explorer's proposals are just files in a third group. That is the whole feature.
+</div>
+
+</body>
+</html>

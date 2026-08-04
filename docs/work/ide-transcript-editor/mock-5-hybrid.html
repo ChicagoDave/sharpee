@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock 5 — Source and turns, side by side</title>
+<link rel="stylesheet" href="mock-shared.css">
+</head>
+<body>
+
+<div class="note">
+  <span class="tag">Mock 5 of 5 · hybrid — my recommendation</span>
+  <h1>Source and turns, side by side</h1>
+  <p class="sub">ADR-300 Q1, option C. The file on the left is the truth. The turns on the right are a <i>view</i> of the last run, and the place you act.</p>
+  <p>Editing happens on the right — select words in the actual output and the editor writes the assertion (mock 2) — but the write is a <b>surgical text edit</b> to the file on the left, not a re-serialization of a parsed model. Nothing outside the assertion line is ever touched, so comments, blank lines and hand-formatting survive exactly as in mock 4.</p>
+  <p><b>Why this one:</b> mock 1 cannot show you what you are committing; mock 4 cannot show you the story's output, which is where the assertion comes from. This shows both, and it is the only option where D3 (all grammar authorable) and Q1 (bytes preserved) are not in tension.</p>
+</div>
+
+<div class="window">
+  <div class="tabstrip">
+    <div class="tab">Build</div>
+    <div class="tab">Play</div>
+    <div class="tab on">Testing</div>
+    <div class="tab">Index</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary">Run</button>
+    <button class="btn">Run All</button>
+    <button class="btn">Replay to Turn</button>
+    <button class="btn">Record from Play</button>
+    <span class="status">cellar-dark.transcript · seed 42 · 13 pass, 1 fail</span>
+  </div>
+
+  <div class="branches" style="border-bottom:1px solid var(--border); border-right:none">
+    <div class="branchcol">
+      <div class="colname">cellar-dark</div>
+      <div class="badge pass sel">north</div><div class="conn"></div>
+      <div class="badge pass">take key</div><div class="conn"></div>
+      <div class="badge fail">down</div>
+    </div>
+    <div class="branchcol">
+      <div class="colname">frost-seal</div>
+      <div class="badge pass">north</div><div class="conn"></div>
+      <div class="badge stale">x kettle</div>
+    </div>
+    <div class="branchcol">
+      <div class="colname">doors</div>
+      <div class="badge pass">open door</div>
+    </div>
+    <div class="branchcol">
+      <div class="colname">explorer-fuse-b</div>
+      <div class="badge proposed">pull lever</div><div class="conn"></div>
+      <div class="badge proposed">wait</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="src" style="flex:1; border-right:1px solid var(--border)"><span class="row"><span class="ln">1</span><span class="h">title</span>: Fernhill A4 — the dark cellar</span><span class="row"><span class="ln">2</span><span class="h">story</span>: fernhill</span><span class="row"><span class="ln">3</span><span class="h">seed</span>: 42</span><span class="row"><span class="ln">4</span>---</span><span class="row"><span class="ln">5</span></span><span class="row"><span class="ln">6</span><span class="c">[GOAL: reach the cellar]</span></span><span class="row"><span class="ln">7</span></span><span class="row gutterpass"><span class="ln">8</span>&gt; north</span><span class="row gutterpass"><span class="ln">9</span><span class="k">[OK: contains <span class="s">"Gravel Drive"</span>]</span></span><span class="row"><span class="ln">10</span></span><span class="row gutterpass"><span class="ln">11</span>&gt; take the tarnished key</span><span class="row gutterpass"><span class="ln">12</span><span class="k">[OK: contains <span class="s">"You take the tarnished key"</span>]</span></span><span class="row gutterpass"><span class="ln">13</span><span class="k">[EVENT: true, type=<span class="s">"if.event.taken"</span> target=<span class="s">"key"</span>]</span></span><span class="row"><span class="ln">14</span></span><span class="row"><span class="ln">15</span><span class="c">[END GOAL]</span></span><span class="row"><span class="ln">16</span></span><span class="row"><span class="ln">17</span><span class="c"># Into the dark: the description must NOT be visible</span></span><span class="row gutterfail"><span class="ln">18</span>&gt; down</span><span class="row gutterfail"><span class="ln">19</span><span class="k bad">[OK: not contains <span class="s">"Brick vaults"</span>]</span></span><span class="row"><span class="ln">20</span></span><span class="row"><span class="ln">21</span>&gt; look</span><span class="row"><span class="ln">22</span><span class="k">[SKIP]</span></span></div>
+
+    <div class="turns" style="flex:1.15">
+      <div class="card pass">
+        <div class="cmd">&gt; north</div>
+        <div class="out"><mark>Gravel Drive</mark>
+The drive curves between bare lime trees, gravel crunching underfoot.</div>
+        <div class="assert"><span class="chip">contains</span> "Gravel Drive" <span style="color:var(--faint)">· line 9</span></div>
+      </div>
+
+      <div class="card fail sel">
+        <div class="cmd">&gt; down</div>
+        <div class="out">Brick vaults recede into the dark, and a draught moves along them.</div>
+        <div class="assert bad"><span class="chip">not contains</span> "Brick vaults" — <b>failed</b> <span style="color:var(--faint)">· line 19</span></div>
+      </div>
+
+      <div class="card sel" style="border-color:var(--accent)">
+        <div class="cmd">&gt; look</div>
+        <div class="out">Darkness. You can see <mark class="picking">nothing at all</mark>.</div>
+        <div class="assert">
+          <span class="chip">contains</span> "nothing at all"
+          <button class="btn primary">Assert</button>
+          <button class="btn">not contains</button>
+        </div>
+        <div class="hint" style="padding-top:6px">Pressing Assert rewrites <b>line 22 only</b> — <code>[SKIP]</code> becomes <code>[OK: contains "nothing at all"]</code>. Lines 1–21 are not re-serialized, re-indented, or re-ordered.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>The branch strip on top</b> is session dd4189's badge canvas with its columns re-pointed at files (D2). The dashed column is an explorer proposal (D10) — you open it, read it as an ordinary transcript, and accept or discard the file.
+  <b>The one thing to prove early:</b> that a surgical single-line rewrite is really enough for every form. <code>[OK]</code> + <code>text</code>…<code>end text</code> spans lines, so it is multi-line replacement, not single-line — <code>Rebless.swift</code> already does exactly that and its <code>BlessedBlock</code> (openIndex / closeIndex) is the model for it.
+</div>
+
+</body>
+</html>

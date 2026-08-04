@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ADR-300 mocks — the transcript editor</title>
+<link rel="stylesheet" href="mock-shared.css">
+<style>
+  .grid { max-width: 860px; margin: 0 auto 40px; padding: 0 20px; display: grid; gap: 10px; }
+  .row2 {
+    border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px;
+    background: var(--project); text-decoration: none; color: inherit; display: block;
+  }
+  .row2 b { font-size: 14px; }
+  .row2 .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+  .row2 p { margin: 5px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.5; }
+  .row2.rec { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="note">
+  <h1>The transcript editor — five mocks</h1>
+  <p class="sub">ADR-300 · session dd4189 · 2026-08-04, written overnight</p>
+  <p>These accompany <code>docs/architecture/adrs/adr-300-transcript-editor.md</code> and the evidence in <code>research-20260804-transcript-authoring.md</code>. They exist to make ADR-300's <b>Q1</b> concrete: does the editor edit a parsed model, or the text?</p>
+  <p>Numbers behind all of this: <code>[OK: contains "…"]</code> is <b>89.8 %</b> of the assertions in the real corpus (2822 of 3144, across 183 files). Verbatim <code>[OK]</code> — the only assertion the skein exporter could produce — has <b>5 uses in the entire repository</b>.</p>
+</div>
+
+<div class="grid">
+  <a class="row2" href="mock-1-cards.html">
+    <span class="k">Model-based</span><br>
+    <b>1 · Cards over a model</b>
+    <p>Every turn is a card; assertions are edited through controls and the grammar is never visible. Risks reformatting hand-written files.</p>
+  </a>
+  <a class="row2" href="mock-2-selection.html">
+    <span class="k">The core gesture</span><br>
+    <b>2 · Select the words that matter</b>
+    <p>Not a layout — one interaction in four states. Drag across the actual output, get <code>[OK: contains "…"]</code>. Includes the re-bless drift case.</p>
+  </a>
+  <a class="row2" href="mock-3-three-pane.html">
+    <span class="k">The merged tab</span><br>
+    <b>3 · Files, turns, and the running game</b>
+    <p>What ADR-300 D9 looks like: Testing and Test become one tab. Also where explorer proposals (D10) land.</p>
+  </a>
+  <a class="row2" href="mock-4-text-first.html">
+    <span class="k">Text-first</span><br>
+    <b>4 · The file, with a gutter</b>
+    <p>No model, no round trip. Syntax highlighting plus inline run results. Preserves bytes; leaves you typing brackets.</p>
+  </a>
+  <a class="row2 rec" href="mock-5-hybrid.html">
+    <span class="k">Hybrid — recommended</span><br>
+    <b>5 · Source and turns, side by side</b>
+    <p>The file is the truth on the left; the turns are the place you act on the right. Assertions are written as surgical text edits, so bytes survive and the whole grammar stays reachable.</p>
+  </a>
+</div>
+
+<div class="legend">
+  Read them in order 2 → 5 → 3 if you only have time for three: 2 is the gesture that justifies the tool, 5 is the shape I would build, 3 is how it sits in the window.
+</div>
+
+</body>
+</html>

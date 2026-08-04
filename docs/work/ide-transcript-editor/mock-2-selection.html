@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock 2 — Select the words that matter</title>
+<link rel="stylesheet" href="mock-shared.css">
+</head>
+<body>
+
+<div class="note">
+  <span class="tag">Mock 2 of 5 · the core gesture</span>
+  <h1>Select the words that matter</h1>
+  <p class="sub">ADR-300 D4. This mock is not a layout — it is one interaction, shown in three states.</p>
+  <p>The corpus says <code>[OK: contains "…"]</code> is <b>89.8 %</b> of every assertion authors write (2822 of 3144) — and the contains family is <b>92.6 %</b>. ADR-299's exporter could only emit verbatim <code>[OK]</code> — <b>5 uses in the whole repository</b>. So the primary gesture has to produce a <i>fragment</i>, and the natural way to name a fragment is to select it.</p>
+  <p><b>Drag across the actual output. The editor writes the assertion.</b> Accept the whole response instead and you get <code>[OK]</code> + a literal block. The rare form stays reachable; the common one is one drag.</p>
+</div>
+
+<div class="window">
+  <div class="toolbar">
+    <span class="status"><b>State 1</b> — the turn has run. Nothing is asserted yet.</span>
+  </div>
+  <div class="body" style="min-height:0">
+    <div class="turns">
+      <div class="card">
+        <div class="cmd">&gt; north</div>
+        <div class="out">Gravel Drive
+The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.
+
+You can see Tobias here.</div>
+        <div class="assert none"><span class="chip">skip</span> nothing asserted yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="window">
+  <div class="toolbar">
+    <span class="status"><b>State 2</b> — the author drags across two words.</span>
+  </div>
+  <div class="body" style="min-height:0">
+    <div class="turns">
+      <div class="card sel">
+        <div class="cmd">&gt; north</div>
+        <div class="out"><mark class="picking">Gravel Drive</mark>
+The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.
+
+You can see Tobias here.</div>
+        <div class="assert">
+          <span class="chip">contains</span> "Gravel Drive"
+          <button class="btn primary">Assert</button>
+          <button class="btn">not contains</button>
+          <button class="btn">exact (whole response)</button>
+        </div>
+      </div>
+      <div class="hint">The chip previews the assertion before it is written. "not contains" flips the same selection into the negative form — 87 uses, and the second most common thing authors want.</div>
+    </div>
+  </div>
+</div>
+
+<div class="window">
+  <div class="toolbar">
+    <span class="status"><b>State 3</b> — asserted, and the turn is green.</span>
+  </div>
+  <div class="body" style="min-height:0">
+    <div class="turns">
+      <div class="card pass">
+        <div class="cmd">&gt; north</div>
+        <div class="out"><mark>Gravel Drive</mark>
+The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.
+
+You can see Tobias here.</div>
+        <div class="assert"><span class="chip">contains</span> "Gravel Drive"</div>
+      </div>
+      <div class="hint">The highlight persists: it shows <i>which part of this response the test actually pins</i>. Everything unmarked is free to change without breaking anything — which is the whole reason authors reach for <code>contains</code> over exact match.</div>
+    </div>
+  </div>
+</div>
+
+<div class="window">
+  <div class="toolbar">
+    <span class="status"><b>The drift case</b> — prose reworded; ADR-282 D2 / ADR-300 D7.</span>
+  </div>
+  <div class="body" style="min-height:0">
+    <div class="turns">
+      <div class="card fail">
+        <div class="cmd">&gt; take the tarnished key</div>
+        <div class="out">You pick up the tarnished key.</div>
+        <div class="assert bad">
+          <span class="chip">contains</span> "You take the tarnished key" — <b>failed</b>
+        </div>
+        <div class="assert" style="color:var(--dim)">
+          <button class="btn">Keep the claim, pick new words</button>
+          <button class="btn">Replace with whole response</button>
+        </div>
+      </div>
+      <div class="hint"><code>Rebless.swift</code> already refuses to silently widen a <code>contains</code> fragment into the whole new response — that would weaken a claim the author made on purpose. So the refusal becomes two explicit buttons instead of one automatic rewrite. This is the affordance ADR-282 D2 always implied and never had a home for.</div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>Why this matters more than the layout:</b> whichever of mocks 1, 3, 4 or 5 wins, this gesture is the thing that makes the tool worth building. It is the one capability the skein could not have at any level of polish, because "which fragment do I care about" is a judgment it had nowhere to put.
+</div>
+
+</body>
+</html>

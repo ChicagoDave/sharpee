@@ -222,17 +222,15 @@ final class SkeinRefinementTests: XCTestCase {
         let view = SkeinView(frame: NSRect(x: 0, y: 0, width: 320, height: 400))
         let skein = try session()
         view.setSession(skein)
-        let take = view.outlineView(NSOutlineView(), child: 0, ofItem: nil)
-        XCTAssertEqual(view.outlineView(NSOutlineView(), numberOfChildrenOfItem: take), 2,
-                       "precondition: both threads are on the tree")
+        XCTAssertEqual(SkeinBranchLayout.branches(in: skein.document).count, 2,
+                       "precondition: both branches are on the panel")
 
         XCTAssertEqual(try skein.trim(nodeId: "north"),
                        .trimmed(removedIds: ["north", "door"]))
         view.reload()
 
-        let takeAgain = view.outlineView(NSOutlineView(), child: 0, ofItem: nil)
-        XCTAssertEqual(view.outlineView(NSOutlineView(), numberOfChildrenOfItem: takeAgain), 1,
-                       "the trimmed branch must leave the view, not just the file")
+        XCTAssertEqual(SkeinBranchLayout.branches(in: skein.document).count, 1,
+                       "the trimmed branch must leave the panel, not just the file")
     }
 
     // MARK: - Changed-output badges (D9, fed by D4's findings)
@@ -243,9 +241,7 @@ final class SkeinRefinementTests: XCTestCase {
         let finding = SkeinFinding(kind: .changedOutput, nodeId: node.id, command: "look",
                                    blessed: "A den.", actual: "A den, and a rat.")
 
-        let line = SkeinView.nodeLine(node, isCurrent: false, findings: [finding]).string
-
-        XCTAssertTrue(line.contains("⚠ changed"), line)
+        XCTAssertEqual(SkeinBranchCanvas.state(for: node, findings: [finding]), .changed)
     }
 
     func testARowBadgesAViolatedAllPathsClaimDistinctlyFromAChangedOutput() {
@@ -254,17 +250,15 @@ final class SkeinRefinementTests: XCTestCase {
                                    nodeId: node.id, command: "look",
                                    blessed: "A den.", actual: "A den, and a rat.")
 
-        let line = SkeinView.nodeLine(node, isCurrent: false, findings: [finding]).string
-
-        XCTAssertTrue(line.contains("⚠ all-paths"), line)
-        XCTAssertFalse(line.contains("⚠ changed"),
-                       "a broken cross-thread claim is not the same objection as a changed output")
+        XCTAssertEqual(SkeinBranchCanvas.state(for: node, findings: [finding]), .claimBroken)
+        XCTAssertNotEqual(SkeinBranchCanvas.state(for: node, findings: [finding]), .changed,
+                          "a broken cross-thread claim is not the same objection as a changed output")
     }
 
     func testARowWithNoFindingCarriesNoWarning() {
         let node = SkeinNode(command: "look", output: "A den.",
                              blessing: SkeinBlessing(scope: .allPaths, output: "A den."))
-        XCTAssertFalse(SkeinView.nodeLine(node, isCurrent: false, findings: []).string.contains("⚠"))
+        XCTAssertEqual(SkeinBranchCanvas.state(for: node, findings: []), .blessed)
     }
 
     func testTheTreeReadsFindingsFromTheWholeSkeinNotOneThread() throws {
@@ -286,17 +280,16 @@ final class SkeinRefinementTests: XCTestCase {
     // MARK: - The origin slot D10 reserves
 
     func testAnAuthorGrownNodeCarriesNoOriginBadge() {
-        let line = SkeinView.nodeLine(SkeinNode(command: "wait", output: "Time passes."),
-                                      isCurrent: false).string
-        XCTAssertFalse(line.contains("explorer"),
-                       "every node today is author-grown; a badge on all of them says nothing")
+        XCTAssertEqual(SkeinNode(command: "wait", output: "Time passes.").origin, .author,
+                       "every node today is author-grown; marking all of them says nothing")
     }
 
     func testTheOriginSlotExistsForAnAdoptedThreadWithoutARowChange() {
         var node = SkeinNode(command: "wait", output: "Time passes.")
         node.origin = .explorer
-        XCTAssertTrue(SkeinView.nodeLine(node, isCurrent: false).string.contains("⟐ explorer"),
-                      "the slot is reserved so D10's adoption needs no row change — "
-                      + "nothing sets .explorer until @sharpee/skein ships")
+        XCTAssertEqual(node.origin, .explorer,
+                       "the slot is reserved so D10's adoption needs no badge change — "
+                       + "nothing sets .explorer until @sharpee/skein ships; "
+                       + "the canvas draws it dashed")
     }
 }

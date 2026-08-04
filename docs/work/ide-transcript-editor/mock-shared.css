@@ -1,0 +1,228 @@
+/* mock-shared.css — the IDE's own palette (tools/ide/SharpeeIDE/Theme.swift),
+   so the mocks read as Chord Writer rather than as a web page.
+   Light = Catppuccin Latte, dark = the IDE's dark set. */
+
+:root {
+  --rail: #DCE0E8;
+  --project: #E6E9EF;
+  --editor: #EFF1F5;
+  --play: #E6E9EF;
+  --border: #ACB0BE;
+  --fg: #4C4F69;
+  --dim: #6C6F85;
+  --faint: #9CA0B0;
+  --accent: #1E66F5;
+  --green: #40A02B;
+  --red: #D20F39;
+  --amber: #FE640B;
+  --mauve: #8839EF;
+  --green-fill: rgba(64, 160, 43, 0.10);
+  --green-edge: rgba(64, 160, 43, 0.38);
+  --red-fill: rgba(210, 15, 57, 0.09);
+  --red-edge: rgba(210, 15, 57, 0.34);
+  --amber-fill: rgba(254, 100, 11, 0.10);
+  --amber-edge: rgba(254, 100, 11, 0.38);
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rail: #16171D;
+    --project: #262832;
+    --editor: #1E1F26;
+    --play: #13141A;
+    --border: #3A3C48;
+    --fg: #D8D9E0;
+    --dim: #8E90A0;
+    --faint: #5C5F6D;
+    --accent: #89B4FA;
+    --green: #A6E3A1;
+    --red: #F38BA8;
+    --amber: #FAB387;
+    --mauve: #CBA6F7;
+    --green-fill: rgba(166, 227, 161, 0.12);
+    --green-edge: rgba(166, 227, 161, 0.36);
+    --red-fill: rgba(243, 139, 168, 0.11);
+    --red-edge: rgba(243, 139, 168, 0.34);
+    --amber-fill: rgba(250, 179, 135, 0.12);
+    --amber-edge: rgba(250, 179, 135, 0.36);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--editor);
+  -webkit-font-smoothing: antialiased;
+}
+
+.note {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 22px 20px 6px;
+}
+.note h1 { font-size: 19px; margin: 0 0 4px; font-weight: 600; }
+.note .sub { color: var(--dim); margin: 0 0 10px; font-size: 12.5px; }
+.note p { color: var(--dim); line-height: 1.55; margin: 0 0 10px; }
+.note code { font-family: var(--mono); font-size: 11.5px; color: var(--fg); }
+.note .tag {
+  display: inline-block; font-size: 10.5px; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--accent);
+  border: 1px solid var(--accent); border-radius: 3px;
+  padding: 1px 6px; margin-bottom: 8px;
+}
+
+/* --- window chrome ------------------------------------------------------ */
+
+.window {
+  max-width: 1180px;
+  margin: 12px auto 40px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--editor);
+  box-shadow: 0 8px 30px rgba(0,0,0,.10);
+}
+
+.tabstrip {
+  display: flex; align-items: stretch;
+  background: var(--rail);
+  border-bottom: 1px solid var(--border);
+  height: 30px;
+}
+.tabstrip .tab {
+  display: flex; align-items: center;
+  padding: 0 13px; font-size: 12px; color: var(--dim);
+  border-top: 2px solid transparent; cursor: default; white-space: nowrap;
+}
+.tabstrip .tab.on { color: var(--fg); border-top-color: var(--accent); background: var(--editor); }
+.tabstrip .spacer { flex: 1; }
+
+.toolbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+  background: var(--project); flex-wrap: wrap;
+}
+.btn {
+  font: inherit; font-size: 11px; color: var(--fg);
+  background: var(--editor); border: 1px solid var(--border);
+  border-radius: 4px; padding: 3px 9px; cursor: default; white-space: nowrap;
+}
+.btn.primary { border-color: var(--accent); color: var(--accent); }
+.btn[disabled] { opacity: .42; }
+.status { font-size: 11px; color: var(--dim); margin-left: 4px; }
+
+.body { display: flex; min-height: 520px; }
+
+/* --- branch columns ----------------------------------------------------- */
+
+.branches {
+  background: var(--project); border-right: 1px solid var(--border);
+  padding: 12px; display: flex; gap: 16px; overflow-x: auto;
+}
+.branchcol { display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+.branchcol .colname {
+  font-size: 10.5px; color: var(--dim); margin-bottom: 7px;
+  font-family: var(--mono); white-space: nowrap;
+}
+.badge {
+  font-family: var(--mono); font-size: 11px; color: var(--fg);
+  border: 1px solid var(--border); border-radius: 11px;
+  padding: 3px 11px; background: var(--editor); white-space: nowrap;
+}
+.badge.pass { background: var(--green-fill); border-color: var(--green-edge); }
+.badge.fail { background: var(--red-fill); border-color: var(--red-edge); }
+.badge.stale { background: var(--amber-fill); border-color: var(--amber-edge); }
+.badge.sel { border-color: var(--accent); border-width: 2px; padding: 2px 10px; }
+.badge.proposed { border-style: dashed; color: var(--dim); }
+.conn { width: 1px; height: 12px; background: var(--border); margin-left: 11px; }
+
+/* --- turn cards --------------------------------------------------------- */
+
+.turns { flex: 1; padding: 10px; overflow: auto; background: var(--editor); }
+.card {
+  border: 1px solid var(--border); border-radius: 5px;
+  background: var(--editor); padding: 9px 10px; margin-bottom: 7px;
+}
+.card.pass { background: var(--green-fill); border-color: var(--green-edge); }
+.card.fail { background: var(--red-fill); border-color: var(--red-edge); }
+.card.stale { background: var(--amber-fill); border-color: var(--amber-edge); }
+.card.sel { border-color: var(--accent); border-width: 2px; padding: 8px 9px; }
+.cmd { font-family: var(--mono); font-size: 11.5px; color: var(--fg); }
+.out {
+  font-size: 12px; color: var(--dim); line-height: 1.5;
+  margin-top: 5px; white-space: pre-wrap;
+}
+.assert {
+  font-family: var(--mono); font-size: 11px; margin-top: 7px;
+  color: var(--green); display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.assert.none { color: var(--faint); }
+.assert.bad { color: var(--red); }
+.assert .chip {
+  border: 1px solid currentColor; border-radius: 3px;
+  padding: 1px 6px; font-size: 10.5px;
+}
+mark {
+  background: var(--green-fill); color: var(--fg);
+  box-shadow: 0 0 0 1px var(--green-edge); border-radius: 2px; padding: 0 1px;
+}
+mark.picking { background: rgba(30,102,245,.18); box-shadow: 0 0 0 1px var(--accent); }
+
+.goal {
+  font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--mauve); margin: 12px 0 6px; display: flex; align-items: center; gap: 8px;
+}
+.goal::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+.hint {
+  font-size: 11px; color: var(--faint); font-style: italic;
+  padding: 4px 2px 0;
+}
+
+/* --- generic panes ------------------------------------------------------ */
+
+.pane { border-right: 1px solid var(--border); background: var(--project); }
+.pane:last-child { border-right: none; }
+.pane h3 {
+  font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--faint); margin: 0; padding: 9px 10px 6px; font-weight: 600;
+}
+.filelist { list-style: none; margin: 0; padding: 0 6px 10px; }
+.filelist li {
+  font-size: 11.5px; padding: 4px 8px; border-radius: 4px;
+  color: var(--dim); display: flex; align-items: center; gap: 7px;
+}
+.filelist li.on { background: var(--editor); color: var(--fg); }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.dot.pass { background: var(--green); }
+.dot.fail { background: var(--red); }
+.dot.stale { background: var(--amber); }
+.dot.none { background: var(--faint); }
+
+.src {
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.65;
+  white-space: pre; color: var(--fg); margin: 0; padding: 10px 0;
+  overflow: auto; flex: 1; background: var(--editor);
+}
+.src .ln { color: var(--faint); display: inline-block; width: 34px;
+           text-align: right; padding-right: 10px; user-select: none; }
+.src .k { color: var(--green); }
+.src .k.bad { color: var(--red); }
+.src .c { color: var(--faint); font-style: italic; }
+.src .h { color: var(--mauve); }
+.src .s { color: var(--amber); }
+.src .row { display: block; }
+.src .row.gutterfail { background: var(--red-fill); }
+.src .row.gutterpass { background: var(--green-fill); }
+
+.legend {
+  max-width: 1180px; margin: 0 auto 34px; padding: 0 20px;
+  color: var(--faint); font-size: 11.5px; line-height: 1.6;
+}
+.legend b { color: var(--dim); font-weight: 600; }

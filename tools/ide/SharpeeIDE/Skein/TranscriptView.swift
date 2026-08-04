@@ -36,12 +36,92 @@ final class TranscriptView: NSView {
     private let scrollView = NSScrollView()
     private let tableView = NSTableView()
     private let emptyLabel = NSTextField(
-        labelWithString: "Select a node in the Skein — its thread reads here")
+        labelWithString: "Select a node above — its thread reads here")
 
     private static let bodyFont = NSFont.systemFont(ofSize: 11.5)
     private static let monoFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
     private static let horizontalInset: CGFloat = 12
     private static let verticalInset: CGFloat = 8
+    /// The card's inset from the pane edge, and its own inner padding.
+    private static let cardMargin: CGFloat = 8
+    private static let cardPadding: CGFloat = 8
+    /// What the skein currently says about a block, carried as the background
+    /// behind the response and nothing else — plain when unblessed, green when
+    /// blessed, red when the blessing no longer holds (David's ruling).
+    ///
+    /// Deliberately NOT a ✓/✗ column. A glyph per turn reads as a control
+    /// inviting a per-segment bless/unbless gesture, which is the interaction
+    /// I7 has and which David rejects; and a checkmark on every approved line
+    /// is loud about the ordinary case. Approval should be quiet and ambient.
+    enum Verdict {
+        /// Blessed, and what it prints still matches (D3).
+        case holds
+        /// Verification objects to this node (D4) — the text moved, or an
+        /// all-paths claim is violated here.
+        case objected
+        /// Nobody has vouched for this node, so there is nothing to hold or
+        /// break. Deliberately not a verdict: D1 has no negative judgment.
+        case unjudged
+
+        /// The card's fill. Every block is a box — the boxes are what separate
+        /// one turn from the next — and the box's tint is the verdict.
+        ///
+        /// Tinting the TEXT was the wrong surface: a coloured band hugging the
+        /// glyphs reads as highlighter pen, and it left the blocks themselves
+        /// undelimited so a long response ran into the next command.
+        var cardFill: NSColor {
+            switch self {
+            case .holds: return NSColor.systemGreen.withAlphaComponent(0.10)
+            case .objected: return NSColor.systemRed.withAlphaComponent(0.09)
+            case .unjudged: return Theme.editorBackground
+            }
+        }
+
+        /// The card's hairline, a touch stronger than its fill so the box has
+        /// an edge in both light and dark.
+        var cardBorder: NSColor {
+            switch self {
+            case .holds: return NSColor.systemGreen.withAlphaComponent(0.35)
+            case .objected: return NSColor.systemRed.withAlphaComponent(0.32)
+            case .unjudged: return Theme.border
+            }
+        }
+    }
+
+    /// The verdict for one block. Pure, so what the column claims is testable
+    /// without a window.
+    ///
+    /// - Parameters:
+    ///   - node: the node the block renders.
+    ///   - findings: verification's objections against it.
+    static func verdict(for node: SkeinNode, findings: [SkeinFinding]) -> Verdict {
+        if !findings.isEmpty { return .objected }
+        return node.blessing == nil ? .unjudged : .holds
+    }
+
+    /// The node whose blessing an objection at `node` is withdrawn at, or nil
+    /// when there is nothing to withdraw.
+    ///
+    /// An all-paths blessing is DECLARED at one node and ENFORCED at every node
+    /// carrying the same command (D4). So the red rows are almost never the row
+    /// holding the blessing — and acting on the selected node left the author
+    /// pressing a disabled button on exactly the rows they wanted to undo. The
+    /// finding already names the declaring node; this reads it.
+    ///
+    /// - Parameters:
+    ///   - node: the node the block renders.
+    ///   - findings: verification's objections against it.
+    /// - Returns: the declaring node for an invariance violation, this node for
+    ///   a changed-output finding or a plain blessing, nil when neither.
+    static func revocableBlessingNode(for node: SkeinNode,
+                                      findings: [SkeinFinding]) -> String? {
+        for finding in findings {
+            if case .invarianceViolated(let blessedNodeId) = finding.kind {
+                return blessedNodeId
+            }
+        }
+        return node.blessing == nil ? nil : node.id
+    }
 
     private weak var session: SkeinSession?
 
@@ -89,6 +169,11 @@ final class TranscriptView: NSView {
         tableView.headerView = nil
         tableView.backgroundColor = .clear
         tableView.usesAlternatingRowBackgroundColors = false
+        // AppKit's selection paints a saturated blue behind the block, and the
+        // block's text carries its own explicit colours — so a selected block
+        // rendered dark-on-blue and could not be read. The card draws its own
+        // selection instead.
+        tableView.selectionHighlightStyle = .none
         // AppKit re-standardizes row metrics unless the style is .custom — the
         // same fix SkeinView and the directory pane carry.
         tableView.rowSizeStyle = .custom
@@ -123,21 +208,25 @@ final class TranscriptView: NSView {
 
             // Minting a test is a different kind of act from judging text —
             // it leaves the skein — so it sits on its own row rather than
-            // reading as a fourth verdict.
+            // reading as a fourth verdict. The status shares that row: this is
+            // the smaller half of a side pane, and three rows of chrome above
+            // the prose is the problem the tree half just shed.
             exportButton.topAnchor.constraint(equalTo: blessButton.bottomAnchor, constant: 4),
             exportButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
 
-            statusLabel.topAnchor.constraint(equalTo: exportButton.bottomAnchor, constant: 6),
-            statusLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            statusLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            statusLabel.centerYAnchor.constraint(equalTo: exportButton.centerYAnchor),
+            statusLabel.leadingAnchor.constraint(equalTo: exportButton.trailingAnchor, constant: 10),
+            statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -8),
 
-            scrollView.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 6),
+            scrollView.topAnchor.constraint(equalTo: exportButton.bottomAnchor, constant: 6),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             emptyLabel.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            emptyLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 20),
+            emptyLabel.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            emptyLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 12),
+            emptyLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
         ])
     }
 
@@ -180,8 +269,20 @@ final class TranscriptView: NSView {
         measuredWidth = 0 // heights are recomputed against the current width
         tableView.reloadData()
 
-        if let selected, let row = nodes.firstIndex(where: { $0.id == selected }) {
+        // The block under discussion, in priority order: the one the author had
+        // selected if it survived, otherwise the thread's terminal node — the
+        // node the TREE selected to get here.
+        //
+        // Defaulting matters. The halves used to carry independent selections,
+        // so picking a node in the tree showed its thread with no block
+        // selected, and Bless / Unbless — which read this selection — were
+        // disabled against the very node the author had just chosen. That read
+        // as "you can't undo an all-paths blessing".
+        let target = selected.flatMap { id in nodes.contains { $0.id == id } ? id : nil }
+            ?? nodes.last?.id
+        if let target, let row = nodes.firstIndex(where: { $0.id == target }) {
             tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+            tableView.scrollRowToVisible(row)
         }
         emptyLabel.isHidden = !nodes.isEmpty
         statusLabel.stringValue = Self.headline(nodeCount: nodes.count, findings: findings)
@@ -205,6 +306,17 @@ final class TranscriptView: NSView {
         return nodes[row].id
     }
 
+    /// Selects the block for `nodeId` — the node the bless actions apply to.
+    ///
+    /// - Returns: true when that node is on the page; false selects nothing.
+    @discardableResult
+    func select(nodeId: String) -> Bool {
+        guard let row = nodes.firstIndex(where: { $0.id == nodeId }) else { return false }
+        tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        tableView.scrollRowToVisible(row)
+        return true
+    }
+
     func setStatus(_ text: String) {
         statusLabel.stringValue = text
     }
@@ -218,12 +330,23 @@ final class TranscriptView: NSView {
 
     private var isBusy = false
 
+    /// Guards the card rebuild in `tableViewSelectionDidChange` from re-entering
+    /// through the selection it restores.
+    private var isRepaintingForSelection = false
+
     private func updateActionAvailability() {
         let selected = selectedNodeId
-        let isBlessed = selected.flatMap { id in nodes.first(where: { $0.id == id })?.blessing } != nil
         blessButton.isEnabled = selected != nil && !isBusy
         blessAllButton.isEnabled = selected != nil && !isBusy
-        unblessButton.isEnabled = isBlessed && !isBusy
+
+        // Unbless follows the blessing, not the selection. On a row an
+        // all-paths claim objects to, the blessing lives on the node that
+        // DECLARED it — so the button says which one it will withdraw rather
+        // than sitting disabled on the very rows the author wants undone.
+        let revocable = revocableNodeForSelection()
+        unblessButton.isEnabled = revocable != nil && !isBusy
+        unblessButton.title = (revocable != nil && revocable != selected)
+            ? "Unbless All Paths" : "Unbless"
         // Export follows the THREAD, not the selection: a test is minted from
         // the whole thread on the page, and it needs at least one blessing to
         // assert anything (D7). Disabled says so before the save panel does.
@@ -249,8 +372,18 @@ final class TranscriptView: NSView {
     }
 
     @objc private func unblessClicked() {
-        guard let id = selectedNodeId else { return }
+        guard let id = revocableNodeForSelection() else { return }
         onUnbless?(id)
+    }
+
+    /// The blessing the Unbless button withdraws: the selected node's own, or —
+    /// when the selection is a node an all-paths claim OBJECTS to — the claim
+    /// itself, declared elsewhere.
+    private func revocableNodeForSelection() -> String? {
+        guard let id = selectedNodeId, let node = nodes.first(where: { $0.id == id }) else {
+            return nil
+        }
+        return Self.revocableBlessingNode(for: node, findings: findingsByNodeId[id] ?? [])
     }
 
     @objc private func exportClicked() {
@@ -270,7 +403,7 @@ final class TranscriptView: NSView {
 
     /// The width prose wraps at: the table's column less the block's own inset.
     private func textWidth() -> CGFloat {
-        max(80, tableView.bounds.width - Self.horizontalInset * 2)
+        max(80, tableView.bounds.width - (Self.cardMargin + Self.cardPadding) * 2)
     }
 
     // MARK: - Rendering
@@ -297,9 +430,13 @@ final class TranscriptView: NSView {
             string: heading,
             attributes: [.foregroundColor: Theme.foreground, .font: monoFont]))
 
-        if let blessing = node.blessing {
+        // Only the SCOPE is worth words. That a node is blessed is already said
+        // by the green band under it; a "✓ blessed" caption beside every
+        // approved command restates it. An all-paths claim is a different and
+        // much stronger assertion, so it keeps its name.
+        if node.blessing?.scope == .allPaths {
             text.append(NSAttributedString(
-                string: blessing.scope == .allPaths ? "   ✓ blessed for all paths" : "   ✓ blessed",
+                string: "   all paths",
                 attributes: [.foregroundColor: NSColor.systemGreen, .font: bodyFont]))
         }
         if !node.forcings.isEmpty {
@@ -308,9 +445,14 @@ final class TranscriptView: NSView {
                 attributes: [.foregroundColor: NSColor.systemOrange, .font: bodyFont]))
         }
 
+        // The verdict is the CARD's tint, not the text's — see Verdict.cardFill.
+        let responseAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: Theme.foregroundDim,
+            .font: bodyFont,
+        ]
         text.append(NSAttributedString(
             string: "\n\(actual.isEmpty ? "(no output)" : actual)\n",
-            attributes: [.foregroundColor: Theme.foregroundDim, .font: bodyFont]))
+            attributes: responseAttributes))
 
         for finding in findings {
             text.append(NSAttributedString(
@@ -334,20 +476,43 @@ extension TranscriptView: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard row < nodes.count else { return nil }
+        // Every block is a card: a box with its own fill, so turns are visibly
+        // separate objects rather than a wall of prose, and the verdict colours
+        // the box instead of highlighter-penning the words.
+        let node = nodes[row]
+        let verdict = Self.verdict(for: node, findings: findingsByNodeId[node.id] ?? [])
+        let isSelected = selectedNodeId == node.id
+
         let container = NSView()
+
+        let card = NSView()
+        card.wantsLayer = true
+        card.layer?.cornerRadius = 5
+        card.layer?.backgroundColor = verdict.cardFill.cgColor
+        card.layer?.borderWidth = isSelected ? 2 : 1
+        card.layer?.borderColor = (isSelected ? Theme.accent : verdict.cardBorder).cgColor
+        card.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(card)
+
         let field = NSTextField(labelWithAttributedString: attributedBlock(forRow: row))
         field.drawsBackground = false
         field.lineBreakMode = .byWordWrapping
         field.maximumNumberOfLines = 0
         field.preferredMaxLayoutWidth = textWidth()
         field.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(field)
+        card.addSubview(field)
+
         NSLayoutConstraint.activate([
-            field.topAnchor.constraint(equalTo: container.topAnchor, constant: Self.verticalInset / 2),
-            field.leadingAnchor.constraint(equalTo: container.leadingAnchor,
-                                           constant: Self.horizontalInset),
-            field.trailingAnchor.constraint(equalTo: container.trailingAnchor,
-                                            constant: -Self.horizontalInset),
+            card.topAnchor.constraint(equalTo: container.topAnchor),
+            card.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            card.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: Self.cardMargin),
+            card.trailingAnchor.constraint(equalTo: container.trailingAnchor,
+                                           constant: -Self.cardMargin),
+
+            field.topAnchor.constraint(equalTo: card.topAnchor, constant: Self.cardPadding),
+            field.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -Self.cardPadding),
+            field.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: Self.cardPadding),
+            field.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -Self.cardPadding),
         ])
         return container
     }
@@ -357,11 +522,23 @@ extension TranscriptView: NSTableViewDelegate {
         let bounds = attributedBlock(forRow: row).boundingRect(
             with: NSSize(width: textWidth(), height: .greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading])
-        return ceil(bounds.height) + Self.verticalInset
+        return ceil(bounds.height) + Self.cardPadding * 2
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {
         updateActionAvailability()
+        // Each card draws its own selection border, so the cards are rebuilt
+        // when the selection moves. Restoring the selection afterwards fires
+        // this delegate again — guarded, or it recurses until the stack blows.
+        guard !isRepaintingForSelection else { return }
+        isRepaintingForSelection = true
+        defer { isRepaintingForSelection = false }
+
+        let selected = tableView.selectedRow
+        tableView.reloadData()
+        if selected >= 0, selected < nodes.count {
+            tableView.selectRowIndexes(IndexSet(integer: selected), byExtendingSelection: false)
+        }
     }
 
     private func attributedBlock(forRow row: Int) -> NSAttributedString {

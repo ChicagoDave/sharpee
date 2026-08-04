@@ -142,82 +142,58 @@ final class SkeinViewTests: XCTestCase {
                        "a stale id must not move play somewhere it never went")
     }
 
-    // MARK: - The tree the view builds
+    // MARK: - The branch grid the panel draws
 
-    func testTheTreeRendersThreadsWithTheStoryStartAsTheTrunkNotARow() throws {
-        let view = SkeinView(frame: NSRect(x: 0, y: 0, width: 320, height: 400))
-        view.setSession(try session(twoThreadDocument()))
+    func testEachRootToLeafPathBecomesItsOwnColumn() {
+        // Two leaves under a shared prefix = two branches, side by side. The
+        // outline view folded the second under the first; branches are the
+        // unit the author reasons about, so they get columns.
+        let branches = SkeinBranchLayout.branches(in: twoThreadDocument())
 
-        // The root (empty command) is the story-start position, not a row —
-        // its children are what an author recognizes as a thread's start.
-        XCTAssertEqual(view.outlineView(NSOutlineView(), numberOfChildrenOfItem: nil), 1)
-        let take = view.outlineView(NSOutlineView(), child: 0, ofItem: nil)
-        XCTAssertTrue(view.outlineView(NSOutlineView(), isItemExpandable: take))
-
-        // Both threads hang off the shared prefix — a branch, not two trunks.
-        XCTAssertEqual(view.outlineView(NSOutlineView(), numberOfChildrenOfItem: take), 2)
+        XCTAssertEqual(branches.count, 2)
+        XCTAssertEqual(branches[0].badges.map(\.command), ["take lamp", "go north"])
+        XCTAssertEqual(branches[1].badges.map(\.command), ["take lamp", "go south"])
+        XCTAssertEqual(branches.map(\.column), [0, 1])
     }
 
-    func testAnEmptySkeinRendersNoRows() throws {
-        let view = SkeinView(frame: NSRect(x: 0, y: 0, width: 320, height: 400))
-        view.setSession(try session(SkeinDocument(seed: 1,
-                                                  root: SkeinNode(command: "", output: ""))))
-        XCTAssertEqual(view.outlineView(NSOutlineView(), numberOfChildrenOfItem: nil), 0)
+    func testASharedPrefixIsRepeatedInEveryColumnItBelongsTo() {
+        // A whole branch has to read top to bottom without the eye jumping
+        // sideways, which a shared spine would break.
+        let branches = SkeinBranchLayout.branches(in: twoThreadDocument())
+
+        XCTAssertEqual(branches[0].badges.first?.nodeId, "n-take")
+        XCTAssertEqual(branches[1].badges.first?.nodeId, "n-take")
+        XCTAssertEqual(branches[0].badges.first?.depth, 0)
+        XCTAssertEqual(branches[1].badges.first?.depth, 0)
     }
 
-    func testTheTreeFollowsTheDocumentWhenPlayGrowsIt() throws {
-        let view = SkeinView(frame: NSRect(x: 0, y: 0, width: 320, height: 400))
-        let session = try session(twoThreadDocument())
-        view.setSession(session)
+    func testTheStoryStartIsNotABadge() {
+        // Its command is empty, so it would draw as a blank capsule at the head
+        // of every column, saying nothing and costing a row.
+        let branches = SkeinBranchLayout.branches(in: twoThreadDocument())
 
-        _ = try session.growForcedSibling(of: "n-north",
-                                          forcings: ["stdlib.throwing.breaks#1=no"])
-        view.reload()
-
-        let take = view.outlineView(NSOutlineView(), child: 0, ofItem: nil)
-        XCTAssertEqual(view.outlineView(NSOutlineView(), numberOfChildrenOfItem: take), 3,
-                       "a branch grown underneath must appear without a re-open")
+        XCTAssertFalse(branches.contains { $0.badges.contains { $0.command.isEmpty } })
+        XCTAssertFalse(branches.contains { $0.badges.contains { $0.nodeId == "n-root" } })
     }
 
-    // MARK: - Row rendering (badges survive a screenshot)
+    func testABranchNamesItsLastTurnAsItsTerminal() {
+        let branches = SkeinBranchLayout.branches(in: twoThreadDocument())
 
-    func testARowShowsCommandBlessingForcingTagsAndWherePlaySits() {
-        let node = SkeinNode(command: "throw bottle at anvil", output: "It shatters.",
-                             tags: ["troll death"],
-                             blessing: SkeinBlessing(scope: .thisThread, output: "It shatters."),
-                             annotation: "the fragile case",
-                             isLocked: true,
-                             forcings: ["stdlib.throwing.breaks#1=yes"])
-        let line = SkeinView.nodeLine(node, isCurrent: true).string
-
-        XCTAssertTrue(line.contains("> throw bottle at anvil"))
-        XCTAssertTrue(line.contains("▶"), "the row shows where play currently sits")
-        XCTAssertTrue(line.contains("✓ blessed"))
-        XCTAssertTrue(line.contains("⑂ stdlib.throwing.breaks#1=yes"))
-        XCTAssertTrue(line.contains("[troll death]"))
-        XCTAssertTrue(line.contains("🔒"))
-        XCTAssertTrue(line.contains("the fragile case"))
+        XCTAssertEqual(branches[0].terminalNodeId, "n-north")
+        XCTAssertEqual(branches[1].terminalNodeId, "n-south")
     }
 
-    func testAnAllPathsBlessingReadsDifferentlyFromAPlainOne() {
-        let allPaths = SkeinNode(command: "look", output: "A den.",
-                                 blessing: SkeinBlessing(scope: .allPaths, output: "A den."))
-        let plain = SkeinNode(command: "look", output: "A den.",
-                              blessing: SkeinBlessing(scope: .thisThread, output: "A den."))
-
-        XCTAssertTrue(SkeinView.nodeLine(allPaths, isCurrent: false).string.contains("✓ all paths"),
-                      "an invariance claim must be visible as one (D4)")
-        XCTAssertTrue(SkeinView.nodeLine(plain, isCurrent: false).string.contains("✓ blessed"))
-        XCTAssertFalse(SkeinView.nodeLine(plain, isCurrent: false).string.contains("all paths"))
+    func testAnEmptySkeinHasNoBranches() {
+        let empty = SkeinDocument(seed: 1, root: SkeinNode(command: "", output: ""))
+        XCTAssertTrue(SkeinBranchLayout.branches(in: empty).isEmpty)
     }
 
-    func testAnUnmarkedRowCarriesNoBadges() {
-        let line = SkeinView.nodeLine(SkeinNode(command: "wait", output: "Time passes."),
-                                      isCurrent: false).string
-        XCTAssertTrue(line.contains("> wait"))
-        for badge in ["✓", "⑂", "[", "🔒", "▶"] {
-            XCTAssertFalse(line.contains(badge), "unmarked row must not show \(badge)")
-        }
+    func testANodeIsFoundInTheLeftmostColumnThatCarriesIt() {
+        let branches = SkeinBranchLayout.branches(in: twoThreadDocument())
+        let shared = SkeinBranchLayout.badge(forNodeId: "n-take", in: branches)
+
+        XCTAssertEqual(shared?.column, 0, "a selection made elsewhere lands in one place")
+        XCTAssertNil(SkeinBranchLayout.badge(forNodeId: "gone", in: branches))
     }
 
     // MARK: - Forcing parse → the spec the live client loads

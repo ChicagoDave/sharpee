@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock 1 — Cards over a model</title>
+<link rel="stylesheet" href="mock-shared.css">
+</head>
+<body>
+
+<div class="note">
+  <span class="tag">Mock 1 of 5 · model-based</span>
+  <h1>Cards over a model</h1>
+  <p class="sub">ADR-300 Q1, option A. The editor parses the transcript into turns and renders each as a card. Assertions are edited through controls, never by typing brackets.</p>
+  <p>Branch columns on the left are <b>transcript files</b> (ADR-300 D2), not tree paths — each column is something you can commit and diff. The badge colour is the last run's verdict for that turn. Selecting a column opens it as cards.</p>
+  <p><b>The bet:</b> authors never see the grammar. <b>The risk:</b> a round trip through the parser reformats files people hand-wrote — comment placement, blank lines, block indentation. That is Q1.</p>
+</div>
+
+<div class="window">
+  <div class="tabstrip">
+    <div class="tab">Build</div>
+    <div class="tab">Play</div>
+    <div class="tab on">Testing</div>
+    <div class="tab">Index</div>
+    <div class="tab">Diagnosis</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary">Run</button>
+    <button class="btn">Run All</button>
+    <button class="btn">Replay to Turn</button>
+    <button class="btn">Record from Play</button>
+    <span class="status">cellar-dark.transcript — 14 turns, 13 pass, 1 fail · seed 42</span>
+  </div>
+
+  <div class="body">
+    <div class="branches" style="flex:none">
+      <div class="branchcol">
+        <div class="colname">cellar-dark</div>
+        <div class="badge pass sel">north</div><div class="conn"></div>
+        <div class="badge pass">north</div><div class="conn"></div>
+        <div class="badge pass">search doormat</div><div class="conn"></div>
+        <div class="badge pass">take key</div><div class="conn"></div>
+        <div class="badge pass">north</div><div class="conn"></div>
+        <div class="badge fail">down</div>
+      </div>
+      <div class="branchcol">
+        <div class="colname">frost-seal</div>
+        <div class="badge pass">north</div><div class="conn"></div>
+        <div class="badge pass">north</div><div class="conn"></div>
+        <div class="badge pass">east</div><div class="conn"></div>
+        <div class="badge stale">x kettle</div>
+      </div>
+      <div class="branchcol">
+        <div class="colname">doors</div>
+        <div class="badge pass">north</div><div class="conn"></div>
+        <div class="badge pass">open door</div>
+      </div>
+    </div>
+
+    <div class="turns">
+      <div class="goal">Goal · reach the cellar</div>
+
+      <div class="card pass sel">
+        <div class="cmd">&gt; north</div>
+        <div class="out">Gravel Drive
+The drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; the gates are back south.</div>
+        <div class="assert">
+          <span class="chip">contains</span> "Gravel Drive"
+          <button class="btn" style="margin-left:auto">Change…</button>
+        </div>
+      </div>
+
+      <div class="card pass">
+        <div class="cmd">&gt; search the doormat</div>
+        <div class="out">Underneath the doormat you find a tarnished key.</div>
+        <div class="assert"><span class="chip">contains</span> "key"</div>
+      </div>
+
+      <div class="card pass">
+        <div class="cmd">&gt; take the tarnished key</div>
+        <div class="out">You take the tarnished key.</div>
+        <div class="assert"><span class="chip">contains</span> "You take the tarnished key"</div>
+        <div class="assert"><span class="chip">event</span> true · type="if.event.taken" target="key"</div>
+      </div>
+
+      <div class="goal">Goal · the dark cellar</div>
+
+      <div class="card fail">
+        <div class="cmd">&gt; down</div>
+        <div class="out">Brick vaults recede into the dark, and a draught moves along them.</div>
+        <div class="assert bad">
+          <span class="chip">not contains</span> "Brick vaults" — <b>failed</b>: the text is present
+          <button class="btn" style="margin-left:auto">Re-bless…</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cmd">&gt; look</div>
+        <div class="out">Darkness. You can see nothing at all.</div>
+        <div class="assert none"><span class="chip">skip</span> nothing asserted yet</div>
+      </div>
+
+      <div class="hint">Every assertion form in the grammar has a control here — Change… opens contains / not contains / exact / events / state / fail / todo / skip. Nothing offers removed grammar (D5).</div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>Reads well:</b> the file is never visible, so the grammar cannot be got wrong; `[EVENT:]` sits beside the turn that emitted it, which is the first time it has ever been visible next to its cause.
+  <b>Reads badly:</b> nothing shows you the file you are committing, and a 60-turn walkthrough is 60 cards to scroll.
+</div>
+
+</body>
+</html>

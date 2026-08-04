@@ -86,14 +86,16 @@ final class TranscriptViewTests: XCTestCase {
     }
 
     func testAnAllPathsBlessingReadsDifferentlyFromAPlainOne() {
+        // A plain blessing is said by the green band alone — no caption. Only
+        // the stronger claim gets words.
         var node = SkeinNode(id: "a", command: "look", output: "The cellar.")
         node.blessing = SkeinBlessing(scope: .thisThread, output: "The cellar.")
-        XCTAssertTrue(text(TranscriptView.block(node, actual: "The cellar.", findings: []))
-            .contains("✓ blessed"))
+        XCTAssertFalse(text(TranscriptView.block(node, actual: "The cellar.", findings: []))
+            .contains("all paths"))
 
         node.blessing = SkeinBlessing(scope: .allPaths, output: "The cellar.")
         XCTAssertTrue(text(TranscriptView.block(node, actual: "The cellar.", findings: []))
-            .contains("✓ blessed for all paths"),
+            .contains("all paths"),
                       "the scope the author declared has to be readable, not inferred")
     }
 

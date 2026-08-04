@@ -541,7 +541,7 @@ private final class MainSplitViewController: NSSplitViewController {
             name: NSSplitView.didResizeSubviewsNotification, object: splitView)
 
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
-        projectPaneViewController.onActivateFile = { [weak self] url in self?.editorViewController.openDocument(at: url) }
+        projectPaneViewController.onActivateFile = { [weak self] url in self?.activateFile(at: url) }
         projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStateChanged = { [weak self] in self?.persistSession() }
         editorViewController.onStoryActivated = { [weak self] url, content in
@@ -582,6 +582,33 @@ private final class MainSplitViewController: NSSplitViewController {
         addSplitViewItem(makeProjectItem())
         addSplitViewItem(makeEditorItem())
         addSplitViewItem(makePlayItem())
+    }
+
+    /// Opens a file the author activated in the project sidebar, in whatever
+    /// surface reads it.
+    ///
+    /// A `.skein` is a committed artifact whose content is threads and prose
+    /// (ADR-299 D7) — the editor would show its JSON serialization, which is
+    /// the storage format, not the thing the author made. Every other file is
+    /// text and goes to the editor.
+    ///
+    /// - Parameter url: the activated file.
+    private func activateFile(at url: URL) {
+        guard url.pathExtension == SkeinStore.fileExtension else {
+            editorViewController.openDocument(at: url)
+            return
+        }
+        do {
+            try rightPanelViewController.openSkein(at: url)
+        } catch {
+            // A skein that cannot be read is exactly when the raw bytes are
+            // worth seeing, so the refusal is stated AND the text is opened —
+            // rather than leaving the author with a message and no file.
+            rightPanelViewController.showSkeinTab()
+            rightPanelViewController.skeinView.setStatus(
+                "\(url.lastPathComponent): \(error.localizedDescription)")
+            editorViewController.openDocument(at: url)
+        }
     }
 
     /// The composed story's identity for Build/Play gating: its URL and whether

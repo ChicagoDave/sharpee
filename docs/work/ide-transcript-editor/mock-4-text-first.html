@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock 4 — The file, with a gutter</title>
+<link rel="stylesheet" href="mock-shared.css">
+</head>
+<body>
+
+<div class="note">
+  <span class="tag">Mock 4 of 5 · text-first</span>
+  <h1>The file, with a gutter</h1>
+  <p class="sub">ADR-300 Q1, option B. No model, no round trip. It is the <code>.transcript</code> in the editor Chord Writer already has, with run results painted behind the lines that produced them.</p>
+  <p><b>The bet:</b> the file is preserved byte-for-byte, comments and blank lines and hand-formatting intact — and authors who already write these files by hand lose nothing. Syntax highlighting plus a results gutter is most of the value for a fraction of the work.</p>
+  <p><b>The cost:</b> you are still typing brackets. <code>[EVENT: true, 2, type="…" key="…"]</code> is not made easier by colouring it, and D3's promise — that the whole grammar becomes authorable — goes unkept.</p>
+</div>
+
+<div class="window">
+  <div class="tabstrip">
+    <div class="tab">Build</div>
+    <div class="tab">Play</div>
+    <div class="tab on">Testing</div>
+    <div class="tab">Index</div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary">Run</button>
+    <button class="btn">Run All</button>
+    <button class="btn">Record from Play</button>
+    <button class="btn">Insert Assertion ▾</button>
+    <span class="status">cellar-dark.transcript — 1 failure on line 33</span>
+  </div>
+
+  <div class="body">
+    <div class="pane" style="width:190px; flex:none">
+      <h3>Transcripts</h3>
+      <ul class="filelist">
+        <li class="on"><span class="dot fail"></span>cellar-dark</li>
+        <li><span class="dot pass"></span>compass</li>
+        <li><span class="dot pass"></span>doors</li>
+        <li><span class="dot stale"></span>frost-seal</li>
+      </ul>
+    </div>
+
+    <div class="src"><span class="row"><span class="ln">1</span><span class="h">title</span>: Fernhill A4 — the dark cellar and the oil lamp</span><span class="row"><span class="ln">2</span><span class="h">story</span>: fernhill</span><span class="row"><span class="ln">3</span><span class="h">seed</span>: 42</span><span class="row"><span class="ln">4</span><span class="h">description</span>: The cellar is dark; without light the vaults</span><span class="row"><span class="ln">5</span>  cannot be seen.</span><span class="row"><span class="ln">6</span>---</span><span class="row"><span class="ln">7</span></span><span class="row"><span class="ln">8</span><span class="c">[GOAL: reach the cellar]</span></span><span class="row"><span class="ln">9</span></span><span class="row gutterpass"><span class="ln">10</span>&gt; north</span><span class="row gutterpass"><span class="ln">11</span><span class="k">[OK: contains <span class="s">"Gravel Drive"</span>]</span></span><span class="row"><span class="ln">12</span></span><span class="row gutterpass"><span class="ln">13</span>&gt; north</span><span class="row gutterpass"><span class="ln">14</span><span class="k">[OK: contains <span class="s">"Fountain Court"</span>]</span></span><span class="row"><span class="ln">15</span></span><span class="row gutterpass"><span class="ln">16</span>&gt; search the doormat</span><span class="row gutterpass"><span class="ln">17</span><span class="k">[OK: contains <span class="s">"key"</span>]</span></span><span class="row"><span class="ln">18</span></span><span class="row gutterpass"><span class="ln">19</span>&gt; take the tarnished key</span><span class="row gutterpass"><span class="ln">20</span><span class="k">[OK: contains <span class="s">"You take the tarnished key"</span>]</span></span><span class="row gutterpass"><span class="ln">21</span><span class="k">[EVENT: true, type=<span class="s">"if.event.taken"</span> target=<span class="s">"key"</span>]</span></span><span class="row"><span class="ln">22</span></span><span class="row"><span class="ln">23</span><span class="c">[END GOAL]</span></span><span class="row"><span class="ln">24</span></span><span class="row"><span class="ln">25</span><span class="c">[GOAL: the dark cellar]</span></span><span class="row"><span class="ln">26</span></span><span class="row gutterpass"><span class="ln">27</span>&gt; unlock the cellar door with the tarnished key</span><span class="row gutterpass"><span class="ln">28</span><span class="k">[OK: contains <span class="s">"unlock"</span>]</span></span><span class="row"><span class="ln">29</span></span><span class="row"><span class="ln">30</span><span class="c"># Into the dark: the room's description must NOT be visible</span></span><span class="row gutterfail"><span class="ln">31</span>&gt; down</span><span class="row gutterfail"><span class="ln">32</span><span class="k bad">[OK: not contains <span class="s">"Brick vaults"</span>]</span></span><span class="row gutterfail"><span class="ln">33</span>  <span class="c">✗ the text is present:</span></span><span class="row gutterfail"><span class="ln">34</span>  <span class="c">  "Brick vaults recede into the dark, and a</span></span><span class="row gutterfail"><span class="ln">35</span>  <span class="c">   draught moves along them."</span></span><span class="row gutterfail"><span class="ln">36</span>  <span class="c">  [ Re-bless ]  [ Replay to here ]</span></span><span class="row"><span class="ln">37</span></span><span class="row"><span class="ln">38</span>&gt; look</span><span class="row"><span class="ln">39</span><span class="k">[OK: not contains <span class="s">"Brick vaults"</span>]</span></span><span class="row"><span class="ln">40</span></span><span class="row"><span class="ln">41</span><span class="c">[END GOAL]</span></span></div>
+  </div>
+</div>
+
+<div class="legend">
+  <b>Reads well:</b> nothing is reformatted, ever; the diff you commit is the diff you made. Failures appear inline as a collapsed result block under the assertion that failed, with the two re-bless choices right there. "Insert Assertion ▾" is a menu that types correct grammar for you — which is a cheap way to reach D5 without a model.
+  <b>Reads badly:</b> the story's <i>output</i> is nowhere on screen except inside a failure. You cannot select the words that matter (mock 2) because the words are not there. This is the mock that makes the strongest case for the hybrid.
+</div>
+
+</body>
+</html>

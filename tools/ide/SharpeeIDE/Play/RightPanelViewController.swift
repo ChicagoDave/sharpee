@@ -1,16 +1,16 @@
 // RightPanelViewController.swift
 // The right panel: a tab strip over the Chord build output (Build), the running
-// game (Play), the story's skein (Skein and Transcript — ADR-299 D8's sibling
-// views), and the error explainer (Diagnosis) — David's ruling: the build
-// process lives NEXT TO Play, not in the bottom dock (which stays for Problems
-// and Game Errors). A build starting switches to Build; a successful
-// play-after-build switches to Play. This controller also hosts the skein
-// tabs' actions, since replay/tag/force/bless need both the tree and the live
+// game (Play), the story's skein (Skein — ADR-299 D8's two halves, split within
+// one tab by SkeinPaneView), and the error explainer (Diagnosis) — David's
+// ruling: the build process lives NEXT TO Play, not in the bottom dock (which
+// stays for Problems and Game Errors). A build starting switches to Build; a
+// successful play-after-build switches to Play. This controller also hosts the
+// skein actions, since replay/tag/force/bless need both the tree and the live
 // Play pane.
-// Public interface: buildPanel, play, skeinView, transcriptView, showBuildTab(),
-// showPlayTab(), showSkeinTab(), showTranscriptTab(), showDiagnosis(_:count:),
-// revealDiagnosis(_:), clearDiagnosis(), onOpenLocation,
-// isWellFormedForcing(_:).
+// Public interface: buildPanel, play, skeinPane, skeinView, transcriptView,
+// showBuildTab(), showPlayTab(), showSkeinTab(), showTranscriptTab(),
+// showDiagnosis(_:count:), revealDiagnosis(_:), clearDiagnosis(),
+// onOpenLocation, isWellFormedForcing(_:).
 // Owner context: tools/ide — Play (right panel).
 
 import AppKit
@@ -22,8 +22,13 @@ final class RightPanelViewController: NSViewController {
     let index = IndexView()
     let diagnosis = ErrorDiagnosisView()
     let testPanel = TestPanelView()
-    let skeinView = SkeinView()
-    let transcriptView = TranscriptView()
+
+    /// The Skein tab: tree over transcript (ADR-299 D8).
+    let skeinPane = SkeinPaneView()
+    /// The pane's two halves. Named accessors because every wiring site below
+    /// speaks in terms of one half or the other, not the container.
+    var skeinView: SkeinView { skeinPane.tree }
+    var transcriptView: TranscriptView { skeinPane.transcript }
 
     /// Forwarded from the Diagnosis view: a clicked source location to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)? {
@@ -35,10 +40,9 @@ final class RightPanelViewController: NSViewController {
     private static let buildTab = 0
     private static let playTab = 1
     private static let skeinTab = 2
-    private static let transcriptTab = 3
-    private static let indexTab = 4
-    private static let diagnosisTab = 5
-    private static let testTab = 6
+    private static let indexTab = 3
+    private static let diagnosisTab = 4
+    private static let testTab = 5
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
@@ -46,8 +50,7 @@ final class RightPanelViewController: NSViewController {
         addChild(play)
         tabStrip.addTab(title: "Build")
         tabStrip.addTab(title: "Play")
-        tabStrip.addTab(title: "Skein")
-        tabStrip.addTab(title: "Transcript")
+        tabStrip.addTab(title: "Testing")
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
         tabStrip.addTab(title: "Test")
@@ -61,16 +64,14 @@ final class RightPanelViewController: NSViewController {
         index.translatesAutoresizingMaskIntoConstraints = false
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
         testPanel.translatesAutoresizingMaskIntoConstraints = false
-        skeinView.translatesAutoresizingMaskIntoConstraints = false
-        transcriptView.translatesAutoresizingMaskIntoConstraints = false
+        skeinPane.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
         container.addSubview(play.view)
         container.addSubview(index)
         container.addSubview(diagnosis)
         container.addSubview(testPanel)
-        container.addSubview(skeinView)
-        container.addSubview(transcriptView)
+        container.addSubview(skeinPane)
 
         NSLayoutConstraint.activate([
             tabStrip.topAnchor.constraint(equalTo: container.topAnchor),
@@ -102,15 +103,10 @@ final class RightPanelViewController: NSViewController {
             testPanel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             testPanel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            skeinView.topAnchor.constraint(equalTo: play.view.topAnchor),
-            skeinView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            skeinView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            skeinView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-
-            transcriptView.topAnchor.constraint(equalTo: play.view.topAnchor),
-            transcriptView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            transcriptView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            transcriptView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            skeinPane.topAnchor.constraint(equalTo: play.view.topAnchor),
+            skeinPane.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            skeinPane.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            skeinPane.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
         view = container
@@ -154,10 +150,13 @@ final class RightPanelViewController: NSViewController {
         tabStrip.select(Self.skeinTab)
     }
 
-    /// Switches to the Transcript tab (ADR-299 D8) — where the selected thread
-    /// reads as prose and blessing happens.
+    /// Reveals the transcript half (ADR-299 D8) — where the selected thread
+    /// reads as prose and blessing happens. It shares the Skein tab with the
+    /// tree now, so this reveals that tab and puts the keyboard on the text;
+    /// there is no separate tab to switch to.
     func showTranscriptTab() {
-        tabStrip.select(Self.transcriptTab)
+        tabStrip.select(Self.skeinTab)
+        skeinPane.focusTranscript()
     }
 
     private func show(tab selected: Int) {
@@ -166,8 +165,7 @@ final class RightPanelViewController: NSViewController {
         index.isHidden = selected != Self.indexTab
         diagnosis.isHidden = selected != Self.diagnosisTab
         testPanel.isHidden = selected != Self.testTab
-        skeinView.isHidden = selected != Self.skeinTab
-        transcriptView.isHidden = selected != Self.transcriptTab
+        skeinPane.isHidden = selected != Self.skeinTab
     }
 
     // MARK: - Skein (ADR-299 D8)
@@ -241,11 +239,100 @@ final class RightPanelViewController: NSViewController {
     /// can tell "the skein grew" from "a different story opened".
     private weak var wiredSkein: SkeinSession?
 
+    /// A session opened from a `.skein` file rather than from a play surface
+    /// (D7). Held strongly because BOTH halves reference their session weakly —
+    /// the Play pane is the normal owner, and a file-opened skein has none, so
+    /// without this it deallocates and the tab reads as empty.
+    private var openedSkein: SkeinSession?
+
+    /// Opens a committed `.skein` file into this tab: its threads in the tree,
+    /// its prose beneath. The artifact's content is threads, not JSON, so
+    /// activating one in the sidebar belongs here rather than in the editor.
+    ///
+    /// A session already pointed at the same file is reused — the Play pane's
+    /// live one, or one an earlier open left behind. Two sessions writing one
+    /// store would each overwrite the other's blessings and tags, and even
+    /// where that is survivable, re-reading throws away the selection and this
+    /// boot's observations for no gain. One reader per file.
+    ///
+    /// The first complete thread is selected, so the transcript has text on
+    /// arrival instead of an instruction to click something.
+    ///
+    /// - Parameter url: the `.skein` file to read.
+    /// - Throws: `SkeinStore.DecodeError.schemaVersionMismatch` or the
+    ///   read/decode error. Nothing is re-pointed on a throw — the tab keeps
+    ///   whatever it was showing.
+    func openSkein(at url: URL) throws {
+        let target = url.standardizedFileURL
+        let alreadyOpen = [play.skein, openedSkein]
+            .compactMap { $0 }
+            .first { $0.storeURL.standardizedFileURL == target }
+        if let alreadyOpen {
+            // Re-point the halves anyway: the tab may currently be showing a
+            // DIFFERENT skein, and this one is already loaded.
+            if skeinView.session !== alreadyOpen {
+                wiredSkein = alreadyOpen
+                skeinView.setSession(alreadyOpen)
+                transcriptView.setSession(alreadyOpen)
+            }
+            showSkeinTab()
+            skeinView.reload()
+            updateTranscript()
+            return
+        }
+
+        let session = try SkeinSession(storeURL: target)
+        openedSkein = session
+        wiredSkein = session
+        skeinView.setSession(session)
+        transcriptView.setSession(session)
+        if let leaf = Self.firstThreadTerminal(in: session.document) {
+            skeinView.select(nodeId: leaf)
+        }
+        showSkeinTab()
+        updateTranscript()
+        skeinView.setStatus(url.lastPathComponent)
+    }
+
+    /// The terminal node of the document's first thread — the leaf reached by
+    /// following first children down from the root. Nil for an empty skein.
+    ///
+    /// Which thread opens first is arbitrary; that SOME thread opens is not.
+    private static func firstThreadTerminal(in document: SkeinDocument) -> String? {
+        guard var node = document.root.children.first else { return nil }
+        while let next = node.children.first { node = next }
+        return node.id
+    }
+
+    /// Guards the tree-selection write below from re-entering through the
+    /// selection-changed callback that calls this method.
+    private var isSyncingSelection = false
+
+    /// The skein every action in this tab applies to: whatever the surface is
+    /// actually showing.
+    ///
+    /// Not `play.skein` — that is nil for a skein opened from a file (D7), and
+    /// reading it there made every gesture a silent no-op: blessing did
+    /// nothing, and unblessing an all-paths claim did nothing, on a tab that
+    /// looked fully populated.
+    private var activeSkein: SkeinSession? { skeinView.session }
+
     /// Points the Transcript view at the thread the author is looking at: the
     /// tree's selection when there is one, otherwise wherever play currently
     /// sits — so a session that has only been played reads without a click.
-    private func updateTranscript() {
-        transcriptView.show(threadTo: skeinView.selectedNodeId ?? play.skein?.currentNodeId)
+    ///
+    /// When it falls back, the tree is moved to match. The two halves are one
+    /// surface now, and a transcript showing a thread over a tree highlighting
+    /// nothing gives two different answers to "which thread am I in" — with the
+    /// row actions disabled against the very thread on screen.
+    func updateTranscript() {
+        let thread = skeinView.selectedNodeId ?? activeSkein?.currentNodeId
+        transcriptView.show(threadTo: thread)
+
+        guard !isSyncingSelection, skeinView.selectedNodeId == nil, let thread else { return }
+        isSyncingSelection = true
+        defer { isSyncingSelection = false }
+        skeinView.select(nodeId: thread)
     }
 
     private func setSkeinBusy(_ busy: Bool) {
@@ -262,7 +349,7 @@ final class RightPanelViewController: NSViewController {
     /// all-paths blessing is an assertion the skein will enforce against every
     /// other thread.
     private func bless(nodeId: String, scope: SkeinBlessing.Scope) {
-        guard let skein = play.skein else { return }
+        guard let skein = activeSkein else { return }
         do {
             guard try skein.bless(nodeId: nodeId, scope: scope) else {
                 transcriptView.setStatus("That node is no longer in the skein.")
@@ -279,7 +366,7 @@ final class RightPanelViewController: NSViewController {
     }
 
     private func unbless(nodeId: String) {
-        guard let skein = play.skein else { return }
+        guard let skein = activeSkein else { return }
         do {
             guard try skein.unbless(nodeId: nodeId) else {
                 transcriptView.setStatus("That node carries no blessing.")
@@ -296,7 +383,7 @@ final class RightPanelViewController: NSViewController {
     /// The command an all-paths blessing's assertion is about, for the message
     /// that states the claim back to the author.
     private func commandLabel(_ nodeId: String) -> String {
-        play.skein?.document.node(withId: nodeId)?.command ?? ""
+        activeSkein?.document.node(withId: nodeId)?.command ?? ""
     }
 
     // MARK: - Export (D7)
@@ -312,7 +399,7 @@ final class RightPanelViewController: NSViewController {
     /// Nothing is written without this act, and a refusal is stated before the
     /// panel appears rather than after a filename has been typed.
     private func exportThread(nodeId: String) {
-        guard let window = view.window, let skein = play.skein else { return }
+        guard let window = view.window, let skein = activeSkein else { return }
 
         do {
             _ = try SkeinExporter.transcriptSource(document: skein.document,
@@ -355,7 +442,7 @@ final class RightPanelViewController: NSViewController {
     /// Notes something on a node — freeform, seeded with the existing note so
     /// the sheet edits rather than replaces, and emptying the field clears it.
     private func promptForAnnotation(nodeId: String) {
-        guard let window = view.window, let skein = play.skein,
+        guard let window = view.window, let skein = activeSkein,
               let node = skein.document.node(withId: nodeId) else { return }
 
         let alert = NSAlert()
@@ -381,7 +468,7 @@ final class RightPanelViewController: NSViewController {
 
     /// Guards or releases a subtree against trimming (D9).
     private func setLock(_ locked: Bool, nodeId: String) {
-        guard let skein = play.skein else { return }
+        guard let skein = activeSkein else { return }
         do {
             guard try skein.setLocked(locked, forNodeId: nodeId) else {
                 skeinView.setStatus("That node is no longer in the skein.")
@@ -403,7 +490,7 @@ final class RightPanelViewController: NSViewController {
     /// confirm destroying something, then telling them it was never going to
     /// happen, teaches them to click through the sheet.
     private func confirmTrim(nodeId: String) {
-        guard let window = view.window, let skein = play.skein,
+        guard let window = view.window, let skein = activeSkein,
               let node = skein.document.node(withId: nodeId) else { return }
 
         if let refusal = skein.document.trimRefusal(for: nodeId) {
@@ -462,7 +549,7 @@ final class RightPanelViewController: NSViewController {
     /// seeded with whatever the node already carries so the sheet edits rather
     /// than replaces.
     private func promptForTags(nodeId: String) {
-        guard let window = view.window, let skein = play.skein,
+        guard let window = view.window, let skein = activeSkein,
               let node = skein.document.node(withId: nodeId) else { return }
 
         let alert = NSAlert()
@@ -498,7 +585,7 @@ final class RightPanelViewController: NSViewController {
     /// validated here so a malformed entry is refused now, rather than
     /// surfacing as a runner load error on the next replay.
     private func promptForForcing(nodeId: String) {
-        guard let window = view.window, let skein = play.skein else { return }
+        guard let window = view.window, let skein = activeSkein else { return }
 
         let alert = NSAlert()
         alert.messageText = "Force a different outcome"
