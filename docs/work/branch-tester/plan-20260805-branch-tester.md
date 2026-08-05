@@ -130,7 +130,11 @@ Three phases carry an additional gate:
 - **Entry state**: Phases 4–6 give a resolvable tree.
 - **Deliverable**: atomic rename updating the transcript, every child's `continues:`, the golden (`goldenPathFor`), and the divergence save. **Validate-then-write** — resolve the whole edit set first; reject before touching anything when the stem is taken, the tree is unreadable, or any file is unwritable.
 - **Exit state**: **AC-8** — all four update together; renaming to a taken stem leaves every file byte-identical.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape**: `src/rename.ts` — `planRename` (resolve + check, writes nothing) / `applyRename` (throws on a problem plan) / `renameTranscript`. Every problem is reported together, same reason tree assembly reports every defect together.
+- **It is FIVE things, not the four the ADR names.** The golden's *provenance* moves with its filename: `transcript:` is checked against the file's basename on every replay (ADR-294 D3), so a rename that moved only the file would make the very next run report a stale recording. Also carries per-seed matrix recordings (`<stem>.<seed>.golden`, ADR-294 D8), not just the plain one.
+- **Children are re-read from disk before rewriting**, not written back from the in-memory tree — the plan has to describe the files as they are now, or a stale parse silently overwrites whatever changed since assembly. Rewrites go through the canonical serializer, which is a no-op on a normalized corpus (ADR-300 D3).
+- **Verified 2026-08-05**: `packages/branch-tester/tests/rename.test.ts` — 12 cases, all against real files in a temp directory through the real parser/serializer/assembly. AC-8's rejection case snapshots every file's bytes before and after and asserts equality. The tree is re-assembled after a rename and asserted clean, so "it worked" means the pointers actually resolve. branch-tester 318 passed + 5 skipped; transcript-tester 253 untouched.
 
 ### Phase 9: Assertion vocabulary and capture inference (ADR-300 D13, D14 — branch-tester only)
 - **Tier**: Medium · **Budget**: 250

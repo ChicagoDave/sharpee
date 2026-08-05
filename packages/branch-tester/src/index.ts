@@ -52,6 +52,15 @@ export {
   type BlockedGroup,
 } from './tree-report.js';
 
+// Rename as a harness operation — validate then write (ADR-302 D14)
+export {
+  planRename,
+  applyRename,
+  renameTranscript,
+  type RenamePlan,
+  type RenameEdit,
+} from './rename.js';
+
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
 export { serializeTranscript } from './serializer.js';
 
