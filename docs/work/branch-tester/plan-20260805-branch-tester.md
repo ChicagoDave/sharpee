@@ -160,7 +160,11 @@ Three phases carry an additional gate:
 - **Entry state**: everything above landed.
 - **Deliverable**: confirm the freeze held. `test:npm` against `tutorials/familyzoo/v1.5.0` (16 transcripts) and `v2.0.0` (17) still runs them; Dungeo's GDT suite and its 17-file chain still run; `transcript-tester`'s own suite still passes.
 - **Exit state**: **AC-9** green. The check that catches `branch-tester` quietly cannibalizing v1's command surface. Deliberately last.
-- **Status**: PENDING
+- **Status**: **BASELINE RUN 2026-08-05** (session 86e85a) — two of three clauses green; the third cannot run, for a reason predating this work. Must still be re-run at the end.
+- **Green**: Dungeo's 17-file chain **952 passed**; its GDT-based unit suite **1742 passed** (1 failure, the unrelated [#223](https://github.com/ChicagoDave/sharpee/issues/223)); `@sharpee/transcript-tester`'s own suite **253 passing and byte-untouched** (`git diff main..HEAD -- packages/transcript-tester/` is empty).
+- **Cannot run**: `./repokit test:npm` against both `tutorials/familyzoo/v1.5.0` and `v2.0.0` fails at `npx tsc` before a single transcript executes — the tutorial source calls platform APIs that no longer exist (`PatternBuilder.withPriority`, `WorldModel.helpers`, `registerCapabilityBehavior`/`getBehaviorForCapability` as module exports, `StoryConfig.author`). Mostly ADR-207/208 and ADR-298 surface changes the tutorial never followed. Filed as [#224](https://github.com/ChicagoDave/sharpee/issues/224).
+- **Confirmed not caused by this branch**: `git diff --name-only main..HEAD` touches zero files under `tutorials/`, `parser-en-us/` or `world-model/`, and the named APIs are absent from the platform at HEAD. So AC-9's first clause was already unrunnable before the split — it cannot demonstrate anything about the split in either direction until #224 is fixed.
+- **Gotcha recorded**: `repokit test:npm` runs `tsf build --npm`, which rewrites `dist/`. Running it concurrently with `node dist/cli/sharpee.js --test` makes the transcript run read a half-written bundle and report spurious failures (observed once: 7 failures where a clean run gives 1). Do not interleave them.
 
 ---
 
