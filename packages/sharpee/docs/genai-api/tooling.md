@@ -958,9 +958,17 @@ interface GameEngine {
      * session's master seed from here (ADR-294 D3).
      */
     engine?: {
+        /**
+         * Registration MERGES on the real engine and every hook is optional
+         * (issue #229), so this declares the loosest shape that still says what
+         * the tester uses. Naming both as required — which it did until
+         * 2026-08-05 — made the real `(hooks: Partial<ISaveRestoreHooks>) => void`
+         * unassignable to it in both directions, since `unknown` is not an
+         * `ISaveData` and a required member is not a `Partial` one.
+         */
         registerSaveRestoreHooks(hooks: {
-            onSaveRequested(data: unknown): Promise<void>;
-            onRestoreRequested(): Promise<unknown | null>;
+            onSaveRequested?(data: any): Promise<void>;
+            onRestoreRequested?(): Promise<any>;
         }): void;
         save(): Promise<boolean>;
         restore(): Promise<boolean>;

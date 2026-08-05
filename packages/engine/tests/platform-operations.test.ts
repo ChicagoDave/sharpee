@@ -27,6 +27,18 @@ import {
 import { MinimalTestStory } from './stories';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 
+/**
+ * Removing every hook. Registration MERGES (#229), so `{}` is a no-op and a
+ * test that means "nothing is registered" has to say which entries it is
+ * dropping — every read site treats absent and undefined alike.
+ */
+const NO_HOOKS = {
+  onSaveRequested: undefined,
+  onRestoreRequested: undefined,
+  onQuitRequested: undefined,
+  onRestartRequested: undefined
+};
+
 describe('GameEngine Platform Operations', () => {
   let engine: GameEngine;
   let story: MinimalTestStory;
@@ -123,6 +135,7 @@ describe('GameEngine Platform Operations', () => {
 
     it('should emit save failed event when hook throws', async () => {
       mockHooks.onSaveRequested = vi.fn().mockRejectedValue(new Error('Save failed'));
+      engine.registerSaveRestoreHooks(mockHooks);
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -141,7 +154,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should emit save failed event when no save hook registered', async () => {
-      engine.registerSaveRestoreHooks({});
+      engine.registerSaveRestoreHooks(NO_HOOKS);
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -187,6 +200,8 @@ describe('GameEngine Platform Operations', () => {
       ).createSaveData();
 
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(mockSaveData);
+
+      engine.registerSaveRestoreHooks(mockHooks);
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -203,6 +218,7 @@ describe('GameEngine Platform Operations', () => {
 
     it('should emit restore failed event when no save data available', async () => {
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(null);
+      engine.registerSaveRestoreHooks(mockHooks);
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -255,6 +271,7 @@ describe('GameEngine Platform Operations', () => {
 
     it('should emit cancelled event when quit declined', async () => {
       mockHooks.onQuitRequested = vi.fn().mockResolvedValue(false);
+      engine.registerSaveRestoreHooks(mockHooks);
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -270,7 +287,7 @@ describe('GameEngine Platform Operations', () => {
     });
 
     it('should quit by default when no hook registered', async () => {
-      engine.registerSaveRestoreHooks({});
+      engine.registerSaveRestoreHooks(NO_HOOKS);
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -343,6 +360,7 @@ describe('GameEngine Platform Operations', () => {
 
     it('should emit cancelled event and keep running when restart declined', async () => {
       mockHooks.onRestartRequested = vi.fn().mockResolvedValue(false);
+      engine.registerSaveRestoreHooks(mockHooks);
 
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -379,6 +397,7 @@ describe('GameEngine Platform Operations', () => {
 
     it('meta path: declined restart returns restart_cancelled and keeps the engine running', async () => {
       mockHooks.onRestartRequested = vi.fn().mockResolvedValue(false);
+      engine.registerSaveRestoreHooks(mockHooks);
 
       const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
 
@@ -405,6 +424,7 @@ describe('GameEngine Platform Operations', () => {
         callOrder.push('restore');
         return null;
       });
+      engine.registerSaveRestoreHooks(mockHooks);
       
       const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
       const restoreEvent = createRestoreRequestedEvent({ saveName: 'test' });
@@ -419,7 +439,9 @@ describe('GameEngine Platform Operations', () => {
 
     it('should continue processing even if one operation fails', async () => {
       mockHooks.onSaveRequested = vi.fn().mockRejectedValue(new Error('Save failed'));
+      engine.registerSaveRestoreHooks(mockHooks);
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(null);
+      engine.registerSaveRestoreHooks(mockHooks);
       
       const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
       const restoreEvent = createRestoreRequestedEvent({ saveName: 'test' });

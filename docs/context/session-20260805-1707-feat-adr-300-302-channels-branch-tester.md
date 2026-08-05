@@ -81,6 +81,36 @@ Claimed in conversation that D17 would remove it; that was wrong and is correcte
 
 **A second copy bit twice.** `freshGameForRoot` exists in both `packages/branch-tester/src/cli.ts` and `scripts/bundle-entry.js`. Updating only the first left the bundle throwing `Cannot read properties of undefined (reading 'transcript')` on the first fork. The bundle copy also revealed a real hazard the package copy shared: a re-boot must re-pin the seed the root *actually* booted with, or a root with no `seed:` would draw a fresh clock seed per boot and its replayed prefix would diverge. Both now remember it. This did not bite Fernhill only because every root had already been given an explicit seed in §1.
 
+### 5. Closed the latent form at the engine (issue #229), after the merge
+Filed #229 for the general form of #227 — `registerSaveRestoreHooks` assigning
+wholesale, so any caller silently disables restart — then, on David's call, fixed it.
+
+A survey found **four** remaining callers, not two: the ADR-300 D18 divergence save
+and the `$save`/`$restore` directives in each harness's `runner.ts`, plus
+`searchOutcome`'s per-candidate restore in each `search.ts`. v1 is closer to the
+trigger than v2, because a chain shares one live engine across files — a blessed
+golden on any member plus a `restart` in a later member arms it. Confirmed not live:
+`grep -ln "^> restart" stories/dungeo/walkthroughs/*.transcript` is empty.
+
+The engine now merges: named entries replace, unnamed survive, removal is spelled by
+naming an entry `undefined`. `save()`/`restore()` guard on the specific hook they need
+rather than on "some hooks exist", so a partial registration reports "no capability"
+instead of calling `undefined` and reporting the TypeError as a failure. Bootstrap's
+`as any` cast is gone — partial registration is now expressible.
+
+**A second consequence, under-called before it showed as red tests:** merging
+necessarily **snapshots**. The engine holds a copy, so mutating a registered hooks
+object no longer reaches it. Eight `platform-operations.test.ts` cases relied on
+exactly that aliasing, and two more used `registerSaveRestoreHooks({})` to mean
+"clear", which merging makes a no-op. The source-caller survey that preceded the
+change looked for reliance on replacement and correctly found none — it never looked
+at tests, and that is where it lived. Recorded in the method's contract doc.
+
+ADR-302 D17's rejected-alternatives paragraph is amended in place: it argued against
+the engine merge while the tree walk was the collision's only victim, which the
+four-caller survey disproved. D17 itself stands — re-execution was chosen on its own
+terms, and the engine fix closes callers D17 never reached.
+
 ---
 
 ## Session Metadata

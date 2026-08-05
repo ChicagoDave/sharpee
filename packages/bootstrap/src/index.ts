@@ -236,12 +236,14 @@ export function assembleGame(
 
     // ADR-248: auto-confirm restart (the harness has no player to ask) and
     // defer the reboot until the restart turn's output has been captured.
+    // Registration merges (#229), so this survives a runner registering its
+    // own save/restore hooks later — which is exactly what used to destroy it.
     engine.registerSaveRestoreHooks({
       onRestartRequested: async (): Promise<boolean> => {
         pendingReboot = true;
         return true;
       },
-    } as any);
+    });
 
     // Start the channel-I/O pipeline (ADR-163). The engine builds its
     // ChannelService internally from these capabilities during start().
