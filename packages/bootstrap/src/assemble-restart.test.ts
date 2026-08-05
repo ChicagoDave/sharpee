@@ -67,7 +67,7 @@ describe('ADR-248 assembleGame restart reboot', () => {
     const game = assembleGame(first.story, {
       // The banner is its own channel now, so declare it — that is where the
       // rebooted story's identity shows up.
-      channels: ['main', 'banner'],
+      channels: ['banner'],
       freshStory: () => {
         freshCalls += 1;
         return second.story;

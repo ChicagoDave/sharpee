@@ -18,7 +18,8 @@
  */
 
 import type { IRenderer } from '@sharpee/channel-service';
-import { createMainChannelRenderer } from './main.js';
+import { PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
+import { createProseChannelRenderers } from './prose.js';
 import { createPromptChannelRenderer } from './prompt.js';
 import {
   createLocationChannelRenderer,
@@ -61,7 +62,7 @@ import {
 import { mountDefaultLayout, type BrowserDefaultLayout } from './layout.js';
 
 export {
-  createMainChannelRenderer,
+  createProseChannelRenderers,
   createPromptChannelRenderer,
   createLocationChannelRenderer,
   createScoreChannelRenderer,
@@ -102,18 +103,18 @@ export interface RegisterDefaultBrowserRenderersOptions {
    */
   audio: AudioManagerLike;
   /**
-   * Optional callback invoked after every entry the main channel
-   * renderer appends. The browser client uses it to scroll the prose
-   * window to the bottom.
+   * Optional callback invoked after the prose renderers append a turn's
+   * entries. The browser client uses it to scroll the prose window to the
+   * bottom.
    */
-  onMainAfterAppend?(slot: HTMLElement): void;
+  onProseAfterAppend?(slot: HTMLElement): void;
 
   /**
-   * Fired with each `main` packet's entries flattened to plain text, by the
+   * Fired with each turn's composed prose flattened to plain text, by the
    * same rule the headless harness uses. The client accumulates these across
    * a turn for the IDE recording bridge (ADR-282 D2).
    */
-  onMainEntriesText?(text: string): void;
+  onProseEntriesText?(text: string): void;
   /**
    * Optional hotspot-click handler for image channels. When a
    * hotspot is clicked the renderer calls this with the hotspot's
@@ -137,8 +138,9 @@ export interface RegisterDefaultBrowserRenderersOptions {
  * via `Renderer.registerSlot(name, handle)` so stories can resolve
  * platform-default slot names by `getSlot`.
  *
- * Standard channels: `main`, `prompt`, `location`, `score`, `turn`,
- * `info`, `ifid`, `death`, `endgame`, `score_notify`.
+ * Standard channels: the seven prose channels and `preferred-layout`
+ * (ADR-300 D8/D9), `prompt`, `location`, `score`, `turn`, `info`,
+ * `ifid`, `prologue`, `banner`, `death`, `endgame`, `score_notify`.
  *
  * Media channels: `image:background`, `image:main`, `image:overlay`,
  * `image:preload`, `sound`, `music`, `animation`, `animate`,
@@ -162,14 +164,19 @@ export function registerDefaultBrowserRenderers(
   renderer.registerSlot('notify', layout.notify);
   renderer.registerSlot('meta', layout.meta);
 
+  // ── Prose channels (ADR-300 D8) + their ordering signal (D9) ─────
+  // One factory for all eight: `preferred-layout` flushes what the prose
+  // renderers buffered, in the engine's order. Registering them
+  // separately would render in manifest order, which D9 rejects.
+  const prose = createProseChannelRenderers(layout.main, PROSE_CHANNEL_IDS, {
+    onAfterAppend: opts.onProseAfterAppend,
+    onEntriesText: opts.onProseEntriesText,
+  });
+  for (const [channelId, channelRenderer] of prose.byChannelId) {
+    renderer.registerRenderer(channelId, channelRenderer);
+  }
+
   // ── Standard channels ────────────────────────────────────────────
-  renderer.registerRenderer(
-    'main',
-    createMainChannelRenderer(layout.main, {
-      onAfterAppend: opts.onMainAfterAppend,
-      onEntriesText: opts.onMainEntriesText,
-    }),
-  );
   renderer.registerRenderer(
     'prompt',
     createPromptChannelRenderer(layout.input, {

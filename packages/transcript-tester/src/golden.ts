@@ -55,7 +55,8 @@ const EVENT_LINE = /^• (\S+) (\{.*\})$/;
 /**
  * ADR-294 D15 channel-capture line: `◦ <channel-id> <payload>`, payload
  * optional (an empty captured line serializes without the trailing space).
- * Only consulted when the provenance declares channels beyond `main`.
+ * Only consulted when the provenance declares channels (`(none)` when it
+ * declares none — the composed prose is not a declared channel, ADR-300 D8).
  */
 const CHANNEL_LINE = /^◦ (\S+)(?: (.*))?$/;
 
@@ -95,7 +96,7 @@ export function serializeGolden(recording: GoldenRecording): string {
     `seed: ${p.seed}`,
     `derivation: ${p.derivation}`,
     `save-format: ${p.saveFormat}`,
-    `channels: ${p.channels.join(', ')}`,
+    `channels: ${p.channels.length > 0 ? p.channels.join(', ') : '(none)'}`,
     `events: ${p.events}`,
     `locale: ${p.locale}`,
     `forces: ${p.forces.length === 0 ? '(none)' : p.forces.join(', ')}`,
@@ -113,12 +114,12 @@ export function serializeGolden(recording: GoldenRecording): string {
     for (const event of turn.events ?? []) {
       lines.push(`• ${event.type} ${event.json}`);
     }
-    // ADR-294 D15: declared non-main channel captures, grouped per channel
-    // in provenance declaration order — last in the turn, after events. An
+    // ADR-294 D15: declared channel captures, grouped per channel in
+    // provenance declaration order — last in the turn, after events. An
     // empty captured line serializes without the trailing space so files
-    // stay free of trailing whitespace.
+    // stay free of trailing whitespace. There is no `main` to exclude
+    // (ADR-300 D8); a declared prose channel records like any other.
     for (const id of p.channels) {
-      if (id === 'main') continue;
       for (const line of turn.channels?.[id] ?? []) {
         lines.push(line === '' ? `◦ ${id}` : `◦ ${id} ${line}`);
       }
@@ -157,9 +158,9 @@ export function parseGolden(content: string, filePath: string = '<inline>'): Gol
 
   const { provenance, bodyStart } = parseProvenance(lines, filePath);
   // ADR-294 D15: `◦` lines are channel captures ONLY when the provenance
-  // declares channels beyond main — the exact `events:` gating precedent, so
-  // main-only recordings parse byte-identically to before.
-  const channelIds = provenance.channels.filter((id) => id !== 'main');
+  // declares channels — the exact `events:` gating precedent, so a recording
+  // that declares none parses byte-identically to before.
+  const channelIds = provenance.channels;
   const turns = parseTurns(lines, bodyStart, provenance.events, channelIds, filePath);
 
   if (turns.length === 0) {
@@ -249,6 +250,7 @@ function parseProvenance(
   const splitList = (value: string): string[] =>
     value.split(',').map((entry) => entry.trim()).filter((entry) => entry !== '');
 
+  const channelsValue = raw.get('channels')!;
   const forcesValue = raw.get('forces')!;
   const pointSeedsValue = raw.get('point-seeds');
 
@@ -258,7 +260,7 @@ function parseProvenance(
     seed: requireInteger('seed'),
     derivation: requireInteger('derivation'),
     saveFormat: raw.get('save-format')!,
-    channels: splitList(raw.get('channels')!),
+    channels: channelsValue === '(none)' ? [] : splitList(channelsValue),
     events: eventsValue === 'true',
     locale: raw.get('locale')!,
     forces: forcesValue === '(none)' ? [] : splitList(forcesValue),

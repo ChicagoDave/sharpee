@@ -357,7 +357,7 @@ export class RoomManager {
     };
     registerDefaultBrowserRenderers(renderer, layout, {
       audio: SILENT_AUDIO_MANAGER,
-      onMainAfterAppend: (slot) => {
+      onProseAfterAppend: (slot) => {
         // Keep the prose pane pinned to the bottom as turns stream in.
         // The slot is the `.sharpee-prose-pane` element.
         slot.scrollTop = slot.scrollHeight;

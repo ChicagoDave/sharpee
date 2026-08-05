@@ -1,5 +1,5 @@
 /**
- * Tests for the ten standard `IOChannel` closures.
+ * Tests for the standard `IOChannel` closures.
  *
  * Each closure is invoked with a hand-built `ChannelProduceContext`
  * and the return value asserted directly. No `ChannelService`, no
@@ -10,7 +10,16 @@ import { describe, expect, it } from 'vitest';
 import type { ChannelProduceContext } from '@sharpee/if-domain';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import {
-  mainChannel,
+  roomNameChannel,
+  roomDescriptionChannel,
+  roomContentsChannel,
+  actionResultChannel,
+  actionBlockedChannel,
+  errorChannel,
+  gameMessageChannel,
+  PROSE_CHANNELS,
+  preferredLayoutChannel,
+  STANDARD_CHANNELS,
   promptChannel,
   locationChannel,
   scoreChannel,
@@ -37,8 +46,17 @@ function makeCtx(over: Partial<ChannelProduceContext> = {}): ChannelProduceConte
   };
 }
 
-function makeBlock(key: string, text: string, opts?: { tight?: boolean }) {
-  return { key, content: [text], ...(opts?.tight ? { tight: true } : {}) };
+function makeBlock(
+  key: string,
+  text: string,
+  opts?: { tight?: boolean; className?: string },
+) {
+  return {
+    key,
+    content: [text],
+    ...(opts?.tight ? { tight: true } : {}),
+    ...(opts?.className ? { className: opts.className } : {}),
+  };
 }
 
 function makeEvent(type: string, data: Record<string, unknown> = {}) {
@@ -90,59 +108,172 @@ function makeWorldStub(opts: {
 }
 
 // ────────────────────────────────────────────────────────────────────
-//  main
+//  prose channels (ADR-300 D8) + preferred-layout (D9)
 // ────────────────────────────────────────────────────────────────────
 
-describe('mainChannel.produce', () => {
-  it('projects every block whose key is in MAIN_KEYS into entries', () => {
-    const result = mainChannel.produce(
+describe('prose channels', () => {
+  it('routes each prose block key to its own channel', () => {
+    const blocks = [
+      makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'Cave'),
+      makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'A dark cave.'),
+      makeBlock(CORE_BLOCK_KEYS.ROOM_CONTENTS, 'There is a lamp here.'),
+      makeBlock(CORE_BLOCK_KEYS.ACTION_RESULT, 'You take the lamp.'),
+      makeBlock(CORE_BLOCK_KEYS.ACTION_BLOCKED, 'It is locked.'),
+      makeBlock(CORE_BLOCK_KEYS.ERROR, 'I do not know that verb.'),
+      makeBlock(CORE_BLOCK_KEYS.GAME_MESSAGE, 'Welcome.'),
+    ];
+
+    expect(roomNameChannel.produce(makeCtx({ blocks }))).toEqual([{ content: ['Cave'] }]);
+    expect(roomDescriptionChannel.produce(makeCtx({ blocks }))).toEqual([
+      { content: ['A dark cave.'] },
+    ]);
+    expect(roomContentsChannel.produce(makeCtx({ blocks }))).toEqual([
+      { content: ['There is a lamp here.'] },
+    ]);
+    expect(actionResultChannel.produce(makeCtx({ blocks }))).toEqual([
+      { content: ['You take the lamp.'] },
+    ]);
+    expect(actionBlockedChannel.produce(makeCtx({ blocks }))).toEqual([
+      { content: ['It is locked.'] },
+    ]);
+    expect(errorChannel.produce(makeCtx({ blocks }))).toEqual([
+      { content: ['I do not know that verb.'] },
+    ]);
+    expect(gameMessageChannel.produce(makeCtx({ blocks }))).toEqual([
+      { content: ['Welcome.'] },
+    ]);
+  });
+
+  it('takes only its own blocks, ignoring the other prose channels', () => {
+    const result = roomDescriptionChannel.produce(
       makeCtx({
         blocks: [
+          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'Cave'),
           makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'A dark cave.'),
           makeBlock(CORE_BLOCK_KEYS.ACTION_RESULT, 'You take the lamp.'),
         ],
       }),
     );
-    expect(result).toEqual([
-      { content: ['A dark cave.'] },
-      { content: ['You take the lamp.'] },
-    ]);
+    expect(result).toEqual([{ content: ['A dark cave.'] }]);
   });
 
   it('skips status blocks (status.score, status.turns, status.room)', () => {
-    const result = mainChannel.produce(
-      makeCtx({
-        blocks: [
-          makeBlock(CORE_BLOCK_KEYS.STATUS_SCORE, '42'),
-          makeBlock(CORE_BLOCK_KEYS.STATUS_TURNS, '5'),
-          makeBlock(CORE_BLOCK_KEYS.STATUS_ROOM, 'Forest'),
-          makeBlock(CORE_BLOCK_KEYS.GAME_MESSAGE, 'Welcome.'),
-        ],
-      }),
-    );
-    expect(result).toEqual([{ content: ['Welcome.'] }]);
+    const blocks = [
+      makeBlock(CORE_BLOCK_KEYS.STATUS_SCORE, '42'),
+      makeBlock(CORE_BLOCK_KEYS.STATUS_TURNS, '5'),
+      makeBlock(CORE_BLOCK_KEYS.STATUS_ROOM, 'Forest'),
+      makeBlock(CORE_BLOCK_KEYS.GAME_MESSAGE, 'Welcome.'),
+    ];
+    for (const channel of PROSE_CHANNELS) {
+      const produced = channel.produce(makeCtx({ blocks })) as unknown[];
+      expect(produced.length).toBe(channel === gameMessageChannel ? 1 : 0);
+    }
+    expect(preferredLayoutChannel.produce(makeCtx({ blocks }))).toEqual(['game-message']);
   });
 
-  it('threads `tight: true` from blocks to entries', () => {
-    const result = mainChannel.produce(
+  it('threads `tight: true` and `className` from blocks to entries', () => {
+    const result = roomDescriptionChannel.produce(
       makeCtx({
         blocks: [
-          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'Cave'),
           makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'It is dark.', {
             tight: true,
+            className: 'cave-prose',
           }),
         ],
       }),
     );
     expect(result).toEqual([
-      { content: ['Cave'] },
-      { content: ['It is dark.'], tight: true },
+      { content: ['It is dark.'], tight: true, className: 'cave-prose' },
     ]);
   });
 
   it('returns an empty array when no blocks match', () => {
-    const result = mainChannel.produce(makeCtx({ blocks: [] }));
-    expect(result).toEqual([]);
+    for (const channel of PROSE_CHANNELS) {
+      expect(channel.produce(makeCtx({ blocks: [] }))).toEqual([]);
+    }
+  });
+
+  it('is sparse — an empty array is emitted as no-entries, not as prose', () => {
+    for (const channel of PROSE_CHANNELS) {
+      expect(channel.emit).toBe('sparse');
+      expect(channel.mode).toBe('append');
+    }
+  });
+});
+
+describe('preferredLayoutChannel.produce', () => {
+  it('names the source channel of every prose entry, in block order', () => {
+    const result = preferredLayoutChannel.produce(
+      makeCtx({
+        blocks: [
+          makeBlock(CORE_BLOCK_KEYS.ACTION_RESULT, 'You go north.'),
+          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'Cave'),
+          makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'A dark cave.'),
+        ],
+      }),
+    );
+    // Action result BEFORE room name — the interleaving a fixed render
+    // order gets wrong, which is why D9 rejects one.
+    expect(result).toEqual(['action-result', 'room-name', 'room-description']);
+  });
+
+  it('repeats a channel id once per entry that channel produced', () => {
+    const result = preferredLayoutChannel.produce(
+      makeCtx({
+        blocks: [
+          makeBlock(CORE_BLOCK_KEYS.GAME_MESSAGE, 'First.'),
+          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'Cave'),
+          makeBlock(CORE_BLOCK_KEYS.GAME_MESSAGE, 'Second.'),
+        ],
+      }),
+    );
+    expect(result).toEqual(['game-message', 'room-name', 'game-message']);
+  });
+
+  it('emits an empty order on a turn that produced no prose', () => {
+    expect(preferredLayoutChannel.produce(makeCtx({ blocks: [] }))).toEqual([]);
+  });
+
+  it('emits always, so a client never re-renders the previous turn', () => {
+    expect(preferredLayoutChannel.emit).toBe('always');
+    expect(preferredLayoutChannel.mode).toBe('replace');
+  });
+
+  it('excludes non-prose blocks from the order', () => {
+    const result = preferredLayoutChannel.produce(
+      makeCtx({
+        blocks: [
+          makeBlock(CORE_BLOCK_KEYS.PROMPT, '> '),
+          makeBlock(CORE_BLOCK_KEYS.STATUS_SCORE, '42'),
+          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'Cave'),
+        ],
+      }),
+    );
+    expect(result).toEqual(['room-name']);
+  });
+});
+
+describe('STANDARD_CHANNELS registration order', () => {
+  it('registers preferred-layout after every prose channel', () => {
+    // ORDER-SENSITIVE (ADR-300 D9). The manifest is walked in
+    // registration order, and the browser composes prose by buffering
+    // each channel's entries and flushing them when the layout arrives.
+    // Registering the layout first would flush an empty buffer and drop
+    // the turn's prose entirely.
+    const ids = STANDARD_CHANNELS.map((c) => c.id);
+    const layoutAt = ids.indexOf('preferred-layout');
+    expect(layoutAt).toBeGreaterThan(-1);
+    for (const prose of PROSE_CHANNELS) {
+      expect(ids.indexOf(prose.id)).toBeLessThan(layoutAt);
+    }
+  });
+
+  it('registers exactly one channel per prose id, with no `main` left', () => {
+    const ids = STANDARD_CHANNELS.map((c) => c.id);
+    expect(ids).not.toContain('main');
+    for (const prose of PROSE_CHANNELS) {
+      expect(ids.filter((id) => id === prose.id).length).toBe(1);
+    }
   });
 });
 
@@ -540,16 +671,15 @@ describe('banner channel (opening is addressable on its own)', () => {
     expect(result).toBeUndefined();
   });
 
-  it('keeps banner blocks out of main', () => {
-    const result = mainChannel.produce(
-      makeCtx({
-        blocks: [
-          bannerBlock('DUNGEON', 'game-title'),
-          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'West of House'),
-        ],
-      }),
-    );
+  it('keeps banner blocks off the prose channels and out of the layout', () => {
+    const blocks = [
+      bannerBlock('DUNGEON', 'game-title'),
+      makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'West of House'),
+    ];
 
-    expect(result).toEqual([{ content: ['West of House'] }]);
+    expect(roomNameChannel.produce(makeCtx({ blocks }))).toEqual([
+      { content: ['West of House'] },
+    ]);
+    expect(preferredLayoutChannel.produce(makeCtx({ blocks }))).toEqual(['room-name']);
   });
 });

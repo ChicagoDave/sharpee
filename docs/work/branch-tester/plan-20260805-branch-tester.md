@@ -45,7 +45,10 @@ Three phases carry an additional gate:
 - **Deliverable**: `ROOM_NAME`, `ROOM_DESCRIPTION`, `ROOM_CONTENTS`, `ACTION_RESULT`, `ACTION_BLOCKED`, `ERROR`, `GAME_MESSAGE` each become their own channel; no channel means "the prose window". A `preferred-layout` channel states the engine's intended reading order, which a client may honour, reorder, or ignore. Every client renders the new set — the bundle CLI, `platform-browser`, the IDE's Play pane, zifmia. The corpus migrates and the 21 goldens are re-blessed.
 - **Exit state**: **ADR-300 AC-5** — no client receives a channel whose contract is "append this to the main text area", and reordering `preferred-layout` changes what the player sees with no engine change. Walkthrough chain byte-identical across the migration except for the intended channel split.
 - **Why first**: see Sequencing.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Outcome**: cheaper than the entry state predicted. The corpus held **zero** `[CHANNEL: main, …]` assertions — all 2921 read `main` implicitly through the composed turn text — so preserving the composition (`composeProse` in `preferred-layout` order, then the existing join rule) left every assertion and every recorded turn byte-identical. **The 21 goldens were NOT re-blessed**: each changed by one line, the provenance `channels:` field (`main` → `(none)`), and the chain then replayed 952 passing against its pre-existing recordings. A bless would have destroyed the evidence the exit state asks for.
+- **Verified 2026-08-05**: `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` → `952 passed`, `✓ All tests passed!`. Package suites: stdlib 1604, engine 609, channel-service 115, bootstrap 39, platform-browser 117, transcript-tester 252, world-model 1453, story-loader 472, chord 719 — all passing. `tsf build --npm` clean. AC-5 pinned by `packages/platform-browser/tests/channels/prose.test.ts`.
+- **Found, not fixed**: [issue #223](https://github.com/ChicagoDave/sharpee/issues/223) — `info-channel-baseline.golden` pins a wall-clock `buildDate` inside its `◦ info` capture, so it breaks on every rebuild. Pre-existing (its body is byte-identical to the committed version); fixing it means growing ADR-294 D6's mask, which D6 says requires an amendment.
 
 ### Phase 2: Chord `record` block (ADR-300 D10)
 - **Tier**: Large · **Budget**: 400
@@ -53,7 +56,13 @@ Three phases carry an additional gate:
 - **Deliverable**: a `record` block in Chord with `list of` for repeated members — Chord parser, AST, IR wire types, and the loader's channel mapping.
 - **Exit state**: **ADR-300 AC-6** — a `.story` file defines a record channel and the running game populates it, with no TypeScript escape hatch.
 - **Note**: independent of every other phase. It is the item that closes the platform/Chord seam, and under "Sharpee and Chord must align as elegantly as possible" it is the highest-value standalone work here — it can move earlier if you want it sooner.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape decided in the building** (the ADR named neither): records do **not** nest — a member is a field, a text template, or a phrase, and nesting is a parse error by name; and absence has two spellings matching what `bannerChannel` already does — a `list of` member the turn did not carry is `[]`, a scalar member it did not carry is *omitted*, so `'x' in value` stays a real answer.
+- **Language version — a judgment call worth your eye**: additive grammar, which ADR-257 D2 would ordinarily make a minor (3.0.0 → 3.1.0). Shipped **inside 3.0.0** instead, following the recorded 2026-08-03 freeze ruling (nothing at 3.x is published, so no released surface a minor would distinguish; and 3.1.0 is the exact number that ruling just retired). Only `chord.ebnf` and its recorded hash moved. Say so if you'd rather it were a minor.
+- **Verified 2026-08-05**: chord 730 passing (was 719 — +11 grammar/analyzer cases), story-loader 480 (was 472 — +8 including AC-6), EBNF surface pin re-recorded and green, walkthrough chain 952 passed.
+
+### Side item: `[EVENTS: N]` removal (ADR-300 D5, issue #222) — COMPLETE
+- Done 2026-08-05, before Phase 3 as the plan required, so `branch-tester` inherits a clean grammar. Joined ADR-294's `REMOVED_FORMS` table (a parse error naming `[EVENT: true, type="..."]` as its replacement) and left the parser, model, serializer, reporter and runner. Zero corpus uses. transcript-tester 253 passing; [issue #222](https://github.com/ChicagoDave/sharpee/issues/222) closed.
 
 ### Phase 3: `branch-tester` package scaffold (ADR-302 D15)
 - **Tier**: Medium · **Budget**: 250
@@ -66,7 +75,10 @@ Three phases carry an additional gate:
   - **Not** in the `sharpee` umbrella or the root `package.json` (ADR-178), and **no** `story-runtime-baseline` entry.
 - **Exit state**: `branch-tester` suite green; `transcript-tester` still 252 passing and unmodified; `tsf build --npm` clean for both.
 - **Verify**: `grep -r "@sharpee/transcript-tester" packages/branch-tester/src` returns nothing; `grep -rn "branch-tester" packages/sharpee/` returns nothing.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Registration was TWO points, not five** — a second measured correction to the same checklist `plan-review` already corrected once. `ts-forge.config.json` and repokit's `BUILD_ORDER` are the whole of it. The other three named here do not apply, measured by reading them: `commands/test.ts` is an unimplemented stub (`repokit test: not yet implemented`); `consumer-gen.ts` and `commands/test-npm.ts` build the **npm consumer closure for the Family Zoo tutorial**, and that tutorial stays on v1 permanently (ADR-302 D9/D12) — vendoring v2 there would ship a package the consumer never loads. Also deliberately NOT in `BUNDLE_ALIASES`: nothing in the CLI graph imports it yet.
+- **Verified 2026-08-05**: branch-tester 248 passed + 5 skipped (the corpus sweeps skip — no corpus is configured yet, by design; see below); transcript-tester still **253** passing and unmodified; `tsf build --npm` clean for both; all four verification greps clean (no v1 import from v2 src, absent from the umbrella, the root `package.json`, and `story-runtime-baseline`); walkthrough chain 952 passed.
+- **Corpus deliberately unconfigured**: `packages/branch-tester/vitest.config.ts` names no root. v2's stories are the ones that will carry `continues:`, and the D16 directory split is Phase 10 — pointing the sweeps at `stories/` meanwhile would run v1's corpus through v2's parser, the exact cross-harness reading D16 exists to prevent. The 5 sweeps skip until a root is named.
 
 ### Phase 4: `continues:` grammar, model, and tree assembly (ADR-302 D1, D2, D4, D11)
 - **Tier**: Large · **Budget**: 400
@@ -74,7 +86,10 @@ Three phases carry an additional gate:
 - **Deliverable**: `continues:` in branch-tester's header grammar — filename stem, no extension, no path, same story. Model gains the parent reference. **Tree assembly becomes the entry point**: read every header in a story, build the tree, validate it whole, report every defect together before executing anything — missing parent, cycle, cross-story pointer. Diamonds are unrepresentable; a file nobody points at is a root.
 - **Exit state**: **AC-2** — a `continues:` carrying a turn reference, path, or extension is rejected by name. **AC-6** — a story with a missing parent, a cycle, and a cross-story pointer reports all three and executes nothing.
 - **Note**: `transcript-tester`'s grammar does not gain `continues:` (D15 freeze).
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a) — commit `89e17e7e`.
+- **AC-2 and AC-6 green.** Each rejected pointer shape is reported BY NAME — interior addressing (`doormat at 4`, `#4`, `:4`), a `.transcript` extension, a path — rather than as a generic invalid value, because the concept is what is being refused: an author reaching for `at 4` wants interior addressing, and "invalid value" leaves them guessing whether the syntax or the idea was wrong.
+- **Diamonds need no check**: the header is a map, so a second `continues:` replaces the first and a transcript has at most one parent by construction. Pinned by a test anyway, since "unrepresentable" is worth showing.
+- **AC-6's "executes nothing" is structural, not a guard**: a node inside a cycle is reachable from no root, so a defective tree exposes no runnable path at all.
 
 ### Phase 5: Header inheritance, and the seed-on-restore question (ADR-302 D8)
 - **Tier**: Medium · **Budget**: 250
@@ -82,28 +97,48 @@ Three phases carry an additional gate:
 - **Deliverable**: effective header = parent's effective header with the child's declared fields replacing them, applied transitively. **Then settle the open implementation question by experiment against the real engine**: whether a master `seed:` override on a non-root re-seeds a game restored from its parent's save, and what that does to the `{pointName → streamState}` map the save carries.
 - **Exit state**: **AC-3** — a child with no seed runs at its parent's, one with its own runs at its own, asserted on the resolved header. The finding is written back into ADR-302 D8 as measured behavior, replacing the open note.
 - **Risk**: if a master-seed override cannot coherently apply to a restored save, D5's header-only variation becomes `point-seed:`/`forces:`-only. That is an ADR amendment — stop and raise it, do not engineer around it.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a) — inheritance built and AC-3 green; the seed question measured, then resolved in the engine.
+- **Inheritance half — done.** `effectiveHeader` / `effectiveConfig` in `packages/branch-tester/src/tree.ts`; **AC-3 green**. Needed a new `Transcript.declaredConfigKeys`, because `config` always carries defaults and so its *value* cannot say whether the author wrote it — `events: false` means both "declared" and "silent", and inheritance has to tell them apart. `continues:` is the one field never inherited: it is the edge itself, and a child inheriting it would claim its grandparent while the tree disagreed.
+- **Seed question — settled by measurement, and the answer is worse than the risk anticipated.** Probed against the real `EngineRandomService`: a master `seed:` override **and** a `point-seed:` override are both **inert** for any point that already drew before the parent's save; only `forces:` varies such a point. Cause: `streamFor` resolves `restoredState ?? pointSeedOverride ?? derive(masterSeed, name)`, so a restored state outranks both seed instruments — correct for ADR-293 D7, and exactly what makes seed-based variation from a shared state impossible. The anticipated risk was "master `seed:` fails, `point-seed:`/`forces:` survive"; the measured result is **`forces:`-only**.
+- **Resolved: branching is its own operation** (David's call, 2026-08-05 — "I just want the correct branch→seed process to work properly"). The engine had ONE reading of a save; branching needed a second. Rather than change `restore` — which would break every linear chain's continuity and contradict ADR-293 D7 — a new session instrument is applied **after** it: `save → restore → reseed`. `EngineRandomService.reseedStreams(points)` drops the named points' stream continuity so each re-derives through the ordinary chain.
+- **Why this shape**: `restore` keeps its contract, so ADR-293 D7 needed no amendment (reseeding is recorded there as a third session instrument alongside forces and point-seed, the same species: session state, never serialized). The save format does not change — one artifact, read two ways, and both children of a fork read the same cached prefix save. Reseeding is always opt-in: a child declaring nothing gets a plain restore, which is what keeps Dungeo's 17-file chain and Fernhill's spine reproducing a single continuous run. Occurrence counters untouched, so a parent-numbered `forces: p#2=X` still means what it said. Naming points is the narrow instrument; `'all'` exists and is the blunt one ADR-293 D12 warns about.
+- **Verified 2026-08-05**: `packages/engine/tests/engine-random-service-reseed.test.ts` — 11 cases, the first being the measured defect kept as a regression. engine 620 passing (+11); branch-tester 282 + 5 skipped; transcript-tester 253 untouched; walkthrough chain 952 passed.
+- **Wiring**: the harness-side spelling (a child's declared `seed:`/`point-seed:` reseeding the points it names before its first command) lands in Phase 6, where the runner that performs the restore exists. `PlatformRandomService` in branch-tester's runner already carries the method.
 
 ### Phase 6: Tree runner — every path, prefix once (ADR-302 D10)
 - **Tier**: Large · **Budget**: 400
 - **Entry state**: Phases 4–5 give a validated tree with resolved headers.
 - **Deliverable**: every root-to-leaf path executes; a shared prefix executes **once**, each divergent tail running from a restore of the state it produced, using the prefix-keyed save cache (story build + prefix + seed). No `--chain` flag exists. Sequential only.
 - **Exit state**: **AC-1** — two transcripts naming one parent both run from its end state and neither runs the other's commands. **AC-5** — every path runs and a shared prefix's commands execute exactly once, asserted on executed command count rather than wall-clock.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape**: `src/tree-runner.ts`. The walk is depth-first over the **tree**, not a loop over paths — each node's commands run exactly once and a divergent tail resumes from a save of the state its parent produced. Looping over paths would replay every prefix per leaf, which on a Dungeo-shaped spine is a 952-command replay each time.
+- **One save per parent, restored before EVERY child including the first.** A uniform reset is what makes sibling order not matter; the previous child's whole subtree has already moved the engine on.
+- **Reseed wired** (the ADR-302 D8 amendment's harness half): `reseedFor(node)` keys on what the child **declared**, never on what it inherited — inheriting a seed means continuing the parent's game, and reseeding there would break exactly the continuity a linear chain depends on. Declared `seed:`/`seeds:` → `'all'`; declared `point-seed:` → the points it names; neither → plain restore. A root never reseeds.
+- **Verified 2026-08-05**: `packages/branch-tester/tests/tree-runner.test.ts` — 14 cases. AC-5 asserted on executed command count (a fork over a 2-command spine executes 4 commands, not 6). AC-1 asserted on the save-state each child *started from*, so "both ran from the parent's end state" is observed rather than inferred. A linear tree is pinned as one continuous sequence (D3), which is the property Dungeo's pinned combat counts depend on. branch-tester 296 passed + 5 skipped; transcript-tester 253 untouched.
+- **Also lands D13's mechanism**: a failed node marks its whole subtree `unreached` with the originating stem, and a healthy sibling still runs. Phase 7 owns the reporting shape over it.
+- **SUPERSEDED 2026-08-05 (session f2a7e6) — the restore half of this phase.** ADR-302 **D17** replaced save/restore with ancestry re-execution: no save is taken, no save is restored, and a fork boots a fresh game and replays its ancestry (a node's first child still continues the live engine, so a chain is untouched). The cause was a hook collision — `registerSaveRestoreHooks` assigns the engine's hook object wholesale, so the save hooks here displaced the harness's `onRestartRequested` and `restart` acked without ever rebooting for any node with a parent (issue #227, now closed). AC-5 is amended with it: "a shared prefix executes once" became "a leaf costs exactly its ancestry", measured on Fernhill at 552 commands (518 authored + 34 replayed) against 518 under restore. Everything else in this phase — the depth-first walk, `reseedFor`'s declared-not-inherited keying, D13's unreached cascade — stands as written.
 
 ### Phase 7: Reporting — unreached is not failed (ADR-302 D13)
 - **Tier**: Medium · **Budget**: 250
 - **Entry state**: Phase 6 runs trees.
 - **Deliverable**: when an interior node fails its descendants report as **unreached** and the run names the originating failure. One broken spine node produces one failure, not one per descendant.
 - **Exit state**: **AC-7** — a tree with one broken interior node reports exactly one failure and N unreached, originating node named.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape**: `src/tree-report.ts` — `summarizeTreeRun` / `formatTreeRun`. `failed` counts **originating** failures only; a node that never ran is counted separately and attributed to the ancestor that blocked it. Two independent breaks report as two origins, each with its own blast radius.
+- **Why the count is signal, not noise**: D13 abolishes the `tests/transcripts/` vs `walkthroughs/` split, so focused tests hang off the spine node that establishes their state. A spine break therefore blocks *tests*, and "blocked 4" is a real statement about blast radius. Folding those into the failure count would bury the one thing that broke under a wall of red proportional to how much of the story depends on it.
+- **A malformed tree renders defects alone**, with no run tally beside them — "0 passed" next to a structural error invites reading it as a result (D11).
+- **Verified 2026-08-05**: `packages/branch-tester/tests/tree-report.test.ts` — 10 cases over real transcripts, real assembly and the real `runTree`. AC-7's case is a spine break with four descendants: **1 failed, 4 unreached, origin `spine` named**. A healthy sibling of a broken node still runs and still passes. branch-tester 306 passed + 5 skipped; transcript-tester 253 untouched.
 
 ### Phase 8: Rename as a harness operation (ADR-302 D14)
 - **Tier**: Medium · **Budget**: 250
 - **Entry state**: Phases 4–6 give a resolvable tree.
 - **Deliverable**: atomic rename updating the transcript, every child's `continues:`, the golden (`goldenPathFor`), and the divergence save. **Validate-then-write** — resolve the whole edit set first; reject before touching anything when the stem is taken, the tree is unreadable, or any file is unwritable.
 - **Exit state**: **AC-8** — all four update together; renaming to a taken stem leaves every file byte-identical.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape**: `src/rename.ts` — `planRename` (resolve + check, writes nothing) / `applyRename` (throws on a problem plan) / `renameTranscript`. Every problem is reported together, same reason tree assembly reports every defect together.
+- **It is FIVE things, not the four the ADR names.** The golden's *provenance* moves with its filename: `transcript:` is checked against the file's basename on every replay (ADR-294 D3), so a rename that moved only the file would make the very next run report a stale recording. Also carries per-seed matrix recordings (`<stem>.<seed>.golden`, ADR-294 D8), not just the plain one.
+- **Children are re-read from disk before rewriting**, not written back from the in-memory tree — the plan has to describe the files as they are now, or a stale parse silently overwrites whatever changed since assembly. Rewrites go through the canonical serializer, which is a no-op on a normalized corpus (ADR-300 D3).
+- **Verified 2026-08-05**: `packages/branch-tester/tests/rename.test.ts` — 12 cases, all against real files in a temp directory through the real parser/serializer/assembly. AC-8's rejection case snapshots every file's bytes before and after and asserts equality. The tree is re-assembled after a rename and asserted clean, so "it worked" means the pointers actually resolve. branch-tester 318 passed + 5 skipped; transcript-tester 253 untouched.
 
 ### Phase 9: Assertion vocabulary and capture inference (ADR-300 D13, D14 — branch-tester only)
 - **Tier**: Medium · **Budget**: 250
@@ -111,21 +146,77 @@ Three phases carry an additional gate:
 - **Deliverable**: the assertion vocabulary covers every channel content type — text, number, record — including dotted-path addressing into records, list any-element matching, `is absent` for sparse-channel silence, and wrong-type-fails-by-name. The capture set is **inferred from the assertions** rather than declared in a `channels:` header, with provenance recording what was captured.
 - **Why here and not in `transcript-tester`**: these extend the assertion grammar, which ADR-302 D15 freezes. They are not back-ported.
 - **Exit state**: a transcript asserts `banner.title` structurally rather than substring-matching flattened text; a transcript asserting on a channel it never declared no longer errors.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Needed a platform change first, made additively**: dotted paths cannot read flattened lines, and a flattened line cannot be un-flattened. `@sharpee/bootstrap` gained `lastChannelValues` — the same emissions kept as structured values — beside the existing `lastChannels`. Additive, so v1 sees exactly what it saw before (ADR-302 D15's freeze holds; transcript-tester is still 253 and untouched).
+- **Grammar** (`src/channel-assert.ts`, parser, serializer): `[CHANNEL: <id>[.<path>], …]` with `contains` / `not contains` / `is <scalar>` / `is not <scalar>` / `is absent` / `is present`. Three things are load-bearing and none is obvious — a path onto a **list matches any element** (`credits` has no index a test could name, and position breaks when an author adds a name); a **wrong-type comparison fails by name** (`is 5` against text `"5"` reports "carries a string, compares it to a number" and suggests `is "5"`, rather than never matching); and **absence is distinct from emptiness**, so a silent channel under `not contains` points the author at `is absent` instead of passing for the wrong reason.
+- **Capture inference (D14)**: the runner derives the capture set from `channelsReferencedBy(assertions)`, unioned with any declared `channels:`. A declared list is still honoured — a golden may want a channel nothing asserts on — so the two compose rather than compete, and a `channels:` header can no longer drift out of step with the assertions beneath it.
+- **Verified 2026-08-05**: `packages/branch-tester/tests/channel-assert.test.ts` — 26 cases. The addressing case is the load-bearing one: `[CHANNEL: banner.storyVersion, contains "DUNGEON"]` **fails**, though "DUNGEON" is in the banner — which is exactly what v1's flattened match got wrong. Every new form round-trips parse → serialize → parse as the same assertion, including the literal's type. branch-tester 344 passed + 5 skipped; transcript-tester 253; bootstrap 39; walkthrough chain 952.
 
 ### Phase 10: Directory separation and Fernhill's rewrite (ADR-302 D16, D13) — requires confirmation
 - **Tier**: Large · **Budget**: 400
 - **Entry state**: Phases 3–9 give a working harness. **Explicit go-ahead required** — rewrites 20 committed, passing files.
 - **Deliverable**: in-repo story directories split so each harness sees only its own; the binding property is that `transcript-tester` never parses a `continues:` file, since it would accept the key, ignore it, and run the transcript standalone from a fresh game — a pass that means nothing. **If the split moves v1's stories rather than Fernhill's, `packages/transcript-tester/vitest.config.ts`'s corpus path moves in the same commit.** Then Fernhill's tests are rewritten as one tree: a root, a spine, and focused tests hanging off the node that establishes their state.
 - **Exit state**: Fernhill's suite passes as a tree; no `tests/transcripts/` versus `walkthroughs/` split remains for it; coverage (ADR-302 D6) reports an unexercised divergence alternative as a gap.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a) — directory separation, the CLI/bundle tree entry, and Fernhill's tree all landed. The "PART TWO NOT STARTED" note below was written mid-phase, before the bundle integration unblocked it; kept as the record of what the blocker was.
+
+#### Done — the D16 separation
+Fernhill moved to a new top-level `branch-stories/`. Moving the smaller side kept v1's corpus config unchanged and left the several dozen `stories/dungeo/...` references in CLAUDE.md true. Named for the harness rather than `stories-v2/`, because D12 makes the split permanent and a version number would say the opposite every time it was read. Both corpus configs now record what they do *not* reach and why. Verified: transcript-tester 253; branch-tester **349 with zero skipped** (its five sweeps now have a corpus, where Phase 3 left them deliberately skipping); Fernhill 502 + 2 skipped and its walkthrough 58, unchanged across the move.
+
+#### Done — the CLI tree entry point (2026-08-05, later the same session)
+`packages/branch-tester/src/cli.ts` now assembles a tree from every transcript and runs it through `runTree`. Per D10 this **removed** a mode rather than adding one: a corpus with no `continues:` is simply a tree of N roots, so there is one path. `--chain` is retired and reports by name if used. A root gets a fresh game built from its own `entry:` and pinned seed when the walk reaches it — no eager pre-load.
+
+Also fixed a real gap this surfaced in Phase 6's `runTree`: a **second root was continuing from wherever the first root's subtree left the engine**. A root is a fresh game (D1), so `runTree` now accepts a factory and builds one per root. Single-engine callers are unaffected.
+
+**Verified end-to-end through the CLI**: AC-6's malformed-tree path — a cycle and a dangling parent reported *together*, nothing executed, exit 2.
+
+#### Done — bundle integration and Fernhill's tree (2026-08-05)
+`scripts/bundle-entry.js` now dispatches on the directory, which is what D16 makes the harness assignment — not a flag, not a header field. Transcripts under `branch-stories/` run through `branchTester.runTree`; everything else keeps v1's path. Mixed paths are a hard error, same species as mixed story prefixes. This uses the bundle's own loader, so a Chord `.story` compiles and runs for v2 exactly as it does for v1 — that capability lives in the bundle, not in either harness package (which is why #225 does not block this).
+
+**Fernhill runs as a tree: 21 nodes passing.** Spine hoisted from what the tests actually shared: `arrival` (north, north → Fountain Court) and `key` (search the doormat, take the tarnished key) off it. `cellar-dark`, `doors` and `smoke` hang off `key`; five more off `arrival`. Each child's inherited `seed: 42` was dropped — the root's governs (D8).
+
+#### Found by running it — the important part
+Three tests (`fuse`, `fuse-lose`, `npcs`) failed only **once a sibling had run before them**. `npcs` passes as `arrival`'s only child and fails when `concealment`'s subtree runs first, executing identical commands from an identical restore point. So **restoring a parent's save is not a full reset** — filed as [#226](https://github.com/ChicagoDave/sharpee/issues/226). The failing assertions are NPC-arrival/timeline ones, which points at scheduler state living outside the save rather than at world state.
+
+This matters beyond three tests: D10's whole model is that a divergent tail resumes from a restore of its parent's state. If a restore leaves residue, sibling ORDER affects results — and since children run in stem order, a D14 rename could silently change whether a sibling passes. The three were reverted to roots so the suite is green; the bug is not theirs.
+
+Also found: branch-tester's copied `header-folding.test.ts` did not list `continues:` as a legal header key — the very key the copy exists to support. The legal set is enforced by that test rather than by the parser, so the first real tree in the corpus is what surfaced it.
+
+#### Remaining
+`e-group`, `dawn-lose`/`timeline` (which share `north, wait, wait, wait`), and the five tests that share no prefix are still roots. The walkthrough is still a separate file rather than the spine. Both are further authoring over Fernhill's map, and #226 should be settled first — hanging more tests off shared parents while restore leaves residue would keep producing order-dependent failures.
+
+#### Superseded — the earlier blocker
+
+**No story will load from the package CLI** — [issue #225](https://github.com/ChicagoDave/sharpee/issues/225), and **v1 fails identically**, so this is pre-existing parity rather than a v2 regression: `SyntaxError: The requested module '@sharpee/world-model' does not provide an export named 'IScopeRule'`. Every in-repo path runs stories through the *bundle* (`dist/cli/sharpee.js`), which resolves `@sharpee/*` through esbuild aliases rather than Node's ESM resolver, so the package `bin` has effectively never been exercised. On top of that, Chord `.story` compilation lives in `scripts/bundle-entry.js`, so neither package CLI can load Fernhill at all.
+
+So a *passing* tree run cannot be demonstrated end-to-end until either #225 is fixed or the bundle routes `branch-stories/` to branch-tester. Writing Fernhill's tree before then would mean writing 20 files no one could run.
+
+**And the rewrite is authoring over Fernhill's map, which ADR-302 D7 forbids deriving.** "Inferring branches from command lists is a reading aid, never truth… Only D1's pointer establishes a parent." So the tree has to be authored, not computed, and each hoisted command's assertions have to move to the node that now runs it.
+
+#### The spine, as a reading aid (D7-legal, and nothing more)
+Measured across the 19 unit transcripts' opening commands 2026-08-05:
+
+| prefix | reaches | shared by |
+| --- | --- | ---: |
+| `north` | Gravel Drive | 14 of 19 |
+| `north, north` | Fountain Court | 11 |
+| `north, north, search the doormat, take the tarnished key` | the key | cellar-dark, doors, smoke (concealment diverges at command 3) |
+| `north, north, east` | — | fuse-lose, machine, tool-gates |
+| `north, north, north` | — | fuse, media-degrade, npcs |
+
+Five tests share no prefix and stay roots: compass, containers, phrasebooks, recorded, restart (and dawn-lose/timeline share `north, wait, wait, wait`).
+
+That suggests a root → `drive` → `court`, with `key`, an east branch and a north branch hanging off `court` — but it is a *suggestion*, which under D7 is all a command-list diff may ever be. Whoever writes it should confirm each parent against what the test actually needs, not against what its commands happen to spell.
 
 ### Phase 11: v1 survives — the regression gate (ADR-302 D12, AC-9)
 - **Tier**: Small · **Budget**: 150
 - **Entry state**: everything above landed.
 - **Deliverable**: confirm the freeze held. `test:npm` against `tutorials/familyzoo/v1.5.0` (16 transcripts) and `v2.0.0` (17) still runs them; Dungeo's GDT suite and its 17-file chain still run; `transcript-tester`'s own suite still passes.
 - **Exit state**: **AC-9** green. The check that catches `branch-tester` quietly cannibalizing v1's command surface. Deliberately last.
-- **Status**: PENDING
+- **Status**: **RUN, TWO OF THREE CLAUSES GREEN** (2026-08-05, session 86e85a) — re-run at the end of the session as required. The third cannot run, for a reason predating this work ([#224](https://github.com/ChicagoDave/sharpee/issues/224)), so **AC-9 is not claimed**: a gate that cannot run is not a gate that passed.
+- **Green**: Dungeo's 17-file chain **952 passed**; its GDT-based unit suite **1742 passed** (1 failure, the unrelated [#223](https://github.com/ChicagoDave/sharpee/issues/223)); `@sharpee/transcript-tester`'s own suite **253 passing and byte-untouched** (`git diff main..HEAD -- packages/transcript-tester/` is empty).
+- **Cannot run**: `./repokit test:npm` against both `tutorials/familyzoo/v1.5.0` and `v2.0.0` fails at `npx tsc` before a single transcript executes — the tutorial source calls platform APIs that no longer exist (`PatternBuilder.withPriority`, `WorldModel.helpers`, `registerCapabilityBehavior`/`getBehaviorForCapability` as module exports, `StoryConfig.author`). Mostly ADR-207/208 and ADR-298 surface changes the tutorial never followed. Filed as [#224](https://github.com/ChicagoDave/sharpee/issues/224).
+- **Confirmed not caused by this branch**: `git diff --name-only main..HEAD` touches zero files under `tutorials/`, `parser-en-us/` or `world-model/`, and the named APIs are absent from the platform at HEAD. So AC-9's first clause was already unrunnable before the split — it cannot demonstrate anything about the split in either direction until #224 is fixed.
+- **Gotcha recorded**: `repokit test:npm` runs `tsf build --npm`, which rewrites `dist/`. Running it concurrently with `node dist/cli/sharpee.js --test` makes the transcript run read a half-written bundle and report spurious failures (observed once: 7 failures where a clean run gives 1). Do not interleave them.
 
 ---
 

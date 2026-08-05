@@ -37,16 +37,24 @@ import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
  * - `text` — plain string. Renderer writes verbatim or styles.
  * - `number` — integer or float. Producer emits the number; client formats.
  * - `json` — structured object. Escape hatch for author-defined surfaces
- *   and for the platform's `main` channel which carries `MainEntry[]`.
+ *   and for the platform's prose channels, which carry `ProseEntry[]`.
  */
 export type ChannelContentType = 'text' | 'number' | 'json';
 
 /**
- * A single entry in the `main` channel's append-mode value array.
+ * A single entry in a prose channel's append-mode value array.
  *
  * Each entry corresponds to one `<p>`-equivalent surface in a text
- * renderer. The wire value of the `main` channel is `MainEntry[]` (the
- * new entries produced this turn).
+ * renderer. The wire value of a prose channel (`room-name`,
+ * `room-description`, `room-contents`, `action-result`,
+ * `action-blocked`, `error`, `game-message`) is `ProseEntry[]` — the
+ * new entries that channel produced this turn.
+ *
+ * Per ADR-300 D8 there is no catch-all `main` channel: each element of
+ * the turn's prose is its own channel, and the order they read in rides
+ * `preferred-layout` (D9) rather than being implied by one append
+ * stream. `ProseEntry` is what a single element looks like once it
+ * reaches the wire; the ordering across elements is not its business.
  *
  * Per the prose-pipeline pre-line removal (session 2026-05-12), every
  * intra-block `\n` was lifted to a block boundary. Where the former
@@ -55,23 +63,77 @@ export type ChannelContentType = 'text' | 'number' | 'json';
  * `tight: true` and the renderer collapses the inter-paragraph margin
  * so the lines stack flush.
  *
- * Invariant: a `tight` entry must not appear first in a packet — the
- * renderer relies on a non-tight predecessor in the same packet or in
- * an already-rendered prior packet.
+ * Invariant: a `tight` entry must not appear first in the turn's
+ * *composed* prose — the renderer relies on a non-tight predecessor,
+ * which may live on a different channel. Composition order therefore
+ * has to be restored (see `composeProse`) before a `tight` flag can be
+ * interpreted; a channel's own entry array is not the sequence the
+ * flag refers to.
  */
-export interface MainEntry {
+export interface ProseEntry {
   /** Content of this entry — strings and decorations, no `\n` in any string. */
   readonly content: ReadonlyArray<TextContent>;
   /** Visual continuation hint. See type-level doc above. */
   readonly tight?: boolean;
   /**
    * Optional semantic CSS class the renderer applies to the rendered
-   * element in addition to `main-entry`. Mirrors `ITextBlock.className`
-   * — used by the prose pipeline to flow per-piece visual identity
-   * through the channel wire to the browser renderer.
+   * element in addition to its own entry class. Mirrors
+   * `ITextBlock.className` — used by the prose pipeline to flow
+   * per-piece visual identity through the channel wire to the browser
+   * renderer.
    */
   readonly className?: string;
 }
+
+/**
+ * Wire value of the `preferred-layout` channel (ADR-300 D9).
+ *
+ * One entry per prose entry emitted this turn, naming the channel that
+ * produced it, in the order the engine thinks its output reads. A
+ * channel id repeats when that channel produced more than one entry:
+ * `['game-message', 'room-name', 'game-message']` means "the first
+ * `game-message` entry, then the first `room-name` entry, then the
+ * second `game-message` entry."
+ *
+ * It is a *preference*, not an instruction. A client may honour the
+ * order, reorder it, or ignore it entirely — which is the point of
+ * putting ordering on its own channel instead of inside the narrative
+ * channels. Reordering this list changes what the player sees with no
+ * engine change.
+ */
+export type PreferredLayout = ReadonlyArray<string>;
+
+/**
+ * Channel id carrying the per-turn prose reading order (ADR-300 D9).
+ */
+export const PREFERRED_LAYOUT_CHANNEL = 'preferred-layout';
+
+/**
+ * The platform's prose channel ids (ADR-300 D8) — the seven elements
+ * the dissolved `main` channel used to carry as one stream.
+ *
+ * This lives in if-domain rather than stdlib because it is wire
+ * vocabulary: the engine-side producer (stdlib) and every consumer (the
+ * browser renderers, the CLI bundle, zifmia's pane, the headless
+ * harness) must agree on these strings, and a duplicated list is a
+ * protocol drift waiting to happen. What each id *means in terms of
+ * text blocks* is stdlib's business and stays there.
+ *
+ * Order is registration order, not render order — render order is
+ * per-turn and rides `preferred-layout`.
+ */
+export const PROSE_CHANNEL_IDS = [
+  'room-name',
+  'room-description',
+  'room-contents',
+  'action-result',
+  'action-blocked',
+  'error',
+  'game-message',
+] as const;
+
+/** One of the platform's prose channel ids. */
+export type ProseChannelId = (typeof PROSE_CHANNEL_IDS)[number];
 
 /**
  * Channel update modes (ADR-163 §4).

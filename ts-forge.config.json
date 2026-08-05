@@ -5,6 +5,7 @@
     "packages/story-runtime-baseline/tsconfig.json",
     "packages/world-model/tsconfig.json",
     "packages/transcript-tester/tsconfig.json",
+    "packages/branch-tester/tsconfig.json",
     "packages/text-blocks/tsconfig.json",
     "packages/chord/tsconfig.json",
     "packages/ide-protocol/tsconfig.json",

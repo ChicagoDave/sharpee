@@ -3264,6 +3264,10 @@ export interface INpcService {
     removeBehavior(id: string): void;
     /** Get a behavior by ID */
     getBehavior(id: string): NpcBehavior | undefined;
+    /** Per-NPC behaviour state not held in the world model, by entity id (#226). */
+    getBehaviorStates?(): Record<string, Record<string, unknown>>;
+    /** Restore per-NPC behaviour state saved by `getBehaviorStates`. */
+    setBehaviorStates?(states: Record<string, Record<string, unknown>>): void;
     /** Register a tick phase handler (ADR-142/144/145/146) */
     registerTickPhase(name: string, handler: NpcTickPhase): void;
     /** Execute the NPC turn phase */
@@ -3282,6 +3286,8 @@ export interface INpcService {
  */
 export declare class NpcService implements INpcService {
     private behaviors;
+    /** Latest world seen by `tick` — serialization needs one to enumerate NPCs. */
+    private lastWorld?;
     private readonly tickPhases;
     registerBehavior(behavior: NpcBehavior): void;
     removeBehavior(id: string): void;
@@ -3322,6 +3328,21 @@ export declare class NpcService implements INpcService {
      * source that makes the combat-kill sync bug (ADR-226 AC-2) impossible.
      */
     private canNpcAct;
+    /**
+     * Per-NPC behaviour state the world model cannot express (issue #226).
+     *
+     * A patrol's waypoint cursor, direction and remaining dwell live in the
+     * behaviour: an NPC standing in a room could be arriving, leaving, or
+     * waiting there, and only the behaviour knows which. Keyed by ENTITY id
+     * because `getState(npc)` takes an entity — one registered behaviour can
+     * serve several NPCs, and keying by behaviour would collapse them.
+     */
+    getBehaviorStates(): Record<string, Record<string, unknown>>;
+    /**
+     * Restore per-NPC behaviour state. An NPC absent from the save is reset
+     * through its own `setState(npc, {})` — a restore is a reset, not a merge.
+     */
+    setBehaviorStates(states: Record<string, Record<string, unknown>>): void;
     private getActiveNpcs;
     private getBehaviorForNpc;
     private createNpcContext;
@@ -3983,10 +4004,16 @@ export declare const channelRegistry: IChannelRegistry;
 /**
  * @sharpee/stdlib/channels — standard `IOChannel` definitions.
  *
- * Owner context: stdlib language layer. The ten platform-vocabulary
+ * Owner context: stdlib language layer. The platform-vocabulary
  * channels from ADR-163 §4 — co-located with stdlib because their
  * closures read stdlib data sources (capabilities, blocks the
  * text-service produces, world projections).
+ *
+ * Per ADR-300 D8 there is no `main`: the seven prose elements each have
+ * their own channel and the turn's reading order rides `preferred-layout`
+ * (D9). Nothing here is "the prose window" — assembling one is the
+ * client's decision, and `composeProse` in `@sharpee/channel-service` is
+ * the shared rule for clients that want the engine's own order.
  *
  * Per ADR-163 §6, channels are self-contained: each `IOChannel`
  * carries its identity, configuration, and a closure that computes
@@ -3999,7 +4026,7 @@ export declare const channelRegistry: IChannelRegistry;
  *
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
-import type { IOChannel, MainEntry } from '@sharpee/if-domain';
+import type { IOChannel, ProseEntry } from '@sharpee/if-domain';
 /**
  * Event types the standard channels listen for. Stories or extensions
  * that want to populate `death`, `endgame`, or `score_notify` emit
@@ -4029,14 +4056,44 @@ export declare const STANDARD_CHANNEL_EVENTS: {
     readonly GAME_LOST: "game.lost";
     readonly SCORE_CHANGED: "game.score_changed";
 };
+/** `room-name` — the room title line. */
+export declare const roomNameChannel: IOChannel<ProseEntry>;
+/** `room-description` — the room's body prose. */
+export declare const roomDescriptionChannel: IOChannel<ProseEntry>;
+/** `room-contents` — what is visible in the room. */
+export declare const roomContentsChannel: IOChannel<ProseEntry>;
+/** `action-result` — an action's success narration. */
+export declare const actionResultChannel: IOChannel<ProseEntry>;
+/** `action-blocked` — why an action refused. */
+export declare const actionBlockedChannel: IOChannel<ProseEntry>;
+/** `error` — parser and system errors. */
+export declare const errorChannel: IOChannel<ProseEntry>;
+/** `game-message` — story and game-level messages. */
+export declare const gameMessageChannel: IOChannel<ProseEntry>;
 /**
- * `main` — append-mode prose transcript. Carries `MainEntry` objects
- * (`{ content, tight? }`) so renderers can preserve decorations *and*
- * the per-entry visual-continuation hint introduced by the pre-line
- * removal (session 2026-05-12). Closure projects every block whose key
- * is in `MAIN_KEYS` into the channel's append stream.
+ * Every prose channel, in `PROSE_CHANNEL_IDS` order. Registration order,
+ * not render order — see `preferredLayoutChannel`.
  */
-export declare const mainChannel: IOChannel<MainEntry>;
+export declare const PROSE_CHANNELS: ReadonlyArray<IOChannel<ProseEntry>>;
+/**
+ * `preferred-layout` — replace-mode reading order for this turn's prose
+ * (ADR-300 D9).
+ *
+ * One entry per prose entry emitted this turn, naming the channel that
+ * produced it, in block order. A channel id repeats when it produced
+ * more than one entry, so the list reconstructs the engine's sequence
+ * exactly — including the interleavings a fixed render order gets
+ * wrong, like a move whose action result prints before the room name.
+ *
+ * It emits `always`, including the empty array on a turn that produced
+ * no prose: a client composing from it needs to know the turn said
+ * nothing, not re-render the previous turn.
+ *
+ * The engine's ordering knowledge does not vanish with `main` — it
+ * stops being smuggled inside an append stream and becomes a signal a
+ * client is free to disagree with.
+ */
+export declare const preferredLayoutChannel: IOChannel<string[]>;
 /**
  * `prompt` — replace-mode input prompt. Defaults to `'> '` when no
  * prompt block is emitted, so the renderer always has a sensible
@@ -4218,7 +4275,14 @@ export declare const STANDARD_CHANNELS: ReadonlyArray<IOChannel>;
  * and consumers that need string-literal types.
  */
 export declare const STANDARD_CHANNEL_IDS: {
-    readonly MAIN: "main";
+    readonly ROOM_NAME: "room-name";
+    readonly ROOM_DESCRIPTION: "room-description";
+    readonly ROOM_CONTENTS: "room-contents";
+    readonly ACTION_RESULT: "action-result";
+    readonly ACTION_BLOCKED: "action-blocked";
+    readonly ERROR: "error";
+    readonly GAME_MESSAGE: "game-message";
+    readonly PREFERRED_LAYOUT: "preferred-layout";
     readonly PROMPT: "prompt";
     readonly LOCATION: "location";
     readonly SCORE: "score";
@@ -4454,27 +4518,48 @@ export type SoundChannelId = typeof SOUND_CHANNEL_IDS[number];
 
 ```typescript
 /**
- * @sharpee/stdlib/channels — block-key sets used by standard channels.
+ * @sharpee/stdlib/channels — block-key → channel-id routing for prose.
  *
- * Owner context: stdlib language layer. The standard `main` channel's
- * closure routes prose-shaped blocks (room descriptions, action
- * results, banners, etc.) into the append-mode main transcript.
- * `MAIN_KEYS` names every `CORE_BLOCK_KEYS` entry that should land in
- * the main channel.
+ * Owner context: stdlib language layer. ADR-300 D8 dissolved the
+ * catch-all `main` channel: each prose-shaped block key now has its own
+ * channel, so a client receives `room-description` and `action-result`
+ * as separate signals instead of one append stream it was expected to
+ * concatenate. No channel means "the prose window" any more.
  *
- * Block keys not in this set are NOT routed to main automatically —
- * stories override or extend by registering their own `IOChannel`
- * (last-write-wins on channel id) per ADR-163 §6.
+ * `PROSE_CHANNEL_BY_BLOCK_KEY` is the whole routing table. It is the
+ * single place the mapping lives: the seven prose channels' closures
+ * read it, and so does `preferred-layout`'s (ADR-300 D9), which is what
+ * keeps the ordering signal and the channels it orders from drifting
+ * apart.
  *
+ * Block keys absent from this map are NOT routed to a prose channel —
+ * status keys are read from world state by the score/turn/location
+ * channels, the banner has `BANNER_KEYS`, and stories extend by
+ * registering their own `IOChannel` (last-write-wins on channel id) per
+ * ADR-163 §6.
+ *
+ * The channel *ids* are wire vocabulary and live in
+ * `@sharpee/if-domain` (`PROSE_CHANNEL_IDS`) so producer and consumers
+ * cannot drift. What this file owns is the engine-side half: which text
+ * block key routes to which of those ids.
+ *
+ * Public interface: `PROSE_CHANNEL_BY_BLOCK_KEY`, `BANNER_KEYS`.
+ *
+ * @see ADR-300 — Addressable Channels and the Canonical Transcript — D8, D9
  * @see ADR-163 — Channel-Service Platform — §6, §7, §14
  */
+import type { ProseChannelId } from '@sharpee/if-domain';
 /**
- * Block keys whose content flows into the `main` channel (append mode,
- * decoration-preserving). Status blocks (`status.score`, `status.turns`,
- * `status.room`) are intentionally absent — those values are now read
- * from world state directly by the score/turn/location channels.
+ * The prose routing table: which channel carries each prose-shaped
+ * block key. Iteration order is the order the channels are registered
+ * in `STANDARD_CHANNELS`, which is *not* a render order — the render
+ * order is per-turn and rides `preferred-layout`.
+ *
+ * Typed on `ProseChannelId` so adding a route to an id that is not in
+ * if-domain's wire vocabulary fails to compile rather than emitting a
+ * channel no consumer knows how to render.
  */
-export declare const MAIN_KEYS: ReadonlySet<string>;
+export declare const PROSE_CHANNEL_BY_BLOCK_KEY: ReadonlyMap<string, ProseChannelId>;
 /**
  * Block keys whose content flows into the `banner` channel.
  *

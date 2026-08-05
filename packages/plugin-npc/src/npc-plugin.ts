@@ -71,12 +71,16 @@ export class NpcPlugin implements TurnPlugin {
    * is saved with the world and the plugin holds nothing of its own.
    */
   getState(): unknown {
-    return {};
+    return { behaviors: this.service.getBehaviorStates?.() ?? {} };
   }
 
   /** No-op: NPC state is restored with the world model, not by this plugin. */
-  setState(_state: unknown): void {
-    // No-op: NPC state is stored in world model entities
+  setState(state: unknown): void {
+    const behaviors =
+      state && typeof state === 'object'
+        ? ((state as { behaviors?: Record<string, Record<string, unknown>> }).behaviors ?? {})
+        : {};
+    this.service.setBehaviorStates?.(behaviors);
   }
 
   /**

@@ -18,7 +18,7 @@ function makeRecording(overrides: Partial<GoldenRecording> = {}): GoldenRecordin
       seed: 42,
       derivation: 1,
       saveFormat: '3.0.0',
-      channels: ['main'],
+      channels: [],
       events: false,
       locale: 'en-US',
       forces: []
@@ -45,7 +45,7 @@ describe('.golden serialization (D7)', () => {
         'seed: 42\n' +
         'derivation: 1\n' +
         'save-format: 3.0.0\n' +
-        'channels: main\n' +
+        'channels: (none)\n' +
         'events: false\n' +
         'locale: en-US\n' +
         'forces: (none)\n' +
@@ -105,13 +105,13 @@ describe('.golden serialization (D7)', () => {
     const recording = makeRecording({
       provenance: {
         ...makeRecording().provenance,
-        channels: ['main', 'status'],
+        channels: ['score', 'status'],
         forces: ['dungeo.melee.blow.hero = DISARM']
       }
     });
     const text = serializeGolden(recording);
 
-    expect(text).toContain('channels: main, status\n');
+    expect(text).toContain('channels: score, status\n');
     expect(text).toContain('forces: dungeo.melee.blow.hero = DISARM\n');
     expect(parseGolden(text)).toEqual(recording);
   });

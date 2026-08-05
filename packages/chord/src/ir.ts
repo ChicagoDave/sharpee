@@ -748,12 +748,28 @@ export interface IRMachineTransition {
  *  - `field`  — the raw event field value;
  *  - `text`   — a text template whose `(slot)` names project event fields
  *    (the phrase slot spelling), yielding finished text;
- *  - `phrase` — the named phrase's rendered text.
+ *  - `phrase` — the named phrase's rendered text;
+ *  - `record` — a structured object whose members each project one of the
+ *    above (ADR-300 D10). This is the Chord side of ADR-300 D7: the platform
+ *    could already build record-valued channels (the banner), and until D10
+ *    an author could not say so in a `.story` file.
  */
 export type IRChannelReturn =
   | { kind: 'field'; field: string }
   | { kind: 'text'; text: string }
-  | { kind: 'phrase'; phrase: string };
+  | { kind: 'phrase'; phrase: string }
+  | { kind: 'record'; members: IRChannelRecordMember[] };
+
+/**
+ * One member of a record-valued channel (ADR-300 D10). `list: true` is the
+ * `list of` spelling — the member's value is an array. Members never nest a
+ * record; the analyzer guarantees `value.kind !== 'record'`.
+ */
+export interface IRChannelRecordMember {
+  name: string;
+  list: boolean;
+  value: Exclude<IRChannelReturn, { kind: 'record' }>;
+}
 
 /**
  * `define channel` (ADR-216; spelling A, 2026-07-18; ADR-253 replaced

@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { CmgtPacket } from '@sharpee/if-domain';
 import { BrowserClient } from '../src/BrowserClient';
 import { emitTurnEvent } from '../src/turn-events';
-import { joinMainEntries } from '@sharpee/channel-service';
+import { packetProseText } from '@sharpee/channel-service';
 
 function installBridge(): string[] {
   const posted: string[] = [];
@@ -64,7 +64,8 @@ const MANIFEST: CmgtPacket = {
   kind: 'cmgt',
   protocol_version: 1,
   channels: [
-    { id: 'main', contentType: 'json', mode: 'append', emit: 'always' },
+    { id: 'game-message', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'preferred-layout', contentType: 'json', mode: 'replace', emit: 'always' },
     { id: 'prompt', contentType: 'text', mode: 'replace', emit: 'always' },
   ],
 };
@@ -81,8 +82,14 @@ function makeEngine(responseParagraphs: string[][]): FakeEngine {
       handlers.get(event)?.forEach((h) => h(...args));
     },
     async executeTurn() {
-      engine.emit('channel:packet',
-        { kind: 'turn', turn_id: 'turn-1', payload: { main: responseParagraphs } }, 1);
+      engine.emit('channel:packet', {
+        kind: 'turn',
+        turn_id: 'turn-1',
+        payload: {
+          'game-message': responseParagraphs,
+          'preferred-layout': responseParagraphs.map(() => 'game-message'),
+        },
+      }, 1);
     },
     async start() { /* no-op */ },
     setStory() { /* no-op */ },
@@ -166,7 +173,8 @@ describe('BrowserClient turn capture (real render path)', () => {
     // with '\n\n'. normalizeOutput preserves blank lines, so a single newline
     // here means every blessed multi-paragraph assertion fails on its first
     // headless run — the exact bug ADR-282's 2026-07-28 amendment fixed.
-    // Both sides now share `joinMainEntries`; this pins the observable result.
+    // Both sides now share `composeProse` + `joinProseEntries`; this pins the
+    // observable result.
     expect(payload.response).toBe('You stand at the cave mouth.\n\nA lamp glints.');
     expect(payload.response).not.toContain('> look');
   });
@@ -175,10 +183,11 @@ describe('BrowserClient turn capture (real render path)', () => {
     // The distinction the old DOM-reading bridge could not see: it read
     // `textContent` off each <p> and joined everything with '\n', so tight and
     // loose entries were indistinguishable in the recorded transcript.
-    expect(joinMainEntries([
-      { content: ['Score: 10'] },
-      { content: ['Turns: 4'], tight: true },
-    ])).toBe('Score: 10\nTurns: 4');
+    expect(packetProseText({
+      'game-message': [{ content: ['Score: 10'] }],
+      'room-name': [{ content: ['Turns: 4'], tight: true }],
+      'preferred-layout': ['game-message', 'room-name'],
+    })).toBe('Score: 10\nTurns: 4');
   });
 
   it('captures only the current turn — a second command emits its own response', async () => {

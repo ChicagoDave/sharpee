@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    { "path": "../bootstrap" },
+    { "path": "../core" },
+    { "path": "../engine" },
+    { "path": "../lang-en-us" },
+    { "path": "../parser-en-us" },
+    { "path": "../stdlib" },
+    { "path": "../text-blocks" },
+    { "path": "../world-model" }
+  ]
+}

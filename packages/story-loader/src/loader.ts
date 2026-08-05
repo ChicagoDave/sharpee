@@ -2411,7 +2411,19 @@ export class ChordStory implements Story {
    *  - `field`  → the raw field value (may be a non-string);
    *  - `text`   → the template with each `(slot)` replaced by its event field;
    *  - `phrase` → the named phrase's first-variant text, its `(slot)`s likewise
-   *    filled from the event payload (locale-aware via `phraseText`).
+   *    filled from the event payload (locale-aware via `phraseText`);
+   *  - `record` → an object of its members, each evaluated the same way
+   *    against the same payload (ADR-300 D10). This is what closes ADR-300's
+   *    platform/Chord seam: the platform could already emit record-valued
+   *    channels (the banner, D7) and an author could not declare one.
+   *
+   * A `list of` member yields an array. An already-array field passes
+   * through; a single value becomes a one-element list; an absent field
+   * becomes `[]` rather than `[undefined]`, so "the event carried none"
+   * reads as an empty list instead of a hole. A member whose value is
+   * `undefined` is omitted from the record entirely, matching how the
+   * platform's own `bannerChannel` omits absent pieces — a consumer can
+   * branch on presence.
    */
   private evaluateChannelReturn(
     returns: IRChannelReturn,
@@ -2429,6 +2441,24 @@ export class ChordStory implements Story {
         return fill(returns.text);
       case 'phrase':
         return fill(this.phraseText(returns.phrase));
+      case 'record': {
+        const record: Record<string, unknown> = {};
+        for (const member of returns.members) {
+          const value = this.evaluateChannelReturn(member.value, data);
+          if (member.list) {
+            record[member.name] =
+              value === undefined || value === null
+                ? []
+                : Array.isArray(value)
+                  ? value
+                  : [value];
+            continue;
+          }
+          if (value === undefined) continue;
+          record[member.name] = value;
+        }
+        return record;
+      }
     }
   }
 }

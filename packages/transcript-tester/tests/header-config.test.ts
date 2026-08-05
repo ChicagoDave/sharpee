@@ -17,7 +17,7 @@ describe('header run configuration (ADR-294 D3)', () => {
 
     expect(transcript.config).toEqual({
       seeds: [],
-      channels: ['main'],
+      channels: [],
       events: false,
       forces: []
     });
@@ -79,14 +79,14 @@ describe('header run configuration (ADR-294 D3)', () => {
   });
 
   describe('channels: (D15)', () => {
-    it('defaults to ["main"]', () => {
+    it('defaults to [] — the composed prose is not a declared channel (ADR-300 D8)', () => {
       const transcript = parseTranscript(`title: T\n${BODY}`);
-      expect(transcript.config!.channels).toEqual(['main']);
+      expect(transcript.config!.channels).toEqual([]);
     });
 
     it('parses a declared list', () => {
-      const transcript = parseTranscript(`title: T\nchannels: main, status\n${BODY}`);
-      expect(transcript.config!.channels).toEqual(['main', 'status']);
+      const transcript = parseTranscript(`title: T\nchannels: score, status\n${BODY}`);
+      expect(transcript.config!.channels).toEqual(['score', 'status']);
     });
 
     it('parses a single non-text channel', () => {
@@ -264,9 +264,9 @@ describe('header run configuration (ADR-294 D3)', () => {
   });
 
   it('rejects a duplicate config field naming the earlier line', () => {
-    const transcript = parseTranscript(`title: T\nchannels: main\nchannels: status\n${BODY}`);
+    const transcript = parseTranscript(`title: T\nchannels: score\nchannels: status\n${BODY}`);
 
-    expect(transcript.config!.channels).toEqual(['main']);
+    expect(transcript.config!.channels).toEqual(['score']);
     expect(validateTranscript(transcript)).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/Line 3: Duplicate header field "channels:" — already declared on line 2/)

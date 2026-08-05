@@ -1,0 +1,13 @@
+title: Fernhill — the tarnished key under the doormat
+story: fernhill
+continues: arrival
+description: The doormat gives up the key that opens the house. Every test
+  that needs to be inside starts here; its position in the tree IS its setup.
+
+---
+
+> search the doormat
+[OK: contains "key"]
+
+> take the tarnished key
+[OK: contains "You take the tarnished key"]

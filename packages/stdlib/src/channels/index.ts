@@ -14,8 +14,9 @@
  *   media channels.
  * - `StdlibChannelRegistry` — the underlying class (exported for tests
  *   and for any consumer that wants an isolated registry).
- * - Standard channel constants — `mainChannel`, `promptChannel`,
- *   `scoreChannel`, etc. Plus `STANDARD_CHANNELS`, `STANDARD_CHANNEL_IDS`,
+ * - Standard channel constants — the seven prose channels (ADR-300 D8),
+ *   `preferredLayoutChannel` (D9), `promptChannel`, `scoreChannel`, etc.
+ *   Plus `PROSE_CHANNELS`, `STANDARD_CHANNELS`, `STANDARD_CHANNEL_IDS`,
  *   `STANDARD_CHANNEL_EVENTS`, `StandardChannelId`.
  * - Media channel constants — `imageBackgroundChannel`,
  *   `imageMainChannel`, `imageOverlayChannel`, `imagePreloadChannel`,
@@ -25,7 +26,9 @@
  *   `MEDIA_EVENT_TYPES`, `MediaChannelId`, `MediaEventType`.
  * - Builders for dynamic channels — `createImageChannel(layer)`,
  *   `createAmbientChannel(id)`. Plus `imageChannelIdFromEvent` helper.
- * - `MAIN_KEYS` — block-key set the `mainChannel` filters against.
+ * - `PROSE_CHANNEL_BY_BLOCK_KEY` — the block-key → channel routing table
+ *   the seven prose channels and `preferred-layout` share. The ids
+ *   themselves come from `@sharpee/if-domain`.
  * - `BANNER_KEYS` — block-key set the `bannerChannel` filters against.
  *
  * Re-exports the `IChannelRegistry` and `IOChannel` types from
@@ -36,8 +39,17 @@
 export { channelRegistry, StdlibChannelRegistry } from './registry.js';
 
 export {
+  // Prose channels (ADR-300 D8) and the ordering signal (D9)
+  roomNameChannel,
+  roomDescriptionChannel,
+  roomContentsChannel,
+  actionResultChannel,
+  actionBlockedChannel,
+  errorChannel,
+  gameMessageChannel,
+  PROSE_CHANNELS,
+  preferredLayoutChannel,
   // Channel objects
-  mainChannel,
   promptChannel,
   locationChannel,
   scoreChannel,
@@ -97,7 +109,7 @@ export {
   type SoundEventType,
 } from './sound-events.js';
 
-export { MAIN_KEYS, BANNER_KEYS } from './keys.js';
+export { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
 
 // Re-export the registry/channel types from if-domain for author
 // convenience — story code can `import { type IChannelRegistry } from

@@ -560,14 +560,45 @@ define-family-channel                                      (* ADR-241: a named a
 define-channel = "define" "channel" WORD NL                (* spelling A; ADR-253 *)
                  >>> { "mode" ( "replace" | "append" | "event" ) NL
                      | "gated" "by" WORD NL                (* a client capability flag *)
-                     | "return" channel-return "from" WORD NL }
+                     | "return" channel-return "from" WORD NL
+                       [ channel-record-body ] }           (* record members: ADR-300 D10 *)
                  "end" "channel" NL ;
-channel-return = WORD | STRING | "phrase" WORD ;           (* field | "text (slot)" | phrase;
+channel-return = WORD | STRING | "phrase" WORD             (* field | "text (slot)" | phrase;
                                                               ADR-253 replaced `from event`
                                                               + `take` (a `take` line is now
                                                               parse.channel-take-removed). The
                                                               value renders by DOM-name, else
                                                               the generic panel. *)
+               | "record" ;                                (* ADR-300 D10: a structured
+                                                              value. Present only so an
+                                                              author can DECLARE what the
+                                                              platform already emits — a
+                                                              channel's value may be a
+                                                              record (ADR-300 D7; the
+                                                              banner is one). Its members
+                                                              follow as an indented block. *)
+channel-record-body                                        (* ADR-300 D10; legal only after
+                                                              `return record from <event>`.
+                                                              Members project from THAT
+                                                              event's payload — a record is
+                                                              one event read as structure,
+                                                              not several joined. An empty
+                                                              body is analysis.channel-
+                                                              record-empty; a duplicate
+                                                              member name is analysis.
+                                                              channel-record-duplicate. *)
+             = >>> { channel-record-member }
+               "end" "record" NL ;
+channel-record-member                                      (* `list of` yields an array:
+                                                              an array field passes through,
+                                                              a single value becomes one
+                                                              element, an absent field
+                                                              becomes []. An absent scalar
+                                                              member is OMITTED, so a
+                                                              consumer can branch on
+                                                              presence. Records do not nest
+                                                              (parse.channel-record-nested). *)
+             = WORD [ "list" "of" ] channel-return NL ;
 define-topics  = "define" "topics" "for" name NL           (* ADR-239 D3 as amended:
                                                               the ask/tell topic table.
                                                               One block per entity

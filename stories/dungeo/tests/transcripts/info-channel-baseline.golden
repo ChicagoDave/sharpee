@@ -4,7 +4,7 @@ story: dungeo
 seed: 42
 derivation: 1
 save-format: 3.0.0
-channels: main, info
+channels: info
 events: false
 locale: en-US
 forces: (none)

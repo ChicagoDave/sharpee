@@ -62,12 +62,13 @@ export declare class BrowserClient implements BrowserClientInterface {
      */
     private pendingReboot;
     /**
-     * This turn's `main` channel text, one entry per packet, flattened by the
-     * same rule the headless harness uses. Feeds the IDE recording bridge
-     * (ADR-282 D2) so a blessed assertion round-trips through `sharpee test`.
-     * Reset at the top of each executeCommand().
+     * This turn's composed prose text, one entry per packet, flattened by
+     * the same rule the headless harness uses (compose in
+     * `preferred-layout` order, then join). Feeds the IDE recording bridge
+     * (ADR-282 D2) so a blessed assertion round-trips through
+     * `sharpee test`. Reset at the top of each executeCommand().
      */
-    private turnMainText;
+    private turnProseText;
     private elements;
     /**
      * ADR-165 channel renderer host. Constructed in `connectEngine()`
@@ -93,8 +94,8 @@ export declare class BrowserClient implements BrowserClientInterface {
      */
     connectEngine(engine: GameEngine, world: WorldModel): void;
     /**
-     * Append a platform-signal message to the main slot. Mirrors the
-     * `mainChannelRenderer`'s DOM shape (`<p class="main-entry">` with
+     * Append a platform-signal message to the prose slot. Mirrors the
+     * prose renderers' DOM shape (`<p class="main-entry">` with
      * `pre-line` whitespace) plus a `system-message` class for theme
      * styling. Used for save/restore feedback strings that aren't
      * routed through the engine's text-service block production.
@@ -993,7 +994,7 @@ export declare class AudioManager {
  * @see ADR-165 — Renderer Architecture — §7, §8
  */
 import type { IRenderer } from '@sharpee/channel-service';
-import { createMainChannelRenderer } from './main.js';
+import { createProseChannelRenderers } from './prose.js';
 import { createPromptChannelRenderer } from './prompt.js';
 import { createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer } from './status.js';
 import { createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer } from './info.js';
@@ -1003,7 +1004,7 @@ import { createSoundChannelRenderer, createMusicChannelRenderer, type AudioManag
 import { createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer } from './animation.js';
 import { createLifecycleChannelRenderer, type LifecycleChannelRendererOptions } from './lifecycle.js';
 import { mountDefaultLayout, type BrowserDefaultLayout } from './layout.js';
-export { createMainChannelRenderer, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
+export { createProseChannelRenderers, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
 export { createAmbientChannelRenderer } from './audio.js';
 export { createGenericPanelRenderer } from './panel.js';
@@ -1020,17 +1021,17 @@ export interface RegisterDefaultBrowserRenderersOptions {
      */
     audio: AudioManagerLike;
     /**
-     * Optional callback invoked after every entry the main channel
-     * renderer appends. The browser client uses it to scroll the prose
-     * window to the bottom.
+     * Optional callback invoked after the prose renderers append a turn's
+     * entries. The browser client uses it to scroll the prose window to the
+     * bottom.
      */
-    onMainAfterAppend?(slot: HTMLElement): void;
+    onProseAfterAppend?(slot: HTMLElement): void;
     /**
-     * Fired with each `main` packet's entries flattened to plain text, by the
+     * Fired with each turn's composed prose flattened to plain text, by the
      * same rule the headless harness uses. The client accumulates these across
      * a turn for the IDE recording bridge (ADR-282 D2).
      */
-    onMainEntriesText?(text: string): void;
+    onProseEntriesText?(text: string): void;
     /**
      * Optional hotspot-click handler for image channels. When a
      * hotspot is clicked the renderer calls this with the hotspot's
@@ -1053,8 +1054,9 @@ export interface RegisterDefaultBrowserRenderersOptions {
  * via `Renderer.registerSlot(name, handle)` so stories can resolve
  * platform-default slot names by `getSlot`.
  *
- * Standard channels: `main`, `prompt`, `location`, `score`, `turn`,
- * `info`, `ifid`, `death`, `endgame`, `score_notify`.
+ * Standard channels: the seven prose channels and `preferred-layout`
+ * (ADR-300 D8/D9), `prompt`, `location`, `score`, `turn`, `info`,
+ * `ifid`, `prologue`, `banner`, `death`, `endgame`, `score_notify`.
  *
  * Media channels: `image:background`, `image:main`, `image:overlay`,
  * `image:preload`, `sound`, `music`, `animation`, `animate`,
@@ -1316,37 +1318,74 @@ import type { TextContent } from '@sharpee/text-blocks';
 export declare function flattenContent(content: ReadonlyArray<TextContent>): string;
 ```
 
-### utils/join-main-entries
+### utils/prose
 
 ```typescript
 /**
- * @sharpee/channel-service/utils — `main` channel entry joining.
+ * @sharpee/channel-service/utils — composing and flattening a turn's prose.
  *
- * Owner context: platform package. The ONE definition of how a `main`
- * channel packet's entries become a single plain-text string.
+ * Owner context: platform package. The ONE definition of two rules every
+ * surface that shows prose to a person needs:
  *
- * Why this is shared rather than inlined by each consumer: two consumers
- * project the same packets to text — the headless bootstrap harness
- * (`@sharpee/bootstrap`, what `sharpee test` compares against) and the
- * browser client's IDE recording bridge (`@sharpee/platform-browser`,
- * ADR-277 D5 / ADR-282 D2). They MUST agree character-for-character, since
+ *  - `composeProse(payload)` — which entries a turn's prose consists of,
+ *    and in what order (ADR-300 D9). The engine emits seven prose
+ *    channels plus `preferred-layout`; putting them back in the engine's
+ *    intended sequence is this function.
+ *  - `joinProseEntries(entries)` — how that sequence becomes one plain
+ *    text string.
+ *
+ * Why these are shared rather than inlined by each consumer: several
+ * consumers project the same packets to text — the headless bootstrap
+ * harness (`@sharpee/bootstrap`, what `sharpee test` compares against),
+ * the CLI bundle, the browser client's IDE recording bridge
+ * (`@sharpee/platform-browser`, ADR-277 D5 / ADR-282 D2), and zifmia's
+ * multi-user pane. They MUST agree character-for-character, since
  * ADR-282's blessed verbatim assertions are captured through one and
- * replayed through the other. They previously each carried their own copy
- * of this rule and silently diverged on paragraph boundaries: the bridge
- * joined every entry with `'\n'` while the harness used `'\n\n'` for
- * non-tight entries, so a blessed two-paragraph response failed on its
- * first headless run (found 2026-07-28; see ADR-282's amendment).
+ * replayed through the other. The join rule previously had two copies
+ * that silently diverged on paragraph boundaries: the bridge joined
+ * every entry with `'\n'` while the harness used `'\n\n'` for non-tight
+ * entries, so a blessed two-paragraph response failed on its first
+ * headless run (found 2026-07-28; see ADR-282's amendment). Composition
+ * is kept here for the same reason, before it can grow a second copy.
  *
- * Public interface:
- *  - `joinMainEntries(entries)` — one packet's entries as plain text.
+ * Composition is a *client* rule applied to a *preference*. A client is
+ * free to reorder or ignore `preferred-layout` — that is the point of
+ * ADR-300 D9. This function is what "honour it" means.
  *
+ * Public interface: `composeProse`, `joinProseEntries`, `packetProseText`.
+ * The channel-id vocabulary itself (`PREFERRED_LAYOUT_CHANNEL`,
+ * `PROSE_CHANNEL_IDS`) is wire protocol and lives in `@sharpee/if-domain`.
+ *
+ * @see ADR-300 — Addressable Channels and the Canonical Transcript — D8, D9
  * @see ADR-282 — Play-to-test — D2 and its 2026-07-28 amendment
  * @see ADR-163 — Channel-Service Platform
  */
 /**
- * Flatten one `main` channel packet's entries to plain text.
+ * Compose one turn packet's prose entries into the engine's intended
+ * reading order (ADR-300 D9).
  *
- * Accepts both entry shapes seen on the wire: the `MainEntry` object
+ * Walks `payload['preferred-layout']` — a list naming, per position, the
+ * channel that produced that entry — and takes each named channel's next
+ * unconsumed entry. A channel id repeating in the list means that
+ * channel produced more than one entry this turn, and each occurrence
+ * advances that channel's cursor, so interleaved output (an action
+ * result printed before a room name, say) reconstructs exactly.
+ *
+ * Returns `[]` when the packet carries no layout — a turn that produced
+ * no prose, or a packet from a surface that does not emit the ordering
+ * channel. Positions naming a channel absent from the payload are
+ * skipped rather than throwing: a missing channel means the client was
+ * not sent it, which is a subscription fact, not a corrupt packet.
+ *
+ * @param payload — a `TurnPacket.payload`, or any equivalent map of
+ *   channel id → emitted value (zifmia stores turns in that shape).
+ * @returns the turn's prose entries in reading order.
+ */
+export declare function composeProse(payload: unknown): unknown[];
+/**
+ * Flatten a sequence of prose entries to plain text.
+ *
+ * Accepts both entry shapes seen on the wire: the `ProseEntry` object
  * (`{ content, tight? }`) and the legacy bare `TextContent[]`. Anything
  * else is skipped, as is any entry whose flattened text is blank.
  *
@@ -1354,10 +1393,23 @@ export declare function flattenContent(content: ReadonlyArray<TextContent>): str
  * continue the previous line with a single newline, matching how the
  * client collapses the inter-paragraph margin for them.
  *
- * @param entries — the packet's `main` payload.
+ * Callers holding a whole packet should pass `composeProse(payload)`
+ * rather than one channel's array: `tight` refers to the entry's
+ * predecessor in the *composed* sequence, which may sit on a different
+ * channel.
+ *
+ * @param entries — prose entries in reading order.
  * @returns the joined text, or `''` when nothing renderable is present.
  */
-export declare function joinMainEntries(entries: unknown): string;
+export declare function joinProseEntries(entries: unknown): string;
+/**
+ * Compose and flatten in one step — one turn packet's prose as plain
+ * text. The form every headless surface wants.
+ *
+ * @param payload — a `TurnPacket.payload`.
+ * @returns the turn's prose as text, or `''` when it produced none.
+ */
+export declare function packetProseText(payload: unknown): string;
 ```
 
 ### render-to-string

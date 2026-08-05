@@ -51,6 +51,13 @@ export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/platform-browser', 'platform-browser'],
   ['@sharpee/sharpee', 'sharpee'],
   ['@sharpee/transcript-tester', 'transcript-tester'],
+  // ADR-302 D15: a full copy of the transcript harness, not a fork. It builds
+  // here so `repokit build` covers it; it is deliberately NOT in
+  // BUNDLE_ALIASES (nothing in the CLI graph imports it) and NOT in the npm
+  // consumer closure (consumer-gen / test-npm) — the Family Zoo tutorial that
+  // closure serves stays on v1 permanently (D9/D12), so vendoring v2 there
+  // would ship a package the consumer never loads.
+  ['@sharpee/branch-tester', 'branch-tester'],
   ['@sharpee/devkit', 'devkit'],
 ];
 

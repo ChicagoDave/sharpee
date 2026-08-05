@@ -25,6 +25,7 @@ import {
   DefineCounter,
   DefineAction,
   DefineChannel,
+  ChannelReturn,
   DefineCondition,
   DefineMachine,
   DefinePhrase,
@@ -65,6 +66,8 @@ import {
   IREntity,
   IRExit,
   IRDataChannelDef,
+  IRChannelReturn,
+  IRChannelRecordMember,
   IRChannelDef,
   IRPronounSetDef,
   IREmitField,
@@ -3809,7 +3812,7 @@ class Analyzer {
     if (decl.returns === null || decl.fromEvent === null) {
       this.diagnostics.error(
         'analysis.channel-return',
-        `Channel \`${decl.name}\` needs a \`return <field | "text" | phrase <key>> from <event>\` line.`,
+        `Channel \`${decl.name}\` needs a \`return <field | "text" | phrase <key> | record> from <event>\` line.`,
         decl.span,
       );
     }
@@ -3831,9 +3834,53 @@ class Analyzer {
       mode: (decl.mode ?? 'event') as IRDataChannelDef['mode'],
       gatedBy,
       fromEvent: decl.fromEvent ?? '',
-      returns: decl.returns ?? { kind: 'field', field: '' },
+      returns: this.lowerChannelReturn(decl.returns, decl),
       span: decl.span,
     };
+  }
+
+  /**
+   * Lower a parsed channel return to IR (ADR-253 D1; ADR-300 D10 for
+   * records).
+   *
+   * A record's members are validated here rather than in the parser: an
+   * empty record, a duplicate member name, and a member whose construct
+   * failed to parse are all analysis gates. Members that did not parse are
+   * dropped after being reported, so the IR never carries a null construct
+   * and the loader needs no defensive branch.
+   */
+  private lowerChannelReturn(
+    returns: ChannelReturn | null,
+    decl: DefineChannel,
+  ): IRChannelReturn {
+    if (returns === null) return { kind: 'field', field: '' };
+    if (returns.kind !== 'record') return returns;
+
+    const members: IRChannelRecordMember[] = [];
+    const seen = new Set<string>();
+    for (const member of returns.members) {
+      if (seen.has(member.name)) {
+        this.diagnostics.error(
+          'analysis.channel-record-duplicate',
+          `Channel \`${decl.name}\` already has a \`${member.name}\` member.`,
+          member.span,
+        );
+        continue;
+      }
+      seen.add(member.name);
+      // A null construct was already reported by the parser; dropping it here
+      // keeps one error per bad line instead of two.
+      if (member.value === null || member.value.kind === 'record') continue;
+      members.push({ name: member.name, list: member.list, value: member.value });
+    }
+    if (members.length === 0) {
+      this.diagnostics.error(
+        'analysis.channel-record-empty',
+        `Channel \`${decl.name}\` returns a \`record\` with no members — give it at least one \`<name> <construct>\` line, or return the construct directly.`,
+        decl.span,
+      );
+    }
+    return { kind: 'record', members };
   }
 
   /**
@@ -3850,12 +3897,7 @@ class Analyzer {
       if (ch.family !== 'data') continue;
       const emitted = this.emitFields.get(ch.fromEvent);
       if (!emitted) continue; // unknown field set — cannot check
-      const required: string[] =
-        ch.returns.kind === 'field'
-          ? [ch.returns.field]
-          : ch.returns.kind === 'text'
-            ? [...ch.returns.text.matchAll(/\(\s*([^)]+?)\s*\)/g)].map((m) => m[1])
-            : [];
+      const required: string[] = channelReturnFields(ch.returns);
       for (const field of required) {
         if (!emitted.has(field)) {
           this.diagnostics.error(
@@ -4561,4 +4603,26 @@ function levenshtein(a: string, b: string): number {
     prev = row;
   }
   return prev[n];
+}
+
+
+/**
+ * Every event-payload field a channel return references (ADR-253 D1;
+ * ADR-300 D10 for records).
+ *
+ * A `field` names one directly; a `text` template names each `(slot)`; a
+ * `record` names the union of its members'. `phrase` returns own their slots
+ * through the phrase system, so they contribute nothing here.
+ */
+function channelReturnFields(returns: IRChannelReturn): string[] {
+  switch (returns.kind) {
+    case 'field':
+      return [returns.field];
+    case 'text':
+      return [...returns.text.matchAll(/\(\s*([^)]+?)\s*\)/g)].map((m) => m[1]);
+    case 'phrase':
+      return [];
+    case 'record':
+      return returns.members.flatMap((m) => channelReturnFields(m.value));
+  }
 }

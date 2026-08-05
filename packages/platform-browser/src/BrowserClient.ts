@@ -101,12 +101,13 @@ export class BrowserClient implements BrowserClientInterface {
   private pendingReboot = false;
 
   /**
-   * This turn's `main` channel text, one entry per packet, flattened by the
-   * same rule the headless harness uses. Feeds the IDE recording bridge
-   * (ADR-282 D2) so a blessed assertion round-trips through `sharpee test`.
-   * Reset at the top of each executeCommand().
+   * This turn's composed prose text, one entry per packet, flattened by
+   * the same rule the headless harness uses (compose in
+   * `preferred-layout` order, then join). Feeds the IDE recording bridge
+   * (ADR-282 D2) so a blessed assertion round-trips through
+   * `sharpee test`. Reset at the top of each executeCommand().
    */
-  private turnMainText: string[] = [];
+  private turnProseText: string[] = [];
 
   // DOM elements reference
   private elements!: DOMElements;
@@ -254,8 +255,8 @@ export class BrowserClient implements BrowserClientInterface {
   }
 
   /**
-   * Append a platform-signal message to the main slot. Mirrors the
-   * `mainChannelRenderer`'s DOM shape (`<p class="main-entry">` with
+   * Append a platform-signal message to the prose slot. Mirrors the
+   * prose renderers' DOM shape (`<p class="main-entry">` with
    * `pre-line` whitespace) plus a `system-message` class for theme
    * styling. Used for save/restore feedback strings that aren't
    * routed through the engine's text-service block production.
@@ -311,12 +312,12 @@ export class BrowserClient implements BrowserClientInterface {
     });
     registerDefaultBrowserRenderers(this.channelRenderer, layout, {
       audio: this.audioManager,
-      onMainAfterAppend: (slot) => {
+      onProseAfterAppend: (slot) => {
         const win = this.elements?.mainWindow ?? slot.parentElement;
         if (win) win.scrollTop = win.scrollHeight;
       },
-      onMainEntriesText: (text) => {
-        this.turnMainText.push(text);
+      onProseEntriesText: (text) => {
+        this.turnProseText.push(text);
       },
       onHotspotCommand: (command) => {
         this.engine.executeTurn(command);
@@ -616,11 +617,11 @@ export class BrowserClient implements BrowserClientInterface {
     await this.audioManager.unlock();
 
     // Recording bridge (ADR-277 D5): the turn's response is whatever lands in
-    // the main text slot after this point — channel prose AND system messages
-    // The engine's own text for this turn, accumulated by the `main`
-    // renderer's onEntriesText as packets arrive (ADR-282 D2). Reset here so
-    // it holds exactly one turn.
-    this.turnMainText = [];
+    // the prose slot after this point — channel prose AND system messages.
+    // The engine's own text for this turn, accumulated by the
+    // `preferred-layout` renderer's onEntriesText as packets arrive
+    // (ADR-282 D2). Reset here so it holds exactly one turn.
+    this.turnProseText = [];
 
     // Display command echo
     this.textDisplay.displayCommand(command);
@@ -638,13 +639,14 @@ export class BrowserClient implements BrowserClientInterface {
     // Emit the completed turn to an embedding IDE (no-op outside one) —
     // BEFORE any deferred reboot clears the slot.
     //
-    // The payload is the ENGINE's text, not the DOM's: packets joined the same
-    // way the headless harness joins them (`joinMainEntries` per packet, then
-    // '\n' across packets — `@sharpee/bootstrap`'s outputBuffer rule). Reading
+    // The payload is the ENGINE's text, not the DOM's: packets composed and
+    // joined the same way the headless harness does (`packetProseText` per
+    // packet, then '\n' across packets — `@sharpee/bootstrap`'s outputBuffer
+    // rule). Reading
     // it back off the DOM instead loses the tight/loose distinction, so a
     // blessed multi-paragraph assertion would never match headless
     // (ADR-282 D2 and its 2026-07-28 amendment).
-    emitTurnEvent(command, this.turnMainText.join('\n'));
+    emitTurnEvent(command, this.turnProseText.join('\n'));
 
     // ADR-248: a confirmed restart defers its reboot to here — the turn is
     // fully complete, so the ack ("The story restarts.") has rendered.

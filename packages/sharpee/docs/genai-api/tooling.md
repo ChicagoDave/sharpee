@@ -439,7 +439,7 @@ export interface TranscriptRunConfig {
      * (legal in the assertion tier; a golden transcript must pin at least one).
      */
     seeds: number[];
-    /** Channels the recording scopes to (D15). Default: `['main']`. */
+    /** Channels the recording scopes to (D15). Default: `[]` (ADR-300 D8). */
     channels: string[];
     /** Record the event stream alongside prose (D6). Default: `false`. */
     events: boolean;
@@ -546,7 +546,7 @@ export interface GoldenRecording {
  * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains';
+    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains';
     value?: string;
     reason?: string;
     /**
@@ -559,7 +559,6 @@ export interface Assertion {
      * header, or there is nothing captured to read.
      */
     channelId?: string;
-    eventCount?: number;
     assertTrue?: boolean;
     eventPosition?: number;
     eventType?: string;
@@ -944,9 +943,10 @@ interface GameEngine {
         data?: any;
     }>;
     /**
-     * Declared non-main channel captures for the last command (ADR-294 D15):
-     * flattened lines per channel id. Populated by bootstrap's assembleGame
-     * when the session was assembled with channels beyond `main`.
+     * Declared channel captures for the last command (ADR-294 D15): flattened
+     * lines per channel id. Populated by bootstrap's assembleGame when the
+     * session declared any channels. The turn's composed prose is not among
+     * them — it rides the command's return value (ADR-300 D8/D9).
      */
     lastChannels?: Record<string, string[]>;
     world?: WorldModel;

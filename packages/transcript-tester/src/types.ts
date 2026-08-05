@@ -98,7 +98,7 @@ export interface TranscriptRunConfig {
    * (legal in the assertion tier; a golden transcript must pin at least one).
    */
   seeds: number[];
-  /** Channels the recording scopes to (D15). Default: `['main']`. */
+  /** Channels the recording scopes to (D15). Default: `[]` (ADR-300 D8). */
   channels: string[];
   /** Record the event stream alongside prose (D6). Default: `false`. */
   events: boolean;
@@ -209,7 +209,7 @@ export interface GoldenRecording {
 export interface Assertion {
   type: 'ok' | 'ok-contains' | 'ok-not-contains'
       | 'fail' | 'skip' | 'todo'
-      | 'event-count' | 'event-assert' | 'state-assert'
+      | 'event-assert' | 'state-assert'
       | 'channel-contains' | 'channel-not-contains';
   value?: string;      // For contains/not-contains
   reason?: string;     // For fail/todo
@@ -226,7 +226,6 @@ export interface Assertion {
   channelId?: string;
 
   // Event assertions
-  eventCount?: number;          // For event-count assertion
   assertTrue?: boolean;         // For event-assert and state-assert: true = must exist, false = must not exist
   eventPosition?: number;       // For event-assert: optional 1-based position (omit for "any position")
   eventType?: string;           // For event-assert: the event type to match

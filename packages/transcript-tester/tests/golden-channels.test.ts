@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 const SOURCE =
-  'title: T\nstory: teststory\nseed: 42\nchannels: main, score\n---\n> look\n> north\n';
+  'title: T\nstory: teststory\nseed: 42\nchannels: score\n---\n> look\n> north\n';
 
 function fixture(source: string = SOURCE, name = 'fixture.transcript') {
   return parseTranscript(source, path.join(dir, name));
@@ -70,7 +70,7 @@ describe('golden format (D15)', () => {
       seed: 42,
       derivation: 1,
       saveFormat: '3.0.0',
-      channels: ['main', 'score'],
+      channels: ['score'],
       events: false,
       locale: 'en-US',
       forces: []
@@ -97,9 +97,9 @@ describe('golden format (D15)', () => {
     expect(serializeGolden(parsed)).toBe(text);
   });
 
-  it('treats ◦ lines as prose in a main-only recording (gating precedent)', () => {
+  it('treats ◦ lines as prose when the recording declares no channels (gating precedent)', () => {
     const mainOnly: GoldenRecording = {
-      provenance: { ...recording.provenance, channels: ['main'] },
+      provenance: { ...recording.provenance, channels: [] },
       turns: [{ command: 'look', output: ['◦ score looks like a channel line but is prose'] }]
     };
     const text = serializeGolden(mainOnly);
@@ -127,17 +127,17 @@ describe('record + replay (AC-8)', () => {
   it('records the declared channel and replays green', async () => {
     const transcript = fixture();
     const record = await runTranscript(transcript, channelEngine() as never, {
-      bless: true, assembledChannels: ['main', 'score']
+      bless: true, assembledChannels: ['score']
     });
     expect(record.status).toBe('passed');
 
     const golden = parseGoldenFile(goldenPathFor(transcript.filePath));
-    expect(golden.provenance.channels).toEqual(['main', 'score']);
+    expect(golden.provenance.channels).toEqual(['score']);
     expect(golden.turns[0].channels).toEqual({ score: ['{"current":1,"max":null}'] });
     expect(golden.turns[1].channels).toEqual({ score: ['{"current":2,"max":null}'] });
 
     const replay = await runTranscript(fixture(), channelEngine() as never, {
-      assembledChannels: ['main', 'score']
+      assembledChannels: ['score']
     });
     expect(replay.status).toBe('passed');
   });
@@ -145,14 +145,14 @@ describe('record + replay (AC-8)', () => {
   it('fails a tampered channel line and names the channel', async () => {
     const transcript = fixture();
     await runTranscript(transcript, channelEngine() as never, {
-      bless: true, assembledChannels: ['main', 'score']
+      bless: true, assembledChannels: ['score']
     });
     const goldenPath = goldenPathFor(transcript.filePath);
     fs.writeFileSync(goldenPath,
       fs.readFileSync(goldenPath, 'utf-8').replace('{"current":2', '{"current":99'), 'utf-8');
 
     const replay = await runTranscript(fixture(), channelEngine() as never, {
-      assembledChannels: ['main', 'score']
+      assembledChannels: ['score']
     });
     expect(replay.status).toBe('failed');
     const failedCommand = replay.commands.find((c) => !c.passed);
@@ -162,11 +162,11 @@ describe('record + replay (AC-8)', () => {
   it('treats a channel that stops emitting as a divergence (absence is diffed)', async () => {
     const transcript = fixture();
     await runTranscript(transcript, channelEngine() as never, {
-      bless: true, assembledChannels: ['main', 'score']
+      bless: true, assembledChannels: ['score']
     });
 
     const replay = await runTranscript(fixture(), channelEngine(42, { silentScore: true }) as never, {
-      assembledChannels: ['main', 'score']
+      assembledChannels: ['score']
     });
     expect(replay.status).toBe('failed');
     const failedCommand = replay.commands.find((c) => !c.passed);
@@ -176,10 +176,10 @@ describe('record + replay (AC-8)', () => {
   it('refuses a transcript whose channels: disagrees with the assembled session', async () => {
     const transcript = fixture();
     const result = await runTranscript(transcript, channelEngine() as never, {
-      bless: true, assembledChannels: ['main']
+      bless: true, assembledChannels: []
     });
     expect(result.status).toBe('error');
-    expect(result.errorMessage).toMatch(/assembled with channels: main —/);
+    expect(result.errorMessage).toMatch(/assembled with channels: \(none\) —/);
     expect(fs.existsSync(goldenPathFor(transcript.filePath))).toBe(false);
   });
 });

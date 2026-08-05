@@ -338,7 +338,24 @@ export interface TopicRow {
 export type ChannelReturn =
   | { kind: 'field'; field: string }
   | { kind: 'text'; text: string }
-  | { kind: 'phrase'; phrase: string };
+  | { kind: 'phrase'; phrase: string }
+  | { kind: 'record'; members: ChannelRecordMember[] };
+
+/**
+ * One member of a `return record` block (ADR-300 D10).
+ *
+ * `<name> <construct>` projects a single value; `<name> list of <construct>`
+ * projects a repeated one. `value` is never itself a record — records do not
+ * nest, and the parser reports an attempt to nest one.
+ */
+export interface ChannelRecordMember {
+  name: string;
+  /** True for `list of <construct>` — the member carries an array. */
+  list: boolean;
+  /** The member's construct; null = parse error already reported. */
+  value: ChannelReturn | null;
+  span: Span;
+}
 
 /**
  * `define channel <name> … end channel` (ADR-216; spelling A ratified by
@@ -358,7 +375,8 @@ export interface DefineChannel {
   /** The source event type, from the `return … from <event>` tail (ADR-256:
    *  a dotless Chord id; null = parse error reported). */
   fromEvent: string | null;
-  /** `return <construct> from <event>` (ADR-253 D1); null = parse error reported. */
+  /** `return <construct> from <event>` (ADR-253 D1); null = parse error
+   *  reported. A `record` construct (ADR-300 D10) carries its members. */
   returns: ChannelReturn | null;
   span: Span;
 }

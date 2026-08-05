@@ -359,24 +359,61 @@ export class SchedulerService implements ISchedulerService {
     };
   }
 
+  /**
+   * Restore scheduler state from a save.
+   *
+   * **A restore is a reset, not a merge.** This used to iterate the SAVE and
+   * overwrite whatever ids it happened to name, which meant anything created
+   * after the save survived untouched. Fuses are the sharp edge: unlike
+   * daemons, which register once at game start, a fuse is lit during play —
+   * so a fuse lit after the save went on ticking in a world that restored to
+   * before it was lit.
+   *
+   * That is invisible in ordinary play, where you restore over your own
+   * later state and a stray fuse looks like the story. It is not invisible
+   * to branch testing, where two children restore the same parent save
+   * (ADR-302 D10): the first child's pending fuses leaked into the second,
+   * so a test passed alone and failed with a sibling — an order-dependent
+   * result from a mechanism whose whole purpose is that order does not
+   * matter. Found by running Fernhill's tree; see issue #226.
+   *
+   * Reconciliation, in both directions:
+   *  - registered AND in the save → restore the saved state;
+   *  - a daemon registered but absent from the save → reset to its
+   *    registration default, since the save predates whatever it counted;
+   *  - a fuse absent from the save → it did not exist then, so it is
+   *    extinguished rather than left to burn.
+   *
+   * A fuse present in the save but no longer registered cannot be revived: a
+   * fuse's callback is not serializable, so the definition is gone with it.
+   * That is a pre-existing limit of the format, not something this
+   * reconciliation introduces, and it is skipped rather than faked.
+   */
   setState(state: SchedulerState): void {
     this.currentTurn = state.turn;
 
-    // Restore daemon states (daemons must be re-registered at game start)
-    for (const daemonState of state.daemons) {
-      if (this.daemons.has(daemonState.id)) {
-        this.daemonStates.set(daemonState.id, { ...daemonState });
-        if (daemonState.runnerState) {
-          this.daemons.get(daemonState.id)?.restoreRunnerState?.(daemonState.runnerState);
+    const savedDaemons = new Map(state.daemons.map((d) => [d.id, d]));
+    for (const id of [...this.daemonStates.keys()]) {
+      const saved = savedDaemons.get(id);
+      if (saved) {
+        this.daemonStates.set(id, { ...saved });
+        if (saved.runnerState) {
+          this.daemons.get(id)?.restoreRunnerState?.(saved.runnerState);
         }
+        continue;
       }
+      this.daemonStates.set(id, { id, isPaused: false, runCount: 0 });
     }
 
-    // Restore fuse states (fuses must be re-registered at game start)
-    for (const fuseState of state.fuses) {
-      if (this.fuses.has(fuseState.id)) {
-        this.fuseStates.set(fuseState.id, { ...fuseState });
+    const savedFuses = new Map(state.fuses.map((f) => [f.id, f]));
+    for (const id of [...this.fuseStates.keys()]) {
+      const saved = savedFuses.get(id);
+      if (saved) {
+        this.fuseStates.set(id, { ...saved });
+        continue;
       }
+      this.fuses.delete(id);
+      this.fuseStates.delete(id);
     }
   }
 

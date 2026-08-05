@@ -103,7 +103,7 @@ final class ComposeRunnerTests: XCTestCase {
     /// situation of the IDE running on the dev Mac with no global install.
     func testRealRepoShimResolvesForFernhill() throws {
         let fernhill = TestToolchain.repoRoot
-            .appendingPathComponent("stories/fernhill/fernhill.story")
+            .appendingPathComponent("branch-stories/fernhill/fernhill.story")
         try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhill.path))
         XCTAssertEqual(ComposeRunner.workspaceShim(near: fernhill)?.lastPathComponent, "sharpee")
         XCTAssertNotNil(ComposeRunner.resolveSharpee(near: fernhill))
@@ -180,7 +180,7 @@ final class ComposeRunnerTests: XCTestCase {
     /// checks a leaf's span lands inside the actual file.
     func testFernhillTreePopulatesFromSourceAlone() throws {
         let fernhill = TestToolchain.repoRoot
-            .appendingPathComponent("stories/fernhill/fernhill.story")
+            .appendingPathComponent("branch-stories/fernhill/fernhill.story")
         try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhill.path),
                           "fernhill fixture story not present in this checkout")
 

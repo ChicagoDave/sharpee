@@ -5,9 +5,11 @@
  * Public interface: {@link mountChannelRendererHost}.
  * Owner: web client.
  *
- * Uses `@sharpee/platform-browser/channels/main` so the same canonical
+ * Uses `@sharpee/platform-browser/channels/prose` so the same canonical
  * decoration → DOM rendering that drives the single-player browser
- * client also drives the multi-user surface (ADR-163 + ADR-165). The
+ * client also drives the multi-user surface (ADR-163 + ADR-165 +
+ * ADR-300 D8/D9) — including composing a turn's prose channels in
+ * `preferred-layout` order rather than payload-key order. The
  * multi-user layer adds a per-turn submitter label between turn blocks
  * so authors and players can attribute commands.
  *
@@ -16,8 +18,8 @@
  */
 
 import type { RoomStateStore, RoomStateSnapshot, TurnLine } from '../store/room-state.js';
-import { createMainChannelRenderer } from '@sharpee/platform-browser/channels/main';
-import type { ChannelRenderer } from '@sharpee/channel-service';
+import { createProseChannelRenderers } from '@sharpee/platform-browser/channels/prose';
+import { PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
 
 export interface ChannelRendererHostHandlers {
   onScrollAnchor?: () => void;
@@ -32,7 +34,7 @@ export function mountChannelRendererHost(
   root.className = 'sharpee-channel-renderer-host';
   parent.appendChild(root);
 
-  const mainRenderer: ChannelRenderer = createMainChannelRenderer(root, {
+  const prose = createProseChannelRenderers(root, PROSE_CHANNEL_IDS, {
     onAfterAppend: (slot) => {
       slot.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
@@ -79,15 +81,12 @@ export function mountChannelRendererHost(
       }
       root.appendChild(header);
     }
-    const mainBlocks = turn.channels.main;
-    if (Array.isArray(mainBlocks) && mainBlocks.length > 0) {
-      mainRenderer.onValue?.(mainBlocks);
-    }
+    prose.renderPayload(turn.channels);
   }
 
   function render(snapshot: RoomStateSnapshot): void {
     if (snapshot.transcript.length < lastTurnCount) {
-      mainRenderer.onClear?.('main');
+      prose.clear();
       lastTurnCount = 0;
     }
     for (let i = lastTurnCount; i < snapshot.transcript.length; i += 1) {

@@ -15,7 +15,7 @@ import { resolveStoryModulePath } from './resolve.js';
 import { purgeStoryModuleCache } from './purge.js';
 import { GameEngine, TurnResult } from '@sharpee/engine';
 import { ISemanticEvent } from '@sharpee/core';
-import { joinMainEntries } from '@sharpee/channel-service';
+import { packetProseText } from '@sharpee/channel-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService, channelRegistry } from '@sharpee/stdlib';
@@ -24,9 +24,9 @@ import { LanguageProvider } from '@sharpee/lang-en-us';
 import { TestingExtension } from '@sharpee/ext-testing';
 
 /**
- * CLI / test capability profile (ADR-165 §8). Only the `main` channel produces
- * visible output in test mode; status/prompt/info/etc. are available to
- * interactive mode but ignored here.
+ * CLI / test capability profile (ADR-165 §8). Only the prose channels
+ * produce visible output in test mode; status/prompt/info/etc. are
+ * available to interactive mode but ignored here.
  */
 export const CLI_CAPABILITIES = {
   text: true,
@@ -56,18 +56,34 @@ export interface LoadedGame {
   lastEvents: ISemanticEvent[];
   lastTurnResult: TurnResult | null;
   /**
-   * Per-command capture of declared non-`main` channels (ADR-294 D15):
-   * flattened lines per channel id, in emission order. Empty unless the game
-   * was assembled with `channels` beyond `main`. `main` stays in
-   * `lastOutput` — it is never duplicated here.
+   * Per-command capture of declared channels (ADR-294 D15): flattened
+   * lines per channel id, in emission order. Empty unless the game was
+   * assembled with an explicit `channels` list. Separate from
+   * `lastOutput`, which is the turn's composed prose (ADR-300 D9) — a
+   * declared prose channel appears in both, answering two different
+   * questions.
    */
   lastChannels: Record<string, string[]>;
+  /**
+   * Per-command capture of declared channels as their STRUCTURED values, in
+   * emission order (ADR-300 D13).
+   *
+   * `lastChannels` flattens everything to lines, which is what a golden
+   * recording wants — deterministic, diffable text. But an assertion that
+   * addresses into a record (`banner.title`) or checks a number needs the
+   * value, not a rendering of it, and a flattened line cannot be un-flattened.
+   * So both are captured: the same emissions, kept two ways for two questions.
+   *
+   * Additive. `lastChannels` is unchanged, so a harness reading only it sees
+   * exactly what it saw before (ADR-302 D15's freeze).
+   */
+  lastChannelValues: Record<string, unknown[]>;
   /** Proxy for runner save/restore plugin state. */
   getPluginRegistry(): {
     getStates(): Record<string, unknown>;
     setStates(states: Record<string, unknown>): void;
   };
-  /** Execute one command; returns the captured `main`-channel text. */
+  /** Execute one command; returns the turn's composed prose as text. */
   executeCommand(input: string): Promise<string>;
   /**
    * Resume the engine if a game-over stopped it (player death, victory).
@@ -89,7 +105,7 @@ export { buildManifest } from './introspect.js';
  * @param opts.seed  master seed for the session (ADR-293 D1), forwarded to
  *   `assembleGame`; absent → the engine reads the clock once
  * @param opts.channels declared capture channels (ADR-294 D15), forwarded to
- *   `assembleGame`; absent → `['main']` (today's behavior)
+ *   `assembleGame`; absent → `[]` (prose still rides `lastOutput`)
  * @throws if the module can't be resolved/required or exports no createStory()
  */
 export async function loadStory(
@@ -153,11 +169,11 @@ export function assembleGame(
      */
     seed?: number;
     /**
-     * Declared capture channels (ADR-294 D15). `main` rides `lastOutput`
-     * as always; each additional id is captured per command into
-     * `lastChannels`, and its `gatedBy` capability (if any) is enabled on
-     * top of CLI_CAPABILITIES so the story emits it in test mode.
-     * Absent / `['main']` → byte-identical to today's behavior.
+     * Declared capture channels (ADR-294 D15). The turn's composed prose
+     * rides `lastOutput` regardless; each id named here is additionally
+     * captured per command into `lastChannels`, and its `gatedBy`
+     * capability (if any) is enabled on top of CLI_CAPABILITIES so the
+     * story emits it in test mode. Absent → no per-channel capture.
      */
     channels?: string[];
   }
@@ -167,6 +183,7 @@ export function assembleGame(
   let outputBuffer: string[] = [];
   let eventBuffer: ISemanticEvent[] = [];
   let channelBuffers: Record<string, string[]> = {};
+  let channelValueBuffers: Record<string, unknown[]> = {};
   let pendingReboot = false;
 
   // ADR-294 D15: the story's channels must be registered BEFORE capability
@@ -174,7 +191,12 @@ export function assembleGame(
   // needs its `gatedBy` looked up now. Registration is last-wins, so the
   // engine's own registration during start() is a harmless re-register.
   story?.registerChannels?.(channelRegistry);
-  const capturedChannels = (opts?.channels ?? ['main']).filter((id) => id !== 'main');
+  // ADR-300 D8: there is no `main` to exclude any more. A transcript that
+  // declares a prose channel by name (`channels: room-name`) gets it
+  // captured here as well as composed into `lastOutput` — the two are
+  // different questions ("what did this channel say" vs "what did the turn
+  // read like"), so neither shadows the other.
+  const capturedChannels = opts?.channels ?? [];
   const capabilities: Record<string, boolean> = { ...CLI_CAPABILITIES };
   for (const id of capturedChannels) {
     const channel = channelRegistry.get(id);
@@ -241,19 +263,22 @@ export function assembleGame(
       // No-op in test mode.
     });
 
-    // channel:packet fires per turn. Flatten the `main` channel's entries to
-    // plain text. Two entry shapes: legacy TextContent[] and MainEntry
-    // { content, tight? }; tight entries continue the prior line.
+    // channel:packet fires per turn. Compose the turn's prose channels in
+    // `preferred-layout` order (ADR-300 D8/D9) and flatten to plain text.
+    // Composing before flattening is what makes `tight` mean the right
+    // thing — it refers to the entry's predecessor in the turn's reading
+    // order, which routinely sits on a different channel now.
     engine.on('channel:packet', (packet: any) => {
-      const out = joinMainEntries(packet?.payload?.main);
+      const out = packetProseText(packet?.payload);
       if (out) outputBuffer.push(out);
-      // ADR-294 D15: capture each declared non-main channel's payload as
+      // ADR-294 D15: capture each declared channel's payload as
       // deterministic lines. Absent payload = the channel emitted nothing
       // this turn (sparse) — meaningful, recorded as absence.
       for (const id of capturedChannels) {
         const value = packet?.payload?.[id];
         if (value === undefined) continue;
         (channelBuffers[id] ??= []).push(...flattenChannelValue(value));
+        (channelValueBuffers[id] ??= []).push(value);
       }
     });
 
@@ -278,6 +303,7 @@ export function assembleGame(
     lastEvents: [],
     lastTurnResult: null,
     lastChannels: {},
+    lastChannelValues: {},
 
     getPluginRegistry() {
       return (engine as any).getPluginRegistry() as {
@@ -294,6 +320,7 @@ export function assembleGame(
       outputBuffer = [];
       eventBuffer = [];
       channelBuffers = {};
+      channelValueBuffers = {};
       let lastTurnResult: TurnResult | null = null;
 
       try {
@@ -324,6 +351,7 @@ export function assembleGame(
       game.lastEvents = eventBuffer;
       game.lastTurnResult = lastTurnResult;
       game.lastChannels = channelBuffers;
+      game.lastChannelValues = channelValueBuffers;
       return game.lastOutput;
     },
   };
