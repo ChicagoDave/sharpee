@@ -3264,6 +3264,10 @@ export interface INpcService {
     removeBehavior(id: string): void;
     /** Get a behavior by ID */
     getBehavior(id: string): NpcBehavior | undefined;
+    /** Per-NPC behaviour state not held in the world model, by entity id (#226). */
+    getBehaviorStates?(): Record<string, Record<string, unknown>>;
+    /** Restore per-NPC behaviour state saved by `getBehaviorStates`. */
+    setBehaviorStates?(states: Record<string, Record<string, unknown>>): void;
     /** Register a tick phase handler (ADR-142/144/145/146) */
     registerTickPhase(name: string, handler: NpcTickPhase): void;
     /** Execute the NPC turn phase */
@@ -3282,6 +3286,8 @@ export interface INpcService {
  */
 export declare class NpcService implements INpcService {
     private behaviors;
+    /** Latest world seen by `tick` — serialization needs one to enumerate NPCs. */
+    private lastWorld?;
     private readonly tickPhases;
     registerBehavior(behavior: NpcBehavior): void;
     removeBehavior(id: string): void;
@@ -3322,6 +3328,21 @@ export declare class NpcService implements INpcService {
      * source that makes the combat-kill sync bug (ADR-226 AC-2) impossible.
      */
     private canNpcAct;
+    /**
+     * Per-NPC behaviour state the world model cannot express (issue #226).
+     *
+     * A patrol's waypoint cursor, direction and remaining dwell live in the
+     * behaviour: an NPC standing in a room could be arriving, leaving, or
+     * waiting there, and only the behaviour knows which. Keyed by ENTITY id
+     * because `getState(npc)` takes an entity — one registered behaviour can
+     * serve several NPCs, and keying by behaviour would collapse them.
+     */
+    getBehaviorStates(): Record<string, Record<string, unknown>>;
+    /**
+     * Restore per-NPC behaviour state. An NPC absent from the save is reset
+     * through its own `setState(npc, {})` — a restore is a reset, not a merge.
+     */
+    setBehaviorStates(states: Record<string, Record<string, unknown>>): void;
     private getActiveNpcs;
     private getBehaviorForNpc;
     private createNpcContext;

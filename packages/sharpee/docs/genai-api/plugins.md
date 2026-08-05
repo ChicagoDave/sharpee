@@ -312,7 +312,7 @@ export declare class NpcPlugin implements TurnPlugin {
      */
     getState(): unknown;
     /** No-op: NPC state is restored with the world model, not by this plugin. */
-    setState(_state: unknown): void;
+    setState(state: unknown): void;
     /**
      * The underlying NPC service — the author hook for registering custom NPC
      * behaviours. The service type (`INpcService`) and behaviour helpers live in

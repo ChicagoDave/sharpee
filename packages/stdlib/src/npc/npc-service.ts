@@ -91,6 +91,11 @@ export interface INpcService {
   /** Get a behavior by ID */
   getBehavior(id: string): NpcBehavior | undefined;
 
+  /** Per-NPC behaviour state not held in the world model, by entity id (#226). */
+  getBehaviorStates?(): Record<string, Record<string, unknown>>;
+  /** Restore per-NPC behaviour state saved by `getBehaviorStates`. */
+  setBehaviorStates?(states: Record<string, Record<string, unknown>>): void;
+
   /** Register a tick phase handler (ADR-142/144/145/146) */
   registerTickPhase(name: string, handler: NpcTickPhase): void;
 
@@ -161,6 +166,8 @@ function createEvent(
  */
 export class NpcService implements INpcService {
   private behaviors: Map<string, NpcBehavior> = new Map();
+  /** Latest world seen by `tick` — serialization needs one to enumerate NPCs. */
+  private lastWorld?: WorldModel;
   private readonly tickPhases: { name: string; handler: NpcTickPhase }[] = [];
 
   registerBehavior(behavior: NpcBehavior): void {
@@ -192,6 +199,7 @@ export class NpcService implements INpcService {
   tick(context: NpcTickContext): ISemanticEvent[] {
     const events: ISemanticEvent[] = [];
     const { world, turn, random, playerLocation, playerId } = context;
+    this.lastWorld = world;
 
     // Find all NPCs that can act
     const npcs = this.getActiveNpcs(world);
@@ -412,6 +420,36 @@ export class NpcService implements INpcService {
     if (!npc.has(TraitType.NPC)) return false;
     const health = npc.get(TraitType.HEALTH) as HealthTrait | undefined;
     return !health || HealthBehavior.canAct(health);
+  }
+
+  /**
+   * Per-NPC behaviour state the world model cannot express (issue #226).
+   *
+   * A patrol's waypoint cursor, direction and remaining dwell live in the
+   * behaviour: an NPC standing in a room could be arriving, leaving, or
+   * waiting there, and only the behaviour knows which. Keyed by ENTITY id
+   * because `getState(npc)` takes an entity — one registered behaviour can
+   * serve several NPCs, and keying by behaviour would collapse them.
+   */
+  getBehaviorStates(): Record<string, Record<string, unknown>> {
+    const states: Record<string, Record<string, unknown>> = {};
+    if (!this.lastWorld) return states;
+    for (const npc of this.getActiveNpcs(this.lastWorld)) {
+      const state = this.getBehaviorForNpc(npc)?.getState?.(npc);
+      if (state !== undefined) states[npc.id] = state;
+    }
+    return states;
+  }
+
+  /**
+   * Restore per-NPC behaviour state. An NPC absent from the save is reset
+   * through its own `setState(npc, {})` — a restore is a reset, not a merge.
+   */
+  setBehaviorStates(states: Record<string, Record<string, unknown>>): void {
+    if (!this.lastWorld) return;
+    for (const npc of this.getActiveNpcs(this.lastWorld)) {
+      this.getBehaviorForNpc(npc)?.setState?.(npc, states[npc.id] ?? {});
+    }
   }
 
   private getActiveNpcs(world: WorldModel): IFEntity[] {

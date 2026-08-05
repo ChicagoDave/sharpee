@@ -45,6 +45,15 @@ import {
  */
 interface TreeGameEngine {
   executeCommand(input: string): Promise<string> | string;
+  /**
+   * Resume the engine after a game-over stopped it.
+   *
+   * A branch whose transcript ends in death or victory leaves the ENGINE
+   * stopped, and restoring a save rewinds the world without restarting it —
+   * so the next sibling's first command met "Engine is not running". The
+   * harness owns reviving, exactly as v1's RETRY restore path does.
+   */
+  reviveEngine?(): void;
   engine?: {
     registerSaveRestoreHooks(hooks: {
       onSaveRequested(data: unknown): Promise<void>;
@@ -185,6 +194,10 @@ export async function runTree(
       // what makes sibling order not matter, and the previous child's subtree
       // has already moved the engine on.
       if (save !== null) await applySave(engine, save);
+      // A previous sibling may have ended in death or victory, which stops the
+      // engine. Restoring rewinds the world but not that, so revive before the
+      // child's first command.
+      engine.reviveEngine?.();
       applyReseed(engine, child);
       await runNode(child);
     }
@@ -219,19 +232,22 @@ function applyReseed(engine: TreeGameEngine, node: TreeNode): void {
 async function captureSave(engine: TreeGameEngine): Promise<unknown | null> {
   const platform = engine.engine;
   if (!platform) return null;
-  try {
-    let captured: unknown = null;
-    platform.registerSaveRestoreHooks({
-      onSaveRequested: async (data) => {
-        captured = data;
-      },
-      onRestoreRequested: async () => null,
-    });
-    const saved = await platform.save();
-    return saved ? captured : null;
-  } catch {
-    return null;
-  }
+  let captured: unknown = null;
+  platform.registerSaveRestoreHooks({
+    onSaveRequested: async (data) => {
+      captured = data;
+    },
+    onRestoreRequested: async () => null,
+  });
+  // Deliberately NOT caught. A swallowed save error is the worst failure mode
+  // this walk has: with no save, every child runs UNRESTORED — continuing from
+  // its sibling's end state — and the result is a scatter of unrelated
+  // world-state assertion failures with nothing pointing at the save. That is
+  // exactly how a platform exception during save presented while chasing
+  // issue #226, and it cost two wrong diagnoses. A tree that cannot save at a
+  // fork cannot run that fork; say so.
+  const saved = await platform.save();
+  return saved ? captured : null;
 }
 
 /** Restore a captured save. The engine owns what a save contains. */
