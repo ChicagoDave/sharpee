@@ -2147,6 +2147,45 @@ export declare class EngineRandomService implements RandomService {
      */
     restoreStreamStates(states: Record<string, number>): void;
     /**
+     * Drop the named points' stream continuity, so their next draw starts a
+     * fresh stream (ADR-302 D5/D8 — branching, as opposed to resuming).
+     *
+     * **Why this is a separate operation and not a mode on restore.** A save
+     * carries `{ pointName → streamState }` for every point that has drawn, and
+     * `restoreStreamStates` adopts it — which is right, and is what a save is
+     * FOR: a restore continues where it left off (D7). But a test harness that
+     * starts a *new run* from a saved state wants the world without the luck,
+     * and before this existed it had no way to say so. The measured consequence
+     * (2026-08-05): a restored stream outranks both seed instruments in
+     * `streamFor`, so a master `seed:` override AND a `point-seed:` override
+     * were silently **inert** for any point that had already drawn — which is
+     * every point you would actually want to vary, since you branch after the
+     * interesting thing has started.
+     *
+     * Leaving `restore` alone and naming this separately keeps D7 true as
+     * written. Reseeding is the same species as forces and point-seed
+     * overrides: session state, deliberately never serialized (D9).
+     *
+     * After the drop, the point's next draw re-derives through the ordinary
+     * chain — its point-seed override if one is active, else
+     * `deriveStreamSeed(masterSeed, name)` — so a caller sets the instruments it
+     * wants and then reseeds.
+     *
+     * **Occurrence counters are deliberately untouched.** They index a point's
+     * firings across the session, and a branch child is a continuation of the
+     * same game in every respect except the luck it is asking to re-roll. A
+     * `forces: p#2=X` written against the parent's numbering keeps meaning what
+     * it said.
+     *
+     * Idempotent, and silent on names that never drew — a point with no stream
+     * to drop ends in the state dropping it would have produced.
+     *
+     * @param points the point names to reseed, or `'all'` for every stream.
+     *   `'all'` re-derives the whole schedule from the master seed, which is the
+     *   blunt instrument ADR-293 warns about; prefer naming points.
+     */
+    reseedStreams(points: 'all' | readonly string[]): void;
+    /**
      * The point's live stream: cached, else re-materialized from a restored
      * state, else started from a point-seed override (D11), else derived lazily
      * from (masterSeed, name) per D3.

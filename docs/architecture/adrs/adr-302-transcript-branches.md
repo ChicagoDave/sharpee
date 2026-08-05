@@ -164,10 +164,9 @@ under this decision; `point-seed:`/`forces:` re-roll one point and leave the res
 of the schedule intact, master `seed:` re-rolls everything. Guidance for authors
 and tools: prefer the narrow instrument.
 
-> **MEASURED 2026-08-05 (session 86e85a) — and the answer contradicts the two
-> paragraphs above. This decision needs an amendment, which is the owner's
-> call: the ADR is ACCEPTED and no Open Questions section was opened here,
-> because opening one would flip it to DRAFT (DevArch rule 11a).**
+> **MEASURED, THEN RESOLVED 2026-08-05 (session 86e85a).** The measurement
+> contradicted the two paragraphs above; the resolution is `reseedStreams`,
+> recorded as an amendment at the end of this decision.
 >
 > The implementation question this decision left open was whether a master
 > `seed:` override on a non-root re-seeds a game restored from its parent's
@@ -204,10 +203,62 @@ and tools: prefer the narrow instrument.
 > touching the stream and consumes zero draws, and `restoreStreamStates`
 > deliberately keeps the session force table (D9).
 >
-> Nothing has been engineered around this. The inheritance rule is built and
-> tested as written (AC-3 green — a child with no seed resolves to its
-> parent's, one with its own resolves to its own); what is unsettled is what a
-> resolved seed *means* on a non-root.
+> Nothing was engineered around this. The inheritance rule is built and tested
+> as written (AC-3 green — a child with no seed resolves to its parent's, one
+> with its own resolves to its own).
+
+**AMENDMENT (2026-08-05, session 86e85a) — branching is its own operation.**
+
+The measurement above says a save's stream states outrank both seed
+instruments. That is correct behaviour for `restore` and must stay: a save
+exists so a session can continue where it left off (ADR-293 D7), and the
+walkthrough chains depend on it — Dungeo's 17 files and Fernhill's spine are
+linear trees (D3), and each reproduces a single continuous run only because a
+child that declares nothing continues its parent's streams exactly.
+
+What was missing is that **a branch child is not resuming; it is starting a new
+run from a captured state.** The engine had one operation for both readings.
+It now has two, and the second is applied *after* the first:
+
+```
+save  →  restore  →  reseed
+```
+
+`EngineRandomService.reseedStreams(points)` drops the named points' stream
+continuity — live streams and restored states alike — so each one's next draw
+re-derives through the ordinary chain: its point-seed override if one is
+active, else `deriveStreamSeed(masterSeed, name)`.
+
+Consequences of shaping it this way:
+
+- **`restore` is untouched**, so ADR-293 D7 stays true as written and needs no
+  amendment. Reseeding is the same species as forces and point-seed overrides —
+  session state, deliberately never serialized (ADR-293 D9) — and is recorded
+  there as an additional instrument, not a change to an existing one.
+- **The save format does not change.** One artifact, read two ways. Both
+  children of a fork read the same cached prefix save (D3); one resumes it and
+  one reseeds after it.
+- **Reseeding is always opt-in**, never what a child *is*. A child that
+  declares nothing gets a plain restore. Any other default would stop every
+  linear chain reproducing a continuous run.
+- **Occurrence counters are untouched**, so a `forces: p#2=X` written against
+  the parent's numbering keeps meaning what it said. A branch child is the same
+  game in every respect except the luck it asked to re-roll.
+- **Naming points is the narrow instrument and the preferred one.**
+  `reseedStreams('all')` exists and re-derives the whole schedule from the
+  master seed — which is exactly the degradation ADR-293's `searchOutcome`
+  warns about, and is why D8 already says to prefer the narrow instrument.
+
+**D5 restated.** Two children of one parent differing only in `forces:`,
+`point-seed:` or `seed:` test RNG variation from a shared state. `forces:`
+worked already (it substitutes an outcome class before any draw and consumes
+none); `point-seed:` and `seed:` work now, by reseeding the points they name
+before the child's first command.
+
+Pinned by `packages/engine/tests/engine-random-service-reseed.test.ts` (11
+cases), whose first case is the measured defect itself — a child's master seed
+being inert on a drawn point — kept as a regression so the shape is legible if
+it ever returns.
 
 **D9 — Dungeo is an outlier and is not a design driver.** (David's ruling,
 session 5113ca.) Dungeo deliberately mirrors the original MDL source, partly for
@@ -539,7 +590,18 @@ that catches v2 quietly cannibalizing v1's command surface.
 
 ## Consequences
 
-> **AMENDMENT PENDING (2026-08-05, session 86e85a) — D5/D8's seed instruments.**
+> **AMENDED 2026-08-05 (session 86e85a) — D5/D8's seed instruments.** Resolved
+> by `reseedStreams`; the amendment is recorded at the end of D8. The note
+> below is kept because it records what was measured and what was considered.
+>
+> **Resolution taken:** none of the three shapes below verbatim, but closest to
+> (3). `restore` keeps its contract (so option 2's ADR-293 amendment was not
+> needed) and branching became a separate operation applied after it, rather
+> than a new spelling competing with it.
+>
+> ---
+>
+> **The finding, as recorded before the fix —**
 > Measurement against the real `EngineRandomService` found that a master
 > `seed:` override *and* a `point-seed:` override are both **inert** for any
 > choice point that already drew before the parent's save; only `forces:`
@@ -564,9 +626,7 @@ that catches v2 quietly cannibalizing v1's command surface.
 > 3. **Add a distinct spelling** for "re-roll this point from here" that is
 >    explicitly not a save-continuation, leaving both existing meanings intact.
 >
-> Until this is settled, the inheritance rule is built and tested exactly as
-> D8 states it (AC-3 green); what is unsettled is what a resolved seed *means*
-> on a non-root.
+> *(Settled: see the amendment at the end of D8.)*
 
 
 **One header field, and the rest is derivation.** The grammar cost is a single

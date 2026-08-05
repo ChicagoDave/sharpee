@@ -416,6 +416,30 @@ not row coverage; row-level coverage, if ever wanted, comes from natural draws o
   Within a live session a restore keeps the session's force table; across sessions the
   transcript is the durable record and reapplies it.
 
+> **Added 2026-08-05 (session 86e85a) — a third session instrument: reseeding.**
+> [ADR-302](adr-302-transcript-branches.md) D5/D8 needed a way for a test to
+> start a *new run* from a saved state rather than resume one. D7's restore is
+> deliberately continuous, and measurement confirmed the consequence: a
+> restored stream state outranks both a master `seed:` and a `point-seed:`
+> override in `streamFor`, so for any point that had already drawn, both were
+> silently **inert**.
+>
+> **D7 is unchanged** — a restore continues, which is what a save is for, and
+> what every walkthrough chain depends on. Branching is a separate operation
+> applied afterwards: `EngineRandomService.reseedStreams(points)` drops the
+> named points' stream continuity so their next draw re-derives through the
+> ordinary chain (point-seed override, else derivation from the master seed).
+>
+> It belongs in this decision because it is the same species as the two
+> instruments above: **session state, never save state, and never serialized.**
+> A save reseeded from is byte-identical to one resumed from; only the reader
+> differs. Occurrence counters are untouched, so an occurrence-indexed force
+> written against the parent's numbering keeps meaning what it said.
+>
+> `reseedStreams('all')` exists and re-derives the whole schedule from the
+> master seed. That is the degradation `searchOutcome` already warns about
+> (D12), so naming points stays the preferred instrument.
+
 ### D10. Split a point when the same class carries different consequences, or when a row must stay legible
 
 The ruling is `dungeo.melee.blow.hero`, `dungeo.melee.blow.villain`, and

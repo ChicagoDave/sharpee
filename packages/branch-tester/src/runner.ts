@@ -88,6 +88,17 @@ interface PlatformRandomService {
   clearForces(): void;
   getForceReport(): RandomForceStatus[];
   setPointSeedOverrides(overrides: Readonly<Record<string, number>>): void;
+  /**
+   * Drop the named points' stream continuity (ADR-302 D5/D8).
+   *
+   * A save carries the parent's stream states and `restore` adopts them, which
+   * is what a save is for. A branch child wants the parent's WORLD without the
+   * parent's luck, and this is how it says so: `save → restore → reseed`.
+   * Without it, a child's `seed:` or `point-seed:` is silently inert for every
+   * point that had already drawn — which is every point worth varying, since
+   * you branch after the interesting thing has started.
+   */
+  reseedStreams(points: 'all' | readonly string[]): void;
 }
 
 /**
