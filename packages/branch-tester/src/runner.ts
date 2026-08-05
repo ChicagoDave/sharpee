@@ -41,6 +41,7 @@ import {
   GoldenEvent
 } from './types.js';
 import { serializeGolden, parseGoldenFile, GoldenFormatError } from './golden.js';
+import { checkChannelAssertion, channelsReferencedBy } from './channel-assert.js';
 
 /**
  * Interface for the game engine wrapper the CLIs hand the runner.
@@ -56,6 +57,13 @@ interface GameEngine {
    * them — it rides the command's return value (ADR-300 D8/D9).
    */
   lastChannels?: Record<string, string[]>;
+  /**
+   * The same emissions as `lastChannels`, kept as their STRUCTURED values
+   * (ADR-300 D13). A dotted-path assertion (`banner.title`) reads these; a
+   * golden recording reads the flattened lines. A flattened line cannot be
+   * un-flattened, which is why both exist.
+   */
+  lastChannelValues?: Record<string, unknown[]>;
   world?: WorldModel;
   /**
    * The underlying platform engine. $save/$restore go through its real
@@ -112,6 +120,18 @@ interface WorldModel {
   getLocation?(entityId: string): string | undefined;
   getContents?(containerId: string): any[];
   getPlayer?(): any;
+}
+
+/**
+ * Every assertion a transcript makes — its opening claims and every command's.
+ * The input to capture inference (ADR-300 D14).
+ */
+function allAssertionsOf(transcript: Transcript): Assertion[] {
+  const assertions: Assertion[] = [...(transcript.opening ?? [])];
+  for (const command of transcript.commands) {
+    assertions.push(...command.assertions);
+  }
+  return assertions;
 }
 
 /** Locale stamped into provenance when neither transcript nor caller declares one (D19). */
@@ -227,7 +247,14 @@ async function runGolden(
       `channels: ${options.assembledChannels.join(', ') || '(none)'} — chain members must declare identical channels (ADR-294 D15)`,
       'golden', goldenPath);
   }
-  const capturedChannelIds = config.channels;
+  // ADR-300 D14: the capture set is INFERRED from the assertions, not declared.
+  // What a transcript asserts about is what gets captured, so a `channels:`
+  // header cannot drift out of step with the assertions beneath it. A declared
+  // list is still honoured — a golden recording may want a channel nothing
+  // asserts on — so the two union rather than compete.
+  const capturedChannelIds = [
+    ...new Set([...config.channels, ...channelsReferencedBy(allAssertionsOf(transcript))]),
+  ];
 
   // A golden transcript must pin a seed (D3). The exception is a chain
   // member after the first: the chain is one session and its recording
@@ -503,7 +530,7 @@ function openingResult(
   };
 
   const assertionResults = opening.map((assertion) =>
-    checkAssertion(assertion, '', '', [], engine.world, engine.lastChannels)
+    checkAssertion(assertion, '', '', [], engine.world, engine.lastChannelValues)
   );
 
   return {
@@ -1133,7 +1160,7 @@ async function runCommand(
   let allPassed = true;
 
   for (const assertion of command.assertions) {
-    const result = checkAssertion(assertion, normalizedActual, normalizedExpected, actualEvents, engine.world, engine.lastChannels);
+    const result = checkAssertion(assertion, normalizedActual, normalizedExpected, actualEvents, engine.world, engine.lastChannelValues);
     assertionResults.push(result);
     if (!result.passed) {
       allPassed = false;
@@ -1179,7 +1206,7 @@ function checkAssertion(
   expectedOutput: string,
   events: TestEventInfo[],
   world?: WorldModel,
-  channels?: Record<string, string[]>
+  channels?: Record<string, unknown[]>
 ): AssertionResult {
   switch (assertion.type) {
     case 'ok': {
@@ -1225,35 +1252,15 @@ function checkAssertion(
     }
 
     case 'channel-contains':
-    case 'channel-not-contains': {
-      const id = assertion.channelId!;
-      const lines = channels?.[id];
-      const wantContains = assertion.type === 'channel-contains';
-
-      // A channel the transcript never declared captures nothing, so the
-      // assertion would read an empty string and "not contains" would pass for
-      // the wrong reason. Name the real problem instead.
-      if (lines === undefined) {
-        return {
-          assertion,
-          passed: false,
-          message: `Channel "${id}" captured nothing — declare it in the transcript header: channels: main, ${id}`
-        };
-      }
-
-      const text = lines.join('\n').toLowerCase();
-      const found = text.includes(assertion.value!.toLowerCase());
-      const passed = wantContains ? found : !found;
-      return {
-        assertion,
-        passed,
-        message: passed
-          ? undefined
-          : wantContains
-            ? `Channel "${id}" does not contain "${assertion.value}"`
-            : `Channel "${id}" should not contain "${assertion.value}"`
-      };
-    }
+    case 'channel-not-contains':
+    case 'channel-is':
+    case 'channel-is-not':
+    case 'channel-absent':
+    case 'channel-present':
+      // ADR-300 D13: dotted paths into records, list any-element matching,
+      // typed comparison, and absence as a claim. Evaluated against the
+      // STRUCTURED capture — a flattened line cannot answer `banner.title`.
+      return checkChannelAssertion(assertion, channels);
 
     case 'fail':
       // This is handled at the command level

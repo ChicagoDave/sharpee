@@ -64,6 +64,20 @@ export interface LoadedGame {
    * questions.
    */
   lastChannels: Record<string, string[]>;
+  /**
+   * Per-command capture of declared channels as their STRUCTURED values, in
+   * emission order (ADR-300 D13).
+   *
+   * `lastChannels` flattens everything to lines, which is what a golden
+   * recording wants — deterministic, diffable text. But an assertion that
+   * addresses into a record (`banner.title`) or checks a number needs the
+   * value, not a rendering of it, and a flattened line cannot be un-flattened.
+   * So both are captured: the same emissions, kept two ways for two questions.
+   *
+   * Additive. `lastChannels` is unchanged, so a harness reading only it sees
+   * exactly what it saw before (ADR-302 D15's freeze).
+   */
+  lastChannelValues: Record<string, unknown[]>;
   /** Proxy for runner save/restore plugin state. */
   getPluginRegistry(): {
     getStates(): Record<string, unknown>;
@@ -169,6 +183,7 @@ export function assembleGame(
   let outputBuffer: string[] = [];
   let eventBuffer: ISemanticEvent[] = [];
   let channelBuffers: Record<string, string[]> = {};
+  let channelValueBuffers: Record<string, unknown[]> = {};
   let pendingReboot = false;
 
   // ADR-294 D15: the story's channels must be registered BEFORE capability
@@ -263,6 +278,7 @@ export function assembleGame(
         const value = packet?.payload?.[id];
         if (value === undefined) continue;
         (channelBuffers[id] ??= []).push(...flattenChannelValue(value));
+        (channelValueBuffers[id] ??= []).push(value);
       }
     });
 
@@ -287,6 +303,7 @@ export function assembleGame(
     lastEvents: [],
     lastTurnResult: null,
     lastChannels: {},
+    lastChannelValues: {},
 
     getPluginRegistry() {
       return (engine as any).getPluginRegistry() as {
@@ -303,6 +320,7 @@ export function assembleGame(
       outputBuffer = [];
       eventBuffer = [];
       channelBuffers = {};
+      channelValueBuffers = {};
       let lastTurnResult: TurnResult | null = null;
 
       try {
@@ -333,6 +351,7 @@ export function assembleGame(
       game.lastEvents = eventBuffer;
       game.lastTurnResult = lastTurnResult;
       game.lastChannels = channelBuffers;
+      game.lastChannelValues = channelValueBuffers;
       return game.lastOutput;
     },
   };

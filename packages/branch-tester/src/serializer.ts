@@ -161,11 +161,38 @@ function serializeAssertionTag(assertion: Assertion): string {
       return `[STATE: ${assertion.assertTrue}, ${assertion.stateExpression}]`;
 
     case 'channel-contains':
-      return `[CHANNEL: ${assertion.channelId}, contains "${assertion.value}"]`;
+      return `[CHANNEL: ${channelTarget(assertion)}, contains "${assertion.value}"]`;
 
     case 'channel-not-contains':
-      return `[CHANNEL: ${assertion.channelId}, not contains "${assertion.value}"]`;
+      return `[CHANNEL: ${channelTarget(assertion)}, not contains "${assertion.value}"]`;
+
+    case 'channel-is':
+      return `[CHANNEL: ${channelTarget(assertion)}, is ${literal(assertion.channelExpected)}]`;
+
+    case 'channel-is-not':
+      return `[CHANNEL: ${channelTarget(assertion)}, is not ${literal(assertion.channelExpected)}]`;
+
+    case 'channel-absent':
+      return `[CHANNEL: ${channelTarget(assertion)}, is absent]`;
+
+    case 'channel-present':
+      return `[CHANNEL: ${channelTarget(assertion)}, is present]`;
   }
+}
+
+/** `<channel>` or `<channel>.<path>` — how the transcript named its target. */
+function channelTarget(assertion: Assertion): string {
+  const path = assertion.channelPath ?? [];
+  return path.length > 0 ? `${assertion.channelId}.${path.join('.')}` : `${assertion.channelId}`;
+}
+
+/**
+ * Write an expected scalar back in the form that reproduces its type: a string
+ * quoted, a number and a boolean bare. Round-tripping the TYPE matters as much
+ * as the value — `is 5` and `is "5"` are different assertions (ADR-300 D13).
+ */
+function literal(value: string | number | boolean | undefined): string {
+  return typeof value === 'string' ? `"${value}"` : String(value);
 }
 
 /**

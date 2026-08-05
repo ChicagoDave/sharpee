@@ -61,6 +61,14 @@ export {
   type RenameEdit,
 } from './rename.js';
 
+// Channel assertions over structured values (ADR-300 D13, D14)
+export {
+  resolveChannelPath,
+  checkChannelAssertion,
+  channelsReferencedBy,
+  type PathResolution,
+} from './channel-assert.js';
+
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
 export { serializeTranscript } from './serializer.js';
 

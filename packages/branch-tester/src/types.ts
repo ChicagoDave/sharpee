@@ -221,7 +221,8 @@ export interface Assertion {
   type: 'ok' | 'ok-contains' | 'ok-not-contains'
       | 'fail' | 'skip' | 'todo'
       | 'event-assert' | 'state-assert'
-      | 'channel-contains' | 'channel-not-contains';
+      | 'channel-contains' | 'channel-not-contains'
+      | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
   value?: string;      // For contains/not-contains
   reason?: string;     // For fail/todo
 
@@ -235,6 +236,29 @@ export interface Assertion {
    * header, or there is nothing captured to read.
    */
   channelId?: string;
+
+  /**
+   * Dotted path into a record channel's value (ADR-300 D13).
+   *
+   * `[CHANNEL: banner.title, …]` addresses the `title` member of the `banner`
+   * channel's record, so a test names the piece it means instead of
+   * substring-matching a flattened rendering of the whole thing. Empty for an
+   * assertion about the channel's value as a whole.
+   *
+   * A path segment that lands on a LIST matches if any element matches — a
+   * `credits` list has no useful index for a test to name, and asserting on
+   * position would fail whenever an author adds a name.
+   */
+  channelPath?: string[];
+
+  /**
+   * Expected scalar for the `channel-is` / `channel-is-not` forms, already
+   * typed: a number when the transcript wrote a bare number, a string when it
+   * wrote a quoted one. The distinction is load-bearing — `is 5` against a
+   * text channel carrying `"5"` is a wrong-type failure, not a match
+   * (ADR-300 D13).
+   */
+  channelExpected?: string | number | boolean;
 
   // Event assertions
   assertTrue?: boolean;         // For event-assert and state-assert: true = must exist, false = must not exist

@@ -557,6 +557,26 @@ function checkContinues(
   }
 }
 
+/**
+ * Read an expected scalar, preserving its type (ADR-300 D13).
+ *
+ * A quoted value is text, a bare number is a number, `true`/`false` are
+ * booleans. The distinction is the point: `is 5` against a text channel
+ * carrying `"5"` must fail by NAME as a wrong-type assertion rather than
+ * quietly matching, so the transcript has to be able to say which it meant.
+ *
+ * Returns undefined for anything else, so the caller falls through and the
+ * assertion reports as unrecognised rather than being silently coerced.
+ */
+function parseScalar(raw: string): string | number | boolean | undefined {
+  const quoted = raw.match(/^"([^"]*)"$/);
+  if (quoted) return quoted[1];
+  if (/^-?\d+(\.\d+)?$/.test(raw)) return Number(raw);
+  if (/^true$/i.test(raw)) return true;
+  if (/^false$/i.test(raw)) return false;
+  return undefined;
+}
+
 function parseConfigField(
   transcript: Transcript,
   key: string,
@@ -1023,22 +1043,50 @@ function parseAssertion(tag: string): Assertion | null {
     }
   }
 
-  // [CHANNEL: id, contains "text"] / [CHANNEL: id, not contains "text"]
-  // Reads a named channel instead of the main prose — how a transcript asserts
-  // on the banner, the prologue, or anything else the story says off to one side.
-  const channelMatch = inner.match(/^CHANNEL:\s*([A-Za-z0-9_.-]+)\s*,\s*(.+)$/i);
+  // [CHANNEL: <target>, <form>] where <target> is `id` or `id.path.into.record`
+  // (ADR-300 D13). Reads a named channel instead of the turn's prose — how a
+  // transcript asserts on the banner, the prologue, or anything else the story
+  // says off to one side, and how it names ONE PIECE of a record rather than
+  // substring-matching a flattened rendering of the whole thing.
+  const channelMatch = inner.match(/^CHANNEL:\s*([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*)\s*,\s*(.+)$/i);
   if (channelMatch) {
-    const channelId = channelMatch[1];
+    const [channelId, ...channelPath] = channelMatch[1].split('.');
     const rest = channelMatch[2].trim();
+    const target = { channelId, ...(channelPath.length > 0 ? { channelPath } : {}) };
+
+    // `is absent` / `is present` — sparse-channel silence is a claim a test can
+    // make (D13). A channel that said nothing this turn is a fact, not a gap.
+    if (/^is\s+absent$/i.test(rest)) {
+      return { type: 'channel-absent', ...target };
+    }
+    if (/^is\s+present$/i.test(rest)) {
+      return { type: 'channel-present', ...target };
+    }
 
     const notContains = rest.match(/^not\s+contains\s+"([^"]+)"$/i);
     if (notContains) {
-      return { type: 'channel-not-contains', channelId, value: notContains[1] };
+      return { type: 'channel-not-contains', ...target, value: notContains[1] };
     }
 
     const contains = rest.match(/^contains\s+"([^"]+)"$/i);
     if (contains) {
-      return { type: 'channel-contains', channelId, value: contains[1] };
+      return { type: 'channel-contains', ...target, value: contains[1] };
+    }
+
+    const isNot = rest.match(/^is\s+not\s+(.+)$/i);
+    if (isNot) {
+      const expected = parseScalar(isNot[1].trim());
+      if (expected !== undefined) {
+        return { type: 'channel-is-not', ...target, channelExpected: expected };
+      }
+    }
+
+    const is = rest.match(/^is\s+(.+)$/i);
+    if (is) {
+      const expected = parseScalar(is[1].trim());
+      if (expected !== undefined) {
+        return { type: 'channel-is', ...target, channelExpected: expected };
+      }
     }
   }
 
