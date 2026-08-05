@@ -4,7 +4,7 @@ story: cloak-of-darkness
 seed: 42
 derivation: 1
 save-format: 3.0.0
-channels: main
+channels: (none)
 events: false
 locale: en-US
 forces: (none)

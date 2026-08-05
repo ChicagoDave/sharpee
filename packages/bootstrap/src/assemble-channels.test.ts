@@ -61,20 +61,19 @@ function makeStory(opts?: { registerGated?: boolean }) {
 
 describe('ADR-294 D15 assembleGame channel capture', () => {
   it('captures a declared standard channel per command into lastChannels', async () => {
-    const game = assembleGame(makeStory(), { seed: 42, channels: ['main', 'score'] });
+    const game = assembleGame(makeStory(), { seed: 42, channels: ['score'] });
     await game.executeCommand('look');
 
     // The score channel (replace/always, ungated) emits {current, max} every
-    // turn — captured as one key-sorted JSON line. main stays out of
-    // lastChannels; it rides lastOutput as always.
+    // turn — captured as one key-sorted JSON line. The turn's prose is
+    // composed into lastOutput (ADR-300 D9) and is not a declared channel.
     expect(game.lastChannels.score).toEqual(['{"current":0,"max":null}']);
-    expect(game.lastChannels.main).toBeUndefined();
     expect(game.lastOutput.length).toBeGreaterThan(0);
   });
 
   it('flips a gated channel\'s capability on and captures it when declared', async () => {
     const game = assembleGame(makeStory({ registerGated: true }), {
-      seed: 42, channels: ['main', 'chime'],
+      seed: 42, channels: ['chime'],
     });
     await game.executeCommand('look');
     // gatedBy: 'sound' is false in CLI_CAPABILITIES — without the D15 flip
@@ -82,14 +81,14 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
     expect(game.lastChannels.chime).toEqual(['{"cue":"chime","gain":1}']);
   });
 
-  it('captures nothing beyond main when no channels are declared (today\'s behavior)', async () => {
+  it('captures nothing when no channels are declared', async () => {
     const game = assembleGame(makeStory(), { seed: 42 });
     await game.executeCommand('look');
     expect(game.lastChannels).toEqual({});
   });
 
   it('rejects an unknown declared channel by name', () => {
-    expect(() => assembleGame(makeStory(), { seed: 42, channels: ['main', 'nonesuch'] }))
+    expect(() => assembleGame(makeStory(), { seed: 42, channels: ['nonesuch'] }))
       .toThrow(/unknown channel 'nonesuch'/);
   });
 });

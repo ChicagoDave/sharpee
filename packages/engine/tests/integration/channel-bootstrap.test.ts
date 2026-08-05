@@ -173,7 +173,8 @@ describe('GameEngine — channel:manifest emission', () => {
     engine.start(); // omit capabilities → DEFAULT_TEXT_CAPABILITIES
     const ids = new Set(manifests[0].channels.map((c) => c.id));
     // Standards survive
-    expect(ids.has(STANDARD_CHANNEL_IDS.MAIN)).toBe(true);
+    expect(ids.has(STANDARD_CHANNEL_IDS.ROOM_DESCRIPTION)).toBe(true);
+    expect(ids.has(STANDARD_CHANNEL_IDS.PREFERRED_LAYOUT)).toBe(true);
     expect(ids.has(STANDARD_CHANNEL_IDS.SCORE)).toBe(true);
     // Media gated out
     expect(ids.has(MEDIA_CHANNEL_IDS.IMAGE_MAIN)).toBe(false);
@@ -344,13 +345,13 @@ describe('StdlibChannelRegistry — story override of standard channel', () => {
   it('replacing the standard channel id propagates through the manifest', () => {
     const reg = new StdlibChannelRegistry();
     reg.add({
-      id: 'main',
+      id: 'room-description',
       contentType: 'text',
       mode: 'replace',
       emit: 'sparse',
       produce: () => 'overridden',
     });
-    const channel = reg.get('main');
+    const channel = reg.get('room-description');
     expect(channel?.mode).toBe('replace');
     expect(channel?.contentType).toBe('text');
     // Last-write-wins is unit-tested in stdlib; here we just confirm

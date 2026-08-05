@@ -85,7 +85,7 @@ describe('bless (record mode, D1/D3/D7)', () => {
       seed: 42,
       derivation: SEED_DERIVATION_VERSION,
       saveFormat: SAVE_FORMAT_VERSION,
-      channels: ['main'],
+      channels: [],
       events: false,
       locale: 'en-US',
       forces: []
@@ -133,12 +133,12 @@ describe('bless (record mode, D1/D3/D7)', () => {
     // that remains is assembly consistency: the capability profile and
     // capture set are fixed when the game is built, so a transcript declaring
     // a different set is a named failure, never a silent partial capture.
-    const channels = fixture('title: T\nseed: 42\nchannels: main, status\n---\n> look\n');
+    const channels = fixture('title: T\nseed: 42\nchannels: score, status\n---\n> look\n');
     const channelsResult = await runTranscript(channels, stubEngine() as never, {
-      bless: true, assembledChannels: ['main']
+      bless: true, assembledChannels: []
     });
     expect(channelsResult.status).toBe('error');
-    expect(channelsResult.errorMessage).toMatch(/assembled with channels: main —.*identical channels.*D15/);
+    expect(channelsResult.errorMessage).toMatch(/assembled with channels: \(none\) —.*identical channels.*D15/);
   });
 });
 
@@ -167,8 +167,9 @@ describe('replay (D1/D6)', () => {
     expect(result.commands[0].diff).toEqual({
       recorded: ['You look.', 'Nothing happens.'],
       actual: ['You look.', 'Something CHANGED.'],
-      // D15: the diff names the diverged surface; prose is 'main'.
-      channel: 'main'
+      // D15: the diff names the diverged surface. After ADR-300 D8 the
+      // composed prose is not a channel, so it reports as '(prose)'.
+      channel: '(prose)'
     });
     // Divergence stops the replay — 'north' never ran.
     expect(engine.calls).toEqual(['look']);

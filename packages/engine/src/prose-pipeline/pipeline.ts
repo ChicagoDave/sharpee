@@ -296,7 +296,7 @@ export class ProsePipeline implements IProsePipeline {
       // if.event.help_displayed / if.event.about_displayed carry messageIds
       // with lang-en-us templates (if.action.help.*, if.action.about.success)
       // and render via tryProcessDomainEventMessage above; their dedicated
-      // handlers (help.text/about.text blocks MAIN_KEYS never routed) were
+      // handlers (help.text/about.text blocks no prose channel routes) were
       // removed 2026-07-02 (dungeo regression findings P3).
 
       case 'sound.audibility.heard':

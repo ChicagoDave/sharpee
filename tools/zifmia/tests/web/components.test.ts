@@ -204,23 +204,28 @@ describe('channel-renderer-host', () => {
   let host: HTMLElement;
   beforeEach(() => { host = document.createElement('div'); document.body.appendChild(host); });
 
-  it('appends a turn-submitter header and renders the main channel per new turn frame', () => {
+  it('appends a turn-submitter header and renders the turn prose per new turn frame', () => {
     // Phase 7 rewrite: channel-renderer-host adds a `.sharpee-turn-submitter`
     // header in front of each new turn (carrying submitter handle and
-    // optional command echo + timestamp); main-channel content is rendered
-    // by `@sharpee/platform-browser`'s `createMainChannelRenderer` rather
+    // optional command echo + timestamp); the turn's prose is rendered by
+    // `@sharpee/platform-browser`'s `createProseChannelRenderers` rather
     // than wrapped in a host-owned turn-block.
     const store = createRoomStateStore();
     store.hydrate(freshResponse());
     mountChannelRendererHost(host, store);
     store.applyFrame({
       type: 'turn', roomId: 'r1', turnId: 't1', submitter: { id: 'i1', handle: 'alice' },
-      // `main` entries are `MainEntry` (`{ content: TextContent[] }`).
-      // A `TextContent` is either a string or a decoration node — strings
-      // render as text nodes.
+      // Prose entries are `ProseEntry` (`{ content: TextContent[] }`). A
+      // `TextContent` is either a string or a decoration node — strings
+      // render as text nodes. `preferred-layout` says which channel each
+      // entry came from and in what order (ADR-300 D9); without it the
+      // host has no reading order and renders nothing.
       packet: {
         turnId: 't1',
-        channels: { main: [{ content: ['you look around'] }] }
+        channels: {
+          'action-result': [{ content: ['you look around'] }],
+          'preferred-layout': ['action-result']
+        }
       }
     });
     expect(host.querySelectorAll('.sharpee-turn-submitter')).toHaveLength(1);

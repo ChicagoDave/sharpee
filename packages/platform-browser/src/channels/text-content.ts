@@ -2,7 +2,7 @@
  * @sharpee/platform-browser/channels — TextContent → DOM helper.
  *
  * Owner context: browser default channel renderers. Projects a
- * `TextContent[]` array (the shape stdlib's `mainChannel` emits per
+ * `TextContent[]` array (the shape stdlib's prose channels emit per
  * append entry) into a flat `<span>`-based fragment that preserves
  * decorations as nested elements.
  *

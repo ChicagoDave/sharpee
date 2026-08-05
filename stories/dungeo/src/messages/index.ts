@@ -91,7 +91,7 @@ Type HELP for instructions, ABOUT for credits.`,
   // HELP — the stdlib help action emits messageIds if.action.help.first_time /
   // if.action.help.general, which have no registered templates; the engine's
   // canonical fallback handler renders to the 'help.text' block key, which the
-  // stdlib main channel does not route (MAIN_KEYS). Registering the text here
+  // no stdlib prose channel routes (PROSE_CHANNEL_BY_BLOCK_KEY). Registering the text here
   // sends it through the messageId path as action.result, which IS routed.
   const HELP_TEXT = `HOW TO PLAY INTERACTIVE FICTION
 

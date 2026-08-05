@@ -210,7 +210,7 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
     comments: [],
     // Defaults per ADR-294: unseeded, main channel only, prose-pure, primary
     // locale, no forces. Header fields overwrite these during parsing.
-    config: { seeds: [], channels: ['main'], events: false, forces: [] }
+    config: { seeds: [], channels: [], events: false, forces: [] }
   };
 
   let inHeader = true;

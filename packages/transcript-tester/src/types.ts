@@ -98,7 +98,7 @@ export interface TranscriptRunConfig {
    * (legal in the assertion tier; a golden transcript must pin at least one).
    */
   seeds: number[];
-  /** Channels the recording scopes to (D15). Default: `['main']`. */
+  /** Channels the recording scopes to (D15). Default: `[]` (ADR-300 D8). */
   channels: string[];
   /** Record the event stream alongside prose (D6). Default: `false`. */
   events: boolean;

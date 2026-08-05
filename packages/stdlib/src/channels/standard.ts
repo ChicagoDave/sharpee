@@ -1,10 +1,16 @@
 /**
  * @sharpee/stdlib/channels — standard `IOChannel` definitions.
  *
- * Owner context: stdlib language layer. The ten platform-vocabulary
+ * Owner context: stdlib language layer. The platform-vocabulary
  * channels from ADR-163 §4 — co-located with stdlib because their
  * closures read stdlib data sources (capabilities, blocks the
  * text-service produces, world projections).
+ *
+ * Per ADR-300 D8 there is no `main`: the seven prose elements each have
+ * their own channel and the turn's reading order rides `preferred-layout`
+ * (D9). Nothing here is "the prose window" — assembling one is the
+ * client's decision, and `composeProse` in `@sharpee/channel-service` is
+ * the shared rule for clients that want the engine's own order.
  *
  * Per ADR-163 §6, channels are self-contained: each `IOChannel`
  * carries its identity, configuration, and a closure that computes
@@ -18,11 +24,12 @@
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
 
-import type { IOChannel, MainEntry } from '@sharpee/if-domain';
+import type { IOChannel, ProseEntry, ProseChannelId } from '@sharpee/if-domain';
+import { PREFERRED_LAYOUT_CHANNEL } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { PLAYER_DIED_EVENT } from '../death/index.js';
-import { MAIN_KEYS, BANNER_KEYS } from './keys.js';
+import { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
 import { playerLocationName, readCapability } from './world-helpers.js';
 
 /**
@@ -115,29 +122,109 @@ function eventMessage(event: { data?: unknown }): string | undefined {
 }
 
 /**
- * `main` — append-mode prose transcript. Carries `MainEntry` objects
- * (`{ content, tight? }`) so renderers can preserve decorations *and*
- * the per-entry visual-continuation hint introduced by the pre-line
- * removal (session 2026-05-12). Closure projects every block whose key
- * is in `MAIN_KEYS` into the channel's append stream.
+ * Project one text block into a `ProseEntry`. Shared by every prose
+ * channel's closure so the seven agree on entry shape by construction.
  */
-export const mainChannel: IOChannel<MainEntry> = {
-  id: 'main',
+function toProseEntry(block: {
+  content: ReadonlyArray<TextContent>;
+  tight?: boolean;
+  className?: string;
+}): ProseEntry {
+  return {
+    content: [...block.content],
+    ...(block.tight ? { tight: true } : {}),
+    ...(block.className ? { className: block.className } : {}),
+  };
+}
+
+/**
+ * Build one prose channel (ADR-300 D8).
+ *
+ * Each prose channel is append-mode `ProseEntry[]` carrying only the
+ * blocks routed to its id, and `sparse` — a turn that produced no
+ * `error` block does not emit an empty `error` array. A client that
+ * wants the whole turn's prose reads `preferred-layout` and composes;
+ * no channel is the prose window.
+ *
+ * @param id — the channel id, as it appears in `PROSE_CHANNEL_BY_BLOCK_KEY`
+ */
+function createProseChannel(id: ProseChannelId): IOChannel<ProseEntry> {
+  return {
+    id,
+    contentType: 'json',
+    mode: 'append',
+    emit: 'sparse',
+    produce: (ctx) => {
+      const entries: ProseEntry[] = [];
+      for (const block of ctx.blocks) {
+        if (PROSE_CHANNEL_BY_BLOCK_KEY.get(block.key) === id) {
+          entries.push(toProseEntry(block));
+        }
+      }
+      return entries;
+    },
+  };
+}
+
+/** `room-name` — the room title line. */
+export const roomNameChannel = createProseChannel('room-name');
+/** `room-description` — the room's body prose. */
+export const roomDescriptionChannel = createProseChannel('room-description');
+/** `room-contents` — what is visible in the room. */
+export const roomContentsChannel = createProseChannel('room-contents');
+/** `action-result` — an action's success narration. */
+export const actionResultChannel = createProseChannel('action-result');
+/** `action-blocked` — why an action refused. */
+export const actionBlockedChannel = createProseChannel('action-blocked');
+/** `error` — parser and system errors. */
+export const errorChannel = createProseChannel('error');
+/** `game-message` — story and game-level messages. */
+export const gameMessageChannel = createProseChannel('game-message');
+
+/**
+ * Every prose channel, in `PROSE_CHANNEL_IDS` order. Registration order,
+ * not render order — see `preferredLayoutChannel`.
+ */
+export const PROSE_CHANNELS: ReadonlyArray<IOChannel<ProseEntry>> = [
+  roomNameChannel,
+  roomDescriptionChannel,
+  roomContentsChannel,
+  actionResultChannel,
+  actionBlockedChannel,
+  errorChannel,
+  gameMessageChannel,
+];
+
+/**
+ * `preferred-layout` — replace-mode reading order for this turn's prose
+ * (ADR-300 D9).
+ *
+ * One entry per prose entry emitted this turn, naming the channel that
+ * produced it, in block order. A channel id repeats when it produced
+ * more than one entry, so the list reconstructs the engine's sequence
+ * exactly — including the interleavings a fixed render order gets
+ * wrong, like a move whose action result prints before the room name.
+ *
+ * It emits `always`, including the empty array on a turn that produced
+ * no prose: a client composing from it needs to know the turn said
+ * nothing, not re-render the previous turn.
+ *
+ * The engine's ordering knowledge does not vanish with `main` — it
+ * stops being smuggled inside an append stream and becomes a signal a
+ * client is free to disagree with.
+ */
+export const preferredLayoutChannel: IOChannel<string[]> = {
+  id: PREFERRED_LAYOUT_CHANNEL,
   contentType: 'json',
-  mode: 'append',
+  mode: 'replace',
   emit: 'always',
   produce: (ctx) => {
-    const entries: MainEntry[] = [];
+    const order: string[] = [];
     for (const block of ctx.blocks) {
-      if (MAIN_KEYS.has(block.key)) {
-        entries.push({
-          content: [...block.content],
-          ...(block.tight ? { tight: true } : {}),
-          ...(block.className ? { className: block.className } : {}),
-        });
-      }
+      const channelId = PROSE_CHANNEL_BY_BLOCK_KEY.get(block.key);
+      if (channelId !== undefined) order.push(channelId);
     }
-    return entries;
+    return order;
   },
 };
 
@@ -536,7 +623,13 @@ export const lifecycleChannel: IOChannel<LifecyclePayload> = {
  * `ChannelService` itself does not depend on ordering.
  */
 export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
-  mainChannel,
+  // ADR-300 D9 — ORDER-SENSITIVE. `preferred-layout` must be registered
+  // after every prose channel: the manifest is walked in registration
+  // order, so a client that composes prose by buffering each channel's
+  // entries and flushing them when the layout arrives depends on the
+  // layout arriving last. `channels/standard.test.ts` pins this.
+  ...PROSE_CHANNELS,
+  preferredLayoutChannel,
   promptChannel,
   locationChannel,
   scoreChannel,
@@ -556,7 +649,14 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
  * and consumers that need string-literal types.
  */
 export const STANDARD_CHANNEL_IDS = {
-  MAIN: 'main',
+  ROOM_NAME: 'room-name',
+  ROOM_DESCRIPTION: 'room-description',
+  ROOM_CONTENTS: 'room-contents',
+  ACTION_RESULT: 'action-result',
+  ACTION_BLOCKED: 'action-blocked',
+  ERROR: 'error',
+  GAME_MESSAGE: 'game-message',
+  PREFERRED_LAYOUT: 'preferred-layout',
   PROMPT: 'prompt',
   LOCATION: 'location',
   SCORE: 'score',

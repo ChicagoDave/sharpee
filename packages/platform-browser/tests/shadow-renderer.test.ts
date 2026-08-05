@@ -107,7 +107,8 @@ const STANDARD_MANIFEST: CmgtPacket = {
   kind: 'cmgt',
   protocol_version: 1,
   channels: [
-    { id: 'main', contentType: 'json', mode: 'append', emit: 'always' },
+    { id: 'room-description', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'preferred-layout', contentType: 'json', mode: 'replace', emit: 'always' },
     { id: 'prompt', contentType: 'text', mode: 'replace', emit: 'always' },
     { id: 'location', contentType: 'text', mode: 'replace', emit: 'always' },
     { id: 'score', contentType: 'json', mode: 'replace', emit: 'always' },
@@ -121,7 +122,7 @@ describe('BrowserClient — channel renderer drives visible DOM (R5-C)', () => {
     document.body.innerHTML = '';
   });
 
-  it('main channel writes prose to the host textContent element', () => {
+  it('prose channels write to the host textContent element', () => {
     const { engine } = makeFakeEngine();
     const elements = mountHostElements();
     const client = new BrowserClient({
@@ -140,7 +141,10 @@ describe('BrowserClient — channel renderer drives visible DOM (R5-C)', () => {
       {
         kind: 'turn',
         turn_id: 'turn-1',
-        payload: { main: [['You stand at the cave mouth.']] },
+        payload: {
+          'room-description': [['You stand at the cave mouth.']],
+          'preferred-layout': ['room-description'],
+        },
       },
       1,
     );

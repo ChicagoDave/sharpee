@@ -233,6 +233,13 @@ grammar to prevent failures — two chains in one story, a member outside
 | D16 | prologue unchanged, already its own channel |
 | D2 | already true — `runTranscript` is the only verification path |
 
+**Shipped and verified in code (2026-08-05, session 86e85a):**
+
+| Decision | Evidence |
+| --- | --- |
+| D8 | Seven prose channels, `packages/stdlib/src/channels/standard.ts`; routing table `PROSE_CHANNEL_BY_BLOCK_KEY`, `packages/stdlib/src/channels/keys.ts`; `mainChannel` deleted, `main` absent from `STANDARD_CHANNELS` |
+| D9 | `preferredLayoutChannel`, `packages/stdlib/src/channels/standard.ts`; composition rule `composeProse`, `packages/channel-service/src/utils/prose.ts`; browser flush, `packages/platform-browser/src/channels/prose.ts` |
+
 **Remaining.** The harness column was added 2026-08-05, after
 [ADR-302](adr-302-transcript-branches.md) split the harness in two and froze
 `@sharpee/transcript-tester` on its grammar and runtime semantics (D12/D15).
@@ -241,13 +248,13 @@ harness specifically, and one of them cannot be done in a frozen package at all.
 
 | Decision | Lands in | Shape of the work |
 | --- | --- | --- |
-| D8, D9 | **stdlib + engine + every client + the whole corpus** | Dissolve `main`, add `preferred-layout`. 2921 `contains` assertions read `main` — dungeo 1966, fernhill 584, friendly-zoo 183, cloak-of-darkness 103, others 85 (measured 2026-08-05) — plus 21 goldens storing its output as `GoldenTurn.output`. Not a harness change: channels live in stdlib, so both harnesses see it |
 | D10 | **Chord** (`packages/chord`, `story-loader`) | `record` block — parser, AST, IR, loader channel mapping. Additive, independent of everything else here, and the item that closes the platform/Chord seam |
 | D13, D14 | **`branch-tester` only** | Assertion vocabulary and capture inference. These extend the assertion grammar, which ADR-302 D15 freezes in `transcript-tester` — so they land in the new harness and are **not** back-ported |
 | D5 | **`transcript-tester`, before the copy** | `[EVENTS: N]` removal — issue #222. A removal of zero-use grammar, so it is safe under the freeze, and doing it before ADR-302's copy means `branch-tester` inherits a clean grammar rather than the removal being done twice |
 | D1 | **`tools/ide` (Swift)** | `.skein` retirement is unexecuted: `tools/ide/SharpeeIDE/Skein/` and `stories/fernhill/play-testing/` are still committed. Deleting them needs explicit confirmation |
 
-**Sequencing consequence — D8 must precede ADR-302's copy.** Dissolving `main`
+**Sequencing consequence — D8 must precede ADR-302's copy.** *(Discharged
+2026-08-05: D8/D9 shipped before any harness copy existed.)* Dissolving `main`
 after `branch-tester` exists means migrating the assertion tier in two packages;
 freezing `transcript-tester` before D8 lands would freeze Dungeo's 1966
 assertions against a channel about to disappear, which would make ADR-302 D9's
@@ -278,7 +285,10 @@ claims, and an assertion that names the wrong one fails. **Met.**
 **AC-5 — no channel means "the prose window."** After D8, no client receives a
 channel whose contract is "append this to the main text area," and reordering
 `preferred-layout` changes what the player sees without an engine change.
-*Pending.*
+**Met** (2026-08-05, session 86e85a). Both halves are pinned by
+`packages/platform-browser/tests/channels/prose.test.ts`: driving all seven
+prose renderers with no layout renders nothing, and the same payload under two
+different layouts produces two different reading orders on screen.
 
 **AC-6 — an author can declare what the engine can emit.** A `.story` file
 defines a record channel and the running game populates it, with no TypeScript
@@ -303,10 +313,19 @@ the parser against the file, which is a different test.
 canonical form, so diffs show intent rather than formatting. A second pass over
 the normalized corpus reports zero byte changes.
 
-**D8 is the expensive one and is not started.** 2921 assertions and 21 goldens
-depend on `main` existing. Nothing else here is blocked by it, but D13 and D14
-are cheaper afterwards, so the natural order is D8/D9 then D13/D14 — with D10
-independent of all of them.
+**D8 was cheaper than measured.** The estimate assumed 2921 `contains`
+assertions and 21 goldens would need migrating. They did not: measured
+2026-08-05, the corpus contained **zero** `[CHANNEL: main, …]` assertions, so
+every one of the 2921 read `main` only *implicitly*, through the turn text the
+harness composed for it. Preserving that composition — `composeProse` in
+`preferred-layout` order, then the existing join rule — left every assertion
+and every recorded turn byte-identical. The 21 goldens changed by one line
+each: the provenance `channels:` field, `main` → `(none)`.
+
+The walkthrough chain ran 952 passing against the *pre-existing* recordings,
+with no re-blessing, which is what makes this a migration rather than a
+re-baseline: a bless would have overwritten the evidence it was asked to
+provide. D13 and D14 remain cheaper after D8, and D10 stays independent.
 
 **D10 is the seam.** The platform can already do what D7 describes; Chord
 cannot say it. Until that closes, an author reaches around the language for

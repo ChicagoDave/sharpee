@@ -28,8 +28,12 @@ export type {
   ChannelProduceContext,
   IOChannel,
   IChannelRegistry,
-  MainEntry,
+  ProseEntry,
+  PreferredLayout,
+  ProseChannelId,
 } from './types.js';
+
+export { PREFERRED_LAYOUT_CHANNEL, PROSE_CHANNEL_IDS } from './types.js';
 
 export type {
   ChannelDefinition,

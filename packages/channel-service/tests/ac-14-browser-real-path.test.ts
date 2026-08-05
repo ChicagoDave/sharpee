@@ -69,7 +69,7 @@ describe.skipIf(!BUNDLE_PRESENT)(
         });
         expect(mainContent.length).toBeGreaterThan(0);
 
-        // Channel-driven gate: the R5-C `mainChannel` renderer adds
+        // Channel-driven gate: the R5-C prose renderers add
         // `class="main-entry"` to every appended `<p>`. The legacy
         // `TextDisplay.displayText` path emitted unclassed `<p>`
         // elements only. If this assertion fails, the bundle was built

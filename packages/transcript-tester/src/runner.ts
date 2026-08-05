@@ -50,9 +50,10 @@ interface GameEngine {
   getOutput?(): string;
   lastEvents?: Array<{ type: string; data?: any }>;
   /**
-   * Declared non-main channel captures for the last command (ADR-294 D15):
-   * flattened lines per channel id. Populated by bootstrap's assembleGame
-   * when the session was assembled with channels beyond `main`.
+   * Declared channel captures for the last command (ADR-294 D15): flattened
+   * lines per channel id. Populated by bootstrap's assembleGame when the
+   * session declared any channels. The turn's composed prose is not among
+   * them — it rides the command's return value (ADR-300 D8/D9).
    */
   lastChannels?: Record<string, string[]>;
   world?: WorldModel;
@@ -104,6 +105,15 @@ interface WorldModel {
 
 /** Locale stamped into provenance when neither transcript nor caller declares one (D19). */
 const DEFAULT_LOCALE = 'en-US';
+
+/**
+ * Name for the turn's composed prose when a divergence has to say which
+ * surface moved. It is not a channel id: after ADR-300 D8 the prose is
+ * composed from seven channels in `preferred-layout` order, so the thing
+ * that diverged is the composition, not any one of them. Reported as
+ * `(prose)`, matching how the opening reports as `(opening)`.
+ */
+const PROSE_SURFACE = '(prose)';
 
 /**
  * The one story-output line excluded from golden diffs (ADR-294 D6): the
@@ -190,7 +200,7 @@ async function runGolden(
   startTime: number
 ): Promise<TranscriptResult> {
   const config: TranscriptRunConfig =
-    transcript.config ?? { seeds: [], channels: ['main'], events: false, forces: [] };
+    transcript.config ?? { seeds: [], channels: [], events: false, forces: [] };
 
   // ADR-294 D15: the capability profile and capture set are fixed at game
   // assembly, so a transcript whose channels: disagrees with the session it
@@ -202,11 +212,11 @@ async function runGolden(
       !options.assembledChannels.every((id, i) => id === config.channels[i]))
   ) {
     return errorResult(transcript, startTime,
-      `transcript declares channels: ${config.channels.join(', ')} but the session was assembled with ` +
-      `channels: ${options.assembledChannels.join(', ')} — chain members must declare identical channels (ADR-294 D15)`,
+      `transcript declares channels: ${config.channels.join(', ') || '(none)'} but the session was assembled with ` +
+      `channels: ${options.assembledChannels.join(', ') || '(none)'} — chain members must declare identical channels (ADR-294 D15)`,
       'golden', goldenPath);
   }
-  const capturedChannelIds = config.channels.filter((id) => id !== 'main');
+  const capturedChannelIds = config.channels;
 
   // A golden transcript must pin a seed (D3). The exception is a chain
   // member after the first: the chain is one session and its recording
@@ -313,8 +323,9 @@ async function runGolden(
       const divergence = diffTurn(turn, actualLines, events, config.events,
         capturedChannelIds, channels);
       if (divergence) {
-        // D15: name the surface that moved — 'main' prose or a channel.
-        let error = divergence.channel && divergence.channel !== 'main'
+        // D15: name the surface that moved — the composed prose, or a
+        // declared channel.
+        let error = divergence.channel && divergence.channel !== PROSE_SURFACE
           ? `channel '${divergence.channel}' diverged from the recording (${path.basename(goldenPath)})`
           : `output diverged from the recording (${path.basename(goldenPath)})`;
         if (preTurnSave !== null) {
@@ -528,7 +539,7 @@ function staleProvenanceFields(
   check('seed', String(p.seed), String(sessionSeed));
   check('derivation', String(p.derivation), String(SEED_DERIVATION_VERSION));
   check('save-format', p.saveFormat, SAVE_FORMAT_VERSION);
-  check('channels', p.channels.join(', '), config.channels.join(', '));
+  check('channels', p.channels.join(', ') || '(none)', config.channels.join(', ') || '(none)');
   check('events', String(p.events), String(config.events));
   check('locale', p.locale, locale);
   check('forces', p.forces.join(', ') || '(none)', config.forces.join(', ') || '(none)');
@@ -674,11 +685,11 @@ function commandListDrift(transcript: Transcript, recording: GoldenRecording): s
 /**
  * Diff one replayed turn against its recording. Returns the divergence, or
  * null when they match. The build-date banner line is masked on both sides
- * (D6); nothing else is normalized. Declared non-main channels (ADR-294 D15)
+ * (D6); nothing else is normalized. Declared channels (ADR-294 D15)
  * are compared in their serialized `◦ <id> <line>` form, appended after
  * output/events in declaration order — absence is meaningful (a cue that
  * stops firing diverges). The returned `channel` names the surface the first
- * mismatch lies in ('main' for prose/events).
+ * mismatch lies in (`PROSE_SURFACE` for prose/events).
  */
 function diffTurn(
   turn: GoldenTurn,
@@ -721,7 +732,7 @@ function diffTurn(
     if (a !== undefined && b !== undefined && mask(a) === mask(b)) continue;
     const line = a ?? b ?? '';
     const m = /^◦ (\S+)/.exec(line);
-    channel = m ? m[1] : 'main';
+    channel = m ? m[1] : PROSE_SURFACE;
     break;
   }
 

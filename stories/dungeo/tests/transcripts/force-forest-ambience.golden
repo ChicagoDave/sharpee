@@ -4,7 +4,7 @@ story: dungeo
 seed: 4242
 derivation: 1
 save-format: 3.0.0
-channels: main
+channels: (none)
 events: false
 locale: en-US
 forces: dungeo.forest.ambience#1=yes, dungeo.forest.ambience#2=no

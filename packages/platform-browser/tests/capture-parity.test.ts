@@ -85,7 +85,7 @@ const PRIMING_COMMAND = 'look';
  * The CLI prints `> <command>`, then the command's output, then one blank
  * line. Blocks are cut on the `> ` markers; the single trailing blank line is
  * the CLI's own separator, not part of the response (a channel-flattened
- * response never ends blank — `joinMainEntries` skips blank entries and joins
+ * response never ends blank — `joinProseEntries` skips blank entries and joins
  * without a trailing newline).
  *
  * @param commands — commands to run, in order.

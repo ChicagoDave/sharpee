@@ -42,7 +42,7 @@ export interface TurnPacket {
    * `ChannelService` (ADR-163/165). The client side renders this via
    * `@sharpee/channel-service`'s `Renderer`, dispatching per-channel
    * payloads to the registered `ChannelRenderer` plug-ins (e.g.
-   * `createMainChannelRenderer` from `@sharpee/platform-browser`).
+   * `createProseChannelRenderers` from `@sharpee/platform-browser`).
    *
    * Always present on turns produced by Phase 6c-server or later. On
    * pre-6c-server transcript entries decoded from old save_blobs the

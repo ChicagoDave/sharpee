@@ -336,9 +336,10 @@ Examples:
   // A path ending in `.story` is compiled + interpreted instead of required
   // (`entry` applies only to module stories and is ignored for `.story` files).
   // Channels carrying the game's opening. The banner and the prologue are said
-  // before anything is typed and do not ride `main`, so any surface showing the
-  // game to a person has to ask for them or the player never sees them.
-  const OPENING_CHANNELS = ['main', 'prologue', 'banner'];
+  // before anything is typed and are not prose channels, so any surface showing
+  // the game to a person has to ask for them or the player never sees them
+  // (ADR-300 D15). The turn's prose rides `lastOutput` and needs no declaration.
+  const OPENING_CHANNELS = ['prologue', 'banner'];
 
   /**
    * Print the opening captured on the way to the first command.
@@ -1034,7 +1035,7 @@ Examples:
             ? { seed: matrixSeed, source: 'seeds:' }
             : resolveSeed(transcript.seed);
           // ADR-294 D15: assemble with the transcript's declared channels.
-          const declaredChannels = (transcript.config && transcript.config.channels) || ['main'];
+          const declaredChannels = (transcript.config && transcript.config.channels) || [];
           const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed, declaredChannels);
           // ADR-293 D14: every run reports the seed it used, clock-derived included.
           console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
@@ -1071,7 +1072,7 @@ Examples:
         // govern assembly; the runner rejects a member that disagrees.
         const chainChannels =
           (parsedTranscripts[0] && parsedTranscripts[0].transcript.config &&
-            parsedTranscripts[0].transcript.config.channels) || ['main'];
+            parsedTranscripts[0].transcript.config.channels) || [];
         const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed, chainChannels);
         // ADR-293 D14: every run reports the seed it used, clock-derived included.
         console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);

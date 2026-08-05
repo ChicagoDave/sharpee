@@ -262,9 +262,12 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
  */
 /**
  * Channels carrying the game's opening, declared whenever a person (rather than
- * a transcript) is going to read the output.
+ * a transcript) is going to read the output. The turn's prose composes from
+ * `preferred-layout` and needs no declaration (ADR-300 D8/D9); these two are
+ * said before anything is typed, so a surface that does not ask for them shows
+ * the player no opening at all (D15).
  */
-const OPENING_CHANNELS = ['main', 'prologue', 'banner'];
+const OPENING_CHANNELS = ['prologue', 'banner'];
 
 /**
  * Print the prologue and banner captured on the way to the first command.
@@ -349,7 +352,7 @@ async function main(): Promise<void> {
   let game: TestableGame | undefined;
   // ADR-294 D15: the channels a session's game was assembled with — threaded
   // to the runner so a mismatched member fails by name, never silently.
-  let assembledChannels: string[] = ['main'];
+  let assembledChannels: string[] = [];
   if (options.chain) {
     // ADR-293 D14: a chain is one session governed by the FIRST member's
     // pinned seed — pre-read it, since the engine is seeded at assembly.
@@ -360,7 +363,7 @@ async function main(): Promise<void> {
     try {
       const firstConfig = parseTranscriptFile(options.transcriptPaths[0]).config;
       chainSeed = firstConfig?.seeds?.[0];
-      assembledChannels = firstConfig?.channels ?? ['main'];
+      assembledChannels = firstConfig?.channels ?? [];
     } catch {
       chainSeed = undefined;
     }
@@ -413,7 +416,7 @@ async function main(): Promise<void> {
     // pinned `seed:` (ADR-294 D3 — the engine is seeded at assembly).
     if (!options.chain) {
       try {
-        assembledChannels = transcript.config?.channels ?? ['main'];
+        assembledChannels = transcript.config?.channels ?? [];
         game = await loadStory(options.storyPath, transcript.header.entry,
           transcript.config?.seeds?.[0], assembledChannels);
       } catch (error) {

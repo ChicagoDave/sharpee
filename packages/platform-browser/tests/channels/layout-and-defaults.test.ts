@@ -21,7 +21,14 @@ const STANDARD_MANIFEST: CmgtPacket = {
   kind: 'cmgt',
   protocol_version: 1,
   channels: [
-    { id: 'main', contentType: 'json', mode: 'append', emit: 'always' },
+    { id: 'room-name', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'room-description', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'room-contents', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'action-result', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'action-blocked', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'error', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'game-message', contentType: 'json', mode: 'append', emit: 'sparse' },
+    { id: 'preferred-layout', contentType: 'json', mode: 'replace', emit: 'always' },
     { id: 'prompt', contentType: 'text', mode: 'replace', emit: 'always' },
     { id: 'location', contentType: 'text', mode: 'replace', emit: 'always' },
     { id: 'score', contentType: 'json', mode: 'replace', emit: 'always' },
@@ -118,7 +125,8 @@ describe('registerDefaultBrowserRenderers — full stack', () => {
       kind: 'turn',
       turn_id: 'turn-1',
       payload: {
-        main: [['You are in a forest.']],
+        'room-description': [['You are in a forest.']],
+        'preferred-layout': ['room-description'],
         prompt: '? ',
         location: 'Forest',
         score: { current: 5, max: 100 },
@@ -186,13 +194,19 @@ describe('registerDefaultBrowserRenderers — full stack', () => {
     r.applyTurnPacket({
       kind: 'turn',
       turn_id: 'turn-1',
-      payload: { main: [['line one'], ['line two']] },
+      payload: {
+        'game-message': [['line one'], ['line two']],
+        'preferred-layout': ['game-message', 'game-message'],
+      },
     });
     expect(layout.main.children.length).toBe(2);
+    // No `target` — clear every append-mode channel. After ADR-300 D8 the
+    // prose window is composed from seven channels, so "clear the prose"
+    // targets the set, not one id.
     r.applyTurnPacket({
       kind: 'turn',
       turn_id: 'turn-2',
-      payload: { clear: { target: 'main' } },
+      payload: { clear: {} },
     });
     expect(layout.main.children.length).toBe(0);
   });
@@ -225,7 +239,7 @@ describe('registerDefaultBrowserRenderers — full stack', () => {
     expect(layout.statusLocation.textContent).toBe('');
   });
 
-  it('onMainAfterAppend fires after each main entry', () => {
+  it('onProseAfterAppend fires once the turn flushes', () => {
     const root = document.createElement('div');
     document.body.appendChild(root);
     const layout = mountDefaultLayout(root);
@@ -234,13 +248,13 @@ describe('registerDefaultBrowserRenderers — full stack', () => {
     const r = createRenderer({ fallbackWarn: () => undefined });
     registerDefaultBrowserRenderers(r, layout, {
       audio,
-      onMainAfterAppend: onAfter,
+      onProseAfterAppend: onAfter,
     });
     r.applyCmgt(STANDARD_MANIFEST);
     r.applyTurnPacket({
       kind: 'turn',
       turn_id: 'turn-1',
-      payload: { main: [['x']] },
+      payload: { 'game-message': [['x']], 'preferred-layout': ['game-message'] },
     });
     expect(onAfter).toHaveBeenCalledWith(layout.main);
   });

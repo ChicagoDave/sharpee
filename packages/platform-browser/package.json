@@ -23,10 +23,10 @@
       "import": "./dist-esm/channels/text-content.js",
       "require": "./dist/channels/text-content.js"
     },
-    "./channels/main": {
-      "types": "./dist/channels/main.d.ts",
-      "import": "./dist-esm/channels/main.js",
-      "require": "./dist/channels/main.js"
+    "./channels/prose": {
+      "types": "./dist/channels/prose.d.ts",
+      "import": "./dist-esm/channels/prose.js",
+      "require": "./dist/channels/prose.js"
     },
     "./channels/status": {
       "types": "./dist/channels/status.d.ts",
