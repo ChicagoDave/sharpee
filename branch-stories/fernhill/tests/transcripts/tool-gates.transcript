@@ -1,6 +1,7 @@
 title: Fernhill B2 — keyless tool gates (R3 spelling): crowbar → crate →
   opener → tin
 story: fernhill
+continues: arrival
 description: Two chained tool gates in the current R3 keyless `with` spelling
   — the nailed crate needs the crowbar (fetched from the dark cellar, so the
   A4 lamp chain is exercised for real), and the kipper tin needs the tin
@@ -8,12 +9,6 @@ description: Two chained tool gates in the current R3 keyless `with` spelling
   tool first.
 
 ---
-
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
 
 # Gate 1 fails bare-handed
 > east

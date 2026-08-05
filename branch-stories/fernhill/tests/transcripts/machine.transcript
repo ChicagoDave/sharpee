@@ -1,17 +1,12 @@
 title: Fernhill D5 — the boiler's three-stage startup, order enforced
 story: fernhill
+continues: arrival
 description: The `define machine` flagship — FILL, PRIME, LIGHT, in that
   order. Out-of-order attempts are rejected with their own voices (the dry
   primer, the clanking cold light); each legal transition mirrors onto the
   boiler's visible states and speaks its on-enter line.
 
 ---
-
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
 
 > east
 [OK: contains "old coal dust"]

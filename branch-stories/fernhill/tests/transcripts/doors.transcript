@@ -1,6 +1,7 @@
 title: Fernhill A2/A3 — the cellar door (locked default) and the two-sided
   pantry door
 story: fernhill
+continues: key
 description: A2 — the cellar door loads LOCKED (kind-scoped lockable default,
   one exit line + one door block); unlock with the tarnished key, open,
   descend. A3 — the pantry door is present from BOTH sides (ADR-238): open it
@@ -9,18 +10,6 @@ description: A2 — the cellar door loads LOCKED (kind-scoped lockable default,
 ---
 
 # Pick up the key on the way in (temporary Phase-2 placement; B3 hides it later)
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
-
-> search the doormat
-[OK: contains "key"]
-
-> take the tarnished key
-[OK: contains "You take the tarnished key"]
-
 # A2: the locked cellar door refuses passage before the key is used
 > north
 [OK: contains "Entrance Hall"]

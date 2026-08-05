@@ -1,6 +1,7 @@
 title: Fernhill A5 — the frost-sealed glasshouse door thaws when the boiler
   runs
 story: fernhill
+continues: arrival
 description: The Greenhouse's north exit is blocked while the boiler is off
   (conditional blocked exit reading live switchable state). Turning the boiler
   on flips the condition; the way to Folly Hill (and the warped folly door)
@@ -8,12 +9,6 @@ description: The Greenhouse's north exit is blocked while the boiler is off
   machine — this transcript pins the A5 condition itself.)
 
 ---
-
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
 
 > west
 [OK: contains "Glass panes furred with frost"]

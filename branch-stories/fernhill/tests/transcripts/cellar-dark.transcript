@@ -1,22 +1,10 @@
 title: Fernhill A4 — the dark cellar and the oil lamp
 story: fernhill
+continues: key
 description: The cellar is dark; without light the vaults cannot be seen. The
   oil lamp (light-source, switchable) on the stairs lights the way.
-seed: 42
 
 ---
-
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
-
-> search the doormat
-[OK: contains "key"]
-
-> take the tarnished key
-[OK: contains "You take the tarnished key"]
 
 > north
 [OK: contains "Entrance Hall"]

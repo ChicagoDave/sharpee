@@ -165,7 +165,22 @@ Also fixed a real gap this surfaced in Phase 6's `runTree`: a **second root was 
 
 **Verified end-to-end through the CLI**: AC-6's malformed-tree path — a cycle and a dangling parent reported *together*, nothing executed, exit 2.
 
-#### Not done — Fernhill's rewrite, now blocked on one thing
+#### Done — bundle integration and Fernhill's tree (2026-08-05)
+`scripts/bundle-entry.js` now dispatches on the directory, which is what D16 makes the harness assignment — not a flag, not a header field. Transcripts under `branch-stories/` run through `branchTester.runTree`; everything else keeps v1's path. Mixed paths are a hard error, same species as mixed story prefixes. This uses the bundle's own loader, so a Chord `.story` compiles and runs for v2 exactly as it does for v1 — that capability lives in the bundle, not in either harness package (which is why #225 does not block this).
+
+**Fernhill runs as a tree: 21 nodes passing.** Spine hoisted from what the tests actually shared: `arrival` (north, north → Fountain Court) and `key` (search the doormat, take the tarnished key) off it. `cellar-dark`, `doors` and `smoke` hang off `key`; five more off `arrival`. Each child's inherited `seed: 42` was dropped — the root's governs (D8).
+
+#### Found by running it — the important part
+Three tests (`fuse`, `fuse-lose`, `npcs`) failed only **once a sibling had run before them**. `npcs` passes as `arrival`'s only child and fails when `concealment`'s subtree runs first, executing identical commands from an identical restore point. So **restoring a parent's save is not a full reset** — filed as [#226](https://github.com/ChicagoDave/sharpee/issues/226). The failing assertions are NPC-arrival/timeline ones, which points at scheduler state living outside the save rather than at world state.
+
+This matters beyond three tests: D10's whole model is that a divergent tail resumes from a restore of its parent's state. If a restore leaves residue, sibling ORDER affects results — and since children run in stem order, a D14 rename could silently change whether a sibling passes. The three were reverted to roots so the suite is green; the bug is not theirs.
+
+Also found: branch-tester's copied `header-folding.test.ts` did not list `continues:` as a legal header key — the very key the copy exists to support. The legal set is enforced by that test rather than by the parser, so the first real tree in the corpus is what surfaced it.
+
+#### Remaining
+`e-group`, `dawn-lose`/`timeline` (which share `north, wait, wait, wait`), and the five tests that share no prefix are still roots. The walkthrough is still a separate file rather than the spine. Both are further authoring over Fernhill's map, and #226 should be settled first — hanging more tests off shared parents while restore leaves residue would keep producing order-dependent failures.
+
+#### Superseded — the earlier blocker
 
 **No story will load from the package CLI** — [issue #225](https://github.com/ChicagoDave/sharpee/issues/225), and **v1 fails identically**, so this is pre-existing parity rather than a v2 regression: `SyntaxError: The requested module '@sharpee/world-model' does not provide an export named 'IScopeRule'`. Every in-repo path runs stories through the *bundle* (`dist/cli/sharpee.js`), which resolves `@sharpee/*` through esbuild aliases rather than Node's ESM resolver, so the package `bin` has effectively never been exercised. On top of that, Chord `.story` compilation lives in `scripts/bundle-entry.js`, so neither package CLI can load Fernhill at all.
 

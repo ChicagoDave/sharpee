@@ -8,17 +8,16 @@ description: The guard block (conditional exit on Mrs Kettle's state) lifts on
   appended to a hit. Kettle's second table has NO catch-all: her miss takes
   the stdlib unknown_topic default. The folly door unjams once Tobias is
   shaken.
-seed: 42
 
 ---
 
-# --- C2: the guard block ---
 > north
 [OK: contains "Gravel Drive"]
 
 > north
 [OK: contains "Fountain Court"]
 
+# --- C2: the guard block ---
 > north
 [OK: contains "Entrance Hall"]
 

@@ -3,18 +3,17 @@ story: fernhill
 description: Entering the folly lights the old fuse (once); the anchored
   sequence gives three turns of hissing stakes; the shears (B2's second edge)
   cut it dead. The lose branch is fuse-lose.transcript.
-seed: 42
 
 ---
 
-# The long road to the folly: key, sherry toll not needed — but shears,
-# boiler startup, and Tobias's blessing are
 > north
 [OK: contains "Gravel Drive"]
 
 > north
 [OK: contains "Fountain Court"]
 
+# The long road to the folly: key, sherry toll not needed — but shears,
+# boiler startup, and Tobias's blessing are
 > north
 [OK: contains "Entrance Hall"]
 

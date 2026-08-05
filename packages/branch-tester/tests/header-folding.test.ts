@@ -154,7 +154,12 @@ describe.skipIf(!hasCorpus)('header grammar across a configured corpus', () => {
   // for `stories/` and passing silently when it finds nothing.
   const LEGAL = new Set([
     'title', 'story', 'entry', 'author', 'description',
-    'seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed'
+    'seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed',
+    // v2's own addition (ADR-302 D1). Inherited from v1's copy, this list did
+    // not know about the key the copy exists to support — and since the legal
+    // key set is enforced HERE rather than in the parser, the first real tree
+    // in the corpus is what found it.
+    'continues'
   ]);
 
   it('produces no header key outside the grammar', () => {

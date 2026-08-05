@@ -1,17 +1,12 @@
 title: Fernhill B3/B4 — the key under the mat, the pocketed winding key,
   hiding
 story: fernhill
+continues: arrival
 description: Concealed items are invisible until SEARCH reveals them (the
   tarnished key on/under the doormat; the winding key in Verity's overcoat).
   The study curtains are a hiding-spot (position behind). The overcoat wears.
 
 ---
-
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
 
 # Before searching: the concealed key cannot be taken
 > take the tarnished key

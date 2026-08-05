@@ -1,5 +1,6 @@
 title: Fernhill E2/C2 — feeding Smoke (authored trait) and gaining a shadow
 story: fernhill
+continues: key
 description: The authored `feedable` trait with its keyed data field
   (`feedable with food the kipper`): feeding refuses without the food and
   after the account is settled; the kipper (via the full tool chain) settles
@@ -9,18 +10,6 @@ description: The authored `feedable` trait with its keyed data field
 ---
 
 # The tool chain to the kipper: key → lamp → cellar → crowbar → crate → opener
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
-
-> search the doormat
-[OK: contains "key"]
-
-> take the tarnished key
-[OK: contains "You take the tarnished key"]
-
 > north
 [OK: contains "Entrance Hall"]
 
