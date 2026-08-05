@@ -15,16 +15,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
 import { parseTranscript } from '../src/parser.js';
 import { serializeTranscript } from '../src/serializer.js';
 import type { Transcript } from '../src/types.js';
 
-const REPO_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
-);
+import { corpusFiles, corpusRelative, hasCorpus } from './corpus.js';
 
 /**
  * Positional metadata that necessarily moves when a file is reformatted.
@@ -62,26 +57,14 @@ function stripPositional(value: unknown): unknown {
   return value;
 }
 
-function corpusFiles(): string[] {
-  const storiesDir = path.join(REPO_ROOT, 'stories');
-  if (!fs.existsSync(storiesDir)) return [];
-  const files: string[] = [];
-  const walk = (dir: string): void => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith('.transcript')) files.push(full);
-    }
-  };
-  walk(storiesDir);
-  return files;
-}
+const FILES = hasCorpus ? corpusFiles() : [];
 
-const FILES = corpusFiles();
-
-describe('serializer round trip (ADR-300 AC-3)', () => {
-  it('finds the corpus', () => {
-    expect(FILES.length).toBeGreaterThan(100);
+describe.skipIf(!hasCorpus)('serializer round trip (ADR-300 AC-3)', () => {
+  it('the configured corpus is not empty', () => {
+    // Not an assertion about how big the repository is — that is not this
+    // test's business. A configured corpus holding no transcripts means the
+    // configuration is wrong, and every sweep below would pass vacuously.
+    expect(FILES.length).toBeGreaterThan(0);
   });
 
   it('preserves the model across parse → serialize → parse, for every file', () => {
@@ -93,7 +76,7 @@ describe('serializer round trip (ADR-300 AC-3)', () => {
 
       const a = JSON.stringify(stripPositional(first));
       const b = JSON.stringify(stripPositional(second));
-      if (a !== b) diverged.push(path.relative(REPO_ROOT, file));
+      if (a !== b) diverged.push(corpusRelative(file));
     }
 
     expect(diverged).toEqual([]);
@@ -107,7 +90,7 @@ describe('serializer round trip (ADR-300 AC-3)', () => {
       if (first.parseErrors) continue;   // already broken on disk: not ours to fix
       const second = parseTranscript(serializeTranscript(first), file);
       if (second.parseErrors) {
-        broken.push(`${path.relative(REPO_ROOT, file)}: ${second.parseErrors[0].message}`);
+        broken.push(`${corpusRelative(file)}: ${second.parseErrors[0].message}`);
       }
     }
 
@@ -115,14 +98,14 @@ describe('serializer round trip (ADR-300 AC-3)', () => {
   });
 });
 
-describe('serializer idempotency (ADR-300 AC-4)', () => {
+describe.skipIf(!hasCorpus)('serializer idempotency (ADR-300 AC-4)', () => {
   it('is a byte no-op on already-canonical output, for every file', () => {
     const unstable: string[] = [];
 
     for (const file of FILES) {
       const once = serializeTranscript(parseTranscript(fs.readFileSync(file, 'utf-8'), file));
       const twice = serializeTranscript(parseTranscript(once, file));
-      if (once !== twice) unstable.push(path.relative(REPO_ROOT, file));
+      if (once !== twice) unstable.push(corpusRelative(file));
     }
 
     expect(unstable).toEqual([]);

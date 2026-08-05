@@ -1,6 +1,8 @@
 # ADR-290: Test creation is an atomic mode, not a toggle over free play
 
-## Status: SUPERSEDED-IN-PART (2026-08-04, session c42886) by **ADR-300 D12** — **D1–D4 are superseded**; **D5–D8 stand and still apply**
+## Status: SUPERSEDED-IN-PART (2026-08-04, session c42886) by the promote-from-session-log mechanism, now held by **[ADR-301](adr-301-sharpee-transcript-editor.md)** and TBD — **D1–D4 are superseded**; **D5–D8 stand and still apply**
+
+> **Re-pointed 2026-08-04 (session 5113ca).** This previously cited "ADR-300 D12". That ADR-300 was deleted and its editor program, including promote-from-session-log, moved to ADR-301, which decides nothing yet. D1–D4 remain retired on the reasoning below, but the mechanism replacing them is now undecided rather than specified — if ADR-301 is never taken up, this ADR's D1–D4 should be revisited rather than left silently superseded by nothing.
 
 ADR-300 D12 addresses the same defect D1 names — "a transcript replays from turn zero, so a capture that does not begin at turn zero is not a test" — and preserves that invariant by the opposite mechanism: promotion from a session log carries the prefix from turn 1, which makes the mid-play-start capture unrepresentable without constraining play at all. The atomic mode (D1), its clean-world entry (D2), its restart semantics (D3) and its save-or-discard exits (D4) are therefore unnecessary and retired. **D5** (the client renders the blessed mark on instruction), **D6** (the menu option is optional at build/publish time), **D7** (one owner for "who else observes this") and **D8** (the save location is inferred, never asked) are untouched — D8 in particular is still where a promoted file's destination is decided. Open question 2 (how the author sees whether a bless asserts a fragment or the whole response) is answered by ADR-300 D4; the remaining open questions apply only to the surviving decisions.
 

@@ -4,12 +4,12 @@
 retires the `.skein` artifact and the second verification engine. What is
 superseded is the *artifact and verification* model — `.skein`, blessing scopes,
 all-paths invariance, `SkeinVerifier`, findings, locks, trims, and the exporter.
-What carries forward, named in ADR-300 D2, is the interaction design: play
+What carries forward — now held by [ADR-301](adr-301-sharpee-transcript-editor.md), which is TBD — is the interaction design: play
 authors the transcript (by promotion from a session log rather than this ADR's
 append-to-an-open-artifact mechanism), replay to a point, branch columns
 re-pointed one-per-file, and the card-per-turn reading surface. Phases 3, 4, 7,
 8 and 9 are substantially retracted; Phases 1–2 and 5–6 survive as that carried
-interaction. The evidence is ADR-300's: `SkeinExporter` reaches only `[OK]` and
+interaction, recorded as ideas rather than as a decided design. The evidence is ADR-300's: `SkeinExporter` reaches only `[OK]` and
 `[SKIP]`, 0.16 % and 0.13 % of the assertions authors write, while the
 `contains` family is 92.6 % and unreachable from a skein.
 

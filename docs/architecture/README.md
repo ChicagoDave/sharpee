@@ -100,7 +100,7 @@ Semantic events are return values from action phases — they are message object
 
 - [API Reference](../api/) — Generated HTML documentation for traits, actions, entities, and events
 - [Coding Standards](../development/standards/coding.md) — TypeScript coding conventions
-- [Core Concepts](../reference/core-concepts.md) — Entity system, traits, actions, and event patterns
+- [Core Concepts](../core-concepts/README.md) — Entity system, traits, actions, and event patterns
 
 ---
 

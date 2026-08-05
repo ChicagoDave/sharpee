@@ -3,6 +3,110 @@
 ## Overview
 Sharpee is an interactive fiction (IF) engine that uses a trait-based entity system, event-driven architecture, and a four-phase action pattern (validate/execute/report/blocked) for handling player commands.
 
+Authors write stories in **Chord**, Sharpee's story language (`.story` files), which compiles to a Story IR that the platform interprets. Stories can also be written directly in TypeScript against the same packages.
+
+### Where the work is
+
+**The platform is now secondary to the Chord language and the IDE.** The engine, world model, stdlib, and the rest of `packages/` are the mature layer underneath; the active product is Chord — what an author actually writes — and the macOS IDE, where they write it.
+
+Secondary does not mean subordinate. **Sharpee and Chord need to align as elegantly as possible**, and that is a two-sided obligation: a platform concept that Chord cannot express cleanly is as much a platform problem as a language one, and the fix belongs on whichever side makes the seam simpler. The recurring failure is a capability that exists in the engine with no natural way to say it in a `.story` file — a channel whose value is a record while `define channel` can only describe a scalar, say — which leaves authors reaching around the language for something the platform already does.
+
+So the test for a `packages/` change is not "did Chord ask for this." It is whether the change makes the platform and the language fit together more elegantly than they did before. A change that does neither — that serves the platform's own internal tidiness while the seam stays where it was — is a change to question rather than a detail to sort out later.
+
+## The Packages
+
+Thirty-two packages under `packages/`. Grouped by what they are for, not by dependency order.
+
+### Contracts and types
+
+**`@sharpee/core`** — Foundation data structures everything else builds on: the event system (`ISemanticEvent`, the `EventDataRegistry` other packages merge into), IFID utilities, story metadata, shared types. Every package depends on it; it depends on none of them.
+
+**`@sharpee/if-domain`** — The shared domain contracts: domain events, the `Parser` interface, `LanguageProvider`, and the types engine, stdlib, and parsers all agree on. Pure types, so it sits under Node and browser packages alike without dragging a runtime along.
+
+**`@sharpee/if-services`** — Runtime *service* interfaces that need access to the world model, deliberately separated from `if-domain`'s pure domain types. `IPerceptionService` lives here: the interface the engine accepts and stdlib implements.
+
+**`@sharpee/text-blocks`** — Interfaces only for structured text output — `ITextBlock`, `IDecoration`, and type guards — with no runtime dependencies. It is the shape the engine's prose pipeline produces and every client consumes.
+
+**`@sharpee/media`** — Audio and media type definitions (ADR-138), types-only beyond `@sharpee/core`. Importing it activates TypeScript declaration merging so audio event keys join core's `EventDataRegistry`.
+
+**`@sharpee/ide-protocol`** — Wire types for the IDE's project-introspection manifest (ADR-184), the single source of truth shared by the `--introspect` CLI emitter and the Play-panel bridge. Types only, so the Node emitter and the browser bridge both import it cleanly.
+
+**`@sharpee/story-runtime-baseline`** — The manifest (ADR-178) declaring the canonical set of packages a `.sharpee` story bundle may import. Zifmia installs the baseline transitively from it and the story build validates bundles against it; bumping it is an amendment to ADR-178.
+
+### World and engine
+
+**`@sharpee/world-model`** — Entities, traits, and behaviors: the world's state and the rules for changing it. Behaviors own every mutation, and the capability registry (ADR-090) lives here, letting a trait claim action ids and supply its own validate/execute/report/blocked.
+
+**`@sharpee/engine`** — The runtime: turn cycle, command execution, event dispatch, save/restore, and the prose pipeline that turns turn-end events into `ITextBlock[]`. `GameEngine` takes `{ world, player, parser, language, perceptionService?, config? }` and owns the master seed every random stream derives from (ADR-293).
+
+**`@sharpee/event-processor`** — Applies semantic events to the world model through registered handlers, bridging event-producing actions and actual state mutation. It also hosts the effects system (ADR-075).
+
+**`@sharpee/stdlib`** — The standard actions (taking, going, opening, and the rest) written in the four-phase pattern, plus scope resolution, command validation, capability schemas, and the `PerceptionService` implementation. Each action is a directory of six files rather than a single module.
+
+**`@sharpee/plugins`** — The contracts for turn-cycle extensibility: `TurnPlugin`, `TurnPluginContext`, `PluginRegistry`. It also carries the banded-scalar crossing engine (ADR-262) for narrating threshold crossings.
+
+**`@sharpee/plugin-npc`** — NPC behaviors and the NPC turn phase (ADR-070, ADR-120). It plugs into the turn cycle rather than being built into the engine.
+
+**`@sharpee/plugin-scheduler`** — Daemons and fuses (ADR-071, ADR-120), the recurring and delayed events a story schedules, plus its own seeded random source.
+
+**`@sharpee/plugin-state-machine`** — Declarative puzzle and narrative orchestration (ADR-119, ADR-120): states, guards, and effects, with a guard evaluator and an effect executor.
+
+### Language
+
+**`@sharpee/parser-en-us`** — Turns typed English into structured commands; `EnglishParser` implements `if-domain`'s `Parser` interface. Grammar patterns (ADR-087) live here, and stories extend them rather than forking the parser.
+
+**`@sharpee/lang-en-us`** — All user-facing English: vocabulary, message templates, action patterns and messages, NPC messages, formatting and lemmatization. If a player can read it, the text belongs here and not in an action.
+
+### Chord — the story language
+
+**`@sharpee/chord`** — The Chord compiler (ADR-210): lexer, indentation-aware parser, semantic analysis, Story IR wire types, and diagnostics carrying source spans. It is deliberately browser-safe and must never depend on platform-runtime packages.
+
+**`@sharpee/story-loader`** — The Story IR interpreter (ADR-210): constructs a generic `Story` from compiled IR, covering world building, phrase registration, custom vocabulary, endings, event rules, expression evaluation, and seeded RNG. Language-neutral by design — it consumes IR, never Chord syntax.
+
+### Authoring conveniences
+
+**`@sharpee/helpers`** — Fluent entity builders for authors (ADR-140); `createHelpers(world)` returns builders bound to that world. Author-facing only: ADR-237 D1 forbids any platform package from depending on it.
+
+**`@sharpee/queries`** — A LINQ-style chainable query API over entities (ADR-150). Importing it augments `WorldModel` with entry points like `w.rooms` and `w.contents()` — the augmentation is on the concrete class, not the `IWorldModel` interface.
+
+**`@sharpee/character`** — A fluent builder for NPCs with rich internal state (ADR-141). Authors describe a character in words and the builder compiles that to trait data `CharacterModelTrait` consumes at runtime.
+
+### Channels and clients
+
+**`@sharpee/channel-service`** — The channel-I/O wire producer (ADR-163), the universal surface carrying every story→UI signal: prose, status, media, layout. It runs in-process wherever the engine runs — Node CLI, multi-user server, browser.
+
+**`@sharpee/platform-browser`** — Browser client infrastructure: `BrowserClient`, a renderer per channel, and managers for save/restore, themes, menus, dialogs, input, and display. Framework-free, with `lz-string` as its only runtime dependency.
+
+**`@sharpee/runtime`** — A headless engine runtime for embedding in an iframe, talking to the parent frame over postMessage. It shares its Sharpee API surface with `bridge` via `@sharpee/sharpee/runtime-surface` and adds only the postMessage transport.
+
+**`@sharpee/bridge`** — The same engine surface exposed as a Node subprocess speaking newline-delimited JSON over stdin/stdout (ADR-135), for native hosts. Only the transport differs from `runtime`.
+
+**`@sharpee/interpreter`** — The legacy Tauri story runner: React context and providers wrapped around a running game. Kept for reference only — ADR-180 dropped it from the build, and the `zifmia` name is reserved for the multi-user web product.
+
+### Build, test, and tooling
+
+**`@sharpee/bootstrap`** — The single story-loading implementation: resolves a story module (entry-aware) and assembles engine, world, player, parser, language, and perception, wired to the channel-packet output path. transcript-tester, the CLI bundle, and devkit all call it rather than hand-copying the wiring (ADR-180).
+
+**`@sharpee/devkit`** — The `sharpee` author CLI (ADR-180, ADR-187): scaffold, build, test, verify, compose, and introspect an author's own story project. In-repo platform builds deliberately use a separate tool, `repokit`.
+
+**`@sharpee/transcript-tester`** — Transcript-based testing: the `.transcript` parser and its matched canonical serializer, the runner, golden recordings, coverage, outcome search, and watch mode. It owns the transcript grammar, so parser and serializer ship as a pair pinned by their own tests.
+
+**`@sharpee/sharpee`** — The umbrella package aggregating the others for consumption. It deliberately does not re-export everything (ADR-178); the baseline sub-packages remain the import contract.
+
+**`@sharpee/map-editor`** — A visual map and region editor for stories, and the one package that is not a library: an Electron application with a React and Vite front end.
+
+## The Command Lines
+
+Three different things carry the name `sharpee` or sit next to it, and confusing them wastes real time. They are split by audience (ADR-180, ADR-187).
+
+**`./sharpee` — the author tool.** A repo-local bash shim over `packages/devkit/dist/cli.js`, the published `@sharpee/devkit` engine. It builds, tests, verifies, and scaffolds *an author's own story project*, project-relative, and it is what an outside author installs. In-repo it is only a wrapper; a globally installed `sharpee` command is ADR-180 Phase U2. Passing a workspace story to `./sharpee build` redirects to `./repokit`, because building the platform is not devkit's job.
+
+**`./repokit` — the in-repo platform build.** A repo-local shim over `tools/repokit/dist/cli.js` (`@sharpee/repokit`), which lives in `tools/`, not `packages/`, and is never published. It is devkit's platform-side counterpart: it builds the platform packages, the CLI bundle, `verify`, `test:npm`, and the in-repo example stories, so `./repokit build dungeo` is the command for all platform and story work in this repository. Use `--skip <pkg>` to resume a build rather than rebuilding the tree.
+
+**`dist/cli/sharpee.js` — the platform bundle.** The esbuild output produced by `./repokit build`, and the thing to run for transcript testing and interactive play: `--test`, `--chain`, `--play`, `--exec`. It loads in roughly 170ms against about five seconds for the equivalent package-by-package path, which is why it is the required entry point for all in-repo transcript testing. It is a testing and development surface, not an authoring product.
+
+The short version: **`./sharpee` is for authors, `./repokit` builds the platform, and `dist/cli/sharpee.js` runs the tests.**
+
 ## Entity System
 
 ### Entity Creation
@@ -125,11 +229,26 @@ report(context: ActionContext): ISemanticEvent[] {
 }
 ```
 
+### Phase 4: Blocked
+Generate events when `validate()` refused. This phase runs *instead of* execute and report, never alongside them.
+```typescript
+blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+  // Turn the ValidationResult's error code into the action's own
+  // blocked message. Optional — omitting it falls back to a standard
+  // 'action.blocked' event.
+}
+```
+
+**Why it is a phase and not an error return**: each action owns the wording of its own refusals, so a blocked attempt is reported through the same event path as a successful one rather than through a thrown error or a bare string. `blocked` is optional on the interface (`enhanced-types.ts`); the default implementation covers actions with nothing special to say.
+
 ### Action Structure
 Each action lives in `/packages/stdlib/src/actions/standard/[action-name]/` with:
 - `[action-name].ts` - Main action implementation
 - `[action-name]-events.ts` - Event type definitions
 - `[action-name]-data.ts` - Data builder configuration
+- `[action-name]-messages.ts` - Message ids the action can emit
+- `[action-name]-types.ts` - Action-specific types (including its sharedData shape)
+- `index.ts` - Barrel
 
 ### Action Categories
 
@@ -406,8 +525,8 @@ const engine = new GameEngine({
   player,
   parser,
   language,
-  textService,
-  perceptionService  // Enable perception filtering
+  perceptionService,  // Enable perception filtering
+  config              // optional (seed, narrative settings)
 });
 ```
 
@@ -485,10 +604,11 @@ case 'if.event.perception.blocked':
 
 1. **Parse**: Text → ParsedCommand (parser)
 2. **Validate**: ParsedCommand → ValidatedCommand (validator)
-3. **Execute**: ValidatedCommand → Events (action's three phases)
+3. **Execute**: ValidatedCommand → Events (the action's four phases)
    - validate(): Check preconditions
-   - execute(): Mutate world
-   - report(): Generate events
+   - execute(): Mutate world (only if validate passed)
+   - report(): Generate events (only if validate passed)
+   - blocked(): Generate refusal events instead, if validate failed
 4. **Process**: Events → Output (event processor)
 
 ## Behaviors vs Actions
@@ -755,6 +875,9 @@ return [
 
 ## File Structure
 
+For the full package inventory see [The Packages](#the-packages) above. The internal
+layout of the three packages you will touch most:
+
 ```
 packages/
   world-model/        # Core world representation
@@ -762,21 +885,24 @@ packages/
       entities/       # Entity system
       traits/         # Trait definitions
       behaviors/      # Pure game logic
+      capabilities/   # Capability registry + helpers (ADR-090)
       world/          # World model implementation
-      
+
   stdlib/             # Standard library
     src/
       actions/        # Action implementations
-        standard/     # Standard IF actions
+        standard/     # Standard IF actions (one directory each)
         base/         # Base action types
       scope/          # Scope resolution
       validation/     # Command validation
-      
+      channels/       # Channel keys and standard channel definitions
+
   engine/             # Game engine
     src/
-      command-executor.ts  # Orchestrates action execution
+      command-executor.ts        # Orchestrates action execution
       action-context-factory.ts  # Creates ActionContext
-      game-engine.ts       # Main game loop
+      game-engine.ts             # Main game loop
+      prose-pipeline/            # Turn-end events → ITextBlock[]
 ```
 
 ## Key Interfaces
@@ -807,6 +933,7 @@ interface Action {
   validate(context: ActionContext): ValidationResult
   execute(context: ActionContext): void
   report(context: ActionContext): ISemanticEvent[]
+  blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[]
 }
 ```
 

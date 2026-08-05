@@ -302,7 +302,7 @@ node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcr
 
 ## Further Reading
 
-- **[Core Concepts](../reference/core-concepts.md)** - Entities, traits, actions, events
+- **[Core Concepts](../core-concepts/README.md)** - Entities, traits, actions, events
 - **[Creating Stories](./creating-stories.md)** - Detailed story authoring guide
 - **[Event Handlers](./event-handlers.md)** - Custom logic and puzzles
 - **[Audio Enablement](./audio-enablement.md)** - Sound effects, music, and ambient audio

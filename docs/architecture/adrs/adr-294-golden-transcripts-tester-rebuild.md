@@ -2,7 +2,7 @@
 
 ## Status: ACCEPTED (2026-08-01, session 06425d) and IMPLEMENTED (2026-08-01, commit `118cd95a` — the D12 arc completed as sequenced: handler-access discussion → ADR-293 Phase B → this rebuild). Drafted, feature-swept, interviewed (six questions resolved), and `adr-review`ed the same day (10/15 → 15/15 after three folds: Acceptance section, `.golden` format block, status wording); accepted by David on the folded result. Status-line updated 2026-08-02 (session 1d3b6f, ADR-293 Phase D plan-review fixup) — the previous wording still described implementation as not yet started.
 
-> **D15 superseded in part** by [ADR-301](adr-301-the-opening-as-addressable-channels.md) (2026-08-04): golden recordings still capture declared channels exactly as D15 says, but recordings are no longer the only consumer — the assertion tier reads channels too, via `[CHANNEL: <id>, contains "…"]`.
+> **D15 superseded in part** by [ADR-300 D11](adr-300-addressable-channels-and-canonical-transcript.md) (2026-08-04): golden recordings still capture declared channels exactly as D15 says, but recordings are no longer the only consumer — the assertion tier reads channels too, via `[CHANNEL: <id>, contains "…"]`.
 
 **Platform change; requires its own discussion before implementation starts.** Packages: `packages/transcript-tester` (rebuilt), `scripts/bundle-entry.js` (CLI flags), `tools/repokit` (test command surface). **Story change**: every story's transcript corpus migrates (`stories/dungeo` 17 walkthroughs + ~100 unit transcripts, plus `cloak-of-darkness`, `friendly-zoo`, `family-zoo-tutorial`, `fernhill`).
 

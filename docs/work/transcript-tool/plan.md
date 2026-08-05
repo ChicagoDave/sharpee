@@ -1,5 +1,25 @@
 # Session Plan: Implement ADR-300 (standalone transcript testing tool)
 
+> **RETIRED 2026-08-04 (session 5113ca) — Phases 1–2 only are live history.**
+> The source ADR this plan implements (`adr-300-transcript-editor.md`) was
+> deleted, not amended. Its channel/transcript decisions are consolidated into
+> the new [ADR-300](../../architecture/adrs/adr-300-addressable-channels-and-canonical-transcript.md);
+> its editor program is TBD and now sits in
+> [ADR-301](../../architecture/adrs/adr-301-sharpee-transcript-editor.md),
+> which decides nothing.
+>
+> **Phases 1 and 2 are COMPLETE and their outcomes below remain accurate** —
+> the serializer, the two parser defects, and the corpus normalization all
+> shipped. **Phases 3–9 are retired**: every one of them builds the standalone
+> CLI-hosted tool whose host was never settled, and they must not be resumed as
+> written. Whatever editor gets built starts from ADR-301's open question, not
+> from Phase 3.
+>
+> Remaining non-editor work from this plan lives on as ADR-300's Decision
+> Status table: the Chord `record` block, dissolving `main`, the assertion
+> vocabulary, capture inference, issue #222, and the unexecuted `.skein`
+> retirement.
+
 **Created**: 2026-08-04
 **Overall scope**: Build the standalone, CLI-hosted transcript editor and verification tool (`sharpee test --ui`) that supersedes the ADR-299 skein: a canonical `.transcript` parser/model/serializer, a framework-free web editor over `packages/platform-browser` reaching all 183 committed transcripts (not just the 46 Chord-story files an IDE panel could reach), in-process verification (no subprocess), play-and-promote authoring, re-bless drift handling, walkthrough-chain support, and retirement of the Skein Swift stack from the macOS IDE in favor of a thin `--json`-wire client.
 **Bounded contexts touched**: N/A — infrastructure/tooling. This is a CLI-hosted developer tool (test authoring + verification infra) spanning `packages/transcript-tester`, a new standalone tool surface on `packages/platform-browser`, and deletions in `tools/ide` (Swift). No domain model is being introduced or changed; DDD framing does not apply per the planner's own skip criteria.

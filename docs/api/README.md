@@ -41,4 +41,4 @@ Open `index.html` in a browser. The docs are a self-contained static site (HTML 
 ## Related
 
 - [Architecture Documentation](../architecture/) — ADRs and system design
-- [Core Concepts](../reference/core-concepts.md) — Entity system, traits, actions, and patterns
+- [Core Concepts](../core-concepts/README.md) — Entity system, traits, actions, and patterns

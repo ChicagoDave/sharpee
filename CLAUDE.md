@@ -63,7 +63,7 @@ If all four are "no," then discuss a platform change. Usually the architecture a
 
 ## Core Concepts Reference
 
-Read `/docs/reference/core-concepts.md` at the start of each session for:
+Read `/docs/core-concepts/README.md` at the start of each session for:
 
 - Entity system and creation
 - Trait system and usage

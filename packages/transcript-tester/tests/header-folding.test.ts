@@ -11,16 +11,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import * as fs from 'fs';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
 import { parseTranscript } from '../src/parser.js';
+import { corpusFiles, corpusRelative, hasCorpus } from './corpus.js';
 
 const BODY = '---\n> look\n[OK]\nA room.\n';
 
-const REPO_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
-);
 
 describe('folded header values (ADR-300 D17)', () => {
   it('joins continuation lines into the field value, single-spaced', () => {
@@ -97,63 +92,50 @@ describe('folded header values (ADR-300 D17)', () => {
     expect(transcript.header['description']).toBe('One. Two.');
   });
 
-  it('recovers the real corpus file whose description was being truncated', () => {
-    // Real path, not a fixture: this file folds `description:` across five
-    // physical lines and is one of the 41 that were losing text.
-    const file = path.join(
-      REPO_ROOT,
-      'stories/cloak-of-darkness/tests/transcripts/ac6-undo.transcript'
+  it('recovers a five-line folded description without losing its tail', () => {
+    // Verbatim header of cloak-of-darkness/ac6-undo, one of the 41 files that
+    // were losing text. Inlined rather than read from disk: what is under test
+    // is how the parser folds these five lines, not whether that file exists
+    // at that path — and a test that reads across the repository breaks when
+    // the corpus is reorganised, which says nothing about the parser.
+    const transcript = parseTranscript(
+      'title: Cloak AC-6 — undo reverts occurrence counters and message state\n' +
+      'story: cloak-of-darkness\n' +
+      'description: ADR-210 AC-6 (added Phase 6, additive to the frozen golden six).\n' +
+      "  Undoing the first dark entry must roll back the first-time ordinal's trample\n" +
+      '  along with the movement — occurrence counters and chord.state.* are world\n' +
+      '  state, so undo needs no author-written code. The message reads intact (the\n' +
+      '  win ending) afterward.\n' +
+      BODY
     );
-    const transcript = parseTranscript(fs.readFileSync(file, 'utf-8'), file);
 
     expect(transcript.header['description']).toContain('ADR-210 AC-6');
     expect(transcript.header['description']).toContain('intact (the win ending) afterward.');
     expect(Object.keys(transcript.header)).toEqual(['title', 'story', 'description']);
   });
 
-  it('produces no header key outside the grammar anywhere in the corpus', () => {
-    // Whole-corpus sweep: a phantom key is prose that got read as grammar, and
-    // it can only appear where a fold was mis-parsed. Zero of them is the
-    // property that makes a model-driven serializer safe to point at these
-    // files (ADR-300 D11), so it is asserted over the corpus, not a fixture.
-    const LEGAL = new Set([
-      'title', 'story', 'entry', 'author', 'description',
-      'seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed'
-    ]);
-
-    const storiesDir = path.join(REPO_ROOT, 'stories');
-    if (!fs.existsSync(storiesDir)) return;  // published package: no corpus
-
-    const files: string[] = [];
-    const walk = (dir: string): void => {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) walk(full);
-        else if (entry.name.endsWith('.transcript')) files.push(full);
-      }
-    };
-    walk(storiesDir);
-    expect(files.length).toBeGreaterThan(100);
-
-    const offenders: string[] = [];
-    for (const file of files) {
-      const transcript = parseTranscript(fs.readFileSync(file, 'utf-8'), file);
-      for (const key of Object.keys(transcript.header)) {
-        if (!LEGAL.has(key)) {
-          offenders.push(`${path.relative(REPO_ROOT, file)}: "${key}"`);
-        }
-      }
-    }
-
-    expect(offenders).toEqual([]);
-  });
-
-  it('leaves no phantom key in the corpus file that produced four of them', () => {
-    const file = path.join(
-      REPO_ROOT,
-      'stories/dungeo/tests/transcripts/article-rendering.transcript'
+  it('leaves no phantom key in the header that produced four of them', () => {
+    // Verbatim header of dungeo/article-rendering. Its description contains
+    // four colons inside prose — "Locks in ADR-158:", "(`{the:cap:item}`",
+    // "See: -", "Original bug report:" — each of which became a header key
+    // before continuations were joined. Inlined for the same reason as above.
+    const transcript = parseTranscript(
+      'title: Article Rendering Regression\n' +
+      'story: dungeo\n' +
+      'author: Sharpee Team\n' +
+      'description: Locks in ADR-158: stdlib actions emit EntityInfo in message\n' +
+      '  params so the formatter chain (`{the:cap:item}`, etc.) can choose the\n' +
+      '  correct article per nounType / properName / IdentityTrait.article. The\n' +
+      '  original bug (rendered "white house is fixed in place." with no article) was\n' +
+      "  caused by stdlib's taking action passing `noun.name` (a bare string) where\n" +
+      '  the formatter expected EntityInfo. Phase 2 of the lang-articles migration\n' +
+      '  migrates the taking action and its templates; this transcript is the\n' +
+      '  regression sentinel. See: - ADR-158 Entity-Valued Message Params Carry\n' +
+      '  EntityInfo - docs/work/lang-articles/plan-20260424-the-cap-migration.md -\n' +
+      '  Original bug report: text "white house is fixed in place." in Dungeo\'s web\n' +
+      '  client\n' +
+      BODY
     );
-    const transcript = parseTranscript(fs.readFileSync(file, 'utf-8'), file);
 
     expect(Object.keys(transcript.header)).toEqual([
       'title',
@@ -161,5 +143,32 @@ describe('folded header values (ADR-300 D17)', () => {
       'author',
       'description'
     ]);
+  });
+});
+
+describe.skipIf(!hasCorpus)('header grammar across a configured corpus', () => {
+  // A phantom key is prose that got read as grammar, and it can only appear
+  // where a fold was mis-parsed — so this is worth asserting over real files
+  // rather than a fixture. It sweeps the corpus it is *given*
+  // (SHARPEE_TRANSCRIPT_CORPUS) and skips when given none, instead of hunting
+  // for `stories/` and passing silently when it finds nothing.
+  const LEGAL = new Set([
+    'title', 'story', 'entry', 'author', 'description',
+    'seed', 'seeds', 'channels', 'events', 'locale', 'forces', 'point-seed'
+  ]);
+
+  it('produces no header key outside the grammar', () => {
+    const offenders: string[] = [];
+
+    for (const file of corpusFiles()) {
+      const transcript = parseTranscript(fs.readFileSync(file, 'utf-8'), file);
+      for (const key of Object.keys(transcript.header)) {
+        if (!LEGAL.has(key)) {
+          offenders.push(`${corpusRelative(file)}: "${key}"`);
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
   });
 });

@@ -10,7 +10,7 @@
 
 - Traits: `packages/world-model/src/traits/`
 - Behaviors: `packages/world-model/src/behaviors/`
-- Behaviors own mutations. Traits are data. See `docs/reference/core-concepts.md` for the full pattern.
+- Behaviors own mutations. Traits are data. See `docs/core-concepts/README.md` for the full pattern.
 
 ## Root Barrel Discipline
 
