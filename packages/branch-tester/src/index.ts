@@ -24,6 +24,16 @@ export * from './types.js';
 // Parser
 export { parseTranscript, parseTranscriptFile, validateTranscript } from './parser.js';
 
+// Tree assembly — v2's entry point is the tree, not the file (ADR-302 D11)
+export {
+  assembleTree,
+  rootToLeafPaths,
+  stemOf,
+  type TranscriptTree,
+  type TreeNode,
+  type TreeDefect,
+} from './tree.js';
+
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
 export { serializeTranscript } from './serializer.js';
 

@@ -78,6 +78,17 @@ export interface TranscriptHeader {
   entry?: string;
   author?: string;
   description?: string;
+  /**
+   * Parent transcript's filename stem (ADR-302 D1) — this transcript begins in
+   * the state its parent ended in. Absent means a root: a fresh game.
+   *
+   * **A stem, not a path**: no `.transcript` extension, no directory
+   * component, and no way to address a point *inside* the parent. There is no
+   * `at <n>` form and never will be — a parent is always a whole file, which
+   * is what makes D14's rename a mechanical operation rather than a
+   * renumbering.
+   */
+  continues?: string;
   [key: string]: string | undefined;
 }
 

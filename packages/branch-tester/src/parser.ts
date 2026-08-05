@@ -44,6 +44,43 @@ const FORCE_ENTRY = /^([^#=\s]+)\s*(?:#\s*(\d+))?\s*=\s*([^=\s]+)$/;
 const POINT_SEED_ENTRY = /^([^#=\s]+)\s*=\s*(\d+)$/;
 
 /**
+ * A legal `continues:` value (ADR-302 D1): a filename stem and nothing else.
+ *
+ * Deliberately narrow. Every rejected shape below is rejected *by name* rather
+ * than by falling through to this pattern, because the whole point of D1 is
+ * that a parent is a WHOLE FILE — an author reaching for `doormat at 4` is
+ * asking for interior addressing, and a generic "invalid value" would leave
+ * them guessing whether they got the syntax wrong or the concept.
+ */
+const CONTINUES_STEM = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+/**
+ * Shapes of `continues:` that are errors naming what the author reached for
+ * (ADR-302 D1, AC-2). Checked in order; the first match reports.
+ */
+const CONTINUES_REJECTIONS: Array<{ pattern: RegExp; message: (value: string) => string }> = [
+  {
+    // `doormat at 4`, `doormat#4`, `doormat:4` — interior addressing.
+    pattern: /\s+at\s+\d+\s*$|#\d+\s*$|:\d+\s*$/i,
+    message: (v) =>
+      `continues: "${v}" addresses a point inside the parent — a parent is always a whole file (ADR-302 D1). ` +
+      `There is no \`at <n>\` form: split the parent at that point into its own transcript and continue from it instead.`,
+  },
+  {
+    pattern: /\.transcript\s*$/i,
+    message: (v) =>
+      `continues: "${v}" carries a file extension — name the filename STEM alone (ADR-302 D1), e.g. ` +
+      `\`continues: ${v.replace(/\.transcript\s*$/i, '')}\`.`,
+  },
+  {
+    pattern: /[\\/]/,
+    message: (v) =>
+      `continues: "${v}" carries a path — a parent is a transcript in the SAME story, named by stem alone (ADR-302 D1). ` +
+      `A cross-story pointer is not expressible and would be rejected by tree validation anyway.`,
+  },
+];
+
+/**
  * Grammar forms removed by ADR-294. Each is a parse error naming the form and
  * its replacement (AC-4) — never silently ignored, never executed. Checked
  * before header parsing so the old trap (`[SEED:]` above the `---` separator
@@ -245,6 +282,9 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
     const { key, value, lineNumber } = pendingHeader;
     pendingHeader = null;
     transcript.header[key] = value;
+    if (key === 'continues') {
+      checkContinues(value, lineNumber, parseErrors);
+    }
     if (CONFIG_KEYS.includes(key)) {
       parseConfigField(transcript, key, value, lineNumber, parseErrors, seenConfigKeys);
     }
@@ -482,6 +522,41 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
  * `transcript.config`, recording parse errors for invalid or conflicting
  * values. `key` is already lowercased and known to be a config key.
  */
+/**
+ * Check a `continues:` value and report by name what the author reached for
+ * (ADR-302 D1, AC-2).
+ *
+ * Nothing is *derived* here — the value is stored either way, so a malformed
+ * pointer still shows up in tree assembly rather than vanishing. This only
+ * decides whether the file parses.
+ */
+function checkContinues(
+  value: string,
+  lineNumber: number,
+  parseErrors: Array<{ lineNumber: number; message: string }>
+): void {
+  const trimmed = value.trim();
+  if (trimmed === '') {
+    parseErrors.push({
+      lineNumber,
+      message: 'continues: has no value — name the parent transcript\'s filename stem, or remove the field to make this a root (ADR-302 D1)',
+    });
+    return;
+  }
+  for (const rejection of CONTINUES_REJECTIONS) {
+    if (rejection.pattern.test(trimmed)) {
+      parseErrors.push({ lineNumber, message: rejection.message(trimmed) });
+      return;
+    }
+  }
+  if (!CONTINUES_STEM.test(trimmed)) {
+    parseErrors.push({
+      lineNumber,
+      message: `continues: "${trimmed}" is not a filename stem — it must be a single name of letters, digits, \`.\`, \`-\` or \`_\` (ADR-302 D1)`,
+    });
+  }
+}
+
 function parseConfigField(
   transcript: Transcript,
   key: string,

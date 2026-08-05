@@ -32,6 +32,10 @@ const HEADER_ORDER = [
   'title',
   'story',
   'entry',
+  // ADR-302 D1: the parent pointer sits with the other identity fields, above
+  // the prose ones — a reader asking "where does this start?" should not have
+  // to read past the description to find out.
+  'continues',
   'author',
   'description',
   'seed',
