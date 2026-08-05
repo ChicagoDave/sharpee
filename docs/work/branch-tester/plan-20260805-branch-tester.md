@@ -153,7 +153,31 @@ Three phases carry an additional gate:
 - **Entry state**: Phases 3–9 give a working harness. **Explicit go-ahead required** — rewrites 20 committed, passing files.
 - **Deliverable**: in-repo story directories split so each harness sees only its own; the binding property is that `transcript-tester` never parses a `continues:` file, since it would accept the key, ignore it, and run the transcript standalone from a fresh game — a pass that means nothing. **If the split moves v1's stories rather than Fernhill's, `packages/transcript-tester/vitest.config.ts`'s corpus path moves in the same commit.** Then Fernhill's tests are rewritten as one tree: a root, a spine, and focused tests hanging off the node that establishes their state.
 - **Exit state**: Fernhill's suite passes as a tree; no `tests/transcripts/` versus `walkthroughs/` split remains for it; coverage (ADR-302 D6) reports an unexercised divergence alternative as a gap.
-- **Status**: PENDING
+- **Status**: **PART ONE COMPLETE (directory separation); PART TWO NOT STARTED (Fernhill's rewrite)** — 2026-08-05, session 86e85a.
+
+#### Done — the D16 separation
+Fernhill moved to a new top-level `branch-stories/`. Moving the smaller side kept v1's corpus config unchanged and left the several dozen `stories/dungeo/...` references in CLAUDE.md true. Named for the harness rather than `stories-v2/`, because D12 makes the split permanent and a version number would say the opposite every time it was read. Both corpus configs now record what they do *not* reach and why. Verified: transcript-tester 253; branch-tester **349 with zero skipped** (its five sweeps now have a corpus, where Phase 3 left them deliberately skipping); Fernhill 502 + 2 skipped and its walkthrough 58, unchanged across the move.
+
+#### Not done — two blockers, in order
+
+**1. The CLI has no tree entry point.** `runTree` exists and is tested (Phase 6), but `packages/branch-tester/src/cli.ts` still walks a flat transcript list with a `--chain` flag. Until it assembles a tree and calls `runTree`, a `continues:` corpus cannot be executed at all, so Fernhill's rewrite could not be verified even if it were written. Per D10 the fix is not a new mode but the *removal* of one: a corpus with no `continues:` is simply a tree of N roots, so `runTree` should be the only path and `--chain` should go. That is CLI surgery, not new mechanism.
+
+**2. The rewrite is authoring over Fernhill's map, and ADR-302 D7 forbids deriving it.** "Inferring branches from command lists is a reading aid, never truth… Only D1's pointer establishes a parent." So the tree has to be authored, not computed, and each hoisted command's assertions have to move to the node that now runs it.
+
+#### The spine, as a reading aid (D7-legal, and nothing more)
+Measured across the 19 unit transcripts' opening commands 2026-08-05:
+
+| prefix | reaches | shared by |
+| --- | --- | ---: |
+| `north` | Gravel Drive | 14 of 19 |
+| `north, north` | Fountain Court | 11 |
+| `north, north, search the doormat, take the tarnished key` | the key | cellar-dark, doors, smoke (concealment diverges at command 3) |
+| `north, north, east` | — | fuse-lose, machine, tool-gates |
+| `north, north, north` | — | fuse, media-degrade, npcs |
+
+Five tests share no prefix and stay roots: compass, containers, phrasebooks, recorded, restart (and dawn-lose/timeline share `north, wait, wait, wait`).
+
+That suggests a root → `drive` → `court`, with `key`, an east branch and a north branch hanging off `court` — but it is a *suggestion*, which under D7 is all a command-list diff may ever be. Whoever writes it should confirm each parent against what the test actually needs, not against what its commands happen to spell.
 
 ### Phase 11: v1 survives — the regression gate (ADR-302 D12, AC-9)
 - **Tier**: Small · **Budget**: 150
