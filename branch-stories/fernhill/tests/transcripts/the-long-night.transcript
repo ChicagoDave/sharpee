@@ -1,28 +1,16 @@
 title: Fernhill — the long night, start to deed (WIN)
 story: fernhill
-description: The full estate arc: key from the mat, the coat and the clock,
-  the sherry toll, the diary and the mantel's gated hint, the cellar and the
-  crowbar, the boiler's three stages, Tobias's truth, the vine and the locket,
-  the folly, the fuse, the deed — and out the gates. Scores asserted at
-  milestones; ends on the WIN ending.
-seed: 42
+continues: key
+description: The full estate arc, resumed with the key already in hand: the
+  coat and the clock, the sherry toll, the diary and the mantel's gated hint,
+  the cellar and the crowbar, the boiler's three stages, Tobias's truth, the
+  vine and the locket, the folly, the fuse, the deed — and out the gates.
+  Scores asserted at milestones; ends on the WIN ending. The arrival and the
+  doormat belong to the spine (`arrival` → `key`) and are not replayed here.
 
 ---
 
-# Arrival
-> north
-[OK: contains "Gravel Drive"]
-
-> north
-[OK: contains "Fountain Court"]
-
-# The key (+5 = 5)
-> search the doormat
-[OK: contains "key"]
-
-> take the tarnished key
-[OK: contains "You take the tarnished key"]
-
+# The key (+5 = 5) — taken by `key`; the score it earns is confirmed here
 > score
 [OK: contains "scored 5 out of 50"]
 
