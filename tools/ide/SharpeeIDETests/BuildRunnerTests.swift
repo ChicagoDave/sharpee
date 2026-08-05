@@ -85,7 +85,7 @@ final class BuildRunnerTests: XCTestCase {
     /// in for the platform packages a global `sharpee` install carries
     /// (ADR-180 U2); the story itself needs none of its own.
     func testBuildsRealStoryToIdQualifiedBundle() throws {
-        let fernhill = TestToolchain.repoRoot.appendingPathComponent("stories/fernhill")
+        let fernhill = TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill")
         try XCTSkipUnless(FileManager.default.fileExists(
             atPath: fernhill.appendingPathComponent("fernhill.story").path),
             "fernhill fixture story not present in this checkout")

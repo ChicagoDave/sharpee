@@ -24,7 +24,11 @@ const packageDir = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     env: {
-      // The in-repo corpus. Absent from a published tarball, where the sweeps
+      // The in-repo corpus — v1's stories only. `branch-stories/` is a
+      // separate top-level directory this deliberately does not reach
+      // (ADR-302 D16): v1 would ACCEPT a `continues:` file, ignore the key,
+      // and run the transcript standalone from a fresh game, reporting a pass
+      // that means nothing. Absent from a published tarball, where the sweeps
       // then skip rather than silently passing over zero files.
       SHARPEE_TRANSCRIPT_CORPUS: resolve(packageDir, '../../stories'),
     },

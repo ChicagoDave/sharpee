@@ -24,14 +24,13 @@ const packageDir = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     env: {
-      // NO corpus is configured yet (ADR-302 D16). This harness's stories are
-      // the ones that will carry `continues:`, and the in-repo directory split
-      // that separates them from v1's has not landed — Phase 10. Pointing the
-      // sweeps at `stories/` meanwhile would sweep v1's corpus through v2's
-      // parser, which is precisely the cross-harness reading D16 exists to
-      // prevent. The sweeps report as skipped until a root is named here.
-      //
-      // SHARPEE_TRANSCRIPT_CORPUS: resolve(packageDir, '../../<v2 stories>'),
+      // This harness's own corpus (ADR-302 D16). `branch-stories/` is a
+      // separate top-level directory from `stories/`, and each harness looks
+      // only at its own — the directory IS the harness assignment, so a story
+      // cannot be read by the wrong one by accident. Absent from a published
+      // tarball, where the sweeps then skip rather than passing over zero
+      // files.
+      SHARPEE_TRANSCRIPT_CORPUS: resolve(packageDir, '../../branch-stories'),
     },
   },
 });

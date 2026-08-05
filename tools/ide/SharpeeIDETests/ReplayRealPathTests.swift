@@ -96,7 +96,7 @@ final class ReplayRealPathTests: XCTestCase {
     // MARK: - AC-2: replay reproduces a live play session byte-for-byte
 
     func testReplayReproducesALiveWKWebViewPlaySessionByteForByte() async throws {
-        let fernhill = TestToolchain.repoRoot.appendingPathComponent("stories/fernhill")
+        let fernhill = TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill")
         try XCTSkipUnless(FileManager.default.fileExists(
             atPath: fernhill.appendingPathComponent("fernhill.story").path),
             "fernhill fixture story not present in this checkout")

@@ -160,7 +160,7 @@ node dist/cli/sharpee.js --play --story stories/dungeo
 `stories/<name>/` prefix (mixed prefixes = hard error; a lone `.story` file in
 that directory is preferred over a compiled dist). `--play`/`--exec` require an
 explicit `--story <dir | .story file>`; for Chord stories pass the `.story`
-FILE (e.g. `stories/fernhill/fernhill.story`), not the directory.
+FILE (e.g. `branch-stories/fernhill/fernhill.story`), not the directory.
 
 **Walkthrough Testing:**
 ```bash

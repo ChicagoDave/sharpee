@@ -273,7 +273,7 @@ Examples:
   node dist/cli/sharpee.js --exec "wait/wait/tie wire to hook" --story stories/dungeo --restore wt-13a --debug
   node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/save-restore-basic.transcript
   node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript
-  node dist/cli/sharpee.js --play --story stories/fernhill/fernhill.story
+  node dist/cli/sharpee.js --play --story branch-stories/fernhill/fernhill.story
   node dist/cli/sharpee.js --restore wt-11 --story stories/dungeo
 `);
   }
