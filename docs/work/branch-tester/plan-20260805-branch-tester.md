@@ -107,7 +107,12 @@ Three phases carry an additional gate:
 - **Entry state**: Phases 4–5 give a validated tree with resolved headers.
 - **Deliverable**: every root-to-leaf path executes; a shared prefix executes **once**, each divergent tail running from a restore of the state it produced, using the prefix-keyed save cache (story build + prefix + seed). No `--chain` flag exists. Sequential only.
 - **Exit state**: **AC-1** — two transcripts naming one parent both run from its end state and neither runs the other's commands. **AC-5** — every path runs and a shared prefix's commands execute exactly once, asserted on executed command count rather than wall-clock.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape**: `src/tree-runner.ts`. The walk is depth-first over the **tree**, not a loop over paths — each node's commands run exactly once and a divergent tail resumes from a save of the state its parent produced. Looping over paths would replay every prefix per leaf, which on a Dungeo-shaped spine is a 952-command replay each time.
+- **One save per parent, restored before EVERY child including the first.** A uniform reset is what makes sibling order not matter; the previous child's whole subtree has already moved the engine on.
+- **Reseed wired** (the ADR-302 D8 amendment's harness half): `reseedFor(node)` keys on what the child **declared**, never on what it inherited — inheriting a seed means continuing the parent's game, and reseeding there would break exactly the continuity a linear chain depends on. Declared `seed:`/`seeds:` → `'all'`; declared `point-seed:` → the points it names; neither → plain restore. A root never reseeds.
+- **Verified 2026-08-05**: `packages/branch-tester/tests/tree-runner.test.ts` — 14 cases. AC-5 asserted on executed command count (a fork over a 2-command spine executes 4 commands, not 6). AC-1 asserted on the save-state each child *started from*, so "both ran from the parent's end state" is observed rather than inferred. A linear tree is pinned as one continuous sequence (D3), which is the property Dungeo's pinned combat counts depend on. branch-tester 296 passed + 5 skipped; transcript-tester 253 untouched.
+- **Also lands D13's mechanism**: a failed node marks its whole subtree `unreached` with the originating stem, and a healthy sibling still runs. Phase 7 owns the reporting shape over it.
 
 ### Phase 7: Reporting — unreached is not failed (ADR-302 D13)
 - **Tier**: Medium · **Budget**: 250

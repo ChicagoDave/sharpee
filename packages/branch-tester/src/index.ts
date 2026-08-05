@@ -36,6 +36,14 @@ export {
   type TreeDefect,
 } from './tree.js';
 
+// Tree running — every path, shared prefixes once (ADR-302 D10)
+export {
+  runTree,
+  reseedFor,
+  type TreeRunResult,
+  type NodeRunOutcome,
+} from './tree-runner.js';
+
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
 export { serializeTranscript } from './serializer.js';
 
