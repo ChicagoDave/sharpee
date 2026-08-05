@@ -7,6 +7,8 @@ seed: 42
 > look
 [SKIP]
 
+# A root by necessity: the goldens below are byte-exact from the opening
+# banner, which only a booted game prints.
 # The play session's own opening turn, replayed so the story banner
 # lands here. A fresh run prints it with the first command, and it
 # would otherwise be prepended to the first blessed response below.

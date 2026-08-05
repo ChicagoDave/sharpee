@@ -1,5 +1,6 @@
 title: Fernhill E1/E3/E4 — the vine chain, prune and wind, the hot poker
 story: fernhill
+continues: arrival
 description: The greenhouse vine's forward state chain (seedling warms to
   flowering via the machine, prunes to fruiting and yields the locket); the
   custom verbs `prune` and `wind` (grammar + must-gates + authored refusals
@@ -8,8 +9,9 @@ description: The greenhouse vine's forward state chain (seedling warms to
 
 ---
 
-# The custom verbs exist and refuse nonsense with THEIR OWN voices
-> north
+# The custom verbs exist and refuse nonsense with THEIR OWN voices — the lime
+# trees are back down the drive from where the spine leaves off
+> south
 [OK: contains "Gravel Drive"]
 
 > prune the lime trees

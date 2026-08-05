@@ -1,8 +1,8 @@
 title: Fernhill — arrival at the estate
 story: fernhill
 description: The spine's first stretch: the cab leaves, and the drive runs
-  north to Fountain Court. Eleven of the estate's tests begin from here, so it
-  is defined once and shared rather than replayed per file (ADR-302 D13).
+  north to Fountain Court. Twelve of the estate's tests begin from here, so it
+  is declared once and shared rather than replayed per file (ADR-302 D13).
 seed: 42
 
 ---

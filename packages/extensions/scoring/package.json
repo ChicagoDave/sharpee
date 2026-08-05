@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/ext-scoring",
-  "version": "4.3.0",
+  "version": "4.4.0",
   "description": "Scoring extension for Sharpee IF engine — enables the ledger's scoring and announces rank promotions",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

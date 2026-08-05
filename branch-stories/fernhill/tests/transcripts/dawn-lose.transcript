@@ -1,59 +1,16 @@
 title: Fernhill F2 — dawn comes for the deedless (LOSE)
 story: fernhill
-description: The other losing branch — do nothing all night. The timeline's
-  three beats land on schedule (dusk at 14, the small hours at 70, dawn at
-  130) and the auction takes Fernhill.
-seed: 42
+continues: timeline
+description: The other losing branch — do nothing all night. D1's dusk beat has
+  already landed in the parent (turn 14); from there the small hours and dawn
+  arrive on schedule and the auction takes Fernhill.
 
 ---
 
-> north
-[OK: contains "Gravel Drive"]
-
-# Wait out the whole night (three loop regions unrolled to their flat
-# seed-42 sequence — ADR-294 migration; the timeline beats land on
-# waits 13, 69, and 129)
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "Time passes"]
-
-> wait
-[OK: contains "the last light goes out of the sky"]
-
-> wait
-[OK: contains "Time passes"]
+# Wait out the rest of the night (the two remaining loop regions unrolled to
+# their flat seed-42 sequence — ADR-294 migration). The parent ends on turn 15,
+# so the small hours (turn 70) land on the 55th wait here and dawn (turn 130)
+# on the 115th.
 
 > wait
 [OK: contains "Time passes"]

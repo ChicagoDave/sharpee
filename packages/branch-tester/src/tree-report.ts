@@ -129,6 +129,16 @@ export function formatTreeRun(run: TreeRunResult): string[] {
   if (summary.unreached > 0) parts.push(`${summary.unreached} unreached`);
   lines.push(parts.join(', '));
 
+  // AC-5 (D17): the replay share is shown, not inferred. A story that grows a
+  // long spine above many children sees the cost of that shape here, in the
+  // run it already reads, rather than in a wall-clock number it cannot act on.
+  const replayed = run.executedCommands - run.authoredCommands;
+  if (replayed > 0) {
+    lines.push(
+      `${run.executedCommands} commands (${run.authoredCommands} authored + ${replayed} replayed)`,
+    );
+  }
+
   return lines;
 }
 

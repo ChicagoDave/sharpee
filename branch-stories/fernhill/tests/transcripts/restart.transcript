@@ -1,5 +1,6 @@
 title: Fernhill — RESTART reboots the story (ADR-248 acceptance)
 story: fernhill
+continues: arrival
 description: The original Chord-path restart repro (restart used to throw
   "assignRoom: room 'r01' not found" under the hood and render as "I don't
   understand that."). Under ADR-248 the client/harness reboots with a fully
@@ -8,12 +9,12 @@ description: The original Chord-path restart repro (restart used to throw
 
 ---
 
-# Establish position away from the opening room
+# The spine has already carried us away from the opening room. This node was a
+# root until ADR-302 D17: while the walk restored a save, its hooks displaced
+# the harness's own restart hook and the reboot never fired for any node with a
+# parent (issue #227). Re-execution has no hooks to displace.
 > look
-[OK: contains "Iron Gates"]
-
-> north
-[OK: contains "Gravel Drive"]
+[OK: contains "Fountain Court"]
 
 # Restart: the ack renders (never "I don't understand that."), then the
 # harness reboots onto a fresh ChordStory

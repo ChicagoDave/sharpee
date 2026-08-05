@@ -12,6 +12,9 @@ seed: 42
 
 ---
 
+# A root by necessity: the per-(book, key) counters must be untouched AND the
+# turn budget to the turn-14 flip is spent on this test's own commands, so a
+# parent would both consume turns and pre-advance the counters.
 # Evening: the default book speaks; its first-time counter advances.
 > examine the weathervane
 [OK: contains "noses the evening breeze"]

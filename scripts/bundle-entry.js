@@ -625,7 +625,12 @@ Examples:
     const storyName = path.basename(storyDirOf(options.storyPath));
     const tree = branchTester.assembleTree(parsed, storyName);
     if (tree.defects.length > 0) {
-      for (const line of branchTester.formatTreeRun({ outcomes: [], defects: tree.defects, executedCommands: 0 })) {
+      for (const line of branchTester.formatTreeRun({
+        outcomes: [],
+        defects: tree.defects,
+        executedCommands: 0,
+        authoredCommands: 0
+      })) {
         console.error(line);
       }
       process.exit(2);
@@ -636,18 +641,29 @@ Examples:
     // A root is a fresh game (D1) built from ITS OWN header — `entry:`, the
     // pinned seed, and any declared channels. Children inherit through the
     // effective header rather than by reloading (D8).
-    let rootIndex = 0;
-    const freshGameForRoot = async () => {
-      const root = tree.roots[rootIndex++];
+    //
+    // D17 asks for a boot per FORK as well as per root, so the same root may be
+    // booted several times and every one of them must land on the same seed —
+    // a root that declared none would otherwise draw a new clock seed per boot
+    // and its replayed prefix would diverge from the one its first child saw.
+    // The seed the first boot actually resolved is therefore remembered and
+    // re-pinned, and the announcement is made once.
+    const bootedSeeds = new Map();
+    const freshGameForRoot = async (root) => {
       const config = root.transcript.config || {};
-      const resolved = resolveSeed(root.transcript.seed);
+      const remembered = bootedSeeds.get(root.stem);
+      const resolved = remembered ?? resolveSeed(root.transcript.seed);
       const game = loadStoryAndCreateGame(
         options.storyPath,
         root.transcript.header && root.transcript.header.entry,
         resolved.seed,
         config.channels || []
       );
-      console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
+      if (!remembered) {
+        const seed = game.engine.getMasterSeed();
+        bootedSeeds.set(root.stem, { seed, source: resolved.source });
+        console.log(`Seed: ${seed} (${resolved.source})`);
+      }
       return game;
     };
 

@@ -7,27 +7,36 @@
  * authored path passed, including every variation — which is the condition
  * that stops alternate-path gaps accumulating.
  *
- * **A shared prefix executes once.** The walk is depth-first over the tree
- * rather than a loop over paths: each node's commands run exactly once, and a
- * divergent tail resumes from a save of the state its parent produced. Running
- * paths independently would replay every prefix per leaf — on Fernhill that is
- * merely wasteful, and on a Dungeo-shaped spine it would be a 952-command
- * replay per leaf.
+ * **A child's state is re-executed, never restored** (D17). The walk takes no
+ * save, restores no save, and registers no save/restore hooks: reaching a
+ * divergent sibling means booting a fresh game and replaying that fork point's
+ * ancestry into it. This costs Fernhill 551 commands where restoring cost 519
+ * (+6.2%, measured 2026-08-05) and it buys back the engine's hook object, which
+ * `registerSaveRestoreHooks` assigns wholesale — the harness's restart
+ * confirmation and the tree's save hooks cannot both live there, and the tree
+ * silently won (issue #227).
  *
- * **A child restores; a child that asks may also reseed.** ADR-293 D7's
- * restore is deliberately continuous, so a plain child continues its parent's
- * RNG streams exactly — which is what makes a linear tree reproduce a single
- * continuous run (D3). A child that declares its own seed instruments is
- * asking for different luck from the same state, and the points it names are
- * reseeded before its first command (ADR-302 D8's amendment).
+ * **A chain still runs continuously.** The walk is depth-first and a node's
+ * FIRST child simply continues the live engine, which is already at exactly the
+ * state that child needs. Only siblings after the first pay a replay. A linear
+ * tree therefore replays nothing and reproduces one continuous run, which is
+ * what D3 means by a chain being the linear case.
+ *
+ * **A child that asks may reseed.** A plain child continues its parent's RNG
+ * streams exactly. A child that declares its own seed instruments is asking for
+ * different luck from the same state, and the points it names are reseeded
+ * before its first command (ADR-302 D8's amendment). Replay applies each
+ * ancestor's declared reseed at that ancestor's own boundary, so a replayed
+ * prefix is bit-identical to the one its siblings saw and a child's own
+ * instruments never leak backwards into it.
  *
  * Sequential only. D10 establishes that the tree *permits* parallelism and
  * commits to nothing about it; correctness is pinned first.
  *
- * Public interface: `runTree`, `TreeRunResult`, `NodeRunOutcome`.
+ * Public interface: `runTree`, `TreeRunResult`, `NodeRunOutcome`, `GameFactory`.
  * Owner context: branch-tester (testing tooling).
  *
- * @see ADR-302 — Transcript Branches — D3, D10, D13
+ * @see ADR-302 — Transcript Branches — D3, D10, D13, D17
  */
 
 import { RunnerOptions, TranscriptResult } from './types.js';
@@ -48,22 +57,27 @@ interface TreeGameEngine {
   /**
    * Resume the engine after a game-over stopped it.
    *
-   * A branch whose transcript ends in death or victory leaves the ENGINE
-   * stopped, and restoring a save rewinds the world without restarting it —
-   * so the next sibling's first command met "Engine is not running". The
-   * harness owns reviving, exactly as v1's RETRY restore path does.
+   * A transcript ending in death or victory leaves the ENGINE stopped, and a
+   * first child continues that same live engine (D17) — so without this its
+   * first command meets "Engine is not running". A rebooted sibling never
+   * needs it; the first child is the one case that does.
    */
   reviveEngine?(): void;
   engine?: {
-    registerSaveRestoreHooks(hooks: {
-      onSaveRequested(data: unknown): Promise<void>;
-      onRestoreRequested(): Promise<unknown | null>;
-    }): void;
-    save(): Promise<boolean>;
-    restore(): Promise<boolean>;
     getRandomService?(): { reseedStreams(points: 'all' | readonly string[]): void } | undefined;
   };
 }
+
+/**
+ * Boots a fresh game for a root (D17).
+ *
+ * Called once per root and once per fork — every sibling after the first gets
+ * its own game with its fork point's ancestry replayed into it. The factory is
+ * handed the ROOT of the ancestry being replayed, since `entry:` and the pinned
+ * seed are the root's to declare and a child inherits them through the
+ * effective header rather than by reloading (D8).
+ */
+export type GameFactory = (root: TreeNode) => Promise<TreeGameEngine>;
 
 /** What happened to one node in a tree run. */
 export interface NodeRunOutcome {
@@ -89,11 +103,19 @@ export interface TreeRunResult {
    */
   readonly defects: TreeDefect[];
   /**
-   * Total commands executed across the run. The measurable form of "a shared
-   * prefix executes exactly once" (AC-5) — asserted on rather than wall-clock,
-   * which would only show that something was faster.
+   * Total commands executed across the run, replays included. The measurable
+   * form of AC-5 as amended by D17 — "a leaf costs exactly its ancestry" —
+   * asserted on rather than wall-clock, which would only show that something
+   * was faster.
    */
   readonly executedCommands: number;
+  /**
+   * Commands the story's authors actually wrote, counting each node once.
+   * `executedCommands - authoredCommands` is the replay share, which D17 owns
+   * as a cost rather than hiding: it is the number that grows if a story puts a
+   * long spine above many children.
+   */
+  readonly authoredCommands: number;
 }
 
 /**
@@ -125,41 +147,55 @@ export function reseedFor(node: TreeNode): 'all' | string[] | null {
 }
 
 /**
- * Run every root-to-leaf path of a story's tree (ADR-302 D10).
+ * Run every root-to-leaf path of a story's tree (ADR-302 D10, D17).
  *
  * A defective tree runs nothing: assembly reports every structural problem
  * together and this returns them untouched (D11). Otherwise the walk is
- * depth-first, one `runTranscript` per node against the shared engine, with a
- * save taken at each node that has children and restored before each of them.
+ * depth-first, one `runTranscript` per node. A node's first child continues the
+ * live engine — which stands at exactly the state that child needs — and every
+ * sibling after it gets a fresh game with the fork point's ancestry replayed
+ * into it (D17). Nothing is saved and nothing is restored.
  *
  * When a node fails, its whole subtree reports as `unreached` rather than
  * running against a state the failure invalidated — one broken spine node
  * produces one failure, not one per descendant (D13).
  *
  * @param tree the assembled tree
- * @param engine the game, positioned at a fresh start
+ * @param game a `GameFactory`, or a single game positioned at a fresh start —
+ *   the latter only for a tree that never forks, since a fork needs a boot
  * @param options runner options, forwarded per node with the node's own
  *   effective config
+ * @throws when a fork needs a boot and no factory was supplied, and when a
+ *   replayed ancestor disagrees with the run it already passed
  */
 export async function runTree(
   tree: TranscriptTree,
-  game: TreeGameEngine | (() => Promise<TreeGameEngine>),
+  game: TreeGameEngine | GameFactory,
   options: RunnerOptions = {}
 ): Promise<TreeRunResult> {
   const outcomes: NodeRunOutcome[] = [];
   let executedCommands = 0;
+  let authoredCommands = 0;
 
   if (tree.defects.length > 0) {
-    return { outcomes, defects: [...tree.defects], executedCommands };
+    return { outcomes, defects: [...tree.defects], executedCommands, authoredCommands: 0 };
   }
 
-  // A root IS a fresh game (D1), so a story with several of them needs a new
-  // one per root — the previous root's whole subtree has moved the engine on,
-  // and there is no save to restore because a root restores from nothing.
-  // A caller passing a single engine gets today's behaviour: fine for one
-  // root, and the tests that drive a stub rely on it.
+  // A root IS a fresh game (D1), and so is every fork. A caller may still pass
+  // one engine for a tree that never forks — a chain needs exactly one boot,
+  // and it is the shape the stub-driven tests use.
   const isFactory = typeof game === 'function';
-  let engine: TreeGameEngine = isFactory ? (undefined as never) : game;
+  let engine: TreeGameEngine = isFactory ? (undefined as never) : (game as TreeGameEngine);
+
+  const boot = async (root: TreeNode): Promise<void> => {
+    if (!isFactory) {
+      throw new Error(
+        `Tree fork at "${root.stem}" needs a fresh game and no game factory was supplied ` +
+          `(ADR-302 D17). Pass a factory, or run a tree that does not fork.`
+      );
+    }
+    engine = await (game as GameFactory)(root);
+  };
 
   /** Mark a failed node's whole subtree unreached, naming the origin. */
   const markUnreached = (node: TreeNode, blockedBy: string): void => {
@@ -169,46 +205,69 @@ export async function runTree(
     }
   };
 
-  const runNode = async (node: TreeNode): Promise<void> => {
+  /**
+   * Execute one node's commands against the live engine.
+   *
+   * `replay` distinguishes the two reasons a node executes: because it is its
+   * own test, or because a descendant needs the state it produces. A replay
+   * adds no outcome — every node is reported exactly once, which is what keeps
+   * D13's "one broken spine node, one failure" true.
+   */
+  const execute = async (node: TreeNode, replay: boolean): Promise<boolean> => {
     const config = effectiveConfig(node);
+    applyReseed(engine, node);
     const result = await runTranscript(node.transcript, engine as never, {
       ...options,
       // D8: the node runs at its RESOLVED header, not its declared one.
       assembledChannels: options.assembledChannels ?? config.channels,
     });
-    executedCommands += result.commands?.length ?? 0;
-    outcomes.push({ stem: node.stem, status: 'ran', result });
-
+    const ran = result.commands?.length ?? 0;
+    executedCommands += ran;
+    if (!replay) {
+      authoredCommands += ran;
+      outcomes.push({ stem: node.stem, status: 'ran', result });
+      return result.status === 'passed';
+    }
+    // A replayed ancestor already passed as its own test. Disagreeing now means
+    // the run is not reproducible, which invalidates every result after it —
+    // so it stops the walk instead of being folded in as one more failure.
     if (result.status !== 'passed') {
+      throw new Error(
+        `Replay of "${node.stem}" disagreed with the run it already passed — the tree is ` +
+          `not reproducible at this seed (ADR-302 D17).`
+      );
+    }
+    return true;
+  };
+
+  const walk = async (node: TreeNode): Promise<void> => {
+    if (!(await execute(node, false))) {
       markUnreached(node, node.stem);
       return;
     }
-    if (node.children.length === 0) return;
 
-    // One save serves every child — the state this node produced. Taken once
-    // rather than per child, since the children all start from the same place.
-    const save = await captureSave(engine);
-
-    for (const child of node.children) {
-      // Restore before EVERY child, including the first: a uniform reset is
-      // what makes sibling order not matter, and the previous child's subtree
-      // has already moved the engine on.
-      if (save !== null) await applySave(engine, save);
-      // A previous sibling may have ended in death or victory, which stops the
-      // engine. Restoring rewinds the world but not that, so revive before the
-      // child's first command.
-      engine.reviveEngine?.();
-      applyReseed(engine, child);
-      await runNode(child);
+    for (let i = 0; i < node.children.length; i += 1) {
+      if (i > 0) {
+        // A fork. The previous sibling's whole subtree has moved the engine on,
+        // so this one starts from a boot and replays the path back to here.
+        await boot(node.ancestry[0]);
+        for (const ancestor of node.ancestry) await execute(ancestor, true);
+      } else {
+        // The first child continues the live engine, which is already at this
+        // node's end state. A parent that ended in death or victory left it
+        // stopped, so revive before handing it over.
+        engine.reviveEngine?.();
+      }
+      await walk(node.children[i]);
     }
   };
 
   for (const root of tree.roots) {
-    if (isFactory) engine = await (game as () => Promise<TreeGameEngine>)();
-    await runNode(root);
+    if (isFactory) await boot(root);
+    await walk(root);
   }
 
-  return { outcomes, defects: [], executedCommands };
+  return { outcomes, defects: [], executedCommands, authoredCommands };
 }
 
 /**
@@ -224,45 +283,12 @@ function applyReseed(engine: TreeGameEngine, node: TreeNode): void {
   engine.engine?.getRandomService?.()?.reseedStreams(points);
 }
 
-/**
- * Capture the engine's save payload in memory. Returns null when the platform
- * engine is unavailable or the save fails — a tree of one node needs no save,
- * and a stub engine that cannot save still runs its transcripts.
+/*
+ * `captureSave` / `applySave` lived here until D17 (2026-08-05). They took the
+ * parent's save and restored it before each child, and their removal is the
+ * whole of that decision: `registerSaveRestoreHooks` assigns the engine's hook
+ * object wholesale, so registering save hooks here dropped the harness's own
+ * `onRestartRequested` and left `restart` acking without ever rebooting for any
+ * node with a parent (issue #226's sibling, filed as #227). Replay costs
+ * Fernhill 6.2% and owes the save format nothing.
  */
-async function captureSave(engine: TreeGameEngine): Promise<unknown | null> {
-  const platform = engine.engine;
-  if (!platform) return null;
-  let captured: unknown = null;
-  platform.registerSaveRestoreHooks({
-    onSaveRequested: async (data) => {
-      captured = data;
-    },
-    onRestoreRequested: async () => null,
-  });
-  // Deliberately NOT caught. A swallowed save error is the worst failure mode
-  // this walk has: with no save, every child runs UNRESTORED — continuing from
-  // its sibling's end state — and the result is a scatter of unrelated
-  // world-state assertion failures with nothing pointing at the save. That is
-  // exactly how a platform exception during save presented while chasing
-  // issue #226, and it cost two wrong diagnoses. A tree that cannot save at a
-  // fork cannot run that fork; say so.
-  const saved = await platform.save();
-  return saved ? captured : null;
-}
-
-/** Restore a captured save. The engine owns what a save contains. */
-async function applySave(engine: TreeGameEngine, save: unknown): Promise<void> {
-  const platform = engine.engine;
-  if (!platform) return;
-  try {
-    platform.registerSaveRestoreHooks({
-      onSaveRequested: async () => {
-        /* not used by a tree restore */
-      },
-      onRestoreRequested: async () => save,
-    });
-    await platform.restore();
-  } catch {
-    /* a failed restore surfaces as the child's own divergence */
-  }
-}

@@ -46,31 +46,15 @@ function broken(stem: string, header: string) {
   return parseTranscriptFile(file);
 }
 
-function stubEngine() {
-  let token = 'fresh';
-  let onRestore: () => Promise<unknown | null> = async () => null;
-  let onSave: (data: unknown) => Promise<void> = async () => {};
+/**
+ * A fresh game per boot (D17): the walk asks for one per root and one per fork,
+ * so this is a factory rather than a single engine.
+ */
+async function stubGame() {
   return {
     executeCommand: async () => 'ok',
     world: {},
     engine: {
-      registerSaveRestoreHooks(hooks: {
-        onSaveRequested(data: unknown): Promise<void>;
-        onRestoreRequested(): Promise<unknown | null>;
-      }) {
-        onSave = hooks.onSaveRequested;
-        onRestore = hooks.onRestoreRequested;
-      },
-      async save() {
-        await onSave({ version: '3.0.0', token });
-        return true;
-      },
-      async restore() {
-        const data = (await onRestore()) as { token?: string } | null;
-        if (!data) return false;
-        token = data.token ?? token;
-        return true;
-      },
       getMasterSeed: () => 42,
       getRandomService: () => ({
         reseedStreams() {},
@@ -99,7 +83,7 @@ describe('tree run reporting (ADR-302 D13, AC-7)', () => {
     ]);
     expect(tree.defects).toEqual([]);
 
-    const summary = summarizeTreeRun(await runTree(tree, stubEngine() as never));
+    const summary = summarizeTreeRun(await runTree(tree, stubGame as never));
 
     expect(summary.failed).toBe(1);
     expect(summary.unreached).toBe(4);
@@ -116,7 +100,7 @@ describe('tree run reporting (ADR-302 D13, AC-7)', () => {
 
   it('the origin carries the failure\'s own message', async () => {
     const tree = assembleTree([ok('root', '', ['a']), broken('spine', 'continues: root\n')]);
-    const summary = summarizeTreeRun(await runTree(tree, stubEngine() as never));
+    const summary = summarizeTreeRun(await runTree(tree, stubGame as never));
     expect(summary.blocked[0].error).toBeDefined();
   });
 
@@ -126,7 +110,7 @@ describe('tree run reporting (ADR-302 D13, AC-7)', () => {
       broken('bad', 'continues: root\n'),
       ok('good', 'continues: root\n', ['b']),
     ]);
-    const summary = summarizeTreeRun(await runTree(tree, stubEngine() as never));
+    const summary = summarizeTreeRun(await runTree(tree, stubGame as never));
 
     expect(summary.failed).toBe(1);
     expect(summary.passed).toBe(2); // root + good
@@ -142,7 +126,7 @@ describe('tree run reporting (ADR-302 D13, AC-7)', () => {
       ok('under2a', 'continues: bad2\n', ['c']),
       ok('under2b', 'continues: bad2\n', ['d']),
     ]);
-    const summary = summarizeTreeRun(await runTree(tree, stubEngine() as never));
+    const summary = summarizeTreeRun(await runTree(tree, stubGame as never));
 
     expect(summary.failed).toBe(2);
     expect(summary.unreached).toBe(3);
@@ -153,7 +137,7 @@ describe('tree run reporting (ADR-302 D13, AC-7)', () => {
 
   it('a leaf failure blocks nothing', async () => {
     const tree = assembleTree([ok('root', '', ['a']), broken('leaf', 'continues: root\n')]);
-    const summary = summarizeTreeRun(await runTree(tree, stubEngine() as never));
+    const summary = summarizeTreeRun(await runTree(tree, stubGame as never));
 
     expect(summary.failed).toBe(1);
     expect(summary.unreached).toBe(0);
@@ -166,7 +150,7 @@ describe('tree run reporting (ADR-302 D13, AC-7)', () => {
       ok('alpha', 'continues: root\n', ['b']),
       ok('beta', 'continues: root\n', ['c']),
     ]);
-    const summary = summarizeTreeRun(await runTree(tree, stubEngine() as never));
+    const summary = summarizeTreeRun(await runTree(tree, stubGame as never));
 
     expect(summary).toMatchObject({ passed: 3, failed: 0, unreached: 0, ok: true });
     expect(summary.blocked).toEqual([]);
@@ -177,7 +161,7 @@ describe('tree run reporting (ADR-302 D13, AC-7)', () => {
       ok('loop-a', 'continues: loop-b\n', ['a']),
       ok('loop-b', 'continues: loop-a\n', ['b']),
     ]);
-    const summary = summarizeTreeRun(await runTree(tree, stubEngine() as never));
+    const summary = summarizeTreeRun(await runTree(tree, stubGame as never));
 
     expect(summary.ok).toBe(false);
     expect(summary.defects.length).toBeGreaterThan(0);
@@ -194,7 +178,7 @@ describe('formatTreeRun', () => {
       ok('test1', 'continues: spine\n', ['b']),
       ok('test2', 'continues: spine\n', ['c']),
     ]);
-    const lines = formatTreeRun(await runTree(tree, stubEngine() as never));
+    const lines = formatTreeRun(await runTree(tree, stubGame as never));
     const text = lines.join('\n');
 
     expect(text).toMatch(/✗ spine/);
@@ -209,7 +193,7 @@ describe('formatTreeRun', () => {
       ok('loop-a', 'continues: loop-b\n', ['a']),
       ok('loop-b', 'continues: loop-a\n', ['b']),
     ]);
-    const lines = formatTreeRun(await runTree(tree, stubEngine() as never));
+    const lines = formatTreeRun(await runTree(tree, stubGame as never));
 
     expect(lines[0]).toMatch(/Tree is malformed/);
     expect(lines.join('\n')).not.toMatch(/passed/);
@@ -217,7 +201,7 @@ describe('formatTreeRun', () => {
 
   it('a green run reports only its tally', async () => {
     const tree = assembleTree([ok('root', '', ['a']), ok('kid', 'continues: root\n', ['b'])]);
-    const lines = formatTreeRun(await runTree(tree, stubEngine() as never));
+    const lines = formatTreeRun(await runTree(tree, stubGame as never));
     expect(lines).toEqual(['2 passed']);
   });
 });

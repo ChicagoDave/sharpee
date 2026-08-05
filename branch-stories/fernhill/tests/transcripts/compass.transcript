@@ -9,6 +9,8 @@ seed: 42
 
 ---
 
+# A root by necessity: A9 is the first look of a fresh game at Iron Gates, and
+# the spine's own root leaves that room on its first command.
 # A9: the first look is still the first visit — arrival prose
 > look
 [OK: contains "The cab is already grinding away"]

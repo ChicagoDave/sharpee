@@ -102,6 +102,12 @@ out by ruling; the Family Zoo tutorial is v1; and Fernhill's tests are **redone
 for v2**, not migrated. Nothing is converted, so there is no migration commit and
 no risk of a half-converted corpus.
 
+> **SUPERSEDED IN PART 2026-08-05 (session f2a7e6) — the save cache.** The
+> sentence above committing v2 to the prefix-keyed save cache is replaced by
+> D17: v2 re-executes a child's ancestry instead of restoring a save, and keeps
+> no cache. The rest of D3 — chains as the linear case, filename ordering
+> retired, zero files migrated — stands.
+
 Rejected: coexistence, where a file with no `continues:` falls back to filename
 order. It leaves "no parent field" meaning two different things — *this is a
 root* or *this continues whatever sorts before it* — with nothing in the file to
@@ -294,12 +300,17 @@ rename safe. **This is a breaking CLI change and CLAUDE.md documents the old for
 as the regression baseline** — the documentation moves in the same commit.
 
 **Branches are independently runnable after their divergence point, so the tree
-is parallelizable.** Compute a shared prefix once, then fork: restore that save N
-times and run N divergent tails concurrently. The mechanism already exists —
-`searchOutcome` restores a captured pre-turn save per candidate and re-executes
-from there (ADR-293 D12), which is the same move. Per-branch progress is likewise
-natural to report, since each tail has a known command count and an independent
-verdict.
+is parallelizable.** Per-branch progress is likewise natural to report, since
+each tail has a known command count and an independent verdict.
+
+> **AMENDED 2026-08-05 (session f2a7e6) — the mechanism, not the claim.** This
+> paragraph originally read "compute a shared prefix once, then fork: restore
+> that save N times and run N divergent tails concurrently," citing
+> `searchOutcome`'s per-candidate restore (ADR-293 D12) as the same move. Under
+> D17 there is no save to restore N times; parallelism becomes N workers each
+> booting a fresh game and replaying its own leaf path, which needs no shared
+> artifact between workers and is the simpler arrangement. The tree is still
+> parallelizable and the paragraph's claim is unchanged.
 
 *Not decided here:* where that renders. A progress display per branch is an
 obvious fit for an authoring surface, and the surface question belongs to
@@ -514,6 +525,92 @@ part of either harness's contract with authors.
 grouping stories by which harness runs them is repository layout, and says
 nothing about a transcript's place in its tree.
 
+**D17 — A child's starting state is RE-EXECUTED, never restored.** (2026-08-05,
+session f2a7e6, David's call.) The tree walk boots a fresh game per leaf and
+replays the leaf's ancestry command by command. It captures no save, restores no
+save, and registers no save/restore hooks. This *replaces* the prefix-keyed save
+cache that D3 carried over from ADR-300 D17 and that the Consequences section
+below promised the runner would reuse.
+
+**The immediate cause is a hook collision that cannot be worked around from the
+harness side.** `GameEngine.registerSaveRestoreHooks` assigns the whole hook
+object (`this.saveRestoreHooks = hooks`, `packages/engine/src/game-engine.ts`),
+and restart confirmation lives on that same object as `onRestartRequested`. The
+harness boot registers it to set `pendingReboot`
+(`packages/bootstrap/src/index.ts`); the tree runner's `captureSave` then
+registers `{ onSaveRequested, onRestoreRequested }` on the same engine and drops
+it. The engine defaults `shouldRestart` to true, emits the ADR-248 ack, and
+calls `stop('restart')` — and nothing reboots, because the flag the reboot reads
+was never set.
+
+Measured 2026-08-05 against the shipped bundle: a Fernhill transcript running
+`look | restart | look` passes as a root and fails as a child of `arrival`, the
+restart turn's output byte-identical in both cases (`The story restarts.`), the
+divergence appearing only on the next command as `Error: Engine is not running`.
+The restart turn reports PASS in the failing case, including `not contains
+"Restart failed"` — the defect is silent at the turn that causes it. Filed as
+issue #227.
+
+**The general form of that cause is the actual argument.** `captureSave` runs at
+every fork, so the collision reaches any node with a parent, and the two hook
+sets cannot coexist on one engine. More broadly, restoring made the save format
+a correctness dependency of the harness: anything a save fails to serialize
+diverges silently in every child. Re-execution has no such surface — a replayed
+prefix is the prefix, produced the only way the story can produce it.
+
+`reviveEngine` survives this decision, for a narrower reason than the one that
+introduced it. It was there because a restore rewinds the world without
+restarting a stopped engine; it stays because a first child continues its
+parent's live engine, and a parent whose transcript ended in death or victory
+left it stopped. A rebooted sibling never needs it.
+
+**Cost, measured before deciding.** Fernhill's 22-node tree executes 519
+commands under restore and 551 under re-execution: **+32, or 6.2%**, on a run
+that takes about half a second. It is that cheap because a shared prefix saves
+`(children − 1) × prefix_length` and Fernhill's prefixes are two commands each
+(`arrival` with 11 children, `key` with 4). Its deepest path, `timeline →
+dawn-lose` at 130 commands, is a chain and saves nothing under either model.
+
+**The cost that is owned rather than dismissed:** a leaf now costs its whole
+ancestry, so a long spine with many children pays linearly where a restore paid
+once. Fernhill does not have that shape and D1's transcript-length discipline
+pushes against it, but the number to watch is the ratio of replayed commands to
+authored ones, which the run reports (see AC-5 as amended). D9's Dungeo
+exemption already keeps the one corpus that would fail this out of v2 — a leaf
+on Dungeo's 952-command spine is exactly the case this decision would lose to,
+and it is not v2's case.
+
+**What is preserved exactly, and how.** Replay walks root→leaf applying each
+node's *declared* reseed at its own boundary before running its commands —
+the same `reseedStreams` call, at the same point in the walk, that the D8
+amendment introduced. This is not incidental: a child's `seed:`/`forces:`
+applied naively across a replayed prefix would re-roll the prefix itself, and
+two siblings declaring different headers would no longer share a state at all,
+which is precisely what D5 requires. Reseeding at boundaries keeps the prefix
+bit-identical across siblings and re-rolls only what a child named. **D5, D8's
+amendment, `forces:`, and occurrence-counter numbering are therefore unchanged
+in meaning** — the mechanism that reaches a shared state changed; nothing about
+what a child may vary from it did.
+
+**Ancestry replay re-evaluates the ancestors' assertions**, and a failure there
+is reported as a non-determinism defect naming the node, not as an ordinary
+assertion failure — the ancestor passed when it ran as its own node, so the
+replay disagreeing with it means the run is not reproducible. Per-node
+reporting, D13's unreached cascades, and the "one broken spine node reports one
+failure" rule are unaffected: each node is still reported once.
+
+**The `$save`/`$restore` transcript directives (ADR-293 D7) are untouched.**
+They are an author testing *their story's* save feature, which is a different
+thing that happens to share a name with the harness's former rewind mechanism.
+The hook collision remains reachable there, but only inside a transcript that
+explicitly asks for it, and #227 records it.
+
+Rejected: fixing the collision by merging hook objects in the engine, or by
+spreading `getSaveRestoreHooks()` in the tree runner. Both work and neither was
+chosen — the first changes a public engine contract to preserve a mechanism this
+decision removes, and the second leaves the trap armed for the next caller while
+buying a 6% saving on the only story that uses it.
+
 ---
 
 ## Worked scenario
@@ -530,12 +627,17 @@ zoo                       (root — fresh game, seed declared here)
     └── smoke             continues: doormat
 ```
 
-Running the harness on `stories/fernhill` executes four root-to-leaf paths. The
-`zoo → doormat` prefix runs **once**; the three tails run from a restore of the
-state it produced, concurrently. Each leaf inherits `zoo`'s seed via `doormat`
-(D8). Adding a fourth leaf costs one file and no edit to any existing one — which
-is the whole point, since today those three tests each rewrite the doormat
-sequence in full.
+Running the harness on `stories/fernhill` executes four root-to-leaf paths. Each
+tail runs from the state the `zoo → doormat` prefix produces, and each leaf
+inherits `zoo`'s seed via `doormat` (D8). Adding a fourth leaf costs one file and
+no edit to any existing one — which is the whole point, since today those three
+tests each rewrite the doormat sequence in full.
+
+> **AMENDED 2026-08-05 (session f2a7e6).** This scenario said the prefix "runs
+> **once**" and the tails "run from a restore of the state it produced." Under
+> D17 the prefix is replayed per leaf — four times here, 8 commands where a
+> restore would have cost 2. What the author writes is identical either way;
+> only the harness's route to the shared state changed.
 
 If `doormat` fails, `cellar-dark`, `doors` and `smoke` report as **unreached**,
 and the run names `doormat` as the originating failure — not four failures
@@ -563,10 +665,19 @@ different outcome classes at the forced point. *PREMISE-DEPENDENT* — the premi
 is that the point has more than one declared outcome class, established by the
 ADR-293 D15 coverage registry before the test is written.
 
-**AC-5 (D10) — every path runs, shared prefixes run once.** On a forked story the
-harness executes every root-to-leaf path, and the commands of a shared prefix
-execute exactly once across the run. *SELF-VERIFYING* — assert on the executed
-command count, not on wall-clock time.
+**AC-5 (D10, D17) — every path runs, and a leaf costs exactly its ancestry.** On
+a forked story the harness executes every root-to-leaf path, and the run's total
+executed commands equal the sum over leaves of each leaf's ancestry length.
+*SELF-VERIFYING* — assert on the executed command count, not on wall-clock time.
+The run reports that total alongside the authored command count, so the replay
+share is visible rather than inferred.
+
+> **AMENDED 2026-08-05 (session f2a7e6).** This read "shared prefixes run once,"
+> asserting a shared prefix's commands execute exactly once across the run. D17
+> replaces restore with re-execution, which makes that assertion false by
+> construction; the criterion now pins the replacement invariant, which is
+> equally self-verifying and equally a real check — an off-by-one in the walk
+> shows up as a wrong total either way.
 
 **AC-6 (D11) — malformed trees fail whole, before execution.** A story containing
 a missing parent, a cycle, and a cross-story pointer reports all three, and
@@ -630,9 +741,13 @@ that catches v2 quietly cannibalizing v1's command surface.
 
 
 **One header field, and the rest is derivation.** The grammar cost is a single
-field; the model gains a parent reference; the runner reuses its existing
-prefix-keyed save cache. Nothing about the canonical serializer, the assertion
-tier, or the channel work changes.
+field; the model gains a parent reference; the runner walks the tree. Nothing
+about the canonical serializer, the assertion tier, or the channel work changes.
+
+> **AMENDED 2026-08-05 (session f2a7e6).** This said the runner "reuses its
+> existing prefix-keyed save cache." Superseded by D17 — there is no cache; a
+> child's state is re-executed. The paragraph's point, that the cost is one
+> header field and derivation, is unchanged and if anything stronger.
 
 **ADR-300 D17 is superseded in part.** Its "convention, not grammar" reasoning —
 that a `chain:` field adds grammar to prevent failures four stories never
@@ -673,6 +788,16 @@ tool operation (D14). Two questions were not on the original list: Q-7 arose fro
 David asking whether transcript tests are needed at all, and Q-8 from his call to
 build a new harness rather than patch the old one. D9's Dungeo exemption came
 from the same conversation and is what let branch-tester be narrow.
+
+**D17 came from implementation, not review** (session f2a7e6, 2026-08-05).
+Re-parenting Fernhill's remaining roots onto its spine surfaced a transcript that
+passed as a root and failed as a child; tracing it found the save/restore hook
+object clobbering restart confirmation (issue #227). David's question — "can we
+just ban save/restore from testing?" — is what turned a workaround into a
+decision. The 6.2% figure was measured before the call, and the first draft of
+the argument wrongly claimed re-execution would repair D5; D8's `reseedStreams`
+amendment had already repaired it, and D17 preserves that mechanism rather than
+replacing it.
 
 **`adr-review` then raised two more**, both resolved the same session: where the
 new harness lives — `@sharpee/branch-tester`, a full copy with no shared code or

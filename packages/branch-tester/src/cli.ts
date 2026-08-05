@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import { parseTranscriptFile, validateTranscript } from './parser.js';
 import { runTranscript } from './runner.js';
-import { assembleTree } from './tree.js';
+import { assembleTree, type TreeNode } from './tree.js';
 import { runTree } from './tree-runner.js';
 import { formatTreeRun } from './tree-report.js';
 import {
@@ -400,26 +400,42 @@ async function main(): Promise<void> {
   if (tree.defects.length > 0) {
     // D11: every defect together, and no execution. A tree with a cycle has no
     // correct partial run to offer.
-    for (const line of formatTreeRun({ outcomes: [], defects: tree.defects, executedCommands: 0 })) {
+    for (const line of formatTreeRun({
+      outcomes: [],
+      defects: tree.defects,
+      executedCommands: 0,
+      authoredCommands: 0,
+    })) {
       console.error(line);
     }
     process.exit(2);
   }
 
-  // A root is a fresh game (D1), so the walk asks for one per root. `entry:`
-  // and the pinned seed come from the root's own header — a child inherits
-  // them through the effective header rather than by reloading.
-  const rootHeaders = new Map(tree.roots.map((r) => [r.stem, r.transcript]));
-  const rootStems = tree.roots.map((r) => r.stem);
-  let rootIndex = 0;
-  const freshGameForRoot = async (): Promise<TestableGame> => {
-    const root = rootHeaders.get(rootStems[rootIndex++])!;
-    return loadStory(
+  // A root is a fresh game (D1), and so is every fork (D17) — the walk asks for
+  // one per root and one per divergent sibling, naming the root of the ancestry
+  // it is about to replay. `entry:` and the pinned seed come from that root's
+  // own header; a child inherits them through the effective header rather than
+  // by reloading.
+  //
+  // The same root is booted again at every fork below it, and all of those
+  // boots must land on the same seed: a root that declared none would draw a
+  // fresh clock seed per boot, and its replayed prefix would then diverge from
+  // the one its first child saw. Whatever the first boot resolved is remembered
+  // and re-pinned.
+  const bootedSeeds = new Map<string, number>();
+  const freshGameForRoot = async (root: TreeNode): Promise<TestableGame> => {
+    const header = root.transcript;
+    const game = await loadStory(
       options.storyPath,
-      root.header.entry,
-      root.config?.seeds?.[0],
-      root.config?.channels ?? []
+      header.header.entry,
+      bootedSeeds.get(root.stem) ?? header.config?.seeds?.[0],
+      header.config?.channels ?? []
     );
+    if (!bootedSeeds.has(root.stem)) {
+      const seed = (game as { engine?: { getMasterSeed?(): number } }).engine?.getMasterSeed?.();
+      if (seed !== undefined) bootedSeeds.set(root.stem, seed);
+    }
+    return game;
   };
 
   let run;

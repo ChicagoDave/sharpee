@@ -158,11 +158,12 @@
  * additive keys ship inside the major rather than as a separate minor —
  * the same consolidation species as the 2.0.0 ruling. The language is
  * **frozen at 3.0.0**. Package versioning is a separate track: the
- * `@sharpee/*` packages version in lockstep (currently 4.3.0; the next npm
- * publish is 4.4.0, continuing the 4.x line through the IDE work) and move
- * to **5.0.0** when the owner cuts the release — `5.0.0` is no longer
- * Relations-reserved (Relations renumbers when it lands; ADR-278 note).
- * Cross-noted at ADR-257 D2.
+ * `@sharpee/*` packages version in lockstep (**4.4.0** as of 2026-08-05,
+ * session f2a7e6 — the bump this ruling anticipated, taken on the
+ * ADR-300/302 branch so its 13 changed packages can publish; the language
+ * did not move) and move to **5.0.0** when the owner cuts the release —
+ * `5.0.0` is no longer Relations-reserved (Relations renumbers when it
+ * lands; ADR-278 note). Cross-noted at ADR-257 D2.
  *
  * **ADR-300 D10 folds into the freeze (2026-08-05, session 86e85a)** — the
  * `record` channel construct with `list of` members is additive grammar,
