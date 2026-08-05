@@ -222,8 +222,6 @@ function formatAssertion(result: AssertionResult): string {
       return `Skipped: ${assertion.reason || 'no reason given'}`;
     case 'todo':
       return `TODO: ${assertion.reason || 'not implemented'}`;
-    case 'event-count':
-      return message || `Event count: ${assertion.eventCount}`;
     case 'event-assert': {
       const prefix = assertion.assertTrue ? 'assertTrue' : 'assertFalse';
       const posStr = assertion.eventPosition ? ` Event ${assertion.eventPosition}:` : '';
@@ -467,8 +465,6 @@ function formatAssertionPlain(assertion: any): string {
       return `Skipped: ${assertion.reason || 'no reason given'}`;
     case 'todo':
       return `TODO: ${assertion.reason || 'not implemented'}`;
-    case 'event-count':
-      return `Event count: ${assertion.eventCount}`;
     case 'event-assert': {
       const prefix = assertion.assertTrue ? 'assertTrue' : 'assertFalse';
       const posStr = assertion.eventPosition ? ` Event ${assertion.eventPosition}:` : '';

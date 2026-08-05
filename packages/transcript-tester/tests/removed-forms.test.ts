@@ -1,7 +1,8 @@
 /**
  * removed-forms.test.ts — ADR-294 AC-4: every removed grammar form is a parse
  * error naming the form and its replacement; nothing is silently ignored and
- * no directive/assertion is produced for it.
+ * no directive/assertion is produced for it. ADR-300 D5 adds `[EVENTS: N]` to
+ * the set (issue #222).
  *
  * Owner context: transcript-tester test suite (tooling).
  */
@@ -26,7 +27,10 @@ const CASES: Array<{ line: string; form: string; names: RegExp }> = [
   { line: '[NAVIGATE TO: "Round Room"]', form: '[NAVIGATE TO:]', names: /literal movement commands/ },
   { line: '[OK: any]', form: '[OK: any]', names: /golden recording/ },
   { line: '[OK: contains_any "a" "b"]', form: '[OK: contains_any]', names: /\[OK: contains "\.\.\."\]/ },
-  { line: '[OK: matches /^You win/]', form: '[OK: matches]', names: /\[OK: contains "\.\.\."\]/ }
+  { line: '[OK: matches /^You win/]', form: '[OK: matches]', names: /\[OK: contains "\.\.\."\]/ },
+  // ADR-300 D5 / issue #222 — a bare count names no event and breaks whenever
+  // any unrelated event is added anywhere in the turn.
+  { line: '[EVENTS: 3]', form: '[EVENTS: N]', names: /\[EVENT: true, type="\.\.\."\]/ }
 ];
 
 describe('removed grammar forms (ADR-294 AC-4)', () => {

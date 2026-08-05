@@ -1260,17 +1260,6 @@ function checkAssertion(
         message: assertion.reason
       };
 
-    case 'event-count': {
-      const expected = assertion.eventCount || 0;
-      const actual = events.length;
-      const countMatches = actual === expected;
-      return {
-        assertion,
-        passed: countMatches,
-        message: countMatches ? undefined : `Expected ${expected} events, got ${actual}`
-      };
-    }
-
     case 'event-assert': {
       return checkEventAssertion(assertion, events);
     }

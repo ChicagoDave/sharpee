@@ -546,7 +546,7 @@ export interface GoldenRecording {
  * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains';
+    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains';
     value?: string;
     reason?: string;
     /**
@@ -559,7 +559,6 @@ export interface Assertion {
      * header, or there is nothing captured to read.
      */
     channelId?: string;
-    eventCount?: number;
     assertTrue?: boolean;
     eventPosition?: number;
     eventType?: string;

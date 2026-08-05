@@ -124,6 +124,11 @@ const REMOVED_FORMS: Array<{ pattern: RegExp; form: string; message: string }> =
     pattern: /^\[OK\s*:\s*any\s*\]$/i,
     form: '[OK: any]',
     message: '[OK: any] was removed (ADR-294 D2) — presence-only assertion masks failure; use a golden recording or [OK: contains "..."], or [SKIP] for deliberately unasserted output'
+  },
+  {
+    pattern: /^\[EVENTS\s*:/i,
+    form: '[EVENTS: N]',
+    message: '[EVENTS: N] was removed (ADR-300 D5) — a bare count names no event and breaks whenever any unrelated event is added anywhere in the turn; use [EVENT: true, type="..."] to name the event you mean'
   }
 ];
 
@@ -893,12 +898,6 @@ function parseAssertion(tag: string): Assertion | null {
   const todoMatch = inner.match(/^TODO(?::\s*(.+))?$/i);
   if (todoMatch) {
     return { type: 'todo', reason: todoMatch[1] || 'Not implemented' };
-  }
-
-  // [EVENTS: N] - exact event count
-  const eventsMatch = inner.match(/^EVENTS:\s*(\d+)$/i);
-  if (eventsMatch) {
-    return { type: 'event-count', eventCount: parseInt(eventsMatch[1], 10) };
   }
 
   // [EVENT: true|false, N?, type="..." key="value"]

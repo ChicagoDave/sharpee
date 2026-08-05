@@ -141,12 +141,6 @@ function serializeAssertionTag(assertion: Assertion): string {
         ? '[TODO]'
         : `[TODO: ${assertion.reason}]`;
 
-    case 'event-count':
-      // On its way out of the grammar, and no editing tool offers it. Written
-      // anyway for as long as the parser still reads it: this writer never
-      // drops something an author could have put in the file.
-      return `[EVENTS: ${assertion.eventCount}]`;
-
     case 'event-assert': {
       const parts: string[] = [String(assertion.assertTrue)];
       if (assertion.eventPosition !== undefined) {
