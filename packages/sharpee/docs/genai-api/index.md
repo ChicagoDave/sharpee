@@ -33,7 +33,7 @@ Generated for Sharpee 4.3.0
 | [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (47 files, ~4587 lines) |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~438 lines) |
 | [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (17 files, ~2677 lines) |
-| [plugins.md](plugins.md) | Plugins | Plugin system, NPC plugin, scheduler (daemons/fuses), state machine. (13 files, ~956 lines) |
+| [plugins.md](plugins.md) | Plugins | Plugin system, NPC plugin, scheduler (daemons/fuses), state machine. (13 files, ~986 lines) |
 | [text.md](text.md) | Text System | Text blocks, decorations, rendering. (3 files, ~275 lines) |
 | [if-services.md](if-services.md) | @sharpee/if-services | Runtime service interfaces (perception). (1 files, ~101 lines) |
 | [event-processor.md](event-processor.md) | @sharpee/event-processor | Event sequencing and effect processing. (6 files, ~366 lines) |
