@@ -14,6 +14,9 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import { parseTranscriptFile, validateTranscript } from './parser.js';
 import { runTranscript } from './runner.js';
+import { assembleTree } from './tree.js';
+import { runTree } from './tree-runner.js';
+import { formatTreeRun } from './tree-report.js';
 import {
   reportTranscript,
   reportTestRun,
@@ -23,7 +26,7 @@ import {
   writeReportToFile
 } from './reporter.js';
 import { loadStory, findTranscripts, TestableGame } from './story-loader.js';
-import { TranscriptResult, TestRunResult } from './types.js';
+import { Transcript, TranscriptResult, TestRunResult } from './types.js';
 import { aggregateTestRun } from './aggregate.js';
 import { CoverageTracker, formatCoverageSummary, formatCoverageBreakdown } from './coverage.js';
 
@@ -34,7 +37,6 @@ interface CliOptions {
   emitTraits: boolean;
   stopOnFailure: boolean;
   all: boolean;
-  chain: boolean;
   outputDir: string | null;
   play: boolean;
   bless: boolean;
@@ -52,7 +54,6 @@ function parseArgs(args: string[]): CliOptions {
     emitTraits: false,
     stopOnFailure: false,
     all: false,
-    chain: false,
     outputDir: null,
     play: false,
     bless: false,
@@ -73,7 +74,15 @@ function parseArgs(args: string[]): CliOptions {
     } else if (arg === '--all' || arg === '-a') {
       options.all = true;
     } else if (arg === '--chain' || arg === '-c') {
-      options.chain = true;
+      // ADR-302 D10: retired, not renamed. The tree states every relationship
+      // the flag used to imply, so running the harness already runs every
+      // path — a flag could only ask for LESS than that.
+      console.error(
+        '--chain was removed (ADR-302 D10) — a transcript declares its parent with ' +
+          '`continues: <stem>`, and running the harness runs every root-to-leaf path. ' +
+          'Delete the flag.'
+      );
+      process.exit(2);
     } else if (arg === '--bless') {
       options.bless = true;
     } else if (arg === '--coverage') {
@@ -120,7 +129,6 @@ Arguments:
 Options:
   -p, --play             Interactive play mode (REPL)
   -a, --all              Run all transcripts in the story's tests/ directory
-  -c, --chain            Chain transcripts (don't reset game state between them)
   --bless                Create/overwrite golden recordings (ADR-294 D1)
   --coverage             Print the full per-point outcome-class coverage
                          breakdown (ADR-293 D15); the one-line summary always
@@ -137,7 +145,6 @@ Examples:
   transcript-test stories/dungeo --all
   transcript-test stories/dungeo tests/*.transcript --verbose
   transcript-test stories/dungeo --all -o test-results
-  transcript-test stories/dungeo --chain tests/setup.transcript tests/puzzle.transcript
 `);
 }
 
@@ -345,56 +352,27 @@ async function main(): Promise<void> {
 
   console.log(`Loading story from: ${options.storyPath}`);
 
-  // Chain mode shares one game instance across all transcripts, so load it up
-  // front. In per-transcript mode the loop loads a fresh game for each
-  // transcript (honoring its `entry:` header) — an eager load here would be
-  // discarded unused (ADR-207 AC-7: no side-effecting pre-load).
-  let game: TestableGame | undefined;
-  // ADR-294 D15: the channels a session's game was assembled with — threaded
-  // to the runner so a mismatched member fails by name, never silently.
-  let assembledChannels: string[] = [];
-  if (options.chain) {
-    // ADR-293 D14: a chain is one session governed by the FIRST member's
-    // pinned seed — pre-read it, since the engine is seeded at assembly.
-    // Same for its channels: declaration (ADR-294 D15): one session, one
-    // capability profile and capture set.
-    // A parse error is swallowed here: the main loop reports it properly.
-    let chainSeed: number | undefined;
-    try {
-      const firstConfig = parseTranscriptFile(options.transcriptPaths[0]).config;
-      chainSeed = firstConfig?.seeds?.[0];
-      assembledChannels = firstConfig?.channels ?? [];
-    } catch {
-      chainSeed = undefined;
-    }
-    try {
-      game = await loadStory(options.storyPath, undefined, chainSeed, assembledChannels);
-    } catch (error) {
-      console.error(`Error loading story: ${error}`);
-      process.exit(3);
-    }
-  }
+  // No game is loaded here. A root's game is built when the walk reaches it,
+  // from that root's own `entry:` and pinned seed — an eager load would be
+  // discarded for a story with several roots (ADR-207 AC-7: no side-effecting
+  // pre-load).
 
   console.log(`Found ${transcriptPaths.length} transcript(s) to run`);
-  if (options.chain) {
-    console.log(`Chain mode: Game state will persist between transcripts`);
-  }
 
-  // Run all transcripts
-  const results: TranscriptResult[] = [];
-
-  // ADR-293 D15: one tracker per run — a chain is one session, one report.
+  // ADR-293 D15: one tracker per run — a tree is one report.
   const coverageTracker = new CoverageTracker();
 
+  // ── The tree is the input (ADR-302 D11) ────────────────────────────
+  // Parse every transcript, assemble the tree, and validate it WHOLE before a
+  // single command runs. A parse error is a defect like any other: it stops
+  // the run rather than producing a green tree with a hole in it.
+  const parsed: Transcript[] = [];
+  const parseFailures: TranscriptResult[] = [];
   for (const transcriptPath of transcriptPaths) {
-    // Parse the transcript
     const transcript = parseTranscriptFile(transcriptPath);
-
-    // Validate. Errors are recorded as an error-status result, never dropped
-    // (ADR-294 AC-4: nothing executes, and the run fails).
     const errors = validateTranscript(transcript);
     if (errors.length > 0) {
-      const result: TranscriptResult = {
+      parseFailures.push({
         transcript,
         commands: [],
         status: 'error',
@@ -404,59 +382,75 @@ async function main(): Promise<void> {
         skipped: 0,
         duration: 0,
         errorMessage: errors.join('; ')
-      };
-      results.push(result);
-      reportTranscript(result, { verbose: options.verbose });
-      if (options.chain) break;  // one session — later members need this state
+      });
       continue;
     }
+    parsed.push(transcript);
+  }
 
-    // Load a fresh story for each transcript to reset state (unless chaining).
-    // Honor the transcript's optional `entry:` header (ADR-180) and its
-    // pinned `seed:` (ADR-294 D3 — the engine is seeded at assembly).
-    if (!options.chain) {
-      try {
-        assembledChannels = transcript.config?.channels ?? [];
-        game = await loadStory(options.storyPath, transcript.header.entry,
-          transcript.config?.seeds?.[0], assembledChannels);
-      } catch (error) {
-        console.error(`Error loading story: ${error}`);
-        process.exit(3);
-      }
+  const storyName = path.basename(path.resolve(options.storyPath));
+
+  if (parseFailures.length > 0) {
+    for (const failure of parseFailures) reportTranscript(failure, { verbose: options.verbose });
+    console.error(`\n${parseFailures.length} transcript(s) failed to parse — nothing ran.`);
+    process.exit(2);
+  }
+
+  const tree = assembleTree(parsed, storyName);
+  if (tree.defects.length > 0) {
+    // D11: every defect together, and no execution. A tree with a cycle has no
+    // correct partial run to offer.
+    for (const line of formatTreeRun({ outcomes: [], defects: tree.defects, executedCommands: 0 })) {
+      console.error(line);
     }
+    process.exit(2);
+  }
 
-    // Run the transcript
-    const result = await runTranscript(transcript, game!, {
+  // A root is a fresh game (D1), so the walk asks for one per root. `entry:`
+  // and the pinned seed come from the root's own header — a child inherits
+  // them through the effective header rather than by reloading.
+  const rootHeaders = new Map(tree.roots.map((r) => [r.stem, r.transcript]));
+  const rootStems = tree.roots.map((r) => r.stem);
+  let rootIndex = 0;
+  const freshGameForRoot = async (): Promise<TestableGame> => {
+    const root = rootHeaders.get(rootStems[rootIndex++])!;
+    return loadStory(
+      options.storyPath,
+      root.header.entry,
+      root.config?.seeds?.[0],
+      root.config?.channels ?? []
+    );
+  };
+
+  let run;
+  try {
+    run = await runTree(tree, freshGameForRoot as never, {
       verbose: options.verbose,
       emitTraits: options.emitTraits,
       stopOnFailure: options.stopOnFailure,
       bless: options.bless,
-      chain: options.chain,
-      assembledChannels,
-      storyName: path.basename(path.resolve(options.storyPath)),
-      // `assembleGame` builds the ext-testing extension and hangs it off LoadedGame,
-      // but this bin used to drop it — so every `$teleport`/`$restore`/`$take` run
-      // through the published `transcript-test` was silently skipped while the
-      // transcript still reported green. The in-repo bundle has always threaded it
-      // (scripts/bundle-entry.js), which is why the divergence only surfaced once
-      // `test:npm --local` could reach the install step.
-      testingExtension: game!.testingExtension ?? undefined,
+      storyName,
       coverage: coverageTracker
     });
+  } catch (error) {
+    console.error(`Error running the tree: ${error}`);
+    process.exit(3);
+  }
 
-    results.push(result);
+  const results: TranscriptResult[] = run.outcomes
+    .filter((outcome) => outcome.result !== undefined)
+    .map((outcome) => outcome.result!);
 
-    // Report individual transcript results
-    reportTranscript(result, { verbose: options.verbose, emitTraits: options.emitTraits });
-
-    // A chain is one session: any non-passing member leaves the world in the
-    // wrong state for every member after it, so the chain always stops there
-    // (recording past it would enshrine a broken session). Independent runs
-    // stop only under --stop-on-failure (ADR-294 D5 — run-level control).
-    if (result.status !== 'passed' && (options.chain || options.stopOnFailure)) {
-      break;
+  for (const outcome of run.outcomes) {
+    if (outcome.result) {
+      reportTranscript(outcome.result, { verbose: options.verbose, emitTraits: options.emitTraits });
     }
   }
+
+  // D13: unreached is not failed. Printed after the runs so the tally that
+  // follows reads as blast radius rather than as more failures.
+  console.log();
+  for (const line of formatTreeRun(run)) console.log(line);
 
   // Aggregate results (the one shared reduce — ADR-277 D1)
   const runResult: TestRunResult = aggregateTestRun(results);

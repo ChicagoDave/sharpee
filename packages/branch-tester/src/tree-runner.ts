@@ -134,7 +134,7 @@ export function reseedFor(node: TreeNode): 'all' | string[] | null {
  */
 export async function runTree(
   tree: TranscriptTree,
-  engine: TreeGameEngine,
+  game: TreeGameEngine | (() => Promise<TreeGameEngine>),
   options: RunnerOptions = {}
 ): Promise<TreeRunResult> {
   const outcomes: NodeRunOutcome[] = [];
@@ -143,6 +143,14 @@ export async function runTree(
   if (tree.defects.length > 0) {
     return { outcomes, defects: [...tree.defects], executedCommands };
   }
+
+  // A root IS a fresh game (D1), so a story with several of them needs a new
+  // one per root — the previous root's whole subtree has moved the engine on,
+  // and there is no save to restore because a root restores from nothing.
+  // A caller passing a single engine gets today's behaviour: fine for one
+  // root, and the tests that drive a stub rely on it.
+  const isFactory = typeof game === 'function';
+  let engine: TreeGameEngine = isFactory ? (undefined as never) : game;
 
   /** Mark a failed node's whole subtree unreached, naming the origin. */
   const markUnreached = (node: TreeNode, blockedBy: string): void => {
@@ -183,6 +191,7 @@ export async function runTree(
   };
 
   for (const root of tree.roots) {
+    if (isFactory) engine = await (game as () => Promise<TreeGameEngine>)();
     await runNode(root);
   }
 

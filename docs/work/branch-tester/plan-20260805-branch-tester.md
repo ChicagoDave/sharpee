@@ -158,11 +158,20 @@ Three phases carry an additional gate:
 #### Done — the D16 separation
 Fernhill moved to a new top-level `branch-stories/`. Moving the smaller side kept v1's corpus config unchanged and left the several dozen `stories/dungeo/...` references in CLAUDE.md true. Named for the harness rather than `stories-v2/`, because D12 makes the split permanent and a version number would say the opposite every time it was read. Both corpus configs now record what they do *not* reach and why. Verified: transcript-tester 253; branch-tester **349 with zero skipped** (its five sweeps now have a corpus, where Phase 3 left them deliberately skipping); Fernhill 502 + 2 skipped and its walkthrough 58, unchanged across the move.
 
-#### Not done — two blockers, in order
+#### Done — the CLI tree entry point (2026-08-05, later the same session)
+`packages/branch-tester/src/cli.ts` now assembles a tree from every transcript and runs it through `runTree`. Per D10 this **removed** a mode rather than adding one: a corpus with no `continues:` is simply a tree of N roots, so there is one path. `--chain` is retired and reports by name if used. A root gets a fresh game built from its own `entry:` and pinned seed when the walk reaches it — no eager pre-load.
 
-**1. The CLI has no tree entry point.** `runTree` exists and is tested (Phase 6), but `packages/branch-tester/src/cli.ts` still walks a flat transcript list with a `--chain` flag. Until it assembles a tree and calls `runTree`, a `continues:` corpus cannot be executed at all, so Fernhill's rewrite could not be verified even if it were written. Per D10 the fix is not a new mode but the *removal* of one: a corpus with no `continues:` is simply a tree of N roots, so `runTree` should be the only path and `--chain` should go. That is CLI surgery, not new mechanism.
+Also fixed a real gap this surfaced in Phase 6's `runTree`: a **second root was continuing from wherever the first root's subtree left the engine**. A root is a fresh game (D1), so `runTree` now accepts a factory and builds one per root. Single-engine callers are unaffected.
 
-**2. The rewrite is authoring over Fernhill's map, and ADR-302 D7 forbids deriving it.** "Inferring branches from command lists is a reading aid, never truth… Only D1's pointer establishes a parent." So the tree has to be authored, not computed, and each hoisted command's assertions have to move to the node that now runs it.
+**Verified end-to-end through the CLI**: AC-6's malformed-tree path — a cycle and a dangling parent reported *together*, nothing executed, exit 2.
+
+#### Not done — Fernhill's rewrite, now blocked on one thing
+
+**No story will load from the package CLI** — [issue #225](https://github.com/ChicagoDave/sharpee/issues/225), and **v1 fails identically**, so this is pre-existing parity rather than a v2 regression: `SyntaxError: The requested module '@sharpee/world-model' does not provide an export named 'IScopeRule'`. Every in-repo path runs stories through the *bundle* (`dist/cli/sharpee.js`), which resolves `@sharpee/*` through esbuild aliases rather than Node's ESM resolver, so the package `bin` has effectively never been exercised. On top of that, Chord `.story` compilation lives in `scripts/bundle-entry.js`, so neither package CLI can load Fernhill at all.
+
+So a *passing* tree run cannot be demonstrated end-to-end until either #225 is fixed or the bundle routes `branch-stories/` to branch-tester. Writing Fernhill's tree before then would mean writing 20 files no one could run.
+
+**And the rewrite is authoring over Fernhill's map, which ADR-302 D7 forbids deriving.** "Inferring branches from command lists is a reading aid, never truth… Only D1's pointer establishes a parent." So the tree has to be authored, not computed, and each hoisted command's assertions have to move to the node that now runs it.
 
 #### The spine, as a reading aid (D7-legal, and nothing more)
 Measured across the 19 unit transcripts' opening commands 2026-08-05:
