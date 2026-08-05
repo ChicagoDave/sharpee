@@ -321,6 +321,18 @@ export interface Transcript {
   parseErrors?: ParseError[];
 
   /**
+   * Config header keys this transcript DECLARED, in declaration order
+   * (ADR-302 D8).
+   *
+   * Needed because `config` always carries defaults, so a field's value cannot
+   * say whether the author wrote it: `channels: []` means both "declared
+   * empty" and "not declared". Inheritance has to distinguish them — a child
+   * that says nothing takes its parent's, a child that says something takes
+   * its own — so the declaration itself is recorded rather than inferred.
+   */
+  declaredConfigKeys?: string[];
+
+  /**
    * Master seed pinned by the `seed:` header field (ADR-293 D14 as amended by
    * ADR-294 D3 — the body-positional `[SEED:]` directive is a parse error).
    * Set only by the singular `seed:` form; a `seeds:` matrix (D8) lives in

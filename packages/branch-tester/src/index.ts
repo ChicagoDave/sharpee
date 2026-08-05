@@ -28,6 +28,8 @@ export { parseTranscript, parseTranscriptFile, validateTranscript } from './pars
 export {
   assembleTree,
   rootToLeafPaths,
+  effectiveHeader,
+  effectiveConfig,
   stemOf,
   type TranscriptTree,
   type TreeNode,

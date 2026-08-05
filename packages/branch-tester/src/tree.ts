@@ -18,14 +18,15 @@
  * produces — so a tree cannot go stale against its files, because it has no
  * separate existence to go stale in.
  *
- * Public interface: `assembleTree`, `TranscriptTree`, `TreeNode`, `TreeDefect`.
+ * Public interface: `assembleTree`, `rootToLeafPaths`, `effectiveHeader`,
+ * `effectiveConfig`, `TranscriptTree`, `TreeNode`, `TreeDefect`.
  * Owner context: branch-tester (testing tooling).
  *
  * @see ADR-302 — Transcript Branches — D1, D2, D3, D4, D11
  */
 
 import * as path from 'path';
-import { Transcript } from './types.js';
+import { Transcript, TranscriptHeader, TranscriptRunConfig } from './types.js';
 
 /**
  * One transcript in the tree, with its resolved relationships.
@@ -260,4 +261,110 @@ function cycleFrom(node: TreeNode): string[] {
     current = current.parent;
   }
   return walked;
+}
+
+// ============================================================================
+// Header inheritance (ADR-302 D8)
+// ============================================================================
+
+/**
+ * Config header keys, and which `TranscriptRunConfig` field each one sets.
+ *
+ * `seed` and `seeds` both write `seeds`, so declaring either in a child
+ * replaces the parent's — a child that says `seed: 7` does not end up running
+ * its parent's `seeds: 1, 2` as well.
+ */
+const CONFIG_FIELD_BY_KEY: ReadonlyMap<string, keyof TranscriptRunConfig> = new Map([
+  ['seed', 'seeds'],
+  ['seeds', 'seeds'],
+  ['channels', 'channels'],
+  ['events', 'events'],
+  ['locale', 'locale'],
+  ['forces', 'forces'],
+  ['point-seed', 'pointSeeds'],
+]);
+
+/**
+ * The effective header of a node: its parent's effective header with this
+ * transcript's declared fields replacing them, applied transitively
+ * (ADR-302 D8).
+ *
+ * One rule, not two. The alternative considered and rejected in the ADR was
+ * carving the header into chain-wide fields (inherit only) and per-file fields
+ * (never inherit) — three rules where one will do, and a table to keep in sync.
+ *
+ * **`continues:` is the one exclusion, and it is not an exception to the rule
+ * so much as a category error.** It is the edge itself, consumed by tree
+ * assembly; a child inheriting it would claim its grandparent as parent while
+ * the tree — built from the *declared* value — disagreed. Two answers to
+ * "who is my parent?" is worse than any inheritance policy.
+ */
+export function effectiveHeader(node: TreeNode): TranscriptHeader {
+  const merged: TranscriptHeader = {};
+  for (const ancestor of node.ancestry.length > 0 ? node.ancestry : [node]) {
+    for (const [key, value] of Object.entries(ancestor.transcript.header)) {
+      if (key === 'continues') continue;
+      if (value !== undefined) merged[key] = value;
+    }
+  }
+  // The node's own parentage is the only `continues` that means anything here.
+  if (node.transcript.header.continues !== undefined) {
+    merged.continues = node.transcript.header.continues;
+  }
+  return merged;
+}
+
+/**
+ * The effective run configuration of a node (ADR-302 D8).
+ *
+ * Walks root-to-here and applies, per ancestor, only the config fields that
+ * ancestor DECLARED — so a child that says nothing about seeds runs at its
+ * parent's, and a child that declares its own runs at its own.
+ *
+ * **Seed is overridable, and that is the point** (D8). A variation branch needs
+ * a different draw from the same state, so a child declaring its own seed is
+ * the mechanism rather than a mistake to reject.
+ */
+export function effectiveConfig(node: TreeNode): TranscriptRunConfig {
+  const chain = node.ancestry.length > 0 ? node.ancestry : [node];
+  const root = chain[0].transcript.config;
+  const effective: TranscriptRunConfig = {
+    seeds: [...(root?.seeds ?? [])],
+    channels: [...(root?.channels ?? [])],
+    events: root?.events ?? false,
+    forces: [...(root?.forces ?? [])],
+    ...(root?.locale !== undefined ? { locale: root.locale } : {}),
+    ...(root?.pointSeeds !== undefined ? { pointSeeds: [...root.pointSeeds] } : {}),
+  };
+
+  for (const ancestor of chain.slice(1)) {
+    const config = ancestor.transcript.config;
+    if (!config) continue;
+    for (const key of ancestor.transcript.declaredConfigKeys ?? []) {
+      const field = CONFIG_FIELD_BY_KEY.get(key);
+      if (field === undefined) continue;
+      switch (field) {
+        case 'seeds':
+          effective.seeds = [...config.seeds];
+          break;
+        case 'channels':
+          effective.channels = [...config.channels];
+          break;
+        case 'events':
+          effective.events = config.events;
+          break;
+        case 'locale':
+          if (config.locale !== undefined) effective.locale = config.locale;
+          break;
+        case 'forces':
+          effective.forces = [...config.forces];
+          break;
+        case 'pointSeeds':
+          if (config.pointSeeds !== undefined) effective.pointSeeds = [...config.pointSeeds];
+          break;
+      }
+    }
+  }
+
+  return effective;
 }

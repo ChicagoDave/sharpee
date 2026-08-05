@@ -164,11 +164,50 @@ under this decision; `point-seed:`/`forces:` re-roll one point and leave the res
 of the schedule intact, master `seed:` re-rolls everything. Guidance for authors
 and tools: prefer the narrow instrument.
 
-*Implementation question this decision does not answer:* whether a master `seed:`
-override on a non-root re-seeds a game restored from its parent's save, and what
-that does to the stream states the save carries (ADR-293 D5/D7 — the
-`{pointName → streamState}` map rides every save). This must be settled when D1
-is built; it is not assumed to work here.
+> **MEASURED 2026-08-05 (session 86e85a) — and the answer contradicts the two
+> paragraphs above. This decision needs an amendment, which is the owner's
+> call: the ADR is ACCEPTED and no Open Questions section was opened here,
+> because opening one would flip it to DRAFT (DevArch rule 11a).**
+>
+> The implementation question this decision left open was whether a master
+> `seed:` override on a non-root re-seeds a game restored from its parent's
+> save. Probed against the real `EngineRandomService` (`packages/engine`), not
+> reasoned about:
+>
+> | mechanism | point that **drew** in the parent | point that did **not** draw |
+> | --- | --- | --- |
+> | master `seed:` override | **inert** | applies |
+> | `point-seed:` override | **inert** | applies |
+> | `forces:` | applies | applies |
+>
+> Measured values: parent at seed 42 draws `[720, 683, 623]` at point A and
+> saves. A child restoring that save draws `[133, 63, 835]` at point A whether
+> its master seed is 42 or 999 — *identical*. At an untouched point B the same
+> child draws `[429, 940, 632]` at 42 and `[736, 266, 48]` at 999, the latter
+> matching a fresh game at 999 exactly. `point-seed:` behaves the same way:
+> overriding a drawn point produces byte-identical output to no override.
+>
+> **Cause**, in `EngineRandomService.streamFor`: a point's stream resolves as
+> `restoredState ?? pointSeedOverride ?? deriveStreamSeed(masterSeed, name)`. A
+> restored state wins over **both** seed mechanisms. That is correct for
+> ADR-293 D7 — a restore continues where the save left off, which is the whole
+> point of saving — and it is exactly what makes seed-based variation from a
+> shared state impossible.
+>
+> **Consequence.** "Seed is overridable, and that is the point" is false as
+> built for the case it was written for. You branch *after* the interesting
+> thing has happened, so the point you want to vary has usually already drawn —
+> and for that point a child's `seed:` is silently inert. Worse than the risk
+> the plan anticipated: it is not that master `seed:` fails and `point-seed:`
+> survives, but that **both seed instruments fail and only `forces:` works**.
+> `forces:` is unaffected because `chance()` consults the force table before
+> touching the stream and consumes zero draws, and `restoreStreamStates`
+> deliberately keeps the session force table (D9).
+>
+> Nothing has been engineered around this. The inheritance rule is built and
+> tested as written (AC-3 green — a child with no seed resolves to its
+> parent's, one with its own resolves to its own); what is unsettled is what a
+> resolved seed *means* on a non-root.
 
 **D9 — Dungeo is an outlier and is not a design driver.** (David's ruling,
 session 5113ca.) Dungeo deliberately mirrors the original MDL source, partly for
@@ -499,6 +538,36 @@ that catches v2 quietly cannibalizing v1's command surface.
 ---
 
 ## Consequences
+
+> **AMENDMENT PENDING (2026-08-05, session 86e85a) — D5/D8's seed instruments.**
+> Measurement against the real `EngineRandomService` found that a master
+> `seed:` override *and* a `point-seed:` override are both **inert** for any
+> choice point that already drew before the parent's save; only `forces:`
+> varies such a point. See the measured table in D8. D5 says "two children of
+> the same parent differing only in `forces:` or `point-seed:` test RNG
+> variation from a shared state" — the `point-seed:` half of that is not true
+> as built, and D8's "seed is overridable, and that is the point" is not true
+> for the case it was written for.
+>
+> Nothing was engineered around it (the plan's instruction was to stop and
+> raise it rather than work around it). Three shapes are available and the
+> choice is the owner's:
+>
+> 1. **Narrow the ADR to match the engine** — D5 becomes `forces:`-only for
+>    variation from a shared state; a `seed:`/`point-seed:` override on a
+>    non-root is documented as applying only to points not yet drawn, or
+>    rejected outright as a misleading no-op. No engine change.
+> 2. **Make the seed instruments reach a restored game** — let a declared
+>    override outrank a restored stream state for the points it names. This
+>    contradicts ADR-293 D7's "a restore continues where the save left off"
+>    for those points, so it is an ADR-293 amendment as well as an ADR-302 one.
+> 3. **Add a distinct spelling** for "re-roll this point from here" that is
+>    explicitly not a save-continuation, leaving both existing meanings intact.
+>
+> Until this is settled, the inheritance rule is built and tested exactly as
+> D8 states it (AC-3 green); what is unsettled is what a resolved seed *means*
+> on a non-root.
+
 
 **One header field, and the rest is derivation.** The grammar cost is a single
 field; the model gains a parent reference; the runner reuses its existing

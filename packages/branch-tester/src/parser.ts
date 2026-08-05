@@ -576,6 +576,9 @@ function parseConfigField(
     return;
   }
   seenConfigKeys.set(key, lineNumber);
+  // ADR-302 D8: record the declaration, not just its value — inheritance
+  // needs to tell "said nothing" from "said the default".
+  (transcript.declaredConfigKeys ??= []).push(key);
 
   /** Parse one seed value, recording an error and returning null when invalid. */
   const parseSeedValue = (raw: string): number | null => {
