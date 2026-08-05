@@ -1,6 +1,7 @@
 title: Boat Stick Puncture Test
 story: dungeo
-description: Test that carrying sharp stick into boat punctures and deflates it
+description: Test that carrying sharp stick into boat punctures and deflates
+  it
 
 ---
 
@@ -34,7 +35,6 @@ description: Test that carrying sharp stick into boat punctures and deflates it
 # ============================================================================
 # TEST: Inflate boat then board with stick - should puncture
 # ============================================================================
-
 > look
 [OK: contains "Dam Base"]
 [OK: contains "plastic"]
@@ -59,7 +59,6 @@ description: Test that carrying sharp stick into boat punctures and deflates it
 # ============================================================================
 # TEST: The correct way - put stick in boat first
 # ============================================================================
-
 # Re-inflate the boat
 > inflate boat
 [OK: contains "inflate"]

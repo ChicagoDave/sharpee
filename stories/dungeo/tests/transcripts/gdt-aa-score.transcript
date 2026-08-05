@@ -1,12 +1,11 @@
 title: GDT AA (Alter Adventurer) — score setting and its rejections
 story: dungeo
-description: |
-  AA SCORE sets the player's total to an exact value so a test can start from a
-  scored position without replaying a walkthrough. The score ledger (ADR-129) is
-  append-only with unique ids and no setter, so AA carries the difference in one
-  reserved entry (gdt.score.adjustment) and leaves earned entries intact.
+description: AA SCORE sets the player's total to an exact value so a test can
+  start from a scored position without replaying a walkthrough. The score
+  ledger (ADR-129) is append-only with unique ids and no setter, so AA carries
+  the difference in one reserved entry (gdt.score.adjustment) and leaves
+  earned entries intact. Covers the rejection paths as well as the happy path.
 
-  Covers the rejection paths as well as the happy path.
 ---
 
 [GOAL: AA SCORE sets an exact total and rejects bad input]
@@ -17,8 +16,10 @@ description: |
 # --- happy path: an exact total, from zero ---
 > aa score 493
 [OK: contains "493"]
+
 > ex
 [OK: contains "Returning"]
+
 > score
 [OK: contains "493 out of 616"]
 
@@ -26,20 +27,26 @@ description: |
 # A naive implementation that appended a second ledger entry would land on 986.
 > gdt
 [OK: contains "GDT"]
+
 > aa score 493
 [OK: contains "493"]
+
 > ex
 [OK: contains "Returning"]
+
 > score
 [OK: contains "493 out of 616"]
 
 # --- a different value overwrites cleanly, downward included ---
 > gdt
 [OK: contains "GDT"]
+
 > aa score 25
 [OK: contains "25"]
+
 > ex
 [OK: contains "Returning"]
+
 > score
 [OK: contains "25 out of 616"]
 

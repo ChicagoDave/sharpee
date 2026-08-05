@@ -23,7 +23,7 @@ function makeStory(opts?: { registerGated?: boolean }) {
     config: {
       id: 'channels-test',
       title: 'Channels Test',
-      author: 'tester',
+      authors: ['tester'],
       version: '1.0.0',
       description: 'ADR-294 D15 channel capture test story',
     },

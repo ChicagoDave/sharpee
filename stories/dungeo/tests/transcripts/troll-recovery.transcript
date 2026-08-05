@@ -1,8 +1,11 @@
 title: Troll Recovery Daemon
 story: dungeo
 author: Sharpee Team
-description: Tests that the troll wakes up after being knocked out, with description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and MDL growing-probability recovery (ADR-226).
+description: Tests that the troll wakes up after being knocked out, with
+  description change (TROLLDESC -> TROLLOUT), exit blocking/unblocking, and
+  MDL growing-probability recovery (ADR-226).
 seed: 42
+
 ---
 
 # From MDL source (act1.254): OUT!/IN! transitions.
@@ -10,7 +13,6 @@ seed: 42
 # ADR-226): each unconscious turn a per-troll accumulator grows +10; revival rolls a
 # seeded probability = accumulator%. At the pinned seed the wake turn is fixed:
 # the daemon fires "stirs" on the third examine after returning to the room.
-
 # Get lantern first (Troll Room is dark); ND = immortality, since the
 # conscious troll's bystander blows can kill a score-0 player outright and
 # this transcript tests the recovery daemon, not player mortality.

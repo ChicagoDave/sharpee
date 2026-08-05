@@ -1,6 +1,7 @@
 title: Dam Drain and Reservoir Walkability
 story: dungeo
 description: Test reservoir navigation when dam is flooded (default state)
+
 ---
 
 # Use GDT to get lantern and teleport directly to Reservoir South

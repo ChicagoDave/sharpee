@@ -5,6 +5,8 @@ issue thread: David's rulings 1–5 (2026-07-29) plus the verified analysis
 recorded there. All seven open questions resolved via `/devarch:adr-interview`
 and review findings folded, 2026-08-02. Closes GH #187 when implemented.
 
+> **D3 extended** by [ADR-301](adr-301-the-opening-as-addressable-channels.md) (2026-08-04): the banner now has its own channel alongside the prologue, so the opening is two addressable channels rather than one channel plus prose on `main`.
+
 **Parent**: ADR-074 (IFID requirements — the regression this repairs), ADR-133
 (info channel), ADR-166 (ifid channel), ADR-257 (language versioning), ADR-284
 (publishing, downstream consumer). Related: GH #200 (launch block — sequenced

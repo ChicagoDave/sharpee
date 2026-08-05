@@ -1,9 +1,11 @@
-title: Fernhill A2/A3 — the cellar door (locked default) and the two-sided pantry door
+title: Fernhill A2/A3 — the cellar door (locked default) and the two-sided
+  pantry door
 story: fernhill
 description: A2 — the cellar door loads LOCKED (kind-scoped lockable default,
-  one exit line + one door block); unlock with the tarnished key, open, descend.
-  A3 — the pantry door is present from BOTH sides (ADR-238): open it from the
-  kitchen, walk through, close it from the pantry side.
+  one exit line + one door block); unlock with the tarnished key, open,
+  descend. A3 — the pantry door is present from BOTH sides (ADR-238): open it
+  from the kitchen, walk through, close it from the pantry side.
+
 ---
 
 # Pick up the key on the way in (temporary Phase-2 placement; B3 hides it later)

@@ -65,7 +65,7 @@ import {
   BehaviorBindingSummary,
   MessageSummary
 } from './types.js';
-import { Story } from './story.js';
+import { Story, validateStoryConfig } from './story.js';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative/index.js';
 import { validateRoomSnippets } from './snippet-validation.js';
 import { validateCombatantHealth } from './combatant-health-validation.js';
@@ -366,6 +366,12 @@ export class GameEngine {
    * Set the story for this engine
    */
   setStory(story: Story): void {
+    // Check the config before anything reads it. Every required field is read
+    // somewhere below without a guard, so a story missing one used to surface
+    // as a TypeError from whichever line happened to touch it first — an engine
+    // stack trace where the author needed to be told which field was missing.
+    validateStoryConfig(story.config);
+
     // Emit story loading event
     const loadingEvent = createStoryLoadingEvent(story.config.id);
     this.emitGameEvent(loadingEvent);

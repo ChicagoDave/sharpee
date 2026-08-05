@@ -26,6 +26,7 @@
  * - Builders for dynamic channels — `createImageChannel(layer)`,
  *   `createAmbientChannel(id)`. Plus `imageChannelIdFromEvent` helper.
  * - `MAIN_KEYS` — block-key set the `mainChannel` filters against.
+ * - `BANNER_KEYS` — block-key set the `bannerChannel` filters against.
  *
  * Re-exports the `IChannelRegistry` and `IOChannel` types from
  * `@sharpee/if-domain` so authors can write channel definitions
@@ -44,6 +45,7 @@ export {
   infoChannel,
   ifidChannel,
   prologueChannel,
+  bannerChannel,
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
@@ -54,6 +56,7 @@ export {
   STANDARD_CHANNEL_EVENTS,
   // Types
   type StandardChannelId,
+  type BannerData,
   type LifecycleEventKind,
   type LifecyclePayload,
 } from './standard.js';
@@ -94,7 +97,7 @@ export {
   type SoundEventType,
 } from './sound-events.js';
 
-export { MAIN_KEYS } from './keys.js';
+export { MAIN_KEYS, BANNER_KEYS } from './keys.js';
 
 // Re-export the registry/channel types from if-domain for author
 // convenience — story code can `import { type IChannelRegistry } from

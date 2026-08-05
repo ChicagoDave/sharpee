@@ -9,7 +9,6 @@ description: Test victory sequence when entering Treasury of Zork
 # 1. Endgame mode active
 # 2. Bronze door open (dial set to 4, button pushed)
 # 3. Enter Treasury from Prison Cell
-
 # Enter GDT mode (game commands only work after EX — GDT is an input mode)
 > gdt
 [OK: contains "GDT ready"]

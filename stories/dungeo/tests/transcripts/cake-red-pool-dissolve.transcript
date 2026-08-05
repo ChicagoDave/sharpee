@@ -1,6 +1,8 @@
 title: Red Cake Pool Dissolve
 story: dungeo
-description: ADR-227 Phase 2 - throwing the red-icing cake (RDICE "Evaporate") in the Pool Room dissolves the pool and reveals the spices via the CakeThrowingInterceptor
+description: ADR-227 Phase 2 - throwing the red-icing cake (RDICE "Evaporate")
+  in the Pool Room dissolves the pool and reveals the spices via the
+  CakeThrowingInterceptor
 
 ---
 

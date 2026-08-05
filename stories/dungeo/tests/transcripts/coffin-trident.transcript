@@ -1,19 +1,19 @@
 title: Coffin and Trident Treasure Retrieval
 story: dungeo
-description: Retrieve gold coffin and crystal trident treasures using GDT teleport
+description: Retrieve gold coffin and crystal trident treasures using GDT
+  teleport
 
 ---
 
 # Get coffin and trident treasures, put in trophy case
-
-## Setup
+# # Setup
 > gdt
 [OK: contains "GDT ready"]
 
 > tk brass lantern
 [OK: contains "Taken"]
 
-## Get coffin from Egyptian Room
+# # Get coffin from Egyptian Room
 > ah egyptian room
 [OK: contains "Teleported"]
 
@@ -29,7 +29,7 @@ description: Retrieve gold coffin and crystal trident treasures using GDT telepo
 > get coffin
 [OK: contains "Taken"]
 
-## Get trident from Atlantis Room
+# # Get trident from Atlantis Room
 > gdt
 [OK: contains "GDT ready"]
 
@@ -45,7 +45,7 @@ description: Retrieve gold coffin and crystal trident treasures using GDT telepo
 > get trident
 [OK: contains "Taken"]
 
-## Put treasures in trophy case
+# # Put treasures in trophy case
 > gdt
 [OK: contains "GDT ready"]
 

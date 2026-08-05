@@ -1,6 +1,7 @@
 title: Frigid River Full Navigation
 story: dungeo
-description: Full Frigid River test - boat from Dam Base to End of Rainbow via dig and wave
+description: Full Frigid River test - boat from Dam Base to End of Rainbow via
+  dig and wave
 
 ---
 
@@ -30,7 +31,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Verify boat, stick, and water scenery at Dam Base
 # ============================================================================
-
 > look
 [OK: contains "Dam Base"]
 [OK: contains "plastic"]
@@ -43,7 +43,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Inflate boat and put stick in it (not carry!)
 # ============================================================================
-
 > inflate boat
 [OK: contains "inflate"]
 
@@ -62,7 +61,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Launch and navigate downstream
 # ============================================================================
-
 # Launch into the river
 > launch
 [OK: contains "river"]
@@ -96,7 +94,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Land at Rocky Shore and get shovel from Small Cave
 # ============================================================================
-
 # Go downstream to FR3 - has landings E/W (Rocky Shore west)
 > d
 [OK: contains "Frigid River"]
@@ -129,7 +126,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Navigate to Sandy Beach and dig for statue
 # ============================================================================
-
 # Go downstream (east exit from Rocky Shore leads to FR3, but we need to launch)
 > launch
 [OK: contains "river"]
@@ -171,7 +167,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Navigate to Aragain Falls and wave stick
 # ============================================================================
-
 # Go south to Shore
 > s
 [OK: contains "Shore"]
@@ -187,7 +182,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Cross rainbow to End of Rainbow and get pot of gold
 # ============================================================================
-
 # Go east onto rainbow
 > e
 [OK: contains "Rainbow"]
@@ -203,7 +197,6 @@ description: Full Frigid River test - boat from Dam Base to End of Rainbow via d
 # ============================================================================
 # TEST: Return via land route
 # ============================================================================
-
 # Go southeast to Canyon Bottom
 > se
 [OK: contains "Canyon"]

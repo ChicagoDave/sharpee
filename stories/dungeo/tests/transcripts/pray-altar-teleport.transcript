@@ -1,6 +1,7 @@
 title: Pray at Altar Teleportation
 story: dungeo
-description: Tests PRAY action at Altar teleports to Forest Path 1 (per Fortran sverbs.for V79)
+description: Tests PRAY action at Altar teleports to Forest Path 1 (per
+  Fortran sverbs.for V79)
 
 ---
 
@@ -37,8 +38,6 @@ description: Tests PRAY action at Altar teleports to Forest Path 1 (per Fortran 
 [OK: contains "Forest Path"]
 [OK: contains "winding through"]
 [OK: contains "tree"]
-
----
 
 # Test that PRAY elsewhere gives generic response
 > gdt

@@ -63,7 +63,6 @@ description: Test commanding the robot - matches FORTRAN timefnc.for behavior
 
 # Test known verbs that robot CAN execute (WALK, TAKE, DROP, PUSH, etc.)
 # Robot says "Whirr, buzz, click!" then executes the action
-
 # Test robot walk - robot should move to Machine Room (north from Dingy Closet)
 > tell robot to go north
 [OK: contains "Whirr"]

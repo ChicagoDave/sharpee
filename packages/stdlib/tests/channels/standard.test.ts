@@ -18,6 +18,7 @@ import {
   infoChannel,
   ifidChannel,
   prologueChannel,
+  bannerChannel,
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
@@ -483,5 +484,72 @@ describe('lifecycleChannel.produce', () => {
       }),
     );
     expect(result).toEqual({ kind: 'restore_completed' });
+  });
+});
+
+describe('banner channel (opening is addressable on its own)', () => {
+  const bannerBlock = (text: string, className: string) => ({
+    key: 'game.banner',
+    content: [text],
+    className,
+  });
+
+  it('carries each banner piece as its own property', () => {
+    const result = bannerChannel.produce(
+      makeCtx({
+        blocks: [
+          bannerBlock('DUNGEON', 'game-title'),
+          bannerBlock('Story v4.3.0', 'story-version'),
+          bannerBlock('Sharpee v4.3.0', 'platform-version'),
+          bannerBlock('A port of Mainframe Zork (1981)', 'sub-title'),
+          bannerBlock('By Tim Anderson', 'author-list'),
+          bannerBlock('Ported by David Cornelson', 'author-list'),
+          bannerBlock('', 'banner-spacer'),
+        ],
+      }),
+    );
+
+    expect(result).toEqual({
+      title: 'DUNGEON',
+      storyVersion: 'Story v4.3.0',
+      platformVersion: 'Sharpee v4.3.0',
+      subtitle: 'A port of Mainframe Zork (1981)',
+      credits: ['By Tim Anderson', 'Ported by David Cornelson'],
+    });
+  });
+
+  it('collects unclassed story-tail lines separately from the credits', () => {
+    const result = bannerChannel.produce(
+      makeCtx({
+        blocks: [
+          bannerBlock('DUNGEON', 'game-title'),
+          { key: 'game.banner', content: ['Type HELP for instructions.'] },
+        ],
+      }),
+    ) as Record<string, unknown>;
+
+    expect(result.tail).toEqual(['Type HELP for instructions.']);
+    expect(result.credits).toBeUndefined();
+  });
+
+  it('emits nothing on a turn with no banner blocks', () => {
+    const result = bannerChannel.produce(
+      makeCtx({ blocks: [makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'West of House')] }),
+    );
+
+    expect(result).toBeUndefined();
+  });
+
+  it('keeps banner blocks out of main', () => {
+    const result = mainChannel.produce(
+      makeCtx({
+        blocks: [
+          bannerBlock('DUNGEON', 'game-title'),
+          makeBlock(CORE_BLOCK_KEYS.ROOM_NAME, 'West of House'),
+        ],
+      }),
+    );
+
+    expect(result).toEqual([{ content: ['West of House'] }]);
   });
 });

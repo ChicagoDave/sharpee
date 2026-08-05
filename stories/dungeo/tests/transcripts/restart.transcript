@@ -6,6 +6,7 @@ description: In-game RESTART delegates through platform events; the harness
   daemons). The ack renders as the final packet of the old engine, and the
   rebuilt world starts over — including state that was mutated before the
   restart.
+
 ---
 
 # Mutate world state away from the initial configuration

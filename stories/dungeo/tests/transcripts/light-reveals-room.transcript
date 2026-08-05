@@ -1,6 +1,7 @@
 title: Light Reveals Room Description
 story: dungeo
-description: Test that turning on a light in a dark room automatically shows the room description
+description: Test that turning on a light in a dark room automatically shows
+  the room description
 
 ---
 

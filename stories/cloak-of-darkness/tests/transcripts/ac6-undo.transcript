@@ -1,10 +1,10 @@
 title: Cloak AC-6 — undo reverts occurrence counters and message state
 story: cloak-of-darkness
 description: ADR-210 AC-6 (added Phase 6, additive to the frozen golden six).
-  Undoing the first dark entry must roll back the first-time ordinal's
-  trample along with the movement — occurrence counters and chord.state.*
-  are world state, so undo needs no author-written code. The message reads
-  intact (the win ending) afterward.
+  Undoing the first dark entry must roll back the first-time ordinal's trample
+  along with the movement — occurrence counters and chord.state.* are world
+  state, so undo needs no author-written code. The message reads intact (the
+  win ending) afterward.
 
 ---
 

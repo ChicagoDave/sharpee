@@ -7,7 +7,6 @@ description: Test the Parapet dial puzzle and GDT DL command
 # Tests the dial puzzle mechanics at the Parapet.
 # The dial controls which prison cell is rotated into position.
 # Cell is accessed via DOWN from Parapet.
-
 # Enter GDT mode (game commands only work after EX — GDT is an input mode)
 > gdt
 [OK: contains "GDT ready"]

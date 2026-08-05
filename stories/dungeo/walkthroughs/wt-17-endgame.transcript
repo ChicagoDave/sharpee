@@ -1,6 +1,8 @@
 title: Endgame (Trivia, Dial Puzzle, Victory)
 story: dungeo
-description: Navigate to Tomb, trigger endgame, pass trivia quiz, solve dial puzzle, reach Treasury for 650/650 victory. Restores from wt-16.
+description: Navigate to Tomb, trigger endgame, pass trivia quiz, solve dial
+  puzzle, reach Treasury for 650/650 victory. Restores from wt-16.
+
 ---
 
 # Restore state from wt-16 (player at Living Room, all treasures scored)
@@ -9,7 +11,6 @@ $restore wt-16
 # ============================================================================
 # GOAL: Navigate from Living Room to Mirror Room
 # ============================================================================
-
 [GOAL: Navigate to Mirror Room]
 
 # Light the lantern BEFORE descending — wt-16 banks the battery by turning
@@ -34,7 +35,6 @@ $restore wt-16
 # GOAL: Toggle mirror to State A (Hades connections) and reach Tomb
 # Mirror was left in State B (Coal Mine) after wt-12
 # ============================================================================
-
 [GOAL: Toggle mirror and reach Tomb]
 
 # Toggle mirror from State B to State A
@@ -55,7 +55,6 @@ $restore wt-16
 # GOAL: Trigger the endgame
 # Tomb is dark. Turn off lamp, wait 3 turns in darkness.
 # ============================================================================
-
 [GOAL: Trigger endgame from Tomb]
 
 # Turn off the lamp to make the room dark
@@ -77,7 +76,6 @@ $restore wt-16
 # ============================================================================
 # GOAL: Navigate endgame rooms and push stone button
 # ============================================================================
-
 [GOAL: Navigate to Hallway via Stone Room]
 
 > west
@@ -94,7 +92,6 @@ $restore wt-16
 # ============================================================================
 # GOAL: Enter Inside Mirror (milestone: +15 endgame pts)
 # ============================================================================
-
 [GOAL: Enter Inside Mirror]
 
 > in
@@ -107,7 +104,6 @@ $restore wt-16
 # ============================================================================
 # GOAL: Reach Dungeon Entrance (milestone: +15 endgame pts)
 # ============================================================================
-
 [GOAL: Reach Dungeon Entrance]
 
 > south
@@ -121,30 +117,25 @@ $restore wt-16
 # After each correct answer, the next question is (current + 3) mod 8.
 # Need 3 correct answers to pass.
 # Use [IF: output contains "..."] to detect which question was asked.
-
 [GOAL: Pass trivia quiz]
 
 # Knock to start the trivia — DM appears and asks first question
 > knock
 
 # === Answer Question 1 (random starting question) ===
-
 > answer rub
 
 > answer no
 
 # === Answer Question 2 (current + 3 mod 8) ===
-
 > answer 30003
 
 # === Answer Question 3 — passing answer opens the door ===
-
 [END GOAL]
 
 # ============================================================================
 # GOAL: Reach Narrow Corridor (milestone: +20 endgame pts)
 # ============================================================================
-
 [GOAL: Reach Narrow Corridor]
 
 > north
@@ -154,7 +145,6 @@ $restore wt-16
 # ============================================================================
 # GOAL: Navigate to Parapet and solve dial puzzle
 # ============================================================================
-
 [GOAL: Solve dial puzzle and reach Treasury]
 
 > north

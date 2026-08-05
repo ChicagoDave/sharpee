@@ -1,10 +1,12 @@
-title: Fernhill A5 — the frost-sealed glasshouse door thaws when the boiler runs
+title: Fernhill A5 — the frost-sealed glasshouse door thaws when the boiler
+  runs
 story: fernhill
 description: The Greenhouse's north exit is blocked while the boiler is off
   (conditional blocked exit reading live switchable state). Turning the boiler
   on flips the condition; the way to Folly Hill (and the warped folly door)
   opens up. (Phase 5 replaces the bare switchable flip with the 3-stage
   machine — this transcript pins the A5 condition itself.)
+
 ---
 
 > north

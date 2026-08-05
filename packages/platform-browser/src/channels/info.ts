@@ -104,6 +104,43 @@ export function createIfidChannelRenderer(slot: HTMLElement): ChannelRenderer {
 }
 
 /**
+ * `banner` channel — replace, json. The opening banner as properties: title,
+ * versions, sub-title, credits and any story tail.
+ *
+ * Each piece gets its own element and class so a page can style or reorder
+ * them; the banner moved off `main` to become addressable, not to move on the
+ * page, so the default order matches what it always looked like.
+ */
+export function createBannerChannelRenderer(slot: HTMLElement): ChannelRenderer {
+  return {
+    onValue(value: unknown): void {
+      if (!value || typeof value !== 'object') return;
+      const banner = value as Record<string, unknown>;
+      const doc = slot.ownerDocument;
+
+      const emit = (text: unknown, className: string): void => {
+        if (typeof text !== 'string' || text.length === 0) return;
+        const p = doc.createElement('p');
+        p.className = className;
+        p.textContent = text;
+        slot.appendChild(p);
+      };
+
+      emit(banner.title, 'sharpee-banner-title');
+      emit(banner.storyVersion, 'sharpee-banner-story-version');
+      emit(banner.platformVersion, 'sharpee-banner-platform-version');
+      emit(banner.subtitle, 'sharpee-banner-subtitle');
+      for (const credit of (banner.credits as unknown[]) ?? []) {
+        emit(credit, 'sharpee-banner-credit');
+      }
+      for (const line of (banner.tail as unknown[]) ?? []) {
+        emit(line, 'sharpee-banner-tail');
+      }
+    },
+  };
+}
+
+/**
  * `prologue` channel — replace, text. Pre-banner prologue prose
  * (ADR-298 D3). Renders the resolved text into the slot as one
  * paragraph per blank-line-separated chunk. The slot is expected to

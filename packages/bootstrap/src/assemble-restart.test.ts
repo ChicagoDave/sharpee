@@ -34,7 +34,7 @@ function makeStory(): TestStoryHandle {
     config: {
       id: 'restart-test',
       title: `Restart Test #${instanceId}`,
-      author: 'tester',
+      authors: ['tester'],
       version: '1.0.0',
       description: 'ADR-248 harness reboot test story',
     },
@@ -65,6 +65,9 @@ describe('ADR-248 assembleGame restart reboot', () => {
     let freshCalls = 0;
 
     const game = assembleGame(first.story, {
+      // The banner is its own channel now, so declare it — that is where the
+      // rebooted story's identity shows up.
+      channels: ['main', 'banner'],
       freshStory: () => {
         freshCalls += 1;
         return second.story;
@@ -92,9 +95,13 @@ describe('ADR-248 assembleGame restart reboot', () => {
     // The rebooted game keeps executing turns through the same handle, and
     // renders the SECOND instance's banner — proof the fresh story took.
     const look = await game.executeCommand('look');
-    expect(look).toContain('Restart Test #');
-    expect(look).toContain(second.story.config.title);
     expect(look).toContain('Test Chamber');
+
+    // The banner travels on its own channel, carrying the title as a property
+    // rather than a line of prose mixed into the room description.
+    const banner = JSON.parse(game.lastChannels.banner[0]);
+    expect(banner.title).toContain('Restart Test #');
+    expect(banner.title).toBe(second.story.config.title);
   });
 
   it('without a freshStory provider, a confirmed restart surfaces an honest error', async () => {

@@ -163,8 +163,10 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
   console.log('  /inv, /i     - Shortcut for "inventory"');
   console.log('');
 
-  // Show initial room description
+  // Show the opening, then the initial room description. The prologue precedes
+  // the banner, which precedes the first response — the order a reader expects.
   const initialOutput = await game.executeCommand('look');
+  printOpening(game);
   console.log(initialOutput);
 
   const prompt = (): void => {
@@ -258,6 +260,28 @@ async function runInteractiveMode(game: TestableGame): Promise<void> {
 /**
  * Main entry point
  */
+/**
+ * Channels carrying the game's opening, declared whenever a person (rather than
+ * a transcript) is going to read the output.
+ */
+const OPENING_CHANNELS = ['main', 'prologue', 'banner'];
+
+/**
+ * Print the prologue and banner captured on the way to the first command.
+ *
+ * They arrive on their own channels, so anything showing the game to a person
+ * has to render them; nothing else prints them.
+ */
+function printOpening(game: TestableGame): void {
+  for (const id of ['prologue', 'banner']) {
+    const lines = game.lastChannels?.[id];
+    if (lines && lines.length > 0) {
+      console.log(lines.join('\n'));
+      console.log('');
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
@@ -279,7 +303,10 @@ async function main(): Promise<void> {
     console.log(`Loading story from: ${options.storyPath}`);
     let game: TestableGame;
     try {
-      game = await loadStory(options.storyPath);
+      // Play needs the channels that carry the opening. The banner and the
+      // prologue are said before anything is typed and no longer ride `main`,
+      // so a player would never see them unless they are captured here.
+      game = await loadStory(options.storyPath, undefined, undefined, OPENING_CHANNELS);
     } catch (error) {
       console.error(`Error loading story: ${error}`);
       process.exit(3);

@@ -546,9 +546,19 @@ export interface GoldenRecording {
  * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert';
+    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-count' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains';
     value?: string;
     reason?: string;
+    /**
+     * Channel this assertion reads, for the `channel-*` forms.
+     *
+     * `[OK: contains "…"]` reads the main prose, which is where a command's
+     * response goes. Everything else the story says — the banner, the prologue,
+     * the status line — travels on its own channel, and naming one here is how a
+     * transcript asserts on it. Must be declared in the transcript's `channels:`
+     * header, or there is nothing captured to read.
+     */
+    channelId?: string;
     eventCount?: number;
     assertTrue?: boolean;
     eventPosition?: number;
@@ -605,6 +615,15 @@ export interface Transcript {
     header: TranscriptHeader;
     commands: TranscriptCommand[];
     items?: TranscriptItem[];
+    /**
+     * Assertions about the game's opening, written above the first command.
+     *
+     * The banner and the prologue happen before anything is typed, so an
+     * assertion about them has no command to hang off. These run once, against
+     * what the story emitted on the way up. Absent when the transcript makes no
+     * claim about the opening, which is nearly all of them.
+     */
+    opening?: Assertion[];
     goals?: GoalDefinition[];
     comments: string[];
     /**
@@ -810,6 +829,37 @@ export declare function parseTranscript(content: string, filePath?: string): Tra
  * Validate a transcript for common issues
  */
 export declare function validateTranscript(transcript: Transcript): string[];
+```
+
+### serializer
+
+```typescript
+/**
+ * serializer.ts — write a parsed transcript back out as a `.transcript` file.
+ *
+ * The matched pair to `parseTranscript`: whatever the parser can read, this
+ * writes, and reading it back gives the same transcript. Editing tools work on
+ * the parsed transcript and re-emit the whole file on save, so an author never
+ * has to format one by hand — and never has to wonder whether saving cost them
+ * something they had typed.
+ *
+ * Formatting follows what transcripts in this repository already do most often,
+ * so adopting it is a small diff and none of it is a matter of taste.
+ *
+ * Public interface: `serializeTranscript(transcript) => string`.
+ * Owner context: @sharpee/transcript-tester (test authoring infrastructure).
+ */
+import { Transcript } from './types.js';
+/**
+ * Write a parsed transcript back out as `.transcript` source.
+ *
+ * Writing an already-written file changes nothing, so saving a transcript you
+ * edited one line of produces a one-line diff.
+ *
+ * @param transcript a transcript as produced by `parseTranscript`
+ * @returns the file's full text, ending in a newline
+ */
+export declare function serializeTranscript(transcript: Transcript): string;
 ```
 
 ### golden
@@ -1138,11 +1188,19 @@ export declare function runStartRecord(mode: 'tests' | 'chain', transcriptCount:
  * command result also carries `actualOutput` — what the story really printed
  * (ADR-282 D2), which the IDE's failure view shows against the blessed text.
  *
+ * With `captureOutput` (ADR-299's replay capture — `--capture-output`),
+ * `actualOutput` rides EVERY executed command result instead: the transcript
+ * interpreter exposing what each command printed, pass/fail irrelevant. The
+ * default stays failures-only so a green chain run's stream stays small.
+ *
  * @param result The transcript's result — including error-status results
  *   that never ran (zero commands).
  * @param index 0-based position in the run order.
+ * @param options `captureOutput` — carry `actualOutput` on every command.
  */
-export declare function transcriptRecords(result: TranscriptResult, index: number): TestResultRecord[];
+export declare function transcriptRecords(result: TranscriptResult, index: number, options?: {
+    captureOutput?: boolean;
+}): TestResultRecord[];
 /**
  * Build the run's coverage record (ADR-293 D15 / ADR-294 D13). Emitted once
  * per run, before `run-end`, only when the caller opted in (`--coverage`) —

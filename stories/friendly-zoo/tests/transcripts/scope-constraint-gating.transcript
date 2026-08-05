@@ -1,6 +1,10 @@
 title: Scope Constraint Parse Gating
 story: friendly-zoo
-description: ADR-271 acceptance 1 (via ADR-273) — the reachable scope constraint on petting is enforced at parse time. From the entrance the goats are out of scope and the command is refused by the parser; the identical command in the Petting Zoo dispatches to the pettable trait.
+description: ADR-271 acceptance 1 (via ADR-273) — the reachable scope
+  constraint on petting is enforced at parse time. From the entrance the goats
+  are out of scope and the command is refused by the parser; the identical
+  command in the Petting Zoo dispatches to the pettable trait.
+
 ---
 
 # The goats live in the Petting Zoo. From the entrance they are out of
@@ -15,6 +19,7 @@ description: ADR-271 acceptance 1 (via ADR-273) — the reachable scope constrai
 # Walk to where the goats are reachable.
 > south
 [OK: contains "gravel path"]
+
 > east
 [OK: contains "warm hay"]
 

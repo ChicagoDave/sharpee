@@ -66,7 +66,6 @@ description: Verify all GDT debug commands work correctly
 # DC (daemon/scheduler) - skipped, requires scheduler setup
 # > DC
 # [OK: contains "CLOCK"]
-
 # Test KL (kill entity)
 > KL troll
 [OK: contains "troll"]

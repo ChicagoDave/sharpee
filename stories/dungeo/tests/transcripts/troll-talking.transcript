@@ -6,13 +6,12 @@ description: TrollTalkingInterceptor owns the full talk-to-troll canon through
   bespoke talk_to_troll action is deleted; all phrasings ride the core talk
   patterns (ADR-229 R3) plus the story's `hello :target`. The conscious-troll
   check runs FIRST and briefly (troll combat RNG — one-good-run rule).
-
 seed: 42
+
 ---
 
 # Deterministic at the pinned seed (header): GDT ND immortality below covers
 # hostile RNG en route, and any residual variation is fixed by the seed.
-
 # Setup — lantern + teleport in one GDT session (no turns pass inside GDT)
 > GDT
 [OK: contains "GDT"]
@@ -36,14 +35,12 @@ seed: 42
 # Conscious troll: postReport override — GROWLS canon, not the
 # stdlib greeting (ADR-229 R4). Core R3 pattern carries it.
 # ============================================================
-
 > talk to troll
 [OK: contains "growls menacingly"]
 
 # ============================================================
 # KO the troll, then the preValidate veto renders the MDL line
 # ============================================================
-
 > GDT
 [OK: contains "GDT"]
 
@@ -64,4 +61,3 @@ seed: 42
 # Story `hello :target` slot pattern (replaces the old literal)
 > hello troll
 [OK: contains "can't hear you"]
-

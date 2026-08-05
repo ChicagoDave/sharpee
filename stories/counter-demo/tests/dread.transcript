@@ -1,22 +1,27 @@
-title: Counter real-path — dread rises each turn, gates death, survives save/restore
+title: Counter real-path — dread rises each turn, gates death, survives
+  save/restore
 story: counter-demo
-description: |
-  ADR-264 real-path through the bundle. A `define counter dread` rises 20/turn
-  (`raise dread by 20` in an `on every turn` clause), a comparison gates death
-  (`kill the player when dread is at least 100`), and the counter value survives
-  a save/restore. Proves declaration + mutation + condition read end to end.
+description: ADR-264 real-path through the bundle. A `define counter dread`
+  rises 20/turn (`raise dread by 20` in an `on every turn` clause), a
+  comparison gates death (`kill the player when dread is at least 100`), and
+  the counter value survives a save/restore. Proves declaration + mutation +
+  condition read end to end.
+
 ---
 
 # dread: 20, then 40 over two turns.
 > wait
 [OK: contains "Time passes"]
+
 > wait
 [OK: contains "Time passes"]
 
 # Save at dread 40, then push on — dread 60, 80.
 $save vigil
+
 > wait
 [OK: contains "Time passes"]
+
 > wait
 [OK: contains "Time passes"]
 
@@ -26,7 +31,9 @@ $restore vigil
 # From 40: three more turns reach 60, 80, 100 → `is at least 100` kills.
 > wait
 [OK: contains "Time passes"]
+
 > wait
 [OK: contains "Time passes"]
+
 > wait
 [EVENT: true, type="if.event.player.died"]

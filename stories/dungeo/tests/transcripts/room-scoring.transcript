@@ -6,7 +6,6 @@ description: Tests RVAL points for room entry and LIGHT-SHAFT achievement
 
 # Room scoring test - verify RVAL points awarded on first room entry
 # Kitchen should award 10 points on first visit
-
 > look
 [OK: contains "West of House"]
 
@@ -39,9 +38,8 @@ description: Tests RVAL points for room entry and LIGHT-SHAFT achievement
 > score
 [OK: contains "out of 616"]
 
-## LIGHT-SHAFT Achievement Test
+# # LIGHT-SHAFT Achievement Test
 # 10 points awarded when entering Bottom of Shaft while lit (from 1981 MDL source)
-
 > gdt
 [OK: contains "GDT ready"]
 

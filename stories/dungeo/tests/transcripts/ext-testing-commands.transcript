@@ -10,11 +10,13 @@ description: Test that $commands from ext-testing work in transcripts
 
 # Use $teleport to instantly go to Kitchen
 $teleport kitchen
+
 > look
 [OK: contains "Kitchen"]
 
 # Use $take to give brass lantern to player (multi-word name support)
 $take brass lantern
+
 > inventory
 [OK: contains "brass lantern"]
 
@@ -27,6 +29,7 @@ $state
 
 # Use $teleport again to go to Cellar (a dark room)
 $teleport cellar
+
 > look
 [OK: contains "Cellar"]
 

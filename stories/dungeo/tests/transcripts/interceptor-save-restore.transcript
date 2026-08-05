@@ -1,6 +1,7 @@
 title: Interceptor Bindings Survive Save/Restore (ADR-208 AC-9)
 story: dungeo
-description: The rug push interceptor fires again on restored state — bindings are per-world code wiring, not save data
+description: The rug push interceptor fires again on restored state — bindings
+  are per-world code wiring, not save data
 
 ---
 

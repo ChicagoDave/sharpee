@@ -1,14 +1,15 @@
 title: Get Torch Early (Save Lantern Battery)
 story: dungeo
-description: Priority path - get the torch ASAP to minimize lantern usage. Torch is unlimited, lantern has 330 turns.
+description: Priority path - get the torch ASAP to minimize lantern usage.
+  Torch is unlimited, lantern has 330 turns.
 seed: 42
+
 ---
 
 # ============================================================================
 # GOAL: Get torch as quickly as possible
 # Critical path: Attic (rope) -> Living Room (lantern, sword) -> Underground -> Dome Room -> Torch Room
 # ============================================================================
-
 [GOAL: Collect essential items from house]
 
 # Start at West of House
@@ -42,7 +43,6 @@ seed: 42
 # ============================================================================
 # GOAL: Enter underground and kill troll
 # ============================================================================
-
 [GOAL: Enter cellar and defeat troll]
 
 > down
@@ -65,7 +65,9 @@ seed: 42
 # so "sword"/"hands" are valid attack-turn outputs too.
 # (loop region resolved to its seed-42 sequence — ADR-294 migration)
 > attack troll with sword
+
 > attack troll with sword
+
 > attack troll with sword
 
 [END GOAL]
@@ -73,7 +75,6 @@ seed: 42
 # ============================================================================
 # GOAL: Navigate to Dome Room and use rope puzzle
 # ============================================================================
-
 [GOAL: Get to Dome Room]
 
 > north
@@ -89,7 +90,6 @@ seed: 42
 # ============================================================================
 # GOAL: Tie rope and descend to Torch Room
 # ============================================================================
-
 [GOAL: Get the torch]
 
 > tie rope to railing
@@ -103,7 +103,6 @@ seed: 42
 # ============================================================================
 # GOAL: Switch to torch, save lantern battery
 # ============================================================================
-
 [GOAL: Switch light sources]
 
 # Torch is always lit (perpetual flame) - no need to switch on
@@ -123,7 +122,6 @@ seed: 42
 > northwest
 
 # We'll get the painting on the way out of the bank
-
 [END GOAL]
 
 # Save checkpoint for next walkthrough

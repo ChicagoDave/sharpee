@@ -1,6 +1,7 @@
 title: Cage/Sphere Puzzle (Dingy Closet)
 story: dungeo
-description: Tests the cage trap when taking sphere, robot raising cage, and taking sphere after solved
+description: Tests the cage trap when taking sphere, robot raising cage, and
+  taking sphere after solved
 
 ---
 
@@ -35,7 +36,6 @@ description: Tests the cage trap when taking sphere, robot raising cage, and tak
 # ============================================================
 # Test: Take sphere with robot present → cage trap
 # ============================================================
-
 > take sphere
 [OK: contains "steel cage falls"]
 [OK: contains "poisonous gas"]
@@ -49,7 +49,6 @@ description: Tests the cage trap when taking sphere, robot raising cage, and tak
 # ============================================================
 # Test: Tell robot to raise cage → puzzle solved
 # ============================================================
-
 > tell robot to raise cage
 [OK: contains "cage shakes"]
 [OK: contains "hurled across"]
@@ -58,7 +57,6 @@ description: Tests the cage trap when taking sphere, robot raising cage, and tak
 # ============================================================
 # Test: Take sphere after cage raised → success
 # ============================================================
-
 > take sphere
 [OK: contains "Taken"]
 [EVENT: true, type="if.event.taken"]

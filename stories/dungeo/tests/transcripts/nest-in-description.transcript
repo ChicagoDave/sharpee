@@ -6,7 +6,6 @@ description: Nest should be mentioned in Up a Tree room description
 
 # Test ISSUE-011: Nest should be mentioned in Up a Tree room description
 # Verifies nest is discoverable in room description
-
 # Grab the mailbox contents first (parity with original test setup)
 > open mailbox
 [OK: contains "open"]

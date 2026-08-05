@@ -1,8 +1,9 @@
 title: Fernhill D1 — the long night keeps its schedule
 story: fernhill
-seed: 42
 description: The fixed timeline (`at turn 14`) fires on the clock — dusk
   deepens and the story crosses evening → midnight, wherever the player is.
+seed: 42
+
 ---
 
 > north

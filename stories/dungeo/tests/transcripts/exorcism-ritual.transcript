@@ -1,12 +1,12 @@
 title: Exorcism Ritual
 story: dungeo
 author: Sharpee Team
-description: Test the bell/book/candle exorcism to banish spirits at Entry to Hades
+description: Test the bell/book/candle exorcism to banish spirits at Entry to
+  Hades
 
 ---
 
 # Setup - get items and navigate to temple region
-
 > look
 [OK: contains "West of House"]
 
@@ -70,7 +70,6 @@ description: Test the bell/book/candle exorcism to banish spirits at Entry to Ha
 [OK: contains "Hades"]
 
 # Perform the exorcism ritual - ring bell, read book, light candles
-
 > ring bell
 [OK: contains "bell"]
 

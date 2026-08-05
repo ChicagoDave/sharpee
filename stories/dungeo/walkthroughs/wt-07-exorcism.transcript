@@ -1,6 +1,7 @@
 title: Exorcism (Bell/Book/Candle Ritual)
 story: dungeo
 description: Perform exorcism ritual at Entry to Hades. Restores from wt-06.
+
 ---
 
 # Restore state from wt-06 (player at Living Room with torch + lantern)
@@ -9,7 +10,6 @@ $restore wt-06
 # ============================================================================
 # GOAL: Verify starting state
 # ============================================================================
-
 [GOAL: Verify starting state]
 
 > look
@@ -22,7 +22,6 @@ $restore wt-06
 # GOAL: Navigate to Round Room
 # Living Room -> Cellar -> Troll Room -> EW Passage -> Round Room
 # ============================================================================
-
 [GOAL: Navigate to Round Room]
 
 > down
@@ -42,26 +41,41 @@ $restore wt-06
 # Use DO-UNTIL: go south (not east, since east=Grail Room would be excluded),
 # handle each possible landing, navigate back to Round Room, repeat.
 # ============================================================================
-
 [GOAL: Get to Grail Room via carousel]
 
 # (loop region resolved to its seed-42 sequence — ADR-294 migration)
 > south
+
 > northeast
+
 > south
+
 > northwest
+
 > south
+
 > northwest
+
 > south
+
 > southwest
+
 > south
+
 > east
+
 > south
+
 > northeast
+
 > south
+
 > northwest
+
 > south
+
 > northeast
+
 > south
 
 [END GOAL]
@@ -70,7 +84,6 @@ $restore wt-06
 # GOAL: Navigate to Altar and collect exorcism items
 # Grail Room -> UP -> Temple -> E -> Altar
 # ============================================================================
-
 [GOAL: Get exorcism items]
 
 > up
@@ -90,7 +103,6 @@ $restore wt-06
 # Altar -> W -> Temple -> D -> Grail Room -> E -> Narrow Crawlway
 # -> SW -> Mirror Room -> E -> Cave -> D -> Entrance to Hades
 # ============================================================================
-
 [GOAL: Get to Entrance to Hades]
 
 > west
@@ -112,7 +124,6 @@ $restore wt-06
 # Ring bell, read book, light candles (order doesn't matter)
 # Daemon checks completion each turn - wait after all three steps
 # ============================================================================
-
 [GOAL: Perform exorcism]
 
 # Step 1: Ring the bell
@@ -132,7 +143,6 @@ $restore wt-06
 # ============================================================================
 # GOAL: Verify exorcism success - passage east should be open
 # ============================================================================
-
 [GOAL: Verify exorcism success]
 
 > east
@@ -146,7 +156,6 @@ $restore wt-06
 # -> carousel WHILE -> Maze -> W -> Troll Room -> W -> Cellar
 # -> UP -> Living Room
 # ============================================================================
-
 [GOAL: Return to Living Room]
 
 # Back through Hades to Cave
@@ -167,80 +176,153 @@ $restore wt-06
 # Traverse carousel to reach Maze (Maze-01 has WEST -> Troll Room)
 # (loop region resolved to its seed-42 sequence — ADR-294 migration)
 > south
+
 > east
+
 > south
+
 > north
+
 > south
+
 > southwest
+
 > south
+
 > north
+
 > south
+
 > northwest
+
 > south
+
 > southwest
+
 > south
+
 > north
+
 > south
+
 > northwest
+
 > south
+
 > northwest
+
 > south
+
 > southeast
+
 > south
+
 > north
+
 > south
+
 > northwest
+
 > south
+
 > southeast
+
 > south
+
 > north
+
 > south
+
 > southeast
+
 > south
+
 > east
+
 > south
+
 > southeast
+
 > south
+
 > southeast
+
 > south
+
 > west
+
 > south
+
 > west
+
 # The thief camps the Round Room here at seed 42; one wait and he
 # stumbles off (already badly wounded) instead of finishing us.
 > wait
+
 > south
+
 > northwest
+
 > south
+
 > west
+
 > south
+
 > west
+
 > south
+
 > northwest
+
 > south
+
 > northwest
+
 > south
+
 > southeast
+
 > south
+
 > north
+
 > south
+
 > southwest
+
 > south
+
 > southeast
+
 > south
+
 > southeast
+
 > south
+
 > east
+
 > south
+
 > northwest
+
 > south
+
 > southwest
+
 > south
+
 > north
+
 > south
+
 > east
+
 > south
+
 > southwest
+
 > south
 
 # Maze-01 -> Troll Room -> Cellar -> Living Room
@@ -255,7 +337,6 @@ $restore wt-06
 # ============================================================================
 # GOAL: Verify final state for next segment
 # ============================================================================
-
 [GOAL: Verify inventory for next segment]
 
 > inventory

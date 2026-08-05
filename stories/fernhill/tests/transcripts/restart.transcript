@@ -1,10 +1,11 @@
 title: Fernhill — RESTART reboots the story (ADR-248 acceptance)
 story: fernhill
 description: The original Chord-path restart repro (restart used to throw
-  "assignRoom: room 'r01' not found" under the hood and render as
-  "I don't understand that."). Under ADR-248 the client/harness reboots
-  with a fully fresh ChordStory rebuilt from source, so restart acks and
-  the opening state comes back clean.
+  "assignRoom: room 'r01' not found" under the hood and render as "I don't
+  understand that."). Under ADR-248 the client/harness reboots with a fully
+  fresh ChordStory rebuilt from source, so restart acks and the opening state
+  comes back clean.
+
 ---
 
 # Establish position away from the opening room

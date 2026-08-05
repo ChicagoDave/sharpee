@@ -1,6 +1,7 @@
 title: Cake Mechanics (Tea Room / Well Area)
 story: dungeo
-description: Tests eat-me cake teleport, blue cake return, red cake pool dissolve, and cake visibility
+description: Tests eat-me cake teleport, blue cake return, red cake pool
+  dissolve, and cake visibility
 
 ---
 
@@ -34,7 +35,6 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # ============================================================
 # Test 1: Eat-Me cake teleports to Posts Room
 # ============================================================
-
 > eat eat-me cake
 [OK: contains "shrunk"]
 
@@ -45,7 +45,6 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # ============================================================
 # Test 2: Navigate east to Pool Room from Posts Room
 # ============================================================
-
 > east
 [OK: contains "Pool Room"]
 
@@ -60,14 +59,12 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # ============================================================
 # Test 3: Go back west to Posts Room
 # ============================================================
-
 > west
 [OK: contains "Posts Room"]
 
 # ============================================================
 # Test 4: Blue cake teleports back to Tea Room from Posts Room
 # ============================================================
-
 > eat blue cake
 [OK: contains "normal size"]
 
@@ -77,7 +74,6 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # ============================================================
 # Test 5: Eat red cake - tastes terrible but no death
 # ============================================================
-
 > eat red cake
 [OK: contains "awful"]
 
@@ -89,10 +85,8 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # Test 6: Navigate back to Pool Room to throw red cake
 # We ate the red cake already, so let's test pool via GDT
 # ============================================================
-
 # Need to get another red cake... we ate it already
 # Let's test the throwing path with GDT
-
 # First go to Pool Room
 > east
 [OK: contains "Posts Room"]
@@ -125,7 +119,6 @@ description: Tests eat-me cake teleport, blue cake return, red cake pool dissolv
 # ============================================================
 # Test 7: Tea Room → Posts Room → Pool Room navigation
 # ============================================================
-
 > west
 [OK: contains "Posts Room"]
 

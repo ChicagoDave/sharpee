@@ -1,11 +1,11 @@
 title: Hunger real-path — starving across the bands, then death
 story: hunger-demo
-description: |
-  ADR-263 / ADR-262 #7 — the forcing function. A `use hunger` meter runs on the
-  banded-scalar crossing engine through the real bundle, proving the engine is
-  scalar-agnostic (not score-shaped): severity grows on a clock (grows 3/turn),
-  crosses each band (author `says` phrases, then the platform fallback for a
-  rung with none), and reaching `fatal` kills the player.
+description: ADR-263 / ADR-262 #7 — the forcing function. A `use hunger` meter
+  runs on the banded-scalar crossing engine through the real bundle, proving
+  the engine is scalar-agnostic (not score-shaped): severity grows on a clock
+  (grows 3/turn), crosses each band (author `says` phrases, then the platform
+  fallback for a rung with none), and reaching `fatal` kills the player.
+
 ---
 
 # Turn 1 — severity 3 reaches `peckish` (the author's `says` phrase).

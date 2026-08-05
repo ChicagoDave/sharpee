@@ -1,6 +1,8 @@
 title: Maze Cyclops Goal (Gallery, Maze, Cyclops)
 story: dungeo
-description: Get painting from Gallery, skeleton key from maze, solve cyclops. Restores from wt-02.
+description: Get painting from Gallery, skeleton key from maze, solve cyclops.
+  Restores from wt-02.
+
 ---
 
 # Restore state from wt-02 (player at Gallery with torch, portrait, zorkmid)
@@ -12,7 +14,6 @@ $restore wt-02
 # ============================================================================
 # GOAL: Navigate to Troll Room for maze
 # ============================================================================
-
 [GOAL: Get to Troll Room]
 
 > south
@@ -32,7 +33,6 @@ $restore wt-02
 # Path per 1981 MDL: S → MAZE1 → E → MAZE4 → W → MAZE3 → UP → MAZE5 (get items)
 # Items are in MAZE5 (not Dead End per old implementation)
 # ============================================================================
-
 [GOAL: Get skeleton key and incense from maze]
 
 # South to Maze-1
@@ -59,7 +59,6 @@ $restore wt-02
 # GOAL: Navigate maze to Cyclops Room
 # Path per 1981 MDL: MAZE5 SW → MAZE6 E → MAZE7 S → MAZ15 NE → CYCLO
 # ============================================================================
-
 [GOAL: Get to Cyclops Room]
 
 # Southwest to Maze-6
@@ -80,7 +79,6 @@ $restore wt-02
 # GOAL: Solve cyclops and get to Living Room
 # Say "odysseus" or "ulysses" to make cyclops flee
 # ============================================================================
-
 [GOAL: Solve cyclops and reach Living Room]
 
 # Solve the cyclops puzzle - say the name of his nemesis
@@ -88,6 +86,7 @@ $restore wt-02
 
 # Go north to Strange Passage, then east to Living Room
 > north
+
 > east
 
 [END GOAL]
@@ -95,7 +94,6 @@ $restore wt-02
 # ============================================================================
 # GOAL: Verify we made it to Living Room
 # ============================================================================
-
 [GOAL: Confirm Living Room arrival with treasures]
 
 # Verify we're in Living Room
@@ -109,7 +107,6 @@ $restore wt-02
 # ============================================================================
 # GOAL: Store treasures and setup for next segment
 # ============================================================================
-
 [GOAL: Store treasures in trophy case]
 
 > open trophy case

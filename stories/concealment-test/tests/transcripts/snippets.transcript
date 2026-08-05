@@ -1,6 +1,7 @@
 title: Room-Description Snippets (ADR-209)
 story: concealment-test
-description: End-to-end splice pass - cycling variants, save/restore counters, mentions gate, duplicate markers, initial/standard shared counters
+description: End-to-end splice pass - cycling variants, save/restore counters,
+  mentions gate, duplicate markers, initial/standard shared counters
 
 ---
 

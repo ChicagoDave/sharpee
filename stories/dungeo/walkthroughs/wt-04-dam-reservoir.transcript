@@ -1,6 +1,8 @@
 title: Dam Puzzle (Loud Room, Dam Controls, Drain Reservoir)
 story: dungeo
-description: Get platinum bar from Loud Room, collect dam area items, drain reservoir. Restores from wt-03.
+description: Get platinum bar from Loud Room, collect dam area items, drain
+  reservoir. Restores from wt-03.
+
 ---
 
 # Restore state from wt-03 (player at Living Room with torch)
@@ -10,7 +12,6 @@ $restore wt-03
 # ============================================================================
 # GOAL: Prepare and head to Loud Room
 # ============================================================================
-
 [GOAL: Get platinum bar]
 
 # Take lantern for later use
@@ -44,7 +45,6 @@ $restore wt-03
 # ============================================================================
 # GOAL: Navigate to Dam area via Damp Cave
 # ============================================================================
-
 [GOAL: Navigate to Dam and collect items]
 
 # Loud Room -> UP -> Damp Cave -> EAST -> Dam
@@ -74,7 +74,6 @@ $restore wt-03
 # ============================================================================
 # GOAL: Drain reservoir at Dam
 # ============================================================================
-
 [GOAL: Drain reservoir]
 
 # Maintenance Room -> South -> Dam Lobby -> South -> Dam
@@ -90,7 +89,6 @@ $restore wt-03
 # ============================================================================
 # GOAL: Return to Living Room
 # ============================================================================
-
 [GOAL: Return to Living Room and store treasure]
 
 # Dam -> E -> Damp Cave -> S -> Loud Room -> W -> N/S Passage
@@ -120,7 +118,6 @@ $restore wt-03
 # GOAL: Mail order puzzle - Don Woods stamp (1 trophy case point)
 # MDL: act1.254:60-61, act3.199:1423-1446
 # ============================================================================
-
 [GOAL: Get Don Woods stamp via mail order]
 
 # Read the matchbook to see the brochure advertisement
@@ -169,7 +166,6 @@ $restore wt-03
 # ============================================================================
 # GOAL: Store treasures and set up for next segment
 # ============================================================================
-
 [GOAL: Store platinum bar and stamp in trophy case]
 
 > open trophy case

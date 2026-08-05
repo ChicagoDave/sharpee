@@ -1,13 +1,12 @@
 title: Cyclops Magic Word
 story: dungeo
 description: Test saying "odysseus" or "ulysses" to scare away the cyclops
-
 seed: 42
+
 ---
 
 # Deterministic at the pinned seed (header): GDT ND immortality below covers
 # hostile RNG en route, and any residual variation is fixed by the seed.
-
 # GDT ND = immortality: this tests the magic word, not player mortality
 > gdt
 [OK: contains "GDT"]
@@ -96,4 +95,3 @@ seed: 42
 > look
 [OK: contains "Cyclops Room"]
 [FAIL: contains "huge cyclops"]
-

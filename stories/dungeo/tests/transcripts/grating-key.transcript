@@ -1,7 +1,8 @@
 title: Grating and Skeleton Key Puzzle
 story: dungeo
 author: Sharpee Team
-description: Test the grating puzzle — locked/closed blocking, unlock with skeleton key, open, traverse both directions (ISSUE-053 regression)
+description: Test the grating puzzle — locked/closed blocking, unlock with
+  skeleton key, open, traverse both directions (ISSUE-053 regression)
 
 ---
 

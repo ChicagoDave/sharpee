@@ -1,8 +1,8 @@
 title: STATE assertion resolution
 story: friendly-zoo
-description: Pins the tester's entity resolution for [STATE] assertions —
-  the reserved `player` keyword (works whatever the player entity is named)
-  and alias resolution for the contains argument (transcript-tester P4).
+description: Pins the tester's entity resolution for [STATE] assertions — the
+  reserved `player` keyword (works whatever the player entity is named) and
+  alias resolution for the contains argument (transcript-tester P4).
 
 ---
 

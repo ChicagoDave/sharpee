@@ -1,6 +1,8 @@
 title: Trophy Case Multi-Put Scoring (ADR-228 D4)
 story: dungeo
-description: Regression test for the live bug where "put all in case" deposited treasures without awarding trophy score (putting's multi-object path bypassed all interceptor hooks)
+description: Regression test for the live bug where "put all in case"
+  deposited treasures without awarding trophy score (putting's multi-object
+  path bypassed all interceptor hooks)
 
 ---
 
@@ -27,7 +29,6 @@ description: Regression test for the live bug where "put all in case" deposited 
 # Test: put all in case — EVERY deposited treasure must award
 # its trophy value (egg 5 + canary 2 = 7)
 # ============================================================
-
 > put all in case
 [OK: contains "egg"]
 [OK: contains "canary"]

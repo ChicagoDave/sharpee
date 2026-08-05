@@ -1,13 +1,13 @@
 title: Troll Axe Visibility
 story: dungeo
-description: Tests that the axe is held by troll, can't be taken (white-hot), and both vanish on death
-
+description: Tests that the axe is held by troll, can't be taken (white-hot),
+  and both vanish on death
 seed: 42
+
 ---
 
 # Deterministic at the pinned seed (header): GDT ND immortality below covers
 # hostile RNG en route, and any residual variation is fixed by the seed.
-
 # Get lantern first; ND = immortality (the conscious troll's bystander blows
 # can kill a score-0 player — this tests axe visibility, not mortality)
 > GDT
@@ -66,4 +66,3 @@ seed: 42
 # Can't examine axe - it's gone
 > examine axe
 [OK: contains "can't see"]
-

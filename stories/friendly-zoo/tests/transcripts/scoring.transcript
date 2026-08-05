@@ -1,18 +1,16 @@
 title: Zoo golden gate — scoring: visit/feed awards, already-fed
 story: friendly-zoo
-description: Scoring as behavior-parity proof (AC-2 scoring category):
-  room visits award 5 each (Petting Zoo, Aviary), feed-the-goats awards 10,
-  petting awards nothing, and the already-fed refusal leaves the score
-  unchanged. Authored against the TS story 2026-07-11, then frozen;
-  max-score assertions revised 100 → 85 in Phase C P5 (gate-delta audit
-  Entry 1, David sign-off 2026-07-12).
-
-  Wording revised again 2026-07-24 (ADR-260 D3/D4): the zoo declares
-  `use scoring` with no `ranks` block, so SCORE now answers `score_display`
-  — "scored N out of a possible 85" — where it used to answer
+description: Scoring as behavior-parity proof (AC-2 scoring category): room
+  visits award 5 each (Petting Zoo, Aviary), feed-the-goats awards 10, petting
+  awards nothing, and the already-fed refusal leaves the score unchanged.
+  Authored against the TS story 2026-07-11, then frozen; max-score assertions
+  revised 100 → 85 in Phase C P5 (gate-delta audit Entry 1, David sign-off
+  2026-07-12). Wording revised again 2026-07-24 (ADR-260 D3/D4): the zoo
+  declares `use scoring` with no `ranks` block, so SCORE now answers
+  `score_display` — "scored N out of a possible 85" — where it used to answer
   `score_with_rank` with a percentage-band rank stdlib invented. That free
-  rank is deleted; a story that wants one writes a ladder. This transcript
-  is therefore also the coverage for ADR-261 acceptance #4: scoring on, no
+  rank is deleted; a story that wants one writes a ladder. This transcript is
+  therefore also the coverage for ADR-261 acceptance #4: scoring on, no
   ladder, a score and no rank.
 
 ---

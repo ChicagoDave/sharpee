@@ -1,6 +1,10 @@
 title: Zoo Walkthrough 2 — Aviary and Gift Shop
 story: friendly-zoo
-description: Chained full-playthrough, chapter 2 of 5. The parrot's cycling flavor with the once-only aside, cycle position surviving save/restore (absorbs the old wt-05 choice-cycle proof, ADR-196 C2), and the camera pickup. Continues from wt-01.
+description: Chained full-playthrough, chapter 2 of 5. The parrot's cycling
+  flavor with the once-only aside, cycle position surviving save/restore
+  (absorbs the old wt-05 choice-cycle proof, ADR-196 C2), and the camera
+  pickup. Continues from wt-01.
+
 ---
 
 # Into the aviary (visit score) — the parrot notices new arrivals.

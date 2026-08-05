@@ -1,13 +1,13 @@
 title: Implicit Take for Reading (ADR-104 - Inference Disabled)
 story: dungeo
-description: Test implicit take for reading action (inference feature is disabled)
+description: Test implicit take for reading action (inference feature is
+  disabled)
 
 ---
 
 # Note: ADR-104 implicit inference has been intentionally disabled.
 # Pronouns now always refer to the pronoun context, even if the entity
 # doesn't meet action requirements. This makes pronouns predictable.
-
 # Open the mailbox to set pronoun context
 > open mailbox
 [OK: contains "open"]

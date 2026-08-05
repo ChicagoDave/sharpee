@@ -48,5 +48,6 @@ description: Test entering the Squeaky Room with garlic - bat should cower
 # Now walk northwest into Squeaky Room - bat should cower from garlic in sack
 > northwest
 [OK: contains "Squeaky"]
+
 # TODO: Bat behavior not yet implemented - when implemented, add this:
 # [EVENT: true, type="npc.emoted" messageId="dungeo.bat.cowers"]

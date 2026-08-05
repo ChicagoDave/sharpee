@@ -1,6 +1,8 @@
 title: ADR-287 literal text blocks
 story: dungeo
-description: Real-path proof that text-block assertions match real story output headless.
+description: Real-path proof that text-block assertions match real story
+  output headless.
+
 ---
 
 # The banner rides along with the first command's output, so this one only

@@ -1,6 +1,13 @@
 title: Zoo Walkthrough 6 — Occupants and the Pin Rack
 story: friendly-zoo
-description: Chained chapter 6 (CP6 rejoin of excluded wt-02-slot-occupants, plus the Z2 pins marker). The zoo.story `phrase present:` blocks feed {slot:here} via ADR-212 slot entries — 0/1/N occupant clauses, keeper absent after his wt-04 departure — and the Gift Shop's {pins} cycling fragment splices with the platform-owned clause comma, including the explicit `nothing` variant. Runs after wt-05 with --chain; after-hours state persists.
+description: Chained chapter 6 (CP6 rejoin of excluded wt-02-slot-occupants,
+  plus the Z2 pins marker). The zoo.story `phrase present:` blocks feed
+  {slot:here} via ADR-212 slot entries — 0/1/N occupant clauses, keeper absent
+  after his wt-04 departure — and the Gift Shop's {pins} cycling fragment
+  splices with the platform-owned clause comma, including the explicit
+  `nothing` variant. Runs after wt-05 with --chain; after-hours state
+  persists.
+
 ---
 
 # --- 1 occupant: the macaw is fixed in the Aviary (we ended wt-05 here) ---

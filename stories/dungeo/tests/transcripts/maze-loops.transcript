@@ -25,7 +25,6 @@ description: Test maze self-loops and dead end connections per 1981 MDL source
 # ============================================================================
 # TEST SELF-LOOPS (5 in original maze)
 # ============================================================================
-
 # Self-loop 1: MAZE1 N → MAZE1
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
@@ -134,7 +133,6 @@ description: Test maze self-loops and dead end connections per 1981 MDL source
 # ============================================================================
 # TEST DEAD ENDS (4 in 1981 MDL: DEAD1-4)
 # ============================================================================
-
 # Dead End-1: Accessed via MAZE4 E, exits S to MAZE4
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]

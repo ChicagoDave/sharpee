@@ -1,11 +1,11 @@
 title: GDT Unrestricted Access
 story: dungeo
-description: Tests that GDT can access and manipulate entities regardless of visibility
+description: Tests that GDT can access and manipulate entities regardless of
+  visibility
 
 ---
 
 # Uses the parsed command transformer to bypass entity validation
-
 # Enter GDT mode
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]

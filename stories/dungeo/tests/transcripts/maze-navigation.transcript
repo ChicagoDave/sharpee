@@ -1,13 +1,12 @@
 title: Maze Navigation
 story: dungeo
 description: Test maze room connections per 1981 MDL source
-
 seed: 42
+
 ---
 
 # Deterministic at the pinned seed (header): GDT ND immortality below covers
 # hostile RNG en route, and any residual variation is fixed by the seed.
-
 # Setup: Get lantern and teleport to Grating Room
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
@@ -39,7 +38,6 @@ seed: 42
 # TEST: Grating Room to Cyclops Room path
 # Path: GR SW→MAZ11 SW→MAZ12 W→MAZE5 SW→MAZE6 E→MAZE7 S→MAZ15 NE→CYCLO
 # ============================================================================
-
 # Enter the maze - southwest leads to Maze-11 (not Maze-12!)
 > southwest
 [OK: contains "maze"]
@@ -94,7 +92,6 @@ seed: 42
 # TEST: Troll Room to Maze entry and navigation
 # Path: Troll S→MAZE1 E→MAZE4 W→MAZE3 UP→MAZE5
 # ============================================================================
-
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
@@ -134,7 +131,6 @@ seed: 42
 # TEST: Deeper maze navigation (Maze-9 to Maze-11 area)
 # Path: MAZE9 E→MAZ11 NE→GRAT (Grating Room)
 # ============================================================================
-
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
@@ -158,7 +154,6 @@ seed: 42
 # TEST: Maze-14/15 connections (near Cyclops exit)
 # Path: MAZ14 W→MAZ15 NE→CYCLO
 # ============================================================================
-
 > gdt
 [OK: contains "GAME DEBUGGING TOOL"]
 
@@ -182,4 +177,3 @@ seed: 42
 > west
 [OK: contains "maze"]
 [EVENT: true, type="if.event.actor_moved"]
-

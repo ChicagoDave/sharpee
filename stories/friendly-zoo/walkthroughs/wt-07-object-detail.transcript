@@ -1,6 +1,11 @@
 title: Zoo Walkthrough 7 — Object Detail by Lamplight
 story: friendly-zoo
-description: Chained chapter 7 (CP6 rejoin of excluded wt-03-slot-detail). The zoo.story `phrase detail while …:` blocks (Z3b) feed the examine {slot:detail} — the radio's switchable hum via SwitchableTrait.detailWhenOn, the flashlight's on/lit pair via both trait fields. 0/1/N detail clauses. Runs after wt-06 with --chain; the flashlight has been on since wt-04.
+description: Chained chapter 7 (CP6 rejoin of excluded wt-03-slot-detail). The
+  zoo.story `phrase detail while …:` blocks (Z3b) feed the examine
+  {slot:detail} — the radio's switchable hum via SwitchableTrait.detailWhenOn,
+  the flashlight's on/lit pair via both trait fields. 0/1/N detail clauses.
+  Runs after wt-06 with --chain; the flashlight has been on since wt-04.
+
 ---
 
 # --- Back to the Supply Room (the staff gate has stood open since wt-04) ---

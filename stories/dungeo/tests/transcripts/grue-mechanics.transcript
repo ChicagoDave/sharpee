@@ -1,12 +1,12 @@
 title: Grue Death Mechanics
 story: dungeo
 author: Sharpee Team
-description: Test grue death mechanics from FORTRAN verbs.f - 25% survival in dark rooms
+description: Test grue death mechanics from FORTRAN verbs.f - 25% survival in
+  dark rooms
 
 ---
 
 # Setup: Get to the cellar with lamp
-
 > north
 [OK: contains "North of House"]
 

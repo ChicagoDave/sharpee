@@ -204,6 +204,19 @@ reach all of:
 `[STATE: true|false, expression]` · `[GOAL: name]`/`[END GOAL]` · `#` comments
 · `$save`/`$restore` · `$`-prefixed ext-testing commands.
 
+`[CHANNEL: <id>, contains "…"]` and `[CHANNEL: <id>, not contains "…"]` read a
+named channel instead of the main prose (added 2026-08-04, session 088e3e).
+Main carries a command's response; everything else the story says — the banner,
+the prologue, the status line — travels on its own channel, and naming one is
+how a transcript asserts on it. The channel must appear in the header's
+`channels:` list or the assertion fails by name saying so, rather than reading
+an empty string and passing a `not contains` for the wrong reason.
+
+**Assertions may also appear above the first command**, where they are about the
+game's opening — the banner and the prologue happen before anything is typed, so
+they have no command to hang off. They run once and report as `(opening)`. This
+position previously parsed and was then silently discarded.
+
 `[EVENTS: N]` is absent from that list deliberately — D16 drops it from the
 grammar.
 
@@ -528,11 +541,27 @@ all 185 files, 2026-08-04.
   blank line separates an assertion from its block** — the one semantic rule,
   established in D11.
 
-**The normalization diff is mostly blank lines.** ~1689 blank-line insertions
-before stanzas, 72 before separators, 40 header re-folds, 34 comment
-respacings, 11 header reorders, 4 indent corrections, 2 blank lines after a
-separator. Every one is semantics-preserving under D11's measurements, and the
-gate is unchanged: a byte-identical walkthrough chain across the commit.
+**The normalization diff, as measured after the fact** (2026-08-04, session
+088e3e — these numbers replace this section's original forecast, which was
+wrong in both magnitude and shape):
+
+| | files | lines |
+| --- | ---: | ---: |
+| transcripts rewritten | 152 of 185 | `+629 / -533` |
+| blank lines | | `+222 / -235` |
+| content lines | | `+407 / -296` |
+
+The forecast predicted ~1689 blank-line insertions and **no removals**. Two
+things account for the gap. The corpus was already far closer to canonical than
+the survey implied, so few blanks needed adding. And the model carries no
+blank-line item, so 235 blank lines used for vertical spacing were dropped —
+111 between a banner comment and its `[GOAL:]`, 53 between a comment and its
+command, 54 inside comment runs. Ruled acceptable: these transcripts are
+generated rather than hand-authored, so there is no author spacing to preserve
+and no `blankBefore` model field is warranted.
+
+The gate is unchanged and held: a byte-identical walkthrough chain across the
+commit, 952 passing on both sides.
 
 ---
 
@@ -552,6 +581,16 @@ the absence of a child process in the tool's run.
 (185 files): parse → serialize → parse yields a model equal to the first.
 *SELF-VERIFYING* — this is the test that proves nothing the parser silently
 drops is deleted on save.
+
+**What AC-3 and AC-4 cannot see** (added 2026-08-04, session 088e3e, after both
+gates passed through two separate losses). They are round-trip gates: they
+compare the model against itself. Anything the *parser* discards on the first
+read is already gone from both sides, so they agree about a file that has
+already lost it. Two real cases hit this — folded header values being dropped
+(176 lines across 41 files) and blank lines between comments being collapsed —
+and both were green through AC-3 and AC-4 the whole time. Do not treat these
+criteria as proving nothing is lost; that claim requires checking the parser
+against the file, which is a different test.
 
 **AC-4 (D17) — the serializer is idempotent.** Serializing an already-canonical
 file is a byte no-op. *SELF-VERIFYING*, and it is the property that makes D11's

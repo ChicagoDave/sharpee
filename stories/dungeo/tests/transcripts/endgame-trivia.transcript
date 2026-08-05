@@ -5,7 +5,6 @@ description: Test the Dungeon Master trivia puzzle at the Dungeon Entrance
 ---
 
 # Tests the knock and answer mechanics at the Dungeon Entrance.
-
 # Enter GDT mode (game commands only work after EX — GDT is an input mode)
 > gdt
 [OK: contains "GDT ready"]

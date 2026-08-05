@@ -29,6 +29,61 @@ describe('GameEngine', () => {
     story = new MinimalTestStory();
   });
 
+  describe('story config validation', () => {
+    /**
+     * Every required config field is read unguarded somewhere in setStory, so
+     * without this check the first field to be touched decided the error — an
+     * author omitting `authors` got a TypeError about `.join` rather than being
+     * told which field was missing.
+     */
+    const withConfig = (over: Record<string, unknown>) => {
+      const broken = new MinimalTestStory();
+      (broken as any).config = { ...(broken as any).config, ...over };
+      return broken;
+    };
+
+    it('rejects a story whose config omits authors, by name', () => {
+      const { engine } = setupTestEngine();
+
+      expect(() => engine.setStory(withConfig({ authors: undefined })))
+        .toThrow('Missing required story configuration fields');
+    });
+
+    it('rejects an empty authors array', () => {
+      const { engine } = setupTestEngine();
+
+      expect(() => engine.setStory(withConfig({ authors: [] })))
+        .toThrow('Missing required story configuration fields');
+    });
+
+    it('rejects a missing title', () => {
+      const { engine } = setupTestEngine();
+
+      expect(() => engine.setStory(withConfig({ title: '' })))
+        .toThrow('Missing required story configuration fields');
+    });
+
+    it('rejects before running any of the story', () => {
+      const { engine } = setupTestEngine();
+      const broken = withConfig({ authors: undefined });
+      const createPlayer = vi.spyOn(broken, 'createPlayer');
+      const initializeWorld = vi.spyOn(broken, 'initializeWorld');
+
+      expect(() => engine.setStory(broken)).toThrow();
+
+      // Rejected up front: none of the story's own code was invoked, so a bad
+      // config cannot half-build a world before it is caught.
+      expect(createPlayer).not.toHaveBeenCalled();
+      expect(initializeWorld).not.toHaveBeenCalled();
+    });
+
+    it('accepts a valid config unchanged', () => {
+      const { engine } = setupTestEngine();
+
+      expect(() => engine.setStory(story)).not.toThrow();
+    });
+  });
+
   describe('initialization', () => {
     it('should create an engine with standard setup', () => {
       const { engine, world, player } = setupTestEngine();

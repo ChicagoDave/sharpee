@@ -1,12 +1,12 @@
 title: Lamp Article Test (ISSUE-013)
 story: dungeo
-description: Test that lamp "switches on" message uses correct article capitalization
+description: Test that lamp "switches on" message uses correct article
+  capitalization
 
 ---
 
 # Test ISSUE-013: Lamp "switches on" message should have "The" article
 # Verifies: "{the:cap:target} switches on, banishing the darkness."
-
 # Use GDT to get lantern and go to a dark room
 > gdt
 [OK: contains "GDT ready"]

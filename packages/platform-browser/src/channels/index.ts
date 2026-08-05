@@ -29,6 +29,7 @@ import {
   createInfoChannelRenderer,
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
+  createBannerChannelRenderer,
 } from './info.js';
 import {
   createDeathChannelRenderer,
@@ -68,6 +69,7 @@ export {
   createInfoChannelRenderer,
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
+  createBannerChannelRenderer,
   createDeathChannelRenderer,
   createEndgameChannelRenderer,
   createScoreNotifyChannelRenderer,
@@ -181,6 +183,7 @@ export function registerDefaultBrowserRenderers(
   renderer.registerRenderer('ifid', createIfidChannelRenderer(layout.meta));
   renderer.registerSlot('prologue', layout.prologue);
   renderer.registerRenderer('prologue', createPrologueChannelRenderer(layout.prologue));
+  renderer.registerRenderer('banner', createBannerChannelRenderer(layout.main));
   renderer.registerRenderer('death', createDeathChannelRenderer(layout.notify));
   renderer.registerRenderer('endgame', createEndgameChannelRenderer(layout.notify));
   renderer.registerRenderer('score_notify', createScoreNotifyChannelRenderer(layout.notify));

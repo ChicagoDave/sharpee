@@ -1,6 +1,7 @@
 title: Melt Glacier Verb
 story: dungeo
-description: Tests the MELT verb at the glacier - non-flaming fails, flaming kills player
+description: Tests the MELT verb at the glacier - non-flaming fails, flaming
+  kills player
 
 ---
 

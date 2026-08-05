@@ -2,8 +2,8 @@ title: Cloak golden gate — cloak handling and the brass hook
 story: cloak-of-darkness
 description: Wearing, removing, hanging (custom verb), taking, and alias
   resolution for the cloak and hook per cloak.story. The `hang` verb is
-  `define verb hang or hook means put (something) on (something)`.
-  ADR-210 AC-1 golden gate (frozen 2026-07-10).
+  `define verb hang or hook means put (something) on (something)`. ADR-210
+  AC-1 golden gate (frozen 2026-07-10).
 
 ---
 

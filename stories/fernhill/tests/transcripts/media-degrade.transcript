@@ -1,11 +1,12 @@
 title: Fernhill G4/G5 — media and channel beats degrade legibly in text
 story: fernhill
+description: The browser-presentation layer (ambient wind, boiler thump, folly
+  photograph, clock channel) is gated on `client has` flags that all read
+  FALSE in the text client. Every media beat's turn must show its prose
+  degradation and never leak an asset name, event key, or payload into the
+  transcript.
 seed: 42
-description: The browser-presentation layer (ambient wind, boiler thump,
-  folly photograph, clock channel) is gated on `client has` flags that all
-  read FALSE in the text client. Every media beat's turn must show its
-  prose degradation and never leak an asset name, event key, or payload
-  into the transcript.
+
 ---
 
 # --- Grounds ambient (play ambient night-wind, gated on sound): the

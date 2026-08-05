@@ -4111,6 +4111,34 @@ export declare const infoChannel: IOChannel<StoryInfoPayload>;
  */
 export declare const ifidChannel: IOChannel<string>;
 /**
+ * Structured opening banner (ADR-163 §channel content types).
+ *
+ * Each piece is its own property rather than a run of prose lines, so a client
+ * decides how the title, the versions and the credits are laid out instead of
+ * receiving somebody else's paragraph breaks. A test can name one piece.
+ */
+export interface BannerData {
+    title?: string;
+    storyVersion?: string;
+    platformVersion?: string;
+    subtitle?: string;
+    credits?: string[];
+    /** Story-supplied closing lines (`game.banner.story-tail`). */
+    tail?: string[];
+}
+/**
+ * `banner` — replace-mode opening banner, carried as structured JSON.
+ *
+ * Its own channel rather than part of `main` so the opening is addressable:
+ * the banner, the prologue and the first command's response become three
+ * things a transcript can check separately, and a client can put the banner
+ * wherever it wants instead of wherever the prose happened to land.
+ *
+ * The engine builds these blocks once, from `game.started`, so a turn that
+ * produces none emits nothing.
+ */
+export declare const bannerChannel: IOChannel<BannerData>;
+/**
  * `prologue` — replace-mode pre-banner prologue text (ADR-298 D3).
  * Closure reads `storyInfo.prologue` — resolved text the engine wrote
  * at story start (phrase references already resolved through the
@@ -4198,6 +4226,7 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly INFO: "info";
     readonly IFID: "ifid";
     readonly PROLOGUE: "prologue";
+    readonly BANNER: "banner";
     readonly DEATH: "death";
     readonly ENDGAME: "endgame";
     readonly SCORE_NOTIFY: "score_notify";
@@ -4446,6 +4475,16 @@ export type SoundChannelId = typeof SOUND_CHANNEL_IDS[number];
  * from world state directly by the score/turn/location channels.
  */
 export declare const MAIN_KEYS: ReadonlySet<string>;
+/**
+ * Block keys whose content flows into the `banner` channel.
+ *
+ * The opening banner used to ride `main`, which meant the title, the version
+ * lines and the credits all arrived glued to whatever the first command
+ * printed — one undivided lump that a test could only assert on as a whole.
+ * On its own channel it is addressable: the banner, the prologue and the first
+ * command's response become three things a transcript can check separately.
+ */
+export declare const BANNER_KEYS: ReadonlySet<string>;
 ```
 
 ### index

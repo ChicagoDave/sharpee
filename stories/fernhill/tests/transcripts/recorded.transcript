@@ -1,18 +1,19 @@
 title: Recorded: recorded
 story: fernhill
 seed: 42
+
 ---
 
 > look
 [SKIP]
+
 # The play session's own opening turn, replayed so the story banner
 # lands here. A fresh run prints it with the first command, and it
 # would otherwise be prepended to the first blessed response below.
-
 > lok
 [SKIP]
-# I don't understand that.
 
+# I don't understand that.
 > look
 [OK]
 text

@@ -1,14 +1,14 @@
 title: Troll Player Interactions
 story: dungeo
 author: Sharpee Team
-description: Test troll-specific player action interceptions (TAKE TROLL, unarmed ATTACK)
-
+description: Test troll-specific player action interceptions (TAKE TROLL,
+  unarmed ATTACK)
 seed: 42
+
 ---
 
 # Deterministic at the pinned seed (header): GDT ND immortality below covers
 # hostile RNG en route, and any residual variation is fixed by the seed.
-
 # GDT ND = immortality: this tests interception behavior, not player mortality
 > gdt
 [OK: contains "GDT"]
@@ -87,4 +87,3 @@ seed: 42
 # We just test that it doesn't say "laughs" anymore
 > attack troll
 [FAIL: contains "laughs"]
-

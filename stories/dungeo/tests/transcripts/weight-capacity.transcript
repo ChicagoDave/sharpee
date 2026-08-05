@@ -6,7 +6,6 @@ description: Verifies that the player cannot carry more than 100 weight units
 
 # Use GDT to give ourselves items directly
 # Player maxWeight = 100
-
 > gdt
 [OK: contains "GDT"]
 

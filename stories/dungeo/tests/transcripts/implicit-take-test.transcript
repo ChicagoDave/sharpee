@@ -5,7 +5,6 @@ description: Test implicit take when reading/putting items not in inventory
 ---
 
 # Start at West of House - mailbox with leaflet is here
-
 > look
 [OK: contains "House"]
 [OK: contains "mailbox"]

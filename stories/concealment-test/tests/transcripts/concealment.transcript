@@ -1,11 +1,11 @@
 title: Concealment Actions (ADR-148)
 story: concealment-test
-description: Tests hide/duck/crouch behind/under/inside, reveal variants, negative cases, NPC presence
+description: Tests hide/duck/crouch behind/under/inside, reveal variants,
+  negative cases, NPC presence
 
 ---
 
 # Starting in Study with curtain, desk, armoire, lamp, and butler NPC
-
 > look
 [OK: contains "Study"]
 [OK: contains "butler"]
@@ -15,12 +15,10 @@ description: Tests hide/duck/crouch behind/under/inside, reveal variants, negati
 [OK: contains "butler"]
 
 # === Negative: target without ConcealmentTrait ===
-
 > hide behind lamp
 [OK: contains "can't"]
 
 # === Negative: wrong position ===
-
 > hide under curtain
 [OK: contains "can't"]
 
@@ -28,7 +26,6 @@ description: Tests hide/duck/crouch behind/under/inside, reveal variants, negati
 [OK: contains "can't"]
 
 # === Success: hide behind curtain (butler in same room) ===
-
 > hide behind curtain
 [OK: contains "behind"]
 
@@ -45,7 +42,6 @@ description: Tests hide/duck/crouch behind/under/inside, reveal variants, negati
 [OK: contains "hiding"]
 
 # === Success: hide under desk ===
-
 > hide under desk
 [OK: contains "under"]
 
@@ -54,7 +50,6 @@ description: Tests hide/duck/crouch behind/under/inside, reveal variants, negati
 [OK: contains "hiding"]
 
 # === Success: hide inside armoire ===
-
 > hide inside armoire
 [OK: contains "into"]
 
@@ -63,7 +58,6 @@ description: Tests hide/duck/crouch behind/under/inside, reveal variants, negati
 [OK: contains "hiding"]
 
 # === Alternate verbs ===
-
 > duck behind curtain
 [OK: contains "behind"]
 
@@ -77,7 +71,6 @@ description: Tests hide/duck/crouch behind/under/inside, reveal variants, negati
 [OK: contains "hiding"]
 
 # === Negative: reveal when not hidden ===
-
 > stand up
 [OK: contains "not hiding"]
 
@@ -85,7 +78,6 @@ description: Tests hide/duck/crouch behind/under/inside, reveal variants, negati
 [OK: contains "not hiding"]
 
 # === Movement to Hall (maid NPC) and back ===
-
 > north
 [OK: contains "Hall"]
 [OK: contains "maid"]

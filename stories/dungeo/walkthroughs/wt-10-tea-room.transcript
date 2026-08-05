@@ -1,6 +1,8 @@
 title: Tea Room Area
 story: dungeo
-description: Solve riddle, get necklace, well puzzle, cake puzzles, carousel fix, cage puzzle. Restores from wt-09.
+description: Solve riddle, get necklace, well puzzle, cake puzzles, carousel
+  fix, cage puzzle. Restores from wt-09.
+
 ---
 
 # Restore state from wt-09 (player at Living Room with torch and lantern)
@@ -9,7 +11,6 @@ $restore wt-09
 # ============================================================================
 # GOAL: Get water bottle from Kitchen (needed for well puzzle)
 # ============================================================================
-
 [GOAL: Get water bottle]
 
 > east
@@ -23,7 +24,6 @@ $restore wt-09
 # ============================================================================
 # GOAL: Solve riddle and get pearl necklace
 # ============================================================================
-
 [GOAL: Solve riddle and get pearl necklace]
 
 # Navigate to Round Room (carousel is spinning — exits are randomized)
@@ -59,7 +59,6 @@ $restore wt-09
 # ============================================================================
 # GOAL: Well puzzle - ride bucket up to Top of Well
 # ============================================================================
-
 [GOAL: Ride bucket to Top of Well]
 
 > east
@@ -78,7 +77,6 @@ $restore wt-09
 # ============================================================================
 # GOAL: Tea Room cake puzzle - get spices from Pool Room
 # ============================================================================
-
 [GOAL: Cake puzzle and get spices]
 
 # Go east to Tea Room
@@ -116,7 +114,6 @@ $restore wt-09
 # ============================================================================
 # GOAL: Fix carousel and solve cage puzzle - get sphere
 # ============================================================================
-
 [GOAL: Fix carousel and cage puzzle]
 
 # Go northwest to Low Room (carousel is active - compass spinning)
@@ -153,7 +150,6 @@ $restore wt-09
 # ============================================================================
 # GOAL: Store treasures in trophy case
 # ============================================================================
-
 [GOAL: Store treasures in trophy case]
 
 # Return to Living Room via well bucket and Round Room.
@@ -208,7 +204,6 @@ $restore wt-09
 # ============================================================================
 # GOAL: Verify final state
 # ============================================================================
-
 [GOAL: Verify state for next segment]
 
 > inventory

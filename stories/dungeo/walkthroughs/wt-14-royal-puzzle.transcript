@@ -1,6 +1,9 @@
 title: Royal Puzzle - Gold Card
 story: dungeo
-description: Navigate to Royal Puzzle via Treasure Room, solve the sliding block puzzle to collect the gold card treasure (25 pts). Restores from wt-13.
+description: Navigate to Royal Puzzle via Treasure Room, solve the sliding
+  block puzzle to collect the gold card treasure (25 pts). Restores from
+  wt-13.
+
 ---
 
 # Restore state from wt-13 (player at Living Room with torch and lantern)
@@ -9,7 +12,6 @@ $restore wt-13
 # ============================================================================
 # GOAL: Navigate to Puzzle Room
 # ============================================================================
-
 [GOAL: Navigate to Puzzle Room]
 
 # Open trapdoor if needed
@@ -43,7 +45,6 @@ $restore wt-13
 
 # The thief may have stolen the gold card from the puzzle room and dropped
 # it here when killed. Pick it up if present.
-
 # Treasure Room → East → Square Room
 > east
 
@@ -55,14 +56,12 @@ $restore wt-13
 # ============================================================================
 # GOAL: Enter puzzle and collect gold card (if not already held)
 # ============================================================================
-
 [GOAL: Collect gold card]
 
 # Enter the puzzle (go down through hole)
 > down
 
 # ---- Phase 1: Navigate from entry (pos 9) to card position (pos 36) ----
-
 # Push east wall: sandstone at 10 slides to 11, player moves to 10
 > push east wall
 
@@ -100,7 +99,6 @@ $restore wt-13
 > take card
 
 # ---- Phase 2: Navigate back, repositioning ladder from 21 to 10 ----
-
 # Push south wall: sandstone at 44 slides to 52, player moves to 44
 > push south wall
 
@@ -202,7 +200,6 @@ $restore wt-13
 # ============================================================================
 # GOAL: Exit the puzzle
 # ============================================================================
-
 [GOAL: Exit puzzle via ladder]
 
 # Climb out — player at pos 9, ladder at pos 10
@@ -216,7 +213,6 @@ $restore wt-13
 # ============================================================================
 # GOAL: Return to Living Room and store treasure
 # ============================================================================
-
 [GOAL: Store gold card in trophy case]
 
 # Puzzle Room → Square Room → Treasure Room → Cyclops Room → Strange Passage → Living Room
@@ -227,6 +223,7 @@ $restore wt-13
 > down
 
 > north
+
 > east
 
 > open trophy case
@@ -238,7 +235,6 @@ $restore wt-13
 # ============================================================================
 # GOAL: Verify final state
 # ============================================================================
-
 [GOAL: Verify state for next segment]
 
 > inventory

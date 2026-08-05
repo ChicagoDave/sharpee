@@ -22,7 +22,7 @@ import type { IOChannel, MainEntry } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { PLAYER_DIED_EVENT } from '../death/index.js';
-import { MAIN_KEYS } from './keys.js';
+import { MAIN_KEYS, BANNER_KEYS } from './keys.js';
 import { playerLocationName, readCapability } from './world-helpers.js';
 
 /**
@@ -297,6 +297,64 @@ export const ifidChannel: IOChannel<string> = {
 };
 
 /**
+ * Structured opening banner (ADR-163 §channel content types).
+ *
+ * Each piece is its own property rather than a run of prose lines, so a client
+ * decides how the title, the versions and the credits are laid out instead of
+ * receiving somebody else's paragraph breaks. A test can name one piece.
+ */
+export interface BannerData {
+  title?: string;
+  storyVersion?: string;
+  platformVersion?: string;
+  subtitle?: string;
+  credits?: string[];
+  /** Story-supplied closing lines (`game.banner.story-tail`). */
+  tail?: string[];
+}
+
+/**
+ * `banner` — replace-mode opening banner, carried as structured JSON.
+ *
+ * Its own channel rather than part of `main` so the opening is addressable:
+ * the banner, the prologue and the first command's response become three
+ * things a transcript can check separately, and a client can put the banner
+ * wherever it wants instead of wherever the prose happened to land.
+ *
+ * The engine builds these blocks once, from `game.started`, so a turn that
+ * produces none emits nothing.
+ */
+export const bannerChannel: IOChannel<BannerData> = {
+  id: 'banner',
+  contentType: 'json',
+  mode: 'replace',
+  emit: 'sparse',
+  produce: (ctx) => {
+    const banner: BannerData = {};
+    let found = false;
+
+    for (const block of ctx.blocks) {
+      if (!BANNER_KEYS.has(block.key)) continue;
+      found = true;
+      const text = flattenContent(block.content);
+
+      switch (block.className) {
+        case 'game-title':        banner.title = text; break;
+        case 'story-version':     banner.storyVersion = text; break;
+        case 'platform-version':  banner.platformVersion = text; break;
+        case 'sub-title':         banner.subtitle = text; break;
+        case 'author-list':       (banner.credits ??= []).push(text); break;
+        case 'banner-spacer':     break;
+        // The story tail carries no class — it is whatever the story added.
+        default:                  if (text) (banner.tail ??= []).push(text); break;
+      }
+    }
+
+    return found ? banner : undefined;
+  },
+};
+
+/**
  * `prologue` — replace-mode pre-banner prologue text (ADR-298 D3).
  * Closure reads `storyInfo.prologue` — resolved text the engine wrote
  * at story start (phrase references already resolved through the
@@ -486,6 +544,7 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   infoChannel,
   ifidChannel,
   prologueChannel,
+  bannerChannel,
   deathChannel,
   endgameChannel,
   scoreNotifyChannel,
@@ -505,6 +564,7 @@ export const STANDARD_CHANNEL_IDS = {
   INFO: 'info',
   IFID: 'ifid',
   PROLOGUE: 'prologue',
+  BANNER: 'banner',
   DEATH: 'death',
   ENDGAME: 'endgame',
   SCORE_NOTIFY: 'score_notify',

@@ -463,6 +463,38 @@ async function executeForGolden(
   return { output, events, channels };
 }
 
+/**
+ * Result for the transcript's opening assertions (the banner, the prologue).
+ *
+ * Carries a synthetic command so it prints in sequence with the real ones; the
+ * opening is not something anybody typed, and the label says so.
+ */
+function openingResult(
+  opening: Assertion[],
+  engine: GameEngine
+): CommandResult {
+  const command: TranscriptCommand = {
+    lineNumber: 0,
+    input: '(opening)',
+    expectedOutput: [],
+    assertions: opening
+  };
+
+  const assertionResults = opening.map((assertion) =>
+    checkAssertion(assertion, '', '', [], engine.world, engine.lastChannels)
+  );
+
+  return {
+    command,
+    actualOutput: '',
+    actualEvents: [],
+    passed: assertionResults.every((r) => r.passed),
+    expectedFailure: false,
+    skipped: false,
+    assertionResults
+  };
+}
+
 /** A passing golden-tier command result. */
 function goldenPassResult(command: TranscriptCommand, output: string): CommandResult {
   return {
@@ -707,6 +739,8 @@ async function runAssertion(
   startTime: number
 ): Promise<TranscriptResult> {
   const results: CommandResult[] = [];
+  /** Opening assertions run once, after the first command flushes the opening. */
+  let openingChecked = (transcript.opening?.length ?? 0) === 0;
 
   for (const item of transcript.items ?? []) {
     if (item.type === 'comment') {
@@ -749,6 +783,15 @@ async function runAssertion(
 
     const result = await runCommand(command, engine, options);
     options.coverage?.collectFrom(engine.lastEvents);
+
+    // The banner and the prologue are said on the way to the first command, so
+    // that is the turn whose capture carries them. Checked once, and reported
+    // ahead of the command that flushed them because that is where they read.
+    if (!openingChecked) {
+      openingChecked = true;
+      results.push(openingResult(transcript.opening!, engine));
+    }
+
     results.push(result);
 
     if (options.testingExtension?.setCommandContext) {
@@ -1068,7 +1111,7 @@ async function runCommand(
   let allPassed = true;
 
   for (const assertion of command.assertions) {
-    const result = checkAssertion(assertion, normalizedActual, normalizedExpected, actualEvents, engine.world);
+    const result = checkAssertion(assertion, normalizedActual, normalizedExpected, actualEvents, engine.world, engine.lastChannels);
     assertionResults.push(result);
     if (!result.passed) {
       allPassed = false;
@@ -1113,7 +1156,8 @@ function checkAssertion(
   actualOutput: string,
   expectedOutput: string,
   events: TestEventInfo[],
-  world?: WorldModel
+  world?: WorldModel,
+  channels?: Record<string, string[]>
 ): AssertionResult {
   switch (assertion.type) {
     case 'ok': {
@@ -1155,6 +1199,37 @@ function checkAssertion(
         assertion,
         passed: notContains,
         message: notContains ? undefined : `Output should not contain "${assertion.value}"`
+      };
+    }
+
+    case 'channel-contains':
+    case 'channel-not-contains': {
+      const id = assertion.channelId!;
+      const lines = channels?.[id];
+      const wantContains = assertion.type === 'channel-contains';
+
+      // A channel the transcript never declared captures nothing, so the
+      // assertion would read an empty string and "not contains" would pass for
+      // the wrong reason. Name the real problem instead.
+      if (lines === undefined) {
+        return {
+          assertion,
+          passed: false,
+          message: `Channel "${id}" captured nothing — declare it in the transcript header: channels: main, ${id}`
+        };
+      }
+
+      const text = lines.join('\n').toLowerCase();
+      const found = text.includes(assertion.value!.toLowerCase());
+      const passed = wantContains ? found : !found;
+      return {
+        assertion,
+        passed,
+        message: passed
+          ? undefined
+          : wantContains
+            ? `Channel "${id}" does not contain "${assertion.value}"`
+            : `Channel "${id}" should not contain "${assertion.value}"`
       };
     }
 

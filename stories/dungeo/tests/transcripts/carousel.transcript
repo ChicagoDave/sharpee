@@ -1,17 +1,18 @@
 title: Low Room Carousel (Magnet Room)
 story: dungeo
-description: Tests the Low Room carousel exit randomization and button toggle (MDL act3 MAGNET-ROOM-EXIT)
+description: Tests the Low Room carousel exit randomization and button toggle
+  (MDL act3 MAGNET-ROOM-EXIT)
 seed: 42
+
 ---
 
 # MDL act3.mud: CAROUSEL-FLIP!-FLAG starts FALSE.
 # Flag false  -> Low Room exits deterministic (E -> Machine Room, SE -> Tea Room),
-#                no compass message on entry.
+# no compass message on entry.
 # Flag true (after button push) -> compass spins on entry, all exits randomly
-#                go to Machine Room or Tea Room ("You cannot get your bearings...").
+# go to Machine Room or Tea Room ("You cannot get your bearings...").
 # The random draw is the dungeo.low-room.exit point on the session RandomService
 # (ADR-293), so at the pinned seed the destination below is fixed: Tea Room.
-
 # Setup - get light source
 > gdt
 [OK: contains "GDT ready"]
@@ -32,7 +33,6 @@ seed: 42
 # ============================================================
 # Part 1: Flag false - deterministic exits, no compass spinning
 # ============================================================
-
 # Go northwest from Tea Room to Low Room - no compass message yet
 > northwest
 [OK: contains "Low Room"]
@@ -46,7 +46,6 @@ seed: 42
 # ============================================================
 # Part 2: Toggle carousel via robot button push
 # ============================================================
-
 # Teleport to well-area Machine Room (use alias to avoid coal mine one)
 > gdt
 [OK: contains "GDT ready"]
@@ -74,7 +73,6 @@ seed: 42
 # ============================================================
 # Part 3: Flag true - compass spins, exits randomized
 # ============================================================
-
 # Go west to Low Room - compass spinning message on entry
 > west
 [OK: contains "Low Room"]

@@ -6,8 +6,7 @@ description: Tests LIGHT, TIE, UNTIE grammar patterns and basic action flow
 
 # Balloon Actions - Basic test
 # Tests: LIGHT, TIE, UNTIE grammar patterns and basic action flow
-
-## Setup - get lantern and navigate to balloon
+# # Setup - get lantern and navigate to balloon
 > gdt
 [OK: contains "GDT ready"]
 
@@ -23,18 +22,18 @@ description: Tests LIGHT, TIE, UNTIE grammar patterns and basic action flow
 > turn on lantern
 [OK: contains "switches on"]
 
-## Examine balloon - should mention wire
+# # Examine balloon - should mention wire
 > look at balloon
 [OK: contains "braided wire"]
 
-## Try tie without being in balloon - should fail (no railing to tie to)
+# # Try tie without being in balloon - should fail (no railing to tie to)
 > tie wire
 [OK: contains "nothing here to tie"]
 
-## Enter the balloon
+# # Enter the balloon
 > enter balloon
 [OK: contains "You get into the balloon."]
 
-## Exit balloon
+# # Exit balloon
 > exit balloon
 [OK: contains "climb out of the balloon"]

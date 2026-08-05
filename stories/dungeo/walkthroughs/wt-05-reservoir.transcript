@@ -1,6 +1,8 @@
 title: Reservoir (Trunk and Pump)
 story: dungeo
-description: Collect trunk and pump from drained reservoir. Restores from wt-04.
+description: Collect trunk and pump from drained reservoir. Restores from
+  wt-04.
+
 ---
 
 # Restore state from wt-04 (player at Living Room with torch and lantern)
@@ -10,7 +12,6 @@ $restore wt-04
 # ============================================================================
 # GOAL: Navigate to Reservoir via Dam
 # ============================================================================
-
 [GOAL: Get trunk and pump from reservoir]
 
 # Living Room -> Cellar -> Troll Room -> EW Passage -> Deep Ravine
@@ -52,7 +53,6 @@ $restore wt-04
 # ============================================================================
 # GOAL: Return to Living Room
 # ============================================================================
-
 [GOAL: Return to Living Room]
 
 # Reservoir North -> Reservoir -> Reservoir South -> Deep Canyon
@@ -89,7 +89,6 @@ $restore wt-04
 # ============================================================================
 # GOAL: Verify final state
 # ============================================================================
-
 [GOAL: Verify inventory for next segment]
 
 > drop trunk

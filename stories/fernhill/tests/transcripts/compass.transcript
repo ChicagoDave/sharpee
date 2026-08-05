@@ -1,9 +1,12 @@
-title: Fernhill A1/A7/A9 — compass network, first-visit prose, region crossings
+title: Fernhill A1/A7/A9 — compass network, first-visit prose, region
+  crossings
 story: fernhill
+description: The estate's navigable shape (design doc map). Iron Gates
+  first-time prose fires once (A9); the Grounds/House crossing reactions fire
+  on the boundary moves (A7); the south exit is blocked with the long-road
+  phrase.
 seed: 42
-description: The estate's navigable shape (design doc map). Iron Gates first-time
-  prose fires once (A9); the Grounds/House crossing reactions fire on the
-  boundary moves (A7); the south exit is blocked with the long-road phrase.
+
 ---
 
 # A9: the first look is still the first visit — arrival prose

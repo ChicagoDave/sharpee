@@ -1,15 +1,14 @@
 title: Fernhill phrasebooks — the night changes the voice (ADR-250 E2E)
 story: fernhill
+description: The unreliable-narrator spine (ADR-250 D9). vane-mood lives only
+  in the two books — evening-voice (the default book) speaks until the turn-14
+  midnight flip, then midnight-voice wins arbitration. vane-story is story
+  text no book may beat, in both states. vane-quiet is covered only by the
+  default book and still renders at midnight (per-key fallthrough). Each book
+  keeps its OWN first-time counter for vane-mood: if counters were keyed by
+  the bare key, midnight's first examine would show a second-variant text —
+  the assertions below distinguish per-(book, key) from shared state.
 seed: 42
-description: The unreliable-narrator spine (ADR-250 D9). vane-mood lives
-  only in the two books — evening-voice (the default book) speaks until
-  the turn-14 midnight flip, then midnight-voice wins arbitration.
-  vane-story is story text no book may beat, in both states. vane-quiet
-  is covered only by the default book and still renders at midnight
-  (per-key fallthrough). Each book keeps its OWN first-time counter for
-  vane-mood: if counters were keyed by the bare key, midnight's first
-  examine would show a second-variant text — the assertions below
-  distinguish per-(book, key) from shared state.
 
 ---
 

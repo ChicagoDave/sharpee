@@ -7,16 +7,21 @@ description: Entering gas room with lit torch causes explosion death
 
 # Setup: Get torch and navigate to Smelly Room
 $teleport Living Room
+
 > take lantern
 [OK: contains "Taken"]
+
 > turn on lantern
 [OK: contains "switches on"]
+
 $teleport Torch Room
+
 > take torch
 [OK: contains "Taken"]
 
 # Navigate to Smelly Room (above Gas Room)
 $teleport Smelly Room
+
 > look
 [OK: contains "Smelly Room"]
 

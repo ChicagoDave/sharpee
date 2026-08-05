@@ -1,6 +1,8 @@
 title: Coal Mine (Diamond, Bracelet)
 story: dungeo
-description: Navigate coal mine, collect 2 treasures (diamond, bracelet), toggle mirror back to State A. Restores from wt-10.
+description: Navigate coal mine, collect 2 treasures (diamond, bracelet),
+  toggle mirror back to State A. Restores from wt-10.
+
 ---
 
 # Restore state from wt-10 (player at Living Room with torch and lantern)
@@ -9,7 +11,6 @@ $restore wt-10
 # ============================================================================
 # GOAL: Enter the Coal Mine via Mirror Room
 # ============================================================================
-
 [GOAL: Enter Coal Mine]
 
 # Pick up lantern (dropped in wt-07, sitting in Living Room)
@@ -43,7 +44,6 @@ $restore wt-10
 # ============================================================================
 # GOAL: Get sapphire bracelet from Gas Room (drop torch first!)
 # ============================================================================
-
 [GOAL: Get sapphire bracelet safely]
 
 # Mine Entrance → NE → Shaft Room (avoid Squeaky Room NW - bat attack!)
@@ -77,7 +77,6 @@ $restore wt-10
 # ============================================================================
 # GOAL: Get coal from Dead End and make diamond
 # ============================================================================
-
 [GOAL: Get coal and make diamond]
 
 # Navigate through mine maze to Coal Mine Dead End
@@ -124,7 +123,6 @@ $restore wt-10
 # Route: Machine Room → Mine Entrance → Slide Room → Cold Passage → Mirror Room
 # → rub mirror → Winding Passage → Round Room → Troll Room → Cellar → Living Room
 # ============================================================================
-
 [GOAL: Return via Mirror Room]
 
 # Navigate back through deep mine to Mine Entrance
@@ -179,7 +177,6 @@ $restore wt-10
 # GOAL: Store treasures in trophy case (diamond + bracelet)
 # Red sphere moved to wt-11 (collected via slide after jade figurine)
 # ============================================================================
-
 [GOAL: Store treasures in trophy case]
 
 > inventory
@@ -195,7 +192,6 @@ $restore wt-10
 # ============================================================================
 # GOAL: Verify final state
 # ============================================================================
-
 [GOAL: Verify state for next segment]
 
 > inventory

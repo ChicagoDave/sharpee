@@ -7,13 +7,16 @@ description: Entering gas room with lantern (electric) is safe
 
 # Setup: Get lantern only (no flame sources)
 $teleport Living Room
+
 > take lantern
 [OK: contains "Taken"]
+
 > turn on lantern
 [OK: contains "on"]
 
 # Navigate to Smelly Room (above Gas Room)
 $teleport Smelly Room
+
 > look
 [OK: contains "Smelly Room"]
 

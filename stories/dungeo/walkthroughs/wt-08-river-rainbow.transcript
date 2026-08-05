@@ -1,6 +1,9 @@
 title: River & Rainbow (Emerald, Statue, Pot of Gold)
 story: dungeo
-description: Ride Frigid River for emerald, detour for shovel, dig statue at Sandy Beach, wave sceptre for rainbow, get pot of gold. Continues from wt-07.
+description: Ride Frigid River for emerald, detour for shovel, dig statue at
+  Sandy Beach, wave sceptre for rainbow, get pot of gold. Continues from
+  wt-07.
+
 ---
 
 # Restore state from wt-07 (player at Living Room with torch, lantern, bell, book, candles)
@@ -10,12 +13,14 @@ $restore wt-07
 # GOAL: Prepare for river journey
 # Drop exorcism items and lantern, take pump for boat inflation
 # ============================================================================
-
 [GOAL: Prepare for river journey]
 
 > drop lantern
+
 > drop bell
+
 > drop book
+
 > drop candles
 
 > take pump
@@ -29,7 +34,6 @@ $restore wt-07
 # Living Room -> Cellar -> Troll Room -> E-W Passage -> Deep Ravine
 # -> Chasm -> N/S Passage -> Loud Room -> Damp Cave -> Dam -> Dam Base
 # ============================================================================
-
 [GOAL: Navigate to Dam Base]
 
 > down
@@ -59,7 +63,6 @@ $restore wt-07
 # IMPORTANT: Board WITHOUT the stick (it punctures the boat!)
 # Then take the stick from inside the boat to bypass the interceptor
 # ============================================================================
-
 [GOAL: Prepare boat and launch]
 
 > inflate boat with pump
@@ -80,7 +83,6 @@ $restore wt-07
 # ============================================================================
 # GOAL: Ride river downstream, get emerald from buoy at FR-2
 # ============================================================================
-
 [GOAL: Get emerald from buoy]
 
 # FR-1 -> FR-2
@@ -104,7 +106,6 @@ $restore wt-07
 # GOAL: Detour at FR-3 to get shovel from Small Cave
 # FR-2 -> FR-3, land at Rocky Shore, walk to Small Cave, return to boat
 # ============================================================================
-
 [GOAL: Get shovel from Small Cave]
 
 # FR-2 -> FR-3
@@ -133,7 +134,6 @@ $restore wt-07
 # ============================================================================
 # GOAL: Continue to FR-4, land at Sandy Beach, dig up statue
 # ============================================================================
-
 [GOAL: Dig up statue at Sandy Beach]
 
 # FR-3 -> FR-4
@@ -166,7 +166,6 @@ $restore wt-07
 # GOAL: Walk to Aragain Falls, wave sceptre for rainbow
 # Sandy Beach -> Shore -> Aragain Falls
 # ============================================================================
-
 [GOAL: Wave sceptre at Aragain Falls]
 
 > south
@@ -181,7 +180,6 @@ $restore wt-07
 # ============================================================================
 # GOAL: Cross rainbow, get pot of gold
 # ============================================================================
-
 [GOAL: Get pot of gold]
 
 > east
@@ -198,7 +196,6 @@ $restore wt-07
 # -> Forest Path 3 -> Forest Path 2 -> Clearing -> Forest Path 1
 # -> North of House -> Behind House -> Kitchen -> Living Room
 # ============================================================================
-
 [GOAL: Return to Living Room]
 
 > southeast
@@ -228,7 +225,6 @@ $restore wt-07
 # ============================================================================
 # GOAL: Store treasures in trophy case
 # ============================================================================
-
 [GOAL: Store treasures]
 
 > open trophy case
@@ -246,7 +242,6 @@ $restore wt-07
 # ============================================================================
 # GOAL: Verify final state for next segment
 # ============================================================================
-
 [GOAL: Verify state for next segment]
 
 > inventory

@@ -1,6 +1,9 @@
-title: Scattered Treasures (Violin, Coins, Grail, Trident, Blue Sphere, Jade, Red Sphere)
+title: Scattered Treasures (Violin, Coins, Grail, Trident, Blue Sphere, Jade,
+  Red Sphere)
 story: dungeo
-description: Collect 7 scattered treasures from existing regions. Restores from wt-11.
+description: Collect 7 scattered treasures from existing regions. Restores
+  from wt-11.
+
 ---
 
 # Restore state from wt-11 (player at Living Room with torch and lantern)
@@ -12,11 +15,9 @@ $restore wt-11
 # → Deep Canyon → Reservoir → Atlantis (trident) → back to Living Room
 # Screwdriver taken from Living Room at start (dropped there in wt-04)
 # ============================================================================
-
 # ============================================================================
 # GOAL: Get brown sack from Kitchen, then get violin from Round Room
 # ============================================================================
-
 [GOAL: Get brown sack and violin]
 
 > east
@@ -44,7 +45,6 @@ $restore wt-11
 # ============================================================================
 # GOAL: Get grail from Grail Room
 # ============================================================================
-
 [GOAL: Get grail]
 
 > east
@@ -56,7 +56,6 @@ $restore wt-11
 # Route: Grail Room → Round Room → Deep Canyon → Reservoir South
 # → Reservoir → Reservoir North → Atlantis Room
 # ============================================================================
-
 [GOAL: Get trident]
 
 > west
@@ -80,7 +79,6 @@ $restore wt-11
 # Route: Atlantis → Reservoir South → Deep Canyon → Round Room → E/W Passage
 # → Troll Room → Cellar → Living Room
 # ============================================================================
-
 [GOAL: Store Pass 1 treasures]
 
 > southeast
@@ -113,7 +111,6 @@ $restore wt-11
 # GOAL: Get bag of coins from Maze-5
 # Route: Living Room → Cellar → Troll Room → Maze-1 → Maze-4 → Maze-3 → Maze-5
 # ============================================================================
-
 [GOAL: Get bag of coins]
 
 > down
@@ -147,12 +144,10 @@ $restore wt-11
 # ============================================================================
 # PASS 2: Puzzle treasures (need tools)
 # ============================================================================
-
 # ============================================================================
 # GOAL: Get welcome mat from West of House
 # Route: Living Room → Kitchen → Behind House → North of House → West of House
 # ============================================================================
-
 [GOAL: Get welcome mat]
 
 > east
@@ -180,7 +175,6 @@ $restore wt-11
 # GOAL: Solve Tiny Room door puzzle and get blue crystal sphere
 # Route: Living Room → Cellar → Troll Room → N/S Crawlway → Torch Room → Tiny Room
 # ============================================================================
-
 [GOAL: Get blue crystal sphere]
 
 > down
@@ -236,7 +230,6 @@ $restore wt-11
 # → rub mirror (State B) → Cold Passage → Slide Room → Mine Entrance
 # → Squeaky Room (jade) → slide down → Sooty Room (red sphere) → Cellar
 # ============================================================================
-
 [GOAL: Get jade figurine and red sphere]
 
 > south
@@ -303,7 +296,6 @@ $restore wt-11
 # ============================================================================
 # GOAL: Store Pass 2 treasures in trophy case
 # ============================================================================
-
 [GOAL: Store Pass 2 treasures]
 
 > put blue crystal sphere in trophy case
@@ -317,7 +309,6 @@ $restore wt-11
 # ============================================================================
 # GOAL: Verify final state
 # ============================================================================
-
 [GOAL: Verify state for next segment]
 
 > inventory

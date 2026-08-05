@@ -335,6 +335,52 @@ Examples:
   // channel-packet assembly now lives once in bootstrap.assembleGame.
   // A path ending in `.story` is compiled + interpreted instead of required
   // (`entry` applies only to module stories and is ignored for `.story` files).
+  // Channels carrying the game's opening. The banner and the prologue are said
+  // before anything is typed and do not ride `main`, so any surface showing the
+  // game to a person has to ask for them or the player never sees them.
+  const OPENING_CHANNELS = ['main', 'prologue', 'banner'];
+
+  /**
+   * Print the opening captured on the way to the first command.
+   *
+   * The banner arrives as properties rather than prose, so the order the lines
+   * appear in is this surface's choice — a different client is free to lay the
+   * same pieces out differently.
+   */
+  function printOpening(game) {
+    const channels = game.lastChannels || {};
+
+    const prologue = channels.prologue;
+    if (prologue && prologue.length > 0) {
+      console.log(prologue.join('\n'));
+      console.log('');
+    }
+
+    const raw = channels.banner;
+    if (!raw || raw.length === 0) return;
+    let banner;
+    try {
+      banner = JSON.parse(raw[raw.length - 1]);
+    } catch {
+      return;
+    }
+
+    const lines = [];
+    if (banner.title) lines.push(banner.title);
+    if (banner.storyVersion) lines.push(banner.storyVersion);
+    if (banner.platformVersion) lines.push(banner.platformVersion);
+    if (banner.subtitle) lines.push(banner.subtitle);
+    for (const credit of banner.credits || []) lines.push(credit);
+    if (banner.tail && banner.tail.length > 0) {
+      lines.push('');
+      for (const line of banner.tail) lines.push(line);
+    }
+    if (lines.length > 0) {
+      console.log(lines.join('\n'));
+      console.log('');
+    }
+  }
+
   function loadStoryAndCreateGame(storyPath, entry, seed, channels) {
     // ADR-293: forward the resolved master seed to EngineConfig.seed; a
     // restart reboot reuses it, so pinned runs survive in-transcript RESTART.
@@ -384,6 +430,7 @@ Examples:
     console.log('');
 
     const initialOutput = await game.executeCommand('look');
+    printOpening(game);
     console.log(initialOutput);
 
     const prompt = () => {
@@ -625,7 +672,8 @@ Examples:
       const game = loadStoryAndCreateGame(
         options.storyPath,
         undefined,
-        resolveSeed(undefined).seed
+        resolveSeed(undefined).seed,
+        OPENING_CHANNELS
       );
       console.log(`Seed: ${game.engine.getMasterSeed()}`);
 
@@ -639,10 +687,15 @@ Examples:
       }
 
       const commands = options.exec.split('/').map(c => c.trim()).filter(c => c);
+      let openingPrinted = false;
       for (const command of commands) {
         console.log(`> ${command}`);
         try {
           const output = await game.executeCommand(command);
+          if (!openingPrinted) {
+            openingPrinted = true;
+            printOpening(game);
+          }
           console.log(output);
 
           if (options.debug) {
@@ -800,7 +853,8 @@ Examples:
       const game = loadStoryAndCreateGame(
         options.storyPath,
         undefined,
-        resolveSeed(undefined).seed
+        resolveSeed(undefined).seed,
+        OPENING_CHANNELS
       );
       // ADR-293 D14: author surfaces show the seed automatically — one
       // number plus a command list reproduces the session.

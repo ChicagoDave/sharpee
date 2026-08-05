@@ -1,14 +1,14 @@
 title: Troll Blocking
 story: dungeo
 author: Sharpee Team
-description: Test that the troll blocks passage north in the Troll Room (to E/W Passage)
-
+description: Test that the troll blocks passage north in the Troll Room (to
+  E/W Passage)
 seed: 42
+
 ---
 
 # Deterministic at the pinned seed (header): GDT ND immortality below covers
 # hostile RNG en route, and any residual variation is fixed by the seed.
-
 # GDT ND = immortality: this tests exit blocking, not player mortality
 > gdt
 [OK: contains "GDT"]
@@ -96,4 +96,3 @@ seed: 42
 [OK: contains "Cellar"]
 [EVENT: true, type="if.event.actor_moved"]
 [EVENT: false, type="if.event.went" blocked="true"]
-

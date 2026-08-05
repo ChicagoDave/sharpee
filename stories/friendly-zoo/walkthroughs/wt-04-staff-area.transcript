@@ -1,6 +1,9 @@
 title: Zoo Walkthrough 4 — Keeper's Farewell and the Staff Area
 story: friendly-zoo
-description: Chained full-playthrough, chapter 4 of 5. The witnessed-only keeper departure, the staff-gate Optional clause (absorbs the old wt-04 optional proof, ADR-196 C1), and the supply room. Continues from wt-03.
+description: Chained full-playthrough, chapter 4 of 5. The witnessed-only
+  keeper departure, the staff-gate Optional clause (absorbs the old wt-04
+  optional proof, ADR-196 C1), and the supply room. Continues from wt-03.
+
 ---
 
 # The keeper waited, unwitnessed, past closing — his once-only farewell

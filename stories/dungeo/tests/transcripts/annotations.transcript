@@ -5,18 +5,17 @@ description: Tests ADR-109 playtester annotation system (all 3 tiers)
 ---
 
 # Test annotation commands - All 3 Tiers (ADR-109)
-#
+# 
 # This transcript tests the playtester annotation system:
 # - Tier 1: # comments with context
 # - Tier 2: $bug, $note, $confusing, $expected, $bookmark
 # - Tier 3: $session start/end, $review, $export
-#
+# 
 # NOTE (ADR-294 rewrite): annotation commands are processed out-of-band by the
 # tester (their output goes to the console, stamped with wall-clock times) and
 # are NOT assertable turns — a crash in the annotation path still fails the
 # run, so this file is smoke coverage for the annotation pipeline plus real
 # assertions on the interleaved game commands.
-
 # === TIER 3: Start Session ===
 $session start annotation-test
 
@@ -26,24 +25,28 @@ $session start annotation-test
 
 # === TIER 1: # Comments with Context ===
 # This is a comment that should be captured with context
-
 # === TIER 2: Annotation Commands ===
 > take mailbox
 [OK: contains "fixed in place"]
+
 $note mailbox is scenery as expected
 
 > open mailbox
 [OK: contains "leaflet"]
-$note opening mailbox works well
-# Another comment after opening
 
+$note opening mailbox works well
+
+# Another comment after opening
 > take leaflet
 [OK: contains "Taken"]
+
 $confusing
 
 > read leaflet
 [OK: contains "DUNGEON"]
+
 $bug the leaflet text could be more descriptive
+
 $expected detailed game instructions with hints
 
 # === TIER 3: Bookmark (saves checkpoint too) ===

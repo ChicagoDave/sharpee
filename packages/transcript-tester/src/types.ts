@@ -209,9 +209,21 @@ export interface GoldenRecording {
 export interface Assertion {
   type: 'ok' | 'ok-contains' | 'ok-not-contains'
       | 'fail' | 'skip' | 'todo'
-      | 'event-count' | 'event-assert' | 'state-assert';
+      | 'event-count' | 'event-assert' | 'state-assert'
+      | 'channel-contains' | 'channel-not-contains';
   value?: string;      // For contains/not-contains
   reason?: string;     // For fail/todo
+
+  /**
+   * Channel this assertion reads, for the `channel-*` forms.
+   *
+   * `[OK: contains "…"]` reads the main prose, which is where a command's
+   * response goes. Everything else the story says — the banner, the prologue,
+   * the status line — travels on its own channel, and naming one here is how a
+   * transcript asserts on it. Must be declared in the transcript's `channels:`
+   * header, or there is nothing captured to read.
+   */
+  channelId?: string;
 
   // Event assertions
   eventCount?: number;          // For event-count assertion
@@ -277,6 +289,16 @@ export interface Transcript {
   header: TranscriptHeader;
   commands: TranscriptCommand[];         // Legacy: just commands (for backwards compat)
   items?: TranscriptItem[];              // New: commands + directives in order
+
+  /**
+   * Assertions about the game's opening, written above the first command.
+   *
+   * The banner and the prologue happen before anything is typed, so an
+   * assertion about them has no command to hang off. These run once, against
+   * what the story emitted on the way up. Absent when the transcript makes no
+   * claim about the opening, which is nearly all of them.
+   */
+  opening?: Assertion[];
   goals?: GoalDefinition[];              // Parsed goal segments
   comments: string[];
 

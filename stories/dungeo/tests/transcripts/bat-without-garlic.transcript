@@ -1,6 +1,7 @@
 title: Squeaky Room Without Garlic
 story: dungeo
-description: Test entering the Squeaky Room without garlic - bat should carry player away
+description: Test entering the Squeaky Room without garlic - bat should carry
+  player away
 
 ---
 
@@ -18,7 +19,6 @@ description: Test entering the Squeaky Room without garlic - bat should carry pl
 [OK: contains "Kitchen"]
 
 # Don't take garlic or sack
-
 > west
 [OK: contains "Living Room"]
 
@@ -46,6 +46,7 @@ description: Test entering the Squeaky Room without garlic - bat should carry pl
 # Now walk northwest into Squeaky Room - bat should attack and carry us away
 > northwest
 [OK: contains "Squeaky"]
+
 # TODO: Bat behavior not yet implemented - when implemented, add these assertions:
 # [EVENT: true, type="npc.emoted" messageId="dungeo.bat.attacks"]
 # [EVENT: true, type="npc.emoted" messageId="dungeo.bat.carries_away"]

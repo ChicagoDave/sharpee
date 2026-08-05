@@ -1,9 +1,10 @@
 title: Fernhill B1/B5 — trunk, mantel capacity, readable clues
 story: fernhill
-description: The trunk (container, max items 3) opens on the diary page and the
-  half-burned letter; both readable forms are exercised (`on reading it` prose
-  vs `readable with text` config). The mantel (supporter, capacity 2 — the
-  photograph occupies one place) takes exactly one more thing.
+description: The trunk (container, max items 3) opens on the diary page and
+  the half-burned letter; both readable forms are exercised (`on reading it`
+  prose vs `readable with text` config). The mantel (supporter, capacity 2 —
+  the photograph occupies one place) takes exactly one more thing.
+
 ---
 
 > read the solicitor's letter

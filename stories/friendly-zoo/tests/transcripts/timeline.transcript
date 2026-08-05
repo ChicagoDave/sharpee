@@ -1,14 +1,14 @@
-title: Zoo golden gate — PA timeline, feeding time, goat bleats, keeper departure
+title: Zoo golden gate — PA timeline, feeding time, goat bleats, keeper
+  departure
 story: friendly-zoo
 description: Deterministic scheduler beats as behavior-parity proof (AC-2
   scheduler category): PA closing announcements at turns 5/10/15/20, the
-  feeding-time fuse at turn 11 with its 8-turn repeats, and hungry-goat
-  bleats while in the Petting Zoo. Authored against the TS story
-  2026-07-11, then frozen. Revised + extended in Phase C P5 (gate-delta
-  audit Entries 2-4, David sign-off 2026-07-12): goats start hungry so
-  bleats are pinned from turn 3; feeding is repeatable after each bell;
-  keeper departure is witnessed-only (decision 10) with `, once` preserved
-  off-stage.
+  feeding-time fuse at turn 11 with its 8-turn repeats, and hungry-goat bleats
+  while in the Petting Zoo. Authored against the TS story 2026-07-11, then
+  frozen. Revised + extended in Phase C P5 (gate-delta audit Entries 2-4,
+  David sign-off 2026-07-12): goats start hungry so bleats are pinned from
+  turn 3; feeding is repeatable after each bell; keeper departure is
+  witnessed-only (decision 10) with `, once` preserved off-stage.
 
 ---
 

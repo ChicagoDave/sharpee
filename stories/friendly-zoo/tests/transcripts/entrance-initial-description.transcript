@@ -1,6 +1,8 @@
 title: Entrance Initial Description
 story: friendly-zoo
-description: ADR-196 Phase 4 — entrance shows its first-visit (initial) description once, then the standard description on a re-look.
+description: ADR-196 Phase 4 — entrance shows its first-visit (initial)
+  description once, then the standard description on a re-look.
+
 ---
 
 # First look at the entrance shows the first-visit-only flavor.

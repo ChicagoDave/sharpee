@@ -1,6 +1,9 @@
 title: AC-15 — debug-stats sparse emission
 story: channel-service-test
-description: Drives the channel-service-test story through stdlib actions (look / take / drop) so the debug-stats channel exercises sparse-emit suppression on unchanged inventory.
+description: Drives the channel-service-test story through stdlib actions
+  (look / take / drop) so the debug-stats channel exercises sparse-emit
+  suppression on unchanged inventory.
+
 ---
 
 # ============================================================================
@@ -9,7 +12,6 @@ description: Drives the channel-service-test story through stdlib actions (look 
 # in-process renderer-parity test in
 # packages/channel-service/tests/ac-15-story-renderer-parity.test.ts
 # ============================================================================
-
 # Initial look — establishes the lab and the beacon.
 > look
 [OK: contains "The Lab"]

@@ -6,10 +6,10 @@ description: Room descriptions and traversal per the canonical cloak.story
   as the ADR-210 AC-1 golden gate (frozen 2026-07-10); runs against the
   Chord-interpreted cloak.story, not the hand-written TS story.
 
-# The bar is deliberately not entered in this file — entering it while
-# carrying the cloak advances the message state (see message-*.transcript).
 ---
 
+# The bar is deliberately not entered in this file — entering it while
+# carrying the cloak advances the message state (see message-*.transcript).
 # Opening room: the Foyer description
 > look
 [OK: contains "Foyer of the Opera House"]

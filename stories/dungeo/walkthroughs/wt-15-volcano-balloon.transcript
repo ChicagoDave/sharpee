@@ -1,6 +1,8 @@
 title: Volcano Balloon & Treasures
 story: dungeo
-description: Melt glacier, fly balloon through volcano, collect 4 treasures (ruby, coin, stamp, crown). Restores from wt-14.
+description: Melt glacier, fly balloon through volcano, collect 4 treasures
+  (ruby, coin, stamp, crown). Restores from wt-14.
+
 ---
 
 # Restore state from wt-14 (player at Living Room with torch and lantern)
@@ -10,7 +12,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Gather volcano supplies from Living Room floor
 # ============================================================================
-
 [GOAL: Gather volcano supplies]
 
 > take guidebook
@@ -28,7 +29,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Navigate to Glacier Room and melt glacier
 # ============================================================================
-
 [GOAL: Melt glacier to open path to Ruby Room]
 
 # Navigate to Egyptian Room
@@ -60,7 +60,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Get ruby from Ruby Room and reach Volcano Bottom
 # ============================================================================
-
 [GOAL: Get ruby and reach Volcano Bottom]
 
 # West exit now open after glacier melt
@@ -77,7 +76,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Prepare balloon for flight
 # ============================================================================
-
 [GOAL: Launch balloon]
 
 > enter balloon
@@ -94,7 +92,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Fly to Narrow Ledge - collect coin and stamp
 # ============================================================================
-
 [GOAL: Dock at Narrow Ledge and collect treasures]
 
 # Wait for balloon to rise from vair1 to vair2 (daemon fires every 3 turns)
@@ -133,7 +130,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Fly to Wide Ledge
 # ============================================================================
-
 [GOAL: Dock at Wide Ledge]
 
 # Rise from vair2 to vair3 (3 turns)
@@ -161,7 +157,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Dusty Room - blow open safe, get crown
 # ============================================================================
-
 [GOAL: Get crown from Dusty Room]
 
 # Go south to Dusty Room
@@ -193,7 +188,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Store all volcano treasures in trophy case
 # ============================================================================
-
 [GOAL: Store volcano treasures in trophy case]
 
 # Re-enter balloon for descent
@@ -285,7 +279,6 @@ $restore wt-14
 # ============================================================================
 # GOAL: Verify final state
 # ============================================================================
-
 [GOAL: Verify state for next segment]
 
 > inventory
@@ -296,7 +289,9 @@ $restore wt-14
 
 # Dump full score ledger for debugging
 > gdt
+
 > ds ledger
+
 > ex
 
 # Bank lantern battery while in the lit Living Room — the torch is gone

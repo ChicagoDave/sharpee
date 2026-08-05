@@ -1,7 +1,8 @@
 title: Chimney Restriction
 story: dungeo
 author: Sharpee Team
-description: Test Studio chimney restriction per MDL source (act1.254) - lamp + max 1 other item
+description: Test Studio chimney restriction per MDL source (act1.254) - lamp
+  + max 1 other item
 
 ---
 
@@ -10,9 +11,7 @@ description: Test Studio chimney restriction per MDL source (act1.254) - lamp + 
 # - Max 2 items in inventory
 # - Must have lamp
 # - Cannot be empty-handed
-
 # === Setup: Get lamp and go to Studio via GDT ===
-
 # First get the lamp from Living Room
 > north
 [OK: contains "North of House"]
@@ -65,9 +64,7 @@ description: Test Studio chimney restriction per MDL source (act1.254) - lamp + 
 [OK: contains "Kitchen"]
 
 # Success! We're in Kitchen with lamp+sword
-
 # === Test 2: Test empty-handed ===
-
 # Teleport back to Studio
 > gdt
 [OK: contains "GDT"]

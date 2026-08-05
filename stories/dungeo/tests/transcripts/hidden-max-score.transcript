@@ -1,6 +1,7 @@
 title: Hidden Max Score Test
 story: dungeo
-description: Verifies ADR-078 - when thief dies, max score changes from 616 to 650
+description: Verifies ADR-078 - when thief dies, max score changes from 616 to
+  650
 
 ---
 
@@ -20,4 +21,3 @@ description: Verifies ADR-078 - when thief dies, max score changes from 616 to 6
 # After thief dies, check score - should now show /650
 > DA
 [OK: contains "/650"]
-

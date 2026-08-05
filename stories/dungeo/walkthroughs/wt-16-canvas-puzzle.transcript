@@ -1,6 +1,8 @@
 title: Canvas Puzzle (Ghost Ritual)
 story: dungeo
-description: Burn incense in Basin Room, pray to bless water, drop frame piece to complete ghost ritual. Canvas spawns in Gallery. Restores from wt-15.
+description: Burn incense in Basin Room, pray to bless water, drop frame piece
+  to complete ghost ritual. Canvas spawns in Gallery. Restores from wt-15.
+
 ---
 
 # Restore state from wt-15 (player at Living Room with lantern)
@@ -10,7 +12,6 @@ $restore wt-15
 # ============================================================================
 # GOAL: Pick up ritual items from Living Room
 # ============================================================================
-
 [GOAL: Pick up incense and frame piece]
 
 > take incense
@@ -24,9 +25,8 @@ $restore wt-15
 # ============================================================================
 # GOAL: Navigate to Basin Room
 # Route: Living Room → Cellar → Troll Room → E/W Passage → Deep Ravine
-#        → Chasm → N/S Passage → Loud Room → Ancient Chasm → Basin Room
+# → Chasm → N/S Passage → Loud Room → Ancient Chasm → Basin Room
 # ============================================================================
-
 [GOAL: Navigate to Basin Room]
 
 > open trap door
@@ -57,7 +57,6 @@ $restore wt-15
 # ============================================================================
 # GOAL: Burn incense to disarm the basin trap
 # ============================================================================
-
 [GOAL: Burn incense to disarm basin]
 
 > burn incense
@@ -67,7 +66,6 @@ $restore wt-15
 # ============================================================================
 # GOAL: Pray to bless the water
 # ============================================================================
-
 [GOAL: Pray to bless water]
 
 > pray
@@ -77,7 +75,6 @@ $restore wt-15
 # ============================================================================
 # GOAL: Drop frame piece in basin to complete ghost ritual
 # ============================================================================
-
 [GOAL: Complete ghost ritual]
 
 > drop frame piece
@@ -87,7 +84,6 @@ $restore wt-15
 # ============================================================================
 # GOAL: Go to Gallery and take the canvas
 # ============================================================================
-
 [GOAL: Get canvas from Gallery]
 
 # Navigate to Gallery (Basin Room → Ancient Chasm → Loud Room → N/S Passage →
@@ -121,7 +117,6 @@ $restore wt-15
 # ============================================================================
 # GOAL: Store canvas in trophy case
 # ============================================================================
-
 [GOAL: Store canvas in trophy case]
 
 # Return to Living Room (Gallery → Studio → N/S Crawlway → Troll Room → Cellar → Living Room)
@@ -144,13 +139,14 @@ $restore wt-15
 # ============================================================================
 # GOAL: Verify final score
 # ============================================================================
-
 [GOAL: Verify score]
 
 > score
 
 > gdt
+
 > ds ledger
+
 > ex
 
 # Bank lantern battery in the lit Living Room; wt-17 turns it back on.

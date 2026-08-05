@@ -219,6 +219,32 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
   /** Config keys already seen, for duplicate detection (key → line number). */
   const seenConfigKeys = new Map<string, number>();
 
+  /**
+   * The header field still being read, in case the author wrapped its value
+   * across several lines.
+   *
+   * Held rather than stored immediately: a wrapped value is not finished until
+   * the next field, the `---` separator, or the end of the file, and a field
+   * like `forces:` has to be checked against the whole value. Checking the
+   * first line alone would judge it on half of what the author wrote.
+   */
+  let pendingHeader: { key: string; value: string; lineNumber: number } | null = null;
+
+  /**
+   * Finish the open header field: store it, and check it if it configures the
+   * run. Safe to call with nothing open, so every path that ends a field can
+   * call it without asking first.
+   */
+  const flushHeader = (): void => {
+    if (!pendingHeader) return;
+    const { key, value, lineNumber } = pendingHeader;
+    pendingHeader = null;
+    transcript.header[key] = value;
+    if (CONFIG_KEYS.includes(key)) {
+      parseConfigField(transcript, key, value, lineNumber, parseErrors, seenConfigKeys);
+    }
+  };
+
   // Indexed rather than for-of: a block consumes the lines that follow its
   // opening delimiter, so the loop has to be able to skip ahead (ADR-287 D1).
   for (let index = 0; index < lines.length; index++) {
@@ -237,7 +263,17 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
 
     // Header separator
     if (trimmed === '---') {
+      flushHeader();
       inHeader = false;
+      continue;
+    }
+
+    // An indented line in the header continues the value above it. Always —
+    // a continuation that happens to contain a colon is the author's prose, not
+    // a new field. Authors wrap long descriptions this way, and until now every
+    // line after the first was thrown away without a word.
+    if (inHeader && pendingHeader && /^[ \t]/.test(line)) {
+      pendingHeader.value += (pendingHeader.value ? ' ' : '') + trimmed;
       continue;
     }
 
@@ -269,8 +305,6 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       // Save any pending command first
       if (currentCommand) {
         finalizeCommand(currentCommand, parseErrors);
-        transcript.commands.push(currentCommand);
-        transcript.items!.push({ type: 'command', command: currentCommand });
         currentCommand = null;
       }
 
@@ -286,20 +320,18 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       const colonIndex = trimmed.indexOf(':');
       const key = trimmed.slice(0, colonIndex).trim().toLowerCase();
       const value = trimmed.slice(colonIndex + 1).trim();
-      transcript.header[key] = value;
-      if (CONFIG_KEYS.includes(key)) {
-        parseConfigField(transcript, key, value, lineNumber, parseErrors, seenConfigKeys);
-      }
+      flushHeader();
+      // A lone `|` is the YAML "the text is below" marker, which a few
+      // transcripts picked up out of habit. It announces the value rather than
+      // being part of it, so it never belongs in what the author reads back.
+      pendingHeader = { key, value: value === '|' ? '' : value, lineNumber };
       continue;
     }
 
     // Command input
     if (trimmed.startsWith('>')) {
-      // Save previous command
       if (currentCommand) {
         finalizeCommand(currentCommand, parseErrors);
-        transcript.commands.push(currentCommand);
-        transcript.items!.push({ type: 'command', command: currentCommand });
       }
 
       currentCommand = {
@@ -308,6 +340,14 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
         expectedOutput: [],
         assertions: []
       };
+
+      // Recorded where it was read, not where it finished. A command stays open
+      // until the next one starts, so a comment the author wrote underneath it
+      // would otherwise be filed ahead of the command it is talking about — and
+      // writing the file back out would move it there for real. Both lists hold
+      // this same command, so finishing it later still completes it here.
+      transcript.commands.push(currentCommand);
+      transcript.items!.push({ type: 'command', command: currentCommand });
       continue;
     }
 
@@ -323,11 +363,9 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
       // Try to parse as directive first
       const directive = parseDirective(trimmed, lineNumber);
       if (directive) {
-        // Save any pending command first
+        // Close out any pending command first. It is already recorded.
         if (currentCommand) {
           finalizeCommand(currentCommand, parseErrors);
-          transcript.commands.push(currentCommand);
-          transcript.items!.push({ type: 'command', command: currentCommand });
           currentCommand = null;
         }
         transcript.items!.push({ type: 'directive', directive });
@@ -337,6 +375,17 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
             lines, blockIndex, parseErrors,
             `A text block cannot follow the directive "${trimmed}" — blocks attach only to [OK] or [OK: contains]`
           );
+        }
+        continue;
+      }
+
+      // An assertion above the first command is about the opening — the banner
+      // and the prologue, which the story says before anything is typed. It has
+      // no command to attach to and used to be dropped without a word.
+      if (!currentCommand) {
+        const opening = parseAssertion(trimmed);
+        if (opening) {
+          (transcript.opening ??= []).push(opening);
         }
         continue;
       }
@@ -401,11 +450,13 @@ export function parseTranscript(content: string, filePath: string = '<inline>'):
     }
   }
 
-  // Don't forget the last command
+  // A file whose header runs to EOF with no `---` separator still closes its
+  // last field. No-op for the ordinary case, where `---` already flushed.
+  flushHeader();
+
+  // The last command is already recorded; it just never got closed out.
   if (currentCommand) {
     finalizeCommand(currentCommand, parseErrors);
-    transcript.commands.push(currentCommand);
-    transcript.items!.push({ type: 'command', command: currentCommand });
   }
 
   // Parse goal segments from items
@@ -892,6 +943,25 @@ function parseAssertion(tag: string): Assertion | null {
         eventType,
         eventData: Object.keys(eventData).length > 0 ? eventData : undefined
       };
+    }
+  }
+
+  // [CHANNEL: id, contains "text"] / [CHANNEL: id, not contains "text"]
+  // Reads a named channel instead of the main prose — how a transcript asserts
+  // on the banner, the prologue, or anything else the story says off to one side.
+  const channelMatch = inner.match(/^CHANNEL:\s*([A-Za-z0-9_.-]+)\s*,\s*(.+)$/i);
+  if (channelMatch) {
+    const channelId = channelMatch[1];
+    const rest = channelMatch[2].trim();
+
+    const notContains = rest.match(/^not\s+contains\s+"([^"]+)"$/i);
+    if (notContains) {
+      return { type: 'channel-not-contains', channelId, value: notContains[1] };
+    }
+
+    const contains = rest.match(/^contains\s+"([^"]+)"$/i);
+    if (contains) {
+      return { type: 'channel-contains', channelId, value: contains[1] };
     }
   }
 

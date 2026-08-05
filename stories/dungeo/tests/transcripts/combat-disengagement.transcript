@@ -1,7 +1,9 @@
 title: Combat Disengagement
 story: dungeo
-description: Test flee-and-recover cycle - villain heals when player leaves room, player wounds persist
+description: Test flee-and-recover cycle - villain heals when player leaves
+  room, player wounds persist
 seed: 42
+
 ---
 
 # GDT ND = immortality: wounds still land and persist (what's under test);

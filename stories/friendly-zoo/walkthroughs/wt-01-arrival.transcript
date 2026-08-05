@@ -1,6 +1,9 @@
 title: Zoo Walkthrough 1 — Arrival
 story: friendly-zoo
-description: Chained full-playthrough, chapter 1 of 5. Entrance pickups (map, brochure, keycard), the first closing announcement at turn 5, and the walk to the Main Path. Run the wt chain with --chain; state persists into wt-02.
+description: Chained full-playthrough, chapter 1 of 5. Entrance pickups (map,
+  brochure, keycard), the first closing announcement at turn 5, and the walk
+  to the Main Path. Run the wt chain with --chain; state persists into wt-02.
+
 ---
 
 # --- Zoo Entrance: opening room + contents list ---

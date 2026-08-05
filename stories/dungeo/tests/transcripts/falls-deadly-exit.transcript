@@ -1,6 +1,7 @@
 title: Falls Deadly Exit
 story: dungeo
-description: ADR-227 Phase 1 - only going SOUTH at Aragain Falls is fatal; other verbs and the north retreat are safe (MDL FALLS-ROOM, act2.mud:203)
+description: ADR-227 Phase 1 - only going SOUTH at Aragain Falls is fatal;
+  other verbs and the north retreat are safe (MDL FALLS-ROOM, act2.mud:203)
 
 ---
 

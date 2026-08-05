@@ -1,9 +1,10 @@
 title: Fernhill D2 — the fuse: fail to cut it and die
 story: fernhill
-seed: 42
 description: The failure branch, not skipped — enter the folly without the
-  shears' mercy, let the anchored countdown run, and the cache goes up
-  (kill the player through the ADR-227 death sink).
+  shears' mercy, let the anchored countdown run, and the cache goes up (kill
+  the player through the ADR-227 death sink).
+seed: 42
+
 ---
 
 > north

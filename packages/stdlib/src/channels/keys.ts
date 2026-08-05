@@ -30,5 +30,17 @@ export const MAIN_KEYS: ReadonlySet<string> = new Set<string>([
   CORE_BLOCK_KEYS.ACTION_BLOCKED,
   CORE_BLOCK_KEYS.ERROR,
   CORE_BLOCK_KEYS.GAME_MESSAGE,
+]);
+
+/**
+ * Block keys whose content flows into the `banner` channel.
+ *
+ * The opening banner used to ride `main`, which meant the title, the version
+ * lines and the credits all arrived glued to whatever the first command
+ * printed — one undivided lump that a test could only assert on as a whole.
+ * On its own channel it is addressable: the banner, the prologue and the first
+ * command's response become three things a transcript can check separately.
+ */
+export const BANNER_KEYS: ReadonlySet<string> = new Set<string>([
   CORE_BLOCK_KEYS.GAME_BANNER,
 ]);

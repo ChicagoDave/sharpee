@@ -1,6 +1,8 @@
 title: Coffin Puzzle - Take and Store
 story: dungeo
-description: Tests taking the gold coffin from Egyptian Room and storing in trophy case (10 points - coffin is not a container, sceptre doesn't exist in mainframe Zork)
+description: Tests taking the gold coffin from Egyptian Room and storing in
+  trophy case (10 points - coffin is not a container, sceptre doesn't exist in
+  mainframe Zork)
 
 ---
 

@@ -1,6 +1,7 @@
 title: Orange Cake Explosion Death
 story: dungeo
-description: ADR-227 Phase 2 - eating the orange-icing cake (ORICE "Explode") is terminal death via the CakeEatingInterceptor
+description: ADR-227 Phase 2 - eating the orange-icing cake (ORICE "Explode")
+  is terminal death via the CakeEatingInterceptor
 
 ---
 

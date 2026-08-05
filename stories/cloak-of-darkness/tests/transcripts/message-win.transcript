@@ -1,9 +1,8 @@
 title: Cloak golden gate — intact message wins
 story: cloak-of-darkness
-description: Hang the cloak before ever entering the bar, then read the
-  intact message — the win ending. ADR-210 AC-1 golden gate (frozen
-  2026-07-10). The ending event asserts the if-domain wire type approved
-  in prereqs.md §3.
+description: Hang the cloak before ever entering the bar, then read the intact
+  message — the win ending. ADR-210 AC-1 golden gate (frozen 2026-07-10). The
+  ending event asserts the if-domain wire type approved in prereqs.md §3.
 
 ---
 

@@ -1,6 +1,8 @@
 title: Canvas Puzzle - Frame Mechanics
 story: dungeo
-description: Test ADR-078 frame spawning, scenery, reading, and breaking after thief death
+description: Test ADR-078 frame spawning, scenery, reading, and breaking after
+  thief death
+
 ---
 
 # Kill the thief via GDT — spawns the empty frame in the Treasure Room

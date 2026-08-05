@@ -1,8 +1,9 @@
 title: Fernhill A4 — the dark cellar and the oil lamp
 story: fernhill
+description: The cellar is dark; without light the vaults cannot be seen. The
+  oil lamp (light-source, switchable) on the stairs lights the way.
 seed: 42
-description: The cellar is dark; without light the vaults cannot be seen.
-  The oil lamp (light-source, switchable) on the stairs lights the way.
+
 ---
 
 > north

@@ -2,6 +2,7 @@ title: Room snippets
 story: friendly-zoo
 description: ADR-209 — the gift shop's pins snippet cycles across looks, goes
   quiet on the empty entry, and wraps (the book ch5 example shape).
+
 ---
 
 # Walk to the gift shop: entrance → main path → aviary → gift shop.
