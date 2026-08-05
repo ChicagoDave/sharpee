@@ -44,6 +44,14 @@ export {
   type NodeRunOutcome,
 } from './tree-runner.js';
 
+// Tree reporting — unreached is not failed (ADR-302 D13)
+export {
+  summarizeTreeRun,
+  formatTreeRun,
+  type TreeRunSummary,
+  type BlockedGroup,
+} from './tree-report.js';
+
 // Canonical `.transcript` writer — the matched pair to the parser (ADR-300 D11/D17)
 export { serializeTranscript } from './serializer.js';
 

@@ -119,7 +119,11 @@ Three phases carry an additional gate:
 - **Entry state**: Phase 6 runs trees.
 - **Deliverable**: when an interior node fails its descendants report as **unreached** and the run names the originating failure. One broken spine node produces one failure, not one per descendant.
 - **Exit state**: **AC-7** — a tree with one broken interior node reports exactly one failure and N unreached, originating node named.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape**: `src/tree-report.ts` — `summarizeTreeRun` / `formatTreeRun`. `failed` counts **originating** failures only; a node that never ran is counted separately and attributed to the ancestor that blocked it. Two independent breaks report as two origins, each with its own blast radius.
+- **Why the count is signal, not noise**: D13 abolishes the `tests/transcripts/` vs `walkthroughs/` split, so focused tests hang off the spine node that establishes their state. A spine break therefore blocks *tests*, and "blocked 4" is a real statement about blast radius. Folding those into the failure count would bury the one thing that broke under a wall of red proportional to how much of the story depends on it.
+- **A malformed tree renders defects alone**, with no run tally beside them — "0 passed" next to a structural error invites reading it as a result (D11).
+- **Verified 2026-08-05**: `packages/branch-tester/tests/tree-report.test.ts` — 10 cases over real transcripts, real assembly and the real `runTree`. AC-7's case is a spine break with four descendants: **1 failed, 4 unreached, origin `spine` named**. A healthy sibling of a broken node still runs and still passes. branch-tester 306 passed + 5 skipped; transcript-tester 253 untouched.
 
 ### Phase 8: Rename as a harness operation (ADR-302 D14)
 - **Tier**: Medium · **Budget**: 250
