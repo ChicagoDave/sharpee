@@ -56,7 +56,13 @@ Three phases carry an additional gate:
 - **Deliverable**: a `record` block in Chord with `list of` for repeated members — Chord parser, AST, IR wire types, and the loader's channel mapping.
 - **Exit state**: **ADR-300 AC-6** — a `.story` file defines a record channel and the running game populates it, with no TypeScript escape hatch.
 - **Note**: independent of every other phase. It is the item that closes the platform/Chord seam, and under "Sharpee and Chord must align as elegantly as possible" it is the highest-value standalone work here — it can move earlier if you want it sooner.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Shape decided in the building** (the ADR named neither): records do **not** nest — a member is a field, a text template, or a phrase, and nesting is a parse error by name; and absence has two spellings matching what `bannerChannel` already does — a `list of` member the turn did not carry is `[]`, a scalar member it did not carry is *omitted*, so `'x' in value` stays a real answer.
+- **Language version — a judgment call worth your eye**: additive grammar, which ADR-257 D2 would ordinarily make a minor (3.0.0 → 3.1.0). Shipped **inside 3.0.0** instead, following the recorded 2026-08-03 freeze ruling (nothing at 3.x is published, so no released surface a minor would distinguish; and 3.1.0 is the exact number that ruling just retired). Only `chord.ebnf` and its recorded hash moved. Say so if you'd rather it were a minor.
+- **Verified 2026-08-05**: chord 730 passing (was 719 — +11 grammar/analyzer cases), story-loader 480 (was 472 — +8 including AC-6), EBNF surface pin re-recorded and green, walkthrough chain 952 passed.
+
+### Side item: `[EVENTS: N]` removal (ADR-300 D5, issue #222) — COMPLETE
+- Done 2026-08-05, before Phase 3 as the plan required, so `branch-tester` inherits a clean grammar. Joined ADR-294's `REMOVED_FORMS` table (a parse error naming `[EVENT: true, type="..."]` as its replacement) and left the parser, model, serializer, reporter and runner. Zero corpus uses. transcript-tester 253 passing; [issue #222](https://github.com/ChicagoDave/sharpee/issues/222) closed.
 
 ### Phase 3: `branch-tester` package scaffold (ADR-302 D15)
 - **Tier**: Medium · **Budget**: 250

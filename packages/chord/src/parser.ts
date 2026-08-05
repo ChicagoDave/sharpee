@@ -47,6 +47,7 @@ import {
   DefineFamilyChannel,
   DefineChannel,
   ChannelReturn,
+  ChannelRecordMember,
   DefinePronouns,
   DefineMachine,
   DefineSequence,
@@ -3428,6 +3429,11 @@ class Parser {
         }
         decl.returns = returns;
         decl.fromEvent = key;
+        // ADR-300 D10: a record's members are the indented lines that follow.
+        if (returns.kind === 'record') {
+          returns.members = this.parseChannelRecordMembers();
+          if (this.pos > 0) decl.span = mergeSpans(decl.span, lineSpan(this.lines[this.pos - 1]));
+        }
         continue;
       }
       if (word === 'from' && lc.isWord('event', 1)) {
@@ -3458,14 +3464,34 @@ class Parser {
 
   /**
    * Parse the construct after `return` (ADR-253 D1), stopping before `from`:
-   * a `"quoted"` text template, a `phrase <key>`, or a bare field word. On a
-   * malformed construct reports `parse.channel-return` and returns null.
+   * a `"quoted"` text template, a `phrase <key>`, `record` (ADR-300 D10), or
+   * a bare field word. On a malformed construct reports
+   * `parse.channel-return` and returns null.
+   *
+   * `record` returns an empty-membered node; the caller fills its members
+   * from the indented block that follows the `from <event>` tail, since the
+   * members are lines and this parses within one line.
+   *
+   * @param allowRecord false inside a record's own members — records do not
+   *   nest, and the attempt is reported by name rather than mis-parsed.
    */
-  private parseChannelReturn(lc: Cursor, line: Line): ChannelReturn | null {
+  private parseChannelReturn(lc: Cursor, line: Line, allowRecord = true): ChannelReturn | null {
     const tok = lc.peek();
     if (!tok) {
-      this.diagnostics.error('parse.channel-return', 'Expected a field, a "text" template, or `phrase <key>` after `return`.', lineSpan(line));
+      this.diagnostics.error('parse.channel-return', 'Expected a field, a "text" template, `phrase <key>`, or `record` after `return`.', lineSpan(line));
       return null;
+    }
+    if (tok.kind === 'word' && tok.text === 'record') {
+      if (!allowRecord) {
+        this.diagnostics.error(
+          'parse.channel-record-nested',
+          'A `record` member cannot itself be a `record` — records do not nest. Use a `list of <field>` member, or a second channel.',
+          lineSpan(line),
+        );
+        return null;
+      }
+      lc.next();
+      return { kind: 'record', members: [] };
     }
     if (tok.kind === 'string') {
       lc.next();
@@ -3488,8 +3514,73 @@ class Parser {
       }
       return { kind: 'field', field };
     }
-    this.diagnostics.error('parse.channel-return', 'Expected a field, a "text" template, or `phrase <key>` after `return`.', lineSpan(line));
+    this.diagnostics.error('parse.channel-return', 'Expected a field, a "text" template, `phrase <key>`, or `record` after `return`.', lineSpan(line));
     return null;
+  }
+
+  /**
+   * Read the indented member lines of a `return record from <event>` block
+   * (ADR-300 D10) up to and including `end record`.
+   *
+   * Each line is `<member-name> <construct>` or
+   * `<member-name> list of <construct>`, where a construct is the same set
+   * `return` accepts minus `record` itself. Members project from the same
+   * event payload the record's `from <event>` names — a record is one event
+   * read as structure, not several events joined.
+   *
+   * Advances `this.pos` past `end record`. Reports and returns whatever it
+   * collected on a malformed member, so one bad line does not cascade.
+   */
+  private parseChannelRecordMembers(): ChannelRecordMember[] {
+    const members: ChannelRecordMember[] = [];
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const mc = new Cursor(line.tokens, line);
+      if (word === 'end' && mc.isWord('record', 1)) {
+        this.pos++;
+        return members;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      // Dedent out of the record block: let `define channel`'s own loop
+      // report the missing `end record` rather than swallowing the line.
+      if (line.indent === 0) break;
+      this.pos++;
+
+      const nameTok = mc.next();
+      if (!nameTok || nameTok.kind !== 'word') {
+        this.diagnostics.error(
+          'parse.channel-record-member',
+          'Expected a member name — `<name> <construct>` or `<name> list of <construct>`.',
+          lineSpan(line),
+        );
+        continue;
+      }
+      let list = false;
+      if (mc.isWord('list') && mc.isWord('of', 1)) {
+        mc.next();
+        mc.next();
+        list = true;
+      }
+      const value = this.parseChannelReturn(mc, line, false);
+      if (value !== null && !mc.atEnd()) {
+        this.diagnostics.error(
+          'parse.channel-record-member',
+          `Unexpected trailing text in record member \`${nameTok.text}\`: \`${mc.peek()!.text}\`.`,
+          lineSpan(line),
+        );
+      }
+      members.push({ name: nameTok.text, list, value, span: lineSpan(line) });
+    }
+    this.diagnostics.error(
+      'parse.channel-record-end',
+      'Expected `end record` to close the `return record` block.',
+      this.pos > 0 ? lineSpan(this.lines[this.pos - 1]) : spanOf(1, 1, 1),
+    );
+    return members;
   }
 
   /**

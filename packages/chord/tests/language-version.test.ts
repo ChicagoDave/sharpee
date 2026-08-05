@@ -29,13 +29,19 @@ const PINNED = {
   // minor, folded back into 3.0.0 by the freeze ruling (2026-08-03,
   // session f382ed; nothing at 3.x published). FROZEN at 3.0.0. Package
   // versions are a separate lockstep track (4.x → 5.0.0 at the cut).
+  //
+  // ADR-300 D10's `return record` + `list of` members (2026-08-05, session
+  // 86e85a) fold into 3.0.0 under the SAME freeze ruling: additive grammar,
+  // and nothing at 3.x is published, so there is no released surface a minor
+  // would distinguish. Only the EBNF hash moves. The next additive construct
+  // AFTER a 3.x publish takes an ordinary minor by D2.
   // (2.2.0 — owner ruling, 2026-07-29: ADR-289's four breaking compile
   //  gates shipped as a minor, EBNF hash unchanged — fourth departure.)
   // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
   languageVersion: '3.0.0',
-  ebnfSha256: 'f7cb7a2ac03c2441ad38d2e134ade5db83b3b6435b475b624b3618e0af5f7505',
+  ebnfSha256: 'c88bb89fb44bb5b40b41537dd12e40742bd9bc8a2f8ec6a20b620b33a1738ab4',
 };
 
 const EBNF_PATH = join(__dirname, '..', '..', '..', 'docs', 'reference', 'chord.ebnf');
