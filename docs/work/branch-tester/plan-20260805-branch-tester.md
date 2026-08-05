@@ -75,7 +75,10 @@ Three phases carry an additional gate:
   - **Not** in the `sharpee` umbrella or the root `package.json` (ADR-178), and **no** `story-runtime-baseline` entry.
 - **Exit state**: `branch-tester` suite green; `transcript-tester` still 252 passing and unmodified; `tsf build --npm` clean for both.
 - **Verify**: `grep -r "@sharpee/transcript-tester" packages/branch-tester/src` returns nothing; `grep -rn "branch-tester" packages/sharpee/` returns nothing.
-- **Status**: PENDING
+- **Status**: **COMPLETE** (2026-08-05, session 86e85a)
+- **Registration was TWO points, not five** — a second measured correction to the same checklist `plan-review` already corrected once. `ts-forge.config.json` and repokit's `BUILD_ORDER` are the whole of it. The other three named here do not apply, measured by reading them: `commands/test.ts` is an unimplemented stub (`repokit test: not yet implemented`); `consumer-gen.ts` and `commands/test-npm.ts` build the **npm consumer closure for the Family Zoo tutorial**, and that tutorial stays on v1 permanently (ADR-302 D9/D12) — vendoring v2 there would ship a package the consumer never loads. Also deliberately NOT in `BUNDLE_ALIASES`: nothing in the CLI graph imports it yet.
+- **Verified 2026-08-05**: branch-tester 248 passed + 5 skipped (the corpus sweeps skip — no corpus is configured yet, by design; see below); transcript-tester still **253** passing and unmodified; `tsf build --npm` clean for both; all four verification greps clean (no v1 import from v2 src, absent from the umbrella, the root `package.json`, and `story-runtime-baseline`); walkthrough chain 952 passed.
+- **Corpus deliberately unconfigured**: `packages/branch-tester/vitest.config.ts` names no root. v2's stories are the ones that will carry `continues:`, and the D16 directory split is Phase 10 — pointing the sweeps at `stories/` meanwhile would run v1's corpus through v2's parser, the exact cross-harness reading D16 exists to prevent. The 5 sweeps skip until a root is named.
 
 ### Phase 4: `continues:` grammar, model, and tree assembly (ADR-302 D1, D2, D4, D11)
 - **Tier**: Large · **Budget**: 400
