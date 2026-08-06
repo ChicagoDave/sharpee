@@ -251,7 +251,31 @@ harness specifically, and one of them cannot be done in a frozen package at all.
 | Decision | Lands in | Shape of the work |
 | --- | --- | --- |
 | D13, D14 | **`branch-tester` only** | Assertion vocabulary and capture inference. These extend the assertion grammar, which ADR-302 D15 freezes in `transcript-tester` — so they land in the new harness and are **not** back-ported |
-| D1 | **`tools/ide` (Swift)** | `.skein` retirement is unexecuted: `tools/ide/SharpeeIDE/Skein/` and `stories/fernhill/play-testing/` are still committed. Deleting them needs explicit confirmation |
+| D1 | **`tools/ide` (Swift)** | ~~`.skein` retirement is unexecuted~~ — **EXECUTED 2026-08-06 (session 322542)**, on David's confirmation. Removed: `tools/ide/SharpeeIDE/Skein/` (12 files, 2,768 lines), 15 test files, `branch-stories/fernhill/play-testing/fernhill.skein`, the Skein tab and its replay/tag/force/bless actions, the Play pane's skein session and replay-to-node machinery, and ADR-280's "Play Testing" sidebar group. Suite **363 passed, 0 failures** (from 521 — the delta is skein tests). See the note below for what deliberately survived |
+
+> **What survived the `.skein` retirement, and why** (2026-08-06). Three things
+> were deliberately kept rather than deleted with the artifact, because none of
+> them is skein-shaped:
+>
+> - **The turn-events bridge** (`PlayViewController`, ADR-277 D5). The skein was
+>   its only consumer, but "play authors the transcript" — promoting a played
+>   session instead of typing commands blind — is named by ADR-301 as the reason
+>   to build an editor at all, and the bridge is how a played turn reaches Swift.
+>   Turns now land in an in-memory `sessionLog` rather than a `.skein` file:
+>   nothing new is persisted, because inventing a second artifact to replace the
+>   one just removed is the trap. `PlaySessionLogTests` re-pins the bridge that
+>   `SkeinPlayGrowthTests` used to cover.
+> - **`RecordingSession`'s serialization grammar.** It describes the `.transcript`
+>   file format, not any one way of producing it, which is why it already
+>   outlived ADR-282's retirement and now outlives ADR-299's.
+> - **A pinned Play seed**, as a constant (`PlayViewController.pinnedPlaySeed`).
+>   The skein minted one per story and persisted it; with the artifact gone there
+>   is nowhere *authored* to read a seed from — `IRStoryFields` is a closed schema
+>   (ADR-298 D4) with no `seed`, and ADR-293's `seed:` is a **transcript** header
+>   field, not a story one. A constant is in fact stronger than what it replaces:
+>   every Play boot is reproducible on any machine and from a fresh clone, which a
+>   random per-story seed never was. Making it authorable means adding `seed` to
+>   `IRStoryFields` — a Chord language change, and a separate decision.
 
 **Sequencing consequence — D8 must precede ADR-302's copy.** *(Discharged
 2026-08-05: D8/D9 shipped before any harness copy existed.)* Dissolving `main`

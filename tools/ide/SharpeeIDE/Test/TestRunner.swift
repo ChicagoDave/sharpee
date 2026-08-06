@@ -23,7 +23,7 @@ protocol TestRunnerDelegate: AnyObject {
     /// consumer that imports the wire contract directly, so handing it the raw
     /// line is what removes the Swift mirror from its path entirely. Decoding
     /// continues alongside for the Swift consumers that have no such option
-    /// (Skein replay, re-bless). Has a default no-op — most delegates want the
+    /// (re-bless). Has a default no-op — most delegates want the
     /// decoded record.
     func runner(_ runner: TestRunner, didReceiveLine line: String)
     /// One decoded NDJSON record, in stream order.

@@ -602,31 +602,15 @@ private final class MainSplitViewController: NSSplitViewController {
         addSplitViewItem(makePlayItem())
     }
 
-    /// Opens a file the author activated in the project sidebar, in whatever
-    /// surface reads it.
+    /// Opens a file the author activated in the project sidebar.
     ///
-    /// A `.skein` is a committed artifact whose content is threads and prose
-    /// (ADR-299 D7) — the editor would show its JSON serialization, which is
-    /// the storage format, not the thing the author made. Every other file is
-    /// text and goes to the editor.
+    /// Every file is text and goes to the editor. `.skein` used to be the one
+    /// exception — a committed artifact whose storage format was JSON — but the
+    /// artifact is retired (ADR-300) and the exception went with it.
     ///
     /// - Parameter url: the activated file.
     private func activateFile(at url: URL) {
-        guard url.pathExtension == SkeinStore.fileExtension else {
-            editorViewController.openDocument(at: url)
-            return
-        }
-        do {
-            try rightPanelViewController.openSkein(at: url)
-        } catch {
-            // A skein that cannot be read is exactly when the raw bytes are
-            // worth seeing, so the refusal is stated AND the text is opened —
-            // rather than leaving the author with a message and no file.
-            rightPanelViewController.showSkeinTab()
-            rightPanelViewController.skeinView.setStatus(
-                "\(url.lastPathComponent): \(error.localizedDescription)")
-            editorViewController.openDocument(at: url)
-        }
+        editorViewController.openDocument(at: url)
     }
 
     /// The composed story's identity for Build/Play gating: its URL and whether
@@ -796,7 +780,7 @@ private final class MainSplitViewController: NSSplitViewController {
     /// The Testing tab (ADR-301) — likewise in the right panel.
     fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
 
-    /// Points the skein exporter at the open story (save-panel default dir +
+    /// Points transcript recording at the open story (save-panel default dir +
     /// re-discovery hook for the Tests panel) — ADR-299 D7.
     fileprivate func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
         playViewController.storyDirectory = storyDirectory

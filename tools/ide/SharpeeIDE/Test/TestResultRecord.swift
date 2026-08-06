@@ -8,12 +8,12 @@
 //
 // WHY THIS MIRROR SURVIVES ADR-301 D1. That decision retires the mirror for the
 // Testing TAB, which is a TypeScript consumer and imports the wire directly. It
-// does not retire it for the Swift subsystems that also read `sharpee test
-// --json` and have no such option: Skein replay verification (ReplayDriver,
-// ADR-299) and re-bless (Rebless, ADR-282 D2) both drive a real run and read its
-// per-command results in Swift. Deleting this file would take those with it.
-// What D1 buys is that the mirror no longer has to track the whole wire for the
-// panel's sake — only what those two consumers read.
+// does not retire it for re-bless (Rebless, ADR-282 D2), which drives a real
+// `sharpee test --json` run and reads its per-command results in Swift, with no
+// TypeScript route to the wire available to it. Deleting this file would take
+// re-bless with it. (Skein replay verification was the second such consumer
+// until ADR-300's retirement removed it.) What D1 buys is that the mirror no
+// longer has to track the whole wire for a panel's sake — only what re-bless reads.
 // Public interface: TestResultRecord.decode(line:), the record structs,
 // TestResultRecord.DecodeError.
 // Owner context: tools/ide — Test.

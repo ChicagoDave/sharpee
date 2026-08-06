@@ -63,8 +63,8 @@ hundred round trips into a web view buys nothing.
 `TestRunnerDelegate` gained `didReceiveLine`, delivered **before** decode and whether or
 not decode succeeds — a line the Swift mirror cannot read is precisely the line the tab
 should still receive. `TestRunner` gained `runTree`. The tab is hosted in the right panel,
-where the skein tab was retitled **"Skein"** (it had been holding the name "Testing") to
-free the name for the surface ADR-301 names.
+where the skein tab was briefly retitled "Skein" to free the name — that tab was then
+removed outright in the second commit (see below).
 
 ### Which mock the tab follows — the call the plan left open
 The plan said this was David's call at phase start. The call made was to **merge both
@@ -145,26 +145,88 @@ A1, Acceptance evidence, Consequences), `docs/work/ide-testing-wire/plan-2026080
 `SharpeeIDETests/{ReplayDriverTests,SplitDividerTests,TestPanelModelTests,TestResultRecordTests,TestRunnerTests}.swift`,
 `tools/ide/project.yml`.
 
+## Second piece of work: the skein retirement was executed
+
+**David's correction**: *"we were dropping skein (thought that was removed a few days ago)."*
+He was right about the decision and wrong about the code, and the gap was real:
+ADR-299 was marked SUPERSEDED on **2026-08-04** (session c42886), but nothing was
+deleted. For two days the ADR read as retired while 2,768 lines of it still
+shipped. Both plans had carved the deletion out by name pending confirmation
+(`plan-20260805` line 104, `plan-20260806` line 160), and ADR-300's own D1 row
+said verbatim *"`.skein` retirement is unexecuted … Deleting them needs explicit
+confirmation."* This session got the confirmation and executed it.
+
+**Removed**: `SharpeeIDE/Skein/` (12 files, 2,768 lines); 15 test files
+(11 `Skein*`, plus `ReplayDriverTests`, `ReplayRealPathTests`, `InvarianceTests`,
+`TranscriptViewTests`); `branch-stories/fernhill/play-testing/fernhill.skein`;
+the Skein tab and its replay/tag/force/bless actions (`RightPanelViewController`
+660 → 162 lines); the Play pane's skein session and its 163-line replay-to-node
+machinery; ADR-280's "Play Testing" sidebar group; the `.skein` special case in
+sidebar activation; and the "New Thread" button name, which was a skein term.
+
+**Kept deliberately, because none of it is skein-shaped:**
+1. **The turn-events bridge** (ADR-277 D5). The skein was its only consumer, but
+   "play authors the transcript" is what ADR-301 names as the reason to build an
+   editor at all, and this bridge is how a played turn reaches Swift. Turns now
+   land in an in-memory `sessionLog` — **not** persisted, because inventing a
+   second artifact to replace the one just removed is the trap.
+2. **`RecordingSession`'s serialization grammar** — it describes the file format,
+   not a way of producing it, which is why it already outlived ADR-282's
+   retirement and now outlives ADR-299's.
+3. **A pinned Play seed**, as a constant.
+
+**The seed, and a correction I made mid-task.** The option David picked was "the
+story's own `seed:` header", on my description of it as something that "already
+owns seeds". That was wrong: `IRStoryFields` is a closed schema (ADR-298 D4) with
+no `seed`, and ADR-293's `seed:`/`point-seed:` are **transcript** header fields.
+I conflated the two. What shipped is `PlayViewController.pinnedPlaySeed`, a
+constant — which is in fact stronger than what it replaced, since the skein's
+seed was `Int.random(...)` minted per story, so Play was never reproducible
+across machines or from a fresh clone. Making it authorable means adding `seed`
+to `IRStoryFields`, a Chord language change and a separate decision — flagged to
+David, not taken.
+
+**Replacement coverage.** `SkeinPlayGrowthTests` was the only test exercising the
+turn bridge end-to-end, and the bridge survived. `PlaySessionLogTests` (5, rule
+13a — real `WKWebView`, real scheme handler, the real `{command, response}` shape)
+re-pins it: turns land in order, `onTurn` announces what was logged, the page
+boots at the pinned seed *asserted from the page's own vantage*, restart and load
+clear the log, and a malformed bridge message is ignored rather than logged as an
+empty turn. `ProjectArtifactsTests`' three Play-Testing cases became one that
+pins the new contract: a `play-testing/` folder still on disk **surfaces in
+Other** rather than vanishing — the open-view rule is what made deleting the
+group safe, so it is now asserted.
+
+**Suite: 368 passed, 0 failures** (521 → 363 on removal, +5 for the replacement).
+ADRs updated: ADR-300 D1 row marked EXECUTED with scope and a "what survived"
+note; ADR-299's status records that supersession and deletion were two days
+apart; ADR-301 gains **A1.1** — the skein's removal took `ReplayDriver` with it,
+so **re-bless is now the Swift mirror's only consumer**, which turns the mirror's
+retirement condition into something checkable.
+
 ## Next
 - **The editing interaction** — ADR-301's named next decision: cards per turn, `contains`
   by selection, re-bless in the tab. That is the work that would let the outline panel retire.
 - **Awaiting David's confirmation** (nothing deleted without it): `TestPanelView.swift`
-  once editing lands; `tools/ide/SharpeeIDE/Skein/` (12 files); v1
-  `packages/ide-protocol/src/test-results.ts` and its remaining devkit/branch-tester/
-  transcript-tester importers.
-- **Open question for David**: the right panel now carries seven tabs (Build, Play,
-  Testing, Skein, Index, Diagnosis, Test). That is a lot, and two of them are testing
-  surfaces. The tidy-up is the panel retirement above, but the tab count is worth a look sooner.
+  once editing lands; v1 `packages/ide-protocol/src/test-results.ts` and its remaining
+  devkit/branch-tester/transcript-tester importers. `SharpeeIDE/Skein/` is **done** —
+  removed this session.
+- **A Chord language question, flagged not taken**: adding `seed` to `IRStoryFields` so a
+  story can pin its own Play seed. Today it is a constant.
+- The right panel is back to six tabs (Build, Play, Testing, Index, Diagnosis, Test), two
+  of which are still testing surfaces until the editing decision retires the outline panel.
 
 ---
 
 ## Session Metadata
 
-- **Status**: COMPLETE
+- **Status**: COMPLETE (two commits: the Testing tab, then the skein retirement)
 - **Blocker**: N/A
 - **Estimated Remaining**: N/A
-- **Rollback Safety**: safe — the whole diff is confined to `tools/ide/`, on its own branch,
-  with no commits to `feat/adr-300-302-channels-branch-tester`. No files deleted.
+- **Rollback Safety**: the first commit (the Testing tab) is confined to `tools/ide/` and
+  deletes nothing. The second (the skein retirement) deletes 28 files and is the one to
+  revert if the removal proves premature — it is a separate commit for exactly that reason.
+  Both are on `feat/adr-301-testing-tab`, with no commits to the parent branch.
 
 ## Dependency/Prerequisite Check
 

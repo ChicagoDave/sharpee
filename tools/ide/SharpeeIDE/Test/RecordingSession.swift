@@ -7,13 +7,13 @@
 // turn is `[OK]` + an ADR-287 literal text block of the response the author
 // vouched for.
 //
-// This file is what SURVIVED ADR-299's retirement of ADR-282's interaction
-// model. The live capture it used to own — the Record toggle, per-turn bless
-// verdicts, checkpoint marks, and the walkthrough-chain split — is gone: the
-// skein records every turn (D1), blessing happens in the Transcript view where
-// the output is readable (D8), and a thread is minted as ONE transcript by
-// `SkeinExporter` (D7). What remains is the grammar, kept in one place so the
-// exporter and `ReplayDriver` cannot drift apart.
+// This file is what SURVIVED two retirements. ADR-299 took ADR-282's live
+// capture — the Record toggle, per-turn bless verdicts, checkpoint marks, the
+// walkthrough-chain split — and ADR-300 then retired ADR-299's own skein,
+// exporter and replay driver in turn. What is left is the transcript
+// SERIALIZATION GRAMMAR, which outlived both because it describes the file
+// format rather than any one way of producing it. The editing surface ADR-301
+// defers to its next decision is the grammar's next caller.
 //
 // Public interface: RecordedTurn, RecordingSession.serialize(_:title:
 // openingTurn:headerFields:), assertionLines(for:).
@@ -30,9 +30,9 @@ struct RecordedTurn: Equatable {
     enum Verdict: Equatable {
         /// The command merely advances state; it asserts nothing (ADR-294 D2).
         case untagged
-        /// The response is right — asserted verbatim. A skein blessing always
-        /// approves the whole output, so there is no fragment form: the author
-        /// vouches for what they read (ADR-299 D3).
+        /// The response is right — asserted verbatim. Blessing approves the
+        /// whole output, so there is no fragment form here: the author vouches
+        /// for what they read.
         case blessed
     }
 
@@ -70,9 +70,9 @@ enum RecordingSession {
 
     /// One transcript's source.
     ///
-    /// The ONE home of the serialization grammar: the skein's `ReplayDriver`
-    /// (ADR-299 D6) and `SkeinExporter` (D7) both emit through this exact
-    /// function rather than growing a second emitter that could drift.
+    /// The ONE home of the serialization grammar. Everything that writes a
+    /// `.transcript` from played turns emits through this exact function rather
+    /// than growing a second emitter that could drift from it.
     ///
     /// - Parameters:
     ///   - turns: the turns to encode, in play order.

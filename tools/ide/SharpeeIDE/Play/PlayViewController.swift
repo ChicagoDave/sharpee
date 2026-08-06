@@ -1,16 +1,23 @@
 // PlayViewController.swift
-// The Play pane: a header (status / New Thread / "Play after build") over a
+// The Play pane: a header (status / Restart / "Play after build") over a
 // WKWebView that embeds the story's self-contained browser client
 // (dist/web/<story>/, served via a custom scheme), or a placeholder when no
-// bundle is built. Playing always grows the story's skein (ADR-299 D1): every
-// turn arriving over the turn-events bridge walks or branches the committed
-// `play-testing/<id>.skein`, and the whole surface boots at the skein's one
-// pinned seed (D5), injected as `window.__SHARPEE_PLAY_SEED__` before any
-// client script runs. Judging what the story printed is not this pane's job —
-// blessing and export live in the Transcript view (D8).
-// Public interface: load(projectRoot:), reloadAfterBuild(projectRoot:), restart(),
-// replay(toNodeId:), isReplaying, playAfterBuild, onPlayAfterBuildChanged,
-// storyDirectory, skein, transcriptsSaveDirectory, announceTranscript(_:).
+// bundle is built.
+//
+// Every turn the story takes arrives over the turn-events bridge (ADR-277 D5)
+// and lands in `sessionLog`. That bridge outlives ADR-299: the skein it used to
+// grow is retired (ADR-300), but "play authors the transcript" — promoting a
+// played session rather than typing commands blind — is named by ADR-301 as the
+// reason to build an editor at all, and this log is where that promotion will
+// read from. Judging what the story printed is not this pane's job.
+//
+// The surface boots at a pinned seed injected as `window.__SHARPEE_PLAY_SEED__`
+// before any client script runs, so a session can be replayed. See
+// `pinnedPlaySeed` for where that value comes from now that the skein no longer
+// carries one.
+// Public interface: load(bundleDirectory:), reloadAfterBuild(projectRoot:),
+// restart(), playAfterBuild, onPlayAfterBuildChanged, storyDirectory,
+// sessionLog, onTurn, transcriptsSaveDirectory, announceTranscript(_:).
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -91,17 +98,43 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// against the bundle's source map into a navigable error.
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
-    /// The story's live skein session (ADR-299 D1): opened per bundle load,
-    /// grown on every turn. Nil when no bundle is loaded or the open project
-    /// has no story directory to keep a skein in.
-    private(set) var skein: SkeinSession?
+    /// One turn of the running story, as it came over the bridge.
+    struct PlayedTurn: Equatable {
+        let command: String
+        let response: String
+    }
 
-    /// The open story's own directory, set by the project-load path. Exported
-    /// threads land in the folders ADR-280's classifier looks for beneath it,
-    /// so the sidebar discovers them.
+    /// Every turn of the CURRENT playthrough, in order, cleared on restart.
+    ///
+    /// In memory only, deliberately: the `.skein` file this used to persist into
+    /// is retired (ADR-300), and a played session is worth keeping only until
+    /// the author promotes it into a `.transcript` — which is the editing
+    /// surface ADR-301 defers to its next decision. Persisting it again before
+    /// that decision would be inventing a second artifact to replace the one
+    /// just removed.
+    private(set) var sessionLog: [PlayedTurn] = []
+
+    /// Fired after each turn lands, so a surface can show the session growing.
+    var onTurn: ((PlayedTurn) -> Void)?
+
+    /// The seed every Play boot pins, injected before any client script runs.
+    ///
+    /// The skein used to mint one per story and persist it; with the artifact
+    /// retired there is nowhere authored to read a seed FROM — the Chord story
+    /// header's schema is closed (ADR-298 D4) and carries no `seed`, and
+    /// ADR-293's `seed:` is a *transcript* header field, not a story one. So
+    /// this is a constant: every Play boot of every story is reproducible, on
+    /// any machine and from a fresh clone, which the skein's random per-story
+    /// seed never was. Making it authorable means adding `seed` to
+    /// `IRStoryFields` — a Chord language change, and a separate decision.
+    static let pinnedPlaySeed = 1
+
+    /// The open story's own directory, set by the project-load path. Recorded
+    /// transcripts land in the folders ADR-280's classifier looks for beneath
+    /// it, so the sidebar discovers them.
     var storyDirectory: URL?
 
-    /// Where an exported thread is offered by default (ADR-299 D7) — ADR-280's
+    /// Where a recorded transcript is offered by default — ADR-280's
     /// Transcript Tests group.
     var transcriptsSaveDirectory: URL? {
         storyDirectory?.appendingPathComponent("tests", isDirectory: true)
@@ -112,17 +145,12 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// re-discover its tree.
     var onTranscriptRecorded: ((URL) -> Void)?
 
-    /// Announces a transcript written by someone else — the skein exporter
-    /// (ADR-299 D7) lives in the right panel, but the Tests panel listens
-    /// here, and two announce channels would be two things to keep wired.
+    /// Announces a transcript written by someone else, so the Tests panel can
+    /// re-discover its tree. One announce channel rather than two, because a
+    /// second would be a second thing to keep wired.
     func announceTranscript(_ url: URL) {
         onTranscriptRecorded?(url)
     }
-
-    /// Fired whenever the skein changes underfoot — a new session opened on
-    /// load, or a turn walked/branched it — so the Skein view repaints without
-    /// polling (ADR-299 D8).
-    var onSkeinChanged: (() -> Void)?
 
     override func loadView() {
         let pane = ThemedPane(color: Theme.playBackground)
@@ -179,31 +207,19 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// caller from the IR header per ADR-258 D4) if its index.html exists,
     /// otherwise shows the placeholder. Passing nil shows the placeholder.
     ///
-    /// Loading opens the story's skein (ADR-299): an existing
-    /// `play-testing/<id>.skein` that cannot be read blocks the surface with
-    /// its reason (AC-7's loud rejection) — playing without growing the skein
-    /// would silently drop turns the author expects recorded.
+    /// Loading starts a fresh session log — the bundle may have just rebuilt,
+    /// so turns from the previous build describe a story that no longer exists.
     func load(bundleDirectory: URL?) {
         guard let bundleDirectory,
               FileManager.default.fileExists(
                   atPath: bundleDirectory.appendingPathComponent("index.html").path) else {
             loaded = nil
-            skein = nil
+            sessionLog = []
             showPlaceholder(Self.notBuiltPlaceholder)
-            onSkeinChanged?()
             return
         }
-        do {
-            try openSkein(storyId: bundleDirectory.lastPathComponent)
-        } catch {
-            loaded = nil
-            skein = nil
-            showPlaceholder("Cannot read the story's skein — \(error.localizedDescription)")
-            onSkeinChanged?()
-            return
-        }
-        onSkeinChanged?()
-        installUserScripts() // seed the new boot (the skein may have changed)
+        sessionLog = []
+        installUserScripts()
         loaded = bundleDirectory
         PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
         schemeHandler.rootDirectory = bundleDirectory
@@ -214,40 +230,17 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         webView.load(URLRequest(url: url))
     }
 
-    /// Opens (or begins) the skein for `storyId` beneath the open story's
-    /// directory. Without a story directory there is nowhere to keep one —
-    /// the pane still plays, it just has no skein to grow (the fixture-page
-    /// case in tests; a real project load always configures the directory).
-    private func openSkein(storyId: String) throws {
-        guard let storyDirectory else {
-            skein = nil
-            return
-        }
-        skein = try SkeinSession(
-            storeURL: SkeinStore.url(forStoryId: storyId, projectRoot: storyDirectory))
-    }
-
     /// (Re)installs the pane's document-start scripts: the console hook, the
-    /// surface chrome, and — when a skein is open — its pinned seed (D5) as
-    /// `window.__SHARPEE_PLAY_SEED__`, which the built bundle's entry passes
-    /// into the engine. Rebuilt per load because the seed rides the script.
+    /// surface chrome, and the pinned seed as `window.__SHARPEE_PLAY_SEED__`,
+    /// which the built bundle's entry passes into the engine.
     private func installUserScripts() {
         let contentController = webView.configuration.userContentController
         contentController.removeAllUserScripts()
-        var sources = [Self.consoleHookScript, Self.playSurfaceScript]
-        if let skein {
-            sources.append("window.__SHARPEE_PLAY_SEED__ = \(skein.seed);")
-        }
-        // The forcings of the branch being replayed (D5). Structured specs,
-        // not header text — the built page must never carry a second copy of
-        // the `forces:` grammar. Empty on an ordinary boot, so a normal play
-        // session and a published page are byte-identical in behaviour.
-        if !pendingForcings.isEmpty,
-           let json = try? JSONSerialization.data(
-               withJSONObject: pendingForcings.map(\.playSpec)),
-           let literal = String(data: json, encoding: .utf8) {
-            sources.append("window.__SHARPEE_PLAY_FORCES__ = \(literal);")
-        }
+        let sources = [
+            Self.consoleHookScript,
+            Self.playSurfaceScript,
+            "window.__SHARPEE_PLAY_SEED__ = \(Self.pinnedPlaySeed);",
+        ]
         for source in sources {
             contentController.addUserScript(WKUserScript(source: source,
                                                          injectionTime: .atDocumentStart,
@@ -287,183 +280,14 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     /// Restarts the running story by reloading from origin — a fresh boot, since
     /// playSurfaceScript clears the origin's storage before the client runs.
-    /// In skein terms this is D8's "new thread from root": play returns to the
-    /// story start, and the next diverging command branches there.
+    /// The session log starts over with it: the turns before a restart belong to
+    /// a playthrough the author has abandoned, and carrying them into the next
+    /// one would promote a transcript that never happened in that order.
     func restart() {
         guard loaded != nil else { return }
-        // A new thread from the story start forces nothing — a forcing left
-        // standing from a replayed branch would silently bend an ostensibly
-        // fresh playthrough (D5).
-        if !pendingForcings.isEmpty {
-            pendingForcings = []
-            installUserScripts()
-        }
-        skein?.beginThread()
+        sessionLog = []
         webView.reloadFromOrigin()
     }
-
-    // MARK: - Replay to node (ADR-299 D6)
-
-    /// Why a replay could not be completed.
-    enum ReplayError: Error, LocalizedError, Equatable {
-        /// No bundle is loaded, or the pane has no skein to replay through.
-        case notPlayable
-        /// The skein has no node with that id.
-        case unknownNode(String)
-        /// The client never finished booting after the restart.
-        case clientDidNotBoot
-        /// A command was typed but no turn came back over the bridge —
-        /// the story no longer accepts it, or the client wedged.
-        case turnDidNotLand(command: String)
-
-        var errorDescription: String? {
-            switch self {
-            case .notPlayable:
-                return "There is no running story to replay through — build (⌘B) first."
-            case .unknownNode(let id):
-                return "That node is no longer in the skein (\(id))."
-            case .clientDidNotBoot:
-                return "The story did not finish booting, so the replay could not start."
-            case .turnDidNotLand(let command):
-                return "Replay stopped at \"\(command)\" — the story did not respond to it."
-            }
-        }
-    }
-
-    /// True while a replay is driving the surface; the Skein view disables its
-    /// affordances so a second click cannot interleave commands into the run.
-    private(set) var isReplaying = false
-
-    /// The forcings the next boot runs under (D5) — the joined annotations of
-    /// the branch being replayed, or empty for ordinary play. They ride the
-    /// injected user script, so they survive the restart reboots the client
-    /// performs, and are cleared by "new thread from root": a fresh thread
-    /// from the story start forces nothing.
-    private(set) var pendingForcings: [Forcing] = []
-
-    /// Re-runs root→node at the skein's pinned seed and leaves the story LIVE
-    /// at that point (D1/D6).
-    ///
-    /// Replay drives the real client rather than a headless run, because "live
-    /// at that point" is the requirement: the author continues typing from
-    /// where the replay left off. A fresh boot at the pinned seed plus the
-    /// thread's commands reproduces the state exactly — `ReplayRealPathTests`
-    /// pins that reproduction as byte-identical, which is what makes this
-    /// substitution sound rather than assumed. (`ReplayDriver` remains the
-    /// headless instrument for reading a thread's output WITHOUT disturbing
-    /// play — what cross-thread verification needs.)
-    ///
-    /// Walking the thread leaves the tree untouched: every command matches an
-    /// existing child, so `SkeinSession` walks rather than branches, and a
-    /// stored output that no longer matches is left standing as the
-    /// changed-output surface's data rather than silently overwritten.
-    ///
-    /// - Parameter nodeId: the node to replay to (inclusive).
-    /// - Throws: `ReplayError` when the surface cannot be driven there. The
-    ///   surface is left wherever the replay reached — a partial replay is a
-    ///   real position in the story, not a corrupt one.
-    func replay(toNodeId nodeId: String) async throws {
-        guard isLoaded, let skein else { throw ReplayError.notPlayable }
-        guard let thread = skein.document.thread(to: nodeId) else {
-            throw ReplayError.unknownNode(nodeId)
-        }
-
-        isReplaying = true
-        defer { isReplaying = false }
-
-        // Stamp the CURRENT document before reloading. `reloadFromOrigin()` is
-        // asynchronous and the outgoing page keeps answering until it is
-        // actually replaced — so every readiness probe passes against the page
-        // being thrown away, and the replay would type its commands into the
-        // OLD world (state and all). The stamp's ABSENCE is the only reliable
-        // "this is the fresh document" signal, since a fresh page defines no
-        // such global.
-        _ = try? await evaluateInPlaySurface("window.\(Self.stalePageMarker) = true; 0")
-        // The branch's forcings must be in place BEFORE the reload, since they
-        // ride a document-start script (D5). Parsed from the thread's stored
-        // annotations; anything unparseable is dropped rather than smuggled to
-        // the engine as text it would reject at load.
-        pendingForcings = (try? ReplayDriver.forcings(along: thread))?
-            .compactMap(Forcing.parse) ?? []
-        installUserScripts()
-        // The replay tells the skein which nodes the coming turns ARE, rather
-        // than letting it infer them from the commands: a forced sibling shares
-        // its shadowed node's command (D5), so command-matching would record the
-        // forced outcome against the unforced node and leave the branch empty.
-        skein.beginReplay(along: thread)
-        defer { skein.endReplay() }
-        webView.reloadFromOrigin()
-        try await waitForFreshClient()
-
-        for command in thread.commands {
-            try await submit(command: command)
-        }
-        // The bridge walked the tree command by command; assert the position
-        // explicitly so a thread whose commands repeat cannot leave play on a
-        // same-command node in a different branch.
-        skein.moveTo(nodeId: nodeId)
-    }
-
-    /// The global stamped on a page about to be discarded, so a reload can be
-    /// distinguished from "the old page is still answering".
-    private static let stalePageMarker = "__sharpeeStalePage"
-
-    /// Waits until a FRESH client has booted: the staleness stamp is gone (so
-    /// this is the post-reload document), its input exists, and the boot turn's
-    /// prose is on the page.
-    ///
-    /// Probes `textContent`, not `innerText` — an off-screen or unrendered
-    /// WebView reports empty `innerText` even with content present.
-    private func waitForFreshClient() async throws {
-        let probe = """
-        (function () {
-          if (window.\(Self.stalePageMarker)) return false;
-          var input = document.getElementById('command-input');
-          var text = document.getElementById('text-content');
-          return !!(input && text && text.textContent.trim().length > 0);
-        })()
-        """
-        for _ in 0..<Self.replayPollCount {
-            if let ready = try? await evaluateInPlaySurface(probe), ready as? Bool == true {
-                return
-            }
-            try await Task.sleep(nanoseconds: Self.replayPollInterval)
-        }
-        throw ReplayError.clientDidNotBoot
-    }
-
-    /// Types `command` into the running client and waits for its turn to come
-    /// back over the bridge.
-    ///
-    /// The wait is on the skein's position rather than on elapsed time: turn
-    /// delivery is asynchronous and can even beat the submitting evaluation's
-    /// own completion, so "the turn landed" is the only reliable signal.
-    private func submit(command: String) async throws {
-        let literal = String(data: try JSONSerialization.data(withJSONObject: [command]),
-                             encoding: .utf8) ?? "[\"\"]"
-        _ = try await evaluateInPlaySurface("""
-        (function () {
-          var input = document.getElementById('command-input');
-          if (!input) return false;
-          input.value = \(literal)[0];
-          input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-          return true;
-        })()
-        """)
-        for _ in 0..<Self.replayPollCount {
-            if skein?.document.node(withId: skein?.currentNodeId ?? "")?.command == command {
-                return
-            }
-            try await Task.sleep(nanoseconds: Self.replayPollInterval)
-        }
-        throw ReplayError.turnDidNotLand(command: command)
-    }
-
-    /// Replay polling: 50ms × 600 = a 30s ceiling per boot and per turn. A
-    /// browser-compiled Chord story boots in seconds on a cold cache, so the
-    /// ceiling is a wedge detector, not a normal wait.
-    private static let replayPollInterval: UInt64 = 50_000_000
-    private static let replayPollCount = 600
 
     /// Applies a persisted "Play after build" value (session restore).
     func setPlayAfterBuild(_ on: Bool) {
@@ -484,8 +308,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     ///
     /// The one door into the play surface's script context, so the pane has a
     /// single place where it reaches into the page rather than a scattering of
-    /// `evaluateJavaScript` call sites. Replay drives this same door, and so do
-    /// the real-path tests.
+    /// `evaluateJavaScript` call sites. The real-path tests drive this same door.
     ///
     /// - Parameter script: the expression to evaluate.
     /// - Returns: the bridged result, or nil for a void script.
@@ -503,20 +326,12 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
             guard let body = message.body as? String,
                   let data = body.data(using: .utf8),
                   let turn = try? JSONDecoder().decode(TurnEventBody.self, from: data) else { return }
-            // Playing always grows the skein (ADR-299 D1) — every turn, no
-            // toggle. A persist failure is surfaced on the pane's error path;
-            // the in-memory session keeps the turn either way.
-            do {
-                try skein?.recordTurn(command: turn.command, output: turn.response)
-                onSkeinChanged?()
-            } catch {
-                onSkeinChanged?()
-                let message = "skein not saved: \(error.localizedDescription)"
-                onConsoleError?(PlayConsoleError(
-                    message: message,
-                    frames: [],
-                    translation: SharpeeErrorTranslator.translate(message: message)))
-            }
+            // Every turn is logged, no toggle: the value of "play authors the
+            // transcript" (ADR-301) is that the author does not have to decide
+            // to record BEFORE the interesting thing happens.
+            let played = PlayedTurn(command: turn.command, response: turn.response)
+            sessionLog.append(played)
+            onTurn?(played)
         case Self.consoleHandlerName:
             guard let text = message.body as? String else { return }
             guard let loaded else {

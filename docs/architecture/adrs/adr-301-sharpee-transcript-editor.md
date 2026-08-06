@@ -87,6 +87,13 @@ outright.
 > TypeScript consumer to import the wire into. Deleting the mirror would have taken both
 > with it.
 >
+> **A1.1 (same session, later).** The skein was then retired outright on David's
+> confirmation (ADR-300 D1), which took `ReplayDriver` with it. **Re-bless is now the
+> mirror's only consumer.** That narrows the justification to one subsystem rather than
+> removing it — and it sharpens the retirement condition into something checkable: when
+> the editing surface owns re-bless, nothing in Swift reads this wire and the mirror can
+> go for real.
+>
 > What D1 actually buys is narrower and still worth having: the **tab** has no Swift
 > mirror in its path — it receives raw NDJSON lines and decodes them with the wire's own
 > `isRunEvent` — and the mirror no longer has to track the whole wire for a panel's sake,
@@ -231,9 +238,9 @@ failures** (from a 508/21 baseline — see Amendment A1).
   in the same session.
 - **ADR-303 D2's parenthetical** on Miller columns should cite this ADR instead of the
   session f2a7e6 mocks.
-- **`tools/ide/SharpeeIDE/Skein/`** (12 Swift files) is superseded. Deletion remains a
-  separate, explicitly confirmed step. `TestResultRecord.swift` is **not** superseded —
-  Amendment A1.
+- **`tools/ide/SharpeeIDE/Skein/`** (12 Swift files) was superseded and is now **removed**
+  (2026-08-06, on David's confirmation — see ADR-300 D1 for scope and for what survived).
+  `TestResultRecord.swift` is **not** superseded — Amendment A1/A1.1.
 - **The tab needs a build step** — TypeScript compiled and bundled into the app's
   resources — which the IDE does not have today. That is new build surface, not just new
   UI. *Built 2026-08-06*: `tools/ide/web/testing-tab/build.mjs` (one esbuild pass, aliased
@@ -244,7 +251,9 @@ failures** (from a 508/21 baseline — see Amendment A1).
 - **The Test panel is still on screen.** The tab ships the *reading* half; the outline
   panel still owns ADR-282 D2's re-bless, which the editing decision covers and this one
   does not. Both are fed from one run — the panel by the mirror, the tab by raw lines.
-  Retiring the panel waits on the editing surface, not on this ADR.
+  Retiring the panel waits on the editing surface, not on this ADR. That retirement now
+  carries the Swift mirror with it (A1.1), which makes the editing decision the last thing
+  standing between this repository and a single decoder for the run-event wire.
 - **Design decisions made in artifacts must be folded into an ADR.** The Context section
   records what it cost when they were not.
 
