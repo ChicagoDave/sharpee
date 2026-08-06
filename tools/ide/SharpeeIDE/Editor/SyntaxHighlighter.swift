@@ -27,6 +27,18 @@ final class SyntaxHighlighter {
         "topics", "pronouns", "trait", "traits",
     ]
 
+    /// Property keys — a `name:` field rather than a structural keyword.
+    ///
+    /// ADR-298's closed story-header schema, MINUS the keys that are already
+    /// structural keywords (`states`, `score`, `use`, `on`): those keep the
+    /// keyword color, so a header reads as fields in one color and the block
+    /// openers among them in another (David's ruling).
+    static let properties: Set<String> = [
+        "title", "authors", "testers", "ifid", "id", "story-version",
+        "prologue", "description", "client", "theme", "template",
+        "themes", "default-theme", "storage-prefix",
+    ]
+
     /// Color for one token, or nil to leave it at base foreground.
     static func color(for token: ChordToken) -> NSColor? {
         switch token.kind {
@@ -36,6 +48,46 @@ final class SyntaxHighlighter {
         case .word:    return keywords.contains(token.text.lowercased()) ? Theme.tokenKeyword : nil
         default:       return nil
         }
+    }
+
+    /// Color for one token, given its neighbours on the same line.
+    ///
+    /// Two rules need the context a per-token view cannot supply:
+    ///
+    /// - A property key is a known name with a colon fused to it (`title:`),
+    ///   which token kind alone cannot tell from the same word used in prose.
+    ///   Keywords win, so `states:` stays a keyword and the two never collide.
+    /// - A digit run fused to a word is part of a larger identifier — a UUID, a
+    ///   hex value — not a numeric literal. The lexer stops a number at the
+    ///   first non-digit, so `8221EC69` arrives as number(8221) + word(EC69);
+    ///   coloring the number would paint the first four characters of an IFID.
+    ///
+    /// - Parameters:
+    ///   - token: the token to color.
+    ///   - previous: the preceding token on the same line, or nil at line start.
+    ///   - next: the following token on the same line, or nil at end of line.
+    /// - Returns: the color, or nil to leave the token at base foreground.
+    static func color(for token: ChordToken,
+                      precededBy previous: ChordToken? = nil,
+                      followedBy next: ChordToken? = nil) -> NSColor? {
+        if token.kind == .number,
+           (previous?.kind == .word && fused(previous, token))
+            || (next?.kind == .word && fused(token, next)) {
+            return nil
+        }
+        if token.kind == .word,
+           !keywords.contains(token.text.lowercased()),
+           properties.contains(token.text.lowercased()),
+           next?.kind == .colon, fused(token, next) {
+            return Theme.tokenType
+        }
+        return color(for: token)
+    }
+
+    /// True when `left` ends exactly where `right` begins — no space between.
+    private static func fused(_ left: ChordToken?, _ right: ChordToken?) -> Bool {
+        guard let left, let right else { return false }
+        return left.span.endColumn == right.span.column
     }
 
     /// True if this highlighter can color the file at `url` (Chord `.story` only).
@@ -68,8 +120,11 @@ final class SyntaxHighlighter {
                 continue
             }
 
-            for token in line.tokens {
-                guard let color = Self.color(for: token) else { continue }
+            for (index, token) in line.tokens.enumerated() {
+                let previous = index > 0 ? line.tokens[index - 1] : nil
+                let next = index + 1 < line.tokens.count ? line.tokens[index + 1] : nil
+                guard let color = Self.color(for: token, precededBy: previous, followedBy: next)
+                else { continue }
                 let location = lineStart + token.span.column - 1
                 let length = token.span.endColumn - token.span.column
                 apply(color, at: NSRange(location: location, length: length),

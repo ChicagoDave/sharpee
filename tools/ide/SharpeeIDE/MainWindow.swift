@@ -15,7 +15,13 @@ final class MainWindowController: NSWindowController {
     convenience init() {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1400, height: 900),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            // .fullSizeContentView + a transparent titlebar hands the chrome band
+            // to the content view, so the story title can be centered IN the
+            // border instead of in a strip below it (macOS 26 draws the native
+            // title leading-aligned and offers no alignment knob). The traffic
+            // lights float over the band's leading edge; RootViewController keeps
+            // the strip exactly as tall as the band.
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -35,6 +41,12 @@ final class MainWindowController: NSWindowController {
         window.isReleasedWhenClosed = false
 
         self.init(window: window)
+
+        // The window still CARRIES the title (Window menu, Mission Control); it
+        // just no longer DRAWS it — the strip at the top of the content view
+        // does, centered on the window.
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
     }
 
     /// Replaces the project displayed in the Project pane. Optional `expandedFolderURLs`
@@ -73,6 +85,21 @@ final class MainWindowController: NSWindowController {
     /// Shows or hides the bottom Build panel — used by session restoration and builds.
     func setBuildPanelVisible(_ visible: Bool) {
         rootViewController?.applyBuildPanelVisible(visible)
+    }
+
+    /// Shows or hides the left Project pane — used by session restoration.
+    func setProjectPaneVisible(_ visible: Bool) {
+        rootViewController?.applyProjectPaneVisible(visible)
+    }
+
+    /// Whether the Project pane is currently showing (drives the View menu's checkmark).
+    var isProjectPaneVisible: Bool {
+        rootViewController?.isProjectPaneVisible ?? false
+    }
+
+    /// Flips the Project pane's visibility and persists it — View → Project Pane.
+    func toggleProjectPane() {
+        rootViewController?.toggleProjectPane()
     }
 
     /// Appends a chunk of build output to the right panel's Build tab.
@@ -124,6 +151,12 @@ final class MainWindowController: NSWindowController {
     /// lose the re-bless.
     func hasUnsavedChanges(at url: URL) -> Bool {
         rootViewController?.hasUnsavedChanges(at: url) ?? false
+    }
+
+    /// The editor's live text for `url` (its unsaved buffer), or nil when the
+    /// file has no open tab.
+    func currentText(at url: URL) -> String? {
+        rootViewController?.currentText(at: url)
     }
 
     /// Refreshes an open tab after something outside the editor rewrote `url`.
@@ -194,6 +227,8 @@ private final class RootViewController: NSViewController {
     private let bottomPanelViewController = BottomPanelViewController()
     private let verticalSplitViewController = NSSplitViewController()
     private let statusBar = StatusBarView()
+    /// The window's chrome band, drawn by us so the story title can be centered.
+    private let storyTitleBar = StoryTitleBarViewController()
 
     private var currentBuildStatus: BuildStatusDisplay = .idle
     /// Cancels the running build when the pill is clicked mid-build. Wired by AppDelegate.
@@ -232,6 +267,10 @@ private final class RootViewController: NSViewController {
             }
         }
 
+        bottomPanelViewController.problems.onFix = { [weak self] item in
+            self?.applyProblemFix(item)
+        }
+
         bottomPanelViewController.gameErrors.onErrorFocused = { [weak self] error in
             self?.mainSplitViewController.revealDiagnosis(error)
         }
@@ -245,13 +284,23 @@ private final class RootViewController: NSViewController {
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
 
+        addChild(storyTitleBar)
+        storyTitleBar.setTitle(AppIdentity.productName)
+        storyTitleBar.view.translatesAutoresizingMaskIntoConstraints = false
         verticalSplitViewController.view.translatesAutoresizingMaskIntoConstraints = false
         statusBar.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(storyTitleBar.view)
         container.addSubview(verticalSplitViewController.view)
         container.addSubview(statusBar)
 
         NSLayoutConstraint.activate([
-            verticalSplitViewController.view.topAnchor.constraint(equalTo: container.topAnchor),
+            // The chrome band: the content view starts at the window's top edge
+            // (.fullSizeContentView), so this strip IS the titlebar area.
+            storyTitleBar.view.topAnchor.constraint(equalTo: container.topAnchor),
+            storyTitleBar.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            storyTitleBar.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+
+            verticalSplitViewController.view.topAnchor.constraint(equalTo: storyTitleBar.view.bottomAnchor),
             verticalSplitViewController.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             verticalSplitViewController.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             verticalSplitViewController.view.bottomAnchor.constraint(equalTo: statusBar.topAnchor),
@@ -305,6 +354,21 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.persistSession()
     }
 
+    // MARK: Project pane visibility
+
+    fileprivate var isProjectPaneVisible: Bool {
+        mainSplitViewController.isProjectPaneVisible
+    }
+
+    /// Applies a visibility without persisting — session restore.
+    fileprivate func applyProjectPaneVisible(_ visible: Bool) {
+        mainSplitViewController.applyProjectPaneVisible(visible)
+    }
+
+    fileprivate func toggleProjectPane() {
+        mainSplitViewController.toggleProjectPane()
+    }
+
     /// Reflects the current build state in the status-bar pill.
     fileprivate func updateBuildStatus(_ status: BuildStatusDisplay) {
         currentBuildStatus = status
@@ -344,7 +408,27 @@ private final class RootViewController: NSViewController {
         // a story title (GH #188) — never carry the previous project's title.
         // Deliberately NOT read from composedIR here: the compose tree is not
         // reset on project switch, so it still holds the old project's IR.
-        view.window?.title = AppIdentity.productName
+        applyWindowTitle(AppIdentity.productName)
+    }
+
+    /// Sets the window's title and the centered strip that displays it. The two
+    /// move together: the native title is hidden, so assigning `window.title`
+    /// alone would change what the Window menu says and nothing on screen.
+    ///
+    /// - Parameter title: the text to show.
+    private func applyWindowTitle(_ title: String) {
+        view.window?.title = title
+        storyTitleBar.setTitle(title)
+    }
+
+    /// Keeps the title strip exactly as tall as the window's titlebar band, so
+    /// it occupies the chrome instead of adding a row. In full screen the band
+    /// is gone and the strip collapses to nothing with it.
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        guard let window = view.window else { return }
+        let band = window.frame.height - window.contentLayoutRect.height
+        storyTitleBar.setBandHeight(max(0, band))
     }
 
     func saveActiveDocument() {
@@ -401,6 +485,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.hasUnsavedChanges(at: url)
     }
 
+    fileprivate func currentText(at url: URL) -> String? {
+        mainSplitViewController.currentText(at: url)
+    }
+
     /// Refreshes an open tab after something outside the editor rewrote `url`.
     func reloadFromDisk(at url: URL) {
         mainSplitViewController.reloadFromDisk(at: url)
@@ -437,7 +525,44 @@ private final class RootViewController: NSViewController {
         // The window carries the story's title once a compose reveals it
         // (GH #188, ADR-279 D1 Amendment A1). Runs on failure too: the tree
         // keeps the last populated IR, so the title stays with it.
-        view.window?.title = WindowTitle.title(for: mainSplitViewController.composedIR)
+        applyWindowTitle(WindowTitle.title(for: mainSplitViewController.composedIR))
+    }
+
+    /// Runs a Problems row's inline fix.
+    ///
+    /// Today there is exactly one: a missing `ifid:`. The IFID is minted here and
+    /// written into the story header — the author never leaves the IDE to run
+    /// `sharpee ifid`. The edit goes through the editor, so it is undoable and
+    /// the next compose clears the warning on its own.
+    ///
+    /// - Parameter item: the Problems row whose button was clicked.
+    private func applyProblemFix(_ item: ProblemItem) {
+        guard item.record.code == "analysis.missing-ifid" else { return }
+        let url = item.fileURL
+        let source = mainSplitViewController.currentText(at: url)
+            ?? (try? String(contentsOf: url, encoding: .utf8))
+
+        guard let source,
+              let insertion = StoryHeaderIFID.insertion(of: StoryHeaderIFID.mint(), into: source),
+              mainSplitViewController.insertText(insertion.text, at: insertion.offset, in: url)
+        else {
+            presentFixFailure(for: url)
+            return
+        }
+    }
+
+    /// Reports a fix that could not be applied, rather than doing nothing and
+    /// leaving the author to wonder whether the button worked.
+    private func presentFixFailure(for url: URL) {
+        let alert = NSAlert()
+        alert.messageText = "Couldn’t add an IFID"
+        alert.informativeText = "No `story` block was found in \(url.lastPathComponent), or it already declares an `ifid:`. Rebuild to refresh Problems."
+        alert.alertStyle = .warning
+        if let window = view.window {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     /// One-line Problems status for a compose-pipeline failure.
@@ -531,7 +656,11 @@ private final class MainSplitViewController: NSSplitViewController {
         NotificationCenter.default.addObserver(
             self, selector: #selector(persistDividerPositions(_:)),
             name: NSSplitView.didResizeSubviewsNotification, object: splitView)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(settingsDidChange(_:)),
+            name: SettingsPreference.didChange, object: nil)
 
+        railViewController.onProjectToggle = { [weak self] in self?.toggleProjectPane() }
         railViewController.onBuildToggle = { [weak self] in self?.onBuildPanelToggle?() }
         projectPaneViewController.onActivateFile = { [weak self] url in self?.activateFile(at: url) }
         projectPaneViewController.onExpansionChanged = { [weak self] in self?.persistSession() }
@@ -668,6 +797,17 @@ private final class MainSplitViewController: NSSplitViewController {
         editorViewController.reloadFromDisk(at: url)
     }
 
+    /// The editor's live text for `url`, or nil when it is not open.
+    fileprivate func currentText(at url: URL) -> String? {
+        editorViewController.currentText(at: url)
+    }
+
+    /// Splices text into `url` through the editor (undoable, re-composes).
+    @discardableResult
+    fileprivate func insertText(_ text: String, at characterIndex: Int, in url: URL) -> Bool {
+        editorViewController.insertText(text, at: characterIndex, in: url)
+    }
+
     /// Applies a compose run's records as editor underlines for `url`.
     fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
         editorViewController.setDiagnostics(records, forFile: url)
@@ -686,12 +826,94 @@ private final class MainSplitViewController: NSSplitViewController {
         railViewController.setBuildActive(active)
     }
 
+    // MARK: Project pane visibility
+
+    /// The project pane's split item (index 1, after the rail), or nil before
+    /// `viewDidLoad` has installed the items.
+    private var projectItem: NSSplitViewItem? {
+        splitViewItems.indices.contains(1) ? splitViewItems[1] : nil
+    }
+
+    /// Tracked explicitly rather than read back from `NSSplitViewItem.isCollapsed`.
+    /// `isCollapsed` is not usable here: this split sets divider positions by hand
+    /// (see `projectWidthKey`), and the width that pins comes back the moment the
+    /// collapse settles — the item reports collapsed while the pane still occupies
+    /// its full width. Hiding is therefore done the same way every other width in
+    /// this split is: by moving divider 1.
+    private var projectPaneVisible = true
+
+    fileprivate var isProjectPaneVisible: Bool { projectPaneVisible }
+
+    /// Shows or hides the project pane without persisting — also used by session
+    /// restore. The pane's dragged width survives a hide: `persistDividerPositions`
+    /// declines to write the 0.
+    ///
+    /// - Parameter visible: true to show the pane, false to hide it.
+    fileprivate func applyProjectPaneVisible(_ visible: Bool) {
+        guard let projectItem, splitView.arrangedSubviews.count == 4 else { return }
+        projectPaneVisible = visible
+        // The minimum has to drop out of the way first, or AppKit clamps the
+        // divider at 200 instead of letting it reach the rail.
+        projectItem.minimumThickness = visible ? Self.projectMinWidth : 0
+        projectItem.viewController.view.isHidden = !visible
+        splitView.setPosition(Self.railWidth + (visible ? savedProjectWidth() : 0), ofDividerAt: 1)
+        railViewController.setProjectActive(visible)
+        // Showing or hiding the pane changes what "half" means (Settings).
+        snapEditorAndPlayEvenlyIfEnabled()
+    }
+
+    /// Flips the project pane's visibility and persists the new state.
+    fileprivate func toggleProjectPane() {
+        applyProjectPaneVisible(!isProjectPaneVisible)
+        persistSession()
+    }
+
+    // MARK: Even pane split (Settings → Snap panes to 50% each)
+
+    /// Puts the editor and Play panes on an even split, when the setting is on.
+    ///
+    /// The project pane keeps its own width — it is a sidebar, not one of the
+    /// two halves — so "half" is half of what remains after the rail and the
+    /// pane. A no-op before the opening layout has run, so launch still restores
+    /// the saved widths rather than snapping over them.
+    fileprivate func snapEditorAndPlayEvenlyIfEnabled() {
+        guard SettingsPreference.snapPanesEvenly,
+              didApplyInitialLayout,
+              splitView.arrangedSubviews.count == 4 else { return }
+
+        let totalWidth = splitView.bounds.width
+        let projectWidth = isProjectPaneVisible ? splitView.arrangedSubviews[1].frame.width : 0
+        let editorPlusPlay = max(0, totalWidth - Self.railWidth - projectWidth)
+        guard editorPlusPlay > 0 else { return }
+        splitView.setPosition(totalWidth - editorPlusPlay / 2, ofDividerAt: 2)
+    }
+
+    /// Re-snaps after a WINDOW resize. Deliberately not hooked to the split's own
+    /// resize notification: that fires for divider drags too, which would make
+    /// the divider immovable rather than merely re-snapping.
+    @objc private func windowDidResize(_ note: Notification) {
+        snapEditorAndPlayEvenlyIfEnabled()
+    }
+
+    /// Applies a settings change to the open window at once.
+    @objc private func settingsDidChange(_ note: Notification) {
+        snapEditorAndPlayEvenlyIfEnabled()
+    }
+
+    /// The width to reopen the project pane at: the author's last dragged width
+    /// when one is saved, the default otherwise — never below the minimum.
+    private func savedProjectWidth() -> CGFloat {
+        let saved = UserDefaults.standard.object(forKey: Self.projectWidthKey) as? Double
+        return max(Self.projectMinWidth, saved.map { CGFloat($0) } ?? Self.projectWidth)
+    }
+
     fileprivate func persistSession() {
         let state = SessionState(
             projectURL: currentProject?.rootURL,
             openDocumentURLs: editorViewController.openDocumentURLs,
             activeIndex: editorViewController.activeDocumentIndex,
             expandedFolderURLs: projectPaneViewController.expandedFolderURLs,
+            projectPaneVisible: isProjectPaneVisible,
             buildPanelVisible: buildPanelVisibleProvider?() ?? false,
             playAfterBuild: playViewController.playAfterBuild
         )
@@ -788,6 +1010,12 @@ private final class MainSplitViewController: NSSplitViewController {
         guard !didApplyInitialLayout else { return }
         didApplyInitialLayout = true
         applyInitialDividerPositions()
+        if let window = view.window {
+            NotificationCenter.default.addObserver(
+                self, selector: #selector(windowDidResize(_:)),
+                name: NSWindow.didResizeNotification, object: window)
+        }
+        snapEditorAndPlayEvenlyIfEnabled()
     }
 
     /// Opening divider positions, applied once the window is at its real size:
@@ -797,13 +1025,13 @@ private final class MainSplitViewController: NSSplitViewController {
         let defaults = UserDefaults.standard
         let totalWidth = splitView.bounds.width
 
-        let savedProject = defaults.object(forKey: Self.projectWidthKey) as? Double
-        let projectWidth = max(Self.projectMinWidth, savedProject.map { CGFloat($0) } ?? Self.projectWidth)
+        let projectWidth = isProjectPaneVisible ? savedProjectWidth() : 0
         let editorPlusPlay = max(0, totalWidth - Self.railWidth - projectWidth)
         let savedPlay = defaults.object(forKey: Self.playWidthKey) as? Double
         let playWidth = max(Self.playMinWidth, savedPlay.map { CGFloat($0) } ?? editorPlusPlay / 2)
 
         splitView.setPosition(Self.railWidth, ofDividerAt: 0)
+        // projectWidth is 0 when a restored session left the pane hidden.
         splitView.setPosition(Self.railWidth + projectWidth, ofDividerAt: 1)
         splitView.setPosition(totalWidth - playWidth, ofDividerAt: 2)
     }
@@ -814,7 +1042,11 @@ private final class MainSplitViewController: NSSplitViewController {
     @objc private func persistDividerPositions(_ note: Notification) {
         guard didApplyInitialLayout else { return }
         let defaults = UserDefaults.standard
-        defaults.set(Double(splitView.arrangedSubviews[1].frame.width), forKey: Self.projectWidthKey)
+        // A collapsed project pane measures 0 — writing that would reset the
+        // author's dragged width to the minimum the next time they expand it.
+        if isProjectPaneVisible {
+            defaults.set(Double(splitView.arrangedSubviews[1].frame.width), forKey: Self.projectWidthKey)
+        }
         defaults.set(Double(splitView.arrangedSubviews[3].frame.width), forKey: Self.playWidthKey)
     }
 
@@ -830,6 +1062,10 @@ private final class MainSplitViewController: NSSplitViewController {
     private func makeProjectItem() -> NSSplitViewItem {
         let item = NSSplitViewItem(viewController: projectPaneViewController)
         item.minimumThickness = Self.projectMinWidth
+        // Hiding is driven by divider 1, not NSSplitViewItem.isCollapsed (see
+        // applyProjectPaneVisible) — leaving canCollapse on would let a drag
+        // collapse the item behind the tracked state's back.
+        item.canCollapse = false
         // Above editor/play (250) so window resizes stretch those panes, but
         // BELOW the divider-drag priorities (~490-510): .defaultHigh (750)
         // out-prioritized user drags entirely — the divider bounced back and
@@ -862,40 +1098,87 @@ private final class MainSplitViewController: NSSplitViewController {
 
 private final class RailViewController: NSViewController {
 
+    /// Accessibility identifiers — the rail's stable handles for tests.
+    static let projectButtonIdentifier = "rail.project"
+    static let buildButtonIdentifier = "rail.build"
+
+    private static let buttonSize: CGFloat = 24
+
+    /// Invoked when the Project (folder) button is clicked.
+    var onProjectToggle: (() -> Void)?
     /// Invoked when the Build button is clicked.
     var onBuildToggle: (() -> Void)?
 
+    private let projectButton = NSButton()
     private let buildButton = NSButton()
 
     override func loadView() {
         let pane = ThemedPane(color: Theme.railBackground)
 
-        buildButton.title = ""
-        buildButton.image = NSImage(systemSymbolName: "hammer", accessibilityDescription: "Build")
-            ?? NSImage()
-        buildButton.imagePosition = .imageOnly
-        buildButton.isBordered = false
-        buildButton.bezelStyle = .regularSquare
-        buildButton.contentTintColor = Theme.foregroundDim
-        buildButton.toolTip = "Toggle Problems Panel"
-        buildButton.target = self
-        buildButton.action = #selector(toggleBuild)
-        buildButton.translatesAutoresizingMaskIntoConstraints = false
+        configure(projectButton, symbol: "folder", label: "Project",
+                  tooltip: "Toggle Project Pane", action: #selector(toggleProject),
+                  identifier: Self.projectButtonIdentifier)
+        configure(buildButton, symbol: "hammer", label: "Build",
+                  tooltip: "Toggle Problems Panel", action: #selector(toggleBuild),
+                  identifier: Self.buildButtonIdentifier)
+        // The project pane opens visible; session restore corrects this when the
+        // author left it collapsed.
+        projectButton.contentTintColor = Theme.accent
+
+        pane.addSubview(projectButton)
         pane.addSubview(buildButton)
 
         NSLayoutConstraint.activate([
+            projectButton.centerXAnchor.constraint(equalTo: pane.centerXAnchor),
+            projectButton.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
+            projectButton.widthAnchor.constraint(equalToConstant: Self.buttonSize),
+            projectButton.heightAnchor.constraint(equalToConstant: Self.buttonSize),
+
             buildButton.centerXAnchor.constraint(equalTo: pane.centerXAnchor),
-            buildButton.topAnchor.constraint(equalTo: pane.topAnchor, constant: 12),
-            buildButton.widthAnchor.constraint(equalToConstant: 24),
-            buildButton.heightAnchor.constraint(equalToConstant: 24),
+            buildButton.topAnchor.constraint(equalTo: projectButton.bottomAnchor, constant: 8),
+            buildButton.widthAnchor.constraint(equalToConstant: Self.buttonSize),
+            buildButton.heightAnchor.constraint(equalToConstant: Self.buttonSize),
         ])
 
         view = pane
     }
 
+    /// Shared setup for a rail button: borderless SF Symbol, dim until active.
+    ///
+    /// - Parameters:
+    ///   - button: the button to configure.
+    ///   - symbol: SF Symbol name for its image.
+    ///   - label: accessibility description for the image.
+    ///   - tooltip: hover text.
+    ///   - action: selector invoked on click, targeted at this controller.
+    ///   - identifier: accessibility identifier tests locate the button by.
+    private func configure(_ button: NSButton, symbol: String, label: String,
+                           tooltip: String, action: Selector, identifier: String) {
+        button.title = ""
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: label) ?? NSImage()
+        button.imagePosition = .imageOnly
+        button.isBordered = false
+        button.bezelStyle = .regularSquare
+        button.contentTintColor = Theme.foregroundDim
+        button.toolTip = tooltip
+        button.target = self
+        button.action = action
+        button.setAccessibilityIdentifier(identifier)
+        button.translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    /// Tints the Project button to reflect whether the project pane is showing.
+    func setProjectActive(_ active: Bool) {
+        projectButton.contentTintColor = active ? Theme.accent : Theme.foregroundDim
+    }
+
     /// Tints the Build button to reflect whether the Build panel is showing.
     func setBuildActive(_ active: Bool) {
         buildButton.contentTintColor = active ? Theme.accent : Theme.foregroundDim
+    }
+
+    @objc private func toggleProject() {
+        onProjectToggle?()
     }
 
     @objc private func toggleBuild() {

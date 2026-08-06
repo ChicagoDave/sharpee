@@ -117,6 +117,31 @@ final class SessionStateTests: XCTestCase {
         XCTAssertTrue(decoded.buildPanelVisible)
     }
 
+    func testPayloadWithoutProjectPaneVisibleDefaultsTrue() throws {
+        // Payloads predating projectPaneVisible must decode with the pane SHOWING —
+        // an existing author must not launch into a hidden folder tree.
+        let json = """
+        {
+            "projectURL": "file:///repo/",
+            "openDocumentURLs": [],
+            "expandedFolderURLs": []
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(SessionState.self, from: json)
+        XCTAssertTrue(decoded.projectPaneVisible)
+    }
+
+    func testProjectPaneVisibleRoundtripsFalse() throws {
+        let original = SessionState(projectURL: URL(fileURLWithPath: "/repo"),
+                                    openDocumentURLs: [],
+                                    activeIndex: nil,
+                                    projectPaneVisible: false)
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(SessionState.self, from: data)
+        XCTAssertFalse(decoded.projectPaneVisible)
+    }
+
     func testPlayAfterBuildDefaultsTrueWhenAbsent() throws {
         let json = """
         { "projectURL": "file:///repo/", "openDocumentURLs": [] }

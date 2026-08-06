@@ -11,6 +11,9 @@ struct SessionState: Codable {
     var openDocumentURLs: [URL]
     var activeIndex: Int?
     var expandedFolderURLs: [URL]
+    /// Whether the left project pane is expanded. Defaults to true — the pane
+    /// shows unless the author collapsed it from the rail or the View menu.
+    var projectPaneVisible: Bool
     var buildPanelVisible: Bool
     var playAfterBuild: Bool
 
@@ -18,12 +21,14 @@ struct SessionState: Codable {
          openDocumentURLs: [URL],
          activeIndex: Int?,
          expandedFolderURLs: [URL] = [],
+         projectPaneVisible: Bool = true,
          buildPanelVisible: Bool = false,
          playAfterBuild: Bool = true) {
         self.projectURL = projectURL
         self.openDocumentURLs = openDocumentURLs
         self.activeIndex = activeIndex
         self.expandedFolderURLs = expandedFolderURLs
+        self.projectPaneVisible = projectPaneVisible
         self.buildPanelVisible = buildPanelVisible
         self.playAfterBuild = playAfterBuild
     }
@@ -35,6 +40,7 @@ struct SessionState: Codable {
         openDocumentURLs = try container.decodeIfPresent([URL].self, forKey: .openDocumentURLs) ?? []
         activeIndex = try container.decodeIfPresent(Int.self, forKey: .activeIndex)
         expandedFolderURLs = try container.decodeIfPresent([URL].self, forKey: .expandedFolderURLs) ?? []
+        projectPaneVisible = try container.decodeIfPresent(Bool.self, forKey: .projectPaneVisible) ?? true
         buildPanelVisible = try container.decodeIfPresent(Bool.self, forKey: .buildPanelVisible) ?? false
         playAfterBuild = try container.decodeIfPresent(Bool.self, forKey: .playAfterBuild) ?? true
     }

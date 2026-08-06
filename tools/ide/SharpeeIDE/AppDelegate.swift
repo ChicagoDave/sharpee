@@ -125,6 +125,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         }
 
         loadProject(at: projectURL, expandedFolderURLs: state.expandedFolderURLs)
+        controller.setProjectPaneVisible(state.projectPaneVisible)
         controller.setBuildPanelVisible(state.buildPanelVisible)
         controller.setPlayAfterBuild(state.playAfterBuild)
 
@@ -416,6 +417,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         testController?.cancel()
     }
 
+    /// Chord Writer → Settings… (⌘,). App-wide author preferences; per-project
+    /// build options stay in the Build Settings sheet.
+    @objc func showSettings(_ sender: Any?) {
+        SettingsWindowController.shared.show()
+    }
+
+    /// View → Project Pane (⌘0). Collapses or expands the left folder tree; the
+    /// rail's folder button is the same toggle. Persisted with the session.
+    @objc func toggleProjectPane(_ sender: Any?) {
+        mainWindowController?.toggleProjectPane()
+    }
+
     /// View → Word Wrap. Toggles soft wrap in the editor (persisted).
     @objc func toggleWordWrap(_ sender: Any?) {
         mainWindowController?.setWordWrap(!WordWrapPreference.isEnabled)
@@ -460,6 +473,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(testController?.isTesting ?? false)
         case #selector(cancelTestRun(_:)):
             return testController?.isTesting ?? false
+        case #selector(toggleProjectPane(_:)):
+            menuItem.state = (mainWindowController?.isProjectPaneVisible ?? false) ? .on : .off
+            return true
         case #selector(toggleWordWrap(_:)):
             menuItem.state = WordWrapPreference.isEnabled ? .on : .off
             return true

@@ -167,6 +167,42 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         documents.contains { $0.url == url && $0.isDirty }
     }
 
+    /// The editor's current text for `url` — its unsaved buffer when a tab holds
+    /// one — or nil when the file is not open. A caller rewriting the file must
+    /// transform THIS, not what is on disk, or it discards the author's edits.
+    func currentText(at url: URL) -> String? {
+        documents.first { $0.url == url }?.content
+    }
+
+    /// Splices `text` into `url`'s buffer at `characterIndex`, opening the file
+    /// first if it is not already showing.
+    ///
+    /// Goes through the text view rather than the Document so the edit is a
+    /// normal typing edit: undoable with ⌘Z, and it fires `textDidChange`, which
+    /// re-highlights and re-composes. The tab is left dirty — the author decides
+    /// when to save.
+    ///
+    /// - Parameters:
+    ///   - text: the text to insert.
+    ///   - characterIndex: UTF-16 offset into the buffer.
+    ///   - url: the file to edit.
+    /// - Returns: false when the file could not be opened or the offset does not
+    ///   fit the buffer; nothing is inserted in that case.
+    @discardableResult
+    func insertText(_ text: String, at characterIndex: Int, in url: URL) -> Bool {
+        openDocument(at: url)
+        guard activeDocument?.url == url else { return false }
+        let length = (textView.string as NSString).length
+        guard characterIndex >= 0, characterIndex <= length else { return false }
+
+        let range = NSRange(location: characterIndex, length: 0)
+        guard textView.shouldChangeText(in: range, replacementString: text) else { return false }
+        textView.setSelectedRange(range)
+        textView.insertText(text, replacementRange: range)
+        textView.didChangeText()
+        return true
+    }
+
     /// Re-reads `url` from disk into its open tab, if it has one.
     ///
     /// For use after something outside the editor rewrote the file, so the tab

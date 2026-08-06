@@ -23,6 +23,16 @@ final class ProblemsView: NSView {
     /// Invoked when a row is double-clicked (or Return-activated).
     var onActivate: ((ProblemItem) -> Void)?
 
+    /// Invoked when a row's inline fix button is clicked.
+    var onFix: ((ProblemItem) -> Void)?
+
+    /// Diagnostics Problems can fix in place, and the button title for each.
+    /// A problem the IDE can resolve itself is offered as a button — the author
+    /// is never told to go and run a CLI command.
+    private static let fixes: [String: String] = [
+        "analysis.missing-ifid": "Generate IFID",
+    ]
+
     private let scrollView = NSScrollView()
     private let tableView = NSTableView()
     private let emptyLabel = NSTextField(labelWithString: "No problems")
@@ -57,6 +67,8 @@ final class ProblemsView: NSView {
         tableView.delegate = self
         tableView.target = self
         tableView.doubleAction = #selector(doubleClicked)
+        // Tall enough for a row's inline fix button; a text-only row is unaffected.
+        tableView.rowHeight = 22
 
         scrollView.documentView = tableView
         scrollView.hasVerticalScroller = true
@@ -167,6 +179,29 @@ extension ProblemsView: NSTableViewDelegate {
         field.lineBreakMode = .byTruncatingTail
         field.maximumNumberOfLines = 1
         field.translatesAutoresizingMaskIntoConstraints = false
-        return field
+
+        guard let fixTitle = Self.fixes[record.code] else { return field }
+
+        let button = NSButton(title: fixTitle, target: self, action: #selector(fixClicked(_:)))
+        button.bezelStyle = .accessoryBarAction
+        button.controlSize = .small
+        button.font = Self.bodyFont
+        button.setAccessibilityIdentifier("problems.fix.\(record.code)")
+        button.setContentHuggingPriority(.required, for: .horizontal)
+
+        let stack = NSStackView(views: [field, button])
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }
+
+    /// Runs the row's inline fix. The row is resolved from the button's position
+    /// in the table rather than a captured index — rows are rebuilt on reload.
+    @objc private func fixClicked(_ sender: NSButton) {
+        let row = tableView.row(for: sender)
+        guard items.indices.contains(row) else { return }
+        onFix?(items[row])
     }
 }

@@ -37,6 +37,13 @@ enum MenuBuilder {
         menu.addItem(about)
         menu.addItem(NSMenuItem.separator())
 
+        let settings = NSMenuItem(title: "Settings…",
+                                  action: #selector(AppDelegate.showSettings(_:)),
+                                  keyEquivalent: ",")
+        settings.target = target
+        menu.addItem(settings)
+        menu.addItem(NSMenuItem.separator())
+
         let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
         let servicesMenu = NSMenu(title: "Services")
         services.submenu = servicesMenu
@@ -118,6 +125,15 @@ enum MenuBuilder {
 
     private static func makeViewMenuItem(target: AnyObject) -> NSMenuItem {
         let menu = NSMenu(title: "View")
+
+        // ⌘0 mirrors Xcode's navigator toggle; ⌘B is already Build.
+        let projectPane = NSMenuItem(title: "Project Pane",
+                                     action: #selector(AppDelegate.toggleProjectPane(_:)),
+                                     keyEquivalent: "0")
+        projectPane.target = target
+        menu.addItem(projectPane)
+
+        menu.addItem(NSMenuItem.separator())
 
         let wordWrap = NSMenuItem(title: "Word Wrap",
                                   action: #selector(AppDelegate.toggleWordWrap(_:)),

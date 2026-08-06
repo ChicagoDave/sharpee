@@ -60,6 +60,78 @@ final class SyntaxHighlighterTests: XCTestCase {
         XCTAssertEqual(color(in: storage, of: "1.0.0"), Theme.tokenNumber)
     }
 
+    // MARK: - Story-header properties
+
+    /// Header fields color as properties, in their OWN color — a header must not
+    /// read as though `title:` and `use` were the same kind of thing.
+    func testStoryPropertiesColorDistinctlyFromStructuralKeywords() {
+        let storage = highlighted("""
+        story
+          title: The Folly at Fernhill
+          id: fernhill
+          ifid: A1B2C3D4-E5F6-7890-ABCD-EF1234567890
+          states: evening, midnight
+          use scoring
+
+        """)
+
+        XCTAssertEqual(color(in: storage, of: "title"), Theme.tokenType)
+        XCTAssertEqual(color(in: storage, of: "id:"), Theme.tokenType)
+        XCTAssertEqual(color(in: storage, of: "ifid"), Theme.tokenType)
+
+        XCTAssertEqual(color(in: storage, of: "states"), Theme.tokenKeyword,
+                       "states stays a keyword — David asked for properties to differ from it")
+        XCTAssertEqual(color(in: storage, of: "use"), Theme.tokenKeyword)
+        XCTAssertNotEqual(Theme.tokenType, Theme.tokenKeyword,
+                          "the two colors must actually be different")
+    }
+
+    /// An IFID is one identifier, not a number glued to words. The lexer stops a
+    /// digit run at the first non-digit, so an unguarded highlighter painted
+    /// `8221` of `8221EC69-…` as a numeric literal.
+    func testAnIfidValueIsNotPartlyColoredAsANumber() {
+        let storage = highlighted("""
+        story
+          id: fernhill
+          ifid: 8221EC69-3D96-4F60-A057-99D1FE72000F
+
+        """)
+
+        XCTAssertEqual(color(in: storage, of: "8221"), Theme.foreground,
+                       "the leading digits of an IFID are not a number")
+        XCTAssertEqual(color(in: storage, of: "3D96"), Theme.foreground,
+                       "nor are the digits leading each later group")
+        XCTAssertEqual(color(in: storage, of: "99D1FE72000F"), Theme.foreground)
+        XCTAssertEqual(color(in: storage, of: "ifid"), Theme.tokenType,
+                       "the key still colors as a property")
+    }
+
+    func testRealNumericLiteralsStillColor() {
+        let storage = highlighted("""
+        story
+          story-version: 0.3.0
+
+        create the Hall
+          a room
+
+          on every turn while one chance in 12
+            phrase distant-bell
+          end on
+
+        """)
+
+        XCTAssertEqual(color(in: storage, of: "0.3.0"), Theme.tokenNumber,
+                       "a version is a number and stays one")
+        XCTAssertEqual(color(in: storage, of: "12"), Theme.tokenNumber,
+                       "a standalone count is a number")
+    }
+
+    func testAPropertyNameWithoutItsColonIsNotAProperty() {
+        let storage = highlighted("create the Book\n  a thing\n\n  The title is faded.\n")
+        XCTAssertEqual(color(in: storage, of: "title"), Theme.foreground,
+                       "a bare word in prose is prose — only `name:` is a property")
+    }
+
     func testHighlightColorsCommentLineWhole() {
         let storage = highlighted("## a file header comment\n\ncreate the Lab\n")
         XCTAssertEqual(color(in: storage, of: "## a file"), Theme.tokenComment)

@@ -151,7 +151,11 @@ final class SplitDividerTests: XCTestCase {
     /// whatever was there afterward so other tests are unaffected.
     private func withCleanLayoutDefaults(_ body: () throws -> Void) rethrows {
         let defaults = UserDefaults.standard
-        let keys = [Self.legacyFramesKey, Self.projectWidthKey, Self.playWidthKey]
+        // The snap setting is cleared too: with it on, a window resize puts the
+        // panes back to 50/50, so these tests would pass or fail depending on
+        // the developer's own preference rather than on the code.
+        let keys = [Self.legacyFramesKey, Self.projectWidthKey, Self.playWidthKey,
+                    "SharpeeSnapPanesEvenly"]
         let saved = keys.map { defaults.object(forKey: $0) }
         defer {
             for (key, value) in zip(keys, saved) {
