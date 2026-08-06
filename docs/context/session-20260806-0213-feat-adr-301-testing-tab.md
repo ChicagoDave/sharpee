@@ -90,8 +90,10 @@ the fold in `model.ts`, separate files for exactly this reason.
   superseded v1 stream is rejected by *version*, not by shape.
 
 **Suite at that point: 521 passed, 0 failures** (from 508/21) — later 363 after the skein
-retirement removed its tests. Tab unit suite 12 passed. `tsc --noEmit` clean. Nothing under `packages/` was touched, so the Dungeo chain and Fernhill tree
-baselines are untouched by construction.
+retirement removed its tests. Tab unit suite 12 passed. `tsc --noEmit` clean. Nothing under
+`packages/` was touched *by the tab work*, so the Dungeo chain and Fernhill tree baselines
+were untouched by construction at that point. (This stopped being true later: the bug-fix
+round changed `packages/chord/src/analyzer.ts` — see below.)
 
 ### A pre-existing flake fixed, and named as pre-existing
 `SplitDividerTests.testEditorPlayDividerMovesBothWaysAndSticks` was the one test in its
@@ -114,11 +116,13 @@ Failing the build of a Swift app because a JavaScript toolchain is missing is a 
 and the committed bundle is still valid. Node resolution mirrors the app's own tiers
 (vendored → PATH → login shell), because Xcode strips the interactive PATH.
 
-### 3. Both testing surfaces stay, for now
-The tab ships the *reading* half. The older outline panel still owns ADR-282 D2's re-bless,
-which ADR-301 explicitly scopes to "the next decision". Replacing the panel now would have
-been a silent feature regression traded for tab-strip tidiness. Both are fed from one run —
-the panel by the mirror, the tab by raw lines.
+### 3. Both testing surfaces stay, for now — ~~decided~~ **REVERSED the same session**
+The original reasoning: the tab ships the *reading* half, the outline panel still owns
+ADR-282 D2's re-bless, and replacing it would trade a feature for tab-strip tidiness.
+David reversed it after testing — "we don't need the Test tab anymore" — knowing re-bless
+went with it. Recorded here rather than rewritten, because the reasoning was sound and the
+call was still his: the feature loss is real, it is now flagged at the top of ADR-282, and
+the panel was the only thing keeping a Swift decoder alive.
 
 ## Deviations
 - **ADR-301 D1's mirror retirement** — could not be done; see the finding above.
@@ -129,9 +133,15 @@ the panel by the mirror, the tab by raw lines.
 
 ## Files Modified
 
-**Docs/ADRs** (2): `docs/architecture/adrs/adr-301-sharpee-transcript-editor.md` (Amendment
-A1, Acceptance evidence, Consequences), `docs/work/ide-testing-wire/plan-20260806-run-event-spine.md`
-(Phase 5 status block).
+**Docs/ADRs** (5): `adr-301-sharpee-transcript-editor.md` (Amendments A1/A1.1/A1.2,
+Acceptance evidence, Consequences), `adr-300-addressable-channels-and-canonical-transcript.md`
+(D1 row marked EXECUTED, what-went note), `adr-299-play-skein-bless.md` (code-removal
+date), `adr-282-play-to-test-tagging.md` (re-bless has no surface),
+`docs/work/ide-testing-wire/plan-20260806-run-event-spine.md` (Phase 5 status block).
+
+**Platform** (1, the only file outside `tools/ide/` this session):
+`packages/chord/src/analyzer.ts` — the missing-ifid span, plus 4 tests in
+`packages/chord/tests/analyzer.test.ts`.
 
 **New — web bundle** (9): `tools/ide/web/testing-tab/{build.mjs,tsconfig.json,vitest.config.ts}`,
 `src/{main.ts,model.ts,views.ts,host.ts,dom.ts,index.html,tab.css}`,
@@ -208,31 +218,107 @@ apart; ADR-301 gains **A1.1** — the skein's removal took `ReplayDriver` with i
 so **re-bless is now the Swift mirror's only consumer**, which turns the mirror's
 retirement condition into something checkable.
 
+## Third piece of work: the bug-fix round (David testing the built app)
+
+Three reports, three different failures, none of them what the symptom suggested.
+
+### "Neither Run All nor Run Chain work"
+**Not a wiring bug.** A probe confirmed every button reached Swift correctly. They were
+the wrong *operations*, failing two different ways — measured, same suite, same moment:
+
+| | result on `branch-stories/fernhill` |
+| --- | --- |
+| Run All (flat `tests` mode) | 229 passed, **287 failed**, exit 1 |
+| Run Tree | **516 passed, 0 failed**, exit 0 |
+
+Flat mode runs each transcript standalone from story start, so every one that `continues:`
+an ancestor fails for want of the state its parent builds. Run Chain scanned
+`walkthroughs/` and exited 2 — and David: *"the IDE will never have walkthroughs."* All
+three surfaces (tab, Test menu, outline panel) offered the same broken operation three
+ways; they now offer one, **Run Tests**, which runs the tree. Verified tree mode is also
+correct for a suite with no `continues:` at all (cloak-of-darkness, zero parentage, 81
+passed), so one button serves both shapes.
+
+Also removed, unreported but identically broken: **Run Current Test File** (2 passed / 29
+failed on fernhill's `smoke`). And the **Follow** toggle — David asked what it was, which
+was the answer; it re-armed every run, so it only ever governed the run being watched.
+
+The regression test asserts the **button set**, not the wiring: a wiring test would have
+passed against the shipped bug.
+
+### "The Story Info section is all yellow underlined"
+Neither highlighting nor a parse error. One warning — `analysis.missing-ifid` — whose span
+covered the entire `story` block (line 5 col 1 → line 20 col 9), rendered as sixteen lines
+of thick yellow to report one absent field. Fixed at both ends: the **analyzer** now spans
+the `story` keyword alone (`packages/chord`, David's explicit go-ahead), and the **editor**
+clamps any multi-line diagnostic underline to its first line — which fixes the class, not
+the instance, and keeps the full span for the gutter flag and click-through.
+
+### "I still don't see the warning"
+Two defects compounding, and this is why the underline was the *only* signal: the Problems
+badge counted **errors only**, so a warnings-only compose badged `0`; and the bottom panel
+is collapsed by default. The one surface that names the problem was hidden *and* silent.
+The badge now counts every diagnostic, and the panel reveals itself on the clean →
+not-clean edge — that edge specifically, since revealing on every compose would reopen a
+panel the author just closed, on every keystroke.
+
+### "We don't need the Test tab anymore"
+It turned out to be a closed cluster: the panel, `TestPanelModel`, `Rebless`,
+`TestResultRecord`, `RecordingSession` and five test files were all reachable only through
+that tab. Leaving any behind would have been the dead-code-with-a-story pattern David had
+already called out twice, so it all went.
+
+**The consequence worth naming: nothing in Swift decodes the run-event wire any more.**
+`TestRunner` is line transport; the tab imports `@sharpee/ide-protocol` and decodes it
+itself. That is what ADR-301 D1 set out to do and what Amendment A1 could not deliver —
+recorded as **A1.2**.
+
+**And the cost: re-bless does not exist right now.** ADR-282 D2's drift lifecycle shipped
+only in that panel. Its rules survive in ADR-282, which now opens with a banner saying the
+code does not.
+
+Transcript discovery survived as `TranscriptDiscovery` — the panel model conflated
+discovery with panel state and the tab still needs the first. `TestRunnerTests` moved from
+asserting on decoded records to asserting on **lines**, the runner's actual contract; one
+expectation changed with it (a broken transcript exits **2**, not 1, because a tree
+assembles before it executes — ADR-302 D11 — so an unparseable file is a defect, not a
+failed test).
+
+**Suite: 314 passed, 0 failures** (from 363 — the delta is the retired cluster's tests).
+chord **734 passed**. Tab unit suite 12. `tsc --noEmit` clean.
+
 ## Next
-- **The editing interaction** — ADR-301's named next decision: cards per turn, `contains`
-  by selection, re-bless in the tab. That is the work that would let the outline panel retire.
-- **Awaiting David's confirmation** (nothing deleted without it): `TestPanelView.swift`
-  once editing lands; v1 `packages/ide-protocol/src/test-results.ts` and its remaining
-  devkit/branch-tester/transcript-tester importers. `SharpeeIDE/Skein/` is **done** —
-  removed this session.
+- **The editing interaction** — ADR-301's named next decision, and now load-bearing rather
+  than optional: **re-bless has no surface** until it lands (ADR-282 carries a banner
+  saying so). Build it against ADR-300's canonical TypeScript serializer, not by restoring
+  the Swift mirror deleted here.
+- **Per-node running.** "Run Current Test File" was removed because a flat single-file run
+  fails whenever that file `continues:` another (2 passed / 29 failed on fernhill's
+  `smoke`). Running one node *with its ancestry* is a real feature and a tree operation
+  that does not exist in the CLI yet.
 - **A Chord language question, flagged not taken**: adding `seed` to `IRStoryFields` so a
-  story can pin its own Play seed. Today it is a constant.
-- The right panel is back to six tabs (Build, Play, Testing, Index, Diagnosis, Test), two
-  of which are still testing surfaces until the editing decision retires the outline panel.
+  story can pin its own Play seed. Play boots at a constant today.
+- **Fernhill has no `ifid:`** — the warning that surfaced the span bug is correct. Minting
+  one is an identity decision, deliberately left alone.
+- **Pre-existing and untouched**: `tsf build --all` fails on a `"channel-is"` assertion-kind
+  type error. Confirmed pre-existing by stashing this session's work and rebuilding.
+- Right panel is five tabs: Build, Play, Testing, Index, Diagnosis. One testing surface.
 
 ---
 
 ## Session Metadata
 
-- **Status**: COMPLETE (three commits: the Testing tab; the skein retirement; the sweep of the hooks the retirement left behind)
+- **Status**: COMPLETE (seven commits: the Testing tab; the skein retirement; the dead-hook sweep; a summary correction; then a bug-fix round from David testing the built app — one run model, warning visibility, and the Test tab's retirement)
 - **Blocker**: N/A
 - **Estimated Remaining**: N/A
-- **Rollback Safety**: `de85dc13` (the Testing tab) is confined to `tools/ide/` and deletes
-  nothing. `afd9acc6` (the skein retirement) deletes 28 files and is the one to revert if
-  the removal proves premature — it is a separate commit for exactly that reason.
-  `71fccafd` (the dead-hook sweep) only removes symbols with zero readers, so reverting it
-  restores dead code. All three are on `feat/adr-301-testing-tab`, with no commits to the
-  parent branch.
+- **Rollback Safety**: each removal is its own commit, deliberately.
+  `de85dc13` (the Testing tab) deletes nothing. `afd9acc6` (skein) deletes 28 files.
+  `71fccafd` (dead hooks) removes only zero-reader symbols, so reverting it restores dead
+  code. `9ceb7215` (one run model) is behavioural, not a deletion. `8061c157`
+  (diagnostics) is additive. `9aa24113` is the one to watch: it deletes the Test-tab
+  cluster **and** touches `packages/chord` — the only commit this session that leaves
+  `tools/ide/`. Reverting it restores re-bless and re-widens the ifid span. All on
+  `feat/adr-301-testing-tab`; no commits to the parent branch.
 
 ## Dependency/Prerequisite Check
 
@@ -256,28 +342,38 @@ retirement condition into something checkable.
 
 - Files with state-changing logic modified/added: `tools/ide/web/testing-tab/src/model.ts`
   (the fold mutates `RunModel`), `SharpeeIDE/Test/TestingTabViewController.swift` (line
-  buffering and web-view evaluation), `SharpeeIDE/Test/TestRunner.swift` (raw-line
-  delivery), `SharpeeIDE/Test/TestController.swift` (both surfaces fed from one run).
+  buffering and web-view evaluation), `SharpeeIDE/Test/TestRunner.swift` (line delivery),
+  `SharpeeIDE/Test/TestController.swift` (one surface, one run),
+  `SharpeeIDE/Editor/EditorViewController.swift` (diagnostic underlines),
+  `SharpeeIDE/MainWindow.swift` (Problems panel reveal),
+  `packages/chord/src/analyzer.ts` (the missing-ifid span).
 - Behaviour Statement produced before tests for `applyEvent` (rule 12); Integration Reality
   is the real-path suite below.
 - Tests verify actual state mutations: YES. Evidence, all executed 2026-08-06 in-session:
-  `xcodebuild test` **363 passed, 0 failures** at session end (521 before the skein
-  retirement removed its tests); `TestingTabRealPathTests` **6 passed**
+  `xcodebuild test` **314 passed, 0 failures** at session end (521 before the skein
+  retirement and 363 before the Test-tab cluster went); chord **734 passed**;
+  `TestingTabRealPathTests` **7 passed**
   asserting on rendered DOM after a real 634-event Fernhill tree run; `vitest`
   **12 passed** asserting on folded model state, not return values.
 
 ## Test Coverage Delta
 
-- Tests added: +6 (`TestingTabRealPathTests`, Swift real-path), +7 (`TestResultRecordTests`
-  v2 cases), +12 (`model.test.ts`, new suite), +1 (`ProjectArtifactsTests`, the retired
-  group's replacement contract).
+- Tests added: +7 (`TestingTabRealPathTests`, Swift real-path, including the one-run-model
+  regression), +12 (`model.test.ts`, new suite), +1 (`ProjectArtifactsTests`, the retired
+  group's replacement contract), +3 (`ProblemsVisibilityTests`), +4
+  (`SpanTextUnderlineTests`), +4 (chord's ifid-span cases). Removed with their subjects:
+  `TestResultRecordTests` (+7 written earlier this session, deleted with the mirror),
+  `TestPanelModelTests`, `ReblessTests`, `ReblessRealPathTests`,
+  `RecordingSerializationTests`.
 - Swift suite: **508 passed / 21 failures** at session start → **521 / 0** after the
-  Testing tab → **363 / 0** after the skein retirement and the dead-hook sweep. The drop
-  from 521 is deletion, not regression: 15 skein test files and one justification test went
-  with the code they covered. Tab unit suite 0 → 12.
+  Testing tab → **363 / 0** after the skein retirement and dead-hook sweep → **314 / 0**
+  after the Test-tab cluster. Every drop is deletion, not regression: 15 skein test files,
+  one justification test, and five panel/re-bless test files went with the code they
+  covered. Tab unit suite 0 → 12. chord 730 → **734** (+4 pinning the ifid span).
 - Known untested areas: the Documents mode's explorer-proposed group (ADR-301 D5) has no
-  producer — ADR-131 is unbuilt, so the group renders nothing and is not exercised; the
-  `follow` toggle and Escape-to-close are driven by hand, not by a test; re-bless from the
-  tab does not exist (out of scope by ADR-301). The Play pane lost its turn-bridge coverage
-  with the bridge itself — nothing untested was left behind, but when the editing surface
-  rebuilds a turn feed it starts with no inherited tests.
+  producer — ADR-131 is unbuilt, so the group renders nothing and is not exercised;
+  Escape-to-close is driven by hand, not by a test. **Re-bless is untested because it no
+  longer exists** — its five test files went with it, so the editing surface inherits a
+  specification (ADR-282 D2) and zero tests. Same for the Play turn bridge. The Problems
+  panel's clean → not-clean reveal is asserted only through `ProblemsView`'s counts, not
+  through the split-view collapse itself.
