@@ -24,7 +24,48 @@ import type {
   ProgressEvent,
   CoverageEvent,
 } from '@sharpee/ide-protocol';
-import type { CommandResult, TestRunResult, TranscriptResult } from './types.js';
+
+/**
+ * What the stream needs from ONE command's outcome — structurally, not by name.
+ *
+ * `branch-tester` carries its own copy of the result types (ADR-302 D15) and its
+ * assertion grammar has since grown ADR-300's channel forms, which are
+ * deliberately NOT back-ported here. Naming `./types.js`'s `CommandResult` made
+ * those two copies nominally incompatible and broke the npm build for a devkit
+ * that legitimately drives both harnesses. Nothing below reads an assertion, so
+ * the honest parameter is the set of fields actually used.
+ */
+export interface StreamableCommandResult {
+  command: { input: string; lineNumber: number };
+  passed: boolean;
+  expectedFailure: boolean;
+  skipped: boolean;
+  error?: string;
+  actualOutput?: string;
+}
+
+/** What the stream needs from a whole run's aggregate. Same reasoning. */
+export interface StreamableRunResult {
+  totalPassed: number;
+  totalFailed: number;
+  totalExpectedFailures: number;
+  totalSkipped: number;
+  totalErrors: number;
+  totalDuration: number;
+}
+
+/** What the stream needs from ONE transcript's outcome. Same reasoning. */
+export interface StreamableTranscriptResult {
+  transcript: { filePath: string };
+  /** Both harnesses spell these the same; the wire narrows to them (D13). */
+  status: 'passed' | 'failed' | 'error' | 'unreached';
+  passed: number;
+  failed: number;
+  expectedFailures: number;
+  skipped: number;
+  duration: number;
+  errorMessage?: string;
+}
 import type { CoverageReport } from './coverage.js';
 
 /**
@@ -134,7 +175,7 @@ export class RunEventStream {
    *   on failures. The default keeps a green run's stream small; replay
    *   verification needs every command's text.
    */
-  commandResult(file: string, result: CommandResult, captureOutput = false): void {
+  commandResult(file: string, result: StreamableCommandResult, captureOutput = false): void {
     this.write({
       ...this.envelope(),
       type: 'command-result',
@@ -193,7 +234,7 @@ export class RunEventStream {
   }
 
   /** A transcript finished. */
-  transcriptEnd(result: TranscriptResult): void {
+  transcriptEnd(result: StreamableTranscriptResult): void {
     this.write({
       ...this.envelope(),
       type: 'transcript-end',
@@ -243,7 +284,7 @@ export class RunEventStream {
    * @param totalUnreached Transcripts that never ran because an ancestor
    *   failed. Always 0 for a flat or chained run — only a tree blocks.
    */
-  runEnd(run: TestRunResult, exitCode: number, totalUnreached = 0): void {
+  runEnd(run: StreamableRunResult, exitCode: number, totalUnreached = 0): void {
     this.write({
       ...this.envelope(),
       type: 'run-end',

@@ -345,17 +345,32 @@ export declare function findStoryFile(dir: string): string | null;
  */
 export declare function loadChordStory(storyFile: string, seed?: number): unknown;
 /**
+ * Reports the boundaries of the work that happens before a test can run.
+ *
+ * For a Chord project the compile is the expensive half and it happens INSIDE
+ * this loader, so a caller wrapping the whole call can only report "loading" and
+ * cannot say where the seconds went. Hence the callback rather than timing from
+ * outside.
+ *
+ * The recompile behind `freshStory` (ADR-248's in-process RESTART) is not
+ * reported: it happens inside a command rather than before the run, and
+ * announcing a compile mid-transcript would read as a new run starting.
+ */
+export type LoadPhaseReporter = (name: 'compile' | 'load', status: 'started' | 'finished', detail?: string) => void;
+/**
  * Load an author project (or an explicit `.story` file) into a runnable game.
  *
  * @param target a project directory, or a path ending in `.story`
  * @param opts.entry optional story sub-entry (module projects only; ignored
  *   for `.story` sources, matching the platform bundle's contract)
+ * @param opts.onPhase optional progress reporter — see {@link LoadPhaseReporter}
  * @returns the assembled game (engine + channel packet plumbing)
  * @throws on gate errors, ambiguous `.story` sets, or unresolvable modules
  */
 export declare function loadAuthorGame(target: string, opts?: {
     entry?: string;
     seed?: number;
+    onPhase?: LoadPhaseReporter;
 }): Promise<LoadedGame>;
 ```
 
@@ -763,6 +778,45 @@ export interface TestingExtensionInterface {
     /** Add an annotation directly (for # comments) */
     addAnnotation?(type: string, text: string, world: any): any;
 }
+/**
+ * Watches a transcript execute, as it executes.
+ *
+ * The runner otherwise reports only by returning a finished `TranscriptResult`,
+ * which forces every consumer — the terminal reporter, the `--json` stream — to
+ * wait for the whole file. A transcript takes about half a second and a tree or
+ * an explorer run takes minutes, so "wait for the whole thing" is the difference
+ * between a progress bar and watching the story play.
+ *
+ * Deliberately domain-shaped, not wire-shaped: no schema version, no sequence
+ * number, no envelope. The runner reports what happened; translating that into
+ * the ADR-277 event stream is the CLI's job, which keeps `@sharpee/ide-protocol`
+ * out of the execution path.
+ *
+ * Every method is optional and every implementation must be non-throwing —
+ * observation must not be able to fail a test. Callbacks are synchronous and run
+ * inline, so a slow observer slows the run.
+ */
+export interface RunObserver {
+    /**
+     * A transcript is about to run — fired before its first command, and before
+     * any early validation failure, so a transcript that never executes is still
+     * announced rather than appearing from nowhere at its own error.
+     *
+     * @param info `commandCount` is the transcript's command total, known from the
+     *   parse that precedes execution.
+     */
+    onTranscriptStart?(info: {
+        file: string;
+        commandCount: number;
+    }): void;
+    /**
+     * One command finished, in execution order. Fires for every result the run
+     * accumulates — including the synthesized opening-assertion result and
+     * directive failures, so the live sequence matches the returned
+     * `TranscriptResult.commands` exactly.
+     */
+    onCommandResult?(result: CommandResult): void;
+}
 export interface RunnerOptions {
     verbose?: boolean;
     emitTraits?: boolean;
@@ -797,6 +851,12 @@ export interface RunnerOptions {
      * feeds it each command's `system.draw` trace events.
      */
     coverage?: CoverageTracker;
+    /**
+     * Watches execution as it happens (live terminal output, the `--json` event
+     * stream). Absent → the runner behaves exactly as it did before observers
+     * existed.
+     */
+    observer?: RunObserver;
 }
 /**
  * Story loader function type
@@ -1106,7 +1166,7 @@ export declare function startWatch(config: WatchConfig, io: WatchRunIO, policy: 
  *
  * Formats and displays test results with colors and diffs.
  */
-import { TranscriptResult, TestRunResult } from './types.js';
+import { TranscriptResult, TestRunResult, CommandResult } from './types.js';
 /**
  * Report options
  */
@@ -1117,7 +1177,31 @@ export interface ReporterOptions {
     color?: boolean;
 }
 /**
- * Report results of running a single transcript
+ * The transcript's opening lines — its path and title.
+ *
+ * Split out of {@link reportTranscript} so the terminal can print it BEFORE the
+ * transcript runs, driven by the runner's observer, rather than after it has
+ * finished. A half-second transcript printed nothing until it was over; a tree
+ * or explorer run would print nothing for minutes.
+ */
+export declare function reportTranscriptStart(info: {
+    filePath: string;
+    title?: string;
+}): void;
+/** One command's row. The live counterpart of the per-command loop below. */
+export declare function reportCommandResult(result: CommandResult, options?: ReporterOptions): void;
+/**
+ * The transcript's closing lines: the error banner for a transcript that never
+ * ran (ADR-277 D1 — never a silent skip), or the bless/match line and summary.
+ */
+export declare function reportTranscriptEnd(result: TranscriptResult): void;
+/**
+ * Report results of running a single transcript, after the fact.
+ *
+ * Retained for callers that have a finished result and no observer (the bundle,
+ * the tree runner, watch mode). Implemented in terms of the three live pieces
+ * above, so the post-hoc and live renderings cannot drift apart — there is one
+ * implementation of each line, not two.
  */
 export declare function reportTranscript(result: TranscriptResult, options?: ReporterOptions): void;
 /**
@@ -1147,6 +1231,169 @@ export declare function writeResultsToJson(result: TestRunResult, outputDir: str
  * Write a human-readable report to a text file
  */
 export declare function writeReportToFile(result: TestRunResult, outputDir: string, timestamp: string): string;
+```
+
+### run-event-stream
+
+```typescript
+/**
+ * run-event-stream.ts — building the run-event stream as a run happens.
+ *
+ * Purpose: translate what the runner reports (domain facts: a transcript is
+ *   starting, a command finished) into the versioned wire events a consumer
+ *   decodes, and own the envelope bookkeeping — the monotonic `seq` and the
+ *   `elapsedMs` clock — in one place so no producer can get them wrong.
+ *   Emission is immediate: every method writes as it is called, which is what
+ *   lets the IDE's Testing tab fill while the run is still going.
+ * Public interface: `RunEventStream`.
+ * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
+ *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
+ *
+ * @see ADR-277 D1, as amended 2026-08-06 — the record stream becomes an event
+ *   stream, because records built from a completed result cannot announce a
+ *   transcript before it runs.
+ */
+import type { RunEvent, RunMode, BudgetUse, ProgressEvent } from '@sharpee/ide-protocol';
+/**
+ * What the stream needs from ONE command's outcome — structurally, not by name.
+ *
+ * `branch-tester` carries its own copy of the result types (ADR-302 D15) and its
+ * assertion grammar has since grown ADR-300's channel forms, which are
+ * deliberately NOT back-ported here. Naming `./types.js`'s `CommandResult` made
+ * those two copies nominally incompatible and broke the npm build for a devkit
+ * that legitimately drives both harnesses. Nothing below reads an assertion, so
+ * the honest parameter is the set of fields actually used.
+ */
+export interface StreamableCommandResult {
+    command: {
+        input: string;
+        lineNumber: number;
+    };
+    passed: boolean;
+    expectedFailure: boolean;
+    skipped: boolean;
+    error?: string;
+    actualOutput?: string;
+}
+/** What the stream needs from a whole run's aggregate. Same reasoning. */
+export interface StreamableRunResult {
+    totalPassed: number;
+    totalFailed: number;
+    totalExpectedFailures: number;
+    totalSkipped: number;
+    totalErrors: number;
+    totalDuration: number;
+}
+/** What the stream needs from ONE transcript's outcome. Same reasoning. */
+export interface StreamableTranscriptResult {
+    transcript: {
+        filePath: string;
+    };
+    /** Both harnesses spell these the same; the wire narrows to them (D13). */
+    status: 'passed' | 'failed' | 'error' | 'unreached';
+    passed: number;
+    failed: number;
+    expectedFailures: number;
+    skipped: number;
+    duration: number;
+    errorMessage?: string;
+}
+import type { CoverageReport } from './coverage.js';
+/** Where an event goes. Called once per event, in emission order. */
+export type RunEventWriter = (event: RunEvent) => void;
+/**
+ * Sequences and emits one run's events.
+ *
+ * **Invariants.** `seq` is monotonic from 0 and never reused; `elapsedMs` is
+ * measured from construction, which the caller performs immediately before
+ * `runStart`. Both are enforced here rather than documented for callers,
+ * because a consumer that sorts by `seq` is trusting them.
+ */
+export declare class RunEventStream {
+    private readonly write;
+    private readonly now;
+    private seq;
+    private readonly startedAt;
+    /**
+     * @param write Receives each event as it is emitted.
+     * @param now Injectable clock — tests pin `elapsedMs` rather than sleeping.
+     */
+    constructor(write: RunEventWriter, now?: () => number);
+    /** The envelope every event carries. Consumes one sequence number. */
+    private envelope;
+    /**
+     * Open the stream.
+     *
+     * @param mode The run model — `tree` and `explore` are not transcript lists.
+     * @param transcriptCount Omit when the count is not knowable in advance,
+     *   which is the explorer's normal case.
+     */
+    runStart(mode: RunMode, transcriptCount?: number): void;
+    /**
+     * Work that is not a transcript but costs real time — compile, load, the
+     * whole-tree assembly ADR-302 D11 performs before anything executes.
+     */
+    phase(name: 'compile' | 'load' | 'assemble' | 'execute', status: 'started' | 'finished', detail?: string): void;
+    /**
+     * A transcript is about to run. Emitted BEFORE its first command.
+     *
+     * @param index 0-based position in the run's EXECUTION order — a tree node
+     *   re-executed for a sibling takes a new index, since the pairing of start
+     *   to end is positional, not by file.
+     * @param extra `commandCount` for a real progress bar; `parent`/`replayed`
+     *   for tree runs (ADR-302 parentage and D17 replay).
+     */
+    transcriptStart(file: string, index: number, extra?: {
+        commandCount?: number;
+        parent?: string;
+        replayed?: boolean;
+    }): void;
+    /**
+     * One command finished.
+     *
+     * @param captureOutput Carry `actualOutput` on every command rather than only
+     *   on failures. The default keeps a green run's stream small; replay
+     *   verification needs every command's text.
+     */
+    commandResult(file: string, result: StreamableCommandResult, captureOutput?: boolean): void;
+    /**
+     * A node that never ran because an ancestor failed (ADR-302 D13).
+     *
+     * Its own method because there is no `TranscriptResult` behind it — nothing
+     * executed. Synthesizing a fake result in the caller to reach
+     * {@link transcriptEnd} would put a `status` the domain type cannot express
+     * through a type that promises it can.
+     */
+    transcriptUnreached(file: string, blockedBy: string): void;
+    /**
+     * A transcript that could not run at all — a parse failure, or a structural
+     * tree defect (ADR-302 D11, where nothing in the tree runs). Also has no
+     * result behind it, and for the same reason.
+     */
+    transcriptError(file: string, errorMessage: string): void;
+    /** A transcript finished. */
+    transcriptEnd(result: StreamableTranscriptResult): void;
+    /**
+     * How far along the current work is — advisory, and safe to ignore.
+     * `budgets` is a list because a bounded search is bounded in several
+     * dimensions at once (ADR-294: states, depth, and wall-clock).
+     */
+    progress(scope: ProgressEvent['scope'], done: number, extra?: {
+        total?: number;
+        budgets?: BudgetUse[];
+    }): void;
+    /** The run's coverage report (ADR-293 D15) — once per run, opt-in. */
+    coverage(report: CoverageReport): void;
+    /**
+     * Close the stream.
+     *
+     * @param totalUnreached Transcripts that never ran because an ancestor
+     *   failed. Always 0 for a flat or chained run — only a tree blocks.
+     */
+    runEnd(run: StreamableRunResult, exitCode: number, totalUnreached?: number): void;
+}
+/** Serialize one event as an NDJSON line, terminator included. */
+export declare function ndjsonEventLine(event: RunEvent): string;
 ```
 
 ### aggregate
