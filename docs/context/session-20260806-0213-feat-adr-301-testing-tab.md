@@ -89,8 +89,8 @@ the fold in `model.ts`, separate files for exactly this reason.
 - **`TestResultRecordTests.swift`** rewritten for v2 (+7 cases), including that the
   superseded v1 stream is rejected by *version*, not by shape.
 
-**Suite: 521 passed, 0 failures** (from 508/21). Tab unit suite 12 passed. `tsc --noEmit`
-clean. Nothing under `packages/` was touched, so the Dungeo chain and Fernhill tree
+**Suite at that point: 521 passed, 0 failures** (from 508/21) — later 363 after the skein
+retirement removed its tests. Tab unit suite 12 passed. `tsc --noEmit` clean. Nothing under `packages/` was touched, so the Dungeo chain and Fernhill tree
 baselines are untouched by construction.
 
 ### A pre-existing flake fixed, and named as pre-existing
@@ -224,13 +224,15 @@ retirement condition into something checkable.
 
 ## Session Metadata
 
-- **Status**: COMPLETE (two commits: the Testing tab, then the skein retirement)
+- **Status**: COMPLETE (three commits: the Testing tab; the skein retirement; the sweep of the hooks the retirement left behind)
 - **Blocker**: N/A
 - **Estimated Remaining**: N/A
-- **Rollback Safety**: the first commit (the Testing tab) is confined to `tools/ide/` and
-  deletes nothing. The second (the skein retirement) deletes 28 files and is the one to
-  revert if the removal proves premature — it is a separate commit for exactly that reason.
-  Both are on `feat/adr-301-testing-tab`, with no commits to the parent branch.
+- **Rollback Safety**: `de85dc13` (the Testing tab) is confined to `tools/ide/` and deletes
+  nothing. `afd9acc6` (the skein retirement) deletes 28 files and is the one to revert if
+  the removal proves premature — it is a separate commit for exactly that reason.
+  `71fccafd` (the dead-hook sweep) only removes symbols with zero readers, so reverting it
+  restores dead code. All three are on `feat/adr-301-testing-tab`, with no commits to the
+  parent branch.
 
 ## Dependency/Prerequisite Check
 
@@ -259,17 +261,23 @@ retirement condition into something checkable.
 - Behaviour Statement produced before tests for `applyEvent` (rule 12); Integration Reality
   is the real-path suite below.
 - Tests verify actual state mutations: YES. Evidence, all executed 2026-08-06 in-session:
-  `xcodebuild test` **521 passed, 0 failures**; `TestingTabRealPathTests` **6 passed**
+  `xcodebuild test` **363 passed, 0 failures** at session end (521 before the skein
+  retirement removed its tests); `TestingTabRealPathTests` **6 passed**
   asserting on rendered DOM after a real 634-event Fernhill tree run; `vitest`
   **12 passed** asserting on folded model state, not return values.
 
 ## Test Coverage Delta
 
 - Tests added: +6 (`TestingTabRealPathTests`, Swift real-path), +7 (`TestResultRecordTests`
-  v2 cases), +12 (`model.test.ts`, new suite).
-- Before **508 passed / 21 failures** → after **521 passed / 0 failures** (Swift);
-  tab unit suite 0 → 12.
+  v2 cases), +12 (`model.test.ts`, new suite), +1 (`ProjectArtifactsTests`, the retired
+  group's replacement contract).
+- Swift suite: **508 passed / 21 failures** at session start → **521 / 0** after the
+  Testing tab → **363 / 0** after the skein retirement and the dead-hook sweep. The drop
+  from 521 is deletion, not regression: 15 skein test files and one justification test went
+  with the code they covered. Tab unit suite 0 → 12.
 - Known untested areas: the Documents mode's explorer-proposed group (ADR-301 D5) has no
   producer — ADR-131 is unbuilt, so the group renders nothing and is not exercised; the
   `follow` toggle and Escape-to-close are driven by hand, not by a test; re-bless from the
-  tab does not exist (out of scope by ADR-301).
+  tab does not exist (out of scope by ADR-301). The Play pane lost its turn-bridge coverage
+  with the bridge itself — nothing untested was left behind, but when the editing surface
+  rebuilds a turn feed it starts with no inherited tests.
