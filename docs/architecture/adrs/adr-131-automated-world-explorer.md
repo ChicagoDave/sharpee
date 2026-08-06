@@ -1,7 +1,25 @@
 # ADR-131: Automated World Explorer (Regression Test Generator)
 
-**Status:** Proposed
+**Status:** Proposed — and **unbuilt** as of 2026-08-05: nothing in `packages/`
+or `repokit` implements it.
 **Date:** 2026-02-18
+
+> **SCOPE QUESTION OPENED 2026-08-05 (session f2a7e6)** — see
+> [ADR-303 Q-3](adr-303-convergent-paths-and-unwinnable-states.md). This ADR is
+> a *regression-baseline generator*, and says so: BFS the rooms, probe entities
+> and description nouns, record outputs, diff later. It excludes reachability by
+> design — "This avoids the hard problem of puzzle-solving."
+>
+> The open question is whether the same BFS bot should also probe whether the
+> **ending stays reachable** — an unwinnable state has no ending, no message and
+> no test, which is why it survives to ship (ADR-303 D1). That is the excluded
+> thing, so widening this ADR would replace its stated premise rather than
+> extend it, and the alternative is a separate tool.
+>
+> Note also that the *static* half already ships elsewhere:
+> `tools/vscode-ext/src/world-explorer.ts` renders a World Index from
+> `--world-json` with dead-end and one-way-exit highlighting. Whether that moves
+> to the IDE is part of Q-3.
 
 ## Context
 

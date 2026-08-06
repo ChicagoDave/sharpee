@@ -111,6 +111,61 @@ the engine merge while the tree walk was the collision's only victim, which the
 four-caller survey disproved. D17 itself stands — re-execution was chosen on its own
 terms, and the engine fix closes callers D17 never reached.
 
+### 6. ADR-303 written and interviewed to resolution
+Two gaps David raised while reviewing the IDE Testing mocks, neither considered by
+ADR-302: open-world paths **reconverge** ("do one of three things, then go to a
+room"), and an **unwinnable state is not a losing ending** — it has no ending, no
+message and no test, which is why it ships.
+
+Written as a **new** ADR rather than reopening ADR-302, which stays ACCEPTED: these
+are questions raised *by* its usage, not left unresolved *within* it. All three open
+questions were then resolved by interview the same session:
+
+- **D4** — a converging variant declares `converges-with:` and the harness *verifies*
+  it before a shared tail runs once; what must match is author-named. Re-running the
+  tail under every route is a per-fork opt-in, expressed as several parents and
+  **expanded to N single-ancestry runs** so every ADR-302 invariant holds per run.
+  `converges-with` does **not** inherit — declared-only, the same keying `reseedFor`
+  uses, because inheritance is right for a setting and wrong for an instruction.
+- **D5** — three detection layers (declared invariants, irreversibility flags,
+  probing). Probing replays the story's own answer key rather than searching: one
+  walkthrough per probe, not an exponential search. Fernhill's 19 leaves ≈ 1000
+  commands, under a second. Deep parallel mode on demand. Unwinnable is reported by
+  the coverage surface and stays out of the point-and-class catalog.
+- **D6** — ADR-131's explorer is widened rather than replaced (its "avoids
+  puzzle-solving" exclusion survives, because replaying an answer key solves
+  nothing), and the static dead-end/one-way analysis moves from the VS Code
+  extension to the IDE.
+
+**A shared primitive fell out of it**: D4's "does this variant arrive where its
+sibling arrives" and D5's "have I seen this state before" are the same operation —
+a semantic world-state signature that ignores turn counters and RNG streams. Built
+once, it serves both.
+
+`adr-review` then scored it **7/17, NEEDS WORK**, and caught two citation failures
+worth recording: ADR-293 **D15 is the coverage report, not a registry** (the catalog
+is D2/D4), which made D5's central sentence self-contradictory; and **Miller columns
+were attributed to ADR-301**, which is TBD and specifies no surface — the design came
+from this session's mocks. Both corrected in place with dated notes, along with a
+D8 inheritance gap and a D1 heading that contradicted D5 once the citation was fixed.
+The ADR stays **DRAFT**: no acceptance criteria, no test requirements, no
+implementation section, and three interfaces still undefined.
+
+### 7. IDE Testing mocks (artifacts, not committed)
+Two published artifacts — a Testing-tab mock and a layout study — built on the
+shell's own Catppuccin tokens from `Theme.swift`. The layout study measured the
+real 22-node tree in three layouts and killed the horizontal canvas: vertical extent
+tracks leaf count, not depth, so a depth-3 tree costs ~800px, and lineage colour
+would need 12 hues for one fan-out. David's call was Miller columns (Finder), which
+makes ancestry spatial and needs no palette. A run-folding idea for deep chains was
+built at his request and then removed at his request — it was the one departure from
+Finder and hid nodes behind a summary.
+
+Surveyed rather than assumed: `TestPanelView` is **already** an `NSOutlineView`
+whose data source is two levels deep (entries → their commands), so click-to-expand
+turns exists today. What is missing is a level *above* it — entry-to-entry
+parentage — plus `.unreached` on `Status`, and a wire that carries any of it.
+
 ---
 
 ## Session Metadata

@@ -4,6 +4,7 @@
 **Date**: 2026-08-05 (session 5113ca)
 **Supersedes in part**: ADR-300 D17 (chain membership as convention, not grammar)
 **Relates to**: ADR-293 (forcing, coverage, outcome search), ADR-294 D4 (`[IF:]` removed), ADR-299 (the skein's branching, superseded)
+**Questions raised by its usage**: [ADR-303](adr-303-convergent-paths-and-unwinnable-states.md) (DRAFT) — convergent paths, and unwinnable states as a divergence class. Raised *by* this ADR's use, not left unresolved *within* it: D1's one-parent rule is implemented and shipped, and ADR-303 reopens nothing here.
 
 ---
 
