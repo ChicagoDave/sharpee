@@ -57,13 +57,19 @@ Claimed in conversation that D17 would remove it; that was wrong and is correcte
 
 ## Open Items
 
+### Resolved after this list was first written
+- The **latent hook collision** was filed as [#229](https://github.com/ChicagoDave/sharpee/issues/229), then fixed at the engine and **closed** — see §5. The survey that produced it found four callers, not the two first recorded here.
+
 ### Short Term
-- **Latent hook collision, same root cause as #227**, in two places D17 does not reach: `runner.ts`'s `captureEngineSave` (ADR-300 D18 divergence saves, fires before every command in golden *replay* mode) and `search.ts`'s per-candidate restore (ADR-293 D12). Probed the golden path — a child of `recorded` doing `restart` — and it **passed**, because `runGolden` only engages when a golden *file* exists and no v2 story has one. Reachable the first time a v2 story blesses a golden and that transcript or a descendant on its live engine uses `restart`. Unverified by execution; mechanism identical. David has not yet said whether to file it.
-- `key.transcript`'s description claims "Every test that needs to be inside starts here", which is false (`containers`, `npcs`, `tool-gates`, `fuse` all go inside from `arrival`). Predates this session; left alone.
+- **ADR-131's amendment is owed.** ADR-303 D6 names *whoever accepts ADR-303* as the flip owner, with acceptance as the trigger. ADR-303 did not flip, so ADR-131 correctly still carries its "SCOPE QUESTION OPENED" note rather than the widening. Unowned flips are how Status lines rot; this one has an owner and a trigger and is simply not yet due.
+- **ADR-303 is DRAFT and should stay there.** `adr-review` scored it 7/17: no acceptance criteria, no test requirements, no implementation section, and three undefined interfaces — the semantic state signature, the multi-parent syntax, and the `converges-with` grammar. It records decisions, not a buildable spec.
+- **The IDE Testing wire is unstarted.** The mocks and the code survey exist; the NDJSON stream still carries no parentage, no `unreached`, and no replay markers, so no view can render the tree. That was step one of the agreed plan and it remains step one.
+- `key.transcript`'s description claims "Every test that needs to be inside starts here", which is false (`containers`, `npcs`, `tool-gates`, `fuse` all reach the interior from `arrival`). Predates this session; left alone rather than churn a description.
 
 ### Long Term
-- ADR-302 **D6** (coverage of untaken divergences) still has no implementing phase; the tree reports `Coverage: 0 of 12 points fired, 12 never fired, 28 classes unobserved`. No AC covers it.
+- ADR-302 **D6** (coverage of untaken divergences) still has no implementing phase; the tree reports `Coverage: 0 of 12 points fired, 12 never fired, 28 classes unobserved`. No AC covers it — but ADR-303 D5 now gives it two concrete motivating cases, which it did not have before.
 - **AC-9**'s first clause stays blocked on pre-existing issue #224 (familyzoo tutorial type-check), outside this branch.
+- The two published mocks are **artifacts, not repository files**, per the standing rule that IDE work belongs to a parallel session. If the IDE session wants them as source, they need re-creating there rather than copying from the artifact URLs.
 
 ## Files Modified
 
@@ -174,7 +180,8 @@ parentage — plus `.unreached` on `Status`, and a wire that carries any of it.
 - **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
-- **Rollback Safety**: D17 is revertible as one commit (the deleted `captureSave`/`applySave` are recorded in a comment at their old site). The version bump is mechanical and independently revertible.
+- **Rollback Safety**: three independently revertible commits, all merged to `main` — `af78363c` (D17 + 4.4.0), `f878a80c` (engine hook merge), `4c767e69` (ADR-303, docs only). D17's deleted `captureSave`/`applySave` are recorded in a comment at their old site.
+- **Landed**: PR [#228](https://github.com/ChicagoDave/sharpee/pull/228) → `8f2f241e`, PR [#230](https://github.com/ChicagoDave/sharpee/pull/230) → `ea996c7d`. Branch level with `main`; working tree clean apart from the untracked `scripts/clodpod.sh`.
 
 ## Dependency/Prerequisite Check
 
@@ -202,4 +209,4 @@ parentage — plus `.unreached` on `Status`, and a wire that carries any of it.
 
 ---
 
-**Progressive update**: Session completed 2026-08-05, ~18:20 CDT
+**Progressive update**: Session completed 2026-08-05, ~19:05 CDT — finalized after both PRs merged.

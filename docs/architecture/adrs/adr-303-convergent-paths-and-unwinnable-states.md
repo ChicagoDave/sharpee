@@ -241,9 +241,18 @@ eventually disagree, and the disagreement would be discovered by an author.
 same commit as the acceptance — replacing its "SCOPE QUESTION OPENED" note with
 the widening recorded here, and stating the two modes in its Decision. The
 trigger is acceptance of this ADR; the owner is the accepter, not a later
-reader. ADR-131 stands unamended until that lands. This ADR does not edit
-ADR-131 itself: one writer per artifact, and an interview writes only the ADR
-under interview.
+reader. This ADR does not edit ADR-131 itself: one writer per artifact, and an
+interview writes only the ADR under interview.
+
+> **DISCHARGED EARLY 2026-08-05 (session 51b5f4).** ADR-131 no longer stands
+> unamended: it carries a **SCOPE WIDENED** note, the two modes in its Decision,
+> the static-half move, and four new Consequences. The amendment landed on
+> David's instruction *ahead of* the trigger above, with this ADR still DRAFT —
+> so the pairing the paragraph specifies (same commit as the acceptance) did not
+> happen, and an accepter should not look for it. What the acceptance still owes
+> ADR-131 is nothing; what it owes this ADR is the DRAFT → ACCEPTED flip on its
+> own merits (acceptance criteria, test requirements, implementation section,
+> and the three undefined interfaces).
 
 ---
 

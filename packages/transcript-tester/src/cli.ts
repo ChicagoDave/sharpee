@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Transcript Tester CLI
+ * Transcript Tester CLI — dev-only entry point, NO LONGER A PUBLISHED BIN.
  *
- * Usage:
- *   transcript-test <story-path> [transcript-files...]
- *   transcript-test <story-path> --all
- *   transcript-test <story-path> --verbose
+ * The `transcript-test` bin was retired: an author runs `sharpee test` (devkit),
+ * which drives this package as a LIBRARY, and the in-repo path is the bundle
+ * (`dist/cli/sharpee.js --test`). This file survives because it is the only
+ * surface that runs a story through Node's real ESM resolver rather than through
+ * the bundle's esbuild aliases — which is how the cloak-of-darkness
+ * type-imported-as-value defect was found (#225).
+ *
+ * Usage (run the file directly; there is no installed command):
+ *   node packages/transcript-tester/dist/cli.js <story-path> [transcript-files...]
+ *   node packages/transcript-tester/dist/cli.js <story-path> --all
  */
 
 import * as path from 'path';
@@ -109,9 +115,12 @@ function printHelp(): void {
   console.log(`
 Transcript Tester - Test Sharpee stories with transcript files
 
+This is a dev-only entry point. There is no installed \`transcript-test\` command:
+authors run \`sharpee test\` and the in-repo path is \`dist/cli/sharpee.js --test\`.
+
 Usage:
-  transcript-test <story-path> [transcript-files...] [options]
-  transcript-test <story-path> --play
+  node packages/transcript-tester/dist/cli.js <story-path> [transcript-files...] [options]
+  node packages/transcript-tester/dist/cli.js <story-path> --play
 
 Arguments:
   story-path         Path to the story directory (e.g., stories/dungeo)
@@ -131,13 +140,13 @@ Options:
   -o, --output-dir <dir> Write timestamped results to directory (JSON + text report)
   -h, --help             Show this help message
 
-Examples:
-  transcript-test stories/dungeo --play
-  transcript-test stories/dungeo tests/navigation.transcript
-  transcript-test stories/dungeo --all
-  transcript-test stories/dungeo tests/*.transcript --verbose
-  transcript-test stories/dungeo --all -o test-results
-  transcript-test stories/dungeo --chain tests/setup.transcript tests/puzzle.transcript
+Examples (CLI="node packages/transcript-tester/dist/cli.js"):
+  $CLI stories/dungeo --play
+  $CLI stories/dungeo tests/navigation.transcript
+  $CLI stories/dungeo --all
+  $CLI stories/dungeo tests/*.transcript --verbose
+  $CLI stories/dungeo --all -o test-results
+  $CLI stories/dungeo --chain tests/setup.transcript tests/puzzle.transcript
 `);
 }
 

@@ -317,6 +317,9 @@ importers:
       '@sharpee/bootstrap':
         specifier: workspace:*
         version: link:../bootstrap
+      '@sharpee/branch-tester':
+        specifier: workspace:*
+        version: link:../branch-tester
       '@sharpee/chord':
         specifier: workspace:*
         version: link:../chord

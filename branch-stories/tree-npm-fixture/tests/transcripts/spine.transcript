@@ -1,0 +1,12 @@
+title: Tree fixture — the spine
+story: tree-npm-fixture
+description: The one root. Both children continue from the state this leaves,
+  so its single command is the prefix that gets replayed exactly once (ADR-302
+  D17 — the first child continues the live engine, the second reboots and
+  replays).
+seed: 42
+
+---
+
+> look
+[OK: contains "Vestibule"]

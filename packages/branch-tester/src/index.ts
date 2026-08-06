@@ -14,8 +14,9 @@
  * a fiction — every change here would be a change there. The split is
  * permanent and by story, not a migration with an end date.
  *
- * Usage:
- *   npx branch-test <story-path> [transcripts...]
+ * Usage: as a LIBRARY. The `branch-test` bin is retired — an author runs
+ * `sharpee test --tree` (devkit), and the in-repo path is the bundle's `--test`
+ * over transcripts under branch-stories/.
  */
 
 // Types
@@ -43,6 +44,14 @@ export {
   type TreeRunResult,
   type NodeRunOutcome,
 } from './tree-runner.js';
+
+// The one `GameFactory` builder — a root's resolved seed is re-pinned at every
+// fork below it (ADR-302 D17). One implementation for cli.ts, devkit, the bundle.
+export {
+  createRootGameFactory,
+  type RootBootSpec,
+  type RootGameFactoryOptions,
+} from './game-factory.js';
 
 // Tree reporting — unreached is not failed (ADR-302 D13)
 export {

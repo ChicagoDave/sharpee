@@ -44,8 +44,11 @@ Usage:
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
   sharpee --version                      Print the platform + Chord language version
-  sharpee test [name|path] [transcripts…] [--chain] [--stop-on-failure] [--verbose]
+  sharpee test [name|path] [transcripts…] [--tree|--chain] [--stop-on-failure] [--verbose]
                                          Run the project's transcript tests
+                                         --tree: transcripts name parents with
+                                         continues:; runs every root-to-leaf
+                                         path (ADR-302)
   sharpee play [name|path]               Play the project interactively (REPL)
 
 build (Chord .story): compiles the story, derives all metadata from the Story IR

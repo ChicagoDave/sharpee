@@ -25,9 +25,12 @@ import type {
 } from '@sharpee/transcript-tester';
 import { loadAuthorGame } from '../standalone/author-game.js';
 import { lookupStory } from '../registry.js';
+// Cheap to import: test-tree.ts pulls @sharpee/branch-tester lazily, so the
+// harness still loads only when --tree is actually used.
+import { runTreeTestCommand } from './test-tree.js';
 
 const USAGE =
-  'usage: sharpee test [name|dir|file.story] [transcripts…] [--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output]';
+  'usage: sharpee test [name|dir|file.story] [transcripts…] [--tree|--chain] [--stop-on-failure|-s] [--verbose|-v] [--json] [--coverage] [--capture-output]';
 
 /**
  * Run `sharpee test`.
@@ -67,6 +70,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   } = require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
   let chain = false;
+  let tree = false;
   let stopOnFailure = false;
   let verbose = false;
   let json = false;
@@ -76,7 +80,8 @@ export async function runTestCommand(rest: string[]): Promise<number> {
   const transcriptPaths: string[] = [];
 
   for (const arg of rest) {
-    if (arg === '--chain' || arg === '-c') chain = true;
+    if (arg === '--tree') tree = true;
+    else if (arg === '--chain' || arg === '-c') chain = true;
     else if (arg === '--stop-on-failure' || arg === '-s') stopOnFailure = true;
     else if (arg === '--verbose' || arg === '-v') verbose = true;
     else if (arg === '--json') json = true;
@@ -117,6 +122,14 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     }
   }
 
+  // ADR-302 D10 retires `--chain`: in a tree, a shared prefix already runs once
+  // and each tail resumes from it, so "chain" names nothing a tree run can mean.
+  // Silently ignoring one of the two would hide which model actually ran.
+  if (tree && chain) {
+    console.error(`test: --tree and --chain are mutually exclusive (ADR-302 D10 retires --chain for trees)\n${USAGE}`);
+    return 2;
+  }
+
   const dir = path.resolve(projectDir ?? process.cwd());
   let transcripts = transcriptPaths.map((p) => path.resolve(p));
   if (transcripts.length === 0) {
@@ -141,6 +154,20 @@ export async function runTestCommand(rest: string[]): Promise<number> {
     }
   }
   transcripts = [...new Set(transcripts)];
+
+  // A tree is a different run model, not a flag on this one: it assembles all
+  // transcripts before executing any, and its reporting distinguishes unreached
+  // from failed (D13). Hand off whole rather than branching through the loop.
+  if (tree) {
+    if (json) {
+      // The ADR-277 D1 record stream carries no parentage, no `unreached` and
+      // no replay markers yet, so a tree emitted through it would be reported
+      // as a flat run. Refusing beats emitting a shape that reads as truth.
+      console.error('test: --json does not yet carry tree records (parentage, unreached, replay) — run --tree without --json');
+      return 2;
+    }
+    return runTreeTestCommand({ dir, transcripts, verbose, stopOnFailure });
+  }
 
   // In --json mode, stdout is exclusively the NDJSON stream: informational
   // lines are dropped (diagnostics stay on stderr) and the chalk reporter

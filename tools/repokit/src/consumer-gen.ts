@@ -22,8 +22,16 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const SHARPEE = '@sharpee/';
-/** transcript-tester supplies the `transcript-test` bin (dev-only). */
-const TT = '@sharpee/transcript-tester';
+/**
+ * devkit supplies the `sharpee` bin (dev-only), whose `test` subcommand runs a
+ * project's transcripts and `test --tree` runs its ADR-302 tree.
+ *
+ * This was `@sharpee/transcript-tester` and its `transcript-test` bin. The proof
+ * is stronger through devkit: an outside author runs `sharpee test`, never the
+ * package bin, so the consumer test now exercises the command authors actually
+ * type. It is also what lets the two package bins be retired.
+ */
+const HARNESS = '@sharpee/devkit';
 
 export type StagingMap = Record<string, string>;
 
@@ -178,13 +186,13 @@ export interface GenerateConsumerResult {
   /** Packages written as runtime deps (full closure in local mode; seed in registry mode). */
   closure: string[];
   /**
-   * Packages vendored solely to satisfy transcript-tester's own `@sharpee` deps — those
+   * Packages vendored solely to satisfy the harness's own `@sharpee` deps — those
    * its closure reaches that the runtime closure does not. Local mode only; empty in
    * registry mode, where npm resolves transitive deps itself.
    */
   devClosure: string[];
-  /** true if transcript-tester is available as a dev dep (always true in registry mode). */
-  haveTranscriptTester: boolean;
+  /** true if the harness is available as a dev dep (always true in registry mode). */
+  haveHarness: boolean;
 }
 
 /**
@@ -193,7 +201,7 @@ export interface GenerateConsumerResult {
  * Local mode packs the story's **full transitive `@sharpee` closure** into tarballs
  * and `file:`-refs them — required because `file:` deps do not resolve their own
  * `@sharpee` deps from anywhere. That same reasoning applies to the dev dep, so
- * transcript-tester's closure is vendored too; whatever it reaches beyond the runtime
+ * the harness's closure is vendored too; whatever it reaches beyond the runtime
  * closure lands in `devDependencies` rather than overstating the story's runtime
  * surface (#201). Registry mode declares only the story's **seed** `@sharpee` deps and
  * lets npm resolve transitive deps from the registry, exactly as a real consumer
@@ -210,7 +218,7 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
   const devDependencies: Record<string, string> = { typescript: '^5.0.0' };
   let written: string[];
   let devOnly: string[] = [];
-  let haveTT: boolean;
+  let haveHarness: boolean;
 
   if (mode === 'local') {
     const staging = scanStaging(opts.stagingDir);
@@ -239,31 +247,31 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
 
     const depsOf = (n: string) => stagingDepsOf(opts.stagingDir, staging, n);
     written = [...computeClosure(seed, depsOf)].sort();
-    haveTT = Boolean(staging[TT]);
+    haveHarness = Boolean(staging[HARNESS]);
 
-    // transcript-tester gets the same closure treatment as the runtime seed: its own
+    // The harness gets the same closure treatment as the runtime seed: its own
     // `@sharpee` deps resolve from nowhere once it is a `file:` tarball, so anything
     // the runtime closure misses (bootstrap, for every story) must be vendored here.
     const runtime = new Set(written);
-    devOnly = haveTT
-      ? [...computeClosure([TT], depsOf)].filter((n) => n !== TT && !runtime.has(n)).sort()
+    devOnly = haveHarness
+      ? [...computeClosure([HARNESS], depsOf)].filter((n) => n !== HARNESS && !runtime.has(n)).sort()
       : [];
 
     // Before packing: a gap here is an `npm install` ETARGET much later (#201).
     assertVendoredClosureComplete(
-      [...written, ...devOnly, ...(haveTT ? [TT] : [])],
+      [...written, ...devOnly, ...(haveHarness ? [HARNESS] : [])],
       (n) => declaredSharpeeDeps(opts.stagingDir, staging, n),
     );
 
     for (const n of written) dependencies[n] = `file:vendor/${pack(n)}`;
     for (const n of devOnly) devDependencies[n] = `file:vendor/${pack(n)}`;
-    if (haveTT) devDependencies[TT] = `file:vendor/${pack(TT)}`;
+    if (haveHarness) devDependencies[HARNESS] = `file:vendor/${pack(HARNESS)}`;
   } else {
     const version = opts.registryVersion || 'latest';
     written = [...seed].sort();
     for (const n of written) dependencies[n] = version;
-    haveTT = true; // transcript-tester is published; npm resolves it from the registry
-    devDependencies[TT] = version;
+    haveHarness = true; // devkit is published; npm resolves it from the registry
+    devDependencies[HARNESS] = version;
   }
 
   writeFileSync(
@@ -283,5 +291,5 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
     ) + '\n',
   );
 
-  return { closure: written, devClosure: devOnly, haveTranscriptTester: haveTT };
+  return { closure: written, devClosure: devOnly, haveHarness };
 }

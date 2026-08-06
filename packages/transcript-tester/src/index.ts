@@ -3,8 +3,9 @@
  *
  * Transcript-based testing for Sharpee interactive fiction stories.
  *
- * Usage:
- *   npx transcript-test <story-path> [transcripts...]
+ * Usage: as a LIBRARY. The `transcript-test` bin is retired — an author runs
+ * `sharpee test` (devkit), which imports this package, and the in-repo path is
+ * the bundle's `--test`.
  *
  * See ADR-073 for format specification.
  */
