@@ -5,7 +5,7 @@
  * formatted events while maintaining the event-driven architecture.
  */
 
-import { createEvent as coreCreateEvent, ISemanticEvent, RandomService } from '@sharpee/core';
+import { createEvent as coreCreateEvent, type ISemanticEvent, type RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel, TraitType } from '@sharpee/world-model';
 import {
   ActionContext,

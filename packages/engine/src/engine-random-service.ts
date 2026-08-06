@@ -27,21 +27,21 @@
  */
 
 import {
-  ChoicePoint,
-  RandomService,
-  SeededRandom,
+  type ChoicePoint,
+  type RandomService,
+  type SeededRandom,
   createSeededRandom,
   deriveStreamSeed,
   getPoint,
-  RandomForceSpec,
-  RandomForceStatus,
-  RandomForceMode,
+  type RandomForceSpec,
+  type RandomForceStatus,
+  type RandomForceMode,
   forceKey,
   DuplicateForceKeyError,
   UnknownForcePointError,
   UndeclaredForceClassError,
-  IRandomTraceData,
-  RandomTraceSink
+  type IRandomTraceData,
+  type RandomTraceSink
 } from '@sharpee/core';
 
 /**

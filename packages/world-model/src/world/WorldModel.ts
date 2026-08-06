@@ -18,7 +18,7 @@ import { LockableTrait } from '../traits/lockable/lockableTrait.js';
 import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
 import { ExitTrait } from '../traits/exit/exitTrait.js';
 import { DirectionType, getOppositeDirection } from '../constants/directions.js';
-import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
+import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
 import { SpatialIndex } from './SpatialIndex.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
 import { ReachabilityBehavior } from './ReachabilityBehavior.js';
@@ -47,14 +47,14 @@ import type {
 import { interceptorBindingKey } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
 import {
-  WorldState,
-  WorldConfig,
-  ContentsOptions,
-  WorldChange,
-  IGrammarVocabularyProvider,
+  type WorldState,
+  type WorldConfig,
+  type ContentsOptions,
+  type WorldChange,
+  type IGrammarVocabularyProvider,
   GrammarVocabularyProvider,
-  IEventProcessorWiring,
-  GamePrompt,
+  type IEventProcessorWiring,
+  type GamePrompt,
   DefaultPrompt,
   PROMPT_STATE_KEY
 } from '@sharpee/if-domain';

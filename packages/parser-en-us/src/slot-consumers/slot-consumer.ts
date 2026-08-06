@@ -5,13 +5,13 @@
 
 import {
   SlotType,
-  SlotMatch,
-  CompiledPattern,
-  GrammarContext,
-  SlotConstraint,
-  PatternToken
+  type SlotMatch,
+  type CompiledPattern,
+  type GrammarContext,
+  type SlotConstraint,
+  type PatternToken
 } from '@sharpee/if-domain';
-import { Token } from '@sharpee/if-domain';
+import { type Token } from '@sharpee/if-domain';
 
 /**
  * Context passed to slot consumers containing all information needed for consumption

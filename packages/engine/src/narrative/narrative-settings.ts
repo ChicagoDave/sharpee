@@ -5,7 +5,7 @@
  * Stories can be written in 1st, 2nd, or 3rd person perspective.
  */
 
-import { PronounSet } from '@sharpee/world-model';
+import { type PronounSet } from '@sharpee/world-model';
 
 /**
  * Narrative perspective for player actions

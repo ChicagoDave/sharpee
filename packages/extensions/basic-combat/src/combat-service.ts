@@ -6,7 +6,7 @@
  * calling registerBasicCombat().
  */
 
-import { EntityId, SeededRandom } from '@sharpee/core';
+import { type EntityId, type SeededRandom } from '@sharpee/core';
 import {
   IFEntity,
   WorldModel,

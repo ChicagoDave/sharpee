@@ -5,7 +5,7 @@
  * Action interfaces have been moved to enhanced-types.ts.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 /**
  * Result of processing events

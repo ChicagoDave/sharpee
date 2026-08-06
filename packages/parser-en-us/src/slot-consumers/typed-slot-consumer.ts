@@ -3,7 +3,7 @@
  * @description Handles typed value slots (ADR-088, ADR-082)
  */
 
-import { SlotType, SlotMatch } from '@sharpee/if-domain';
+import { SlotType, type SlotMatch } from '@sharpee/if-domain';
 import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
 import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
 

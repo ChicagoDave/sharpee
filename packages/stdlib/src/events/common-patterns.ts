@@ -6,7 +6,7 @@
  * to define their own structures.
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Common pattern for events that involve a target entity

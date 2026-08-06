@@ -12,7 +12,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   IFEntity,
@@ -23,9 +23,9 @@ import {
   LockableBehavior,
   VisibilityBehavior,
   Direction,
-  DirectionType,
+  type DirectionType,
   canActorWalkInVehicle,
-  RegionCrossings,
+  type RegionCrossings,
 } from '@sharpee/world-model';
 import type { ExitResolution } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';

@@ -28,15 +28,15 @@
  */
 
 import {
-  Assembler,
-  Phrase,
-  NounPhrase,
-  Verb,
-  Pronoun,
-  Contents,
-  Slot,
-  Choice,
-  RenderContext,
+  type Assembler,
+  type Phrase,
+  type NounPhrase,
+  type Verb,
+  type Pronoun,
+  type Contents,
+  type Slot,
+  type Choice,
+  type RenderContext,
   isLiteral,
   isNounPhrase,
   isPhraseList,
@@ -54,7 +54,7 @@ import {
   isSentence,
   isQuote,
 } from '@sharpee/if-domain';
-import { ITextBlock, TextContent, IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
+import { type ITextBlock, type TextContent, type IDecoration, CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { pluralize } from '../pluralize.js';
 import { countWord, numberToWords, ordinalString } from '../number-words.js';
 import { PhraseNotImplementedError } from './errors.js';

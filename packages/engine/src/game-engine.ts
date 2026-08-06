@@ -12,7 +12,7 @@ import {
   ContainerTrait,
   ListenerTrait,
   StandardCapabilities,
-  ITrait,
+  type ITrait,
   TraitType,
   EntityType,
   StoryInfoTrait,
@@ -20,34 +20,34 @@ import {
   HealthBehavior,
   registerConcealedVisibilityBehavior
 } from '@sharpee/world-model';
-import { EventProcessor, Effect } from '@sharpee/event-processor';
+import { EventProcessor, type Effect } from '@sharpee/event-processor';
 import {
-  ActionRegistry,
+  type ActionRegistry,
   StandardActionRegistry,
   standardActions,
   vocabularyRegistry,
-  Parser,
+  type Parser,
   ParserFactory,
-  CommandHistoryData,
-  CommandHistoryEntry,
+  type CommandHistoryData,
+  type CommandHistoryEntry,
   CommandHistoryCapabilitySchema,
   IFActions,
   MetaCommandRegistry,
-  IPerceptionService,
+  type IPerceptionService,
   registerStandardChains,
   createScopeResolver,
   channelRegistry,
   PLAYER_DIED_EVENT,
   createDeadlyRoomTransformer,
 } from '@sharpee/stdlib';
-import { LanguageProvider, IEventProcessorWiring, ClientCapabilities, CmgtPacket, TurnPacket, ISound } from '@sharpee/if-domain';
+import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type CmgtPacket, type TurnPacket, type ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
-import { ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
+import { type ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, createSemanticEventSource, createGenericEventSource, ISaveData, ISaveRestoreHooks, ISaveResult, IRestoreResult, ISerializedEvent, ISerializedTurn, IEngineState, ISaveMetadata, ISerializedParserState, IPlatformEvent, isPlatformRequestEvent, PlatformEventType, ISaveContext, IRestoreContext, IQuitContext, IRestartContext, IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, PlatformEventType, type ISaveContext, type IRestoreContext, type IQuitContext, type IRestartContext, type IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
-import { PluginRegistry, TurnPluginContext } from '@sharpee/plugins';
+import { PluginRegistry, type TurnPluginContext } from '@sharpee/plugins';
 import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
 
 

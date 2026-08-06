@@ -930,7 +930,7 @@ export declare function parseGoldenFile(filePath: string): GoldenRecording;
  * Public interface: `runTranscript`, `goldenPathFor`. Owner context:
  * transcript-tester (testing tooling).
  */
-import { RandomForceSpec, RandomForceStatus } from '@sharpee/core';
+import { type RandomForceSpec, type RandomForceStatus } from '@sharpee/core';
 import { Transcript, TranscriptResult, RunnerOptions } from './types.js';
 /**
  * Interface for the game engine wrapper the CLIs hand the runner.
@@ -1332,7 +1332,7 @@ export {};
  * Public interface: `searchOutcome`, `SearchTarget`, `SearchResult`.
  * Owner context: @sharpee/transcript-tester (testing tooling).
  */
-import { RandomForceSpec } from '@sharpee/core';
+import { type RandomForceSpec } from '@sharpee/core';
 import type { Transcript } from './types.js';
 /** The searched-for outcome: a declared point and one of its declared classes. */
 export interface SearchTarget {

@@ -10,7 +10,7 @@
  * Owner context: @sharpee/character / conversation
  */
 
-import { Mood, DispositionWord } from '@sharpee/world-model';
+import { type Mood, type DispositionWord } from '@sharpee/world-model';
 import { CharacterBuilder } from '../character-builder.js';
 import { TopicDef } from './topic-registry.js';
 import {

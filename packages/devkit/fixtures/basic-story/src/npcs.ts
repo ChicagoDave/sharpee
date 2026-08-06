@@ -5,7 +5,7 @@
  * Owner: npm regression test suite
  */
 
-import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
+import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
 import { definePoint } from '@sharpee/core';
 
 // Declared choice points (ADR-293): every draw names a point the author can

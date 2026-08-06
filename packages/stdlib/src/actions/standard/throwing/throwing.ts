@@ -15,7 +15,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
-import { ISemanticEvent, definePoint } from '@sharpee/core';
+import { type ISemanticEvent, definePoint } from '@sharpee/core';
 
 // Choice points (ADR-293 D2): every throwing draw goes through a declared
 // point on its own stream. Grouping ruled at implementation time: the three
@@ -35,11 +35,11 @@ import {
   RoomBehavior,
   OpenableBehavior,
   Direction,
-  DirectionType,
+  type DirectionType,
   findTraitWithCapability,
-  CapabilityBehavior,
-  CapabilityEffect,
-  ITrait
+  type CapabilityBehavior,
+  type CapabilityEffect,
+  type ITrait
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/types.js';

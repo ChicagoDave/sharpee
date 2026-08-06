@@ -11,7 +11,7 @@
  * Owner context: @sharpee/queries (ADR-150)
  */
 
-import { WorldModel, IWorldModel, EntityType, IFEntity, TraitType } from '@sharpee/world-model';
+import { WorldModel, type IWorldModel, EntityType, IFEntity, TraitType } from '@sharpee/world-model';
 import type { ContentsOptions } from '@sharpee/if-domain';
 import { EntityQuery } from './entity-query.js';
 

@@ -6,7 +6,7 @@ import { TraitType } from '../trait-types.js';
 import { ActorTrait } from './actorTrait.js';
 import { ContainerBehavior, IWorldQuery } from '../container/containerBehavior.js';
 import { IdentityBehavior } from '../identity/identityBehavior.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { WearableBehavior } from '../wearable/wearableBehavior.js';
 
 /**

@@ -17,19 +17,19 @@
  * - highest-priority: Only highest priority entity is checked
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   IFEntity,
-  IWorldModel,
+  type IWorldModel,
   findTraitWithCapability,
-  CapabilityBehavior,
-  CapabilitySharedData,
-  CapabilityEffect,
-  ITrait,
+  type CapabilityBehavior,
+  type CapabilitySharedData,
+  type CapabilityEffect,
+  type ITrait,
   getCapabilityConfig,
-  CapabilityResolution
+  type CapabilityResolution
 } from '@sharpee/world-model';
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 
 /**
  * A single capability claim from an entity.

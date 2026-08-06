@@ -1,6 +1,6 @@
 // packages/world-model/src/entities/if-entity.ts
 
-import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
+import { type IEntity, type EntityId, type IEntityCreationParams } from '@sharpee/core';
 import { ITrait, ITraitConstructor, isTrait } from '../traits/trait.js';
 import { TraitType } from '../traits/trait-types.js';
 import { rehydrateTraitData } from './trait-rehydrator.js';

@@ -2,8 +2,8 @@
  * Type definitions for the attacking action's shared data
  */
 
-import { EntityId } from '@sharpee/core';
-import { AttackIneffectiveReason } from '@sharpee/world-model';
+import { type EntityId } from '@sharpee/core';
+import { type AttackIneffectiveReason } from '@sharpee/world-model';
 
 /**
  * Result from attack behaviors

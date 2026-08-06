@@ -12,7 +12,7 @@
  * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
  */
 
-import { RandomService, definePoint } from '@sharpee/core';
+import { type RandomService, definePoint } from '@sharpee/core';
 
 /** The probabilistic-death hazard's choice point (single yes/no draw). */
 export const PROBABILISTIC_DEATH_POINT = definePoint('stdlib.probabilistic-death.lethal', {

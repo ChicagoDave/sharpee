@@ -7,12 +7,12 @@
 
 import {
   IFEntity,
-  CapabilityBehavior,
-  CapabilitySharedData,
+  type CapabilityBehavior,
+  type CapabilitySharedData,
   findTraitWithCapability,
 } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 import { INSPECT_ACTION_ID } from './behaviors';
 import { getRoomIds } from './world-setup';
 

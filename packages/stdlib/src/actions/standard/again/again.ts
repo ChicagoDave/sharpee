@@ -14,7 +14,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
-import { ISemanticEvent, createAgainRequestedEvent } from '@sharpee/core';
+import { type ISemanticEvent, createAgainRequestedEvent } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { CommandHistoryData } from '../../../capabilities/command-history.js';

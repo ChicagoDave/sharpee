@@ -2,7 +2,7 @@
  * All trait classes in one convenient import
  * 
  * Usage:
- * import { Traits } from '@sharpee/world-model';
+ * import { type Traits } from '@sharpee/world-model';
  * 
  * const openable = entity.get(TraitType.OPENABLE) as Traits.OpenableTrait;
  */

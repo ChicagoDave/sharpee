@@ -7,7 +7,7 @@ import { IFEntity } from '../../entities/if-entity.js';
 import { WorldModel } from '../../world/WorldModel.js';
 import { TraitType } from '../trait-types.js';
 import { BreakableTrait } from './breakableTrait.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Result of breaking an entity

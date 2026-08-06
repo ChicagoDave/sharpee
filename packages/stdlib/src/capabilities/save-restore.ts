@@ -2,7 +2,7 @@
  * Save/Restore capability for managing save game slots and metadata
  */
 
-import { ICapabilitySchema } from '@sharpee/world-model';
+import { type ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Save/Restore capability schema

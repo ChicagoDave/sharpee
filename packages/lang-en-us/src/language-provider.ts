@@ -5,7 +5,7 @@
  * Enhanced to support getMessage interface for text service
  */
 
-import { LanguageProvider, ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
+import { type LanguageProvider, type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { EnglishAssembler, registerPronounSet as registerAssemblerPronounSet } from './assembler/index.js';
 import type { PronounSetForms } from './assembler/index.js';

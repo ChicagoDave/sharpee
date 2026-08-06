@@ -4,8 +4,8 @@
  * These handlers apply movement-related events to the world model
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IFEntity, TraitType, WearableTrait, RoomTrait, EventHandler } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { WorldModel, IFEntity, TraitType, WearableTrait, RoomTrait, type EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**

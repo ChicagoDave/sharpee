@@ -2,7 +2,7 @@
  * Type definitions for the opening action's shared data
  */
 
-import { IOpenResult } from '@sharpee/world-model';
+import { type IOpenResult } from '@sharpee/world-model';
 
 /**
  * Data shared between execute and report phases of the opening action

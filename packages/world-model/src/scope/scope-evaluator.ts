@@ -13,7 +13,7 @@
  * resolution with disambiguation).
  */
 
-import { IEntity } from '@sharpee/core';
+import { type IEntity } from '@sharpee/core';
 import { 
   IScopeRule, 
   IScopeContext, 

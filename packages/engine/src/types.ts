@@ -4,9 +4,9 @@
  * The engine manages game state, turn execution, and event sequencing
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { IParsedCommand, IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
-import { ITextBlock } from '@sharpee/text-blocks';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type IParsedCommand, type IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
+import { type ITextBlock } from '@sharpee/text-blocks';
 
 // Re-export perception types from stdlib for convenience
 export { IPerceptionService, Sense } from '@sharpee/stdlib';

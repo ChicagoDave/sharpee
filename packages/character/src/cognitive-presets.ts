@@ -9,7 +9,7 @@
  * Owner context: @sharpee/character
  */
 
-import { CognitiveProfile } from '@sharpee/world-model';
+import { type CognitiveProfile } from '@sharpee/world-model';
 
 /** Names of built-in cognitive presets. */
 export type CognitivePresetName =

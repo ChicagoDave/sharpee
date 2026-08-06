@@ -2,7 +2,7 @@
  * Behavior for weapon entities
  */
 
-import { SeededRandom } from '@sharpee/core';
+import { type SeededRandom } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';

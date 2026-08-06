@@ -2,8 +2,8 @@
  * Mock WorldModel implementation for testing
  */
 
-import { WorldModel, WorldChange, IFEntity } from '@sharpee/world-model';
-import { SemanticEvent } from '@sharpee/core';
+import { WorldModel, type WorldChange, IFEntity } from '@sharpee/world-model';
+import type { ISemanticEvent as SemanticEvent } from '@sharpee/core';
 
 // Mock IFEvents constants
 export const MockIFEvents = {

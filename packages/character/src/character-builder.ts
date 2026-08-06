@@ -10,24 +10,24 @@
  */
 
 import {
-  PersonalityExpr,
-  PersonalityTrait,
+  type PersonalityExpr,
+  type PersonalityTrait,
   parsePersonalityExpr,
-  DispositionWord,
+  type DispositionWord,
   dispositionToValue,
-  Mood,
+  type Mood,
   MOOD_AXES,
-  ThreatLevel,
+  type ThreatLevel,
   THREAT_VALUES,
-  CognitiveProfile,
+  type CognitiveProfile,
   STABLE_COGNITIVE_PROFILE,
-  ConfidenceWord,
-  FactSource,
-  LucidityConfig,
-  PerceptionFilterConfig,
-  PerceivedEvent,
-  CharacterPredicate,
-  ICharacterModelData,
+  type ConfidenceWord,
+  type FactSource,
+  type LucidityConfig,
+  type PerceptionFilterConfig,
+  type PerceivedEvent,
+  type CharacterPredicate,
+  type ICharacterModelData,
 } from '@sharpee/world-model';
 import { COGNITIVE_PRESETS, CognitivePresetName, isCognitivePreset } from './cognitive-presets.js';
 import { VocabularyExtension } from './vocabulary-extension.js';

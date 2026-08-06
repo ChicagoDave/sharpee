@@ -12,8 +12,8 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait, OpenableBehavior, ICloseResult } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { TraitType, OpenableTrait, OpenableBehavior, type ICloseResult } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types.js';
 import { IFActions } from '../../constants.js';
 import { closedDataConfig } from './closing-data.js';

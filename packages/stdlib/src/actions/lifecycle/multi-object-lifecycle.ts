@@ -20,7 +20,7 @@
  * Owner: stdlib standard-action infrastructure (ADR-228).
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFEntity } from '@sharpee/world-model';
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { ActionLifecycleDescriptor } from './descriptor.js';

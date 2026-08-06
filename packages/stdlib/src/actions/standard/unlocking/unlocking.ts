@@ -12,8 +12,8 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
-import { ISemanticEvent } from '@sharpee/core';
-import { TraitType, OpenableTrait, LockableBehavior, IUnlockResult } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { TraitType, OpenableTrait, LockableBehavior, type IUnlockResult } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/index.js';
 import { UnlockedEventData } from './unlocking-events.js';

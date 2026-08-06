@@ -5,7 +5,7 @@ import { TraitType } from '../trait-types.js';
 import { ExitTrait } from './exitTrait.js';
 import { OpenableTrait } from '../openable/openableTrait.js';
 import { LockableTrait } from '../lockable/lockableTrait.js';
-import { ISemanticEvent, createEvent } from '@sharpee/core';
+import { type ISemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
 import { ActionFailureReason } from '../../constants/action-failures.js';
 

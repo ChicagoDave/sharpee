@@ -6,13 +6,13 @@
  * - ActionContext (stdlib implementation) → IActionContext (if-domain contract)
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { 
-  CommandInput, 
-  EntityReference, 
-  IActionContext, 
-  IAction,
-  ValidationResult
+  type CommandInput, 
+  type EntityReference, 
+  type IActionContext, 
+  type IAction,
+  type ValidationResult
 } from '@sharpee/if-domain';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ValidatedCommand } from '../validation/types.js';

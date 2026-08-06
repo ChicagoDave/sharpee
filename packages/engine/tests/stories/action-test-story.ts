@@ -4,7 +4,7 @@
 
 import { Story, StoryConfig } from '../../src/story';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
-import { Action, ActionContext, ActionResult } from '@sharpee/stdlib';
+import { type Action, type ActionContext, ActionResult } from '@sharpee/stdlib';
 
 /**
  * Action test story with custom actions and test helpers

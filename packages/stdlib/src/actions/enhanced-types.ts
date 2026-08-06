@@ -6,9 +6,9 @@
  * but the enhanced context makes it easy to create those events.
  */
 
-import { ISemanticEvent, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ISound } from '@sharpee/if-domain';
+import { type ISound } from '@sharpee/if-domain';
 import { ScopeResolver, ScopeLevel } from '../scope/types.js';
 import { ValidatedCommand } from '../validation/types.js';
 

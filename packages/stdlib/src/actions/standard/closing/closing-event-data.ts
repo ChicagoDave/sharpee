@@ -4,7 +4,7 @@
  * This is what goes in SemanticEvent.data
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { EntitySnapshot } from '../../base/snapshot-utils.js';
 
 export interface ClosedEventData {

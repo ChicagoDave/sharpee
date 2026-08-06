@@ -26,8 +26,8 @@
  * additive only — a new member plus a new Assembler case, never a rewrite.
  */
 
-import { EntityId, IEntity } from '@sharpee/core';
-import { IDecoration, ITextBlock } from '@sharpee/text-blocks';
+import { type EntityId, type IEntity } from '@sharpee/core';
+import { type IDecoration, type ITextBlock } from '@sharpee/text-blocks';
 
 // ---------------------------------------------------------------------------
 // Agreement surface

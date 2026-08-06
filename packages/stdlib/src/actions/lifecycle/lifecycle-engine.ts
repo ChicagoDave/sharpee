@@ -30,10 +30,10 @@
  * Owner: stdlib standard-action infrastructure (ADR-228).
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   IFEntity,
-  InterceptorSharedData,
+  type InterceptorSharedData,
   applyInterceptorReportResult,
   applyInterceptorBlockedResult
 } from '@sharpee/world-model';

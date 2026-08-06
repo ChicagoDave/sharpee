@@ -4,7 +4,7 @@
  * These interfaces define the structure of data emitted by the going action
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Data for the 'if.event.actor_moved' event

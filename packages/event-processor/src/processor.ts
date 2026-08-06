@@ -5,9 +5,9 @@
  * ADR-075: Entity handlers receive WorldQuery and return Effect[].
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
+import { type WorldChange, type ProcessedEvents, type ProcessorOptions } from '@sharpee/if-domain';
 import { registerStandardHandlers } from './handlers/index.js';
 import {
   Effect,

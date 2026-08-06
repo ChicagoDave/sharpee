@@ -13,7 +13,7 @@ English language provider, message resolution, formatters.
  * Self-contained language implementation with no external dependencies
  * Enhanced to support getMessage interface for text service
  */
-import { ParserLanguageProvider, ActionHelp, VerbVocabulary, DirectionVocabulary, SpecialVocabulary, LanguageGrammarPattern, LocaleSettings, RenderContext } from '@sharpee/if-domain';
+import { type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PronounSetForms } from './assembler/index.js';
 import { NarrativeContext } from './perspective/index.js';
@@ -2181,8 +2181,8 @@ export declare function resolvePerspectivePlaceholders(message: string, context?
  * `Optional` / `Choice` (196) atoms. `PhraseNotImplementedError` is now only a
  * defensive guard against a future unhandled kind.
  */
-import { Assembler, Phrase, RenderContext } from '@sharpee/if-domain';
-import { ITextBlock } from '@sharpee/text-blocks';
+import { type Assembler, type Phrase, type RenderContext } from '@sharpee/if-domain';
+import { type ITextBlock } from '@sharpee/text-blocks';
 /**
  * Default channel key for a realized tree. Phase 2 emits one block; the report
  * layer (ADR-192 §6, Phase 4) assigns real channel keys (room.name, …) as it
@@ -2254,7 +2254,7 @@ export declare class EnglishAssembler implements Assembler {
  * a defensive guard against a future kind landing without an Assembler case,
  * refusing loudly rather than silently dropping text.
  */
-import { Phrase } from '@sharpee/if-domain';
+import { type Phrase } from '@sharpee/if-domain';
 /**
  * Thrown by the Assembler when a reserved (stub) phrase kind is realized before
  * its follow-on ADR has implemented the case. Names the kind and the ADR.
@@ -2306,7 +2306,7 @@ export declare class PhraseNotImplementedError extends Error {
  *    an unknown leading hint, or an unbound param all raise `PhraseParseError`
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
  */
-import { Phrase } from '@sharpee/if-domain';
+import { type Phrase } from '@sharpee/if-domain';
 /**
  * Raised when a template cannot be parsed: a legacy `:`-chain, an unknown
  * kind-prefix, an unknown leading hint, or a reference to an unbound param.

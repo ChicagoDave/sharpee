@@ -6,13 +6,13 @@
  */
 
 import {
-  ISemanticEvent,
-  ISemanticEventSource,
+  type ISemanticEvent,
+  type ISemanticEventSource,
   isPlatformRequestEvent,
-  IPlatformEvent
+  type IPlatformEvent
 } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
-import { IPerceptionService } from '@sharpee/stdlib';
+import { type IPerceptionService } from '@sharpee/stdlib';
 import { EngineConfig } from './types.js';
 
 /**

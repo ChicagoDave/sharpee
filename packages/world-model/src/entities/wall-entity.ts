@@ -17,7 +17,7 @@
  * Owner context: `@sharpee/world-model` — entities / spatial primitives.
  */
 
-import { EntityId, IEntityCreationParams } from '@sharpee/core';
+import { type EntityId, type IEntityCreationParams } from '@sharpee/core';
 import { IFEntity } from './if-entity.js';
 import { ITrait } from '../traits/trait.js';
 

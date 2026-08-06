@@ -8,7 +8,7 @@
 import { IFEntity, WorldModel, TraitType, IdentityTrait } from '@sharpee/world-model';
 import { ActionContext } from '../actions/enhanced-types.js';
 import { StandardScopeResolver } from '../scope/scope-resolver.js';
-import { INounPhrase } from '@sharpee/world-model';
+import { type INounPhrase } from '@sharpee/world-model';
 
 /**
  * Result of processing a single entity in a multi-object command

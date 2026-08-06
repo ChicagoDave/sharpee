@@ -3,7 +3,7 @@
  * Supports the AGAIN/G action functionality
  */
 
-import { ICapabilitySchema } from '@sharpee/world-model';
+import { type ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Command history capability schema

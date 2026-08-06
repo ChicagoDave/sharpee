@@ -2,7 +2,7 @@
  * Test event fixtures
  */
 
-import { SemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent as SemanticEvent } from '@sharpee/core';
 import { IFEvents } from '@sharpee/if-domain';
 
 // Movement events

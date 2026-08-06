@@ -4,8 +4,8 @@
 
 import { Story, StoryConfig } from '../../src/story';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
-import { Action, ActionContext, ActionResult } from '@sharpee/stdlib';
-import { GameEvent } from '@sharpee/event-processor';
+import { type Action, type ActionContext, ActionResult } from '@sharpee/stdlib';
+import type { IGameEvent as GameEvent } from '@sharpee/event-processor';
 
 interface RecordedEvent {
   type: string;

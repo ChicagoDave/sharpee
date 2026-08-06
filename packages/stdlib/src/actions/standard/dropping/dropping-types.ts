@@ -4,7 +4,7 @@
  * Provides type-safe access to shared data for multi-object support
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Per-item mutation scratch for dropping one entity. For a single-object

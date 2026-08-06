@@ -16,7 +16,7 @@
 import { ActionContext } from '../enhanced-types.js';
 import { MetaAction } from '../meta-action.js';
 import { ValidationResult } from '../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 export class TraceAction extends MetaAction {
   id = 'author.trace';

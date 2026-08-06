@@ -9,7 +9,7 @@
  * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
  */
 
-import { SeededRandom } from '@sharpee/core';
+import { type SeededRandom } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { TraitType } from '../trait-types.js';
 import { DeadlyRoomTrait } from './deadlyRoomTrait.js';

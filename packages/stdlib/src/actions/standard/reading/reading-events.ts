@@ -3,7 +3,7 @@
  * @module
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 /**
  * Data for reading events

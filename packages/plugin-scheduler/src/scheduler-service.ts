@@ -8,7 +8,7 @@
  * 4. Turn complete
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import {
   Daemon,

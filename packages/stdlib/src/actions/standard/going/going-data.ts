@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
 import { ActionContext } from '../../enhanced-types.js';
-import { WorldModel, IFEntity, RoomBehavior, DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
+import { WorldModel, IFEntity, RoomBehavior, type DirectionType, getOppositeDirection as getOpposite } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshot } from '../../base/snapshot-utils.js';
 import { GoingSharedData, getGoingSharedData } from './going.js';
 

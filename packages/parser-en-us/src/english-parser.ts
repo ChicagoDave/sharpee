@@ -6,24 +6,24 @@
  */
 
 import {
-  Parser,
-  ParserOptions,
-  Token as InternalToken,
-  TokenCandidate as InternalTokenCandidate,
-  CandidateCommand,
-  InternalParseResult,
-  ParseError,
+  type Parser,
+  type ParserOptions,
+  type Token as InternalToken,
+  type TokenCandidate as InternalTokenCandidate,
+  type CandidateCommand,
+  type InternalParseResult,
+  type ParseError,
   ParseErrorType,
   PartOfSpeech as VocabPartOfSpeech,
   GrammarPatterns,
   vocabularyRegistry,
-  ParserLanguageProvider,
+  type ParserLanguageProvider,
   adaptVerbVocabulary,
   adaptDirectionVocabulary,
   adaptSpecialVocabulary,
-  VerbVocabulary,
-  VocabularyEntry,
-  PatternMatch,
+  type VerbVocabulary,
+  type VocabularyEntry,
+  type PatternMatch,
   SlotType
 } from '@sharpee/if-domain';
 
@@ -45,7 +45,7 @@ import type { ISystemEvent, Result } from '@sharpee/core';
 import { EnglishGrammarEngine } from './english-grammar-engine.js';
 import { defineGrammar } from './grammar.js';
 import { definePlatformGrammar } from './platform-grammar.js';
-import { scope, GrammarBuilder } from '@sharpee/if-domain';
+import { scope, type GrammarBuilder } from '@sharpee/if-domain';
 import { parseDirection } from './direction-mappings.js';
 import { analyzeBestFailure } from './parse-failure.js';
 import { PronounContextManager, setPronounContextManager } from './pronoun-context.js';

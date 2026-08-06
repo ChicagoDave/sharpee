@@ -2,9 +2,9 @@
  * Event processor types
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, EventHandler } from '@sharpee/world-model';
-import { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
+import { type ISemanticEvent } from '@sharpee/core';
+import { WorldModel, type EventHandler } from '@sharpee/world-model';
+import { type WorldChange, type ProcessedEvents, type ProcessorOptions } from '@sharpee/if-domain';
 
 // Re-export domain types
 export { WorldChange, ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';

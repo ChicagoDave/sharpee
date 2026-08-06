@@ -21,12 +21,12 @@
  */
 
 import { 
-  ScopeConstraint, 
-  PropertyConstraint, 
-  FunctionConstraint,
-  GrammarContext 
+  type ScopeConstraint, 
+  type PropertyConstraint, 
+  type FunctionConstraint,
+  type GrammarContext 
 } from '@sharpee/if-domain';
-import { IEntity } from '@sharpee/core';
+import { type IEntity } from '@sharpee/core';
 
 /**
  * Entity with optional trait methods (duck-typed for IFEntity compatibility).

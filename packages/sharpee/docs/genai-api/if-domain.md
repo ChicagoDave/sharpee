@@ -139,7 +139,7 @@ export interface IEventProcessorWiring {
 /**
  * Domain contracts for world state changes and event processing
  */
-import { ISemanticEvent, IEntity } from '@sharpee/core';
+import { type ISemanticEvent, type IEntity } from '@sharpee/core';
 /**
  * Represents a change to the world state
  */
@@ -1446,7 +1446,7 @@ export declare function adaptSpecialVocabulary(languageProvider: ParserLanguageP
  * @file Grammar Builder Interfaces
  * @description Language-agnostic interfaces for defining grammar rules
  */
-import { IEntity } from '@sharpee/core';
+import { type IEntity } from '@sharpee/core';
 /**
  * Slot types for grammar patterns
  * Controls how the parser handles slot matching
@@ -2944,8 +2944,8 @@ export interface IAudibilityEvent {
  * follow-on ADRs (193 adjectives, 195 Slot, 196 Optional/Choice). Extension is
  * additive only — a new member plus a new Assembler case, never a rewrite.
  */
-import { EntityId, IEntity } from '@sharpee/core';
-import { IDecoration, ITextBlock } from '@sharpee/text-blocks';
+import { type EntityId, type IEntity } from '@sharpee/core';
+import { type IDecoration, type ITextBlock } from '@sharpee/text-blocks';
 /**
  * Base carried by every composable phrase: decorations (emphasis / code) that
  * survive composition and are realized by the Assembler. The literal article

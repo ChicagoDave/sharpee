@@ -37,7 +37,7 @@
  *    AT PARSE TIME (never a silent `Empty` at realize time). (AC-8, AC-11)
  */
 
-import { Phrase, NounPhrase, Slot } from '@sharpee/if-domain';
+import { type Phrase, type NounPhrase, type Slot } from '@sharpee/if-domain';
 
 /** Leading hint → the article it selects on a `NounPhrase`. */
 const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {

@@ -11,10 +11,10 @@
  * WorldModel to isolate event concerns.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
-  WorldChange,
-  IEventProcessorWiring,
+  type WorldChange,
+  type IEventProcessorWiring,
 } from '@sharpee/if-domain';
 import type { IWorldModel } from './WorldModel.js';
 

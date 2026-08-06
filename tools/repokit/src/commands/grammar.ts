@@ -238,7 +238,7 @@ export function generateGrammarModule(root: string): { source: string; rules: nu
   lines.push(' * Owner context: parser-en-us (generated artifact).');
   lines.push(' */');
   lines.push('');
-  lines.push("import { GrammarBuilder } from '@sharpee/if-domain';");
+  lines.push("import { type GrammarBuilder } from '@sharpee/if-domain';");
   lines.push('');
   lines.push('/**');
   lines.push(' * Register the standard English grammar (generated).');

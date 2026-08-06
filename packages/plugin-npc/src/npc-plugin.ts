@@ -5,9 +5,9 @@
  * NPCs act immediately after the player's action.
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-import { INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
+import { type INpcService, createNpcService, guardBehavior, passiveBehavior } from '@sharpee/stdlib';
 
 /**
  * The {@link TurnPlugin} that lets NPCs act each turn (ADR-070, ADR-120).

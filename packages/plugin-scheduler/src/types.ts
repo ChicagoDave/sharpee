@@ -5,7 +5,7 @@
  * Fuses: Countdown timers that trigger after N turns
  */
 
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 
 // Re-export the draw types from core for convenience

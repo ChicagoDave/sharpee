@@ -4,7 +4,7 @@
  * Provides type-safe access to shared data for multi-object support
  */
 
-import { IRemoveItemResult, IRemoveItemFromSupporterResult, ITakeItemResult } from '@sharpee/world-model';
+import { type IRemoveItemResult, type IRemoveItemFromSupporterResult, type ITakeItemResult } from '@sharpee/world-model';
 
 /**
  * Per-item mutation scratch for removing one entity. For a single-object

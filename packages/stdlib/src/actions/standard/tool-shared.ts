@@ -11,7 +11,7 @@
  * Owner context: stdlib standard actions.
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { IFEntity } from '@sharpee/world-model';
 import { nounPhraseFor } from '../../utils/index.js';

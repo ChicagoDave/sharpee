@@ -3,7 +3,7 @@
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { WearableTrait } from './wearableTrait.js';
-import { ISemanticEvent, createEvent } from '@sharpee/core';
+import { type ISemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
 
 export interface IWearResult {

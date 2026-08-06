@@ -47,7 +47,7 @@ import {
   ACOUSTIC_TIER_COSTS,
   AcousticTrait,
   findTraitsOnObstructors,
-  IExitInfo,
+  type IExitInfo,
   OpenableTrait,
   RoomTrait,
   TraitType,

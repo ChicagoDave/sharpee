@@ -5,7 +5,7 @@
  * These are static compass-direction mappings owned by the parser locale.
  */
 
-import { Direction, DirectionType } from '@sharpee/world-model';
+import { Direction, type DirectionType } from '@sharpee/world-model';
 
 /**
  * Full English words → Direction constant mappings.

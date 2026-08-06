@@ -14,9 +14,9 @@ All 43 standard actions, validation, scope builders, NPC support, combat, action
  * maintaining the event-driven architecture. Actions return events,
  * but the enhanced context makes it easy to create those events.
  */
-import { ISemanticEvent, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { ISound } from '@sharpee/if-domain';
+import { type ISound } from '@sharpee/if-domain';
 import { ScopeResolver, ScopeLevel } from '../scope/types.js';
 import { ValidatedCommand } from '../validation/types.js';
 /**
@@ -759,7 +759,7 @@ export declare const EventTypes: {
  * Provides helper methods that make it easy to create properly
  * formatted events while maintaining the event-driven architecture.
  */
-import { RandomService } from '@sharpee/core';
+import { type RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ActionContext, Action } from './enhanced-types.js';
 import { ScopeResolver } from '../scope/types.js';
@@ -793,7 +793,7 @@ export declare function createMockActionContext(world: WorldModel, player: IFEnt
  * commands (SCORE/VERSION).
  */
 import { Action, ActionContext, ValidationResult } from './enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 /**
  * Abstract base class for meta-commands
  *
@@ -1010,7 +1010,7 @@ export declare class MetaCommandRegistry {
  * Actions are pure logic - patterns come from the language provider.
  */
 import { Action, ActionRegistry as IActionRegistry } from './enhanced-types.js';
-import { LanguageProvider } from '@sharpee/if-domain';
+import { type LanguageProvider } from '@sharpee/if-domain';
 export { ActionRegistry } from './enhanced-types.js';
 export declare class StandardActionRegistry implements IActionRegistry {
     private actions;
@@ -1311,8 +1311,8 @@ export interface ActionLifecycleDescriptor {
  * `runOnBlocked`, `LifecycleState`, `ResolvedConsultation`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, InterceptorSharedData } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { IFEntity, type InterceptorSharedData } from '@sharpee/world-model';
 import type { ActionInterceptor } from '@sharpee/world-model';
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { ActionLifecycleDescriptor } from './descriptor.js';
@@ -1494,7 +1494,7 @@ export declare function runOnBlocked(context: ActionContext, state: LifecycleSta
  * `MultiObjectItemState`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFEntity } from '@sharpee/world-model';
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { ActionLifecycleDescriptor } from './descriptor.js';
@@ -1723,7 +1723,7 @@ export declare const standardActions: (import("../enhanced-types.js").Action | T
 import { ActionContext } from '../enhanced-types.js';
 import { MetaAction } from '../meta-action.js';
 import { ValidationResult } from '../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 export declare class TraceAction extends MetaAction {
     id: string;
     verbs: string[];
@@ -1780,7 +1780,7 @@ export interface GameEventPayload<TData = any> {
  * if they want to follow common patterns. Actions are free
  * to define their own structures.
  */
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Common pattern for events that involve a target entity
  */
@@ -1844,7 +1844,7 @@ export interface MovementData {
  * common patterns, but they're entirely optional.
  */
 import { IFEntity } from '@sharpee/world-model';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Create standard target data from an entity
  */
@@ -2356,7 +2356,7 @@ export declare function registerStandardCapabilities(world: {
  * Handles responses to quit confirmation queries.
  * Works with the platform events system to emit appropriate events.
  */
-import { IQueryHandler, IPendingQuery, IQueryResponse } from '@sharpee/core';
+import { type IQueryHandler, type IPendingQuery, type IQueryResponse } from '@sharpee/core';
 /**
  * Handler for quit confirmation queries
  */
@@ -2402,7 +2402,7 @@ export declare function createQuitQueryHandler(): QuitQueryHandler;
  * Handles responses to restart confirmation queries.
  * Works with the platform events system to emit appropriate events.
  */
-import { IQueryHandler, IPendingQuery, IQueryResponse } from '@sharpee/core';
+import { type IQueryHandler, type IPendingQuery, type IQueryResponse } from '@sharpee/core';
 /**
  * Handler for restart confirmation queries
  */
@@ -2883,8 +2883,8 @@ export declare class StandardWitnessSystem implements WitnessSystem {
  *
  * @see ADR-069 Perception-Based Event Filtering
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, IWorldModel } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { IFEntity, type IWorldModel } from '@sharpee/world-model';
 export type { Sense, Rendering, PerSenseRenderings, PerceptionBlockReason, PerceptionBlockedData, IPerceptionService, } from '@sharpee/if-services';
 import type { Sense, IPerceptionService } from '@sharpee/if-services';
 /**
@@ -2963,8 +2963,8 @@ export declare class PerceptionService implements IPerceptionService {
  *
  * Types for NPC behaviors and actions.
  */
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
-import { IFEntity, WorldModel, DirectionType } from '@sharpee/world-model';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import { IFEntity, WorldModel, type DirectionType } from '@sharpee/world-model';
 /**
  * Context passed to NPC behavior hooks
  */
@@ -3215,7 +3215,7 @@ export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof Charact
  *
  * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
  */
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { NpcBehavior } from './types.js';
 /**
@@ -3384,7 +3384,7 @@ export declare function createNpcService(): INpcService;
  * Public interface: observeEvent(), DefaultStateTransitions.
  * Owner context: stdlib / npc
  */
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { IFEntity, WorldModel, CharacterModelTrait } from '@sharpee/world-model';
 /** A default state transition triggered by an event type. */
 export interface StateTransitionRule {
@@ -3465,8 +3465,8 @@ export declare function observeEvent(npc: IFEntity, event: ISemanticEvent, world
  * Public interface: processLucidityDecay(), DECAY_RATE_TURNS.
  * Owner context: stdlib / npc
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, WorldModel, CharacterModelTrait, DecayRate } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { IFEntity, WorldModel, CharacterModelTrait, type DecayRate } from '@sharpee/world-model';
 /**
  * Maps decay rate words to number of turns before baseline is restored.
  * These are the window durations when no sustaining trigger is active.
@@ -3698,7 +3698,7 @@ export interface IPlayerDiedPayload {
  * Public interface: `rollLethal`, `PROBABILISTIC_DEATH_POINT`.
  * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
  */
-import { RandomService } from '@sharpee/core';
+import { type RandomService } from '@sharpee/core';
 /** The probabilistic-death hazard's choice point (single yes/no draw). */
 export declare const PROBABILISTIC_DEATH_POINT: import("@sharpee/core").ChoicePoint<"yes" | "no">;
 /**
@@ -3910,7 +3910,7 @@ export declare function tryInferTarget(originalTarget: IFEntity, wasPronoun: boo
  * @see ADR-192 Phrase Algebra — Phrase Model & Assembler Core
  * @see ADR-158 (superseded) Entity-Valued Message Params Carry EntityInfo
  */
-import { NounPhrase, RenderContext } from '@sharpee/if-domain';
+import { type NounPhrase, type RenderContext } from '@sharpee/if-domain';
 import { IFEntity } from '@sharpee/world-model';
 /** Options for {@link nounPhraseFor}. */
 export interface NounPhraseOptions {

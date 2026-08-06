@@ -12,9 +12,9 @@ GameEngine, Story interface, turn cycle, command executor, save/restore, vocabul
  *
  * The engine manages game state, turn execution, and event sequencing
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { IParsedCommand, IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
-import { ITextBlock } from '@sharpee/text-blocks';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type IParsedCommand, type IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
+import { type ITextBlock } from '@sharpee/text-blocks';
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
 /**
  * Timing data for performance tracking
@@ -332,7 +332,7 @@ export interface EngineIntrospection {
  * ADR-089 Phase C: Defines how the story narrates player actions.
  * Stories can be written in 1st, 2nd, or 3rd person perspective.
  */
-import { PronounSet } from '@sharpee/world-model';
+import { type PronounSet } from '@sharpee/world-model';
 /**
  * Narrative perspective for player actions
  * - '1st': "I take the lamp" (rare, Anchorhead-style)
@@ -406,10 +406,10 @@ export declare function buildNarrativeSettings(config?: NarrativeConfig): Narrat
 /**
  * Story configuration and interfaces
  */
-import { WorldModel, IFEntity, IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
-import { LanguageProvider, IChannelRegistry } from '@sharpee/if-domain';
-import { Parser } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { WorldModel, IFEntity, type IGameEvent, type SimpleEventHandler } from '@sharpee/world-model';
+import { type LanguageProvider, type IChannelRegistry } from '@sharpee/if-domain';
+import { type Parser } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import type { GameEngine } from './game-engine.js';
 import { NarrativeConfig } from './narrative/index.js';
 /**
@@ -707,12 +707,12 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  *
  * All event creation is owned by the action components themselves.
  */
-import { ISystemEvent, IGenericEventSource, Result, RandomService } from '@sharpee/core';
-import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
-import { ISound } from '@sharpee/if-domain';
+import { type ISystemEvent, type IGenericEventSource, Result, type RandomService } from '@sharpee/core';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError } from '@sharpee/world-model';
+import { type ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { ActionRegistry } from '@sharpee/stdlib';
+import { type ActionRegistry } from '@sharpee/stdlib';
 import { GameContext, TurnResult, EngineConfig } from './types.js';
 /**
  * Data passed to pre-action hook listeners (ADR-148).
@@ -821,9 +821,9 @@ export declare function createCommandExecutor(world: WorldModel, actionRegistry:
  * - all-must-pass: All entities must return valid: true
  * - highest-priority: Only highest priority entity is checked
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, IWorldModel, CapabilityBehavior, CapabilitySharedData, ITrait, CapabilityResolution } from '@sharpee/world-model';
-import { ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
+import { IFEntity, type IWorldModel, type CapabilityBehavior, type CapabilitySharedData, type ITrait, type CapabilityResolution } from '@sharpee/world-model';
+import { type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 /**
  * A single capability claim from an entity.
  */
@@ -1174,11 +1174,11 @@ export interface EngineSharedData {
  */
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { Parser, IPerceptionService } from '@sharpee/stdlib';
-import { LanguageProvider, ClientCapabilities, CmgtPacket, TurnPacket } from '@sharpee/if-domain';
+import { type Parser, type IPerceptionService } from '@sharpee/stdlib';
+import { type LanguageProvider, type ClientCapabilities, type CmgtPacket, type TurnPacket } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
-import { ITextBlock } from '@sharpee/text-blocks';
-import { ISemanticEvent, ISaveRestoreHooks, ISemanticEventSource } from '@sharpee/core';
+import { type ITextBlock } from '@sharpee/text-blocks';
+import { type ISemanticEvent, type ISaveRestoreHooks, type ISemanticEventSource } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 import { PluginRegistry } from '@sharpee/plugins';
 import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types.js';
@@ -1795,7 +1795,7 @@ export {};
  * Public interface: SceneEvaluationPlugin (TurnPlugin implementation).
  * Owner context: @sharpee/engine — turn cycle
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 export declare class SceneEvaluationPlugin implements TurnPlugin {
     id: string;
@@ -1891,7 +1891,7 @@ export declare function createVocabularyManager(): VocabularyManager;
  *     see the same data reorganized.
  */
 import { WorldModel } from '@sharpee/world-model';
-import { ISaveData, ISerializedTurn, ISemanticEventSource } from '@sharpee/core';
+import { type ISaveData, type ISerializedTurn, type ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
 import { TurnResult, GameContext } from './types.js';
 import { Story } from './story.js';
@@ -2042,7 +2042,7 @@ export declare function createSaveRestoreService(config?: UndoConfig): SaveResto
  * - No trace record is built unless a sink is installed (D16: off by default,
  *   silent in a published game).
  */
-import { ChoicePoint, RandomService, SeededRandom, RandomForceSpec, RandomForceStatus, RandomTraceSink } from '@sharpee/core';
+import { type ChoicePoint, type RandomService, type SeededRandom, type RandomForceSpec, type RandomForceStatus, type RandomTraceSink } from '@sharpee/core';
 /**
  * Point name the pre-ADR-293 unified action stream (`IEngineState.actionRngSeed`)
  * maps onto when a `2.0.0` save is read (D7's version reader). The action surface
@@ -2243,9 +2243,9 @@ export declare class EngineRandomService implements RandomService {
  * Extracted from GameEngine as part of Phase 4 remediation.
  * Handles event enrichment, perception filtering, and event emission.
  */
-import { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
+import { type ISemanticEvent, type ISemanticEventSource, type IPlatformEvent } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
-import { IPerceptionService } from '@sharpee/stdlib';
+import { type IPerceptionService } from '@sharpee/stdlib';
 import { EngineConfig } from './types.js';
 /**
  * Context for event processing pipeline
@@ -2366,7 +2366,7 @@ export declare function createTurnEventProcessor(perceptionService?: IPerception
  * Extracted from GameEngine as part of Phase 4 remediation.
  * Uses strategy pattern to handle different platform operation types.
  */
-import { IPlatformEvent, ISemanticEvent, ISemanticEventSource, ISaveRestoreHooks } from '@sharpee/core';
+import { type IPlatformEvent, type ISemanticEvent, type ISemanticEventSource, type ISaveRestoreHooks } from '@sharpee/core';
 import type { IParser } from '@sharpee/world-model';
 import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
 import { VocabularyManager } from './vocabulary-manager.js';

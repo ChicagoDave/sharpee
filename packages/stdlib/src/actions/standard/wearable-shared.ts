@@ -8,7 +8,7 @@
  */
 
 import { ActionContext } from '../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFEntity, TraitType, WearableTrait } from '@sharpee/world-model';
 import { nounPhraseFor } from '../../utils/index.js';
 

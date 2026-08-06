@@ -4,8 +4,8 @@
  * Provides type-safe access to traits and shared data
  */
 
-import { EntityId } from '@sharpee/core';
-import { IWearableData } from '@sharpee/world-model';
+import { type EntityId } from '@sharpee/core';
+import { type IWearableData } from '@sharpee/world-model';
 
 /**
  * Type guard for wearable trait data

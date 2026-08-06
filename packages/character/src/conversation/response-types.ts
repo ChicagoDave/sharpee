@@ -10,7 +10,7 @@
  * Owner context: @sharpee/character / conversation
  */
 
-import { Mood, Coherence } from '@sharpee/world-model';
+import { type Mood, type Coherence } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Response actions

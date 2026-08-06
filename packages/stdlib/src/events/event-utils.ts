@@ -6,7 +6,7 @@
  */
 
 import { IFEntity } from '@sharpee/world-model';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Create standard target data from an entity

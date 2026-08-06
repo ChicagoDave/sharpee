@@ -9,7 +9,7 @@ import {
   PropertyConstraint, 
   FunctionConstraint 
 } from './grammar-builder.js';
-import { IEntity } from '@sharpee/core';
+import { type IEntity } from '@sharpee/core';
 
 /**
  * Concrete scope builder implementation

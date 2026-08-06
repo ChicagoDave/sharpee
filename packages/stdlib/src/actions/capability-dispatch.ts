@@ -7,11 +7,11 @@
  */
 
 import { Action, ActionContext, ValidationResult } from './enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   findTraitWithCapability,
-  CapabilityEffect,
-  CapabilitySharedData
+  type CapabilityEffect,
+  type CapabilitySharedData
 } from '@sharpee/world-model';
 import { ActionMetadata } from '../validation/index.js';
 import { ScopeLevel } from '../scope/types.js';

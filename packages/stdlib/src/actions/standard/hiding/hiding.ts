@@ -18,13 +18,13 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ConcealmentTrait,
-  ConcealmentPosition,
+  type ConcealmentPosition,
   ConcealedStateTrait,
   isConcealed,
 } from '@sharpee/world-model';

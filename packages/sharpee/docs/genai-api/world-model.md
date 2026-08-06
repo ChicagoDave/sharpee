@@ -7,7 +7,7 @@ Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, an
 ### entities/if-entity
 
 ```typescript
-import { IEntity, EntityId, IEntityCreationParams } from '@sharpee/core';
+import { type IEntity, type EntityId, type IEntityCreationParams } from '@sharpee/core';
 import { ITrait, ITraitConstructor } from '../traits/trait.js';
 import { TraitType } from '../traits/trait-types.js';
 import { Annotation, AnnotationCondition } from '../annotations/types.js';
@@ -464,7 +464,7 @@ export declare function getEntityTypePrefix(type: EntityType): string;
  *
  * Owner context: `@sharpee/world-model` — entities / spatial primitives.
  */
-import { EntityId, IEntityCreationParams } from '@sharpee/core';
+import { type EntityId, type IEntityCreationParams } from '@sharpee/core';
 import { IFEntity } from './if-entity.js';
 import { ITrait } from '../traits/trait.js';
 /**
@@ -832,7 +832,7 @@ export declare class WearableBehavior {
 
 ```typescript
 import { IFEntity } from '../../entities/if-entity.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for readable entities.
  * Handles all logic related to reading text, turning pages, etc.
@@ -940,7 +940,7 @@ export declare class LightSourceBehavior extends Behavior {
 ```typescript
 import { IFEntity } from '../../entities/if-entity.js';
 import { ExitTrait } from './exitTrait.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for exit entities.
  * Handles all logic related to movement through exits.
@@ -1034,7 +1034,7 @@ export declare class ClimbableBehavior {
 ### traits/openable/openableBehavior
 
 ```typescript
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 /**
@@ -1114,7 +1114,7 @@ export declare class OpenableBehavior extends Behavior {
 ```typescript
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Result of a lock operation
  */
@@ -1207,7 +1207,7 @@ export declare class LockableBehavior extends Behavior {
 /**
  * Behavior for weapon entities
  */
-import { SeededRandom } from '@sharpee/core';
+import { type SeededRandom } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 /**
@@ -1268,7 +1268,7 @@ export declare class WeaponBehavior extends Behavior {
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { WorldModel } from '../../world/WorldModel.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Result of breaking an entity
  */
@@ -1315,7 +1315,7 @@ export declare class BreakableBehavior extends Behavior {
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { WorldModel } from '../../world/WorldModel.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Result of damaging a destructible entity
  */
@@ -1386,7 +1386,7 @@ export declare class DestructibleBehavior extends Behavior {
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { WorldModel } from '../../world/WorldModel.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Result of a combat attack
  */
@@ -1456,7 +1456,7 @@ export declare class CombatBehavior extends Behavior {
  */
 import { IFEntity } from '../entities/if-entity.js';
 import { WorldModel } from '../world/WorldModel.js';
-import { EntityId, SeededRandom } from '@sharpee/core';
+import { type EntityId, type SeededRandom } from '@sharpee/core';
 /**
  * Why an unsuccessful attack had no effect. A reason CODE for the language
  * layer (stdlib maps each to a message ID) — world-model never emits English
@@ -2709,7 +2709,7 @@ export declare function hasContainerProperties(trait: any): trait is IContainerC
 
 ```typescript
 import { ITrait } from '../trait.js';
-import { SnippetMap } from '@sharpee/if-domain';
+import { type SnippetMap } from '@sharpee/if-domain';
 import { DirectionType } from '../../constants/directions.js';
 /**
  * Map position hint for an exit (ADR-113).
@@ -2841,7 +2841,7 @@ import { IFEntity } from '../../entities/if-entity.js';
 import { ITrait } from '../trait.js';
 import { IExitInfo } from './roomTrait.js';
 import { IComputedExitDeclaration } from './computedExitContract.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { DirectionType } from '../../constants/directions.js';
 import type { ExitResolution, ExitResolverContext } from '../../capabilities/exit-resolver-binding.js';
 /**
@@ -3019,7 +3019,7 @@ export declare function isComputedExitCarrier(trait: ITrait): trait is ITrait & 
 ### traits/openable/openableTrait
 
 ```typescript
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 export interface IOpenableData {
     /** Whether the entity is currently open */
@@ -3082,7 +3082,7 @@ export declare class OpenableTrait implements ITrait, IOpenableData {
 ### traits/lockable/lockableTrait
 
 ```typescript
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 export interface ILockableData {
     /** Whether the entity is currently locked */
@@ -3145,7 +3145,7 @@ export declare class LockableTrait implements ITrait, ILockableData {
 ### traits/cuttable/cuttableTrait
 
 ```typescript
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 /**
  * Data for the cuttable trait (ADR-230 D3c).
@@ -3186,7 +3186,7 @@ export declare class CuttableTrait implements ITrait, ICuttableData {
 ### traits/cuttable/cuttableBehavior
 
 ```typescript
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 /**
@@ -3213,7 +3213,7 @@ export declare class CuttableBehavior extends Behavior {
 ### traits/diggable/diggableTrait
 
 ```typescript
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 /**
  * Data for the diggable trait (ADR-230 Phase 6 (sketch ruling 6)).
@@ -3254,7 +3254,7 @@ export declare class DiggableTrait implements ITrait, IDiggableData {
 ### traits/diggable/diggableBehavior
 
 ```typescript
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 /**
@@ -3678,7 +3678,7 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
 ```typescript
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 export interface ISwitchOnResult {
     success: boolean;
     wasOn?: boolean;
@@ -3874,7 +3874,7 @@ export declare class EdibleTrait implements ITrait, IEdibleData {
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { TasteQuality } from './edibleTrait.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 /**
  * Behavior for edible entities.
  *
@@ -4168,7 +4168,7 @@ import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { ActorTrait } from './actorTrait.js';
 import { IWorldQuery } from '../container/containerBehavior.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Result of a take item operation
  */
@@ -4661,7 +4661,7 @@ export declare class PushableTrait implements ITrait, IPushableData {
  * NPCs participate in the turn cycle and can have behaviors.
  */
 import { ITrait } from '../trait.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 /**
  * Interface for NPC trait data
  */
@@ -6419,7 +6419,7 @@ export declare class DeadlyRoomTrait implements ITrait, IDeadlyRoomData {
  * Public interface: `checkVerb`, `isSafeVerb`.
  * Owner context: `@sharpee/world-model` — the deadly-room trigger shape (ADR-224).
  */
-import { SeededRandom } from '@sharpee/core';
+import { type SeededRandom } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { DeadlyRoomTrait } from './deadlyRoomTrait.js';
 /** Verdict returned by {@link DeadlyRoomBehavior.checkVerb}. */
@@ -6855,7 +6855,7 @@ import { IFEntity } from '../entities/if-entity.js';
 import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
 import { TraitType } from '../traits/trait-types.js';
 import { DirectionType } from '../constants/directions.js';
-import { ISemanticEvent, ISemanticEventSource } from '@sharpee/core';
+import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
 import { IDataStore } from './AuthorModel.js';
 import { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
 import { ITrait } from '../traits/trait.js';
@@ -6864,7 +6864,7 @@ import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capab
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import { WorldState, WorldConfig, ContentsOptions, WorldChange, IGrammarVocabularyProvider, IEventProcessorWiring, GamePrompt } from '@sharpee/if-domain';
+import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { IScopeRule } from '../scope/scope-rule.js';
 import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem.js';
@@ -8146,7 +8146,7 @@ export declare function createWalls(world: IWallCreationWorld, spec: IWallsSpec)
  *
  * Owner context: `@sharpee/world-model` — world / spatial primitives.
  */
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { IFEntity } from '../entities/if-entity.js';
 import { IWallSpec } from '../entities/wall-entity.js';
 /**
@@ -8945,7 +8945,7 @@ export declare function buildEntity(entity: IFEntity): EntityBuilder;
  * - CapabilityBehavior: Full delegation, trait owns ALL logic (LOWER, RAISE)
  * - ActionInterceptor: Hooks into phases, action owns core logic (ENTER, PUT)
  */
-import { ISemanticEvent, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import { IFEntity } from '../entities/index.js';
 import { WorldModel } from '../world/index.js';
 import { CapabilityEffect } from './types.js';

@@ -5,8 +5,8 @@
  * Owner context: @sharpee/stdlib / actions / hiding
  */
 
-import { EntityId } from '@sharpee/core';
-import { ConcealmentPosition, ConcealmentQuality } from '@sharpee/world-model';
+import { type EntityId } from '@sharpee/core';
+import { type ConcealmentPosition, type ConcealmentQuality } from '@sharpee/world-model';
 
 /**
  * Event data emitted when an actor becomes concealed.

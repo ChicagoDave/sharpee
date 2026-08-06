@@ -5,7 +5,7 @@
  * Owner: npm regression test suite
  */
 
-import { ITrait } from '@sharpee/world-model';
+import { type ITrait } from '@sharpee/world-model';
 
 /**
  * A custom trait that registers the INSPECT capability.

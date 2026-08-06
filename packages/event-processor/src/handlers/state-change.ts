@@ -4,8 +4,8 @@
  * These handlers apply state-changing events to the world model
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IFEntity, TraitType, OpenableTrait, DoorTrait, LockableTrait, SwitchableTrait, WearableTrait, LightSourceTrait, EventHandler } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { WorldModel, IFEntity, TraitType, OpenableTrait, DoorTrait, LockableTrait, SwitchableTrait, WearableTrait, LightSourceTrait, type EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**

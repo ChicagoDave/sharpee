@@ -1,4 +1,4 @@
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TurnPluginContext } from './turn-plugin-context.js';
 
 /**
