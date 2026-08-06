@@ -290,9 +290,17 @@ decide it by side effect.
 
 - **Status**: COMPLETE
 - **Blocker**: N/A
-- **Rollback Safety**: docs, platform and story changes are separable. The bundle change
-  is one hunk in `runBranchTree`; the extracted helper is additive (the old closures were
-  replaced, not deleted from history).
+- **Rollback Safety**: three independently revertible commits — `56d76928` (ADR-131
+  widening, docs only), `86e664f9` (the retirement), `6f890e56` (the tree npm proof +
+  the #232 promotion). The bundle change is one hunk in `runBranchTree`; the extracted
+  helper is additive.
+- **Landed**: PR [#233](https://github.com/ChicagoDave/sharpee/pull/233) → `b8b2c468`,
+  merged 2026-08-06. Branch level with `main`; working tree clean apart from the
+  untracked `scripts/clodpod.sh`.
+- **Issues**: [#225](https://github.com/ChicagoDave/sharpee/issues/225) and
+  [#232](https://github.com/ChicagoDave/sharpee/issues/232) closed;
+  [#231](https://github.com/ChicagoDave/sharpee/issues/231) (cloak's two divergent
+  implementations) left open.
 
 ## Architectural Decisions
 - No new ADR. Discharges the ADR-303 D6 amendment obligation. **Possibly ADR-worthy and
