@@ -88,11 +88,21 @@ outright.
 > with it.
 >
 > **A1.1 (same session, later).** The skein was then retired outright on David's
-> confirmation (ADR-300 D1), which took `ReplayDriver` with it. **Re-bless is now the
-> mirror's only consumer.** That narrows the justification to one subsystem rather than
-> removing it — and it sharpens the retirement condition into something checkable: when
-> the editing surface owns re-bless, nothing in Swift reads this wire and the mirror can
-> go for real.
+> confirmation (ADR-300 D1), which took `ReplayDriver` with it, leaving re-bless as the
+> mirror's only consumer.
+>
+> **A1.2 (same session, later still) — the mirror is gone.** David retired the outline
+> Test panel too. Re-bless was reachable only through that panel, so retiring the tab
+> retired the feature, and with the feature went its reader: `TestResultRecord.swift`,
+> `Rebless.swift`, `TestPanelModel.swift`, `RecordingSession.swift` and the panel itself
+> are deleted. **Nothing in Swift decodes the run-event wire any more** — `TestRunner` is
+> line transport and the tab is the only consumer, which is what D1 set out to achieve and
+> A1 could not yet deliver.
+>
+> The cost is stated rather than buried: **re-bless does not exist right now.** ADR-282
+> D2's drift lifecycle has no surface until the editing decision builds one, and it should
+> be rebuilt against ADR-300's canonical TypeScript serializer rather than by restoring a
+> Swift mirror of it.
 >
 > What D1 actually buys is narrower and still worth having: the **tab** has no Swift
 > mirror in its path — it receives raw NDJSON lines and decodes them with the wire's own

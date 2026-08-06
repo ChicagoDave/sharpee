@@ -22,11 +22,9 @@ final class RightPanelViewController: NSViewController {
     let play = PlayViewController()
     let index = IndexView()
     let diagnosis = ErrorDiagnosisView()
-    let testPanel = TestPanelView()
-    /// The ADR-301 D1 Testing surface: a web bundle in a WKWebView, which is
-    /// where a run is watched. The older `testPanel` outline is still here
-    /// because it owns the ADR-282 D2 re-bless interaction the tab's reading
-    /// half does not cover; retiring it is its own confirmed step.
+    /// The ADR-301 D1 Testing surface: a web bundle in a WKWebView, and the only
+    /// place a run is watched. The outline panel that used to sit beside it is
+    /// retired — one run, one surface.
     let testingTab = TestingTabViewController()
 
     /// Forwarded from the Diagnosis view: a clicked source location to open in the editor.
@@ -41,7 +39,6 @@ final class RightPanelViewController: NSViewController {
     private static let testingTabIndex = 2
     private static let indexTab = 3
     private static let diagnosisTab = 4
-    private static let testTab = 5
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
@@ -53,7 +50,6 @@ final class RightPanelViewController: NSViewController {
         tabStrip.addTab(title: "Testing")
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
-        tabStrip.addTab(title: "Test")
         tabStrip.onSelect = { [weak self] tab in self?.show(tab: tab) }
         tabStrip.translatesAutoresizingMaskIntoConstraints = false
 
@@ -61,14 +57,12 @@ final class RightPanelViewController: NSViewController {
         play.view.translatesAutoresizingMaskIntoConstraints = false
         index.translatesAutoresizingMaskIntoConstraints = false
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
-        testPanel.translatesAutoresizingMaskIntoConstraints = false
         testingTab.view.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
         container.addSubview(play.view)
         container.addSubview(index)
         container.addSubview(diagnosis)
-        container.addSubview(testPanel)
         container.addSubview(testingTab.view)
 
         NSLayoutConstraint.activate([
@@ -96,10 +90,6 @@ final class RightPanelViewController: NSViewController {
             diagnosis.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             diagnosis.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            testPanel.topAnchor.constraint(equalTo: play.view.topAnchor),
-            testPanel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            testPanel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            testPanel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
             testingTab.view.topAnchor.constraint(equalTo: play.view.topAnchor),
             testingTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -138,10 +128,6 @@ final class RightPanelViewController: NSViewController {
         tabStrip.setCount(0, forTab: Self.diagnosisTab)
     }
 
-    /// Switches to the Test tab — the older outline panel (ADR-282 D2 re-bless).
-    func showTestTab() {
-        tabStrip.select(Self.testTab)
-    }
 
     /// Switches to the Testing tab (ADR-301) — where a run is watched live.
     func showTestingTab() {
@@ -155,7 +141,6 @@ final class RightPanelViewController: NSViewController {
         play.view.isHidden = selected != Self.playTab
         index.isHidden = selected != Self.indexTab
         diagnosis.isHidden = selected != Self.diagnosisTab
-        testPanel.isHidden = selected != Self.testTab
         testingTab.view.isHidden = selected != Self.testingTabIndex
     }
 

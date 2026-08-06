@@ -1,11 +1,15 @@
 // TestRunnerTests.swift
 // Real-path tests for TestRunner (rule 13a): drives the actual devkit CLI
-// (`node packages/devkit/dist/cli.js test <story> --json`) against real
-// `.story` + `.transcript` fixtures through the production spawn/line-decode
+// (`node packages/devkit/dist/cli.js test <story> --tree --json`) against real
+// `.story` + `.transcript` fixtures through the production spawn/line-buffer
 // path — no stubbed toolchain. Fixture shell scripts appear only for the
-// failure shapes the real CLI can't produce on demand (schema drift,
-// split-chunk delivery, cancellation), where the NDJSON payload itself stays
-// contract-shaped.
+// shapes the real CLI cannot produce on demand (split-chunk delivery, a
+// future schema version, cancellation).
+//
+// The runner is TRANSPORT: it delivers complete NDJSON lines and decodes
+// nothing, so these assert on LINES. Parsing them here is the test reading the
+// wire to check what was carried — not a decoder the app relies on. The tab
+// owns decoding (ADR-301 D1), and its own real-path suite covers it.
 
 import XCTest
 @testable import SharpeeIDE
@@ -86,14 +90,28 @@ final class TestRunnerTests: XCTestCase {
         let exited = expectation(description: "test run exits")
         delegate.onExit = { exited.fulfill() }
         runner.start(executable: URL(fileURLWithPath: "/usr/bin/env"),
-                     arguments: ["node", TestToolchain.devkitCLI.path, "test"] + arguments + ["--json"],
+                     arguments: ["node", TestToolchain.devkitCLI.path, "test"] + arguments + ["--tree", "--json"],
                      workingDirectory: tempDir,
                      environment: ShellEnvironment.buildEnvironment())
         wait(for: [exited], timeout: timeout)
     }
 
-    private func transcriptEnds() -> [TestTranscriptEnd] {
-        delegate.records.compactMap { if case .transcriptEnd(let end) = $0 { return end } else { return nil } }
+    /// Every delivered line parsed as JSON, in stream order.
+    private func events() -> [[String: Any]] {
+        delegate.lines.compactMap {
+            (try? JSONSerialization.jsonObject(with: Data($0.utf8))) as? [String: Any]
+        }
+    }
+
+    /// The `type` of every delivered event, in order.
+    private func eventTypes() -> [String] {
+        events().compactMap { $0["type"] as? String }
+    }
+
+    /// `transcript-end` statuses, in order.
+    private func transcriptEndStatuses() -> [String] {
+        events().filter { $0["type"] as? String == "transcript-end" }
+            .compactMap { $0["status"] as? String }
     }
 
     // MARK: - Real CLI, real stories (Acceptance 6)
@@ -111,29 +129,33 @@ final class TestRunnerTests: XCTestCase {
 
         XCTAssertEqual(delegate.result?.state, .passed)
         XCTAssertEqual(delegate.result?.exitCode, 0)
-        guard case .runStart(let start)? = delegate.records.first else {
-            return XCTFail("stream must open with run-start, got \(String(describing: delegate.records.first))")
-        }
-        XCTAssertEqual(start.mode, .tests)
-        XCTAssertEqual(start.transcriptCount, 1)
-        guard case .runEnd(let end)? = delegate.records.last else {
-            return XCTFail("stream must close with run-end, got \(String(describing: delegate.records.last))")
-        }
-        XCTAssertEqual(end.exitCode, 0)
 
-        let commands = delegate.records.compactMap { record -> TestCommandResult? in
-            if case .commandResult(let command) = record { return command } else { return nil }
-        }
-        XCTAssertEqual(commands.map(\.input), ["look"])
-        XCTAssertEqual(commands.first?.line, 4, "the `> look` source line — the click-through target")
-        XCTAssertEqual(transcriptEnds().map(\.status), [.passed])
+        let all = events()
+        XCTAssertEqual(all.first?["type"] as? String, "run-start",
+                       "the stream opens with run-start")
+        XCTAssertEqual(all.first?["mode"] as? String, "tree")
+        XCTAssertEqual(all.last?["type"] as? String, "run-end",
+                       "and closes with run-end")
+        XCTAssertEqual(all.last?["exitCode"] as? Int, 0)
+
+        let commands = all.filter { $0["type"] as? String == "command-result" }
+        XCTAssertEqual(commands.compactMap { $0["input"] as? String }, ["look"])
+        XCTAssertEqual(commands.first?["line"] as? Int, 4,
+                       "the `> look` source line — the click-through target")
+        XCTAssertEqual(transcriptEndStatuses(), ["passed"])
     }
 
-    /// A broken transcript is an error ROW, not a vanished file (Acceptance 2's
-    /// Swift-visible proof), and fails the run. "Broken" means a real parse
-    /// error — a removed form (ADR-294 D2). An assertion-less command is NOT
-    /// broken post-rebuild: it is a golden-tier candidate that fails at runtime
-    /// with "no recording exists" (transcript status `failed`, not `error`).
+    /// A broken transcript is an error ROW, not a vanished file, and fails the
+    /// run. "Broken" means a real parse error — a removed form (ADR-294 D2). An
+    /// assertion-less command is NOT broken post-rebuild: it is a golden-tier
+    /// candidate that fails at runtime with "no recording exists" (transcript
+    /// status `failed`, not `error`).
+    ///
+    /// Exit 2, not 1: a tree ASSEMBLES before it executes (ADR-302 D11), so a
+    /// transcript that cannot be parsed is a defect in the tree rather than a
+    /// test that ran and failed. Flat mode exited 1 here — the difference is the
+    /// run model, and it is worth pinning because it is the exit code the IDE
+    /// reports when an author's transcript will not parse.
     func testValidationBrokenTranscriptArrivesAsErrorRecord() throws {
         try writeFixture("mini.story", Self.story)
         try writeFixture("tests/broken.transcript", """
@@ -146,42 +168,10 @@ final class TestRunnerTests: XCTestCase {
         runReal(arguments: [tempDir.path])
 
         XCTAssertEqual(delegate.result?.state, .failed)
-        XCTAssertEqual(delegate.result?.exitCode, 1)
-        let ends = transcriptEnds()
-        XCTAssertEqual(ends.count, 1)
-        XCTAssertEqual(ends.first?.status, .error)
-        XCTAssertNotNil(ends.first?.errorMessage)
-    }
-
-    /// The walkthroughs chain preserves state across files (Acceptance 4): the
-    /// second file's inventory assertion only passes if the first file's take
-    /// persisted into the same game instance.
-    func testChainRunPreservesStateAcrossFiles() throws {
-        try writeFixture("mini.story", Self.story)
-        try writeFixture("walkthroughs/wt-01-take.transcript", """
-        title: Step 1
-        ---
-
-        > take the brass lamp
-        [OK: contains "Taken"]
-        """)
-        try writeFixture("walkthroughs/wt-02-carry.transcript", """
-        title: Step 2
-        ---
-
-        > inventory
-        [OK: contains "brass lamp"]
-        """)
-        runReal(arguments: [tempDir.path, "--chain"])
-
-        XCTAssertEqual(delegate.result?.state, .passed)
-        guard case .runStart(let start)? = delegate.records.first else { return XCTFail("no run-start") }
-        XCTAssertEqual(start.mode, .chain)
-        let ends = transcriptEnds()
-        XCTAssertEqual(ends.map { URL(fileURLWithPath: $0.file).lastPathComponent },
-                       ["wt-01-take.transcript", "wt-02-carry.transcript"],
-                       "filename order — D3")
-        XCTAssertEqual(ends.map(\.status), [.passed, .passed])
+        XCTAssertEqual(delegate.result?.exitCode, 2, "a tree defect, not a failed test")
+        XCTAssertEqual(transcriptEndStatuses(), ["error"], "an error ROW, not a vanished file")
+        let end = events().first { $0["type"] as? String == "transcript-end" }
+        XCTAssertNotNil(end?["errorMessage"], "and it says why")
     }
 
     /// Edit-then-run (Phase 3's re-run guarantee): the CLI re-reads the
@@ -212,14 +202,14 @@ final class TestRunnerTests: XCTestCase {
         runReal(arguments: [tempDir.path])
         XCTAssertEqual(delegate.result?.state, .failed,
                        "the edited content, not a stale parse, decided this run")
-        XCTAssertEqual(transcriptEnds().map(\.status), [.failed])
+        XCTAssertEqual(transcriptEndStatuses(), ["failed"])
     }
 
     // MARK: - Line buffering through the real pipe
 
-    /// A record split across pipe chunks (the writer flushes mid-line) still
-    /// decodes exactly once — the runner's buffer reassembles it.
-    func testSplitChunkDeliveryDecodesEachRecordExactlyOnce() throws {
+    /// An event split across pipe chunks (the writer flushes mid-line) is
+    /// delivered exactly once, whole — the runner's buffer reassembles it.
+    func testSplitChunkDeliveryYieldsEachLineExactlyOnce() throws {
         let script = try makeScript("""
         printf '{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","mo'
         sleep 0.3
@@ -231,17 +221,19 @@ final class TestRunnerTests: XCTestCase {
         runner.start(executable: script, arguments: [], workingDirectory: tempDir)
         wait(for: [exited], timeout: 10)
 
-        XCTAssertEqual(delegate.records.count, 2, "one decode per record — none dropped or doubled")
-        guard case .runStart(let start)? = delegate.records.first else { return XCTFail("no run-start") }
-        XCTAssertEqual(start.transcriptCount, 0)
-        XCTAssertTrue(delegate.decodeFailures.isEmpty)
+        XCTAssertEqual(delegate.lines.count, 2, "one line per event — none dropped or doubled")
+        XCTAssertEqual(eventTypes(), ["run-start", "run-end"])
+        XCTAssertFalse(delegate.lines[0].contains("\n"), "a delivered line is one whole line")
     }
 
-    // MARK: - Schema gate (Acceptance 1, Swift half)
+    // MARK: - Transport does not judge
 
-    /// A future-toolchain stream is rejected loudly ONCE; later lines are
-    /// dropped, and the already-typed mismatch carries both versions.
-    func testSchemaVersionMismatchStopsDecodingLoudly() throws {
+    /// A future-schema stream is delivered VERBATIM. The runner used to reject
+    /// it, which meant two opinions about the wire — one here and one in the
+    /// tab, which imports the contract directly. Rejecting is the tab's job now
+    /// (it renders the mismatch as a status), so the runner must not swallow the
+    /// line on the way.
+    func testAFutureSchemaLineIsDeliveredVerbatimRatherThanSwallowed() throws {
         let script = try makeScript("""
         printf '{"schemaVersion":999,"type":"run-start","mode":"tests","transcriptCount":1}\\n'
         printf '{"schemaVersion":999,"type":"run-end","exitCode":0}\\n'
@@ -251,27 +243,26 @@ final class TestRunnerTests: XCTestCase {
         runner.start(executable: script, arguments: [], workingDirectory: tempDir)
         wait(for: [exited], timeout: 10)
 
-        XCTAssertTrue(delegate.records.isEmpty, "no partial decode of a future stream")
-        XCTAssertEqual(delegate.decodeFailures.count, 1, "surfaced once, then dropped")
-        XCTAssertEqual(delegate.decodeFailures.first as? TestResultRecord.DecodeError,
-                       .schemaVersionMismatch(found: 999, expected: 2))
+        XCTAssertEqual(delegate.lines.count, 2, "both lines reach the consumer")
+        XCTAssertTrue(delegate.lines[0].contains("\"schemaVersion\":999"),
+                      "unaltered — the tab decides it is unreadable, not the runner")
     }
 
     // MARK: - Cancel
 
-    func testCancelTerminatesAndKeepsDecodedRecords() throws {
+    func testCancelTerminatesAndKeepsDeliveredLines() throws {
         let script = try makeScript("""
         printf '{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","mode":"tests","transcriptCount":9}\\n'
         sleep 30
         """)
-        let sawRecord = expectation(description: "first record decoded")
-        delegate.onRecord = { _ in sawRecord.fulfill() }
+        let sawLine = expectation(description: "first line delivered")
+        delegate.onLine = { _ in sawLine.fulfill() }
         let exited = expectation(description: "cancelled run exits")
         delegate.onExit = { exited.fulfill() }
 
         runner.start(executable: script, arguments: [], workingDirectory: tempDir)
         XCTAssertTrue(runner.isRunning)
-        wait(for: [sawRecord], timeout: 10)
+        wait(for: [sawLine], timeout: 10)
         runner.cancel()
 
         // SIGTERM kills the script promptly; the 2s SIGKILL escalation is a
@@ -286,28 +277,23 @@ final class TestRunnerTests: XCTestCase {
         wait(for: [exited], timeout: 30)
         XCTAssertEqual(delegate.result?.state, .cancelled)
         XCTAssertEqual(runner.state, .cancelled)
-        XCTAssertEqual(delegate.records.count, 1, "records up to the cancel point are kept")
+        XCTAssertEqual(delegate.lines.count, 1, "lines up to the cancel point are kept")
     }
 }
 
 @MainActor
 private final class RecordingTestDelegate: TestRunnerDelegate {
-    private(set) var records: [TestResultRecord] = []
-    private(set) var decodeFailures: [Error] = []
+    private(set) var lines: [String] = []
     private(set) var stderrText = ""
     private(set) var states: [TestRunner.State] = []
     var result: TestRunner.Result?
     var onExit: (() -> Void)?
-    var onRecord: ((TestResultRecord) -> Void)?
+    var onLine: ((String) -> Void)?
 
-    func runner(_ runner: TestRunner, didDecode record: TestResultRecord) {
-        records.append(record)
-        onRecord?(record)
-        onRecord = nil
-    }
-
-    func runner(_ runner: TestRunner, didFailDecode error: Error) {
-        decodeFailures.append(error)
+    func runner(_ runner: TestRunner, didReceiveLine line: String) {
+        lines.append(line)
+        onLine?(line)
+        onLine = nil
     }
 
     func runner(_ runner: TestRunner, didEmitStderr text: String) {

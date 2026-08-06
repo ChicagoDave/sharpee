@@ -332,8 +332,6 @@ private final class LineRelay: TestRunnerDelegate {
     func runner(_ runner: TestRunner, didReceiveLine line: String) {
         tab.deliver(line: line)
     }
-    func runner(_ runner: TestRunner, didDecode record: TestResultRecord) {}
-    func runner(_ runner: TestRunner, didFailDecode error: Error) {}
     func runner(_ runner: TestRunner, didEmitStderr text: String) {}
     func runner(_ runner: TestRunner, didChangeState state: TestRunner.State) {}
     func runner(_ runner: TestRunner, didExit result: TestRunner.Result) {

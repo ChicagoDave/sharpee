@@ -1,5 +1,13 @@
 # ADR-282: Play-to-test — blessing good turns while playing becomes transcript tests
 
+> **D2's re-bless has NO SURFACE as of 2026-08-06** (session 322542). The drift
+> lifecycle — locate the blessed literal block a failed command owns, rewrite only
+> its content, refuse to widen a `contains` — shipped in the outline Test panel and
+> was reachable only from there. That panel is retired (ADR-301 A1.2) and `Rebless.swift`
+> went with it. The RULES survive in this document and are the specification the
+> editing decision has to satisfy; the code does not. Rebuild it against ADR-300's
+> canonical serializer, not by restoring the Swift mirror that was deleted with it.
+
 ## Status: SUPERSEDED — interaction model only (2026-08-03, session 83abc1) by [ADR-299](adr-299-play-skein-bless.md) (play–skein–bless: the skein replaces per-turn record/bless). The serialization and grammar work (literal text blocks, transcript emission, `[OK:]` defaulting) is retained and carried forward by [ADR-300](adr-300-addressable-channels-and-canonical-transcript.md) — D1 (the `.transcript` file is the artifact) and D3/D4 (a canonical serializer owns transcript emission). The editing gestures that were to consume it — `contains` by selection as the default `[OK:]`, and this ADR's D2 refusal-to-widen rule — are now held by [ADR-301](adr-301-sharpee-transcript-editor.md), which is TBD, so those two have a recorded home but no decided mechanism. This pointer previously read "carried forward by ADR-299 D7"; ADR-299 D7 is the `.skein`-as-committed-artifact decision that ADR-300 D1 retires, and ADR-299 itself is SUPERSEDED, so that link was dead (corrected 2026-08-04, session 088e3e; re-pointed to the consolidated ADR-300 in session 5113ca). Historical: ACCEPTED (2026-07-27, session fda0f0) — drafted, interviewed (4 questions resolved), and twice re-reviewed the same day; accepted after the ADR-287 grammar (backtick fences then, literal text blocks now) and review-fix folds
 
 ## Date: 2026-07-27

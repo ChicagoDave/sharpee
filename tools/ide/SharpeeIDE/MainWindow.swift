@@ -96,22 +96,11 @@ final class MainWindowController: NSWindowController {
         rootViewController?.storyBuildReport()
     }
 
-    /// The right panel's Tests surface (ADR-277 D2) — wired by TestController.
-    /// Force-unwrap-free: the panel exists for the window's lifetime; the
-    /// fallback instance only serves a window-less controller (tests).
-    var testPanel: TestPanelView {
-        rootViewController?.testPanel ?? TestPanelView()
-    }
-
     /// The right panel's Testing tab (ADR-301) — the web surface a run streams
-    /// into. Same fallback reasoning as `testPanel`.
+    /// into. Force-unwrap-free: it exists for the window's lifetime; the
+    /// fallback instance only serves a window-less controller (tests).
     var testingTab: TestingTabViewController {
         rootViewController?.testingTab ?? TestingTabViewController()
-    }
-
-    /// Switches the right panel to the Test tab (the outline panel).
-    func showTestTab() {
-        rootViewController?.showTestTab()
     }
 
     /// Switches the right panel to the Testing tab (a test run just started).
@@ -392,18 +381,11 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.showBuildTab()
     }
 
-    /// The right panel's Tests surface (ADR-277 D2) — wired by TestController.
-    var testPanel: TestPanelView { mainSplitViewController.testPanel }
-
     /// The right panel's Testing tab (ADR-301) — wired by TestController.
     var testingTab: TestingTabViewController { mainSplitViewController.testingTab }
 
     func showTestingTab() {
         mainSplitViewController.showTestingTab()
-    }
-
-    func showTestTab() {
-        mainSplitViewController.showTestTab()
     }
 
     /// The editor's focused document (Run Current Test File enablement/target).
@@ -428,6 +410,11 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.storyBuildReport()
     }
 
+    /// Diagnostics the last compose reported, so the panel can be revealed on
+    /// the transition from clean to not-clean and never again for the same run
+    /// of problems.
+    private var lastProblemCount = 0
+
     /// Routes a compose outcome to the Problems tab and the editor's underlines.
     private func handleComposeOutcome(_ outcome: ComposeScheduler.Outcome) {
         switch outcome.result {
@@ -435,6 +422,15 @@ private final class RootViewController: NSViewController {
             bottomPanelViewController.setProblems(payload.diagnostics, for: outcome.storyURL)
             mainSplitViewController.applyComposeDiagnostics(payload.diagnostics,
                                                             forFile: outcome.storyURL)
+            // The panel is collapsed by default, so a diagnostic could underline
+            // the editor while the only surface that NAMES it stayed hidden —
+            // the author saw a coloured squiggle and no text anywhere. Reveal on
+            // the clean → not-clean edge only: revealing on every compose would
+            // reopen a panel the author had just closed, on every keystroke.
+            if lastProblemCount == 0 && !payload.diagnostics.isEmpty {
+                applyBuildPanelVisible(true)
+            }
+            lastProblemCount = payload.diagnostics.count
         case .failure(let failure):
             bottomPanelViewController.setProblemsStatus(Self.statusMessage(for: failure))
         }
@@ -734,15 +730,8 @@ private final class MainSplitViewController: NSSplitViewController {
         rightPanelViewController.showBuildTab()
     }
 
-    /// Tests-panel plumbing — the Test tab lives in the right panel (ADR-277 D2).
-    fileprivate var testPanel: TestPanelView { rightPanelViewController.testPanel }
-
     /// The Testing tab (ADR-301) — likewise in the right panel.
     fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
-
-    fileprivate func showTestTab() {
-        rightPanelViewController.showTestTab()
-    }
 
     fileprivate func showTestingTab() {
         rightPanelViewController.showTestingTab()

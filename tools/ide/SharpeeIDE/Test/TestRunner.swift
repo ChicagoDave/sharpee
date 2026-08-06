@@ -2,11 +2,11 @@
 // Owns a single child `sharpee test … --json` process (ADR-277 D1/D2): spawns
 // it with the same resolution as builds (workspace shim, else login-shell
 // PATH), line-buffers its NDJSON stdout (chunks do not align with line
-// boundaries), decodes each complete line as it arrives so the Tests panel
-// fills live, and supports graceful cancel (SIGTERM, escalating to SIGKILL
-// after 2s) — a cancelled run keeps every record already decoded. A
-// schemaVersion mismatch is surfaced once and stops decoding (the "IDE is out
-// of date" state), never a partial decode.
+// boundaries), hands each complete line to its delegate as it arrives so the
+// Testing tab fills live, and supports graceful cancel (SIGTERM, escalating to
+// SIGKILL after 2s) — a cancelled run keeps everything already rendered.
+// It does NOT decode: the tab owns the wire (ADR-301 D1), including deciding
+// that a line is unreadable.
 // Public interface: TestRunner.runTests(storyFile:),
 // start(executable:arguments:...), cancel(), state, delegate.
 // Owner context: tools/ide — Test.
@@ -15,21 +15,13 @@ import Foundation
 
 @MainActor
 protocol TestRunnerDelegate: AnyObject {
-    /// One complete NDJSON line, verbatim, in stream order — delivered BEFORE
-    /// it is decoded and whether or not the decode succeeds.
+    /// One complete NDJSON line, verbatim, in stream order.
     ///
-    /// This is the Testing tab's feed (ADR-301 D1): the tab is a TypeScript
-    /// consumer that imports the wire contract directly, so handing it the raw
-    /// line is what removes the Swift mirror from its path entirely. Decoding
-    /// continues alongside for the Swift consumers that have no such option
-    /// (re-bless). Has a default no-op — most delegates want the
-    /// decoded record.
+    /// The runner does not decode. Its consumer is the Testing tab, a
+    /// TypeScript surface that imports the wire contract directly and validates
+    /// each line with the wire's own guard (DEVARCH 8b) — a Swift decoder in
+    /// front of it could only be a second opinion that drifts.
     func runner(_ runner: TestRunner, didReceiveLine line: String)
-    /// One decoded NDJSON record, in stream order.
-    func runner(_ runner: TestRunner, didDecode record: TestResultRecord)
-    /// The stream stopped decoding (schema mismatch or malformed line).
-    /// Fires at most once per run; subsequent lines are dropped.
-    func runner(_ runner: TestRunner, didFailDecode error: Error)
     /// A chunk of UTF-8 stderr (diagnostics, validation detail).
     func runner(_ runner: TestRunner, didEmitStderr text: String)
     /// The runner's state changed (drives buttons and the status line).
@@ -38,9 +30,6 @@ protocol TestRunnerDelegate: AnyObject {
     func runner(_ runner: TestRunner, didExit result: TestRunner.Result)
 }
 
-extension TestRunnerDelegate {
-    func runner(_ runner: TestRunner, didReceiveLine line: String) {}
-}
 
 @MainActor
 final class TestRunner {
@@ -72,9 +61,6 @@ final class TestRunner {
     private var killTimer: Timer?
     private var didRequestCancel = false
     private var lineBuffer = NDJSONLineBuffer()
-    /// Set on the first decode failure — the stream contract is broken (or
-    /// from a future toolchain); remaining lines are dropped, not guessed at.
-    private var decodingStopped = false
 
     // MARK: - Production entries (ADR-277 D2/D3)
 
@@ -115,7 +101,7 @@ final class TestRunner {
 
     /// Spawns an arbitrary executable. This is the production spawn path; the
     /// sharpee overloads delegate here, and tests drive it directly with the
-    /// real devkit CLI so the Process/pipe/line-decode machinery is exercised.
+    /// real devkit CLI so the Process/pipe/line-buffer machinery is exercised.
     func start(executable: URL, arguments: [String], workingDirectory: URL,
                environment: [String: String]? = nil) {
         guard !isRunning else {
@@ -123,7 +109,6 @@ final class TestRunner {
             return
         }
         didRequestCancel = false
-        decodingStopped = false
         lineBuffer = NDJSONLineBuffer()
 
         let proc = Process()
@@ -169,8 +154,9 @@ final class TestRunner {
                 guard let self else { return }
                 if !tailOut.isEmpty { self.consumeStdout(tailOut) }
                 // A well-formed stream ends newline-terminated; flush defends
-                // against a truncated final line (decode failure, reported).
-                if let last = self.lineBuffer.flush() { self.decodeLine(last) }
+                // against a truncated final line, which the tab rejects as
+                // unreadable rather than folding.
+                if let last = self.lineBuffer.flush() { self.emit(last) }
                 if !errText.isEmpty { self.delegate?.runner(self, didEmitStderr: errText) }
                 self.handleTermination(of: finished)
             }
@@ -195,7 +181,7 @@ final class TestRunner {
     // MARK: - Cancel
 
     /// Requests cancellation of the running tests: SIGTERM now, SIGKILL after a
-    /// grace period if it hasn't exited. Records already decoded are kept — the
+    /// grace period if it has not exited. Lines already delivered are kept — the
     /// panel shows the run up to the cancel point. No-op when not running.
     func cancel() {
         guard isRunning, let proc = process else { return }
@@ -211,29 +197,17 @@ final class TestRunner {
         }
     }
 
-    // MARK: - Decode
+    // MARK: - Line delivery
 
     private func consumeStdout(_ chunk: Data) {
         for line in lineBuffer.append(chunk) {
-            decodeLine(line)
+            emit(line)
         }
     }
 
-    private func decodeLine(_ line: Data) {
-        // The raw line goes out first and unconditionally: the Testing tab is the
-        // consumer that understands the wire best, and a line this Swift mirror
-        // cannot decode is exactly the line the tab should still receive.
-        if let text = String(data: line, encoding: .utf8) {
-            delegate?.runner(self, didReceiveLine: text)
-        }
-        guard !decodingStopped else { return }
-        do {
-            let record = try TestResultRecord.decode(line: line)
-            delegate?.runner(self, didDecode: record)
-        } catch {
-            decodingStopped = true
-            delegate?.runner(self, didFailDecode: error)
-        }
+    private func emit(_ line: Data) {
+        guard let text = String(data: line, encoding: .utf8) else { return }
+        delegate?.runner(self, didReceiveLine: text)
     }
 
     // MARK: - Termination
