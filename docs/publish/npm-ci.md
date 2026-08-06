@@ -439,8 +439,15 @@ publish time, not at setup time.
 - [x] `@sharpee/text-blocks`
 - [x] `@sharpee/transcript-tester`
 - [x] `@sharpee/world-model`
+- [ ] `@sharpee/branch-tester` — **added after this list was completed; blocked on a
+  first publish.** It has never been published, so it has no `/access` page and no
+  trusted publisher, which is what broke the 4.5.0 release. Bootstrap it per §10.2,
+  then check this box.
 
-All 32 are published at 3.6.0 today, so every one has a settings page to configure.
+The first 32 were published at 3.6.0 when this list was written, so every one had a
+settings page to configure. **That is a precondition, not a coincidence** — a package
+with no publish history has no page, so any package added to the workspace after this
+point needs the §10.2 bootstrap before it can ride a CI release.
 
 **Excluded**: `@sharpee/extension-conversation` has `publishConfig` and is not
 private, but is stale at `0.9.112` and **has never been published**. tsf's
@@ -553,10 +560,53 @@ Nothing here is one-way until Part E.
    into the lockstep version and register a trusted publisher for it. Needs your
    call; I'd guess it's dead, but I'm not assuming.
 
-2. **Trusted publishing for a never-published package** — npm's documentation does
-   not state whether a trusted publisher can be registered before a package's first
-   publish. Only relevant if a *new* package is added later, or if
-   extension-conversation is kept. Worth a probe before it matters.
+2. ~~**Trusted publishing for a never-published package**~~ — **answered 2026-08-06,
+   the hard way. No: a trusted publisher cannot be registered before a package's
+   first publish, because registration happens at
+   `npmjs.com/package/<name>/access` and that page does not exist for a package
+   that does not exist.** The 4.5.0 release (run `31108631413`) proved it: 28
+   packages published, then `@sharpee/branch-tester` — added to the workspace after
+   Part C was completed, so on neither the checklist nor the registry — failed with
+
+   ```
+   npm error code E404
+   npm error 404 Not Found - PUT https://registry.npmjs.org/@sharpee%2fbranch-tester
+   ```
+
+   and took the four packages behind it in dependency order
+   (`story-runtime-baseline`, `transcript-tester`, `devkit`, `sharpee`) down with it,
+   leaving them at 4.3.0 while their dependencies sat at 4.5.0.
+
+   **The bootstrap procedure for any new publishable package**, which must happen
+   *before* it is first included in a CI release:
+
+   1. Publish it once by hand, **from a real interactive terminal**. The staging
+      directory is already prepared by `tsf build --npm`, and `npm publish` packs it:
+      ```bash
+      npm publish ~/.tsf-publish/sharpee/<pkg> --access public --tag latest
+      ```
+      **There is no `--otp` code to pass.** npm authenticates 2FA through a browser
+      handshake now: it prints a `https://www.npmjs.com/auth/cli/…` URL, waits, and
+      continues once you approve it in the browser. This is why the step needs a TTY —
+      run non-interactively (from a script, a tool call, or CI) npm cannot wait on the
+      round-trip, so it prints the URL and exits `EOTP` immediately. That failure mode
+      looks like a credential problem and is not one:
+      ```
+      npm error code EOTP
+      npm error This operation requires a one-time password.
+      npm error Open this URL in your browser to authenticate:
+      ```
+   2. Register its trusted publisher at `npmjs.com/package/@sharpee/<pkg>/access`
+      with the Part C field values, and add it to the Part C checklist.
+   3. From then on it is an ordinary member of the CI release.
+
+   Note that **`tsf publish --dry-run` cannot catch this** — a dry run never issues
+   the `PUT`, so a never-published package validates clean locally and fails only
+   against the live registry. `repokit verify` was green immediately before this run.
+
+   **Because `tsf publish --changed` skips anything already at the target version,
+   re-dispatching after the bootstrap is safe and resumes at the failure point** —
+   it republishes nothing, and ships only the five that did not make it.
 
 3. **`--no-git-checks`** — tsf passes this to `npm publish` (`publish.ts:199`), but
    it's a pnpm flag, not an npm one. npm should warn and ignore it. Harmless, but

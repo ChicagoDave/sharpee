@@ -107,6 +107,67 @@ Three different things carry the name `sharpee` or sit next to it, and confusing
 
 The short version: **`./sharpee` is for authors, `./repokit` builds the platform, and `dist/cli/sharpee.js` runs the tests.**
 
+## Publishing to npm
+
+**Publishing is not a local command.** Running `tsf publish` from a workstation fails with `npm error code EOTP`. The npm account requires two-factor authentication to publish, and npm does that through a browser handshake — it prints a `https://www.npmjs.com/auth/cli/…` URL and waits for approval — so it needs an interactive terminal, which `tsf publish` shelling out once per package across 33 packages is not. There is no token to fix in `~/.npmrc` and no `--otp` code to pass; neither is the route.
+
+**The release path is the `Publish to npm` GitHub Actions workflow** (`.github/workflows/publish-npm.yml`), dispatched by hand. It authenticates by OIDC trusted publishing (`id-token: write`), so no npm credential exists anywhere in the repository or the runner. The `dry_run` input defaults to `true`, which packs and validates without publishing:
+
+```bash
+gh workflow run publish-npm.yml --ref main -f dry_run=true    # pack and validate only
+gh workflow run publish-npm.yml --ref main -f dry_run=false   # the real publish
+gh run list --workflow=publish-npm.yml --limit 1              # watch it
+```
+
+**Versions must be committed before dispatch.** The workflow stamps versions with `./repokit build --no-genai` and then runs `git diff --exit-code`, so if stamping changes a tracked file the run fails rather than shipping a version the repository does not record. It uses the repokit build specifically because `pnpm run build` is `turbo run build` and does not stamp — that gap is how `@sharpee/stdlib@3.6.0` once shipped a stale `ENGINE_VERSION`.
+
+**`tsf publish --changed` carries no `--tag`, so everything lands on `latest`.** That is the channel every published release has used. `--changed` also means only packages whose version is ahead of the registry ship, which makes a re-dispatch after a partial failure safe: it resumes where the last run stopped instead of erroring on conflicts.
+
+**`./repokit verify` is the local pre-flight, not the publish.** It runs `tsf build --npm` plus a publish dry-run and answers "would this pack and validate," which is worth knowing before spending seven minutes of CI. Note that its dry-run passes `--tag beta`; that is a verification detail with no bearing on the release channel, and reading it as one has cost a session before.
+
+### First publish of a new package
+
+**A brand-new package cannot ride a CI release until it has been published once by hand.** Trusted publishing is configured per package at `npmjs.com/package/<name>/access`, and that page only exists for a package that already exists — so under OIDC the first publish of a new package fails with:
+
+```
+npm error code E404
+npm error 404 Not Found - PUT https://registry.npmjs.org/@sharpee%2f<name>
+```
+
+**No dry run catches this.** A dry run never issues the `PUT`, so a never-published package packs, validates, and reports `+ @sharpee/<name>@x.y.z` locally, then fails only against the live registry. `./repokit verify` being green says nothing about it.
+
+**Worse, it fails mid-release.** `tsf publish` runs in dependency order and stops on the first error, so an unbootstrapped package strands every package behind it while the ones ahead of it are already live. That is how 4.5.0 shipped 28 of 33 packages and left `@sharpee/sharpee` resolving to the previous version.
+
+The one-time bootstrap, done **before** the package is first included in a release:
+
+1. **Stage the artifact** — `./repokit verify` (or `pnpm exec tsf build --npm`) writes it to `~/.tsf-publish/sharpee/<name>/`, with `workspace:*` dependencies rewritten to real version ranges.
+
+2. **Publish it once by hand, from a real interactive terminal:**
+   ```bash
+   npm publish ~/.tsf-publish/sharpee/<name> --access public --tag latest
+   ```
+   `npm publish` packs the directory. There is no `--otp` code to pass — npm prints a `https://www.npmjs.com/auth/cli/…` URL, waits, and continues once you approve it in the browser. **This step needs a TTY**: run from a script, a tool call, or CI, npm cannot wait on that round-trip and exits `EOTP` immediately, which looks like a credential problem and is not one.
+
+3. **Register its trusted publisher** at `npmjs.com/package/@sharpee/<name>/access` → Trusted Publisher → GitHub Actions:
+
+   | Field | Value |
+   | --- | --- |
+   | Organization or user | `ChicagoDave` |
+   | Repository | `sharpee` |
+   | Workflow filename | `publish-npm.yml` |
+   | Environment name | *(leave empty)* |
+   | Allowed actions | `npm publish` |
+
+   All fields are case-sensitive and must match exactly; mistakes surface at publish time, not at setup time.
+
+4. **Tick it off** in the `npm-ci.md` Part C checklist, so the next person can tell registered from merely-published.
+
+5. **Re-dispatch the workflow.** `--changed` republishes nothing and ships only what is behind the registry.
+
+**Expect the registry to 404 the package for a few minutes afterward.** `npm view @sharpee/<name>` reads the CDN packument, which lags a first publish; `npm access get status @sharpee/<name>` reads the auth layer and answers immediately. A `public` there means the publish landed regardless of what `npm view` says.
+
+This is a **seventh registration point** for a new publishable package, on top of the six in the workspace config, and the only one that lives outside the repository. Full detail, including the release this was learned from, is in `docs/publish/npm-ci.md` §10.2.
+
 ## Entity System
 
 ### Entity Creation
