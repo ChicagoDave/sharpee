@@ -287,6 +287,55 @@ failed test).
 **Suite: 314 passed, 0 failures** (from 363 — the delta is the retired cluster's tests).
 chord **734 passed**. Tab unit suite 12. `tsc --noEmit` clean.
 
+## Fourth piece of work: ship it — and a regression we had called pre-existing
+
+PR **#235** merged to main (`e4ad79aa`), carrying the whole run-event spine: the parent
+branch's Phases 1–4 plus everything above. Then David asked for a 4.5.0 bump and an npm
+republish, which surfaced the session's worst mistake.
+
+### The npm build was broken, and it was ours
+
+`tsf build --npm` failed with seven type errors in `devkit/src/commands/test-tree.ts`.
+Earlier in this session I reported that as *"pre-existing, confirmed by stashing this
+session's work and rebuilding"* — and put it in this summary as a known-good finding.
+**It was wrong.** Stashing removed only *this* session's changes; the break came from
+`66ecc9ea`, the run-event spine committed in the previous session, which was already on
+the branch when I stashed. Checking out its parent `7742463d` shows `✓ npm build complete`.
+So it was a regression from this body of work, it had reached main, and the "verification"
+that cleared it was structurally incapable of finding it.
+
+This is precisely the standing note about running `tsf build --npm` during refactors that
+touch publishable packages: the previous session shipped Phases 1–4 without it, and the
+regression sat invisible for a day behind a green `xcodebuild test`.
+
+**Cause**: devkit drives BOTH harnesses and passes branch-tester's results into
+transcript-tester's `RunEventStream`. Those packages carry duplicate result types by
+decision (ADR-302 D15), and branch-tester's assertion grammar has since grown ADR-300's
+channel forms, deliberately not back-ported — so the two copies are nominally
+incompatible. **Fix**: the stream reads no assertion data at all (only `input`/
+`lineNumber`, the pass flags, counts, a duration), so its parameters became structural
+(`StreamableCommandResult` / `StreamableTranscriptResult` / `StreamableRunResult`) instead
+of named imports from one harness. Neither grammar is back-ported; neither package learns
+about the other.
+
+### 4.5.0, verified but NOT published
+
+33 packages — exactly tsf's publish set — bumped from 4.4.0, with `ENGINE_VERSION` and
+Dungeo's `version.ts` stamped by `./repokit build`. Four packages stay at 0.9.x/1.0.0:
+outside tsf's scope, two excluded from the workspace outright. PR **#236** merged
+(`18fc5792`).
+
+`./repokit verify` (npm build + publish dry-run) OK for all 33. Regression baselines
+re-run after the type change: Dungeo chain passes, Fernhill tree `22 passed, 552 commands
+(518 authored + 34 replayed)` — the pinned numbers. transcript-tester 262, branch-tester 360.
+
+**Publishing is blocked on three things, all David's:**
+1. The npm token in `~/.npmrc` is stale — `npm whoami` returns **E401**.
+2. npm `latest` is **4.3.0**; **4.4.0 was never published**, so 4.5.0 skips a version.
+3. `repokit verify` uses the **`beta`** dist-tag, and no `beta` tag exists on the registry
+   — 4.1.1 through 4.3.0 all went to `latest`. Publishing under `beta` would leave
+   `latest` at 4.3.0 and nobody would get 4.5.0 by default. A release-channel decision.
+
 ## Next
 - **The editing interaction** — ADR-301's named next decision, and now load-bearing rather
   than optional: **re-bless has no surface** until it lands (ADR-282 carries a banner
@@ -300,17 +349,32 @@ chord **734 passed**. Tab unit suite 12. `tsc --noEmit` clean.
   story can pin its own Play seed. Play boots at a constant today.
 - **Fernhill has no `ifid:`** — the warning that surfaced the span bug is correct. Minting
   one is an identity decision, deliberately left alone.
-- **Pre-existing and untouched**: `tsf build --all` fails on a `"channel-is"` assertion-kind
-  type error. Confirmed pre-existing by stashing this session's work and rebuilding.
+- ~~**Pre-existing and untouched**: `tsf build --all` fails on a `"channel-is"`
+  assertion-kind type error. Confirmed pre-existing by stashing this session's work.~~
+  **WRONG, and corrected below** — it was our regression, from `66ecc9ea`. Stashing only
+  removed *this* session's changes; the break was already on the branch.
+- **Publish 4.5.0** once `npm login` is done and the dist-tag is chosen (`latest` is what
+  every prior release used; `repokit verify` defaults to `beta`).
 - Right panel is five tabs: Build, Play, Testing, Index, Diagnosis. One testing surface.
+
+## A process note worth keeping
+
+Three finalizes ran this session, and **each one caught a false claim in this file** that
+"a summary exists" would have shipped: first "two commits" and a stale test count, then
+"nothing under `packages/` was touched", then "pre-existing, confirmed by stashing".
+The last was the costliest — it cleared a real regression that had already reached main.
+The pattern in all three: a verification narrower than the claim it was used to support.
+Re-reading the summary at finalize, rather than checking it exists, is what found them.
 
 ---
 
 ## Session Metadata
 
-- **Status**: COMPLETE (seven commits: the Testing tab; the skein retirement; the dead-hook sweep; a summary correction; then a bug-fix round from David testing the built app — one run model, warning visibility, and the Test tab's retirement)
-- **Blocker**: N/A
-- **Estimated Remaining**: N/A
+- **Status**: COMPLETE — merged. PR #235 (`e4ad79aa`) carried the Testing tab, three retirements and the bug-fix round; PR #236 (`18fc5792`) fixed the npm-build regression and bumped to 4.5.0. **Publishing to npm is NOT done** — blocked on a stale npm token and a release-channel decision, both David's.
+- **Blocker**: the npm publish. `npm whoami` → E401 (stale token in `~/.npmrc`), and the
+  dist-tag is undecided: `repokit verify` uses `beta`, but every published version through
+  4.3.0 went to `latest` and no `beta` tag exists on the registry.
+- **Estimated Remaining**: the npm publish — one command once the token and dist-tag are settled.
 - **Rollback Safety**: each removal is its own commit, deliberately.
   `de85dc13` (the Testing tab) deletes nothing. `afd9acc6` (skein) deletes 28 files.
   `71fccafd` (dead hooks) removes only zero-reader symbols, so reverting it restores dead
@@ -370,6 +434,10 @@ chord **734 passed**. Tab unit suite 12. `tsc --noEmit` clean.
   after the Test-tab cluster. Every drop is deletion, not regression: 15 skein test files,
   one justification test, and five panel/re-bless test files went with the code they
   covered. Tab unit suite 0 → 12. chord 730 → **734** (+4 pinning the ifid span).
+- **A gate that was missing and now is not**: `tsf build --npm` was never run across the
+  run-event spine, so a type regression it introduced reached main behind a green
+  `xcodebuild test`. It is green now and belongs in the definition of done for any change
+  touching publishable packages.
 - Known untested areas: the Documents mode's explorer-proposed group (ADR-301 D5) has no
   producer — ADR-131 is unbuilt, so the group renders nothing and is not exercised;
   Escape-to-close is driven by hand, not by a test. **Re-bless is untested because it no
