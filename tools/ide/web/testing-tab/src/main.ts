@@ -9,9 +9,10 @@
  *
  *   Selection follows the running transcript until the author clicks a row, at
  *   which point it stops following: a view that steals your selection while you
- *   are reading is a view you fight. The view MODE never changes itself at all
- *   (ADR-301 D4) — it is restored from the host and persisted back when the
- *   author switches it.
+ *   are reading is a view you fight. It resumes on the next run, which is why
+ *   this has no toggle — a control that re-arms itself every run only ever
+ *   governs the run you are already watching. The view MODE, by contrast, never
+ *   changes itself at all (ADR-301 D4): restored from the host, persisted back.
  *
  * Public interface: none — this module is the bundle's entry and runs on load.
  * Owner context: tools/ide — the Testing tab's web bundle.
@@ -62,8 +63,8 @@ const actions: ViewActions = {
     surface.selected = node;
     // An explicit click is a decision to look at something; honour it for the
     // rest of the run rather than yanking the selection back on the next event.
+    // Following resumes on the next run, which is why it needs no control.
     surface.follow = false;
-    byId('follow').setAttribute('aria-pressed', 'false');
     scheduleRender();
   },
   open(node: TestNode) {
@@ -108,7 +109,6 @@ const host = installHost({
     surface.selected = null;
     surface.follow = true;
     surface.status = '';
-    byId('follow').setAttribute('aria-pressed', 'true');
     byId('story').textContent = story;
     scheduleRender();
   },
@@ -168,16 +168,8 @@ function installToolbar(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((button) => {
     button.addEventListener('click', () => actions.setMode(button.dataset.mode as ViewMode));
   });
-  byId('run-all').addEventListener('click', () => host.runAll());
-  byId('run-chain').addEventListener('click', () => host.runChain());
-  byId('run-tree').addEventListener('click', () => host.runTree());
+  byId('run').addEventListener('click', () => host.run());
   byId('cancel').addEventListener('click', () => host.cancel());
-  byId('follow').addEventListener('click', () => {
-    surface.follow = !surface.follow;
-    byId('follow').setAttribute('aria-pressed', String(surface.follow));
-    if (surface.follow) trackRunning();
-    scheduleRender();
-  });
   // Escape leaves the document view — the one gesture that has no button of its
   // own on screen while a document fills the pane.
   document.addEventListener('keydown', (event) => {

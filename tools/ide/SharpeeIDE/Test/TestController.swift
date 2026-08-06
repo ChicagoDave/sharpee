@@ -1,7 +1,7 @@
 // TestController.swift
 // Glue between the Test menu, the two testing surfaces and the TestRunner
-// (ADR-277 D2/D3, ADR-301): discovers the open story's transcripts, starts
-// run-all / tree / chain / single-file runs, feeds the stream to both surfaces,
+// (ADR-277 D2/D3, ADR-301): discovers the open story's transcripts, starts THE
+// run (there is one — see TestRunner.runTests), feeds the stream to both surfaces,
 // routes click-through to the editor, and surfaces pipeline failures (sharpee
 // missing, schema mismatch, and the ADR-279 D4 fence-grammar/toolchain
 // mismatch) as status lines.
@@ -12,8 +12,8 @@
 // ADR-282 D2 re-bless interaction that the tab's reading half does not cover;
 // ADR-301 scopes editing to the next decision. Retiring it is a separate,
 // confirmed step, not a side effect of this one.
-// Public interface: TestController.attach(storyFile:), runAll(), runTree(),
-// runChain(), runFile(_:), cancel(), isTesting.
+// Public interface: TestController.attach(storyFile:), runTests(), cancel(),
+// isTesting.
 // Owner context: tools/ide — Test.
 
 import AppKit
@@ -38,8 +38,7 @@ final class TestController: TestRunnerDelegate {
         wireTestingTab(window.testingTab)
         let panel = window.testPanel
         panel.setModel(model)
-        panel.onRunAll = { [weak self] in self?.runAll() }
-        panel.onRunChain = { [weak self] in self?.runChain() }
+        panel.onRun = { [weak self] in self?.runTests() }
         panel.onCancel = { [weak self] in self?.cancel() }
         panel.onOpenLocation = { [weak self] location in
             self?.window?.openDocument(at: location.file, line: location.line, column: location.column)
@@ -62,9 +61,7 @@ final class TestController: TestRunnerDelegate {
     /// the ADR-301 D1 surface; everything it asks for lands here, so the two
     /// surfaces drive one runner rather than each owning a run.
     private func wireTestingTab(_ tab: TestingTabViewController) {
-        tab.onRunAll = { [weak self] in self?.runAll() }
-        tab.onRunTree = { [weak self] in self?.runTree() }
-        tab.onRunChain = { [weak self] in self?.runChain() }
+        tab.onRun = { [weak self] in self?.runTests() }
         tab.onCancel = { [weak self] in self?.cancel() }
         tab.onOpenLocation = { [weak self] location in
             self?.window?.openDocument(at: location.file, line: location.line, column: location.column)
@@ -101,25 +98,11 @@ final class TestController: TestRunnerDelegate {
         window?.testingTab.beginRun(story: "No story open")
     }
 
-    /// Runs the `tests/` subtree (`sharpee test <story> --json`).
-    func runAll() {
-        startRun { runner, story in runner.runAll(storyFile: story) }
-    }
-
-    /// Runs the suite as a tree (ADR-302): `continues:` parentage resolved, a
-    /// shared prefix re-executed per sibling, blocked nodes reported `unreached`.
-    func runTree() {
-        startRun { runner, story in runner.runTree(storyFile: story) }
-    }
-
-    /// Runs the `walkthroughs/` chain (`--chain`, state persists — D3).
-    func runChain() {
-        startRun { runner, story in runner.runChain(storyFile: story) }
-    }
-
-    /// Runs one `.transcript` (the editor's current file).
-    func runFile(_ transcript: URL) {
-        startRun { runner, story in runner.runFile(storyFile: story, transcript: transcript) }
+    /// Runs the story's tests. One entry, because there is one run model — see
+    /// `TestRunner.runTests` for why the flat and chain modes were not merely
+    /// redundant but wrong for an IDE project.
+    func runTests() {
+        startRun { runner, story in runner.runTests(storyFile: story) }
     }
 
     /// Cancels the in-flight run (SIGTERM → SIGKILL). Decoded records stay.

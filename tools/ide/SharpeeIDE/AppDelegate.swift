@@ -405,24 +405,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
 
     // MARK: - Test menu actions (ADR-277 D2/D3)
 
-    /// Test → Run All Tests (⌘U). Runs the story's `tests/` subtree via
-    /// `sharpee test <file>.story --json`, streaming into the Test tab.
-    @objc func runAllTests(_ sender: Any?) {
-        testController?.runAll()
-    }
-
-    /// Test → Run Walkthrough Chain (⌥⌘U). Runs `walkthroughs/` with `--chain`
-    /// (one game, state persists — D3).
-    @objc func runTestChain(_ sender: Any?) {
-        testController?.runChain()
-    }
-
-    /// Test → Run Current Test File (^⌘U). Runs the editor's focused
-    /// `.transcript` against the story.
-    @objc func runCurrentTestFile(_ sender: Any?) {
-        guard let transcript = mainWindowController?.activeDocumentURL,
-              transcript.pathExtension == "transcript" else { return }
-        testController?.runFile(transcript)
+    /// Test → Run Tests (⌘U). Runs the story's suite as a tree, streaming into
+    /// the Testing tab. The only run the IDE offers — see `TestRunner.runTests`.
+    @objc func runTests(_ sender: Any?) {
+        testController?.runTests()
     }
 
     /// Test → Cancel Test Run. SIGTERM, then SIGKILL; decoded results stay.
@@ -468,13 +454,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
                 && !(buildController?.isBuilding ?? false)
         case #selector(cancelBuild(_:)):
             return buildController?.isBuilding ?? false
-        case #selector(runAllTests(_:)), #selector(runTestChain(_:)):
+        case #selector(runTests(_:)):
             return currentStoryURL != nil
                 && mainWindowController?.composedStory?.isGrammar != true
-                && !(testController?.isTesting ?? false)
-        case #selector(runCurrentTestFile(_:)):
-            return currentStoryURL != nil
-                && mainWindowController?.activeDocumentURL?.pathExtension == "transcript"
                 && !(testController?.isTesting ?? false)
         case #selector(cancelTestRun(_:)):
             return testController?.isTesting ?? false

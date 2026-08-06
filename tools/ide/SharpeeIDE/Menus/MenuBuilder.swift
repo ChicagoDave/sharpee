@@ -200,25 +200,19 @@ enum MenuBuilder {
     private static func makeTestMenuItem(target: AnyObject) -> NSMenuItem {
         let menu = NSMenu(title: "Test")
 
-        let runAll = NSMenuItem(title: "Run All Tests",
-                                action: #selector(AppDelegate.runAllTests(_:)),
-                                keyEquivalent: "u")
-        runAll.target = target
-        menu.addItem(runAll)
-
-        let runChain = NSMenuItem(title: "Run Walkthrough Chain",
-                                  action: #selector(AppDelegate.runTestChain(_:)),
+        // ONE run item. "Run All Tests" ran the suite flat, which is wrong for a
+        // `continues:` tree (229 passed / 287 failed on fernhill, against 516 / 0
+        // as a tree); "Run Walkthrough Chain" scanned `walkthroughs/`, which an
+        // IDE project does not have; "Run Current Test File" ran one transcript
+        // standalone, which fails the same way whenever that file continues
+        // another (2 passed / 29 failed on fernhill's `smoke`). Running a single
+        // NODE with its ancestry is a real feature, but it is a tree operation
+        // that does not exist yet — not a flat single-file run.
+        let runTests = NSMenuItem(title: "Run Tests",
+                                  action: #selector(AppDelegate.runTests(_:)),
                                   keyEquivalent: "u")
-        runChain.keyEquivalentModifierMask = [.command, .option]
-        runChain.target = target
-        menu.addItem(runChain)
-
-        let runFile = NSMenuItem(title: "Run Current Test File",
-                                 action: #selector(AppDelegate.runCurrentTestFile(_:)),
-                                 keyEquivalent: "u")
-        runFile.keyEquivalentModifierMask = [.command, .control]
-        runFile.target = target
-        menu.addItem(runFile)
+        runTests.target = target
+        menu.addItem(runTests)
 
         // No Bless / Checkpoint items: ADR-299 D8 moved blessing into the
         // Transcript view, where the output being vouched for is readable, and

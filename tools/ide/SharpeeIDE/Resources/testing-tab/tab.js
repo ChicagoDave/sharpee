@@ -95,9 +95,7 @@
     };
     return {
       openLocation: (file, line) => send({ action: "openLocation", file, line }),
-      runAll: () => send({ action: "runAll" }),
-      runChain: () => send({ action: "runChain" }),
-      runTree: () => send({ action: "runTree" }),
+      run: () => send({ action: "run" }),
       cancel: () => send({ action: "cancel" }),
       persistMode: (mode) => send({ action: "persistMode", mode }),
       ready: () => send({ action: "ready" })
@@ -563,9 +561,7 @@
     status.textContent = surface2.status;
     status.classList.toggle("on", surface2.status !== "");
     byId("cancel").toggleAttribute("disabled", !model2.inFlight);
-    for (const id of ["run-all", "run-chain", "run-tree"]) {
-      byId(id).toggleAttribute("disabled", model2.inFlight);
-    }
+    byId("run").toggleAttribute("disabled", model2.inFlight);
   }
   function renderPathBar(model2, surface2) {
     const bar = byId("pathbar");
@@ -632,7 +628,6 @@
     select(node) {
       surface.selected = node;
       surface.follow = false;
-      byId("follow").setAttribute("aria-pressed", "false");
       scheduleRender();
     },
     open(node) {
@@ -672,7 +667,6 @@
       surface.selected = null;
       surface.follow = true;
       surface.status = "";
-      byId("follow").setAttribute("aria-pressed", "true");
       byId("story").textContent = story;
       scheduleRender();
     },
@@ -722,16 +716,8 @@
     document.querySelectorAll("[data-mode]").forEach((button) => {
       button.addEventListener("click", () => actions.setMode(button.dataset.mode));
     });
-    byId("run-all").addEventListener("click", () => host.runAll());
-    byId("run-chain").addEventListener("click", () => host.runChain());
-    byId("run-tree").addEventListener("click", () => host.runTree());
+    byId("run").addEventListener("click", () => host.run());
     byId("cancel").addEventListener("click", () => host.cancel());
-    byId("follow").addEventListener("click", () => {
-      surface.follow = !surface.follow;
-      byId("follow").setAttribute("aria-pressed", String(surface.follow));
-      if (surface.follow) trackRunning();
-      scheduleRender();
-    });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && surface.opened) actions.back();
     });

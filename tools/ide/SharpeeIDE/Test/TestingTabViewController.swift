@@ -11,7 +11,7 @@
 // view is a cost with nothing to show for it.
 // Public interface: deliver(line:), beginRun(story:), setStatus(_:),
 // setDiscovered(_:), restoreMode(_:), runFinished(ok:), onOpenLocation,
-// onRunAll, onRunTree, onRunChain, onCancel, onPersistMode, isBundleAvailable.
+// onRun, onCancel, onPersistMode, isBundleAvailable.
 // Owner context: tools/ide — Test.
 
 import AppKit
@@ -26,9 +26,8 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
 
     /// A `file:line` the author clicked, to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)?
-    var onRunAll: (() -> Void)?
-    var onRunTree: (() -> Void)?
-    var onRunChain: (() -> Void)?
+    /// Run the suite. One verb, because there is one run model (see TestRunner).
+    var onRun: (() -> Void)?
     var onCancel: (() -> Void)?
     /// The author switched view mode — the choice is remembered per project
     /// (ADR-301 D4), so the host persists it.
@@ -226,12 +225,8 @@ final class TestingTabViewController: NSViewController, WKScriptMessageHandler, 
             guard let file = body["file"] as? String else { return }
             let line = (body["line"] as? Int) ?? 1
             onOpenLocation?(SourceLocation(file: URL(fileURLWithPath: file), line: line, column: 1))
-        case "runAll":
-            onRunAll?()
-        case "runTree":
-            onRunTree?()
-        case "runChain":
-            onRunChain?()
+        case "run":
+            onRun?()
         case "cancel":
             onCancel?()
         case "persistMode":

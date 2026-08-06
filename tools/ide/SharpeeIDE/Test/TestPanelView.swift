@@ -1,6 +1,6 @@
 // TestPanelView.swift
-// The right-panel "Test" tab (ADR-277 D2): run controls (Run All / Run Chain /
-// Cancel), a status line, and one outline — transcript rows (status dot,
+// The right-panel "Test" tab (ADR-277 D2): run controls (Run Tests / Cancel),
+// a status line, and one outline — transcript rows (status dot,
 // name, counts) expandable to per-command rows once results stream in.
 // Double-click (or Return) on a command row opens its `.transcript` at the
 // command's source line; on a transcript row, the file itself. A pipeline
@@ -13,7 +13,7 @@
 // offered only when it would succeed — the reason stands in its place when it
 // would not.
 // Public interface: setModel/reloadModel, setStatus(_:), setRunning(_:),
-// showFailure(for:), performRebless(), onRunAll, onRunChain, onCancel,
+// showFailure(for:), performRebless(), onRun, onCancel,
 // onOpenLocation, onDidRebless.
 // Owner context: tools/ide — Test.
 
@@ -22,8 +22,7 @@ import AppKit
 final class TestPanelView: NSView {
 
     /// Fired by the run controls.
-    var onRunAll: (() -> Void)?
-    var onRunChain: (() -> Void)?
+    var onRun: (() -> Void)?
     var onCancel: (() -> Void)?
     /// A clicked row's source location to open in the editor.
     var onOpenLocation: ((SourceLocation) -> Void)?
@@ -36,8 +35,7 @@ final class TestPanelView: NSView {
     /// re-bless. Returns a reason to refuse, or nil to proceed.
     var hostReblessObstacle: ((TestCommandResult) -> String?)?
 
-    private let runAllButton = NSButton(title: "Run All", target: nil, action: nil)
-    private let runChainButton = NSButton(title: "Run Chain", target: nil, action: nil)
+    private let runButton = NSButton(title: "Run Tests", target: nil, action: nil)
     private let cancelButton = NSButton(title: "Cancel", target: nil, action: nil)
     private let statusLabel = NSTextField(labelWithString: "")
     private let scrollView = NSScrollView()
@@ -78,14 +76,13 @@ final class TestPanelView: NSView {
         super.init(frame: frameRect)
         wantsLayer = true
 
-        for button in [runAllButton, runChainButton, cancelButton] {
+        for button in [runButton, cancelButton] {
             button.bezelStyle = .accessoryBarAction
             button.font = NSFont.systemFont(ofSize: 11)
             button.target = self
             button.translatesAutoresizingMaskIntoConstraints = false
         }
-        runAllButton.action = #selector(runAllClicked)
-        runChainButton.action = #selector(runChainClicked)
+        runButton.action = #selector(runClicked)
         cancelButton.action = #selector(cancelClicked)
         cancelButton.isEnabled = false
 
@@ -120,8 +117,7 @@ final class TestPanelView: NSView {
 
         buildFailurePane()
 
-        addSubview(runAllButton)
-        addSubview(runChainButton)
+        addSubview(runButton)
         addSubview(cancelButton)
         addSubview(statusLabel)
         addSubview(scrollView)
@@ -136,18 +132,16 @@ final class TestPanelView: NSView {
             failurePane.bottomAnchor.constraint(equalTo: bottomAnchor),
             failurePaneHeight,
 
-            runAllButton.topAnchor.constraint(equalTo: topAnchor, constant: 6),
-            runAllButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            runChainButton.topAnchor.constraint(equalTo: runAllButton.topAnchor),
-            runChainButton.leadingAnchor.constraint(equalTo: runAllButton.trailingAnchor, constant: 6),
-            cancelButton.topAnchor.constraint(equalTo: runAllButton.topAnchor),
-            cancelButton.leadingAnchor.constraint(equalTo: runChainButton.trailingAnchor, constant: 6),
+            runButton.topAnchor.constraint(equalTo: topAnchor, constant: 6),
+            runButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            cancelButton.topAnchor.constraint(equalTo: runButton.topAnchor),
+            cancelButton.leadingAnchor.constraint(equalTo: runButton.trailingAnchor, constant: 6),
 
-            statusLabel.centerYAnchor.constraint(equalTo: runAllButton.centerYAnchor),
+            statusLabel.centerYAnchor.constraint(equalTo: runButton.centerYAnchor),
             statusLabel.leadingAnchor.constraint(equalTo: cancelButton.trailingAnchor, constant: 10),
             statusLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -8),
 
-            scrollView.topAnchor.constraint(equalTo: runAllButton.bottomAnchor, constant: 6),
+            scrollView.topAnchor.constraint(equalTo: runButton.bottomAnchor, constant: 6),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: failurePane.topAnchor),
@@ -208,8 +202,7 @@ final class TestPanelView: NSView {
 
     /// Toggles the run/cancel controls for an in-flight run.
     func setRunning(_ running: Bool) {
-        runAllButton.isEnabled = !running
-        runChainButton.isEnabled = !running
+        runButton.isEnabled = !running
         cancelButton.isEnabled = running
         if running { statusLabel.stringValue = "Running…" }
     }
@@ -338,8 +331,7 @@ final class TestPanelView: NSView {
 
     // MARK: - Actions
 
-    @objc private func runAllClicked() { onRunAll?() }
-    @objc private func runChainClicked() { onRunChain?() }
+    @objc private func runClicked() { onRun?() }
     @objc private func cancelClicked() { onCancel?() }
 
     /// Accepts the story's new text for the drifted bless on show.

@@ -38,9 +38,11 @@ export interface HostInbound {
 export interface HostOutbound {
   /** Open `file` in the editor at `line` (1-based). */
   openLocation(file: string, line: number): void;
-  runAll(): void;
-  runChain(): void;
-  runTree(): void;
+  /**
+   * Run the suite. There is exactly one run model — the tree (ADR-302) — so
+   * there is exactly one verb here. See the toolbar comment in index.html.
+   */
+  run(): void;
   cancel(): void;
   /** Remember the view mode for this project — the mode never switches itself. */
   persistMode(mode: string): void;
@@ -126,9 +128,7 @@ export function installHost(handlers: PageHandlers): HostOutbound {
 
   return {
     openLocation: (file, line) => send({ action: 'openLocation', file, line }),
-    runAll: () => send({ action: 'runAll' }),
-    runChain: () => send({ action: 'runChain' }),
-    runTree: () => send({ action: 'runTree' }),
+    run: () => send({ action: 'run' }),
     cancel: () => send({ action: 'cancel' }),
     persistMode: (mode) => send({ action: 'persistMode', mode }),
     ready: () => send({ action: 'ready' }),

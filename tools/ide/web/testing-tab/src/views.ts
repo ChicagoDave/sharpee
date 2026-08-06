@@ -366,9 +366,7 @@ function renderHeader(model: RunModel, surface: Surface): void {
   status.classList.toggle('on', surface.status !== '');
 
   byId('cancel').toggleAttribute('disabled', !model.inFlight);
-  for (const id of ['run-all', 'run-chain', 'run-tree']) {
-    byId(id).toggleAttribute('disabled', model.inFlight);
-  }
+  byId('run').toggleAttribute('disabled', model.inFlight);
 }
 
 /** The breadcrumb under the panes — the selected path, always. */

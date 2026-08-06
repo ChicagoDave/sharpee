@@ -83,6 +83,39 @@ final class TestingTabRealPathTests: XCTestCase {
         XCTAssertEqual(rows, 0, "nothing from an unreadable line may reach the tree")
     }
 
+    // MARK: - One run model
+
+    /// The toolbar offers exactly ONE run, and clicking it reaches the host.
+    ///
+    /// This is a regression test for a shipped bug, not a style preference. The
+    /// tab shipped with Run All / Run Tree / Run Chain; the first ran the suite
+    /// flat, which is wrong for a `continues:` tree (229 passed / 287 failed on
+    /// fernhill against 516 / 0 as a tree), and the second scanned
+    /// `walkthroughs/`, which an IDE project does not have. Both "worked" — they
+    /// wired through correctly and produced wrong answers, which is why a wiring
+    /// test would not have caught it and this asserts the BUTTON SET.
+    func testTheToolbarOffersExactlyOneRunAndItReachesTheHost() async throws {
+        try await waitForPage()
+
+        let runButtons = try await tab.evaluateInTab(
+            "Array.from(document.querySelectorAll('.runs button')).map(function (b) { return b.id; }).join(',')") as? String
+        XCTAssertEqual(runButtons, "run,cancel",
+                       "one run verb plus cancel — no flat or chain variant")
+        let label = try await text("#run")
+        XCTAssertEqual(label, "Run Tests")
+
+        // And no Follow toggle: it re-armed itself every run, so it only ever
+        // governed the run already being watched.
+        let follow = try await count("#follow")
+        XCTAssertEqual(follow, 0)
+
+        var ran = 0
+        tab.onRun = { ran += 1 }
+        _ = try await tab.evaluateInTab("document.getElementById('run').click()")
+        try await settle()
+        XCTAssertEqual(ran, 1, "the run button must reach the host")
+    }
+
     // MARK: - Acceptance 2 — a real tree run renders
 
     func testARealFernhillTreeRunRendersItsTreeReplaysAndTotals() async throws {

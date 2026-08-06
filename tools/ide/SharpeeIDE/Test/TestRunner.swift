@@ -7,9 +7,8 @@
 // after 2s) — a cancelled run keeps every record already decoded. A
 // schemaVersion mismatch is surfaced once and stops decoding (the "IDE is out
 // of date" state), never a partial decode.
-// Public interface: TestRunner.runAll(storyFile:), runChain(storyFile:),
-// runFile(storyFile:transcript:), start(executable:arguments:...), cancel(),
-// state, delegate.
+// Public interface: TestRunner.runTests(storyFile:),
+// start(executable:arguments:...), cancel(), state, delegate.
 // Owner context: tools/ide — Test.
 
 import Foundation
@@ -79,27 +78,20 @@ final class TestRunner {
 
     // MARK: - Production entries (ADR-277 D2/D3)
 
-    /// Run every transcript under the story's `tests/` subtree.
-    func runAll(storyFile: URL) {
-        startSharpee(storyFile: storyFile, extraArguments: [])
-    }
-
-    /// Run the story's `walkthroughs/` chain (filename order, state persists —
-    /// D3: `--chain` with no explicit files IS the chain request).
-    func runChain(storyFile: URL) {
-        startSharpee(storyFile: storyFile, extraArguments: ["--chain"])
-    }
-
-    /// Run the story's transcripts as a TREE (ADR-302): `continues:` parentage
-    /// is resolved, a shared prefix is re-executed for each sibling, and a node
-    /// whose ancestor failed is reported `unreached` rather than skipped.
-    func runTree(storyFile: URL) {
+    /// Run the story's tests. `--tree` (ADR-302) is the ONLY run model the IDE
+    /// offers, and this is the only production entry point.
+    ///
+    /// The two it replaced were not merely redundant, they were wrong here.
+    /// Flat `tests` mode runs every transcript standalone from story start, so
+    /// each one that `continues:` an ancestor fails for want of the state its
+    /// parent builds — measured on `branch-stories/fernhill` 2026-08-06:
+    /// **229 passed / 287 failed** flat, against **516 / 0** as a tree, same
+    /// suite. And `--chain` scans `walkthroughs/`, which an IDE project does
+    /// not have. Tree mode is also correct for a suite with no `continues:` at
+    /// all — every transcript is simply a root (verified on
+    /// `stories/cloak-of-darkness`, zero parentage, 81 passed).
+    func runTests(storyFile: URL) {
         startSharpee(storyFile: storyFile, extraArguments: ["--tree"])
-    }
-
-    /// Run one `.transcript` file against the story.
-    func runFile(storyFile: URL, transcript: URL) {
-        startSharpee(storyFile: storyFile, extraArguments: [transcript.path])
     }
 
     /// Shared production spawn: `sharpee test <file>.story … --json` with the
