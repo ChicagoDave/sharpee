@@ -7,13 +7,14 @@
 // turn is `[OK]` + an ADR-287 literal text block of the response the author
 // vouched for.
 //
-// This file is what SURVIVED two retirements. ADR-299 took ADR-282's live
-// capture — the Record toggle, per-turn bless verdicts, checkpoint marks, the
-// walkthrough-chain split — and ADR-300 then retired ADR-299's own skein,
-// exporter and replay driver in turn. What is left is the transcript
-// SERIALIZATION GRAMMAR, which outlived both because it describes the file
-// format rather than any one way of producing it. The editing surface ADR-301
-// defers to its next decision is the grammar's next caller.
+// NO PRODUCTION CALLER, and that is stated rather than dressed up: ADR-282's
+// live capture and then ADR-299's skein exporter were the two things that
+// serialized transcripts in Swift, and both are retired. What keeps this file
+// here is that the re-bless tests use it to build their fixtures — re-blessing
+// a transcript is only a meaningful test if the transcript came from the real
+// serializer rather than a hand-typed string. If the editing surface ADR-301
+// defers ever needs Swift-side serialization it starts here; if it does not,
+// this file leaves with the re-bless tests.
 //
 // Public interface: RecordedTurn, RecordingSession.serialize(_:title:
 // openingTurn:headerFields:), assertionLines(for:).

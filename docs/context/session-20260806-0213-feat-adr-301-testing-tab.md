@@ -162,43 +162,47 @@ confirmation."* This session got the confirmation and executed it.
 the Skein tab and its replay/tag/force/bless actions (`RightPanelViewController`
 660 → 162 lines); the Play pane's skein session and its 163-line replay-to-node
 machinery; ADR-280's "Play Testing" sidebar group; the `.skein` special case in
-sidebar activation; and the "New Thread" button name, which was a skein term.
+sidebar activation; the "New Thread" button name, which was a skein term; and —
+after David's second pass — the turn-events bridge, the pinned Play seed, and the
+whole recording-hook chain (see below).
 
-**Kept deliberately, because none of it is skein-shaped:**
-1. **The turn-events bridge** (ADR-277 D5). The skein was its only consumer, but
-   "play authors the transcript" is what ADR-301 names as the reason to build an
-   editor at all, and this bridge is how a played turn reaches Swift. Turns now
-   land in an in-memory `sessionLog` — **not** persisted, because inventing a
-   second artifact to replace the one just removed is the trap.
-2. **`RecordingSession`'s serialization grammar** — it describes the file format,
-   not a way of producing it, which is why it already outlived ADR-282's
-   retirement and now outlives ADR-299's.
-3. **A pinned Play seed**, as a constant.
+**Kept at first, then cut.** The initial pass retained the turn-events bridge, an
+in-memory `sessionLog`, and a pinned Play seed, each with a paragraph explaining
+why the future editing surface would want it. David: *"there's a lot of hacky
+retention in that summary."* He was right, and counting settled it rather than
+arguing — **every retained symbol had zero production readers**:
 
-**The seed, and a correction I made mid-task.** The option David picked was "the
-story's own `seed:` header", on my description of it as something that "already
-owns seeds". That was wrong: `IRStoryFields` is a closed schema (ADR-298 D4) with
-no `seed`, and ADR-293's `seed:`/`point-seed:` are **transcript** header fields.
-I conflated the two. What shipped is `PlayViewController.pinnedPlaySeed`, a
-constant — which is in fact stronger than what it replaced, since the skein's
-seed was `Int.random(...)` minted per story, so Play was never reproducible
-across machines or from a fresh clone. Making it authorable means adding `seed`
-to `IRStoryFields`, a Chord language change and a separate decision — flagged to
-David, not taken.
+| symbol | production readers |
+| --- | --- |
+| `sessionLog`, `onTurn`, `PlayedTurn` | 0 (declaring file only) |
+| `announceTranscript` | 0 |
+| `onTranscriptRecorded`, `transcriptsSaveDirectory`, `storyDirectory` | 0 (written, never read) |
+| `pinnedPlaySeed` | 0 (only the test written to justify it) |
+| `refreshProjectTree` | 0 (3-level forward; only caller was the deleted recording callback) |
 
-**Replacement coverage.** `SkeinPlayGrowthTests` was the only test exercising the
-turn bridge end-to-end, and the bridge survived. `PlaySessionLogTests` (5, rule
-13a — real `WKWebView`, real scheme handler, the real `{command, response}` shape)
-re-pins it: turns land in order, `onTurn` announces what was logged, the page
-boots at the pinned seed *asserted from the page's own vantage*, restart and load
-clear the log, and a malformed bridge message is ignored rather than logged as an
-empty turn. `ProjectArtifactsTests`' three Play-Testing cases became one that
-pins the new contract: a `play-testing/` folder still on disk **surfaces in
-Other** rather than vanishing — the open-view rule is what made deleting the
-group safe, so it is now asserted.
+All of it went, along with `configureRecording` from `AppDelegate` down and the
+`PlaySessionLogTests` file written to justify the bridge. **The seed is the
+clearest case**: `git log -S` shows it arrived *with* the skein (`23c81be6`,
+"Phases 1-4 … pinned play seed") to make skein replay reproducible. Replacing it
+with a constant was inventing a feature to stand where one had been deleted —
+and then arguing in a doc comment that the invention was better than the thing it
+replaced.
 
-**Suite: 368 passed, 0 failures** (521 → 363 on removal, +5 for the replacement).
-ADRs updated: ADR-300 D1 row marked EXECUTED with scope and a "what survived"
+**One thing stayed, on evidence rather than intent.** `RecordingSession`'s
+serialization grammar also has no production caller — but the re-bless tests
+build fixtures with it, and re-blessing a transcript is only a meaningful test if
+the transcript came from the real serializer instead of a hand-typed string. Its
+header now opens `// NO PRODUCTION CALLER, and that is stated rather than dressed
+up`, and names the condition under which it leaves.
+
+**Coverage.** `SkeinPlayGrowthTests` covered the turn bridge; the bridge is gone,
+so the coverage goes with it rather than being replaced. `ProjectArtifactsTests`'
+three Play-Testing cases became one that pins a contract that still exists: a
+`play-testing/` folder still on disk **surfaces in Other** rather than vanishing —
+the open-view rule is what made deleting the group safe, so it is now asserted.
+
+**Suite: 363 passed, 0 failures** (from 521 — the delta is skein tests and the
+dead-hook sweep). ADRs updated: ADR-300 D1 row marked EXECUTED with scope and a "what survived"
 note; ADR-299's status records that supersession and deletion were two days
 apart; ADR-301 gains **A1.1** — the skein's removal took `ReplayDriver` with it,
 so **re-bless is now the Swift mirror's only consumer**, which turns the mirror's

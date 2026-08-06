@@ -119,17 +119,6 @@ final class MainWindowController: NSWindowController {
         rootViewController?.showTestingTab()
     }
 
-    /// Points Play recording at the open story (ADR-277 D5).
-    func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        rootViewController?.configureRecording(storyDirectory: storyDirectory, onRecorded: onRecorded)
-    }
-
-    /// Re-reads the open project from disk so files written from outside the
-    /// tree (a recorded transcript) become visible without reopening.
-    func refreshProjectTree() {
-        rootViewController?.refreshProjectTree()
-    }
-
     /// The editor's focused document (Run Current Test File target), or nil.
     var activeDocumentURL: URL? {
         rootViewController?.activeDocumentURL
@@ -417,17 +406,6 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.showTestTab()
     }
 
-    /// Points Play recording at the open story (ADR-277 D5).
-    func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        mainSplitViewController.configureRecording(storyDirectory: storyDirectory,
-                                                   onRecorded: onRecorded)
-    }
-
-    /// Re-reads the open project from disk, preserving expansion state.
-    func refreshProjectTree() {
-        mainSplitViewController.refreshProjectTree()
-    }
-
     /// The editor's focused document (Run Current Test File enablement/target).
     var activeDocumentURL: URL? { mainSplitViewController.activeDocumentURL }
 
@@ -664,24 +642,6 @@ private final class MainSplitViewController: NSSplitViewController {
         persistSession()
     }
 
-    /// Re-reads the open project from disk and re-applies it, preserving which
-    /// folders are expanded.
-    ///
-    /// The tree is a snapshot of one scan, so anything that writes into the
-    /// project from OUTSIDE the tree leaves it stale — a recorded transcript
-    /// (ADR-282 D3/D4) lands in `tests/transcripts/` or `walkthroughs/` and is
-    /// simply invisible until the project is reopened. Re-applying rather than
-    /// reloading keeps `RecentProjectsStore` and the persisted session out of
-    /// it: nothing about the project changed, only what is inside it.
-    ///
-    /// A no-op when no project is open.
-    fileprivate func refreshProjectTree() {
-        guard let root = currentProject?.rootURL else { return }
-        let expanded = projectPaneViewController.expandedFolderURLs
-        let rescanned = Project(rootURL: root)
-        currentProject = rescanned
-        projectPaneViewController.setProject(rescanned, expandedFolderURLs: expanded)
-    }
 
     func saveActiveDocument() {
         editorViewController.saveActiveDocument()
@@ -779,13 +739,6 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// The Testing tab (ADR-301) — likewise in the right panel.
     fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
-
-    /// Points transcript recording at the open story (save-panel default dir +
-    /// re-discovery hook for the Tests panel) — ADR-299 D7.
-    fileprivate func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
-        playViewController.storyDirectory = storyDirectory
-        playViewController.onTranscriptRecorded = onRecorded
-    }
 
     fileprivate func showTestTab() {
         rightPanelViewController.showTestTab()

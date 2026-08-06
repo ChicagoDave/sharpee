@@ -335,25 +335,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         currentStoryURL = StoryTarget.storyFile(in: url)
 
         // The Tests panel tracks the same target (ADR-277 D2): discover its
-        // tests/ + walkthroughs/ tree now; runs are user-initiated. Play
-        // recording saves beneath the story's own directory and re-discovers on
-        // save — into `tests/transcripts/` for an unmarked session (ADR-282 D3)
-        // or `walkthroughs/` for a checkpointed chain (D4). The pane derives
-        // both, since ADR-280's classifier looks for exactly those paths and
-        // anything saved beside them would be invisible in the sidebar.
+        // tests/ + walkthroughs/ tree now; runs are user-initiated.
         if let storyURL = currentStoryURL {
             testController?.attach(storyFile: storyURL)
-            mainWindowController?.configureRecording(
-                storyDirectory: storyURL.deletingLastPathComponent(),
-                onRecorded: { [weak self] _ in
-                    guard let self, let story = self.currentStoryURL else { return }
-                    self.testController?.attach(storyFile: story)
-                    // The Tests panel re-discovers, but the file tree was built
-                    // from an earlier scan and would keep the new transcript
-                    // invisible until reopen — the author saves a test and sees
-                    // nothing appear.
-                    self.mainWindowController?.refreshProjectTree()
-                })
         } else {
             testController?.detach()
         }

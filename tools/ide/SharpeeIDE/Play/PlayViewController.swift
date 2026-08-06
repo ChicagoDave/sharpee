@@ -2,22 +2,18 @@
 // The Play pane: a header (status / Restart / "Play after build") over a
 // WKWebView that embeds the story's self-contained browser client
 // (dist/web/<story>/, served via a custom scheme), or a placeholder when no
-// bundle is built.
+// bundle is built. Errors from the running story are symbolicated and forwarded
+// to the Diagnosis tab; judging what the story PRINTED is not this pane's job.
 //
-// Every turn the story takes arrives over the turn-events bridge (ADR-277 D5)
-// and lands in `sessionLog`. That bridge outlives ADR-299: the skein it used to
-// grow is retired (ADR-300), but "play authors the transcript" — promoting a
-// played session rather than typing commands blind — is named by ADR-301 as the
-// reason to build an editor at all, and this log is where that promotion will
-// read from. Judging what the story printed is not this pane's job.
-//
-// The surface boots at a pinned seed injected as `window.__SHARPEE_PLAY_SEED__`
-// before any client script runs, so a session can be replayed. See
-// `pinnedPlaySeed` for where that value comes from now that the skein no longer
-// carries one.
+// ADR-299's additions are gone with it (ADR-300): the turn-events bridge, the
+// pinned play seed and the skein session all arrived to grow a `.skein` and had
+// no other consumer. When the editing surface ADR-301 defers lands, "play
+// authors the transcript" will need a turn feed again — and it should be built
+// against that decision rather than left standing as a hook nothing reads.
 // Public interface: load(bundleDirectory:), reloadAfterBuild(projectRoot:),
-// restart(), playAfterBuild, onPlayAfterBuildChanged, storyDirectory,
-// sessionLog, onTurn, transcriptsSaveDirectory, announceTranscript(_:).
+// restart(), invalidateForSourceChange(), showUnplayable(reason:), isLoaded,
+// playAfterBuild, onPlayAfterBuildChanged, onConsoleError,
+// evaluateInPlaySurface(_:).
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -26,9 +22,6 @@ import WebKit
 final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     private static let consoleHandlerName = "playConsole"
-    /// The turn-events bridge (ADR-277 D5): the browser client posts
-    /// `{command, response}` JSON here after each turn's response renders.
-    private static let turnEventsHandlerName = "turnEvents"
 
     /// Hooks the page's console.error / window.onerror / unhandledrejection and forwards
     /// them to Swift, so Play-runtime errors are visible in the IDE (no WebView inspector
@@ -98,60 +91,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// against the bundle's source map into a navigable error.
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
-    /// One turn of the running story, as it came over the bridge.
-    struct PlayedTurn: Equatable {
-        let command: String
-        let response: String
-    }
-
-    /// Every turn of the CURRENT playthrough, in order, cleared on restart.
-    ///
-    /// In memory only, deliberately: the `.skein` file this used to persist into
-    /// is retired (ADR-300), and a played session is worth keeping only until
-    /// the author promotes it into a `.transcript` — which is the editing
-    /// surface ADR-301 defers to its next decision. Persisting it again before
-    /// that decision would be inventing a second artifact to replace the one
-    /// just removed.
-    private(set) var sessionLog: [PlayedTurn] = []
-
-    /// Fired after each turn lands, so a surface can show the session growing.
-    var onTurn: ((PlayedTurn) -> Void)?
-
-    /// The seed every Play boot pins, injected before any client script runs.
-    ///
-    /// The skein used to mint one per story and persist it; with the artifact
-    /// retired there is nowhere authored to read a seed FROM — the Chord story
-    /// header's schema is closed (ADR-298 D4) and carries no `seed`, and
-    /// ADR-293's `seed:` is a *transcript* header field, not a story one. So
-    /// this is a constant: every Play boot of every story is reproducible, on
-    /// any machine and from a fresh clone, which the skein's random per-story
-    /// seed never was. Making it authorable means adding `seed` to
-    /// `IRStoryFields` — a Chord language change, and a separate decision.
-    static let pinnedPlaySeed = 1
-
-    /// The open story's own directory, set by the project-load path. Recorded
-    /// transcripts land in the folders ADR-280's classifier looks for beneath
-    /// it, so the sidebar discovers them.
-    var storyDirectory: URL?
-
-    /// Where a recorded transcript is offered by default — ADR-280's
-    /// Transcript Tests group.
-    var transcriptsSaveDirectory: URL? {
-        storyDirectory?.appendingPathComponent("tests", isDirectory: true)
-            .appendingPathComponent("transcripts", isDirectory: true)
-    }
-
-    /// Fired after a `.transcript` is written, so the Tests panel can
-    /// re-discover its tree.
-    var onTranscriptRecorded: ((URL) -> Void)?
-
-    /// Announces a transcript written by someone else, so the Tests panel can
-    /// re-discover its tree. One announce channel rather than two, because a
-    /// second would be a second thing to keep wired.
-    func announceTranscript(_ url: URL) {
-        onTranscriptRecorded?(url)
-    }
-
     override func loadView() {
         let pane = ThemedPane(color: Theme.playBackground)
 
@@ -161,7 +100,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: PlayURLSchemeHandler.scheme)
         let contentController = configuration.userContentController
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
-        contentController.add(WeakScriptMessageHandler(self), name: Self.turnEventsHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.isInspectable = true // right-click → Inspect Element to debug the running story
         webView.translatesAutoresizingMaskIntoConstraints = false
@@ -207,18 +145,14 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// caller from the IR header per ADR-258 D4) if its index.html exists,
     /// otherwise shows the placeholder. Passing nil shows the placeholder.
     ///
-    /// Loading starts a fresh session log — the bundle may have just rebuilt,
-    /// so turns from the previous build describe a story that no longer exists.
     func load(bundleDirectory: URL?) {
         guard let bundleDirectory,
               FileManager.default.fileExists(
                   atPath: bundleDirectory.appendingPathComponent("index.html").path) else {
             loaded = nil
-            sessionLog = []
             showPlaceholder(Self.notBuiltPlaceholder)
             return
         }
-        sessionLog = []
         installUserScripts()
         loaded = bundleDirectory
         PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
@@ -230,18 +164,12 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         webView.load(URLRequest(url: url))
     }
 
-    /// (Re)installs the pane's document-start scripts: the console hook, the
-    /// surface chrome, and the pinned seed as `window.__SHARPEE_PLAY_SEED__`,
-    /// which the built bundle's entry passes into the engine.
+    /// (Re)installs the pane's document-start scripts: the console hook and the
+    /// surface chrome.
     private func installUserScripts() {
         let contentController = webView.configuration.userContentController
         contentController.removeAllUserScripts()
-        let sources = [
-            Self.consoleHookScript,
-            Self.playSurfaceScript,
-            "window.__SHARPEE_PLAY_SEED__ = \(Self.pinnedPlaySeed);",
-        ]
-        for source in sources {
+        for source in [Self.consoleHookScript, Self.playSurfaceScript] {
             contentController.addUserScript(WKUserScript(source: source,
                                                          injectionTime: .atDocumentStart,
                                                          forMainFrameOnly: true))
@@ -280,12 +208,8 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     /// Restarts the running story by reloading from origin — a fresh boot, since
     /// playSurfaceScript clears the origin's storage before the client runs.
-    /// The session log starts over with it: the turns before a restart belong to
-    /// a playthrough the author has abandoned, and carrying them into the next
-    /// one would promote a transcript that never happened in that order.
     func restart() {
         guard loaded != nil else { return }
-        sessionLog = []
         webView.reloadFromOrigin()
     }
 
@@ -322,16 +246,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         switch message.name {
-        case Self.turnEventsHandlerName:
-            guard let body = message.body as? String,
-                  let data = body.data(using: .utf8),
-                  let turn = try? JSONDecoder().decode(TurnEventBody.self, from: data) else { return }
-            // Every turn is logged, no toggle: the value of "play authors the
-            // transcript" (ADR-301) is that the author does not have to decide
-            // to record BEFORE the interesting thing happens.
-            let played = PlayedTurn(command: turn.command, response: turn.response)
-            sessionLog.append(played)
-            onTurn?(played)
         case Self.consoleHandlerName:
             guard let text = message.body as? String else { return }
             guard let loaded else {
@@ -345,12 +259,6 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         }
     }
 
-    /// The `turnEvents` message body — mirrors platform-browser's
-    /// `TurnEventPayload` (the D5 wire shape).
-    private struct TurnEventBody: Codable {
-        let command: String
-        let response: String
-    }
 }
 
 /// Forwards script messages to a delegate weakly — `WKUserContentController.add` retains its
