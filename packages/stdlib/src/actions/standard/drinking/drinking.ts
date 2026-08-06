@@ -15,7 +15,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TraitType, EdibleTrait, ContainerTrait, OpenableBehavior, EdibleBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { DrunkEventData, ImplicitTakenEventData } from './drinking-events.js';

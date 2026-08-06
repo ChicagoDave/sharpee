@@ -14,7 +14,7 @@
  * Replaces: handlers/death-penalty-handler.ts
  */
 
-import { StateMachineDefinition, CustomEffect } from '@sharpee/plugin-state-machine';
+import { type StateMachineDefinition, type CustomEffect } from '@sharpee/plugin-state-machine';
 import { StandardCapabilities } from '@sharpee/world-model';
 
 export const DeathPenaltyMessages = {

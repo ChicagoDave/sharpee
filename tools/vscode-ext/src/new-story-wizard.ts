@@ -128,7 +128,7 @@ function generateIndexTs(storyId: string, title: string, author: string, descrip
  * Owner: stories/${storyId}
  */
 
-import { Story, StoryConfig } from '@sharpee/engine';
+import { type Story, type StoryConfig } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 import {

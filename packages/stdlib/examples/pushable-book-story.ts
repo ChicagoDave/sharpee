@@ -6,7 +6,7 @@
  */
 
 import { IFEntity, PushableTrait, TraitType } from '@sharpee/world-model';
-import { Story } from '@sharpee/engine';
+import { type Story } from '@sharpee/engine';
 
 // Define the story
 const story = new Story({

@@ -8,8 +8,8 @@
  * and getDiagnosis() from the melee engine.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { DIAGNOSE_ACTION_ID, DiagnoseMessages } from './types';
 import { getDiagnosis, CURE_WAIT } from '../../combat/melee';
 import { MELEE_STATE, CURE_STATE } from '../../combat/melee-state';

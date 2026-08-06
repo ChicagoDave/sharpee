@@ -14,7 +14,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TraitType, ReadableTrait } from '@sharpee/world-model';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { IFActions } from '../../constants.js';

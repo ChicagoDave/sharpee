@@ -10,7 +10,7 @@ import { WorldModel, IdentityTrait } from '@sharpee/world-model';
 import { PerceptionService } from '@sharpee/stdlib';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
-import { ITextBlock } from '@sharpee/text-blocks';
+import { type ITextBlock } from '@sharpee/text-blocks';
 import type { Story } from '@sharpee/engine';
 import type { ISaveData } from '@sharpee/core';
 

@@ -5,8 +5,8 @@
  * If key was pushed out and landed on mat, player gets both.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { PULL_MAT_ACTION_ID, PullMatMessages } from './types';
 import {
   findTinyRoomDoor,

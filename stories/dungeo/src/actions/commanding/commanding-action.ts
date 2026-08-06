@@ -11,8 +11,8 @@
  * Unknown commands: "I am only a stupid robot and cannot perform that command."
  */
 
-import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, killPlayer } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, NpcTrait, RoomTrait, RoomBehavior, Direction, TraitType } from '@sharpee/world-model';
 import { CommandingMessages, COMMANDING_ACTION_ID } from './commanding-messages';
 import { RobotMessages } from '../../npcs/robot/robot-messages';

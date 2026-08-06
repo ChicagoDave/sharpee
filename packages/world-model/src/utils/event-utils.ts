@@ -4,8 +4,8 @@
  * Provides helpers for creating properly-formed SemanticEvents
  */
 
-import { ISemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
-import { EntityId } from '@sharpee/core';
+import { type ISemanticEvent, createEvent as coreCreateEvent } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Create a semantic event with world-model specific defaults

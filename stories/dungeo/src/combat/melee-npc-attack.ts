@@ -15,7 +15,7 @@
  * Source: docs/internal/dungeon-81/original_source/melee.137
  */
 
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import {
   VILLAIN_BLOW_POINT,
   VS_UNCONSCIOUS_BLOW_POINT,

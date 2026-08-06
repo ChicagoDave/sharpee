@@ -11,10 +11,10 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorResult,
-  InterceptorBlockedResult,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorResult,
+  type InterceptorBlockedResult,
   createEffect,
   IFEntity,
   WorldModel,

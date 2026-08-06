@@ -4,7 +4,7 @@ import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { SwitchableTrait } from './switchableTrait.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
 import { ActionFailureReason } from '../../constants/action-failures.js';
 

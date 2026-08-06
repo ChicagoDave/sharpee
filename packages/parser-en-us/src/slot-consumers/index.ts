@@ -3,7 +3,7 @@
  * @description Registry for slot consumption strategies (ADR-088)
  */
 
-import { SlotType, SlotMatch } from '@sharpee/if-domain';
+import { SlotType, type SlotMatch } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
 import { EntitySlotConsumer } from './entity-slot-consumer.js';
 import { TextSlotConsumer } from './text-slot-consumer.js';

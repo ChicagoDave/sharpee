@@ -6,11 +6,11 @@
 
 import {
   SlotType,
-  SlotMatch,
-  PatternToken,
-  SlotConstraint,
+  type SlotMatch,
+  type PatternToken,
+  type SlotConstraint,
   ScopeBuilderImpl,
-  ScopeConstraintBuilder
+  type ScopeConstraintBuilder
 } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext, getNextPatternToken, isPatternDelimiter } from './slot-consumer.js';
 import { GrammarScopeResolver } from '../grammar-scope-resolver.js';

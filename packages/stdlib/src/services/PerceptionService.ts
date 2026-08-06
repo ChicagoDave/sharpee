@@ -8,8 +8,8 @@
  * @see ADR-069 Perception-Based Event Filtering
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { IFEntity, IWorldModel, VisibilityBehavior, WorldModel } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { IFEntity, type IWorldModel, VisibilityBehavior, WorldModel } from '@sharpee/world-model';
 import { SENSE_PRECEDENCE } from '@sharpee/if-services';
 
 // Re-export interface types from if-services for convenience

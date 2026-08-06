@@ -13,7 +13,7 @@
  * 3. After 3 turns → knock, brochure in MAILB, BRFLAG2 set
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import {
   WorldModel,
   IdentityTrait,
@@ -22,7 +22,7 @@ import {
   ReadableTrait,
   EntityType
 } from '@sharpee/world-model';
-import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Fuse, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import type { Daemon } from '@sharpee/plugin-scheduler';
 import { TreasureTrait } from '../traits';
 import { DungeoSchedulerMessages } from './scheduler-messages';

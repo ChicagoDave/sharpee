@@ -17,7 +17,7 @@ NPC/character authoring — builders, applyCharacter, character model.
  * Public interface: CharacterBuilder, TriggerBuilder.
  * Owner context: @sharpee/character
  */
-import { PersonalityExpr, DispositionWord, Mood, ThreatLevel, CognitiveProfile, ConfidenceWord, LucidityConfig, PerceptionFilterConfig, PerceivedEvent, CharacterPredicate, ICharacterModelData } from '@sharpee/world-model';
+import { type PersonalityExpr, type DispositionWord, type Mood, type ThreatLevel, type CognitiveProfile, type ConfidenceWord, type LucidityConfig, type PerceptionFilterConfig, type PerceivedEvent, type CharacterPredicate, type ICharacterModelData } from '@sharpee/world-model';
 import { CognitivePresetName } from './cognitive-presets.js';
 import { VocabularyExtension } from './vocabulary-extension.js';
 import { PropagationProfile } from './propagation/propagation-types.js';
@@ -366,7 +366,7 @@ export interface CompiledCharacter {
  * Public interface: COGNITIVE_PRESETS, CognitivePresetName.
  * Owner context: @sharpee/character
  */
-import { CognitiveProfile } from '@sharpee/world-model';
+import { type CognitiveProfile } from '@sharpee/world-model';
 /** Names of built-in cognitive presets. */
 export type CognitivePresetName = 'stable' | 'schizophrenic' | 'ptsd' | 'dementia' | 'dissociative' | 'tbi' | 'obsessive' | 'intoxicated';
 /**
@@ -534,7 +534,7 @@ export declare function applyCharacter(entity: IFEntity, compiled: CompiledChara
  *   ConversationRecord, ConversationEntry, EvidenceRecord, EvidenceEntry.
  * Owner context: @sharpee/character / conversation
  */
-import { Mood, Coherence } from '@sharpee/world-model';
+import { type Mood, type Coherence } from '@sharpee/world-model';
 /**
  * The semantic action an NPC takes when responding to a topic.
  * Drives both conversation history tracking and language layer variant selection.
@@ -1138,7 +1138,7 @@ export interface ConversationLifecycleState {
  *   applyCognitiveColoring.
  * Owner context: @sharpee/character / conversation
  */
-import { CharacterModelTrait, Mood, CognitiveProfile } from '@sharpee/world-model';
+import { CharacterModelTrait, type Mood, type CognitiveProfile } from '@sharpee/world-model';
 import { ResponseCandidate, ResponseIntent } from './response-types.js';
 /**
  * Build a ResponseIntent from a selected candidate and the NPC's
@@ -1278,7 +1278,7 @@ export interface DialogueExtension {
  *   ConversationData, OffscreenScene, WitnessedScene, DialogueLine.
  * Owner context: @sharpee/character / conversation
  */
-import { Mood, DispositionWord } from '@sharpee/world-model';
+import { type Mood, type DispositionWord } from '@sharpee/world-model';
 import { CharacterBuilder } from '../character-builder.js';
 import { TopicDef } from './topic-registry.js';
 import { ResponseCandidate } from './response-types.js';
@@ -3049,7 +3049,7 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  *   createInfluencePhase, CharacterPhaseConfig.
  * Owner context: @sharpee/character
  */
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { PropagationProfile, AlreadyToldRecord } from './propagation/index.js';
 import { GoalDef, MovementProfile, GoalManager } from './goals/index.js';

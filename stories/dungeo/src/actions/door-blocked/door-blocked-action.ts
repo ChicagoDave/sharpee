@@ -4,8 +4,8 @@
  * Shows blocking message when player tries to go north through locked door.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { DOOR_BLOCKED_ACTION_ID, DoorBlockedMessages } from './types';
 
 // Event ID counter

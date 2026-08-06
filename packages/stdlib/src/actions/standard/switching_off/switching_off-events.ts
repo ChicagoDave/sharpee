@@ -2,7 +2,7 @@
  * Event type definitions for the switching off action
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Event data for when something is switched off

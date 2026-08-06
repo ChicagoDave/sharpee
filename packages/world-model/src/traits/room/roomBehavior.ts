@@ -6,7 +6,7 @@ import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
 import { RoomTrait, IExitInfo } from './roomTrait.js';
 import { IComputedExitDeclaration, isComputedExitCarrier } from './computedExitContract.js';
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
 import { Direction, DirectionType, getOppositeDirection } from '../../constants/directions.js';
 import { IWorldQuery } from '../container/containerBehavior.js';

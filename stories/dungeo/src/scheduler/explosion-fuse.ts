@@ -18,10 +18,10 @@
  *   - Player elsewhere: narrow escape message
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
-import { WorldModel, IdentityTrait, RoomTrait, DirectionType, OpenableTrait, SceneryTrait, TraitType, Direction } from '@sharpee/world-model';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
+import { WorldModel, IdentityTrait, RoomTrait, type DirectionType, OpenableTrait, SceneryTrait, TraitType, Direction } from '@sharpee/world-model';
 import { killPlayer } from '@sharpee/stdlib';
-import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Fuse, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import { BurnableTrait } from '../traits';
 

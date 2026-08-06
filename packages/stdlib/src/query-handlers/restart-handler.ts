@@ -6,16 +6,16 @@
  */
 
 import {
-  IQueryHandler,
-  IPendingQuery,
-  IQueryResponse,
+  type IQueryHandler,
+  type IPendingQuery,
+  type IQueryResponse,
   QuerySource,
   QueryType,
-  ISemanticEvent,
+  type ISemanticEvent,
   createSemanticEventSource,
   createRestartRequestedEvent,
   createRestartCompletedEvent,
-  IRestartContext
+  type IRestartContext
 } from '@sharpee/core';
 
 /**

@@ -6,8 +6,8 @@
  * shows a custom blocking message instead of generic "no exit that way".
  */
 
-import { WorldModel, IdentityTrait, IParsedCommand } from '@sharpee/world-model';
-import { ParsedCommandTransformer } from '@sharpee/engine';
+import { WorldModel, IdentityTrait, type IParsedCommand } from '@sharpee/world-model';
+import { type ParsedCommandTransformer } from '@sharpee/engine';
 
 // State key for tracking rainbow state
 const RAINBOW_ACTIVE_KEY = 'dungeo.rainbow.active';

@@ -2,7 +2,7 @@
  * Domain contracts for world state changes and event processing
  */
 
-import { ISemanticEvent, IEntity } from '@sharpee/core';
+import { type ISemanticEvent, type IEntity } from '@sharpee/core';
 
 /**
  * Represents a change to the world state

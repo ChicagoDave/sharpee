@@ -19,14 +19,14 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   ContainerBehavior,
   SupporterBehavior,
   OpenableBehavior,
-  IAddItemResult,
-  IAddItemToSupporterResult,
+  type IAddItemResult,
+  type IAddItemToSupporterResult,
   IFEntity
 } from '@sharpee/world-model';
 import { captureEntitySnapshot } from '../../base/snapshot-utils.js';

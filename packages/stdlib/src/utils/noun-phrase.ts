@@ -20,7 +20,7 @@
  * @see ADR-158 (superseded) Entity-Valued Message Params Carry EntityInfo
  */
 
-import { NounPhrase, RenderContext } from '@sharpee/if-domain';
+import { type NounPhrase, type RenderContext } from '@sharpee/if-domain';
 import { IFEntity, IdentityTrait, TraitType, getStateAdjectives } from '@sharpee/world-model';
 
 /** Options for {@link nounPhraseFor}. */

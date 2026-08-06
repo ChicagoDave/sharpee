@@ -44,13 +44,13 @@ import { gunzipSync, gzipSync, strFromU8, strToU8 } from 'fflate';
 
 import { WorldModel } from '@sharpee/world-model';
 import {
-  ISaveData,
-  ISaveMetadata,
-  IEngineState,
-  ISerializedEvent,
-  ISerializedTurn,
-  ISerializedParserState,
-  ISemanticEventSource,
+  type ISaveData,
+  type ISaveMetadata,
+  type IEngineState,
+  type ISerializedEvent,
+  type ISerializedTurn,
+  type ISerializedParserState,
+  type ISemanticEventSource,
   createSemanticEventSource
 } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';

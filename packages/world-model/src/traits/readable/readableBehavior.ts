@@ -3,7 +3,7 @@
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { ReadableTrait } from './readableTrait.js';
-import { ISemanticEvent, createEvent } from '@sharpee/core';
+import { type ISemanticEvent, createEvent } from '@sharpee/core';
 
 /**
  * Behavior for readable entities.

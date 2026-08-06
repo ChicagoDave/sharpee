@@ -11,7 +11,7 @@
  * If the player tries to force it open, they would destroy the contents.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /**
  * Configuration for the egg trait

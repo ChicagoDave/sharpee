@@ -5,7 +5,7 @@
  * ensures atomicity (all-or-nothing), and applies them through proper channels.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel, RoomTrait } from '@sharpee/world-model';
 import {
   Effect,

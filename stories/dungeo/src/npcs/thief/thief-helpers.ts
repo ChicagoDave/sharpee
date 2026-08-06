@@ -10,7 +10,7 @@
 
 import { definePoint } from '@sharpee/core';
 import { IFEntity, WorldModel, NpcTrait, IdentityTrait } from '@sharpee/world-model';
-import { NpcContext } from '@sharpee/stdlib';
+import { type NpcContext } from '@sharpee/stdlib';
 
 /**
  * The thief's WINNING? decision point (ADR-293) — `isVillainWinning` is a

@@ -10,8 +10,8 @@
  * The answer is captured as greedy text and checked against the appropriate system.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, NpcTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { ANSWER_ACTION_ID, AnswerMessages } from './types';
 import { RiddleRoomTrait } from '../../traits';

@@ -12,7 +12,7 @@
 
 import type { GameEngine } from '@sharpee/engine';
 import type { EventProcessor } from '@sharpee/event-processor';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import { VisibilityBehavior } from '@sharpee/world-model';
 

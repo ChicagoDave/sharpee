@@ -12,7 +12,7 @@
  * Owner context: `@sharpee/stdlib` — the player-death primitive (ADR-224).
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import {
   killPlayer,

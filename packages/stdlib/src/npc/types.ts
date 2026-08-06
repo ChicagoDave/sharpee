@@ -4,8 +4,8 @@
  * Types for NPC behaviors and actions.
  */
 
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
-import { IFEntity, WorldModel, DirectionType } from '@sharpee/world-model';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import { IFEntity, WorldModel, type DirectionType } from '@sharpee/world-model';
 
 /**
  * Context passed to NPC behavior hooks

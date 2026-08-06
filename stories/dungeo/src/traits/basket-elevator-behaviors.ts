@@ -7,10 +7,10 @@
  */
 
 import {
-  CapabilityBehavior,
-  CapabilityValidationResult,
-  CapabilityEffect,
-  CapabilitySharedData,
+  type CapabilityBehavior,
+  type CapabilityValidationResult,
+  type CapabilityEffect,
+  type CapabilitySharedData,
   createEffect,
   IFEntity,
   WorldModel

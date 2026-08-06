@@ -3,7 +3,7 @@
  * See ADR-124 for the annotation architecture.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFEntity } from '@sharpee/world-model';
 import { ActionContext } from '../enhanced-types.js';
 

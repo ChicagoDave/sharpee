@@ -5,13 +5,13 @@
  * Registered on CombatantTrait for if.action.attacking.
  */
 
-import { RandomService, definePoint } from '@sharpee/core';
+import { type RandomService, definePoint } from '@sharpee/core';
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
+  type ActionInterceptor,
+  type InterceptorSharedData,
   IFEntity,
   WorldModel,
-  CapabilityEffect,
+  type CapabilityEffect,
   createEffect,
 } from '@sharpee/world-model';
 import { findWieldedWeapon } from '@sharpee/stdlib';

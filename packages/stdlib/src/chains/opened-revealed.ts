@@ -12,8 +12,8 @@
  * 4. Language layer renders "Inside you see..." from revealed event
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { IWorldModel, TraitType } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type IWorldModel, TraitType } from '@sharpee/world-model';
 import { RevealedEventData } from '../actions/standard/opening/opening-events.js';
 
 /**

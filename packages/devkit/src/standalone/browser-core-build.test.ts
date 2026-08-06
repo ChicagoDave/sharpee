@@ -18,7 +18,11 @@ import { buildBrowser, buildPlaygroundBundle, type BrowserBuildEnv, type Playgro
 import { runBuildBrowserCommand } from './build-browser.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
-const FERNHILL = join(REPO_ROOT, 'stories', 'fernhill', 'fernhill.story');
+// ADR-302 D16 moved Fernhill out of `stories/` into the branch-tester's own
+// corpus directory. The path is asserted rather than silently skipped: this is a
+// rule 13a real-path test, and a fixture that quietly vanishes turns a real-path
+// gate into a no-op.
+const FERNHILL = join(REPO_ROOT, 'branch-stories', 'fernhill', 'fernhill.story');
 const STYLES = join(REPO_ROOT, 'packages', 'platform-browser', 'styles');
 const TEMPLATES = join(REPO_ROOT, 'packages', 'devkit', 'templates', 'browser');
 

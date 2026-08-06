@@ -5,8 +5,8 @@
  * Pattern: "dig", "dig with shovel", "dig sand"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, WorldModel } from '@sharpee/world-model';
 import { DIG_ACTION_ID, DigMessages } from './types';
 

@@ -6,8 +6,8 @@
  * Pattern: "lift pole", "raise pole", "lift short pole"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { LIFT_ACTION_ID, LiftMessages } from './types';
 import { raisePole, getMirrorState } from '../../handlers/inside-mirror-handler';

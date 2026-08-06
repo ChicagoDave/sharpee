@@ -3,7 +3,7 @@
  * @description Language-agnostic interfaces for defining grammar rules
  */
 
-import { IEntity } from '@sharpee/core';
+import { type IEntity } from '@sharpee/core';
 
 /**
  * Slot types for grammar patterns

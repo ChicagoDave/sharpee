@@ -14,11 +14,11 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorResult,
-  InterceptorBlockedResult,
-  CapabilityEffect,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorResult,
+  type InterceptorBlockedResult,
+  type CapabilityEffect,
   createEffect,
   IFEntity,
   WorldModel,

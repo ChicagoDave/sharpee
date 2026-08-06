@@ -6,7 +6,7 @@
  * (validate + execute + report).
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { Action, ActionContext, ValidationResult } from '../enhanced-types.js';
 
 /**

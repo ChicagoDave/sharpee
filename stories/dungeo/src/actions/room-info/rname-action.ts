@@ -4,8 +4,8 @@
  * Prints only the short description (name) of the current room.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { RNAME_ACTION_ID } from './types';
 
 export const rnameAction: Action = {

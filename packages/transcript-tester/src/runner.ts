@@ -19,8 +19,8 @@ import {
   SEED_DERIVATION_VERSION,
   getPoint,
   forceKey,
-  RandomForceSpec,
-  RandomForceStatus,
+  type RandomForceSpec,
+  type RandomForceStatus,
   RandomForceLoadError
 } from '@sharpee/core';
 import { SAVE_FORMAT_VERSION } from '@sharpee/engine';

@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/openable/openableTrait.ts
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
 

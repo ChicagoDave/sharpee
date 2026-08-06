@@ -6,7 +6,7 @@ import { IFEvents } from '../constants/index.js';
 import { TraitType } from '../traits/trait-types.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { LockableTrait } from '../traits/lockable/lockableTrait.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 /**
  * Register standard IF event handlers with the world model

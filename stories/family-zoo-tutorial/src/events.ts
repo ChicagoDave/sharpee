@@ -17,7 +17,7 @@
  * Owner: familyzoo tutorial, v17
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 import type { Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
 import { MAX_SCORE, ScoreIds, ScorePoints, ScoreMessages } from './scoring.js';

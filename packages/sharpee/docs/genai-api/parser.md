@@ -13,10 +13,10 @@ English parser, grammar patterns, story grammar extension API.
  * This parser handles English-specific grammar patterns and preserves all information
  * in rich structured commands.
  */
-import { Parser, ParserOptions, Token as InternalToken, InternalParseResult, ParserLanguageProvider, VerbVocabulary, VocabularyEntry } from '@sharpee/if-domain';
+import { type Parser, type ParserOptions, type Token as InternalToken, type InternalParseResult, type ParserLanguageProvider, type VerbVocabulary, type VocabularyEntry } from '@sharpee/if-domain';
 import type { IParsedCommand, IValidatedCommand, IParseError as CoreParseError } from '@sharpee/world-model';
 import type { ISystemEvent, Result } from '@sharpee/core';
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import { PronounContextManager } from './pronoun-context.js';
 type CommandResult<T, E> = Result<T, E>;
 /**

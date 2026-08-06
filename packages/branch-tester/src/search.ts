@@ -26,8 +26,8 @@
 import {
   getPoint,
   deriveStreamSeed,
-  IRandomTraceData,
-  RandomForceSpec
+  type IRandomTraceData,
+  type RandomForceSpec
 } from '@sharpee/core';
 import type { Transcript } from './types.js';
 

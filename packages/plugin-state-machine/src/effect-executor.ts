@@ -2,7 +2,7 @@
  * Effect Executor - applies state machine effects to the world model.
  */
 
-import { EntityId, ISemanticEvent } from '@sharpee/core';
+import { type EntityId, type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { Effect, EntityBindings } from './types.js';
 import { resolveRef } from './guard-evaluator.js';

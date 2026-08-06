@@ -11,7 +11,7 @@
  * - ActionInterceptor: Hooks into phases, action owns core logic (ENTER, PUT)
  */
 
-import { ISemanticEvent, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import { IFEntity } from '../entities/index.js';
 import { WorldModel } from '../world/index.js';
 import { CapabilityEffect } from './types.js';

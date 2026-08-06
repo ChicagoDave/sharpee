@@ -3,8 +3,8 @@
  */
 
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
-import { Action, ActionContext, ActionResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, ActionResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 
 // Export mock parser
 export { MockParser, createMockParser } from './mock-parser';

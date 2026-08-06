@@ -7,8 +7,7 @@ import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 // @ts-ignore - lang-en-us types not available yet
 import { LanguageProvider } from '@sharpee/lang-en-us';
-// @ts-ignore - text-services types not available yet
-import { TextService } from '@sharpee/text-services';
+// No text service: ADR-174 removed it, and the engine renders its own prose.
 import { createStory } from './index.js';
 
 async function debugRun() {
@@ -23,12 +22,11 @@ async function debugRun() {
     const createdPlayer = world.createEntity('player', EntityType.ACTOR);
     world.setPlayer(createdPlayer.id); // Register as the player so getPlayer() works
     
-    // Create parser, language, and text service
+    // Create parser and language. Rendering is the engine's (ADR-174).
     const language = new LanguageProvider();
     const parser = new Parser(language);
-    const textService = new TextService();
-    textService.setLanguageProvider(language);
-    
+
+
     // Extend parser and language with story-specific vocabulary/messages
     if (story.extendParser) {
       story.extendParser(parser);
@@ -42,8 +40,7 @@ async function debugRun() {
       world,
       player: createdPlayer,
       parser,
-      language,
-      textService
+      language
     });
     
     // Set the story

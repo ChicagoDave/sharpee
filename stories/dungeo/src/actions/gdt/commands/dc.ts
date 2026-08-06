@@ -17,7 +17,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { ISchedulerService } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService } from '@sharpee/plugin-scheduler';
 
 // Per-world scheduler handles. A runtime service reference must NOT live in
 // the world's capability store: capability data is deep-copied on

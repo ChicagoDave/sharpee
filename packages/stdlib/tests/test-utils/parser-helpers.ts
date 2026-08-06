@@ -7,7 +7,7 @@
 
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { WorldModel } from '@sharpee/world-model';
-import { LanguageProvider } from '@sharpee/if-domain';
+import { type LanguageProvider } from '@sharpee/if-domain';
 import EnglishLanguageProvider from '@sharpee/lang-en-us';
 import type { ParsedCommand } from '@sharpee/world-model';
 

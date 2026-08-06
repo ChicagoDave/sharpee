@@ -2,7 +2,7 @@
  * Event type definitions for the attacking action
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { AttackingSharedData } from './attacking-types.js';
 
 /**

@@ -7,9 +7,9 @@
  * Canonical message: "The door crashes shut, and you hear someone barring it."
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel, OpenableTrait, RoomTrait, Direction } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const TrapdoorMessages = {
   SLAMS_SHUT: 'dungeo.trapdoor.slams_shut',

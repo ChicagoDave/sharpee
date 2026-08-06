@@ -1,6 +1,6 @@
 // packages/world-model/src/traits/openable/openableBehavior.ts
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';

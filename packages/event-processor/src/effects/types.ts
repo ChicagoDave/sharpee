@@ -5,7 +5,7 @@
  * Handlers return effects, which are validated and applied by EffectProcessor.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 /**
  * Effect for adding/subtracting score

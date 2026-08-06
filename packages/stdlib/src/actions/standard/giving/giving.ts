@@ -17,15 +17,15 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   ActorTrait,
   IdentityBehavior,
   findTraitWithCapability,
-  CapabilityBehavior,
-  CapabilityEffect,
-  ITrait
+  type CapabilityBehavior,
+  type CapabilityEffect,
+  type ITrait
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { GivingEventMap } from './giving-events.js';

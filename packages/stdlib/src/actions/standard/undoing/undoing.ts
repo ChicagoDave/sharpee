@@ -7,7 +7,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent, createUndoRequestedEvent } from '@sharpee/core';
+import { type ISemanticEvent, createUndoRequestedEvent } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 

@@ -13,7 +13,7 @@
  * This trait persists through checkpoint save/restore, unlike custom properties.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /**
  * Configuration for the river navigation trait

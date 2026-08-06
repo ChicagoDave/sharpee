@@ -11,9 +11,9 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorResult,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorResult,
   IFEntity,
   WorldModel,
 } from '@sharpee/world-model';

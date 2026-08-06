@@ -4,8 +4,8 @@
  * Handles "PUSH KEY WITH SCREWDRIVER" for the key puzzle.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { PUSH_KEY_ACTION_ID, PushKeyMessages } from './types';
 import {
   findTinyRoomDoor,

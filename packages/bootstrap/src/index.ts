@@ -13,8 +13,8 @@
 
 import { resolveStoryModulePath } from './resolve.js';
 import { purgeStoryModuleCache } from './purge.js';
-import { GameEngine, TurnResult } from '@sharpee/engine';
-import { ISemanticEvent } from '@sharpee/core';
+import { GameEngine, type TurnResult } from '@sharpee/engine';
+import { type ISemanticEvent } from '@sharpee/core';
 import { packetProseText } from '@sharpee/channel-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';

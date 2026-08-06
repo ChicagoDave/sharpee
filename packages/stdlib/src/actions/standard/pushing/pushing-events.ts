@@ -2,7 +2,7 @@
  * Event type definitions for the pushing action
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Event data for when something is pushed

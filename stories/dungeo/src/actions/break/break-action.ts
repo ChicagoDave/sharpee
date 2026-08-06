@@ -7,8 +7,8 @@
  * Pattern: "break frame", "smash frame", "break :target"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { BREAK_ACTION_ID, BreakMessages } from './types';
 import { createFramePiece } from '../../objects/thiefs-canvas-objects';

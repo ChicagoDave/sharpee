@@ -4,8 +4,8 @@
  * These handlers process sensory observation events (search, listen, smell, touch)
  */
 
-import { ISemanticEvent, getUntypedEventData } from '@sharpee/core';
-import { WorldModel, IFEntity, TraitType, IdentityTrait, EventHandler } from '@sharpee/world-model';
+import { type ISemanticEvent, getUntypedEventData } from '@sharpee/core';
+import { WorldModel, IFEntity, TraitType, IdentityTrait, type EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**

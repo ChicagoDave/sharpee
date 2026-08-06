@@ -12,7 +12,7 @@
  * refusing loudly rather than silently dropping text.
  */
 
-import { Phrase } from '@sharpee/if-domain';
+import { type Phrase } from '@sharpee/if-domain';
 
 /** Maps a still-unrealized stub kind to the ADR that will implement its case. */
 const STUB_KIND_ADR: Partial<Record<Phrase['kind'], string>> = {

@@ -18,7 +18,7 @@
  *   these unreachable; reaching one is a loader bug, not author error.
  */
 import type { IRCondition, IREntity, IRValue, StoryIR } from '@sharpee/chord';
-import { createSeededRandom, SeededRandom } from '@sharpee/core';
+import { createSeededRandom, type SeededRandom } from '@sharpee/core';
 import {
   LightSourceTrait,
   LockableTrait,

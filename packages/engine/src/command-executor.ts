@@ -10,18 +10,18 @@
  * All event creation is owned by the action components themselves.
  */
 
-import { ISemanticEvent, ISystemEvent, IGenericEventSource, QuerySource, QueryType, Result, RandomService } from '@sharpee/core';
-import { IParser, IValidatedCommand, IParsedCommand, IValidationError } from '@sharpee/world-model';
-import { ISound } from '@sharpee/if-domain';
+import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, QuerySource, QueryType, Result, type RandomService } from '@sharpee/core';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError } from '@sharpee/world-model';
+import { type ISound } from '@sharpee/if-domain';
 import { hasWorldContext } from './parser-interface.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import {
   CommandValidator,
-  ActionRegistry,
-  Action,
-  ScopeResolver,
+  type ActionRegistry,
+  type Action,
+  type ScopeResolver,
   createScopeResolver,
   tryInferTarget
 } from '@sharpee/stdlib';

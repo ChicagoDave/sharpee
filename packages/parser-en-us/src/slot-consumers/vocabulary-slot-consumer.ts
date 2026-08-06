@@ -3,7 +3,7 @@
  * @description Handles vocabulary-constrained slots (ADR-088, ADR-082)
  */
 
-import { SlotType, SlotMatch, GrammarContext } from '@sharpee/if-domain';
+import { SlotType, type SlotMatch, type GrammarContext } from '@sharpee/if-domain';
 import { SlotConsumer, SlotConsumerContext } from './slot-consumer.js';
 
 /**

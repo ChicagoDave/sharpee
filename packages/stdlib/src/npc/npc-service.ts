@@ -4,8 +4,8 @@
  * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
  */
 
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
-import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, IExitInfo, DirectionType, CharacterModelTrait, getOppositeDirection } from '@sharpee/world-model';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
+import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, HealthBehavior, RoomTrait, type IExitInfo, type DirectionType, CharacterModelTrait, getOppositeDirection } from '@sharpee/world-model';
 import type { PerSenseRenderings } from '@sharpee/if-services';
 import {
   NpcBehavior,

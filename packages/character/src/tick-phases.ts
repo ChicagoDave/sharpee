@@ -10,14 +10,14 @@
  * Owner context: @sharpee/character
  */
 
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import {
   IFEntity,
   WorldModel,
   TraitType,
   CharacterModelTrait,
   RoomTrait,
-  IExitInfo,
+  type IExitInfo,
 } from '@sharpee/world-model';
 import { nounPhraseFor } from '@sharpee/stdlib';
 import {

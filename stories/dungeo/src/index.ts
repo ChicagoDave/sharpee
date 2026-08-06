@@ -6,11 +6,11 @@
  * There is a small mailbox here."
  */
 
-import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
+import { type Story, type StoryConfig, GameEngine } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 // ScopeBuilder now used in grammar files
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   WorldModel,
   IFEntity,
@@ -28,8 +28,8 @@ import {
   Direction,
   TraitType,
   StandardCapabilities,
-  IWorldModel,
-  IParsedCommand,
+  type IWorldModel,
+  type IParsedCommand,
   VisibilityBehavior
 } from '@sharpee/world-model';
 import { MetaCommandRegistry, registerNpcCombatResolver } from '@sharpee/stdlib';

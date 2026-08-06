@@ -14,14 +14,14 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   ContainerTrait,
   ContainerBehavior,
   WearableBehavior,
   ActorBehavior,
-  IDropItemResult,
+  type IDropItemResult,
   IFEntity
 } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types.js';

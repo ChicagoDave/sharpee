@@ -5,13 +5,13 @@
  * and message determination for sensory actions.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   IdentityBehavior,
   IFEntity
 } from '@sharpee/world-model';
-import { Phrase } from '@sharpee/if-domain';
+import { type Phrase } from '@sharpee/if-domain';
 import { ActionContext } from '../enhanced-types.js';
 import { nounPhraseFor } from '../../utils/index.js';
 

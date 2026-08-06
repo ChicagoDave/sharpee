@@ -2,7 +2,7 @@
  * Guard Evaluator - evaluates guard conditions against world state.
  */
 
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import {
   GuardCondition,

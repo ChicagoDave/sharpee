@@ -6,8 +6,8 @@
  * Pattern: "lower pole", "drop pole", "lower short pole"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { LOWER_ACTION_ID, LowerMessages } from './types';
 import { lowerPole, getMirrorState } from '../../handlers/inside-mirror-handler';

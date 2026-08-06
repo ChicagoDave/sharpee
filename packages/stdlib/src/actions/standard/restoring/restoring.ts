@@ -13,7 +13,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
-import { ISemanticEvent, createRestoreRequestedEvent, IRestoreContext } from '@sharpee/core';
+import { type ISemanticEvent, createRestoreRequestedEvent, type IRestoreContext } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { RestoreRequestedEventData } from './restoring-events.js';

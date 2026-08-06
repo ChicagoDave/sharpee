@@ -12,7 +12,7 @@
  * Replaces: exit manipulation logic formerly in wave-action.ts execute phase
  */
 
-import { StateMachineDefinition, CustomEffect } from '@sharpee/plugin-state-machine';
+import { type StateMachineDefinition, type CustomEffect } from '@sharpee/plugin-state-machine';
 import { RoomTrait, Direction } from '@sharpee/world-model';
 
 export const RAINBOW_SOLIDIFIED_EVENT = 'dungeo.event.rainbow.solidified';

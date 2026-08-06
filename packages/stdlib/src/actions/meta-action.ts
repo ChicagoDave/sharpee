@@ -13,7 +13,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from './enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { MetaCommandRegistry } from './meta-registry.js';
 
 /**

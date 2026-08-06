@@ -17,7 +17,7 @@
  * - Player is given the elvish sword
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import {
   WorldModel,
   IdentityTrait,
@@ -25,7 +25,7 @@ import {
   SwitchableTrait,
   RoomTrait
 } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const EndgameTriggerMessages = {
   DARKNESS_DESCENDS: 'dungeo.endgame.darkness_descends',

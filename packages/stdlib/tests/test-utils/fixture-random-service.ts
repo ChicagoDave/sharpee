@@ -12,9 +12,9 @@
  */
 
 import {
-  ChoicePoint,
-  RandomService,
-  SeededRandom,
+  type ChoicePoint,
+  type RandomService,
+  type SeededRandom,
   createSeededRandom,
   deriveStreamSeed
 } from '@sharpee/core';

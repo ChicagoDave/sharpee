@@ -5,15 +5,15 @@
 
 import {
   GrammarEngine,
-  GrammarContext,
-  PatternMatch,
-  GrammarMatchOptions,
-  PatternToken,
-  CompiledPattern,
+  type GrammarContext,
+  type PatternMatch,
+  type GrammarMatchOptions,
+  type PatternToken,
+  type CompiledPattern,
   SlotType,
-  SlotMatch
+  type SlotMatch
 } from '@sharpee/if-domain';
-import { Token } from '@sharpee/if-domain';
+import { type Token } from '@sharpee/if-domain';
 import { EnglishPatternCompiler } from './english-pattern-compiler.js';
 import { cardinalNumbers, ordinalNumbers, directionMap } from '@sharpee/lang-en-us';
 import { SlotConsumerRegistry, SlotConsumerContext, createDefaultRegistry } from './slot-consumers/index.js';

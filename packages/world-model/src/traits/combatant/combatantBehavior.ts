@@ -19,7 +19,7 @@ import { TraitType } from '../trait-types.js';
 import { CombatantTrait } from './combatantTrait.js';
 import { HealthTrait } from '../health/healthTrait.js';
 import { HealthBehavior } from '../health/healthBehavior.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Result of a combat attack

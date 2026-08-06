@@ -19,7 +19,7 @@
  *           registerRealityAlteredDaemon (daemon) from reality-altered-handler.ts
  */
 
-import { StateMachineDefinition, CustomEffect } from '@sharpee/plugin-state-machine';
+import { type StateMachineDefinition, type CustomEffect } from '@sharpee/plugin-state-machine';
 
 export const RealityAlteredMessages = {
   REALITY_ALTERED: 'dungeo.scoring.reality_altered',

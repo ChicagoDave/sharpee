@@ -7,8 +7,8 @@
  * rotated into the accessible position around the fiery pit.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 import { SET_DIAL_ACTION_ID, SetDialMessages } from './types';
 

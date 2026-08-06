@@ -15,7 +15,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, ActorBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { TalkedEventData } from './talking-events.js';

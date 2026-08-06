@@ -2,7 +2,7 @@
 
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Full pronoun set for animate entities (ADR-089)

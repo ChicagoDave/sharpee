@@ -8,7 +8,7 @@
  * - OTVAL (Object Trophy Value) = trophyCaseValue (points for placing in case)
  */
 
-import { ITrait } from '@sharpee/world-model';
+import { type ITrait } from '@sharpee/world-model';
 
 export interface TreasureTraitConfig {
   /** Points awarded when placing in trophy case (MDL: OTVAL) */

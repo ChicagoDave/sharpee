@@ -2,10 +2,10 @@
  * Action Context Factory - Creates ActionContext for action execution
  */
 
-import { ActionContext, Action, ScopeResolver, ValidatedCommand, ScopeLevel, ScopeCheckResult, ScopeErrors, ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
+import { type ActionContext, type Action, type ScopeResolver, type ValidatedCommand, ScopeLevel, type ScopeCheckResult, ScopeErrors, type ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
-import { ISemanticEvent, createEvent as coreCreateEvent, RandomService } from '@sharpee/core';
-import { ISound } from '@sharpee/if-domain';
+import { type ISemanticEvent, createEvent as coreCreateEvent, type RandomService } from '@sharpee/core';
+import { type ISound } from '@sharpee/if-domain';
 import { GameContext } from './types.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 

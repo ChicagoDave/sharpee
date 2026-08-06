@@ -20,7 +20,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
 import { puttingAction } from '../putting/index.js';
 import { createActionContext } from '../../enhanced-context.js';

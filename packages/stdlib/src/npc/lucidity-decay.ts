@@ -9,13 +9,13 @@
  * Owner context: stdlib / npc
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import {
   IFEntity,
   WorldModel,
   TraitType,
   CharacterModelTrait,
-  DecayRate,
+  type DecayRate,
 } from '@sharpee/world-model';
 import { CharacterMessages } from './character-messages.js';
 

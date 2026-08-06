@@ -4,7 +4,7 @@
  * Manages registered state machines and evaluates transitions each turn.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   StateMachineDefinition,
   EntityBindings,

@@ -11,7 +11,7 @@
  * Owner context: stories/dungeo — Tea Room / Well Area puzzles.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /** The four MDL cakes: ECAKE, BLICE, RDICE, ORICE. */
 export type CakeType = 'eat-me' | 'blue-icing' | 'red-icing' | 'orange-icing';

@@ -4,7 +4,7 @@
  * DIAGNOSE, ROOM, RNAME, and OBJECTS information commands.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import {
   DIAGNOSE_ACTION_ID,
   ROOM_ACTION_ID,

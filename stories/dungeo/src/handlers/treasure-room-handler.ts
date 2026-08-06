@@ -9,7 +9,7 @@
  * hideaway. Using passages unknown to you, he rushes to its defense."
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { EventProcessor } from '@sharpee/event-processor';
 import { WorldModel, CombatantTrait, HealthTrait, HealthBehavior, IdentityTrait } from '@sharpee/world-model';
 

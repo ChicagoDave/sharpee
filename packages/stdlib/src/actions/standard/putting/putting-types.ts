@@ -4,7 +4,7 @@
  * Provides type-safe access to shared data for multi-object support
  */
 
-import { IAddItemResult, IAddItemToSupporterResult } from '@sharpee/world-model';
+import { type IAddItemResult, type IAddItemToSupporterResult } from '@sharpee/world-model';
 
 /**
  * Per-item mutation scratch for putting one entity. For a single-object

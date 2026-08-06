@@ -83,7 +83,7 @@ export function handleTextInventoryList(event: ISemanticEvent, world: any): void
  * Handles events related to looking, examining, and other observation actions
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 
 /**

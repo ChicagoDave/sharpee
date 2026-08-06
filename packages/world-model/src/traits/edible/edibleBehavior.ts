@@ -4,7 +4,7 @@ import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { EdibleTrait, TasteQuality } from './edibleTrait.js';
-import { ISemanticEvent, createEvent } from '@sharpee/core';
+import { type ISemanticEvent, createEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
 import { ActionFailureReason } from '../../constants/action-failures.js';
 

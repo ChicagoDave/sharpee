@@ -18,7 +18,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { captureEntitySnapshot } from '../../base/snapshot-utils.js';
 import {
   TraitType,
@@ -26,9 +26,9 @@ import {
   ContainerBehavior,
   SupporterBehavior,
   ActorBehavior,
-  IRemoveItemResult,
-  IRemoveItemFromSupporterResult,
-  ITakeItemResult,
+  type IRemoveItemResult,
+  type IRemoveItemFromSupporterResult,
+  type ITakeItemResult,
   IFEntity
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';

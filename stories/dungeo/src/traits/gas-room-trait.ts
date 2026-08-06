@@ -9,7 +9,7 @@
  * Per MDL source (act3.199).
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 export class GasRoomTrait implements ITrait {
   static readonly type = 'dungeo.trait.gas_room';

@@ -7,7 +7,7 @@
  * - safeBlownOpen: true after explosion
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 export class SafeTrait implements ITrait {
   static readonly type = 'dungeo.trait.safe' as const;

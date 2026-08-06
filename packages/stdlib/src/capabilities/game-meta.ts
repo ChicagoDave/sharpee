@@ -2,7 +2,7 @@
  * Game meta capability for tracking game preferences and meta information
  */
 
-import { ICapabilitySchema } from '@sharpee/world-model';
+import { type ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Game meta capability schema

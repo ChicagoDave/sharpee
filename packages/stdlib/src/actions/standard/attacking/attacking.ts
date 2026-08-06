@@ -14,7 +14,7 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent, definePoint } from '@sharpee/core';
+import { type ISemanticEvent, definePoint } from '@sharpee/core';
 
 // ADR-293 D2/D8: object attacks resolve through one declared point.
 // `AttackBehavior.attack` is a multi-draw parameter taker (damage roll +
@@ -26,7 +26,7 @@ const ATTACK_OUTCOME_POINT = definePoint('stdlib.attacking.outcome', {
 import {
   TraitType,
   AttackBehavior,
-  IAttackResult,
+  type IAttackResult,
   HealthTrait,
   HealthBehavior
 } from '@sharpee/world-model';

@@ -11,7 +11,7 @@
  * Owner context: @sharpee/character / conversation
  */
 
-import { CharacterModelTrait, Mood, CognitiveProfile } from '@sharpee/world-model';
+import { CharacterModelTrait, type Mood, type CognitiveProfile } from '@sharpee/world-model';
 import { ResponseCandidate, ResponseIntent } from './response-types.js';
 
 // ---------------------------------------------------------------------------

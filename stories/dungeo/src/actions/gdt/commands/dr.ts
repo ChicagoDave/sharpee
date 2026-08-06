@@ -6,7 +6,7 @@
  */
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
-import { RoomTrait, DirectionType } from '@sharpee/world-model';
+import { RoomTrait, type DirectionType } from '@sharpee/world-model';
 
 export const drHandler: GDTCommandHandler = {
   code: 'DR',

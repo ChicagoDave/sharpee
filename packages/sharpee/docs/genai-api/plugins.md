@@ -9,7 +9,7 @@ Plugin system, NPC plugin, scheduler (daemons/fuses), state machine.
 ### turn-plugin
 
 ```typescript
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TurnPluginContext } from './turn-plugin-context.js';
 /**
  * A turn-cycle plugin: code that runs once after each successful player action
@@ -50,7 +50,7 @@ export interface TurnPlugin {
 ### turn-plugin-context
 
 ```typescript
-import { EntityId, RandomService, ISemanticEvent } from '@sharpee/core';
+import { type EntityId, type RandomService, type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 /** Summary of the player action that just completed, passed to each plugin. */
 export interface TurnPluginActionResult {
@@ -275,9 +275,9 @@ export declare function createBandNarrator(config: BandNarratorConfig): TurnPlug
  * Priority 100: Runs before scheduler (50) and state machines (75).
  * NPCs act immediately after the player's action.
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-import { INpcService } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
+import { type INpcService } from '@sharpee/stdlib';
 /**
  * The {@link TurnPlugin} that lets NPCs act each turn (ADR-070, ADR-120).
  *
@@ -333,7 +333,7 @@ export declare class NpcPlugin implements TurnPlugin {
  * Daemons: Processes that run every turn
  * Fuses: Countdown timers that trigger after N turns
  */
-import { ISemanticEvent, EntityId, RandomService } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 export { RandomService, ChoicePoint } from '@sharpee/core';
 /**
@@ -480,7 +480,7 @@ export type SchedulerEventType = 'daemon.registered' | 'daemon.removed' | 'daemo
  * 3. Scheduler tick (daemons run, fuses count down)
  * 4. Turn complete
  */
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { Daemon, Fuse, DaemonInfo, FuseInfo, SchedulerResult, SchedulerState, RandomService } from './types.js';
 /**
@@ -584,8 +584,8 @@ export declare function createSchedulerService(): ISchedulerService;
  * Priority 50: Runs after NPCs (100) and state machines (75).
  * Daemons and fuses are background temporal events.
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { ISchedulerService } from './scheduler-service.js';
 export declare class SchedulerPlugin implements TurnPlugin {
     id: string;
@@ -614,7 +614,7 @@ export declare class SchedulerPlugin implements TurnPlugin {
  * with `$` (e.g. `$door`) is a role looked up in the machine's
  * {@link EntityBindings}; any other string is a literal entity id.
  */
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 /** A complete declarative state machine: its states and where it starts. */
 export interface StateMachineDefinition {
@@ -862,8 +862,8 @@ export interface EvaluationContext {
  * Priority 75: Runs after NPCs (100) but before scheduler (50).
  * Evaluates state machine transitions after each successful player action.
  */
-import { ISemanticEvent } from '@sharpee/core';
-import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
@@ -899,7 +899,7 @@ export declare class StateMachinePlugin implements TurnPlugin {
  *
  * Manages registered state machines and evaluates transitions each turn.
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { StateMachineDefinition, EntityBindings, EvaluationContext, StateMachineRegistryState } from './types.js';
 /**
  * Holds the running state machines for a story and advances them each turn
@@ -943,7 +943,7 @@ export declare class StateMachineRegistry {
 /**
  * Guard Evaluator - evaluates guard conditions against world state.
  */
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { GuardCondition, EntityBindings } from './types.js';
 /**
@@ -968,7 +968,7 @@ export declare function resolveRef(ref: string, bindings: EntityBindings): Entit
 /**
  * Effect Executor - applies state machine effects to the world model.
  */
-import { EntityId, ISemanticEvent } from '@sharpee/core';
+import { type EntityId, type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { Effect, EntityBindings } from './types.js';
 /**

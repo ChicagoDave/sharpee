@@ -5,7 +5,7 @@
  * toggled via meta-commands (author commands) without affecting game state.
  */
 
-import { ICapabilitySchema } from '@sharpee/world-model';
+import { type ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Debug capability schema

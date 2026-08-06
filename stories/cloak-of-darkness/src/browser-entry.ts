@@ -108,10 +108,11 @@ async function start(): Promise<void> {
     textContent: document.getElementById('text-content'),
     mainWindow: document.getElementById('main-window'),
     commandInput: document.getElementById('command-input') as HTMLInputElement,
-    modalOverlay: document.getElementById('modal-overlay'),
-    saveDialog: document.getElementById('save-dialog'),
-    restoreDialog: document.getElementById('restore-dialog'),
-    startupDialog: document.getElementById('startup-dialog'),
+    // No `modalOverlay`: ADR-170 moved the dialogs to native <dialog>, which
+    // provides its own backdrop, and DOMElements dropped the field with it.
+    saveDialog: document.getElementById('save-dialog') as HTMLDialogElement | null,
+    restoreDialog: document.getElementById('restore-dialog') as HTMLDialogElement | null,
+    startupDialog: document.getElementById('startup-dialog') as HTMLDialogElement | null,
     saveNameInput: document.getElementById('save-name-input') as HTMLInputElement,
     saveSlotsListEl: document.getElementById('save-slots-list'),
     restoreSlotsListEl: document.getElementById('restore-slots-list'),

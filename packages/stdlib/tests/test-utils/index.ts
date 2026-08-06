@@ -5,8 +5,8 @@
  * set up basic worlds, and validate events in action tests.
  */
 
-import {
-  SemanticEvent
+import type {
+  ISemanticEvent as SemanticEvent
 } from '@sharpee/core';
 import { createFixtureRandomService } from './fixture-random-service';
 
@@ -15,7 +15,7 @@ import {
   WorldModel,
   IFEntity,
   TraitType,
-  ValidatedCommand,
+  type IValidatedCommand as ValidatedCommand,
   IdentityTrait
 } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '../../src/capabilities';

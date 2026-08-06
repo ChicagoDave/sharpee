@@ -14,7 +14,7 @@ Basic combat extension — attack/defend mechanics.
  * Moved from stdlib to basic-combat extension — stories opt in by
  * calling registerBasicCombat().
  */
-import { EntityId, SeededRandom } from '@sharpee/core';
+import { type EntityId, type SeededRandom } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { HealthStatus } from './combat-messages.js';
 /**
@@ -199,7 +199,7 @@ export declare function getHealthStatusMessageId(status: HealthStatus): CombatMe
  * Wraps CombatService as an ActionInterceptor for PC→NPC attacks.
  * Registered on CombatantTrait for if.action.attacking.
  */
-import { ActionInterceptor } from '@sharpee/world-model';
+import { type ActionInterceptor } from '@sharpee/world-model';
 import { CombatResult } from './combat-service.js';
 /** Outcome class of a CombatService result (shared with the villain point). */
 export declare function combatResultClass(result: CombatResult): 'missed' | 'hit' | 'knocked_out' | 'killed';

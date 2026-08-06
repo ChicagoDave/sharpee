@@ -4,9 +4,9 @@
  */
 
 import {
-  PatternCompiler,
-  CompiledPattern,
-  PatternToken,
+  type PatternCompiler,
+  type CompiledPattern,
+  type PatternToken,
   PatternSyntaxError,
   SlotType
 } from '@sharpee/if-domain';

@@ -35,15 +35,15 @@
  * Owner: npm regression test suite
  */
 
-import { Story, StoryConfig, GameEngine, CustomVocabulary } from '@sharpee/engine';
-import { WorldModel, IFEntity, EntityType, IWorldModel } from '@sharpee/world-model';
+import { type Story, type StoryConfig, GameEngine, type CustomVocabulary } from '@sharpee/engine';
+import { WorldModel, IFEntity, EntityType, type IWorldModel } from '@sharpee/world-model';
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { registerScoring } from '@sharpee/ext-scoring';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
-import { Action } from '@sharpee/stdlib';
+import { type Action } from '@sharpee/stdlib';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 

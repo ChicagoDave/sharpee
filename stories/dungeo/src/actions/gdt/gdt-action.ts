@@ -7,8 +7,8 @@
  * Usage: GDT
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { GDT_ACTION_ID, GDT_STATE_KEY, DEFAULT_GDT_FLAGS, GDTPrompt, GDT_INPUT_MODE_ID } from './types';
 import { GDTEventTypes } from './gdt-events';
 import { getGDTFlags, setGDTFlags } from './gdt-context';

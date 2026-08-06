@@ -5,8 +5,8 @@
  * Pattern: "wave stick", "wave :target"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { WAVE_ACTION_ID, WaveMessages } from './types';
 import { RAINBOW_SOLIDIFIED_EVENT, RAINBOW_DISMISSED_EVENT } from '../../state-machines/rainbow-machine';

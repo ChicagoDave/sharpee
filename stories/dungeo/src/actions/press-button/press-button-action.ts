@@ -8,8 +8,8 @@
  * - Blue: Starts flooding (death trap)
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IFEntity, RoomTrait, ButtonTrait, TraitType } from '@sharpee/world-model';
 import { PRESS_BUTTON_ACTION_ID, PressButtonMessages } from './types';
 import { setYellowButtonPressed } from '../../scheduler/dam-state';

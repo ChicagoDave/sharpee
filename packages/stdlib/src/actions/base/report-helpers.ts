@@ -6,7 +6,7 @@
  */
 
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { captureEntitySnapshot } from './snapshot-utils.js';
 
 /**

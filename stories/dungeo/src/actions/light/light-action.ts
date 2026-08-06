@@ -8,8 +8,8 @@
  * FORTRAN: Creates BINFF state (burning object in receptacle)
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { LIGHT_ACTION_ID, LightMessages } from './types';
 import { BurnableTrait } from '../../traits';

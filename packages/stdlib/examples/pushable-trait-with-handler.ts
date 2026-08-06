@@ -9,7 +9,7 @@
 // PART 1: TRAIT DEFINITION (Framework)
 // ============================================
 
-import { Trait, TraitType } from '@sharpee/world-model';
+import { type ITrait as Trait, TraitType } from '@sharpee/world-model';
 import { ActionContext } from '../src/actions/enhanced-types';
 
 /**
@@ -132,7 +132,7 @@ function pushingActionExecute(context: ActionContext): SemanticEvent[] {
 // PART 3: AUTHOR'S STORY CODE
 // ============================================
 
-import { Story, IFEntity } from '@sharpee/engine';
+import { type Story, type IFEntity } from '@sharpee/engine';
 
 const story = new Story({
   title: "The Secret Library",

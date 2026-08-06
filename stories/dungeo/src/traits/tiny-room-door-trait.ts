@@ -21,7 +21,7 @@
  * This trait persists through checkpoint save/restore.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /**
  * Configuration for the tiny room door trait

@@ -7,8 +7,8 @@
  * - If already used (diamond created), nothing happens
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
 import { TURN_SWITCH_ACTION_ID, TurnSwitchMessages } from './types';
 import { TreasureTrait, MachineStateTrait } from '../../traits';

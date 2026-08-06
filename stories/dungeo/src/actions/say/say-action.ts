@@ -10,8 +10,8 @@
  * - Riddle Room: answer "well" to open the stone door
  */
 
-import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, killPlayer } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { NpcTrait, IdentityTrait, ActorTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { SAY_ACTION_ID, SayMessages } from './types';
 

@@ -11,10 +11,10 @@
  *   "Time passes...and you die from some obscure poisoning."
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { killPlayer } from '@sharpee/stdlib';
-import { ISchedulerService, SchedulerContext, Daemon } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type SchedulerContext, type Daemon } from '@sharpee/plugin-scheduler';
 import {
   CAGE_TRAPPED_KEY,
   CAGE_TURNS_KEY,

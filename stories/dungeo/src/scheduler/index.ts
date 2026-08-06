@@ -40,7 +40,7 @@ export { startExplosionCountdown, EXPLOSION_FUSE_ID, type ExplosionConfig } from
 export { registerBrochureDelivery } from './brochure-fuse';
 
 import { WorldModel } from '@sharpee/world-model';
-import { ISchedulerService } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService } from '@sharpee/plugin-scheduler';
 import { registerLanternFuse } from './lantern-fuse';
 import { registerCandleFuse } from './candle-fuse';
 import { initializeDamState, registerYellowButtonHandler } from './dam-state';

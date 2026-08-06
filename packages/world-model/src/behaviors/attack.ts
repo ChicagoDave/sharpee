@@ -9,7 +9,7 @@ import { WorldModel } from '../world/WorldModel.js';
 import { TraitType } from '../traits/trait-types.js';
 import { EquippedTrait } from '../traits/equipped/equippedTrait.js';
 import { WeaponTrait } from '../traits/weapon/weaponTrait.js';
-import { EntityId, SeededRandom } from '@sharpee/core';
+import { type EntityId, type SeededRandom } from '@sharpee/core';
 import { WeaponBehavior, IWeaponDamageResult } from '../traits/weapon/weaponBehavior.js';
 import { BreakableBehavior, IBreakResult } from '../traits/breakable/breakableBehavior.js';
 import { DestructibleBehavior, IDamageResult } from '../traits/destructible/destructibleBehavior.js';

@@ -22,7 +22,7 @@
  * Owner context: parser-en-us.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 
 /**
  * Register the platform-side exception rules.

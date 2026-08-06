@@ -6,7 +6,7 @@
  */
 
 import { Action, ActionRegistry as IActionRegistry } from './enhanced-types.js';
-import { LanguageProvider } from '@sharpee/if-domain';
+import { type LanguageProvider } from '@sharpee/if-domain';
 
 export { ActionRegistry } from './enhanced-types.js';
 

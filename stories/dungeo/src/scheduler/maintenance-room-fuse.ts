@@ -9,10 +9,10 @@
  * - Enables CEVMNT daemon with CTICK=-1 (runs every turn)
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
 import { killPlayer } from '@sharpee/stdlib';
-import { ISchedulerService, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Flooding state key
 export const FLOODING_STATE_KEY = 'dungeo.maintenance.flooding.state';

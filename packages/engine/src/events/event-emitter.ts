@@ -2,8 +2,8 @@
  * Event emitter for managing game events
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { IGameEvent, SimpleEventHandler } from '@sharpee/world-model';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type IGameEvent, type SimpleEventHandler } from '@sharpee/world-model';
 
 /**
  * Simple event emitter for the game event system

@@ -4,7 +4,7 @@
  * BREAK, BURN, PRAY, INCANT, WAVE, RING, and WIND actions for various puzzles.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import {
   BREAK_ACTION_ID,
   BURN_ACTION_ID,

@@ -6,7 +6,7 @@
  * awards trophy case points via world.awardScore().
  */
 
-import { ITrait } from '@sharpee/world-model';
+import { type ITrait } from '@sharpee/world-model';
 
 export class TrophyCaseTrait implements ITrait {
   static readonly type = 'dungeo.trait.trophy_case' as const;

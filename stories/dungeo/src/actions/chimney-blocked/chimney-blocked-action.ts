@@ -11,8 +11,8 @@
  * - "Going up empty-handed is a bad idea." (note: original has typo "idead")
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockedMessages, ChimneyBlockReason } from './types';
 
 // Event ID counter

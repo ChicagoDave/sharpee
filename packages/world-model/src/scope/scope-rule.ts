@@ -3,7 +3,7 @@
  * @description Defines rules for entity visibility and interaction scope
  */
 
-import { IEntity } from '@sharpee/core';
+import { type IEntity } from '@sharpee/core';
 
 /**
  * Context provided to scope rules for evaluation

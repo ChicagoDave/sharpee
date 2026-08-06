@@ -6,8 +6,8 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
+  type ActionInterceptor,
+  type InterceptorSharedData,
   IFEntity,
   WorldModel,
   IdentityTrait

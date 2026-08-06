@@ -10,9 +10,9 @@
  * - 0 turns remaining: "Your lantern flickers and goes out." (lantern dies)
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { WorldModel, LightSourceTrait, SwitchableTrait } from '@sharpee/world-model';
-import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Fuse, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 
 // Fuse IDs

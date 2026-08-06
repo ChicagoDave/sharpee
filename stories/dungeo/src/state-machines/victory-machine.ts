@@ -14,7 +14,7 @@
  * Replaces: registerVictoryHandler daemon from victory-handler.ts
  */
 
-import { StateMachineDefinition, CustomEffect } from '@sharpee/plugin-state-machine';
+import { type StateMachineDefinition, type CustomEffect } from '@sharpee/plugin-state-machine';
 
 export const VictoryMessages = {
   ENTER_TREASURY: 'dungeo.victory.enter_treasury',

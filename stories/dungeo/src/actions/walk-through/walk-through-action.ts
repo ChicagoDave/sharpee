@@ -11,8 +11,8 @@
  * - Walk through north wall (from Vault) → Safety Depository
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 import {
   WALK_THROUGH_ACTION_ID,

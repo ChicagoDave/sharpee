@@ -5,8 +5,8 @@
  * Daemons and fuses are background temporal events.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { ISchedulerService, createSchedulerService } from './scheduler-service.js';
 import { SchedulerState } from './types.js';
 

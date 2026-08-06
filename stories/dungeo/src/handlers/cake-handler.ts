@@ -26,14 +26,14 @@
 
 import {
   WorldModel,
-  IWorldModel,
+  type IWorldModel,
   IFEntity,
   IdentityBehavior,
   IdentityTrait,
   TraitType,
-  ActionInterceptor,
-  InterceptorSharedData,
-  CapabilityEffect,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type CapabilityEffect,
   createEffect
 } from '@sharpee/world-model';
 import { killPlayer, PLAYER_DIED_EVENT } from '@sharpee/stdlib';

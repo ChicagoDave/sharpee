@@ -5,8 +5,8 @@
  * like giving, showing, and throwing.
  */
 
-import { ISemanticEvent, getUntypedEventData } from '@sharpee/core';
-import { WorldModel, TraitType, EventHandler } from '@sharpee/world-model';
+import { type ISemanticEvent, getUntypedEventData } from '@sharpee/core';
+import { WorldModel, TraitType, type EventHandler } from '@sharpee/world-model';
 import { IFEvents } from '@sharpee/if-domain';
 
 /**

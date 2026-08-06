@@ -21,7 +21,7 @@
  * Owner context: @sharpee/engine — turn cycle
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   SceneTrait,
   TraitType,

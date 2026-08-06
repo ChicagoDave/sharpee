@@ -5,7 +5,7 @@
  * Used by npc-service.ts executeAttack() when registered.
  */
 
-import { ISemanticEvent, RandomService, definePoint } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService, definePoint } from '@sharpee/core';
 import {
   IFEntity,
   WorldModel,

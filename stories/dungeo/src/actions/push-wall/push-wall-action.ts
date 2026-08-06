@@ -8,9 +8,9 @@
  * Examples: "push east wall", "push n wall", "push the west wall"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, DirectionType, Direction } from '@sharpee/world-model';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
+import { IdentityTrait, type DirectionType, Direction } from '@sharpee/world-model';
 import { PUSH_WALL_ACTION_ID, PushWallMessages, PushDirection } from './types';
 import {
   getPuzzleState,

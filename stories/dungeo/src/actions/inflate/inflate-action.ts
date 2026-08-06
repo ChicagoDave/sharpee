@@ -7,8 +7,8 @@
  * Pattern: "inflate boat", "inflate boat with pump", "pump boat"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, VehicleTrait, EnterableTrait, TraitType } from '@sharpee/world-model';
 import { InflatableTrait } from '../../traits';
 import { INFLATE_ACTION_ID, InflateMessages } from './types';

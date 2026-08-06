@@ -16,7 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
-import { ISemanticEvent, definePoint } from '@sharpee/core';
+import { type ISemanticEvent, definePoint } from '@sharpee/core';
 
 // Plain draw (ADR-293 D4): a message-variant pick — seeded and traced, no
 // outcome classes, no coverage row.

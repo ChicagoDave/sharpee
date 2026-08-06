@@ -23,6 +23,7 @@
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/platform-browser": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
+    "@sharpee/text-blocks": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {

@@ -9,7 +9,7 @@
  * No fuses, no waiting - just a state toggle.
  */
 
-import { WorldModel, IWorldModel } from '@sharpee/world-model';
+import { WorldModel, type IWorldModel } from '@sharpee/world-model';
 
 // Dam state key for world capability
 export const DAM_STATE_KEY = 'dungeo.dam.state';

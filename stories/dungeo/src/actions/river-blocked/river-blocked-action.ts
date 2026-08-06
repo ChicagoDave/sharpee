@@ -5,8 +5,8 @@
  * Per Mainframe Zork Fortran source - water rooms require the rubber boat.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { RIVER_BLOCKED_ACTION_ID, RiverBlockedMessages } from './types';
 
 // Event ID counter

@@ -17,7 +17,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TraitType, ActorTrait, IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ShownEventData } from './showing-events.js';

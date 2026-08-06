@@ -13,7 +13,7 @@
  * Owner context: parser-en-us (generated artifact).
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 
 /**
  * Register the standard English grammar (generated).

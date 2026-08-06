@@ -14,7 +14,7 @@ import {
   RoomBehavior,
   EntityType,
   Direction,
-  DirectionType,
+  type DirectionType,
   ActorTrait,
   NpcTrait,
   CombatantTrait,

@@ -20,11 +20,11 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorResult,
-  InterceptorReportResult,
-  CapabilityEffect,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorResult,
+  type InterceptorReportResult,
+  type CapabilityEffect,
   createEffect,
   IFEntity,
   WorldModel,

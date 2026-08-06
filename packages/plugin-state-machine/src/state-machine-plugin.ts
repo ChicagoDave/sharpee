@@ -5,8 +5,8 @@
  * Evaluates state machine transitions after each successful player action.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
 import { EvaluationContext, StateMachineRegistryState } from './types.js';
 

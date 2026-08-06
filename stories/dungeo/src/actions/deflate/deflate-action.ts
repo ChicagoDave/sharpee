@@ -7,8 +7,8 @@
  * Pattern: "deflate boat", "open valve"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, TraitType } from '@sharpee/world-model';
 import { InflatableTrait } from '../../traits';
 import { DEFLATE_ACTION_ID, DeflateMessages } from './types';

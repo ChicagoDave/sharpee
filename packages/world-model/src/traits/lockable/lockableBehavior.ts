@@ -5,7 +5,7 @@ import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { LockableTrait } from './lockableTrait.js';
 import { OpenableTrait } from '../openable/openableTrait.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 // No longer using ActionFailureReason enum
 
 /**

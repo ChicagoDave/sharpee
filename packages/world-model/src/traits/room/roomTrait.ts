@@ -2,8 +2,8 @@
 
 import { ITrait } from '../trait.js';
 import { TraitType } from '../trait-types.js';
-import { EntityId } from '@sharpee/core';
-import { SnippetMap } from '@sharpee/if-domain';
+import { type EntityId } from '@sharpee/core';
+import { type SnippetMap } from '@sharpee/if-domain';
 import { DirectionType } from '../../constants/directions.js';
 
 /**

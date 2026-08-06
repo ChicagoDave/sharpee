@@ -1,4 +1,4 @@
-import { EntityId, RandomService, ISemanticEvent } from '@sharpee/core';
+import { type EntityId, type RandomService, type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 
 /** Summary of the player action that just completed, passed to each plugin. */

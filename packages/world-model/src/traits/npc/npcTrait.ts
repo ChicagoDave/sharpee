@@ -6,7 +6,7 @@
  */
 
 import { ITrait } from '../trait.js';
-import { EntityId } from '@sharpee/core';
+import { type EntityId } from '@sharpee/core';
 
 /**
  * Interface for NPC trait data

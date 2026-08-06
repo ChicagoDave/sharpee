@@ -13,9 +13,9 @@ Event sequencing and effect processing.
  * Applies semantic events to the world model through registered handlers.
  * ADR-075: Entity handlers receive WorldQuery and return Effect[].
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { ProcessedEvents, ProcessorOptions } from '@sharpee/if-domain';
+import { type ProcessedEvents, type ProcessorOptions } from '@sharpee/if-domain';
 import type { StoryEventHandler } from './handler-types.js';
 export type { StoryEventHandler, IGameEvent } from './handler-types.js';
 export type { Effect, WorldQuery } from './effects/index.js';
@@ -95,7 +95,7 @@ export declare function registerStandardHandlers(world: WorldModel): void;
  * Effects are intents, not mutations. They describe what should happen, not how.
  * Handlers return effects, which are validated and applied by EffectProcessor.
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 /**
  * Effect for adding/subtracting score
  */
@@ -292,7 +292,7 @@ export declare function createWorldQuery(world: IWorldModel): WorldQuery;
  * This is the ONLY place effects become mutations. It validates effects,
  * ensures atomicity (all-or-nothing), and applies them through proper channels.
  */
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { Effect, EffectResult } from './types.js';
 /**

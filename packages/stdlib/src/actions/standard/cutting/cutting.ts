@@ -21,13 +21,13 @@
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   CuttableBehavior,
   findTraitWithCapability,
-  CapabilityEffect,
-  CapabilitySharedData
+  type CapabilityEffect,
+  type CapabilitySharedData
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';

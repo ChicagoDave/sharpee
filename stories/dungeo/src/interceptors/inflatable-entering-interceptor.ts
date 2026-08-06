@@ -12,10 +12,10 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorResult,
-  InterceptorReportResult,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorResult,
+  type InterceptorReportResult,
   IFEntity,
   WorldModel,
   IdentityTrait,

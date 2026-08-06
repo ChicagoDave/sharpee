@@ -4,7 +4,7 @@
  * Handles events for meta-game actions like waiting, scoring, help, etc.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 
 /**

@@ -6,8 +6,8 @@
  * tries to take the card while inside the puzzle grid and is at the card position.
  */
 
-import { Action, ActionContext, ValidationResult, ActionMetadata } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, type ActionMetadata } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   handleTakeCard,
   PuzzleHandlerMessages

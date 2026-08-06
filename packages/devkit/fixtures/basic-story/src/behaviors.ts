@@ -8,10 +8,10 @@
 import {
   IFEntity,
   WorldModel,
-  CapabilityBehavior,
-  CapabilityValidationResult,
-  CapabilitySharedData,
-  CapabilityEffect,
+  type CapabilityBehavior,
+  type CapabilityValidationResult,
+  type CapabilitySharedData,
+  type CapabilityEffect,
   createEffect,
 } from '@sharpee/world-model';
 import { InspectableTrait } from './traits';

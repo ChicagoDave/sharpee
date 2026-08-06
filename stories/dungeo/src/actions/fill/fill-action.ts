@@ -5,8 +5,8 @@
  * Pattern: "fill bottle", "fill bottle from bucket"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, VehicleTrait, OpenableTrait } from '@sharpee/world-model';
 import { moveVehicle, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
 import { FILL_ACTION_ID, FillMessages } from './types';

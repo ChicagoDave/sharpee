@@ -15,8 +15,8 @@
  * 3. Otherwise -> allow passage to Kitchen
  */
 
-import { WorldModel, IdentityTrait, IParsedCommand } from '@sharpee/world-model';
-import { ParsedCommandTransformer } from '@sharpee/engine';
+import { WorldModel, IdentityTrait, type IParsedCommand } from '@sharpee/world-model';
+import { type ParsedCommandTransformer } from '@sharpee/engine';
 import { CHIMNEY_BLOCKED_ACTION_ID, ChimneyBlockReason } from '../actions/chimney-blocked';
 
 /**

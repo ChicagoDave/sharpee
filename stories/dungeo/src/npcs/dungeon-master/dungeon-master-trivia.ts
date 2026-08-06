@@ -9,7 +9,7 @@
  * Question answers extracted from dungeon-messages.txt
  */
 
-import { RandomService, definePoint } from '@sharpee/core';
+import { type RandomService, definePoint } from '@sharpee/core';
 import { DungeonMasterMessages } from './dungeon-master-messages';
 
 // Plain draw (ADR-293 D4): uniform starting question index, 0..7.

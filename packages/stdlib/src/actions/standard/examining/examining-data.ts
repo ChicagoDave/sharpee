@@ -5,7 +5,7 @@
  * This separates data structure concerns from business logic.
  */
 
-import { Phrase } from '@sharpee/if-domain';
+import { type Phrase } from '@sharpee/if-domain';
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
 import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait, WallEntity } from '@sharpee/world-model';

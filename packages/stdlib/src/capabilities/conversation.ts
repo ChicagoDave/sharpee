@@ -2,7 +2,7 @@
  * Conversation capability for tracking NPC conversation states and history
  */
 
-import { ICapabilitySchema } from '@sharpee/world-model';
+import { type ICapabilitySchema } from '@sharpee/world-model';
 
 /**
  * Conversation capability schema  
