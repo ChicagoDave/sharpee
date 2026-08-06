@@ -4,22 +4,32 @@
 or `repokit` implements it.
 **Date:** 2026-02-18
 
-> **SCOPE QUESTION OPENED 2026-08-05 (session f2a7e6)** — see
-> [ADR-303 Q-3](adr-303-convergent-paths-and-unwinnable-states.md). This ADR is
-> a *regression-baseline generator*, and says so: BFS the rooms, probe entities
-> and description nouns, record outputs, diff later. It excludes reachability by
-> design — "This avoids the hard problem of puzzle-solving."
+> **SCOPE WIDENED 2026-08-05 (session 51b5f4)**, replacing the scope question
+> opened earlier the same day (session f2a7e6). Resolved by
+> [ADR-303 D6](adr-303-convergent-paths-and-unwinnable-states.md): this ADR
+> **gains a second mode rather than being replaced**, and its *static* half
+> **moves out of the VS Code extension into the IDE**. Both are stated in the
+> Decision below.
 >
-> The open question is whether the same BFS bot should also probe whether the
-> **ending stays reachable** — an unwinnable state has no ending, no message and
-> no test, which is why it survives to ship (ADR-303 D1). That is the excluded
-> thing, so widening this ADR would replace its stated premise rather than
-> extend it, and the alternative is a separate tool.
+> The question was whether a BFS bot built as a *regression-baseline generator*
+> — BFS the rooms, probe entities and description nouns, record outputs, diff
+> later — should also probe whether the **ending stays reachable**. An
+> unwinnable state has no ending, no message and no test, which is why it
+> survives to ship (ADR-303 D1), and this ADR excludes reachability by design:
+> "This avoids the hard problem of puzzle-solving."
 >
-> Note also that the *static* half already ships elsewhere:
-> `tools/vscode-ext/src/world-explorer.ts` renders a World Index from
-> `--world-json` with dead-end and one-way-exit highlighting. Whether that moves
-> to the IDE is part of Q-3.
+> The earlier note argued from that exclusion that widening would *replace this
+> ADR's premise rather than extend it*. **That objection is retracted**, and the
+> reason is what ADR-303 D5's probe turned out to be: it replays the story's own
+> answer key from a state rather than searching for a win, so it solves no
+> puzzle. The excluded thing and the added thing are not the same thing, and the
+> exclusion under *Starting Point* survives the widening intact.
+>
+> **Amended ahead of its trigger.** ADR-303 D6 names *whoever accepts ADR-303*
+> as this amendment's owner, with acceptance as the trigger; ADR-303 is still
+> DRAFT. Landed early on David's instruction (session 51b5f4). The obligation D6
+> records is discharged here, and D6's own "ADR-131 stands unamended until that
+> lands" sentence is corrected in place to say so.
 
 ## Context
 
@@ -36,6 +46,37 @@ We need an automated system that methodically explores the entire game world, tr
 ## Decision
 
 Build an **Automated World Explorer** — a BFS-driven bot that systematically visits every room, interacts with every entity and description noun, and records all outputs. It runs against the existing game engine programmatically (same as the transcript runner) and produces a golden baseline that can be diffed on future runs.
+
+### Two modes over one walk (widened by ADR-303 D6, 2026-08-05)
+
+| Mode | Records | Cadence | Output |
+|------|---------|---------|--------|
+| **Baseline** | prose, events and flags per probe | often, diffed against a golden | regression findings |
+| **Reachability** | states from which the authored win may no longer be reachable | rarely, run deliberately | unwinnability *candidates*, never verdicts |
+
+They share the walk and differ in everything else, which is why a mode is the
+right seam and not a second tool. Phases 1–4 below specify the **baseline**
+mode. The **reachability** mode is specified by
+[ADR-303 D5](adr-303-convergent-paths-and-unwinnable-states.md) — three
+detection layers (declared invariants, irreversibility flags, probing) and a
+probe that replays the known winning suffix from a state rather than searching
+for a win — and is not restated here.
+
+> **Label collision, stated so it is not tripped over.** ADR-303 D5 divides its
+> *probing* layer into a **routine** mode (seeded from the states the suite
+> already reaches) and a **deep** mode (BFS the reachable space, dedupe by state
+> signature, probe the frontier). Those two sit *inside* the reachability mode
+> named above; they are not alternatives to the baseline mode.
+
+**The static half moves to the IDE — not into either mode above.**
+`tools/vscode-ext/src/world-explorer.ts` already computes the graph-computable
+portion of this idea — dead ends (rooms with one exit or fewer) and one-way
+exits, rendered as a World Index from `--world-json`. That is the cheap layer
+living in the wrong product. Its destination is the **IDE's** author surface,
+not this explorer's walk: it needs no engine run at all, only the world JSON.
+It **moves** rather than being mirrored — two copies of a reachability analysis
+will eventually disagree, and the disagreement would be discovered by an
+author.
 
 ## Design
 
@@ -155,6 +196,11 @@ On subsequent runs, diff output against baseline:
 
 `packages/transcript-tester/src/explorer.ts` — reuses the existing engine initialization and command execution from the transcript runner. New CLI flag: `--explore`.
 
+This is the home of **both modes** named in the Decision, since both are engine
+walks. The **static** dead-end/one-way analysis is not one of them and does not
+belong behind `--explore`: it reads `--world-json` without running the engine,
+and its destination is the IDE.
+
 ## Starting Point
 
 Start from a save state where:
@@ -164,6 +210,14 @@ Start from a save state where:
 - Minimal inventory (avoid carrying capacity issues)
 
 This avoids the hard problem of puzzle-solving and focuses on regression coverage.
+
+> **This exclusion survives the ADR-303 D6 widening, and is load-bearing in it.**
+> Reachability mode does not solve puzzles either: it replays a winning path the
+> finished story already ships. What changes is the *starting point* — baseline
+> mode starts from one all-puzzles-solved save, while reachability mode seeds
+> from many states (the suite's leaves in routine mode, a BFS frontier in deep
+> mode). The single privileged save above is a baseline-mode requirement, not an
+> explorer-wide one.
 
 ## Consequences
 
@@ -183,3 +237,19 @@ This avoids the hard problem of puzzle-solving and focuses on regression coverag
 **Neutral:**
 - Complements manual transcripts, doesn't replace them
 - Manual transcripts test sequences and puzzles; explorer tests breadth and error handling
+
+**Added by the ADR-303 D6 widening (2026-08-05):**
+- Reachability mode has a **prerequisite this ADR did not previously have**: the
+  story must ship a known winning path for the probe to replay. A story without
+  one gets baseline mode only.
+- Its findings are **candidates, not failures** — a failed suffix replay may
+  mean the route changed rather than the win being gone. Reporting them as
+  failures would train authors to ignore the surface.
+- Those findings do **not** enter ADR-293's point-and-class catalog; they are
+  reported by the coverage surface (ADR-293 D15) alongside ADR-302 D6's untaken
+  divergences, where the unit is already "a place the story can be in that
+  nothing tests" (ADR-303 D5).
+- Moving the static analysis out of `tools/vscode-ext` **removes a shipped VS
+  Code feature** from that extension. The move is not complete until the IDE
+  renders the World Index; until then, deleting the extension copy would leave
+  authors with neither.
