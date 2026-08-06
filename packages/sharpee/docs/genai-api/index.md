@@ -2,7 +2,7 @@
 
 Auto-generated from `.d.ts` declarations. AI coding assistants should read these files instead of exploring the codebase when writing code against the Sharpee platform.
 
-Generated for Sharpee 4.4.0
+Generated for Sharpee 4.5.0
 
 ## Quick Start
 
@@ -41,4 +41,4 @@ Generated for Sharpee 4.4.0
 | [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (31 files, ~3135 lines) |
 | [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~792 lines) |
 | [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (25 files, ~2500 lines) |
-| [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (17 files, ~1467 lines) |
+| [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (18 files, ~1714 lines) |

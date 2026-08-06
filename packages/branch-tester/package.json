@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/branch-tester",
-  "version": "4.4.0",
+  "version": "4.5.0",
   "description": "Tree-native transcript testing for Sharpee: a transcript names its parent, every test is a branch, and a run covers every root-to-leaf path (ADR-302)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
