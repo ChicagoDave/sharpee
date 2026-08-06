@@ -214,10 +214,14 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         lineNumberRuler?.navigationLines = [span.line]
     }
 
-    /// Underlines each record's span in the active document (errors red, warnings
+    /// Underlines each record in the active document (errors red, warnings
     /// yellow) and flags their lines in the gutter. Records for other files (hatch
     /// modules) are ignored. Cleared on the next edit — the following compose
     /// repaints against the new buffer.
+    ///
+    /// A multi-line span underlines only its FIRST line (see
+    /// `SpanText.underlineRange`); the gutter still flags the record's line and
+    /// the Problems list still carries the full span.
     func setDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
         clearDiagnosticUnderlines()
         guard let doc = activeDocument, doc.url == url,
@@ -226,7 +230,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         var flaggedLines: Set<Int> = []
         for record in records {
             guard record.file == url.path, let span = record.span,
-                  let range = SpanText.characterRange(of: span, in: textView.string),
+                  let range = SpanText.underlineRange(of: span, in: textView.string),
                   range.length > 0, NSMaxRange(range) <= storage.length else { continue }
             let color: NSColor = record.severity == .error ? .systemRed : .systemYellow
             storage.addAttribute(.underlineStyle,

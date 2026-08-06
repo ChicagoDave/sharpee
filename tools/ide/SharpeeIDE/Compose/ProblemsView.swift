@@ -6,6 +6,7 @@
 // errors. A compose-pipeline failure (sharpee missing, decode error) renders as
 // a status line instead of rows — Problems never silently goes blank.
 // Public interface: setProblems(_:for:), setStatus(_:), clear(), errorCount,
+// problemCount,
 // onActivate.
 // Owner context: tools/ide — Compose (bottom panel).
 
@@ -30,8 +31,17 @@ final class ProblemsView: NSView {
     private static let bodyFont = NSFont.systemFont(ofSize: 11.5)
     private static let monoFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
 
-    /// Number of error-severity rows (drives the tab badge).
+    /// Number of error-severity rows.
     var errorCount: Int { items.filter { $0.record.severity == .error }.count }
+
+    /// Number of diagnostic rows of ANY severity — what the tab badge shows.
+    ///
+    /// The badge counted errors only, so a compose whose sole finding was a
+    /// warning badged 0 while the editor underlined the span: the panel is
+    /// collapsed by default, so the one surface that NAMES the problem was both
+    /// hidden and silent, and the only signal left was a coloured squiggle with
+    /// no text. A warning is a problem; it belongs in the count.
+    var problemCount: Int { items.count }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)

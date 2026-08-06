@@ -55,7 +55,8 @@ final class BottomPanelViewController: NSViewController {
     /// Replaces the Problems list with a compose run's records and updates the badge.
     func setProblems(_ records: [ComposeDiagnosticRecord], for storyURL: URL) {
         problems.setProblems(records, for: storyURL)
-        tabStrip.setCount(problems.errorCount, forTab: Self.problemsTab)
+        // Every diagnostic, not just errors — see ProblemsView.problemCount.
+        tabStrip.setCount(problems.problemCount, forTab: Self.problemsTab)
     }
 
     /// Shows a compose-pipeline status line in Problems (badge cleared).
