@@ -4,6 +4,7 @@
 **Date**: 2026-08-05 (session 5113ca)
 **Supersedes in part**: ADR-300 D17 (chain membership as convention, not grammar)
 **Relates to**: ADR-293 (forcing, coverage, outcome search), ADR-294 D4 (`[IF:]` removed), ADR-299 (the skein's branching, superseded)
+**Questions raised by its usage**: [ADR-303](adr-303-convergent-paths-and-unwinnable-states.md) (DRAFT) — convergent paths, and unwinnable states as a divergence class. Raised *by* this ADR's use, not left unresolved *within* it: D1's one-parent rule is implemented and shipped, and ADR-303 reopens nothing here.
 
 ---
 
@@ -610,6 +611,28 @@ spreading `getSaveRestoreHooks()` in the tree runner. Both work and neither was
 chosen — the first changes a public engine contract to preserve a mechanism this
 decision removes, and the second leaves the trap armed for the next caller while
 buying a 6% saving on the only story that uses it.
+
+> **THE FIRST WAS ADOPTED AFTER ALL, 2026-08-05 (session f2a7e6, David's
+> call) — and it does not undo this decision.** The rejection above is sound
+> only while the tree walk is the collision's one victim, which is what a
+> survey after D17 landed disproved: `registerSaveRestoreHooks` still had four
+> callers across the two harnesses — the ADR-300 D18 divergence save and the
+> `$save`/`$restore` directives in each `runner.ts`, and `searchOutcome`'s
+> per-candidate restore in each `search.ts` (issue #229). None is being
+> deleted, so "changes a public contract to preserve a mechanism this decision
+> removes" no longer describes the trade.
+>
+> `GameEngine.registerSaveRestoreHooks` now merges: a named entry replaces the
+> prior one of that name, unnamed entries survive, and removal is spelled by
+> naming an entry `undefined`. Merging necessarily **snapshots** — the engine
+> holds a copy rather than the caller's object, so mutating a registered hooks
+> object no longer reaches it.
+>
+> **D17 stands unchanged.** It is not a workaround that the engine fix
+> supersedes: re-execution was chosen on its own terms — the save format stops
+> being a correctness dependency of the harness, and the cost is 6.2% on the
+> representative corpus. The engine fix closes the *other* four callers, which
+> D17 never reached and never claimed to.
 
 ---
 

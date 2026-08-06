@@ -1244,6 +1244,7 @@ export declare class GameEngine {
     private languageProvider?;
     private parser?;
     private eventListeners;
+    /** Accumulated across every `registerSaveRestoreHooks` call, hence Partial. */
     private saveRestoreHooks?;
     private eventSource;
     private systemEventSource;
@@ -1584,13 +1585,35 @@ export declare class GameEngine {
      */
     registerSlotEntry(entry: SlotEntry): void;
     /**
-     * Register save/restore hooks
+     * Register save/restore hooks, MERGING them into whatever is already
+     * registered (issue #229).
+     *
+     * The four hooks are one object but four unrelated concerns: two clients
+     * legitimately own different ones. A harness owns `onRestartRequested`
+     * (auto-confirming a restart nobody is present to approve) while a test
+     * runner or bridge owns `onSaveRequested`/`onRestoreRequested`. Assigning
+     * wholesale — which this did until 2026-08-05 — meant the second registrant
+     * silently destroyed the first's, and the failure was invisible: with
+     * `onRestartRequested` gone, `shouldRestart` defaults to true, so `restart`
+     * still acked and stopped the engine while the reboot that ack promised
+     * never fired (issue #227). Merging makes partial registration the supported
+     * shape rather than a trap.
+     *
+     * A named entry replaces the prior one of that name; entries the caller does
+     * not name are left alone. To REMOVE a hook, name it explicitly as
+     * `undefined` — every read site treats an absent and an undefined entry the
+     * same way.
+     *
+     * @param hooks any subset of the four hooks
      */
-    registerSaveRestoreHooks(hooks: ISaveRestoreHooks): void;
+    registerSaveRestoreHooks(hooks: Partial<ISaveRestoreHooks>): void;
     /**
-     * Get currently registered save/restore hooks
+     * Get currently registered save/restore hooks.
+     *
+     * Partial because registration is (see above): what comes back is the
+     * accumulation of every registration so far, which need not carry all four.
      */
-    getSaveRestoreHooks(): ISaveRestoreHooks | undefined;
+    getSaveRestoreHooks(): Partial<ISaveRestoreHooks> | undefined;
     /**
      * Register a transformer for parsed commands.
      * Transformers are called after parsing but before validation,

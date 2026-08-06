@@ -160,7 +160,8 @@ export class GameEngine {
   private languageProvider?: LanguageProvider;
   private parser?: Parser;
   private eventListeners = new Map<GameEngineEventName, Set<(...args: any[]) => void>>();
-  private saveRestoreHooks?: ISaveRestoreHooks;
+  /** Accumulated across every `registerSaveRestoreHooks` call, hence Partial. */
+  private saveRestoreHooks?: Partial<ISaveRestoreHooks>;
   private eventSource = createSemanticEventSource();
   private systemEventSource: IGenericEventSource<ISystemEvent>;
   private pendingPlatformOps: IPlatformEvent[] = [];
@@ -1994,16 +1995,43 @@ export class GameEngine {
   }
 
   /**
-   * Register save/restore hooks
+   * Register save/restore hooks, MERGING them into whatever is already
+   * registered (issue #229).
+   *
+   * The four hooks are one object but four unrelated concerns: two clients
+   * legitimately own different ones. A harness owns `onRestartRequested`
+   * (auto-confirming a restart nobody is present to approve) while a test
+   * runner or bridge owns `onSaveRequested`/`onRestoreRequested`. Assigning
+   * wholesale — which this did until 2026-08-05 — meant the second registrant
+   * silently destroyed the first's, and the failure was invisible: with
+   * `onRestartRequested` gone, `shouldRestart` defaults to true, so `restart`
+   * still acked and stopped the engine while the reboot that ack promised
+   * never fired (issue #227). Merging makes partial registration the supported
+   * shape rather than a trap.
+   *
+   * A named entry replaces the prior one of that name; entries the caller does
+   * not name are left alone. To REMOVE a hook, name it explicitly as
+   * `undefined` — every read site treats an absent and an undefined entry the
+   * same way. `{}` therefore registers nothing rather than clearing everything.
+   *
+   * **This SNAPSHOTS.** Merging necessarily copies, so the engine no longer
+   * holds the caller's object: mutating a hooks object after registering it
+   * has no effect, where it used to reach the engine through the shared
+   * reference. Re-register to change a hook.
+   *
+   * @param hooks any subset of the four hooks
    */
-  registerSaveRestoreHooks(hooks: ISaveRestoreHooks): void {
-    this.saveRestoreHooks = hooks;
+  registerSaveRestoreHooks(hooks: Partial<ISaveRestoreHooks>): void {
+    this.saveRestoreHooks = { ...this.saveRestoreHooks, ...hooks };
   }
 
   /**
-   * Get currently registered save/restore hooks
+   * Get currently registered save/restore hooks.
+   *
+   * Partial because registration is (see above): what comes back is the
+   * accumulation of every registration so far, which need not carry all four.
    */
-  getSaveRestoreHooks(): ISaveRestoreHooks | undefined {
+  getSaveRestoreHooks(): Partial<ISaveRestoreHooks> | undefined {
     return this.saveRestoreHooks;
   }
 
@@ -2045,7 +2073,12 @@ export class GameEngine {
    * Save game state using registered hooks
    */
   async save(): Promise<boolean> {
-    if (!this.saveRestoreHooks) {
+    // Guarded on the hook this needs, not merely on some hooks existing:
+    // registration is partial (#229), so a client that registered only
+    // `onRestartRequested` leaves this one absent. Calling it would throw a
+    // TypeError into the catch below and report as "Save failed"; saying
+    // "no save capability" is the honest answer.
+    if (!this.saveRestoreHooks?.onSaveRequested) {
       return false; // No save capability
     }
 
@@ -2063,7 +2096,8 @@ export class GameEngine {
    * Restore game state using registered hooks
    */
   async restore(): Promise<boolean> {
-    if (!this.saveRestoreHooks) {
+    // Guarded on the specific hook, for the reason given in `save()`.
+    if (!this.saveRestoreHooks?.onRestoreRequested) {
       return false; // No restore capability
     }
 

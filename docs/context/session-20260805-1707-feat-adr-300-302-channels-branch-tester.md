@@ -81,6 +81,91 @@ Claimed in conversation that D17 would remove it; that was wrong and is correcte
 
 **A second copy bit twice.** `freshGameForRoot` exists in both `packages/branch-tester/src/cli.ts` and `scripts/bundle-entry.js`. Updating only the first left the bundle throwing `Cannot read properties of undefined (reading 'transcript')` on the first fork. The bundle copy also revealed a real hazard the package copy shared: a re-boot must re-pin the seed the root *actually* booted with, or a root with no `seed:` would draw a fresh clock seed per boot and its replayed prefix would diverge. Both now remember it. This did not bite Fernhill only because every root had already been given an explicit seed in §1.
 
+### 5. Closed the latent form at the engine (issue #229), after the merge
+Filed #229 for the general form of #227 — `registerSaveRestoreHooks` assigning
+wholesale, so any caller silently disables restart — then, on David's call, fixed it.
+
+A survey found **four** remaining callers, not two: the ADR-300 D18 divergence save
+and the `$save`/`$restore` directives in each harness's `runner.ts`, plus
+`searchOutcome`'s per-candidate restore in each `search.ts`. v1 is closer to the
+trigger than v2, because a chain shares one live engine across files — a blessed
+golden on any member plus a `restart` in a later member arms it. Confirmed not live:
+`grep -ln "^> restart" stories/dungeo/walkthroughs/*.transcript` is empty.
+
+The engine now merges: named entries replace, unnamed survive, removal is spelled by
+naming an entry `undefined`. `save()`/`restore()` guard on the specific hook they need
+rather than on "some hooks exist", so a partial registration reports "no capability"
+instead of calling `undefined` and reporting the TypeError as a failure. Bootstrap's
+`as any` cast is gone — partial registration is now expressible.
+
+**A second consequence, under-called before it showed as red tests:** merging
+necessarily **snapshots**. The engine holds a copy, so mutating a registered hooks
+object no longer reaches it. Eight `platform-operations.test.ts` cases relied on
+exactly that aliasing, and two more used `registerSaveRestoreHooks({})` to mean
+"clear", which merging makes a no-op. The source-caller survey that preceded the
+change looked for reliance on replacement and correctly found none — it never looked
+at tests, and that is where it lived. Recorded in the method's contract doc.
+
+ADR-302 D17's rejected-alternatives paragraph is amended in place: it argued against
+the engine merge while the tree walk was the collision's only victim, which the
+four-caller survey disproved. D17 itself stands — re-execution was chosen on its own
+terms, and the engine fix closes callers D17 never reached.
+
+### 6. ADR-303 written and interviewed to resolution
+Two gaps David raised while reviewing the IDE Testing mocks, neither considered by
+ADR-302: open-world paths **reconverge** ("do one of three things, then go to a
+room"), and an **unwinnable state is not a losing ending** — it has no ending, no
+message and no test, which is why it ships.
+
+Written as a **new** ADR rather than reopening ADR-302, which stays ACCEPTED: these
+are questions raised *by* its usage, not left unresolved *within* it. All three open
+questions were then resolved by interview the same session:
+
+- **D4** — a converging variant declares `converges-with:` and the harness *verifies*
+  it before a shared tail runs once; what must match is author-named. Re-running the
+  tail under every route is a per-fork opt-in, expressed as several parents and
+  **expanded to N single-ancestry runs** so every ADR-302 invariant holds per run.
+  `converges-with` does **not** inherit — declared-only, the same keying `reseedFor`
+  uses, because inheritance is right for a setting and wrong for an instruction.
+- **D5** — three detection layers (declared invariants, irreversibility flags,
+  probing). Probing replays the story's own answer key rather than searching: one
+  walkthrough per probe, not an exponential search. Fernhill's 19 leaves ≈ 1000
+  commands, under a second. Deep parallel mode on demand. Unwinnable is reported by
+  the coverage surface and stays out of the point-and-class catalog.
+- **D6** — ADR-131's explorer is widened rather than replaced (its "avoids
+  puzzle-solving" exclusion survives, because replaying an answer key solves
+  nothing), and the static dead-end/one-way analysis moves from the VS Code
+  extension to the IDE.
+
+**A shared primitive fell out of it**: D4's "does this variant arrive where its
+sibling arrives" and D5's "have I seen this state before" are the same operation —
+a semantic world-state signature that ignores turn counters and RNG streams. Built
+once, it serves both.
+
+`adr-review` then scored it **7/17, NEEDS WORK**, and caught two citation failures
+worth recording: ADR-293 **D15 is the coverage report, not a registry** (the catalog
+is D2/D4), which made D5's central sentence self-contradictory; and **Miller columns
+were attributed to ADR-301**, which is TBD and specifies no surface — the design came
+from this session's mocks. Both corrected in place with dated notes, along with a
+D8 inheritance gap and a D1 heading that contradicted D5 once the citation was fixed.
+The ADR stays **DRAFT**: no acceptance criteria, no test requirements, no
+implementation section, and three interfaces still undefined.
+
+### 7. IDE Testing mocks (artifacts, not committed)
+Two published artifacts — a Testing-tab mock and a layout study — built on the
+shell's own Catppuccin tokens from `Theme.swift`. The layout study measured the
+real 22-node tree in three layouts and killed the horizontal canvas: vertical extent
+tracks leaf count, not depth, so a depth-3 tree costs ~800px, and lineage colour
+would need 12 hues for one fan-out. David's call was Miller columns (Finder), which
+makes ancestry spatial and needs no palette. A run-folding idea for deep chains was
+built at his request and then removed at his request — it was the one departure from
+Finder and hid nodes behind a summary.
+
+Surveyed rather than assumed: `TestPanelView` is **already** an `NSOutlineView`
+whose data source is two levels deep (entries → their commands), so click-to-expand
+turns exists today. What is missing is a level *above* it — entry-to-entry
+parentage — plus `.unreached` on `Status`, and a wire that carries any of it.
+
 ---
 
 ## Session Metadata

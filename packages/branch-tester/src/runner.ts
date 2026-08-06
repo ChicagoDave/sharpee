@@ -73,9 +73,16 @@ interface GameEngine {
    * session's master seed from here (ADR-294 D3).
    */
   engine?: {
+    /**
+     * Registration MERGES on the real engine and every hook is optional
+     * (issue #229), so this declares the loosest shape that still says what
+     * the tester uses. It compiles either way here — this seam passes through
+     * a cast — but the declaration was making a claim about the engine that
+     * stopped being true, and v1 broke on exactly that.
+     */
     registerSaveRestoreHooks(hooks: {
-      onSaveRequested(data: unknown): Promise<void>;
-      onRestoreRequested(): Promise<unknown | null>;
+      onSaveRequested?(data: any): Promise<void>;
+      onRestoreRequested?(): Promise<any>;
     }): void;
     save(): Promise<boolean>;
     restore(): Promise<boolean>;
