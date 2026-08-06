@@ -221,10 +221,10 @@ final class TestRunnerTests: XCTestCase {
     /// decodes exactly once — the runner's buffer reassembles it.
     func testSplitChunkDeliveryDecodesEachRecordExactlyOnce() throws {
         let script = try makeScript("""
-        printf '{"schemaVersion":1,"type":"run-start","mo'
+        printf '{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","mo'
         sleep 0.3
         printf 'de":"tests","transcriptCount":0}\\n'
-        printf '{"schemaVersion":1,"type":"run-end","totalPassed":0,"totalFailed":0,"totalExpectedFailures":0,"totalSkipped":0,"totalErrors":0,"totalDuration":0,"exitCode":0}\\n'
+        printf '{"schemaVersion":2,"seq":1,"elapsedMs":1,"type":"run-end","totalPassed":0,"totalFailed":0,"totalExpectedFailures":0,"totalSkipped":0,"totalErrors":0,"totalUnreached":0,"totalDuration":0,"exitCode":0}\\n'
         """)
         let exited = expectation(description: "script exits")
         delegate.onExit = { exited.fulfill() }
@@ -254,14 +254,14 @@ final class TestRunnerTests: XCTestCase {
         XCTAssertTrue(delegate.records.isEmpty, "no partial decode of a future stream")
         XCTAssertEqual(delegate.decodeFailures.count, 1, "surfaced once, then dropped")
         XCTAssertEqual(delegate.decodeFailures.first as? TestResultRecord.DecodeError,
-                       .schemaVersionMismatch(found: 999, expected: 1))
+                       .schemaVersionMismatch(found: 999, expected: 2))
     }
 
     // MARK: - Cancel
 
     func testCancelTerminatesAndKeepsDecodedRecords() throws {
         let script = try makeScript("""
-        printf '{"schemaVersion":1,"type":"run-start","mode":"tests","transcriptCount":9}\\n'
+        printf '{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","mode":"tests","transcriptCount":9}\\n'
         sleep 30
         """)
         let sawRecord = expectation(description: "first record decoded")

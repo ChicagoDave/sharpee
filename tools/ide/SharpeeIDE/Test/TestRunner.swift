@@ -16,6 +16,16 @@ import Foundation
 
 @MainActor
 protocol TestRunnerDelegate: AnyObject {
+    /// One complete NDJSON line, verbatim, in stream order — delivered BEFORE
+    /// it is decoded and whether or not the decode succeeds.
+    ///
+    /// This is the Testing tab's feed (ADR-301 D1): the tab is a TypeScript
+    /// consumer that imports the wire contract directly, so handing it the raw
+    /// line is what removes the Swift mirror from its path entirely. Decoding
+    /// continues alongside for the Swift consumers that have no such option
+    /// (Skein replay, re-bless). Has a default no-op — most delegates want the
+    /// decoded record.
+    func runner(_ runner: TestRunner, didReceiveLine line: String)
     /// One decoded NDJSON record, in stream order.
     func runner(_ runner: TestRunner, didDecode record: TestResultRecord)
     /// The stream stopped decoding (schema mismatch or malformed line).
@@ -27,6 +37,10 @@ protocol TestRunnerDelegate: AnyObject {
     func runner(_ runner: TestRunner, didChangeState state: TestRunner.State)
     /// The run finished (passed, failed, or cancelled).
     func runner(_ runner: TestRunner, didExit result: TestRunner.Result)
+}
+
+extension TestRunnerDelegate {
+    func runner(_ runner: TestRunner, didReceiveLine line: String) {}
 }
 
 @MainActor
@@ -74,6 +88,13 @@ final class TestRunner {
     /// D3: `--chain` with no explicit files IS the chain request).
     func runChain(storyFile: URL) {
         startSharpee(storyFile: storyFile, extraArguments: ["--chain"])
+    }
+
+    /// Run the story's transcripts as a TREE (ADR-302): `continues:` parentage
+    /// is resolved, a shared prefix is re-executed for each sibling, and a node
+    /// whose ancestor failed is reported `unreached` rather than skipped.
+    func runTree(storyFile: URL) {
+        startSharpee(storyFile: storyFile, extraArguments: ["--tree"])
     }
 
     /// Run one `.transcript` file against the story.
@@ -207,6 +228,12 @@ final class TestRunner {
     }
 
     private func decodeLine(_ line: Data) {
+        // The raw line goes out first and unconditionally: the Testing tab is the
+        // consumer that understands the wire best, and a line this Swift mirror
+        // cannot decode is exactly the line the tab should still receive.
+        if let text = String(data: line, encoding: .utf8) {
+            delegate?.runner(self, didReceiveLine: text)
+        }
         guard !decodingStopped else { return }
         do {
             let record = try TestResultRecord.decode(line: line)

@@ -7,8 +7,9 @@
 // successful play-after-build switches to Play. This controller also hosts the
 // skein actions, since replay/tag/force/bless need both the tree and the live
 // Play pane.
-// Public interface: buildPanel, play, skeinPane, skeinView, transcriptView,
-// showBuildTab(), showPlayTab(), showSkeinTab(), showTranscriptTab(),
+// Public interface: buildPanel, play, testingTab, skeinPane, skeinView,
+// transcriptView, showBuildTab(), showPlayTab(), showTestTab(),
+// showTestingTab(), showSkeinTab(), showTranscriptTab(),
 // showDiagnosis(_:count:), revealDiagnosis(_:), clearDiagnosis(),
 // onOpenLocation, isWellFormedForcing(_:).
 // Owner context: tools/ide — Play (right panel).
@@ -22,6 +23,11 @@ final class RightPanelViewController: NSViewController {
     let index = IndexView()
     let diagnosis = ErrorDiagnosisView()
     let testPanel = TestPanelView()
+    /// The ADR-301 D1 Testing surface: a web bundle in a WKWebView, which is
+    /// where a run is watched. The older `testPanel` outline is still here
+    /// because it owns the ADR-282 D2 re-bless interaction the tab's reading
+    /// half does not cover; retiring it is its own confirmed step.
+    let testingTab = TestingTabViewController()
 
     /// The Skein tab: tree over transcript (ADR-299 D8).
     let skeinPane = SkeinPaneView()
@@ -39,18 +45,24 @@ final class RightPanelViewController: NSViewController {
     private let tabStrip = TabStripView()
     private static let buildTab = 0
     private static let playTab = 1
-    private static let skeinTab = 2
-    private static let indexTab = 3
-    private static let diagnosisTab = 4
-    private static let testTab = 5
+    private static let testingTabIndex = 2
+    private static let skeinTab = 3
+    private static let indexTab = 4
+    private static let diagnosisTab = 5
+    private static let testTab = 6
 
     override func loadView() {
         let container = ThemedPane(color: Theme.playBackground)
 
         addChild(play)
+        addChild(testingTab)
         tabStrip.addTab(title: "Build")
         tabStrip.addTab(title: "Play")
         tabStrip.addTab(title: "Testing")
+        // Renamed from "Testing" (which this tab held while it was the only
+        // testing surface) to what it actually shows — the story's skein,
+        // ADR-299 D8. The name is now the web Testing tab's.
+        tabStrip.addTab(title: "Skein")
         tabStrip.addTab(title: "Index")
         tabStrip.addTab(title: "Diagnosis")
         tabStrip.addTab(title: "Test")
@@ -64,6 +76,7 @@ final class RightPanelViewController: NSViewController {
         index.translatesAutoresizingMaskIntoConstraints = false
         diagnosis.translatesAutoresizingMaskIntoConstraints = false
         testPanel.translatesAutoresizingMaskIntoConstraints = false
+        testingTab.view.translatesAutoresizingMaskIntoConstraints = false
         skeinPane.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tabStrip)
         container.addSubview(buildPanel)
@@ -71,6 +84,7 @@ final class RightPanelViewController: NSViewController {
         container.addSubview(index)
         container.addSubview(diagnosis)
         container.addSubview(testPanel)
+        container.addSubview(testingTab.view)
         container.addSubview(skeinPane)
 
         NSLayoutConstraint.activate([
@@ -102,6 +116,11 @@ final class RightPanelViewController: NSViewController {
             testPanel.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             testPanel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             testPanel.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            testingTab.view.topAnchor.constraint(equalTo: play.view.topAnchor),
+            testingTab.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            testingTab.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            testingTab.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
             skeinPane.topAnchor.constraint(equalTo: play.view.topAnchor),
             skeinPane.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -140,9 +159,14 @@ final class RightPanelViewController: NSViewController {
         tabStrip.setCount(0, forTab: Self.diagnosisTab)
     }
 
-    /// Switches to the Test tab (a test run just started — results stream here).
+    /// Switches to the Test tab — the older outline panel (ADR-282 D2 re-bless).
     func showTestTab() {
         tabStrip.select(Self.testTab)
+    }
+
+    /// Switches to the Testing tab (ADR-301) — where a run is watched live.
+    func showTestingTab() {
+        tabStrip.select(Self.testingTabIndex)
     }
 
     /// Switches to the Skein tab (ADR-299 D8).
@@ -165,6 +189,7 @@ final class RightPanelViewController: NSViewController {
         index.isHidden = selected != Self.indexTab
         diagnosis.isHidden = selected != Self.diagnosisTab
         testPanel.isHidden = selected != Self.testTab
+        testingTab.view.isHidden = selected != Self.testingTabIndex
         skeinPane.isHidden = selected != Self.skeinTab
     }
 

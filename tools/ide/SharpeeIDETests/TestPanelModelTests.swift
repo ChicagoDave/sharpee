@@ -70,7 +70,9 @@ final class TestPanelModelTests: XCTestCase {
         let file = try write("tests/a.transcript")
         model.discover(storyDir: tempDir)
 
-        model.apply(.transcriptStart(TestTranscriptStart(file: file.path, index: 0)))
+        model.apply(.transcriptStart(TestTranscriptStart(file: file.path, index: 0,
+                                                         commandCount: 1, parent: nil,
+                                                         replayed: nil)))
         XCTAssertEqual(model.entries[0].status, .running)
 
         let command = TestCommandResult(file: file.path, line: 4, input: "look",
@@ -81,13 +83,15 @@ final class TestPanelModelTests: XCTestCase {
 
         model.apply(.transcriptEnd(TestTranscriptEnd(
             file: file.path, status: .passed, passed: 1, failed: 0,
-            expectedFailures: 0, skipped: 0, duration: 12, errorMessage: nil)))
+            expectedFailures: 0, skipped: 0, duration: 12, errorMessage: nil,
+            blockedBy: nil)))
         XCTAssertEqual(model.entries[0].status, .passed)
         XCTAssertEqual(model.entries[0].counts.passed, 1)
 
         model.apply(.runEnd(TestRunEnd(totalPassed: 1, totalFailed: 0,
                                        totalExpectedFailures: 0, totalSkipped: 0,
-                                       totalErrors: 0, totalDuration: 12, exitCode: 0)))
+                                       totalErrors: 0, totalUnreached: 0,
+                                       totalDuration: 12, exitCode: 0)))
         XCTAssertEqual(model.runSummary, "1 passed")
     }
 
@@ -97,7 +101,8 @@ final class TestPanelModelTests: XCTestCase {
         model.apply(.transcriptEnd(TestTranscriptEnd(
             file: file.path, status: .error, passed: 0, failed: 0,
             expectedFailures: 0, skipped: 0, duration: 0,
-            errorMessage: "Transcript validation failed")))
+            errorMessage: "Transcript validation failed",
+            blockedBy: nil)))
         XCTAssertEqual(model.entries[0].status,
                        .error(message: "Transcript validation failed"))
     }
@@ -107,7 +112,8 @@ final class TestPanelModelTests: XCTestCase {
         model.discover(storyDir: tempDir)
         model.apply(.transcriptEnd(TestTranscriptEnd(
             file: file.path, status: .failed, passed: 0, failed: 1,
-            expectedFailures: 0, skipped: 0, duration: 5, errorMessage: nil)))
+            expectedFailures: 0, skipped: 0, duration: 5, errorMessage: nil,
+            blockedBy: nil)))
         model.apply(.runStart(TestRunStart(mode: .tests, transcriptCount: 1)))
         XCTAssertEqual(model.entries[0].status, .idle)
         XCTAssertTrue(model.entries[0].commands.isEmpty)
@@ -119,7 +125,8 @@ final class TestPanelModelTests: XCTestCase {
         let stray = tempDir.appendingPathComponent("elsewhere/x.transcript").standardizedFileURL
         model.apply(.transcriptEnd(TestTranscriptEnd(
             file: stray.path, status: .passed, passed: 1, failed: 0,
-            expectedFailures: 0, skipped: 0, duration: 1, errorMessage: nil)))
+            expectedFailures: 0, skipped: 0, duration: 1, errorMessage: nil,
+            blockedBy: nil)))
         XCTAssertEqual(model.entries.map(\.file), [stray])
     }
 

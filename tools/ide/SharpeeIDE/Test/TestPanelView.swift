@@ -444,6 +444,9 @@ extension TestPanelView: NSOutlineViewDelegate {
             case .passed: return ("● ", .systemGreen)
             case .failed: return ("● ", .systemRed)
             case .error: return ("● ", .systemRed)
+            // Unreached is not failed (ADR-302 D13): a hollow dot in the dim
+            // colour, never red — the failure belongs to the ancestor.
+            case .unreached: return ("◌ ", Theme.foregroundFaint)
             }
         }()
         let s = NSMutableAttributedString(string: dot,
@@ -458,6 +461,10 @@ extension TestPanelView: NSOutlineViewDelegate {
         case .error(let message):
             s.append(NSAttributedString(string: "   ERROR\(message.map { ": \($0)" } ?? "")",
                                         attributes: [.foregroundColor: NSColor.systemRed, .font: bodyFont]))
+        case .unreached(let blockedBy):
+            let stem = blockedBy.map { URL(fileURLWithPath: $0).deletingPathExtension().lastPathComponent }
+            s.append(NSAttributedString(string: "   never ran\(stem.map { " — blocked by \($0)" } ?? "")",
+                                        attributes: [.foregroundColor: Theme.foregroundFaint, .font: bodyFont]))
         case .passed, .failed:
             let counts = "   \(entry.counts.passed) passed" +
                 (entry.counts.failed > 0 ? ", \(entry.counts.failed) failed" : "")

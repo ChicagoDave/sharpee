@@ -95,41 +95,50 @@ final class SplitDividerTests: XCTestCase {
     /// The right pane: divider 2 (editor|play) must move both ways and stick —
     /// the play pane is not fixed-width (reported live with the Play header +
     /// placeholder showing, so that exact content is on screen here).
+    // Runs from the CLEARED layout defaults, like every other test in this file.
+    // Without that this test inherited whatever pane widths the previous run
+    // persisted — and it persists its own drags — so `before` crept wider on
+    // each run until `before + 120` crossed the editor's minimum width and the
+    // widen assertion failed against a wall that had nothing to do with the
+    // property under test. Verified 2026-08-06: at the same working tree it
+    // failed at 837 vs 872 and passed once the keys were cleared.
     func testEditorPlayDividerMovesBothWaysAndSticks() throws {
-        let controller = MainWindowController()
-        let window = try XCTUnwrap(controller.window)
-        window.setFrame(NSRect(x: 0, y: 0, width: 1400, height: 900), display: true)
-        window.orderFront(nil)
-        defer { window.orderOut(nil) }
-        pump()
+        try withCleanLayoutDefaults {
+            let controller = MainWindowController()
+            let window = try XCTUnwrap(controller.window)
+            window.setFrame(NSRect(x: 0, y: 0, width: 1400, height: 900), display: true)
+            window.orderFront(nil)
+            defer { window.orderOut(nil) }
+            pump()
 
-        let split = try XCTUnwrap(findMainSplit(in: window.contentView!))
-        let indexView = try XCTUnwrap(findIndexView(in: window.contentView!))
-        indexView.setState(.populated(ir: fatIR, stale: false))
-        pump()
+            let split = try XCTUnwrap(findMainSplit(in: window.contentView!))
+            let indexView = try XCTUnwrap(findIndexView(in: window.contentView!))
+            indexView.setState(.populated(ir: fatIR, stale: false))
+            pump()
 
-        let play = split.arrangedSubviews[3]
-        let before = play.frame.width
+            let play = split.arrangedSubviews[3]
+            let before = play.frame.width
 
-        // Widen the play pane by 120 (divider 2 moves left).
-        split.setPosition(play.frame.minX - 120, ofDividerAt: 2)
-        pump()
-        XCTAssertEqual(play.frame.width, before + 120, accuracy: 2,
-                       "the right pane must widen and stay widened")
+            // Widen the play pane by 120 (divider 2 moves left).
+            split.setPosition(play.frame.minX - 120, ofDividerAt: 2)
+            pump()
+            XCTAssertEqual(play.frame.width, before + 120, accuracy: 2,
+                           "the right pane must widen and stay widened")
 
-        // Narrow it back down toward (but above) its 240 minimum.
-        let target = max(before, 250)
-        split.setPosition(split.bounds.width - target, ofDividerAt: 2)
-        pump()
-        XCTAssertEqual(play.frame.width, target, accuracy: 2,
-                       "the right pane must narrow and stay narrowed")
+            // Narrow it back down toward (but above) its 240 minimum.
+            let target = max(before, 250)
+            split.setPosition(split.bounds.width - target, ofDividerAt: 2)
+            pump()
+            XCTAssertEqual(play.frame.width, target, accuracy: 2,
+                           "the right pane must narrow and stay narrowed")
 
-        // And the position survives further layout passes (the snap-back property).
-        let settled = play.frame.width
-        split.needsLayout = true
-        window.contentView?.needsLayout = true
-        pump(0.2)
-        XCTAssertEqual(play.frame.width, settled, accuracy: 1)
+            // And the position survives further layout passes (the snap-back property).
+            let settled = play.frame.width
+            split.needsLayout = true
+            window.contentView?.needsLayout = true
+            pump(0.2)
+            XCTAssertEqual(play.frame.width, settled, accuracy: 1)
+        }
     }
 
     // MARK: - Opening layout (manual divider persistence)

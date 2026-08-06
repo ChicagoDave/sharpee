@@ -103,9 +103,20 @@ final class MainWindowController: NSWindowController {
         rootViewController?.testPanel ?? TestPanelView()
     }
 
-    /// Switches the right panel to the Test tab (a test run just started).
+    /// The right panel's Testing tab (ADR-301) — the web surface a run streams
+    /// into. Same fallback reasoning as `testPanel`.
+    var testingTab: TestingTabViewController {
+        rootViewController?.testingTab ?? TestingTabViewController()
+    }
+
+    /// Switches the right panel to the Test tab (the outline panel).
     func showTestTab() {
         rootViewController?.showTestTab()
+    }
+
+    /// Switches the right panel to the Testing tab (a test run just started).
+    func showTestingTab() {
+        rootViewController?.showTestingTab()
     }
 
     /// Points Play recording at the open story (ADR-277 D5).
@@ -394,6 +405,13 @@ private final class RootViewController: NSViewController {
 
     /// The right panel's Tests surface (ADR-277 D2) — wired by TestController.
     var testPanel: TestPanelView { mainSplitViewController.testPanel }
+
+    /// The right panel's Testing tab (ADR-301) — wired by TestController.
+    var testingTab: TestingTabViewController { mainSplitViewController.testingTab }
+
+    func showTestingTab() {
+        mainSplitViewController.showTestingTab()
+    }
 
     func showTestTab() {
         mainSplitViewController.showTestTab()
@@ -775,6 +793,9 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Tests-panel plumbing — the Test tab lives in the right panel (ADR-277 D2).
     fileprivate var testPanel: TestPanelView { rightPanelViewController.testPanel }
 
+    /// The Testing tab (ADR-301) — likewise in the right panel.
+    fileprivate var testingTab: TestingTabViewController { rightPanelViewController.testingTab }
+
     /// Points the skein exporter at the open story (save-panel default dir +
     /// re-discovery hook for the Tests panel) — ADR-299 D7.
     fileprivate func configureRecording(storyDirectory: URL?, onRecorded: @escaping (URL) -> Void) {
@@ -784,6 +805,10 @@ private final class MainSplitViewController: NSSplitViewController {
 
     fileprivate func showTestTab() {
         rightPanelViewController.showTestTab()
+    }
+
+    fileprivate func showTestingTab() {
+        rightPanelViewController.showTestingTab()
     }
 
     /// The editor's focused document, or nil when nothing is open (drives the

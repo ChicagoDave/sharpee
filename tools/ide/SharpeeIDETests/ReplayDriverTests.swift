@@ -153,7 +153,8 @@ final class ReplayDriverTests: XCTestCase {
                                              status: .error, passed: 1, failed: 0,
                                              expectedFailures: 0, skipped: 1,
                                              duration: 1,
-                                             errorMessage: "story load failed")),
+                                             errorMessage: "story load failed",
+                                             blockedBy: nil)),
         ]
         XCTAssertThrowsError(try ReplayDriver.outputs(from: records, thread: thread)) { error in
             XCTAssertEqual(error as? ReplayDriver.ReplayError,

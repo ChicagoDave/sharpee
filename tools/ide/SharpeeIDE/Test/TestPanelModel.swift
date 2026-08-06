@@ -36,6 +36,9 @@ final class TestPanelModel {
         case passed
         case failed
         case error(message: String?)
+        /// Never ran: an ancestor in the tree failed (ADR-302 D13). Distinct
+        /// from `error`, which is a transcript that tried and could not.
+        case unreached(blockedBy: String?)
     }
 
     /// One transcript row: its file, group, live status, and (after a run)
@@ -119,9 +122,20 @@ final class TestPanelModel {
             case .passed: entries[index].status = .passed
             case .failed: entries[index].status = .failed
             case .error: entries[index].status = .error(message: end.errorMessage)
+            case .unreached:
+                // A node an ancestor's failure blocked (ADR-302 D13). This flat
+                // panel has no parentage to place it under — that is the tree
+                // the web Testing tab renders (ADR-301 D2) — so it reports the
+                // reason rather than showing a second failure.
+                entries[index].status = .unreached(blockedBy: end.blockedBy)
             }
         case .runEnd(let end):
             runEnd = end
+        case .phase, .progress, .coverage:
+            // Timing, advisory progress and the coverage report have no row in
+            // this flat panel. Ignored rather than rejected: the wire's contract
+            // is that a consumer skips what it does not render.
+            break
         }
     }
 

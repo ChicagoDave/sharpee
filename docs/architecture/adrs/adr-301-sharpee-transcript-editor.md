@@ -73,7 +73,31 @@ weight order:
    consumer removes the mirror rather than maintaining it.
 
 **Consequence for the Swift side**: `tools/ide/SharpeeIDE/Test/TestResultRecord.swift` is
-retired. Deleting it is a separate, explicitly confirmed step.
+retired *for the tab*. See Amendment A1 — building the tab found that it is not retired
+outright.
+
+> **Amendment A1 (2026-08-06, session 322542) — the Swift mirror survives, narrowed.**
+> This decision said the mirror was retired and that deleting it was a confirmation step
+> away. Implementing the tab showed that claim was too broad, and the evidence was a red
+> test suite: `xcodebuild test` stood at **508 tests, 21 failures**, every one of them
+> `schemaVersionMismatch(found: 2, expected: 1)`. The failures were not in the Tests
+> panel. They were in **Skein replay verification** (`ReplayDriver`, ADR-299) and
+> **re-bless** (`Rebless`, ADR-282 D2) — two Swift subsystems that drive a real
+> `sharpee test --json` run and read its per-command results, and which have no
+> TypeScript consumer to import the wire into. Deleting the mirror would have taken both
+> with it.
+>
+> What D1 actually buys is narrower and still worth having: the **tab** has no Swift
+> mirror in its path — it receives raw NDJSON lines and decodes them with the wire's own
+> `isRunEvent` — and the mirror no longer has to track the whole wire for a panel's sake,
+> only what those two consumers read. The mirror was migrated to schema 2 rather than
+> deleted (`phase`, `progress`, `coverage`, `unreached`, `replayed`, `parent`,
+> `totalUnreached`), and `xcodebuild test` is **521 tests, 0 failures**.
+>
+> The general shape of the lesson: rule 8b's fix is available to a consumer that shares
+> the language. Where it does not, the mirror is the cost of the boundary, and the honest
+> move is to narrow and pin it — not to declare it retired because one of its consumers
+> found a better route.
 
 Rejected: **native AppKit** — `TestPanelView` is already an `NSOutlineView`, so List mode
 is nearly free there, but the document grid and the editor are not, and splitting the tab
@@ -182,19 +206,45 @@ deep spine that branches at every joint is what Column view is for.
    and click-through to `file:line`.
 7. `xcodebuild test` green — the only gate, since there is no CI.
 
+**Met 2026-08-06 (session 322542)**, by `SharpeeIDETests/TestingTabRealPathTests.swift` —
+a rule-13a suite in which nothing this repository owns is stubbed: the bundle under test is
+the one shipped in the app, served by the real scheme handler into a real `WKWebView`,
+rendering a real `sharpee test --tree --json` run of the real `branch-stories/fernhill`
+driven through the real `TestRunner`, with every assertion read off the **rendered page**.
+Per criterion: **1** the page reports `location.protocol === "sharpee-test:"` and carries
+the wire's own guard; **2** the tab recomputes `552` / `518 authored · 34 replayed` from
+the stream and agrees with the reporter, with replayed executions tagged and `arrival`
+still showing its 2 turns once; **3** a deliberately broken `key` (an interior node with
+four children) renders exactly `1` failure with its descendants present and classed
+`unreached`, never `failed`; **4** `arrival` carries the badge `1` for the failure beneath
+it; **5** all three panes render and `key` stays selected across every switch; **6**
+double-clicking `concealment` lists all 16 turns and clicking the first line number
+reaches the host as `concealment.transcript:12`; **7** the whole suite at **521 tests, 0
+failures** (from a 508/21 baseline — see Amendment A1).
+
 ---
 
 ## Consequences
 
-- **ADR-277 D1's Swift-mirror requirement is retired** by D1, and its record stream was
-  already superseded by the run-event stream in the same session.
+- **ADR-277 D1's Swift-mirror requirement is retired** by D1 *for the tab*; see Amendment
+  A1 for what survives. Its record stream was already superseded by the run-event stream
+  in the same session.
 - **ADR-303 D2's parenthetical** on Miller columns should cite this ADR instead of the
   session f2a7e6 mocks.
-- **`tools/ide/SharpeeIDE/Skein/`** (12 Swift files) and `TestResultRecord.swift` are
-  superseded. Deletion remains a separate, explicitly confirmed step.
+- **`tools/ide/SharpeeIDE/Skein/`** (12 Swift files) is superseded. Deletion remains a
+  separate, explicitly confirmed step. `TestResultRecord.swift` is **not** superseded —
+  Amendment A1.
 - **The tab needs a build step** — TypeScript compiled and bundled into the app's
   resources — which the IDE does not have today. That is new build surface, not just new
-  UI.
+  UI. *Built 2026-08-06*: `tools/ide/web/testing-tab/build.mjs` (one esbuild pass, aliased
+  at the wire's SOURCE so `dist-esm` staleness cannot reach the tab), run from a pre-build
+  script on every `xcodebuild`. Its output is committed, unusually for build output,
+  because XcodeGen resolves the folder reference at generate time and a gitignored folder
+  would silently produce an app with no Testing tab.
+- **The Test panel is still on screen.** The tab ships the *reading* half; the outline
+  panel still owns ADR-282 D2's re-bless, which the editing decision covers and this one
+  does not. Both are fed from one run — the panel by the mirror, the tab by raw lines.
+  Retiring the panel waits on the editing surface, not on this ADR.
 - **Design decisions made in artifacts must be folded into an ADR.** The Context section
   records what it cost when they were not.
 

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!--
+  index.html — the Testing tab's shell (ADR-301 D1).
+
+  Purpose: the fixed markup every view paints into. Ids here are the contract
+    views.ts looks up by name; byId() throws if one goes missing rather than
+    letting a pane silently stop rendering.
+  Owner context: tools/ide — the Testing tab's web bundle. Served over
+    sharpee-test://app/ from the app's Resources, never file://.
+-->
+<title>Sharpee — Testing</title>
+<link rel="stylesheet" href="./tab.css">
+</head>
+<body>
+<div class="tab">
+
+  <div class="toolbar">
+    <span class="story" id="story">No story open</span>
+    <span class="meta" id="meta"></span>
+    <span class="phases" id="phases"></span>
+    <span class="spacer"></span>
+    <div class="runs">
+      <button type="button" id="run-all">Run All</button>
+      <button type="button" id="run-tree">Run Tree</button>
+      <button type="button" id="run-chain">Run Chain</button>
+      <button type="button" id="cancel" disabled>Cancel</button>
+    </div>
+    <button type="button" id="follow" class="toggle" aria-pressed="true" title="Selection follows the running transcript">Follow</button>
+    <span class="label">View</span>
+    <div class="seg" role="group" aria-label="View mode">
+      <button type="button" data-mode="column" aria-pressed="true"><i class="glyph">▊▊▊</i> Column</button>
+      <button type="button" data-mode="list" aria-pressed="false"><i class="glyph">☰</i> List</button>
+      <button type="button" data-mode="documents" aria-pressed="false"><i class="glyph">▤▤</i> Documents</button>
+    </div>
+  </div>
+
+  <div class="tallies">
+    <div class="stat"><span class="k">Passed</span><span class="v" id="tally-pass">0</span></div>
+    <div class="stat"><span class="k">Failed</span><span class="v" id="tally-fail">0</span></div>
+    <div class="stat"><span class="k">Unreached</span><span class="v" id="tally-unreached">0</span></div>
+    <div class="stat wide">
+      <span class="k">Commands</span>
+      <span class="v" id="tally-commands">0</span>
+      <span class="sub" id="tally-commands-sub"></span>
+    </div>
+    <div class="stat grow">
+      <span class="k">Progress</span>
+      <span class="v" id="progress-text">0</span>
+      <div class="track"><div class="fill" id="progress-bar"></div></div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="body">
+    <div class="pane on" id="pane-column"><div class="cols" id="cols"></div></div>
+    <div class="pane" id="pane-list">
+      <div class="listwrap">
+        <div class="list" id="list"></div>
+        <div class="side" id="list-side"></div>
+      </div>
+    </div>
+    <div class="pane" id="pane-documents"><div class="docwrap" id="docs"></div></div>
+    <div class="docview" id="docview"></div>
+  </div>
+
+  <div class="pathbar" id="pathbar"></div>
+</div>
+<script src="./tab.js"></script>
+</body>
+</html>
