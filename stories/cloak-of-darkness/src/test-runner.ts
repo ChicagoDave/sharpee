@@ -8,12 +8,17 @@ import { GameEngine, type TurnResult } from '@sharpee/engine';
 import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
-import { renderToString } from '@sharpee/text-service';
-// @ts-ignore - lang-en-us types not available yet
+// ADR-174 removed @sharpee/text-service: rendering is now the engine's own prose
+// pipeline, which emits ITextBlock[] on `text:output`. A client turns those into
+// its own surface; for a console demo that is `extractPlainText` per block.
+import { extractPlainText, type ITextBlock } from '@sharpee/text-blocks';
 import { LanguageProvider } from '@sharpee/lang-en-us';
-// @ts-ignore - text-services types not available yet
-import { TextService } from '@sharpee/text-services';
 import { createStory } from './index.js';
+
+/** Render one turn's blocks the way a plain-console client would. */
+function renderBlocks(blocks: ReadonlyArray<ITextBlock>): string {
+  return blocks.map((block) => extractPlainText(block.content)).join('\n');
+}
 
 async function runStory() {
   console.log('=== Cloak of Darkness ===');
@@ -29,12 +34,12 @@ async function runStory() {
     const player = world.createEntity('player', EntityType.ACTOR);
     world.setPlayer(player.id); // Register as the player so getPlayer() works
     
-    // Create parser, language, and text service
+    // Create parser and language. There is no text service to construct — the
+    // engine renders (ADR-174).
     const language = new LanguageProvider();
     const parser = new Parser(language);
-    const textService = new TextService();
-    textService.setLanguageProvider(language);
-    
+
+
     // Extend parser and language with story-specific vocabulary/messages
     if (story.extendParser) {
       story.extendParser(parser);
@@ -52,7 +57,6 @@ async function runStory() {
       player,
       parser,
       language,
-      textService,
       perceptionService
     });
     
@@ -62,8 +66,8 @@ async function runStory() {
     console.log('Engine started');
     
     // Listen for text output
-    engine.on('text:output', (blocks, turn) => {
-      console.log(renderToString(blocks));
+    engine.on('text:output', (blocks) => {
+      console.log(renderBlocks(blocks));
     });
     
     // Listen for turn completion

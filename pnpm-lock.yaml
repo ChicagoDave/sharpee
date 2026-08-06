@@ -1353,6 +1353,9 @@ importers:
       '@sharpee/stdlib':
         specifier: workspace:*
         version: link:../../packages/stdlib
+      '@sharpee/text-blocks':
+        specifier: workspace:*
+        version: link:../../packages/text-blocks
       '@sharpee/world-model':
         specifier: workspace:*
         version: link:../../packages/world-model
