@@ -10,8 +10,8 @@
  * Pattern: "push red panel", "push mahogany", "push yellow wall"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { PUSH_PANEL_ACTION_ID, PushPanelMessages } from './types';
 import { rotateBox, moveBox } from '../../handlers/inside-mirror-handler';

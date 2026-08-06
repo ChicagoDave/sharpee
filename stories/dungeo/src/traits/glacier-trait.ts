@@ -6,7 +6,7 @@
  * revealing the west passage to Ruby Room (MDL: CEXIT GLACIER-FLAG).
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /**
  * Configuration for the GlacierTrait

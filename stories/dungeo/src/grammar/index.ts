@@ -5,7 +5,7 @@
  * Each grammar file handles patterns for a specific feature or puzzle area.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import type { Parser } from '@sharpee/parser-en-us';
 
 // Import all grammar registration functions

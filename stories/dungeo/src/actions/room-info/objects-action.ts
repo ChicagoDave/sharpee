@@ -5,8 +5,8 @@
  * without describing the room itself.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TraitType, OpenableTrait, HealthTrait, HealthBehavior } from '@sharpee/world-model';
 import { OBJECTS_ACTION_ID, RoomInfoMessages } from './types';
 

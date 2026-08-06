@@ -17,7 +17,7 @@ import {
   RoomTrait,
   EntityType,
   Direction,
-  DirectionType,
+  type DirectionType,
   SceneryTrait,
   OpenableTrait,
   ReadableTrait,

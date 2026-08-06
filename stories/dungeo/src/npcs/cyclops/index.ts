@@ -17,7 +17,7 @@ export {
 export { cyclopsBehavior } from './cyclops-behavior';
 
 import { WorldModel, IFEntity, RoomBehavior, Direction } from '@sharpee/world-model';
-import { INpcService } from '@sharpee/stdlib';
+import { type INpcService } from '@sharpee/stdlib';
 import { cyclopsBehavior } from './cyclops-behavior';
 import { createCyclops } from './cyclops-entity';
 

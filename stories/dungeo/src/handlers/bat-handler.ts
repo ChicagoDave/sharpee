@@ -7,9 +7,9 @@
  * - If player doesn't have garlic: bat carries player to a random underground room
  */
 
-import { ISemanticEvent, RandomService, definePoint } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService, definePoint } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Plain draw (ADR-293 D4): the destination set is the live underground room list.
 const BAT_DROP_ROOM_POINT = definePoint('dungeo.bat.drop-room');

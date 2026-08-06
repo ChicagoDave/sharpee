@@ -8,8 +8,8 @@
  * Pattern: "knock", "knock on door", "knock door"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 import { KNOCK_ACTION_ID, KnockMessages } from './types';
 import {

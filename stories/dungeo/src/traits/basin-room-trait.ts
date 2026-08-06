@@ -10,7 +10,7 @@
  * This trait persists through checkpoint save/restore.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /** Basin states: normal (trap armed) → disarmed (incense burning) → blessed (prayer said) */
 export type BasinState = 'normal' | 'disarmed' | 'blessed';

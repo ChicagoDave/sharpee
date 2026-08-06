@@ -5,8 +5,8 @@
  * before waving the sceptre to make the rainbow solid.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { RAINBOW_BLOCKED_ACTION_ID, RainbowBlockedMessages } from './types';
 
 // Event ID counter

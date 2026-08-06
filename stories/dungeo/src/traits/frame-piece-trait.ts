@@ -8,7 +8,7 @@
  * state values set during story initialization.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 export class FramePieceTrait implements ITrait {
   static readonly type = 'dungeo.trait.frame_piece' as const;

@@ -17,18 +17,18 @@
 
 import {
   WorldModel,
-  IParsedCommand,
+  type IParsedCommand,
   TraitType,
   RoomTrait,
   OpenableTrait,
-  DirectionType,
+  type DirectionType,
   VisibilityBehavior
 } from '@sharpee/world-model';
-import { RandomService, definePoint } from '@sharpee/core';
+import { type RandomService, definePoint } from '@sharpee/core';
 
 // ADR-293 D2: the grue survival roll (PROB(25,25)) draws on its own point.
 const GRUE_SURVIVAL_POINT = definePoint('dungeo.grue.survival', { classes: ['yes', 'no'] });
-import { ParsedCommandTransformer } from '@sharpee/engine';
+import { type ParsedCommandTransformer } from '@sharpee/engine';
 import { GRUE_DEATH_ACTION_ID } from '../actions/grue-death/types';
 import { getGDTFlags } from '../actions/gdt/gdt-context';
 

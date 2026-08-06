@@ -10,7 +10,7 @@
  * eliminating the need for a prevLocation tracking daemon.
  */
 
-import { StateMachineDefinition } from '@sharpee/plugin-state-machine';
+import { type StateMachineDefinition } from '@sharpee/plugin-state-machine';
 
 export const TrapdoorMessages = {
   SLAMS_SHUT: 'dungeo.trapdoor.slams_shut',

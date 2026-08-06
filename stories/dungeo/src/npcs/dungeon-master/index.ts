@@ -11,7 +11,7 @@ export * from './dungeon-master-messages';
 export * from './dungeon-master-trivia';
 
 import { WorldModel, IFEntity } from '@sharpee/world-model';
-import { INpcService } from '@sharpee/stdlib';
+import { type INpcService } from '@sharpee/stdlib';
 import { dungeonMasterBehavior } from './dungeon-master-behavior';
 import { createDungeonMaster } from './dungeon-master-entity';
 

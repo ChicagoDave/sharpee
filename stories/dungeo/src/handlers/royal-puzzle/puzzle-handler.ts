@@ -12,10 +12,10 @@
  * - Taking the gold card when adjacent
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, Direction, DirectionType, IParsedCommand } from '@sharpee/world-model';
-import { ParsedCommandTransformer } from '@sharpee/engine';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISemanticEvent } from '@sharpee/core';
+import { WorldModel, IdentityTrait, Direction, type DirectionType, type IParsedCommand } from '@sharpee/world-model';
+import { type ParsedCommandTransformer } from '@sharpee/engine';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import {
   getPuzzleState,
   canMove,

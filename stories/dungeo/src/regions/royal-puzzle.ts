@@ -24,7 +24,7 @@ import {
   RoomTrait,
   EntityType,
   Direction,
-  DirectionType,
+  type DirectionType,
   ReadableTrait
 } from '@sharpee/world-model';
 import { RoyalPuzzleTrait, TreasureTrait } from '../traits';

@@ -1,4 +1,4 @@
-import { ITrait } from '@sharpee/world-model';
+import { type ITrait } from '@sharpee/world-model';
 
 /**
  * Weapon category - affects combat behavior and skills.

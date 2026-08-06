@@ -15,7 +15,7 @@
  * <TRZ .A ,OVISON>  ; Hide axe when troll knocked out
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /**
  * Configuration for the troll axe

@@ -9,8 +9,8 @@
  * Pattern: "pray"
  */
 
-import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, killPlayer } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, RoomTrait } from '@sharpee/world-model';
 import { PRAY_ACTION_ID, PrayMessages } from './types';
 import { BasinRoomTrait } from '../../traits/basin-room-trait';

@@ -52,26 +52,26 @@
 // IMPORTS
 // ============================================================================
 
-import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
+import { type Story, type StoryConfig, GameEngine } from '@sharpee/engine';
 import {
   WorldModel,
   IFEntity,
   EntityType,
-  IWorldModel,
-  CapabilityBehavior,
-  CapabilityValidationResult,
-  CapabilitySharedData,
-  CapabilityEffect,
+  type IWorldModel,
+  type CapabilityBehavior,
+  type CapabilityValidationResult,
+  type CapabilitySharedData,
+  type CapabilityEffect,
   createEffect,
   findTraitWithCapability,
 } from '@sharpee/world-model';
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import {
-  NpcBehavior, NpcContext, NpcAction, createPatrolBehavior,
-  Action, ActionContext, ValidationResult,
+  type NpcBehavior, type NpcContext, type NpcAction, createPatrolBehavior,
+  type Action, type ActionContext, type ValidationResult,
 } from '@sharpee/stdlib';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';

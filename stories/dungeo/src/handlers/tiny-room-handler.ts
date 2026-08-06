@@ -11,9 +11,9 @@
  * 5. OPEN DOOR / GO NORTH - access Dreary Room
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IFEntity, IdentityTrait, Direction, RoomTrait, OpenableTrait, IParsedCommand, TraitType, LockableTrait } from '@sharpee/world-model';
-import { ParsedCommandTransformer } from '@sharpee/engine';
+import { type ISemanticEvent } from '@sharpee/core';
+import { WorldModel, IFEntity, IdentityTrait, Direction, RoomTrait, OpenableTrait, type IParsedCommand, TraitType, LockableTrait } from '@sharpee/world-model';
+import { type ParsedCommandTransformer } from '@sharpee/engine';
 import { DOOR_BLOCKED_ACTION_ID } from '../actions/door-blocked';
 import { PULL_MAT_ACTION_ID } from '../actions/pull-mat/types';
 import { TinyRoomDoorTrait, TinyRoomKeyTrait, UnderDoorTrait } from '../traits';

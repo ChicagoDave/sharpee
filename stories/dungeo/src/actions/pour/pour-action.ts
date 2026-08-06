@@ -5,8 +5,8 @@
  * Pattern: "pour water", "pour water in bucket", "pour water into bucket"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, VehicleTrait } from '@sharpee/world-model';
 import { moveVehicle, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
 import { POUR_ACTION_ID, PourMessages } from './types';

@@ -15,12 +15,12 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorResult,
-  CapabilityBehavior,
-  CapabilityValidationResult,
-  CapabilitySharedData,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorResult,
+  type CapabilityBehavior,
+  type CapabilityValidationResult,
+  type CapabilitySharedData,
   IFEntity,
   WorldModel,
   HealthTrait,

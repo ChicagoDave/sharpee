@@ -16,9 +16,9 @@
  * - Flag is cleared after message is shown
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const RealityAlteredMessages = {
   REALITY_ALTERED: 'dungeo.scoring.reality_altered',

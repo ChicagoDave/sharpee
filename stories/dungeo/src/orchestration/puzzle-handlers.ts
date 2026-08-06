@@ -12,7 +12,7 @@ import type { GameEngine } from '@sharpee/engine';
 import type { ISchedulerService } from '@sharpee/plugin-scheduler';
 import type { WorldModel } from '@sharpee/world-model';
 import { RoomTrait, Direction } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 // Puzzle handlers
 import { registerLaserPuzzleHandler } from '../handlers/endgame-laser-handler';

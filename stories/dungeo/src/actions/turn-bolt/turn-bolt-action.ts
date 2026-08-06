@@ -12,8 +12,8 @@
  * are owned by this action's execute phase — no event handler needed.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import {
   WorldModel,
   IdentityTrait,

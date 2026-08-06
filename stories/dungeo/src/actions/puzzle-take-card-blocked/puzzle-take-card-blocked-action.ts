@@ -5,8 +5,8 @@
  * but is not at the card position (position 36) in the puzzle grid.
  */
 
-import { Action, ActionContext, ValidationResult, ActionMetadata } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, type ActionMetadata } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 
 export const PUZZLE_TAKE_CARD_BLOCKED_ACTION_ID = 'dungeo.puzzle.take_card_blocked';
 

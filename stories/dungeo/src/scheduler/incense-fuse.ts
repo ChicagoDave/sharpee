@@ -8,9 +8,9 @@
  * This is a one-shot fuse - incense cannot be relit.
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait } from '@sharpee/world-model';
-import { ISchedulerService, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Fuse, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import { BurnableTrait, BasinRoomTrait } from '../traits';
 

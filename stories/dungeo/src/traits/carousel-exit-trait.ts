@@ -11,7 +11,7 @@
  * Owner context: dungeo story — carousel/magnet puzzle.
  */
 
-import { ITrait, IComputedExitDeclaration } from '@sharpee/world-model';
+import { type ITrait, type IComputedExitDeclaration } from '@sharpee/world-model';
 
 export interface CarouselExitConfig {
   /** Room entity ids a scrambled traversal may land in (ADR-295 D3 candidates). */

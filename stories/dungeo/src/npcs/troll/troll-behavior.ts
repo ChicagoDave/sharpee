@@ -11,7 +11,7 @@
  * - If disarmed: "cowers in terror, pleading for his life"
  */
 
-import { NpcBehavior, NpcContext, NpcAction, guardBehavior } from '@sharpee/stdlib';
+import { type NpcBehavior, type NpcContext, type NpcAction, guardBehavior } from '@sharpee/stdlib';
 import { HealthTrait, HealthBehavior, IdentityTrait, TraitType } from '@sharpee/world-model';
 import { TrollMessages } from './troll-messages';
 import { definePoint } from '@sharpee/core';

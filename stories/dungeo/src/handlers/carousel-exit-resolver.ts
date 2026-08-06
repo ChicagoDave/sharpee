@@ -18,8 +18,8 @@
  * Owner context: dungeo story — carousel/magnet puzzle.
  */
 
-import { ISemanticEvent, definePoint, ChoicePoint } from '@sharpee/core';
-import { WorldModel, RoomBehavior, ExitResolver } from '@sharpee/world-model';
+import { type ISemanticEvent, definePoint, type ChoicePoint } from '@sharpee/core';
+import { WorldModel, RoomBehavior, type ExitResolver } from '@sharpee/world-model';
 import { CarouselExitTrait } from '../traits/carousel-exit-trait';
 import { RoundRoomTrait } from '../traits/round-room-trait';
 

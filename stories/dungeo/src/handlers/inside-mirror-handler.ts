@@ -13,14 +13,14 @@
  * - POLEUF: pole state (0=lowered in channel, 1=on floor, 2=raised)
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import {
   WorldModel,
   IdentityTrait,
   RoomTrait,
   Direction
 } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 
 export const InsideMirrorMessages = {
   // Pole operations

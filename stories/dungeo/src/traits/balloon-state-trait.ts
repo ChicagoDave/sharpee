@@ -8,7 +8,7 @@
  * This trait persists through checkpoint save/restore, unlike custom properties.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /**
  * Balloon position in the volcano shaft

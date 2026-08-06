@@ -8,9 +8,9 @@
  * - Responds to "tell master set dial to N" and "tell master push button"
  */
 
-import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
+import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
 import { IFEntity, IdentityTrait, RoomTrait, NpcTrait } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 import { DungeonMasterMessages } from './dungeon-master-messages';
 import {

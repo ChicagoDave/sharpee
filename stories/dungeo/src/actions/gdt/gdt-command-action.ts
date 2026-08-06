@@ -5,8 +5,8 @@
  * Routes commands to the appropriate handler.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { GDT_COMMAND_ACTION_ID, GDTCommandCode, GDTCommandResult } from './types';
 import { GDTEventTypes } from './gdt-events';
 import { isGDTActive, createGDTContext } from './gdt-context';

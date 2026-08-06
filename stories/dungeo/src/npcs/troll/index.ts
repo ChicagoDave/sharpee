@@ -2,7 +2,7 @@
  * Troll NPC exports
  */
 
-import { INpcService } from '@sharpee/stdlib';
+import { type INpcService } from '@sharpee/stdlib';
 import { trollBehavior } from './troll-behavior';
 
 export { trollBehavior } from './troll-behavior';

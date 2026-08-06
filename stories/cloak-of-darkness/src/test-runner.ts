@@ -4,7 +4,7 @@
  * This demonstrates how to run the story with the Sharpee engine using static loading
  */
 
-import { GameEngine, TurnResult } from '@sharpee/engine';
+import { GameEngine, type TurnResult } from '@sharpee/engine';
 import { WorldModel, IFEntity, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';

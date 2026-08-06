@@ -16,7 +16,7 @@
 
 import {
   WorldModel,
-  ITrait,
+  type ITrait,
 } from '@sharpee/world-model';
 import {
   NpcTrait,

@@ -14,7 +14,7 @@
  * The initial 15 pts are awarded by endgame-trigger-handler.ts on entry.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import type { EventProcessor } from '@sharpee/event-processor';
 import type { WorldModel } from '@sharpee/world-model';
 

@@ -13,8 +13,8 @@
  * - TIE ROPE (context-sensitive)
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, RoomTrait, Direction, VehicleTrait, moveVehicle } from '@sharpee/world-model';
 import { TIE_ACTION_ID, TieMessages } from './types';
 import { BalloonStateTrait, isLedgePosition, BalloonPosition, RopeStateTrait } from '../../traits';

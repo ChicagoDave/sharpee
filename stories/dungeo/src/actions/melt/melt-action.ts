@@ -10,8 +10,8 @@
  * GLACIER-MELT-FLAG is set (for custom room description on revisit).
  */
 
-import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, killPlayer } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, LightSourceTrait, IFEntity } from '@sharpee/world-model';
 import { GlacierTrait } from '../../traits/glacier-trait';
 import { MELT_ACTION_ID, MeltMessages } from './types';

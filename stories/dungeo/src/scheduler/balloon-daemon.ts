@@ -17,10 +17,10 @@
  * - ledg2-4 (131-133): Ledge positions (dockable)
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { WorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, moveVehicle } from '@sharpee/world-model';
 import { killPlayer } from '@sharpee/stdlib';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from './scheduler-messages';
 import {
   BurnableTrait,

@@ -13,7 +13,7 @@ import {
   NpcTrait,
   EntityType
 } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { RobotMessages } from './robot-messages';
 import { RoundRoomTrait } from '../../traits';
 

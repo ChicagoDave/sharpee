@@ -13,8 +13,8 @@
  * - Shore → Frigid River 5 (via E exit)
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { VehicleTrait, TraitType, RoomTrait, Direction } from '@sharpee/world-model';
 import { LAUNCH_ACTION_ID, LaunchMessages } from './types';
 import { RiverNavigationTrait, InflatableTrait } from '../../traits';

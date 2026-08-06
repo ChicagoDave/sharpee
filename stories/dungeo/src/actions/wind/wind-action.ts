@@ -6,8 +6,8 @@
  * Pattern: "wind canary", "wind :target"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity, EntityType } from '@sharpee/world-model';
 import { WIND_ACTION_ID, WindMessages } from './types';
 import { TreasureTrait } from '../../traits';

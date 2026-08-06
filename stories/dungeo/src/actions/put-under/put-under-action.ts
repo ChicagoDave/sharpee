@@ -4,8 +4,8 @@
  * Handles "PUT MAT UNDER DOOR" for the key puzzle.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { PUT_UNDER_ACTION_ID, PutUnderMessages } from './types';
 import {
   findTinyRoomDoor,

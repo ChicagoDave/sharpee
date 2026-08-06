@@ -12,7 +12,7 @@
  * 3. Triggers game over after 2 deaths
  */
 
-import { Effect, WorldQuery, IGameEvent } from '@sharpee/event-processor';
+import { type Effect, type WorldQuery, type IGameEvent } from '@sharpee/event-processor';
 import { WorldModel, StandardCapabilities } from '@sharpee/world-model';
 
 // Death penalty constants from FORTRAN source

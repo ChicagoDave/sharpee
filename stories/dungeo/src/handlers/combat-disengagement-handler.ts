@@ -14,7 +14,7 @@
  * but the player must wait for the cure daemon to heal.
  */
 
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { EventProcessor } from '@sharpee/event-processor';
 import { WorldModel, CombatantTrait, HealthTrait, HealthBehavior } from '@sharpee/world-model';
 import { MELEE_STATE, getBaseOstrength } from '../combat/melee-state';

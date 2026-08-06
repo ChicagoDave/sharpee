@@ -9,8 +9,8 @@
  * - Death 523: "a lurking grue slithered into the room"
  */
 
-import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, killPlayer } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { GRUE_DEATH_ACTION_ID, GrueDeathMessages } from './types';
 
 export const grueDeathAction: Action = {

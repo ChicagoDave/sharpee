@@ -9,7 +9,7 @@
  * and wires DOWN/UP exits between Living Room and Cellar.
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 export interface RugTraitConfig {
   /** Entity ID of the trap door hidden under the rug */

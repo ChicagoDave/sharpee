@@ -8,10 +8,10 @@
  * Pattern: "burn incense", "light wire", "burn fuse"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
-import { ISchedulerService } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService } from '@sharpee/plugin-scheduler';
 import { BURN_ACTION_ID, BurnMessages } from './types';
 import { BurnableTrait, BasinRoomTrait } from '../../traits';
 import { startExplosionCountdown, ExplosionConfig } from '../../scheduler';

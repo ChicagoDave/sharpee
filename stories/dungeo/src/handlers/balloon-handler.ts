@@ -7,10 +7,10 @@
  * 3. Balloon operational state management
  */
 
-import { WorldModel, IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, IParsedCommand } from '@sharpee/world-model';
+import { WorldModel, type IWorldModel, IdentityTrait, OpenableTrait, ContainerTrait, VehicleTrait, type IParsedCommand } from '@sharpee/world-model';
 import { InflatableTrait, BurnableTrait, BalloonStateTrait, BalloonPosition, isLedgePosition, isMidairPosition } from '../traits';
-import { ISemanticEvent } from '@sharpee/core';
-import { ISchedulerService, Daemon, Fuse, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type ISchedulerService, type Daemon, type Fuse, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { DungeoSchedulerMessages } from '../scheduler/scheduler-messages';
 
 // State keys
@@ -258,7 +258,7 @@ export function createBalloonExitTransformer() {
 /**
  * Balloon exit action - handles exit at ledges and blocks exit in mid-air
  */
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 
 export const balloonExitAction: Action = {
   id: BALLOON_EXIT_ACTION_ID,

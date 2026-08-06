@@ -15,8 +15,8 @@
  * - Wound level: player.attributes.meleeWoundAdjust (survives save/restore)
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISemanticEvent } from '@sharpee/core';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { MELEE_STATE, CURE_STATE } from '../combat/melee-state';
 import { healOneWound, CURE_WAIT } from '../combat/melee';
 

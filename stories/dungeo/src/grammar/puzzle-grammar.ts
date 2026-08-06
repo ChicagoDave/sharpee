@@ -5,7 +5,7 @@
  * mirror pole, dial controls, dam mechanics, coal machine, tiny room, etc.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import {
   PUSH_WALL_ACTION_ID,
   PUSH_PANEL_ACTION_ID,

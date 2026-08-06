@@ -9,7 +9,7 @@
  * Owner: thealderman story
  */
 
-import { Story, StoryConfig, GameEngine } from '@sharpee/engine';
+import { type Story, type StoryConfig, GameEngine } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 import {
@@ -20,7 +20,7 @@ import {
   ActorTrait,
   ContainerTrait,
 } from '@sharpee/world-model';
-import { Action } from '@sharpee/stdlib';
+import { type Action } from '@sharpee/stdlib';
 import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 

@@ -14,9 +14,9 @@
  * - Combat difficulty scales with player score
  */
 
-import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
+import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
 import { IFEntity, NpcTrait, CombatantTrait, OpenableTrait, IdentityTrait } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 import { ThiefMessages } from './thief-messages';
 import { TreasureTrait, EggTrait } from '../../traits';

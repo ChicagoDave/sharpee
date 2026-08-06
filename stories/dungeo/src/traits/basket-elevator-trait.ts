@@ -8,7 +8,7 @@
  * and Bottom of Shaft (bottom).
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 /**
  * Basket position - where the basket currently is

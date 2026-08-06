@@ -1,4 +1,4 @@
-import { ITrait } from '@sharpee/world-model';
+import { type ITrait } from '@sharpee/world-model';
 
 /**
  * CombatantTrait - Makes an entity capable of combat.

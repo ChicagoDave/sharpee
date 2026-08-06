@@ -8,8 +8,8 @@
  * to the Treasury becomes visible.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, RoomTrait, Direction } from '@sharpee/world-model';
 import { PUSH_DIAL_BUTTON_ACTION_ID, PushDialButtonMessages } from './types';
 

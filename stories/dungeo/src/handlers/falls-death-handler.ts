@@ -17,8 +17,8 @@
  * Owner context: stories/dungeo — death triggers (ADR-227 Phase 1).
  */
 
-import { WorldModel, IParsedCommand, TraitType } from '@sharpee/world-model';
-import { ParsedCommandTransformer } from '@sharpee/engine';
+import { WorldModel, type IParsedCommand, TraitType } from '@sharpee/world-model';
+import { type ParsedCommandTransformer } from '@sharpee/engine';
 import {
   DEADLY_ROOM_DEATH_ACTION_ID,
   DEADLY_ROOM_CAUSE_KEY,

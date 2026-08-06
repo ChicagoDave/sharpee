@@ -12,7 +12,7 @@
  * never at module level — a fresh `createStory()` gets fully fresh state.
  */
 
-import { Action } from '@sharpee/stdlib';
+import { type Action } from '@sharpee/stdlib';
 import type { ActionContext, ValidationResult } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import { MSG } from '../messages';

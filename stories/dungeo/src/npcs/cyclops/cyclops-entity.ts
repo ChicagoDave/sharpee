@@ -24,7 +24,7 @@ import {
   RoomTrait,
   Direction
 } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { CyclopsMessages } from './cyclops-messages';
 
 /**

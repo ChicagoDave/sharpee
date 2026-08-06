@@ -4,7 +4,7 @@
  * INFLATE, DEFLATE, BOARD, DISEMBARK, and LAUNCH actions for the boat puzzle.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import {
   INFLATE_ACTION_ID,
   DEFLATE_ACTION_ID,

@@ -4,7 +4,7 @@
  * SAY action, magic words, COMMANDING NPCs, TALK TO, ANSWER, and KNOCK patterns.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import {
   SAY_ACTION_ID,
   COMMANDING_ACTION_ID,

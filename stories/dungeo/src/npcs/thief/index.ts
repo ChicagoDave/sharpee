@@ -29,7 +29,7 @@ export {
 } from './thief-helpers';
 
 import { WorldModel, IFEntity, IdentityTrait } from '@sharpee/world-model';
-import { INpcService } from '@sharpee/stdlib';
+import { type INpcService } from '@sharpee/stdlib';
 import { thiefBehavior } from './thief-behavior';
 import { createThief } from './thief-entity';
 

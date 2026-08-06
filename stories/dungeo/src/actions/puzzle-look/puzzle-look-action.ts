@@ -5,8 +5,8 @@
  * Shows the dynamic room description based on puzzle state.
  */
 
-import { Action, ActionContext, ValidationResult, ActionMetadata } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, type ActionMetadata } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 import {
   getPuzzleState,

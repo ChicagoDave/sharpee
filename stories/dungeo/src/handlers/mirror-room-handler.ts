@@ -17,8 +17,8 @@
  * The room shakes and rumbles when the state changes.
  */
 
-import { WorldModel, Direction, IGameEvent } from '@sharpee/world-model';
-import { Effect, WorldQuery, StoryEventHandler } from '@sharpee/event-processor';
+import { WorldModel, Direction, type IGameEvent } from '@sharpee/world-model';
+import { type Effect, type WorldQuery, type StoryEventHandler } from '@sharpee/event-processor';
 
 export const MirrorRoomMessages = {
   MIRROR_RUBBED: 'dungeo.mirror_room.rubbed',

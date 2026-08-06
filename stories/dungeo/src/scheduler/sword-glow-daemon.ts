@@ -16,9 +16,9 @@
  * - "Your sword is no longer glowing." (level 0)
  */
 
-import { ISemanticEvent } from '@sharpee/core';
-import { WorldModel, IdentityTrait, HealthTrait, HealthBehavior, RoomTrait, ActorTrait, IExitInfo } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISemanticEvent } from '@sharpee/core';
+import { WorldModel, IdentityTrait, HealthTrait, HealthBehavior, RoomTrait, ActorTrait, type IExitInfo } from '@sharpee/world-model';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 
 // Daemon ID
 const SWORD_GLOW_DAEMON = 'dungeo.sword.glow';

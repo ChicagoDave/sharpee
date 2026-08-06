@@ -8,8 +8,8 @@
  * - UNTIE
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait, IFEntity } from '@sharpee/world-model';
 import { UNTIE_ACTION_ID, UntieMessages } from './types';
 import { BalloonStateTrait } from '../../traits';

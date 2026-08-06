@@ -14,8 +14,8 @@
  * Pattern: "send for brochure", "send for free brochure", "order brochure"
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { SEND_ACTION_ID, SendMessages } from './types';
 
 // State keys (shared with brochure-fuse.ts)

@@ -5,7 +5,7 @@
  * that are only functional when GDT mode is active.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import { GDT_ACTION_ID, GDT_COMMAND_ACTION_ID } from '../actions';
 
 /**

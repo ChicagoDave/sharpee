@@ -15,9 +15,9 @@
  * - Player receives points
  */
 
-import { ISemanticEvent, EntityId } from '@sharpee/core';
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
 import { WorldModel, IdentityTrait, LightSourceTrait, SwitchableTrait, RoomTrait, RoomBehavior, Direction } from '@sharpee/world-model';
-import { ISchedulerService, Daemon, SchedulerContext } from '@sharpee/plugin-scheduler';
+import { type ISchedulerService, type Daemon, type SchedulerContext } from '@sharpee/plugin-scheduler';
 import { HadesEntryTrait } from '../traits';
 
 export const ExorcismMessages = {

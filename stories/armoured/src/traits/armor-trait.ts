@@ -1,4 +1,4 @@
-import { ITrait } from '@sharpee/world-model';
+import { type ITrait } from '@sharpee/world-model';
 
 /**
  * Armor slot - where on the body this armor is worn.

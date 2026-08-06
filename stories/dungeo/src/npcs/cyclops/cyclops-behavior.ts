@@ -10,9 +10,9 @@
  * blinded the cyclops Polyphemus and escaped by clinging to sheep.
  */
 
-import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
+import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
 import { IFEntity, NpcTrait, CombatantTrait } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 import { CyclopsMessages } from './cyclops-messages';
 import { CyclopsCustomProperties, makeCyclopsFlee } from './cyclops-entity';

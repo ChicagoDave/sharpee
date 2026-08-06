@@ -7,7 +7,7 @@
 
 import { GDTCommandHandler, GDTContext, GDTCommandResult } from '../types';
 import { IdentityTrait, HealthTrait, HealthBehavior, TraitType } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import { applyVillainDeathSideEffects } from '../../../interceptors/melee-interceptor';
 
 // Store engine reference for event processing

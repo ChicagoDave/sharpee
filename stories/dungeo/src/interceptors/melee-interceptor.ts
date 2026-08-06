@@ -16,10 +16,10 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorResult,
-  InterceptorReportResult,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorResult,
+  type InterceptorReportResult,
   IFEntity,
   WorldModel,
   IdentityTrait,
@@ -32,10 +32,10 @@ import {
   RoomTrait,
   Direction,
   createEffect,
-  CapabilityEffect,
-  InterceptorBlockedResult,
+  type CapabilityEffect,
+  type InterceptorBlockedResult,
 } from '@sharpee/world-model';
-import { RandomService } from '@sharpee/core';
+import { type RandomService } from '@sharpee/core';
 import {
   HERO_BLOW_POINT,
   HERO_MESSAGE_VARIANT_POINT,

@@ -10,9 +10,9 @@
  * the triangular button to stop the carousel.
  */
 
-import { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
+import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
 import { IFEntity, IdentityTrait, NpcTrait, RoomTrait, Direction } from '@sharpee/world-model';
-import { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 
 import { RobotMessages } from './robot-messages';
 import { getRobotProps, makeRobotPushButton, RobotCustomProperties } from './robot-entity';

@@ -4,7 +4,7 @@
  * POUR, FILL, LIGHT (with tool), TIE, and UNTIE actions for liquid and rope puzzles.
  */
 
-import { GrammarBuilder } from '@sharpee/if-domain';
+import { type GrammarBuilder } from '@sharpee/if-domain';
 import {
   POUR_ACTION_ID,
   FILL_ACTION_ID,

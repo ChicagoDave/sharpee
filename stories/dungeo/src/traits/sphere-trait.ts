@@ -14,7 +14,7 @@
  *   ... cage trap or poison death ...
  */
 
-import { ITrait, ITraitConstructor } from '@sharpee/world-model';
+import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
 
 export interface SphereTraitConfig {
   /** Room ID of the Dingy Closet (where the cage puzzle occurs) */

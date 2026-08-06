@@ -14,9 +14,9 @@
  */
 
 import {
-  ActionInterceptor,
-  InterceptorSharedData,
-  InterceptorReportResult,
+  type ActionInterceptor,
+  type InterceptorSharedData,
+  type InterceptorReportResult,
   IFEntity,
   WorldModel,
   PushableTrait,

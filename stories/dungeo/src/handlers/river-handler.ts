@@ -8,8 +8,8 @@
  * Note: Falls death is handled separately by falls-death-handler.ts
  */
 
-import { WorldModel, IParsedCommand, VehicleTrait, TraitType, RoomTrait, DirectionType } from '@sharpee/world-model';
-import { ParsedCommandTransformer } from '@sharpee/engine';
+import { WorldModel, type IParsedCommand, VehicleTrait, TraitType, RoomTrait, type DirectionType } from '@sharpee/world-model';
+import { type ParsedCommandTransformer } from '@sharpee/engine';
 import { RIVER_BLOCKED_ACTION_ID } from '../actions/river-blocked/types';
 import { RiverNavigationTrait } from '../traits';
 

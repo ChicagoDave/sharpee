@@ -6,8 +6,8 @@
  * Per MDL source (act3.199) - immediate death.
  */
 
-import { Action, ActionContext, ValidationResult, killPlayer } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult, killPlayer } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { GAS_EXPLOSION_ACTION_ID, GasExplosionMessages } from './types';
 
 export const gasExplosionAction: Action = {

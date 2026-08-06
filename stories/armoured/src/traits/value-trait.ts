@@ -1,4 +1,4 @@
-import { ITrait } from '@sharpee/world-model';
+import { type ITrait } from '@sharpee/world-model';
 
 /**
  * ValueTrait - Provides economic value for buying/selling.

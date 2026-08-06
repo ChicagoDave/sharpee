@@ -1602,7 +1602,12 @@ export declare class GameEngine {
      * A named entry replaces the prior one of that name; entries the caller does
      * not name are left alone. To REMOVE a hook, name it explicitly as
      * `undefined` — every read site treats an absent and an undefined entry the
-     * same way.
+     * same way. `{}` therefore registers nothing rather than clearing everything.
+     *
+     * **This SNAPSHOTS.** Merging necessarily copies, so the engine no longer
+     * holds the caller's object: mutating a hooks object after registering it
+     * has no effect, where it used to reach the engine through the shared
+     * reference. Re-register to change a hook.
      *
      * @param hooks any subset of the four hooks
      */

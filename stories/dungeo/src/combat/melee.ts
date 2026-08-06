@@ -17,7 +17,7 @@
  * This is a pure story-level module — no platform changes required.
  */
 
-import { SeededRandom } from '@sharpee/core';
+import { type SeededRandom } from '@sharpee/core';
 import { MeleeOutcome, MeleeOutcomeType, getResultTable } from './melee-tables';
 
 export { MeleeOutcome, MeleeOutcomeType };

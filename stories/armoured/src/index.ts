@@ -21,7 +21,7 @@
  * - Flexibility (spiked gauntlets can have ArmorTrait AND WeaponTrait)
  */
 
-import { Story, StoryConfig } from '@sharpee/engine';
+import { type Story, type StoryConfig } from '@sharpee/engine';
 import { WorldModel, EntityType, IFEntity } from '@sharpee/world-model';
 import { ActorTrait, IdentityTrait } from '@sharpee/world-model';
 

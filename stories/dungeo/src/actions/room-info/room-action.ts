@@ -5,8 +5,8 @@
  * This is the room-only part of LOOK.
  */
 
-import { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { ISemanticEvent } from '@sharpee/core';
+import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
+import { type ISemanticEvent } from '@sharpee/core';
 import { TraitType, RoomTrait } from '@sharpee/world-model';
 import { ROOM_ACTION_ID } from './types';
 
